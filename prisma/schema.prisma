@@ -1,0 +1,543 @@
+// ERP Genius — schema modelado em EVENTOS + estado (não em telas).
+// Espinha dorsal: tabela `Evento` (audit/event log append-only).
+// Regra: Evento = auditoria; tabelas tipadas (ex.: AjusteFinanceiro) = relatório.
+// Evolução futura (NÃO V0): Papel enum[] -> tabela UsuarioPapel (escopo por país);
+//   unificar Lead/Aluno/Responsavel sob uma entidade Pessoa/Contato.
+// Ver docs/02-arquitetura.md e docs/09-fase0-telas.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ACESSO
+// ============================================================
+
+enum Papel {
+  ADMINISTRADOR
+  GERENTE_COMERCIAL
+  VENDEDOR
+  GERENTE_PEDAGOGICO
+  PROFESSOR
+  FINANCEIRO
+  SECRETARIA_ACADEMICA
+}
+
+model Usuario {
+  id                String    @id @default(cuid())
+  nome              String
+  email             String    @unique
+  senhaHash         String
+  ativo             Boolean   @default(true)
+  papeis            Papel[] // multi-papel. V2: migrar p/ tabela UsuarioPapel (permissões granulares / por país)
+  limiteDescontoPct Float? // null = sem limite (Admin)
+  ultimoAcesso      DateTime?
+  criadoEm          DateTime  @default(now())
+
+  leads        Lead[]      @relation("VendedorLeads")
+  turmas       Turma[]     @relation("ProfessorTurmas")
+  comissoes    Comissao[]
+  eventos      Evento[]    @relation("AutorEventos")
+  aprovacoes   Aprovacao[] @relation("SolicitanteAprovacoes")
+  aprovadasPor Aprovacao[] @relation("AprovadorAprovacoes")
+  ajustes      AjusteFinanceiro[] @relation("AutorAjustes")
+}
+
+// ============================================================
+// PAÍS / MERCADO (espinha dorsal do multi-país)
+// ============================================================
+
+enum StatusPais {
+  RASCUNHO
+  ATIVO
+  PAUSADO
+  ENCERRADO
+}
+
+model Pais {
+  id         String         @id @default(cuid())
+  nome       String
+  codigoISO  String         @unique
+  moedaLocal String // ex.: CRC, USD, MXN
+  ddi        String // ex.: +506
+  fuso       String         @default("America/Sao_Paulo")
+  idioma     String         @default("es")
+  status     StatusPais     @default(RASCUNHO)
+  criadoEm   DateTime       @default(now())
+
+  tiposDocumento TipoDocumento[]
+  produtosPais   ProdutoPais[]
+  alunos         Aluno[]
+  leads          Lead[]
+  matriculas     Matricula[]
+}
+
+model TipoDocumento {
+  id        String @id @default(cuid())
+  paisId    String
+  pais      Pais   @relation(fields: [paisId], references: [id])
+  nome      String // CPF, DNI, CURP, Cédula, Passaporte...
+  validador String // nome do validador: cpf, curp, cedula_cr, passaporte...
+}
+
+// ============================================================
+// CATÁLOGO
+// ============================================================
+
+enum Segmento {
+  ADULTO
+  KIDS
+  TEENS
+  EMPRESA
+}
+
+model Idioma {
+  id      String   @id @default(cuid())
+  nome    String // Português, Inglês...
+  ativo   Boolean  @default(true)
+  niveis  Nivel[]
+  produtos Produto[]
+}
+
+model Modalidade {
+  id              String   @id @default(cuid())
+  nome            String // Regular, Semi-intensiva, Intensiva, Super-intensiva, Particular, Kids Regular...
+  segmento        Segmento @default(ADULTO)
+  frequencia      String // 1x/semana, 2x/semana...
+  horasAula       Float    @default(2)
+  duracaoPorNivel String // "3 meses", "1 mês"...
+  aulasPorNivel   Int? // 12, 16, 18, 20...
+  minimoAbrir     Int      @default(1)
+
+  produtos Produto[]
+  turmas   Turma[]
+}
+
+model Nivel {
+  id       String @id @default(cuid())
+  idiomaId String
+  idioma   Idioma @relation(fields: [idiomaId], references: [id])
+  codigo   String // Pré A1, A1, A2, B1, B2, C1, C2
+  ordem    Int
+
+  turmas Turma[]
+}
+
+// Produto vendável = idioma + modalidade
+model Produto {
+  id           String        @id @default(cuid())
+  idiomaId     String
+  idioma       Idioma        @relation(fields: [idiomaId], references: [id])
+  modalidadeId String
+  modalidade   Modalidade    @relation(fields: [modalidadeId], references: [id])
+  produtosPais ProdutoPais[]
+  matriculas   Matricula[]
+}
+
+enum TipoCobranca {
+  TAXA_MATRICULA
+  MENSALIDADE
+  CERTIFICADO
+}
+
+// Disponibilidade + preços por país
+model ProdutoPais {
+  id        String           @id @default(cuid())
+  produtoId String
+  produto   Produto          @relation(fields: [produtoId], references: [id])
+  paisId    String
+  pais      Pais             @relation(fields: [paisId], references: [id])
+  moeda     String
+  oferecido Boolean          @default(true)
+  precos    PrecoReferencia[]
+
+  @@unique([produtoId, paisId])
+}
+
+model PrecoReferencia {
+  id            String       @id @default(cuid())
+  produtoPaisId String
+  produtoPais   ProdutoPais  @relation(fields: [produtoPaisId], references: [id])
+  tipoCobranca  TipoCobranca
+  valor         Float
+  versaoEstudo  String?
+  vigenteDesde  DateTime     @default(now())
+}
+
+// ============================================================
+// TURMAS
+// ============================================================
+
+enum StatusTurma {
+  PLANEJADA
+  ABERTA
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+model Turma {
+  id           String      @id @default(cuid())
+  codigo       String?     @unique // T-000001
+  modalidadeId String
+  modalidade   Modalidade  @relation(fields: [modalidadeId], references: [id])
+  nivelId      String
+  nivel        Nivel       @relation(fields: [nivelId], references: [id])
+  professorId  String?
+  professor    Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
+  diasHorario  String // "Ter/Qui 20h"
+  dataInicio   DateTime?
+  cronograma   String?
+  capacidade   Int         @default(12)
+  status       StatusTurma @default(PLANEJADA)
+  rolling      Boolean     @default(false) // Pré A1
+  criadoEm     DateTime    @default(now())
+
+  alocacoes AlocacaoTurma[]
+}
+
+// ============================================================
+// ALUNOS
+// ============================================================
+
+enum StatusAluno {
+  ATIVO
+  PAUSADO
+  ENCERRADO
+}
+
+model Aluno {
+  id              String      @id @default(cuid())
+  codigo          String?     @unique // A-000001
+  nome            String
+  nascimento      DateTime?
+  paisId          String
+  pais            Pais        @relation(fields: [paisId], references: [id])
+  documento       String?
+  documentoValido Boolean     @default(false)
+  telefoneE164    String?
+  status          StatusAluno @default(ATIVO)
+  criadoEm        DateTime    @default(now())
+
+  responsaveis AlunoResponsavel[]
+  matriculas   Matricula[]
+  alocacoes    AlocacaoTurma[]
+}
+
+model Responsavel {
+  id           String  @id @default(cuid())
+  nome         String
+  parentesco   String?
+  telefoneE164 String?
+  email        String?
+
+  alunos AlunoResponsavel[]
+}
+
+enum PapelResponsavel {
+  PEDAGOGICO
+  FINANCEIRO
+}
+
+model AlunoResponsavel {
+  id            String           @id @default(cuid())
+  alunoId       String
+  aluno         Aluno            @relation(fields: [alunoId], references: [id])
+  responsavelId String
+  responsavel   Responsavel      @relation(fields: [responsavelId], references: [id])
+  papel         PapelResponsavel @default(FINANCEIRO)
+}
+
+model AlocacaoTurma {
+  id        String   @id @default(cuid())
+  alunoId   String
+  aluno     Aluno    @relation(fields: [alunoId], references: [id])
+  turmaId   String
+  turma     Turma    @relation(fields: [turmaId], references: [id])
+  ativa     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+}
+
+// ============================================================
+// COMERCIAL (LEAD)
+// ============================================================
+
+enum Temperatura {
+  QUENTE
+  MORNO
+  FRIO
+}
+
+enum EtapaLead {
+  NOVO
+  EM_ATENDIMENTO
+  QUALIFICADO
+  EXPERIMENTAL_AGENDADA
+  EXPERIMENTAL_REALIZADA
+  PROPOSTA
+  AGUARDANDO_MATRICULA
+  MATRICULADO
+  NO_SHOW
+  PERDIDO
+}
+
+enum MotivoPerda {
+  NAO_RESPONDEU
+  PRECO
+  TEMPO
+  CONCORRENCIA
+  INTERESSE
+  LOCALIZACAO
+  EMPRESA
+  QUALIFICACAO
+  OUTRO
+}
+
+model Lead {
+  id             String      @id @default(cuid())
+  codigo         String?     @unique // L-000001
+  nome           String
+  telefoneE164   String?
+  paisId         String?
+  pais           Pais?       @relation(fields: [paisId], references: [id])
+  segmento       Segmento    @default(ADULTO)
+  temperatura    Temperatura @default(MORNO)
+  etapa          EtapaLead   @default(NOVO)
+  b2b            Boolean     @default(false)
+  vendedorDonoId String?
+  vendedor       Usuario?    @relation("VendedorLeads", fields: [vendedorDonoId], references: [id])
+
+  // origem inteligente
+  origemCampanha String?
+  origemConjunto String?
+  origemAnuncio  String?
+  origemPalavra  String?
+
+  // resumo executivo (manual no V0, IA na Fase 1)
+  interesse   String?
+  objetivo    String?
+  urgencia    String?
+  orcamento   String?
+  objecao     String?
+  proximaAcao String?
+
+  // datas que alimentam a fila da Home
+  proximoFollowUp DateTime?
+  dataExperimental DateTime?
+  dataProposta     DateTime?
+
+  motivoPerda      MotivoPerda?
+  ultimaCobranca   DateTime?
+  criadoEm         DateTime     @default(now())
+
+  matricula Matricula?
+}
+
+// ============================================================
+// MATRÍCULA / FINANCEIRO
+// ============================================================
+
+enum StatusMatricula {
+  RASCUNHO
+  AGUARDANDO
+  ATIVA
+  ENCERRADA
+  CANCELADA // encerramento precoce → estorno de comissão (ver docs/10)
+}
+
+model Matricula {
+  id            String          @id @default(cuid())
+  alunoId       String
+  aluno         Aluno           @relation(fields: [alunoId], references: [id])
+  leadId        String?         @unique
+  lead          Lead?           @relation(fields: [leadId], references: [id])
+  produtoId     String
+  produto       Produto         @relation(fields: [produtoId], references: [id])
+  paisId        String
+  pais          Pais            @relation(fields: [paisId], references: [id])
+  codigo        String?         @unique // M-000001
+  moeda         String
+  status        StatusMatricula @default(RASCUNHO)
+  diaVencimento Int             @default(5)
+  contratoOk    Boolean         @default(false)
+  pagamentoOk   Boolean         @default(false)
+  criadoEm      DateTime        @default(now())
+  ativadaEm     DateTime?
+
+  cobrancas Cobranca[]
+  comissoes Comissao[]
+  ajustes   AjusteFinanceiro[]
+}
+
+enum StatusCobranca {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADA
+}
+
+enum FormaPagamento {
+  TRANSFERENCIA
+  GREENPAY
+  DINHEIRO
+  CARTAO
+}
+
+model Cobranca {
+  id             String          @id @default(cuid())
+  codigo         String?         @unique // C-000001
+  matriculaId    String
+  matricula      Matricula       @relation(fields: [matriculaId], references: [id])
+  tipo           TipoCobranca
+  competencia    String? // "2026-06" para mensalidades
+  valorOriginal  Float
+  valorNegociado Float
+  valorRecebido  Float?
+  saldo          Float? // valorNegociado - valorRecebido
+  moeda          String
+  vencimento     DateTime
+  status         StatusCobranca  @default(PENDENTE)
+  pagoEm         DateTime?
+  formaPagamento FormaPagamento?
+  comprovanteUrl String?
+  comentario     String?
+  criadoEm       DateTime        @default(now())
+}
+
+enum StatusComissao {
+  PENDENTE
+  APROVADA
+  PAGA
+  ESTORNADA
+}
+
+model Comissao {
+  id                    String         @id @default(cuid())
+  matriculaId           String
+  matricula             Matricula      @relation(fields: [matriculaId], references: [id])
+  vendedorId            String
+  vendedor              Usuario        @relation(fields: [vendedorId], references: [id])
+  percentual            Float
+  valor                 Float
+  moeda                 String
+  status                StatusComissao @default(PENDENTE)
+  dataPrevistaPagamento DateTime?
+  pagaEm                DateTime?
+  criadoEm              DateTime       @default(now())
+}
+
+// ============================================================
+// APROVAÇÕES (engine genérica)
+// ============================================================
+
+enum TipoAprovacao {
+  DESCONTO
+  BOLSA
+  ALTERACAO_VALOR
+  PERDAO_DIVIDA
+  COMISSAO_EXCEPCIONAL
+}
+
+enum StatusAprovacao {
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
+enum Vigencia {
+  ESTA_COBRANCA
+  PROXIMOS_MESES
+  CONTRATO_INTEIRO
+}
+
+model Aprovacao {
+  id            String          @id @default(cuid())
+  tipo          TipoAprovacao
+  status        StatusAprovacao @default(PENDENTE)
+  solicitanteId String
+  solicitante   Usuario         @relation("SolicitanteAprovacoes", fields: [solicitanteId], references: [id])
+  aprovadorId   String?
+  aprovador     Usuario?        @relation("AprovadorAprovacoes", fields: [aprovadorId], references: [id])
+  alvoTipo      String // "Cobranca", "Comissao"...
+  alvoId        String?
+  payload       Json? // { de, para, percentual, ... }
+  vigencia      Vigencia?
+  motivo        String?
+  impactoMensal Float?
+  criadoEm      DateTime        @default(now())
+  decididoEm    DateTime?
+}
+
+// ============================================================
+// AJUSTE FINANCEIRO — tabela TIPADA (relatório). Evento cuida da auditoria.
+// Responde: total de desconto concedido · desconto por vendedor / país / modalidade.
+// ============================================================
+
+enum TipoAjuste {
+  DESCONTO
+  BOLSA
+  ALTERACAO_VALOR
+  PERDAO
+  RENEGOCIACAO
+}
+
+model AjusteFinanceiro {
+  id            String     @id @default(cuid())
+  matriculaId   String
+  matricula     Matricula  @relation(fields: [matriculaId], references: [id])
+  cobrancaId    String? // referência leve (opcional)
+  tipo          TipoAjuste
+  valorDe       Float
+  valorPara     Float
+  descontoValor Float // valorDe - valorPara
+  descontoPct   Float?
+  moeda         String
+  vigencia      Vigencia?
+  motivo        String
+  autorId       String
+  autor         Usuario    @relation("AutorAjustes", fields: [autorId], references: [id])
+  aprovacaoId   String?
+  // denormalizados p/ relatório fácil (group by):
+  vendedorId    String?
+  paisId        String?
+  modalidadeId  String?
+  criadoEm      DateTime   @default(now())
+
+  @@index([vendedorId])
+  @@index([paisId])
+  @@index([modalidadeId])
+  @@index([criadoEm])
+}
+
+// ============================================================
+// EVENTO — audit / event log append-only (ESPINHA DORSAL)
+// ============================================================
+
+model Evento {
+  id           String   @id @default(cuid())
+  tipo         String // LeadCriado, MatriculaAtivada, PagamentoRegistrado, AlunoPausado...
+  agregadoTipo String // "Lead", "Matricula", "Aluno", "Cobranca"...
+  agregadoId   String
+  autorId      String?
+  autor        Usuario? @relation("AutorEventos", fields: [autorId], references: [id])
+  versao       Int      @default(1) // versão do formato do payload — versionamento salva vidas
+  payload      Json? // { de, para, motivo, ... } — o antes→depois
+  criadoEm     DateTime @default(now())
+
+  @@index([agregadoTipo, agregadoId])
+  @@index([tipo])
+  @@index([criadoEm])
+}
+
+// ============================================================
+// CONTADOR — gera os códigos legíveis (L-/A-/M-/C-/T-) sem corrida (transacional)
+// ============================================================
+
+model Contador {
+  chave String @id // "lead", "aluno", "matricula", "cobranca", "turma"
+  valor Int    @default(0)
+}
