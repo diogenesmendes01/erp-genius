@@ -7,6 +7,10 @@ import {
   listarTurmasAbertas,
   listarPrecosAtivos,
 } from "@/server/matricula/consultas";
+import {
+  podeCriarMatricula,
+  podeCriarEAtivarMatricula,
+} from "@/server/matricula/permissoes";
 import { listarNiveis } from "@/server/turmas/consultas";
 import { vagasTurma } from "@/server/alunos/consultas";
 import { listarPaises } from "@/server/paises/consultas";
@@ -27,6 +31,13 @@ export default async function NovaMatriculaPage({
   };
 
   const { lead: leadId } = await searchParams;
+  // "Receber pagamento e ativar" (fluxo atômico) exige os papéis de CRIAR E ATIVAR.
+  // O botão só aparece para quem passa nas duas checagens; o backend continua
+  // exigindo ambos (defesa em profundidade). Mantemos a verificação real no
+  // servidor — isto é só UX (issue #8).
+  const papeis = (session.user.papeis ?? []) as Papel[];
+  const podeCriar = podeCriarMatricula(papeis);
+  const podeCriarEAtivar = podeCriarEAtivarMatricula(papeis);
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
     leadId ? obterLeadParaMatricula(leadId, usuario) : Promise.resolve(null),
     listarProdutosParaMatricula(),
@@ -57,6 +68,8 @@ export default async function NovaMatriculaPage({
 
   return (
     <MatriculaFormulario
+      podeCriar={podeCriar}
+      podeCriarEAtivar={podeCriarEAtivar}
       lead={lead}
       paises={paises.map((p) => ({ id: p.id, nome: p.nome, moedaLocal: p.moedaLocal }))}
       produtos={produtos.map((p) => ({ id: p.id, label: `${p.idioma.nome} · ${p.modalidade.nome}` }))}
