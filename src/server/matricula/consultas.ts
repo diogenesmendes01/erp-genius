@@ -41,8 +41,11 @@ export async function listarTurmasAbertas() {
 
 /** Preços ativos (para sugerir referência → negociado). */
 export async function listarPrecosAtivos() {
+  // A regra garante no máximo 1 ativo por combinação; mais recente primeiro
+  // (`criadoEm` desc, `id` desempata) mantém a escolha determinística.
   return prisma.precoReferencia.findMany({
     where: { ativo: true },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     select: { paisId: true, produtoId: true, tipoCobranca: true, valor: true, moeda: true },
   });
 }
