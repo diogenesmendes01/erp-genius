@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { StatusTurma, TipoCobranca } from "@prisma/client";
-import { ErroRegra } from "@/server/_shared";
+import { Papel, StatusTurma, TipoCobranca } from "@prisma/client";
+import { ErroRegra, ErroPermissao, temPapel, type UsuarioSessao } from "@/server/_shared";
 import {
   validarOfertaPais,
   validarTurmaParaProduto,
@@ -100,15 +100,24 @@ describe("validarOfertaPreco", () => {
     preco({ tipoCobranca: TipoCobranca.MATRICULA }),
     preco({ tipoCobranca: TipoCobranca.MENSALIDADE }),
   ];
+  // Sem exceção: nem justificativa nem papel autorizado.
+  const semExcecao = { justificativa: null, autorizado: false };
 
-  it("passa com matrícula + mensalidade ativos para país+produto", () => {
-    expect(() => validarOfertaPreco(completos, "prod-1", "pais-1", false)).not.toThrow();
+  it("passa com matrícula + mensalidade ativos e não marca ausência", () => {
+    const r = validarOfertaPreco(completos, "prod-1", "pais-1", semExcecao);
+    expect(r).toEqual({ precoReferenciaAusente: false });
   });
 
-  it("bloqueia quando falta um dos preços e não há exceção", () => {
+  it("bloqueia (ErroRegra) quando falta preço e não há justificativa", () => {
     const soTaxa = [preco({ tipoCobranca: TipoCobranca.MATRICULA })];
-    expect(() => validarOfertaPreco(soTaxa, "prod-1", "pais-1", false)).toThrow(ErroRegra);
-    expect(() => validarOfertaPreco([], "prod-1", "pais-1", false)).toThrow(/exceção/);
+    expect(() => validarOfertaPreco(soTaxa, "prod-1", "pais-1", semExcecao)).toThrow(ErroRegra);
+    expect(() => validarOfertaPreco([], "prod-1", "pais-1", semExcecao)).toThrow(/justificativa/);
+  });
+
+  it("trata justificativa só de espaços como vazia (bloqueia)", () => {
+    expect(() =>
+      validarOfertaPreco([], "prod-1", "pais-1", { justificativa: "   ", autorizado: true }),
+    ).toThrow(ErroRegra);
   });
 
   it("ignora preços de outro país/produto ou inativos", () => {
@@ -118,10 +127,55 @@ describe("validarOfertaPreco", () => {
       preco({ tipoCobranca: TipoCobranca.MATRICULA, ativo: false }),
       preco({ tipoCobranca: TipoCobranca.MENSALIDADE, ativo: false }),
     ];
-    expect(() => validarOfertaPreco(ruidos, "prod-1", "pais-1", false)).toThrow(ErroRegra);
+    expect(() => validarOfertaPreco(ruidos, "prod-1", "pais-1", semExcecao)).toThrow(ErroRegra);
   });
 
-  it("permite prosseguir sem preço quando há exceção aprovada", () => {
-    expect(() => validarOfertaPreco([], "prod-1", "pais-1", true)).not.toThrow();
+  it("bloqueia (ErroPermissao) com justificativa mas SEM papel autorizado", () => {
+    expect(() =>
+      validarOfertaPreco([], "prod-1", "pais-1", {
+        justificativa: "Cliente B2B sem tabela cadastrada",
+        autorizado: false,
+      }),
+    ).toThrow(ErroPermissao);
+  });
+
+  it("permite e marca ausência com justificativa + papel autorizado", () => {
+    const r = validarOfertaPreco([], "prod-1", "pais-1", {
+      justificativa: "Cliente B2B sem tabela cadastrada",
+      autorizado: true,
+    });
+    expect(r).toEqual({ precoReferenciaAusente: true });
+  });
+
+  // Reproduz exatamente como a action apura `autorizado` (temPapel) para garantir
+  // que vendedor comum não consegue forçar a exceção nem com justificativa.
+  describe("integração com papel (como na Server Action)", () => {
+    const PAPEIS_EXCECAO = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
+    const vendedor: UsuarioSessao = { id: "v", nome: "V", papeis: [Papel.VENDEDOR] };
+    const gerente: UsuarioSessao = { id: "g", nome: "G", papeis: [Papel.GERENTE_COMERCIAL] };
+    const admin: UsuarioSessao = { id: "a", nome: "A", papeis: [Papel.ADMINISTRADOR] };
+
+    function tentar(autor: UsuarioSessao, justificativa: string | null) {
+      return validarOfertaPreco([], "prod-1", "pais-1", {
+        justificativa,
+        autorizado: temPapel(autor, ...PAPEIS_EXCECAO),
+      });
+    }
+
+    it("vendedor comum NÃO força a exceção mesmo com justificativa", () => {
+      expect(() => tentar(vendedor, "tentando pular o bloqueio")).toThrow(ErroPermissao);
+    });
+
+    it("gerente comercial pode, com justificativa", () => {
+      expect(tentar(gerente, "tabela em revisão")).toEqual({ precoReferenciaAusente: true });
+    });
+
+    it("administrador pode, com justificativa", () => {
+      expect(tentar(admin, "exceção pontual")).toEqual({ precoReferenciaAusente: true });
+    });
+
+    it("nem gerente prossegue sem justificativa", () => {
+      expect(() => tentar(gerente, null)).toThrow(ErroRegra);
+    });
   });
 });
