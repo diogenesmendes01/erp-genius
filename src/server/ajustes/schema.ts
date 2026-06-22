@@ -3,6 +3,9 @@ import { TipoAjuste, Vigencia } from "@prisma/client";
 import { dataOpcional } from "@/server/_shared/validacao";
 
 // Renegociação / Ajuste manual (ver docs/09 §Renegociação). Tudo com motivo + auditoria.
+// A DIREÇÃO do ajuste (desconto deve ter valorPara <= valor atual; só ALTERACAO_VALOR
+// pode aumentar) depende do valor atual da cobrança e é validada em acoes.ts via
+// validarDirecaoAjuste — aqui só garantimos um valor não-negativo.
 export const AjusteSchema = z.object({
   cobrancaId: z.string().min(1, "Cobrança obrigatória"),
   tipo: z.nativeEnum(TipoAjuste),
