@@ -25,7 +25,8 @@ export interface PrecoRef {
 }
 
 export function MatriculaFormulario({
-  podeAtivar,
+  podeCriar,
+  podeCriarEAtivar,
   lead,
   paises,
   produtos,
@@ -33,7 +34,8 @@ export function MatriculaFormulario({
   niveis,
   precos,
 }: {
-  podeAtivar: boolean;
+  podeCriar: boolean;
+  podeCriarEAtivar: boolean;
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: { id: string; nome: string; moedaLocal: string }[];
   produtos: { id: string; label: string }[];
@@ -335,14 +337,16 @@ export function MatriculaFormulario({
       </section>
 
       <div className="flex gap-2">
-        <button
-          onClick={() => salvar(false)}
-          disabled={salvando}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-        >
-          {salvando && !podeAtivar ? "Processando…" : "Salvar matrícula"}
-        </button>
-        {podeAtivar && (
+        {podeCriar && (
+          <button
+            onClick={() => salvar(false)}
+            disabled={salvando}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            {salvando && !podeCriarEAtivar ? "Processando…" : "Salvar matrícula"}
+          </button>
+        )}
+        {podeCriarEAtivar && (
           <button
             onClick={() => salvar(true)}
             disabled={salvando}
@@ -352,7 +356,7 @@ export function MatriculaFormulario({
           </button>
         )}
       </div>
-      {podeAtivar ? (
+      {podeCriarEAtivar ? (
         <p className="text-xs text-gray-400">
           "Receber pagamento e ativar" cria a matrícula, marca taxa + 1ª mensalidade como pagas e
           ativa — tudo numa só operação ({FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão). Se a
