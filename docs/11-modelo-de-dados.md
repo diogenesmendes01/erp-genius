@@ -110,6 +110,8 @@ Relação: `alocacoes`.
 - **`online`:** hoje todas online; presencial é futuro. **Não há "sede" física** (o nome da turma
   pode até ser uma cidade, mas é só rótulo).
 - **`diasHorario` opcional:** turmas importadas entram sem dia/horário (a preencher).
+  Opcional em **todas** as camadas (Prisma, banco, Zod, UI): criar/editar **não** bloqueia
+  por horário; vazio é gravado como `null` e a UI exibe "a definir".
 - **Regra de status na carga (doc 20):** ABERTA por 2 semanas após o início; **A1 = 1 mês**
   (entrada contínua do Pré A1, `rolling=true`); depois EM_ANDAMENTO até `dataFim`, então CONCLUIDA.
 - **Regra:** só turma **ABERTA com vaga** aparece no seletor da matrícula (doc 09).
