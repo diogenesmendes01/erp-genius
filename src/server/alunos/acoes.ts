@@ -16,6 +16,7 @@ import {
   executarAcao,
   ErroRegra,
   normalizarTelefoneE164,
+  calcularDocumentoValido,
   type Resultado,
 } from "@/server/_shared";
 import {
@@ -45,19 +46,36 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS);
     const dados = EditarAlunoSchema.parse(input);
-    const aluno = await prisma.aluno.findUnique({ where: { id }, include: { pais: true } });
+    const aluno = await prisma.aluno.findUnique({
+      where: { id },
+      include: { pais: { include: { tiposDocumento: true } } },
+    });
     if (!aluno) throw new ErroRegra("Aluno não encontrado.");
 
     const paisDestino =
       dados.paisId === aluno.paisId
         ? aluno.pais
-        : await prisma.pais.findUnique({ where: { id: dados.paisId } });
+        : await prisma.pais.findUnique({
+            where: { id: dados.paisId },
+            include: { tiposDocumento: true },
+          });
     if (!paisDestino) throw new ErroRegra("País não encontrado.");
+
+    const documento = dados.documento || null;
+    // Recalcula a flag sempre que documento OU país mudarem (validadores variam por país);
+    // se nada relevante mudou, mantém o valor atual (recálculo seria idêntico). Doc 04: avisa, não bloqueia.
+    const documentoMudou = documento !== aluno.documento;
+    const paisMudou = dados.paisId !== aluno.paisId;
+    const documentoValido =
+      documentoMudou || paisMudou
+        ? calcularDocumentoValido(paisDestino.tiposDocumento, documento)
+        : aluno.documentoValido;
 
     const novo = {
       nome: dados.nome,
       paisId: dados.paisId,
-      documento: dados.documento || null,
+      documento,
+      documentoValido,
       telefoneE164: normalizarTelefoneE164(dados.telefone, paisDestino.ddi),
       email: dados.email || null,
       genero: dados.genero ?? null,
