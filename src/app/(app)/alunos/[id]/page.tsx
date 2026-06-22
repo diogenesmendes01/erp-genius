@@ -23,6 +23,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     paisId: aluno.paisId,
     nascimento: aluno.nascimento ? aluno.nascimento.toISOString() : null,
     documento: aluno.documento,
+    documentoValido: aluno.documentoValido,
     telefone: aluno.telefoneE164,
     email: aluno.email,
     genero: aluno.genero,
