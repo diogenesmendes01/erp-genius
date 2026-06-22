@@ -31,6 +31,7 @@ export function MatriculaFormulario({
   turmas,
   niveis,
   precos,
+  podeAtivar,
 }: {
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: { id: string; nome: string; moedaLocal: string }[];
@@ -38,6 +39,12 @@ export function MatriculaFormulario({
   turmas: { id: string; label: string }[];
   niveis: { id: string; label: string }[];
   precos: PrecoRef[];
+  /**
+   * O usuário pode ativar matrículas (Financeiro/Secretaria/Admin)? Quando falso,
+   * os caminhos de ativação somem para evitar registro parcial — quem cria sem
+   * permissão só consegue "Salvar matrícula". O backend revalida (defesa em profundidade).
+   */
+  podeAtivar: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -368,7 +375,8 @@ export function MatriculaFormulario({
         </p>
       </section>
 
-      {/* Pagamento na ativação (issue #23) */}
+      {/* Pagamento na ativação (issue #23) — só para quem pode ativar (Financeiro/Secretaria/Admin) */}
+      {podeAtivar && (
       <section className="rounded-lg border border-gray-200 bg-surface p-5">
         <h2 className="mb-1 text-sm font-medium">Pagamento (para ativar com lastro)</h2>
         <p className="mb-4 text-xs text-gray-400">
@@ -429,6 +437,7 @@ export function MatriculaFormulario({
           />
         </div>
       </section>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -438,26 +447,37 @@ export function MatriculaFormulario({
         >
           Salvar matrícula
         </button>
-        <button
-          onClick={() => salvar("com_pagamento")}
-          disabled={salvando}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {salvando ? "Processando…" : "Receber pagamento e ativar"}
-        </button>
-        <button
-          onClick={() => salvar("sem_pagamento")}
-          disabled={salvando}
-          className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60"
-        >
-          Ativar sem pagamento (pendente)
-        </button>
+        {podeAtivar && (
+          <>
+            <button
+              onClick={() => salvar("com_pagamento")}
+              disabled={salvando}
+              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+            >
+              {salvando ? "Processando…" : "Receber pagamento e ativar"}
+            </button>
+            <button
+              onClick={() => salvar("sem_pagamento")}
+              disabled={salvando}
+              className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+            >
+              Ativar sem pagamento (pendente)
+            </button>
+          </>
+        )}
       </div>
-      <p className="text-xs text-gray-400">
-        "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO});
-        o backend só baixa as cobranças cobertas pelo valor recebido. "Ativar sem pagamento" deixa o estado financeiro
-        pendente e registra o motivo (exige perfil Financeiro/Secretaria).
-      </p>
+      {podeAtivar ? (
+        <p className="text-xs text-gray-400">
+          "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO});
+          o backend só baixa as cobranças cobertas pelo valor recebido. "Ativar sem pagamento" deixa o estado financeiro
+          pendente e registra o motivo.
+        </p>
+      ) : (
+        <p className="text-xs text-gray-400">
+          Você pode salvar a matrícula como rascunho. A ativação (receber pagamento ou ativar pendente)
+          é feita pelo perfil Financeiro/Secretaria depois.
+        </p>
+      )}
     </div>
   );
 }

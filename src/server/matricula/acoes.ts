@@ -26,9 +26,10 @@ import {
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
+import { PAPEIS_ATIVAR_MATRICULA } from "./permissoes";
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
-const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+const PAPEIS_ATIVAR: Papel[] = PAPEIS_ATIVAR_MATRICULA;
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
