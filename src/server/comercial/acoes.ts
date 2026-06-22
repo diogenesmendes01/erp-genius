@@ -14,9 +14,15 @@ import {
   ErroPermissao,
   temPapel,
   normalizarTelefoneE164,
+  podeCheckinExperimental,
+  professorNoEscopoExperimental,
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
+import {
+  EVENTO_EXPERIMENTAL_ATRIBUIDA,
+  professorAtribuido,
+} from "./experimental";
 
 /** DDI do país do lead (para normalizar o telefone); "" se sem país. */
 async function ddiDoPais(paisId?: string | null): Promise<string> {
@@ -349,13 +355,34 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
 }
 
 /** Check-in da experimental (professor): Compareceu → Experimental Realizada · Faltou → No-show.
- * Devolve o lead à fila do comercial (doc 09 §Visão do Professor). */
+ * Devolve o lead à fila do comercial (doc 09 §Visão do Professor).
+ *
+ * Escopo do professor (Issue #13): valida papel, etapa atual (precisa haver uma
+ * experimental AGENDADA) e a associação professor↔experimental (event log). Fora
+ * do escopo → ErroPermissao; etapa errada → ErroRegra. */
 export async function checkinExperimental(leadId: string, compareceu: boolean): Promise<Resultado> {
   return executarAcao(async () => {
+    // 1) papel: só professor (Admin passa em exigirPapel)
     const autor = await exigirSessao();
     exigirPapel(autor, Papel.PROFESSOR);
+
     const lead = await prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new ErroRegra("Lead não encontrado.");
+
+    // 2) etapa/agendamento: só vale enquanto há uma experimental agendada
+    if (!podeCheckinExperimental(lead.etapa)) {
+      throw new ErroRegra("Não há experimental agendada para check-in neste lead.");
+    }
+
+    // 3) escopo: o professor precisa estar atribuído a esta experimental.
+    //    Admin (passa em temPapel mas não é professor literal) ignora o vínculo.
+    const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
+    if (!ehAdmin) {
+      const atribuido = await professorAtribuido(prisma, leadId);
+      if (!professorNoEscopoExperimental(atribuido, autor.id)) {
+        throw new ErroPermissao("Esta experimental não está atribuída a você.");
+      }
+    }
 
     const etapa = compareceu ? EtapaLead.EXPERIMENTAL_REALIZADA : EtapaLead.NO_SHOW;
     const proximaAcao = compareceu ? "Comercial: apresentar proposta" : "Remarcar experimental";
@@ -373,6 +400,39 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     revalidatePath("/home");
     revalidatePath("/leads");
     revalidatePath("/pipeline");
+  });
+}
+
+/** Atribui (ou remaneja) o professor responsável por uma experimental — define o
+ * escopo que a Home do professor e o check-in usam (Issue #13). Comercial/Admin.
+ * Vínculo gravado no event log (sem FK no V0 — pendência docs/15). */
+export async function atribuirProfessorExperimental(
+  leadId: string,
+  professorId: string,
+): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_COMERCIAL);
+    await exigirLeadVisivel(leadId, autor);
+
+    const professor = await prisma.usuario.findUnique({ where: { id: professorId } });
+    if (!professor) throw new ErroRegra("Professor não encontrado.");
+    if (!professor.papeis.includes(Papel.PROFESSOR)) {
+      throw new ErroRegra("Usuário informado não é professor.");
+    }
+
+    const anterior = await professorAtribuido(prisma, leadId);
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
+        agregadoTipo: "Lead",
+        agregadoId: leadId,
+        autorId: autor.id,
+        payload: { de: anterior, professorId },
+      });
+    });
+    revalidarLead(leadId);
+    revalidatePath("/home");
   });
 }
 
