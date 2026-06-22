@@ -1,9 +1,45 @@
-import { StatusCobranca, StatusAprovacao } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca, StatusAprovacao } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { UsuarioSessao } from "@/server/_shared";
 
-export async function obterFichaFinanceira(alunoId: string) {
-  const aluno = await prisma.aluno.findUnique({
-    where: { id: alunoId },
+// Papéis com visão GLOBAL da ficha financeira (doc 07): operam o financeiro de
+// QUALQUER aluno. Vendedor NÃO está aqui — vê só a ficha de alunos ligados a ele.
+const PAPEIS_AMPLO_FICHA: Papel[] = [
+  Papel.ADMINISTRADOR,
+  Papel.FINANCEIRO,
+  Papel.SECRETARIA_ACADEMICA,
+  Papel.GERENTE_PEDAGOGICO,
+  Papel.GERENTE_COMERCIAL,
+];
+
+function temVisaoAmplaFicha(usuario: UsuarioSessao): boolean {
+  return usuario.papeis.some((p) => PAPEIS_AMPLO_FICHA.includes(p));
+}
+
+/**
+ * Escopo row-level da ficha financeira (doc 07). Papéis amplos veem qualquer
+ * aluno. Vendedor só vê a ficha de alunos ligados a ele: matrícula cuja comissão
+ * é dele OU cujo lead de origem tem ele como dono. Sem usuário → sem restrição
+ * (compat. com chamadas internas). Combine no `where` da consulta para que o
+ * acesso fora do escopo retorne `null` (nunca dados de terceiros).
+ */
+export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
+  if (!usuario || temVisaoAmplaFicha(usuario)) return {};
+  return {
+    matriculas: {
+      some: {
+        OR: [
+          { comissoes: { some: { vendedorId: usuario.id } } },
+          { lead: { vendedorDonoId: usuario.id } },
+        ],
+      },
+    },
+  };
+}
+
+export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSessao) {
+  const aluno = await prisma.aluno.findFirst({
+    where: { id: alunoId, ...escopoFichaFinanceira(usuario) },
     include: {
       pais: { select: { nome: true } },
       responsaveis: { include: { responsavel: true } },

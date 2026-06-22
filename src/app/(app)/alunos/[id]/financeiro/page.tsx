@@ -16,7 +16,9 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
   );
   const tem = (...p: Papel[]) => temPapel(usuario, ...p);
 
-  const f = await obterFichaFinanceira(id);
+  // Escopo row-level (doc 07): vendedor só vê a ficha de alunos ligados a ele;
+  // fora do escopo → consulta devolve null → notFound (nunca dados de terceiros).
+  const f = await obterFichaFinanceira(id, usuario);
   if (!f) notFound();
 
   const moeda = f.cobrancas[0]?.moeda ?? f.aluno.matriculas[0]?.moeda ?? "";
