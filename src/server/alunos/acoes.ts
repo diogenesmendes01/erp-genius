@@ -9,12 +9,12 @@ import {
   TipoMovimentacao,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { vagasTurma } from "./consultas";
 import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
   ErroRegra,
-  temVaga,
   normalizarTelefoneE164,
   type Resultado,
 } from "@/server/_shared";
@@ -225,11 +225,11 @@ export async function trocarTurma(id: string, input: TrocarTurmaInput): Promise<
 
     const destino = await prisma.turma.findUnique({
       where: { id: dados.turmaDestinoId },
-      // Conta SOMENTE alocações ativas (issue #1) — vaga real da turma de destino.
+      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga real da turma de destino.
       include: { _count: { select: { alocacoes: { where: { ativa: true } } } } },
     });
     if (!destino) throw new ErroRegra("Turma de destino não encontrada.");
-    if (!temVaga(destino.capacidade, destino._count.alocacoes))
+    if (vagasTurma(destino.capacidade, destino._count.alocacoes) <= 0)
       throw new ErroRegra("Turma de destino sem vaga.");
 
     const atual = aluno.alocacoes[0] ?? null;

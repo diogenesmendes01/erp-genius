@@ -41,7 +41,7 @@ export async function listarTurmasAbertas() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      // Conta SOMENTE alocações ativas (issue #1) — vaga calculada na UI.
+      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga calculada na UI (histórico inativo não ocupa vaga).
       _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
