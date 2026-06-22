@@ -16,6 +16,7 @@ import { gerarCodigo } from "@/lib/codigo";
 import {
   exigirSessao,
   exigirPapel,
+  temPapel,
   registrarEvento,
   executarAcao,
   ErroRegra,
@@ -33,6 +34,8 @@ import {
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+// Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
+const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
@@ -86,8 +89,13 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
-    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção aprovada.
-    validarOfertaPreco(precos, produto.id, pais.id, dados.excecaoPreco);
+    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção
+    // JUSTIFICADA + APROVADA por papel (Issue #7). A autorização é apurada no
+    // servidor (temPapel), nunca por flag do client.
+    const { precoReferenciaAusente } = validarOfertaPreco(precos, produto.id, pais.id, {
+      justificativa: dados.justificativaSemPreco,
+      autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
+    });
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
 
@@ -140,8 +148,25 @@ export async function criarMatricula(
           nivelInicialId: dados.nivelInicialId || null,
           origemNivel: dados.origemNivel ?? null,
           dataAvaliacaoNivel: dados.dataAvaliacaoNivel ?? null,
+          precoReferenciaAusente,
         },
       });
+
+      // Auditoria da exceção de preço (Issue #7): registra motivo + autor na
+      // MESMA transação da criação.
+      if (precoReferenciaAusente) {
+        await registrarEvento(tx, {
+          tipo: "MatriculaSemPrecoReferencia",
+          agregadoTipo: "Matricula",
+          agregadoId: matricula.id,
+          autorId: autor.id,
+          payload: {
+            produtoId: produto.id,
+            paisId: pais.id,
+            justificativa: dados.justificativaSemPreco?.trim() ?? null,
+          },
+        });
+      }
 
       if (dados.turmaId) {
         // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
