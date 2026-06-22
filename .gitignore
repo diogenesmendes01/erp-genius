@@ -30,3 +30,6 @@ next-env.d.ts
 
 # uploads (storage local)
 /public/uploads/
+
+# claude code (worktrees/estado local de agentes)
+/.claude/
