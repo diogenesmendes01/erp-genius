@@ -117,11 +117,11 @@ Professor, **a-vencer agrupado** no Financeiro. Residual fino em [`15`](15-decis
 - [x] **Testes unitários** (Vitest) das regras puras — ver [`14`](14-estrategia-de-testes.md). `npm test`.
 - [x] **Typecheck** como verificação estática: `npx tsc --noEmit` (tsconfig com `noEmit`).
 - [ ] Testes de **integração** das Server Actions contra DB de teste (próximo).
-- [ ] **ESLint (gap aberto):** o script `npm run lint` aponta para `next lint`, que **foi
-      removido no Next.js 16** e **não há ESLint configurado** no projeto (sem dependência nem
-      config). Até resolver, a checagem estática é `npx tsc --noEmit`. Pendência: (re)adicionar
-      ESLint flat config compatível com Next 16 e ajustar o script — ver [`SETUP.md`](../SETUP.md)
-      §Verificação estática.
+- [x] **ESLint:** o script `npm run lint` roda `eslint .` com ESLint 9 (flat config em
+      `eslint.config.mjs`) e os presets do `eslint-config-next` (`core-web-vitals` +
+      `typescript`). O lint executa sem falhar; algumas regras pré-existentes estão rebaixadas
+      para `warn` (baseline) e serão tratadas de forma incremental — ver
+      [`SETUP.md`](../SETUP.md) §Verificação estática.
 
 ### Fora da Fase 0 (não fazer agora)
 Automações, WhatsApp Cloud API, IA (scoring/resumo), DocuSign, gateways de pagamento,

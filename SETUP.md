@@ -73,10 +73,21 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 ## Verificação estática
 - **Typecheck:** `npx tsc --noEmit` — checagem de tipos do projeto (o `tsconfig.json` já usa
   `noEmit`). É a verificação estática disponível hoje.
-- **Lint:** ⚠️ o script `npm run lint` ainda aponta para `next lint`, que **não funciona no
-  Next.js 16** (o subcomando `next lint` foi removido) e o projeto **não tem ESLint configurado**.
-  Use `npx tsc --noEmit` (e `npm test`) como checagem até o ESLint ser (re)adicionado — ver
-  gap em `docs/16-plano-execucao.md`.
+- **Lint:** `npm run lint` (→ `eslint .`) — o ESLint **já está configurado** via flat config
+  (ESLint 9, `eslint.config.mjs`) usando os presets do `eslint-config-next`
+  (`core-web-vitals` + `typescript`). O comando executa normalmente; algumas regras
+  pré-existentes estão rebaixadas para `warn` (baseline) para que o lint rode sem falhar
+  enquanto os apontamentos são tratados de forma incremental.
+
+Resumo dos comandos de verificação:
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Sobe o ambiente de desenvolvimento |
+| `npm run build` | Build de produção (Turbopack) |
+| `npm test` | Testes unitários (Vitest, regras puras) |
+| `npx tsc --noEmit` | Typecheck (sem emitir arquivos) |
+| `npm run lint` | Lint via `eslint .` (flat config + `eslint-config-next`) |
 
 ## Troubleshooting
 - **`Can't reach database server` / erro de conexão:** confira `DATABASE_URL` e se o
