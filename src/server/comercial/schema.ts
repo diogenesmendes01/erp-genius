@@ -43,10 +43,15 @@ export type DatasInput = z.input<typeof DatasSchema>;
 
 // Agendamento da experimental (doc 09 §Ficha do Lead / pipeline). Captura também
 // o professor responsável (FK escopo — Issue #13). professorId opcional: pode-se
-// agendar sem definir o professor e atribuir/remanejar depois.
+// agendar sem definir o professor e atribuir/remanejar depois. A UI envia "" na
+// opção "Definir depois"; normalizamos vazio → null para diferenciar "limpar o
+// responsável" de "campo ausente".
 export const AgendarExperimentalSchema = z.object({
   dataISO: z.string().min(1, "Informe a data/hora da experimental"),
-  professorId: z.string().optional(),
+  professorId: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.string().nullable(),
+  ).optional(),
 });
 export type AgendarExperimentalInput = z.input<typeof AgendarExperimentalSchema>;
 
