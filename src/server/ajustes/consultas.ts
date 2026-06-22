@@ -37,6 +37,25 @@ export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWher
   };
 }
 
+/**
+ * Uma matrícula "pertence" ao vendedor quando ele tem comissão nela OU é o dono
+ * do lead de origem (mesma regra de `escopoFichaFinanceira`). Usado para filtrar,
+ * row-level, as matrículas retornadas na ficha — para não vazar matrículas (e suas
+ * cobranças/ajustes/comissões) de OUTROS vendedores no mesmo aluno.
+ */
+function matriculaDoVendedor(
+  matricula: {
+    comissoes: { vendedorId: string }[];
+    lead: { vendedorDonoId: string | null } | null;
+  },
+  vendedorId: string,
+): boolean {
+  return (
+    matricula.comissoes.some((c) => c.vendedorId === vendedorId) ||
+    matricula.lead?.vendedorDonoId === vendedorId
+  );
+}
+
 export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSessao) {
   const aluno = await prisma.aluno.findFirst({
     where: { id: alunoId, ...escopoFichaFinanceira(usuario) },
@@ -49,11 +68,20 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
           comissoes: { include: { vendedor: { select: { nome: true } } } },
           ajustes: { orderBy: { criadoEm: "desc" }, include: { autor: { select: { nome: true } } } },
           produto: { include: { idioma: true, modalidade: true } },
+          lead: { select: { vendedorDonoId: true } },
         },
       },
     },
   });
   if (!aluno) return null;
+
+  // Row-level (doc 07): papéis amplos veem a ficha completa; vendedor só vê as
+  // SUAS matrículas (e as cobranças/ajustes/comissões aninhadas nelas) — nunca as
+  // de outros vendedores no mesmo aluno. KPIs/somatórios abaixo derivam apenas
+  // das matrículas visíveis, então não vazam totais de terceiros.
+  if (usuario && !temVisaoAmplaFicha(usuario) && usuario.papeis.includes(Papel.VENDEDOR)) {
+    aluno.matriculas = aluno.matriculas.filter((m) => matriculaDoVendedor(m, usuario.id));
+  }
 
   const cobrancas = aluno.matriculas.flatMap((m) => m.cobrancas);
   const ajustes = aluno.matriculas.flatMap((m) => m.ajustes);
