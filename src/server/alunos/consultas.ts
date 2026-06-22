@@ -1,5 +1,6 @@
 import { StatusCobranca, StatusTurma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { vagasDisponiveis, temVaga } from "@/server/_shared/regras";
 
 // Situação financeira resumida a partir das cobranças.
 function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number }[]) {
@@ -81,16 +82,18 @@ export async function listarTurmasAbertasComVaga() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issue #1) — inativas não ocupam vaga.
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
   return turmas
-    .filter((t) => t.capacidade - t._count.alocacoes > 0)
+    .filter((t) => temVaga(t.capacidade, t._count.alocacoes))
     .map((t) => ({
       id: t.id,
-      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${
-        t.capacidade - t._count.alocacoes
-      } vagas`,
+      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${vagasDisponiveis(
+        t.capacidade,
+        t._count.alocacoes,
+      )} vagas`,
     }));
 }
 

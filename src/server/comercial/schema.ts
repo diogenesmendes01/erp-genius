@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
-import { dataOpcional } from "@/server/_shared/validacao";
+import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
@@ -36,7 +36,10 @@ export type ResumoInput = z.input<typeof ResumoSchema>;
 
 export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
-  dataExperimental: dataOpcional,
+  // dataExperimental carrega HORA (alimenta a agenda da Home). Aceita datetime-local
+  // para não descartar o horário já agendado (issue #16); date-only ainda funciona,
+  // mas o front mantém a hora existente quando o usuário só ajusta a data.
+  dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
 });
 export type DatasInput = z.input<typeof DatasSchema>;
