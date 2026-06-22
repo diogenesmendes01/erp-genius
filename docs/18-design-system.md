@@ -11,11 +11,14 @@
 - **Sentence case sempre:** nada de Title Case nem CAIXA ALTA (inclusive sem `uppercase` no CSS).
 
 ## Tipografia
-- Fonte: **Anthropic Sans** é o alvo; como o arquivo não está empacotado, carregamos **Inter**
-  via `next/font/google` na variável `--font-sans` (stand-in) — trocar pela Anthropic Sans
-  quando houver os arquivos (`next/font/local`). `globals.css` referencia `var(--font-sans)`.
-- Só **dois pesos**: **regular (400)** e **medium (500)** — nada de negrito pesado
-  (`font-bold` evitado; use `font-medium`).
+- Fonte: **Anthropic Sans**, carregada localmente via `next/font/local` em
+  [`src/app/layout.tsx`](../src/app/layout.tsx) (arquivos `.otf` em `src/app/fonts/`), exposta
+  na variável `--font-sans`. `globals.css` referencia `var(--font-sans)`.
+- **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
+  negrito pesado (`font-bold` evitado; use `font-medium`).
+  > **Nota de alinhamento:** a implementação atual em `layout.tsx` ainda registra quatro pesos
+  > (400/500/600/700); a redução para 400/500 está sendo alinhada em PR de front-end. Esta doc
+  > descreve o padrão **pretendido** — ao alinhar, mantenha só 400/500.
 
 ## Cantos & bordas
 - Raios: `rounded-md` = 8px · `rounded-lg` = 10px · `rounded-xl` = 12px · `rounded-full` (chips/avatar).

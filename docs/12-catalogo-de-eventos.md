@@ -24,6 +24,19 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > **Convenção:** toda mutação grava o `Evento` **na mesma transação** da mudança de estado
 > (ver [`13-convencoes-codigo.md`](13-convencoes-codigo.md)).
 
+### Padrão de nomenclatura (canônico)
+- **`tipo` em PascalCase**, no formato `AgregadoVerboParticípio` (ex.: `MatriculaAtivada`,
+  `AlunoEncerrado`). É o padrão de **todo** evento gravado pelas Server Actions em `src/server/**`.
+- **Exceção histórica:** os scripts de **carga Q10** (docs 19 e 21) gravaram o evento de
+  importação de aluno como **`ALUNO_IMPORTADO`** (CAIXA ALTA com `_`), divergindo do padrão.
+  O nome **canônico** é **`AlunoImportado`**; `ALUNO_IMPORTADO` permanece **apenas** como o valor
+  realmente persistido por aquela carga one-shot (não usar em código novo). Se houver nova carga,
+  usar `AlunoImportado`.
+
+> **Como esta lista foi conferida:** os eventos abaixo refletem as strings `tipo: "…"` reais
+> nas Server Actions (`src/server/**/acoes.ts`) e nos docs de carga (19–23). Itens sem gatilho
+> ativo no código estão explicitamente marcados como **reservados/importação**.
+
 ---
 
 ## Comercial (agregado `Lead`)
@@ -77,6 +90,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 |---|---|---|---|
 | `AlunoMatriculado` | Matrícula ativada cria/ativa aluno | Sistema | `{ matriculaId, turmaId }` |
 | `AlunoEditado` | Edição de dados cadastrais (motivo obrigatório) | Secretaria/Pedagógico | `{ de, para, motivo }` |
+| `AlunoImportado` | Carga de alunos Q10 (Listado de alunos) — **persistido como `ALUNO_IMPORTADO`** (ver nota de nomenclatura) | Sistema (docs 19, 21) | `{ origem, codigoQ10?, ... }` |
 | `AlunoVinculadoTurma` | Carga de rosters (EstudiantesCurso Q10) | Sistema (doc 21) | `{ turmaId, nivel, ativa }` |
 | `TrocaTurma` | Troca de turma | Secretaria/Pedagógico | `{ de, para, motivo }` |
 | `AlunoPausado` | Pausa | Secretaria | `{ motivo, dataRetornoPrevista }` |
@@ -112,6 +126,26 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > mantendo o padrão `tipo · agregado · gatilho · autor · payload`.
 
 ---
+
+## Estado de implementação (código vs planejado)
+Conferido contra `src/server/**/acoes.ts` (junho/2026):
+
+- **Disparados hoje pelo código (Fase 0):** `LeadCriado · LeadAtribuido · EtapaAlterada ·
+  ExperimentalAgendada · PropostaEnviada · LeadPerdido · LeadEditado · InteracaoRegistrada ·
+  DocumentoAnexado · DocumentoArquivado · MatriculaCriada · MatriculaAtivada · CobrancaGerada ·
+  ComissaoGerada · ComissaoAprovada · PagamentoRegistrado · DescontoSolicitado ·
+  AprovacaoDecidida · ComissaoPaga · CobrancaEnviadaWhatsApp · AlunoMatriculado · AlunoEditado ·
+  AlunoPausado · AlunoReativado · AlunoEncerrado · TrocaTurma · AberturaTurmaSolicitada ·
+  TurmaCriada · TurmaEditada · IdiomaCriado · ModalidadeCriada · ModalidadeEditada · NivelCriado ·
+  ProdutoCriado · PrecoDefinido · PaisCriado · PaisEditado · UsuarioCriado · UsuarioEditado`.
+- **Só nos scripts de carga Q10 (one-shot, docs 19–23):** `AlunoImportado` (persistido como
+  `ALUNO_IMPORTADO`) · `AlunoVinculadoTurma` · `TurmaImportada` · `MatriculaImportada` ·
+  `ComissaoImportada`.
+- **Planejados / ainda sem gatilho no código (ciclos de status e Fase 1+):** os demais eventos
+  de status de `Pais`/`Idioma`/`Preco`/`Turma`/`Usuario`, `ExperimentalRealizada` · `NoShow` ·
+  `CobrancaRenegociada` · `BolsaConcedida` · `CobrancaPerdoada`, além dos reservados acima
+  (`ValorNegociado`, `MatriculaAtivadaComPendencia`, `MatriculaCancelada`, `ComissaoEstornada`,
+  `AvancoNivel`). Ao implementar, gravar em PascalCase.
 
 ## Eventos que EXIGEM registro (doc 10 §9)
 Obrigatório gravar `Evento` em: **troca de etapa · troca de turma · pausa · reativação ·
