@@ -53,6 +53,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `CobrancaGerada` | Cronograma (meses 2..N) gerado na ativação | Financeiro/Secretaria | `{ quantidade, tipo }` |
 | `ComissaoGerada` | Criação da matrícula (comissão Pendente) | Vendedor/Sistema | `{ vendedorId, percentual }` |
 | `ComissaoAprovada` | Ativação da matrícula | Financeiro/Secretaria | — |
+| `MatriculaSemPrecoReferencia` | Matrícula criada sem preço de referência ativo (exceção auditável, issue #22) | Vendedor/Gerente | `{ paisId, produtoId, tiposAusentes, justificativa, taxaValor, mensalidadeValor }` |
 | `MatriculaImportada` | Carga financeira Q10 (Planilha de cobrança) | Sistema (doc 22) | `{ aluno, pais, moeda, mensalidade, diaVencimento, statusCobranca }` |
 | `ComissaoImportada` | Carga Q10: comissão histórica já paga (vendedor Henrique) | Sistema (doc 23) | `{ vendedor, status, obs }` |
 

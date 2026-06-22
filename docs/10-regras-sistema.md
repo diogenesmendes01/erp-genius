@@ -53,6 +53,20 @@ EM_ANDAMENTO · CONCLUIDA`).
 - **Pagamento:** mensal — **fechamento dia 30 · pagamento dia 05** *(cron é Fase 1+; hoje o
   fechamento é manual em Financeiro → "Fechar mês e marcar pagas")*.
 
+## 3.1 Matrícula sem preço de referência ativo (issue #22)
+- **Decisão:** **permitida**, mas como **exceção auditável** — nunca segue silenciosa.
+- Quando **não há `PrecoReferencia` ativo** para a combinação **país × produto × tipo**
+  (taxa de matrícula e/ou 1ª mensalidade), a criação da matrícula **exige justificativa**.
+  Sem justificativa → **bloqueio no backend** com mensagem clara (`ErroRegra`).
+- Com justificativa: a matrícula é marcada (`precoReferenciaAusente = true`,
+  `justificativaSemPreco`) e grava o Evento **`MatriculaSemPrecoReferencia`** (autor +
+  tipos ausentes + justificativa + valores manuais).
+- **UI** diferencia três estados por linha de cobrança: **Sugerido** (= referência ativa),
+  **Manual** (= diverge da referência) e **Sem tabela** (= ausência da matriz de preços).
+- Racional: o catálogo é global e a **matriz de preços pode estar incompleta** por país/produto
+  (doc 06 §Em aberto); bloquear de vez travaria operações legítimas, então preservamos a
+  operação **com rastro de auditoria** (alinhado a §9).
+
 ## 4. Jobs automáticos (cron diário) — **Fase 1+**
 > Na Fase 0 **não há cron**: inadimplência, métricas e fila da Home são calculadas
 > **on-the-fly** na leitura (ver `home/consultas.ts`, `financeiro/consultas.ts`); o cronograma
@@ -84,7 +98,7 @@ Pesquisar por **nome · telefone · email · documento · código** → abre o r
 
 ## 9. Auditoria — Evento OBRIGATÓRIO para:
 Troca de etapa · troca de turma · pausa · reativação · encerramento · pagamento ·
-desconto · bolsa · perdão · comissão.
+desconto · bolsa · perdão · comissão · **matrícula sem preço de referência ativo** (§3.1).
 > Cada um grava um `Evento` (autor · agregado · antes→depois · versão).
 
 ## 10. Métricas (fórmulas)
