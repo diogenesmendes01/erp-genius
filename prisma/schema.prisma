@@ -45,6 +45,7 @@ model Usuario {
   criadoEm          DateTime  @default(now())
 
   leads         Lead[]              @relation("VendedorLeads")
+  experimentais Lead[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
   turmas        Turma[]             @relation("ProfessorTurmas")
   comissoes     Comissao[]
   eventos       Evento[]            @relation("AutorEventos")
@@ -392,6 +393,13 @@ model Lead {
   b2b            Boolean     @default(false)
   vendedorDonoId String?
   vendedor       Usuario?    @relation("VendedorLeads", fields: [vendedorDonoId], references: [id])
+
+  // Professor responsável pela experimental (Issue #13). FK opcional (NULL) =
+  // sem atribuição: experimentais antigas/sem professor ficam sem escopo até
+  // serem (re)atribuídas. Fonte de verdade do vínculo professor↔experimental;
+  // o evento `ExperimentalAtribuida` é mantido apenas para auditoria.
+  professorExperimentalId String?
+  professorExperimental   Usuario? @relation("ProfessorExperimentais", fields: [professorExperimentalId], references: [id])
 
   // origem inteligente
   origemCampanha String?
