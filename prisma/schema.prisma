@@ -467,6 +467,12 @@ model Matricula {
   primeiraMensalidadeOk Boolean         @default(false)
   // Exceção: Admin/Gerente pode ativar com pendência (registra o porquê em Evento).
   ativadaComPendencia   Boolean         @default(false)
+  // Exceção auditável (issue #22): matrícula criada sem preço de referência ATIVO
+  // para a combinação país × produto × tipo de cobrança. Exige justificativa e
+  // grava Evento `MatriculaSemPrecoReferencia`. Permite operar países/produtos
+  // sem matriz de preços fechada (doc 06 §Em aberto) sem perder a auditoria.
+  precoReferenciaAusente Boolean        @default(false)
+  justificativaSemPreco  String?
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId        String?
   origemNivel           OrigemNivel?
