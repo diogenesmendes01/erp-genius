@@ -33,7 +33,11 @@ export async function listarProdutosParaMatricula() {
   });
 }
 
-/** Turmas Abertas (com vaga calculada na UI). */
+/**
+ * Turmas Abertas (com vaga calculada na UI).
+ * A contagem considera apenas alocações ATIVAS (ativa:true) — mesma regra que o
+ * servidor revalida na criação da matrícula (Issue #7).
+ */
 export async function listarTurmasAbertas() {
   return prisma.turma.findMany({
     where: { status: StatusTurma.ABERTA },
