@@ -89,6 +89,16 @@ function soData(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
 }
 
+// Converte um ISO (UTC) para o valor de <input type="datetime-local"> em HORA LOCAL:
+// "YYYY-MM-DDTHH:mm". Mantém o horário já agendado da experimental visível/editável (issue #16).
+function soDataHora(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export function FichaLead({ lead, timeline }: { lead: LeadFicha; timeline: EventoTimeline[] }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -472,7 +482,8 @@ function ProximosPassos({
   run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
 }) {
   const [followUp, setFollow] = useState(soData(lead.proximoFollowUp));
-  const [exp, setExp] = useState(soData(lead.dataExperimental));
+  // datetime-local p/ preservar o horário da experimental já agendada (issue #16).
+  const [exp, setExp] = useState(soDataHora(lead.dataExperimental));
   const [prop, setProp] = useState(soData(lead.dataProposta));
 
   return (
@@ -485,8 +496,9 @@ function ProximosPassos({
           <input type="date" className={inputCls} value={followUp} onChange={(e) => setFollow(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Data da experimental</label>
-          <input type="date" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
+          <input type="datetime-local" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <p className="mt-1 text-xs text-gray-400">Mantém o horário já agendado; ajuste a data sem perder a hora.</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Data da proposta</label>

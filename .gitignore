@@ -28,5 +28,7 @@ next-env.d.ts
 # prisma
 /prisma/*.db
 
-# uploads (storage local)
+# uploads (storage local PRIVADO — servido só via /api/files autenticado)
+/data/uploads/
+# legado: caminho público antigo (não deve mais ser usado)
 /public/uploads/
