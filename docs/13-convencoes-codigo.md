@@ -4,8 +4,12 @@
 > [`02-arquitetura.md`](02-arquitetura.md) e no que já existe na fundação V0.
 
 ## Stack (já travada)
-Next.js 16 (App Router) · TypeScript · Tailwind · Prisma + PostgreSQL · Auth.js (NextAuth v5
-beta) · Zod · React Hook Form. Ícones: `@tabler/icons-react` (outline).
+Next.js 16 (App Router, build com **Turbopack**) · TypeScript · Tailwind (3.x) · Prisma 5 +
+PostgreSQL · Auth.js (NextAuth v5 beta) · Zod · React Hook Form. Ícones:
+`@tabler/icons-react` (outline). Testes: **Vitest**.
+
+> Versões reais no [`package.json`](../package.json): `next ^16.x`, `@prisma/client ^5.x`,
+> `next-auth ^5.0.0-beta.x`, `@tabler/icons-react ^3.x`, `tailwindcss ^3.x`.
 
 ## Monólito modular por domínio
 Um código só, **organizado por domínio** com fronteiras claras:

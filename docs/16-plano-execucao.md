@@ -15,13 +15,37 @@
 ## Estado atual (junho/2026)
 - **Documentação:** docs `01`–`23` cobrem escopo, arquitetura, roadmap, domínio, fluxo de
   matrícula, catálogo, papéis, CRM/WhatsApp, telas da Fase 0, regras cross-cutting, modelo de
-  dados, eventos, convenções, testes, ADRs, design system e cargas Q10.
-- **Código (Fase 0 implementada):**
+  dados, catálogo de eventos, convenções, testes, ADRs, glossário, design system e as cargas Q10.
+- **Código:** **Fase 0 implementada** — Configuração (países, catálogo, turmas, usuários),
+  CRM (pipeline/kanban, ficha do lead), matrícula manual, Homes (vendedor/gerente/professor),
+  área de alunos e financeiro manual; tudo backed pelo schema (**eventos + estado**) com guards
+  de permissão server-side nas mutações. Detalhe item a item na **Etapa B** abaixo.
+
+### Limitações conhecidas da Fase 0 (estado atual)
+- **Guards de permissão só nas mutações:** as **leituras** (`src/server/*/consultas.ts`) hoje
+  **não** reexecutam `exigirSessao`/`exigirPapel` — a proteção das telas de leitura vem do
+  layout autenticado e do menu role-aware (UX), não de um guard por consulta. Endurecer leituras
+  sensíveis (row-level por papel) é trabalho pendente.
+- **Integração com o banco em teste pendente:** as Server Actions ainda não têm testes de
+  integração contra um Postgres de teste (transação + Evento + permissão). Hoje só há testes
+  unitários (Vitest) das regras puras — ver [`14-estrategia-de-testes.md`](14-estrategia-de-testes.md).
+- **Storage local de arquivos:** uploads (comprovantes/documentos) gravam em `public/uploads`
+  via `src/app/api/upload/route.ts` (ambiente Node). **Não** funciona em hosting serverless —
+  trocar por S3/Supabase Storage antes de subir para esse tipo de ambiente.
+- **Lint/build:** `npm run lint`, `npm run build` (Turbopack) e `npm test` devem passar; em
+  Windows há tropeços conhecidos de ambiente (PowerShell e `.next/trace`) — ver Troubleshooting
+  no [`SETUP.md`](../SETUP.md).
+
+### Histórico — diagnóstico inicial (V0, antes da Fase 0)
+> Snapshot do ponto de partida, mantido por rastreabilidade. **Já superado:** as telas que aqui
+> eram `<Placeholder/>` foram implementadas na Etapa B.
+
+- **Documentação (à época):** apenas docs `01`–`10`.
+- **Código (V0 — fundação):**
   - ✅ Login (Auth.js) com os 7 papéis · rotas protegidas · app shell com sidebar role-aware.
   - ✅ `schema.prisma` completo (modelo **eventos + estado**) · migrations · seed.
-  - ✅ **Telas da Fase 0 implementadas** (home, pipeline, leads, alunos, financeiro,
-    configuração, matrícula) — ver os itens **B0–B7** marcados na Etapa B abaixo. O
-    `<Placeholder/>` segue como componente reutilizável, não como app inteira.
+  - ⛔ **Todas as telas do app eram `<Placeholder/>`** (home, pipeline, leads, alunos,
+    financeiro, configuração) — situação **superada** pela Etapa B.
 
 ### Lacunas / inconsistências encontradas no diagnóstico
 | # | Problema | Ação na Etapa A |
@@ -115,13 +139,7 @@ Professor, **a-vencer agrupado** no Financeiro. Residual fino em [`15`](15-decis
 ### Qualidade
 - [x] **Design system** (tokens + dark mode + Tabler + Anthropic Sans + sentence case) — ver [`18`](18-design-system.md).
 - [x] **Testes unitários** (Vitest) das regras puras — ver [`14`](14-estrategia-de-testes.md). `npm test`.
-- [x] **Typecheck** como verificação estática: `npx tsc --noEmit` (tsconfig com `noEmit`).
 - [ ] Testes de **integração** das Server Actions contra DB de teste (próximo).
-- [x] **ESLint:** o script `npm run lint` roda `eslint .` com ESLint 9 (flat config em
-      `eslint.config.mjs`) e os presets do `eslint-config-next` (`core-web-vitals` +
-      `typescript`). O lint executa sem falhar; algumas regras pré-existentes estão rebaixadas
-      para `warn` (baseline) e serão tratadas de forma incremental — ver
-      [`SETUP.md`](../SETUP.md) §Verificação estática.
 
 ### Fora da Fase 0 (não fazer agora)
 Automações, WhatsApp Cloud API, IA (scoring/resumo), DocuSign, gateways de pagamento,

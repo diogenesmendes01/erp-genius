@@ -1,8 +1,4 @@
-# Como rodar o ERP Genius
-
-> Stack: **Next.js 16** (App Router) · TypeScript · Tailwind · Prisma 5 + PostgreSQL ·
-> Auth.js (NextAuth v5 beta) · Zod · React Hook Form · Vitest. Detalhes em
-> [`docs/02-arquitetura.md`](docs/02-arquitetura.md) e [`docs/13-convencoes-codigo.md`](docs/13-convencoes-codigo.md).
+# Como rodar o ERP Genius (V0 — fundação)
 
 ## Pré-requisitos
 - Node.js 20+ (exigido pelo Next.js 16)
@@ -53,41 +49,24 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 - ana@genius.com — Financeiro + Secretaria Acadêmica
 - carla@genius.com — Professor
 
-## O que já funciona (Fase 0)
-- Login (Auth.js) com os 7 papéis · rotas protegidas (sem sessão → volta pro login).
-- **App shell** com menu lateral **role-aware** (cada papel vê só o que pode) e destaque do item ativo.
+## O que já funciona (Fase 0 implementada)
+- Login (Auth.js) com os 7 papéis · rotas protegidas · **app shell** com menu lateral **role-aware**.
+- Configuração (países, catálogo, turmas, usuários), CRM (pipeline/kanban, ficha do lead),
+  matrícula manual, Homes (vendedor/gerente/professor), área de alunos e financeiro manual.
 - Banco modelado em **eventos + estado** (ver `prisma/schema.prisma` e `docs/02`, `docs/10`).
-- **Telas da Fase 0 implementadas:** Configuração (países, catálogo, turmas, usuários), Pipeline/
-  Kanban + Ficha do Lead, matrícula manual, Homes (vendedor/gerente/professor), área de Alunos e
-  Financeiro manual. Design em `docs/09-fase0-telas.md`; estado dos itens em
-  `docs/16-plano-execucao.md`.
+
+> **Limitações conhecidas da Fase 0** (ver [`docs/16-plano-execucao.md`](docs/16-plano-execucao.md)
+> §Limitações): guards de permissão só nas **mutações** (leituras ainda sem guard por consulta);
+> testes de **integração** contra o DB pendentes; uploads em **storage local privado**
+> (`data/uploads/`, servidos por rota autenticada) — ainda em filesystem local, não serverless.
 
 ## Scripts úteis
 - `npm run dev` — ambiente de desenvolvimento (http://localhost:3000)
-- `npm run build` / `npm start` — build de produção (Turbopack) e execução
-- `npm test` — testes unitários (Vitest, regras puras) · `npm run test:watch` — modo watch
+- `npm run build` / `npm start` — build de produção e execução
+- `npm run lint` — checagem de lint
 - `npm run prisma:studio` — abre o Prisma Studio (inspecionar/editar o banco)
 - `npm run prisma:migrate` — cria/aplica migrations em dev
 - `npm run seed` — popula usuários iniciais
-
-## Verificação estática
-- **Typecheck:** `npx tsc --noEmit` — checagem de tipos do projeto (o `tsconfig.json` já usa
-  `noEmit`). É a verificação estática disponível hoje.
-- **Lint:** `npm run lint` (→ `eslint .`) — o ESLint **já está configurado** via flat config
-  (ESLint 9, `eslint.config.mjs`) usando os presets do `eslint-config-next`
-  (`core-web-vitals` + `typescript`). O comando executa normalmente; algumas regras
-  pré-existentes estão rebaixadas para `warn` (baseline) para que o lint rode sem falhar
-  enquanto os apontamentos são tratados de forma incremental.
-
-Resumo dos comandos de verificação:
-
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | Sobe o ambiente de desenvolvimento |
-| `npm run build` | Build de produção (Turbopack) |
-| `npm test` | Testes unitários (Vitest, regras puras) |
-| `npx tsc --noEmit` | Typecheck (sem emitir arquivos) |
-| `npm run lint` | Lint via `eslint .` (flat config + `eslint-config-next`) |
 
 ## Troubleshooting
 - **`Can't reach database server` / erro de conexão:** confira `DATABASE_URL` e se o
@@ -100,3 +79,26 @@ Resumo dos comandos de verificação:
   `NEXTAUTH_URL` bate com a URL que você está acessando.
 - **Mudou o `schema.prisma`:** rode `npm run prisma:migrate` para gerar a migration e
   atualizar o client.
+
+### Windows / PowerShell
+- **`npm.ps1 cannot be loaded ... running scripts is disabled on this system`:** o PowerShell
+  está bloqueando o script `npm.ps1` por política de execução. Soluções:
+  - liberar para o usuário atual (recomendado):
+    `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` e reabrir o terminal; ou
+  - usar `npm.cmd` em vez de `npm` (ex.: `npm.cmd install`, `npm.cmd run dev`); ou
+  - rodar pelo **Git Bash**/WSL, onde a política do PowerShell não se aplica.
+- **`build` travado / `EPERM: operation not permitted ... .next/trace`:** o arquivo de trace do
+  Next fica preso (antivírus, OneDrive sincronizando a pasta, ou um `next dev` ainda rodando).
+  - encerre processos `node`/`next` pendentes;
+  - apague a pasta de build e rode de novo: remova `.next` (`Remove-Item -Recurse -Force .next`
+    no PowerShell, ou `rm -rf .next` no bash) e refaça `npm run build`;
+  - se persistir, mova o projeto para **fora** de pastas sincronizadas (OneDrive/Dropbox) ou
+    adicione a pasta do projeto à exceção do antivírus.
+  - Em CI/sandbox, prefira validar com `npm run lint` + `npm test` (+ `npx tsc --noEmit`).
+
+## Uploads (storage privado)
+- Comprovantes, contratos e documentos são gravados em **`data/uploads/`** (fora de
+  `public/`), portanto **não** são acessíveis por URL pública. A leitura passa por
+  `GET /api/files/[...path]`, que **exige sessão válida e autorização por papel/escopo**
+  sobre o objeto que referencia o arquivo (ex.: a cobrança/lead correspondente). O envio é por
+  `POST /api/upload` (também autenticado). A pasta `data/uploads/` está no `.gitignore`.

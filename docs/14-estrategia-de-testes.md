@@ -3,6 +3,24 @@
 > O que testar e como, a partir da Fase 0. Pragmático: cobrir o que **quebra dinheiro,
 > auditoria ou permissão** — não perseguir 100% de cobertura.
 
+## Status atual (junho/2026)
+| Camada | Status | Detalhe |
+|---|---|---|
+| **Unitário (Vitest)** | ✅ existe | 19 testes em `src/server/_shared/*.test.ts` (regras puras). Roda com `npm test`. |
+| **Integração (Server Actions × DB)** | ⛔ **pendente** | Falta o Postgres de teste isolado; sem ele, os riscos de **permissão**, **gravação de `Evento`** e **`gerarCodigo()` sob concorrência** ainda não têm cobertura automatizada. |
+| **e2e (Playwright)** | ⏳ futuro | Opcional na Fase 0; só após as telas estabilizarem. |
+
+> **Risco aberto principal:** os guards de permissão das **leituras** (`consultas.ts`) não são
+> exercitados por teste (e hoje sequer existem como guard — ver
+> [`16-plano-execucao.md`](16-plano-execucao.md) §Limitações). A suíte de integração é o que
+> fecha esse e os demais riscos de auditoria/financeiro listados abaixo.
+
+### Fluxos prioritários para a integração (ordem)
+1. **Permissão por papel** numa mutação representativa de cada domínio (vazamento = vendedor vê lead de outro).
+2. **Mutação grava `Evento`** na mesma transação (auditoria/timeline confiáveis).
+3. **Ativação de matrícula** → gera cronograma + comissão Aprovada + lead Matriculado (distorce receita se errar).
+4. **`gerarCodigo()`** sob concorrência (códigos duplicados).
+
 ## Prioridades (o que mais importa testar)
 A regra: teste pesado onde o erro é caro e silencioso.
 
