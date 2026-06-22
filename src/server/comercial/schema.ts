@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
-import { dataOpcional } from "@/server/_shared/validacao";
+import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
@@ -36,10 +36,27 @@ export type ResumoInput = z.input<typeof ResumoSchema>;
 
 export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
-  dataExperimental: dataOpcional,
+  // dataExperimental carrega HORA (alimenta a agenda da Home). Aceita datetime-local
+  // para não descartar o horário já agendado (issue #16); date-only ainda funciona,
+  // mas o front mantém a hora existente quando o usuário só ajusta a data.
+  dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
 });
 export type DatasInput = z.input<typeof DatasSchema>;
+
+// Agendamento da experimental (doc 09 §Ficha do Lead / pipeline). Captura também
+// o professor responsável (FK escopo — Issue #13). professorId opcional: pode-se
+// agendar sem definir o professor e atribuir/remanejar depois. A UI envia "" na
+// opção "Definir depois"; normalizamos vazio → null para diferenciar "limpar o
+// responsável" de "campo ausente".
+export const AgendarExperimentalSchema = z.object({
+  dataISO: z.string().min(1, "Informe a data/hora da experimental"),
+  professorId: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.string().nullable(),
+  ).optional(),
+});
+export type AgendarExperimentalInput = z.input<typeof AgendarExperimentalSchema>;
 
 export const InteracaoSchema = z.object({
   canal: z.string().optional(),
@@ -58,14 +75,34 @@ export const PerdaSchema = z
   });
 export type PerdaInput = z.input<typeof PerdaSchema>;
 
-// Etapas que o usuário pode definir manualmente no Kanban (Fase 0).
-// PERDIDO e MATRICULADO têm fluxo próprio (marcar perdido / converter em matrícula).
+// Etapas que o vendedor pode definir manualmente no Kanban (Fase 0).
+//
+// As demais etapas do funil são geradas por EVENTOS DE DOMÍNIO, não por arraste:
+//   - EXPERIMENTAL_REALIZADA / NO_SHOW → check-in do professor (checkinExperimental)
+//   - PROPOSTA                          → envio da proposta (enviarProposta)
+//   - AGUARDANDO_MATRICULA              → handoff para a máquina da matrícula (doc 08)
+//   - MATRICULADO                       → matrícula ativada (fluxo próprio)
+//   - PERDIDO                           → marcar perdido (com motivo)
+// Por isso elas NÃO entram aqui: mesmo que o client envie, o backend recusa (ver acoes.moverEtapa).
+//
+// Mover manualmente ainda respeita a máquina de estados (origem→destino) — ver
+// transicaoManualPermitida() em @/server/_shared/regras.
 export const ETAPAS_MANUAIS: EtapaLead[] = [
   EtapaLead.NOVO,
   EtapaLead.EM_ATENDIMENTO,
   EtapaLead.QUALIFICADO,
   EtapaLead.EXPERIMENTAL_AGENDADA,
-  EtapaLead.EXPERIMENTAL_REALIZADA,
-  EtapaLead.PROPOSTA,
-  EtapaLead.AGUARDANDO_MATRICULA,
+];
+
+// Tipos de evento (agregado Lead) que mudam a etapa do funil. Fonte única de
+// verdade para projetar `etapaDesde` de forma confiável (issue #15): a etapa muda
+// por ação manual (EtapaAlterada) e também por ações específicas que avançam o
+// funil. O fluxo de matrícula também emite EtapaAlterada no agregado Lead.
+export const TIPOS_MUDAM_ETAPA: string[] = [
+  "EtapaAlterada",
+  "ExperimentalAgendada",
+  "ExperimentalRealizada",
+  "NoShow",
+  "PropostaEnviada",
+  "LeadPerdido",
 ];
