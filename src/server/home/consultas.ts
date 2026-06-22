@@ -115,7 +115,8 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issue #1) — alunos atuais da turma.
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 

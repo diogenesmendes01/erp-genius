@@ -1,5 +1,6 @@
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { exigirPapelLeitura } from "@/lib/guards";
+import { AcessoNegado } from "@/components/AcessoNegado";
 import {
   listarCobrancasAbertas,
   listarComissoes,
@@ -8,9 +9,14 @@ import {
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
 
+// Guard server-side por papel ANTES de buscar dados sensíveis (issue #1).
+// Papéis alinhados ao nav.ts; Administrador passa sempre (exigirPapelLeitura).
+const PAPEIS_FINANCEIRO: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL];
+
 export default async function FinanceiroPage() {
-  const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
+  const papeis = await exigirPapelLeitura(...PAPEIS_FINANCEIRO);
+  if (!papeis) return <AcessoNegado recurso="o financeiro" />;
+
   const podeAprovar =
     papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.GERENTE_COMERCIAL);
 
