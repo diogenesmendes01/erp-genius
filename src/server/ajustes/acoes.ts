@@ -21,6 +21,9 @@ import {
   ErroRegra,
   ErroPermissao,
   temPapel,
+  descontoPercentual,
+  precisaAprovacaoDesconto,
+  validarDirecaoAjuste,
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
@@ -186,12 +189,22 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
     }
 
     const valorDe = cobranca.valorNegociado;
-    const descontoPct = valorDe > 0 ? ((valorDe - dados.valorPara) / valorDe) * 100 : 0;
 
+    // Direção do ajuste: só ALTERACAO_VALOR pode aumentar; o resto é redução.
+    const erroDirecao = validarDirecaoAjuste(dados.tipo, valorDe, dados.valorPara);
+    if (erroDirecao) throw new ErroRegra(erroDirecao);
+
+    const descontoPct = descontoPercentual(valorDe, dados.valorPara);
+
+    // Só Financeiro/Admin aplicam sem limite. Para os demais (Vendedor),
+    // limiteDescontoPct = null NÃO é ilimitado — é "sem autonomia" (qualquer desconto → aprovação).
     const total = temPapel(autor, Papel.FINANCEIRO) || temPapel(autor, Papel.ADMINISTRADOR);
     const limiteUsuario = (await prisma.usuario.findUnique({ where: { id: autor.id } }))?.limiteDescontoPct ?? null;
-    // Vendedor (sem ser total) acima do limite → precisa de aprovação.
-    const acimaDoLimite = !total && limiteUsuario !== null && descontoPct > limiteUsuario;
+    const acimaDoLimite = precisaAprovacaoDesconto({
+      podeAplicarSemLimite: total,
+      limiteDescontoPct: limiteUsuario,
+      descontoPct,
+    });
 
     if (acimaDoLimite) {
       // cria pedido de aprovação (não aplica)

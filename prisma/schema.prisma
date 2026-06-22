@@ -189,6 +189,9 @@ model PrecoReferencia {
   vigenteDesde DateTime     @default(now())
   criadoEm     DateTime     @default(now())
 
+  // Integridade (issue #1): no máx. UM preço ATIVO por país+produto+modalidade+tipoCobrança.
+  // Índice único PARCIAL (só ativo=true) — mora na migration `integridade_alocacao_preco`
+  // (UNIQUE ... WHERE "ativo"). O histórico desativado (supersede) permanece livre.
   @@index([paisId, produtoId, modalidadeId, tipoCobranca])
   @@index([ativo])
   // Proteção lógica: no máximo UM preço ATIVO por combinação
@@ -301,6 +304,12 @@ model AlocacaoTurma {
   turma    Turma    @relation(fields: [turmaId], references: [id])
   ativa    Boolean  @default(true)
   criadoEm DateTime @default(now())
+
+  // Integridade (issue #1): no máx. UMA alocação ATIVA por aluno. Índice único PARCIAL
+  // (só linhas ativa=true) — Prisma não modela WHERE em @@unique, então mora na migration
+  // `integridade_alocacao_preco` (UNIQUE ... WHERE "ativa"). Histórico (ativa=false) é livre.
+  @@index([alunoId])
+  @@index([turmaId])
 }
 
 // MOVIMENTAÇÃO DO ALUNO — tabela TIPADA (decisão P6, doc 15).
