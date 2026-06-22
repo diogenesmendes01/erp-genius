@@ -231,6 +231,7 @@ function PagamentoModal({
   const [data, setData] = useState("");
   const [comprovanteUrl, setComp] = useState("");
   const [comentario, setComentario] = useState("");
+  const [permitirExcedente, setPermitirExcedente] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const diff = cobranca.valorNegociado - Number(valor || 0);
 
@@ -242,6 +243,7 @@ function PagamentoModal({
       dataPagamento: data,
       comprovanteUrl,
       comentario,
+      permitirExcedente,
     });
     setSalvando(false);
     if (!r.ok) onErro(r.erro);
@@ -253,6 +255,12 @@ function PagamentoModal({
       <label className="mb-1 block text-xs text-gray-600">Valor esperado: {moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")}</label>
       <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
       {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {moeda} {diff.toLocaleString("pt-BR")}.</p>}
+      {diff < 0 && (
+        <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">
+          <input type="checkbox" checked={permitirExcedente} onChange={(e) => setPermitirExcedente(e.target.checked)} />
+          Acima do negociado — registrar excedente de {moeda} {(-diff).toLocaleString("pt-BR")} como crédito.
+        </label>
+      )}
       <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
       <select className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
         {Object.values(FormaPagamento).map((f) => <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>)}
