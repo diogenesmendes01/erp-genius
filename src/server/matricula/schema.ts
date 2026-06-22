@@ -46,3 +46,14 @@ export const AtivacaoSchema = z.object({
   forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
 });
 export type AtivacaoInput = z.input<typeof AtivacaoSchema>;
+
+// Criar + ativar atômico (issue #8): combina os dados da matrícula com a forma
+// de pagamento da ativação. Exige os papéis de criar E ativar.
+export const MatriculaComAtivacaoSchema = z.object({
+  matricula: MatriculaSchema,
+  ativacao: AtivacaoSchema,
+});
+export type MatriculaComAtivacaoInput = {
+  matricula: MatriculaInput;
+  ativacao: AtivacaoInput;
+};
