@@ -63,6 +63,7 @@ export interface LeadFicha {
   planoPrevisto: string | null;
   comissaoPrevista: number | null;
   documentos: { id: string; categoria: string; nome: string; url: string }[];
+  professorExperimentalId: string | null;
 }
 
 export interface EventoTimeline {
@@ -89,7 +90,25 @@ function soData(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
 }
 
-export function FichaLead({ lead, timeline }: { lead: LeadFicha; timeline: EventoTimeline[] }) {
+// Converte um ISO (UTC) para o valor de <input type="datetime-local"> em HORA LOCAL:
+// "YYYY-MM-DDTHH:mm". Mantém o horário já agendado da experimental visível/editável (issue #16).
+function soDataHora(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+export function FichaLead({
+  lead,
+  timeline,
+  professores = [],
+}: {
+  lead: LeadFicha;
+  timeline: EventoTimeline[];
+  professores?: { id: string; nome: string }[];
+}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const refresh = () => router.refresh();
@@ -155,7 +174,7 @@ export function FichaLead({ lead, timeline }: { lead: LeadFicha; timeline: Event
 
       <ValorOportunidade lead={lead} />
 
-      <BarraAcoes lead={lead} run={run} />
+      <BarraAcoes lead={lead} run={run} professores={professores} />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Resumo lead={lead} run={run} />
@@ -282,14 +301,17 @@ function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
 function BarraAcoes({
   lead,
   run,
+  professores,
 }: {
   lead: LeadFicha;
   run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
+  professores: { id: string; nome: string }[];
 }) {
   const [modal, setModal] = useState<"none" | "interacao" | "experimental" | "perdido">("none");
   const [nota, setNota] = useState("");
   const [canal, setCanal] = useState("");
   const [dataExp, setDataExp] = useState("");
+  const [profExp, setProfExp] = useState(lead.professorExperimentalId ?? "");
   const [motivo, setMotivo] = useState<MotivoPerda>(MotivoPerda.NAO_RESPONDEU);
   const [obs, setObs] = useState("");
 
@@ -352,15 +374,26 @@ function BarraAcoes({
       )}
 
       {modal === "experimental" && (
-        <div className="mt-4 flex items-end gap-2 border-t border-gray-100 pt-4">
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4">
           <div>
             <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
             <input type="datetime-local" className={inputCls} value={dataExp} onChange={(e) => setDataExp(e.target.value)} />
           </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Professor responsável</label>
+            <select className={inputCls} value={profExp} onChange={(e) => setProfExp(e.target.value)}>
+              <option value="">Definir depois</option>
+              {professores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             className={btnPri}
             onClick={() => {
-              if (dataExp) run(agendarExperimental(lead.id, dataExp));
+              if (dataExp) run(agendarExperimental(lead.id, { dataISO: dataExp, professorId: profExp || undefined }));
               setModal("none");
             }}
           >
@@ -472,7 +505,8 @@ function ProximosPassos({
   run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
 }) {
   const [followUp, setFollow] = useState(soData(lead.proximoFollowUp));
-  const [exp, setExp] = useState(soData(lead.dataExperimental));
+  // datetime-local p/ preservar o horário da experimental já agendada (issue #16).
+  const [exp, setExp] = useState(soDataHora(lead.dataExperimental));
   const [prop, setProp] = useState(soData(lead.dataProposta));
 
   return (
@@ -485,8 +519,9 @@ function ProximosPassos({
           <input type="date" className={inputCls} value={followUp} onChange={(e) => setFollow(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Data da experimental</label>
-          <input type="date" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
+          <input type="datetime-local" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <p className="mt-1 text-xs text-gray-400">Mantém o horário já agendado; ajuste a data sem perder a hora.</p>
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Data da proposta</label>
@@ -513,6 +548,57 @@ function ProximosPassos({
   );
 }
 
+const EVENTO_LABEL: Record<string, string> = {
+  LeadCriado: "Lead criado",
+  LeadAtribuido: "Dono atribuído",
+  LeadEditado: "Dados do lead editados",
+  EtapaAlterada: "Etapa alterada",
+  ResumoAtualizado: "Resumo atualizado",
+  DatasAtualizadas: "Datas / próximos passos atualizados",
+  ExperimentalAgendada: "Experimental agendada",
+  ExperimentalRealizada: "Experimental realizada",
+  NoShow: "No-show",
+  PropostaEnviada: "Proposta enviada",
+  LeadPerdido: "Lead perdido",
+  InteracaoRegistrada: "Interação registrada",
+  DocumentoAnexado: "Documento anexado",
+  DocumentoArquivado: "Documento arquivado",
+};
+
+/** Texto auxiliar da timeline conforme o tipo de evento (resumo, datas, etapa…). */
+function detalheEvento(tipo: string, p: Record<string, unknown>): string | null {
+  const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const data = (v: unknown) =>
+    typeof v === "string" && v ? new Date(v).toLocaleDateString("pt-BR") : null;
+
+  if (tipo === "ResumoAtualizado") {
+    const partes = [
+      txt(p.interesse) && `Interesse: ${txt(p.interesse)}`,
+      txt(p.objetivo) && `Objetivo: ${txt(p.objetivo)}`,
+      txt(p.urgencia) && `Urgência: ${txt(p.urgencia)}`,
+      txt(p.orcamento) && `Orçamento: ${txt(p.orcamento)}`,
+      txt(p.objecao) && `Objeção: ${txt(p.objecao)}`,
+      txt(p.proximaAcao) && `Próximo passo: ${txt(p.proximaAcao)}`,
+    ].filter(Boolean);
+    return partes.length ? partes.join(" · ") : "Resumo limpo";
+  }
+  if (tipo === "DatasAtualizadas") {
+    const partes = [
+      data(p.proximoFollowUp) && `Follow-up: ${data(p.proximoFollowUp)}`,
+      data(p.dataExperimental) && `Experimental: ${data(p.dataExperimental)}`,
+      data(p.dataProposta) && `Proposta: ${data(p.dataProposta)}`,
+    ].filter(Boolean);
+    return partes.length ? partes.join(" · ") : "Datas limpas";
+  }
+  if (tipo === "EtapaAlterada") {
+    const de = p.de as EtapaLead | null;
+    const para = p.para as EtapaLead | null;
+    const rotulo = (e: EtapaLead | null) => (e ? (ETAPA_LABEL[e] ?? e) : "—");
+    return para ? `${rotulo(de)} → ${rotulo(para)}` : null;
+  }
+  return txt(p.nota);
+}
+
 function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -523,11 +609,11 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
         <ul className="flex flex-col gap-3">
           {timeline.map((ev) => {
             const p = (ev.payload ?? {}) as Record<string, unknown>;
-            const nota = typeof p.nota === "string" ? p.nota : null;
+            const detalhe = detalheEvento(ev.tipo, p);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm text-gray-800">{ev.tipo}</div>
-                {nota && <div className="text-sm text-gray-600">{nota}</div>}
+                <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
+                {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
                   {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}

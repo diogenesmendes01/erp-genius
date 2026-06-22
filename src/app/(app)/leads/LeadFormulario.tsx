@@ -31,11 +31,14 @@ export function LeadFormulario({
   lead,
   paises,
   vendedores,
+  podeAtribuir,
   onClose,
 }: {
   lead?: LeadParaEditar;
   paises: { id: string; nome: string }[];
   vendedores: { id: string; nome: string }[];
+  // Só gerente/admin podem escolher o dono; o backend ignora o campo para vendedor.
+  podeAtribuir: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -102,17 +105,19 @@ export function LeadFormulario({
             ))}
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-600">Dono (vendedor)</label>
-          <select {...register("vendedorDonoId")} className={inputCls}>
-            <option value="">{lead ? "—" : "Eu / atribuir depois"}</option>
-            {vendedores.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        {podeAtribuir && (
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Dono (vendedor)</label>
+            <select {...register("vendedorDonoId")} className={inputCls}>
+              <option value="">{lead ? "—" : "Atribuir depois"}</option>
+              {vendedores.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-xs text-gray-600">Segmento</label>
           <select {...register("segmento")} className={inputCls}>

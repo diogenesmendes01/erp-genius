@@ -1,12 +1,18 @@
 import { Papel, StatusTurma, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
+import { escopoLeads } from "@/server/comercial/consultas";
 
 // Dados para pré-preencher a tela de Nova matrícula.
 
-export async function obterLeadParaMatricula(id: string, usuario?: UsuarioSessao) {
-  const lead = await prisma.lead.findUnique({
-    where: { id },
+/**
+ * Lead para pré-preencher a tela de Nova matrícula, respeitando a visibilidade
+ * row-level (doc 07): Vendedor só enxerga os próprios; Gerente Comercial/Admin
+ * enxergam tudo. Fora do escopo → retorna null (a tela trata como "sem lead").
+ */
+export async function obterLeadParaMatricula(id: string, usuario: UsuarioSessao) {
+  return prisma.lead.findFirst({
+    where: { id, ...escopoLeads(usuario) },
     select: {
       id: true,
       nome: true,
@@ -17,15 +23,6 @@ export async function obterLeadParaMatricula(id: string, usuario?: UsuarioSessao
       matricula: { select: { id: true } },
     },
   });
-  if (!lead) return null;
-  // Row-level (doc 07): vendedor só pré-preenche a partir dos próprios leads.
-  if (usuario) {
-    const amplo =
-      usuario.papeis.includes(Papel.ADMINISTRADOR) ||
-      usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-    if (!amplo && lead.vendedorDonoId !== usuario.id) return null;
-  }
-  return lead;
 }
 
 /** Produtos do catálogo (idioma × modalidade) para seleção. */
@@ -36,7 +33,11 @@ export async function listarProdutosParaMatricula() {
   });
 }
 
-/** Turmas Abertas (com vaga calculada na UI). */
+/**
+ * Turmas Abertas (com vaga calculada na UI).
+ * A contagem considera apenas alocações ATIVAS (ativa:true) — mesma regra que o
+ * servidor revalida na criação da matrícula (Issue #7).
+ */
 export async function listarTurmasAbertas() {
   return prisma.turma.findMany({
     where: { status: StatusTurma.ABERTA },
@@ -44,15 +45,19 @@ export async function listarTurmasAbertas() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga calculada na UI (histórico inativo não ocupa vaga).
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 }
 
 /** Preços ativos (para sugerir referência → negociado). */
 export async function listarPrecosAtivos() {
+  // A regra garante no máximo 1 ativo por combinação; mais recente primeiro
+  // (`criadoEm` desc, `id` desempata) mantém a escolha determinística.
   return prisma.precoReferencia.findMany({
     where: { ativo: true },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     select: { paisId: true, produtoId: true, tipoCobranca: true, valor: true, moeda: true },
   });
 }
