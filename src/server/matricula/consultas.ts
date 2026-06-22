@@ -1,11 +1,18 @@
 import { StatusTurma, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { UsuarioSessao } from "@/server/_shared";
+import { escopoLeads } from "@/server/comercial/consultas";
 
 // Dados para pré-preencher a tela de Nova matrícula.
 
-export async function obterLeadParaMatricula(id: string) {
-  return prisma.lead.findUnique({
-    where: { id },
+/**
+ * Lead para pré-preencher a tela de Nova matrícula, respeitando a visibilidade
+ * row-level (doc 07): Vendedor só enxerga os próprios; Gerente Comercial/Admin
+ * enxergam tudo. Fora do escopo → retorna null (a tela trata como "sem lead").
+ */
+export async function obterLeadParaMatricula(id: string, usuario: UsuarioSessao) {
+  return prisma.lead.findFirst({
+    where: { id, ...escopoLeads(usuario) },
     select: {
       id: true,
       nome: true,
@@ -34,7 +41,7 @@ export async function listarTurmasAbertas() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      // Vagas calculadas na UI a partir de alocações ativas (histórico inativo não ocupa vaga).
+      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga calculada na UI (histórico inativo não ocupa vaga).
       _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });

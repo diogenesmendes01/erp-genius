@@ -113,8 +113,12 @@ export function TurmaFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Dias / horário</label>
-          <input {...register("diasHorario")} placeholder="Ter/Qui 20h" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600">Dias / horário (opcional)</label>
+          <input
+            {...register("diasHorario")}
+            placeholder="Ter/Qui 20h (deixe em branco se a definir)"
+            className={inputCls}
+          />
           {errors.diasHorario && (
             <p className="mt-1 text-xs text-red-600">{errors.diasHorario.message}</p>
           )}

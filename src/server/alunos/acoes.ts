@@ -225,6 +225,7 @@ export async function trocarTurma(id: string, input: TrocarTurmaInput): Promise<
 
     const destino = await prisma.turma.findUnique({
       where: { id: dados.turmaDestinoId },
+      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga real da turma de destino.
       include: { _count: { select: { alocacoes: { where: { ativa: true } } } } },
     });
     if (!destino) throw new ErroRegra("Turma de destino não encontrada.");

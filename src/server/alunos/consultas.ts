@@ -90,7 +90,7 @@ export async function listarTurmasAbertasComVaga() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      // Vagas só consideram alocações ativas (histórico inativo não ocupa lugar).
+      // Conta SOMENTE alocações ativas (issues #1/#19) — histórico inativo não ocupa vaga.
       _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
