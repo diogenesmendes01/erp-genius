@@ -10,7 +10,8 @@ export async function listarTurmas() {
       modalidade: true,
       nivel: { include: { idioma: true } },
       professor: { select: { id: true, nome: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issue #1) — base de "matriculados/vagas".
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 }
