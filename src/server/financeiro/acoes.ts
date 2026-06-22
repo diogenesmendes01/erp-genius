@@ -7,6 +7,7 @@ import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
+  acumularPagamento,
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
@@ -26,16 +27,23 @@ export async function registrarPagamento(
     const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
     if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
     if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");
+    if (cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança cancelada.");
 
-    const saldo = cobranca.valorNegociado - dados.valorRecebido;
-    const quitada = saldo <= 0;
+    // Parciais acumulam sobre o já recebido; saldo/quitação pelo ACUMULADO; excedente tratado.
+    const jaRecebido = cobranca.valorRecebido ?? 0;
+    const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
+      jaRecebido,
+      cobranca.valorNegociado,
+      dados.valorRecebido,
+      dados.permitirExcedente,
+    );
 
     await prisma.$transaction(async (tx) => {
       await tx.cobranca.update({
         where: { id: cobrancaId },
         data: {
-          valorRecebido: dados.valorRecebido,
-          saldo: saldo > 0 ? saldo : 0,
+          valorRecebido: recebidoTotal,
+          saldo,
           status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
           pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
           formaPagamento: dados.forma as FormaPagamento,
@@ -48,7 +56,14 @@ export async function registrarPagamento(
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        payload: { valorRecebido: dados.valorRecebido, forma: dados.forma, quitada, saldo: Math.max(0, saldo) },
+        payload: {
+          valorRecebido: dados.valorRecebido,
+          recebidoTotal,
+          forma: dados.forma,
+          quitada,
+          saldo,
+          excedente,
+        },
       });
     });
     revalidatePath("/financeiro");
