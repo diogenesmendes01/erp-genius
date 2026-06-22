@@ -57,8 +57,8 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 
 > **Limitações conhecidas da Fase 0** (ver [`docs/16-plano-execucao.md`](docs/16-plano-execucao.md)
 > §Limitações): guards de permissão só nas **mutações** (leituras ainda sem guard por consulta);
-> testes de **integração** contra o DB pendentes; **storage local** de uploads em `public/uploads`
-> (não serverless).
+> testes de **integração** contra o DB pendentes; uploads em **storage local privado**
+> (`data/uploads/`, servidos por rota autenticada) — ainda em filesystem local, não serverless.
 
 ## Scripts úteis
 - `npm run dev` — ambiente de desenvolvimento (http://localhost:3000)
@@ -94,3 +94,11 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
     no PowerShell, ou `rm -rf .next` no bash) e refaça `npm run build`;
   - se persistir, mova o projeto para **fora** de pastas sincronizadas (OneDrive/Dropbox) ou
     adicione a pasta do projeto à exceção do antivírus.
+  - Em CI/sandbox, prefira validar com `npm run lint` + `npm test` (+ `npx tsc --noEmit`).
+
+## Uploads (storage privado)
+- Comprovantes, contratos e documentos são gravados em **`data/uploads/`** (fora de
+  `public/`), portanto **não** são acessíveis por URL pública. A leitura passa por
+  `GET /api/files/[...path]`, que **exige sessão válida e autorização por papel/escopo**
+  sobre o objeto que referencia o arquivo (ex.: a cobrança/lead correspondente). O envio é por
+  `POST /api/upload` (também autenticado). A pasta `data/uploads/` está no `.gitignore`.

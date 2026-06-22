@@ -12,6 +12,7 @@ import {
   useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { EtapaLead, Temperatura, MotivoPerda } from "@prisma/client";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
@@ -69,7 +70,9 @@ function Card({ lead }: { lead: KanbanLead }) {
         <span>{diasDesde(lead.etapaDesde)}d nesta etapa</span>
         <span>· últ. ação {diasDesde(lead.ultimaAcaoEm)}d</span>
         {lead.etapa === EtapaLead.NOVO && minutosDesde(lead.etapaDesde) > 60 && (
-          <span className="rounded bg-red-100 px-1 font-medium text-red-600">🚨 SLA</span>
+          <span className="inline-flex items-center gap-0.5 rounded bg-red-100 px-1 font-medium text-red-600">
+            <IconAlertTriangle className="h-3 w-3" /> SLA
+          </span>
         )}
       </div>
       {lead.proximaAcao && <div className="mt-1 text-xs text-gray-500">Próxima: {lead.proximaAcao}</div>}
