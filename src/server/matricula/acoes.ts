@@ -16,18 +16,29 @@ import { gerarCodigo } from "@/lib/codigo";
 import {
   exigirSessao,
   exigirPapel,
+  temPapel,
   registrarEvento,
   executarAcao,
   ErroRegra,
+  ErroPermissao,
   calcularComissao,
   vencimentoMensalidade,
   normalizarTelefoneE164,
+  calcularDocumentoValido,
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
+import {
+  validarOfertaPais,
+  validarOfertaPreco,
+  validarTurmaParaProduto,
+} from "./validacao";
+import { podeConverterLead } from "./escopo";
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+// Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
+const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
@@ -48,24 +59,39 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
     const dados = MatriculaSchema.parse(input);
 
-    const pais = await prisma.pais.findUnique({ where: { id: dados.alunoPaisId } });
+    const pais = await prisma.pais.findUnique({
+      where: { id: dados.alunoPaisId },
+      include: { tiposDocumento: true },
+    });
     if (!pais) throw new ErroRegra("País não encontrado.");
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
+
+    // Revalidação no servidor (Issue #7) — NÃO confiar no client.
+    // 1) Produto precisa estar OFERECIDO no país (catálogo coerente).
+    const ofertaPais = await prisma.produtoPais.findUnique({
+      where: { produtoId_paisId: { produtoId: produto.id, paisId: pais.id } },
+      select: { oferecido: true },
+    });
+    validarOfertaPais(ofertaPais?.oferecido);
 
     const moeda = pais.moedaLocal;
 
     // dono do lead = quem recebe a comissão; senão o criador (se vendedor)
     let vendedorId = autor.id;
     let leadId: string | null = null;
+    let etapaLeadAtual: EtapaLead | null = null;
     if (dados.leadId) {
       const lead = await prisma.lead.findUnique({
         where: { id: dados.leadId },
         include: { matricula: { select: { id: true } } },
       });
       if (!lead) throw new ErroRegra("Lead não encontrado.");
+      // Ownership/escopo: vendedor só converte lead do próprio escopo (doc 07).
+      if (!podeConverterLead(autor, lead.vendedorDonoId)) throw new ErroPermissao();
       if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
       leadId = lead.id;
+      etapaLeadAtual = lead.etapa;
       if (lead.vendedorDonoId) vendedorId = lead.vendedorDonoId;
     }
 
@@ -73,6 +99,15 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
+    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção AUDITÁVEL,
+    // JUSTIFICADA + APROVADA por papel (Issues #7/#22). A autorização é apurada no
+    // servidor (temPapel), nunca por flag do client; ausência de preço marca a
+    // matrícula (`precoReferenciaAusente`) e grava Evento `MatriculaSemPrecoReferencia`.
+    const { precoReferenciaAusente } = validarOfertaPreco(precos, produto.id, pais.id, {
+      justificativa: dados.justificativaSemPreco,
+      autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
+    });
+
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
 
@@ -89,6 +124,7 @@ export async function criarMatricula(
           nome: dados.alunoNome,
           paisId: pais.id,
           documento: dados.alunoDocumento || null,
+          documentoValido: calcularDocumentoValido(pais.tiposDocumento, dados.alunoDocumento),
           telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
           email: dados.alunoEmail || null,
           genero: dados.alunoGenero ?? null,
@@ -125,11 +161,48 @@ export async function criarMatricula(
           nivelInicialId: dados.nivelInicialId || null,
           origemNivel: dados.origemNivel ?? null,
           dataAvaliacaoNivel: dados.dataAvaliacaoNivel ?? null,
+          precoReferenciaAusente,
+          justificativaSemPreco: precoReferenciaAusente ? dados.justificativaSemPreco?.trim() || null : null,
         },
       });
 
+      // Auditoria da exceção de preço (Issue #7): registra motivo + autor na
+      // MESMA transação da criação.
+      if (precoReferenciaAusente) {
+        await registrarEvento(tx, {
+          tipo: "MatriculaSemPrecoReferencia",
+          agregadoTipo: "Matricula",
+          agregadoId: matricula.id,
+          autorId: autor.id,
+          payload: {
+            produtoId: produto.id,
+            paisId: pais.id,
+            justificativa: dados.justificativaSemPreco?.trim() ?? null,
+          },
+        });
+      }
+
       if (dados.turmaId) {
-        await tx.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: dados.turmaId } });
+        // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
+        // produto e com vaga). Vaga = capacidade − alocações ATIVAS (ativa:true).
+        const turma = await tx.turma.findUnique({
+          where: { id: dados.turmaId },
+          select: {
+            id: true,
+            status: true,
+            capacidade: true,
+            modalidadeId: true,
+            nivel: { select: { idiomaId: true } },
+          },
+        });
+        if (!turma) throw new ErroRegra("Turma não encontrada.");
+        const alocacoesAtivas = await tx.alocacaoTurma.count({
+          where: { turmaId: turma.id, ativa: true },
+        });
+        validarTurmaParaProduto(turma, produto, alocacoesAtivas);
+        await tx.alocacaoTurma.create({
+          data: { alunoId: aluno.id, turmaId: turma.id, ativa: true },
+        });
       }
 
       // Taxa de matrícula (vence agora)
@@ -190,8 +263,17 @@ export async function criarMatricula(
         },
       });
 
-      if (leadId) {
+      if (leadId && etapaLeadAtual !== EtapaLead.AGUARDANDO_MATRICULA) {
         await tx.lead.update({ where: { id: leadId }, data: { etapa: EtapaLead.AGUARDANDO_MATRICULA } });
+        // Etapa do lead muda no fluxo de matrícula: registra no agregado Lead para
+        // alimentar a timeline e o `etapaDesde` confiável (issue #15).
+        await registrarEvento(tx, {
+          tipo: "EtapaAlterada",
+          agregadoTipo: "Lead",
+          agregadoId: leadId,
+          autorId: autor.id,
+          payload: { de: etapaLeadAtual, para: EtapaLead.AGUARDANDO_MATRICULA },
+        });
       }
 
       await registrarEvento(tx, {
@@ -240,7 +322,11 @@ export async function ativarMatricula(
 
     const matricula = await prisma.matricula.findUnique({
       where: { id: matriculaId },
-      include: { cobrancas: { orderBy: { vencimento: "asc" } }, comissoes: true },
+      include: {
+        cobrancas: { orderBy: { vencimento: "asc" } },
+        comissoes: true,
+        lead: { select: { etapa: true } },
+      },
     });
     if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
     if (matricula.status === StatusMatricula.ATIVA) throw new ErroRegra("Matrícula já está ativa.");
@@ -323,8 +409,17 @@ export async function ativarMatricula(
         });
       }
 
-      if (matricula.leadId) {
+      if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
         await tx.lead.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
+        // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
+        // `etapaDesde` confiável (issue #15).
+        await registrarEvento(tx, {
+          tipo: "EtapaAlterada",
+          agregadoTipo: "Lead",
+          agregadoId: matricula.leadId,
+          autorId: autor.id,
+          payload: { de: matricula.lead?.etapa ?? null, para: EtapaLead.MATRICULADO },
+        });
       }
 
       await registrarEvento(tx, {
