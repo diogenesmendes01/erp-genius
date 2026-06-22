@@ -18,6 +18,8 @@ export interface CobrancaRow {
   codigo: string | null;
   tipo: TipoCobranca;
   valorNegociado: number;
+  valorRecebido: number;
+  saldo: number;
   moeda: string;
   vencimento: string;
   atrasado: boolean;
@@ -422,14 +424,17 @@ function PagamentoModal({
   onDone: () => void;
   onErro: (e: string) => void;
 }) {
-  const [valor, setValor] = useState(String(cobranca.valorNegociado));
+  const jaRecebido = cobranca.valorRecebido;
+  const saldoRestante = cobranca.saldo;
+  const [valor, setValor] = useState(String(saldoRestante));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
   const [comentario, setComentario] = useState("");
   const [permitirExcedente, setPermitirExcedente] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  const diff = cobranca.valorNegociado - Number(valor || 0);
+  // diff compara o pagamento atual com o SALDO restante (coerente com acumularPagamento no backend).
+  const diff = saldoRestante - Number(valor || 0);
 
   async function salvar() {
     setSalvando(true);
@@ -449,7 +454,11 @@ function PagamentoModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-md rounded-lg bg-surface p-5">
         <h3 className="mb-1 text-sm font-medium">Registrar pagamento — {cobranca.aluno.nome}</h3>
-        <p className="mb-4 text-xs text-gray-500">Esperado: {cobranca.moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")}</p>
+        <p className="text-xs text-gray-500">Negociado: {cobranca.moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")}</p>
+        {jaRecebido > 0 && (
+          <p className="text-xs text-gray-500">Já recebido: {cobranca.moeda} {jaRecebido.toLocaleString("pt-BR")}</p>
+        )}
+        <p className="mb-4 text-xs font-medium text-gray-600">Saldo restante: {cobranca.moeda} {saldoRestante.toLocaleString("pt-BR")}</p>
         <label className="mb-1 block text-xs text-gray-600">Valor recebido</label>
         <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
         {diff > 0 && <p className="mb-2 text-xs text-amber-600">Pagamento parcial — saldo de {cobranca.moeda} {diff.toLocaleString("pt-BR")}.</p>}
