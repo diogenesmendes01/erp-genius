@@ -13,6 +13,10 @@ import {
   ErroRegra,
   ErroPermissao,
   temPapel,
+  ehEtapaManual,
+  transicaoManualPermitida,
+  resolverDonoLead,
+  diffCampos,
   normalizarTelefoneE164,
   type Resultado,
   type UsuarioSessao,
@@ -29,7 +33,6 @@ import {
   DatasSchema,
   InteracaoSchema,
   PerdaSchema,
-  ETAPAS_MANUAIS,
   type LeadInput,
   type ResumoInput,
   type DatasInput,
@@ -60,10 +63,9 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const dados = LeadSchema.parse(input);
 
-    // Vendedor vira dono por padrão; gerente/admin podem atribuir (mas NÃO viram dono sozinhos).
-    // Checagem LITERAL de papel — temPapel() não serve aqui (Admin passa em tudo).
-    const ehVendedor = autor.papeis.includes(Papel.VENDEDOR);
-    const donoId = dados.vendedorDonoId || (ehVendedor ? autor.id : null);
+    // Vendedor vira dono por padrão; só gerente/admin podem atribuir a outro vendedor.
+    // O servidor ignora qualquer vendedorDonoId enviado por um vendedor (doc 09).
+    const donoId = resolverDonoLead(autor, dados.vendedorDonoId);
     const ddi = await ddiDoPais(dados.paisId);
 
     const id = await prisma.$transaction(async (tx) => {
@@ -154,18 +156,38 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(id, autor);
+    const lead = await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        interesse: dados.interesse || null,
-        objetivo: dados.objetivo || null,
-        urgencia: dados.urgencia || null,
-        orcamento: dados.orcamento || null,
-        objecao: dados.objecao || null,
-        proximaAcao: dados.proximaAcao || null,
-      },
+
+    const novo = {
+      interesse: dados.interesse || null,
+      objetivo: dados.objetivo || null,
+      urgencia: dados.urgencia || null,
+      orcamento: dados.orcamento || null,
+      objecao: dados.objecao || null,
+      proximaAcao: dados.proximaAcao || null,
+    };
+    const atual = {
+      interesse: lead.interesse,
+      objetivo: lead.objetivo,
+      urgencia: lead.urgencia,
+      orcamento: lead.orcamento,
+      objecao: lead.objecao,
+      proximaAcao: lead.proximaAcao,
+    };
+    // antes→depois só dos campos que mudaram (auditoria enxuta — padrão de editarAluno).
+    const { antes, depois } = diffCampos(atual, novo);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({ where: { id }, data: novo });
+      // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
+      await registrarEvento(tx, {
+        tipo: "LeadEditado",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { campo: "resumo", de: antes, para: depois },
+      });
     });
     revalidarLead(id);
   });
@@ -175,15 +197,37 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(id, autor);
+    const lead = await exigirLeadVisivel(id, autor);
     const dados = DatasSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        proximoFollowUp: dados.proximoFollowUp ?? null,
-        dataExperimental: dados.dataExperimental ?? null,
-        dataProposta: dados.dataProposta ?? null,
-      },
+
+    const novo = {
+      proximoFollowUp: dados.proximoFollowUp ?? null,
+      dataExperimental: dados.dataExperimental ?? null,
+      dataProposta: dados.dataProposta ?? null,
+    };
+    const aIso = (d: Date | null) => (d ? d.toISOString() : null);
+    const atual = {
+      proximoFollowUp: aIso(lead.proximoFollowUp),
+      dataExperimental: aIso(lead.dataExperimental),
+      dataProposta: aIso(lead.dataProposta),
+    };
+    const depoisDisplay = {
+      proximoFollowUp: aIso(novo.proximoFollowUp),
+      dataExperimental: aIso(novo.dataExperimental),
+      dataProposta: aIso(novo.dataProposta),
+    };
+    const { antes, depois } = diffCampos(atual, depoisDisplay);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({ where: { id }, data: novo });
+      // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
+      await registrarEvento(tx, {
+        tipo: "LeadEditado",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { campo: "datas", de: antes, para: depois },
+      });
     });
     revalidarLead(id);
   });
@@ -194,12 +238,23 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const lead = await exigirLeadVisivel(id, autor);
-    if (!ETAPAS_MANUAIS.includes(etapa)) {
+    if (lead.etapa === etapa) return;
+
+    // Etapas geradas por evento (Exp. Realizada, Proposta, Aguardando Matrícula…)
+    // e saídas paralelas (Perdido/Matriculado) NÃO se movem por arraste.
+    if (!ehEtapaManual(etapa)) {
       throw new ErroRegra(
-        "Use 'Marcar perdido' ou 'Converter em matrícula' para essas etapas.",
+        "Esta etapa é definida por uma ação específica (agendar/realizar experimental, " +
+          "enviar proposta, marcar perdido ou converter em matrícula), não pelo arraste.",
       );
     }
-    if (lead.etapa === etapa) return;
+    // Valida a máquina de estados origem→destino — bloqueia saltos inválidos no
+    // backend mesmo que o client envie um destino fora da sequência (doc 10 §1).
+    if (!transicaoManualPermitida(lead.etapa, etapa)) {
+      throw new ErroRegra(
+        `Transição inválida: não é possível mover de "${lead.etapa}" para "${etapa}".`,
+      );
+    }
     await prisma.$transaction(async (tx) => {
       await tx.lead.update({ where: { id }, data: { etapa } });
       await registrarEvento(tx, {
@@ -207,7 +262,7 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: lead.etapa, para: etapa },
+        payload: { de: lead.etapa, para: etapa, origem: "manual" },
       });
     });
     revalidarLead(id);
@@ -220,12 +275,15 @@ export async function registrarInteracao(id: string, input: InteracaoInput): Pro
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = InteracaoSchema.parse(input);
-    await registrarEvento(prisma, {
-      tipo: "InteracaoRegistrada",
-      agregadoTipo: "Lead",
-      agregadoId: id,
-      autorId: autor.id,
-      payload: { canal: dados.canal || null, nota: dados.nota },
+    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "InteracaoRegistrada",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { canal: dados.canal || null, nota: dados.nota },
+      });
     });
     revalidarLead(id);
   });
