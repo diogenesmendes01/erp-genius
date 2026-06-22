@@ -3,21 +3,23 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormaPagamento, TipoCobranca, StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
+import { TipoCobranca, StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import {
   TIPO_COBRANCA_LABEL,
-  FORMA_PAGAMENTO_LABEL,
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
-import { registrarPagamento, registrarCobrancaWhatsApp, fecharMesComissoes } from "@/server/financeiro/acoes";
+import { registrarCobrancaWhatsApp, fecharMesComissoes } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
+import { PagamentoModal } from "@/components/PagamentoModal";
 
 export interface CobrancaRow {
   id: string;
   codigo: string | null;
   tipo: TipoCobranca;
   valorNegociado: number;
+  valorRecebido: number;
+  saldo: number;
   moeda: string;
   vencimento: string;
   atrasado: boolean;
@@ -62,10 +64,11 @@ const TIPO_APROV_LABEL: Record<TipoAprovacao, string> = {
   PERDAO_DIVIDA: "Perdão de dívida",
   COMISSAO_EXCEPCIONAL: "Comissão excepcional",
 };
+// Sem emoji: labels usadas dentro de <select>, onde não cabe ícone JSX (design denso).
 const VIGENCIA_LABEL: Record<Vigencia, string> = {
-  ESTA_COBRANCA: "🟢 Esta cobrança",
-  PROXIMOS_MESES: "🟡 Próximos meses",
-  CONTRATO_INTEIRO: "🔴 Contrato inteiro",
+  ESTA_COBRANCA: "Esta cobrança",
+  PROXIMOS_MESES: "Próximos meses",
+  CONTRATO_INTEIRO: "Contrato inteiro",
 };
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
@@ -170,7 +173,17 @@ export function FinanceiroPainel({
       {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(decidirAprovacao(id, { aprovar: ok }))} />}
 
       {pagar && (
-        <PagamentoModal cobranca={pagar} onClose={() => setPagar(null)} onDone={() => { setPagar(null); router.refresh(); }} onErro={setErro} />
+        <PagamentoModal
+          cobrancaId={pagar.id}
+          alunoNome={pagar.aluno.nome}
+          moeda={pagar.moeda}
+          valorEsperado={pagar.valorNegociado}
+          jaRecebido={pagar.valorRecebido}
+          saldoRestante={pagar.saldo}
+          onClose={() => setPagar(null)}
+          onDone={() => { setPagar(null); router.refresh(); }}
+          onErro={setErro}
+        />
       )}
       {whats && <WhatsappModal cobranca={whats} onClose={() => setWhats(null)} onErro={setErro} onRefresh={() => router.refresh()} />}
     </div>
@@ -400,72 +413,13 @@ function VisaoGeral({ kpis }: { kpis: Kpis }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {cards.map(([t, v]) => (
           <div key={t} className="rounded-lg border border-gray-200 bg-surface p-4">
-            <div className="text-2xl font-semibold text-gray-800">{v.toLocaleString("pt-BR")}</div>
+            <div className="text-2xl font-medium text-gray-800">{v.toLocaleString("pt-BR")}</div>
             <div className="text-xs text-gray-500">{t}</div>
           </div>
         ))}
       </div>
       <p className="mt-4 text-sm text-gray-500">Novas matrículas no mês: <strong>{kpis.novasMatriculas}</strong></p>
       <p className="mt-1 text-xs text-gray-400">Consolidação multi-moeda em USD nos KPIs entra na Fase 2.</p>
-    </div>
-  );
-}
-
-function PagamentoModal({
-  cobranca,
-  onClose,
-  onDone,
-  onErro,
-}: {
-  cobranca: CobrancaRow;
-  onClose: () => void;
-  onDone: () => void;
-  onErro: (e: string) => void;
-}) {
-  const [valor, setValor] = useState(String(cobranca.valorNegociado));
-  const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
-  const [data, setData] = useState("");
-  const [comentario, setComentario] = useState("");
-  const [salvando, setSalvando] = useState(false);
-
-  const diff = cobranca.valorNegociado - Number(valor || 0);
-
-  async function salvar() {
-    setSalvando(true);
-    const r = await registrarPagamento(cobranca.id, {
-      valorRecebido: valor === "" ? 0 : Number(valor),
-      forma,
-      dataPagamento: data,
-      comentario,
-    });
-    setSalvando(false);
-    if (!r.ok) onErro(r.erro);
-    else onDone();
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-md rounded-lg bg-surface p-5">
-        <h3 className="mb-1 text-sm font-medium">Registrar pagamento — {cobranca.aluno.nome}</h3>
-        <p className="mb-4 text-xs text-gray-500">Esperado: {cobranca.moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")}</p>
-        <label className="mb-1 block text-xs text-gray-600">Valor recebido</label>
-        <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
-        {diff > 0 && <p className="mb-2 text-xs text-amber-600">Pagamento parcial — saldo de {cobranca.moeda} {diff.toLocaleString("pt-BR")}.</p>}
-        <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
-        <select className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
-          {Object.values(FormaPagamento).map((f) => (
-            <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>
-          ))}
-        </select>
-        <label className="mb-1 block text-xs text-gray-600">Data (opcional)</label>
-        <input type="date" className={inputCls + " mb-2"} value={data} onChange={(e) => setData(e.target.value)} />
-        <label className="mb-1 block text-xs text-gray-600">Comentário</label>
-        <input className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
-        <div className="flex gap-2">
-          <button className={btnPri} disabled={salvando} onClick={salvar}>{salvando ? "Salvando…" : "Registrar pagamento"}</button>
-          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -20,9 +20,11 @@ import {
   registrarEvento,
   executarAcao,
   ErroRegra,
+  ErroPermissao,
   calcularComissao,
   vencimentoMensalidade,
   normalizarTelefoneE164,
+  calcularDocumentoValido,
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
@@ -31,6 +33,7 @@ import {
   validarOfertaPreco,
   validarTurmaParaProduto,
 } from "./validacao";
+import { podeConverterLead } from "./escopo";
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
@@ -56,7 +59,10 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
     const dados = MatriculaSchema.parse(input);
 
-    const pais = await prisma.pais.findUnique({ where: { id: dados.alunoPaisId } });
+    const pais = await prisma.pais.findUnique({
+      where: { id: dados.alunoPaisId },
+      include: { tiposDocumento: true },
+    });
     if (!pais) throw new ErroRegra("País não encontrado.");
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
@@ -80,6 +86,8 @@ export async function criarMatricula(
         include: { matricula: { select: { id: true } } },
       });
       if (!lead) throw new ErroRegra("Lead não encontrado.");
+      // Ownership/escopo: vendedor só converte lead do próprio escopo (doc 07).
+      if (!podeConverterLead(autor, lead.vendedorDonoId)) throw new ErroPermissao();
       if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
       leadId = lead.id;
       if (lead.vendedorDonoId) vendedorId = lead.vendedorDonoId;
@@ -112,6 +120,7 @@ export async function criarMatricula(
           nome: dados.alunoNome,
           paisId: pais.id,
           documento: dados.alunoDocumento || null,
+          documentoValido: calcularDocumentoValido(pais.tiposDocumento, dados.alunoDocumento),
           telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
           email: dados.alunoEmail || null,
           genero: dados.alunoGenero ?? null,
