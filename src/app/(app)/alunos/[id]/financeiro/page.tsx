@@ -1,14 +1,20 @@
 import { notFound } from "next/navigation";
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { obterFichaFinanceira } from "@/server/ajustes/consultas";
+import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { FichaFinanceira, type FichaFinanceiraDados } from "./FichaFinanceira";
 
 export default async function FichaFinanceiraPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
-  const tem = (...p: Papel[]) => papeis.includes(Papel.ADMINISTRADOR) || p.some((x) => papeis.includes(x));
+  // Ficha financeira do aluno: papéis que operam o financeiro (doc 07).
+  // Guard ANTES de consultar cobranças/ajustes/comissões.
+  const usuario = await exigirSessaoPagina(
+    Papel.FINANCEIRO,
+    Papel.SECRETARIA_ACADEMICA,
+    Papel.GERENTE_COMERCIAL,
+    Papel.VENDEDOR,
+  );
+  const tem = (...p: Papel[]) => temPapel(usuario, ...p);
 
   const f = await obterFichaFinanceira(id);
   if (!f) notFound();
@@ -69,7 +75,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     permissoes: {
       registrarPagamento: tem(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA),
       renegociar: tem(Papel.FINANCEIRO, Papel.VENDEDOR),
-      perdao: papeis.includes(Papel.ADMINISTRADOR),
+      perdao: usuario.papeis.includes(Papel.ADMINISTRADOR),
     },
   };
 

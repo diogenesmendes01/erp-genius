@@ -1,11 +1,21 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Papel } from "@prisma/client";
 import { obterTurma } from "@/server/alunos/consultas";
+import { exigirSessaoPagina } from "@/server/_shared";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const turma = await obterTurma(id);
+  // Ficha da turma (doc 07 / nav). Professor só vê turmas que leciona:
+  // obterTurma devolve null fora do seu escopo → notFound.
+  const usuario = await exigirSessaoPagina(
+    Papel.SECRETARIA_ACADEMICA,
+    Papel.GERENTE_PEDAGOGICO,
+    Papel.FINANCEIRO,
+    Papel.PROFESSOR,
+  );
+  const turma = await obterTurma(id, usuario);
   if (!turma) notFound();
   const vagas = turma.capacidade - turma.alocacoes.length;
 

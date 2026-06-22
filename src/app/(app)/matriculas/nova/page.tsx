@@ -1,3 +1,4 @@
+import { Papel } from "@prisma/client";
 import {
   obterLeadParaMatricula,
   listarProdutosParaMatricula,
@@ -6,6 +7,7 @@ import {
 } from "@/server/matricula/consultas";
 import { listarNiveis } from "@/server/turmas/consultas";
 import { listarPaises } from "@/server/paises/consultas";
+import { exigirSessaoPagina } from "@/server/_shared";
 import { MatriculaFormulario, type PrecoRef } from "./MatriculaFormulario";
 
 export default async function NovaMatriculaPage({
@@ -13,9 +15,12 @@ export default async function NovaMatriculaPage({
 }: {
   searchParams: Promise<{ lead?: string }>;
 }) {
+  // Criar matrícula (doc 07 / acoes.criarMatricula): Vendedor e Gerente Comercial.
+  // Vendedor recebe escopo: só pré-preenche a partir dos próprios leads.
+  const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   const { lead: leadId } = await searchParams;
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
-    leadId ? obterLeadParaMatricula(leadId) : Promise.resolve(null),
+    leadId ? obterLeadParaMatricula(leadId, usuario) : Promise.resolve(null),
     listarProdutosParaMatricula(),
     listarTurmasAbertas(),
     listarPrecosAtivos(),
