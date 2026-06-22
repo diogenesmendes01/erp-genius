@@ -1,6 +1,7 @@
 import { Papel, Prisma, EtapaLead, Segmento, Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
+import { TIPOS_MUDAM_ETAPA } from "./schema";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
 export async function listarVendedores() {
@@ -55,7 +56,11 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
         }),
         prisma.evento.groupBy({
           by: ["agregadoId"],
-          where: { agregadoTipo: "Lead", tipo: "EtapaAlterada", agregadoId: { in: ids } },
+          where: {
+            agregadoTipo: "Lead",
+            tipo: { in: TIPOS_MUDAM_ETAPA },
+            agregadoId: { in: ids },
+          },
           _max: { criadoEm: true },
         }),
       ])
