@@ -62,10 +62,11 @@ const TIPO_APROV_LABEL: Record<TipoAprovacao, string> = {
   PERDAO_DIVIDA: "Perdão de dívida",
   COMISSAO_EXCEPCIONAL: "Comissão excepcional",
 };
+// Sem emoji: labels usadas dentro de <select>, onde não cabe ícone JSX (design denso).
 const VIGENCIA_LABEL: Record<Vigencia, string> = {
-  ESTA_COBRANCA: "🟢 Esta cobrança",
-  PROXIMOS_MESES: "🟡 Próximos meses",
-  CONTRATO_INTEIRO: "🔴 Contrato inteiro",
+  ESTA_COBRANCA: "Esta cobrança",
+  PROXIMOS_MESES: "Próximos meses",
+  CONTRATO_INTEIRO: "Contrato inteiro",
 };
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
@@ -400,7 +401,7 @@ function VisaoGeral({ kpis }: { kpis: Kpis }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {cards.map(([t, v]) => (
           <div key={t} className="rounded-lg border border-gray-200 bg-surface p-4">
-            <div className="text-2xl font-semibold text-gray-800">{v.toLocaleString("pt-BR")}</div>
+            <div className="text-2xl font-medium text-gray-800">{v.toLocaleString("pt-BR")}</div>
             <div className="text-xs text-gray-500">{t}</div>
           </div>
         ))}

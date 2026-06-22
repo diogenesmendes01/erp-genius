@@ -1,3 +1,4 @@
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
 import type { dadosHomeGerente } from "@/server/home/consultas";
 
@@ -6,7 +7,7 @@ type Dados = Awaited<ReturnType<typeof dadosHomeGerente>>;
 function Kpi({ titulo, valor }: { titulo: string; valor: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-surface p-4">
-      <div className="text-2xl font-semibold text-gray-800">{valor}</div>
+      <div className="text-2xl font-medium text-gray-800">{valor}</div>
       <div className="text-xs text-gray-500">{titulo}</div>
     </div>
   );
@@ -26,8 +27,9 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       </div>
 
       {kpis.alertasSla > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
-          ⚠️ Alertas de SLA: <strong>{kpis.alertasSla}</strong> lead(s) novo(s) sem 1º contato além do limite.
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          <IconAlertTriangle className="h-4 w-4 shrink-0" />
+          <span>Alertas de SLA: <strong>{kpis.alertasSla}</strong> lead(s) novo(s) sem 1º contato além do limite.</span>
         </div>
       )}
 

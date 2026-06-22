@@ -14,6 +14,7 @@ import {
   ErroPermissao,
   temPapel,
   resolverDonoLead,
+  diffCampos,
   normalizarTelefoneE164,
   type Resultado,
   type UsuarioSessao,
@@ -154,18 +155,38 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(id, autor);
+    const lead = await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        interesse: dados.interesse || null,
-        objetivo: dados.objetivo || null,
-        urgencia: dados.urgencia || null,
-        orcamento: dados.orcamento || null,
-        objecao: dados.objecao || null,
-        proximaAcao: dados.proximaAcao || null,
-      },
+
+    const novo = {
+      interesse: dados.interesse || null,
+      objetivo: dados.objetivo || null,
+      urgencia: dados.urgencia || null,
+      orcamento: dados.orcamento || null,
+      objecao: dados.objecao || null,
+      proximaAcao: dados.proximaAcao || null,
+    };
+    const atual = {
+      interesse: lead.interesse,
+      objetivo: lead.objetivo,
+      urgencia: lead.urgencia,
+      orcamento: lead.orcamento,
+      objecao: lead.objecao,
+      proximaAcao: lead.proximaAcao,
+    };
+    // antes→depois só dos campos que mudaram (auditoria enxuta — padrão de editarAluno).
+    const { antes, depois } = diffCampos(atual, novo);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({ where: { id }, data: novo });
+      // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
+      await registrarEvento(tx, {
+        tipo: "LeadEditado",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { campo: "resumo", de: antes, para: depois },
+      });
     });
     revalidarLead(id);
   });
@@ -175,15 +196,37 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(id, autor);
+    const lead = await exigirLeadVisivel(id, autor);
     const dados = DatasSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        proximoFollowUp: dados.proximoFollowUp ?? null,
-        dataExperimental: dados.dataExperimental ?? null,
-        dataProposta: dados.dataProposta ?? null,
-      },
+
+    const novo = {
+      proximoFollowUp: dados.proximoFollowUp ?? null,
+      dataExperimental: dados.dataExperimental ?? null,
+      dataProposta: dados.dataProposta ?? null,
+    };
+    const aIso = (d: Date | null) => (d ? d.toISOString() : null);
+    const atual = {
+      proximoFollowUp: aIso(lead.proximoFollowUp),
+      dataExperimental: aIso(lead.dataExperimental),
+      dataProposta: aIso(lead.dataProposta),
+    };
+    const depoisDisplay = {
+      proximoFollowUp: aIso(novo.proximoFollowUp),
+      dataExperimental: aIso(novo.dataExperimental),
+      dataProposta: aIso(novo.dataProposta),
+    };
+    const { antes, depois } = diffCampos(atual, depoisDisplay);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({ where: { id }, data: novo });
+      // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
+      await registrarEvento(tx, {
+        tipo: "LeadEditado",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { campo: "datas", de: antes, para: depois },
+      });
     });
     revalidarLead(id);
   });
@@ -220,12 +263,15 @@ export async function registrarInteracao(id: string, input: InteracaoInput): Pro
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = InteracaoSchema.parse(input);
-    await registrarEvento(prisma, {
-      tipo: "InteracaoRegistrada",
-      agregadoTipo: "Lead",
-      agregadoId: id,
-      autorId: autor.id,
-      payload: { canal: dados.canal || null, nota: dados.nota },
+    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "InteracaoRegistrada",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { canal: dados.canal || null, nota: dados.nota },
+      });
     });
     revalidarLead(id);
   });
