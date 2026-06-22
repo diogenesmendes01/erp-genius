@@ -39,7 +39,8 @@ export async function registrarPagamento(
           status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
           pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
           formaPagamento: dados.forma as FormaPagamento,
-          comprovanteUrl: dados.comprovanteUrl || null,
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
           comentario: dados.comentario || null,
         },
       });
@@ -48,7 +49,14 @@ export async function registrarPagamento(
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        payload: { valorRecebido: dados.valorRecebido, forma: dados.forma, quitada, saldo: Math.max(0, saldo) },
+        payload: {
+          valorRecebido: dados.valorRecebido,
+          forma: dados.forma,
+          quitada,
+          saldo: Math.max(0, saldo),
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
+        },
       });
     });
     revalidatePath("/financeiro");

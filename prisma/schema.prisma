@@ -515,6 +515,7 @@ model Cobranca {
   pagoEm         DateTime?
   formaPagamento FormaPagamento?
   comprovanteUrl String?
+  comprovanteNome String?
   comentario     String?
   criadoEm       DateTime        @default(now())
 }
