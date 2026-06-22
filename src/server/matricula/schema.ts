@@ -39,6 +39,8 @@ export const MatriculaSchema = z.object({
   // (apurado no servidor). NÃO há flag booleana livre do client — evita que
   // qualquer vendedor pule o bloqueio. `z.coerce.boolean` foi removido de
   // propósito: ele transformava "false" em true.
+  // Obrigatória quando não há preço de referência ativo p/ a combinação país ×
+  // produto (issue #22); a validação fica na ação, que conhece a matriz de preços.
   justificativaSemPreco: z.string().trim().optional(),
   // Comissão
   comissaoPct: z.coerce.number().min(0).max(100).default(20),

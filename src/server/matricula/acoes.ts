@@ -97,13 +97,15 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
-    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção
-    // JUSTIFICADA + APROVADA por papel (Issue #7). A autorização é apurada no
-    // servidor (temPapel), nunca por flag do client.
+    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção AUDITÁVEL,
+    // JUSTIFICADA + APROVADA por papel (Issues #7/#22). A autorização é apurada no
+    // servidor (temPapel), nunca por flag do client; ausência de preço marca a
+    // matrícula (`precoReferenciaAusente`) e grava Evento `MatriculaSemPrecoReferencia`.
     const { precoReferenciaAusente } = validarOfertaPreco(precos, produto.id, pais.id, {
       justificativa: dados.justificativaSemPreco,
       autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
     });
+
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
 
@@ -158,6 +160,7 @@ export async function criarMatricula(
           origemNivel: dados.origemNivel ?? null,
           dataAvaliacaoNivel: dados.dataAvaliacaoNivel ?? null,
           precoReferenciaAusente,
+          justificativaSemPreco: precoReferenciaAusente ? dados.justificativaSemPreco?.trim() || null : null,
         },
       });
 

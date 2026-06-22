@@ -4,6 +4,7 @@ import {
   calcularComissao,
   vencimentoMensalidade,
   ehEtapaManual,
+  avaliarPrecoReferencia,
   acumularPagamento,
   chavePrecoReferencia,
   mesmaChavePreco,
@@ -357,5 +358,39 @@ describe("acumularPagamento", () => {
   it("rejeita valor não positivo", () => {
     expect(() => acumularPagamento(0, 1000, 0)).toThrow(ErroRegra);
     expect(() => acumularPagamento(0, 1000, -50)).toThrow(/maior que zero/i);
+  });
+});
+
+describe("avaliarPrecoReferencia", () => {
+  it("não há ausência quando taxa + mensalidade existem", () => {
+    const r = avaliarPrecoReferencia([
+      { tipoCobranca: TipoCobranca.MATRICULA, valor: 100 },
+      { tipoCobranca: TipoCobranca.MENSALIDADE, valor: 50 },
+    ]);
+    expect(r.ausente).toBe(false);
+    expect(r.tiposAusentes).toEqual([]);
+  });
+
+  it("marca ausência quando falta a mensalidade", () => {
+    const r = avaliarPrecoReferencia([
+      { tipoCobranca: TipoCobranca.MATRICULA, valor: 100 },
+    ]);
+    expect(r.ausente).toBe(true);
+    expect(r.tiposAusentes).toEqual([TipoCobranca.MENSALIDADE]);
+  });
+
+  it("marca ausência total quando não há preços ativos", () => {
+    const r = avaliarPrecoReferencia([]);
+    expect(r.ausente).toBe(true);
+    expect(r.tiposAusentes).toEqual([TipoCobranca.MATRICULA, TipoCobranca.MENSALIDADE]);
+  });
+
+  it("ignora tipos extras irrelevantes (ex.: certificado)", () => {
+    const r = avaliarPrecoReferencia([
+      { tipoCobranca: TipoCobranca.MATRICULA, valor: 100 },
+      { tipoCobranca: TipoCobranca.MENSALIDADE, valor: 50 },
+      { tipoCobranca: TipoCobranca.CERTIFICADO, valor: 10 },
+    ]);
+    expect(r.ausente).toBe(false);
   });
 });
