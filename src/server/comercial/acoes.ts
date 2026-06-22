@@ -156,16 +156,32 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        interesse: dados.interesse || null,
-        objetivo: dados.objetivo || null,
-        urgencia: dados.urgencia || null,
-        orcamento: dados.orcamento || null,
-        objecao: dados.objecao || null,
-        proximaAcao: dados.proximaAcao || null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({
+        where: { id },
+        data: {
+          interesse: dados.interesse || null,
+          objetivo: dados.objetivo || null,
+          urgencia: dados.urgencia || null,
+          orcamento: dados.orcamento || null,
+          objecao: dados.objecao || null,
+          proximaAcao: dados.proximaAcao || null,
+        },
+      });
+      await registrarEvento(tx, {
+        tipo: "ResumoAtualizado",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: {
+          interesse: dados.interesse || null,
+          objetivo: dados.objetivo || null,
+          urgencia: dados.urgencia || null,
+          orcamento: dados.orcamento || null,
+          objecao: dados.objecao || null,
+          proximaAcao: dados.proximaAcao || null,
+        },
+      });
     });
     revalidarLead(id);
   });
@@ -177,13 +193,26 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = DatasSchema.parse(input);
-    await prisma.lead.update({
-      where: { id },
-      data: {
-        proximoFollowUp: dados.proximoFollowUp ?? null,
-        dataExperimental: dados.dataExperimental ?? null,
-        dataProposta: dados.dataProposta ?? null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({
+        where: { id },
+        data: {
+          proximoFollowUp: dados.proximoFollowUp ?? null,
+          dataExperimental: dados.dataExperimental ?? null,
+          dataProposta: dados.dataProposta ?? null,
+        },
+      });
+      await registrarEvento(tx, {
+        tipo: "DatasAtualizadas",
+        agregadoTipo: "Lead",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: {
+          proximoFollowUp: dados.proximoFollowUp?.toISOString() ?? null,
+          dataExperimental: dados.dataExperimental?.toISOString() ?? null,
+          dataProposta: dados.dataProposta?.toISOString() ?? null,
+        },
+      });
     });
     revalidarLead(id);
   });
