@@ -89,7 +89,6 @@ export function MatriculaFormulario({
   const [pagData, setPagData] = useState(hoje);
   const [pagComprovante, setPagComprovante] = useState("");
   const [pagComentario, setPagComentario] = useState("");
-  const [semPagamentoMotivo, setSemPagamentoMotivo] = useState("");
 
   const moeda = paises.find((p) => p.id === alunoPaisId)?.moedaLocal ?? "";
   const totalInicial = Number(taxaValor || 0) + Number(mensalidadeValor || 0);
@@ -135,20 +134,18 @@ export function MatriculaFormulario({
     };
   }
 
-  type Ativacao = "nenhuma" | "com_pagamento" | "sem_pagamento";
+  // Ativação tem caminho único: receber pagamento (que cobre a taxa) e ativar.
+  // "nenhuma" = só salvar a matrícula (fica AGUARDANDO).
+  type Ativacao = "nenhuma" | "com_pagamento";
 
-  function montarAtivacao(modo: Ativacao) {
-    if (modo === "com_pagamento") {
-      return {
-        comPagamento: true as const,
-        valorRecebido: pagValor === "" ? 0 : Number(pagValor),
-        forma: pagForma,
-        dataPagamento: pagData,
-        comprovanteUrl: pagComprovante || undefined,
-        comentario: pagComentario || undefined,
-      };
-    }
-    return { comPagamento: false as const, motivo: semPagamentoMotivo };
+  function montarAtivacao() {
+    return {
+      valorRecebido: pagValor === "" ? 0 : Number(pagValor),
+      forma: pagForma,
+      dataPagamento: pagData,
+      comprovanteUrl: pagComprovante || undefined,
+      comentario: pagComentario || undefined,
+    };
   }
 
   async function salvar(modo: Ativacao) {
@@ -164,10 +161,6 @@ export function MatriculaFormulario({
         return;
       }
     }
-    if (modo === "sem_pagamento" && !semPagamentoMotivo.trim()) {
-      setErro("Informe o motivo para ativar sem pagamento.");
-      return;
-    }
 
     setSalvando(true);
     const res = await criarMatricula(montarInput());
@@ -177,7 +170,7 @@ export function MatriculaFormulario({
       return;
     }
     if (modo !== "nenhuma" && res.dado) {
-      const at = await ativarMatricula(res.dado.id, montarAtivacao(modo));
+      const at = await ativarMatricula(res.dado.id, montarAtivacao());
       if (!at.ok) {
         setErro("Matrícula salva, mas ativação falhou: " + at.erro);
         setSalvando(false);
@@ -375,13 +368,14 @@ export function MatriculaFormulario({
         </p>
       </section>
 
-      {/* Pagamento na ativação (issue #23) — só para quem pode ativar (Financeiro/Secretaria/Admin) */}
+      {/* Pagamento na ativação — só para quem pode ativar (Financeiro/Secretaria/Admin) */}
       {podeAtivar && (
       <section className="rounded-lg border border-gray-200 bg-surface p-5">
-        <h2 className="mb-1 text-sm font-medium">Pagamento (para ativar com lastro)</h2>
+        <h2 className="mb-1 text-sm font-medium">Pagamento da taxa (para ativar)</h2>
         <p className="mb-4 text-xs text-gray-400">
-          O valor recebido é alocado à taxa e à 1ª mensalidade; cada cobrança só é baixada se for
-          integralmente coberta. Pagamento parcial mantém o saldo pendente.
+          Para ativar, o valor recebido precisa cobrir a TAXA de matrícula. A 1ª mensalidade NÃO é
+          exigida para ativar: entra como pendente com vencimento 30 dias após o início da 1ª aula,
+          no dia escolhido. Se o valor não cobrir a taxa, a matrícula continua aguardando.
         </p>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
@@ -424,18 +418,6 @@ export function MatriculaFormulario({
             <input className={inputCls} value={pagComentario} onChange={(e) => setPagComentario(e.target.value)} />
           </div>
         </div>
-
-        <div className="mt-4 border-t border-gray-100 pt-4">
-          <label className="mb-1 block text-xs text-gray-600">
-            Ativar SEM pagamento? Informe o motivo (vira evento de auditoria)
-          </label>
-          <input
-            className={inputCls}
-            value={semPagamentoMotivo}
-            onChange={(e) => setSemPagamentoMotivo(e.target.value)}
-            placeholder="Ex.: pagamento será conciliado depois"
-          />
-        </div>
       </section>
       )}
 
@@ -448,34 +430,25 @@ export function MatriculaFormulario({
           Salvar matrícula
         </button>
         {podeAtivar && (
-          <>
-            <button
-              onClick={() => salvar("com_pagamento")}
-              disabled={salvando}
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-            >
-              {salvando ? "Processando…" : "Receber pagamento e ativar"}
-            </button>
-            <button
-              onClick={() => salvar("sem_pagamento")}
-              disabled={salvando}
-              className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60"
-            >
-              Ativar sem pagamento (pendente)
-            </button>
-          </>
+          <button
+            onClick={() => salvar("com_pagamento")}
+            disabled={salvando}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {salvando ? "Processando…" : "Receber pagamento e ativar"}
+          </button>
         )}
       </div>
       {podeAtivar ? (
         <p className="text-xs text-gray-400">
-          "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO});
-          o backend só baixa as cobranças cobertas pelo valor recebido. "Ativar sem pagamento" deixa o estado financeiro
-          pendente e registra o motivo.
+          "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO}).
+          A ativação só ocorre se o valor cobrir a TAXA de matrícula; caso contrário a matrícula continua aguardando.
+          A 1ª mensalidade não é exigida para ativar — fica pendente com vencimento 30 dias após o início da 1ª aula.
         </p>
       ) : (
         <p className="text-xs text-gray-400">
-          Você pode salvar a matrícula como rascunho. A ativação (receber pagamento ou ativar pendente)
-          é feita pelo perfil Financeiro/Secretaria depois.
+          Você pode salvar a matrícula como rascunho. A ativação (receber o pagamento da taxa) é feita
+          pelo perfil Financeiro/Secretaria depois.
         </p>
       )}
     </div>
