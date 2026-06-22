@@ -36,6 +36,8 @@
 | D29 | **Carga Q10 docentes + vendedor:** `Usuario` ganha `telefoneE164/documento/nascimento/genero` (migration `usuario_dados_professor`); 8 professores atualizados + 3 criados (12 total); vendedor **Henrique** criado + **56 comissões PAGA** (valor não consta na fonte → 0) | ✅ | [23](23-carga-docentes-vendedor-q10.md) |
 | D24 | **Next.js 16** (era 14, EOL de segurança) + React 18 mantido + `overrides.postcss ≥8.5.10` → `npm audit` **0 vulnerabilidades** | ✅ | [13](13-convencoes-codigo.md) |
 | D17 | **Preço tipado** (`PrecoReferencia` = País+Produto+Modalidade+TipoCobrança, com moeda+ativo) | ✅ | [11](11-modelo-de-dados.md) |
+| D30 | **Dinheiro em `Float` (temporário)** — manter `Float` nos campos monetários por ora; migrar para `Decimal` adiado (custo/risco alto nesta fase). Ver pendência P19 | 🟡 | (este doc) |
+| D31 | **Integridade de dados (issue #1):** índices únicos PARCIAIS — 1 alocação ATIVA por aluno · 1 preço ATIVO por país+produto+modalidade+tipoCobrança (migration `integridade_alocacao_preco`) | ✅ | [11](11-modelo-de-dados.md) |
 | D18 | **`MovimentacaoAluno` tipada** criada na Fase 0 (coexiste com `Evento`) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
 | D19 | **Ativação** exige `contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`; exceção "com pendência" (Admin/Gerente) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
 
@@ -121,6 +123,29 @@ UI na tela de País ("Catálogo") alterna `ProdutoPais.oferecido` por produto (i
 `Matricula.mesesPlano` adicionado. `criarMatricula` cria só **taxa + 1ª mensalidade**;
 `ativarMatricula` gera o restante (meses 2..N) e emite `CobrancaGerada`. Código agora 100%
 fiel à spec do doc 09.
+
+### P19 — Dinheiro em `Float` vs. `Decimal` 🟡 (decisão temporária — D30)
+**Contexto.** Os campos monetários (`Cobranca.valorOriginal/valorNegociado/valorRecebido/saldo`,
+`Comissao.valor`, `PrecoReferencia.valor`, `AjusteFinanceiro.valorDe/valorPara/descontoValor`,
+além de `Lead.valorPrevisto/comissaoPrevista` e `Aprovacao.impactoMensal`) usam `Float`. Float é
+binário (IEEE-754) e acumula erro de arredondamento — não é o tipo ideal para dinheiro.
+
+**Decisão (temporária).** **Manter `Float` por ora**; **não** migrar para `Decimal` nesta fase.
+Justificativa do risco/esforço:
+- Prisma mapeia `Decimal` para objetos `Prisma.Decimal` (decimal.js), **não** `number`. Migrar
+  obriga a reescrever **toda** a aritmética monetária do domínio (somas de saldo/comissão/KPIs em
+  `financeiro/consultas.ts`, `alunos/consultas.ts`, `regras.ts`, etc.) e a **serialização** dos
+  valores nos `payload` de `Evento`/props de Server Components (JSON não serializa `Decimal`).
+- Já há **carga Q10 em produção** (alunos, 56 cobranças, comissões) que passaria por conversão.
+- O ganho de precisão não é crítico na Fase 0 (operação manual, valores inteiros na prática:
+  ₡25.000, US$50). O risco de regressão silenciosa em cálculo financeiro é alto.
+
+**Consequência / quando reabrir.** Migrar para `Decimal(12,2)` quando entrar gateway de pagamento
+(P1) ou consolidação multi-moeda automática (doc 09). Na migração: schema `Decimal` + migration de
+`ALTER COLUMN ... TYPE numeric(12,2)`, camada de mapeamento `Decimal→number` na borda das
+consultas/payloads, e testes de regressão dos cálculos. Enquanto isso, manter os valores como
+inteiros na moeda local sempre que possível e arredondar na borda.
+→ origem: issue #1 (endurecer regras financeiras).
 
 ### P17 — Micro-detalhes do Kanban/matrícula ✅
 Fechados: card do Kanban com **última ação**, **idade da etapa** e **SLA** (projeção de eventos
