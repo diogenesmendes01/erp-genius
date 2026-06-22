@@ -14,11 +14,14 @@ import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
 const PAPEIS_FINANCEIRO: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL];
 
 export default async function FinanceiroPage() {
+  // Painel financeiro global (doc 07 / nav): Admin, Financeiro, Gerente Comercial.
+  // Bloqueia ANTES de consultar dados sensíveis (cobranças, comissões, aprovações).
   const papeis = await exigirPapelLeitura(...PAPEIS_FINANCEIRO);
   if (!papeis) return <AcessoNegado recurso="o financeiro" />;
 
   const podeAprovar =
-    papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.GERENTE_COMERCIAL);
+    papeis.includes(Papel.ADMINISTRADOR) ||
+    papeis.includes(Papel.GERENTE_COMERCIAL);
 
   const [cobrancas, comissoes, kpis, aprovacoesRaw] = await Promise.all([
     listarCobrancasAbertas(),

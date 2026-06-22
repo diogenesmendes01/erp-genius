@@ -22,6 +22,8 @@ export default async function NovaMatriculaPage({
 }: {
   searchParams: Promise<{ lead?: string }>;
 }) {
+  // Criar matrícula (doc 07 / acoes.criarMatricula): Vendedor e Gerente Comercial.
+  // Vendedor recebe escopo: só pré-preenche a partir dos próprios leads.
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const usuario: UsuarioSessao = {
