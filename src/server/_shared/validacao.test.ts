@@ -5,6 +5,8 @@ import {
   telefoneE164,
   paraDataLocal,
   dataOpcional,
+  paraDataHoraLocal,
+  dataHoraOpcional,
 } from "./validacao";
 
 describe("validarDocumento (cpf)", () => {
@@ -86,5 +88,44 @@ describe("dataOpcional (schema compartilhado)", () => {
     expect(dataOpcional.parse("")).toBeUndefined();
     expect(dataOpcional.parse(null)).toBeUndefined();
     expect(dataOpcional.parse(undefined)).toBeUndefined();
+  });
+});
+
+describe("paraDataHoraLocal (datetime-local → preserva a hora, issue #16)", () => {
+  it("converte 'YYYY-MM-DDTHH:mm' mantendo a hora LOCAL digitada", () => {
+    const d = paraDataHoraLocal("2026-06-22T14:30") as Date;
+    expect(d).toBeInstanceOf(Date);
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5); // junho
+    expect(d.getDate()).toBe(22);
+    expect(d.getHours()).toBe(14); // hora NÃO é descartada nem ancorada no meio-dia
+    expect(d.getMinutes()).toBe(30);
+  });
+  it("aceita segundos opcionais", () => {
+    const d = paraDataHoraLocal("2026-06-22T14:30:45") as Date;
+    expect(d.getSeconds()).toBe(45);
+  });
+  it("date-only cai no meio-dia local (reusa paraDataLocal)", () => {
+    const d = paraDataHoraLocal("2026-06-22") as Date;
+    expect(d.getHours()).toBe(12);
+    expect(d.getDate()).toBe(22);
+  });
+  it("deixa outros valores passarem inalterados", () => {
+    const date = new Date("2026-03-10T08:00:00Z");
+    expect(paraDataHoraLocal(date)).toBe(date);
+    expect(paraDataHoraLocal(undefined)).toBeUndefined();
+  });
+});
+
+describe("dataHoraOpcional (schema datetime-local)", () => {
+  it("preserva o horário do datetime-local", () => {
+    const r = dataHoraOpcional.parse("2026-06-22T09:15") as Date;
+    expect(r.getHours()).toBe(9);
+    expect(r.getMinutes()).toBe(15);
+  });
+  it("trata vazio/null/undefined como undefined", () => {
+    expect(dataHoraOpcional.parse("")).toBeUndefined();
+    expect(dataHoraOpcional.parse(null)).toBeUndefined();
+    expect(dataHoraOpcional.parse(undefined)).toBeUndefined();
   });
 });
