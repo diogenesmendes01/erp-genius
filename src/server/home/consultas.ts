@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
+import { leadsAtribuidosAoProfessor } from "@/server/comercial/experimental";
 
 const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
 const SLA_MINUTOS = 60; // SLA do 1º contato (default; tunável — P10, doc 10 §10)
@@ -119,13 +120,21 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
     },
   });
 
-  // Experimentais para check-in (agendadas). Simplificação: todas as agendadas (sem vínculo
-  // professor↔experimental no schema). Ver docs/15 (pendência de modelagem).
-  const experimentais = await prisma.lead.findMany({
-    where: { etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null } },
-    orderBy: { dataExperimental: "asc" },
-    select: { id: true, nome: true, dataExperimental: true },
-  });
+  // Experimentais para check-in (agendadas) — só as ATRIBUÍDAS a este professor
+  // (escopo, Issue #13). O vínculo vem do event log (sem FK no V0 — pendência
+  // docs/15). Sem atribuição = nada aparece, e o check-in também é bloqueado.
+  const meusLeads = await leadsAtribuidosAoProfessor(usuario.id);
+  const experimentais = meusLeads.length
+    ? await prisma.lead.findMany({
+        where: {
+          id: { in: meusLeads },
+          etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
+          dataExperimental: { not: null },
+        },
+        orderBy: { dataExperimental: "asc" },
+        select: { id: true, nome: true, dataExperimental: true },
+      })
+    : [];
 
   return {
     turmas: turmas.map((t) => ({
