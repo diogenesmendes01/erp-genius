@@ -25,6 +25,11 @@ import {
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
+import {
+  validarOfertaPais,
+  validarOfertaPreco,
+  validarTurmaParaProduto,
+} from "./validacao";
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
@@ -53,6 +58,14 @@ export async function criarMatricula(
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
 
+    // Revalidação no servidor (Issue #7) — NÃO confiar no client.
+    // 1) Produto precisa estar OFERECIDO no país (catálogo coerente).
+    const ofertaPais = await prisma.produtoPais.findUnique({
+      where: { produtoId_paisId: { produtoId: produto.id, paisId: pais.id } },
+      select: { oferecido: true },
+    });
+    validarOfertaPais(ofertaPais?.oferecido);
+
     const moeda = pais.moedaLocal;
 
     // dono do lead = quem recebe a comissão; senão o criador (se vendedor)
@@ -73,6 +86,8 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
+    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção aprovada.
+    validarOfertaPreco(precos, produto.id, pais.id, dados.excecaoPreco);
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
 
@@ -129,7 +144,26 @@ export async function criarMatricula(
       });
 
       if (dados.turmaId) {
-        await tx.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: dados.turmaId } });
+        // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
+        // produto e com vaga). Vaga = capacidade − alocações ATIVAS (ativa:true).
+        const turma = await tx.turma.findUnique({
+          where: { id: dados.turmaId },
+          select: {
+            id: true,
+            status: true,
+            capacidade: true,
+            modalidadeId: true,
+            nivel: { select: { idiomaId: true } },
+          },
+        });
+        if (!turma) throw new ErroRegra("Turma não encontrada.");
+        const alocacoesAtivas = await tx.alocacaoTurma.count({
+          where: { turmaId: turma.id, ativa: true },
+        });
+        validarTurmaParaProduto(turma, produto, alocacoesAtivas);
+        await tx.alocacaoTurma.create({
+          data: { alunoId: aluno.id, turmaId: turma.id, ativa: true },
+        });
       }
 
       // Taxa de matrícula (vence agora)
