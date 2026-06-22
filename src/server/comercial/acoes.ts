@@ -262,17 +262,21 @@ export async function agendarExperimental(
     const dados = AgendarExperimentalSchema.parse(input);
     const data = new Date(dados.dataISO);
     if (isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
-    const professorId = dados.professorId || null;
+    // Schema normaliza "" → null; `?? null` cobre o campo ausente. Sempre
+    // persistimos a FK para que "Definir depois" limpe o responsável anterior.
+    const professorId = dados.professorId ?? null;
     if (professorId) await exigirProfessorValido(professorId);
 
-    const anterior = professorId ? await professorAtribuido(prisma, id) : null;
+    // Estado atual da FK para auditar só quando o responsável mudar (incl. remoção).
+    const anterior = await professorAtribuido(prisma, id);
+    const mudouProfessor = professorId !== anterior;
     await prisma.$transaction(async (tx) => {
       await tx.lead.update({
         where: { id },
         data: {
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
           dataExperimental: data,
-          ...(professorId ? { professorExperimentalId: professorId } : {}),
+          professorExperimentalId: professorId,
         },
       });
       await registrarEvento(tx, {
@@ -282,7 +286,9 @@ export async function agendarExperimental(
         autorId: autor.id,
         payload: { data: data.toISOString() },
       });
-      if (professorId) {
+      // Auditoria do vínculo: mesmo evento para atribuição/remanejamento e
+      // remoção (professorId null). Só registra quando houve mudança.
+      if (mudouProfessor) {
         await registrarEvento(tx, {
           tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
           agregadoTipo: "Lead",

@@ -145,6 +145,13 @@ describe("checkinExperimental", () => {
 });
 
 describe("agendarExperimental", () => {
+  // Atalho: eventos registrados via evento.create na transação.
+  function eventosRegistrados(tipo: string) {
+    return prismaMock.evento.create.mock.calls
+      .map((c: unknown[]) => c[0] as { data: Record<string, unknown> })
+      .filter((c: { data: Record<string, unknown> }) => c.data.tipo === tipo);
+  }
+
   it("grava a FK do professor ao agendar com professorId", async () => {
     comoUsuario("vend1", [Papel.VENDEDOR]);
     // exigirLeadVisivel → findUnique (dono = vend1); depois professorAtribuido → findUnique
@@ -168,17 +175,68 @@ describe("agendarExperimental", () => {
         }),
       }),
     );
+    // mudança null → prof1 audita atribuição
+    expect(eventosRegistrados("ExperimentalAtribuida")).toHaveLength(1);
   });
 
-  it("agenda sem professor (FK não tocada) quando professorId ausente", async () => {
+  it("agenda sem professor: persiste FK null quando professorId ausente", async () => {
     comoUsuario("vend1", [Papel.VENDEDOR]);
-    prismaMock.lead.findUnique.mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" });
+    // exigirLeadVisivel → findUnique; professorAtribuido → findUnique (sem professor)
+    prismaMock.lead.findUnique
+      .mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" })
+      .mockResolvedValueOnce({ professorExperimentalId: null });
 
     const r = await agendarExperimental("lead1", { dataISO: "2026-06-22T10:00:00Z" });
 
     expect(r.ok).toBe(true);
     const dataArg = (prismaMock.lead.update.mock.calls[0]![0] as { data: Record<string, unknown> })
       .data;
-    expect(dataArg).not.toHaveProperty("professorExperimentalId");
+    expect(dataArg.professorExperimentalId).toBeNull();
+    // sem professor antes e depois → nenhum evento de vínculo
+    expect(eventosRegistrados("ExperimentalAtribuida")).toHaveLength(0);
+  });
+
+  it("reagendar com 'Definir depois' limpa a FK e audita a remoção", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    // lead já tinha prof1 atribuído
+    prismaMock.lead.findUnique
+      .mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" })
+      .mockResolvedValueOnce({ professorExperimentalId: "prof1" });
+
+    // UI manda "" na opção "Definir depois"
+    const r = await agendarExperimental("lead1", {
+      dataISO: "2026-06-22T10:00:00Z",
+      professorId: "",
+    });
+
+    expect(r.ok).toBe(true);
+    const dataArg = (prismaMock.lead.update.mock.calls[0]![0] as { data: Record<string, unknown> })
+      .data;
+    expect(dataArg.professorExperimentalId).toBeNull();
+    // prof1 → null é mudança → audita remoção (de: prof1, professorId: null)
+    const eventos = eventosRegistrados("ExperimentalAtribuida");
+    expect(eventos).toHaveLength(1);
+    expect(eventos[0].data.payload).toMatchObject({ de: "prof1", professorId: null });
+  });
+
+  it("reagendar sem mudar o professor não duplica o evento de vínculo", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    // lead já tinha prof1; reagenda mantendo prof1
+    prismaMock.lead.findUnique
+      .mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" })
+      .mockResolvedValueOnce({ professorExperimentalId: "prof1" });
+    prismaMock.usuario.findUnique.mockResolvedValue({ id: "prof1", papeis: [Papel.PROFESSOR] });
+
+    const r = await agendarExperimental("lead1", {
+      dataISO: "2026-06-23T11:00:00Z",
+      professorId: "prof1",
+    });
+
+    expect(r.ok).toBe(true);
+    const dataArg = (prismaMock.lead.update.mock.calls[0]![0] as { data: Record<string, unknown> })
+      .data;
+    expect(dataArg.professorExperimentalId).toBe("prof1");
+    // mesmo professor antes e depois → sem evento de vínculo
+    expect(eventosRegistrados("ExperimentalAtribuida")).toHaveLength(0);
   });
 });
