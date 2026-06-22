@@ -24,6 +24,8 @@ import {
   ErroPermissao,
   calcularComissao,
   vencimentoMensalidade,
+  vencimentoPrimeiraMensalidade,
+  alocarPagamento,
   normalizarTelefoneE164,
   calcularDocumentoValido,
   type UsuarioSessao,
@@ -191,6 +193,9 @@ async function criarMatriculaTx(
     });
   }
 
+  // Data de início da PRIMEIRA AULA = Turma.dataInicio (quando há turma alocada).
+  // Base do vencimento da 1ª mensalidade (início + 30d, ajustado ao dia escolhido).
+  let dataInicioAula: Date | null = null;
   if (dados.turmaId) {
     // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
     // produto e com vaga). Vaga = capacidade − alocações ATIVAS (ativa:true).
@@ -201,6 +206,7 @@ async function criarMatriculaTx(
         status: true,
         capacidade: true,
         modalidadeId: true,
+        dataInicio: true,
         nivel: { select: { idiomaId: true } },
       },
     });
@@ -209,6 +215,7 @@ async function criarMatriculaTx(
       where: { turmaId: turma.id, ativa: true },
     });
     validarTurmaParaProduto(turma, produto, alocacoesAtivas);
+    dataInicioAula = turma.dataInicio ?? null;
     await tx.alocacaoTurma.create({
       data: { alunoId: aluno.id, turmaId: turma.id, ativa: true },
     });
@@ -228,8 +235,11 @@ async function criarMatriculaTx(
     },
   });
 
-  // 1ª mensalidade (o restante do cronograma é gerado na ATIVAÇÃO — doc 09 / P18)
-  const primeira = vencimentoMes(dados.diaVencimento, 0);
+  // 1ª mensalidade (o restante do cronograma é gerado na ATIVAÇÃO — doc 09 / P18).
+  // Vencimento = início da 1ª aula + 30 dias, ajustado ao dia escolhido (regra PO).
+  // Não exige pagamento p/ ativar: entra PENDENTE com esse vencimento; sem turma/
+  // dataInicio cai para a data atual + 30 dias.
+  const primeira = vencimentoPrimeiraMensalidade(dados.diaVencimento, dataInicioAula);
   await tx.cobranca.create({
     data: {
       codigo: codPrimeiraMensalidade,
@@ -311,16 +321,32 @@ async function criarMatriculaTx(
 }
 
 /**
- * Ativa uma matrícula recém-criada (ou existente) dentro de uma transação:
- * marca taxa + 1ª mensalidade como pagas, ativa, gera o cronograma restante,
- * aprova a comissão e move o lead para Matriculado.
- * Reutilizado por `ativarMatricula` e pela operação atômica `criarEAtivarMatricula`.
+ * Ativa uma matrícula recém-criada (ou existente) dentro de uma transação.
+ *
+ * Regra de domínio do PO (caminho único "Receber pagamento e ativar"):
+ * - Lastro da ativação = TAXA DE MATRÍCULA QUITADA. O valor recebido é alocado
+ *   SÓ à taxa; se NÃO cobrir a taxa, a matrícula NÃO ativa (lança ErroRegra e a
+ *   transação é desfeita — fica AGUARDANDO). A 1ª mensalidade NÃO é exigida.
+ * - Com a taxa quitada: matrícula vira ATIVA, e a 1ª mensalidade é apenas
+ *   AGENDADA (vencimento = início da 1ª aula + 30 dias, ajustado ao dia
+ *   escolhido) — não é baixada na ativação.
+ *
+ * Gera o restante do cronograma (meses 2..N a partir do vencimento da 1ª
+ * mensalidade), aprova a comissão, move o lead para Matriculado e registra os
+ * eventos de auditoria. Reutilizado por `ativarMatricula` e pela operação
+ * atômica `criarEAtivarMatricula`.
  */
 async function ativarMatriculaTx(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
   matriculaId: string,
-  dados: { forma: FormaPagamento },
+  dados: {
+    valorRecebido: number;
+    forma: FormaPagamento;
+    dataPagamento?: Date | null;
+    comprovanteUrl?: string | null;
+    comentario?: string | null;
+  },
 ): Promise<{ leadId: string | null }> {
   const matricula = await tx.matricula.findUnique({
     where: { id: matriculaId },
@@ -338,31 +364,74 @@ async function ativarMatriculaTx(
   if (!taxa || !primeiraMensalidade)
     throw new ErroRegra("Matrícula sem taxa ou mensalidade para receber.");
 
+  // Lastro da ativação: o valor recebido precisa cobrir a TAXA. A 1ª mensalidade
+  // NÃO entra na alocação — não é exigida para ativar.
+  const alocacao = alocarPagamento(dados.valorRecebido, [
+    { id: taxa.id, valorNegociado: taxa.valorNegociado },
+  ]);
+  const taxaAloc = alocacao.alocacoes[0];
+  // Regra dura: sem taxa paga não há ativação. Fica AGUARDANDO.
+  if (!taxaAloc?.quitada) {
+    throw new ErroRegra(
+      "O valor recebido não cobre a taxa de matrícula; a matrícula continua AGUARDANDO ativação.",
+    );
+  }
+
+  // Início da 1ª aula = Turma.dataInicio da turma alocada (quando houver).
+  const alocacaoTurma = await tx.alocacaoTurma.findFirst({
+    where: { alunoId: matricula.alunoId, ativa: true },
+    orderBy: { criadoEm: "desc" },
+    include: { turma: { select: { dataInicio: true } } },
+  });
+  const dataInicioAula = alocacaoTurma?.turma.dataInicio ?? null;
+
   // Cronograma gerado NA ATIVAÇÃO (doc 09 / P18): meses 2..N (o 1º já existe).
   const restante = Math.max(0, matricula.mesesPlano - 1);
   const codsRestante: string[] = [];
   for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca"));
 
   const agora = new Date();
-  for (const c of [taxa, primeiraMensalidade]) {
-    await tx.cobranca.update({
-      where: { id: c.id },
-      data: {
-        status: StatusCobranca.PAGO,
-        pagoEm: agora,
-        formaPagamento: dados.forma,
-        valorRecebido: c.valorNegociado,
-        saldo: 0,
-      },
-    });
-    await registrarEvento(tx, {
-      tipo: "PagamentoRegistrado",
-      agregadoTipo: "Cobranca",
-      agregadoId: c.id,
-      autorId: autor.id,
-      payload: { valorRecebido: c.valorNegociado, forma: dados.forma },
-    });
-  }
+  const dataPagamento = dados.dataPagamento ?? agora;
+
+  // ----- Baixa da TAXA (lastro da ativação) -----
+  await tx.cobranca.update({
+    where: { id: taxa.id },
+    data: {
+      status: StatusCobranca.PAGO,
+      pagoEm: dataPagamento,
+      formaPagamento: dados.forma,
+      valorRecebido: taxaAloc.valorRecebido,
+      saldo: taxaAloc.saldo,
+      comprovanteUrl: dados.comprovanteUrl || null,
+      comentario: dados.comentario || null,
+    },
+  });
+  await registrarEvento(tx, {
+    tipo: "PagamentoRegistrado",
+    agregadoTipo: "Cobranca",
+    agregadoId: taxa.id,
+    autorId: autor.id,
+    payload: {
+      valorRecebido: taxaAloc.valorRecebido,
+      saldo: taxaAloc.saldo,
+      quitada: true,
+      forma: dados.forma,
+      tipo: TipoCobranca.MATRICULA,
+      comprovanteUrl: dados.comprovanteUrl || null,
+    },
+  });
+
+  // ----- 1ª mensalidade: apenas AGENDADA (não é baixada na ativação) -----
+  // Vencimento = início da 1ª aula + 30 dias, ajustado ao dia escolhido.
+  const venc1 = vencimentoPrimeiraMensalidade(matricula.diaVencimento, dataInicioAula, agora);
+  await tx.cobranca.update({
+    where: { id: primeiraMensalidade.id },
+    data: {
+      competencia: venc1.competencia,
+      vencimento: venc1.data,
+      status: StatusCobranca.PENDENTE,
+    },
+  });
 
   await tx.matricula.update({
     where: { id: matriculaId },
@@ -370,14 +439,17 @@ async function ativarMatriculaTx(
       status: StatusMatricula.ATIVA,
       contratoOk: true,
       pagamentoTaxaOk: true,
-      primeiraMensalidadeOk: true,
+      // 1ª mensalidade NÃO é exigida para ativar — apenas agendada.
+      primeiraMensalidadeOk: false,
+      ativadaComPendencia: false,
       ativadaEm: agora,
     },
   });
 
-  // Gera o restante do cronograma de mensalidades (meses 2..N)
+  // Gera o restante do cronograma de mensalidades (meses 2..N), a partir do mês
+  // de vencimento da 1ª mensalidade.
   for (let i = 0; i < restante; i++) {
-    const { data, competencia } = vencimentoMes(matricula.diaVencimento, i + 1);
+    const { data, competencia } = vencimentoMes(matricula.diaVencimento, i + 1, venc1.data);
     await tx.cobranca.create({
       data: {
         codigo: codsRestante[i],
@@ -428,7 +500,15 @@ async function ativarMatriculaTx(
     agregadoTipo: "Matricula",
     agregadoId: matriculaId,
     autorId: autor.id,
-    payload: { ativadaEm: agora.toISOString(), forma: dados.forma },
+    payload: {
+      ativadaEm: agora.toISOString(),
+      lastro: "TAXA_QUITADA",
+      forma: dados.forma,
+      valorRecebido: dados.valorRecebido,
+      taxaValor: taxa.valorNegociado,
+      troco: alocacao.troco,
+      primeiraMensalidadeVencimento: venc1.data.toISOString(),
+    },
   });
   await registrarEvento(tx, {
     tipo: "ComissaoAprovada",
@@ -458,9 +538,19 @@ export async function criarMatricula(
 }
 
 /**
- * Receber pagamento e ativar (decisão P7): exige taxa + 1ª mensalidade pagas + contrato.
- * Marca as duas cobranças como pagas, ativa a matrícula, aprova a comissão e
- * move o lead para Matriculado. Exige papel de ativação.
+ * Ativar matrícula (regra de domínio do PO). Lastro = TAXA DE MATRÍCULA QUITADA.
+ *
+ * Caminho único "Receber pagamento e ativar":
+ * - O valor recebido é alocado à TAXA. Se NÃO cobrir a taxa, a matrícula NÃO
+ *   ativa: permanece AGUARDANDO e a ação retorna mensagem clara (regra dura,
+ *   sem exceção de papel). A 1ª mensalidade NÃO é exigida para ativar.
+ * - Com a taxa quitada: matrícula vira ATIVA, a 1ª mensalidade é apenas
+ *   AGENDADA (vencimento = início da 1ª aula + 30 dias, ajustado ao dia
+ *   escolhido) e NÃO é baixada na ativação.
+ *
+ * Gera o cronograma (meses 2..N), aprova a comissão, move o lead e registra os
+ * eventos de auditoria (MatriculaAtivada + PagamentoRegistrado da taxa). Tudo
+ * na mesma transação. Exige papel de ativação.
  */
 export async function ativarMatricula(
   matriculaId: string,
@@ -472,7 +562,13 @@ export async function ativarMatricula(
     const dados = AtivacaoSchema.parse(input);
 
     const { leadId } = await prisma.$transaction((tx) =>
-      ativarMatriculaTx(tx, autor, matriculaId, { forma: dados.forma as FormaPagamento }),
+      ativarMatriculaTx(tx, autor, matriculaId, {
+        valorRecebido: dados.valorRecebido,
+        forma: dados.forma as FormaPagamento,
+        dataPagamento: dados.dataPagamento,
+        comprovanteUrl: dados.comprovanteUrl,
+        comentario: dados.comentario,
+      }),
     );
     revalidar(leadId);
   });
@@ -482,6 +578,8 @@ export async function ativarMatricula(
  * Criar + ativar atômico (issue #8): cria a matrícula e a ativa numa única
  * transação. Exige os papéis de criar E ativar — se faltar qualquer um, nada é
  * gravado (não fica matrícula parcial). Para quem só pode criar, use `criarMatricula`.
+ * A ativação segue a regra de domínio do PO: lastro = TAXA QUITADA; se o valor
+ * recebido não cobrir a taxa, a transação inteira é desfeita (nada é gravado).
  */
 export async function criarEAtivarMatricula(
   input: MatriculaComAtivacaoInput,
@@ -495,7 +593,11 @@ export async function criarEAtivarMatricula(
     const res = await prisma.$transaction(async (tx) => {
       const criada = await criarMatriculaTx(tx, autor, input.matricula);
       const ativada = await ativarMatriculaTx(tx, autor, criada.id, {
+        valorRecebido: ativacao.valorRecebido,
         forma: ativacao.forma as FormaPagamento,
+        dataPagamento: ativacao.dataPagamento,
+        comprovanteUrl: ativacao.comprovanteUrl,
+        comentario: ativacao.comentario,
       });
       return { id: criada.id, alunoId: criada.alunoId, leadId: ativada.leadId };
     });

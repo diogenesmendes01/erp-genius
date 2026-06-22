@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { FormaPagamento, OrigemNivel, Genero } from "@prisma/client";
-import { emailSchema, dataOpcional } from "@/server/_shared/validacao";
+import { emailSchema, dataOpcional, paraDataLocal } from "@/server/_shared/validacao";
 
 // Matrícula manual (ver docs/05, docs/09). Pré-preenchida pelo lead → confirmar + completar.
 export const MatriculaSchema = z.object({
@@ -50,9 +50,41 @@ export const MatriculaSchema = z.object({
 });
 export type MatriculaInput = z.input<typeof MatriculaSchema>;
 
-export const AtivacaoSchema = z.object({
-  forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
-});
+// ------------------------------------------------------------
+// Ativação (regra de domínio do PO): ATIVAR EXIGE A TAXA QUITADA.
+// Só existe UM caminho de ativação — "Receber pagamento e ativar":
+//   - exige valor recebido, forma, data e comprovante (quando aplicável — só
+//     DINHEIRO dispensa o comprovante);
+//   - o valor é alocado à TAXA; se NÃO cobrir a taxa, a matrícula NÃO ativa
+//     (fica AGUARDANDO). A 1ª mensalidade NÃO é exigida para ativar — é apenas
+//     agendada (vencimento = início da 1ª aula + 30 dias).
+// Não há mais "ativar sem pagamento": sem taxa paga não há ativação. Quem só
+// quer registrar a matrícula usa "Salvar matrícula" (fica AGUARDANDO).
+// ------------------------------------------------------------
+
+/** Formas em que NÃO faz sentido exigir comprovante (recebimento em espécie). */
+const FORMAS_SEM_COMPROVANTE: FormaPagamento[] = [FormaPagamento.DINHEIRO];
+
+export const AtivacaoSchema = z
+  .object({
+    valorRecebido: z.coerce.number().positive("Informe o valor pago"),
+    forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
+    dataPagamento: z.preprocess(
+      (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
+      z.coerce.date({ required_error: "Informe a data do pagamento" }),
+    ),
+    comprovanteUrl: z.string().optional(),
+    comentario: z.string().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (!FORMAS_SEM_COMPROVANTE.includes(d.forma) && !d.comprovanteUrl?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe o comprovante do pagamento",
+        path: ["comprovanteUrl"],
+      });
+    }
+  });
 export type AtivacaoInput = z.input<typeof AtivacaoSchema>;
 
 // Criar + ativar atômico (issue #8): combina os dados da matrícula com a forma

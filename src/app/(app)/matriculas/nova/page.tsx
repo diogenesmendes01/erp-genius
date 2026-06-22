@@ -33,10 +33,10 @@ export default async function NovaMatriculaPage({
   };
 
   const { lead: leadId } = await searchParams;
-  // "Receber pagamento e ativar" (fluxo atômico) exige os papéis de CRIAR E ATIVAR.
-  // O botão só aparece para quem passa nas duas checagens; o backend continua
-  // exigindo ambos (defesa em profundidade). Mantemos a verificação real no
-  // servidor — isto é só UX (issue #8).
+  // Gating de papéis (issue #8 / #34): "Salvar matrícula" para quem pode CRIAR;
+  // "Receber pagamento e ativar" (fluxo atômico) exige os papéis de CRIAR E
+  // ATIVAR. Os botões só aparecem para quem passa nas checagens; o backend
+  // continua exigindo os papéis (defesa em profundidade). Isto é só UX.
   const papeis = (session.user.papeis ?? []) as Papel[];
   const podeCriar = podeCriarMatricula(papeis);
   const podeCriarEAtivar = podeCriarEAtivarMatricula(papeis);
