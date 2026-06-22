@@ -1,12 +1,22 @@
 import { notFound } from "next/navigation";
+import { Papel } from "@prisma/client";
 import { obterAluno, listarTurmasAbertasComVaga } from "@/server/alunos/consultas";
 import { listarPaisesSimples } from "@/server/paises/consultas";
+import { exigirSessaoPagina } from "@/server/_shared";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
 export default async function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // Ficha do aluno (doc 07 / nav). Professor recebe escopo: obterAluno devolve
+  // null se o aluno não estiver em uma das suas turmas → notFound.
+  const usuario = await exigirSessaoPagina(
+    Papel.SECRETARIA_ACADEMICA,
+    Papel.GERENTE_PEDAGOGICO,
+    Papel.FINANCEIRO,
+    Papel.PROFESSOR,
+  );
   const [dados, turmas, paises] = await Promise.all([
-    obterAluno(id),
+    obterAluno(id, usuario),
     listarTurmasAbertasComVaga(),
     listarPaisesSimples(),
   ]);

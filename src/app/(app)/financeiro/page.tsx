@@ -1,18 +1,23 @@
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import {
   listarCobrancasAbertas,
   listarComissoes,
   kpisFinanceiro,
 } from "@/server/financeiro/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
+import { exigirSessaoPagina } from "@/server/_shared";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
 
 export default async function FinanceiroPage() {
-  const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
+  // Painel financeiro global (doc 07 / nav): Admin, Financeiro, Gerente Comercial.
+  // Bloqueia ANTES de consultar dados sensíveis (cobranças, comissões, aprovações).
+  const usuario = await exigirSessaoPagina(
+    Papel.FINANCEIRO,
+    Papel.GERENTE_COMERCIAL,
+  );
   const podeAprovar =
-    papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.GERENTE_COMERCIAL);
+    usuario.papeis.includes(Papel.ADMINISTRADOR) ||
+    usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
 
   const [cobrancas, comissoes, kpis, aprovacoesRaw] = await Promise.all([
     listarCobrancasAbertas(),
