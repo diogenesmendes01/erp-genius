@@ -6,6 +6,8 @@ import {
 } from "@/server/matricula/consultas";
 import { listarNiveis } from "@/server/turmas/consultas";
 import { listarPaises } from "@/server/paises/consultas";
+import { auth } from "@/lib/auth";
+import { podeAtivarMatricula } from "@/server/matricula/permissoes";
 import { MatriculaFormulario, type PrecoRef } from "./MatriculaFormulario";
 
 export default async function NovaMatriculaPage({
@@ -14,6 +16,12 @@ export default async function NovaMatriculaPage({
   searchParams: Promise<{ lead?: string }>;
 }) {
   const { lead: leadId } = await searchParams;
+  const session = await auth();
+  const podeAtivar = podeAtivarMatricula({
+    id: session?.user?.id ?? "",
+    nome: session?.user?.name ?? "Usuário",
+    papeis: session?.user?.papeis ?? [],
+  });
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
     leadId ? obterLeadParaMatricula(leadId) : Promise.resolve(null),
     listarProdutosParaMatricula(),
@@ -49,6 +57,7 @@ export default async function NovaMatriculaPage({
       turmas={turmasComVaga}
       niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}
       precos={precos as PrecoRef[]}
+      podeAtivar={podeAtivar}
     />
   );
 }
