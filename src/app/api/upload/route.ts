@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { auth } from "@/lib/auth";
+import { UPLOAD_DIR } from "@/lib/uploads";
 
-// Upload de arquivos (comprovantes / documentos do lead — doc 09).
-// Storage local em public/uploads (dev / hosting Node). Para serverless, trocar por S3/Supabase.
+// Upload de comprovantes / contratos / documentos (doc 09).
+// Storage PRIVADO em data/uploads (fora de public/) — os arquivos NÃO são servidos
+// estaticamente. A leitura passa por GET /api/files/[...path], que valida a sessão.
+// Para serverless, trocar por S3/Supabase (signed URLs).
 export const runtime = "nodejs";
 
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
@@ -29,12 +32,12 @@ export async function POST(req: Request) {
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
+  await mkdir(UPLOAD_DIR, { recursive: true });
 
   const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const nomeArquivo = `${Date.now()}-${Math.round(Math.random() * 1e6)}-${safe}`;
-  await writeFile(path.join(dir, nomeArquivo), bytes);
+  await writeFile(path.join(UPLOAD_DIR, nomeArquivo), bytes);
 
-  return NextResponse.json({ url: `/uploads/${nomeArquivo}`, nome: file.name });
+  // URL servida pela rota autenticada — nunca um caminho público estático.
+  return NextResponse.json({ url: `/api/files/${nomeArquivo}`, nome: file.name });
 }

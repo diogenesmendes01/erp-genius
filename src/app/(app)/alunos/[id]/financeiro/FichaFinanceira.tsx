@@ -24,9 +24,9 @@ const TIPO_AJUSTE_LABEL: Record<TipoAjuste, string> = {
   RENEGOCIACAO: "Renegociação",
 };
 const VIGENCIA_INFO: Record<Vigencia, { label: string; cls: string }> = {
-  ESTA_COBRANCA: { label: "🟢 Apenas esta cobrança", cls: "text-green-700" },
-  PROXIMOS_MESES: { label: "🟡 Próximos meses", cls: "text-amber-700" },
-  CONTRATO_INTEIRO: { label: "🔴 Contrato inteiro", cls: "text-red-700" },
+  ESTA_COBRANCA: { label: "Apenas esta cobrança", cls: "text-green-700" },
+  PROXIMOS_MESES: { label: "Próximos meses", cls: "text-amber-700" },
+  CONTRATO_INTEIRO: { label: "Contrato inteiro", cls: "text-red-700" },
 };
 
 export interface FichaFinanceiraDados {
@@ -206,7 +206,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
 function Tile({ titulo, valor, sub, cls }: { titulo: string; valor: string; sub?: string; cls?: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-surface p-4">
-      <div className={"text-lg font-semibold text-gray-800 " + (cls ?? "")}>{valor}</div>
+      <div className={"text-lg font-medium text-gray-800 " + (cls ?? "")}>{valor}</div>
       <div className="text-xs text-gray-500">{titulo}</div>
       {sub && <div className="text-xs text-gray-400">{sub}</div>}
     </div>
