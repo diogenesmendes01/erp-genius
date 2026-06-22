@@ -32,10 +32,12 @@ export function LeadsLista({
   leads,
   paises,
   vendedores,
+  podeAtribuir,
 }: {
   leads: LeadRow[];
   paises: { id: string; nome: string }[];
   vendedores: { id: string; nome: string }[];
+  podeAtribuir: boolean;
 }) {
   const [novo, setNovo] = useState(false);
   const [fEtapa, setEtapa] = useState("");
@@ -71,7 +73,12 @@ export function LeadsLista({
 
       {novo && (
         <div className="mb-6">
-          <LeadFormulario paises={paises} vendedores={vendedores} onClose={() => setNovo(false)} />
+          <LeadFormulario
+            paises={paises}
+            vendedores={vendedores}
+            podeAtribuir={podeAtribuir}
+            onClose={() => setNovo(false)}
+          />
         </div>
       )}
 
