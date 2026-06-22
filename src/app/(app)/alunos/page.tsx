@@ -1,5 +1,7 @@
-import { Placeholder } from "@/components/Placeholder";
+import { listarAlunos } from "@/server/alunos/consultas";
+import { AlunosLista } from "./AlunosLista";
 
-export default function AlunosPage() {
-  return <Placeholder title="Alunos" />;
+export default async function AlunosPage() {
+  const alunos = await listarAlunos();
+  return <AlunosLista alunos={alunos} />;
 }

@@ -4,7 +4,7 @@ import { Papel } from "@prisma/client";
 export interface NavItem {
   href: string;
   label: string;
-  icon: string; // nome do ícone lucide-react
+  icon: string; // chave do ícone (mapeada p/ Tabler em Sidebar.tsx)
   papeis: Papel[] | "all";
 }
 

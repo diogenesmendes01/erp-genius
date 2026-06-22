@@ -1,44 +1,74 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  Home,
-  KanbanSquare,
-  Users,
-  UserCheck,
-  Wallet,
-  Settings,
-  LogOut,
-  GraduationCap,
-  type LucideIcon,
-} from "lucide-react";
+  IconHome,
+  IconLayoutKanban,
+  IconUsers,
+  IconUserCheck,
+  IconWallet,
+  IconSettings,
+  IconLogout,
+  IconSchool,
+  IconSun,
+  IconMoon,
+  type IconProps,
+} from "@tabler/icons-react";
 import { navParaPapeis } from "@/lib/nav";
 
-const ICONS: Record<string, LucideIcon> = {
-  Home,
-  KanbanSquare,
-  Users,
-  UserCheck,
-  Wallet,
-  Settings,
+type Icone = React.ComponentType<IconProps>;
+
+const ICONS: Record<string, Icone> = {
+  Home: IconHome,
+  KanbanSquare: IconLayoutKanban,
+  Users: IconUsers,
+  UserCheck: IconUserCheck,
+  Wallet: IconWallet,
+  Settings: IconSettings,
 };
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  function alternar() {
+    const novo = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", novo);
+    localStorage.setItem("tema", novo ? "dark" : "light");
+    setDark(novo);
+  }
+
+  return (
+    <button
+      onClick={alternar}
+      className="text-gray-400 hover:text-gray-700"
+      title={dark ? "Tema claro" : "Tema escuro"}
+      aria-label="Alternar tema"
+    >
+      {dark ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+    </button>
+  );
+}
 
 export function Sidebar({ papeis, nome }: { papeis: string[]; nome: string }) {
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
 
   return (
-    <aside className="flex w-56 flex-col border-r border-gray-200 bg-white p-3">
+    <aside className="flex w-56 flex-col border-r border-gray-200 bg-surface p-3">
       <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
-        <GraduationCap className="h-5 w-5 text-brand-600" />
+        <IconSchool className="h-5 w-5 text-brand-600" />
         Genius
       </div>
 
       <nav className="flex flex-col gap-1">
         {itens.map((item) => {
-          const Icon = ICONS[item.icon] ?? Home;
+          const Icon = ICONS[item.icon] ?? IconHome;
           const ativo = pathname.startsWith(item.href);
           return (
             <Link
@@ -63,13 +93,14 @@ export function Sidebar({ papeis, nome }: { papeis: string[]; nome: string }) {
           {nome.slice(0, 2).toUpperCase()}
         </div>
         <span className="flex-1 truncate text-sm text-gray-600">{nome}</span>
+        <ThemeToggle />
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="text-gray-400 hover:text-gray-700"
           title="Sair"
           aria-label="Sair"
         >
-          <LogOut className="h-4 w-4" />
+          <IconLogout className="h-4 w-4" />
         </button>
       </div>
     </aside>

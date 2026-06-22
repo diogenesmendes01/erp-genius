@@ -36,16 +36,22 @@ model Usuario {
   ativo             Boolean   @default(true)
   papeis            Papel[] // multi-papel. V2: migrar p/ tabela UsuarioPapel (permissões granulares / por país)
   limiteDescontoPct Float? // null = sem limite (Admin)
+  // dados pessoais (ex.: professores importados — doc 23). Opcionais.
+  telefoneE164      String?
+  documento         String?
+  nascimento        DateTime?
+  genero            Genero?
   ultimoAcesso      DateTime?
   criadoEm          DateTime  @default(now())
 
-  leads        Lead[]      @relation("VendedorLeads")
-  turmas       Turma[]     @relation("ProfessorTurmas")
-  comissoes    Comissao[]
-  eventos      Evento[]    @relation("AutorEventos")
-  aprovacoes   Aprovacao[] @relation("SolicitanteAprovacoes")
-  aprovadasPor Aprovacao[] @relation("AprovadorAprovacoes")
-  ajustes      AjusteFinanceiro[] @relation("AutorAjustes")
+  leads         Lead[]              @relation("VendedorLeads")
+  turmas        Turma[]             @relation("ProfessorTurmas")
+  comissoes     Comissao[]
+  eventos       Evento[]            @relation("AutorEventos")
+  aprovacoes    Aprovacao[]         @relation("SolicitanteAprovacoes")
+  aprovadasPor  Aprovacao[]         @relation("AprovadorAprovacoes")
+  ajustes       AjusteFinanceiro[]  @relation("AutorAjustes")
+  movimentacoes MovimentacaoAluno[] @relation("AutorMovimentacoes")
 }
 
 // ============================================================
@@ -60,18 +66,19 @@ enum StatusPais {
 }
 
 model Pais {
-  id         String         @id @default(cuid())
+  id         String     @id @default(cuid())
   nome       String
-  codigoISO  String         @unique
+  codigoISO  String     @unique
   moedaLocal String // ex.: CRC, USD, MXN
   ddi        String // ex.: +506
-  fuso       String         @default("America/Sao_Paulo")
-  idioma     String         @default("es")
-  status     StatusPais     @default(RASCUNHO)
-  criadoEm   DateTime       @default(now())
+  fuso       String     @default("America/Sao_Paulo")
+  idioma     String     @default("es")
+  status     StatusPais @default(RASCUNHO)
+  criadoEm   DateTime   @default(now())
 
   tiposDocumento TipoDocumento[]
   produtosPais   ProdutoPais[]
+  precos         PrecoReferencia[]
   alunos         Aluno[]
   leads          Lead[]
   matriculas     Matricula[]
@@ -97,10 +104,10 @@ enum Segmento {
 }
 
 model Idioma {
-  id      String   @id @default(cuid())
-  nome    String // Português, Inglês...
-  ativo   Boolean  @default(true)
-  niveis  Nivel[]
+  id       String    @id @default(cuid())
+  nome     String // Português, Inglês...
+  ativo    Boolean   @default(true)
+  niveis   Nivel[]
   produtos Produto[]
 }
 
@@ -116,6 +123,7 @@ model Modalidade {
 
   produtos Produto[]
   turmas   Turma[]
+  precos   PrecoReferencia[]
 }
 
 model Nivel {
@@ -130,43 +138,59 @@ model Nivel {
 
 // Produto vendável = idioma + modalidade
 model Produto {
-  id           String        @id @default(cuid())
+  id           String            @id @default(cuid())
   idiomaId     String
-  idioma       Idioma        @relation(fields: [idiomaId], references: [id])
+  idioma       Idioma            @relation(fields: [idiomaId], references: [id])
   modalidadeId String
-  modalidade   Modalidade    @relation(fields: [modalidadeId], references: [id])
+  modalidade   Modalidade        @relation(fields: [modalidadeId], references: [id])
   produtosPais ProdutoPais[]
+  precos       PrecoReferencia[]
   matriculas   Matricula[]
 }
 
 enum TipoCobranca {
-  TAXA_MATRICULA
-  MENSALIDADE
-  CERTIFICADO
+  MATRICULA // taxa de matrícula (negociável)
+  MENSALIDADE // Regular/Intensivo/Kids… (negociável)
+  HORA_PARTICULAR // aulas particulares (cobrança por hora)
+  MATERIAL // material didático
+  CERTIFICADO // certificado profissional — fixo, só Costa Rica (doc 04)
 }
 
-// Disponibilidade + preços por país
+// Disponibilidade do produto por país (catálogo global → país habilita subconjunto).
+// O PREÇO mora em PrecoReferencia (tabela tipada), não aqui.
 model ProdutoPais {
-  id        String           @id @default(cuid())
+  id        String  @id @default(cuid())
   produtoId String
-  produto   Produto          @relation(fields: [produtoId], references: [id])
+  produto   Produto @relation(fields: [produtoId], references: [id])
   paisId    String
-  pais      Pais             @relation(fields: [paisId], references: [id])
+  pais      Pais    @relation(fields: [paisId], references: [id])
   moeda     String
-  oferecido Boolean          @default(true)
-  precos    PrecoReferencia[]
+  oferecido Boolean @default(true)
 
   @@unique([produtoId, paisId])
 }
 
+// PREÇO TIPADO (decisão P5, doc 15): País + Produto + Modalidade + TipoCobrança = preço.
+// modalidadeId é explícito (apesar de derivável de Produto) p/ relatório/seed simples.
+// moeda gravada também aqui (vem do país) para fidelidade histórica.
 model PrecoReferencia {
-  id            String       @id @default(cuid())
-  produtoPaisId String
-  produtoPais   ProdutoPais  @relation(fields: [produtoPaisId], references: [id])
-  tipoCobranca  TipoCobranca
-  valor         Float
-  versaoEstudo  String?
-  vigenteDesde  DateTime     @default(now())
+  id           String       @id @default(cuid())
+  paisId       String
+  pais         Pais         @relation(fields: [paisId], references: [id])
+  produtoId    String
+  produto      Produto      @relation(fields: [produtoId], references: [id])
+  modalidadeId String
+  modalidade   Modalidade   @relation(fields: [modalidadeId], references: [id])
+  tipoCobranca TipoCobranca
+  valor        Float
+  moeda        String
+  ativo        Boolean      @default(true)
+  versaoEstudo String?
+  vigenteDesde DateTime     @default(now())
+  criadoEm     DateTime     @default(now())
+
+  @@index([paisId, produtoId, modalidadeId, tipoCobranca])
+  @@index([ativo])
 }
 
 // ============================================================
@@ -183,18 +207,21 @@ enum StatusTurma {
 model Turma {
   id           String      @id @default(cuid())
   codigo       String?     @unique // T-000001
+  nome         String? // nome livre da turma (a escola batiza como quiser: "Salvador", "Particular Ronny"...)
   modalidadeId String
   modalidade   Modalidade  @relation(fields: [modalidadeId], references: [id])
   nivelId      String
   nivel        Nivel       @relation(fields: [nivelId], references: [id])
   professorId  String?
   professor    Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
-  diasHorario  String // "Ter/Qui 20h"
+  online       Boolean     @default(true) // online (hoje) × presencial (futuro) — não há "sede" física
+  diasHorario  String? // "Ter/Qui 20h" — opcional (preenchido quando houver dia/horário)
   dataInicio   DateTime?
+  dataFim      DateTime?
   cronograma   String?
-  capacidade   Int         @default(12)
+  capacidade   Int         @default(16)
   status       StatusTurma @default(PLANEJADA)
-  rolling      Boolean     @default(false) // Pré A1
+  rolling      Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
   criadoEm     DateTime    @default(now())
 
   alocacoes AlocacaoTurma[]
@@ -210,22 +237,32 @@ enum StatusAluno {
   ENCERRADO
 }
 
+enum Genero {
+  MASCULINO
+  FEMININO
+  OUTRO
+  NAO_INFORMADO
+}
+
 model Aluno {
   id              String      @id @default(cuid())
   codigo          String?     @unique // A-000001
   nome            String
   nascimento      DateTime?
+  genero          Genero?
   paisId          String
   pais            Pais        @relation(fields: [paisId], references: [id])
   documento       String?
   documentoValido Boolean     @default(false)
-  telefoneE164    String?
+  email           String?
+  telefoneE164    String?     // E.164 com DDI embutido (ex.: +50688887777). Máscara só na UI.
   status          StatusAluno @default(ATIVO)
   criadoEm        DateTime    @default(now())
 
-  responsaveis AlunoResponsavel[]
-  matriculas   Matricula[]
-  alocacoes    AlocacaoTurma[]
+  responsaveis  AlunoResponsavel[]
+  matriculas    Matricula[]
+  alocacoes     AlocacaoTurma[]
+  movimentacoes MovimentacaoAluno[]
 }
 
 model Responsavel {
@@ -253,13 +290,45 @@ model AlunoResponsavel {
 }
 
 model AlocacaoTurma {
-  id        String   @id @default(cuid())
-  alunoId   String
-  aluno     Aluno    @relation(fields: [alunoId], references: [id])
-  turmaId   String
-  turma     Turma    @relation(fields: [turmaId], references: [id])
-  ativa     Boolean  @default(true)
-  criadoEm  DateTime @default(now())
+  id       String   @id @default(cuid())
+  alunoId  String
+  aluno    Aluno    @relation(fields: [alunoId], references: [id])
+  turmaId  String
+  turma    Turma    @relation(fields: [turmaId], references: [id])
+  ativa    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+}
+
+// MOVIMENTAÇÃO DO ALUNO — tabela TIPADA (decisão P6, doc 15).
+// Mesmo princípio do financeiro: Evento = auditoria; tabela tipada = relatório/operação.
+// Responde "quantos pausaram/encerraram este mês", "por que está nessa turma", etc.
+// (turmaOrigem/Destino ficam como IDs simples — é um log; aluno/usuário têm relação.)
+enum TipoMovimentacao {
+  MATRICULA
+  TROCA_TURMA
+  PAUSA
+  REATIVACAO
+  ENCERRAMENTO
+}
+
+model MovimentacaoAluno {
+  id             String           @id @default(cuid())
+  alunoId        String
+  aluno          Aluno            @relation(fields: [alunoId], references: [id])
+  tipo           TipoMovimentacao
+  turmaOrigemId  String?
+  turmaDestinoId String?
+  statusOrigem   StatusAluno?
+  statusDestino  StatusAluno?
+  motivo         String?
+  observacao     String?
+  usuarioId      String?
+  usuario        Usuario?         @relation("AutorMovimentacoes", fields: [usuarioId], references: [id])
+  criadoEm       DateTime         @default(now())
+
+  @@index([alunoId])
+  @@index([tipo])
+  @@index([criadoEm])
 }
 
 // ============================================================
@@ -326,15 +395,43 @@ model Lead {
   proximaAcao String?
 
   // datas que alimentam a fila da Home
-  proximoFollowUp DateTime?
+  proximoFollowUp  DateTime?
   dataExperimental DateTime?
   dataProposta     DateTime?
 
-  motivoPerda      MotivoPerda?
-  ultimaCobranca   DateTime?
-  criadoEm         DateTime     @default(now())
+  // valor da oportunidade (Ficha do Lead — doc 09)
+  valorPrevisto    Float?
+  planoPrevisto    String?
+  comissaoPrevista Float?
 
-  matricula Matricula?
+  motivoPerda    MotivoPerda?
+  ultimaCobranca DateTime?
+  criadoEm       DateTime     @default(now())
+
+  matricula  Matricula?
+  documentos Documento[]
+}
+
+enum CategoriaDocumento {
+  PROPOSTA
+  CONTRATO
+  COMPROVANTE
+  TESTE_NIVEL
+  OUTRO
+}
+
+// Documentos anexados ao lead (Propostas/Contratos/Comprovantes/Teste de nível — doc 09).
+model Documento {
+  id        String             @id @default(cuid())
+  leadId    String
+  lead      Lead               @relation(fields: [leadId], references: [id])
+  categoria CategoriaDocumento
+  nome      String
+  url       String
+  arquivado Boolean            @default(false) // soft-delete (doc 10 §6: ninguém apaga nada)
+  criadoEm  DateTime           @default(now())
+
+  @@index([leadId])
 }
 
 // ============================================================
@@ -350,27 +447,41 @@ enum StatusMatricula {
 }
 
 model Matricula {
-  id            String          @id @default(cuid())
-  alunoId       String
-  aluno         Aluno           @relation(fields: [alunoId], references: [id])
-  leadId        String?         @unique
-  lead          Lead?           @relation(fields: [leadId], references: [id])
-  produtoId     String
-  produto       Produto         @relation(fields: [produtoId], references: [id])
-  paisId        String
-  pais          Pais            @relation(fields: [paisId], references: [id])
-  codigo        String?         @unique // M-000001
-  moeda         String
-  status        StatusMatricula @default(RASCUNHO)
-  diaVencimento Int             @default(5)
-  contratoOk    Boolean         @default(false)
-  pagamentoOk   Boolean         @default(false)
-  criadoEm      DateTime        @default(now())
-  ativadaEm     DateTime?
+  id                    String          @id @default(cuid())
+  alunoId               String
+  aluno                 Aluno           @relation(fields: [alunoId], references: [id])
+  leadId                String?         @unique
+  lead                  Lead?           @relation(fields: [leadId], references: [id])
+  produtoId             String
+  produto               Produto         @relation(fields: [produtoId], references: [id])
+  paisId                String
+  pais                  Pais            @relation(fields: [paisId], references: [id])
+  codigo                String?         @unique // M-000001
+  moeda                 String
+  status                StatusMatricula @default(RASCUNHO)
+  diaVencimento         Int             @default(5)
+  mesesPlano            Int             @default(12) // p/ gerar o cronograma na ativação
+  // Gatilho de ativação (decisão P7, doc 15): ATIVA exige os três true.
+  contratoOk            Boolean         @default(false)
+  pagamentoTaxaOk       Boolean         @default(false)
+  primeiraMensalidadeOk Boolean         @default(false)
+  // Exceção: Admin/Gerente pode ativar com pendência (registra o porquê em Evento).
+  ativadaComPendencia   Boolean         @default(false)
+  // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
+  nivelInicialId        String?
+  origemNivel           OrigemNivel?
+  dataAvaliacaoNivel    DateTime?
+  criadoEm              DateTime        @default(now())
+  ativadaEm             DateTime?
 
   cobrancas Cobranca[]
   comissoes Comissao[]
   ajustes   AjusteFinanceiro[]
+}
+
+enum OrigemNivel {
+  AVALIACAO
+  MANUAL
 }
 
 enum StatusCobranca {
