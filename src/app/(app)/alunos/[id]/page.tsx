@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { Papel } from "@prisma/client";
-import { obterAluno, listarTurmasAbertasComVaga } from "@/server/alunos/consultas";
+import {
+  obterAluno,
+  listarTurmasAbertasComVaga,
+  podeMovimentarAluno,
+} from "@/server/alunos/consultas";
 import { listarPaisesSimples } from "@/server/paises/consultas";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
@@ -44,11 +48,14 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
           diasHorario: turma.diasHorario ?? null,
         }
       : null,
-    financeiro: {
-      atrasado: financeiro.atrasado,
-      emAberto: financeiro.emAberto,
-      proximoVencimento: financeiro.proximoVencimento ? financeiro.proximoVencimento.toISOString() : null,
-    },
+    // Projeção pedagógica (doc 10): professor não recebe financeiro (já vem null da consulta).
+    financeiro: financeiro
+      ? {
+          atrasado: financeiro.atrasado,
+          emAberto: financeiro.emAberto,
+          proximoVencimento: financeiro.proximoVencimento ? financeiro.proximoVencimento.toISOString() : null,
+        }
+      : null,
     movimentacoes: aluno.movimentacoes.map((m) => ({
       id: m.id,
       tipo: m.tipo,
@@ -59,5 +66,12 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     })),
   };
 
-  return <FichaAluno aluno={ficha} turmas={turmas} paises={paises} />;
+  return (
+    <FichaAluno
+      aluno={ficha}
+      turmas={turmas}
+      paises={paises}
+      podeMovimentar={podeMovimentarAluno(usuario)}
+    />
+  );
 }

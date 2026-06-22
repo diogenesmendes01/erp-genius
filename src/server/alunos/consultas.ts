@@ -14,6 +14,32 @@ function temVisaoAmpla(usuario: UsuarioSessao): boolean {
   return usuario.papeis.some((p) => PAPEIS_AMPLO_ALUNOS.includes(p));
 }
 
+// Papéis que executam movimentação acadêmica (editar/trocar/pausar/encerrar) — espelha
+// `PAPEIS` em `acoes.ts`. Professor NÃO movimenta (doc 10): visão somente leitura.
+const PAPEIS_MOVIMENTACAO_ALUNO: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
+
+/**
+ * O usuário pode ver dados financeiros do aluno (resumo + ficha financeira)?
+ * Professor "puro" (sem papel amplo) tem projeção pedagógica: vê a ficha mas NADA
+ * financeiro (doc 10 §2 — professor = ver turmas · ver alunos · check-in). Papéis amplos
+ * (Admin/Secretaria/Pedagógico/Financeiro) mantêm a ficha completa.
+ */
+export function podeVerFinanceiroAluno(usuario?: UsuarioSessao): boolean {
+  if (!usuario) return true;
+  return temVisaoAmpla(usuario);
+}
+
+/**
+ * O usuário pode executar movimentação acadêmica (editar/trocar turma/pausar/encerrar)?
+ * Espelha o guard das server actions; controla apenas a exibição dos botões na UI
+ * (a segurança real está nas próprias actions). Professor → somente leitura.
+ */
+export function podeMovimentarAluno(usuario?: UsuarioSessao): boolean {
+  if (!usuario) return true;
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return true;
+  return usuario.papeis.some((p) => PAPEIS_MOVIMENTACAO_ALUNO.includes(p));
+}
+
 // Visibilidade row-level (doc 07): Professor enxerga apenas alunos das SUAS turmas;
 // demais papéis amplos veem todos. Professor → restringe via alocação ativa.
 export function escopoAlunos(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
@@ -109,6 +135,11 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
   if (!aluno) return null;
   // Row-level: professor só vê a ficha de alunos das suas turmas (doc 07).
   if (!professorVeAluno(usuario, aluno.alocacoes)) return null;
+  // Projeção pedagógica (doc 10): professor NÃO recebe nada financeiro — nem no payload,
+  // para não vazar via rede. Papéis amplos seguem com o resumo completo.
+  if (!podeVerFinanceiroAluno(usuario)) {
+    return { aluno, financeiro: null };
+  }
   const cobrancas = aluno.matriculas.flatMap((m) => m.cobrancas);
   return { aluno, financeiro: resumoFinanceiro(cobrancas) };
 }
