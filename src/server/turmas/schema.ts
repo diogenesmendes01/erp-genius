@@ -6,7 +6,12 @@ export const TurmaSchema = z.object({
   modalidadeId: z.string().min(1, "Selecione a modalidade"),
   nivelId: z.string().min(1, "Selecione o nível"),
   professorId: z.string().optional(),
-  diasHorario: z.string().min(1, "Informe os dias/horário (ex.: Ter/Qui 20h)"),
+  // diasHorario é OPCIONAL no domínio (alinhado ao Prisma/banco): turmas podem
+  // entrar "a definir" (carga Q10, doc 20). Vazio → undefined; persistido como null.
+  diasHorario: z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.string().optional(),
+  ),
   dataInicio: dataOpcional,
   capacidade: z.coerce.number().int().positive("Capacidade deve ser ≥ 1").default(12),
   rolling: z.boolean().optional().default(false),

@@ -130,7 +130,9 @@ export function TurmasPainel({
                         {t.codigo}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{t.diasHorario ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">
                       {t.dataInicio ? new Date(t.dataInicio).toLocaleDateString("pt-BR") : "—"}
                     </td>
