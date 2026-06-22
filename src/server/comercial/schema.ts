@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
-import { dataOpcional } from "@/server/_shared/validacao";
+import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
@@ -36,7 +36,10 @@ export type ResumoInput = z.input<typeof ResumoSchema>;
 
 export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
-  dataExperimental: dataOpcional,
+  // dataExperimental carrega HORA (alimenta a agenda da Home). Aceita datetime-local
+  // para não descartar o horário já agendado (issue #16); date-only ainda funciona,
+  // mas o front mantém a hora existente quando o usuário só ajusta a data.
+  dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
 });
 export type DatasInput = z.input<typeof DatasSchema>;
@@ -58,14 +61,21 @@ export const PerdaSchema = z
   });
 export type PerdaInput = z.input<typeof PerdaSchema>;
 
-// Etapas que o usuário pode definir manualmente no Kanban (Fase 0).
-// PERDIDO e MATRICULADO têm fluxo próprio (marcar perdido / converter em matrícula).
+// Etapas que o vendedor pode definir manualmente no Kanban (Fase 0).
+//
+// As demais etapas do funil são geradas por EVENTOS DE DOMÍNIO, não por arraste:
+//   - EXPERIMENTAL_REALIZADA / NO_SHOW → check-in do professor (checkinExperimental)
+//   - PROPOSTA                          → envio da proposta (enviarProposta)
+//   - AGUARDANDO_MATRICULA              → handoff para a máquina da matrícula (doc 08)
+//   - MATRICULADO                       → matrícula ativada (fluxo próprio)
+//   - PERDIDO                           → marcar perdido (com motivo)
+// Por isso elas NÃO entram aqui: mesmo que o client envie, o backend recusa (ver acoes.moverEtapa).
+//
+// Mover manualmente ainda respeita a máquina de estados (origem→destino) — ver
+// transicaoManualPermitida() em @/server/_shared/regras.
 export const ETAPAS_MANUAIS: EtapaLead[] = [
   EtapaLead.NOVO,
   EtapaLead.EM_ATENDIMENTO,
   EtapaLead.QUALIFICADO,
   EtapaLead.EXPERIMENTAL_AGENDADA,
-  EtapaLead.EXPERIMENTAL_REALIZADA,
-  EtapaLead.PROPOSTA,
-  EtapaLead.AGUARDANDO_MATRICULA,
 ];

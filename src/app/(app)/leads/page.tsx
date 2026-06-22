@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { listarLeads, listarVendedores } from "@/server/comercial/consultas";
 import { listarPaises } from "@/server/paises/consultas";
 import { LeadsLista, type LeadRow } from "./LeadsLista";
-import type { UsuarioSessao } from "@/server/_shared";
+import { podeAtribuirOutroDono, type UsuarioSessao } from "@/server/_shared";
 
 export default async function LeadsPage() {
   const session = await auth();
@@ -39,6 +39,7 @@ export default async function LeadsPage() {
       leads={rows}
       paises={paises.map((p) => ({ id: p.id, nome: p.nome }))}
       vendedores={vendedores}
+      podeAtribuir={podeAtribuirOutroDono(usuario.papeis)}
     />
   );
 }

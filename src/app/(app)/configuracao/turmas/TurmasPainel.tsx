@@ -110,7 +110,8 @@ export function TurmasPainel({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {turmas.map((t) => {
-                const vagas = t.capacidade - t._count.alocacoes;
+                // _count.alocacoes já vem filtrado por { ativa: true } (ver listarTurmas).
+                const vagas = Math.max(0, t.capacidade - t._count.alocacoes);
                 return (
                   <tr key={t.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
@@ -130,7 +131,9 @@ export function TurmasPainel({
                         {t.codigo}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{t.diasHorario ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">
                       {t.dataInicio ? new Date(t.dataInicio).toLocaleDateString("pt-BR") : "—"}
                     </td>
