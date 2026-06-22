@@ -11,7 +11,7 @@ const GENERO_LABEL: Record<Genero, string> = {
   OUTRO: "Outro",
   NAO_INFORMADO: "Não informado",
 };
-import { criarMatricula, ativarMatricula } from "@/server/matricula/acoes";
+import { criarMatricula, criarEAtivarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
 
 const inputCls =
@@ -25,6 +25,7 @@ export interface PrecoRef {
 }
 
 export function MatriculaFormulario({
+  podeAtivar,
   lead,
   paises,
   produtos,
@@ -32,6 +33,7 @@ export function MatriculaFormulario({
   niveis,
   precos,
 }: {
+  podeAtivar: boolean;
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: { id: string; nome: string; moedaLocal: string }[];
   produtos: { id: string; label: string }[];
@@ -120,21 +122,28 @@ export function MatriculaFormulario({
   async function salvar(ativar: boolean) {
     setErro(null);
     setSalvando(true);
-    const res = await criarMatricula(montarInput());
-    if (!res.ok) {
-      setErro(res.erro);
-      setSalvando(false);
-      return;
-    }
-    if (ativar && res.dado) {
-      const at = await ativarMatricula(res.dado.id, { forma: FormaPagamento.TRANSFERENCIA });
-      if (!at.ok) {
-        setErro("Matrícula salva, mas ativação falhou: " + at.erro);
+
+    if (ativar) {
+      // Operação atômica: cria + ativa numa só transação no servidor (issue #8).
+      // Se a ativação for recusada, NADA é gravado e o usuário NÃO é redirecionado.
+      const res = await criarEAtivarMatricula({
+        matricula: montarInput(),
+        ativacao: { forma: FormaPagamento.TRANSFERENCIA },
+      });
+      if (!res.ok) {
+        setErro("Ativação recusada: " + res.erro + " A matrícula não foi criada.");
         setSalvando(false);
-        router.push(lead ? `/leads/${lead.id}` : "/alunos");
+        return;
+      }
+    } else {
+      const res = await criarMatricula(montarInput());
+      if (!res.ok) {
+        setErro(res.erro);
+        setSalvando(false);
         return;
       }
     }
+
     router.push(lead ? `/leads/${lead.id}` : "/alunos");
     router.refresh();
   }
@@ -331,20 +340,30 @@ export function MatriculaFormulario({
           disabled={salvando}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
-          Salvar matrícula
+          {salvando && !podeAtivar ? "Processando…" : "Salvar matrícula"}
         </button>
-        <button
-          onClick={() => salvar(true)}
-          disabled={salvando}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {salvando ? "Processando…" : "Receber pagamento e ativar"}
-        </button>
+        {podeAtivar && (
+          <button
+            onClick={() => salvar(true)}
+            disabled={salvando}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {salvando ? "Processando…" : "Receber pagamento e ativar"}
+          </button>
+        )}
       </div>
-      <p className="text-xs text-gray-400">
-        "Receber pagamento e ativar" marca taxa + 1ª mensalidade como pagas e ativa a matrícula
-        (exige perfil Financeiro/Secretaria; {FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão).
-      </p>
+      {podeAtivar ? (
+        <p className="text-xs text-gray-400">
+          "Receber pagamento e ativar" cria a matrícula, marca taxa + 1ª mensalidade como pagas e
+          ativa — tudo numa só operação ({FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão). Se a
+          ativação for recusada, nada é gravado.
+        </p>
+      ) : (
+        <p className="text-xs text-gray-400">
+          A matrícula será criada como <strong>Aguardando</strong>. O recebimento do pagamento e a
+          ativação são feitos pelo perfil Financeiro/Secretaria.
+        </p>
+      )}
     </div>
   );
 }
