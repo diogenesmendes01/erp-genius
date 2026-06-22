@@ -26,3 +26,25 @@ export function vencimentoMensalidade(
 export function ehEtapaManual(etapa: EtapaLead): boolean {
   return ETAPAS_MANUAIS.includes(etapa);
 }
+
+/**
+ * O check-in da experimental só vale enquanto o lead está na etapa que tem
+ * uma experimental AGENDADA — protege contra check-in repetido / fora de ordem
+ * (lead já Realizado, No-show, Perdido, Matriculado, etc.). Ver docs/09 §Check-in.
+ */
+export function podeCheckinExperimental(etapa: EtapaLead): boolean {
+  return etapa === EtapaLead.EXPERIMENTAL_AGENDADA;
+}
+
+/**
+ * O professor está no escopo desta experimental? (associação professor↔lead).
+ * O vínculo é gravado no event log como `ExperimentalAtribuida` — não há FK no V0
+ * (pendência de modelagem, docs/15). `professorAtribuidoId` = professor da última
+ * atribuição (null = ainda sem vínculo → fora do escopo de qualquer professor).
+ */
+export function professorNoEscopoExperimental(
+  professorAtribuidoId: string | null | undefined,
+  professorId: string,
+): boolean {
+  return !!professorAtribuidoId && professorAtribuidoId === professorId;
+}
