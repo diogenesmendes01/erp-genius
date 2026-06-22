@@ -1,4 +1,8 @@
-# Como rodar o ERP Genius (V0 — fundação)
+# Como rodar o ERP Genius
+
+> Stack: **Next.js 16** (App Router) · TypeScript · Tailwind · Prisma 5 + PostgreSQL ·
+> Auth.js (NextAuth v5 beta) · Zod · React Hook Form · Vitest. Detalhes em
+> [`docs/02-arquitetura.md`](docs/02-arquitetura.md) e [`docs/13-convencoes-codigo.md`](docs/13-convencoes-codigo.md).
 
 ## Pré-requisitos
 - Node.js 20+ (exigido pelo Next.js 16)
@@ -49,21 +53,30 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 - ana@genius.com — Financeiro + Secretaria Acadêmica
 - carla@genius.com — Professor
 
-## O que já funciona nesta fundação
-- Login (Auth.js) com os 7 papéis.
+## O que já funciona (Fase 0)
+- Login (Auth.js) com os 7 papéis · rotas protegidas (sem sessão → volta pro login).
 - **App shell** com menu lateral **role-aware** (cada papel vê só o que pode) e destaque do item ativo.
-- Rotas protegidas (sem sessão → volta pro login).
 - Banco modelado em **eventos + estado** (ver `prisma/schema.prisma` e `docs/02`, `docs/10`).
-
-As telas (Home, Pipeline, Ficha, Financeiro…) entram em seguida, a partir do design em `docs/09-fase0-telas.md`.
+- **Telas da Fase 0 implementadas:** Configuração (países, catálogo, turmas, usuários), Pipeline/
+  Kanban + Ficha do Lead, matrícula manual, Homes (vendedor/gerente/professor), área de Alunos e
+  Financeiro manual. Design em `docs/09-fase0-telas.md`; estado dos itens em
+  `docs/16-plano-execucao.md`.
 
 ## Scripts úteis
 - `npm run dev` — ambiente de desenvolvimento (http://localhost:3000)
-- `npm run build` / `npm start` — build de produção e execução
-- `npm run lint` — checagem de lint
+- `npm run build` / `npm start` — build de produção (Turbopack) e execução
+- `npm test` — testes unitários (Vitest, regras puras) · `npm run test:watch` — modo watch
 - `npm run prisma:studio` — abre o Prisma Studio (inspecionar/editar o banco)
 - `npm run prisma:migrate` — cria/aplica migrations em dev
 - `npm run seed` — popula usuários iniciais
+
+## Verificação estática
+- **Typecheck:** `npx tsc --noEmit` — checagem de tipos do projeto (o `tsconfig.json` já usa
+  `noEmit`). É a verificação estática disponível hoje.
+- **Lint:** ⚠️ o script `npm run lint` ainda aponta para `next lint`, que **não funciona no
+  Next.js 16** (o subcomando `next lint` foi removido) e o projeto **não tem ESLint configurado**.
+  Use `npx tsc --noEmit` (e `npm test`) como checagem até o ESLint ser (re)adicionado — ver
+  gap em `docs/16-plano-execucao.md`.
 
 ## Troubleshooting
 - **`Can't reach database server` / erro de conexão:** confira `DATABASE_URL` e se o
