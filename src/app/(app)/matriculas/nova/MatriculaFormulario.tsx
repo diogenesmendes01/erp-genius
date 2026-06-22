@@ -74,16 +74,26 @@ export function MatriculaFormulario({
   const [certificadoValor, setCert] = useState("");
   const [mesesPlano, setMeses] = useState(12);
   const [comissaoPct, setPct] = useState(20);
+  const [justificativaSemPreco, setJustSemPreco] = useState("");
 
   const moeda = paises.find((p) => p.id === alunoPaisId)?.moedaLocal ?? "";
 
+  function precoRefDe(pid: string, prodId: string, tipo: TipoCobranca) {
+    return precos.find((p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === tipo);
+  }
+
+  // Sugerido (preço de referência ativo) por linha + ausência da tabela (issue #22).
+  const refTaxa = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MATRICULA);
+  const refMens = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MENSALIDADE);
+  const semTabela = !refTaxa || !refMens;
+  // "Manual" = há tabela, mas o valor digitado diverge do sugerido.
+  const taxaManual = !!refTaxa && taxaValor !== "" && Number(taxaValor) !== refTaxa.valor;
+  const mensManual = !!refMens && mensalidadeValor !== "" && Number(mensalidadeValor) !== refMens.valor;
+
   function prefillPrecos(pid: string, prodId: string) {
-    const taxa = precos.find(
-      (p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === TipoCobranca.MATRICULA,
-    );
-    const mens = precos.find(
-      (p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === TipoCobranca.MENSALIDADE,
-    );
+    const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
+    const mens = precoRefDe(pid, prodId, TipoCobranca.MENSALIDADE);
+    // Sem tabela: não sobrescreve o que o usuário digitou (não há sugestão).
     if (taxa) setTaxa(String(taxa.valor));
     if (mens) setMens(String(mens.valor));
   }
@@ -114,6 +124,7 @@ export function MatriculaFormulario({
       certificadoValor: certificadoValor === "" ? 0 : Number(certificadoValor),
       mesesPlano,
       comissaoPct,
+      justificativaSemPreco: justificativaSemPreco || undefined,
     };
   }
 
@@ -298,14 +309,23 @@ export function MatriculaFormulario({
       <section className="rounded-lg border border-gray-200 bg-surface p-5">
         <h2 className="mb-1 text-sm font-medium">Contrato — linhas de cobrança</h2>
         <p className="mb-4 text-xs text-gray-400">Moeda: {moeda || "—"} · valores de referência pré-preenchidos (edite o negociado).</p>
+        {semTabela && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Sem tabela de preço ativa para este país × produto. Os valores abaixo são
+            <strong> manuais</strong> (sem referência). Para registrar a matrícula, informe a
+            justificativa da exceção (será auditada).
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
             <input type="number" step="0.01" className={inputCls} value={taxaValor} onChange={(e) => setTaxa(e.target.value)} />
+            <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Mensalidade</label>
             <input type="number" step="0.01" className={inputCls} value={mensalidadeValor} onChange={(e) => setMens(e.target.value)} />
+            <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Meses do plano</label>
@@ -320,6 +340,20 @@ export function MatriculaFormulario({
             <input type="number" step="0.01" className={inputCls} value={certificadoValor} onChange={(e) => setCert(e.target.value)} placeholder="0" />
           </div>
         </div>
+        {semTabela && (
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <label className="mb-1 block text-xs text-gray-600">
+              Justificativa da exceção (sem tabela de preço) <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              className={inputCls}
+              rows={2}
+              value={justificativaSemPreco}
+              onChange={(e) => setJustSemPreco(e.target.value)}
+              placeholder="Ex.: país/produto ainda sem matriz de preços; valor aprovado pelo gerente."
+            />
+          </div>
+        )}
         <p className="mt-3 text-sm text-gray-600">
           Primeiro pagamento: <strong>{moeda} {(Number(taxaValor || 0) + Number(mensalidadeValor || 0)).toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
         </p>
@@ -346,5 +380,24 @@ export function MatriculaFormulario({
         (exige perfil Financeiro/Secretaria; {FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão).
       </p>
     </div>
+  );
+}
+
+/** Etiqueta da linha de cobrança: diferencia preço sugerido × manual × sem tabela (issue #22). */
+function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: string; manual: boolean }) {
+  if (refValor === undefined) {
+    return <p className="mt-1 text-xs text-amber-700">Sem tabela — valor manual</p>;
+  }
+  if (manual) {
+    return (
+      <p className="mt-1 text-xs text-amber-700">
+        Manual (sugerido: {moeda} {refValor.toLocaleString("pt-BR")})
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1 text-xs text-gray-400">
+      Sugerido: {moeda} {refValor.toLocaleString("pt-BR")}
+    </p>
   );
 }
