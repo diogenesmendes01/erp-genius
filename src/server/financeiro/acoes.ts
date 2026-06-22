@@ -47,7 +47,8 @@ export async function registrarPagamento(
           status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
           pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
           formaPagamento: dados.forma as FormaPagamento,
-          comprovanteUrl: dados.comprovanteUrl || null,
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
           comentario: dados.comentario || null,
         },
       });
@@ -56,13 +57,15 @@ export async function registrarPagamento(
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo.
+        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + comprovante.
         payload: {
           valorRecebido: dados.valorRecebido,
           recebidoAcumulado: recebidoTotal,
           forma: dados.forma,
           quitada,
           saldo,
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
         },
       });
     });

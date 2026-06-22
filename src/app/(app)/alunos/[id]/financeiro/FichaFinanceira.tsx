@@ -6,14 +6,11 @@ import { useRouter } from "next/navigation";
 import { FormaPagamento, TipoAjuste, Vigencia, TipoCobranca, StatusCobranca, StatusComissao } from "@prisma/client";
 import {
   TIPO_COBRANCA_LABEL,
-  FORMA_PAGAMENTO_LABEL,
   STATUS_COBRANCA_LABEL,
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
-import { IconCircleCheck } from "@tabler/icons-react";
-import { registrarPagamento } from "@/server/financeiro/acoes";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
-import { UploadArquivo } from "@/components/UploadArquivo";
+import { PagamentoModal } from "@/components/PagamentoModal";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
@@ -179,8 +176,10 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
 
       {pagar && (
         <PagamentoModal
-          cobranca={pagar}
+          cobrancaId={pagar.id}
+          alunoNome={dados.aluno.nome}
           moeda={dados.moeda}
+          valorEsperado={pagar.valorNegociado}
           onClose={() => setPagar(null)}
           onDone={() => { setPagar(null); router.refresh(); }}
           onErro={setErro}
@@ -211,71 +210,6 @@ function Tile({ titulo, valor, sub, cls }: { titulo: string; valor: string; sub?
       <div className="text-xs text-gray-500">{titulo}</div>
       {sub && <div className="text-xs text-gray-400">{sub}</div>}
     </div>
-  );
-}
-
-function PagamentoModal({
-  cobranca,
-  moeda,
-  onClose,
-  onDone,
-  onErro,
-}: {
-  cobranca: FichaFinanceiraDados["cobrancas"][number];
-  moeda: string;
-  onClose: () => void;
-  onDone: () => void;
-  onErro: (e: string) => void;
-}) {
-  const [valor, setValor] = useState(String(cobranca.valorNegociado));
-  const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
-  const [data, setData] = useState("");
-  const [comprovanteUrl, setComp] = useState("");
-  const [comentario, setComentario] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const diff = cobranca.valorNegociado - Number(valor || 0);
-
-  async function salvar() {
-    setSalvando(true);
-    const r = await registrarPagamento(cobranca.id, {
-      valorRecebido: valor === "" ? 0 : Number(valor),
-      forma,
-      dataPagamento: data,
-      comprovanteUrl,
-      comentario,
-    });
-    setSalvando(false);
-    if (!r.ok) onErro(r.erro);
-    else onDone();
-  }
-
-  return (
-    <Modal titulo="Registrar pagamento" onClose={onClose}>
-      <label className="mb-1 block text-xs text-gray-600">Valor esperado: {moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")}</label>
-      <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
-      {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {moeda} {diff.toLocaleString("pt-BR")}.</p>}
-      <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
-      <select className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
-        {Object.values(FormaPagamento).map((f) => <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>)}
-      </select>
-      <label className="mb-1 block text-xs text-gray-600">Data (opcional)</label>
-      <input type="date" className={inputCls + " mb-2"} value={data} onChange={(e) => setData(e.target.value)} />
-      <label className="mb-1 block text-xs text-gray-600">Comprovante (PDF/JPG/PNG)</label>
-      <div className="mb-2">
-        <UploadArquivo label="Anexar comprovante" onUpload={(r) => setComp(r.url)} />
-        {comprovanteUrl && (
-          <a href={comprovanteUrl} target="_blank" className="mt-1 flex items-center gap-1 text-xs text-brand-700 hover:underline">
-            <IconCircleCheck className="h-3.5 w-3.5" /> comprovante anexado
-          </a>
-        )}
-      </div>
-      <label className="mb-1 block text-xs text-gray-600">Comentário</label>
-      <input className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
-      <div className="flex gap-2">
-        <button className={btnPri} disabled={salvando} onClick={salvar}>{salvando ? "Salvando…" : "Registrar pagamento"}</button>
-        <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
-      </div>
-    </Modal>
   );
 }
 
