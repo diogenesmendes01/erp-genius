@@ -11,6 +11,12 @@ export const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 export const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 
 /**
+ * Papéis que podem ATIVAR uma matrícula (receber pagamento / ativar pendente).
+ * Alias mantido por compatibilidade com chamadas que referenciam o nome longo.
+ */
+export const PAPEIS_ATIVAR_MATRICULA: Papel[] = PAPEIS_ATIVAR;
+
+/**
  * O conjunto de papéis informado contém algum dos papéis exigidos?
  * Administrador passa em qualquer verificação (mesma regra do `temPapel`).
  *
@@ -26,6 +32,11 @@ export function podeCriarMatricula(papeis: readonly Papel[]): boolean {
   return contemPapel(papeis, PAPEIS_CRIAR);
 }
 
+/**
+ * O usuário pode ativar matrículas? Defesa em profundidade: a UI usa isto para
+ * esconder os botões de ativação; o backend (`ativarMatricula`) revalida com
+ * `exigirPapel` e continua sendo a fonte da verdade.
+ */
 export function podeAtivarMatricula(papeis: readonly Papel[]): boolean {
   return contemPapel(papeis, PAPEIS_ATIVAR);
 }

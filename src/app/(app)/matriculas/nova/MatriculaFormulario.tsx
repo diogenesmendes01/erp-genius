@@ -34,7 +34,16 @@ export function MatriculaFormulario({
   niveis,
   precos,
 }: {
+  /**
+   * O usuário pode CRIAR matrículas (Vendedor/Gerente Comercial/Admin)? Habilita
+   * "Salvar matrícula" (fica AGUARDANDO). O backend revalida (defesa em profundidade).
+   */
   podeCriar: boolean;
+  /**
+   * O usuário pode CRIAR e ATIVAR (Financeiro/Secretaria/Admin além do papel de
+   * criar)? Habilita o caminho atômico "Receber pagamento e ativar". Quando falso,
+   * a UI de pagamento/ativação some para evitar registro parcial.
+   */
   podeCriarEAtivar: boolean;
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: { id: string; nome: string; moedaLocal: string }[];
@@ -80,7 +89,17 @@ export function MatriculaFormulario({
   const [comissaoPct, setPct] = useState(20);
   const [justificativaSemPreco, setJustSemPreco] = useState("");
 
+  // Pagamento na ativação (issue #23): lastro financeiro explícito.
+  const [pagForma, setPagForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
+  const [pagValor, setPagValor] = useState("");
+  const hoje = new Date().toISOString().slice(0, 10);
+  const [pagData, setPagData] = useState(hoje);
+  const [pagComprovante, setPagComprovante] = useState("");
+  const [pagComentario, setPagComentario] = useState("");
+
   const moeda = paises.find((p) => p.id === alunoPaisId)?.moedaLocal ?? "";
+  const totalInicial = Number(taxaValor || 0) + Number(mensalidadeValor || 0);
+  const comprovanteAplicavel = pagForma !== FormaPagamento.DINHEIRO;
 
   function precoRefDe(pid: string, prodId: string, tipo: TipoCobranca) {
     return precos.find((p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === tipo);
@@ -132,16 +151,44 @@ export function MatriculaFormulario({
     };
   }
 
-  async function salvar(ativar: boolean) {
+  // Ativação tem caminho único: receber pagamento (que cobre a taxa) e ativar.
+  // "nenhuma" = só salvar a matrícula (fica AGUARDANDO).
+  type Ativacao = "nenhuma" | "com_pagamento";
+
+  function montarAtivacao() {
+    return {
+      valorRecebido: pagValor === "" ? 0 : Number(pagValor),
+      forma: pagForma,
+      dataPagamento: pagData,
+      comprovanteUrl: pagComprovante || undefined,
+      comentario: pagComentario || undefined,
+    };
+  }
+
+  async function salvar(modo: Ativacao) {
     setErro(null);
+    // Validações de borda no cliente (o backend revalida e é a fonte da verdade).
+    if (modo === "com_pagamento") {
+      if (pagValor === "" || Number(pagValor) <= 0) {
+        setErro("Informe o valor pago para ativar com pagamento.");
+        return;
+      }
+      if (comprovanteAplicavel && !pagComprovante.trim()) {
+        setErro("Informe o comprovante do pagamento (ou selecione Dinheiro).");
+        return;
+      }
+    }
+
     setSalvando(true);
 
-    if (ativar) {
-      // Operação atômica: cria + ativa numa só transação no servidor (issue #8).
-      // Se a ativação for recusada, NADA é gravado e o usuário NÃO é redirecionado.
+    if (modo === "com_pagamento") {
+      // Caminho único de ativação "Receber pagamento e ativar": operação ATÔMICA
+      // (cria + ativa numa só transação no servidor — issue #8). A ativação exige
+      // só a TAXA quitada (regra do PO); se o valor recebido não cobrir a taxa, a
+      // ativação é recusada, NADA é gravado e o usuário NÃO é redirecionado.
       const res = await criarEAtivarMatricula({
         matricula: montarInput(),
-        ativacao: { forma: FormaPagamento.TRANSFERENCIA },
+        ativacao: montarAtivacao(),
       });
       if (!res.ok) {
         setErro("Ativação recusada: " + res.erro + " A matrícula não foi criada.");
@@ -149,6 +196,8 @@ export function MatriculaFormulario({
         return;
       }
     } else {
+      // Só salvar a matrícula (fica AGUARDANDO; o recebimento/ativação fica para
+      // o Financeiro).
       const res = await criarMatricula(montarInput());
       if (!res.ok) {
         setErro(res.erro);
@@ -366,14 +415,67 @@ export function MatriculaFormulario({
           </div>
         )}
         <p className="mt-3 text-sm text-gray-600">
-          Primeiro pagamento: <strong>{moeda} {(Number(taxaValor || 0) + Number(mensalidadeValor || 0)).toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
+          Primeiro pagamento devido: <strong>{moeda} {totalInicial.toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
         </p>
       </section>
 
-      <div className="flex gap-2">
+      {/* Pagamento na ativação — só para quem pode CRIAR e ATIVAR (Financeiro/Secretaria/Admin) */}
+      {podeCriarEAtivar && (
+      <section className="rounded-lg border border-gray-200 bg-surface p-5">
+        <h2 className="mb-1 text-sm font-medium">Pagamento da taxa (para ativar)</h2>
+        <p className="mb-4 text-xs text-gray-400">
+          Para ativar, o valor recebido precisa cobrir a TAXA de matrícula. A 1ª mensalidade NÃO é
+          exigida para ativar: entra como pendente com vencimento 30 dias após o início da 1ª aula,
+          no dia escolhido. Se o valor não cobrir a taxa, a matrícula continua aguardando.
+        </p>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Valor pago</label>
+            <input
+              type="number"
+              step="0.01"
+              className={inputCls}
+              value={pagValor}
+              onChange={(e) => setPagValor(e.target.value)}
+              placeholder={String(totalInicial)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Forma</label>
+            <select className={inputCls} value={pagForma} onChange={(e) => setPagForma(e.target.value as FormaPagamento)}>
+              {Object.values(FormaPagamento).map((f) => (
+                <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Data do pagamento</label>
+            <input type="date" className={inputCls} value={pagData} onChange={(e) => setPagData(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">
+              Comprovante {comprovanteAplicavel ? "(obrigatório)" : "(dispensado — dinheiro)"}
+            </label>
+            <input
+              className={inputCls}
+              value={pagComprovante}
+              onChange={(e) => setPagComprovante(e.target.value)}
+              placeholder="URL do comprovante"
+              disabled={!comprovanteAplicavel}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label className="mb-1 block text-xs text-gray-600">Observação (opcional)</label>
+            <input className={inputCls} value={pagComentario} onChange={(e) => setPagComentario(e.target.value)} />
+          </div>
+        </div>
+      </section>
+      )}
+
+      <div className="flex flex-wrap gap-2">
         {podeCriar && (
           <button
-            onClick={() => salvar(false)}
+            onClick={() => salvar("nenhuma")}
             disabled={salvando}
             className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
           >
@@ -382,7 +484,7 @@ export function MatriculaFormulario({
         )}
         {podeCriarEAtivar && (
           <button
-            onClick={() => salvar(true)}
+            onClick={() => salvar("com_pagamento")}
             disabled={salvando}
             className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
           >
@@ -392,14 +494,16 @@ export function MatriculaFormulario({
       </div>
       {podeCriarEAtivar ? (
         <p className="text-xs text-gray-400">
-          "Receber pagamento e ativar" cria a matrícula, marca taxa + 1ª mensalidade como pagas e
-          ativa — tudo numa só operação ({FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão). Se a
-          ativação for recusada, nada é gravado.
+          "Receber pagamento e ativar" cria e ativa numa só operação atômica: exige valor, forma,
+          data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO}). A ativação só ocorre se o
+          valor cobrir a TAXA de matrícula; caso contrário nada é gravado e a matrícula não é criada.
+          A 1ª mensalidade não é exigida para ativar — fica pendente com vencimento 30 dias após o
+          início da 1ª aula, no dia escolhido.
         </p>
       ) : (
         <p className="text-xs text-gray-400">
-          A matrícula será criada como <strong>Aguardando</strong>. O recebimento do pagamento e a
-          ativação são feitos pelo perfil Financeiro/Secretaria.
+          A matrícula será criada como <strong>Aguardando</strong>. O recebimento do pagamento da taxa
+          e a ativação são feitos pelo perfil Financeiro/Secretaria depois.
         </p>
       )}
     </div>
