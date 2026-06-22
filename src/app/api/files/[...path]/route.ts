@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
+import { Papel } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
+import { podeLerArquivo } from "@/server/uploads/autorizacao";
 
-// Leitura AUTENTICADA de arquivos privados (comprovantes / contratos / documentos).
-// Os arquivos vivem em data/uploads (fora de public/), então esta é a única forma
-// de acessá-los — e sempre exige sessão válida. Ver POST /api/upload.
+// Leitura AUTENTICADA + AUTORIZADA POR OBJETO de arquivos privados (comprovantes /
+// contratos / documentos). Os arquivos vivem em data/uploads (fora de public/), então
+// esta é a única forma de acessá-los. Além de exigir sessão, validamos se o usuário pode
+// LER o agregado que referencia o arquivo (Cobranca / Documento do Lead) — sem isso,
+// qualquer autenticado abriria documento de qualquer aluno/lead. Ver POST /api/upload e
+// src/server/uploads/autorizacao.ts.
 export const runtime = "nodejs";
 
 export async function GET(
@@ -27,6 +32,19 @@ export async function GET(
   const contentType = contentTypePorExtensao(caminho);
   if (!contentType) {
     return NextResponse.json({ erro: "Tipo não permitido." }, { status: 400 });
+  }
+
+  // Autorização POR OBJETO: o arquivo só é servido se o usuário pode ler o agregado que
+  // o referencia (papel + escopo). Acesso negado => 403 (não vazamos o conteúdo).
+  const autorizado = await podeLerArquivo(
+    {
+      id: session.user.id,
+      papeis: (session.user.papeis ?? []) as Papel[],
+    },
+    segmentos ?? [],
+  );
+  if (!autorizado) {
+    return NextResponse.json({ erro: "Acesso negado." }, { status: 403 });
   }
 
   let bytes: Buffer;
