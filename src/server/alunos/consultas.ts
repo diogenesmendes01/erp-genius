@@ -1,6 +1,15 @@
 import { StatusCobranca, StatusTurma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Vagas de uma turma = capacidade − ocupação. `ocupacaoAtiva` deve vir de um `_count`
+ * filtrado por `{ ativa: true }`: alocações inativas (aluno transferido/removido) ficam no
+ * histórico mas NÃO ocupam vaga. Nunca retorna negativo.
+ */
+export function vagasTurma(capacidade: number, ocupacaoAtiva: number) {
+  return Math.max(0, capacidade - ocupacaoAtiva);
+}
+
 // Situação financeira resumida a partir das cobranças.
 function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number }[]) {
   const agora = new Date();
@@ -81,16 +90,18 @@ export async function listarTurmasAbertasComVaga() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issues #1/#19) — histórico inativo não ocupa vaga.
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
   return turmas
-    .filter((t) => t.capacidade - t._count.alocacoes > 0)
+    .filter((t) => vagasTurma(t.capacidade, t._count.alocacoes) > 0)
     .map((t) => ({
       id: t.id,
-      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${
-        t.capacidade - t._count.alocacoes
-      } vagas`,
+      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${vagasTurma(
+        t.capacidade,
+        t._count.alocacoes,
+      )} vagas`,
     }));
 }
 
