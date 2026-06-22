@@ -513,6 +513,57 @@ function ProximosPassos({
   );
 }
 
+const EVENTO_LABEL: Record<string, string> = {
+  LeadCriado: "Lead criado",
+  LeadAtribuido: "Dono atribuído",
+  LeadEditado: "Dados do lead editados",
+  EtapaAlterada: "Etapa alterada",
+  ResumoAtualizado: "Resumo atualizado",
+  DatasAtualizadas: "Datas / próximos passos atualizados",
+  ExperimentalAgendada: "Experimental agendada",
+  ExperimentalRealizada: "Experimental realizada",
+  NoShow: "No-show",
+  PropostaEnviada: "Proposta enviada",
+  LeadPerdido: "Lead perdido",
+  InteracaoRegistrada: "Interação registrada",
+  DocumentoAnexado: "Documento anexado",
+  DocumentoArquivado: "Documento arquivado",
+};
+
+/** Texto auxiliar da timeline conforme o tipo de evento (resumo, datas, etapa…). */
+function detalheEvento(tipo: string, p: Record<string, unknown>): string | null {
+  const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const data = (v: unknown) =>
+    typeof v === "string" && v ? new Date(v).toLocaleDateString("pt-BR") : null;
+
+  if (tipo === "ResumoAtualizado") {
+    const partes = [
+      txt(p.interesse) && `Interesse: ${txt(p.interesse)}`,
+      txt(p.objetivo) && `Objetivo: ${txt(p.objetivo)}`,
+      txt(p.urgencia) && `Urgência: ${txt(p.urgencia)}`,
+      txt(p.orcamento) && `Orçamento: ${txt(p.orcamento)}`,
+      txt(p.objecao) && `Objeção: ${txt(p.objecao)}`,
+      txt(p.proximaAcao) && `Próximo passo: ${txt(p.proximaAcao)}`,
+    ].filter(Boolean);
+    return partes.length ? partes.join(" · ") : "Resumo limpo";
+  }
+  if (tipo === "DatasAtualizadas") {
+    const partes = [
+      data(p.proximoFollowUp) && `Follow-up: ${data(p.proximoFollowUp)}`,
+      data(p.dataExperimental) && `Experimental: ${data(p.dataExperimental)}`,
+      data(p.dataProposta) && `Proposta: ${data(p.dataProposta)}`,
+    ].filter(Boolean);
+    return partes.length ? partes.join(" · ") : "Datas limpas";
+  }
+  if (tipo === "EtapaAlterada") {
+    const de = p.de as EtapaLead | null;
+    const para = p.para as EtapaLead | null;
+    const rotulo = (e: EtapaLead | null) => (e ? (ETAPA_LABEL[e] ?? e) : "—");
+    return para ? `${rotulo(de)} → ${rotulo(para)}` : null;
+  }
+  return txt(p.nota);
+}
+
 function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -523,11 +574,11 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
         <ul className="flex flex-col gap-3">
           {timeline.map((ev) => {
             const p = (ev.payload ?? {}) as Record<string, unknown>;
-            const nota = typeof p.nota === "string" ? p.nota : null;
+            const detalhe = detalheEvento(ev.tipo, p);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm text-gray-800">{ev.tipo}</div>
-                {nota && <div className="text-sm text-gray-600">{nota}</div>}
+                <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
+                {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
                   {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
