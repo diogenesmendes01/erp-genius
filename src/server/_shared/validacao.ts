@@ -134,3 +134,21 @@ export function validarDocumento(validador: string, valor: string): boolean {
   if (!fn) return false;
   return fn(valor);
 }
+
+/**
+ * Calcula a flag `Aluno.documentoValido` a partir do documento informado e dos
+ * tipos de documento do país do aluno. Cada país pode ter 1+ {@link TipoDocumento};
+ * o documento é considerado VÁLIDO se passar em QUALQUER um dos validadores do país
+ * (ex.: Cédula OU Passaporte). Ausência de documento → false (não há o que validar).
+ *
+ * NUNCA bloqueia (doc 04): o resultado é só a flag persistida; o salvamento ocorre
+ * de qualquer forma. Usado na criação (via matrícula) e na edição de aluno.
+ */
+export function calcularDocumentoValido(
+  tiposDocumento: { validador: string }[],
+  documento: string | null | undefined,
+): boolean {
+  const valor = documento?.trim();
+  if (!valor) return false;
+  return tiposDocumento.some((t) => validarDocumento(t.validador, valor));
+}

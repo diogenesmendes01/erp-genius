@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   validarDocumento,
+  calcularDocumentoValido,
   telefoneE164,
   paraDataLocal,
   dataOpcional,
@@ -19,6 +20,30 @@ describe("validarDocumento (cpf)", () => {
   });
   it("validador desconhecido → não validado (false), nunca lança", () => {
     expect(validarDocumento("inexistente", "qualquer")).toBe(false);
+  });
+});
+
+describe("calcularDocumentoValido (flag Aluno.documentoValido)", () => {
+  const cpf = [{ validador: "cpf" }];
+  it("documento VÁLIDO para algum validador do país → true", () => {
+    expect(calcularDocumentoValido(cpf, "529.982.247-25")).toBe(true);
+  });
+  it("documento INVÁLIDO para os validadores do país → false (mas não lança)", () => {
+    expect(calcularDocumentoValido(cpf, "12345678900")).toBe(false);
+  });
+  it("AUSÊNCIA de documento (null/undefined/vazio/só espaços) → false", () => {
+    expect(calcularDocumentoValido(cpf, null)).toBe(false);
+    expect(calcularDocumentoValido(cpf, undefined)).toBe(false);
+    expect(calcularDocumentoValido(cpf, "")).toBe(false);
+    expect(calcularDocumentoValido(cpf, "   ")).toBe(false);
+  });
+  it("aceita se passar em QUALQUER validador do país (1+ tipos)", () => {
+    const dois = [{ validador: "passaporte" }, { validador: "cpf" }];
+    expect(calcularDocumentoValido(dois, "529.982.247-25")).toBe(true);
+  });
+  it("país sem tipos de documento ou só validadores desconhecidos → false", () => {
+    expect(calcularDocumentoValido([], "529.982.247-25")).toBe(false);
+    expect(calcularDocumentoValido([{ validador: "inexistente" }], "529.982.247-25")).toBe(false);
   });
 });
 
