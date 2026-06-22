@@ -8,6 +8,7 @@ import {
   listarPrecosAtivos,
 } from "@/server/matricula/consultas";
 import { listarNiveis } from "@/server/turmas/consultas";
+import { vagasTurma } from "@/server/alunos/consultas";
 import { listarPaises } from "@/server/paises/consultas";
 import { MatriculaFormulario, type PrecoRef } from "./MatriculaFormulario";
 import type { UsuarioSessao } from "@/server/_shared";
@@ -45,12 +46,13 @@ export default async function NovaMatriculaPage({
     : null;
 
   const turmasComVaga = turmas
-    .filter((t) => t.capacidade - t._count.alocacoes > 0)
+    .filter((t) => vagasTurma(t.capacidade, t._count.alocacoes) > 0)
     .map((t) => ({
       id: t.id,
-      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${
-        t.capacidade - t._count.alocacoes
-      } vagas`,
+      label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${vagasTurma(
+        t.capacidade,
+        t._count.alocacoes,
+      )} vagas`,
     }));
 
   return (
