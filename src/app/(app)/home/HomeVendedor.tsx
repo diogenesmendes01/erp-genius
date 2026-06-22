@@ -1,20 +1,30 @@
 import Link from "next/link";
+import {
+  IconFlame,
+  IconAlertTriangle,
+  IconCalendarEvent,
+  IconCoin,
+  IconCircleCheck,
+  type IconProps,
+} from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
 import type { dadosHomeVendedor } from "@/server/home/consultas";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeVendedor>>;
 
-const PRIO = {
-  quente: { icon: "🔥", cls: "border-l-red-500" },
-  atencao: { icon: "⚠️", cls: "border-l-amber-500" },
-  agenda: { icon: "📅", cls: "border-l-blue-500" },
-  proposta: { icon: "💰", cls: "border-l-green-500" },
-} as const;
+type Icone = React.ComponentType<IconProps>;
+
+const PRIO: Record<string, { Icon: Icone; iconCls: string; cls: string }> = {
+  quente: { Icon: IconFlame, iconCls: "text-red-500", cls: "border-l-red-500" },
+  atencao: { Icon: IconAlertTriangle, iconCls: "text-amber-500", cls: "border-l-amber-500" },
+  agenda: { Icon: IconCalendarEvent, iconCls: "text-blue-500", cls: "border-l-blue-500" },
+  proposta: { Icon: IconCoin, iconCls: "text-green-500", cls: "border-l-green-500" },
+};
 
 function Card({ titulo, valor, cls }: { titulo: string; valor: string; cls: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-surface p-4">
-      <div className={"text-2xl font-semibold " + cls}>{valor}</div>
+      <div className={"text-2xl font-medium " + cls}>{valor}</div>
       <div className="text-xs text-gray-500">{titulo}</div>
     </div>
   );
@@ -33,7 +43,7 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]} 👋</h1>
+        <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
         <div className="flex gap-4 text-sm">
           <span className="text-gray-600">SLA do dia: <strong className="text-green-600">{sla.pct}%</strong></span>
           <span className="text-gray-600">Leads atrasados: <strong className={sla.atrasados > 0 ? "text-red-600" : "text-gray-700"}>{sla.atrasados}</strong></span>
@@ -57,8 +67,11 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
           <ul className="flex flex-col gap-2">
             {oportunidades.map((o) => (
               <li key={o.id} className="flex items-center justify-between rounded-md bg-surface px-3 py-2">
-                <div>
-                  <span className="mr-2">{PRIO[o.prioridade].icon}</span>
+                <div className="flex items-center">
+                  {(() => {
+                    const { Icon, iconCls } = PRIO[o.prioridade];
+                    return <Icon className={"mr-2 h-4 w-4 " + iconCls} />;
+                  })()}
                   <Link href={`/leads/${o.id}`} className="font-medium text-brand-700 hover:underline">{o.nome}</Link>
                   <span className="ml-2 text-sm text-gray-500">{o.motivo}</span>
                   <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">Prioridade {FAIXA[o.prioridade]}</span>
@@ -80,13 +93,18 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
           )}
         </div>
         {fila.length === 0 ? (
-          <p className="text-sm text-gray-400">Tudo em dia ✅</p>
+          <p className="flex items-center gap-1.5 text-sm text-gray-400">
+            <IconCircleCheck className="h-4 w-4 text-green-600" /> Tudo em dia
+          </p>
         ) : (
           <ul className="flex flex-col gap-2">
             {fila.map((f) => (
               <li key={f.id} className={"flex items-center justify-between border-l-4 bg-gray-50 px-3 py-2 " + PRIO[f.prioridade].cls}>
-                <div>
-                  <span className="mr-2">{PRIO[f.prioridade].icon}</span>
+                <div className="flex items-center">
+                  {(() => {
+                    const { Icon, iconCls } = PRIO[f.prioridade];
+                    return <Icon className={"mr-2 h-4 w-4 " + iconCls} />;
+                  })()}
                   <Link href={`/leads/${f.id}`} className="font-medium text-brand-700 hover:underline">
                     {f.nome}
                   </Link>

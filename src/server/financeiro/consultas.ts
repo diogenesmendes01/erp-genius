@@ -49,6 +49,8 @@ export async function listarCobrancasAbertas() {
       codigo: c.codigo,
       tipo: c.tipo,
       valorNegociado: c.valorNegociado,
+      valorRecebido: c.valorRecebido ?? 0,
+      saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
       moeda: c.moeda,
       vencimento: c.vencimento.toISOString(),
       atrasado: c.status === StatusCobranca.ATRASADO || c.vencimento < agora,

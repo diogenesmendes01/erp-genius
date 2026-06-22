@@ -115,14 +115,20 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issues #1/#19) — alunos atuais (não conta transferidos/removidos).
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 
-  // Experimentais para check-in (agendadas). Simplificação: todas as agendadas (sem vínculo
-  // professor↔experimental no schema). Ver docs/15 (pendência de modelagem).
+  // Experimentais para check-in (agendadas) — só as ATRIBUÍDAS a este professor
+  // (escopo, Issue #13). O vínculo é a FK `professorExperimentalId` (fonte de
+  // verdade). Sem atribuição = nada aparece, e o check-in também é bloqueado.
   const experimentais = await prisma.lead.findMany({
-    where: { etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null } },
+    where: {
+      professorExperimentalId: usuario.id,
+      etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
+      dataExperimental: { not: null },
+    },
     orderBy: { dataExperimental: "asc" },
     select: { id: true, nome: true, dataExperimental: true },
   });

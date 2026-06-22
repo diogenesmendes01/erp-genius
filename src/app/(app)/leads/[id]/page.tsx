@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { obterLead } from "@/server/comercial/consultas";
+import { listarProfessores } from "@/server/turmas/consultas";
 import { FichaLead, type LeadFicha, type EventoTimeline } from "./FichaLead";
 import type { UsuarioSessao } from "@/server/_shared";
 
@@ -18,6 +19,7 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
   const dados = await obterLead(id, usuario);
   if (!dados) notFound();
   const { lead, timeline } = dados;
+  const professores = await listarProfessores();
 
   const ficha: LeadFicha = {
     id: lead.id,
@@ -50,6 +52,7 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     planoPrevisto: lead.planoPrevisto,
     comissaoPrevista: lead.comissaoPrevista,
     documentos: lead.documentos.map((d) => ({ id: d.id, categoria: d.categoria, nome: d.nome, url: d.url })),
+    professorExperimentalId: lead.professorExperimentalId,
   };
 
   const eventos: EventoTimeline[] = timeline.map((ev) => ({
@@ -60,5 +63,5 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     autor: ev.autor ? { nome: ev.autor.nome } : null,
   }));
 
-  return <FichaLead lead={ficha} timeline={eventos} />;
+  return <FichaLead lead={ficha} timeline={eventos} professores={professores} />;
 }

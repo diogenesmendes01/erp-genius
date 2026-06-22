@@ -24,6 +24,19 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > **Convenção:** toda mutação grava o `Evento` **na mesma transação** da mudança de estado
 > (ver [`13-convencoes-codigo.md`](13-convencoes-codigo.md)).
 
+### Padrão de nomenclatura (canônico)
+- **`tipo` em PascalCase**, no formato `AgregadoVerboParticípio` (ex.: `MatriculaAtivada`,
+  `AlunoEncerrado`). É o padrão de **todo** evento gravado pelas Server Actions em `src/server/**`.
+- **Exceção histórica:** os scripts de **carga Q10** (docs 19 e 21) gravaram o evento de
+  importação de aluno como **`ALUNO_IMPORTADO`** (CAIXA ALTA com `_`), divergindo do padrão.
+  O nome **canônico** é **`AlunoImportado`**; `ALUNO_IMPORTADO` permanece **apenas** como o valor
+  realmente persistido por aquela carga one-shot (não usar em código novo). Se houver nova carga,
+  usar `AlunoImportado`.
+
+> **Como esta lista foi conferida:** os eventos abaixo refletem as strings `tipo: "…"` reais
+> nas Server Actions (`src/server/**/acoes.ts`) e nos docs de carga (19–23). Itens sem gatilho
+> ativo no código estão explicitamente marcados como **reservados/importação**.
+
 ---
 
 ## Comercial (agregado `Lead`)
@@ -31,13 +44,15 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 |---|---|---|---|
 | `LeadCriado` | Lead entra no sistema | Sistema/Vendedor | `{ origem, segmento, paisId }` |
 | `LeadAtribuido` | Define/troca o dono | Sistema/Gerente | `{ de, para, motivo }` |
-| `EtapaAlterada` | Muda a etapa do funil | Vendedor | `{ de, para }` |
+| `EtapaAlterada` | Muda a etapa do funil (manual no Kanban e também no fluxo de matrícula: → Aguardando matrícula / Matriculado) | Vendedor/Secretaria | `{ de, para }` |
 | `ExperimentalAgendada` | Agenda aula experimental | Vendedor | `{ data }` |
 | `ExperimentalRealizada` | Check-in "Compareceu" | Professor | `{ turmaId, data }` |
 | `NoShow` | Check-in "Faltou" | Professor | `{ data }` |
 | `PropostaEnviada` | Envia proposta | Vendedor | `{ data }` |
 | `LeadPerdido` | Marca perdido (terminal) | Vendedor | `{ motivoPerda, observacao }` |
 | `LeadEditado` | Edição de dados do lead | Vendedor | `{ nome, temperatura }` |
+| `ResumoAtualizado` | Atualiza o resumo executivo (interesse, objetivo, urgência, orçamento, objeção, próximo passo) | Vendedor | `{ interesse, objetivo, urgencia, orcamento, objecao, proximaAcao }` |
+| `DatasAtualizadas` | Atualiza datas / próximos passos (follow-up, experimental, proposta) | Vendedor | `{ proximoFollowUp, dataExperimental, dataProposta }` |
 | `InteracaoRegistrada` | Registro manual de interação | Vendedor | `{ canal, nota }` |
 | `DocumentoAnexado` | Upload de documento ao lead | Vendedor | `{ categoria, nome }` |
 | `DocumentoArquivado` | Arquiva documento (soft-delete) | Vendedor | `{ documentoId, nome }` |
@@ -53,6 +68,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `CobrancaGerada` | Cronograma (meses 2..N) gerado na ativação | Financeiro/Secretaria | `{ quantidade, tipo }` |
 | `ComissaoGerada` | Criação da matrícula (comissão Pendente) | Vendedor/Sistema | `{ vendedorId, percentual }` |
 | `ComissaoAprovada` | Ativação da matrícula | Financeiro/Secretaria | — |
+| `MatriculaSemPrecoReferencia` | Matrícula criada sem preço de referência ativo (exceção auditável, issue #22) | Vendedor/Gerente | `{ paisId, produtoId, tiposAusentes, justificativa, taxaValor, mensalidadeValor }` |
 | `MatriculaImportada` | Carga financeira Q10 (Planilha de cobrança) | Sistema (doc 22) | `{ aluno, pais, moeda, mensalidade, diaVencimento, statusCobranca }` |
 | `ComissaoImportada` | Carga Q10: comissão histórica já paga (vendedor Henrique) | Sistema (doc 23) | `{ vendedor, status, obs }` |
 
@@ -77,6 +93,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 |---|---|---|---|
 | `AlunoMatriculado` | Matrícula ativada cria/ativa aluno | Sistema | `{ matriculaId, turmaId }` |
 | `AlunoEditado` | Edição de dados cadastrais (motivo obrigatório) | Secretaria/Pedagógico | `{ de, para, motivo }` |
+| `AlunoImportado` | Carga de alunos Q10 (Listado de alunos) — **persistido como `ALUNO_IMPORTADO`** (ver nota de nomenclatura) | Sistema (docs 19, 21) | `{ origem, codigoQ10?, ... }` |
 | `AlunoVinculadoTurma` | Carga de rosters (EstudiantesCurso Q10) | Sistema (doc 21) | `{ turmaId, nivel, ativa }` |
 | `TrocaTurma` | Troca de turma | Secretaria/Pedagógico | `{ de, para, motivo }` |
 | `AlunoPausado` | Pausa | Secretaria | `{ motivo, dataRetornoPrevista }` |
@@ -112,6 +129,26 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > mantendo o padrão `tipo · agregado · gatilho · autor · payload`.
 
 ---
+
+## Estado de implementação (código vs planejado)
+Conferido contra `src/server/**/acoes.ts` (junho/2026):
+
+- **Disparados hoje pelo código (Fase 0):** `LeadCriado · LeadAtribuido · EtapaAlterada ·
+  ExperimentalAgendada · PropostaEnviada · LeadPerdido · LeadEditado · InteracaoRegistrada ·
+  DocumentoAnexado · DocumentoArquivado · MatriculaCriada · MatriculaAtivada · CobrancaGerada ·
+  ComissaoGerada · ComissaoAprovada · PagamentoRegistrado · DescontoSolicitado ·
+  AprovacaoDecidida · ComissaoPaga · CobrancaEnviadaWhatsApp · AlunoMatriculado · AlunoEditado ·
+  AlunoPausado · AlunoReativado · AlunoEncerrado · TrocaTurma · AberturaTurmaSolicitada ·
+  TurmaCriada · TurmaEditada · IdiomaCriado · ModalidadeCriada · ModalidadeEditada · NivelCriado ·
+  ProdutoCriado · PrecoDefinido · PaisCriado · PaisEditado · UsuarioCriado · UsuarioEditado`.
+- **Só nos scripts de carga Q10 (one-shot, docs 19–23):** `AlunoImportado` (persistido como
+  `ALUNO_IMPORTADO`) · `AlunoVinculadoTurma` · `TurmaImportada` · `MatriculaImportada` ·
+  `ComissaoImportada`.
+- **Planejados / ainda sem gatilho no código (ciclos de status e Fase 1+):** os demais eventos
+  de status de `Pais`/`Idioma`/`Preco`/`Turma`/`Usuario`, `ExperimentalRealizada` · `NoShow` ·
+  `CobrancaRenegociada` · `BolsaConcedida` · `CobrancaPerdoada`, além dos reservados acima
+  (`ValorNegociado`, `MatriculaAtivadaComPendencia`, `MatriculaCancelada`, `ComissaoEstornada`,
+  `AvancoNivel`). Ao implementar, gravar em PascalCase.
 
 ## Eventos que EXIGEM registro (doc 10 §9)
 Obrigatório gravar `Evento` em: **troca de etapa · troca de turma · pausa · reativação ·

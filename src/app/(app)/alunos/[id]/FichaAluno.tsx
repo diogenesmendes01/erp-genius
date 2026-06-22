@@ -39,11 +39,13 @@ export interface AlunoFicha {
   paisId: string;
   nascimento: string | null;
   documento: string | null;
+  documentoValido: boolean;
   telefone: string | null;
   email: string | null;
   genero: Genero | null;
   turmaAtual: { id: string; label: string; professor: string | null; diasHorario: string | null } | null;
-  financeiro: { atrasado: boolean; emAberto: number; proximoVencimento: string | null };
+  // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
+  financeiro: { atrasado: boolean; emAberto: number; proximoVencimento: string | null } | null;
   movimentacoes: {
     id: string;
     tipo: TipoMovimentacao;
@@ -63,10 +65,13 @@ export function FichaAluno({
   aluno,
   turmas,
   paises,
+  podeMovimentar = true,
 }: {
   aluno: AlunoFicha;
   turmas: { id: string; label: string }[];
   paises: { id: string; nome: string }[];
+  // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
+  podeMovimentar?: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -124,25 +129,27 @@ export function FichaAluno({
         </p>
       </header>
 
-      {/* Ações */}
-      <div className="flex flex-wrap gap-2">
-        <button className={btnSec} onClick={abrirEdicao}>
-          Editar dados
-        </button>
-        {aluno.status === StatusAluno.ATIVO && (
-          <>
-            <button className={btnSec} onClick={() => setModal("trocar")}>Trocar turma</button>
-            <button className={btnSec} onClick={() => setModal("pausar")}>Pausar</button>
-            <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
-          </>
-        )}
-        {aluno.status === StatusAluno.PAUSADO && (
-          <>
-            <button className={btnPri} onClick={() => run(reativarAluno(aluno.id))}>Reativar</button>
-            <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
-          </>
-        )}
-      </div>
+      {/* Ações (apenas papéis que movimentam — professor tem visão somente leitura, doc 10) */}
+      {podeMovimentar && (
+        <div className="flex flex-wrap gap-2">
+          <button className={btnSec} onClick={abrirEdicao}>
+            Editar dados
+          </button>
+          {aluno.status === StatusAluno.ATIVO && (
+            <>
+              <button className={btnSec} onClick={() => setModal("trocar")}>Trocar turma</button>
+              <button className={btnSec} onClick={() => setModal("pausar")}>Pausar</button>
+              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+            </>
+          )}
+          {aluno.status === StatusAluno.PAUSADO && (
+            <>
+              <button className={btnPri} onClick={() => run(reativarAluno(aluno.id))}>Reativar</button>
+              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+            </>
+          )}
+        </div>
+      )}
 
       <Drawer
         open={modal === "editar"}
@@ -177,6 +184,7 @@ export function FichaAluno({
           <div>
             <label className="mb-1 block text-xs text-gray-600">Documento</label>
             <input className={inputCls} value={ed.documento} onChange={(e) => setEd({ ...ed, documento: e.target.value })} />
+            <p className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Telefone</label>
@@ -274,32 +282,48 @@ export function FichaAluno({
 
           <h2 className="mb-2 mt-5 font-medium">Dados pessoais</h2>
           <dl className="text-sm text-gray-700">
-            <div className="flex gap-2"><dt className="w-32 text-gray-500">Documento</dt><dd>{aluno.documento ?? "—"}</dd></div>
+            <div className="flex gap-2">
+              <dt className="w-32 text-gray-500">Documento</dt>
+              <dd className="flex items-center gap-2">
+                {aluno.documento ?? "—"}
+                {aluno.documento && !aluno.documentoValido && (
+                  <span
+                    className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+                    title="O documento não passou na validação do país. Salvamento permitido; confira o número."
+                  >
+                    não validado
+                  </span>
+                )}
+              </dd>
+            </div>
             <div className="flex gap-2"><dt className="w-32 text-gray-500">Nascimento</dt><dd>{aluno.nascimento ? new Date(aluno.nascimento).toLocaleDateString("pt-BR") : "—"}</dd></div>
             <div className="flex gap-2"><dt className="w-32 text-gray-500">E-mail</dt><dd>{aluno.email ?? "—"}</dd></div>
             <div className="flex gap-2"><dt className="w-32 text-gray-500">Gênero</dt><dd>{aluno.genero ? GENERO_LABEL[aluno.genero] : "—"}</dd></div>
           </dl>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-surface p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium">Financeiro</h2>
-            <span className={aluno.financeiro.atrasado ? "text-sm text-red-600" : "text-sm text-green-600"}>
-              {aluno.financeiro.atrasado ? "Em atraso" : "Em dia"}
-            </span>
-          </div>
-          <div className="text-sm text-gray-700">
-            Em aberto: <strong>{aluno.financeiro.emAberto.toLocaleString("pt-BR")}</strong>
-            {aluno.financeiro.proximoVencimento && (
-              <span className="ml-2 text-gray-500">
-                · próximo venc. {new Date(aluno.financeiro.proximoVencimento).toLocaleDateString("pt-BR")}
+        {/* Financeiro: oculto na projeção pedagógica (professor — doc 10). */}
+        {aluno.financeiro && (
+          <section className="rounded-lg border border-gray-200 bg-surface p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-medium">Financeiro</h2>
+              <span className={aluno.financeiro.atrasado ? "text-sm text-red-600" : "text-sm text-green-600"}>
+                {aluno.financeiro.atrasado ? "Em atraso" : "Em dia"}
               </span>
-            )}
-          </div>
-          <Link href={`/alunos/${aluno.id}/financeiro`} className="mt-2 inline-block text-xs text-brand-700 hover:underline">
-            Ver ficha financeira →
-          </Link>
-        </section>
+            </div>
+            <div className="text-sm text-gray-700">
+              Em aberto: <strong>{aluno.financeiro.emAberto.toLocaleString("pt-BR")}</strong>
+              {aluno.financeiro.proximoVencimento && (
+                <span className="ml-2 text-gray-500">
+                  · próximo venc. {new Date(aluno.financeiro.proximoVencimento).toLocaleDateString("pt-BR")}
+                </span>
+              )}
+            </div>
+            <Link href={`/alunos/${aluno.id}/financeiro`} className="mt-2 inline-block text-xs text-brand-700 hover:underline">
+              Ver ficha financeira →
+            </Link>
+          </section>
+        )}
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
