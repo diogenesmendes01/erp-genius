@@ -1,5 +1,40 @@
-import { StatusCobranca, StatusTurma } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca, StatusTurma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { UsuarioSessao } from "@/server/_shared";
+
+// Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
+const PAPEIS_AMPLO_ALUNOS: Papel[] = [
+  Papel.ADMINISTRADOR,
+  Papel.SECRETARIA_ACADEMICA,
+  Papel.GERENTE_PEDAGOGICO,
+  Papel.FINANCEIRO,
+];
+
+function temVisaoAmpla(usuario: UsuarioSessao): boolean {
+  return usuario.papeis.some((p) => PAPEIS_AMPLO_ALUNOS.includes(p));
+}
+
+// Visibilidade row-level (doc 07): Professor enxerga apenas alunos das SUAS turmas;
+// demais papéis amplos veem todos. Professor → restringe via alocação ativa.
+export function escopoAlunos(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
+  if (!usuario || temVisaoAmpla(usuario)) return {};
+  if (usuario.papeis.includes(Papel.PROFESSOR)) {
+    return { alocacoes: { some: { ativa: true, turma: { professorId: usuario.id } } } };
+  }
+  return {};
+}
+
+/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.) */
+function professorVeAluno(
+  usuario: UsuarioSessao | undefined,
+  alocacoes: { turma: { professorId: string | null } | null }[],
+): boolean {
+  if (!usuario || temVisaoAmpla(usuario)) return true;
+  if (usuario.papeis.includes(Papel.PROFESSOR)) {
+    return alocacoes.some((a) => a.turma?.professorId === usuario.id);
+  }
+  return true;
+}
 
 // Situação financeira resumida a partir das cobranças.
 function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number }[]) {
@@ -16,8 +51,9 @@ function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date;
   return { atrasado, emAberto, proximoVencimento: proximo?.vencimento ?? null };
 }
 
-export async function listarAlunos() {
+export async function listarAlunos(usuario?: UsuarioSessao) {
   const alunos = await prisma.aluno.findMany({
+    where: escopoAlunos(usuario),
     orderBy: { nome: "asc" },
     include: {
       pais: { select: { nome: true } },
@@ -50,7 +86,7 @@ export async function listarAlunos() {
   });
 }
 
-export async function obterAluno(id: string) {
+export async function obterAluno(id: string, usuario?: UsuarioSessao) {
   const aluno = await prisma.aluno.findUnique({
     where: { id },
     include: {
@@ -71,6 +107,8 @@ export async function obterAluno(id: string) {
     },
   });
   if (!aluno) return null;
+  // Row-level: professor só vê a ficha de alunos das suas turmas (doc 07).
+  if (!professorVeAluno(usuario, aluno.alocacoes)) return null;
   const cobrancas = aluno.matriculas.flatMap((m) => m.cobrancas);
   return { aluno, financeiro: resumoFinanceiro(cobrancas) };
 }
@@ -94,8 +132,8 @@ export async function listarTurmasAbertasComVaga() {
     }));
 }
 
-export async function obterTurma(id: string) {
-  return prisma.turma.findUnique({
+export async function obterTurma(id: string, usuario?: UsuarioSessao) {
+  const turma = await prisma.turma.findUnique({
     where: { id },
     include: {
       modalidade: true,
@@ -104,4 +142,15 @@ export async function obterTurma(id: string) {
       alocacoes: { where: { ativa: true }, include: { aluno: { select: { id: true, nome: true, codigo: true, status: true } } } },
     },
   });
+  if (!turma) return null;
+  // Row-level: professor só vê turmas que leciona (doc 07).
+  if (
+    usuario &&
+    !temVisaoAmpla(usuario) &&
+    usuario.papeis.includes(Papel.PROFESSOR) &&
+    turma.professorId !== usuario.id
+  ) {
+    return null;
+  }
+  return turma;
 }
