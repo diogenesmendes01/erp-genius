@@ -35,13 +35,24 @@ import {
   DatasSchema,
   InteracaoSchema,
   PerdaSchema,
+  AgendarExperimentalSchema,
   ETAPAS_MANUAIS,
   type LeadInput,
   type ResumoInput,
   type DatasInput,
   type InteracaoInput,
   type PerdaInput,
+  type AgendarExperimentalInput,
 } from "./schema";
+
+/** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
+async function exigirProfessorValido(professorId: string) {
+  const professor = await prisma.usuario.findUnique({ where: { id: professorId } });
+  if (!professor) throw new ErroRegra("Professor não encontrado.");
+  if (!professor.papeis.includes(Papel.PROFESSOR)) {
+    throw new ErroRegra("Usuário informado não é professor.");
+  }
+}
 
 const PAPEIS_COMERCIAL: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 
@@ -237,17 +248,32 @@ export async function registrarInteracao(id: string, input: InteracaoInput): Pro
   });
 }
 
-export async function agendarExperimental(id: string, dataISO: string): Promise<Resultado> {
+/** Agenda a experimental e (opcionalmente) grava o professor responsável na FK
+ * `professorExperimentalId` — escopo que a Home do professor e o check-in usam
+ * (Issue #13). O vínculo também é auditado no event log. */
+export async function agendarExperimental(
+  id: string,
+  input: AgendarExperimentalInput,
+): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
-    const data = new Date(dataISO);
+    const dados = AgendarExperimentalSchema.parse(input);
+    const data = new Date(dados.dataISO);
     if (isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
+    const professorId = dados.professorId || null;
+    if (professorId) await exigirProfessorValido(professorId);
+
+    const anterior = professorId ? await professorAtribuido(prisma, id) : null;
     await prisma.$transaction(async (tx) => {
       await tx.lead.update({
         where: { id },
-        data: { etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: data },
+        data: {
+          etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
+          dataExperimental: data,
+          ...(professorId ? { professorExperimentalId: professorId } : {}),
+        },
       });
       await registrarEvento(tx, {
         tipo: "ExperimentalAgendada",
@@ -256,8 +282,18 @@ export async function agendarExperimental(id: string, dataISO: string): Promise<
         autorId: autor.id,
         payload: { data: data.toISOString() },
       });
+      if (professorId) {
+        await registrarEvento(tx, {
+          tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
+          agregadoTipo: "Lead",
+          agregadoId: id,
+          autorId: autor.id,
+          payload: { de: anterior, professorId },
+        });
+      }
     });
     revalidarLead(id);
+    revalidatePath("/home");
   });
 }
 
@@ -358,8 +394,9 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
  * Devolve o lead à fila do comercial (doc 09 §Visão do Professor).
  *
  * Escopo do professor (Issue #13): valida papel, etapa atual (precisa haver uma
- * experimental AGENDADA) e a associação professor↔experimental (event log). Fora
- * do escopo → ErroPermissao; etapa errada → ErroRegra. */
+ * experimental AGENDADA) e a associação professor↔experimental (FK
+ * `professorExperimentalId`). Fora do escopo → ErroPermissao; etapa errada →
+ * ErroRegra. */
 export async function checkinExperimental(leadId: string, compareceu: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     // 1) papel: só professor (Admin passa em exigirPapel)
@@ -374,12 +411,11 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
       throw new ErroRegra("Não há experimental agendada para check-in neste lead.");
     }
 
-    // 3) escopo: o professor precisa estar atribuído a esta experimental.
+    // 3) escopo: o professor precisa estar atribuído a esta experimental (FK).
     //    Admin (passa em temPapel mas não é professor literal) ignora o vínculo.
     const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
     if (!ehAdmin) {
-      const atribuido = await professorAtribuido(prisma, leadId);
-      if (!professorNoEscopoExperimental(atribuido, autor.id)) {
+      if (!professorNoEscopoExperimental(lead.professorExperimentalId, autor.id)) {
         throw new ErroPermissao("Esta experimental não está atribuída a você.");
       }
     }
@@ -405,7 +441,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
 
 /** Atribui (ou remaneja) o professor responsável por uma experimental — define o
  * escopo que a Home do professor e o check-in usam (Issue #13). Comercial/Admin.
- * Vínculo gravado no event log (sem FK no V0 — pendência docs/15). */
+ * Grava a FK `professorExperimentalId` (fonte de verdade) e audita no event log. */
 export async function atribuirProfessorExperimental(
   leadId: string,
   professorId: string,
@@ -414,15 +450,14 @@ export async function atribuirProfessorExperimental(
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(leadId, autor);
-
-    const professor = await prisma.usuario.findUnique({ where: { id: professorId } });
-    if (!professor) throw new ErroRegra("Professor não encontrado.");
-    if (!professor.papeis.includes(Papel.PROFESSOR)) {
-      throw new ErroRegra("Usuário informado não é professor.");
-    }
+    await exigirProfessorValido(professorId);
 
     const anterior = await professorAtribuido(prisma, leadId);
     await prisma.$transaction(async (tx) => {
+      await tx.lead.update({
+        where: { id: leadId },
+        data: { professorExperimentalId: professorId },
+      });
       await registrarEvento(tx, {
         tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
         agregadoTipo: "Lead",

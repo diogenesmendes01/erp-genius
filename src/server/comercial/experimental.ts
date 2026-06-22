@@ -3,59 +3,38 @@ import { prisma } from "@/lib/prisma";
 
 // Associação professor↔experimental (escopo do professor — Issue #13).
 //
-// Não há FK lead↔professor no V0 (pendência de modelagem, docs/15 e docs/09
-// §Visão do Professor). O vínculo é gravado no event log (espinha dorsal do
-// schema) como `ExperimentalAtribuida` { professorId }. Estas funções leem/
-// gravam esse vínculo sem precisar de migration.
+// FONTE DE VERDADE: a FK `Lead.professorExperimentalId` (relação
+// `professorExperimental`). O evento `ExperimentalAtribuida` é mantido apenas
+// como trilha de auditoria (quem atribuiu, quando, de quem para quem).
+// Experimentais antigas/sem professor têm a FK NULL → ficam fora do escopo de
+// qualquer professor até serem (re)atribuídas.
 
-/** Tipo do evento que vincula um professor a uma experimental (lead). */
+/** Tipo do evento que audita a atribuição de um professor a uma experimental. */
 export const EVENTO_EXPERIMENTAL_ATRIBUIDA = "ExperimentalAtribuida";
 
-interface PayloadAtribuicao {
-  professorId?: string;
-}
-
 /**
- * Professor atualmente atribuído a uma experimental (última atribuição válida),
- * ou null se nunca houve atribuição. Fonte: event log.
+ * Professor atualmente atribuído a uma experimental (FK), ou null se não houver
+ * vínculo. Fonte: `Lead.professorExperimentalId`.
  */
 export async function professorAtribuido(
   client: Prisma.TransactionClient | typeof prisma,
   leadId: string,
 ): Promise<string | null> {
-  const evento = await client.evento.findFirst({
-    where: {
-      tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
-      agregadoTipo: "Lead",
-      agregadoId: leadId,
-    },
-    orderBy: { criadoEm: "desc" },
-    select: { payload: true },
+  const lead = await client.lead.findUnique({
+    where: { id: leadId },
+    select: { professorExperimentalId: true },
   });
-  if (!evento?.payload) return null;
-  const payload = evento.payload as PayloadAtribuicao;
-  return payload.professorId ?? null;
+  return lead?.professorExperimentalId ?? null;
 }
 
 /**
- * IDs dos leads cuja última atribuição de experimental aponta para `professorId`.
+ * IDs dos leads cuja experimental está atribuída a `professorId` (via FK).
  * Usado pela Home do professor para listar só as experimentais dele.
  */
 export async function leadsAtribuidosAoProfessor(professorId: string): Promise<string[]> {
-  const eventos = await prisma.evento.findMany({
-    where: { tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA, agregadoTipo: "Lead" },
-    orderBy: { criadoEm: "desc" },
-    select: { agregadoId: true, payload: true },
+  const leads = await prisma.lead.findMany({
+    where: { professorExperimentalId: professorId },
+    select: { id: true },
   });
-
-  // Mantém só a última atribuição por lead (eventos já vêm do mais novo p/ o mais antigo).
-  const vistos = new Set<string>();
-  const meus: string[] = [];
-  for (const e of eventos) {
-    if (vistos.has(e.agregadoId)) continue;
-    vistos.add(e.agregadoId);
-    const payload = (e.payload ?? null) as PayloadAtribuicao | null;
-    if (payload?.professorId === professorId) meus.push(e.agregadoId);
-  }
-  return meus;
+  return leads.map((l) => l.id);
 }
