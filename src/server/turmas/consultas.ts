@@ -10,7 +10,7 @@ export async function listarTurmas() {
       modalidade: true,
       nivel: { include: { idioma: true } },
       professor: { select: { id: true, nome: true } },
-      // Ocupação conta só alocações ativas — transferência/remoção desativa (ativa:false) e mantém histórico.
+      // Conta SOMENTE alocações ativas (issues #1/#19) — base de "matriculados/vagas"; transferência/remoção desativa e mantém histórico.
       _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
