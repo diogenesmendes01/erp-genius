@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Turma" ADD COLUMN     "dataFim" TIMESTAMP(3),
+ADD COLUMN     "nome" TEXT,
+ADD COLUMN     "online" BOOLEAN NOT NULL DEFAULT true,
+ALTER COLUMN "diasHorario" DROP NOT NULL,
+ALTER COLUMN "capacidade" SET DEFAULT 16;
+

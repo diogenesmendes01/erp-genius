@@ -53,10 +53,15 @@ Separação importante para não confundir "quem digita" com "quem decide":
 
 ## Modelo de dados (acesso)
 
+> ⚠️ **No schema atual (V0)** o multi-papel é um **array de enum** em `Usuario.papeis: Papel[]`
+> — **não** existe tabela `UsuarioPapel` (essa é a evolução **V2**, quando surgir escopo por
+> país; ver [`02`](02-arquitetura.md) e [`11`](11-modelo-de-dados.md)). O bloco abaixo descreve
+> o destino V2, não o atual.
+
 ```
-Usuario     (id, nome, email, senhaHash, ativo, limiteDescontoPct)  # null = sem limite (Admin)
-Papel       (id, nome)                          # ADM, Gerente, GerentePedagogico, Vendedor, Financeiro, Secretaria Acadêmica, Professor
-UsuarioPapel(usuarioId, papelId)                # N:N — uma pessoa, vários papéis
+Usuario     (id, nome, email, senhaHash, ativo, limiteDescontoPct, papeis: Papel[])  # null = sem limite (Admin)
+# enum Papel: ADMINISTRADOR · GERENTE_COMERCIAL · VENDEDOR · GERENTE_PEDAGOGICO · PROFESSOR · FINANCEIRO · SECRETARIA_ACADEMICA
+# V2: extrair para UsuarioPapel(usuarioId, papelId) quando houver escopo por país
 Lead        (..., vendedorDonoId)               # define a visibilidade do vendedor
 Turma       (..., professorId)                  # define a visibilidade do professor
 ```

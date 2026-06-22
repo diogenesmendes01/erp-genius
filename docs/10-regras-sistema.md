@@ -16,7 +16,9 @@ Saídas paralelas: **Perdido** (vendedor, com motivo) · **No-show** (professor,
 `Ativo ⇄ Pausado` · `Ativo → Encerrado`.
 
 ### Matrícula
-`Rascunho → Aguardando → Ativa → Encerrada`. **Ativa** quando **Contrato OK + Pagamento OK**.
+`Rascunho → Aguardando → Ativa → Encerrada`. **Ativa** quando **Contrato OK + Taxa paga +
+1ª mensalidade paga** (`contratoOk && pagamentoTaxaOk && primeiraMensalidadeOk` — decisão P7,
+doc 15); Admin/Gerente pode ativar com pendência (`ativadaComPendencia`).
 (`Cancelada` = encerramento precoce — dispara estorno de comissão, ver §3.)
 
 ### Cobrança
@@ -27,7 +29,8 @@ Saídas paralelas: **Perdido** (vendedor, com motivo) · **No-show** (professor,
 `Pendente → Aprovada → Paga` · `Estornada`.
 
 ### Turma
-`Planejada → Aberta → (Em andamento) → Encerrada`.
+`Planejada → Aberta → Em andamento → Concluída` (enum `StatusTurma`: `PLANEJADA · ABERTA ·
+EM_ANDAMENTO · CONCLUIDA`).
 
 ## 2. Permissões (matriz autoritativa)
 
@@ -42,13 +45,19 @@ Saídas paralelas: **Perdido** (vendedor, com motivo) · **No-show** (professor,
 | **Administrador** | **Tudo** | — |
 
 ## 3. Comissão
-- **Geração:** quando a **Matrícula vira Ativa** → comissão criada.
-- **Valor:** `taxa de matrícula × percentual do vendedor`.
-- **Estorno:** matrícula **cancelada antes de 30 dias** → comissão **Estornada**.
-- **Pagamento:** mensal — **fechamento dia 30 · pagamento dia 05**.
+- **Geração:** criada **Pendente** na criação da matrícula; vira **Aprovada** quando a matrícula
+  é **Ativada**; vira **Paga** no fechamento mensal.
+- **Valor:** `taxa de matrícula × percentual do vendedor` (recalcula só se a taxa mudar — doc 09).
+- **Estorno:** matrícula **cancelada antes de 30 dias** → comissão **Estornada** *(regra; gatilho
+  automático de cancelamento é Fase 1+ — ver doc 12 "reservados")*.
+- **Pagamento:** mensal — **fechamento dia 30 · pagamento dia 05** *(cron é Fase 1+; hoje o
+  fechamento é manual em Financeiro → "Fechar mês e marcar pagas")*.
 
-## 4. Jobs automáticos (cron diário)
-- **00:05** — gerar mensalidades futuras *(rede de segurança; o cronograma já é gerado na ativação)*.
+## 4. Jobs automáticos (cron diário) — **Fase 1+**
+> Na Fase 0 **não há cron**: inadimplência, métricas e fila da Home são calculadas
+> **on-the-fly** na leitura (ver `home/consultas.ts`, `financeiro/consultas.ts`); o cronograma
+> de mensalidades é gerado **na criação da matrícula** (V0). Os jobs abaixo entram na Fase 1+.
+- **00:05** — gerar mensalidades futuras *(rede de segurança)*.
 - **01:00** — atualizar **inadimplência** (Pendente → Vencida quando vencimento passou).
 - **02:00** — atualizar **métricas**.
 - **03:00** — atualizar **fila comercial** (prioridades da Home).
@@ -58,8 +67,12 @@ Saídas paralelas: **Perdido** (vendedor, com motivo) · **No-show** (professor,
 
 ## 6. Exclusão — PRINCÍPIO: ninguém apaga nada (nunca)
 Soft-delete via status (alinhado à filosofia de evento/auditoria):
-- Lead → **Perdido** · Aluno → **Encerrado** · Cobrança → **Cancelada** · Usuário → **Inativo**.
-- Nenhum `DELETE` físico no banco. A história é preservada.
+- Lead → **Perdido** · Aluno → **Encerrado** · Cobrança → **Cancelada** · Usuário → **Inativo** ·
+  Documento → **Arquivado** · Preço → **inativo** (supersede) · Produto-no-país → `oferecido=false`.
+- Nenhum `DELETE` físico de **entidade de negócio / histórico**. A história é preservada.
+- **Exceção permitida:** substituição de **conjuntos de configuração sem histórico** (ex.: os
+  tipos de documento de um país são recriados ao editar o país). Não são registros de negócio
+  nem auditáveis — só a lista vigente importa.
 
 ## 7. Identificadores legíveis
 Código humano por entidade, gerado por uma tabela `Contador` transacional:

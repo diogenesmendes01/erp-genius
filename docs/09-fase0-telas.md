@@ -230,7 +230,8 @@ Experimental Agendada, Proposta).
 ### Resolvido / em aberto
 - ✅ **Nível** vem da avaliação **ou** manual, com **origem registrada**.
 - ✅ **Aluno** criado em **rascunho** ao salvar (aparece no "Aguardando Matrícula").
-- ❓ **Gatilho de ativação:** só a **taxa**, ou **taxa + 1ª mensalidade**? (acerta o card e o gatilho)
+- ✅ **Gatilho de ativação (decisão P7):** **taxa + 1ª mensalidade + contrato** (`pagamentoTaxaOk
+  + primeiraMensalidadeOk + contratoOk`); Admin/Gerente pode ativar com pendência.
 
 ## Tela: Configuração (backstage)
 
@@ -315,8 +316,9 @@ Onde a turma **nasce** (o "criar" do princípio criar × alocar). Casa do **Gere
 - **Trocar turma:** seleciona turma compatível (respeita vaga); **entre níveis exige justificativa**.
 - **Reativar:** Pausado → Ativo.
 
-> **Entidade `MovimentacaoAluno`** (`id, alunoId, tipo, deValor, paraValor, motivo, usuarioId, data`) — registra
-> **toda** movimentação; é a fonte do **histórico** na Ficha do Aluno ("por que está nessa turma?").
+> **Entidade `MovimentacaoAluno`** (no schema: `id, alunoId, tipo, turmaOrigemId?, turmaDestinoId?,
+> statusOrigem?, statusDestino?, motivo?, observacao?, usuarioId?, criadoEm`) — registra **toda**
+> movimentação; fonte do **histórico** na Ficha do Aluno ("por que está nessa turma?"). Ver [`11`](11-modelo-de-dados.md).
 
 ### Visão por papel (área Alunos)
 | Papel | Ficha do Aluno / Movimentações |
@@ -492,8 +494,9 @@ mostra o selo **"comprovante"**.
 
 ### Resolvido
 - ✅ **Dia de vencimento por matrícula** (operador escolhe 5/10/15/20/25 — serve p/ aluno e empresa).
-- ✅ **Cronograma inteiro gerado na ativação** (não mês a mês): previsão de receita, inadimplência e Visão geral
-  ficam corretas; **Pausar/Encerrar cancela só as mensalidades futuras**.
+- ✅ **Cronograma inteiro gerado na ativação** (não mês a mês): na criação ficam só taxa + 1ª
+  mensalidade; ao ativar (P7), o restante (meses 2..N, via `Matricula.mesesPlano`) é gerado.
+  **Pausar/Encerrar cancela só as mensalidades futuras.**
 
 ## Dependências (o que a Home consome)
 
@@ -507,6 +510,7 @@ A fila inteligente só funciona se a **Ficha do Lead** registrar:
 > obrigatórios da próxima tela.
 
 ## Em aberto
-- Homes de **Secretaria Acadêmica** e **Professor** (definir junto das telas deles).
-- Critério exato do **ranking** do gerente.
-- Valor de "X dias" para "proposta parada".
+- ✅ **Home do Professor** implementada (próxima aula + check-in). Home de **Secretaria
+  Acadêmica** ainda usa a Home genérica (atalhos) — dedicar quando definida.
+- Critério exato do **ranking** do gerente *(hoje: nº de matriculados por dono; refinar — P10)*.
+- Valor de "X dias" para "proposta parada" *(default 5 dias)* e SLA em minutos *(default 60)* — P10.

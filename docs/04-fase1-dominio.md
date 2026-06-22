@@ -140,6 +140,11 @@ moeda do país. O Financeiro apenas **soma as linhas** daquele contrato.
 
 ## Modelo de dados (entidades principais)
 
+> ⚠️ **Esboço da época do brainstorm.** Alguns nomes mudaram no schema final (ex.:
+> `LinhaCobranca` → `Cobranca`; `NegociacaoLog`/`DocumentoAluno` não foram criados — a
+> negociação e os documentos são tratados via `Evento`/campos do `Aluno`). A referência
+> atual e fiel é [`11-modelo-de-dados.md`](11-modelo-de-dados.md).
+
 ```
 Pais            (id, nome, codigoISO, moedaLocal, ddi, fuso, idioma, status)  # rascunho/ativo/pausado/encerrado
 TipoDocumento   (id, paisId, nome, regraValidacao)        # CPF, DNI, CURP, passaporte...

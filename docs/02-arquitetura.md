@@ -7,7 +7,9 @@
 | Camada | Tecnologia | Por quê |
 |---|---|---|
 | Frontend + Backend | **Next.js (React + TypeScript)** | Um só projeto para telas e API; rápido de desenvolver |
-| Estilo | **Tailwind CSS** | Visual consistente e produtivo |
+| Estilo | **Tailwind CSS** + tokens (CSS vars) | Visual consistente; tema claro/escuro troca sozinho (ver [`18`](18-design-system.md)) |
+| Ícones | **Tabler** (outline) | Conjunto consistente, flat |
+| Fonte | **Anthropic Sans** (400/500) | Tipografia sóbria, dois pesos |
 | Banco de dados | **PostgreSQL** | Robusto, ideal para dados relacionais (alunos, matrículas, financeiro) |
 | ORM (acesso ao banco) | **Prisma** | Modela os dados de forma segura e legível |
 | Autenticação | **Auth.js (NextAuth)** | Login + sessão + JWT + papéis/permissões (nada na mão) |
@@ -60,7 +62,11 @@ Toda mudança de estado grava um evento. De brinde, é a fonte dos **indicadores
 - **Papel `enum[]` → `UsuarioPapel` (V2):** quando surgir **escopo por país** (ex.: Professor só na Costa Rica).
 - **`Pessoa/Contato` (V2+):** unificar Lead / Aluno / Responsável / Contato-RH sob uma entidade de pessoa.
 
-## Estrutura de pastas (planejada)
+## Estrutura de pastas
+
+> ⚠️ **Esboço inicial.** A estrutura **real e atual** (rotas por área: `home · pipeline · leads ·
+> alunos · financeiro · configuracao · matriculas`, e domínios em `src/server/<dominio>`) está
+> documentada em [`13-convencoes-codigo.md`](13-convencoes-codigo.md). O bloco abaixo é o rascunho original.
 
 ```
 erp-genius/
@@ -69,20 +75,19 @@ erp-genius/
 │   └── schema.prisma      # Modelo de dados
 ├── src/
 │   ├── app/               # Páginas e rotas (Next.js App Router)
-│   │   ├── alunos/
-│   │   ├── matriculas/
-│   │   ├── financeiro/
-│   │   ├── academico/
-│   │   ├── equipe/
-│   │   └── vendas/
 │   ├── components/        # Componentes de interface reutilizáveis
 │   ├── lib/               # Funções utilitárias, conexão com banco
-│   └── server/            # Lógica de negócio / serviços
+│   └── server/            # Lógica de negócio por domínio (Server Actions)
 ├── public/                # Imagens e estáticos
 └── package.json
 ```
 
 ## Modelo de dados inicial (entidades principais)
+
+> ⚠️ **Desatualizado — esboço histórico.** O modelo real evoluiu para eventos + estado
+> multi-país. A **referência fiel** do `schema.prisma` está em
+> [`11-modelo-de-dados.md`](11-modelo-de-dados.md). O bloco abaixo é mantido só como registro
+> do raciocínio inicial (cita entidades como `Mensalidade`/`Disciplina`/`Nota` que **não existem**).
 
 ```
 Aluno         (id, nome, nascimento, cpf, foto, status)

@@ -65,6 +65,12 @@ Pré A1  → A1 (Básico 1) → A2 (Básico 2) → B1 (Inter. 1) → B2 (Inter. 
 
 ## Acréscimos ao modelo de dados
 
+> ⚠️ **Esboço do brainstorm — não é o schema final.** No modelo implementado:
+> `Modalidade` tem `segmento`; **não há `ModalidadeNivel`** (a regra do Pré A1 vive em
+> `Turma.rolling` + `Modalidade`); `AlocacaoTurma` é por **`alunoId`** (não `matriculaId`);
+> **não há `ProdutoParticular`** (Particular é uma `Modalidade`, e o preço/hora é um
+> `PrecoReferencia` com `tipoCobranca = HORA_PARTICULAR`). Referência fiel: [`11-modelo-de-dados.md`](11-modelo-de-dados.md).
+
 ```
 Idioma          (id, nome)                                  # Português (hoje); outros no futuro
 Modalidade      (id, nome, frequencia, horasAula, duracaoPorNivel, aulasPorNivel, minimoAbrir)

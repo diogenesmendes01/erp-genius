@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { GraduationCap } from "lucide-react";
+import { IconSchool } from "@tabler/icons-react";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -36,9 +36,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-surface p-8">
         <div className="mb-6 flex items-center gap-2 text-lg font-medium">
-          <GraduationCap className="h-6 w-6 text-brand-600" />
+          <IconSchool className="h-6 w-6 text-brand-600" />
           ERP Genius
         </div>
 

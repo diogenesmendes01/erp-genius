@@ -10,6 +10,10 @@ especialmente o atendimento comercial via WhatsApp.
 
 ## Perfis de usuário (papéis)
 
+> ℹ️ Visão inicial (5 perfis). O modelo evoluiu para **7 papéis** — a referência autoritativa é
+> [`07-papeis-permissoes.md`](07-papeis-permissoes.md): **Administrador · Gerente Comercial ·
+> Vendedor · Gerente Pedagógico · Professor · Financeiro · Secretaria Acadêmica**.
+
 - **Administrador** — acesso total, configura o sistema.
 - **Secretaria** — cadastra alunos, matrículas, turmas.
 - **Financeiro** — mensalidades, pagamentos, inadimplência.

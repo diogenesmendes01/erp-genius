@@ -9,11 +9,15 @@
 - Hoje: **curso de português**. Futuro: outros idiomas.
 - Portanto a matrícula é em um **curso/produto**, não em turma física com sala.
 
-## Gatilho de virada (CONFIRMADO)
+## Gatilho de virada (CONFIRMADO — atualizado pela decisão P7)
 
 Uma pessoa só vira **aluno matriculado** quando acontece:
 
-> **Pagamento da taxa de matrícula + assinatura do contrato.**
+> **Pagamento da taxa de matrícula + 1ª mensalidade + assinatura do contrato.**
+
+> ⚠️ **Decisão P7 (doc 15):** o gatilho exige `contratoOk + pagamentoTaxaOk +
+> primeiraMensalidadeOk` — taxa **e** a 1ª mensalidade, para não criar aluno ativo já
+> devedor. (O texto original previa só a taxa.) Admin/Gerente pode ativar com pendência.
 
 Ordem importante: **paga primeiro, contrato depois.** O contrato só é gerado após o
 pagamento confirmado, já com os valores negociados dentro.
