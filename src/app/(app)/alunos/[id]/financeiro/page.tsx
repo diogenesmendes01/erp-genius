@@ -42,6 +42,8 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
       tipo: c.tipo,
       status: c.status,
       valorNegociado: c.valorNegociado,
+      valorRecebido: c.valorRecebido ?? 0,
+      saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
       moeda: c.moeda,
       vencimento: c.vencimento.toISOString(),
       pagoEm: c.pagoEm ? c.pagoEm.toISOString() : null,

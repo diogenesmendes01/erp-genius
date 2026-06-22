@@ -26,6 +26,8 @@ export function PagamentoModal({
   alunoNome,
   moeda,
   valorEsperado,
+  jaRecebido = 0,
+  saldoRestante,
   onClose,
   onDone,
   onErro,
@@ -34,19 +36,27 @@ export function PagamentoModal({
   alunoNome?: string;
   moeda: string;
   valorEsperado: number;
+  /** Total já recebido na cobrança (parciais anteriores). Default 0. */
+  jaRecebido?: number;
+  /** Saldo devedor restante; base da baixa. Default = valorEsperado (sem parciais). */
+  saldoRestante?: number;
   onClose: () => void;
   onDone: () => void;
   onErro: (e: string) => void;
 }) {
-  const [valor, setValor] = useState(String(valorEsperado));
+  // A baixa parte do saldo restante (issue #10): pagar o que falta, não o negociado cheio.
+  const saldo = saldoRestante ?? valorEsperado;
+  const [valor, setValor] = useState(String(saldo));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
   const [comprovanteUrl, setComp] = useState("");
   const [comprovanteNome, setCompNome] = useState("");
   const [comentario, setComentario] = useState("");
+  const [permitirExcedente, setPermitirExcedente] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  const diff = valorEsperado - Number(valor || 0);
+  // diff compara o pagamento atual com o SALDO restante (coerente com acumularPagamento no backend).
+  const diff = saldo - Number(valor || 0);
   const exigeComprovante = FORMAS_EXIGEM_COMPROVANTE.includes(forma);
   const faltaComprovante = exigeComprovante && !comprovanteUrl;
 
@@ -63,6 +73,7 @@ export function PagamentoModal({
       comprovanteUrl,
       comprovanteNome,
       comentario,
+      permitirExcedente,
     });
     setSalvando(false);
     if (!r.ok) onErro(r.erro);
@@ -75,11 +86,21 @@ export function PagamentoModal({
         <h3 className="mb-3 text-sm font-medium">
           Registrar pagamento{alunoNome ? ` — ${alunoNome}` : ""}
         </h3>
-        <label className="mb-1 block text-xs text-gray-600">
-          Valor esperado: {moeda} {valorEsperado.toLocaleString("pt-BR")}
+        <p className="text-xs text-gray-600">Negociado: {moeda} {valorEsperado.toLocaleString("pt-BR")}</p>
+        {jaRecebido > 0 && (
+          <p className="text-xs text-gray-600">Já recebido: {moeda} {jaRecebido.toLocaleString("pt-BR")}</p>
+        )}
+        <label className="mb-1 block text-xs font-medium text-gray-600">
+          Saldo restante: {moeda} {saldo.toLocaleString("pt-BR")}
         </label>
         <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
         {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {moeda} {diff.toLocaleString("pt-BR")}.</p>}
+        {diff < 0 && (
+          <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">
+            <input type="checkbox" checked={permitirExcedente} onChange={(e) => setPermitirExcedente(e.target.checked)} />
+            Acima do negociado — registrar excedente de {moeda} {(-diff).toLocaleString("pt-BR")} como crédito.
+          </label>
+        )}
         <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
         <select className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
           {Object.values(FormaPagamento).map((f) => <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>)}

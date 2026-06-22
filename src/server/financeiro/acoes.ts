@@ -7,7 +7,7 @@ import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
-  aplicarBaixa,
+  acumularPagamento,
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
@@ -30,12 +30,14 @@ export async function registrarPagamento(
     if (cobranca.status === StatusCobranca.CANCELADA)
       throw new ErroRegra("Cobrança cancelada não recebe pagamento.");
 
-    // ACUMULA baixas parciais (issue #1): nunca sobrescreve o total já recebido — somar a
-    // baixa atual ao histórico evita que uma 2ª baixa reduza o total recebido.
-    const { recebidoTotal, saldo, quitada } = aplicarBaixa(
+    // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
+    // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.
+    const jaRecebido = cobranca.valorRecebido ?? 0;
+    const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
+      jaRecebido,
       cobranca.valorNegociado,
-      cobranca.valorRecebido,
       dados.valorRecebido,
+      dados.permitirExcedente,
     );
 
     await prisma.$transaction(async (tx) => {
@@ -57,13 +59,14 @@ export async function registrarPagamento(
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + comprovante.
+        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + excedente + comprovante.
         payload: {
           valorRecebido: dados.valorRecebido,
           recebidoAcumulado: recebidoTotal,
           forma: dados.forma,
           quitada,
           saldo,
+          excedente,
           comprovanteUrl: dados.comprovanteUrl ?? null,
           comprovanteNome: dados.comprovanteNome ?? null,
         },

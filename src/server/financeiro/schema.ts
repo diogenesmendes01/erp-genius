@@ -9,7 +9,7 @@ export const FORMAS_EXIGEM_COMPROVANTE: FormaPagamento[] = [
   FormaPagamento.GREENPAY,
 ];
 
-// Baixa manual (ver docs/09 §Financeiro). Parciais modelados (valorRecebido/saldo).
+// Baixa manual (ver docs/09 §Financeiro). Parciais acumulam em valorRecebido; saldo = ACUMULADO.
 // O comprovante é exigido quando a forma de pagamento gera prova (transferência/GreenPay),
 // mantendo o comportamento consistente entre painel financeiro e ficha do aluno.
 export const PagamentoSchema = z
@@ -28,6 +28,8 @@ export const PagamentoSchema = z
       .optional()
       .transform((v) => (v ? v : undefined)),
     comentario: z.string().optional(),
+    // Recebimento acima do negociado é bloqueado por padrão; só passa como crédito explícito.
+    permitirExcedente: z.coerce.boolean().optional().default(false),
   })
   .superRefine((dados, ctx) => {
     if (FORMAS_EXIGEM_COMPROVANTE.includes(dados.forma) && !dados.comprovanteUrl) {
