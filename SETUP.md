@@ -76,3 +76,20 @@ As telas (Home, Pipeline, Ficha, Financeiro…) entram em seguida, a partir do d
   `NEXTAUTH_URL` bate com a URL que você está acessando.
 - **Mudou o `schema.prisma`:** rode `npm run prisma:migrate` para gerar a migration e
   atualizar o client.
+- **`npm run build` falha com `EPERM` em `.next/trace`:** algum processo ainda está
+  segurando a pasta `.next` (ex.: um `npm run dev` aberto). Encerre os processos Node
+  em execução e limpe a pasta antes de buildar:
+  ```bash
+  # encerre o dev server (Ctrl+C) ou mate os processos Node travados
+  rm -rf .next
+  npm run build
+  ```
+  No Windows, feche editores/terminais que estejam usando a pasta e rode
+  `rmdir /s /q .next` antes do build. Em CI/sandbox, prefira validar com
+  `npm run lint` + `npm test` (+ `npx tsc --noEmit`).
+
+## Uploads (storage privado)
+- Comprovantes, contratos e documentos são gravados em **`data/uploads/`** (fora de
+  `public/`), portanto **não** são acessíveis por URL pública. A leitura passa por
+  `GET /api/files/[...path]`, que **exige sessão** válida. O envio é por
+  `POST /api/upload` (também autenticado). A pasta `data/uploads/` está no `.gitignore`.
