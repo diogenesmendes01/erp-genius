@@ -53,7 +53,7 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
           modalidadeId: dados.modalidadeId,
           nivelId: dados.nivelId,
           professorId: dados.professorId || null,
-          diasHorario: dados.diasHorario,
+          diasHorario: dados.diasHorario ?? null,
           dataInicio: dados.dataInicio ?? null,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
@@ -89,7 +89,7 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
           modalidadeId: dados.modalidadeId,
           nivelId: dados.nivelId,
           professorId: dados.professorId || null,
-          diasHorario: dados.diasHorario,
+          diasHorario: dados.diasHorario ?? null,
           dataInicio: dados.dataInicio ?? null,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
@@ -100,7 +100,7 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
         agregadoTipo: "Turma",
         agregadoId: id,
         autorId: autor.id,
-        payload: { diasHorario: dados.diasHorario, capacidade: dados.capacidade },
+        payload: { diasHorario: dados.diasHorario ?? null, capacidade: dados.capacidade },
       });
     });
 
