@@ -33,9 +33,8 @@ import {
   type AtivacaoInput,
   type MatriculaComAtivacaoInput,
 } from "./schema";
-
-const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
-const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+// Conjuntos de papéis centralizados (compartilhados com a UI).
+import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");

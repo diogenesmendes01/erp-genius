@@ -6,6 +6,10 @@ import {
   listarTurmasAbertas,
   listarPrecosAtivos,
 } from "@/server/matricula/consultas";
+import {
+  podeCriarMatricula,
+  podeCriarEAtivarMatricula,
+} from "@/server/matricula/permissoes";
 import { listarNiveis } from "@/server/turmas/consultas";
 import { listarPaises } from "@/server/paises/consultas";
 import { MatriculaFormulario, type PrecoRef } from "./MatriculaFormulario";
@@ -16,14 +20,14 @@ export default async function NovaMatriculaPage({
   searchParams: Promise<{ lead?: string }>;
 }) {
   const { lead: leadId } = await searchParams;
-  // "Receber pagamento e ativar" exige perfil Financeiro/Secretaria (ou Admin).
-  // Mantemos a verificação real no servidor; isto é só UX (issue #8).
+  // "Receber pagamento e ativar" (fluxo atômico) exige os papéis de CRIAR E ATIVAR.
+  // O botão só aparece para quem passa nas duas checagens; o backend continua
+  // exigindo ambos (defesa em profundidade). Mantemos a verificação real no
+  // servidor — isto é só UX (issue #8).
   const session = await auth();
   const papeis = (session?.user?.papeis ?? []) as Papel[];
-  const podeAtivar =
-    papeis.includes(Papel.ADMINISTRADOR) ||
-    papeis.includes(Papel.FINANCEIRO) ||
-    papeis.includes(Papel.SECRETARIA_ACADEMICA);
+  const podeCriar = podeCriarMatricula(papeis);
+  const podeCriarEAtivar = podeCriarEAtivarMatricula(papeis);
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
     leadId ? obterLeadParaMatricula(leadId) : Promise.resolve(null),
     listarProdutosParaMatricula(),
@@ -53,7 +57,8 @@ export default async function NovaMatriculaPage({
 
   return (
     <MatriculaFormulario
-      podeAtivar={podeAtivar}
+      podeCriar={podeCriar}
+      podeCriarEAtivar={podeCriarEAtivar}
       lead={lead}
       paises={paises.map((p) => ({ id: p.id, nome: p.nome, moedaLocal: p.moedaLocal }))}
       produtos={produtos.map((p) => ({ id: p.id, label: `${p.idioma.nome} · ${p.modalidade.nome}` }))}
