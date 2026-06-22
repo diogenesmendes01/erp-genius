@@ -75,7 +75,18 @@ export function MatriculaFormulario({
   const [mesesPlano, setMeses] = useState(12);
   const [comissaoPct, setPct] = useState(20);
 
+  // Pagamento na ativação (issue #23): lastro financeiro explícito.
+  const [pagForma, setPagForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
+  const [pagValor, setPagValor] = useState("");
+  const hoje = new Date().toISOString().slice(0, 10);
+  const [pagData, setPagData] = useState(hoje);
+  const [pagComprovante, setPagComprovante] = useState("");
+  const [pagComentario, setPagComentario] = useState("");
+  const [semPagamentoMotivo, setSemPagamentoMotivo] = useState("");
+
   const moeda = paises.find((p) => p.id === alunoPaisId)?.moedaLocal ?? "";
+  const totalInicial = Number(taxaValor || 0) + Number(mensalidadeValor || 0);
+  const comprovanteAplicavel = pagForma !== FormaPagamento.DINHEIRO;
 
   function prefillPrecos(pid: string, prodId: string) {
     const taxa = precos.find(
@@ -117,8 +128,40 @@ export function MatriculaFormulario({
     };
   }
 
-  async function salvar(ativar: boolean) {
+  type Ativacao = "nenhuma" | "com_pagamento" | "sem_pagamento";
+
+  function montarAtivacao(modo: Ativacao) {
+    if (modo === "com_pagamento") {
+      return {
+        comPagamento: true as const,
+        valorRecebido: pagValor === "" ? 0 : Number(pagValor),
+        forma: pagForma,
+        dataPagamento: pagData,
+        comprovanteUrl: pagComprovante || undefined,
+        comentario: pagComentario || undefined,
+      };
+    }
+    return { comPagamento: false as const, motivo: semPagamentoMotivo };
+  }
+
+  async function salvar(modo: Ativacao) {
     setErro(null);
+    // Validações de borda no cliente (o backend revalida e é a fonte da verdade).
+    if (modo === "com_pagamento") {
+      if (pagValor === "" || Number(pagValor) <= 0) {
+        setErro("Informe o valor pago para ativar com pagamento.");
+        return;
+      }
+      if (comprovanteAplicavel && !pagComprovante.trim()) {
+        setErro("Informe o comprovante do pagamento (ou selecione Dinheiro).");
+        return;
+      }
+    }
+    if (modo === "sem_pagamento" && !semPagamentoMotivo.trim()) {
+      setErro("Informe o motivo para ativar sem pagamento.");
+      return;
+    }
+
     setSalvando(true);
     const res = await criarMatricula(montarInput());
     if (!res.ok) {
@@ -126,8 +169,8 @@ export function MatriculaFormulario({
       setSalvando(false);
       return;
     }
-    if (ativar && res.dado) {
-      const at = await ativarMatricula(res.dado.id, { forma: FormaPagamento.TRANSFERENCIA });
+    if (modo !== "nenhuma" && res.dado) {
+      const at = await ativarMatricula(res.dado.id, montarAtivacao(modo));
       if (!at.ok) {
         setErro("Matrícula salva, mas ativação falhou: " + at.erro);
         setSalvando(false);
@@ -321,29 +364,99 @@ export function MatriculaFormulario({
           </div>
         </div>
         <p className="mt-3 text-sm text-gray-600">
-          Primeiro pagamento: <strong>{moeda} {(Number(taxaValor || 0) + Number(mensalidadeValor || 0)).toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
+          Primeiro pagamento devido: <strong>{moeda} {totalInicial.toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
         </p>
       </section>
 
-      <div className="flex gap-2">
+      {/* Pagamento na ativação (issue #23) */}
+      <section className="rounded-lg border border-gray-200 bg-surface p-5">
+        <h2 className="mb-1 text-sm font-medium">Pagamento (para ativar com lastro)</h2>
+        <p className="mb-4 text-xs text-gray-400">
+          O valor recebido é alocado à taxa e à 1ª mensalidade; cada cobrança só é baixada se for
+          integralmente coberta. Pagamento parcial mantém o saldo pendente.
+        </p>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Valor pago</label>
+            <input
+              type="number"
+              step="0.01"
+              className={inputCls}
+              value={pagValor}
+              onChange={(e) => setPagValor(e.target.value)}
+              placeholder={String(totalInicial)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Forma</label>
+            <select className={inputCls} value={pagForma} onChange={(e) => setPagForma(e.target.value as FormaPagamento)}>
+              {Object.values(FormaPagamento).map((f) => (
+                <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Data do pagamento</label>
+            <input type="date" className={inputCls} value={pagData} onChange={(e) => setPagData(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">
+              Comprovante {comprovanteAplicavel ? "(obrigatório)" : "(dispensado — dinheiro)"}
+            </label>
+            <input
+              className={inputCls}
+              value={pagComprovante}
+              onChange={(e) => setPagComprovante(e.target.value)}
+              placeholder="URL do comprovante"
+              disabled={!comprovanteAplicavel}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label className="mb-1 block text-xs text-gray-600">Observação (opcional)</label>
+            <input className={inputCls} value={pagComentario} onChange={(e) => setPagComentario(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <label className="mb-1 block text-xs text-gray-600">
+            Ativar SEM pagamento? Informe o motivo (vira evento de auditoria)
+          </label>
+          <input
+            className={inputCls}
+            value={semPagamentoMotivo}
+            onChange={(e) => setSemPagamentoMotivo(e.target.value)}
+            placeholder="Ex.: pagamento será conciliado depois"
+          />
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => salvar(false)}
+          onClick={() => salvar("nenhuma")}
           disabled={salvando}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           Salvar matrícula
         </button>
         <button
-          onClick={() => salvar(true)}
+          onClick={() => salvar("com_pagamento")}
           disabled={salvando}
           className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
         >
           {salvando ? "Processando…" : "Receber pagamento e ativar"}
         </button>
+        <button
+          onClick={() => salvar("sem_pagamento")}
+          disabled={salvando}
+          className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+        >
+          Ativar sem pagamento (pendente)
+        </button>
       </div>
       <p className="text-xs text-gray-400">
-        "Receber pagamento e ativar" marca taxa + 1ª mensalidade como pagas e ativa a matrícula
-        (exige perfil Financeiro/Secretaria; {FORMA_PAGAMENTO_LABEL.TRANSFERENCIA} por padrão).
+        "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO});
+        o backend só baixa as cobranças cobertas pelo valor recebido. "Ativar sem pagamento" deixa o estado financeiro
+        pendente e registra o motivo (exige perfil Financeiro/Secretaria).
       </p>
     </div>
   );
