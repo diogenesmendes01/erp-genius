@@ -20,6 +20,8 @@ export const emailSchema = z.string().email("E-mail inválido");
 // fuso prática (servidor em -03/-06) cruza a fronteira do dia.
 // ------------------------------------------------------------
 const SOMENTE_DATA = /^\d{4}-\d{2}-\d{2}$/;
+// <input type="datetime-local"> envia "YYYY-MM-DDTHH:mm" (sem fuso) — hora LOCAL.
+const DATA_HORA_LOCAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 
 /**
  * Converte uma string "YYYY-MM-DD" (date-only) em Date ancorada no meio-dia
@@ -41,6 +43,32 @@ export function paraDataLocal(v: unknown): unknown {
  */
 export const dataOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
+  z.coerce.date().optional(),
+);
+
+/**
+ * Converte uma string "YYYY-MM-DDTHH:mm" (vinda de <input type="datetime-local">,
+ * sem fuso) em Date na HORA LOCAL informada. Diferente de {@link paraDataLocal},
+ * NÃO ancora no meio-dia: a hora digitada é preservada (issue #16 — não descartar o
+ * horário da experimental). Date-only ("YYYY-MM-DD") cai no meio-dia local via
+ * {@link paraDataLocal}; qualquer outro valor passa inalterado.
+ */
+export function paraDataHoraLocal(v: unknown): unknown {
+  if (typeof v === "string" && DATA_HORA_LOCAL.test(v)) {
+    const [data, hora] = v.split("T");
+    const [ano, mes, dia] = data.split("-").map(Number);
+    const [h, min, seg] = hora.split(":").map(Number);
+    return new Date(ano, mes - 1, dia, h, min, seg || 0, 0);
+  }
+  return paraDataLocal(v);
+}
+
+/**
+ * Campo opcional de data COM hora (datetime-local). Preserva o horário digitado;
+ * aceita também date-only (ancorado no meio-dia local). Vazio → undefined.
+ */
+export const dataHoraOpcional = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : paraDataHoraLocal(v)),
   z.coerce.date().optional(),
 );
 
@@ -105,4 +133,22 @@ export function validarDocumento(validador: string, valor: string): boolean {
   const fn = VALIDADORES[validador];
   if (!fn) return false;
   return fn(valor);
+}
+
+/**
+ * Calcula a flag `Aluno.documentoValido` a partir do documento informado e dos
+ * tipos de documento do país do aluno. Cada país pode ter 1+ {@link TipoDocumento};
+ * o documento é considerado VÁLIDO se passar em QUALQUER um dos validadores do país
+ * (ex.: Cédula OU Passaporte). Ausência de documento → false (não há o que validar).
+ *
+ * NUNCA bloqueia (doc 04): o resultado é só a flag persistida; o salvamento ocorre
+ * de qualquer forma. Usado na criação (via matrícula) e na edição de aluno.
+ */
+export function calcularDocumentoValido(
+  tiposDocumento: { validador: string }[],
+  documento: string | null | undefined,
+): boolean {
+  const valor = documento?.trim();
+  if (!valor) return false;
+  return tiposDocumento.some((t) => validarDocumento(t.validador, valor));
 }

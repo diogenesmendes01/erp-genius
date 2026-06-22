@@ -40,7 +40,7 @@ export default async function HomePage() {
   const itens = navParaPapeis(usuario.papeis).filter((i) => i.href !== "/home");
   return (
     <div>
-      <h1 className="text-2xl font-medium">Olá, {usuario.nome.split(" ")[0]} 👋</h1>
+      <h1 className="text-2xl font-medium">Olá, {usuario.nome.split(" ")[0]}</h1>
       <p className="mt-2 text-sm text-gray-500">Acesso rápido às suas áreas:</p>
       <div className="mt-6 flex flex-wrap gap-2">
         {itens.map((i) => (

@@ -1,23 +1,27 @@
 import { Papel } from "@prisma/client";
+import { exigirPapelLeitura } from "@/lib/guards";
+import { AcessoNegado } from "@/components/AcessoNegado";
 import {
   listarCobrancasAbertas,
   listarComissoes,
   kpisFinanceiro,
 } from "@/server/financeiro/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
-import { exigirSessaoPagina } from "@/server/_shared";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
+
+// Guard server-side por papel ANTES de buscar dados sensíveis (issue #1).
+// Papéis alinhados ao nav.ts; Administrador passa sempre (exigirPapelLeitura).
+const PAPEIS_FINANCEIRO: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL];
 
 export default async function FinanceiroPage() {
   // Painel financeiro global (doc 07 / nav): Admin, Financeiro, Gerente Comercial.
   // Bloqueia ANTES de consultar dados sensíveis (cobranças, comissões, aprovações).
-  const usuario = await exigirSessaoPagina(
-    Papel.FINANCEIRO,
-    Papel.GERENTE_COMERCIAL,
-  );
+  const papeis = await exigirPapelLeitura(...PAPEIS_FINANCEIRO);
+  if (!papeis) return <AcessoNegado recurso="o financeiro" />;
+
   const podeAprovar =
-    usuario.papeis.includes(Papel.ADMINISTRADOR) ||
-    usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
+    papeis.includes(Papel.ADMINISTRADOR) ||
+    papeis.includes(Papel.GERENTE_COMERCIAL);
 
   const [cobrancas, comissoes, kpis, aprovacoesRaw] = await Promise.all([
     listarCobrancasAbertas(),

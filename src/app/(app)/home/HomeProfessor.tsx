@@ -43,13 +43,13 @@ export function HomeProfessor({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]} 👋</h1>
+      <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
       {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {proxima && (
         <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
           <div className="text-xs font-medium text-brand-700">Próxima aula experimental</div>
-          <div className="mt-1 text-lg font-semibold text-gray-800">
+          <div className="mt-1 text-lg font-medium text-gray-800">
             {new Date(proxima.data).toLocaleString("pt-BR", { weekday: "short", hour: "2-digit", minute: "2-digit" })} · {proxima.nome}
           </div>
         </section>

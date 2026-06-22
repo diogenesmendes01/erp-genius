@@ -31,8 +31,10 @@ export async function listarProdutos() {
 }
 
 export async function listarPrecos() {
+  // Ordem determinística: ativos primeiro, mais recente antes; `id` desempata
+  // quando há `criadoEm` idêntico (evita ordem instável entre execuções).
   return prisma.precoReferencia.findMany({
-    orderBy: [{ ativo: "desc" }, { criadoEm: "desc" }],
+    orderBy: [{ ativo: "desc" }, { criadoEm: "desc" }, { id: "desc" }],
     include: {
       pais: true,
       modalidade: true,
