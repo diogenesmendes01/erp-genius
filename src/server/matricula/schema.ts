@@ -34,6 +34,14 @@ export const MatriculaSchema = z.object({
   mensalidadeValor: z.coerce.number().min(0, "Valor inválido"),
   certificadoValor: z.coerce.number().min(0).optional().default(0), // só Costa Rica (doc 04)
   mesesPlano: z.coerce.number().int().positive().default(12),
+  // Exceção de preço (Issue #7): quando NÃO há preço de referência válido, a
+  // matrícula só prossegue com uma JUSTIFICATIVA (texto) E papel autorizado
+  // (apurado no servidor). NÃO há flag booleana livre do client — evita que
+  // qualquer vendedor pule o bloqueio. `z.coerce.boolean` foi removido de
+  // propósito: ele transformava "false" em true.
+  // Obrigatória quando não há preço de referência ativo p/ a combinação país ×
+  // produto (issue #22); a validação fica na ação, que conhece a matriz de preços.
+  justificativaSemPreco: z.string().trim().optional(),
   // Comissão
   comissaoPct: z.coerce.number().min(0).max(100).default(20),
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
@@ -78,3 +86,14 @@ export const AtivacaoSchema = z
     }
   });
 export type AtivacaoInput = z.input<typeof AtivacaoSchema>;
+
+// Criar + ativar atômico (issue #8): combina os dados da matrícula com a forma
+// de pagamento da ativação. Exige os papéis de criar E ativar.
+export const MatriculaComAtivacaoSchema = z.object({
+  matricula: MatriculaSchema,
+  ativacao: AtivacaoSchema,
+});
+export type MatriculaComAtivacaoInput = {
+  matricula: MatriculaInput;
+  ativacao: AtivacaoInput;
+};

@@ -11,7 +11,7 @@ const GENERO_LABEL: Record<Genero, string> = {
   OUTRO: "Outro",
   NAO_INFORMADO: "Não informado",
 };
-import { criarMatricula, ativarMatricula } from "@/server/matricula/acoes";
+import { criarMatricula, criarEAtivarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
 
 const inputCls =
@@ -25,26 +25,32 @@ export interface PrecoRef {
 }
 
 export function MatriculaFormulario({
+  podeCriar,
+  podeCriarEAtivar,
   lead,
   paises,
   produtos,
   turmas,
   niveis,
   precos,
-  podeAtivar,
 }: {
+  /**
+   * O usuário pode CRIAR matrículas (Vendedor/Gerente Comercial/Admin)? Habilita
+   * "Salvar matrícula" (fica AGUARDANDO). O backend revalida (defesa em profundidade).
+   */
+  podeCriar: boolean;
+  /**
+   * O usuário pode CRIAR e ATIVAR (Financeiro/Secretaria/Admin além do papel de
+   * criar)? Habilita o caminho atômico "Receber pagamento e ativar". Quando falso,
+   * a UI de pagamento/ativação some para evitar registro parcial.
+   */
+  podeCriarEAtivar: boolean;
   lead: { id: string; nome: string; telefoneE164: string | null; paisId: string | null } | null;
   paises: { id: string; nome: string; moedaLocal: string }[];
   produtos: { id: string; label: string }[];
   turmas: { id: string; label: string }[];
   niveis: { id: string; label: string }[];
   precos: PrecoRef[];
-  /**
-   * O usuário pode ativar matrículas (Financeiro/Secretaria/Admin)? Quando falso,
-   * os caminhos de ativação somem para evitar registro parcial — quem cria sem
-   * permissão só consegue "Salvar matrícula". O backend revalida (defesa em profundidade).
-   */
-  podeAtivar: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -81,6 +87,7 @@ export function MatriculaFormulario({
   const [certificadoValor, setCert] = useState("");
   const [mesesPlano, setMeses] = useState(12);
   const [comissaoPct, setPct] = useState(20);
+  const [justificativaSemPreco, setJustSemPreco] = useState("");
 
   // Pagamento na ativação (issue #23): lastro financeiro explícito.
   const [pagForma, setPagForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
@@ -94,13 +101,22 @@ export function MatriculaFormulario({
   const totalInicial = Number(taxaValor || 0) + Number(mensalidadeValor || 0);
   const comprovanteAplicavel = pagForma !== FormaPagamento.DINHEIRO;
 
+  function precoRefDe(pid: string, prodId: string, tipo: TipoCobranca) {
+    return precos.find((p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === tipo);
+  }
+
+  // Sugerido (preço de referência ativo) por linha + ausência da tabela (issue #22).
+  const refTaxa = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MATRICULA);
+  const refMens = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MENSALIDADE);
+  const semTabela = !refTaxa || !refMens;
+  // "Manual" = há tabela, mas o valor digitado diverge do sugerido.
+  const taxaManual = !!refTaxa && taxaValor !== "" && Number(taxaValor) !== refTaxa.valor;
+  const mensManual = !!refMens && mensalidadeValor !== "" && Number(mensalidadeValor) !== refMens.valor;
+
   function prefillPrecos(pid: string, prodId: string) {
-    const taxa = precos.find(
-      (p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === TipoCobranca.MATRICULA,
-    );
-    const mens = precos.find(
-      (p) => p.paisId === pid && p.produtoId === prodId && p.tipoCobranca === TipoCobranca.MENSALIDADE,
-    );
+    const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
+    const mens = precoRefDe(pid, prodId, TipoCobranca.MENSALIDADE);
+    // Sem tabela: não sobrescreve o que o usuário digitou (não há sugestão).
     if (taxa) setTaxa(String(taxa.valor));
     if (mens) setMens(String(mens.valor));
   }
@@ -131,6 +147,7 @@ export function MatriculaFormulario({
       certificadoValor: certificadoValor === "" ? 0 : Number(certificadoValor),
       mesesPlano,
       comissaoPct,
+      justificativaSemPreco: justificativaSemPreco || undefined,
     };
   }
 
@@ -163,21 +180,32 @@ export function MatriculaFormulario({
     }
 
     setSalvando(true);
-    const res = await criarMatricula(montarInput());
-    if (!res.ok) {
-      setErro(res.erro);
-      setSalvando(false);
-      return;
-    }
-    if (modo !== "nenhuma" && res.dado) {
-      const at = await ativarMatricula(res.dado.id, montarAtivacao());
-      if (!at.ok) {
-        setErro("Matrícula salva, mas ativação falhou: " + at.erro);
+
+    if (modo === "com_pagamento") {
+      // Caminho único de ativação "Receber pagamento e ativar": operação ATÔMICA
+      // (cria + ativa numa só transação no servidor — issue #8). A ativação exige
+      // só a TAXA quitada (regra do PO); se o valor recebido não cobrir a taxa, a
+      // ativação é recusada, NADA é gravado e o usuário NÃO é redirecionado.
+      const res = await criarEAtivarMatricula({
+        matricula: montarInput(),
+        ativacao: montarAtivacao(),
+      });
+      if (!res.ok) {
+        setErro("Ativação recusada: " + res.erro + " A matrícula não foi criada.");
         setSalvando(false);
-        router.push(lead ? `/leads/${lead.id}` : "/alunos");
+        return;
+      }
+    } else {
+      // Só salvar a matrícula (fica AGUARDANDO; o recebimento/ativação fica para
+      // o Financeiro).
+      const res = await criarMatricula(montarInput());
+      if (!res.ok) {
+        setErro(res.erro);
+        setSalvando(false);
         return;
       }
     }
+
     router.push(lead ? `/leads/${lead.id}` : "/alunos");
     router.refresh();
   }
@@ -341,14 +369,23 @@ export function MatriculaFormulario({
       <section className="rounded-lg border border-gray-200 bg-surface p-5">
         <h2 className="mb-1 text-sm font-medium">Contrato — linhas de cobrança</h2>
         <p className="mb-4 text-xs text-gray-400">Moeda: {moeda || "—"} · valores de referência pré-preenchidos (edite o negociado).</p>
+        {semTabela && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Sem tabela de preço ativa para este país × produto. Os valores abaixo são
+            <strong> manuais</strong> (sem referência). Para registrar a matrícula, informe a
+            justificativa da exceção (será auditada).
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
             <input type="number" step="0.01" className={inputCls} value={taxaValor} onChange={(e) => setTaxa(e.target.value)} />
+            <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Mensalidade</label>
             <input type="number" step="0.01" className={inputCls} value={mensalidadeValor} onChange={(e) => setMens(e.target.value)} />
+            <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Meses do plano</label>
@@ -363,13 +400,27 @@ export function MatriculaFormulario({
             <input type="number" step="0.01" className={inputCls} value={certificadoValor} onChange={(e) => setCert(e.target.value)} placeholder="0" />
           </div>
         </div>
+        {semTabela && (
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <label className="mb-1 block text-xs text-gray-600">
+              Justificativa da exceção (sem tabela de preço) <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              className={inputCls}
+              rows={2}
+              value={justificativaSemPreco}
+              onChange={(e) => setJustSemPreco(e.target.value)}
+              placeholder="Ex.: país/produto ainda sem matriz de preços; valor aprovado pelo gerente."
+            />
+          </div>
+        )}
         <p className="mt-3 text-sm text-gray-600">
           Primeiro pagamento devido: <strong>{moeda} {totalInicial.toLocaleString("pt-BR")}</strong> (taxa + 1ª mensalidade).
         </p>
       </section>
 
-      {/* Pagamento na ativação — só para quem pode ativar (Financeiro/Secretaria/Admin) */}
-      {podeAtivar && (
+      {/* Pagamento na ativação — só para quem pode CRIAR e ATIVAR (Financeiro/Secretaria/Admin) */}
+      {podeCriarEAtivar && (
       <section className="rounded-lg border border-gray-200 bg-surface p-5">
         <h2 className="mb-1 text-sm font-medium">Pagamento da taxa (para ativar)</h2>
         <p className="mb-4 text-xs text-gray-400">
@@ -422,14 +473,16 @@ export function MatriculaFormulario({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => salvar("nenhuma")}
-          disabled={salvando}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-        >
-          Salvar matrícula
-        </button>
-        {podeAtivar && (
+        {podeCriar && (
+          <button
+            onClick={() => salvar("nenhuma")}
+            disabled={salvando}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            {salvando && !podeCriarEAtivar ? "Processando…" : "Salvar matrícula"}
+          </button>
+        )}
+        {podeCriarEAtivar && (
           <button
             onClick={() => salvar("com_pagamento")}
             disabled={salvando}
@@ -439,18 +492,39 @@ export function MatriculaFormulario({
           </button>
         )}
       </div>
-      {podeAtivar ? (
+      {podeCriarEAtivar ? (
         <p className="text-xs text-gray-400">
-          "Receber pagamento e ativar" exige valor, forma, data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO}).
-          A ativação só ocorre se o valor cobrir a TAXA de matrícula; caso contrário a matrícula continua aguardando.
-          A 1ª mensalidade não é exigida para ativar — fica pendente com vencimento 30 dias após o início da 1ª aula.
+          "Receber pagamento e ativar" cria e ativa numa só operação atômica: exige valor, forma,
+          data e comprovante (exceto {FORMA_PAGAMENTO_LABEL.DINHEIRO}). A ativação só ocorre se o
+          valor cobrir a TAXA de matrícula; caso contrário nada é gravado e a matrícula não é criada.
+          A 1ª mensalidade não é exigida para ativar — fica pendente com vencimento 30 dias após o
+          início da 1ª aula, no dia escolhido.
         </p>
       ) : (
         <p className="text-xs text-gray-400">
-          Você pode salvar a matrícula como rascunho. A ativação (receber o pagamento da taxa) é feita
-          pelo perfil Financeiro/Secretaria depois.
+          A matrícula será criada como <strong>Aguardando</strong>. O recebimento do pagamento da taxa
+          e a ativação são feitos pelo perfil Financeiro/Secretaria depois.
         </p>
       )}
     </div>
+  );
+}
+
+/** Etiqueta da linha de cobrança: diferencia preço sugerido × manual × sem tabela (issue #22). */
+function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: string; manual: boolean }) {
+  if (refValor === undefined) {
+    return <p className="mt-1 text-xs text-amber-700">Sem tabela — valor manual</p>;
+  }
+  if (manual) {
+    return (
+      <p className="mt-1 text-xs text-amber-700">
+        Manual (sugerido: {moeda} {refValor.toLocaleString("pt-BR")})
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1 text-xs text-gray-400">
+      Sugerido: {moeda} {refValor.toLocaleString("pt-BR")}
+    </p>
   );
 }

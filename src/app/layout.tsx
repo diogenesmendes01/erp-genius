@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
+// Design system (docs/18 §Tipografia): apenas DOIS pesos — regular (400) e medium (500).
+// Não carregamos semibold/bold para manter a UI densa e consistente com o DS.
 const anthropicSans = localFont({
   src: [
     { path: "./fonts/AnthropicSans-Text-Regular.otf", weight: "400", style: "normal" },
     { path: "./fonts/AnthropicSans-Text-Medium.otf", weight: "500", style: "normal" },
-    { path: "./fonts/AnthropicSans-Text-Semibold.otf", weight: "600", style: "normal" },
-    { path: "./fonts/AnthropicSans-Text-Bold.otf", weight: "700", style: "normal" },
   ],
   variable: "--font-sans",
   display: "swap",
