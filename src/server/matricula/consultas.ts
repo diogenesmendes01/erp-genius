@@ -1,4 +1,4 @@
-import { StatusTurma, TipoCobranca } from "@prisma/client";
+import { Papel, StatusTurma, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoLeads } from "@/server/comercial/consultas";

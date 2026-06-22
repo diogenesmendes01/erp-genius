@@ -71,3 +71,28 @@ export async function exigirSessaoComPapel(...alvo: Papel[]): Promise<UsuarioSes
   exigirPapel(usuario, ...alvo);
   return usuario;
 }
+
+/**
+ * Guard de PÁGINA (Server Component). Diferente das Server Actions (que lançam e
+ * devolvem {ok:false}), aqui bloqueamos a renderização ANTES de qualquer consulta:
+ * sem sessão → /login; sem papel → /acesso-negado. Retorna o usuário para reuso
+ * (id/papéis no escopo row-level). Permissão SEMPRE no servidor — menu é só UX.
+ */
+export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessao> {
+  // imports dinâmicos: mantém o módulo (guards/erros puros) testável sem Next/NextAuth.
+  const { auth } = await import("@/lib/auth");
+  const { redirect } = await import("next/navigation");
+  const session = await auth();
+  const user = session?.user;
+  if (!user?.id) {
+    redirect("/login");
+    throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
+  }
+  const usuario: UsuarioSessao = {
+    id: user.id,
+    nome: user.name ?? "Usuário",
+    papeis: user.papeis ?? [],
+  };
+  if (alvo.length > 0 && !temPapel(usuario, ...alvo)) redirect("/acesso-negado");
+  return usuario;
+}
