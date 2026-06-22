@@ -13,6 +13,7 @@ import {
   ErroRegra,
   ErroPermissao,
   temPapel,
+  resolverDonoLead,
   normalizarTelefoneE164,
   type Resultado,
   type UsuarioSessao,
@@ -60,10 +61,9 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const dados = LeadSchema.parse(input);
 
-    // Vendedor vira dono por padrão; gerente/admin podem atribuir (mas NÃO viram dono sozinhos).
-    // Checagem LITERAL de papel — temPapel() não serve aqui (Admin passa em tudo).
-    const ehVendedor = autor.papeis.includes(Papel.VENDEDOR);
-    const donoId = dados.vendedorDonoId || (ehVendedor ? autor.id : null);
+    // Vendedor vira dono por padrão; só gerente/admin podem atribuir a outro vendedor.
+    // O servidor ignora qualquer vendedorDonoId enviado por um vendedor (doc 09).
+    const donoId = resolverDonoLead(autor, dados.vendedorDonoId);
     const ddi = await ddiDoPais(dados.paisId);
 
     const id = await prisma.$transaction(async (tx) => {
