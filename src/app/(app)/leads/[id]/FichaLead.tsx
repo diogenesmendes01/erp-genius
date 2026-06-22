@@ -63,6 +63,7 @@ export interface LeadFicha {
   planoPrevisto: string | null;
   comissaoPrevista: number | null;
   documentos: { id: string; categoria: string; nome: string; url: string }[];
+  professorExperimentalId: string | null;
 }
 
 export interface EventoTimeline {
@@ -89,7 +90,15 @@ function soData(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
 }
 
-export function FichaLead({ lead, timeline }: { lead: LeadFicha; timeline: EventoTimeline[] }) {
+export function FichaLead({
+  lead,
+  timeline,
+  professores = [],
+}: {
+  lead: LeadFicha;
+  timeline: EventoTimeline[];
+  professores?: { id: string; nome: string }[];
+}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const refresh = () => router.refresh();
@@ -155,7 +164,7 @@ export function FichaLead({ lead, timeline }: { lead: LeadFicha; timeline: Event
 
       <ValorOportunidade lead={lead} />
 
-      <BarraAcoes lead={lead} run={run} />
+      <BarraAcoes lead={lead} run={run} professores={professores} />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Resumo lead={lead} run={run} />
@@ -282,14 +291,17 @@ function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
 function BarraAcoes({
   lead,
   run,
+  professores,
 }: {
   lead: LeadFicha;
   run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
+  professores: { id: string; nome: string }[];
 }) {
   const [modal, setModal] = useState<"none" | "interacao" | "experimental" | "perdido">("none");
   const [nota, setNota] = useState("");
   const [canal, setCanal] = useState("");
   const [dataExp, setDataExp] = useState("");
+  const [profExp, setProfExp] = useState(lead.professorExperimentalId ?? "");
   const [motivo, setMotivo] = useState<MotivoPerda>(MotivoPerda.NAO_RESPONDEU);
   const [obs, setObs] = useState("");
 
@@ -352,15 +364,26 @@ function BarraAcoes({
       )}
 
       {modal === "experimental" && (
-        <div className="mt-4 flex items-end gap-2 border-t border-gray-100 pt-4">
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4">
           <div>
             <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
             <input type="datetime-local" className={inputCls} value={dataExp} onChange={(e) => setDataExp(e.target.value)} />
           </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Professor responsável</label>
+            <select className={inputCls} value={profExp} onChange={(e) => setProfExp(e.target.value)}>
+              <option value="">Definir depois</option>
+              {professores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             className={btnPri}
             onClick={() => {
-              if (dataExp) run(agendarExperimental(lead.id, dataExp));
+              if (dataExp) run(agendarExperimental(lead.id, { dataISO: dataExp, professorId: profExp || undefined }));
               setModal("none");
             }}
           >
