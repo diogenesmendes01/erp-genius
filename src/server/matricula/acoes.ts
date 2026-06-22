@@ -22,6 +22,7 @@ import {
   calcularComissao,
   vencimentoMensalidade,
   normalizarTelefoneE164,
+  calcularDocumentoValido,
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
@@ -48,7 +49,10 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
     const dados = MatriculaSchema.parse(input);
 
-    const pais = await prisma.pais.findUnique({ where: { id: dados.alunoPaisId } });
+    const pais = await prisma.pais.findUnique({
+      where: { id: dados.alunoPaisId },
+      include: { tiposDocumento: true },
+    });
     if (!pais) throw new ErroRegra("País não encontrado.");
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
@@ -89,6 +93,7 @@ export async function criarMatricula(
           nome: dados.alunoNome,
           paisId: pais.id,
           documento: dados.alunoDocumento || null,
+          documentoValido: calcularDocumentoValido(pais.tiposDocumento, dados.alunoDocumento),
           telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
           email: dados.alunoEmail || null,
           genero: dados.alunoGenero ?? null,
