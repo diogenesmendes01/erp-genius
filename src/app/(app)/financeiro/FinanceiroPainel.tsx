@@ -18,6 +18,8 @@ export interface CobrancaRow {
   codigo: string | null;
   tipo: TipoCobranca;
   valorNegociado: number;
+  valorRecebido: number;
+  saldo: number;
   moeda: string;
   vencimento: string;
   atrasado: boolean;
@@ -176,6 +178,8 @@ export function FinanceiroPainel({
           alunoNome={pagar.aluno.nome}
           moeda={pagar.moeda}
           valorEsperado={pagar.valorNegociado}
+          jaRecebido={pagar.valorRecebido}
+          saldoRestante={pagar.saldo}
           onClose={() => setPagar(null)}
           onDone={() => { setPagar(null); router.refresh(); }}
           onErro={setErro}

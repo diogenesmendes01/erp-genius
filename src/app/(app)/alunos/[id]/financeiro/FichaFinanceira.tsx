@@ -46,6 +46,8 @@ export interface FichaFinanceiraDados {
     tipo: TipoCobranca;
     status: StatusCobranca;
     valorNegociado: number;
+    valorRecebido: number;
+    saldo: number;
     moeda: string;
     vencimento: string;
     pagoEm: string | null;
@@ -180,6 +182,8 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
           alunoNome={dados.aluno.nome}
           moeda={dados.moeda}
           valorEsperado={pagar.valorNegociado}
+          jaRecebido={pagar.valorRecebido}
+          saldoRestante={pagar.saldo}
           onClose={() => setPagar(null)}
           onDone={() => { setPagar(null); router.refresh(); }}
           onErro={setErro}
