@@ -190,8 +190,15 @@ model PrecoReferencia {
   vigenteDesde DateTime     @default(now())
   criadoEm     DateTime     @default(now())
 
+  // Integridade (issue #1): no máx. UM preço ATIVO por país+produto+modalidade+tipoCobrança.
+  // Índice único PARCIAL (só ativo=true) — mora na migration `integridade_alocacao_preco`
+  // (UNIQUE ... WHERE "ativo"). O histórico desativado (supersede) permanece livre.
   @@index([paisId, produtoId, modalidadeId, tipoCobranca])
   @@index([ativo])
+  // Proteção lógica: no máximo UM preço ATIVO por combinação
+  // (país + produto + modalidade + tipo de cobrança). Como Prisma não suporta
+  // índice único parcial, ele é criado por SQL na migration
+  // 20260622120000_preco_ativo_unico (partial unique index WHERE ativo).
 }
 
 // ============================================================
@@ -298,6 +305,12 @@ model AlocacaoTurma {
   turma    Turma    @relation(fields: [turmaId], references: [id])
   ativa    Boolean  @default(true)
   criadoEm DateTime @default(now())
+
+  // Integridade (issue #1): no máx. UMA alocação ATIVA por aluno. Índice único PARCIAL
+  // (só linhas ativa=true) — Prisma não modela WHERE em @@unique, então mora na migration
+  // `integridade_alocacao_preco` (UNIQUE ... WHERE "ativa"). Histórico (ativa=false) é livre.
+  @@index([alunoId])
+  @@index([turmaId])
 }
 
 // MOVIMENTAÇÃO DO ALUNO — tabela TIPADA (decisão P6, doc 15).
@@ -475,6 +488,13 @@ model Matricula {
   primeiraMensalidadeOk Boolean         @default(false)
   // Exceção: Admin/Gerente pode ativar com pendência (registra o porquê em Evento).
   ativadaComPendencia   Boolean         @default(false)
+  // Exceção de preço auditável (Issues #7/#22): matrícula criada SEM preço de
+  // referência ATIVO para a combinação país × produto × tipo de cobrança, por
+  // exceção justificada + aprovada. Exige justificativa e grava Evento
+  // `MatriculaSemPrecoReferencia`. Permite operar países/produtos sem matriz de
+  // preços fechada (doc 06 §Em aberto) sem perder a auditoria.
+  precoReferenciaAusente Boolean        @default(false)
+  justificativaSemPreco  String?
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId        String?
   origemNivel           OrigemNivel?
@@ -523,6 +543,7 @@ model Cobranca {
   pagoEm         DateTime?
   formaPagamento FormaPagamento?
   comprovanteUrl String?
+  comprovanteNome String?
   comentario     String?
   criadoEm       DateTime        @default(now())
 }
