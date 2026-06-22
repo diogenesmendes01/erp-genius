@@ -29,12 +29,15 @@ export async function solicitarAberturaTurma(input: {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
     if (!input.produtoId) throw new ErroRegra("Selecione o produto.");
-    await registrarEvento(prisma, {
-      tipo: "AberturaTurmaSolicitada",
-      agregadoTipo: "Produto",
-      agregadoId: input.produtoId,
-      autorId: autor.id,
-      payload: { nivelId: input.nivelId ?? null, observacao: input.observacao ?? null },
+    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "AberturaTurmaSolicitada",
+        agregadoTipo: "Produto",
+        agregadoId: input.produtoId,
+        autorId: autor.id,
+        payload: { nivelId: input.nivelId ?? null, observacao: input.observacao ?? null },
+      });
     });
     revalidatePath(PATH);
   });
