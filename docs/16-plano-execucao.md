@@ -13,13 +13,15 @@
   (`contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`). Falta só a **matriz de valores** (P5).
 
 ## Estado atual (junho/2026)
-- **Documentação:** docs `01`–`10` cobrem escopo, arquitetura, roadmap, domínio, fluxo de
-  matrícula, catálogo, papéis, CRM/WhatsApp, telas da Fase 0 e regras cross-cutting.
-- **Código (V0 — fundação):**
+- **Documentação:** docs `01`–`23` cobrem escopo, arquitetura, roadmap, domínio, fluxo de
+  matrícula, catálogo, papéis, CRM/WhatsApp, telas da Fase 0, regras cross-cutting, modelo de
+  dados, eventos, convenções, testes, ADRs, design system e cargas Q10.
+- **Código (Fase 0 implementada):**
   - ✅ Login (Auth.js) com os 7 papéis · rotas protegidas · app shell com sidebar role-aware.
   - ✅ `schema.prisma` completo (modelo **eventos + estado**) · migrations · seed.
-  - ⛔ **Todas as telas do app ainda são `<Placeholder/>`** (home, pipeline, leads, alunos,
-    financeiro, configuração).
+  - ✅ **Telas da Fase 0 implementadas** (home, pipeline, leads, alunos, financeiro,
+    configuração, matrícula) — ver os itens **B0–B7** marcados na Etapa B abaixo. O
+    `<Placeholder/>` segue como componente reutilizável, não como app inteira.
 
 ### Lacunas / inconsistências encontradas no diagnóstico
 | # | Problema | Ação na Etapa A |
@@ -113,7 +115,13 @@ Professor, **a-vencer agrupado** no Financeiro. Residual fino em [`15`](15-decis
 ### Qualidade
 - [x] **Design system** (tokens + dark mode + Tabler + Anthropic Sans + sentence case) — ver [`18`](18-design-system.md).
 - [x] **Testes unitários** (Vitest) das regras puras — ver [`14`](14-estrategia-de-testes.md). `npm test`.
+- [x] **Typecheck** como verificação estática: `npx tsc --noEmit` (tsconfig com `noEmit`).
 - [ ] Testes de **integração** das Server Actions contra DB de teste (próximo).
+- [ ] **ESLint (gap aberto):** o script `npm run lint` aponta para `next lint`, que **foi
+      removido no Next.js 16** e **não há ESLint configurado** no projeto (sem dependência nem
+      config). Até resolver, a checagem estática é `npx tsc --noEmit`. Pendência: (re)adicionar
+      ESLint flat config compatível com Next 16 e ajustar o script — ver [`SETUP.md`](../SETUP.md)
+      §Verificação estática.
 
 ### Fora da Fase 0 (não fazer agora)
 Automações, WhatsApp Cloud API, IA (scoring/resumo), DocuSign, gateways de pagamento,
