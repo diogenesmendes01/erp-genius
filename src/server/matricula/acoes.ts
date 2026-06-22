@@ -80,6 +80,7 @@ export async function criarMatricula(
     // dono do lead = quem recebe a comissão; senão o criador (se vendedor)
     let vendedorId = autor.id;
     let leadId: string | null = null;
+    let etapaLeadAtual: EtapaLead | null = null;
     if (dados.leadId) {
       const lead = await prisma.lead.findUnique({
         where: { id: dados.leadId },
@@ -90,6 +91,7 @@ export async function criarMatricula(
       if (!podeConverterLead(autor, lead.vendedorDonoId)) throw new ErroPermissao();
       if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
       leadId = lead.id;
+      etapaLeadAtual = lead.etapa;
       if (lead.vendedorDonoId) vendedorId = lead.vendedorDonoId;
     }
 
@@ -261,8 +263,17 @@ export async function criarMatricula(
         },
       });
 
-      if (leadId) {
+      if (leadId && etapaLeadAtual !== EtapaLead.AGUARDANDO_MATRICULA) {
         await tx.lead.update({ where: { id: leadId }, data: { etapa: EtapaLead.AGUARDANDO_MATRICULA } });
+        // Etapa do lead muda no fluxo de matrícula: registra no agregado Lead para
+        // alimentar a timeline e o `etapaDesde` confiável (issue #15).
+        await registrarEvento(tx, {
+          tipo: "EtapaAlterada",
+          agregadoTipo: "Lead",
+          agregadoId: leadId,
+          autorId: autor.id,
+          payload: { de: etapaLeadAtual, para: EtapaLead.AGUARDANDO_MATRICULA },
+        });
       }
 
       await registrarEvento(tx, {
@@ -311,7 +322,11 @@ export async function ativarMatricula(
 
     const matricula = await prisma.matricula.findUnique({
       where: { id: matriculaId },
-      include: { cobrancas: { orderBy: { vencimento: "asc" } }, comissoes: true },
+      include: {
+        cobrancas: { orderBy: { vencimento: "asc" } },
+        comissoes: true,
+        lead: { select: { etapa: true } },
+      },
     });
     if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
     if (matricula.status === StatusMatricula.ATIVA) throw new ErroRegra("Matrícula já está ativa.");
@@ -394,8 +409,17 @@ export async function ativarMatricula(
         });
       }
 
-      if (matricula.leadId) {
+      if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
         await tx.lead.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
+        // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
+        // `etapaDesde` confiável (issue #15).
+        await registrarEvento(tx, {
+          tipo: "EtapaAlterada",
+          agregadoTipo: "Lead",
+          agregadoId: matricula.leadId,
+          autorId: autor.id,
+          payload: { de: matricula.lead?.etapa ?? null, para: EtapaLead.MATRICULADO },
+        });
       }
 
       await registrarEvento(tx, {

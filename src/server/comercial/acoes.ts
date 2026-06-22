@@ -16,7 +16,6 @@ import {
   ehEtapaManual,
   transicaoManualPermitida,
   resolverDonoLead,
-  diffCampos,
   normalizarTelefoneE164,
   type Resultado,
   type UsuarioSessao,
@@ -158,35 +157,34 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const lead = await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
-
-    const novo = {
-      interesse: dados.interesse || null,
-      objetivo: dados.objetivo || null,
-      urgencia: dados.urgencia || null,
-      orcamento: dados.orcamento || null,
-      objecao: dados.objecao || null,
-      proximaAcao: dados.proximaAcao || null,
-    };
-    const atual = {
-      interesse: lead.interesse,
-      objetivo: lead.objetivo,
-      urgencia: lead.urgencia,
-      orcamento: lead.orcamento,
-      objecao: lead.objecao,
-      proximaAcao: lead.proximaAcao,
-    };
-    // antes→depois só dos campos que mudaram (auditoria enxuta — padrão de editarAluno).
-    const { antes, depois } = diffCampos(atual, novo);
-
+    // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
+    // Tipo específico ResumoAtualizado com payload completo, consumido pela linha
+    // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id }, data: novo });
-      // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
+      await tx.lead.update({
+        where: { id },
+        data: {
+          interesse: dados.interesse || null,
+          objetivo: dados.objetivo || null,
+          urgencia: dados.urgencia || null,
+          orcamento: dados.orcamento || null,
+          objecao: dados.objecao || null,
+          proximaAcao: dados.proximaAcao || null,
+        },
+      });
       await registrarEvento(tx, {
-        tipo: "LeadEditado",
+        tipo: "ResumoAtualizado",
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { campo: "resumo", de: antes, para: depois },
+        payload: {
+          interesse: dados.interesse || null,
+          objetivo: dados.objetivo || null,
+          urgencia: dados.urgencia || null,
+          orcamento: dados.orcamento || null,
+          objecao: dados.objecao || null,
+          proximaAcao: dados.proximaAcao || null,
+        },
       });
     });
     revalidarLead(id);
@@ -199,34 +197,28 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const lead = await exigirLeadVisivel(id, autor);
     const dados = DatasSchema.parse(input);
-
-    const novo = {
-      proximoFollowUp: dados.proximoFollowUp ?? null,
-      dataExperimental: dados.dataExperimental ?? null,
-      dataProposta: dados.dataProposta ?? null,
-    };
-    const aIso = (d: Date | null) => (d ? d.toISOString() : null);
-    const atual = {
-      proximoFollowUp: aIso(lead.proximoFollowUp),
-      dataExperimental: aIso(lead.dataExperimental),
-      dataProposta: aIso(lead.dataProposta),
-    };
-    const depoisDisplay = {
-      proximoFollowUp: aIso(novo.proximoFollowUp),
-      dataExperimental: aIso(novo.dataExperimental),
-      dataProposta: aIso(novo.dataProposta),
-    };
-    const { antes, depois } = diffCampos(atual, depoisDisplay);
-
+    // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
+    // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
+    // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id }, data: novo });
-      // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
+      await tx.lead.update({
+        where: { id },
+        data: {
+          proximoFollowUp: dados.proximoFollowUp ?? null,
+          dataExperimental: dados.dataExperimental ?? null,
+          dataProposta: dados.dataProposta ?? null,
+        },
+      });
       await registrarEvento(tx, {
-        tipo: "LeadEditado",
+        tipo: "DatasAtualizadas",
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { campo: "datas", de: antes, para: depois },
+        payload: {
+          proximoFollowUp: dados.proximoFollowUp?.toISOString() ?? null,
+          dataExperimental: dados.dataExperimental?.toISOString() ?? null,
+          dataProposta: dados.dataProposta?.toISOString() ?? null,
+        },
       });
     });
     revalidarLead(id);

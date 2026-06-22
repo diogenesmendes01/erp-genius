@@ -79,3 +79,16 @@ export const ETAPAS_MANUAIS: EtapaLead[] = [
   EtapaLead.QUALIFICADO,
   EtapaLead.EXPERIMENTAL_AGENDADA,
 ];
+
+// Tipos de evento (agregado Lead) que mudam a etapa do funil. Fonte única de
+// verdade para projetar `etapaDesde` de forma confiável (issue #15): a etapa muda
+// por ação manual (EtapaAlterada) e também por ações específicas que avançam o
+// funil. O fluxo de matrícula também emite EtapaAlterada no agregado Lead.
+export const TIPOS_MUDAM_ETAPA: string[] = [
+  "EtapaAlterada",
+  "ExperimentalAgendada",
+  "ExperimentalRealizada",
+  "NoShow",
+  "PropostaEnviada",
+  "LeadPerdido",
+];

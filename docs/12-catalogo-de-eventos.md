@@ -44,13 +44,15 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 |---|---|---|---|
 | `LeadCriado` | Lead entra no sistema | Sistema/Vendedor | `{ origem, segmento, paisId }` |
 | `LeadAtribuido` | Define/troca o dono | Sistema/Gerente | `{ de, para, motivo }` |
-| `EtapaAlterada` | Muda a etapa do funil | Vendedor | `{ de, para }` |
+| `EtapaAlterada` | Muda a etapa do funil (manual no Kanban e também no fluxo de matrícula: → Aguardando matrícula / Matriculado) | Vendedor/Secretaria | `{ de, para }` |
 | `ExperimentalAgendada` | Agenda aula experimental | Vendedor | `{ data }` |
 | `ExperimentalRealizada` | Check-in "Compareceu" | Professor | `{ turmaId, data }` |
 | `NoShow` | Check-in "Faltou" | Professor | `{ data }` |
 | `PropostaEnviada` | Envia proposta | Vendedor | `{ data }` |
 | `LeadPerdido` | Marca perdido (terminal) | Vendedor | `{ motivoPerda, observacao }` |
 | `LeadEditado` | Edição de dados do lead | Vendedor | `{ nome, temperatura }` |
+| `ResumoAtualizado` | Atualiza o resumo executivo (interesse, objetivo, urgência, orçamento, objeção, próximo passo) | Vendedor | `{ interesse, objetivo, urgencia, orcamento, objecao, proximaAcao }` |
+| `DatasAtualizadas` | Atualiza datas / próximos passos (follow-up, experimental, proposta) | Vendedor | `{ proximoFollowUp, dataExperimental, dataProposta }` |
 | `InteracaoRegistrada` | Registro manual de interação | Vendedor | `{ canal, nota }` |
 | `DocumentoAnexado` | Upload de documento ao lead | Vendedor | `{ categoria, nome }` |
 | `DocumentoArquivado` | Arquiva documento (soft-delete) | Vendedor | `{ documentoId, nome }` |
