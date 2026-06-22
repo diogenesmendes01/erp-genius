@@ -7,6 +7,7 @@ import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
+  irmaosParaInativar,
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
@@ -233,14 +234,45 @@ export async function alternarPrecoAtivo(id: string): Promise<Resultado> {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const preco = await prisma.precoReferencia.findUnique({ where: { id } });
     if (!preco) throw new ErroRegra("Preço não encontrado.");
+
+    const reativando = !preco.ativo;
+    const chave = {
+      paisId: preco.paisId,
+      produtoId: preco.produtoId,
+      modalidadeId: preco.modalidadeId,
+      tipoCobranca: preco.tipoCobranca,
+    };
+
     await prisma.$transaction(async (tx) => {
-      await tx.precoReferencia.update({ where: { id }, data: { ativo: !preco.ativo } });
+      // Ao reativar, supersede: inativa os irmãos ativos da mesma combinação
+      // (país/produto/modalidade/tipo) para nunca haver dois preços ativos.
+      // Mesmo comportamento de criarPreco — mantém histórico, só um fica ativo.
+      let inativados: string[] = [];
+      if (reativando) {
+        const irmaosAtivos = await tx.precoReferencia.findMany({
+          where: { ...chave, ativo: true },
+          select: { id: true, paisId: true, produtoId: true, modalidadeId: true, tipoCobranca: true },
+        });
+        inativados = irmaosParaInativar({ id, ...chave }, irmaosAtivos);
+        if (inativados.length > 0) {
+          await tx.precoReferencia.updateMany({
+            where: { id: { in: inativados } },
+            data: { ativo: false },
+          });
+        }
+      }
+
+      await tx.precoReferencia.update({ where: { id }, data: { ativo: reativando } });
       await registrarEvento(tx, {
-        tipo: preco.ativo ? "PrecoDesativado" : "PrecoReativado",
+        tipo: reativando ? "PrecoReativado" : "PrecoDesativado",
         agregadoTipo: "Preco",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: preco.ativo, para: !preco.ativo },
+        payload: {
+          de: preco.ativo,
+          para: reativando,
+          ...(inativados.length > 0 ? { irmaosInativados: inativados } : {}),
+        },
       });
     });
     revalidatePath(PATH);

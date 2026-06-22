@@ -34,12 +34,16 @@ export const MatriculaSchema = z.object({
   mensalidadeValor: z.coerce.number().min(0, "Valor inválido"),
   certificadoValor: z.coerce.number().min(0).optional().default(0), // só Costa Rica (doc 04)
   mesesPlano: z.coerce.number().int().positive().default(12),
+  // Exceção de preço (Issue #7): quando NÃO há preço de referência válido, a
+  // matrícula só prossegue com uma JUSTIFICATIVA (texto) E papel autorizado
+  // (apurado no servidor). NÃO há flag booleana livre do client — evita que
+  // qualquer vendedor pule o bloqueio. `z.coerce.boolean` foi removido de
+  // propósito: ele transformava "false" em true.
+  // Obrigatória quando não há preço de referência ativo p/ a combinação país ×
+  // produto (issue #22); a validação fica na ação, que conhece a matriz de preços.
+  justificativaSemPreco: z.string().trim().optional(),
   // Comissão
   comissaoPct: z.coerce.number().min(0).max(100).default(20),
-  // Exceção auditável (issue #22): preenchida quando não há preço de referência
-  // ativo p/ a combinação país × produto. Obrigatória nesse caso (validada na ação,
-  // que é quem conhece a matriz de preços).
-  justificativaSemPreco: z.string().optional(),
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
   message: "Informe o nome do responsável financeiro",
   path: ["responsavelNome"],

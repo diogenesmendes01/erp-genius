@@ -16,19 +16,29 @@ import { gerarCodigo } from "@/lib/codigo";
 import {
   exigirSessao,
   exigirPapel,
+  temPapel,
   registrarEvento,
   executarAcao,
   ErroRegra,
+  ErroPermissao,
   calcularComissao,
   vencimentoMensalidade,
   normalizarTelefoneE164,
-  avaliarPrecoReferencia,
+  calcularDocumentoValido,
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
+import {
+  validarOfertaPais,
+  validarOfertaPreco,
+  validarTurmaParaProduto,
+} from "./validacao";
+import { podeConverterLead } from "./escopo";
 
 const PAPEIS_CRIAR: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const PAPEIS_ATIVAR: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+// Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
+const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
@@ -49,10 +59,21 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
     const dados = MatriculaSchema.parse(input);
 
-    const pais = await prisma.pais.findUnique({ where: { id: dados.alunoPaisId } });
+    const pais = await prisma.pais.findUnique({
+      where: { id: dados.alunoPaisId },
+      include: { tiposDocumento: true },
+    });
     if (!pais) throw new ErroRegra("País não encontrado.");
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
+
+    // Revalidação no servidor (Issue #7) — NÃO confiar no client.
+    // 1) Produto precisa estar OFERECIDO no país (catálogo coerente).
+    const ofertaPais = await prisma.produtoPais.findUnique({
+      where: { produtoId_paisId: { produtoId: produto.id, paisId: pais.id } },
+      select: { oferecido: true },
+    });
+    validarOfertaPais(ofertaPais?.oferecido);
 
     const moeda = pais.moedaLocal;
 
@@ -65,6 +86,8 @@ export async function criarMatricula(
         include: { matricula: { select: { id: true } } },
       });
       if (!lead) throw new ErroRegra("Lead não encontrado.");
+      // Ownership/escopo: vendedor só converte lead do próprio escopo (doc 07).
+      if (!podeConverterLead(autor, lead.vendedorDonoId)) throw new ErroPermissao();
       if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
       leadId = lead.id;
       if (lead.vendedorDonoId) vendedorId = lead.vendedorDonoId;
@@ -74,19 +97,14 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
-
-    // Issue #22 — regra para matrícula sem preço de referência ativo.
-    // Decisão: PERMITIR, mas como EXCEÇÃO AUDITÁVEL: exige justificativa, marca a
+    // 2) Oferta de preço válida (matrícula + mensalidade) — ou exceção AUDITÁVEL,
+    // JUSTIFICADA + APROVADA por papel (Issues #7/#22). A autorização é apurada no
+    // servidor (temPapel), nunca por flag do client; ausência de preço marca a
     // matrícula (`precoReferenciaAusente`) e grava Evento `MatriculaSemPrecoReferencia`.
-    // (Sem preço ativo, o valor "negociado" segue, mas não há referência sugerida —
-    // o valorOriginal cai para o próprio valor manual informado.)
-    const precoRef = avaliarPrecoReferencia(precos);
-    const justificativaSemPreco = dados.justificativaSemPreco?.trim() || null;
-    if (precoRef.ausente && !justificativaSemPreco) {
-      throw new ErroRegra(
-        "Não há preço de referência ativo para este país/produto. Informe uma justificativa para registrar a matrícula como exceção.",
-      );
-    }
+    const { precoReferenciaAusente } = validarOfertaPreco(precos, produto.id, pais.id, {
+      justificativa: dados.justificativaSemPreco,
+      autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
+    });
 
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
@@ -104,6 +122,7 @@ export async function criarMatricula(
           nome: dados.alunoNome,
           paisId: pais.id,
           documento: dados.alunoDocumento || null,
+          documentoValido: calcularDocumentoValido(pais.tiposDocumento, dados.alunoDocumento),
           telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
           email: dados.alunoEmail || null,
           genero: dados.alunoGenero ?? null,
@@ -140,13 +159,48 @@ export async function criarMatricula(
           nivelInicialId: dados.nivelInicialId || null,
           origemNivel: dados.origemNivel ?? null,
           dataAvaliacaoNivel: dados.dataAvaliacaoNivel ?? null,
-          precoReferenciaAusente: precoRef.ausente,
-          justificativaSemPreco: precoRef.ausente ? justificativaSemPreco : null,
+          precoReferenciaAusente,
+          justificativaSemPreco: precoReferenciaAusente ? dados.justificativaSemPreco?.trim() || null : null,
         },
       });
 
+      // Auditoria da exceção de preço (Issue #7): registra motivo + autor na
+      // MESMA transação da criação.
+      if (precoReferenciaAusente) {
+        await registrarEvento(tx, {
+          tipo: "MatriculaSemPrecoReferencia",
+          agregadoTipo: "Matricula",
+          agregadoId: matricula.id,
+          autorId: autor.id,
+          payload: {
+            produtoId: produto.id,
+            paisId: pais.id,
+            justificativa: dados.justificativaSemPreco?.trim() ?? null,
+          },
+        });
+      }
+
       if (dados.turmaId) {
-        await tx.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: dados.turmaId } });
+        // 3) Revalida a turma DENTRO da transação (turma aberta, coerente com o
+        // produto e com vaga). Vaga = capacidade − alocações ATIVAS (ativa:true).
+        const turma = await tx.turma.findUnique({
+          where: { id: dados.turmaId },
+          select: {
+            id: true,
+            status: true,
+            capacidade: true,
+            modalidadeId: true,
+            nivel: { select: { idiomaId: true } },
+          },
+        });
+        if (!turma) throw new ErroRegra("Turma não encontrada.");
+        const alocacoesAtivas = await tx.alocacaoTurma.count({
+          where: { turmaId: turma.id, ativa: true },
+        });
+        validarTurmaParaProduto(turma, produto, alocacoesAtivas);
+        await tx.alocacaoTurma.create({
+          data: { alunoId: aluno.id, turmaId: turma.id, ativa: true },
+        });
       }
 
       // Taxa de matrícula (vence agora)
@@ -232,24 +286,6 @@ export async function criarMatricula(
         autorId: autor.id,
         payload: { vendedorId, percentual: dados.comissaoPct },
       });
-
-      // Exceção auditável (issue #22): sem preço de referência ativo.
-      if (precoRef.ausente) {
-        await registrarEvento(tx, {
-          tipo: "MatriculaSemPrecoReferencia",
-          agregadoTipo: "Matricula",
-          agregadoId: matricula.id,
-          autorId: autor.id,
-          payload: {
-            paisId: pais.id,
-            produtoId: produto.id,
-            tiposAusentes: precoRef.tiposAusentes,
-            justificativa: justificativaSemPreco,
-            taxaValor: dados.taxaValor,
-            mensalidadeValor: dados.mensalidadeValor,
-          },
-        });
-      }
 
       return { id: matricula.id, alunoId: aluno.id };
     });
