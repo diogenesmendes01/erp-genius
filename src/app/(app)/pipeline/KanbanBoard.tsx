@@ -12,9 +12,11 @@ import {
   useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { EtapaLead, Temperatura, MotivoPerda } from "@prisma/client";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
+import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
 
 export interface KanbanLead {
@@ -38,7 +40,20 @@ function minutosDesde(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
 }
 
-const COLUNAS: EtapaLead[] = [...ETAPAS_MANUAIS, EtapaLead.MATRICULADO, EtapaLead.PERDIDO];
+// Funil completo na ordem do doc 08. As etapas geradas por evento (Exp. Realizada,
+// Proposta, Aguardando Matrícula) seguem visíveis para acompanhamento, mas NÃO
+// recebem arraste — só ETAPAS_MANUAIS + Matriculado/Perdido (fluxo próprio) aceitam.
+const COLUNAS: EtapaLead[] = [
+  EtapaLead.NOVO,
+  EtapaLead.EM_ATENDIMENTO,
+  EtapaLead.QUALIFICADO,
+  EtapaLead.EXPERIMENTAL_AGENDADA,
+  EtapaLead.EXPERIMENTAL_REALIZADA,
+  EtapaLead.PROPOSTA,
+  EtapaLead.AGUARDANDO_MATRICULA,
+  EtapaLead.MATRICULADO,
+  EtapaLead.PERDIDO,
+];
 
 function Card({ lead }: { lead: KanbanLead }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -69,7 +84,9 @@ function Card({ lead }: { lead: KanbanLead }) {
         <span>{diasDesde(lead.etapaDesde)}d nesta etapa</span>
         <span>· últ. ação {diasDesde(lead.ultimaAcaoEm)}d</span>
         {lead.etapa === EtapaLead.NOVO && minutosDesde(lead.etapaDesde) > 60 && (
-          <span className="rounded bg-red-100 px-1 font-medium text-red-600">🚨 SLA</span>
+          <span className="inline-flex items-center gap-0.5 rounded bg-red-100 px-1 font-medium text-red-600">
+            <IconAlertTriangle className="h-3 w-3" /> SLA
+          </span>
         )}
       </div>
       {lead.proximaAcao && <div className="mt-1 text-xs text-gray-500">Próxima: {lead.proximaAcao}</div>}
@@ -154,6 +171,15 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
       return;
     }
     setErro(null);
+    // Espelha a regra do servidor: feedback imediato e evita uma ida ao backend
+    // para um destino que será recusado (etapa de evento ou salto inválido).
+    if (!transicaoManualPermitida(lead.etapa, destino)) {
+      setErro(
+        `Não é possível arrastar de "${ETAPA_LABEL[lead.etapa]}" para "${ETAPA_LABEL[destino]}". ` +
+          "Esta etapa é definida por uma ação específica.",
+      );
+      return;
+    }
     const r = await moverEtapa(lead.id, destino);
     if (!r.ok) setErro(r.erro);
     else router.refresh();

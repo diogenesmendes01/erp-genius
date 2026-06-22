@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { validarDocumento, telefoneE164, paraDataLocal, dataOpcional } from "./validacao";
+import {
+  validarDocumento,
+  calcularDocumentoValido,
+  telefoneE164,
+  paraDataLocal,
+  dataOpcional,
+  paraDataHoraLocal,
+  dataHoraOpcional,
+} from "./validacao";
 
 describe("validarDocumento (cpf)", () => {
   it("aceita CPF válido (com ou sem máscara)", () => {
@@ -12,6 +20,30 @@ describe("validarDocumento (cpf)", () => {
   });
   it("validador desconhecido → não validado (false), nunca lança", () => {
     expect(validarDocumento("inexistente", "qualquer")).toBe(false);
+  });
+});
+
+describe("calcularDocumentoValido (flag Aluno.documentoValido)", () => {
+  const cpf = [{ validador: "cpf" }];
+  it("documento VÁLIDO para algum validador do país → true", () => {
+    expect(calcularDocumentoValido(cpf, "529.982.247-25")).toBe(true);
+  });
+  it("documento INVÁLIDO para os validadores do país → false (mas não lança)", () => {
+    expect(calcularDocumentoValido(cpf, "12345678900")).toBe(false);
+  });
+  it("AUSÊNCIA de documento (null/undefined/vazio/só espaços) → false", () => {
+    expect(calcularDocumentoValido(cpf, null)).toBe(false);
+    expect(calcularDocumentoValido(cpf, undefined)).toBe(false);
+    expect(calcularDocumentoValido(cpf, "")).toBe(false);
+    expect(calcularDocumentoValido(cpf, "   ")).toBe(false);
+  });
+  it("aceita se passar em QUALQUER validador do país (1+ tipos)", () => {
+    const dois = [{ validador: "passaporte" }, { validador: "cpf" }];
+    expect(calcularDocumentoValido(dois, "529.982.247-25")).toBe(true);
+  });
+  it("país sem tipos de documento ou só validadores desconhecidos → false", () => {
+    expect(calcularDocumentoValido([], "529.982.247-25")).toBe(false);
+    expect(calcularDocumentoValido([{ validador: "inexistente" }], "529.982.247-25")).toBe(false);
   });
 });
 
@@ -56,5 +88,44 @@ describe("dataOpcional (schema compartilhado)", () => {
     expect(dataOpcional.parse("")).toBeUndefined();
     expect(dataOpcional.parse(null)).toBeUndefined();
     expect(dataOpcional.parse(undefined)).toBeUndefined();
+  });
+});
+
+describe("paraDataHoraLocal (datetime-local → preserva a hora, issue #16)", () => {
+  it("converte 'YYYY-MM-DDTHH:mm' mantendo a hora LOCAL digitada", () => {
+    const d = paraDataHoraLocal("2026-06-22T14:30") as Date;
+    expect(d).toBeInstanceOf(Date);
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5); // junho
+    expect(d.getDate()).toBe(22);
+    expect(d.getHours()).toBe(14); // hora NÃO é descartada nem ancorada no meio-dia
+    expect(d.getMinutes()).toBe(30);
+  });
+  it("aceita segundos opcionais", () => {
+    const d = paraDataHoraLocal("2026-06-22T14:30:45") as Date;
+    expect(d.getSeconds()).toBe(45);
+  });
+  it("date-only cai no meio-dia local (reusa paraDataLocal)", () => {
+    const d = paraDataHoraLocal("2026-06-22") as Date;
+    expect(d.getHours()).toBe(12);
+    expect(d.getDate()).toBe(22);
+  });
+  it("deixa outros valores passarem inalterados", () => {
+    const date = new Date("2026-03-10T08:00:00Z");
+    expect(paraDataHoraLocal(date)).toBe(date);
+    expect(paraDataHoraLocal(undefined)).toBeUndefined();
+  });
+});
+
+describe("dataHoraOpcional (schema datetime-local)", () => {
+  it("preserva o horário do datetime-local", () => {
+    const r = dataHoraOpcional.parse("2026-06-22T09:15") as Date;
+    expect(r.getHours()).toBe(9);
+    expect(r.getMinutes()).toBe(15);
+  });
+  it("trata vazio/null/undefined como undefined", () => {
+    expect(dataHoraOpcional.parse("")).toBeUndefined();
+    expect(dataHoraOpcional.parse(null)).toBeUndefined();
+    expect(dataHoraOpcional.parse(undefined)).toBeUndefined();
   });
 });

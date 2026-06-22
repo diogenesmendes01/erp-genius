@@ -27,9 +27,11 @@ export async function registrarPagamento(
     const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
     if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
     if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");
-    if (cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança cancelada.");
+    if (cobranca.status === StatusCobranca.CANCELADA)
+      throw new ErroRegra("Cobrança cancelada não recebe pagamento.");
 
-    // Parciais acumulam sobre o já recebido; saldo/quitação pelo ACUMULADO; excedente tratado.
+    // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
+    // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.
     const jaRecebido = cobranca.valorRecebido ?? 0;
     const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
       jaRecebido,
@@ -47,7 +49,8 @@ export async function registrarPagamento(
           status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
           pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
           formaPagamento: dados.forma as FormaPagamento,
-          comprovanteUrl: dados.comprovanteUrl || null,
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
           comentario: dados.comentario || null,
         },
       });
@@ -56,13 +59,16 @@ export async function registrarPagamento(
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
+        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + excedente + comprovante.
         payload: {
           valorRecebido: dados.valorRecebido,
-          recebidoTotal,
+          recebidoAcumulado: recebidoTotal,
           forma: dados.forma,
           quitada,
           saldo,
           excedente,
+          comprovanteUrl: dados.comprovanteUrl ?? null,
+          comprovanteNome: dados.comprovanteNome ?? null,
         },
       });
     });
@@ -79,12 +85,15 @@ export async function registrarCobrancaWhatsApp(
     const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
     if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
 
-    await registrarEvento(prisma, {
-      tipo: "CobrancaEnviadaWhatsApp",
-      agregadoTipo: "Cobranca",
-      agregadoId: cobrancaId,
-      autorId: autor.id,
-      payload: { modelo },
+    // Evento gravado em transação (issue #1): consistente com o restante do domínio.
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "CobrancaEnviadaWhatsApp",
+        agregadoTipo: "Cobranca",
+        agregadoId: cobrancaId,
+        autorId: autor.id,
+        payload: { modelo },
+      });
     });
     revalidatePath("/financeiro");
   });
