@@ -34,7 +34,8 @@ export async function listarTurmasAbertas() {
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
-      _count: { select: { alocacoes: true } },
+      // Conta SOMENTE alocações ativas (issue #1) — vaga calculada na UI.
+      _count: { select: { alocacoes: { where: { ativa: true } } } },
     },
   });
 }
