@@ -13,6 +13,8 @@ import {
   ErroRegra,
   ErroPermissao,
   temPapel,
+  ehEtapaManual,
+  transicaoManualPermitida,
   resolverDonoLead,
   diffCampos,
   normalizarTelefoneE164,
@@ -31,7 +33,6 @@ import {
   DatasSchema,
   InteracaoSchema,
   PerdaSchema,
-  ETAPAS_MANUAIS,
   type LeadInput,
   type ResumoInput,
   type DatasInput,
@@ -237,12 +238,23 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const lead = await exigirLeadVisivel(id, autor);
-    if (!ETAPAS_MANUAIS.includes(etapa)) {
+    if (lead.etapa === etapa) return;
+
+    // Etapas geradas por evento (Exp. Realizada, Proposta, Aguardando Matrícula…)
+    // e saídas paralelas (Perdido/Matriculado) NÃO se movem por arraste.
+    if (!ehEtapaManual(etapa)) {
       throw new ErroRegra(
-        "Use 'Marcar perdido' ou 'Converter em matrícula' para essas etapas.",
+        "Esta etapa é definida por uma ação específica (agendar/realizar experimental, " +
+          "enviar proposta, marcar perdido ou converter em matrícula), não pelo arraste.",
       );
     }
-    if (lead.etapa === etapa) return;
+    // Valida a máquina de estados origem→destino — bloqueia saltos inválidos no
+    // backend mesmo que o client envie um destino fora da sequência (doc 10 §1).
+    if (!transicaoManualPermitida(lead.etapa, etapa)) {
+      throw new ErroRegra(
+        `Transição inválida: não é possível mover de "${lead.etapa}" para "${etapa}".`,
+      );
+    }
     await prisma.$transaction(async (tx) => {
       await tx.lead.update({ where: { id }, data: { etapa } });
       await registrarEvento(tx, {
@@ -250,7 +262,7 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: lead.etapa, para: etapa },
+        payload: { de: lead.etapa, para: etapa, origem: "manual" },
       });
     });
     revalidarLead(id);
