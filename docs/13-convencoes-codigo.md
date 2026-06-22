@@ -4,8 +4,8 @@
 > [`02-arquitetura.md`](02-arquitetura.md) e no que já existe na fundação V0.
 
 ## Stack (já travada)
-Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + PostgreSQL · Auth.js (NextAuth v5
-beta) · Zod · React Hook Form. Ícones: `lucide-react`.
+Next.js 16 (App Router) · TypeScript · Tailwind · Prisma + PostgreSQL · Auth.js (NextAuth v5
+beta) · Zod · React Hook Form. Ícones: `@tabler/icons-react` (outline).
 
 ## Monólito modular por domínio
 Um código só, **organizado por domínio** com fronteiras claras:
