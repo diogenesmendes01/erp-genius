@@ -34,6 +34,9 @@ export const MatriculaSchema = z.object({
   mensalidadeValor: z.coerce.number().min(0, "Valor inválido"),
   certificadoValor: z.coerce.number().min(0).optional().default(0), // só Costa Rica (doc 04)
   mesesPlano: z.coerce.number().int().positive().default(12),
+  // Exceção de preço: quando NÃO há preço de referência válido, permite
+  // prosseguir só com este caminho explícito e aprovado (Issue #7).
+  excecaoPreco: z.coerce.boolean().default(false),
   // Comissão
   comissaoPct: z.coerce.number().min(0).max(100).default(20),
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
