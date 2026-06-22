@@ -22,6 +22,27 @@ export function vencimentoMensalidade(
   return { data: d, competencia };
 }
 
+/**
+ * Vencimento da 1ª mensalidade (regra de domínio do PO): 30 dias após o início
+ * da PRIMEIRA AULA da turma, ajustado para o DIA de vencimento selecionado na
+ * matrícula. Sem turma/data de início, cai para a referência informada
+ * (`fallback`, normalmente a data de criação) + 30 dias, também ajustada ao dia.
+ *
+ * "Ajustado ao dia" = mantém o mês de (início + 30d) mas troca o dia para o
+ * `diaVencimento`. Função pura (sem I/O) → testável.
+ */
+export function vencimentoPrimeiraMensalidade(
+  diaVencimento: number,
+  dataInicioAula: Date | null | undefined,
+  fallback: Date = new Date(),
+): { data: Date; competencia: string } {
+  const base = dataInicioAula ?? fallback;
+  const mais30 = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 30);
+  const data = new Date(mais30.getFullYear(), mais30.getMonth(), diaVencimento);
+  const competencia = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+  return { data, competencia };
+}
+
 /** O usuário pode mover o lead para esta etapa manualmente? (Perdido/Matriculado têm fluxo próprio.) */
 export function ehEtapaManual(etapa: EtapaLead): boolean {
   return ETAPAS_MANUAIS.includes(etapa);
