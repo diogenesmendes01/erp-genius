@@ -36,6 +36,10 @@ export const MatriculaSchema = z.object({
   mesesPlano: z.coerce.number().int().positive().default(12),
   // Comissão
   comissaoPct: z.coerce.number().min(0).max(100).default(20),
+  // Exceção auditável (issue #22): preenchida quando não há preço de referência
+  // ativo p/ a combinação país × produto. Obrigatória nesse caso (validada na ação,
+  // que é quem conhece a matriz de preços).
+  justificativaSemPreco: z.string().optional(),
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
   message: "Informe o nome do responsável financeiro",
   path: ["responsavelNome"],
