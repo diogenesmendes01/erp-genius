@@ -22,6 +22,7 @@ import {
   calcularComissao,
   vencimentoMensalidade,
   normalizarTelefoneE164,
+  avaliarPrecoReferencia,
   type Resultado,
 } from "@/server/_shared";
 import { MatriculaSchema, AtivacaoSchema, type MatriculaInput, type AtivacaoInput } from "./schema";
@@ -73,6 +74,20 @@ export async function criarMatricula(
     const precos = await prisma.precoReferencia.findMany({
       where: { ativo: true, paisId: pais.id, produtoId: produto.id },
     });
+
+    // Issue #22 — regra para matrícula sem preço de referência ativo.
+    // Decisão: PERMITIR, mas como EXCEÇÃO AUDITÁVEL: exige justificativa, marca a
+    // matrícula (`precoReferenciaAusente`) e grava Evento `MatriculaSemPrecoReferencia`.
+    // (Sem preço ativo, o valor "negociado" segue, mas não há referência sugerida —
+    // o valorOriginal cai para o próprio valor manual informado.)
+    const precoRef = avaliarPrecoReferencia(precos);
+    const justificativaSemPreco = dados.justificativaSemPreco?.trim() || null;
+    if (precoRef.ausente && !justificativaSemPreco) {
+      throw new ErroRegra(
+        "Não há preço de referência ativo para este país/produto. Informe uma justificativa para registrar a matrícula como exceção.",
+      );
+    }
+
     const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
     const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
 
@@ -125,6 +140,8 @@ export async function criarMatricula(
           nivelInicialId: dados.nivelInicialId || null,
           origemNivel: dados.origemNivel ?? null,
           dataAvaliacaoNivel: dados.dataAvaliacaoNivel ?? null,
+          precoReferenciaAusente: precoRef.ausente,
+          justificativaSemPreco: precoRef.ausente ? justificativaSemPreco : null,
         },
       });
 
@@ -215,6 +232,24 @@ export async function criarMatricula(
         autorId: autor.id,
         payload: { vendedorId, percentual: dados.comissaoPct },
       });
+
+      // Exceção auditável (issue #22): sem preço de referência ativo.
+      if (precoRef.ausente) {
+        await registrarEvento(tx, {
+          tipo: "MatriculaSemPrecoReferencia",
+          agregadoTipo: "Matricula",
+          agregadoId: matricula.id,
+          autorId: autor.id,
+          payload: {
+            paisId: pais.id,
+            produtoId: produto.id,
+            tiposAusentes: precoRef.tiposAusentes,
+            justificativa: justificativaSemPreco,
+            taxaValor: dados.taxaValor,
+            mensalidadeValor: dados.mensalidadeValor,
+          },
+        });
+      }
 
       return { id: matricula.id, alunoId: aluno.id };
     });
