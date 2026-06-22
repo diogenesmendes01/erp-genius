@@ -467,6 +467,9 @@ model Matricula {
   primeiraMensalidadeOk Boolean         @default(false)
   // Exceção: Admin/Gerente pode ativar com pendência (registra o porquê em Evento).
   ativadaComPendencia   Boolean         @default(false)
+  // Exceção de preço (Issue #7): true quando a matrícula foi criada SEM preço de
+  // referência ativo, por exceção justificada + aprovada (registra em Evento).
+  precoReferenciaAusente Boolean        @default(false)
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId        String?
   origemNivel           OrigemNivel?

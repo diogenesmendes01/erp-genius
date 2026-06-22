@@ -1,5 +1,5 @@
 import { StatusTurma, TipoCobranca } from "@prisma/client";
-import { ErroRegra } from "@/server/_shared";
+import { ErroRegra, ErroPermissao } from "@/server/_shared";
 
 // Revalidação de matrícula no SERVIDOR (Issue #7).
 // Regras PURAS (sem I/O) — o I/O (consultas frescas) vive na Server Action;
@@ -79,30 +79,57 @@ export function vagasDisponiveis(capacidade: number, alocacoesAtivas: number): n
 }
 
 /**
+ * Exceção de preço (Issue #7) — NÃO é um boolean livre do client.
+ *
+ * Quando não há PrecoReferencia ativo, a matrícula só prossegue se houver uma
+ * exceção JUSTIFICADA e APROVADA por papel autorizado:
+ *  - `justificativa`: texto não vazio (vem do formulário, mas é OBRIGATÓRIO);
+ *  - `autorizado`: o autor tem GERENTE_COMERCIAL ou ADMINISTRADOR (apurado no
+ *    servidor via `temPapel`, nunca confiando numa flag do client).
+ */
+export interface ExcecaoPreco {
+  justificativa?: string | null;
+  autorizado: boolean;
+}
+
+/**
  * Oferta de preço: precisa existir PrecoReferencia ATIVO de MATRÍCULA e de
  * MENSALIDADE para o par país+produto. Sem oferta válida, bloqueia — a menos
- * que haja um caminho de exceção EXPLÍCITO e APROVADO (excecaoPreco=true).
+ * que haja um caminho de exceção EXPLÍCITO, JUSTIFICADO e APROVADO por papel.
  *
  * Não confiamos no preço enviado pelo client: os valores negociados continuam
  * vindo do formulário, mas a EXISTÊNCIA de uma referência válida é o gate.
+ *
+ * Retorna `precoReferenciaAusente`: true quando a matrícula está sendo criada
+ * SEM preço de referência (caminho de exceção). O chamador deve persistir a
+ * flag e registrar o Evento de auditoria na mesma transação.
  */
 export function validarOfertaPreco(
   precos: PrecoCoerencia[],
   produtoId: string,
   paisId: string,
-  excecaoPreco: boolean,
-): void {
+  excecao: ExcecaoPreco,
+): { precoReferenciaAusente: boolean } {
   const validos = precos.filter(
     (p) => p.ativo && p.produtoId === produtoId && p.paisId === paisId,
   );
   const temTaxa = validos.some((p) => p.tipoCobranca === TipoCobranca.MATRICULA);
   const temMensalidade = validos.some((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE);
 
-  if (temTaxa && temMensalidade) return;
-  if (excecaoPreco) return; // caminho de exceção aprovado explicitamente
+  if (temTaxa && temMensalidade) return { precoReferenciaAusente: false };
 
-  throw new ErroRegra(
-    "Não há preço de referência válido (matrícula/mensalidade) para este produto no país. " +
-      "Cadastre o preço ou registre uma exceção aprovada.",
-  );
+  // Sem preço de referência: só prossegue por exceção justificada + aprovada.
+  const justificativa = excecao.justificativa?.trim();
+  if (!justificativa) {
+    throw new ErroRegra(
+      "Não há preço de referência válido (matrícula/mensalidade) para este produto no país. " +
+        "Cadastre o preço ou informe uma justificativa para a exceção.",
+    );
+  }
+  if (!excecao.autorizado) {
+    throw new ErroPermissao(
+      "Apenas Gerente Comercial ou Administrador podem matricular sem preço de referência.",
+    );
+  }
+  return { precoReferenciaAusente: true };
 }
