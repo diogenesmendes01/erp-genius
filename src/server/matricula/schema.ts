@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { FormaPagamento, OrigemNivel, Genero } from "@prisma/client";
-import { emailSchema, dataOpcional } from "@/server/_shared/validacao";
+import { emailSchema, dataOpcional, paraDataLocal } from "@/server/_shared/validacao";
 
 // Matrícula manual (ver docs/05, docs/09). Pré-preenchida pelo lead → confirmar + completar.
 export const MatriculaSchema = z.object({
@@ -42,7 +42,53 @@ export const MatriculaSchema = z.object({
 });
 export type MatriculaInput = z.input<typeof MatriculaSchema>;
 
-export const AtivacaoSchema = z.object({
+// ------------------------------------------------------------
+// Ativação (issue #23): dois caminhos EXPLÍCITOS e separados.
+// - COM pagamento: exige valor recebido, forma, data e comprovante (quando
+//   aplicável — só DINHEIRO dispensa o comprovante). O backend ainda valida se
+//   o valor cobre as cobranças antes de marcá-las como pagas.
+// - SEM pagamento: caminho próprio; a matrícula ativa com estado financeiro
+//   PENDENTE (nada é presumido como pago). Exige justificativa.
+// ------------------------------------------------------------
+
+/** Formas em que NÃO faz sentido exigir comprovante (recebimento em espécie). */
+const FORMAS_SEM_COMPROVANTE: FormaPagamento[] = [FormaPagamento.DINHEIRO];
+
+// discriminatedUnion exige membros ZodObject "puros" (sem .refine, que vira
+// ZodEffects). Por isso a regra do comprovante fica num .superRefine na união.
+const AtivacaoComPagamentoSchema = z.object({
+  comPagamento: z.literal(true),
+  valorRecebido: z.coerce.number().positive("Informe o valor pago"),
   forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
+  dataPagamento: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
+    z.coerce.date({ required_error: "Informe a data do pagamento" }),
+  ),
+  comprovanteUrl: z.string().optional(),
+  comentario: z.string().optional(),
 });
+
+const AtivacaoSemPagamentoSchema = z.object({
+  comPagamento: z.literal(false),
+  /** Por que ativar sem lastro financeiro? Vira evento de auditoria. */
+  motivo: z.string().min(1, "Informe o motivo da ativação sem pagamento"),
+});
+
+export const AtivacaoSchema = z
+  .discriminatedUnion("comPagamento", [AtivacaoComPagamentoSchema, AtivacaoSemPagamentoSchema])
+  .superRefine((d, ctx) => {
+    if (
+      d.comPagamento &&
+      !FORMAS_SEM_COMPROVANTE.includes(d.forma) &&
+      !d.comprovanteUrl?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe o comprovante do pagamento",
+        path: ["comprovanteUrl"],
+      });
+    }
+  });
 export type AtivacaoInput = z.input<typeof AtivacaoSchema>;
+export type AtivacaoComPagamentoInput = z.input<typeof AtivacaoComPagamentoSchema>;
+export type AtivacaoSemPagamentoInput = z.input<typeof AtivacaoSemPagamentoSchema>;
