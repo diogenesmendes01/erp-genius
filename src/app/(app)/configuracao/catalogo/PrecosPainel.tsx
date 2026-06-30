@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
+import { formatarMoeda } from "@/lib/dinheiro";
 import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
 
 export interface PrecoRow {
@@ -199,7 +200,7 @@ export function PrecosPainel({
                   </td>
                   <td className="px-4 py-3">{TIPO_LABEL[p.tipoCobranca]}</td>
                   <td className="px-4 py-3">
-                    {p.moeda} {p.valor.toLocaleString("pt-BR")}
+                    {formatarMoeda(p.valor, p.moeda)}
                   </td>
                   <td className="px-4 py-3">
                     <span

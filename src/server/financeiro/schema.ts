@@ -45,3 +45,19 @@ export type PagamentoInput = z.input<typeof PagamentoSchema>;
 // Modelos de cobrança via WhatsApp (wa.me, sem Cloud API).
 export const MODELOS_WHATSAPP = ["amigavel", "vencida", "firme", "dados", "promessa"] as const;
 export type ModeloWhatsapp = (typeof MODELOS_WHATSAPP)[number];
+
+// Câmbio (Fase B): cotação manual por moeda para CONSOLIDAÇÃO gerencial. `unidadesPorUsd` =
+// quantas unidades da moeda equivalem a 1 USD (pivô). USD não é cadastrado (é sempre 1).
+export const TaxaCambioSchema = z.object({
+  moeda: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/, "Moeda em 3 letras (ex.: CRC, BRL)")
+    .transform((s) => s.toUpperCase())
+    .refine((m) => m !== "USD", "USD é o pivô (cotação fixa em 1) — não precisa cadastrar."),
+  unidadesPorUsd: z.coerce.number().positive("A cotação deve ser maior que zero."),
+});
+export const SalvarTaxasCambioSchema = z.object({
+  entradas: z.array(TaxaCambioSchema).min(1, "Informe ao menos uma cotação."),
+});
+export type SalvarTaxasCambioInput = z.input<typeof SalvarTaxasCambioSchema>;

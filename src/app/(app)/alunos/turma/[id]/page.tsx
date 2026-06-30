@@ -4,6 +4,7 @@ import { Papel } from "@prisma/client";
 import { obterTurma } from "@/server/alunos/consultas";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
+import { nomeCompleto } from "@/lib/nome";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -54,7 +55,7 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
                 <tr key={a.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <Link href={`/alunos/${a.aluno.id}`} className="font-medium text-brand-700 hover:underline">
-                      {a.aluno.nome}
+                      {nomeCompleto(a.aluno)}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-gray-500">{a.aluno.codigo}</td>

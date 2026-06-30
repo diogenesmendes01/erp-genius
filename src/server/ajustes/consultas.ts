@@ -1,6 +1,8 @@
 import { Papel, Prisma, StatusCobranca, StatusAprovacao } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { somarPorMoeda } from "@/lib/dinheiro";
 import type { UsuarioSessao } from "@/server/_shared";
+import { montarReguaPorCobranca, historicoFinanceiroDoAluno } from "@/server/cobrancas/consultas";
 
 // Papéis com visão GLOBAL da ficha financeira (doc 07): operam o financeiro de
 // QUALQUER aluno. Vendedor NÃO está aqui — vê só a ficha de alunos ligados a ele.
@@ -88,12 +90,17 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   const comissoes = aluno.matriculas.flatMap((m) => m.comissoes);
   const agora = new Date();
 
-  const emAtraso = cobrancas
-    .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora))
-    .reduce((s, c) => s + c.valorNegociado, 0);
-  const emAberto = cobrancas
-    .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
-    .reduce((s, c) => s + c.valorNegociado, 0);
+  // Por moeda (nunca soma moedas diferentes) — o aluno pode ter matrículas em moedas distintas.
+  const emAtraso = somarPorMoeda(
+    cobrancas
+      .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora))
+      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+  );
+  const emAberto = somarPorMoeda(
+    cobrancas
+      .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
+      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+  );
   const proximo = cobrancas
     .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0] ?? null;
@@ -104,7 +111,36 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   const responsavelFinanceiro =
     aluno.responsaveis.find((r) => r.papel === "FINANCEIRO")?.responsavel.nome ?? "O próprio aluno";
 
-  return { aluno, cobrancas, ajustes, comissoes, responsavelFinanceiro, emAtraso, emAberto, proximo, ultimoPago };
+  // Régua (read-only) por cobrança ABERTA + histórico financeiro: a ficha passa a contar a
+  // MESMA história da fila de cobrança, via o cérebro compartilhado, sem ganhar ações (doc 24).
+  const reguaPorCobranca = await montarReguaPorCobranca(
+    aluno.matriculas.flatMap((m) =>
+      m.cobrancas
+        .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
+        .map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: m.acessoBloqueado })),
+    ),
+    agora,
+  );
+  const acessoBloqueado = aluno.matriculas.some((m) => m.acessoBloqueado);
+  const historico = await historicoFinanceiroDoAluno(
+    cobrancas.map((c) => c.id),
+    aluno.matriculas.map((m) => m.id),
+  );
+
+  return {
+    aluno,
+    cobrancas,
+    ajustes,
+    comissoes,
+    responsavelFinanceiro,
+    emAtraso,
+    emAberto,
+    proximo,
+    ultimoPago,
+    acessoBloqueado,
+    reguaPorCobranca,
+    historico,
+  };
 }
 
 export async function listarAprovacoesPendentes() {

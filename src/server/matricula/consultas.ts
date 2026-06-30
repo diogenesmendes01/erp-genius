@@ -1,4 +1,4 @@
-import { Papel, StatusTurma, TipoCobranca } from "@prisma/client";
+import { TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoLeads } from "@/server/comercial/consultas";
@@ -34,14 +34,14 @@ export async function listarProdutosParaMatricula() {
 }
 
 /**
- * Turmas Abertas (com vaga calculada na UI).
- * A contagem considera apenas alocações ATIVAS (ativa:true) — mesma regra que o
- * servidor revalida na criação da matrícula (Issue #7).
+ * Turmas ACEITANDO MATRÍCULA = data de início no FUTURO (ainda não começaram) — doc 09.
+ * Depois que a turma inicia, sai automaticamente desta lista (sem cron: é por data).
+ * A vaga é calculada na UI; a contagem considera só alocações ATIVAS (issues #1/#19).
  */
 export async function listarTurmasAbertas() {
   return prisma.turma.findMany({
-    where: { status: StatusTurma.ABERTA },
-    orderBy: { criadoEm: "desc" },
+    where: { dataInicio: { gt: new Date() } },
+    orderBy: { dataInicio: "asc" },
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },

@@ -17,6 +17,8 @@ import {
   ErroRegra,
   normalizarTelefoneE164,
   calcularDocumentoValido,
+  validarDocumento,
+  diffCampos,
   type Resultado,
 } from "@/server/_shared";
 import {
@@ -61,53 +63,82 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
           });
     if (!paisDestino) throw new ErroRegra("País não encontrado.");
 
-    const documento = dados.documento || null;
-    // Recalcula a flag sempre que documento OU país mudarem (validadores variam por país);
-    // se nada relevante mudou, mantém o valor atual (recálculo seria idêntico). Doc 04: avisa, não bloqueia.
-    const documentoMudou = documento !== aluno.documento;
-    const paisMudou = dados.paisId !== aluno.paisId;
-    const documentoValido =
-      documentoMudou || paisMudou
-        ? calcularDocumentoValido(paisDestino.tiposDocumento, documento)
-        : aluno.documentoValido;
+    // Documento (doc 04: avisa, não bloqueia). Valida pelo TIPO escolhido quando houver;
+    // senão tenta os validadores do país (compatível com registros legados sem tipo).
+    const documento = dados.documento?.trim() || null;
+    const tipoDoc = dados.tipoDocumentoId
+      ? paisDestino.tiposDocumento.find((t) => t.id === dados.tipoDocumentoId)
+      : null;
+    if (dados.tipoDocumentoId && !tipoDoc)
+      throw new ErroRegra("Tipo de documento não pertence ao país selecionado.");
+    const documentoValido = !documento
+      ? false
+      : tipoDoc
+        ? validarDocumento(tipoDoc.validador, documento)
+        : calcularDocumentoValido(paisDestino.tiposDocumento, documento);
 
     const novo = {
-      nome: dados.nome,
+      primeiroNome: dados.primeiroNome,
+      sobrenome: dados.sobrenome,
+      nomePreferido: dados.nomePreferido || null,
+      nascimento: dados.nascimento ?? null,
+      genero: dados.genero ?? null,
       paisId: dados.paisId,
+      tipoDocumentoId: dados.tipoDocumentoId || null,
       documento,
       documentoValido,
-      telefoneE164: normalizarTelefoneE164(dados.telefone, paisDestino.ddi),
+      documentoPaisEmissor: dados.documentoPaisEmissor || null,
+      nacionalidade: dados.nacionalidade || null,
+      segundaNacionalidade: dados.segundaNacionalidade || null,
       email: dados.email || null,
-      genero: dados.genero ?? null,
-      nascimento: dados.nascimento ?? null,
+      telefoneE164: normalizarTelefoneE164(dados.telefone, paisDestino.ddi),
+      whatsapp: dados.whatsapp ?? aluno.whatsapp,
+      aceitaComunicacoes: dados.aceitaComunicacoes ?? aluno.aceitaComunicacoes,
+      paisResidencia: dados.paisResidencia || null,
+      cep: dados.cep || null,
+      rua: dados.rua || null,
+      numero: dados.numero || null,
+      complemento: dados.complemento || null,
+      bairro: dados.bairro || null,
+      cidade: dados.cidade || null,
+      regiao: dados.regiao || null,
+      escolaridade: dados.escolaridade ?? null,
+      idiomaNativo: dados.idiomaNativo || null,
+      fuso: dados.fuso || null,
+      observacoes: dados.observacoes || null,
     };
-    // antes→depois só dos campos que realmente mudaram (auditoria enxuta, JSON serializável)
-    const atual: Record<string, string | null> = {
-      nome: aluno.nome,
-      paisId: aluno.paisId,
-      documento: aluno.documento,
-      telefoneE164: aluno.telefoneE164,
-      email: aluno.email,
-      genero: aluno.genero,
-      nascimento: aluno.nascimento ? aluno.nascimento.toISOString() : null,
-    };
-    const depoisDisplay: Record<string, string | null> = {
-      nome: novo.nome,
-      paisId: novo.paisId,
-      documento: novo.documento,
-      telefoneE164: novo.telefoneE164,
-      email: novo.email,
-      genero: novo.genero,
-      nascimento: novo.nascimento ? novo.nascimento.toISOString() : null,
-    };
-    const antes: Record<string, string | null> = {};
-    const depois: Record<string, string | null> = {};
-    for (const k of Object.keys(atual)) {
-      if (atual[k] !== depoisDisplay[k]) {
-        antes[k] = atual[k];
-        depois[k] = depoisDisplay[k];
-      }
-    }
+
+    // antes→depois só dos campos que mudaram (auditoria enxuta, JSON serializável).
+    const fmt = (o: typeof novo | typeof aluno): Record<string, string | null> => ({
+      primeiroNome: o.primeiroNome,
+      sobrenome: o.sobrenome,
+      nomePreferido: o.nomePreferido,
+      nascimento: o.nascimento ? new Date(o.nascimento).toISOString() : null,
+      genero: o.genero,
+      paisId: o.paisId,
+      tipoDocumentoId: o.tipoDocumentoId,
+      documento: o.documento,
+      documentoPaisEmissor: o.documentoPaisEmissor,
+      nacionalidade: o.nacionalidade,
+      segundaNacionalidade: o.segundaNacionalidade,
+      email: o.email,
+      telefoneE164: o.telefoneE164,
+      whatsapp: String(o.whatsapp),
+      aceitaComunicacoes: String(o.aceitaComunicacoes),
+      paisResidencia: o.paisResidencia,
+      cep: o.cep,
+      rua: o.rua,
+      numero: o.numero,
+      complemento: o.complemento,
+      bairro: o.bairro,
+      cidade: o.cidade,
+      regiao: o.regiao,
+      escolaridade: o.escolaridade,
+      idiomaNativo: o.idiomaNativo,
+      fuso: o.fuso,
+      observacoes: o.observacoes,
+    });
+    const { antes, depois } = diffCampos(fmt(aluno), fmt(novo));
 
     await prisma.$transaction(async (tx) => {
       await tx.aluno.update({ where: { id }, data: novo });

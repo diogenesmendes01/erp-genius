@@ -73,7 +73,13 @@ export default async function NovaMatriculaPage({
       podeCriar={podeCriar}
       podeCriarEAtivar={podeCriarEAtivar}
       lead={lead}
-      paises={paises.map((p) => ({ id: p.id, nome: p.nome, moedaLocal: p.moedaLocal }))}
+      paises={paises.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        moedaLocal: p.moedaLocal,
+        codigoISO: p.codigoISO,
+        tiposDocumento: p.tiposDocumento.map((t) => ({ id: t.id, nome: t.nome })),
+      }))}
       produtos={produtos.map((p) => ({ id: p.id, label: `${p.idioma.nome} · ${p.modalidade.nome}` }))}
       turmas={turmasComVaga}
       niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}

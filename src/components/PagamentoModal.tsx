@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FormaPagamento } from "@prisma/client";
 import { FORMA_PAGAMENTO_LABEL } from "@/lib/labels";
+import { formatarMoeda } from "@/lib/dinheiro";
 import { registrarPagamento } from "@/server/financeiro/acoes";
 import { UploadArquivo } from "@/components/UploadArquivo";
 
@@ -86,19 +87,19 @@ export function PagamentoModal({
         <h3 className="mb-3 text-sm font-medium">
           Registrar pagamento{alunoNome ? ` — ${alunoNome}` : ""}
         </h3>
-        <p className="text-xs text-gray-600">Negociado: {moeda} {valorEsperado.toLocaleString("pt-BR")}</p>
+        <p className="text-xs text-gray-600">Negociado: {formatarMoeda(valorEsperado, moeda)}</p>
         {jaRecebido > 0 && (
-          <p className="text-xs text-gray-600">Já recebido: {moeda} {jaRecebido.toLocaleString("pt-BR")}</p>
+          <p className="text-xs text-gray-600">Já recebido: {formatarMoeda(jaRecebido, moeda)}</p>
         )}
         <label className="mb-1 block text-xs font-medium text-gray-600">
-          Saldo restante: {moeda} {saldo.toLocaleString("pt-BR")}
+          Saldo restante: {formatarMoeda(saldo, moeda)}
         </label>
         <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
-        {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {moeda} {diff.toLocaleString("pt-BR")}.</p>}
+        {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
         {diff < 0 && (
           <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">
             <input type="checkbox" checked={permitirExcedente} onChange={(e) => setPermitirExcedente(e.target.checked)} />
-            Acima do negociado — registrar excedente de {moeda} {(-diff).toLocaleString("pt-BR")} como crédito.
+            Acima do negociado — registrar excedente de {formatarMoeda(-diff, moeda)} como crédito.
           </label>
         )}
         <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>

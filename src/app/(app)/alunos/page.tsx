@@ -3,6 +3,7 @@ import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import { listarAlunos } from "@/server/alunos/consultas";
 import { exigirSessao } from "@/server/_shared";
+import { podeCriarMatricula } from "@/server/matricula/permissoes";
 import { AlunosLista } from "./AlunosLista";
 
 // Guard server-side por papel ANTES de buscar dados de alunos (issue #1).
@@ -23,5 +24,10 @@ export default async function AlunosPage() {
   // Professor recebe escopo row-level (só suas turmas) dentro de listarAlunos (issue #46).
   const usuario = await exigirSessao();
   const alunos = await listarAlunos(usuario);
-  return <AlunosLista alunos={alunos} />;
+  // "Cadastrar aluno" leva ao fluxo de matrícula (aluno nasce da matrícula — doc 09).
+  // Gateado pela permissão real de criar matrícula (Vendedor/Gerente Comercial/Admin).
+  const podeCadastrar = podeCriarMatricula(usuario.papeis);
+  // Cadastro em lote (XLSX) é exclusivo do Administrador (doc 22 — carga por lote).
+  const podeImportar = usuario.papeis.includes(Papel.ADMINISTRADOR);
+  return <AlunosLista alunos={alunos} podeCadastrar={podeCadastrar} podeImportar={podeImportar} />;
 }

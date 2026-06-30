@@ -2,7 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Papel, StatusCobranca } from "@prisma/client";
 
 const findFirst = vi.fn();
-vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: (...a: unknown[]) => findFirst(...a) } } }));
+// `evento.findMany` cobre as consultas da régua/histórico que a ficha agora reusa (doc 24 §só
+// leitura): sem eventos no mock, a régua fica em "futuro" e o histórico vazio — o que os testes
+// de filtragem row-level abaixo não exercitam (eles validam matrículas/KPIs, não a régua).
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    aluno: { findFirst: (...a: unknown[]) => findFirst(...a) },
+    evento: { findMany: () => Promise.resolve([]) },
+  },
+}));
 
 import { escopoFichaFinanceira, obterFichaFinanceira } from "./consultas";
 import type { UsuarioSessao } from "@/server/_shared";
@@ -57,6 +65,7 @@ const cobranca = (valor: number, status: StatusCobranca) => ({
   status,
   vencimento: new Date("2030-01-01"),
   valorNegociado: valor,
+  moeda: "BRL",
   pagoEm: null,
 });
 
@@ -96,8 +105,8 @@ describe("obterFichaFinanceira (filtragem row-level das matrículas, P1)", () =>
     expect(ficha!.cobrancas).toHaveLength(1);
     expect(ficha!.ajustes.map((a) => a.id)).toEqual(["aj-m-minha"]);
     expect(ficha!.comissoes.every((c) => c.vendedorId === "vend-1")).toBe(true);
-    // KPIs somam apenas o escopo do vendedor (100), não os 999 de terceiros.
-    expect(ficha!.emAberto).toBe(100);
+    // KPIs somam apenas o escopo do vendedor (100), não os 999 de terceiros — por moeda.
+    expect(ficha!.emAberto).toEqual([{ moeda: "BRL", valor: 100 }]);
   });
 
   it("Vendedor enxerga matrícula vinda do SEU lead (mesmo sem comissão dele)", async () => {
@@ -108,7 +117,7 @@ describe("obterFichaFinanceira (filtragem row-level das matrículas, P1)", () =>
     const ficha = await obterFichaFinanceira("aluno-1", u("vend-1", Papel.VENDEDOR));
 
     expect(ficha!.aluno.matriculas.map((m) => m.id)).toEqual(["m-lead"]);
-    expect(ficha!.emAberto).toBe(50);
+    expect(ficha!.emAberto).toEqual([{ moeda: "BRL", valor: 50 }]);
   });
 
   it("Vendedor sem matrícula visível no aluno → ficha vazia coerente (nunca dados de terceiros)", async () => {
@@ -120,7 +129,7 @@ describe("obterFichaFinanceira (filtragem row-level das matrículas, P1)", () =>
     expect(ficha!.aluno.matriculas).toEqual([]);
     expect(ficha!.cobrancas).toEqual([]);
     expect(ficha!.comissoes).toEqual([]);
-    expect(ficha!.emAberto).toBe(0);
+    expect(ficha!.emAberto).toEqual([]);
   });
 
   it("Papel amplo (Financeiro) vê TODAS as matrículas do aluno (visão global)", async () => {
@@ -131,7 +140,7 @@ describe("obterFichaFinanceira (filtragem row-level das matrículas, P1)", () =>
     const ficha = await obterFichaFinanceira("aluno-1", u("fin", Papel.FINANCEIRO));
 
     expect(ficha!.aluno.matriculas.map((m) => m.id)).toEqual(["m-a", "m-b"]);
-    expect(ficha!.emAberto).toBe(1099);
+    expect(ficha!.emAberto).toEqual([{ moeda: "BRL", valor: 1099 }]);
   });
 
   it("aluno fora do escopo (findFirst → null) retorna null", async () => {

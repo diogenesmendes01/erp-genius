@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { StatusAluno } from "@prisma/client";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
+import { ImportarAlunosModal } from "./ImportarAlunosModal";
 
 export interface AlunoRow {
   id: string;
@@ -12,7 +13,7 @@ export interface AlunoRow {
   status: StatusAluno;
   pais: string;
   turma: { id: string; label: string } | null;
-  financeiro: { atrasado: boolean; emAberto: number };
+  financeiro: { atrasado: boolean; emAberto: { moeda: string; valor: number }[] };
 }
 
 const STATUS_CLS: Record<StatusAluno, string> = {
@@ -21,7 +22,15 @@ const STATUS_CLS: Record<StatusAluno, string> = {
   ENCERRADO: "bg-gray-200 text-gray-500",
 };
 
-export function AlunosLista({ alunos }: { alunos: AlunoRow[] }) {
+export function AlunosLista({
+  alunos,
+  podeCadastrar = false,
+  podeImportar = false,
+}: {
+  alunos: AlunoRow[];
+  podeCadastrar?: boolean;
+  podeImportar?: boolean;
+}) {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("");
   const [pais, setPais] = useState("");
@@ -49,7 +58,20 @@ export function AlunosLista({ alunos }: { alunos: AlunoRow[] }) {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-medium">Alunos</h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-medium">Alunos</h1>
+        <div className="flex items-center gap-2">
+          {podeImportar && <ImportarAlunosModal />}
+          {podeCadastrar && (
+            <Link
+              href="/matriculas/nova"
+              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              Cadastrar aluno
+            </Link>
+          )}
+        </div>
+      </div>
 
       <div className="mb-3 flex flex-wrap gap-2">
         <input

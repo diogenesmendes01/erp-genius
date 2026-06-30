@@ -27,7 +27,7 @@ import {
   vencimentoPrimeiraMensalidade,
   alocarPagamento,
   normalizarTelefoneE164,
-  calcularDocumentoValido,
+  validarDocumento,
   type UsuarioSessao,
   type Resultado,
 } from "@/server/_shared";
@@ -129,19 +129,64 @@ async function criarMatriculaTx(
   const codPrimeiraMensalidade = await gerarCodigo("cobranca");
   const codCertificado = dados.certificadoValor && dados.certificadoValor > 0 ? await gerarCodigo("cobranca") : null;
 
+  // Documento estruturado (doc 04): o tipo escolhido deve pertencer ao país; a
+  // validação mira o validador DESSE tipo. Documento avisa, não bloqueia (flag).
+  const tipoDoc = pais.tiposDocumento.find((t) => t.id === dados.alunoTipoDocumentoId);
+  if (!tipoDoc) throw new ErroRegra("Tipo de documento não pertence ao país selecionado.");
+
   const aluno = await tx.aluno.create({
     data: {
       codigo: codAluno,
-      nome: dados.alunoNome,
+      // Identificação
+      primeiroNome: dados.alunoPrimeiroNome,
+      sobrenome: dados.alunoSobrenome,
+      nomePreferido: dados.alunoNomePreferido || null,
+      nascimento: dados.alunoNascimento,
+      genero: dados.alunoGenero,
+      // Documentação
       paisId: pais.id,
-      documento: dados.alunoDocumento || null,
-      documentoValido: calcularDocumentoValido(pais.tiposDocumento, dados.alunoDocumento),
+      tipoDocumentoId: tipoDoc.id,
+      documento: dados.alunoDocumento,
+      documentoValido: validarDocumento(tipoDoc.validador, dados.alunoDocumento),
+      documentoPaisEmissor: dados.alunoDocumentoPaisEmissor || null,
+      nacionalidade: dados.alunoNacionalidade,
+      segundaNacionalidade: dados.alunoSegundaNacionalidade || null,
+      // Contato
+      email: dados.alunoEmail,
       telefoneE164: normalizarTelefoneE164(dados.alunoTelefone, pais.ddi),
-      email: dados.alunoEmail || null,
-      genero: dados.alunoGenero ?? null,
-      nascimento: dados.alunoNascimento ?? null,
+      whatsapp: dados.alunoWhatsapp,
+      aceitaComunicacoes: dados.alunoAceitaComunicacoes,
+      // Residência
+      paisResidencia: dados.alunoPaisResidencia,
+      cep: dados.alunoCep || null,
+      rua: dados.alunoRua || null,
+      numero: dados.alunoNumero || null,
+      complemento: dados.alunoComplemento || null,
+      bairro: dados.alunoBairro || null,
+      cidade: dados.alunoCidade || null,
+      regiao: dados.alunoRegiao || null,
+      // Acadêmico
+      escolaridade: dados.alunoEscolaridade ?? null,
+      idiomaNativo: dados.alunoIdiomaNativo || null,
+      // Operacional
+      fuso: dados.alunoFuso || null,
+      observacoes: dados.alunoObservacoes || null,
     },
   });
+
+  // Contato de emergência (opcional) — reaproveita Responsavel com papel EMERGENCIA.
+  if (dados.emergenciaNome) {
+    const emerg = await tx.responsavel.create({
+      data: {
+        nome: dados.emergenciaNome,
+        parentesco: dados.emergenciaParentesco || null,
+        telefoneE164: normalizarTelefoneE164(dados.emergenciaTelefone, pais.ddi),
+      },
+    });
+    await tx.alunoResponsavel.create({
+      data: { alunoId: aluno.id, responsavelId: emerg.id, papel: PapelResponsavel.EMERGENCIA },
+    });
+  }
 
   // Responsável financeiro (pagador) quando não é o próprio aluno (Kids/Teens/B2B)
   if (dados.pagador !== "ALUNO" && dados.responsavelNome) {

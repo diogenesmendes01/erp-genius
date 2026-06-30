@@ -18,7 +18,8 @@ export type AgregadoTipo =
   | "Modalidade"
   | "Nivel"
   | "Produto"
-  | "Preco";
+  | "Preco"
+  | "TaxaCambio";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */

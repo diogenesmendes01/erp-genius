@@ -2,10 +2,12 @@ import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import {
-  listarCobrancasAbertas,
   listarComissoes,
   kpisFinanceiro,
+  dadosCambio,
+  relatorioDescontosComissoes,
 } from "@/server/financeiro/consultas";
+import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
 
@@ -22,12 +24,21 @@ export default async function FinanceiroPage() {
   const podeAprovar =
     papeis.includes(Papel.ADMINISTRADOR) ||
     papeis.includes(Papel.GERENTE_COMERCIAL);
+  // Cadastrar cotação de câmbio (alimenta a consolidação) é de Admin/Financeiro.
+  const podeGerenciarCambio =
+    papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
+  // Operar cobrança (enviar/baixar/promessa) é de Financeiro/Admin (PAPEIS_BAIXA + Admin).
+  // Gerente Comercial LÊ o painel mas não opera — os botões de ação ficam escondidos p/ ele.
+  const podeOperarCobranca =
+    papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 
-  const [cobrancas, comissoes, kpis, aprovacoesRaw] = await Promise.all([
-    listarCobrancasAbertas(),
+  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio] = await Promise.all([
+    listarFilaCobranca(),
     listarComissoes(),
     kpisFinanceiro(),
     listarAprovacoesPendentes(),
+    dadosCambio(),
+    relatorioDescontosComissoes(),
   ]);
 
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
@@ -49,11 +60,15 @@ export default async function FinanceiroPage() {
 
   return (
     <FinanceiroPainel
-      cobrancas={cobrancas}
+      fila={fila}
       comissoes={comissoes}
       kpis={kpis}
       aprovacoes={aprovacoes}
       podeAprovar={podeAprovar}
+      podeOperarCobranca={podeOperarCobranca}
+      cotacoes={cotacoes}
+      relatorio={relatorio}
+      podeGerenciarCambio={podeGerenciarCambio}
     />
   );
 }

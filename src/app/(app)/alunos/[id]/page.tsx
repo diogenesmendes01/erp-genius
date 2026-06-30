@@ -5,8 +5,9 @@ import {
   listarTurmasAbertasComVaga,
   podeMovimentarAluno,
 } from "@/server/alunos/consultas";
-import { listarPaisesSimples } from "@/server/paises/consultas";
+import { listarPaises } from "@/server/paises/consultas";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { nomeCompleto } from "@/lib/nome";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
 export default async function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   const [dados, turmas, paises] = await Promise.all([
     obterAluno(id, usuario),
     listarTurmasAbertasComVaga(),
-    listarPaisesSimples(),
+    listarPaises(),
   ]);
   if (!dados) notFound();
   const { aluno, financeiro } = dados;
@@ -31,16 +32,37 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   const ficha: AlunoFicha = {
     id: aluno.id,
     codigo: aluno.codigo,
-    nome: aluno.nome,
+    nome: nomeCompleto(aluno),
+    primeiroNome: aluno.primeiroNome,
+    sobrenome: aluno.sobrenome,
+    nomePreferido: aluno.nomePreferido,
     status: aluno.status,
     pais: aluno.pais.nome,
     paisId: aluno.paisId,
     nascimento: aluno.nascimento ? aluno.nascimento.toISOString() : null,
+    genero: aluno.genero,
+    tipoDocumentoId: aluno.tipoDocumentoId,
     documento: aluno.documento,
     documentoValido: aluno.documentoValido,
+    documentoPaisEmissor: aluno.documentoPaisEmissor,
+    nacionalidade: aluno.nacionalidade,
+    segundaNacionalidade: aluno.segundaNacionalidade,
     telefone: aluno.telefoneE164,
     email: aluno.email,
-    genero: aluno.genero,
+    whatsapp: aluno.whatsapp,
+    aceitaComunicacoes: aluno.aceitaComunicacoes,
+    paisResidencia: aluno.paisResidencia,
+    cep: aluno.cep,
+    rua: aluno.rua,
+    numero: aluno.numero,
+    complemento: aluno.complemento,
+    bairro: aluno.bairro,
+    cidade: aluno.cidade,
+    regiao: aluno.regiao,
+    escolaridade: aluno.escolaridade,
+    idiomaNativo: aluno.idiomaNativo,
+    fuso: aluno.fuso,
+    observacoes: aluno.observacoes,
     turmaAtual: turma
       ? {
           id: turma.id,
@@ -71,7 +93,11 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     <FichaAluno
       aluno={ficha}
       turmas={turmas}
-      paises={paises}
+      paises={paises.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        tiposDocumento: p.tiposDocumento.map((t) => ({ id: t.id, nome: t.nome })),
+      }))}
       podeMovimentar={podeMovimentarAluno(usuario)}
     />
   );
