@@ -4,8 +4,17 @@ import { MatriculaSchema } from "./schema";
 // Base mínima válida para focar nos campos da exceção de preço (Issue #7).
 function base(over: Record<string, unknown> = {}) {
   return {
-    alunoNome: "Aluno Teste",
+    alunoPrimeiroNome: "Aluno",
+    alunoSobrenome: "Teste",
+    alunoNascimento: "2000-01-01",
+    alunoGenero: "MASCULINO",
     alunoPaisId: "pais-1",
+    alunoTipoDocumentoId: "tipodoc-1",
+    alunoDocumento: "123456",
+    alunoNacionalidade: "CR",
+    alunoEmail: "aluno@teste.com",
+    alunoTelefone: "+50688887777",
+    alunoPaisResidencia: "CR",
     produtoId: "prod-1",
     diaVencimento: 5,
     taxaValor: 100,

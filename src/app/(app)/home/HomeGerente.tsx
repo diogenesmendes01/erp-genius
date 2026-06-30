@@ -1,5 +1,6 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
+import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeGerente } from "@/server/home/consultas";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeGerente>>;
@@ -23,7 +24,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
         <Kpi titulo="Leads hoje" valor={String(kpis.leadsHoje)} />
         <Kpi titulo="Conversão" valor={`${kpis.conversao}%`} />
         <Kpi titulo="Matrículas no mês" valor={String(kpis.matriculasMes)} />
-        <Kpi titulo="Recebido no mês" valor={kpis.receitaMes.toLocaleString("pt-BR")} />
+        <Kpi titulo="Recebido no mês" valor={formatarValores(kpis.receitaMes)} />
       </div>
 
       {kpis.alertasSla > 0 && (

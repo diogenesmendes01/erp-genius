@@ -9,6 +9,7 @@ import {
   STATUS_COBRANCA_LABEL,
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
+import { formatarMoeda, formatarValores, type ValorMoeda } from "@/lib/dinheiro";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
@@ -29,16 +30,46 @@ const VIGENCIA_INFO: Record<Vigencia, { label: string; cls: string }> = {
   CONTRATO_INTEIRO: { label: "Contrato inteiro", cls: "text-red-700" },
 };
 
+// Chip da régua (read-only) na linha da cobrança — espelha o estado da fila (doc 24 §só leitura).
+function reguaChipInfo(r: ReguaFicha | null): { label: string; cls: string } | null {
+  if (!r) return null;
+  if (r.precisaBloqueio) return { label: "Bloqueio pendente", cls: "bg-red-100 text-red-700" };
+  if (r.estado === "promessa") {
+    return {
+      label: r.promessaAte ? `Promessa até ${new Date(r.promessaAte).toLocaleDateString("pt-BR")}` : "Promessa",
+      cls: "bg-blue-100 text-blue-700",
+    };
+  }
+  if (r.estado === "acao_devida" && r.passo) {
+    const cls = r.tipoAcao === "lembrar" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700";
+    return { label: `${r.passo} · ${r.tipoAcao === "lembrar" ? "lembrar" : "cobrar"}`, cls };
+  }
+  return null;
+}
+
+export interface ReguaFicha {
+  estado: string;
+  passo: string | null;
+  tipoAcao: string | null;
+  rotuloAcao: string | null;
+  promessaAte: string | null;
+  precisaBloqueio: boolean;
+  diasAtraso: number;
+  /** Sinal de reincidência V1 (nº de cobranças já enviadas). Score de risco real é V2 (doc 24). */
+  tentativas: number;
+}
+
 export interface FichaFinanceiraDados {
   aluno: { id: string; nome: string; codigo: string | null; pais: string };
   responsavelFinanceiro: string;
   situacaoAtrasado: boolean;
-  moeda: string;
+  acessoBloqueado: boolean;
+  historico: { id: string; quando: string; label: string; autor: string | null }[];
   tiles: {
-    proximoVenc: { valor: number; data: string } | null;
-    ultimoPago: { valor: number; data: string; forma: string | null } | null;
-    emAberto: number;
-    emAtraso: number;
+    proximoVenc: { valor: number; moeda: string; data: string } | null;
+    ultimoPago: { valor: number; moeda: string; data: string; forma: string | null } | null;
+    emAberto: ValorMoeda[];
+    emAtraso: ValorMoeda[];
   };
   contrato: { produto: string; moeda: string; status: string }[];
   cobrancas: {
@@ -52,6 +83,7 @@ export interface FichaFinanceiraDados {
     vencimento: string;
     pagoEm: string | null;
     forma: FormaPagamento | null;
+    regua: ReguaFicha | null;
   }[];
   ajustes: {
     id: string;
@@ -59,6 +91,7 @@ export interface FichaFinanceiraDados {
     valorDe: number;
     valorPara: number;
     descontoValor: number;
+    moeda: string;
     motivo: string;
     autor: string;
     criadoEm: string;
@@ -89,6 +122,9 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
           <span className={dados.situacaoAtrasado ? "rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700" : "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"}>
             {dados.situacaoAtrasado ? "Em atraso" : "Em dia"}
           </span>
+          {dados.acessoBloqueado && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Acesso bloqueado</span>
+          )}
         </div>
         <p className="mt-1 text-sm text-gray-500">
           {dados.aluno.codigo} · {dados.aluno.pais} · Responsável financeiro: {dados.responsavelFinanceiro}
@@ -96,10 +132,10 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? `${dados.moeda} ${t.proximoVenc.valor.toLocaleString("pt-BR")}` : "—"} sub={t.proximoVenc ? new Date(t.proximoVenc.data).toLocaleDateString("pt-BR") : ""} />
-        <Tile titulo="Último pagamento" valor={t.ultimoPago ? `${dados.moeda} ${t.ultimoPago.valor.toLocaleString("pt-BR")}` : "—"} sub={t.ultimoPago ? new Date(t.ultimoPago.data).toLocaleDateString("pt-BR") : ""} />
-        <Tile titulo="Em aberto" valor={`${dados.moeda} ${t.emAberto.toLocaleString("pt-BR")}`} />
-        <Tile titulo="Em atraso" valor={`${dados.moeda} ${t.emAtraso.toLocaleString("pt-BR")}`} cls={t.emAtraso > 0 ? "text-red-600" : ""} />
+        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? new Date(t.proximoVenc.data).toLocaleDateString("pt-BR") : ""} />
+        <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? new Date(t.ultimoPago.data).toLocaleDateString("pt-BR") : ""} />
+        <Tile titulo="Em aberto" valor={formatarValores(t.emAberto)} />
+        <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
       </div>
 
       {/* Cobranças */}
@@ -120,8 +156,19 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-2">{TIPO_COBRANCA_LABEL[c.tipo]}</td>
                 <td className="px-4 py-2 text-gray-600">{new Date(c.vencimento).toLocaleDateString("pt-BR")}</td>
-                <td className="px-4 py-2">{c.moeda} {c.valorNegociado.toLocaleString("pt-BR")}</td>
-                <td className="px-4 py-2 text-gray-600">{STATUS_COBRANCA_LABEL[c.status]}</td>
+                <td className="px-4 py-2">{formatarMoeda(c.valorNegociado, c.moeda)}</td>
+                <td className="px-4 py-2 text-gray-600">
+                  {STATUS_COBRANCA_LABEL[c.status]}
+                  {(() => {
+                    const ch = reguaChipInfo(c.regua);
+                    return ch ? <span className={"ml-2 inline-block rounded px-1.5 py-0.5 text-[11px] " + ch.cls}>{ch.label}</span> : null;
+                  })()}
+                  {c.regua && c.regua.tentativas > 1 && (
+                    <span className="ml-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-700">
+                      {c.regua.tentativas}ª cobrança
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-end gap-2">
                     {(c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO) && (
@@ -152,8 +199,8 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
             {dados.ajustes.map((a) => (
               <li key={a.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-gray-800">
-                  {TIPO_AJUSTE_LABEL[a.tipo]}: {dados.moeda} {a.valorDe.toLocaleString("pt-BR")} → {a.valorPara.toLocaleString("pt-BR")}
-                  <span className="ml-2 text-gray-500">(desconto {dados.moeda} {a.descontoValor.toLocaleString("pt-BR")})</span>
+                  {TIPO_AJUSTE_LABEL[a.tipo]}: {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}
+                  <span className="ml-2 text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
                 </div>
                 <div className="text-xs text-gray-500">{a.motivo} · {a.autor} · {new Date(a.criadoEm).toLocaleDateString("pt-BR")}{a.vigencia ? ` · ${VIGENCIA_INFO[a.vigencia].label}` : ""}</div>
               </li>
@@ -170,7 +217,27 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
         ) : (
           <ul className="text-sm text-gray-700">
             {dados.comissoes.map((c) => (
-              <li key={c.id}>{c.vendedor} · {c.percentual}% · {c.moeda} {c.valor.toLocaleString("pt-BR")} · {STATUS_COMISSAO_LABEL[c.status]}</li>
+              <li key={c.id}>{c.vendedor} · {c.percentual}% · {formatarMoeda(c.valor, c.moeda)} · {STATUS_COMISSAO_LABEL[c.status]}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Histórico de cobrança — linha do tempo dos eventos da régua (read-only, doc 24) */}
+      <section className="rounded-lg border border-gray-200 bg-surface p-4">
+        <h2 className="mb-3 font-medium">Histórico de cobrança</h2>
+        {dados.historico.length === 0 ? (
+          <p className="text-sm text-gray-400">Sem movimentações de cobrança.</p>
+        ) : (
+          <ul className="flex flex-col gap-2 text-sm">
+            {dados.historico.map((h) => (
+              <li key={h.id} className="border-l-2 border-gray-200 pl-3">
+                <div className="text-gray-800">{h.label}</div>
+                <div className="text-xs text-gray-500">
+                  {new Date(h.quando).toLocaleString("pt-BR")}
+                  {h.autor ? ` · ${h.autor}` : ""}
+                </div>
+              </li>
             ))}
           </ul>
         )}
@@ -180,7 +247,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
         <PagamentoModal
           cobrancaId={pagar.id}
           alunoNome={dados.aluno.nome}
-          moeda={dados.moeda}
+          moeda={pagar.moeda}
           valorEsperado={pagar.valorNegociado}
           jaRecebido={pagar.valorRecebido}
           saldoRestante={pagar.saldo}
@@ -192,7 +259,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
       {reneg && (
         <RenegociarModal
           cobranca={reneg}
-          moeda={dados.moeda}
+          moeda={reneg.moeda}
           podePerdao={dados.permissoes.perdao}
           onClose={() => setReneg(null)}
           onDone={(aprovacao) => {
@@ -265,9 +332,9 @@ function RenegociarModal({
       </select>
       {tipo !== TipoAjuste.PERDAO && (
         <>
-          <label className="mb-1 block text-xs text-gray-600">Novo valor (de {moeda} {cobranca.valorNegociado.toLocaleString("pt-BR")})</label>
+          <label className="mb-1 block text-xs text-gray-600">Novo valor (de {formatarMoeda(cobranca.valorNegociado, moeda)})</label>
           <input type="number" step="0.01" className={inputCls + " mb-1"} value={valorPara} onChange={(e) => setValor(e.target.value)} />
-          {desconto !== 0 && <p className="mb-2 text-xs text-gray-600">Desconto concedido: <strong>{moeda} {desconto.toLocaleString("pt-BR")}</strong></p>}
+          {desconto !== 0 && <p className="mb-2 text-xs text-gray-600">Desconto concedido: <strong>{formatarMoeda(desconto, moeda)}</strong></p>}
         </>
       )}
       <label className="mb-1 block text-xs text-gray-600">Vigência</label>

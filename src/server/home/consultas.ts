@@ -6,6 +6,7 @@ import {
   Papel,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { somarPorMoeda } from "@/lib/dinheiro";
 import type { UsuarioSessao } from "@/server/_shared";
 
 const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
@@ -69,9 +70,10 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
 
   const comissoes = await prisma.comissao.findMany({
     where: { vendedorId: usuario.id, status: { in: [StatusComissao.PENDENTE, StatusComissao.APROVADA] } },
+    select: { valor: true, moeda: true },
   });
-  const comissaoPrevista = comissoes.reduce((s, c) => s + c.valor, 0);
-  const moedaComissao = comissoes[0]?.moeda ?? "";
+  // Por moeda — antes somava CRC+USD e rotulava com a moeda da PRIMEIRA comissão (errado).
+  const comissaoPrevista = somarPorMoeda(comissoes.map((c) => ({ moeda: c.moeda, valor: c.valor })));
 
   // kanban resumido
   const agrup = await prisma.lead.groupBy({
@@ -99,7 +101,7 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
   const slaPct = leads.length > 0 ? Math.round((respondidos / leads.length) * 100) : 100;
 
   return {
-    cards: { leadsNovos, followVencidos, experimentaisHoje, comissaoPrevista, moedaComissao },
+    cards: { leadsNovos, followVencidos, experimentaisHoje, comissaoPrevista },
     sla: { pct: slaPct, atrasados: atrasadosSla },
     fila,
     agenda,
@@ -165,12 +167,12 @@ export async function dadosHomeGerente() {
     where: { etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
   });
 
-  // receita: cobranças pagas no mês (soma simples; multi-moeda exibida à parte é Fase 2)
+  // receita: cobranças pagas no mês, agrupada por moeda (nunca soma CRC+USD num total só).
   const pagasMes = await prisma.cobranca.findMany({
     where: { status: StatusCobranca.PAGO, pagoEm: { gte: inicioDoMes() } },
-    select: { valorRecebido: true, valorNegociado: true },
+    select: { valorRecebido: true, valorNegociado: true, moeda: true },
   });
-  const receitaMes = pagasMes.reduce((s, c) => s + (c.valorRecebido ?? c.valorNegociado), 0);
+  const receitaMes = somarPorMoeda(pagasMes.map((c) => ({ moeda: c.moeda, valor: c.valorRecebido ?? c.valorNegociado })));
 
   // ranking simples por matrículas (leads matriculados por dono)
   const vendedores = await prisma.usuario.findMany({

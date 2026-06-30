@@ -203,11 +203,23 @@ Experimental Agendada, Proposta).
 > chega **pré-preenchida pelo lead** → é **confirmar + completar**, não redigitar.
 
 ### Seções
-1. **Aluno** — o **país dirige** documento, moeda e formato de telefone. Documento avisa-não-bloqueia.
+1. **Aluno (cadastro completo)** — passo 1 do **wizard de 2 passos**, organizado em blocos. O **país
+   dirige** tipo de documento, formato de telefone e moeda. Documento **avisa-não-bloqueia** (doc 04).
+   - **Identificação:** Nome · Sobrenome(s) · Nome preferido · Data de nascimento · Gênero.
+   - **Documentação:** País · Tipo de documento (lista do país) · Número · País emissor · Nacionalidade ·
+     Segunda nacionalidade. Nacionalidade/residência/emissor usam **ISO 3166** (qualquer país, não só os mercados).
+   - **Contato:** E-mail · Telefone principal · É WhatsApp? · Recebe comunicações?
+   - **Residência:** País de residência · CEP · Região/Estado/Província · Cidade · Bairro · Rua · Número · Complemento.
+   - **Acadêmico:** Escolaridade (lista) · Idioma nativo. **Operacional:** Fuso · Contato de emergência · Observações.
+   - **Essenciais OBRIGATÓRIOS:** País · Tipo + Número de documento · Nome · Sobrenome · País de residência ·
+     Telefone · E-mail · Data de nascimento · Nacionalidade · Gênero. Demais campos opcionais.
    - **Responsável financeiro (o pagador)** = **o próprio aluno** (Adulto) · **responsável** (Kids/Teens) ·
      **empresa** (B2B). Modela o **faturamento corporativo** de brinde. Escondido para Adulto.
+   - **Edição (Ficha do Aluno)** é **lenient**: só identidade (nome/sobrenome/país) é obrigatória, para não
+     travar os 190 alunos migrados (Q10) que podem não ter documento/nascimento/etc.
 2. **Curso & alocação (SELEÇÃO, não criação)** — idioma · modalidade · **nível inicial** ·
-   **turma** (escolhida de uma lista de **turmas já existentes**).
+   **turma** (escolhida da lista de turmas **aceitando matrícula** = `dataInicio` no futuro, com vaga;
+   após o início a turma sai automaticamente da lista — ver doc 11 §Turma).
    - ⚠️ **Princípio criar × alocar:** aqui o vendedor só **seleciona/aloca**. **Criar** produto/preço/turma
      é em **Configuração** — turma é responsabilidade do **Gerente Pedagógico**. **Não há "criar turma"** nesta tela.
    - **Origem do nível** registrada: **avaliação (data)** ou **manual** ("quem colocou no A1?").
@@ -293,7 +305,9 @@ Onde a turma **nasce** (o "criar" do princípio criar × alocar). Casa do **Gere
 ### Ficha do Aluno
 - Header: nome · país · contato · **status em destaque** (Ativo/Pausado/Encerrado — a info mais crítica da ficha).
 - **Turma atual** (professor · horário · início) com **tempo na turma** ("há 4 meses").
-- **Dados pessoais** (nascimento, documento, responsável financeiro, data de matrícula).
+- **Dados pessoais** (cadastro completo): nome preferido · documento (tipo + número + emissor, com flag
+  "não validado") · nascimento · gênero · nacionalidade(s) · contato (e-mail/telefone/WhatsApp) · residência ·
+  escolaridade · idioma nativo · observações. Editável via drawer (edição **lenient** — exige só identidade + motivo).
 - **Financeiro resumido** (situação · saldo · próximo vencimento) + link **Ver ficha financeira**.
 - **Histórico de movimentações** (linha do tempo completa — **entidade própria**): matrícula · troca de turma ·
   pausa · reativação · encerramento · avanço de nível — cada um com **data · de→para · motivo · autor**.
@@ -481,12 +495,15 @@ mostra o selo **"comprovante"**.
 
 ### Visão geral (dashboard)
 - KPIs: **novas matrículas no mês** (a receita futura nasce na matrícula) · **previsto · recebido · em atraso · % recebido**.
-- **Recebido × previsto** (com fatia em atraso e a vencer) · **receita por país** (consolidada em USD) ·
+- **Recebido × previsto** (com fatia em atraso e a vencer) · **receita por país** (consolidada na moeda escolhida, padrão USD) ·
   comissões a pagar · inadimplência.
 - **Visão por papel:** Admin/Financeiro/Gerentes; o Vendedor vê os próprios números **na Home** (não esta consolidada).
 
 ### Multi-moeda
-- Cada cobrança **na sua moeda**; **consolidação em USD só nos KPIs/painel** (reporting, nunca na conta do aluno).
+- Cada cobrança **na sua moeda**; KPIs/somatórios **agrupados por moeda** (nunca somam moedas diferentes).
+- **Consolidação (Fase B):** seletor de moeda-base no painel (padrão USD; colón/real/etc.), via `TaxaCambio`
+  (cotação manual, pivô USD). Reporting-only — nunca na conta do aluno. Aba **Câmbio** (Admin/Financeiro)
+  cadastra as cotações; aba **Descontos** mostra desconto/comissão por moeda × vendedor.
 
 ### Escopo V0 × Fase 2
 - **V0 = manual** (baixa na mão). **Fase 2 =** integrações (GreenPay/PIX/boleto/cartão), conciliação,

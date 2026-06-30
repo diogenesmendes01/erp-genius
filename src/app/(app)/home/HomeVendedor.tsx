@@ -8,6 +8,7 @@ import {
   type IconProps,
 } from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
+import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeVendedor } from "@/server/home/consultas";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeVendedor>>;
@@ -56,7 +57,7 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
         <Card titulo="Experimentais hoje" valor={String(cards.experimentaisHoje)} cls="text-blue-600" />
         <Card
           titulo="Comissão prevista"
-          valor={`${cards.moedaComissao} ${cards.comissaoPrevista.toLocaleString("pt-BR")}`}
+          valor={formatarValores(cards.comissaoPrevista)}
           cls="text-green-600"
         />
       </div>

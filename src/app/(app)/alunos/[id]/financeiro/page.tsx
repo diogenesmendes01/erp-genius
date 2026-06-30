@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { obterFichaFinanceira } from "@/server/ajustes/consultas";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
+import { nomeCompleto } from "@/lib/nome";
 import { FichaFinanceira, type FichaFinanceiraDados } from "./FichaFinanceira";
 
 export default async function FichaFinanceiraPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,18 +22,20 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
   const f = await obterFichaFinanceira(id, usuario);
   if (!f) notFound();
 
-  const moeda = f.cobrancas[0]?.moeda ?? f.aluno.matriculas[0]?.moeda ?? "";
-
   const dados: FichaFinanceiraDados = {
-    aluno: { id: f.aluno.id, nome: f.aluno.nome, codigo: f.aluno.codigo, pais: f.aluno.pais.nome },
+    aluno: { id: f.aluno.id, nome: nomeCompleto(f.aluno), codigo: f.aluno.codigo, pais: f.aluno.pais.nome },
     responsavelFinanceiro: f.responsavelFinanceiro,
-    situacaoAtrasado: f.emAtraso > 0,
-    moeda,
+    situacaoAtrasado: f.emAtraso.some((v) => v.valor > 0),
+    acessoBloqueado: f.acessoBloqueado,
+    historico: f.historico,
     tiles: {
-      proximoVenc: f.proximo ? { valor: f.proximo.valorNegociado, data: f.proximo.vencimento.toISOString() } : null,
+      proximoVenc: f.proximo
+        ? { valor: f.proximo.valorNegociado, moeda: f.proximo.moeda, data: f.proximo.vencimento.toISOString() }
+        : null,
       ultimoPago: f.ultimoPago
         ? {
             valor: f.ultimoPago.valorRecebido ?? f.ultimoPago.valorNegociado,
+            moeda: f.ultimoPago.moeda,
             data: f.ultimoPago.pagoEm!.toISOString(),
             forma: f.ultimoPago.formaPagamento,
           }
@@ -45,24 +48,40 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
       moeda: m.moeda,
       status: m.status,
     })),
-    cobrancas: f.cobrancas.map((c) => ({
-      id: c.id,
-      tipo: c.tipo,
-      status: c.status,
-      valorNegociado: c.valorNegociado,
-      valorRecebido: c.valorRecebido ?? 0,
-      saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
-      moeda: c.moeda,
-      vencimento: c.vencimento.toISOString(),
-      pagoEm: c.pagoEm ? c.pagoEm.toISOString() : null,
-      forma: c.formaPagamento,
-    })),
+    cobrancas: f.cobrancas.map((c) => {
+      const r = f.reguaPorCobranca.get(c.id) ?? null;
+      return {
+        id: c.id,
+        tipo: c.tipo,
+        status: c.status,
+        valorNegociado: c.valorNegociado,
+        valorRecebido: c.valorRecebido ?? 0,
+        saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
+        moeda: c.moeda,
+        vencimento: c.vencimento.toISOString(),
+        pagoEm: c.pagoEm ? c.pagoEm.toISOString() : null,
+        forma: c.formaPagamento,
+        regua: r
+          ? {
+              estado: r.estado,
+              passo: r.passo,
+              tipoAcao: r.tipoAcao,
+              rotuloAcao: r.rotuloAcao,
+              promessaAte: r.promessaAte,
+              precisaBloqueio: r.precisaBloqueio,
+              diasAtraso: r.diasAtraso,
+              tentativas: r.tentativas,
+            }
+          : null,
+      };
+    }),
     ajustes: f.ajustes.map((a) => ({
       id: a.id,
       tipo: a.tipo,
       valorDe: a.valorDe,
       valorPara: a.valorPara,
       descontoValor: a.descontoValor,
+      moeda: a.moeda,
       motivo: a.motivo,
       autor: a.autor.nome,
       criadoEm: a.criadoEm.toISOString(),

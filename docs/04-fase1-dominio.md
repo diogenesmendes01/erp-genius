@@ -45,6 +45,17 @@ documento novo/exótico = o dev adiciona **um** validador e ele fica disponível
   importada** e está divergente — validação que bloqueia impediria migrar os próprios alunos.
 - Princípio: a meta nunca foi **rejeitar** a divergência, foi **estruturar** ela.
 
+### 4. Documento estruturado e cidadania (cadastro de aluno)
+- O documento não é texto livre: é **Tipo de documento** (escolhido na lista do país) + **Número** +
+  **País emissor** (opcional). A validação mira o **validador do tipo escolhido**; documento estrangeiro
+  é suportado (passaporte / doc de outro país). Continua **avisa-não-bloqueia**.
+- **Três conceitos de país, distintos:**
+  - **País-base** (o `paisId` do aluno) = mercado: dirige tipos de documento, DDI do telefone e moeda da matrícula.
+  - **Nacionalidade** (+ segunda nacionalidade) = cidadania da pessoa.
+  - **País de residência** = onde mora hoje — **pode diferir** da nacionalidade (ex.: venezuelano residente no
+    Panamá, comum na América Central).
+- Nacionalidade / residência / emissor são **ISO 3166** (qualquer país), **não** restritos aos mercados ativos.
+
 ## Moeda
 
 - A moeda da cobrança é uma **decisão da matrícula**, não do aluno: **moeda local do país OU dólar**.
@@ -136,7 +147,13 @@ moeda do país. O Financeiro apenas **soma as linhas** daquele contrato.
 
 - A cobrança **nunca** precisa saber a cotação do dólar — cada moeda é independente.
 - O câmbio aparece **apenas** na consolidação gerencial ("quanto faturamos na
-  América Latina toda?"), convertendo tudo para uma moeda-base (dólar) só para leitura.
+  América Latina toda?"), convertendo tudo para uma **moeda-base à escolha do gestor**
+  (padrão USD; colón, real e demais moedas em uso disponíveis) só para leitura.
+- **Implementado (Fase B):** tabela `TaxaCambio` (cotação manual, pivô único USD) +
+  seletor de moeda de consolidação no painel financeiro (preferência salva por usuário).
+  Estende a decisão **D4** (era "só dólar"): a moeda-base passou a ser **configurável**,
+  mantendo USD como padrão. Continua **reporting-only** — nunca toca a conta do aluno;
+  cada cobrança permanece na sua própria moeda.
 
 ## Modelo de dados (entidades principais)
 

@@ -36,6 +36,8 @@
 | Doc | Conteúdo |
 |---|---|
 | [`09-fase0-telas.md`](09-fase0-telas.md) | Especificação tela por tela da Fase 0 (UX) |
+| [`24-cobrancas-regua-fluxo.md`](24-cobrancas-regua-fluxo.md) | Redesenho de Cobranças: régua + cérebro/braço + dash/lista/detalhe |
+| [`25-motor-de-risco-cobranca.md`](25-motor-de-risco-cobranca.md) | **Spec V2 (não implementado)**: motor de risco do aluno — score explicável + faseamento |
 | [`16-plano-execucao.md`](16-plano-execucao.md) | **Plano mestre** de documentação + implementação (checklist) |
 | [`15-decisoes-adr.md`](15-decisoes-adr.md) | Log de decisões e pendências em aberto |
 

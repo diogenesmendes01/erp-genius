@@ -14,7 +14,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | Campo | Significado |
 |---|---|
 | `tipo` | Nome do evento em PascalCase (ex.: `MatriculaAtivada`) |
-| `agregadoTipo` | Entidade afetada: `Lead · Matricula · Aluno · Cobranca · Comissao · Turma · Pais · Usuario · Idioma · Modalidade · Nivel · Produto · Preco` |
+| `agregadoTipo` | Entidade afetada: `Lead · Matricula · Aluno · Cobranca · Comissao · Turma · Pais · Usuario · Idioma · Modalidade · Nivel · Produto · Preco · TaxaCambio` |
 | `agregadoId` | `id` da entidade |
 | `autorId` | Usuário que disparou (`null` = sistema/cron) |
 | `versao` | Versão do formato do `payload` (começa em 1) |
@@ -82,7 +82,11 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `DescontoSolicitado` | Vendedor pede acima do limite | Vendedor | `{ percentual, vigencia, aprovacaoId }` |
 | `AprovacaoDecidida` | Aprova/rejeita ajuste | Gerente Com./Admin | `{ status, motivo? }` |
 | `ComissaoPaga` | Fechar mês de comissões | Financeiro | `{ pagaEm, valor }` |
-| `CobrancaEnviadaWhatsApp` | "Abrir no WhatsApp" (wa.me) | Financeiro/Secretaria | `{ modelo }` |
+| `CobrancaEnviadaWhatsApp` | "Abrir no WhatsApp" (wa.me) — registra o **degrau da régua** cumprido (doc 24) | Financeiro/Secretaria | `{ modelo, passo? }` |
+| `PromessaPagamento` | Aluno prometeu pagar até uma data — adormece a cobrança na fila (doc 24) | Financeiro/Secretaria | `{ ate }` |
+| `AcessoBloqueado` | Bloqueio de acesso à aula (degrau D+15, **aprovação humana**) — agregado `Matricula` | Gerente Com./Admin | `{ cobrancaId?, motivo? }` |
+| `AcessoDesbloqueado` | Reversão do bloqueio — agregado `Matricula` | Gerente Com./Admin | `{ motivo? }` |
+| `TaxasCambioDefinidas` | Cotação de câmbio salva (manual ou auto) — agregado `TaxaCambio` | Financeiro/Admin | `{ fonte?, entradas:[{moeda, unidadesPorUsd}], vigenteEm }` |
 
 > **Reservados (planejados — gatilho ainda não disparado no código):** `ValorNegociado`,
 > `MatriculaAtivadaComPendencia`, `MatriculaCancelada`, `ComissaoEstornada`.
@@ -93,7 +97,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 |---|---|---|---|
 | `AlunoMatriculado` | Matrícula ativada cria/ativa aluno | Sistema | `{ matriculaId, turmaId }` |
 | `AlunoEditado` | Edição de dados cadastrais (motivo obrigatório) | Secretaria/Pedagógico | `{ de, para, motivo }` |
-| `AlunoImportado` | Carga de alunos Q10 (Listado de alunos) — **persistido como `ALUNO_IMPORTADO`** (ver nota de nomenclatura) | Sistema (docs 19, 21) | `{ origem, codigoQ10?, ... }` |
+| `AlunoImportado` | Cadastro de alunos em **lote por XLSX** (tela de Alunos → "Cadastrar por lote", só Admin) **e** carga Q10 inicial (esta **persistida como `ALUNO_IMPORTADO`** — ver nota de nomenclatura) | Admin / Sistema (docs 19, 21) | `{ origem, linha?, codigo?, codigoQ10?, ... }` |
 | `AlunoVinculadoTurma` | Carga de rosters (EstudiantesCurso Q10) | Sistema (doc 21) | `{ turmaId, nivel, ativa }` |
 | `TrocaTurma` | Troca de turma | Secretaria/Pedagógico | `{ de, para, motivo }` |
 | `AlunoPausado` | Pausa | Secretaria | `{ motivo, dataRetornoPrevista }` |
@@ -120,7 +124,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `ProdutoCriado` | Catálogo: produto (idioma × modalidade) | Admin |
 | `PrecoDefinido` / `PrecoDesativado` / `PrecoReativado` | Catálogo: preço de referência (supersede/histórico) | Admin |
 | `TurmaCriada` / `TurmaEditada` | Cadastro/edição de turma | Gerente Pedagógico |
-| `TurmaImportada` | Carga única do ListadoCursos (Q10) | Sistema (doc 20) |
+| `TurmaImportada` | Importação de turmas em **lote por XLSX** (Configuração → Turmas → "Importar turmas", só Admin) **e** carga única do ListadoCursos (Q10) | Admin / Sistema (doc 20) |
 | `TurmaPlanejada` / `TurmaAberta` / `TurmaEmAndamento` / `TurmaConcluida` | Ciclo de vida da turma | Gerente Pedagógico |
 | `AberturaTurmaSolicitada` | Vendedor solicita abertura (sem turma compatível) | Vendedor (agregado `Produto`) |
 | `UsuarioCriado` / `UsuarioEditado` / `UsuarioAtivado` / `UsuarioDesativado` | Gestão de usuários | Admin |
@@ -137,13 +141,16 @@ Conferido contra `src/server/**/acoes.ts` (junho/2026):
   ExperimentalAgendada · PropostaEnviada · LeadPerdido · LeadEditado · InteracaoRegistrada ·
   DocumentoAnexado · DocumentoArquivado · MatriculaCriada · MatriculaAtivada · CobrancaGerada ·
   ComissaoGerada · ComissaoAprovada · PagamentoRegistrado · DescontoSolicitado ·
-  AprovacaoDecidida · ComissaoPaga · CobrancaEnviadaWhatsApp · AlunoMatriculado · AlunoEditado ·
+  AprovacaoDecidida · ComissaoPaga · CobrancaEnviadaWhatsApp · TaxasCambioDefinidas · AlunoMatriculado · AlunoEditado ·
   AlunoPausado · AlunoReativado · AlunoEncerrado · TrocaTurma · AberturaTurmaSolicitada ·
   TurmaCriada · TurmaEditada · IdiomaCriado · ModalidadeCriada · ModalidadeEditada · NivelCriado ·
   ProdutoCriado · PrecoDefinido · PaisCriado · PaisEditado · UsuarioCriado · UsuarioEditado`.
-- **Só nos scripts de carga Q10 (one-shot, docs 19–23):** `AlunoImportado` (persistido como
-  `ALUNO_IMPORTADO`) · `AlunoVinculadoTurma` · `TurmaImportada` · `MatriculaImportada` ·
-  `ComissaoImportada`.
+- **`AlunoImportado` / `TurmaImportada`:** disparados pelo código na **importação por XLSX** (Admin —
+  rotas `/api/alunos/importar` e `/api/turmas/importar`), em **PascalCase canônico**. A carga Q10
+  inicial (one-shot) gravou `AlunoImportado` como `ALUNO_IMPORTADO` (caixa alta) — valor histórico,
+  não usar em código novo.
+- **Só nos scripts de carga Q10 (one-shot, docs 19–23):** `AlunoVinculadoTurma` ·
+  `MatriculaImportada` · `ComissaoImportada`.
 - **Planejados / ainda sem gatilho no código (ciclos de status e Fase 1+):** os demais eventos
   de status de `Pais`/`Idioma`/`Preco`/`Turma`/`Usuario`, `ExperimentalRealizada` · `NoShow` ·
   `CobrancaRenegociada` · `BolsaConcedida` · `CobrancaPerdoada`, além dos reservados acima

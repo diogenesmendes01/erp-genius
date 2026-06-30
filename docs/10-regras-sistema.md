@@ -71,6 +71,8 @@ EM_ANDAMENTO · CONCLUIDA`).
 > Na Fase 0 **não há cron**: inadimplência, métricas e fila da Home são calculadas
 > **on-the-fly** na leitura (ver `home/consultas.ts`, `financeiro/consultas.ts`); o cronograma
 > de mensalidades é gerado **na criação da matrícula** (V0). Os jobs abaixo entram na Fase 1+.
+> A **régua de cobrança** (doc 24) também é calculada on-the-fly por `proximaAcao` (degrau
+> devido por cobrança); o cron da Fase 1+ apenas **dispara** as mensagens (o "braço" automático).
 - **00:05** — gerar mensalidades futuras *(rede de segurança)*.
 - **01:00** — atualizar **inadimplência** (Pendente → Vencida quando vencimento passou).
 - **02:00** — atualizar **métricas**.

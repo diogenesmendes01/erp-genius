@@ -1,17 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { StatusAluno, TipoMovimentacao, Genero } from "@prisma/client";
-import { STATUS_ALUNO_LABEL } from "@/lib/labels";
-
-const GENERO_LABEL: Record<Genero, string> = {
-  MASCULINO: "Masculino",
-  FEMININO: "Feminino",
-  OUTRO: "Outro",
-  NAO_INFORMADO: "Não informado",
-};
+import { StatusAluno, TipoMovimentacao, Genero, Escolaridade } from "@prisma/client";
+import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
+import { formatarValores, type ValorMoeda } from "@/lib/dinheiro";
+import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
 import { pausarAluno, reativarAluno, encerrarAluno, trocarTurma, editarAluno } from "@/server/alunos/acoes";
 import { Drawer } from "@/components/Drawer";
@@ -33,19 +28,40 @@ const STATUS_CLS: Record<StatusAluno, string> = {
 export interface AlunoFicha {
   id: string;
   codigo: string | null;
-  nome: string;
+  nome: string; // nome completo (exibição)
+  primeiroNome: string;
+  sobrenome: string | null;
+  nomePreferido: string | null;
   status: StatusAluno;
   pais: string;
   paisId: string;
   nascimento: string | null;
+  genero: Genero | null;
+  tipoDocumentoId: string | null;
   documento: string | null;
   documentoValido: boolean;
+  documentoPaisEmissor: string | null;
+  nacionalidade: string | null;
+  segundaNacionalidade: string | null;
   telefone: string | null;
   email: string | null;
-  genero: Genero | null;
+  whatsapp: boolean;
+  aceitaComunicacoes: boolean;
+  paisResidencia: string | null;
+  cep: string | null;
+  rua: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  regiao: string | null;
+  escolaridade: Escolaridade | null;
+  idiomaNativo: string | null;
+  fuso: string | null;
+  observacoes: string | null;
   turmaAtual: { id: string; label: string; professor: string | null; diasHorario: string | null } | null;
   // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
-  financeiro: { atrasado: boolean; emAberto: number; proximoVencimento: string | null } | null;
+  financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: string | null } | null;
   movimentacoes: {
     id: string;
     tipo: TipoMovimentacao;
@@ -54,6 +70,12 @@ export interface AlunoFicha {
     criadoEm: string;
     usuario: string | null;
   }[];
+}
+
+interface PaisOpt {
+  id: string;
+  nome: string;
+  tiposDocumento: { id: string; nome: string }[];
 }
 
 const inputCls =
@@ -69,7 +91,7 @@ export function FichaAluno({
 }: {
   aluno: AlunoFicha;
   turmas: { id: string; label: string }[];
-  paises: { id: string; nome: string }[];
+  paises: PaisOpt[];
   // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
   podeMovimentar?: boolean;
 }) {
@@ -84,18 +106,48 @@ export function FichaAluno({
   const [obsEnc, setObsEnc] = useState("");
   const [turmaDest, setTurmaDest] = useState("");
   const [justif, setJustif] = useState("");
-  // edição de dados cadastrais (prefill com os valores atuais)
+
+  // edição de dados cadastrais (prefill com TODOS os valores atuais — edição lenient).
   const valoresEd = () => ({
-    nome: aluno.nome,
-    paisId: aluno.paisId,
-    documento: aluno.documento ?? "",
-    telefone: aluno.telefone ?? "",
-    email: aluno.email ?? "",
-    genero: (aluno.genero ?? "") as Genero | "",
+    primeiroNome: aluno.primeiroNome,
+    sobrenome: aluno.sobrenome ?? "",
+    nomePreferido: aluno.nomePreferido ?? "",
     nascimento: aluno.nascimento ? aluno.nascimento.slice(0, 10) : "",
+    genero: (aluno.genero ?? "") as Genero | "",
+    paisId: aluno.paisId,
+    tipoDocumentoId: aluno.tipoDocumentoId ?? "",
+    documento: aluno.documento ?? "",
+    documentoPaisEmissor: aluno.documentoPaisEmissor ?? "",
+    nacionalidade: aluno.nacionalidade ?? "",
+    segundaNacionalidade: aluno.segundaNacionalidade ?? "",
+    email: aluno.email ?? "",
+    telefone: aluno.telefone ?? "",
+    whatsapp: aluno.whatsapp,
+    aceitaComunicacoes: aluno.aceitaComunicacoes,
+    paisResidencia: aluno.paisResidencia ?? "",
+    cep: aluno.cep ?? "",
+    rua: aluno.rua ?? "",
+    numero: aluno.numero ?? "",
+    complemento: aluno.complemento ?? "",
+    bairro: aluno.bairro ?? "",
+    cidade: aluno.cidade ?? "",
+    regiao: aluno.regiao ?? "",
+    escolaridade: (aluno.escolaridade ?? "") as Escolaridade | "",
+    idiomaNativo: aluno.idiomaNativo ?? "",
+    fuso: aluno.fuso ?? "",
+    observacoes: aluno.observacoes ?? "",
     motivo: "",
   });
   const [ed, setEd] = useState(valoresEd);
+  const set = <K extends keyof ReturnType<typeof valoresEd>>(k: K, v: ReturnType<typeof valoresEd>[K]) =>
+    setEd((e) => ({ ...e, [k]: v }));
+
+  const tiposDocEd = paises.find((p) => p.id === ed.paisId)?.tiposDocumento ?? [];
+  const tipoDocNome =
+    paises.find((p) => p.id === aluno.paisId)?.tiposDocumento.find((t) => t.id === aluno.tipoDocumentoId)?.nome ?? null;
+  const enderecoResumo = [aluno.rua, aluno.numero, aluno.complemento, aluno.bairro, aluno.cidade, aluno.regiao]
+    .filter(Boolean)
+    .join(", ");
 
   function abrirEdicao() {
     setEd(valoresEd()); // recarrega valores atuais a cada abertura
@@ -120,6 +172,7 @@ export function FichaAluno({
       <header>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-medium">{aluno.nome}</h1>
+          {aluno.nomePreferido && <span className="text-sm text-gray-500">({aluno.nomePreferido})</span>}
           <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_CLS[aluno.status]}>
             {STATUS_ALUNO_LABEL[aluno.status]}
           </span>
@@ -160,8 +213,16 @@ export function FichaAluno({
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
             <button
               className={btnPri}
-              disabled={!ed.motivo.trim() || !ed.nome.trim() || !ed.paisId}
-              onClick={() => run(editarAluno(aluno.id, { ...ed, genero: ed.genero || undefined }))}
+              disabled={!ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
+              onClick={() =>
+                run(
+                  editarAluno(aluno.id, {
+                    ...ed,
+                    genero: ed.genero || undefined,
+                    escolaridade: ed.escolaridade || undefined,
+                  }),
+                )
+              }
             >
               Salvar alterações
             </button>
@@ -169,44 +230,158 @@ export function FichaAluno({
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+          {/* Identificação */}
+          <div>
             <label className="mb-1 block text-xs text-gray-600">Nome</label>
-            <input className={inputCls} value={ed.nome} onChange={(e) => setEd({ ...ed, nome: e.target.value })} />
+            <input className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">País</label>
-            <select className={inputCls} value={ed.paisId} onChange={(e) => setEd({ ...ed, paisId: e.target.value })}>
-              {paises.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
+            <label className="mb-1 block text-xs text-gray-600">Sobrenome(s)</label>
+            <input className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Documento</label>
-            <input className={inputCls} value={ed.documento} onChange={(e) => setEd({ ...ed, documento: e.target.value })} />
-            <p className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
+            <label className="mb-1 block text-xs text-gray-600">Nome preferido</label>
+            <input className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Telefone</label>
-            <input className={inputCls} value={ed.telefone} onChange={(e) => setEd({ ...ed, telefone: e.target.value })} placeholder="+506..." />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">E-mail</label>
-            <input type="email" className={inputCls} value={ed.email} onChange={(e) => setEd({ ...ed, email: e.target.value })} />
+            <label className="mb-1 block text-xs text-gray-600">Nascimento</label>
+            <input type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-xs text-gray-600">Gênero</label>
-            <select className={inputCls} value={ed.genero} onChange={(e) => setEd({ ...ed, genero: e.target.value as Genero | "" })}>
+            <select className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
               <option value="">—</option>
               {Object.values(Genero).map((g) => (
                 <option key={g} value={g}>{GENERO_LABEL[g]}</option>
               ))}
             </select>
           </div>
+
+          {/* Documentação */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Nascimento</label>
-            <input type="date" className={inputCls} value={ed.nascimento} onChange={(e) => setEd({ ...ed, nascimento: e.target.value })} />
+            <label className="mb-1 block text-xs text-gray-600">País</label>
+            <select
+              className={inputCls}
+              value={ed.paisId}
+              onChange={(e) => {
+                const np = paises.find((p) => p.id === e.target.value);
+                setEd((s) => ({
+                  ...s,
+                  paisId: e.target.value,
+                  tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
+                }));
+              }}
+            >
+              {paises.map((p) => (
+                <option key={p.id} value={p.id}>{p.nome}</option>
+              ))}
+            </select>
           </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Tipo de documento</label>
+            <select className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
+              <option value="">—</option>
+              {tiposDocEd.map((t) => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Número do documento</label>
+            <input className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />
+            <p className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">País emissor</label>
+            <SelectISO value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Nacionalidade</label>
+            <SelectISO value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Segunda nacionalidade</label>
+            <SelectISO value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />
+          </div>
+
+          {/* Contato */}
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">E-mail</label>
+            <input type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Telefone</label>
+            <input className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />
+          </div>
+          <div className="flex items-center gap-4 pt-5 sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" checked={ed.whatsapp} onChange={(e) => set("whatsapp", e.target.checked)} />
+              É WhatsApp
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" checked={ed.aceitaComunicacoes} onChange={(e) => set("aceitaComunicacoes", e.target.checked)} />
+              Recebe comunicações
+            </label>
+          </div>
+
+          {/* Residência */}
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">País de residência</label>
+            <SelectISO value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">CEP / Código postal</label>
+            <input className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Região / Estado / Província</label>
+            <input className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Cidade</label>
+            <input className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Bairro / Distrito</label>
+            <input className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Rua</label>
+            <input className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Número</label>
+            <input className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Complemento</label>
+            <input className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />
+          </div>
+
+          {/* Acadêmico / operacional */}
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Escolaridade</label>
+            <select className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
+              <option value="">—</option>
+              {Object.values(Escolaridade).map((e) => (
+                <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Idioma nativo</label>
+            <input className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Fuso horário</label>
+            <input className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs text-gray-600">Observações</label>
+            <textarea className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
+          </div>
+
+          {/* Auditoria */}
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
             <textarea
@@ -214,7 +389,7 @@ export function FichaAluno({
               rows={2}
               placeholder="Ex.: correção de documento informado pelo aluno"
               value={ed.motivo}
-              onChange={(e) => setEd({ ...ed, motivo: e.target.value })}
+              onChange={(e) => set("motivo", e.target.value)}
             />
             <p className="mt-1 text-xs text-gray-500">Fica registrado na auditoria, junto com quem editou.</p>
           </div>
@@ -281,11 +456,11 @@ export function FichaAluno({
           )}
 
           <h2 className="mb-2 mt-5 font-medium">Dados pessoais</h2>
-          <dl className="text-sm text-gray-700">
-            <div className="flex gap-2">
-              <dt className="w-32 text-gray-500">Documento</dt>
-              <dd className="flex items-center gap-2">
-                {aluno.documento ?? "—"}
+          <dl className="grid grid-cols-1 gap-1 text-sm text-gray-700">
+            <Linha rotulo="Documento">
+              <span className="flex items-center gap-2">
+                {[tipoDocNome, aluno.documento].filter(Boolean).join(": ") || "—"}
+                {aluno.documentoPaisEmissor && <span className="text-gray-400">({nomePaisISO(aluno.documentoPaisEmissor)})</span>}
                 {aluno.documento && !aluno.documentoValido && (
                   <span
                     className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
@@ -294,11 +469,23 @@ export function FichaAluno({
                     não validado
                   </span>
                 )}
-              </dd>
-            </div>
-            <div className="flex gap-2"><dt className="w-32 text-gray-500">Nascimento</dt><dd>{aluno.nascimento ? new Date(aluno.nascimento).toLocaleDateString("pt-BR") : "—"}</dd></div>
-            <div className="flex gap-2"><dt className="w-32 text-gray-500">E-mail</dt><dd>{aluno.email ?? "—"}</dd></div>
-            <div className="flex gap-2"><dt className="w-32 text-gray-500">Gênero</dt><dd>{aluno.genero ? GENERO_LABEL[aluno.genero] : "—"}</dd></div>
+              </span>
+            </Linha>
+            <Linha rotulo="Nascimento">{aluno.nascimento ? new Date(aluno.nascimento).toLocaleDateString("pt-BR") : "—"}</Linha>
+            <Linha rotulo="Gênero">{aluno.genero ? GENERO_LABEL[aluno.genero] : "—"}</Linha>
+            <Linha rotulo="Nacionalidade">
+              {[aluno.nacionalidade, aluno.segundaNacionalidade].filter(Boolean).map(nomePaisISO).join(" · ") || "—"}
+            </Linha>
+            <Linha rotulo="E-mail">{aluno.email ?? "—"}</Linha>
+            <Linha rotulo="Telefone">
+              {aluno.telefone ?? "—"} {aluno.whatsapp && aluno.telefone && <span className="text-green-600">· WhatsApp</span>}
+            </Linha>
+            <Linha rotulo="Residência">
+              {[enderecoResumo, aluno.cep, nomePaisISO(aluno.paisResidencia)].filter((v) => v && v !== "—").join(" · ") || "—"}
+            </Linha>
+            <Linha rotulo="Escolaridade">{aluno.escolaridade ? ESCOLARIDADE_LABEL[aluno.escolaridade] : "—"}</Linha>
+            <Linha rotulo="Idioma nativo">{aluno.idiomaNativo ?? "—"}</Linha>
+            {aluno.observacoes && <Linha rotulo="Observações">{aluno.observacoes}</Linha>}
           </dl>
         </section>
 
@@ -312,7 +499,7 @@ export function FichaAluno({
               </span>
             </div>
             <div className="text-sm text-gray-700">
-              Em aberto: <strong>{aluno.financeiro.emAberto.toLocaleString("pt-BR")}</strong>
+              Em aberto: <strong>{formatarValores(aluno.financeiro.emAberto)}</strong>
               {aluno.financeiro.proximoVencimento && (
                 <span className="ml-2 text-gray-500">
                   · próximo venc. {new Date(aluno.financeiro.proximoVencimento).toLocaleDateString("pt-BR")}
@@ -347,5 +534,26 @@ export function FichaAluno({
         )}
       </section>
     </div>
+  );
+}
+
+function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="w-32 shrink-0 text-gray-500">{rotulo}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+/** Select de país ISO 3166. */
+function SelectISO({ value, onChange, comVazio }: { value: string; onChange: (v: string) => void; comVazio?: boolean }) {
+  return (
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      {comVazio && <option value="">—</option>}
+      {PAISES_ISO.map((p) => (
+        <option key={p.codigo} value={p.codigo}>{p.nome}</option>
+      ))}
+    </select>
   );
 }

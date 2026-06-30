@@ -86,11 +86,12 @@ model Pais {
 }
 
 model TipoDocumento {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   paisId    String
-  pais      Pais   @relation(fields: [paisId], references: [id])
+  pais      Pais    @relation(fields: [paisId], references: [id])
   nome      String // CPF, DNI, CURP, Cédula, Passaporte...
   validador String // nome do validador: cpf, curp, cedula_cr, passaporte...
+  alunos    Aluno[] // alunos que escolheram este tipo de documento (doc 04)
 }
 
 // ============================================================
@@ -223,7 +224,13 @@ model Turma {
   professorId  String?
   professor    Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
   online       Boolean     @default(true) // online (hoje) × presencial (futuro) — não há "sede" física
-  diasHorario  String? // "Ter/Qui 20h" — opcional (preenchido quando houver dia/horário)
+  // Agenda da turma (calendário real — doc 06): dias da semana + horário. O nº de dias
+  // deve casar com a frequência da modalidade (1x/2x/3x/5x por semana). `diasHorario` é o
+  // rótulo DERIVADO (ex.: "Seg, Qua, Sex · 19:00") mantido para exibição/compat.
+  diasSemana    Int[]      @default([]) // 0=Dom · 1=Seg … 6=Sáb
+  horarioInicio String? // "HH:MM" — início da aula
+  horarioFim    String? // "HH:MM" — fim da aula
+  diasHorario   String? // rótulo derivado (ex.: "Seg, Qua, Sex · 19:00–21:00"); null em turmas antigas
   dataInicio   DateTime?
   dataFim      DateTime?
   cronograma   String?
@@ -245,27 +252,82 @@ enum StatusAluno {
   ENCERRADO
 }
 
+// Gênero (doc 09 §Identificação): lista curta — Masculino · Feminino · Prefiro não informar.
+// (V0 tinha OUTRO; removido na migration `aluno_cadastro_completo`, OUTRO→NAO_INFORMADO.)
 enum Genero {
   MASCULINO
   FEMININO
-  OUTRO
-  NAO_INFORMADO
+  NAO_INFORMADO // rótulo na UI: "Prefiro não informar"
 }
 
+// Escolaridade do aluno (doc 09 §Acadêmico). Lista fechada, ordem crescente.
+enum Escolaridade {
+  FUNDAMENTAL_INCOMPLETO
+  FUNDAMENTAL_COMPLETO
+  MEDIO_INCOMPLETO
+  MEDIO_COMPLETO
+  TECNICO
+  SUPERIOR_INCOMPLETO
+  SUPERIOR_COMPLETO
+  POS_GRADUACAO
+  MESTRADO
+  DOUTORADO
+}
+
+// Cadastro de pessoa guiado pelo país (doc 04 §espinha dorsal). O `paisId` é o país-base
+// (mercado) que comanda tipos de documento, DDI do telefone e moeda da matrícula.
+// Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
+// (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
   id              String      @id @default(cuid())
   codigo          String?     @unique // A-000001
-  nome            String
+
+  // Identificação (doc 09 §Identificação). `nome` foi dividido em primeiroNome+sobrenome
+  // na migration `aluno_cadastro_completo` (backfill: split no 1º espaço).
+  primeiroNome    String
+  sobrenome       String?
+  nomePreferido   String?
   nascimento      DateTime?
   genero          Genero?
+
+  // Documentação — país dirige o tipo de documento e a validação (doc 04).
   paisId          String
-  pais            Pais        @relation(fields: [paisId], references: [id])
-  documento       String?
-  documentoValido Boolean     @default(false)
-  email           String?
-  telefoneE164    String?     // E.164 com DDI embutido (ex.: +50688887777). Máscara só na UI.
-  status          StatusAluno @default(ATIVO)
-  criadoEm        DateTime    @default(now())
+  pais            Pais           @relation(fields: [paisId], references: [id])
+  tipoDocumentoId String?
+  tipoDocumento   TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id])
+  documento       String? // número do documento
+  documentoValido Boolean        @default(false)
+  documentoPaisEmissor String? // ISO 3166 (opcional) — permite documento estrangeiro
+  nacionalidade        String? // ISO 3166
+  segundaNacionalidade String? // ISO 3166 (opcional)
+
+  // Contato — telefone/e-mail bloqueiam se inválidos (doc 04 §3).
+  email              String?
+  telefoneE164       String? // E.164 com DDI embutido (ex.: +50688887777). Máscara só na UI.
+  whatsapp           Boolean @default(false) // o telefone principal é WhatsApp?
+  aceitaComunicacoes Boolean @default(true) // opt-in de comunicações
+
+  // Residência (doc 09 §Residência) — país pode diferir da nacionalidade (comum na AC).
+  paisResidencia String? // ISO 3166
+  cep            String?
+  rua            String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  regiao         String? // Estado / Província / Departamento (nome varia por país)
+
+  // Acadêmico (doc 09 §Acadêmico)
+  escolaridade Escolaridade?
+  idiomaNativo String?
+
+  // Operacional (doc 09 §Operacional)
+  fuso        String? // sobrescreve o fuso do país (envio de mensagens); default = país
+  observacoes String?
+
+  // Estado
+  status   StatusAluno @default(ATIVO)
+  criadoEm DateTime    @default(now())
 
   responsaveis  AlunoResponsavel[]
   matriculas    Matricula[]
@@ -286,6 +348,7 @@ model Responsavel {
 enum PapelResponsavel {
   PEDAGOGICO
   FINANCEIRO
+  EMERGENCIA // contato de emergência (doc 09 §Operacional) — nome/parentesco/telefone
 }
 
 model AlunoResponsavel {
@@ -501,6 +564,11 @@ model Matricula {
   dataAvaliacaoNivel    DateTime?
   criadoEm              DateTime        @default(now())
   ativadaEm             DateTime?
+  // Bloqueio de acesso à aula (régua de cobrança D+15, doc 24). Flag ortogonal ao status:
+  // a matrícula segue ATIVA, só perde acesso. Exige aprovação humana (Gerente Com./Admin);
+  // o enforcement técnico (barrar entrada na aula) é Fase 1+ — aqui grava-se a decisão.
+  acessoBloqueado       Boolean         @default(false)
+  bloqueadoEm           DateTime?
 
   cobrancas Cobranca[]
   comissoes Comissao[]
@@ -651,6 +719,24 @@ model AjusteFinanceiro {
   @@index([paisId])
   @@index([modalidadeId])
   @@index([criadoEm])
+}
+
+// ============================================================
+// CÂMBIO — cotações manuais p/ CONSOLIDAÇÃO gerencial (reporting-only, doc 04 §Câmbio).
+// NUNCA toca a conta do aluno: cada cobrança fica na sua moeda. Pivô único = USD
+// (`unidadesPorUsd` = quantas unidades da moeda equivalem a 1 USD; USD seria 1, não é gravado).
+// Append-only por (moeda, vigenteEm): a leitura usa a cotação MAIS RECENTE por moeda, e o
+// histórico permite reconstruir a taxa usada em cada relatório. Auditoria de "quem" no Evento.
+// ============================================================
+
+model TaxaCambio {
+  id             String   @id @default(cuid())
+  moeda          String // ISO 4217 (ex.: CRC, BRL). Alvo/origem de conversão; USD é o pivô.
+  unidadesPorUsd Float // quantas unidades desta moeda equivalem a 1 USD (ex.: CRC ~ 512)
+  vigenteEm      DateTime @default(now())
+  criadoEm       DateTime @default(now())
+
+  @@index([moeda, vigenteEm])
 }
 
 // ============================================================

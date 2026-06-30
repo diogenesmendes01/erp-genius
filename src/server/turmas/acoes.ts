@@ -11,7 +11,27 @@ import {
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
-import { TurmaSchema, type TurmaInput } from "./schema";
+import { TurmaSchema, type TurmaInput, diasPorSemanaDaFrequencia, rotuloDiasHorario } from "./schema";
+
+// Valida a agenda contra a frequência da modalidade e devolve o rótulo derivado.
+// Lança ErroRegra se o nº de dias não casar (ex.: Intensiva 3x exige 3 dias).
+async function validarAgenda(
+  modalidadeId: string,
+  diasSemana: number[],
+  horarioInicio: string,
+  horarioFim: string,
+): Promise<string> {
+  const modalidade = await prisma.modalidade.findUnique({ where: { id: modalidadeId } });
+  if (!modalidade) throw new ErroRegra("Modalidade não encontrada.");
+  const req = diasPorSemanaDaFrequencia(modalidade.frequencia);
+  const dias = Array.from(new Set(diasSemana)); // sem duplicados
+  if (req !== null && dias.length !== req) {
+    throw new ErroRegra(
+      `A modalidade ${modalidade.nome} é ${modalidade.frequencia}: selecione exatamente ${req} dia(s) — você marcou ${dias.length}.`,
+    );
+  }
+  return rotuloDiasHorario(dias, horarioInicio, horarioFim);
+}
 
 const PATH = "/configuracao/turmas";
 
@@ -48,16 +68,23 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
     const autor = await exigirGestorTurma();
     const dados = TurmaSchema.parse(input);
 
+    const diasHorario = await validarAgenda(dados.modalidadeId, dados.diasSemana, dados.horarioInicio, dados.horarioFim);
+
     const id = await prisma.$transaction(async (tx) => {
       const codigo = await gerarCodigo("turma");
       const turma = await tx.turma.create({
         data: {
           codigo,
+          nome: dados.nome ?? null,
           modalidadeId: dados.modalidadeId,
           nivelId: dados.nivelId,
           professorId: dados.professorId || null,
-          diasHorario: dados.diasHorario ?? null,
-          dataInicio: dados.dataInicio ?? null,
+          diasSemana: dados.diasSemana,
+          horarioInicio: dados.horarioInicio,
+          horarioFim: dados.horarioFim,
+          diasHorario,
+          dataInicio: dados.dataInicio,
+          dataFim: dados.dataFim,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
           status: StatusTurma.PLANEJADA,
@@ -85,15 +112,22 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
     const atual = await prisma.turma.findUnique({ where: { id } });
     if (!atual) throw new ErroRegra("Turma não encontrada.");
 
+    const diasHorario = await validarAgenda(dados.modalidadeId, dados.diasSemana, dados.horarioInicio, dados.horarioFim);
+
     await prisma.$transaction(async (tx) => {
       await tx.turma.update({
         where: { id },
         data: {
+          nome: dados.nome ?? null,
           modalidadeId: dados.modalidadeId,
           nivelId: dados.nivelId,
           professorId: dados.professorId || null,
-          diasHorario: dados.diasHorario ?? null,
-          dataInicio: dados.dataInicio ?? null,
+          diasSemana: dados.diasSemana,
+          horarioInicio: dados.horarioInicio,
+          horarioFim: dados.horarioFim,
+          diasHorario,
+          dataInicio: dados.dataInicio,
+          dataFim: dados.dataFim,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
         },
@@ -103,7 +137,7 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
         agregadoTipo: "Turma",
         agregadoId: id,
         autorId: autor.id,
-        payload: { diasHorario: dados.diasHorario ?? null, capacidade: dados.capacidade },
+        payload: { diasHorario, capacidade: dados.capacidade },
       });
     });
 

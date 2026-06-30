@@ -1,5 +1,7 @@
-import { Papel, Prisma, StatusCobranca, StatusTurma } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { nomeCompleto } from "@/lib/nome";
+import { somarPorMoeda } from "@/lib/dinheiro";
 import type { UsuarioSessao } from "@/server/_shared";
 
 // Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
@@ -71,15 +73,20 @@ export function vagasTurma(capacidade: number, ocupacaoAtiva: number) {
   return Math.max(0, capacidade - ocupacaoAtiva);
 }
 
-// Situação financeira resumida a partir das cobranças.
-function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number }[]) {
+// Situação financeira resumida a partir das cobranças. `emAberto` é por moeda (uma matrícula
+// pode ter trocado de moeda entre anos — doc 04) e nunca soma moedas diferentes.
+function resumoFinanceiro(
+  cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number; moeda: string }[],
+) {
   const agora = new Date();
   const atrasado = cobrancas.some(
     (c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora),
   );
-  const emAberto = cobrancas
-    .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
-    .reduce((s, c) => s + c.valorNegociado, 0);
+  const emAberto = somarPorMoeda(
+    cobrancas
+      .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
+      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+  );
   const proximo = cobrancas
     .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0];
@@ -89,7 +96,7 @@ function resumoFinanceiro(cobrancas: { status: StatusCobranca; vencimento: Date;
 export async function listarAlunos(usuario?: UsuarioSessao) {
   const alunos = await prisma.aluno.findMany({
     where: escopoAlunos(usuario),
-    orderBy: { nome: "asc" },
+    orderBy: [{ primeiroNome: "asc" }, { sobrenome: "asc" }],
     include: {
       pais: { select: { nome: true } },
       alocacoes: {
@@ -98,7 +105,7 @@ export async function listarAlunos(usuario?: UsuarioSessao) {
         include: { turma: { include: { modalidade: true, nivel: true } } },
       },
       matriculas: {
-        select: { cobrancas: { select: { status: true, vencimento: true, valorNegociado: true } } },
+        select: { cobrancas: { select: { status: true, vencimento: true, valorNegociado: true, moeda: true } } },
       },
     },
   });
@@ -109,7 +116,7 @@ export async function listarAlunos(usuario?: UsuarioSessao) {
     return {
       id: a.id,
       codigo: a.codigo,
-      nome: a.nome,
+      nome: nomeCompleto(a),
       status: a.status,
       pais: a.pais.nome,
       criadoEm: a.criadoEm.toISOString(),
@@ -154,8 +161,11 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
 }
 
 export async function listarTurmasAbertasComVaga() {
+  // Destinos de TROCA de turma: turmas ainda não encerradas (dataFim no futuro ou ausente
+  // em turmas legadas) — diferente de "aceitando matrícula" (início futuro). Um aluno pode
+  // ser transferido para uma turma em andamento.
   const turmas = await prisma.turma.findMany({
-    where: { status: StatusTurma.ABERTA },
+    where: { OR: [{ dataFim: null }, { dataFim: { gte: new Date() } }] },
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
@@ -181,7 +191,7 @@ export async function obterTurma(id: string, usuario?: UsuarioSessao) {
       modalidade: true,
       nivel: { include: { idioma: true } },
       professor: { select: { nome: true } },
-      alocacoes: { where: { ativa: true }, include: { aluno: { select: { id: true, nome: true, codigo: true, status: true } } } },
+      alocacoes: { where: { ativa: true }, include: { aluno: { select: { id: true, primeiroNome: true, sobrenome: true, codigo: true, status: true } } } },
     },
   });
   if (!turma) return null;

@@ -1,19 +1,68 @@
 import { z } from "zod";
+<<<<<<< Updated upstream
 import { FormaPagamento, OrigemNivel, Genero } from "@prisma/client";
 import { emailSchema, dataOpcional, paraDataLocal } from "@/server/_shared/validacao";
+=======
+import { FormaPagamento, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
+import {
+  emailSchema,
+  dataOpcional,
+  dataObrigatoria,
+  codigoISO,
+  codigoISOOpcional,
+} from "@/server/_shared/validacao";
+>>>>>>> Stashed changes
 
 // Matrícula manual (ver docs/05, docs/09). Pré-preenchida pelo lead → confirmar + completar.
+// Cadastro completo do aluno (doc 09): essenciais OBRIGATÓRIOS; resto opcional.
 export const MatriculaSchema = z.object({
   leadId: z.string().optional(),
-  // Aluno
-  alunoNome: z.string().min(1, "Informe o nome do aluno"),
+
+  // Aluno — Identificação (doc 09)
+  alunoPrimeiroNome: z.string().min(1, "Informe o nome do aluno"),
+  alunoSobrenome: z.string().min(1, "Informe o sobrenome"),
+  alunoNomePreferido: z.string().optional(),
+  alunoNascimento: dataObrigatoria,
+  alunoGenero: z.nativeEnum(Genero),
+
+  // Aluno — Documentação (país dirige o tipo — doc 04)
   alunoPaisId: z.string().min(1, "Selecione o país"),
-  alunoDocumento: z.string().optional(),
+  alunoTipoDocumentoId: z.string().min(1, "Selecione o tipo de documento"),
+  alunoDocumento: z.string().min(1, "Informe o número do documento"),
+  alunoDocumentoPaisEmissor: codigoISOOpcional,
+  alunoNacionalidade: codigoISO,
+  alunoSegundaNacionalidade: codigoISOOpcional,
+
+  // Aluno — Contato (telefone/e-mail são obrigatórios aqui — doc 04 bloqueia inválidos)
+  alunoEmail: emailSchema,
   // telefone livre — normalizado p/ E.164 no servidor (doc 19 §4.3)
-  alunoTelefone: z.string().optional(),
-  alunoEmail: z.union([emailSchema, z.literal("")]).optional(),
-  alunoGenero: z.nativeEnum(Genero).optional(),
-  alunoNascimento: dataOpcional,
+  alunoTelefone: z.string().min(1, "Informe o telefone"),
+  alunoWhatsapp: z.boolean().default(false),
+  alunoAceitaComunicacoes: z.boolean().default(true),
+
+  // Aluno — Residência (pode diferir da nacionalidade — doc 04)
+  alunoPaisResidencia: codigoISO,
+  alunoCep: z.string().optional(),
+  alunoRua: z.string().optional(),
+  alunoNumero: z.string().optional(),
+  alunoComplemento: z.string().optional(),
+  alunoBairro: z.string().optional(),
+  alunoCidade: z.string().optional(),
+  alunoRegiao: z.string().optional(),
+
+  // Aluno — Acadêmico
+  alunoEscolaridade: z.nativeEnum(Escolaridade).optional(),
+  alunoIdiomaNativo: z.string().optional(),
+
+  // Aluno — Operacional
+  alunoFuso: z.string().optional(),
+  alunoObservacoes: z.string().optional(),
+
+  // Aluno — Contato de emergência (opcional — gravado como Responsavel EMERGENCIA)
+  emergenciaNome: z.string().optional(),
+  emergenciaParentesco: z.string().optional(),
+  emergenciaTelefone: z.string().optional(),
+
   // Responsável financeiro (o pagador): próprio aluno / responsável (Kids/Teens) / empresa (B2B)
   pagador: z.enum(["ALUNO", "RESPONSAVEL", "EMPRESA"]).default("ALUNO"),
   responsavelNome: z.string().optional(),

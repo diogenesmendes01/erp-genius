@@ -12,6 +12,7 @@ import {
   TipoCobranca,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { nomeCompleto } from "@/lib/nome";
 import {
   exigirSessao,
   exigirPapel,
@@ -48,7 +49,7 @@ type CobrancaCompleta = Prisma.CobrancaGetPayload<{
       include: {
         comissoes: true;
         produto: { select: { modalidadeId: true } };
-        aluno: { select: { id: true; nome: true } };
+        aluno: { select: { id: true; primeiroNome: true; sobrenome: true } };
       };
     };
   };
@@ -161,7 +162,7 @@ async function carregarCobranca(cobrancaId: string): Promise<CobrancaCompleta> {
         include: {
           comissoes: true,
           produto: { select: { modalidadeId: true } },
-          aluno: { select: { id: true, nome: true } },
+          aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
         },
       },
     },
@@ -219,7 +220,7 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
             motivo: dados.motivo,
             impactoMensal: valorDe - dados.valorPara,
             payload: {
-              alunoNome: aluno.nome,
+              alunoNome: nomeCompleto(aluno),
               alunoId: aluno.id,
               valorDe,
               valorPara: dados.valorPara,

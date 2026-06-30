@@ -9,6 +9,8 @@ import {
   StatusAluno,
   TipoCobranca,
   FormaPagamento,
+  Genero,
+  Escolaridade,
 } from "@prisma/client";
 
 // Rótulos legíveis (pt-BR) dos enums do domínio. Fonte única para a UI.
@@ -98,4 +100,25 @@ export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
   GREENPAY: "GreenPay",
   DINHEIRO: "Dinheiro",
   CARTAO: "Cartão",
+};
+
+// Gênero (doc 09 §Identificação) — lista curta. NAO_INFORMADO = "Prefiro não informar".
+export const GENERO_LABEL: Record<Genero, string> = {
+  MASCULINO: "Masculino",
+  FEMININO: "Feminino",
+  NAO_INFORMADO: "Prefiro não informar",
+};
+
+// Escolaridade (doc 09 §Acadêmico) — lista fechada, ordem crescente.
+export const ESCOLARIDADE_LABEL: Record<Escolaridade, string> = {
+  FUNDAMENTAL_INCOMPLETO: "Ensino fundamental incompleto",
+  FUNDAMENTAL_COMPLETO: "Ensino fundamental completo",
+  MEDIO_INCOMPLETO: "Ensino médio incompleto",
+  MEDIO_COMPLETO: "Ensino médio completo",
+  TECNICO: "Técnico",
+  SUPERIOR_INCOMPLETO: "Superior incompleto",
+  SUPERIOR_COMPLETO: "Superior completo",
+  POS_GRADUACAO: "Pós-graduação",
+  MESTRADO: "Mestrado",
+  DOUTORADO: "Doutorado",
 };

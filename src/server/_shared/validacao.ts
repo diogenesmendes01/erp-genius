@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CODIGOS_ISO } from "@/lib/paises-iso";
 
 // Validação compartilhada frontend ↔ backend (ver docs/04 §3 e docs/13).
 // Política de rigor (doc 04): TELEFONE e E-MAIL bloqueiam; DOCUMENTO avisa mas salva
@@ -70,6 +71,22 @@ export function paraDataHoraLocal(v: unknown): unknown {
 export const dataHoraOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataHoraLocal(v)),
   z.coerce.date().optional(),
+);
+
+/** Data OBRIGATÓRIA "date-only" (ex.: nascimento) — ancorada no meio-dia local. */
+export const dataObrigatoria = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
+  z.coerce.date({ required_error: "Informe a data" }),
+);
+
+// ------------------------------------------------------------
+// Código de país ISO 3166 (nacionalidade, residência, país emissor). Ver
+// `lib/paises-iso.ts`. É DIFERENTE do `Pais` (mercado) — aceita qualquer país.
+// ------------------------------------------------------------
+export const codigoISO = z.string().refine((c) => CODIGOS_ISO.has(c), "Selecione um país válido");
+export const codigoISOOpcional = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  codigoISO.optional(),
 );
 
 /**

@@ -22,7 +22,7 @@ append-only (auditoria + projeções). Não é event sourcing puro — é o meio
 | **turmas** | `Turma` |
 | **alunos** | `Aluno`, `Responsavel`, `AlunoResponsavel`, `AlocacaoTurma` |
 | **comercial** | `Lead` |
-| **matrícula/financeiro** | `Matricula`, `Cobranca`, `Comissao`, `AjusteFinanceiro`, `Aprovacao` |
+| **matrícula/financeiro** | `Matricula`, `Cobranca`, `Comissao`, `AjusteFinanceiro`, `Aprovacao`, `TaxaCambio` |
 | **transversal** | `Evento` (auditoria), `Contador` (códigos legíveis) |
 
 ---
@@ -103,35 +103,56 @@ valor · moeda · ativo · versaoEstudo? · vigenteDesde · criadoEm`.
 
 ### `Turma`
 `id · codigo? (T-000001, unique) · nome? (livre, a escola batiza como quiser) · modalidadeId ·
-nivelId · professorId? → Usuario · online (true) · diasHorario? (ex.: "Ter/Qui 20h") ·
-dataInicio? · dataFim? · cronograma? · capacidade (16) · status · rolling (Pré A1) · criadoEm`.
-Relação: `alocacoes`.
-- **enum `StatusTurma`:** `PLANEJADA · ABERTA · EM_ANDAMENTO · CONCLUIDA`.
-- **`online`:** hoje todas online; presencial é futuro. **Não há "sede" física** (o nome da turma
-  pode até ser uma cidade, mas é só rótulo).
-- **`diasHorario` opcional:** turmas importadas entram sem dia/horário (a preencher).
-  Opcional em **todas** as camadas (Prisma, banco, Zod, UI): criar/editar **não** bloqueia
-  por horário; vazio é gravado como `null` e a UI exibe "a definir".
-- **Regra de status na carga (doc 20):** ABERTA por 2 semanas após o início; **A1 = 1 mês**
-  (entrada contínua do Pré A1, `rolling=true`); depois EM_ANDAMENTO até `dataFim`, então CONCLUIDA.
-- **Regra:** só turma **ABERTA com vaga** aparece no seletor da matrícula (doc 09).
+nivelId · professorId? → Usuario · online (true) · diasSemana (Int[], 0=Dom…6=Sáb) ·
+horarioInicio? · horarioFim? ("HH:MM") · diasHorario? (rótulo DERIVADO, ex.: "Seg, Qua, Sex · 19:00–21:00") ·
+dataInicio? · dataFim? · cronograma? ·
+capacidade (16) · status · rolling (Pré A1) · criadoEm`. Relação: `alocacoes`.
+- **enum `StatusTurma`:** `PLANEJADA · ABERTA · EM_ANDAMENTO · CONCLUIDA` (mantido no banco para
+  histórico; a **situação operativa é derivada das datas** — ver abaixo).
+- **`online`:** hoje todas online; presencial é futuro. **Não há "sede" física**.
+- **Agenda (calendário real, doc 06/09):** `diasSemana` + `horarioInicio`/`horarioFim` (intervalo da
+  aula, ex.: 19:00–21:00) são a fonte; `diasHorario` é só o rótulo derivado para exibição.
+  **O nº de dias deve casar com a frequência da modalidade**
+  (1x/2x/3x/5x por semana); Particular ("critério do aluno") = sem nº fixo. Validado na criação/edição.
+- **Início e fim obrigatórios** na criação/edição (`dataFim > dataInicio`). Turmas legadas (carga Q10)
+  podem ter datas/agenda incompletas — a UI exibe "a definir"/"Sem datas" até serem editadas.
+- **"Aceitando matrícula" = `dataInicio` no FUTURO** (derivado por data, sem cron): a turma aceita
+  matrícula até começar; depois sai automaticamente. **É esse o filtro do wizard de matrícula**
+  (doc 09) — não mais `status = ABERTA`. Situação na UI: Aceitando matrícula → Em andamento → Encerrada.
 
 ---
 
 ## Alunos
 
 ### `Aluno`
-`id · codigo? (A-000001) · nome · nascimento? · paisId → Pais · documento? ·
-documentoValido (false) · telefoneE164? · status · criadoEm`.
+Cadastro de pessoa **guiado pelo país** (doc 04). Blocos (doc 09 §Cadastro de aluno):
+- **Identificação:** `primeiroNome · sobrenome? · nomePreferido? · nascimento? · genero?`.
+  (O campo único `nome` foi **dividido** em `primeiroNome` + `sobrenome` na migration
+  `aluno_cadastro_completo` — backfill por split no 1º espaço.)
+- **Documentação:** `paisId → Pais` (país-base/mercado: dirige tipo de documento, DDI e moeda) ·
+  `tipoDocumentoId? → TipoDocumento` · `documento?` (número) · `documentoValido (false)` ·
+  `documentoPaisEmissor?` · `nacionalidade?` · `segundaNacionalidade?`.
+- **Contato:** `email? · telefoneE164? · whatsapp (false) · aceitaComunicacoes (true)`.
+- **Residência:** `paisResidencia? · cep? · rua? · numero? · complemento? · bairro? · cidade? · regiao?`.
+- **Acadêmico:** `escolaridade? · idiomaNativo?`. **Operacional:** `fuso? · observacoes?`.
+- **Estado:** `id · codigo? (A-000001) · status · criadoEm`.
 - **enum `StatusAluno`:** `ATIVO · PAUSADO · ENCERRADO` (ciclo no doc 09; encerrar exige motivo).
-- **Relações:** `responsaveis` (N:N), `matriculas`, `alocacoes`.
+- **enum `Genero`:** `MASCULINO · FEMININO · NAO_INFORMADO` (rótulo "Prefiro não informar"; `OUTRO`
+  foi removido na migration `aluno_cadastro_completo`).
+- **enum `Escolaridade`:** `FUNDAMENTAL_INCOMPLETO · FUNDAMENTAL_COMPLETO · MEDIO_INCOMPLETO ·
+  MEDIO_COMPLETO · TECNICO · SUPERIOR_INCOMPLETO · SUPERIOR_COMPLETO · POS_GRADUACAO · MESTRADO · DOUTORADO`.
+- **Códigos ISO:** `nacionalidade · segundaNacionalidade · paisResidencia · documentoPaisEmissor` são
+  **ISO 3166-1 alpha-2** (`lib/paises-iso.ts`), **não** FK de `Pais` — aceitam qualquer país
+  (ex.: venezuelano residente no Panamá, comum na AC; doc 04). `Pais` modela só os mercados.
+- **Relações:** `responsaveis` (N:N), `tipoDocumento` (opcional), `matriculas`, `alocacoes`, `movimentacoes`.
 
 ### `Responsavel`
 `id · nome · parentesco? · telefoneE164? · email?`. Relação: `alunos` (N:N).
 
 ### `AlunoResponsavel` (vínculo N:N)
-`id · alunoId · responsavelId · papel`. **enum `PapelResponsavel`:** `PEDAGOGICO · FINANCEIRO`
-(o financeiro = o pagador: o próprio aluno / responsável / empresa).
+`id · alunoId · responsavelId · papel`. **enum `PapelResponsavel`:** `PEDAGOGICO · FINANCEIRO · EMERGENCIA`.
+- `FINANCEIRO` = o pagador (o próprio aluno / responsável / empresa).
+- `EMERGENCIA` = contato de emergência (nome/parentesco/telefone — doc 09 §Operacional).
 
 ### `AlocacaoTurma`
 `id · alunoId · turmaId · ativa (true) · criadoEm`. O aluno é alocado por nível e avança.
@@ -226,6 +247,16 @@ decididoEm?`.
 - **enum `StatusAprovacao`:** `PENDENTE · APROVADA · REJEITADA`.
 - **enum `Vigencia`** (compartilhado com AjusteFinanceiro): `ESTA_COBRANCA · PROXIMOS_MESES ·
   CONTRATO_INTEIRO`.
+
+### `TaxaCambio` (cotação de referência — Fase B, reporting-only)
+Alimenta **só** a consolidação gerencial multi-moeda (doc 04 §Câmbio); **nunca** toca a conta do
+aluno. Pivô único **USD**: `unidadesPorUsd` = quantas unidades da moeda equivalem a 1 US$ (USD não
+é gravado, é sempre 1). **Append-only** por `(moeda, vigenteEm)` — a leitura usa a cotação mais
+recente por moeda; o histórico permite reconstruir a taxa usada em cada relatório.
+`id · moeda · unidadesPorUsd · vigenteEm · criadoEm`.
+- **Origem da cotação:** manual (tela Câmbio, Admin/Financeiro) **ou** automática (botão que busca de
+  fonte pública `open.er-api.com`, base USD, grátis/sem chave). Override manual sempre prevalece.
+- **Índice:** `(moeda, vigenteEm)`.
 
 ---
 
