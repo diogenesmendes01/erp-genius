@@ -1,8 +1,4 @@
 import { z } from "zod";
-<<<<<<< Updated upstream
-import { FormaPagamento, OrigemNivel, Genero } from "@prisma/client";
-import { emailSchema, dataOpcional, paraDataLocal } from "@/server/_shared/validacao";
-=======
 import { FormaPagamento, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
 import {
   emailSchema,
@@ -10,8 +6,8 @@ import {
   dataObrigatoria,
   codigoISO,
   codigoISOOpcional,
+  paraDataLocal,
 } from "@/server/_shared/validacao";
->>>>>>> Stashed changes
 
 // Matrícula manual (ver docs/05, docs/09). Pré-preenchida pelo lead → confirmar + completar.
 // Cadastro completo do aluno (doc 09): essenciais OBRIGATÓRIOS; resto opcional.
