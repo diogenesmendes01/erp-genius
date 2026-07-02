@@ -18,8 +18,12 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
     evento: {
       create: vi.fn(),
     },
+    // `turma` é re-mockado ad-hoc no teste da Home do professor.
+    turma: {
+      findMany: vi.fn(),
+    },
     $transaction: vi.fn(),
-  } as Record<string, any>,
+  },
   authMock: vi.fn(),
 }));
 
