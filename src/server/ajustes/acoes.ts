@@ -25,6 +25,8 @@ import {
   descontoPercentual,
   precisaAprovacaoDesconto,
   validarDirecaoAjuste,
+  numero,
+  numeroOuNull,
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
@@ -91,7 +93,7 @@ async function aplicarAjuste(
 ) {
   const { cobranca, valorPara, vigencia, tipo, motivo, autorId, aprovacaoId, novoVencimento } = params;
   const matricula = cobranca.matricula;
-  const valorDe = cobranca.valorNegociado;
+  const valorDe = numero(cobranca.valorNegociado);
   const descontoValor = valorDe - valorPara;
   const descontoPct = valorDe > 0 ? (descontoValor / valorDe) * 100 : 0;
 
@@ -135,7 +137,7 @@ async function aplicarAjuste(
   // Comissão recalcula só quando muda a TAXA DE MATRÍCULA (comissão = % da taxa).
   if (cobranca.tipo === TipoCobranca.MATRICULA) {
     for (const com of matricula.comissoes) {
-      const novoValor = ((tipo === TipoAjuste.PERDAO ? 0 : valorPara) * com.percentual) / 100;
+      const novoValor = ((tipo === TipoAjuste.PERDAO ? 0 : valorPara) * numero(com.percentual)) / 100;
       await tx.comissao.update({ where: { id: com.id }, data: { valor: novoValor } });
     }
   }
@@ -189,7 +191,7 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
       throw new ErroPermissao("Perdoar cobrança é exclusivo do Administrador.");
     }
 
-    const valorDe = cobranca.valorNegociado;
+    const valorDe = numero(cobranca.valorNegociado);
 
     // Direção do ajuste: só ALTERACAO_VALOR pode aumentar; o resto é redução.
     const erroDirecao = validarDirecaoAjuste(dados.tipo, valorDe, dados.valorPara);
@@ -200,7 +202,9 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
     // Só Financeiro/Admin aplicam sem limite. Para os demais (Vendedor),
     // limiteDescontoPct = null NÃO é ilimitado — é "sem autonomia" (qualquer desconto → aprovação).
     const total = temPapel(autor, Papel.FINANCEIRO) || temPapel(autor, Papel.ADMINISTRADOR);
-    const limiteUsuario = (await prisma.usuario.findUnique({ where: { id: autor.id } }))?.limiteDescontoPct ?? null;
+    const limiteUsuario = numeroOuNull(
+      (await prisma.usuario.findUnique({ where: { id: autor.id } }))?.limiteDescontoPct,
+    );
     const acimaDoLimite = precisaAprovacaoDesconto({
       podeAplicarSemLimite: total,
       limiteDescontoPct: limiteUsuario,
@@ -295,7 +299,7 @@ export async function decidirAprovacao(aprovacaoId: string, input: DecisaoInput)
     if (!aprov.alvoId) throw new ErroRegra("Aprovação sem cobrança alvo.");
     const alvoId = aprov.alvoId;
     const cobranca = await carregarCobranca(alvoId);
-    const valorPara = typeof payload.valorPara === "number" ? payload.valorPara : cobranca.valorNegociado;
+    const valorPara = typeof payload.valorPara === "number" ? payload.valorPara : numero(cobranca.valorNegociado);
     const novoVenc = typeof payload.novoVencimento === "string" ? new Date(payload.novoVencimento) : undefined;
 
     await prisma.$transaction(async (tx) => {

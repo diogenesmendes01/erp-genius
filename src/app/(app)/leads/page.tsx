@@ -1,19 +1,11 @@
-import { redirect } from "next/navigation";
-import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { listarLeads, listarVendedores } from "@/server/comercial/consultas";
 import { listarPaises } from "@/server/paises/consultas";
 import { LeadsLista, type LeadRow } from "./LeadsLista";
-import { podeAtribuirOutroDono, type UsuarioSessao } from "@/server/_shared";
+import { exigirSessaoPagina, podeAtribuirOutroDono } from "@/server/_shared";
 
 export default async function LeadsPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-  const usuario: UsuarioSessao = {
-    id: session.user.id,
-    nome: session.user.name ?? "Usuário",
-    papeis: (session.user.papeis ?? []) as Papel[],
-  };
+  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
+  const usuario = await exigirSessaoPagina();
 
   const [leads, paises, vendedores] = await Promise.all([
     listarLeads(usuario),

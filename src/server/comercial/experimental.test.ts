@@ -30,8 +30,22 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { checkinExperimental, agendarExperimental } from "./acoes";
 import { dadosHomeProfessor } from "@/server/home/consultas";
 
+// Mini-banco de usuários: `exigirSessao` relê papéis do BANCO (papéis frescos —
+// _shared/sessao), então usuario.findUnique resolve por id — o usuário logado E
+// outros usuários buscados pela ação (ex.: o professor do agendamento).
+const usuariosNoBanco = new Map<string, Record<string, unknown>>();
+
+function existeUsuario(id: string, dados: Record<string, unknown>) {
+  usuariosNoBanco.set(id, { nome: "U", ativo: true, ...dados });
+}
+
 function comoUsuario(id: string, papeis: Papel[]) {
   authMock.mockResolvedValue({ user: { id, name: "U", papeis } });
+  usuariosNoBanco.clear();
+  existeUsuario(id, { papeis });
+  prismaMock.usuario.findUnique.mockImplementation(
+    async ({ where }: { where: { id: string } }) => usuariosNoBanco.get(where.id) ?? null,
+  );
 }
 
 beforeEach(() => {
@@ -158,7 +172,7 @@ describe("agendarExperimental", () => {
     prismaMock.lead.findUnique
       .mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" })
       .mockResolvedValueOnce({ professorExperimentalId: null });
-    prismaMock.usuario.findUnique.mockResolvedValue({ id: "prof1", papeis: [Papel.PROFESSOR] });
+    existeUsuario("prof1", { id: "prof1", papeis: [Papel.PROFESSOR] });
 
     const r = await agendarExperimental("lead1", {
       dataISO: "2026-06-22T10:00:00Z",
@@ -225,7 +239,7 @@ describe("agendarExperimental", () => {
     prismaMock.lead.findUnique
       .mockResolvedValueOnce({ id: "lead1", vendedorDonoId: "vend1" })
       .mockResolvedValueOnce({ professorExperimentalId: "prof1" });
-    prismaMock.usuario.findUnique.mockResolvedValue({ id: "prof1", papeis: [Papel.PROFESSOR] });
+    existeUsuario("prof1", { id: "prof1", papeis: [Papel.PROFESSOR] });
 
     const r = await agendarExperimental("lead1", {
       dataISO: "2026-06-23T11:00:00Z",

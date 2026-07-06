@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { loginBloqueado, registrarFalhaLogin, limparFalhasLogin } from "@/lib/rate-limit-login";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -13,16 +14,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         senha: { label: "Senha", type: "password" },
       },
       authorize: async (credentials) => {
-        const email = credentials?.email as string | undefined;
+        const email = (credentials?.email as string | undefined)?.trim().toLowerCase();
         const senha = credentials?.senha as string | undefined;
         if (!email || !senha) return null;
 
+        // Rate-limit por e-mail (ver lib/rate-limit-login): bloqueado responde igual a
+        // credencial inválida, sem tocar o banco.
+        if (loginBloqueado(email)) return null;
+
         const user = await prisma.usuario.findUnique({ where: { email } });
-        if (!user || !user.ativo) return null;
+        if (!user || !user.ativo) {
+          registrarFalhaLogin(email);
+          return null;
+        }
 
         const ok = await bcrypt.compare(senha, user.senhaHash);
-        if (!ok) return null;
+        if (!ok) {
+          registrarFalhaLogin(email);
+          return null;
+        }
 
+        limparFalhasLogin(email);
         await prisma.usuario.update({
           where: { id: user.id },
           data: { ultimoAcesso: new Date() },

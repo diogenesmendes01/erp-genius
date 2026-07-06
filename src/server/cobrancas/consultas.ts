@@ -1,6 +1,7 @@
 import { StatusCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
+import { numero, numeroOuNull } from "@/server/_shared/decimal";
 import { somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { proximaAcao, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
 
@@ -180,13 +181,15 @@ export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[];
     const r = regua.get(c.id)!;
     const aluno = c.matricula.aluno;
     const turma = aluno.alocacoes[0]?.turma ?? null;
+    const valorNegociado = numero(c.valorNegociado);
+    const valorRecebido = numeroOuNull(c.valorRecebido) ?? 0;
     return {
       id: c.id,
       codigo: c.codigo,
       tipo: c.tipo,
-      valorNegociado: c.valorNegociado,
-      valorRecebido: c.valorRecebido ?? 0,
-      saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
+      valorNegociado,
+      valorRecebido,
+      saldo: numeroOuNull(c.saldo) ?? valorNegociado - valorRecebido,
       moeda: c.moeda,
       vencimento: c.vencimento.toISOString(),
       competencia: c.competencia,

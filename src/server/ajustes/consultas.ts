@@ -1,6 +1,7 @@
 import { Papel, Prisma, StatusCobranca, StatusAprovacao } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
+import { semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { montarReguaPorCobranca, historicoFinanceiroDoAluno } from "@/server/cobrancas/consultas";
 
@@ -85,9 +86,12 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
     aluno.matriculas = aluno.matriculas.filter((m) => matriculaDoVendedor(m, usuario.id));
   }
 
-  const cobrancas = aluno.matriculas.flatMap((m) => m.cobrancas);
-  const ajustes = aluno.matriculas.flatMap((m) => m.ajustes);
-  const comissoes = aluno.matriculas.flatMap((m) => m.comissoes);
+  // Borda Server → Client: Decimal (dinheiro no banco) vira number aqui, antes de
+  // qualquer soma/serialização — ver `_shared/decimal`.
+  const alunoPlano = semDecimais(aluno);
+  const cobrancas = alunoPlano.matriculas.flatMap((m) => m.cobrancas);
+  const ajustes = alunoPlano.matriculas.flatMap((m) => m.ajustes);
+  const comissoes = alunoPlano.matriculas.flatMap((m) => m.comissoes);
   const agora = new Date();
 
   // Por moeda (nunca soma moedas diferentes) — o aluno pode ter matrículas em moedas distintas.
@@ -114,21 +118,21 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   // Régua (read-only) por cobrança ABERTA + histórico financeiro: a ficha passa a contar a
   // MESMA história da fila de cobrança, via o cérebro compartilhado, sem ganhar ações (doc 24).
   const reguaPorCobranca = await montarReguaPorCobranca(
-    aluno.matriculas.flatMap((m) =>
+    alunoPlano.matriculas.flatMap((m) =>
       m.cobrancas
         .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
         .map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: m.acessoBloqueado })),
     ),
     agora,
   );
-  const acessoBloqueado = aluno.matriculas.some((m) => m.acessoBloqueado);
+  const acessoBloqueado = alunoPlano.matriculas.some((m) => m.acessoBloqueado);
   const historico = await historicoFinanceiroDoAluno(
     cobrancas.map((c) => c.id),
-    aluno.matriculas.map((m) => m.id),
+    alunoPlano.matriculas.map((m) => m.id),
   );
 
   return {
-    aluno,
+    aluno: alunoPlano,
     cobrancas,
     ajustes,
     comissoes,
@@ -144,9 +148,10 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
 }
 
 export async function listarAprovacoesPendentes() {
-  return prisma.aprovacao.findMany({
+  const aprovacoes = await prisma.aprovacao.findMany({
     where: { status: StatusAprovacao.PENDENTE },
     orderBy: { criadoEm: "asc" },
     include: { solicitante: { select: { nome: true } } },
   });
+  return semDecimais(aprovacoes); // impactoMensal: Decimal → number (borda Server → Client)
 }
