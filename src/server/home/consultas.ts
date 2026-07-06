@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
+import { numero } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 
 const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
@@ -73,7 +74,7 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
     select: { valor: true, moeda: true },
   });
   // Por moeda — antes somava CRC+USD e rotulava com a moeda da PRIMEIRA comissão (errado).
-  const comissaoPrevista = somarPorMoeda(comissoes.map((c) => ({ moeda: c.moeda, valor: c.valor })));
+  const comissaoPrevista = somarPorMoeda(comissoes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })));
 
   // kanban resumido
   const agrup = await prisma.lead.groupBy({
@@ -172,7 +173,9 @@ export async function dadosHomeGerente() {
     where: { status: StatusCobranca.PAGO, pagoEm: { gte: inicioDoMes() } },
     select: { valorRecebido: true, valorNegociado: true, moeda: true },
   });
-  const receitaMes = somarPorMoeda(pagasMes.map((c) => ({ moeda: c.moeda, valor: c.valorRecebido ?? c.valorNegociado })));
+  const receitaMes = somarPorMoeda(
+    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valorRecebido ?? c.valorNegociado) })),
+  );
 
   // ranking simples por matrículas (leads matriculados por dono)
   const vendedores = await prisma.usuario.findMany({

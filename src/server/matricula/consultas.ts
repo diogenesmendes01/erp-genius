@@ -1,5 +1,6 @@
 import { TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { numero } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoLeads } from "@/server/comercial/consultas";
 
@@ -55,11 +56,13 @@ export async function listarTurmasAbertas() {
 export async function listarPrecosAtivos() {
   // A regra garante no máximo 1 ativo por combinação; mais recente primeiro
   // (`criadoEm` desc, `id` desempata) mantém a escolha determinística.
-  return prisma.precoReferencia.findMany({
+  const precos = await prisma.precoReferencia.findMany({
     where: { ativo: true },
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     select: { paisId: true, produtoId: true, tipoCobranca: true, valor: true, moeda: true },
   });
+  // valor: Decimal → number (borda Server → Client)
+  return precos.map((p) => ({ ...p, valor: numero(p.valor) }));
 }
 
 export type { TipoCobranca };

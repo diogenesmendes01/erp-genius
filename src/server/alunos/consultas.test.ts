@@ -31,6 +31,13 @@ describe("escopoAlunos (visibilidade row-level, doc 07)", () => {
   it("Professor que também é Secretaria vê todos (papel amplo prevalece)", () => {
     expect(escopoAlunos(u("x", Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA))).toEqual({});
   });
+
+  it("FAIL-CLOSED: usuário sem papel amplo nem professor não vê NADA (review PR #48)", () => {
+    // ex.: papéis revogados no banco com sessão ainda viva, ou papel fora do domínio (Vendedor)
+    const impossivel = { id: { in: [] } };
+    expect(escopoAlunos(u("x"))).toEqual(impossivel); // papéis vazios (revogado)
+    expect(escopoAlunos(u("x", Papel.VENDEDOR))).toEqual(impossivel);
+  });
 });
 
 describe("podeVerFinanceiroAluno (projeção pedagógica, doc 10)", () => {

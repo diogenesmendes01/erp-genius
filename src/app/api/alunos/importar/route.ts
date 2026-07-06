@@ -47,18 +47,21 @@ function resolverPais(valor: string, paises: PaisComDocs[]): PaisComDocs | null 
 
 export async function POST(req: Request) {
   const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
-  if (!session?.user?.id || !papeis.includes(Papel.ADMINISTRADOR)) {
-    return NextResponse.json({ erro: "Apenas administrador pode importar alunos." }, { status: 403 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
-  // Guard de sessão órfã: o autorId do Evento é FK de Usuario — se a sessão (JWT) tem um
-  // id que não existe neste banco, falha com FK críptica. Detecta e orienta o re-login.
+  // Autorização por papéis FRESCOS do banco (não do JWT — _shared/sessao): admin revogado/
+  // desativado perde o acesso na hora. De quebra cobre a sessão órfã (o autorId do Evento é
+  // FK de Usuario — id inexistente falharia com FK críptica; aqui orienta o re-login).
   const autor = await prisma.usuario.findUnique({
     where: { id: session.user.id },
-    select: { id: true },
+    select: { id: true, papeis: true, ativo: true },
   });
-  if (!autor) {
+  if (!autor || !autor.ativo) {
     return NextResponse.json({ erro: "Sessão expirada. Saia e entre novamente." }, { status: 401 });
+  }
+  if (!autor.papeis.includes(Papel.ADMINISTRADOR)) {
+    return NextResponse.json({ erro: "Apenas administrador pode importar alunos." }, { status: 403 });
   }
 
   // Rejeita cedo, antes de bufferizar o multipart inteiro em memória.

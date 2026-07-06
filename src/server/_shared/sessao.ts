@@ -35,7 +35,24 @@ export class ErroRegra extends Error {
 }
 
 /**
- * Exige uma sessão autenticada e retorna o usuário.
+ * Papéis/estado FRESCOS do banco — nunca do JWT. O token carrega os papéis do momento
+ * do login; sem esta releitura, revogar um papel ou desativar um usuário só valeria no
+ * próximo login (risco apontado no doc 16 §limitações). Custo: 1 query por ação/página.
+ * Retorna null quando o usuário não existe mais ou foi desativado (sessão inválida).
+ */
+async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> {
+  // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o Prisma.
+  const { prisma } = await import("@/lib/prisma");
+  const atual = await prisma.usuario.findUnique({
+    where: { id },
+    select: { nome: true, papeis: true, ativo: true },
+  });
+  if (!atual || !atual.ativo) return null;
+  return { id, nome: atual.nome, papeis: atual.papeis };
+}
+
+/**
+ * Exige uma sessão autenticada e retorna o usuário (papéis frescos do banco).
  * Use no início de toda Server Action.
  */
 export async function exigirSessao(): Promise<UsuarioSessao> {
@@ -44,11 +61,9 @@ export async function exigirSessao(): Promise<UsuarioSessao> {
   const session = await auth();
   const user = session?.user;
   if (!user?.id) throw new ErroAutenticacao();
-  return {
-    id: user.id,
-    nome: user.name ?? "Usuário",
-    papeis: user.papeis ?? [],
-  };
+  const usuario = await carregarUsuarioFresco(user.id);
+  if (!usuario) throw new ErroAutenticacao();
+  return usuario;
 }
 
 /** O usuário tem pelo menos um dos papéis informados? (Admin sempre passa.) */
@@ -88,11 +103,13 @@ export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessa
     redirect("/login");
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
   }
-  const usuario: UsuarioSessao = {
-    id: user.id,
-    nome: user.name ?? "Usuário",
-    papeis: user.papeis ?? [],
-  };
+  // Papéis frescos do banco (mesma razão de exigirSessao): usuário desativado ou com
+  // papel revogado cai AGORA, não no próximo login.
+  const usuario = await carregarUsuarioFresco(user.id);
+  if (!usuario) {
+    redirect("/login");
+    throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
+  }
   if (alvo.length > 0 && !temPapel(usuario, ...alvo)) redirect("/acesso-negado");
   return usuario;
 }

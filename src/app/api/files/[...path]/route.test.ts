@@ -8,10 +8,12 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 
 const cobrancaFindFirst = vi.fn();
 const documentoFindFirst = vi.fn();
+const usuarioFindUnique = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findFirst: (...a: unknown[]) => cobrancaFindFirst(...a) },
     documento: { findFirst: (...a: unknown[]) => documentoFindFirst(...a) },
+    usuario: { findUnique: (...a: unknown[]) => usuarioFindUnique(...a) },
   },
 }));
 
@@ -25,10 +27,18 @@ function ctx(segmentos: string[]) {
 }
 const req = new Request("http://localhost/api/files/x");
 
+// Sessão + usuário no banco: `exigirSessao` relê os papéis do BANCO (papéis frescos —
+// _shared/sessao), então o papel efetivo vem de usuario.findUnique, não do token.
+function comoUsuario(id: string, papeis: Papel[]) {
+  authMock.mockResolvedValue({ user: { id, papeis } });
+  usuarioFindUnique.mockResolvedValue({ nome: "U", papeis, ativo: true });
+}
+
 beforeEach(() => {
   authMock.mockReset();
   cobrancaFindFirst.mockReset().mockResolvedValue(null);
   documentoFindFirst.mockReset().mockResolvedValue(null);
+  usuarioFindUnique.mockReset().mockResolvedValue(null);
   readFileMock.mockReset().mockResolvedValue(Buffer.from("PDFDATA"));
 });
 
@@ -40,7 +50,7 @@ describe("GET /api/files/[...path]", () => {
   });
 
   it("usuário autorizado lê o arquivo (200) e marca como privado", async () => {
-    authMock.mockResolvedValue({ user: { id: "u1", papeis: [Papel.FINANCEIRO] } });
+    comoUsuario("u1", [Papel.FINANCEIRO]);
     cobrancaFindFirst.mockResolvedValue({ id: "c1" }); // comprovante existe
 
     const res = await GET(req, ctx(["123-comprovante.pdf"]));
@@ -51,7 +61,7 @@ describe("GET /api/files/[...path]", () => {
   });
 
   it("usuário autenticado sem escopo recebe 403 e NÃO lê o arquivo", async () => {
-    authMock.mockResolvedValue({ user: { id: "u1", papeis: [Papel.VENDEDOR] } });
+    comoUsuario("u1", [Papel.VENDEDOR]);
     cobrancaFindFirst.mockResolvedValue({ id: "c1" }); // comprovante: vendedor não pode
 
     const res = await GET(req, ctx(["123-comprovante.pdf"]));
@@ -60,14 +70,14 @@ describe("GET /api/files/[...path]", () => {
   });
 
   it("arquivo órfão (sem agregado) -> 403", async () => {
-    authMock.mockResolvedValue({ user: { id: "u1", papeis: [Papel.ADMINISTRADOR] } });
+    comoUsuario("u1", [Papel.ADMINISTRADOR]);
     const res = await GET(req, ctx(["orfao.pdf"]));
     expect(res.status).toBe(403);
     expect(readFileMock).not.toHaveBeenCalled();
   });
 
   it("path traversal bloqueado (400) antes de qualquer leitura", async () => {
-    authMock.mockResolvedValue({ user: { id: "u1", papeis: [Papel.ADMINISTRADOR] } });
+    comoUsuario("u1", [Papel.ADMINISTRADOR]);
     const res = await GET(req, ctx(["..", "..", "etc", "passwd"]));
     expect(res.status).toBe(400);
     expect(readFileMock).not.toHaveBeenCalled();
@@ -75,7 +85,7 @@ describe("GET /api/files/[...path]", () => {
   });
 
   it("extensão não permitida -> 400", async () => {
-    authMock.mockResolvedValue({ user: { id: "u1", papeis: [Papel.ADMINISTRADOR] } });
+    comoUsuario("u1", [Papel.ADMINISTRADOR]);
     const res = await GET(req, ctx(["malware.exe"]));
     expect(res.status).toBe(400);
     expect(readFileMock).not.toHaveBeenCalled();

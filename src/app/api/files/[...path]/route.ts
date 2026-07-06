@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
-import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { exigirSessao, ErroAutenticacao } from "@/server/_shared/sessao";
 import { contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 
@@ -18,9 +17,15 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
+  // Sessão com papéis FRESCOS do banco (não do JWT) — usuário desativado/revogado cai aqui.
+  let usuario;
+  try {
+    usuario = await exigirSessao();
+  } catch (e) {
+    if (e instanceof ErroAutenticacao) {
+      return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
+    }
+    throw e;
   }
 
   const { path: segmentos } = await params;
@@ -37,10 +42,7 @@ export async function GET(
   // Autorização POR OBJETO: o arquivo só é servido se o usuário pode ler o agregado que
   // o referencia (papel + escopo). Acesso negado => 403 (não vazamos o conteúdo).
   const autorizado = await podeLerArquivo(
-    {
-      id: session.user.id,
-      papeis: (session.user.papeis ?? []) as Papel[],
-    },
+    { id: usuario.id, papeis: usuario.papeis },
     segmentos ?? [],
   );
   if (!autorizado) {

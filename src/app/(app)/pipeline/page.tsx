@@ -1,18 +1,10 @@
-import { redirect } from "next/navigation";
-import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { listarLeads } from "@/server/comercial/consultas";
 import { KanbanBoard, type KanbanLead } from "./KanbanBoard";
-import type { UsuarioSessao } from "@/server/_shared";
+import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
 
 export default async function PipelinePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-  const usuario: UsuarioSessao = {
-    id: session.user.id,
-    nome: session.user.name ?? "Usuário",
-    papeis: (session.user.papeis ?? []) as Papel[],
-  };
+  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
+  const usuario = await exigirSessaoPagina();
 
   const leads = await listarLeads(usuario);
   const rows: KanbanLead[] = leads.map((l) => ({
@@ -24,7 +16,7 @@ export default async function PipelinePage() {
     b2b: l.b2b,
     pais: l.pais,
     proximaAcao: l.proximaAcao,
-    valorPrevisto: l.valorPrevisto,
+    valorPrevisto: numeroOuNull(l.valorPrevisto),
     ultimaAcaoEm: l.ultimaAcaoEm.toISOString(),
     etapaDesde: l.etapaDesde.toISOString(),
   }));

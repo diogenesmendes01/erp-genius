@@ -1,22 +1,15 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { navParaPapeis } from "@/lib/nav";
 import { dadosHomeVendedor, dadosHomeGerente, dadosHomeProfessor } from "@/server/home/consultas";
 import { HomeVendedor } from "./HomeVendedor";
 import { HomeGerente } from "./HomeGerente";
 import { HomeProfessor } from "./HomeProfessor";
-import type { UsuarioSessao } from "@/server/_shared";
+import { exigirSessaoPagina } from "@/server/_shared";
 
 export default async function HomePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-  const usuario: UsuarioSessao = {
-    id: session.user.id,
-    nome: session.user.name ?? "Usuário",
-    papeis: (session.user.papeis ?? []) as Papel[],
-  };
+  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
+  const usuario = await exigirSessaoPagina();
 
   const ehGerente =
     usuario.papeis.includes(Papel.ADMINISTRADOR) ||
