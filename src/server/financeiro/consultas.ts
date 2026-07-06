@@ -1,6 +1,7 @@
 import { StatusCobranca, StatusComissao, StatusMatricula } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
+import { numero, numeroOuNull } from "@/server/_shared/decimal";
 
 function inicioDoMes() {
   const d = new Date();
@@ -15,9 +16,9 @@ export async function listarComissoes() {
   return comissoes.map((c) => ({
     id: c.id,
     vendedor: c.vendedor.nome,
-    valor: c.valor,
+    valor: numero(c.valor),
     moeda: c.moeda,
-    percentual: c.percentual,
+    percentual: numero(c.percentual),
     status: c.status,
     dataPrevistaPagamento: c.dataPrevistaPagamento ? c.dataPrevistaPagamento.toISOString() : null,
   }));
@@ -46,14 +47,16 @@ export async function kpisFinanceiro() {
   // Cada KPI é uma lista {moeda, valor} — agrupada por moeda, NUNCA somando moedas diferentes
   // num número só (era o bug central: ₡ + US$ num total sem sentido). Consolidação numa moeda
   // única (com câmbio) é a próxima fase; aqui cada moeda aparece em separado.
-  const recebidoMes = somarPorMoeda(pagasMes.map((c) => ({ moeda: c.moeda, valor: c.valorRecebido ?? c.valorNegociado })));
+  const recebidoMes = somarPorMoeda(
+    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valorRecebido ?? c.valorNegociado) })),
+  );
   const emAtraso = somarPorMoeda(
-    abertas.filter((c) => c.vencimento < agora).map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+    abertas.filter((c) => c.vencimento < agora).map((c) => ({ moeda: c.moeda, valor: numero(c.valorNegociado) })),
   );
   const aReceber = somarPorMoeda(
-    abertas.filter((c) => c.vencimento >= agora).map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+    abertas.filter((c) => c.vencimento >= agora).map((c) => ({ moeda: c.moeda, valor: numero(c.valorNegociado) })),
   );
-  const comissoesAPagar = somarPorMoeda(comissoesAprovadas.map((c) => ({ moeda: c.moeda, valor: c.valor })));
+  const comissoesAPagar = somarPorMoeda(comissoesAprovadas.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })));
 
   return { recebidoMes, emAtraso, aReceber, comissoesAPagar, novasMatriculas };
 }
@@ -79,7 +82,7 @@ export async function dadosCambio(): Promise<CotacaoVigente[]> {
   const ultima = new Map<string, { unidadesPorUsd: number; vigenteEm: Date }>();
   for (const t of taxas) {
     const m = t.moeda.toUpperCase();
-    if (!ultima.has(m)) ultima.set(m, { unidadesPorUsd: t.unidadesPorUsd, vigenteEm: t.vigenteEm });
+    if (!ultima.has(m)) ultima.set(m, { unidadesPorUsd: numero(t.unidadesPorUsd), vigenteEm: t.vigenteEm });
   }
   const moedas = [...new Set(["USD", "BRL", ...paises.map((p) => p.moedaLocal.toUpperCase())])];
   moedas.sort((a, b) => (a === "USD" ? -1 : b === "USD" ? 1 : a.localeCompare(b)));
@@ -114,14 +117,14 @@ export async function relatorioDescontosComissoes() {
   const nome = new Map(vendedores.map((v) => [v.id, v.nome]));
   return {
     descontoPorMoeda: descPorMoeda
-      .map((d) => ({ moeda: d.moeda, total: d._sum.descontoValor ?? 0, qtd: d._count._all }))
+      .map((d) => ({ moeda: d.moeda, total: numeroOuNull(d._sum.descontoValor) ?? 0, qtd: d._count._all }))
       .sort((a, b) => b.total - a.total),
     descontoPorVendedor: descPorVendedor
       .filter((d) => d.vendedorId)
-      .map((d) => ({ vendedor: nome.get(d.vendedorId!) ?? "—", moeda: d.moeda, total: d._sum.descontoValor ?? 0, qtd: d._count._all }))
+      .map((d) => ({ vendedor: nome.get(d.vendedorId!) ?? "—", moeda: d.moeda, total: numeroOuNull(d._sum.descontoValor) ?? 0, qtd: d._count._all }))
       .sort((a, b) => b.total - a.total),
     comissoesPorStatus: comissoes
-      .map((c) => ({ moeda: c.moeda, status: c.status, total: c._sum.valor ?? 0, qtd: c._count._all }))
+      .map((c) => ({ moeda: c.moeda, status: c.status, total: numeroOuNull(c._sum.valor) ?? 0, qtd: c._count._all }))
       .sort((a, b) => a.moeda.localeCompare(b.moeda)),
   };
 }

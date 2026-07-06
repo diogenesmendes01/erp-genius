@@ -1,20 +1,13 @@
-import { notFound, redirect } from "next/navigation";
-import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import { obterLead } from "@/server/comercial/consultas";
 import { listarProfessores } from "@/server/turmas/consultas";
 import { FichaLead, type LeadFicha, type EventoTimeline } from "./FichaLead";
-import type { UsuarioSessao } from "@/server/_shared";
+import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
 
 export default async function LeadDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-  const usuario: UsuarioSessao = {
-    id: session.user.id,
-    nome: session.user.name ?? "Usuário",
-    papeis: (session.user.papeis ?? []) as Papel[],
-  };
+  // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
+  const usuario = await exigirSessaoPagina();
 
   const dados = await obterLead(id, usuario);
   if (!dados) notFound();
@@ -48,9 +41,9 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     matricula: lead.matricula
       ? { id: lead.matricula.id, codigo: lead.matricula.codigo, status: lead.matricula.status }
       : null,
-    valorPrevisto: lead.valorPrevisto,
+    valorPrevisto: numeroOuNull(lead.valorPrevisto),
     planoPrevisto: lead.planoPrevisto,
-    comissaoPrevista: lead.comissaoPrevista,
+    comissaoPrevista: numeroOuNull(lead.comissaoPrevista),
     documentos: lead.documentos.map((d) => ({ id: d.id, categoria: d.categoria, nome: d.nome, url: d.url })),
     professorExperimentalId: lead.professorExperimentalId,
   };

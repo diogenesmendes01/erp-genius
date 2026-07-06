@@ -3,23 +3,29 @@
 > O que testar e como, a partir da Fase 0. Pragmático: cobrir o que **quebra dinheiro,
 > auditoria ou permissão** — não perseguir 100% de cobertura.
 
-## Status atual (junho/2026)
+## Status atual (julho/2026)
 | Camada | Status | Detalhe |
 |---|---|---|
-| **Unitário (Vitest)** | ✅ existe | 19 testes em `src/server/_shared/*.test.ts` (regras puras). Roda com `npm test`. |
-| **Integração (Server Actions × DB)** | ⛔ **pendente** | Falta o Postgres de teste isolado; sem ele, os riscos de **permissão**, **gravação de `Evento`** e **`gerarCodigo()` sob concorrência** ainda não têm cobertura automatizada. |
+| **Unitário (Vitest)** | ✅ existe | 273 testes em `src/**/*.test.ts` (regras puras, schemas, réguas). Roda com `npm test`. |
+| **Integração (Server Actions × DB)** | ✅ **implementada** | Postgres de teste DESCARTÁVEL sem docker/admin (`npm run test:db` — binários do `embedded-postgres`, porta 54329, dados em `.testdb/`). Suites `src/**/*.int.test.ts` rodam com `npm run test:int`. A URL do banco de teste é FIXADA em `vitest.integration.config.ts` (nunca lê `.env`) — impossível apontar para produção por engano. |
 | **e2e (Playwright)** | ⏳ futuro | Opcional na Fase 0; só após as telas estabilizarem. |
 
-> **Risco aberto principal:** os guards de permissão das **leituras** (`consultas.ts`) não são
-> exercitados por teste (e hoje sequer existem como guard — ver
-> [`16-plano-execucao.md`](16-plano-execucao.md) §Limitações). A suíte de integração é o que
-> fecha esse e os demais riscos de auditoria/financeiro listados abaixo.
+> As leituras (`consultas.ts`) têm escopo **row-level testado por integração** (vendedor não
+> abre lead/ficha de terceiro), e sessões usam **papéis frescos do banco** (revogação vale na
+> hora — ver `_shared/sessao.ts`); há teste de integração cobrindo a revogação. O rate-limit do
+> login (`lib/rate-limit-login.ts`) tem teste unitário próprio.
 
-### Fluxos prioritários para a integração (ordem)
-1. **Permissão por papel** numa mutação representativa de cada domínio (vazamento = vendedor vê lead de outro).
-2. **Mutação grava `Evento`** na mesma transação (auditoria/timeline confiáveis).
-3. **Ativação de matrícula** → gera cronograma + comissão Aprovada + lead Matriculado (distorce receita se errar).
-4. **`gerarCodigo()`** sob concorrência (códigos duplicados).
+### Fluxos prioritários para a integração (ordem) — estado
+1. ✅ **Permissão por papel + row-level** — `comercial/leads.int.test.ts` (vendedor só vê os
+   próprios; gerente vê tudo; papel revogado no banco derruba a ação) e
+   `ajustes/ficha.int.test.ts` (ficha financeira fora do escopo → `null`).
+2. ✅ **Mutação grava `Evento`** na mesma transação — `leads.int.test.ts` (`LeadCriado` +
+   `LeadAtribuido` com autor; ação barrada não grava nada).
+3. ⏳ **Ativação de matrícula** — `matricula/ativacao.int.test.ts` PRONTA (cronograma, comissão
+   aprovada, lead Matriculado, eventos, atomicidade do criar+ativar), aguardando a resolução dos
+   marcadores de merge em `matricula/schema.ts` para rodar.
+4. ✅ **`gerarCodigo()`** sob concorrência — `lib/codigo.int.test.ts` (30 gerações concorrentes,
+   zero duplicatas/buracos: o `upsert` com `increment` é atômico no Postgres).
 
 ## Prioridades (o que mais importa testar)
 A regra: teste pesado onde o erro é caro e silencioso.
@@ -45,9 +51,15 @@ A regra: teste pesado onde o erro é caro e silencioso.
 ## Ferramentas
 - **Vitest** instalado e configurado ([`vitest.config.ts`](../vitest.config.ts), resolve `@/`
   via tsconfig paths). Scripts: `npm test` (run) e `npm run test:watch`.
-- **Banco de teste** isolado (`DATABASE_URL` de teste) com `prisma migrate reset` por suíte,
-  ou Postgres em container — **pendente** (testes de integração das Server Actions). Nunca
-  rodar testes contra o banco de dev/prod.
+- **Banco de teste** isolado: `npm run test:db` sobe um Postgres embutido (binários npm do
+  `embedded-postgres`, sem docker/WSL/admin) na porta **54329**, dados em `.testdb/` (gitignored);
+  `npm run test:db:stop` derruba. `npm run test:int` aplica as migrations (globalSetup) e roda as
+  suites `*.int.test.ts` em série (`fileParallelism: false` — as suites truncam o banco entre si).
+  A URL fica hardcoded em [`vitest.integration.config.ts`](../vitest.integration.config.ts): os
+  testes **nunca** enxergam o `DATABASE_URL` do `.env` (produção).
+- **Sessão nos testes de integração:** mock de `@/lib/auth` devolve só `{ user: { id } }` — os
+  papéis vêm do próprio banco de teste (papéis frescos), então a autorização real é exercitada.
+  Helpers em [`src/test/integracao.ts`](../src/test/integracao.ts) (truncar, usuários, catálogo mínimo).
 - **e2e (futuro):** Playwright.
 
 ## Cobertura atual (unitária — regras puras)

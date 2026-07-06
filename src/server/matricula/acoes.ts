@@ -26,6 +26,8 @@ import {
   vencimentoMensalidade,
   vencimentoPrimeiraMensalidade,
   alocarPagamento,
+  numero,
+  numeroOuNull,
   normalizarTelefoneE164,
   validarDocumento,
   type UsuarioSessao,
@@ -120,8 +122,10 @@ async function criarMatriculaTx(
     justificativa: dados.justificativaSemPreco,
     autorizado: temPapel(autor, ...PAPEIS_EXCECAO_PRECO),
   });
-  const refTaxa = precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor ?? dados.taxaValor;
-  const refMens = precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor ?? dados.mensalidadeValor;
+  const refTaxa =
+    numeroOuNull(precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.valor) ?? dados.taxaValor;
+  const refMens =
+    numeroOuNull(precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.valor) ?? dados.mensalidadeValor;
 
   const codAluno = await gerarCodigo("aluno");
   const codMatricula = await gerarCodigo("matricula");
@@ -412,7 +416,7 @@ async function ativarMatriculaTx(
   // Lastro da ativação: o valor recebido precisa cobrir a TAXA. A 1ª mensalidade
   // NÃO entra na alocação — não é exigida para ativar.
   const alocacao = alocarPagamento(dados.valorRecebido, [
-    { id: taxa.id, valorNegociado: taxa.valorNegociado },
+    { id: taxa.id, valorNegociado: numero(taxa.valorNegociado) },
   ]);
   const taxaAloc = alocacao.alocacoes[0];
   // Regra dura: sem taxa paga não há ativação. Fica AGUARDANDO.
@@ -550,7 +554,7 @@ async function ativarMatriculaTx(
       lastro: "TAXA_QUITADA",
       forma: dados.forma,
       valorRecebido: dados.valorRecebido,
-      taxaValor: taxa.valorNegociado,
+      taxaValor: numero(taxa.valorNegociado),
       troco: alocacao.troco,
       primeiraMensalidadeVencimento: venc1.data.toISOString(),
     },

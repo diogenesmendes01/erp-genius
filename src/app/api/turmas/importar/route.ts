@@ -37,17 +37,20 @@ function cellTexto(v: ExcelJS.CellValue): string {
 
 export async function POST(req: Request) {
   const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
-  if (!session?.user?.id || !papeis.includes(Papel.ADMINISTRADOR)) {
-    return NextResponse.json({ erro: "Apenas administrador pode importar turmas." }, { status: 403 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
-  // Guard de sessão órfã (autorId do Evento é FK de Usuario).
+  // Autorização por papéis FRESCOS do banco (não do JWT — _shared/sessao): admin revogado/
+  // desativado perde o acesso na hora. Cobre também a sessão órfã (autorId do Evento é FK).
   const autor = await prisma.usuario.findUnique({
     where: { id: session.user.id },
-    select: { id: true },
+    select: { id: true, papeis: true, ativo: true },
   });
-  if (!autor) {
+  if (!autor || !autor.ativo) {
     return NextResponse.json({ erro: "Sessão expirada. Saia e entre novamente." }, { status: 401 });
+  }
+  if (!autor.papeis.includes(Papel.ADMINISTRADOR)) {
+    return NextResponse.json({ erro: "Apenas administrador pode importar turmas." }, { status: 403 });
   }
 
   // Rejeita cedo, antes de bufferizar o multipart inteiro em memória.

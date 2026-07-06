@@ -2,6 +2,7 @@ import { Papel, Prisma, StatusCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { somarPorMoeda } from "@/lib/dinheiro";
+import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 
 // Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
@@ -44,15 +45,19 @@ export function podeMovimentarAluno(usuario?: UsuarioSessao): boolean {
 
 // Visibilidade row-level (doc 07): Professor enxerga apenas alunos das SUAS turmas;
 // demais papéis amplos veem todos. Professor → restringe via alocação ativa.
+// FAIL-CLOSED (review PR #48): usuário presente SEM papel amplo e SEM professor (ex.:
+// papéis revogados com sessão viva) não vê NADA — nunca "todos" por omissão.
+// `usuario` ausente segue sem restrição (chamadas internas, fora de request).
 export function escopoAlunos(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
   if (!usuario || temVisaoAmpla(usuario)) return {};
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     return { alocacoes: { some: { ativa: true, turma: { professorId: usuario.id } } } };
   }
-  return {};
+  return { id: { in: [] } }; // filtro impossível: sem papel adequado → lista vazia
 }
 
-/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.) */
+/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.)
+ *  FAIL-CLOSED (review PR #48): sem papel amplo e sem professor → não vê. */
 function professorVeAluno(
   usuario: UsuarioSessao | undefined,
   alocacoes: { turma: { professorId: string | null } | null }[],
@@ -61,7 +66,7 @@ function professorVeAluno(
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     return alocacoes.some((a) => a.turma?.professorId === usuario.id);
   }
-  return true;
+  return false;
 }
 
 /**
@@ -76,7 +81,7 @@ export function vagasTurma(capacidade: number, ocupacaoAtiva: number) {
 // Situação financeira resumida a partir das cobranças. `emAberto` é por moeda (uma matrícula
 // pode ter trocado de moeda entre anos — doc 04) e nunca soma moedas diferentes.
 function resumoFinanceiro(
-  cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: number; moeda: string }[],
+  cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: Prisma.Decimal | number; moeda: string }[],
 ) {
   const agora = new Date();
   const atrasado = cobrancas.some(
@@ -85,7 +90,7 @@ function resumoFinanceiro(
   const emAberto = somarPorMoeda(
     cobrancas
       .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
-      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+      .map((c) => ({ moeda: c.moeda, valor: numero(c.valorNegociado) })),
   );
   const proximo = cobrancas
     .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
@@ -151,13 +156,19 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
   if (!aluno) return null;
   // Row-level: professor só vê a ficha de alunos das suas turmas (doc 07).
   if (!professorVeAluno(usuario, aluno.alocacoes)) return null;
+  // Borda Server → Client: Decimal (dinheiro no banco) vira number — ver `_shared/decimal`.
+  const alunoPlano = semDecimais(aluno);
   // Projeção pedagógica (doc 10): professor NÃO recebe nada financeiro — nem no payload,
-  // para não vazar via rede. Papéis amplos seguem com o resumo completo.
+  // para não vazar via rede. As cobranças são REMOVIDAS do objeto (antes iam junto,
+  // apesar do comentário); papéis amplos seguem com o resumo completo.
   if (!podeVerFinanceiroAluno(usuario)) {
-    return { aluno, financeiro: null };
+    return {
+      aluno: { ...alunoPlano, matriculas: alunoPlano.matriculas.map((m) => ({ ...m, cobrancas: [] })) },
+      financeiro: null,
+    };
   }
-  const cobrancas = aluno.matriculas.flatMap((m) => m.cobrancas);
-  return { aluno, financeiro: resumoFinanceiro(cobrancas) };
+  const cobrancas = alunoPlano.matriculas.flatMap((m) => m.cobrancas);
+  return { aluno: alunoPlano, financeiro: resumoFinanceiro(cobrancas) };
 }
 
 export async function listarTurmasAbertasComVaga() {
