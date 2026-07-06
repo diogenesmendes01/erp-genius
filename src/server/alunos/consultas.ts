@@ -45,15 +45,19 @@ export function podeMovimentarAluno(usuario?: UsuarioSessao): boolean {
 
 // Visibilidade row-level (doc 07): Professor enxerga apenas alunos das SUAS turmas;
 // demais papéis amplos veem todos. Professor → restringe via alocação ativa.
+// FAIL-CLOSED (review PR #48): usuário presente SEM papel amplo e SEM professor (ex.:
+// papéis revogados com sessão viva) não vê NADA — nunca "todos" por omissão.
+// `usuario` ausente segue sem restrição (chamadas internas, fora de request).
 export function escopoAlunos(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
   if (!usuario || temVisaoAmpla(usuario)) return {};
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     return { alocacoes: { some: { ativa: true, turma: { professorId: usuario.id } } } };
   }
-  return {};
+  return { id: { in: [] } }; // filtro impossível: sem papel adequado → lista vazia
 }
 
-/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.) */
+/** O usuário pode ver este aluno? (Professor: só se aluno está em turma sua.)
+ *  FAIL-CLOSED (review PR #48): sem papel amplo e sem professor → não vê. */
 function professorVeAluno(
   usuario: UsuarioSessao | undefined,
   alocacoes: { turma: { professorId: string | null } | null }[],
@@ -62,7 +66,7 @@ function professorVeAluno(
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     return alocacoes.some((a) => a.turma?.professorId === usuario.id);
   }
-  return true;
+  return false;
 }
 
 /**
