@@ -35,7 +35,7 @@ model Usuario {
   senhaHash         String
   ativo             Boolean   @default(true)
   papeis            Papel[] // multi-papel. V2: migrar p/ tabela UsuarioPapel (permissões granulares / por país)
-  limiteDescontoPct Float? // null = sem limite (Admin)
+  limiteDescontoPct Decimal?  @db.Decimal(5, 2) // null = sem limite (Admin)
   // dados pessoais (ex.: professores importados — doc 23). Opcionais.
   telefoneE164      String?
   documento         String?
@@ -184,7 +184,7 @@ model PrecoReferencia {
   modalidadeId String
   modalidade   Modalidade   @relation(fields: [modalidadeId], references: [id])
   tipoCobranca TipoCobranca
-  valor        Float
+  valor        Decimal      @db.Decimal(12, 2)
   moeda        String
   ativo        Boolean      @default(true)
   versaoEstudo String?
@@ -484,9 +484,9 @@ model Lead {
   dataProposta     DateTime?
 
   // valor da oportunidade (Ficha do Lead — doc 09)
-  valorPrevisto    Float?
+  valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
-  comissaoPrevista Float?
+  comissaoPrevista Decimal? @db.Decimal(12, 2)
 
   motivoPerda    MotivoPerda?
   ultimaCobranca DateTime?
@@ -601,10 +601,10 @@ model Cobranca {
   matricula      Matricula       @relation(fields: [matriculaId], references: [id])
   tipo           TipoCobranca
   competencia    String? // "2026-06" para mensalidades
-  valorOriginal  Float
-  valorNegociado Float
-  valorRecebido  Float?
-  saldo          Float? // valorNegociado - valorRecebido
+  valorOriginal  Decimal         @db.Decimal(12, 2)
+  valorNegociado Decimal         @db.Decimal(12, 2)
+  valorRecebido  Decimal?        @db.Decimal(12, 2)
+  saldo          Decimal?        @db.Decimal(12, 2) // valorNegociado - valorRecebido
   moeda          String
   vencimento     DateTime
   status         StatusCobranca  @default(PENDENTE)
@@ -629,8 +629,8 @@ model Comissao {
   matricula             Matricula      @relation(fields: [matriculaId], references: [id])
   vendedorId            String
   vendedor              Usuario        @relation(fields: [vendedorId], references: [id])
-  percentual            Float
-  valor                 Float
+  percentual            Decimal        @db.Decimal(5, 2)
+  valor                 Decimal        @db.Decimal(12, 2)
   moeda                 String
   status                StatusComissao @default(PENDENTE)
   dataPrevistaPagamento DateTime?
@@ -675,7 +675,7 @@ model Aprovacao {
   payload       Json? // { de, para, percentual, ... }
   vigencia      Vigencia?
   motivo        String?
-  impactoMensal Float?
+  impactoMensal Decimal?        @db.Decimal(12, 2)
   criadoEm      DateTime        @default(now())
   decididoEm    DateTime?
 }
@@ -699,10 +699,10 @@ model AjusteFinanceiro {
   matricula     Matricula  @relation(fields: [matriculaId], references: [id])
   cobrancaId    String? // referência leve (opcional)
   tipo          TipoAjuste
-  valorDe       Float
-  valorPara     Float
-  descontoValor Float // valorDe - valorPara
-  descontoPct   Float?
+  valorDe       Decimal    @db.Decimal(12, 2)
+  valorPara     Decimal    @db.Decimal(12, 2)
+  descontoValor Decimal    @db.Decimal(12, 2) // valorDe - valorPara
+  descontoPct   Decimal?   @db.Decimal(5, 2)
   moeda         String
   vigencia      Vigencia?
   motivo        String
@@ -732,7 +732,7 @@ model AjusteFinanceiro {
 model TaxaCambio {
   id             String   @id @default(cuid())
   moeda          String // ISO 4217 (ex.: CRC, BRL). Alvo/origem de conversão; USD é o pivô.
-  unidadesPorUsd Float // quantas unidades desta moeda equivalem a 1 USD (ex.: CRC ~ 512)
+  unidadesPorUsd Decimal  @db.Decimal(14, 6) // quantas unidades desta moeda equivalem a 1 USD (ex.: CRC ~ 512)
   vigenteEm      DateTime @default(now())
   criadoEm       DateTime @default(now())
 

@@ -32,3 +32,6 @@ next-env.d.ts
 /data/uploads/
 # legado: caminho público antigo (não deve mais ser usado)
 /public/uploads/
+
+# Postgres de teste (npm run test:db)
+.testdb/

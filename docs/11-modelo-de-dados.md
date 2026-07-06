@@ -36,7 +36,7 @@ append-only (auditoria + projeções). Não é event sourcing puro — é o meio
 | `nome`, `email` (unique), `senhaHash` | String | senha com hash (bcrypt) |
 | `ativo` | Boolean | soft-delete = `false` (nunca apaga — doc 10 §6) |
 | `papeis` | `Papel[]` | multi-papel. **V2:** migrar p/ tabela `UsuarioPapel` (escopo por país) |
-| `limiteDescontoPct` | Float? | `null` = sem limite (Admin). Gancho de aprovação (doc 07) |
+| `limiteDescontoPct` | Decimal(5,2)? | `null` = sem limite (Admin). Gancho de aprovação (doc 07) |
 | `telefoneE164`, `documento`, `nascimento`, `genero` | opcionais | dados pessoais (ex.: professores importados — doc 23) |
 | `ultimoAcesso` | DateTime? | exibido em Config → Usuários |
 | `criadoEm` | DateTime | |
@@ -181,7 +181,7 @@ statusDestino? · motivo? · observacao? · usuarioId? → Usuario · criadoEm`.
 | Origem | `origemCampanha? · origemConjunto? · origemAnuncio? · origemPalavra?` |
 | Resumo executivo | `interesse? · objetivo? · urgencia? · orcamento? · objecao? · proximaAcao?` (manual no V0, IA na Fase 1) |
 | Datas (alimentam a fila da Home) | `proximoFollowUp? · dataExperimental? · dataProposta?` |
-| Valor da oportunidade (doc 09) | `valorPrevisto? (Float) · planoPrevisto? · comissaoPrevista? (Float)` |
+| Valor da oportunidade (doc 09) | `valorPrevisto? (Decimal 12,2) · planoPrevisto? · comissaoPrevista? (Decimal 12,2)` |
 | Outros | `motivoPerda? · ultimaCobranca? · criadoEm` · `matricula` (1:1) · `documentos` (1:N) |
 
 - **enum `Temperatura`:** `QUENTE · MORNO · FRIO`.

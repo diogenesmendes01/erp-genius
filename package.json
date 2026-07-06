@@ -12,7 +12,10 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db": "node scripts/test-db.mjs start",
+    "test:db:stop": "node scripts/test-db.mjs stop",
+    "test:int": "vitest run -c vitest.integration.config.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -42,6 +45,7 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.9",
     "postcss": "^8.5.10",

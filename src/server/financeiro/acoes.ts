@@ -8,6 +8,8 @@ import {
   registrarEvento,
   executarAcao,
   acumularPagamento,
+  numero,
+  numeroOuNull,
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
@@ -43,10 +45,10 @@ export async function registrarPagamento(
 
     // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
     // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.
-    const jaRecebido = cobranca.valorRecebido ?? 0;
+    const jaRecebido = numeroOuNull(cobranca.valorRecebido) ?? 0;
     const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
       jaRecebido,
-      cobranca.valorNegociado,
+      numero(cobranca.valorNegociado),
       dados.valorRecebido,
       dados.permitirExcedente,
     );
@@ -132,7 +134,7 @@ export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>
           agregadoTipo: "Comissao",
           agregadoId: c.id,
           autorId: autor.id,
-          payload: { pagaEm: agora.toISOString(), valor: c.valor },
+          payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
         });
       }
     });

@@ -22,13 +22,17 @@
   de permissão server-side nas mutações. Detalhe item a item na **Etapa B** abaixo.
 
 ### Limitações conhecidas da Fase 0 (estado atual)
-- **Guards de permissão só nas mutações:** as **leituras** (`src/server/*/consultas.ts`) hoje
-  **não** reexecutam `exigirSessao`/`exigirPapel` — a proteção das telas de leitura vem do
-  layout autenticado e do menu role-aware (UX), não de um guard por consulta. Endurecer leituras
-  sensíveis (row-level por papel) é trabalho pendente.
-- **Integração com o banco em teste pendente:** as Server Actions ainda não têm testes de
-  integração contra um Postgres de teste (transação + Evento + permissão). Hoje só há testes
-  unitários (Vitest) das regras puras — ver [`14-estrategia-de-testes.md`](14-estrategia-de-testes.md).
+- ~~Guards de permissão só nas mutações~~ **Endurecido (jul/2026):** toda página/rota agora usa
+  `exigirSessaoPagina`/`exigirSessao`, que releem **papéis frescos do banco** (revogar papel ou
+  desativar usuário vale na hora, não no próximo login); o escopo **row-level** das leituras
+  (leads, ficha financeira, alunos/turmas do professor) é coberto por testes de integração; o
+  login tem **rate-limit** por e-mail (`lib/rate-limit-login.ts`); a ficha do aluno deixou de
+  enviar cobranças no payload de professor (projeção pedagógica de verdade). As `consultas.ts`
+  seguem recebendo `usuario` por parâmetro (testabilidade) — o chamador é sempre um guard.
+- ~~Integração com o banco em teste pendente~~ **Implementada (jul/2026):** Postgres de teste
+  embutido (`npm run test:db`, porta 54329, sem docker) + suites `*.int.test.ts` cobrindo os 4
+  fluxos prioritários — ver [`14-estrategia-de-testes.md`](14-estrategia-de-testes.md). A suite de
+  ativação de matrícula aguarda a resolução dos marcadores de merge em `matricula/schema.ts`.
 - **Storage local de arquivos:** uploads (comprovantes/documentos) gravam em `public/uploads`
   via `src/app/api/upload/route.ts` (ambiente Node). **Não** funciona em hosting serverless —
   trocar por S3/Supabase Storage antes de subir para esse tipo de ambiente.

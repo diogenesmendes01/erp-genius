@@ -37,7 +37,7 @@
 | D30 | **`Turma.diasHorario` opcional no domínio** (Zod alinhado ao Prisma/banco): turma pode entrar "a definir" sem bloquear criação/edição; vazio → `null`; UI mostra "a definir" | ✅ | [11](11-modelo-de-dados.md), [20](20-carga-turmas-q10.md) |
 | D24 | **Next.js 16** (era 14, EOL de segurança) + React 18 mantido + `overrides.postcss ≥8.5.10` → `npm audit` **0 vulnerabilidades** | ✅ | [13](13-convencoes-codigo.md) |
 | D17 | **Preço tipado** (`PrecoReferencia` = País+Produto+Modalidade+TipoCobrança, com moeda+ativo) | ✅ | [11](11-modelo-de-dados.md) |
-| D30 | **Dinheiro em `Float` (temporário)** — manter `Float` nos campos monetários por ora; migrar para `Decimal` adiado (custo/risco alto nesta fase). Ver pendência P19 | 🟡 | (este doc) |
+| D32 | **Dinheiro em `DECIMAL`** — campos monetários migrados de `Float` para `Decimal(12,2)` (percentuais `5,2`; câmbio `14,6`), migration `dinheiro_decimal` (jul/2026); domínio TS segue em `number` via conversão na borda de leitura (`_shared/decimal`). Fecha a P19 (era D30 duplicado) | ✅ | [11](11-modelo-de-dados.md), (este doc §P19) |
 | D31 | **Integridade de dados (issue #1):** índices únicos PARCIAIS — 1 alocação ATIVA por aluno · 1 preço ATIVO por país+produto+modalidade+tipoCobrança (migration `integridade_alocacao_preco`) | ✅ | [11](11-modelo-de-dados.md) |
 | D18 | **`MovimentacaoAluno` tipada** criada na Fase 0 (coexiste com `Evento`) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
 | D19 | **Ativação** exige `contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`; exceção "com pendência" (Admin/Gerente) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
@@ -125,27 +125,29 @@ UI na tela de País ("Catálogo") alterna `ProdutoPais.oferecido` por produto (i
 `ativarMatricula` gera o restante (meses 2..N) e emite `CobrancaGerada`. Código agora 100%
 fiel à spec do doc 09.
 
-### P19 — Dinheiro em `Float` vs. `Decimal` 🟡 (decisão temporária — D30)
+### P19 — Dinheiro em `Float` vs. `Decimal` ✅ (fechada — D32, jul/2026)
 **Contexto.** Os campos monetários (`Cobranca.valorOriginal/valorNegociado/valorRecebido/saldo`,
 `Comissao.valor`, `PrecoReferencia.valor`, `AjusteFinanceiro.valorDe/valorPara/descontoValor`,
-além de `Lead.valorPrevisto/comissaoPrevista` e `Aprovacao.impactoMensal`) usam `Float`. Float é
+além de `Lead.valorPrevisto/comissaoPrevista` e `Aprovacao.impactoMensal`) usavam `Float`. Float é
 binário (IEEE-754) e acumula erro de arredondamento — não é o tipo ideal para dinheiro.
 
-**Decisão (temporária).** **Manter `Float` por ora**; **não** migrar para `Decimal` nesta fase.
-Justificativa do risco/esforço:
-- Prisma mapeia `Decimal` para objetos `Prisma.Decimal` (decimal.js), **não** `number`. Migrar
-  obriga a reescrever **toda** a aritmética monetária do domínio (somas de saldo/comissão/KPIs em
-  `financeiro/consultas.ts`, `alunos/consultas.ts`, `regras.ts`, etc.) e a **serialização** dos
-  valores nos `payload` de `Evento`/props de Server Components (JSON não serializa `Decimal`).
-- Já há **carga Q10 em produção** (alunos, 56 cobranças, comissões) que passaria por conversão.
-- O ganho de precisão não é crítico na Fase 0 (operação manual, valores inteiros na prática:
-  ₡25.000, US$50). O risco de regressão silenciosa em cálculo financeiro é alto.
+**Decisão (executada em 2026-07-02).** Migrado para `DECIMAL` enquanto o volume era pequeno
+(56 cobranças/comissões) — quanto mais tarde, mais cara a conversão. Exatamente o plano previsto
+na versão anterior desta pendência:
+- **Banco:** migration `20260702100000_dinheiro_decimal` — `ALTER COLUMN ... TYPE DECIMAL USING
+  ROUND(col::numeric, N)`. Monetários `12,2` · percentuais (`limiteDescontoPct`, `percentual`,
+  `descontoPct`) `5,2` · `TaxaCambio.unidadesPorUsd` `14,6`. `Modalidade.horasAula` segue `Float`
+  (duração, não dinheiro). Verificação por checksum (COUNT/SUM/MIN/MAX por coluna) antes/depois:
+  contagens idênticas, somas com diferença zero.
+- **Domínio TS:** segue em `number` — conversão na **borda de leitura**, o mais perto do Prisma
+  (`src/server/_shared/decimal.ts`: `numero`/`numeroOuNull` campo a campo; `semDecimais`
+  recursivo p/ retornos crus que cruzam Server → Client). Escritas aceitam `number` sem mudança.
+- **Testes:** unitários do helper + integração provando que a ficha financeira devolve `number`
+  puro e somas por moeda corretas (`ficha.int.test.ts`).
 
-**Consequência / quando reabrir.** Migrar para `Decimal(12,2)` quando entrar gateway de pagamento
-(P1) ou consolidação multi-moeda automática (doc 09). Na migração: schema `Decimal` + migration de
-`ALTER COLUMN ... TYPE numeric(12,2)`, camada de mapeamento `Decimal→number` na borda das
-consultas/payloads, e testes de regressão dos cálculos. Enquanto isso, manter os valores como
-inteiros na moeda local sempre que possível e arredondar na borda.
+**Consequência.** O banco é a fonte de verdade EXATA (SUM/agregações no Postgres sem erro binário);
+`payload` de Evento e props de Client Components seguem números JSON como antes. Regra nova de
+código: ao LER campo monetário do Prisma, converta na borda (ver `_shared/decimal`).
 → origem: issue #1 (endurecer regras financeiras).
 
 ### P17 — Micro-detalhes do Kanban/matrícula ✅
