@@ -27,10 +27,16 @@ export async function GET(req: Request): Promise<Response> {
 function assinaturaValida(corpoCru: string, header: string | null): boolean {
   const secret = process.env.META_WA_APP_SECRET;
   if (!secret || !header?.startsWith("sha256=")) return false;
-  const esperada = createHmac("sha256", secret).update(corpoCru, "utf8").digest("hex");
   const recebida = header.slice("sha256=".length);
-  if (esperada.length !== recebida.length) return false;
-  return timingSafeEqual(Buffer.from(esperada, "hex"), Buffer.from(recebida, "hex"));
+  // Hex malformado geraria buffer curto e RangeError no timingSafeEqual (review PR #49):
+  // valida o formato ANTES e responde 401, nunca 500 (5xx repetido suspende o webhook).
+  if (!/^[0-9a-f]{64}$/i.test(recebida)) return false;
+  const esperada = createHmac("sha256", secret).update(corpoCru, "utf8").digest("hex");
+  try {
+    return timingSafeEqual(Buffer.from(esperada, "hex"), Buffer.from(recebida, "hex"));
+  } catch {
+    return false;
+  }
 }
 
 const TIPO_POR_META: Record<string, TipoMensagem> = {

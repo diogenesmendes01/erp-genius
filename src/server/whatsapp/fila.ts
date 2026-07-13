@@ -4,8 +4,9 @@ import type { PassoRegua } from "@/server/cobrancas/regua";
 // FILA DE ENVIO ÚNICA / outbox (doc 26 §Camada 0): nenhuma automação envia direto — toda
 // origem (cron, lote aprovado, clique humano) grava uma INTENÇÃO aqui; só o despachante
 // drena. A idempotência por degrau mora no banco (@@unique [cobrancaId, passo]) e no ciclo
-// de vida: DESPACHADA/SIMULADA/PENDENTE não renascem; CANCELADA/FALHOU/ADIADA podem ser
-// re-enfileiradas (reset) — ex.: falha de driver corrigida, item reaprovado no lote.
+// de vida: PENDENTE/ENVIANDO (em voo) e DESPACHADA (enviada de fato) não renascem;
+// CANCELADA/FALHOU/ADIADA/SIMULADA reabrem (reset). SIMULADA reabrível é deliberado
+// (review PR #49): ensaio não cumpre degrau — ao sair do shadow, o envio real acontece.
 
 export interface EnfileirarCobranca {
   cobrancaId: string;
@@ -32,8 +33,8 @@ export async function enfileirarIntencaoCobranca(
   });
 
   if (existente) {
-    // PENDENTE já está na fila; DESPACHADA/SIMULADA = degrau já cumprido (idempotência).
-    if (["PENDENTE", "DESPACHADA", "SIMULADA"].includes(existente.status)) return "ja_existente";
+    // PENDENTE/ENVIANDO estão em voo; DESPACHADA = degrau cumprido (idempotência real).
+    if (["PENDENTE", "ENVIANDO", "DESPACHADA"].includes(existente.status)) return "ja_existente";
     await tx.intencaoMensagem.update({
       where: { id: existente.id },
       data: {
