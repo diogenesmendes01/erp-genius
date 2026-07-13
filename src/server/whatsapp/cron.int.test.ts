@@ -39,7 +39,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
   });
 
-  it("idempotência: segunda rodada não duplica a intenção", async () => {
+  it("idempotência: segunda rodada não duplica a intenção (SIMULADA reabre a MESMA linha)", async () => {
     const agora = agoraAs(10);
     await seedCanal();
     await seedCobranca({ vencimento: diasDepois(agora, 7) });
@@ -47,8 +47,11 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     await rodarCronRegua(agora);
     const r2 = await rodarCronRegua(agora);
     expect(r2.enfileiradas).toBe(0);
-    expect(r2.jaExistentes).toBe(1);
+    // SIMULADA não é terminal (review PR #49): o ensaio reabre e re-simula a mesma
+    // intenção — ao sair do shadow, o envio real acontece. Nunca nasce uma 2ª linha.
+    expect(r2.reabertas).toBe(1);
     expect(await prisma.intencaoMensagem.count()).toBe(1);
+    expect((await prisma.intencaoMensagem.findFirst())?.status).toBe("SIMULADA");
   });
 
   it("destino S2: responsável FINANCEIRO com telefone vence o telefone do aluno (Kids nunca o aluno)", async () => {
@@ -145,6 +148,29 @@ describe("despachante — guard-rails", () => {
     });
     expect(depois?.status).toBe("CANCELADA");
     expect(depois?.motivoFalha).toBe("conversa_viva");
+  });
+
+  it("claim ENVIANDO: em voo não é tocado; órfão (stale) vira FALHOU envio_interrompido", async () => {
+    const agora = agoraAs(10);
+    await seedCanal();
+    await seedCobranca({ vencimento: diasDepois(agora, 7) });
+    await rodarCronRegua(agora); // cria a intenção (SIMULADA no ensaio)
+
+    // Claim de outro worker, DENTRO do prazo → despachante não toca (nem re-simula).
+    await prisma.intencaoMensagem.updateMany({
+      data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + 600_000) },
+    });
+    await despacharFila(agora);
+    expect((await prisma.intencaoMensagem.findFirst())?.status).toBe("ENVIANDO");
+
+    // Claim órfão (prazo vencido = worker morreu no meio) → FALHOU com motivo, fila humana.
+    await prisma.intencaoMensagem.updateMany({
+      data: { despacharAposEm: new Date(agora.getTime() - 60_000) },
+    });
+    await despacharFila(agora);
+    const it2 = await prisma.intencaoMensagem.findFirst();
+    expect(it2?.status).toBe("FALHOU");
+    expect(it2?.motivoFalha).toBe("envio_interrompido");
   });
 
   it("retry de webhook não duplica mensagem (dedupe por providerMessageId)", async () => {

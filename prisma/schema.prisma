@@ -920,6 +920,7 @@ model MensagemWhatsApp {
 
 enum StatusIntencao {
   PENDENTE
+  ENVIANDO // claim atômico do despachante — evita envio duplo sob concorrência (review PR #49)
   DESPACHADA
   CANCELADA
   FALHOU

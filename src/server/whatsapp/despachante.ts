@@ -50,9 +50,20 @@ function diaSemanaLocal(data: Date, fuso: string): number {
   }
 }
 
+/** Prazo do claim: intenção ENVIANDO além disto = worker morreu no meio do envio. */
+const CLAIM_STALE_MS = 15 * 60_000;
+
 export async function despacharFila(agora: Date = new Date()): Promise<ResultadoDespacho> {
   const politicaPadrao = await carregarPoliticaRegua();
   const live = process.env.WHATSAPP_LIVE === "1";
+
+  // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
+  // vira FALHOU com motivo — o item volta à fila humana; nunca re-tenta sozinho, porque o
+  // driver PODE ter enviado antes da queda (só o humano decide se repete).
+  await prisma.intencaoMensagem.updateMany({
+    where: { status: "ENVIANDO", despacharAposEm: { lt: agora } },
+    data: { status: "FALHOU", motivoFalha: "envio_interrompido" },
+  });
 
   const intencoes = await prisma.intencaoMensagem.findMany({
     where: {
@@ -183,11 +194,12 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     }
 
     // 9. SHADOW (S8): política em ensaio (cron) ou ambiente sem WHATSAPP_LIVE=1 →
-    //    registra o que TERIA sido enviado, sem chamar driver.
+    //    registra o que TERIA sido enviado, sem chamar driver. SIMULADA não é terminal:
+    //    a fila reabre quando o canal sair do ensaio (review PR #49).
     const shadow = !live || (it.origem === "CRON" && politica.estado !== "ATIVA");
     if (shadow) {
-      await prisma.intencaoMensagem.update({
-        where: { id: it.id },
+      await prisma.intencaoMensagem.updateMany({
+        where: { id: it.id, status: it.status }, // não clobbera claim concorrente
         data: { status: "SIMULADA", despachadaEm: agora, motivoFalha: live ? null : "ambiente_sem_live" },
       });
       r.simuladas += 1;
@@ -201,7 +213,16 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
       continue;
     }
 
-    // 11. Envio real + gravação em transação (mensagem + evento de domínio + intenção).
+    // 11. CLAIM ATÔMICO (review PR #49): só quem mover a intenção para ENVIANDO chama o
+    //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
+    //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
+    const claim = await prisma.intencaoMensagem.updateMany({
+      where: { id: it.id, status: it.status },
+      data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+    });
+    if (claim.count === 0) continue; // outro worker levou — não conta em nada
+
+    // 12. Envio real + gravação em transação (mensagem + evento de domínio + intenção).
     try {
       const numeroCanal: NumeroCanal = {
         id: it.numero.id,
@@ -255,13 +276,19 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
         }
         await tx.intencaoMensagem.update({
           where: { id: it.id },
-          data: { status: "DESPACHADA", despachadaEm: agora, mensagemId: msg.id, motivoFalha: null },
+          data: {
+            status: "DESPACHADA",
+            despachadaEm: agora,
+            despacharAposEm: null,
+            mensagemId: msg.id,
+            motivoFalha: null,
+          },
         });
       });
       r.despachadas += 1;
     } catch (e) {
       const motivo = e instanceof ErroDriver ? e.motivo : "erro_inesperado";
-      await marcar(it.id, "FALHOU", motivo);
+      await falharClaim(it.id, motivo);
       r.falhas += 1;
     }
   }
@@ -300,13 +327,26 @@ function fusoDoDestino(it: IntencaoComDestino): string {
   return aluno?.fuso ?? aluno?.pais?.fuso ?? it.cobranca?.matricula.pais?.fuso ?? "America/Sao_Paulo";
 }
 
+// Marks dos guard-rails só transitam de estados "na fila" — nunca clobberam um claim
+// ENVIANDO de outro worker nem estados terminais (review PR #49).
 async function marcar(id: string, status: "CANCELADA" | "FALHOU", motivo: string): Promise<void> {
-  await prisma.intencaoMensagem.update({ where: { id }, data: { status, motivoFalha: motivo } });
+  await prisma.intencaoMensagem.updateMany({
+    where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
+    data: { status, motivoFalha: motivo },
+  });
 }
 
 async function adiar(id: string, ate: Date, motivo: string): Promise<void> {
-  await prisma.intencaoMensagem.update({
-    where: { id },
+  await prisma.intencaoMensagem.updateMany({
+    where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
     data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
+  });
+}
+
+/** Falha pós-claim: transita exclusivamente de ENVIANDO (o claim é deste worker). */
+async function falharClaim(id: string, motivo: string): Promise<void> {
+  await prisma.intencaoMensagem.updateMany({
+    where: { id, status: "ENVIANDO" },
+    data: { status: "FALHOU", motivoFalha: motivo },
   });
 }

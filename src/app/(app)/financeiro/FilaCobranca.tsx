@@ -383,6 +383,7 @@ function AcaoRapida({
 
 const ROTULO_ENVIO: Record<string, string> = {
   PENDENTE: "na fila de envio",
+  ENVIANDO: "enviando…",
   ADIADA: "na fila (aguardando janela)",
   DESPACHADA: "enviada via API",
   SIMULADA: "simulada (ensaio)",

@@ -5,11 +5,11 @@ import { MODOS_FABRICA, POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "../src/se
 // Seed do canal WhatsApp (doc 30 E1): templates de fábrica + política padrão da régua.
 // Idempotente (upsert por nome) e SEGURO: a política nasce DESLIGADA e sem número
 // remetente — nada dispara até o admin configurar e ligar (doc 27 §regra de ouro).
-// Rodar: npx tsx prisma/seed-whatsapp.ts
+//
+// É chamado pelo seed PRINCIPAL (prisma/seed.ts → ambiente novo já nasce completo,
+// review PR #49) e também roda sozinho: npm run seed:whatsapp
 
-const prisma = new PrismaClient();
-
-async function main() {
+export async function semearWhatsApp(prisma: PrismaClient): Promise<void> {
   // 1. Templates — fonte única dos textos (doc 29 regra 4).
   const templates = new Map<string, string>();
   for (const [nome, corpo] of Object.entries(TEXTOS_FABRICA)) {
@@ -20,7 +20,7 @@ async function main() {
     });
     templates.set(nome, t.id);
   }
-  console.log(`Templates: ${templates.size} garantidos.`);
+  console.log(`WhatsApp: ${templates.size} templates garantidos.`);
 
   // 2. Política padrão (DESLIGADA) + degraus de fábrica.
   const politica = await prisma.politicaRegua.upsert({
@@ -45,12 +45,17 @@ async function main() {
       update: {}, // não sobrescreve edições do admin
     });
   }
-  console.log(`Política "${POLITICA_COBRANCA_NOME}" garantida (estado DESLIGADA) com ${REGUA.length} degraus.`);
+  console.log(`WhatsApp: política "${POLITICA_COBRANCA_NOME}" garantida (DESLIGADA) com ${REGUA.length} degraus.`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+// Execução direta (npm run seed:whatsapp) — quando importado pelo seed.ts, não roda.
+const executadoDireto = process.argv[1]?.replace(/\\/g, "/").endsWith("prisma/seed-whatsapp.ts");
+if (executadoDireto) {
+  const prisma = new PrismaClient();
+  semearWhatsApp(prisma)
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(() => prisma.$disconnect());
+}
