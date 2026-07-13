@@ -28,6 +28,10 @@ function inputMatricula(leadId: string | undefined, cat: typeof catalogo) {
     leadId,
     alunoPrimeiroNome: "Maria",
     alunoSobrenome: "Rojas",
+    // Obrigatórios desde a resolução do schema (pós-40ea4ff) — este teste nunca tinha
+    // rodado porque a suíte não parseava com os conflict markers.
+    alunoGenero: "NAO_INFORMADO" as const,
+    alunoNascimento: "1990-05-10",
     alunoPaisId: cat.pais.id,
     alunoTipoDocumentoId: cat.pais.tiposDocumento[0].id,
     alunoDocumento: "1-2345-6789",
@@ -63,7 +67,7 @@ describe("criar + ativar matrícula (fluxo atômico)", () => {
     authMock.mockResolvedValue({ user: { id: admin.id } });
     const r = await criarEAtivarMatricula({
       matricula: inputMatricula(lead.id, catalogo),
-      ativacao: { valorRecebido: TAXA, forma: "TRANSFERENCIA" },
+      ativacao: { valorRecebido: TAXA, forma: "TRANSFERENCIA", dataPagamento: "2026-06-01", comprovanteUrl: "uploads/comprovante-teste.pdf" },
     });
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
     const matriculaId = r.ok ? r.dado!.id : "";
@@ -115,7 +119,7 @@ describe("criar + ativar matrícula (fluxo atômico)", () => {
     authMock.mockResolvedValue({ user: { id: admin.id } });
     const r = await criarEAtivarMatricula({
       matricula: inputMatricula(undefined, catalogo),
-      ativacao: { valorRecebido: TAXA - 1, forma: "TRANSFERENCIA" }, // não cobre a taxa
+      ativacao: { valorRecebido: TAXA - 1, forma: "TRANSFERENCIA", dataPagamento: "2026-06-01", comprovanteUrl: "uploads/comprovante-teste.pdf" }, // não cobre a taxa
     });
 
     expect(r.ok).toBe(false);
@@ -127,7 +131,7 @@ describe("criar + ativar matrícula (fluxo atômico)", () => {
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     const r = await criarEAtivarMatricula({
       matricula: inputMatricula(undefined, catalogo),
-      ativacao: { valorRecebido: TAXA, forma: "TRANSFERENCIA" },
+      ativacao: { valorRecebido: TAXA, forma: "TRANSFERENCIA", dataPagamento: "2026-06-01", comprovanteUrl: "uploads/comprovante-teste.pdf" },
     });
     expect(r.ok).toBe(false);
   });
