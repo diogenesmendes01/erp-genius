@@ -1,4 +1,11 @@
-import { ErroDriver, type CanalWhatsApp, type EnvioTemplate, type NumeroCanal, type ResultadoEnvio } from "../canal";
+import {
+  ErroDriver,
+  type CanalWhatsApp,
+  type EnvioMidia,
+  type EnvioTemplate,
+  type NumeroCanal,
+  type ResultadoEnvio,
+} from "../canal";
 
 // Driver NÃO-OFICIAL — Baileys via Evolution API self-hosted (doc 26 §Motores).
 // Credenciais por env: EVOLUTION_URL + EVOLUTION_APIKEY. A instância (1 por número) vem do
@@ -7,8 +14,8 @@ import { ErroDriver, type CanalWhatsApp, type EnvioTemplate, type NumeroCanal, t
 
 async function chamarEvolution(
   numero: NumeroCanal,
-  paraE164: string,
-  corpo: string,
+  rota: string,
+  body: Record<string, unknown>,
 ): Promise<ResultadoEnvio> {
   const base = process.env.EVOLUTION_URL;
   const apikey = process.env.EVOLUTION_APIKEY;
@@ -19,10 +26,10 @@ async function chamarEvolution(
 
   let resposta: Response;
   try {
-    resposta = await fetch(`${base.replace(/\/$/, "")}/message/sendText/${numero.providerRef}`, {
+    resposta = await fetch(`${base.replace(/\/$/, "")}/${rota}/${numero.providerRef}`, {
       method: "POST",
       headers: { apikey, "Content-Type": "application/json" },
-      body: JSON.stringify({ number: paraE164.replace(/\D/g, ""), text: corpo }),
+      body: JSON.stringify(body),
     });
   } catch (e) {
     throw new ErroDriver("evolution_rede", e instanceof Error ? e.message : "Falha de rede na Evolution API.");
@@ -40,13 +47,42 @@ async function chamarEvolution(
   return { providerMessageId: id };
 }
 
+// mediatype da Evolution para os tipos não-áudio (áudio tem rota própria, vira PTT).
+const MEDIATYPE: Record<Exclude<EnvioMidia["tipo"], "AUDIO">, string> = {
+  IMAGEM: "image",
+  VIDEO: "video",
+  DOCUMENTO: "document",
+};
+
 export const driverEvolution: CanalWhatsApp = {
   async enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string): Promise<ResultadoEnvio> {
-    return chamarEvolution(numero, paraE164, corpo);
+    return chamarEvolution(numero, "message/sendText", {
+      number: paraE164.replace(/\D/g, ""),
+      text: corpo,
+    });
   },
 
   async enviarTemplate(numero: NumeroCanal, paraE164: string, t: EnvioTemplate): Promise<ResultadoEnvio> {
     // Baileys não tem ciclo de template: envia o corpo já renderizado como texto.
-    return chamarEvolution(numero, paraE164, t.corpoRenderizado);
+    return chamarEvolution(numero, "message/sendText", {
+      number: paraE164.replace(/\D/g, ""),
+      text: t.corpoRenderizado,
+    });
+  },
+
+  async enviarMidia(numero: NumeroCanal, paraE164: string, m: EnvioMidia): Promise<ResultadoEnvio> {
+    const number = paraE164.replace(/\D/g, "");
+    if (m.tipo === "AUDIO") {
+      // Rota própria: vira mensagem de voz (PTT) — sem legenda no protocolo.
+      return chamarEvolution(numero, "message/sendWhatsAppAudio", { number, audio: m.dadosBase64 });
+    }
+    return chamarEvolution(numero, "message/sendMedia", {
+      number,
+      mediatype: MEDIATYPE[m.tipo],
+      mimetype: m.mime,
+      media: m.dadosBase64,
+      fileName: m.nomeArquivo,
+      ...(m.legenda ? { caption: m.legenda } : {}),
+    });
   },
 };

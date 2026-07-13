@@ -23,6 +23,20 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR],
   },
   {
+    // Inbox WhatsApp (doc 26 §Camada 3): escopo real é por NÚMERO (whatsapp/escopo.ts);
+    // o menu é só UX. Vendas (dono do número) + cobrança (respostas da régua).
+    href: "/inbox",
+    label: "Inbox",
+    icon: "MessageCircle",
+    papeis: [
+      Papel.ADMINISTRADOR,
+      Papel.GERENTE_COMERCIAL,
+      Papel.VENDEDOR,
+      Papel.FINANCEIRO,
+      Papel.SECRETARIA_ACADEMICA,
+    ],
+  },
+  {
     href: "/alunos",
     label: "Alunos",
     icon: "UserCheck",

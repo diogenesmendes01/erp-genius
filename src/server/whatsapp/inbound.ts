@@ -1,13 +1,15 @@
 import type { DriverWhatsApp, StatusMensagem, TipoMensagem } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { registrarEvento } from "@/server/_shared/evento";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
 // - dedupe por (numeroId, providerMessageId) — retries de webhook não duplicam (S7);
 // - fromMe TAMBÉM entra no log (gap 16: mensagem do app do celular vira SAIDA sem origem);
-// - inbound cancela intenções automáticas anteriores (lei do despachante, no ingresso).
+// - inbound cancela intenções automáticas anteriores (lei do despachante, no ingresso);
+// - keyword de opt-out marca o contato no ingresso (S10 — a LEI já vive no despachante).
 
 export interface InboundNormalizado {
   /** Identifica o número da escola: providerRef (phone_number_id/instância) ou telefone E.164. */
@@ -19,10 +21,22 @@ export interface InboundNormalizado {
   providerMessageId: string;
   corpo: string | null;
   tipo: TipoMensagem;
+  /** URL canônica /api/files/... do binário já baixado pelo webhook (E3 — gap A3). */
+  midiaPath?: string | null;
   driver: DriverWhatsApp;
   /** true = mensagem enviada pela escola FORA do ERP (app do celular / outro aparelho). */
   fromMe: boolean;
   quando: Date;
+}
+
+// Captura de opt-out por keyword (doc 30 S10, UI/captura na E3): match EXATO e
+// conservador — frase solta que contenha a palavra não conta (falso positivo mataria a
+// régua de um contato que disse "vou parar de atrasar").
+const KEYWORDS_OPT_OUT = new Set(["sair", "parar", "stop", "baja", "no enviar", "unsubscribe"]);
+
+export function ehPedidoOptOut(corpo: string | null): boolean {
+  if (!corpo) return false;
+  return KEYWORDS_OPT_OUT.has(corpo.trim().toLowerCase());
 }
 
 export type ResultadoInbound = "gravada" | "duplicada" | "numero_desconhecido";
@@ -56,6 +70,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           direcao: m.fromMe ? "SAIDA" : "ENTRADA",
           tipo: m.tipo,
           corpo: m.corpo,
+          midiaPath: m.midiaPath ?? null,
           status: m.fromMe ? "ENVIADA" : "ENTREGUE",
           statusEm: m.quando,
           driver: m.driver,
@@ -85,6 +100,22 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           },
           data: { status: "CANCELADA", motivoFalha: "conversa_viva" },
         });
+
+        // Opt-out por keyword (S10): marca o contato + evento auditável (autor = sistema).
+        // A LEI que respeita o opt-out já mora no despachante; aqui é só a captura.
+        if (!contato.optOutEm && ehPedidoOptOut(m.corpo)) {
+          await tx.contatoWhatsApp.update({
+            where: { id: contato.id },
+            data: { optOutEm: m.quando },
+          });
+          await registrarEvento(tx, {
+            tipo: "OptOutRegistrado",
+            agregadoTipo: "ContatoWhatsApp",
+            agregadoId: contato.id,
+            autorId: null,
+            payload: { via: "keyword", palavra: (m.corpo ?? "").trim().toLowerCase() },
+          });
+        }
       }
     });
     return "gravada";
