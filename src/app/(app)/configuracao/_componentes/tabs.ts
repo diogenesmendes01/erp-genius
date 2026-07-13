@@ -17,6 +17,8 @@ export const CONFIG_TABS: ConfigTab[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO],
   },
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
+  // Canal WhatsApp (docs 26/30 E3/E4): números, templates e política da régua — admin.
+  { href: "/configuracao/whatsapp", label: "WhatsApp", papeis: [Papel.ADMINISTRADOR] },
 ];
 
 export function tabsParaPapeis(papeis: Papel[]): ConfigTab[] {

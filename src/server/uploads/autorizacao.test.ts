@@ -4,10 +4,15 @@ import { Papel } from "@prisma/client";
 // Mock do client Prisma — testamos a regra de escopo sem DB real.
 const cobrancaFindFirst = vi.fn();
 const documentoFindFirst = vi.fn();
+const mensagemFindFirst = vi.fn(async () => null);
+const intencaoFindFirst = vi.fn(async () => null);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findFirst: (...a: unknown[]) => cobrancaFindFirst(...a) },
     documento: { findFirst: (...a: unknown[]) => documentoFindFirst(...a) },
+    // 3º ramo (E3): mídia de mensagem WhatsApp — null = a URL não é mídia do canal.
+    mensagemWhatsApp: { findFirst: () => mensagemFindFirst() },
+    intencaoMensagem: { findFirst: () => intencaoFindFirst() },
   },
 }));
 

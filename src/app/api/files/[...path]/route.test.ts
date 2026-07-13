@@ -9,11 +9,16 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 const cobrancaFindFirst = vi.fn();
 const documentoFindFirst = vi.fn();
 const usuarioFindUnique = vi.fn();
+const mensagemFindFirst = vi.fn(async () => null);
+const intencaoFindFirst = vi.fn(async () => null);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findFirst: (...a: unknown[]) => cobrancaFindFirst(...a) },
     documento: { findFirst: (...a: unknown[]) => documentoFindFirst(...a) },
     usuario: { findUnique: (...a: unknown[]) => usuarioFindUnique(...a) },
+    // 3º ramo (E3): mídia de mensagem WhatsApp — null = a URL não é mídia do canal.
+    mensagemWhatsApp: { findFirst: (...a: unknown[]) => mensagemFindFirst() },
+    intencaoMensagem: { findFirst: (...a: unknown[]) => intencaoFindFirst() },
   },
 }));
 

@@ -15,6 +15,7 @@ import {
   IconSchool,
   IconSun,
   IconMoon,
+  IconMessageCircle,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis } from "@/lib/nav";
@@ -28,6 +29,7 @@ const ICONS: Record<string, Icone> = {
   UserCheck: IconUserCheck,
   Wallet: IconWallet,
   Settings: IconSettings,
+  MessageCircle: IconMessageCircle,
 };
 
 function ThemeToggle() {
@@ -55,7 +57,16 @@ function ThemeToggle() {
   );
 }
 
-export function Sidebar({ papeis, nome }: { papeis: string[]; nome: string }) {
+export function Sidebar({
+  papeis,
+  nome,
+  naoLidasInbox = 0,
+}: {
+  papeis: string[];
+  nome: string;
+  /** Notificação básica da inbox (doc 30 E3): soma de não-lidas no escopo do usuário. */
+  naoLidasInbox?: number;
+}) {
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
 
@@ -82,7 +93,12 @@ export function Sidebar({ papeis, nome }: { papeis: string[]; nome: string }) {
               }
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/inbox" && naoLidasInbox > 0 && (
+                <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                  {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
+                </span>
+              )}
             </Link>
           );
         })}
