@@ -82,7 +82,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `DescontoSolicitado` | Vendedor pede acima do limite | Vendedor | `{ percentual, vigencia, aprovacaoId }` |
 | `AprovacaoDecidida` | Aprova/rejeita ajuste | Gerente Com./Admin | `{ status, motivo? }` |
 | `ComissaoPaga` | Fechar mês de comissões | Financeiro | `{ pagaEm, valor }` |
-| `CobrancaEnviadaWhatsApp` | "Abrir no WhatsApp" (wa.me) — registra o **degrau da régua** cumprido (doc 24) | Financeiro/Secretaria | `{ modelo, passo? }` |
+| `CobrancaEnviadaWhatsApp` | Degrau da régua cumprido (doc 24) — braço humano (wa.me) OU despachante da API (docs 26/30). **v2**: payload ganhou `canal`; autor `null` = cron. O evento **não** carrega driver — driver mora no log `MensagemWhatsApp` (doc 29 regras 2/3) | Financeiro/Secretaria · Sistema | `{ modelo, passo?, canal: "manual"\|"api" }` (v2) |
 | `PromessaPagamento` | Aluno prometeu pagar até uma data — adormece a cobrança na fila (doc 24) | Financeiro/Secretaria | `{ ate }` |
 | `AcessoBloqueado` | Bloqueio de acesso à aula (degrau D+15, **aprovação humana**) — agregado `Matricula` | Gerente Com./Admin | `{ cobrancaId?, motivo? }` |
 | `AcessoDesbloqueado` | Reversão do bloqueio — agregado `Matricula` | Gerente Com./Admin | `{ motivo? }` |
@@ -91,6 +91,13 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > **Reservados (planejados — gatilho ainda não disparado no código):** `ValorNegociado`,
 > `MatriculaAtivadaComPendencia`, `MatriculaCancelada`, `ComissaoEstornada`.
 > Mantidos no catálogo porque o roadmap (Fase 1/2) os ativa; ao implementar, manter o padrão.
+>
+> **Reservados do canal WhatsApp (doc 30, etapas E2–E4):** `OptOutRegistrado` (agregado
+> `ContatoWhatsApp`), `NumeroWhatsAppConectado`/`SessaoBaileysCaiu` (`NumeroWhatsApp`),
+> `TemplateSubmetido`/`TemplateAprovado`/`TemplateRejeitado` (`TemplateWhatsApp`),
+> `PoliticaReguaAlterada { antes, depois }` (`PoliticaRegua`). Os agregados novos já estão
+> no union `AgregadoTipo` (`_shared/evento.ts`). `Conversa`/`Mensagem` **não** são agregados
+> de Evento: tabelas operacionais (doc 29 regra 3).
 
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |

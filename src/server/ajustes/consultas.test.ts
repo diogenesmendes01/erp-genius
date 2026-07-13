@@ -9,6 +9,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     aluno: { findFirst: (...a: unknown[]) => findFirst(...a) },
     evento: { findMany: () => Promise.resolve([]) },
+    // Política como dado (doc 26/30): sem registro → montarReguaPorCobranca usa a de fábrica.
+    politicaRegua: { findFirst: () => Promise.resolve(null) },
   },
 }));
 

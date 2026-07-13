@@ -75,9 +75,10 @@ nunca "perde" um item por dia pulado — isso protege a suposição de adoção.
 ## Fases
 - **V1 (agora):** cérebro completo + tela (dash/lista/detalhe) + braço humano (`wa.me`) +
   eventos `{ passo }`/`PromessaPagamento`/bloqueio-com-aprovação. Manual, mas pronto pra automatizar.
-- **V2 (futuro, [`08`](08-comercial-crm-whatsapp.md) §automação):** braço automático (cron +
+- **V2 (escopo fechado em [`26`](26-whatsapp-v1.md)):** braço automático (cron +
   WhatsApp API) dispara os lembretes preventivos; o humano só entra nos itens de julgamento
-  (cobranças, promessas, bloqueios, respostas).
+  (cobranças, promessas, bloqueios, respostas). A régua vira **configurável pelo admin**
+  (política como dado) e o lote por degrau entra (a API elimina o bloqueio de popup).
 
 ## Fora de escopo do V1 (estacionado)
 Score de risco sofisticado · régua diferenciada por risco (bom pagador vs reincidente) · régua

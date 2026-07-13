@@ -27,7 +27,9 @@ export const REGUA: readonly DegrauRegua[] = [
   { passo: "D+15", offsetDias: 15, tipo: "bloquear", template: "firme", rotulo: "Bloqueio de acesso · 15 dias" },
 ] as const;
 
-const ULTIMO_OFFSET = REGUA[REGUA.length - 1].offsetDias;
+// (doc 26/30) A REGUA acima é o DEFAULT DE FÁBRICA. Em runtime a política pode vir do banco
+// (PoliticaRegua/DegrauPolitica — ver ./politica.ts); o cérebro recebe os degraus como
+// parâmetro e continua puro. Pressuposto mantido: ordem CRESCENTE de offset.
 
 export type EstadoCobranca =
   | "quitada" // paga/cancelada — fora da régua
@@ -84,7 +86,11 @@ function prioridadeDe(d: DegrauRegua): number {
  * - BACKLOG: um degrau cuja data já passou e não foi feito continua devido (atrasadaNaAcao=true)
  *   até ser cumprido ou superado pelo próximo — dias pulados nunca "somem".
  */
-export function proximaAcao(entrada: EntradaRegua, hoje: Date): ResultadoRegua {
+export function proximaAcao(
+  entrada: EntradaRegua,
+  hoje: Date,
+  politica: readonly DegrauRegua[] = REGUA,
+): ResultadoRegua {
   const diasAtraso = diferencaEmDias(hoje, entrada.vencimento);
   const promessaAte = entrada.promessaAte ?? null;
 
@@ -96,13 +102,16 @@ export function proximaAcao(entrada: EntradaRegua, hoje: Date): ResultadoRegua {
     return { estado: "promessa", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 900, promessaAte };
   }
 
+  // Política vazia (todos os degraus desativados) → nunca há ação devida nem conclusão.
+  const ultimoOffset = politica.length ? politica[politica.length - 1].offsetDias : Infinity;
+
   const feitos = new Set(entrada.passosFeitos);
   // Degraus que já chegaram (offset ≤ diasAtraso) e ainda não foram cumpridos.
-  const devidos = REGUA.filter((d) => d.offsetDias <= diasAtraso && !feitos.has(d.passo));
+  const devidos = politica.filter((d) => d.offsetDias <= diasAtraso && !feitos.has(d.passo));
 
   if (devidos.length === 0) {
-    const todosCumpridos = REGUA.every((d) => d.offsetDias > diasAtraso || feitos.has(d.passo));
-    if (diasAtraso >= ULTIMO_OFFSET && todosCumpridos) {
+    const todosCumpridos = politica.every((d) => d.offsetDias > diasAtraso || feitos.has(d.passo));
+    if (diasAtraso >= ultimoOffset && todosCumpridos) {
       return { estado: "concluida", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 800, promessaAte };
     }
     // Nada a fazer ainda: ou antes do D-7, ou os degraus que chegaram já foram feitos.

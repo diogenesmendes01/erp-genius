@@ -1,5 +1,6 @@
 import { PrismaClient, Papel, Segmento, TipoCobranca, StatusPais } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { semearWhatsApp } from "./seed-whatsapp";
 
 const prisma = new PrismaClient();
 
@@ -161,6 +162,9 @@ async function seedCatalogo() {
   }
 
   console.log(`Catálogo: ${paisesData.length} países · 1 idioma · ${niveis.length} níveis · ${modalidadesData.length} modalidades · preços de exemplo.`);
+
+  // Canal WhatsApp (doc 30): templates + política padrão (nasce DESLIGADA — nada dispara).
+  await semearWhatsApp(prisma);
 }
 
 main()

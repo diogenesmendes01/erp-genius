@@ -44,15 +44,18 @@ model Usuario {
   ultimoAcesso      DateTime?
   criadoEm          DateTime  @default(now())
 
-  leads         Lead[]              @relation("VendedorLeads")
-  experimentais Lead[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
-  turmas        Turma[]             @relation("ProfessorTurmas")
-  comissoes     Comissao[]
-  eventos       Evento[]            @relation("AutorEventos")
-  aprovacoes    Aprovacao[]         @relation("SolicitanteAprovacoes")
-  aprovadasPor  Aprovacao[]         @relation("AprovadorAprovacoes")
-  ajustes       AjusteFinanceiro[]  @relation("AutorAjustes")
-  movimentacoes MovimentacaoAluno[] @relation("AutorMovimentacoes")
+  leads             Lead[]              @relation("VendedorLeads")
+  experimentais     Lead[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
+  turmas            Turma[]             @relation("ProfessorTurmas")
+  comissoes         Comissao[]
+  eventos           Evento[]            @relation("AutorEventos")
+  aprovacoes        Aprovacao[]         @relation("SolicitanteAprovacoes")
+  aprovadasPor      Aprovacao[]         @relation("AprovadorAprovacoes")
+  ajustes           AjusteFinanceiro[]  @relation("AutorAjustes")
+  movimentacoes     MovimentacaoAluno[] @relation("AutorMovimentacoes")
+  numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
+  mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
+  intencoesWhatsApp IntencaoMensagem[]  @relation("AutorIntencoesWhatsApp")
 }
 
 // ============================================================
@@ -190,16 +193,16 @@ model PrecoReferencia {
   versaoEstudo String?
   vigenteDesde DateTime     @default(now())
   criadoEm     DateTime     @default(now())
+  // Proteção lógica: no máximo UM preço ATIVO por combinação
+  // (país + produto + modalidade + tipo de cobrança). Como Prisma não suporta
+  // índice único parcial, ele é criado por SQL na migration
+  // 20260622120000_preco_ativo_unico (partial unique index WHERE ativo).
 
   // Integridade (issue #1): no máx. UM preço ATIVO por país+produto+modalidade+tipoCobrança.
   // Índice único PARCIAL (só ativo=true) — mora na migration `integridade_alocacao_preco`
   // (UNIQUE ... WHERE "ativo"). O histórico desativado (supersede) permanece livre.
   @@index([paisId, produtoId, modalidadeId, tipoCobranca])
   @@index([ativo])
-  // Proteção lógica: no máximo UM preço ATIVO por combinação
-  // (país + produto + modalidade + tipo de cobrança). Como Prisma não suporta
-  // índice único parcial, ele é criado por SQL na migration
-  // 20260622120000_preco_ativo_unico (partial unique index WHERE ativo).
 }
 
 // ============================================================
@@ -214,30 +217,30 @@ enum StatusTurma {
 }
 
 model Turma {
-  id           String      @id @default(cuid())
-  codigo       String?     @unique // T-000001
-  nome         String? // nome livre da turma (a escola batiza como quiser: "Salvador", "Particular Ronny"...)
-  modalidadeId String
-  modalidade   Modalidade  @relation(fields: [modalidadeId], references: [id])
-  nivelId      String
-  nivel        Nivel       @relation(fields: [nivelId], references: [id])
-  professorId  String?
-  professor    Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
-  online       Boolean     @default(true) // online (hoje) × presencial (futuro) — não há "sede" física
+  id            String      @id @default(cuid())
+  codigo        String?     @unique // T-000001
+  nome          String? // nome livre da turma (a escola batiza como quiser: "Salvador", "Particular Ronny"...)
+  modalidadeId  String
+  modalidade    Modalidade  @relation(fields: [modalidadeId], references: [id])
+  nivelId       String
+  nivel         Nivel       @relation(fields: [nivelId], references: [id])
+  professorId   String?
+  professor     Usuario?    @relation("ProfessorTurmas", fields: [professorId], references: [id])
+  online        Boolean     @default(true) // online (hoje) × presencial (futuro) — não há "sede" física
   // Agenda da turma (calendário real — doc 06): dias da semana + horário. O nº de dias
   // deve casar com a frequência da modalidade (1x/2x/3x/5x por semana). `diasHorario` é o
   // rótulo DERIVADO (ex.: "Seg, Qua, Sex · 19:00") mantido para exibição/compat.
-  diasSemana    Int[]      @default([]) // 0=Dom · 1=Seg … 6=Sáb
+  diasSemana    Int[]       @default([]) // 0=Dom · 1=Seg … 6=Sáb
   horarioInicio String? // "HH:MM" — início da aula
   horarioFim    String? // "HH:MM" — fim da aula
   diasHorario   String? // rótulo derivado (ex.: "Seg, Qua, Sex · 19:00–21:00"); null em turmas antigas
-  dataInicio   DateTime?
-  dataFim      DateTime?
-  cronograma   String?
-  capacidade   Int         @default(16)
-  status       StatusTurma @default(PLANEJADA)
-  rolling      Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
-  criadoEm     DateTime    @default(now())
+  dataInicio    DateTime?
+  dataFim       DateTime?
+  cronograma    String?
+  capacidade    Int         @default(16)
+  status        StatusTurma @default(PLANEJADA)
+  rolling       Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
+  criadoEm      DateTime    @default(now())
 
   alocacoes AlocacaoTurma[]
 }
@@ -279,24 +282,24 @@ enum Escolaridade {
 // Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
 // (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
-  id              String      @id @default(cuid())
-  codigo          String?     @unique // A-000001
+  id     String  @id @default(cuid())
+  codigo String? @unique // A-000001
 
   // Identificação (doc 09 §Identificação). `nome` foi dividido em primeiroNome+sobrenome
   // na migration `aluno_cadastro_completo` (backfill: split no 1º espaço).
-  primeiroNome    String
-  sobrenome       String?
-  nomePreferido   String?
-  nascimento      DateTime?
-  genero          Genero?
+  primeiroNome  String
+  sobrenome     String?
+  nomePreferido String?
+  nascimento    DateTime?
+  genero        Genero?
 
   // Documentação — país dirige o tipo de documento e a validação (doc 04).
-  paisId          String
-  pais            Pais           @relation(fields: [paisId], references: [id])
-  tipoDocumentoId String?
-  tipoDocumento   TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id])
-  documento       String? // número do documento
-  documentoValido Boolean        @default(false)
+  paisId               String
+  pais                 Pais           @relation(fields: [paisId], references: [id])
+  tipoDocumentoId      String?
+  tipoDocumento        TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id])
+  documento            String? // número do documento
+  documentoValido      Boolean        @default(false)
   documentoPaisEmissor String? // ISO 3166 (opcional) — permite documento estrangeiro
   nacionalidade        String? // ISO 3166
   segundaNacionalidade String? // ISO 3166 (opcional)
@@ -329,10 +332,13 @@ model Aluno {
   status   StatusAluno @default(ATIVO)
   criadoEm DateTime    @default(now())
 
-  responsaveis  AlunoResponsavel[]
-  matriculas    Matricula[]
-  alocacoes     AlocacaoTurma[]
-  movimentacoes MovimentacaoAluno[]
+  responsaveis     AlunoResponsavel[]
+  matriculas       Matricula[]
+  alocacoes        AlocacaoTurma[]
+  movimentacoes    MovimentacaoAluno[]
+  contatosWhatsApp ContatoWhatsApp[]
+
+  @@index([telefoneE164])
 }
 
 model Responsavel {
@@ -342,7 +348,10 @@ model Responsavel {
   telefoneE164 String?
   email        String?
 
-  alunos AlunoResponsavel[]
+  alunos           AlunoResponsavel[]
+  contatosWhatsApp ContatoWhatsApp[]
+
+  @@index([telefoneE164])
 }
 
 enum PapelResponsavel {
@@ -492,8 +501,11 @@ model Lead {
   ultimaCobranca DateTime?
   criadoEm       DateTime     @default(now())
 
-  matricula  Matricula?
-  documentos Documento[]
+  matricula        Matricula?
+  documentos       Documento[]
+  contatosWhatsApp ContatoWhatsApp[]
+
+  @@index([telefoneE164])
 }
 
 enum CategoriaDocumento {
@@ -531,44 +543,44 @@ enum StatusMatricula {
 }
 
 model Matricula {
-  id                    String          @id @default(cuid())
-  alunoId               String
-  aluno                 Aluno           @relation(fields: [alunoId], references: [id])
-  leadId                String?         @unique
-  lead                  Lead?           @relation(fields: [leadId], references: [id])
-  produtoId             String
-  produto               Produto         @relation(fields: [produtoId], references: [id])
-  paisId                String
-  pais                  Pais            @relation(fields: [paisId], references: [id])
-  codigo                String?         @unique // M-000001
-  moeda                 String
-  status                StatusMatricula @default(RASCUNHO)
-  diaVencimento         Int             @default(5)
-  mesesPlano            Int             @default(12) // p/ gerar o cronograma na ativação
+  id                     String          @id @default(cuid())
+  alunoId                String
+  aluno                  Aluno           @relation(fields: [alunoId], references: [id])
+  leadId                 String?         @unique
+  lead                   Lead?           @relation(fields: [leadId], references: [id])
+  produtoId              String
+  produto                Produto         @relation(fields: [produtoId], references: [id])
+  paisId                 String
+  pais                   Pais            @relation(fields: [paisId], references: [id])
+  codigo                 String?         @unique // M-000001
+  moeda                  String
+  status                 StatusMatricula @default(RASCUNHO)
+  diaVencimento          Int             @default(5)
+  mesesPlano             Int             @default(12) // p/ gerar o cronograma na ativação
   // Gatilho de ativação (decisão P7, doc 15): ATIVA exige os três true.
-  contratoOk            Boolean         @default(false)
-  pagamentoTaxaOk       Boolean         @default(false)
-  primeiraMensalidadeOk Boolean         @default(false)
+  contratoOk             Boolean         @default(false)
+  pagamentoTaxaOk        Boolean         @default(false)
+  primeiraMensalidadeOk  Boolean         @default(false)
   // Exceção: Admin/Gerente pode ativar com pendência (registra o porquê em Evento).
-  ativadaComPendencia   Boolean         @default(false)
+  ativadaComPendencia    Boolean         @default(false)
   // Exceção de preço auditável (Issues #7/#22): matrícula criada SEM preço de
   // referência ATIVO para a combinação país × produto × tipo de cobrança, por
   // exceção justificada + aprovada. Exige justificativa e grava Evento
   // `MatriculaSemPrecoReferencia`. Permite operar países/produtos sem matriz de
   // preços fechada (doc 06 §Em aberto) sem perder a auditoria.
-  precoReferenciaAusente Boolean        @default(false)
+  precoReferenciaAusente Boolean         @default(false)
   justificativaSemPreco  String?
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
-  nivelInicialId        String?
-  origemNivel           OrigemNivel?
-  dataAvaliacaoNivel    DateTime?
-  criadoEm              DateTime        @default(now())
-  ativadaEm             DateTime?
+  nivelInicialId         String?
+  origemNivel            OrigemNivel?
+  dataAvaliacaoNivel     DateTime?
+  criadoEm               DateTime        @default(now())
+  ativadaEm              DateTime?
   // Bloqueio de acesso à aula (régua de cobrança D+15, doc 24). Flag ortogonal ao status:
   // a matrícula segue ATIVA, só perde acesso. Exige aprovação humana (Gerente Com./Admin);
   // o enforcement técnico (barrar entrada na aula) é Fase 1+ — aqui grava-se a decisão.
-  acessoBloqueado       Boolean         @default(false)
-  bloqueadoEm           DateTime?
+  acessoBloqueado        Boolean         @default(false)
+  bloqueadoEm            DateTime?
 
   cobrancas Cobranca[]
   comissoes Comissao[]
@@ -595,25 +607,27 @@ enum FormaPagamento {
 }
 
 model Cobranca {
-  id             String          @id @default(cuid())
-  codigo         String?         @unique // C-000001
-  matriculaId    String
-  matricula      Matricula       @relation(fields: [matriculaId], references: [id])
-  tipo           TipoCobranca
-  competencia    String? // "2026-06" para mensalidades
-  valorOriginal  Decimal         @db.Decimal(12, 2)
-  valorNegociado Decimal         @db.Decimal(12, 2)
-  valorRecebido  Decimal?        @db.Decimal(12, 2)
-  saldo          Decimal?        @db.Decimal(12, 2) // valorNegociado - valorRecebido
-  moeda          String
-  vencimento     DateTime
-  status         StatusCobranca  @default(PENDENTE)
-  pagoEm         DateTime?
-  formaPagamento FormaPagamento?
-  comprovanteUrl String?
+  id              String          @id @default(cuid())
+  codigo          String?         @unique // C-000001
+  matriculaId     String
+  matricula       Matricula       @relation(fields: [matriculaId], references: [id])
+  tipo            TipoCobranca
+  competencia     String? // "2026-06" para mensalidades
+  valorOriginal   Decimal         @db.Decimal(12, 2)
+  valorNegociado  Decimal         @db.Decimal(12, 2)
+  valorRecebido   Decimal?        @db.Decimal(12, 2)
+  saldo           Decimal?        @db.Decimal(12, 2) // valorNegociado - valorRecebido
+  moeda           String
+  vencimento      DateTime
+  status          StatusCobranca  @default(PENDENTE)
+  pagoEm          DateTime?
+  formaPagamento  FormaPagamento?
+  comprovanteUrl  String?
   comprovanteNome String?
-  comentario     String?
-  criadoEm       DateTime        @default(now())
+  comentario      String?
+  criadoEm        DateTime        @default(now())
+
+  intencoesWhatsApp IntencaoMensagem[]
 }
 
 enum StatusComissao {
@@ -766,4 +780,262 @@ model Evento {
 model Contador {
   chave String @id // "lead", "aluno", "matricula", "cobranca", "turma"
   valor Int    @default(0)
+}
+
+// ============================================================
+// WHATSAPP — canal bimotor (docs 26/29/30)
+// Regra (doc 29 §3): estas são tabelas OPERACIONAIS (mutáveis, alto volume);
+// o Evento grava só fatos de negócio (degrau cumprido, opt-out, ciclo de template).
+// ============================================================
+
+enum DriverWhatsApp {
+  META_CLOUD
+  BAILEYS
+}
+
+enum FinalidadeNumero {
+  COBRANCA
+  VENDAS
+}
+
+enum SessaoNumero {
+  DESCONECTADO
+  AGUARDANDO_QR
+  CONECTADO
+  CAIU
+}
+
+model NumeroWhatsApp {
+  id           String           @id @default(cuid())
+  telefoneE164 String           @unique
+  rotulo       String // "Cobrança", "Vendas — Ana"
+  driver       DriverWhatsApp
+  finalidade   FinalidadeNumero
+  providerRef  String? // META_CLOUD: phone_number_id · BAILEYS: nome da instância Evolution
+  sessao       SessaoNumero     @default(DESCONECTADO) // relevante só p/ BAILEYS
+  donoId       String? // dono da conversa = dono do número (doc 26 §Camada 3)
+  dono         Usuario?         @relation("DonoNumerosWhatsApp", fields: [donoId], references: [id])
+  ativo        Boolean          @default(true)
+  criadoEm     DateTime         @default(now())
+
+  conversas ConversaWhatsApp[]
+  mensagens MensagemWhatsApp[]
+  intencoes IntencaoMensagem[]
+  politicas PoliticaRegua[]
+}
+
+model ContatoWhatsApp {
+  id           String  @id @default(cuid())
+  telefoneE164 String  @unique // 1ª unicidade de telefone do sistema (doc 29) — embrião da entidade Pessoa (comentário do topo)
+  waId         String? @unique
+  nomeExibicao String?
+
+  // Vínculos opcionais — um contato pode ser responsável E lead ao mesmo tempo.
+  alunoId       String?
+  aluno         Aluno?       @relation(fields: [alunoId], references: [id])
+  responsavelId String?
+  responsavel   Responsavel? @relation(fields: [responsavelId], references: [id])
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+
+  optOutEm DateTime? // LEI: opt-out sempre respeitado pelo despachante (doc 26/30 S10)
+  criadoEm DateTime  @default(now())
+
+  conversas ConversaWhatsApp[]
+  intencoes IntencaoMensagem[]
+}
+
+model ConversaWhatsApp {
+  id               String          @id @default(cuid())
+  numeroId         String
+  numero           NumeroWhatsApp  @relation(fields: [numeroId], references: [id])
+  contatoId        String
+  contato          ContatoWhatsApp @relation(fields: [contatoId], references: [id])
+  ultimaMensagemEm DateTime?
+  ultimoInboundEm  DateTime? // alimenta a lei do despachante + silêncio pós-inbound (S4)
+  naoLidas         Int             @default(0)
+  criadoEm         DateTime        @default(now())
+
+  mensagens MensagemWhatsApp[]
+
+  @@unique([numeroId, contatoId]) // um contexto conversa por um número só (doc 26)
+}
+
+enum DirecaoMensagem {
+  ENTRADA
+  SAIDA
+}
+
+enum TipoMensagem {
+  TEXTO
+  IMAGEM
+  AUDIO
+  VIDEO
+  DOCUMENTO
+  OUTRO
+}
+
+enum StatusMensagem {
+  NA_FILA
+  ENVIADA
+  ENTREGUE
+  LIDA
+  FALHOU
+}
+
+enum OrigemEnvio {
+  HUMANO
+  CRON
+  LOTE
+}
+
+model MensagemWhatsApp {
+  id         String           @id @default(cuid())
+  conversaId String
+  conversa   ConversaWhatsApp @relation(fields: [conversaId], references: [id])
+  numeroId   String // denormalizado p/ dedupe por número
+  numero     NumeroWhatsApp   @relation(fields: [numeroId], references: [id])
+
+  direcao   DirecaoMensagem
+  tipo      TipoMensagem    @default(TEXTO)
+  corpo     String? // snapshot do texto renderizado (auditoria — S/gap 15)
+  midiaPath String? // caminho no storage (binário: decisão E3)
+
+  status            StatusMensagem    @default(NA_FILA)
+  statusEm          DateTime?
+  driver            DriverWhatsApp
+  origem            OrigemEnvio? // só SAIDA
+  providerMessageId String? // wamid/key.id do driver
+  autorId           String?
+  autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
+  templateId        String?
+  template          TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+  criadoEm          DateTime          @default(now())
+
+  intencao IntencaoMensagem?
+
+  @@unique([numeroId, providerMessageId]) // dedupe dos retries de webhook (S7)
+  @@index([conversaId, criadoEm])
+}
+
+enum StatusIntencao {
+  PENDENTE
+  ENVIANDO // claim atômico do despachante — evita envio duplo sob concorrência (review PR #49)
+  DESPACHADA
+  CANCELADA
+  FALHOU
+  ADIADA
+  SIMULADA
+}
+
+// OUTBOX (doc 26 §fila única): nenhuma automação envia direto — grava intenção;
+// o despachante único aplica os guard-rails e entrega ao driver do número.
+model IntencaoMensagem {
+  id        String          @id @default(cuid())
+  numeroId  String
+  numero    NumeroWhatsApp  @relation(fields: [numeroId], references: [id])
+  contatoId String
+  contato   ContatoWhatsApp @relation(fields: [contatoId], references: [id])
+
+  origem           OrigemEnvio
+  status           StatusIntencao    @default(PENDENTE)
+  corpoRenderizado String // snapshot no enfileiramento (S/gap 15)
+  variaveis        Json? // valores posicionais p/ template Meta (mesma renderização do corpo)
+  templateId       String?
+  template         TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+
+  // Vínculo de domínio — cobrança na E1; lead na E6 (fase doc 27).
+  cobrancaId String?
+  cobranca   Cobranca?      @relation(fields: [cobrancaId], references: [id])
+  passo      String? // PassoRegua ("D-7"...) — validado no Zod
+  politicaId String?
+  politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
+
+  criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
+  despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
+  despachadaEm    DateTime?
+  motivoFalha     String? // sem_destino, driver, opt_out... — estampado na fila humana
+  mensagemId      String?           @unique
+  mensagem        MensagemWhatsApp? @relation(fields: [mensagemId], references: [id])
+  autorId         String? // quem enfileirou (HUMANO/LOTE); null = cron
+  autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
+
+  @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
+  @@index([status, despacharAposEm])
+}
+
+enum StatusTemplate {
+  RASCUNHO
+  EM_REVISAO
+  APROVADO
+  REJEITADO
+}
+
+// Entidade única com ciclo duplo (doc 26 §Camada 2): statusMeta só importa quando o
+// template roda em número META_CLOUD; em BAILEYS todo template vale no ato (texto livre).
+model TemplateWhatsApp {
+  id             String         @id @default(cuid())
+  nome           String         @unique // amigavel, dados, vencida, firme
+  corpo          String // com variáveis {nome} {valor} {vencimento} {link}
+  idioma         String         @default("es") // casar com Pais.idioma (gap 11)
+  categoria      String         @default("utility")
+  statusMeta     StatusTemplate @default(RASCUNHO)
+  metaTemplateId String?
+  criadoEm       DateTime       @default(now())
+  atualizadoEm   DateTime       @updatedAt
+
+  degraus   DegrauPolitica[]
+  mensagens MensagemWhatsApp[]
+  intencoes IntencaoMensagem[]
+}
+
+enum ModoDegrau {
+  AUTOMATICO
+  MANUAL
+  LOTE
+}
+
+enum EstadoPolitica {
+  DESLIGADA
+  SHADOW
+  ATIVA
+}
+
+// Política como DADO (doc 26): a const REGUA vira default de fábrica (seed).
+// LEIS fora da config (código): D+15 nunca AUTOMATICO; régua automática exige driver
+// oficial (S1); opt-out sempre respeitado; despachante nunca fala por cima de conversa viva.
+model PoliticaRegua {
+  id                      String          @id @default(cuid())
+  nome                    String          @unique
+  escopo                  String          @default("COBRANCA")
+  estado                  EstadoPolitica  @default(DESLIGADA) // toda automação nasce desligada (doc 27)
+  janelaInicio            Int             @default(9) // hora local do CONTATO (S3: Aluno.fuso ?? Pais.fuso)
+  janelaFim               Int             @default(20)
+  diasSemana              Int[]           @default([1, 2, 3, 4, 5]) // 0=domingo
+  tetoPorContatoDia       Int             @default(2) // S5
+  silencioPosInboundHoras Int             @default(72) // S4
+  killSwitch              Boolean         @default(false)
+  numeroRemetenteId       String?
+  numeroRemetente         NumeroWhatsApp? @relation(fields: [numeroRemetenteId], references: [id])
+  criadoEm                DateTime        @default(now())
+  atualizadoEm            DateTime        @updatedAt
+
+  degraus   DegrauPolitica[]
+  intencoes IntencaoMensagem[]
+}
+
+model DegrauPolitica {
+  id         String            @id @default(cuid())
+  politicaId String
+  politica   PoliticaRegua     @relation(fields: [politicaId], references: [id])
+  passo      String // "D-7"..."D+15"
+  offsetDias Int
+  tipo       String // lembrar | cobrar | bloquear
+  rotulo     String
+  modo       ModoDegrau        @default(MANUAL)
+  ativo      Boolean           @default(true)
+  templateId String?
+  template   TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+
+  @@unique([politicaId, passo])
 }
