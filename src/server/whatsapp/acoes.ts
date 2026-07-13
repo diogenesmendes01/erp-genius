@@ -49,7 +49,7 @@ async function enfileirarDegrauDevido(
 ): Promise<{ passo: string; resultado: "criada" | "reaberta" | "ja_existente" }> {
   const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId }, include: INCLUDE_DESTINO });
   if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-  if (![StatusCobranca.PENDENTE, StatusCobranca.ATRASADO].includes(cobranca.status)) {
+  if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO) {
     throw new ErroRegra("Cobrança quitada/cancelada não entra na fila de envio.");
   }
 
