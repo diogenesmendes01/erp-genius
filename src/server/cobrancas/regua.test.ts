@@ -117,6 +117,56 @@ describe("regua — estados especiais", () => {
   });
 });
 
+describe("regua — política como dado (doc 26/30: proximaAcao recebe os degraus)", () => {
+  it("sem o parâmetro, usa a REGUA de fábrica (compatibilidade)", () => {
+    const r = proximaAcao(entrada(), d(2026, 6, 16));
+    expect(r.degrau?.passo).toBe("D-7");
+  });
+
+  it("política customizada muda offsets: D-3 configurado para -5 dias dispara no dia -5", () => {
+    const politica = [
+      { passo: "D-3", offsetDias: -5, tipo: "lembrar", template: "amigavel", rotulo: "Lembrete custom" },
+      { passo: "D0", offsetDias: 0, tipo: "cobrar", template: "dados", rotulo: "No dia" },
+    ] as const;
+    const r = proximaAcao(entrada(), d(2026, 6, 18), politica); // offset -5
+    expect(r.estado).toBe("acao_devida");
+    expect(r.degrau?.passo).toBe("D-3");
+    expect(r.atrasadaNaAcao).toBe(false);
+  });
+
+  it("degrau desativado (fora da política) nunca é devido — superação continua valendo", () => {
+    // Política sem D-7/D-3: no dia do vencimento a ação é direto o D0.
+    const politica = REGUA.filter((x) => x.offsetDias >= 0);
+    const r = proximaAcao(entrada(), VENC, politica);
+    expect(r.degrau?.passo).toBe("D0");
+    // E antes do vencimento não há nada devido (não existe degrau preventivo).
+    const antes = proximaAcao(entrada(), d(2026, 6, 16), politica);
+    expect(antes.estado).toBe("futuro");
+  });
+
+  it("política vazia (tudo desativado) nunca gera ação nem conclusão", () => {
+    const r = proximaAcao(entrada(), d(2026, 7, 20), []);
+    expect(r.estado).toBe("futuro");
+    expect(r.degrau).toBeNull();
+  });
+
+  it("passos feitos de degraus removidos da política não ressuscitam a ação (fatos históricos)", () => {
+    // D-7 foi cumprido no passado; depois o admin removeu D-7 da política. Hoje é D-2:
+    // com política sem preventivos, nada é devido — o histórico não quebra o cálculo.
+    const politica = REGUA.filter((x) => x.offsetDias >= 0);
+    const r = proximaAcao(entrada({ passosFeitos: ["D-7"] }), d(2026, 6, 21), politica);
+    expect(r.estado).toBe("futuro");
+  });
+
+  it("conclusão respeita o último degrau DA POLÍTICA (não o da fábrica)", () => {
+    // Política termina em D+7: cumprido tudo até D+7, aos 10 dias de atraso está concluída.
+    const politica = REGUA.filter((x) => x.passo !== "D+15");
+    const feitos = politica.map((x) => x.passo);
+    const r = proximaAcao(entrada({ passosFeitos: feitos }), d(2026, 7, 3), politica);
+    expect(r.estado).toBe("concluida");
+  });
+});
+
 describe("regua — prioridade (menor = mais urgente)", () => {
   it("bloquear < cobrar < lembrar, e mais atraso é mais urgente", () => {
     const bloq = proximaAcao(entrada({ passosFeitos: TODOS_ATE("D+15") }), d(2026, 7, 8));

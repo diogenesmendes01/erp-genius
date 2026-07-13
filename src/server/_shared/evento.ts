@@ -19,7 +19,13 @@ export type AgregadoTipo =
   | "Nivel"
   | "Produto"
   | "Preco"
-  | "TaxaCambio";
+  | "TaxaCambio"
+  // Canal WhatsApp (docs 26/30). Conversa/Mensagem NÃO são agregados de Evento:
+  // são tabelas operacionais (doc 29 regra 3 — "Evento = auditoria; tabela = operacional").
+  | "NumeroWhatsApp"
+  | "ContatoWhatsApp"
+  | "TemplateWhatsApp"
+  | "PoliticaRegua";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
