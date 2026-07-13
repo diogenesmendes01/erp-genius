@@ -21,6 +21,7 @@ import {
   type SalvarTaxasCambioInput,
 } from "./schema";
 import type { PassoRegua } from "@/server/cobrancas/regua";
+import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 const PAPEIS_COMISSAO: Papel[] = [Papel.FINANCEIRO];
@@ -101,14 +102,15 @@ export async function registrarCobrancaWhatsApp(
 
     // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     // `passo` = degrau da régua cumprido (doc 24) — é o que faz a fila avançar e o que o
-    // cron de automação (Fase 1+) vai ler. Opcional: eventos legados sem passo seguem válidos.
+    // cron de automação lê. `canal:"manual"` (doc 26): o despachante grava o MESMO evento
+    // com canal:"api" — humano e cron continuam um do outro (helper único em cobrancas/eventos).
     await prisma.$transaction(async (tx) => {
-      await registrarEvento(tx, {
-        tipo: "CobrancaEnviadaWhatsApp",
-        agregadoTipo: "Cobranca",
-        agregadoId: cobrancaId,
+      await registrarEventoCobrancaEnviada(tx, {
+        cobrancaId,
+        modelo,
+        passo: passo ?? null,
+        canal: "manual",
         autorId: autor.id,
-        payload: { modelo, passo: passo ?? null },
       });
     });
     revalidatePath("/financeiro");

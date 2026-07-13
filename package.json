@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:whatsapp": "tsx prisma/seed-whatsapp.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "node scripts/test-db.mjs start",

@@ -165,6 +165,7 @@ export function FinanceiroPainel({
         <FilaCobranca
           itens={fila.itens}
           dashs={fila.dashs}
+          regua={fila.regua}
           podeOperar={podeOperarCobranca}
           podeBloquear={podeAprovar}
         />
