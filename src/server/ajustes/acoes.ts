@@ -152,7 +152,18 @@ async function aplicarAjuste(
     agregadoTipo: "Cobranca",
     agregadoId: cobranca.id,
     autorId,
-    payload: { de: valorDe, para: valorPara, descontoValor, vigencia, motivo, aprovacaoId: aprovacaoId ?? null },
+    // `novoVencimento` no payload (doc 30 S6): a régua ignora passos cumpridos ANTES da
+    // última renegociação que mudou o vencimento — sem isso o replay contaria degraus da
+    // data antiga e o cron pularia lembretes (gap 14 do doc 28).
+    payload: {
+      de: valorDe,
+      para: valorPara,
+      descontoValor,
+      vigencia,
+      motivo,
+      aprovacaoId: aprovacaoId ?? null,
+      novoVencimento: novoVencimento ? novoVencimento.toISOString() : null,
+    },
   });
 }
 

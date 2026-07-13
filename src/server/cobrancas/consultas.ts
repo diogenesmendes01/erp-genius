@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { numero, numeroOuNull } from "@/server/_shared/decimal";
 import { somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
-import { proximaAcao, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
+import { proximaAcao, type DegrauRegua, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
+import { carregarPoliticaRegua } from "./politica";
+import { TEXTOS_FABRICA } from "./fabrica";
+import type { ModeloWhatsapp } from "@/server/financeiro/schema";
+import { renderizarTemplate } from "@/server/whatsapp/render";
+import { resolverDestinoCobranca } from "@/server/whatsapp/identidade";
 
 // Read path da régua de cobrança (doc 24). Monta a EntradaRegua de cada cobrança aberta a partir
 // dos eventos já gravados (passo cumprido + promessa) e roda o cérebro `proximaAcao`. Tudo
@@ -41,6 +46,15 @@ export interface FilaCobrancaItem {
   aluno: { id: string; nome: string; telefone: string | null };
   pais: string;
   turma: string | null;
+  // Canal WhatsApp (doc 30 E2):
+  /** Destino resolvido (S2): responsável financeiro > aluno; null = sem destino (manual). */
+  destino: { telefone: string; nome: string; viaResponsavel: boolean } | null;
+  /** Inbound do destino POSTERIOR à última cobrança enviada — o selo "respondeu". */
+  respondeuEm: string | null;
+  /** Última intenção na fila de envio (estado do braço API) — null = nunca enfileirada. */
+  envio: { passo: string | null; status: string; motivo: string | null; em: string | null } | null;
+  /** Texto do degrau atual renderizado NO SERVIDOR (fonte única — doc 29 regra 4). */
+  mensagemSugerida: string | null;
 }
 
 export interface DashsCobranca {
@@ -71,6 +85,9 @@ export interface ReguaCalculada {
   passosFeitos: PassoRegua[];
 }
 
+// Universo de passos VÁLIDOS por tipo (não por política): eventos `{ passo }` são fatos
+// históricos e continuam contando como "feitos" mesmo se o admin desativar/alterar o degrau
+// depois — senão a régua re-enviaria passos já cumpridos (doc 30 S6/anti-duplicação).
 const PASSOS_VALIDOS = new Set<PassoRegua>(["D-7", "D-3", "D0", "D+3", "D+7", "D+15"]);
 
 /**
@@ -83,14 +100,17 @@ const PASSOS_VALIDOS = new Set<PassoRegua>(["D-7", "D-3", "D0", "D+3", "D+7", "D
 export async function montarReguaPorCobranca(
   cobrancas: { id: string; vencimento: Date; acessoBloqueado: boolean }[],
   hoje: Date,
+  politica?: readonly DegrauRegua[],
 ): Promise<Map<string, ReguaCalculada>> {
+  // Política como dado (doc 26/30): sem parâmetro, carrega a do banco (fallback = fábrica).
+  const degraus = politica ?? (await carregarPoliticaRegua()).degraus;
   const ids = cobrancas.map((c) => c.id);
   const eventos = ids.length
     ? await prisma.evento.findMany({
         where: {
           agregadoTipo: "Cobranca",
           agregadoId: { in: ids },
-          tipo: { in: ["CobrancaEnviadaWhatsApp", "PromessaPagamento"] },
+          tipo: { in: ["CobrancaEnviadaWhatsApp", "PromessaPagamento", "CobrancaRenegociada"] },
         },
         select: { agregadoId: true, tipo: true, payload: true, criadoEm: true },
         orderBy: { criadoEm: "asc" },
@@ -102,6 +122,13 @@ export async function montarReguaPorCobranca(
   const promessaPorId = new Map<string, Date>();
   for (const e of eventos) {
     const p = (e.payload ?? {}) as Record<string, unknown>;
+    // S6 (doc 30): renegociação que MUDOU o vencimento zera os passos cumpridos até ali —
+    // a régua recomeça da data nova. Eventos vêm em ordem asc, então basta limpar o
+    // acumulado. Tentativas (sinal de reincidência) seguem contando o histórico inteiro.
+    if (e.tipo === "CobrancaRenegociada") {
+      if (typeof p.novoVencimento === "string") passosPorId.delete(e.agregadoId);
+      continue;
+    }
     if (e.tipo === "CobrancaEnviadaWhatsApp") {
       const t = tentativasPorId.get(e.agregadoId) ?? { count: 0, ultima: e.criadoEm };
       t.count += 1;
@@ -126,6 +153,7 @@ export async function montarReguaPorCobranca(
     const acao = proximaAcao(
       { vencimento: c.vencimento, quitada: false, passosFeitos: passos, promessaAte },
       hoje,
+      degraus,
     );
     const tent = tentativasPorId.get(c.id);
     mapa.set(c.id, {
@@ -147,8 +175,22 @@ export async function montarReguaPorCobranca(
   return mapa;
 }
 
-export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[]; dashs: DashsCobranca }> {
+export interface DegrauFila {
+  passo: PassoRegua;
+  offsetDias: number;
+  tipo: TipoAcao;
+  rotulo: string;
+}
+
+export async function listarFilaCobranca(): Promise<{
+  itens: FilaCobrancaItem[];
+  dashs: DashsCobranca;
+  /** Degraus da POLÍTICA vigente — a timeline do drawer desenha isto, nunca a const REGUA
+   *  do client (doc 29: a régua exibida deve ser a mesma que o cron executa). */
+  regua: DegrauFila[];
+}> {
   const hoje = new Date();
+  const politica = await carregarPoliticaRegua();
 
   const cobrancas = await prisma.cobranca.findMany({
     where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
@@ -156,9 +198,11 @@ export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[];
     include: {
       matricula: {
         include: {
-          pais: { select: { nome: true } },
+          pais: true,
           aluno: {
             include: {
+              pais: true,
+              responsaveis: { include: { responsavel: true } },
               alocacoes: {
                 where: { ativa: true },
                 take: 1,
@@ -175,21 +219,94 @@ export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[];
   const regua = await montarReguaPorCobranca(
     cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: c.matricula.acessoBloqueado })),
     hoje,
+    politica.degraus,
   );
 
-  const itens: FilaCobrancaItem[] = cobrancas.map((c) => {
+  // Canal WhatsApp (E2): templates p/ renderizar a mensagem sugerida no servidor,
+  // última intenção por cobrança (estado do braço) e inbound por destino ("respondeu").
+  const ids = cobrancas.map((c) => c.id);
+  const templates = await prisma.templateWhatsApp.findMany();
+  const templatePorId = new Map(templates.map((t) => [t.id, t]));
+  const templatePorNome = new Map(templates.map((t) => [t.nome, t]));
+
+  const intencoes = ids.length
+    ? await prisma.intencaoMensagem.findMany({
+        where: { cobrancaId: { in: ids } },
+        orderBy: { criadaEm: "desc" },
+        select: { cobrancaId: true, passo: true, status: true, motivoFalha: true, despachadaEm: true, criadaEm: true },
+      })
+    : [];
+  const envioPorCobranca = new Map<string, (typeof intencoes)[number]>();
+  for (const i of intencoes) {
+    if (i.cobrancaId && !envioPorCobranca.has(i.cobrancaId)) envioPorCobranca.set(i.cobrancaId, i);
+  }
+
+  const destinos = cobrancas.map((c) => resolverDestinoCobranca(c));
+  const telefones = [...new Set(destinos.filter(Boolean).map((d) => d!.telefoneE164))];
+  const contatos = telefones.length
+    ? await prisma.contatoWhatsApp.findMany({
+        where: { telefoneE164: { in: telefones } },
+        select: { telefoneE164: true, conversas: { select: { ultimoInboundEm: true } } },
+      })
+    : [];
+  const inboundPorTelefone = new Map<string, Date>();
+  for (const ct of contatos) {
+    for (const cv of ct.conversas) {
+      if (!cv.ultimoInboundEm) continue;
+      const atual = inboundPorTelefone.get(ct.telefoneE164);
+      if (!atual || cv.ultimoInboundEm > atual) inboundPorTelefone.set(ct.telefoneE164, cv.ultimoInboundEm);
+    }
+  }
+
+  const itens: FilaCobrancaItem[] = cobrancas.map((c, idx) => {
     const r = regua.get(c.id)!;
     const aluno = c.matricula.aluno;
     const turma = aluno.alocacoes[0]?.turma ?? null;
     const valorNegociado = numero(c.valorNegociado);
     const valorRecebido = numeroOuNull(c.valorRecebido) ?? 0;
+    const saldo = numeroOuNull(c.saldo) ?? valorNegociado - valorRecebido;
+
+    const d = destinos[idx];
+    const destino = d ? { telefone: d.telefoneE164, nome: d.nome, viaResponsavel: d.responsavelId !== null } : null;
+
+    // "Respondeu" = inbound do destino DEPOIS da última cobrança enviada (doc 26 §Camada 3).
+    const inbound = destino ? inboundPorTelefone.get(destino.telefone) : undefined;
+    const respondeuEm =
+      inbound && r.ultimaCobrancaEm && inbound > new Date(r.ultimaCobrancaEm) ? inbound.toISOString() : null;
+
+    const envioRaw = envioPorCobranca.get(c.id);
+    const envio = envioRaw
+      ? {
+          passo: envioRaw.passo,
+          status: envioRaw.status,
+          motivo: envioRaw.motivoFalha,
+          em: (envioRaw.despachadaEm ?? envioRaw.criadaEm).toISOString(),
+        }
+      : null;
+
+    // Mensagem do degrau atual renderizada no servidor (fonte única — doc 29 regra 4):
+    // template da política > template pelo nome do modelo > texto de fábrica.
+    let mensagemSugerida: string | null = null;
+    if (r.estado === "acao_devida" && r.passo) {
+      const tId = politica.templateIdPorPasso.get(r.passo) ?? null;
+      const template = (tId ? templatePorId.get(tId) : undefined) ?? templatePorNome.get(r.template ?? "") ?? null;
+      const corpoTemplate = template?.corpo ?? TEXTOS_FABRICA[(r.template ?? "dados") as ModeloWhatsapp];
+      mensagemSugerida = renderizarTemplate(corpoTemplate, {
+        nome: destino?.nome ?? nomeCompleto(aluno),
+        valor: saldo > 0 ? saldo : valorNegociado,
+        moeda: c.moeda,
+        vencimento: c.vencimento,
+        idioma: template?.idioma ?? aluno.pais?.idioma ?? "es",
+      }).corpo;
+    }
+
     return {
       id: c.id,
       codigo: c.codigo,
       tipo: c.tipo,
       valorNegociado,
       valorRecebido,
-      saldo: numeroOuNull(c.saldo) ?? valorNegociado - valorRecebido,
+      saldo,
       moeda: c.moeda,
       vencimento: c.vencimento.toISOString(),
       competencia: c.competencia,
@@ -199,6 +316,10 @@ export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[];
       aluno: { id: aluno.id, nome: nomeCompleto(aluno), telefone: aluno.telefoneE164 },
       pais: c.matricula.pais.nome,
       turma: turma ? `${turma.modalidade.nome} ${turma.nivel.codigo}` : null,
+      destino,
+      respondeuEm,
+      envio,
+      mensagemSugerida,
     };
   });
 
@@ -235,7 +356,11 @@ export async function listarFilaCobranca(): Promise<{ itens: FilaCobrancaItem[];
       .filter((x) => x.valor > 0),
   );
 
-  return { itens, dashs: { aVencer, emAtraso, bloquear, promessas, recebidoHoje } };
+  return {
+    itens,
+    dashs: { aVencer, emAtraso, bloquear, promessas, recebidoHoje },
+    regua: politica.degraus.map((d) => ({ passo: d.passo, offsetDias: d.offsetDias, tipo: d.tipo, rotulo: d.rotulo })),
+  };
 }
 
 export type FilaCobranca = Awaited<ReturnType<typeof listarFilaCobranca>>;

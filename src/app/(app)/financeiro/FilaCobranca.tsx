@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores } from "@/lib/dinheiro";
-import { REGUA } from "@/server/cobrancas/regua";
-import type { FilaCobrancaItem, DashsCobranca } from "@/server/cobrancas/consultas";
+import type { FilaCobrancaItem, DashsCobranca, DegrauFila } from "@/server/cobrancas/consultas";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { registrarCobrancaWhatsApp } from "@/server/financeiro/acoes";
 import { registrarPromessaPagamento, bloquearAcesso, desbloquearAcesso } from "@/server/cobrancas/acoes";
+import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "@/server/whatsapp/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
@@ -45,16 +45,8 @@ function rotuloAcaoCurto(item: FilaCobrancaItem): string {
   return `${item.passo} · ${verbo} · ${quando}`;
 }
 
-function mensagem(modelo: ModeloWhatsapp, nome: string, valor: string): string {
-  const m: Record<ModeloWhatsapp, string> = {
-    amigavel: `Olá ${nome}! 😊 Passando para lembrar da sua mensalidade de ${valor}. Qualquer dúvida, estou à disposição!`,
-    vencida: `Olá ${nome}, notamos que a cobrança de ${valor} está vencida. Consegue regularizar?`,
-    firme: `Olá ${nome}, sua cobrança de ${valor} está em atraso. Precisamos regularizar para manter seu acesso às aulas.`,
-    dados: `Olá ${nome}! Seguem os dados para pagamento de ${valor}. Pode me confirmar quando efetuar?`,
-    promessa: `Olá ${nome}, podemos combinar uma data para o pagamento de ${valor}?`,
-  };
-  return m[modelo];
-}
+// Os textos dos templates saíram do client (doc 29 regra 4): a mensagem sugerida chega
+// RENDERIZADA do servidor (item.mensagemSugerida) — fonte única entre wa.me, API e cron.
 
 function linkWa(telefone: string, texto: string): string {
   return `https://wa.me/${telefone.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`;
@@ -67,11 +59,13 @@ function valorDevido(item: FilaCobrancaItem): number {
 export function FilaCobranca({
   itens,
   dashs,
+  regua,
   podeOperar,
   podeBloquear,
 }: {
   itens: FilaCobrancaItem[];
   dashs: DashsCobranca;
+  regua: DegrauFila[];
   podeOperar: boolean;
   podeBloquear: boolean;
 }) {
@@ -84,6 +78,8 @@ export function FilaCobranca({
   const [pagar, setPagar] = useState<FilaCobrancaItem | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
+  const [selecao, setSelecao] = useState<Set<string>>(new Set());
+  const [enviandoLote, setEnviandoLote] = useState(false);
 
   const paisesOpts = useMemo(() => [...new Set(itens.map((i) => i.pais))].sort(), [itens]);
   const turmasOpts = useMemo(
@@ -115,13 +111,70 @@ export function FilaCobranca({
     }
   }
 
-  async function enviar(item: FilaCobrancaItem, textoOverride?: string) {
-    if (!item.passo || !item.template) return;
-    const texto = textoOverride ?? mensagem(item.template as ModeloWhatsapp, item.aluno.nome, formatarMoeda(valorDevido(item), item.moeda));
-    if (item.aluno.telefone) window.open(linkWa(item.aluno.telefone, texto), "_blank");
-    await run(registrarCobrancaWhatsApp(item.id, item.template as ModeloWhatsapp, item.passo), "Envio registrado.");
+  // BRAÇO API (doc 30 E2): enfileira e despacha na hora — passa pelos mesmos guard-rails
+  // do cron. O resultado diz o que aconteceu (enviada, simulada em ensaio, adiada, falhou).
+  async function enviarViaApi(item: FilaCobrancaItem) {
+    setErro(null);
+    setNota(null);
+    const r = await enfileirarCobrancaWhatsApp(item.id);
+    if (!r.ok) {
+      setErro(r.erro ?? "Erro ao enfileirar.");
+      return;
+    }
+    const d = r.dado!;
+    if (d.status === "DESPACHADA") setNota(`Enviado via WhatsApp (${d.passo}).`);
+    else if (d.status === "SIMULADA") setNota(`Ensaio (shadow): ${d.passo} simulado — nada foi enviado de verdade.`);
+    else if (d.status === "ADIADA") setNota(`Na fila (${d.motivo === "fora_da_janela" ? "fora da janela de horário" : d.motivo}) — envia sozinho na próxima janela.`);
+    else if (d.status === "FALHOU") setErro(`Envio falhou: ${d.motivo ?? "erro"} — o item continua na fila manual.`);
+    else if (d.status === "CANCELADA") setNota(`Não enviado: ${d.motivo === "conversa_viva" ? "o contato respondeu — trate a conversa antes" : d.motivo}.`);
+    router.refresh();
     setAberta(null);
   }
+
+  // FALLBACK MANUAL permanente (doc 26): abre o wa.me com o texto (editável) e registra o
+  // degrau como canal "manual" — exatamente o fluxo que existia antes do braço API.
+  async function abrirWaMe(item: FilaCobrancaItem, textoOverride?: string) {
+    if (!item.passo || !item.template) return;
+    const texto = textoOverride ?? item.mensagemSugerida ?? "";
+    const telefone = item.destino?.telefone ?? item.aluno.telefone;
+    if (telefone) window.open(linkWa(telefone, texto), "_blank");
+    await run(registrarCobrancaWhatsApp(item.id, item.template as ModeloWhatsapp, item.passo), "Envio manual registrado.");
+    setAberta(null);
+  }
+
+  function alternarSelecao(id: string) {
+    setSelecao((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  async function enviarLote() {
+    setErro(null);
+    setNota(null);
+    setEnviandoLote(true);
+    const r = await aprovarLoteCobranca({ cobrancaIds: [...selecao] });
+    setEnviandoLote(false);
+    if (!r.ok) {
+      setErro(r.erro ?? "Erro no lote.");
+      return;
+    }
+    const d = r.dado!;
+    const partes = [
+      `${d.enfileiradas} aprovada(s)`,
+      d.despachadas ? `${d.despachadas} enviada(s)` : null,
+      d.simuladas ? `${d.simuladas} simulada(s) (ensaio)` : null,
+      d.falhas ? `${d.falhas} falhou(aram)` : null,
+      d.puladas.length ? `${d.puladas.length} pulada(s): ${d.puladas[0].motivo}` : null,
+    ].filter(Boolean);
+    setNota(`Lote: ${partes.join(" · ")}.`);
+    setSelecao(new Set());
+    router.refresh();
+  }
+
+  const elegivelLote = (i: FilaCobrancaItem) => i.estado === "acao_devida" && !!i.passo && !!i.destino;
 
   const DASHS: { chave: Filtro; label: string; valor: string; cls: string }[] = [
     { chave: "aVencer", label: "A vencer", valor: String(dashs.aVencer), cls: "text-green-700" },
@@ -193,6 +246,17 @@ export function FilaCobranca({
         <span className="text-xs text-gray-400">{filtrados.length} de {itens.length}</span>
       </div>
 
+      {/* Barra de lote-com-aprovação (doc 26 §Camada 1): humano seleciona → aprova → a fila dispara */}
+      {podeOperar && selecao.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-brand-200 bg-brand-50 px-3 py-2">
+          <span className="text-sm text-gray-700">{selecao.size} selecionada(s) para envio em lote</span>
+          <button className={btnPri} disabled={enviandoLote} onClick={enviarLote}>
+            {enviandoLote ? "Enviando…" : "Aprovar e enviar lote"}
+          </button>
+          <button className={btnSec} onClick={() => setSelecao(new Set())}>Limpar</button>
+        </div>
+      )}
+
       {/* Lista magra */}
       {filtrados.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
@@ -207,7 +271,18 @@ export function FilaCobranca({
               onClick={() => setAberta(item)}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-gray-800">{item.aluno.nome}</span>
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
+                  {podeOperar && elegivelLote(item) && (
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 accent-brand-600"
+                      checked={selecao.has(item.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => alternarSelecao(item.id)}
+                    />
+                  )}
+                  {item.aluno.nome}
+                </span>
                 <span className="text-sm font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between gap-3">
@@ -215,14 +290,21 @@ export function FilaCobranca({
                   {item.turma ?? "sem turma"} · {item.pais}
                   {item.acessoBloqueado && <span className="ml-1 text-red-600">· acesso bloqueado</span>}
                   {item.tentativas > 1 && <span className="ml-1 text-amber-600">· {item.tentativas}ª cobrança</span>}
+                  {!item.destino && <span className="ml-1 text-red-600">· sem destino</span>}
                 </span>
                 <div className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  {item.respondeuEm && (
+                    <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">respondeu</span>
+                  )}
+                  {item.envio?.status === "FALHOU" && (
+                    <span className="rounded-md bg-red-100 px-2 py-0.5 text-[11px] text-red-700">envio falhou</span>
+                  )}
                   <span className={"rounded-md px-2 py-0.5 text-[11px] " + chipCls(item)}>{rotuloAcaoCurto(item)}</span>
                   <AcaoRapida
                     item={item}
                     podeOperar={podeOperar}
                     podeBloquear={podeBloquear}
-                    onEnviar={() => enviar(item)}
+                    onEnviar={() => enviarViaApi(item)}
                     onBloquear={() => run(bloquearAcesso(item.matriculaId), "Acesso bloqueado.")}
                   />
                   <span className="text-gray-300">›</span>
@@ -236,10 +318,12 @@ export function FilaCobranca({
       {aberta && (
         <DrawerDetalhe
           item={aberta}
+          regua={regua}
           podeOperar={podeOperar}
           podeBloquear={podeBloquear}
           onClose={() => setAberta(null)}
-          onEnviar={(texto) => enviar(aberta, texto)}
+          onEnviarApi={() => enviarViaApi(aberta)}
+          onWaMe={(texto) => abrirWaMe(aberta, texto)}
           onPagar={() => { setPagar(aberta); setAberta(null); }}
           onPromessa={(ate) => run(registrarPromessaPagamento(aberta.id, ate), "Promessa registrada.").then(() => setAberta(null))}
           onBloquear={() => run(bloquearAcesso(aberta.matriculaId), "Acesso bloqueado.").then(() => setAberta(null))}
@@ -297,33 +381,42 @@ function AcaoRapida({
   );
 }
 
+const ROTULO_ENVIO: Record<string, string> = {
+  PENDENTE: "na fila de envio",
+  ADIADA: "na fila (aguardando janela)",
+  DESPACHADA: "enviada via API",
+  SIMULADA: "simulada (ensaio)",
+  FALHOU: "falhou",
+  CANCELADA: "cancelada",
+};
+
 function DrawerDetalhe({
   item,
+  regua,
   podeOperar,
   podeBloquear,
   onClose,
-  onEnviar,
+  onEnviarApi,
+  onWaMe,
   onPagar,
   onPromessa,
   onBloquear,
   onDesbloquear,
 }: {
   item: FilaCobrancaItem;
+  regua: DegrauFila[];
   podeOperar: boolean;
   podeBloquear: boolean;
   onClose: () => void;
-  onEnviar: (texto: string) => void;
+  onEnviarApi: () => void;
+  onWaMe: (texto: string) => void;
   onPagar: () => void;
   onPromessa: (ate: string) => void;
   onBloquear: () => void;
   onDesbloquear: () => void;
 }) {
   const venc = new Date(item.vencimento);
-  const textoSugerido =
-    item.template && item.estado === "acao_devida"
-      ? mensagem(item.template as ModeloWhatsapp, item.aluno.nome, formatarMoeda(valorDevido(item), item.moeda))
-      : "";
-  const [texto, setTexto] = useState(textoSugerido);
+  const [texto, setTexto] = useState(item.mensagemSugerida ?? "");
   const [promessaData, setPromessaData] = useState("");
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
 
@@ -371,7 +464,7 @@ function DrawerDetalhe({
                   <span className="text-xs text-gray-500">Aguardando aprovação do Gerente Comercial / Admin.</span>
                 )}
                 {podeOperar && item.template && (
-                  <button className={btnSec} onClick={() => onEnviar(texto)}>Enviar cobrança no WhatsApp</button>
+                  <button className={btnSec} onClick={() => onWaMe(texto)}>Enviar cobrança no WhatsApp</button>
                 )}
               </div>
             </div>
@@ -382,6 +475,11 @@ function DrawerDetalhe({
               Ação de hoje · {item.rotuloAcao}
               {item.atrasadaNaAcao && <span className="ml-1 font-normal">(atrasada)</span>}
             </div>
+            {item.respondeuEm && (
+              <div className="mb-2 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-800">
+                O contato respondeu em {new Date(item.respondeuEm).toLocaleDateString("pt-BR")} — trate a conversa antes de cobrar de novo.
+              </div>
+            )}
             <textarea
               className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:border-brand-500"
               rows={3}
@@ -389,12 +487,28 @@ function DrawerDetalhe({
               onChange={(e) => setTexto(e.target.value)}
             />
             {podeOperar && (
-              <button className={btnPri + " mt-2"} onClick={() => onEnviar(texto)}>
-                Enviar no WhatsApp
-              </button>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button className={btnPri} disabled={!item.destino} onClick={onEnviarApi}>
+                  Enviar via WhatsApp (API)
+                </button>
+                <button className={btnSec} onClick={() => onWaMe(texto)}>
+                  Abrir no wa.me (manual)
+                </button>
+              </div>
             )}
+            <p className="mt-1.5 text-[11px] text-gray-500">
+              O envio via API usa o template do degrau; o texto editável acima vale para o wa.me manual.
+              {!item.destino && " Sem destino cadastrado — só o registro manual está disponível."}
+            </p>
           </div>
         ) : null}
+        {item.envio && (
+          <div className="mx-5 mb-4 text-xs text-gray-600">
+            Braço API · {item.envio.passo ?? "—"}: {ROTULO_ENVIO[item.envio.status] ?? item.envio.status}
+            {item.envio.motivo && <span className="text-gray-500"> ({item.envio.motivo})</span>}
+            {item.envio.em && <span className="text-gray-400"> · {new Date(item.envio.em).toLocaleString("pt-BR")}</span>}
+          </div>
+        )}
         {item.estado === "promessa" && item.promessaAte && (
           <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
             Promessa de pagamento até {new Date(item.promessaAte).toLocaleDateString("pt-BR")} — fora da fila até lá.
@@ -405,7 +519,7 @@ function DrawerDetalhe({
         <div className="px-5 pb-4">
           <div className="mb-2 text-xs font-medium text-gray-600">Régua de cobrança</div>
           <ol className="relative ml-1 border-l border-gray-200 pl-4">
-            {REGUA.map((deg) => {
+            {regua.map((deg) => {
               const feito = item.passosFeitos.includes(deg.passo);
               const atual = item.passo === deg.passo && item.estado === "acao_devida";
               const data = new Date(venc.getTime() + deg.offsetDias * 86400000);
@@ -454,7 +568,9 @@ function DrawerDetalhe({
           )}
           <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
             <span>
-              {item.aluno.telefone ?? "sem telefone"}
+              {item.destino
+                ? `${item.destino.telefone}${item.destino.viaResponsavel ? ` · ${item.destino.nome} (responsável)` : ""}`
+                : "sem destino"}
               {item.tentativas > 0 && ` · ${item.tentativas} tentativa(s)`}
               {item.ultimaCobrancaEm && ` · último ${new Date(item.ultimaCobrancaEm).toLocaleDateString("pt-BR")}`}
             </span>

@@ -38,6 +38,11 @@
 | [`09-fase0-telas.md`](09-fase0-telas.md) | Especificação tela por tela da Fase 0 (UX) |
 | [`24-cobrancas-regua-fluxo.md`](24-cobrancas-regua-fluxo.md) | Redesenho de Cobranças: régua + cérebro/braço + dash/lista/detalhe |
 | [`25-motor-de-risco-cobranca.md`](25-motor-de-risco-cobranca.md) | **Spec V2 (não implementado)**: motor de risco do aluno — score explicável + faseamento |
+| [`26-whatsapp-v1.md`](26-whatsapp-v1.md) | **Escopo fechado (não implementado)**: WhatsApp bimotor (Cloud API + Baileys) — fundação + braço da régua + inbox mínima |
+| [`27-comercial-automacoes-ia.md`](27-comercial-automacoes-ia.md) | **Fase pós-V1 (não implementado)**: automações comerciais (ondas C1–C5) + IA copiloto só-leitura |
+| [`28-whatsapp-auditoria-gaps.md`](28-whatsapp-auditoria-gaps.md) | **Auditoria pré-implementação**: 34 gaps/decisões pendentes dos docs 26/27, mapeados por marco |
+| [`29-whatsapp-integracao-codigo.md`](29-whatsapp-integracao-codigo.md) | **Mapa de integração**: o que reusa, o que muda (arquivo:linha), fluxos, projeções e as 10 regras anti-duplicação |
+| [`30-whatsapp-spec-implementacao.md`](30-whatsapp-spec-implementacao.md) | **Spec mestre (em implementação)**: decisões S1–S10, modelo de dados final, contratos e etapas E1–E6 |
 | [`16-plano-execucao.md`](16-plano-execucao.md) | **Plano mestre** de documentação + implementação (checklist) |
 | [`15-decisoes-adr.md`](15-decisoes-adr.md) | Log de decisões e pendências em aberto |
 
