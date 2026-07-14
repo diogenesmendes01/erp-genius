@@ -37,10 +37,18 @@ pública") → **Caddy** (única borda; TLS automático — o webhook da Meta ex
 - **Webhook Evolution**: configurado sozinho pelo fluxo "conectar via QR" da tela do
   canal (aponta para `http://app:3000/...` na rede interna — evento Baileys nunca sai
   para a internet).
-- **Migração dos dados atuais**: o banco de hoje (porta pública 5423 — exatamente o que
-  a E5 aposenta) é dumpado e restaurado no Postgres interno:
-  `pg_dump -Fc $DATABASE_URL_ATUAL > antes.dump` →
-  `docker compose -f docker-compose.prod.yml exec -T db pg_restore -U erp -d erp < antes.dump`.
+- **Migração dos dados atuais** — o restore acontece em banco **vazio, ANTES** do app e
+  das migrations (restaurar dump completo por cima de schema já migrado conflita em
+  constraints e deixa restauração parcial):
+  ```bash
+  docker compose -f docker-compose.prod.yml up -d db     # SÓ o banco (cria erp vazio)
+  pg_dump -Fc "$DATABASE_URL_ATUAL" > antes.dump
+  docker compose -f docker-compose.prod.yml exec -T db pg_restore -U erp -d erp --no-owner < antes.dump
+  docker compose -f docker-compose.prod.yml up -d --build  # migrate deploy aplica só o que o dump não tem
+  ```
+  O dump carrega a tabela `_prisma_migrations`, então o `migrate deploy` aplica apenas
+  migrations mais novas — fluxo determinístico. **Validar**: login + fila de cobrança +
+  contagem de alunos/cobranças contra o banco de origem.
   Depois, **reset do canal de teste** (doc 26 §motores: "banco será resetado no go-live"
   = as tabelas do CANAL, não o ERP): truncar `MensagemWhatsApp`, `ConversaWhatsApp`,
   `IntencaoMensagem`, `ContatoWhatsApp` e recadastrar os números reais na tela do canal.
@@ -53,9 +61,13 @@ Uma instância do app; concorrência interna resolvida por **claim atômico** na
 re-envia sozinho — o driver pode ter enviado antes da queda). O tick é EXTERNO e
 idempotente (idempotência por degrau em banco):
 ```cron
-# crontab da VPS — a cada hora, dentro da janela ampla; a política decide o resto
-5 * * * *  curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" https://<dominio>/api/whatsapp/cron > /dev/null
+# crontab de ROOT na VPS — a cada hora; a política decide o resto.
+# O crond NÃO herda o .env do compose: a própria linha carrega o arquivo (por isso o
+# `. ./.env` — e por isso o .env precisa de chmod 600 e crontab de root, não de usuário).
+5 * * * *  cd /opt/erp-genius && . ./.env && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" https://<dominio>/api/whatsapp/cron > /dev/null
 ```
+Teste na mão antes de confiar no agendamento: rode a linha inteira no shell e confira
+`{"executou": ...}` na resposta (401 = segredo não carregou).
 Tick horário (não diário): itens `ADIADA` (janela/teto/silêncio) re-tentam na hora certa.
 Rodar 2× não duplica nada — testado (`cron.int.test.ts`, `@@unique cobrancaId+passo`).
 

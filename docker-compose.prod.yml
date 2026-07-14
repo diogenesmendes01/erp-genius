@@ -14,6 +14,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?defina no .env}
+      # ATENÇÃO: a senha entra CRUA nas connection URLs abaixo — use `openssl rand -hex 32`
+      # (URL-safe). Base64 pode conter / + = e quebrar migrations/app/Evolution (PR #52).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
       POSTGRES_DB: erp
     volumes:
