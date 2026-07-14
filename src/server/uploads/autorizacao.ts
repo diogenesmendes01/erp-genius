@@ -77,6 +77,26 @@ export async function podeLerArquivo(
     return false;
   }
 
+  // 3) Mídia de mensagem WhatsApp (MensagemWhatsApp.midiaPath — doc 29 §pipeline de
+  //    mídia): autorizado quem vê a CONVERSA, i.e. o escopo do número (gap D22 → S11).
+  //    Mídia ainda em intenção (upload feito, envio pendente/falho) segue a mesma regra.
+  const mensagem = await prisma.mensagemWhatsApp.findFirst({
+    where: { midiaPath: url },
+    select: { numero: { select: { donoId: true, finalidade: true } } },
+  });
+  const numeroDaMidia =
+    mensagem?.numero ??
+    (
+      await prisma.intencaoMensagem.findFirst({
+        where: { midiaPath: url },
+        select: { numero: { select: { donoId: true, finalidade: true } } },
+      })
+    )?.numero;
+  if (numeroDaMidia) {
+    const { usuarioVeNumero } = await import("@/server/whatsapp/escopo");
+    return usuarioVeNumero(usuario, numeroDaMidia);
+  }
+
   // Nenhum agregado referencia este arquivo: negado.
   return false;
 }

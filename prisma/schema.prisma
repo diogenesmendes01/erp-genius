@@ -822,6 +822,11 @@ model NumeroWhatsApp {
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   politicas PoliticaRegua[]
+
+  // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
+  // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
+  // mensagem cairia na conversa/dono errados (review PR #51 P2-6).
+  @@unique([driver, providerRef])
 }
 
 model ContatoWhatsApp {
@@ -853,6 +858,9 @@ model ConversaWhatsApp {
   contato          ContatoWhatsApp @relation(fields: [contatoId], references: [id])
   ultimaMensagemEm DateTime?
   ultimoInboundEm  DateTime? // alimenta a lei do despachante + silêncio pós-inbound (S4)
+  // "Tratar" o inbound (S4/E3): promessa/pagamento pela inbox ou "retomar régua" marcam
+  // aqui; o despachante só aplica o silêncio quando ultimoInboundEm > inboundTratadoEm.
+  inboundTratadoEm DateTime?
   naoLidas         Int             @default(0)
   criadoEm         DateTime        @default(now())
 
@@ -939,7 +947,9 @@ model IntencaoMensagem {
 
   origem           OrigemEnvio
   status           StatusIntencao    @default(PENDENTE)
-  corpoRenderizado String // snapshot no enfileiramento (S/gap 15)
+  tipo             TipoMensagem      @default(TEXTO) // mídia da inbox (E3): IMAGEM/AUDIO/DOCUMENTO
+  midiaPath        String? // URL canônica /api/files/... do binário (pipeline único — doc 29 regra 10)
+  corpoRenderizado String // snapshot no enfileiramento (S/gap 15); em mídia é a legenda
   variaveis        Json? // valores posicionais p/ template Meta (mesma renderização do corpo)
   templateId       String?
   template         TemplateWhatsApp? @relation(fields: [templateId], references: [id])

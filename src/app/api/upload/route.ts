@@ -10,6 +10,8 @@ import { UPLOAD_DIR } from "@/lib/uploads";
 // Para serverless, trocar por S3/Supabase (signed URLs).
 export const runtime = "nodejs";
 
+// Só documentos/imagens: comprovante e contrato não têm áudio/vídeo. A mídia da inbox
+// WhatsApp usa a rota própria POST /api/whatsapp/upload (posse por autor — PR #51 P1-2).
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ erro: "Arquivo ausente." }, { status: 400 });
   }
-  if (!TIPOS_OK.includes(file.type)) {
+  if (!TIPOS_OK.includes(file.type.split(";")[0].trim())) {
     return NextResponse.json({ erro: "Tipo inválido (use PDF, JPG ou PNG)." }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {

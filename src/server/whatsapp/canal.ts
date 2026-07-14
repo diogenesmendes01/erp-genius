@@ -22,6 +22,16 @@ export interface EnvioTemplate {
   corpoRenderizado: string;
 }
 
+export interface EnvioMidia {
+  /** Tipo normalizado da mensagem (enum TipoMensagem, sem TEXTO/OUTRO). */
+  tipo: "IMAGEM" | "AUDIO" | "VIDEO" | "DOCUMENTO";
+  mime: string;
+  nomeArquivo: string;
+  /** Binário em base64 — lido do storage privado pelo despachante (midia.ts). */
+  dadosBase64: string;
+  legenda?: string | null;
+}
+
 export interface ResultadoEnvio {
   providerMessageId: string;
 }
@@ -40,4 +50,5 @@ export class ErroDriver extends Error {
 export interface CanalWhatsApp {
   enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string): Promise<ResultadoEnvio>;
   enviarTemplate(numero: NumeroCanal, paraE164: string, template: EnvioTemplate): Promise<ResultadoEnvio>;
+  enviarMidia(numero: NumeroCanal, paraE164: string, midia: EnvioMidia): Promise<ResultadoEnvio>;
 }
