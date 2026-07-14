@@ -5,6 +5,7 @@ import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
 import { driverEvolution } from "./drivers/evolution";
 import { driverMetaCloud } from "./drivers/meta-cloud";
+import { lerMidiaParaEnvio } from "./midia";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -98,8 +99,9 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
       : politicaPadrao;
     const automatica = it.origem !== "HUMANO"; // guard-rails de automação valem p/ CRON e LOTE
 
-    // 1. Kill switch: congela a fila (nada é perdido nem cancelado).
-    if (politica.killSwitch) {
+    // 1. Kill switch: congela a AUTOMAÇÃO (nada é perdido nem cancelado). Origem HUMANO
+    //    passa — resposta humana na inbox/fila é decisão humana, não automação (S13, E3).
+    if (politica.killSwitch && automatica) {
       r.pendentes += 1;
       continue;
     }
@@ -122,7 +124,7 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
 
     const conversa = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
-      select: { id: true, ultimoInboundEm: true },
+      select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true },
     });
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
@@ -134,8 +136,12 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     }
 
     // 5. Silêncio pós-inbound (S4): inbound recente (mesmo anterior à intenção) suspende o
-    //    CRON até o humano tratar ou a janela de silêncio expirar.
-    if (it.origem === "CRON" && conversa?.ultimoInboundEm) {
+    //    CRON até o humano TRATAR (promessa/pagamento/"retomar régua" marcam
+    //    inboundTratadoEm — E3) ou a janela de silêncio expirar.
+    const inboundNaoTratado =
+      !!conversa?.ultimoInboundEm &&
+      (!conversa.inboundTratadoEm || conversa.inboundTratadoEm < conversa.ultimoInboundEm);
+    if (it.origem === "CRON" && conversa?.ultimoInboundEm && inboundNaoTratado) {
       const limite = new Date(conversa.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000);
       if (agora < limite) {
         await adiar(it.id, limite, "silencio_pos_inbound");
@@ -193,10 +199,12 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
       }
     }
 
-    // 9. SHADOW (S8): política em ensaio (cron) ou ambiente sem WHATSAPP_LIVE=1 →
-    //    registra o que TERIA sido enviado, sem chamar driver. SIMULADA não é terminal:
-    //    a fila reabre quando o canal sair do ensaio (review PR #49).
-    const shadow = !live || (it.origem === "CRON" && politica.estado !== "ATIVA");
+    // 9. SHADOW (S8): política em ensaio ou ambiente sem WHATSAPP_LIVE=1 → registra o que
+    //    TERIA sido enviado, sem chamar driver. Vale para TODA automação (CRON e LOTE —
+    //    review PR #51 P1-3: lote aprovado durante o ensaio não pode disparar de verdade);
+    //    origem HUMANO (resposta na inbox/fila) é decisão humana e envia mesmo em ensaio.
+    //    SIMULADA não é terminal: a fila reabre quando o canal sair do ensaio (review PR #49).
+    const shadow = !live || (automatica && politica.estado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente
@@ -231,15 +239,27 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
         providerRef: it.numero.providerRef,
       };
       const driver = DRIVERS[it.numero.driver];
-      const envio =
-        it.numero.driver === "META_CLOUD" && it.template
-          ? await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
-              nome: it.template.nome,
-              idioma: it.template.idioma,
-              variaveis: (it.variaveis as string[] | null) ?? [],
-              corpoRenderizado: it.corpoRenderizado,
-            })
-          : await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
+      let envio;
+      if (it.tipo !== "TEXTO" && it.tipo !== "OUTRO" && it.midiaPath) {
+        // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
+        const midia = await lerMidiaParaEnvio(it.midiaPath);
+        envio = await driver.enviarMidia(numeroCanal, it.contato.telefoneE164, {
+          tipo: it.tipo,
+          mime: midia.mime,
+          nomeArquivo: midia.nomeArquivo,
+          dadosBase64: midia.dadosBase64,
+          legenda: it.corpoRenderizado || null,
+        });
+      } else if (it.numero.driver === "META_CLOUD" && it.template) {
+        envio = await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
+          nome: it.template.nome,
+          idioma: it.template.idioma,
+          variaveis: (it.variaveis as string[] | null) ?? [],
+          corpoRenderizado: it.corpoRenderizado,
+        });
+      } else {
+        envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
+      }
 
       await prisma.$transaction(async (tx) => {
         const conv =
@@ -253,8 +273,9 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
             conversaId: conv.id,
             numeroId: it.numeroId,
             direcao: "SAIDA",
-            tipo: "TEXTO",
-            corpo: it.corpoRenderizado,
+            tipo: it.tipo,
+            corpo: it.corpoRenderizado || null,
+            midiaPath: it.midiaPath,
             status: "ENVIADA",
             statusEm: agora,
             driver: it.numero.driver,

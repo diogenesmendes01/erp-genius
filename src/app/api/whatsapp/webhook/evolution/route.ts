@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import type { StatusMensagem, TipoMensagem } from "@prisma/client";
 import { processarMensagemNormalizada, processarStatusNormalizado } from "@/server/whatsapp/inbound";
+import { baixarMidiaEvolution, salvarMidiaInbound } from "@/server/whatsapp/midia";
+import { aplicarEstadoSessaoPorInstancia } from "@/server/whatsapp/sessao";
+import { prisma } from "@/lib/prisma";
 
 // WEBHOOK EVOLUTION (Baileys) — doc 26 §Camada 0. Autenticação por token compartilhado
 // (header `apikey`, configurado no webhook da instância Evolution → EVOLUTION_WEBHOOK_TOKEN).
@@ -27,6 +30,12 @@ const STATUS_POR_ACK: Record<number, StatusMensagem> = {
   4: "LIDA",
 };
 
+interface MidiaEvolution {
+  mimetype?: string;
+  caption?: string;
+  fileName?: string;
+}
+
 interface EventoEvolution {
   event?: string;
   instance?: string;
@@ -34,19 +43,34 @@ interface EventoEvolution {
     key?: { remoteJid?: string; fromMe?: boolean; id?: string };
     pushName?: string;
     status?: string;
-    message?: Record<string, unknown> & { conversation?: string; extendedTextMessage?: { text?: string } };
+    state?: string; // connection.update
+    message?: Record<string, unknown> & {
+      conversation?: string;
+      extendedTextMessage?: { text?: string };
+      base64?: string; // instância configurada com base64:true manda o binário junto
+    };
     messageTimestamp?: number | string;
     ack?: number;
   };
 }
 
-function corpoDe(msg: EventoEvolution["data"]): { corpo: string | null; tipo: TipoMensagem } {
+function corpoDe(msg: EventoEvolution["data"]): {
+  corpo: string | null;
+  tipo: TipoMensagem;
+  midia: MidiaEvolution | null;
+} {
   const m = msg?.message;
-  if (!m) return { corpo: null, tipo: "OUTRO" };
-  if (typeof m.conversation === "string") return { corpo: m.conversation, tipo: "TEXTO" };
-  if (m.extendedTextMessage?.text) return { corpo: m.extendedTextMessage.text, tipo: "TEXTO" };
+  if (!m) return { corpo: null, tipo: "OUTRO", midia: null };
+  if (typeof m.conversation === "string") return { corpo: m.conversation, tipo: "TEXTO", midia: null };
+  if (m.extendedTextMessage?.text) return { corpo: m.extendedTextMessage.text, tipo: "TEXTO", midia: null };
   const chave = Object.keys(m).find((k) => TIPO_POR_EVOLUTION[k]);
-  return { corpo: null, tipo: chave ? TIPO_POR_EVOLUTION[chave] : "OUTRO" };
+  if (!chave) return { corpo: null, tipo: "OUTRO", midia: null };
+  const midia = (m[chave] ?? null) as MidiaEvolution | null;
+  return {
+    corpo: midia?.caption ?? midia?.fileName ?? null,
+    tipo: TIPO_POR_EVOLUTION[chave],
+    midia,
+  };
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -64,6 +88,21 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   try {
     const dados = evento.data;
+
+    // Estado da sessão (doc 26 §Camada 0/E3): conexão abre/cai → atualiza o número e
+    // grava os eventos de domínio (NumeroWhatsAppConectado / SessaoBaileysCaiu).
+    if (evento.event === "connection.update" && evento.instance) {
+      await aplicarEstadoSessaoPorInstancia(evento.instance, dados?.state ?? null);
+      return NextResponse.json({ ok: true });
+    }
+    if (evento.event === "qrcode.updated" && evento.instance) {
+      await prisma.numeroWhatsApp.updateMany({
+        where: { providerRef: evento.instance, driver: "BAILEYS", sessao: { not: "CONECTADO" } },
+        data: { sessao: "AGUARDANDO_QR" },
+      });
+      return NextResponse.json({ ok: true });
+    }
+
     const jid = dados?.key?.remoteJid ?? "";
     // Filtro de tráfego não-conversacional (gap 18): grupos (@g.us), broadcast e status
     // NUNCA entram no log — só conversa 1:1 (@s.whatsapp.net).
@@ -71,8 +110,22 @@ export async function POST(req: Request): Promise<NextResponse> {
     const waId = jid.replace("@s.whatsapp.net", "");
 
     if (evento.event === "messages.upsert" && dados?.key?.id) {
-      const { corpo, tipo } = corpoDe(dados);
+      const { corpo, tipo, midia } = corpoDe(dados);
       const ts = dados.messageTimestamp;
+
+      // Mídia inbound: usa o base64 do próprio webhook (instância com base64:true) ou
+      // busca na API; falha não perde a mensagem (entra sem binário — gap A3/D28).
+      let midiaPath: string | null = null;
+      if (midia && evento.instance) {
+        const baixada = await baixarMidiaEvolution(
+          evento.instance,
+          dados.key.id,
+          dados.message?.base64 ?? null,
+          midia.mimetype ?? null,
+        );
+        if (baixada) midiaPath = await salvarMidiaInbound(baixada.bytes, baixada.mime || midia.mimetype);
+      }
+
       await processarMensagemNormalizada({
         numeroProviderRef: evento.instance ?? null,
         contatoWaId: waId,
@@ -80,6 +133,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         providerMessageId: dados.key.id,
         corpo,
         tipo,
+        midiaPath,
         driver: "BAILEYS",
         fromMe: dados.key.fromMe === true,
         quando: ts ? new Date(Number(ts) * 1000) : new Date(),
@@ -100,6 +154,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           numeroProviderRef: evento.instance ?? null,
           providerMessageId: dados.key.id,
           status,
+          driver: "BAILEYS",
           quando: new Date(),
         });
       }

@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { StatusMensagem, TipoMensagem } from "@prisma/client";
 import { processarMensagemNormalizada, processarStatusNormalizado } from "@/server/whatsapp/inbound";
+import { processarStatusTemplateWebhook, type StatusTemplateWebhook } from "@/server/whatsapp/meta-templates";
+import { baixarMidiaMeta, salvarMidiaInbound } from "@/server/whatsapp/midia";
 
 // WEBHOOK OFICIAL (Meta Cloud API) — doc 26 §Camada 0 · gap A4/A8 do doc 28.
 // GET  = handshake de verificação (hub.challenge).
@@ -54,9 +56,17 @@ const STATUS_POR_META: Record<string, StatusMensagem> = {
   failed: "FALHOU",
 };
 
+interface MidiaMeta {
+  id?: string;
+  mime_type?: string;
+  caption?: string;
+  filename?: string;
+}
+
 interface PayloadMeta {
   entry?: {
     changes?: {
+      field?: string;
       value?: {
         metadata?: { phone_number_id?: string };
         contacts?: { wa_id?: string; profile?: { name?: string } }[];
@@ -66,6 +76,10 @@ interface PayloadMeta {
           timestamp?: string;
           type?: string;
           text?: { body?: string };
+          image?: MidiaMeta;
+          audio?: MidiaMeta;
+          video?: MidiaMeta;
+          document?: MidiaMeta;
         }[];
         statuses?: { id?: string; status?: string; timestamp?: string }[];
       };
@@ -91,6 +105,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   try {
     for (const entry of payload.entry ?? []) {
       for (const change of entry.changes ?? []) {
+        // Ciclo de template (doc 26 §Camada 2): rascunho → em revisão → aprovado/rejeitado.
+        if (change.field === "message_template_status_update" && change.value) {
+          await processarStatusTemplateWebhook(change.value as StatusTemplateWebhook);
+          continue;
+        }
         const valor = change.value;
         if (!valor) continue;
         const providerRef = valor.metadata?.phone_number_id ?? null;
@@ -102,13 +121,24 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         for (const m of valor.messages ?? []) {
           if (!m.id || !m.from) continue;
+
+          // Mídia inbound (gap A3): a URL da Meta EXPIRA em minutos — baixa AGORA, antes
+          // de gravar o log. Falha de download não perde a mensagem (entra sem binário).
+          const midia = m.image ?? m.audio ?? m.video ?? m.document ?? null;
+          let midiaPath: string | null = null;
+          if (midia?.id) {
+            const baixada = await baixarMidiaMeta(midia.id);
+            if (baixada) midiaPath = await salvarMidiaInbound(baixada.bytes, baixada.mime || midia.mime_type);
+          }
+
           await processarMensagemNormalizada({
             numeroProviderRef: providerRef,
             contatoWaId: m.from,
             nomeExibicao: nomePorWaId.get(m.from) ?? null,
             providerMessageId: m.id,
-            corpo: m.text?.body ?? null,
+            corpo: m.text?.body ?? midia?.caption ?? m.document?.filename ?? null,
             tipo: TIPO_POR_META[m.type ?? ""] ?? "OUTRO",
+            midiaPath,
             driver: "META_CLOUD",
             fromMe: false, // Cloud API só entrega inbound aqui; echo de saída chega em statuses
             quando: m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date(),
@@ -123,6 +153,7 @@ export async function POST(req: Request): Promise<NextResponse> {
             numeroProviderRef: providerRef,
             providerMessageId: s.id,
             status,
+            driver: "META_CLOUD",
             quando: s.timestamp ? new Date(Number(s.timestamp) * 1000) : new Date(),
           });
         }

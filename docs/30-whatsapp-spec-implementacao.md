@@ -18,6 +18,11 @@
 | S8 | **Shadow mode** | Global `modoShadow` (default **true**) + estado por política (`ativa/shadow/desligada`, default `desligada`). Despachante em shadow marca a intenção como `simulada`, nunca chama driver. |
 | S9 | **Mídia (E1)** | Log de mensagem referencia mídia por caminho; download/armazenamento real (S3 vs disco) é decisão da E3 — E1 não trata binário. |
 | S10 | **Opt-out (E1)** | Campo `optOutEm` no contato + lei no despachante. Captura (botão/keyword) é UI da E3. |
+| S11 | **Matriz papéis × canal** (gaps D21/D22, fechados na E3) | Conversa é do NÚMERO (`whatsapp/escopo.ts`, fail-closed): Admin vê tudo · Financeiro/Secretaria veem números de COBRANCA · Gerente Comercial supervisiona VENDAS · Vendedor só números dos quais é dono. Quem vê, opera (enviar/vincular/opt-out). Promessa/pagamento pela inbox seguem as alçadas do doc 12 (Financeiro/Secretaria); "retomar régua" idem; config (números/templates/política/kill switch) = Admin. |
+| S12 | **Storage de mídia** (E3, resolve S9/gap A3) | Disco local no pipeline existente: `data/uploads/whatsapp/` + `GET /api/files` + 3º ramo em `podeLerArquivo` (escopo do número). Whitelist ganhou áudio/webp/mp4; teto 10MB; download inbound imediato no webhook (URL da Meta expira). S3/retenção = E5. |
+| S13 | **Kill switch × origem HUMANO** (E3) | Kill switch congela a AUTOMAÇÃO (CRON/LOTE); origem HUMANO (inbox e botão da fila) passa — resposta humana é decisão humana, não automação. |
+| S14 | **"Tratar" o inbound** (E3, completa S4) | `ConversaWhatsApp.inboundTratadoEm`: promessa/pagamento pela inbox e "retomar régua" marcam tratado; o despachante só aplica o silêncio quando `ultimoInboundEm > inboundTratadoEm`. |
+| S15 | **Prontidão da política** (E4) | Validada ao ARMAR (salvar com estado shadow/ativa): exige remetente ativo; remetente oficial exige template APROVADO nos degraus ativos automático/lote; remetente Baileys com degrau automático é recusado (trava S1). DESLIGADA salva livre. |
 
 ## Modelo de dados (Prisma — nomes finais)
 Enums: `DriverWhatsApp (META_CLOUD, BAILEYS)` · `FinalidadeNumero (COBRANCA, VENDAS)` ·
@@ -58,6 +63,9 @@ modo, ativo, @@unique politicaId+passo).
   agregados novos no union de `_shared/evento.ts`. Atualizar docs/12 ao final da E1.
 
 ## Etapas
+> **Estado:** E1+E2 entregues (PR #49/#50, 2026-07-13) · E3+E4 entregues (branch
+> `feat/whatsapp-e3-e4`, 2026-07-13) · E5 (go-live) e E6 (comercial) pendentes.
+
 - **E1 — Fundação de dados + braço em shadow (esta etapa).** Schema + migration aditiva ·
   seed (política de fábrica = REGUA com D-7/D-3/D0 `AUTOMATICO`, D+3/D+7 `LOTE`, D+15 fora;
   4 templates com os textos migrados do client) · `proximaAcao` ganha `politica` ·

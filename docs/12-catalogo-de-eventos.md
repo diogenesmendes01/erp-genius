@@ -92,12 +92,25 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 > `MatriculaAtivadaComPendencia`, `MatriculaCancelada`, `ComissaoEstornada`.
 > Mantidos no catálogo porque o roadmap (Fase 1/2) os ativa; ao implementar, manter o padrão.
 >
-> **Reservados do canal WhatsApp (doc 30, etapas E2–E4):** `OptOutRegistrado` (agregado
-> `ContatoWhatsApp`), `NumeroWhatsAppConectado`/`SessaoBaileysCaiu` (`NumeroWhatsApp`),
-> `TemplateSubmetido`/`TemplateAprovado`/`TemplateRejeitado` (`TemplateWhatsApp`),
-> `PoliticaReguaAlterada { antes, depois }` (`PoliticaRegua`). Os agregados novos já estão
-> no union `AgregadoTipo` (`_shared/evento.ts`). `Conversa`/`Mensagem` **não** são agregados
-> de Evento: tabelas operacionais (doc 29 regra 3).
+## Canal WhatsApp (agregados `ContatoWhatsApp` · `NumeroWhatsApp` · `TemplateWhatsApp` · `PoliticaRegua`)
+
+Implementados nas etapas E3/E4 do doc 30. `Conversa`/`Mensagem` **não** são agregados de
+Evento: tabelas operacionais (doc 29 regra 3).
+
+| Evento | Gatilho | Quem | Payload |
+|---|---|---|---|
+| `OptOutRegistrado` | Contato pediu para não receber: keyword exata no inbound (sair/parar/stop/baja…) ou botão da thread (S10) | Sistema · quem vê a conversa | `{ via: "keyword"\|"botao", palavra? }` |
+| `OptOutRemovido` | Reativação manual (contato pediu para voltar) | Quem vê a conversa | `{}` |
+| `ContatoVinculado` | Vínculo contato → aluno/responsável/lead na inbox (D26) | Quem vê a conversa (lead respeita `escopoLeads`) | `{ alvo: {tipo, id}, antes }` |
+| `ReguaRetomada` | "Retomar régua" na thread — libera o silêncio pós-inbound (S4) sem promessa/pagamento | Financeiro/Secretaria | `{ conversaId }` |
+| `NumeroWhatsAppCriado` | Cadastro de número na config | Admin | `{ telefoneE164, driver, finalidade }` |
+| `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26) | Admin | `{ antes, depois }` |
+| `NumeroWhatsAppConectado` | Sessão Baileys abriu (QR lido) — via webhook `connection.update` ou poll | Sistema | `{ via, de }` |
+| `SessaoBaileysCaiu` | Sessão que estava CONECTADO caiu — fila degrada p/ "acumula + alerta" | Sistema | `{ via }` |
+| `TemplateCriado` / `TemplateAlterado` | Editor de template (edição de aprovado volta a rascunho) | Admin | `{ nome, ... }` / `{ antes, depois }` |
+| `TemplateSubmetido` | Submissão à revisão da Meta (Marco 2) | Admin | `{ metaTemplateId }` |
+| `TemplateAprovado` / `TemplateRejeitado` | Transição de status vinda da Meta (webhook `message_template_status_update` ou mapeador/sync) | Sistema | `{ via: "sync"\|"webhook", de, motivo? }` |
+| `PoliticaReguaAlterada` | Salvar política / kill switch (D26) | Admin | `{ antes, depois }` (snapshot; `antes: null` na 1ª materialização) |
 
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |
