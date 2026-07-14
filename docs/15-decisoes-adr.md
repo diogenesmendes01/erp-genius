@@ -41,6 +41,7 @@
 | D31 | **Integridade de dados (issue #1):** índices únicos PARCIAIS — 1 alocação ATIVA por aluno · 1 preço ATIVO por país+produto+modalidade+tipoCobrança (migration `integridade_alocacao_preco`) | ✅ | [11](11-modelo-de-dados.md) |
 | D18 | **`MovimentacaoAluno` tipada** criada na Fase 0 (coexiste com `Evento`) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
 | D19 | **Ativação** exige `contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`; exceção "com pendência" (Admin/Gerente) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
+| D33 | **Deploy = VPS + Docker Compose** (Postgres interno sem porta pública · app Next standalone · Evolution só na rede interna · Caddy TLS como única borda); processo sempre-vivo exigido pelo canal (webhook + sessão Baileys) descarta serverless; mídia segue em disco/volume (S9) com backup diário testado (`scripts/backup-producao.sh`); banco por ambiente fecha o gap A5 | ✅ | [31](31-whatsapp-go-live.md) |
 
 ---
 
