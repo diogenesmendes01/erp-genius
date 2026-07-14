@@ -199,10 +199,12 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
       }
     }
 
-    // 9. SHADOW (S8): política em ensaio (cron) ou ambiente sem WHATSAPP_LIVE=1 →
-    //    registra o que TERIA sido enviado, sem chamar driver. SIMULADA não é terminal:
-    //    a fila reabre quando o canal sair do ensaio (review PR #49).
-    const shadow = !live || (it.origem === "CRON" && politica.estado !== "ATIVA");
+    // 9. SHADOW (S8): política em ensaio ou ambiente sem WHATSAPP_LIVE=1 → registra o que
+    //    TERIA sido enviado, sem chamar driver. Vale para TODA automação (CRON e LOTE —
+    //    review PR #51 P1-3: lote aprovado durante o ensaio não pode disparar de verdade);
+    //    origem HUMANO (resposta na inbox/fila) é decisão humana e envia mesmo em ensaio.
+    //    SIMULADA não é terminal: a fila reabre quando o canal sair do ensaio (review PR #49).
+    const shadow = !live || (automatica && politica.estado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente

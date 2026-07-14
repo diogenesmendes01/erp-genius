@@ -29,7 +29,7 @@ import {
   submeterTemplateNaMeta,
   type ResultadoSync,
 } from "./meta-templates";
-import { tipoPorMime } from "./midia";
+import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import {
   LoteCobrancaSchema,
@@ -261,7 +261,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
   });
 }
 
-/** Mídia da inbox: o arquivo já subiu pelo POST /api/upload; aqui só vira intenção. */
+/** Mídia da inbox: o arquivo já subiu pelo POST /api/whatsapp/upload; aqui só vira intenção. */
 export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Resultado<EnvioInboxResultado>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -271,6 +271,14 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.contato.optOutEm) {
       throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
+    }
+
+    // POSSE (review PR #51 P1-2): só anexa mídia que o PRÓPRIO autor subiu para envio
+    // (whatsapp-out/<autor>). Qualquer outra URL de /api/files — comprovante, documento de
+    // lead, mídia de outra conversa — é recusada SEM consultar o arquivo: a autorização de
+    // leitura desses objetos é de outra alçada e envio para fora seria exfiltração.
+    if (!midiaSaidaDoAutor(url, autor.id)) {
+      throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
     }
 
     const mime = contentTypePorExtensao(url);
@@ -478,6 +486,24 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
     });
     if (conflito) throw new ErroRegra("Já existe um número cadastrado com este telefone.");
 
+    // providerRef identifica o número DENTRO do driver (review PR #51 P2-6): duplicado
+    // deixaria o roteamento dos webhooks ambíguo — mensagem cairia na conversa errada.
+    if (dados.providerRef) {
+      const refDuplicada = await prisma.numeroWhatsApp.findFirst({
+        where: {
+          providerRef: dados.providerRef,
+          driver: dados.driver,
+          ...(dados.id ? { id: { not: dados.id } } : {}),
+        },
+        select: { rotulo: true },
+      });
+      if (refDuplicada) {
+        throw new ErroRegra(
+          `Esta referência (phone_number_id/instância) já está no número "${refDuplicada.rotulo}".`,
+        );
+      }
+    }
+
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.numeroWhatsApp.findUnique({ where: { id: dados.id } });
@@ -600,9 +626,13 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
       if (dados.id) {
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
         if (!antes) throw new ErroRegra("Template não encontrado.");
-        // Nome é a identidade na Meta: só renomeia quem nunca foi submetido.
+        // Nome+idioma são a identidade na Meta: só muda quem nunca foi submetido
+        // (review PR #51 P2-4 — a edição na Meta não aceita trocar nem name nem language).
         if (dados.nome !== antes.nome && antes.metaTemplateId) {
           throw new ErroRegra("Template já submetido à Meta não pode mudar de nome — crie um novo.");
+        }
+        if (dados.idioma !== antes.idioma && antes.metaTemplateId) {
+          throw new ErroRegra("Template já submetido à Meta não pode mudar de idioma — crie um novo.");
         }
         const mudouConteudo =
           dados.corpo !== antes.corpo || dados.idioma !== antes.idioma || dados.categoria !== antes.categoria;

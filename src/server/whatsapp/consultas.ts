@@ -1,7 +1,7 @@
-import { StatusCobranca, type Prisma } from "@prisma/client";
+import { Papel, StatusCobranca, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
-import type { UsuarioSessao } from "@/server/_shared";
+import { temPapel, type UsuarioSessao } from "@/server/_shared";
 import { numero as decimalParaNumero, numeroOuNull } from "@/server/_shared/decimal";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "@/server/cobrancas/fabrica";
@@ -182,8 +182,10 @@ export async function carregarThread(
           lead: { select: { id: true, nome: true } },
         },
       },
+      // As 300 mais RECENTES (review PR #51 P2-5): desc + take, invertidas na projeção —
+      // asc + take devolveria as 300 mais ANTIGAS e esconderia justamente o fim da conversa.
       mensagens: {
-        orderBy: { criadoEm: "asc" },
+        orderBy: { criadoEm: "desc" },
         take: 300,
         include: {
           autor: { select: { nome: true } },
@@ -213,7 +215,11 @@ export async function carregarThread(
     : null;
   const silencioAtivo = naoTratado && !!limiteSilencio && agora < limiteSilencio.getTime();
 
-  const cobrancaAtiva = await cobrancaAtivaDoContato(c.contato);
+  // Dados financeiros SÓ para quem opera cobrança (review PR #51 P1-1): o gate no server —
+  // esconder botão no client não impede o payload de vazar saldo/vencimento a vendedor.
+  const cobrancaAtiva = temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA)
+    ? await cobrancaAtivaDoContato(c.contato)
+    : null;
 
   return {
     conversaId: c.id,
@@ -240,7 +246,7 @@ export async function carregarThread(
     janela24h,
     silencio: { ativo: silencioAtivo, ate: silencioAtivo ? limiteSilencio!.toISOString() : null },
     cobrancaAtiva,
-    mensagens: c.mensagens.map((m) => ({
+    mensagens: [...c.mensagens].reverse().map((m) => ({
       id: m.id,
       direcao: m.direcao,
       tipo: m.tipo,

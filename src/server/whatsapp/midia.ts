@@ -13,7 +13,11 @@ import { ErroDriver } from "./canal";
 // SEM binário (o texto/caption sobrevive; nada explode).
 
 const SUBPASTA = "whatsapp";
-const MAX_BYTES = 10 * 1024 * 1024;
+/** Saída (inbox → contato): por AUTOR — whatsapp-out/<usuarioId>/ (review PR #51 P1-2). */
+const SUBPASTA_SAIDA = "whatsapp-out";
+/** Teto único de mídia do canal (inbound e outbound). Exportado p/ o uploader validar ANTES de materializar o corpo. */
+export const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
+const MAX_BYTES = MAX_BYTES_MIDIA;
 
 /** MIME normalizado (sem "; codecs=...") → extensão canônica do storage. */
 const EXTENSAO_POR_MIME: Record<string, string> = {
@@ -66,6 +70,47 @@ export async function salvarMidiaInbound(
   return `/api/files/${SUBPASTA}/${nome}`;
 }
 
+/**
+ * Persiste um binário que o USUÁRIO subiu para ENVIAR pela inbox. Vive em
+ * `whatsapp-out/<usuarioId>/` — a posse fica no caminho, e é ela que a action de envio
+ * valida (review PR #51 P1-2: sem isso, qualquer URL de /api/files viraria anexo e um
+ * comprovante fora do escopo do usuário poderia ser exfiltrado para um contato externo).
+ */
+export async function salvarMidiaSaida(
+  usuarioId: string,
+  bytes: Buffer,
+  mime: string | null | undefined,
+): Promise<string | null> {
+  const ext = extensaoPorMime(mime);
+  if (!ext) return null;
+  if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES) return null;
+
+  const dir = path.join(UPLOAD_DIR, SUBPASTA_SAIDA, usuarioId);
+  await mkdir(dir, { recursive: true });
+  const nome = `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`;
+  await writeFile(path.join(dir, nome), bytes);
+  return `/api/files/${SUBPASTA_SAIDA}/${usuarioId}/${nome}`;
+}
+
+/**
+ * A URL é uma mídia de saída DO PRÓPRIO autor? Checagem canônica por segmentos (não por
+ * prefixo de string): rejeita traversal (`..`) que "começaria com" o prefixo certo mas
+ * resolveria para arquivo de outro usuário ou de outra pasta.
+ */
+export function midiaSaidaDoAutor(url: string, autorId: string): boolean {
+  const prefixo = "/api/files/";
+  if (!url.startsWith(prefixo)) return false;
+  const seg = url.slice(prefixo.length).split("/");
+  return (
+    seg.length === 3 &&
+    seg[0] === SUBPASTA_SAIDA &&
+    seg[1] === autorId &&
+    seg[2].length > 0 &&
+    !seg[2].includes("..") &&
+    !seg[2].includes("\\")
+  );
+}
+
 export interface MidiaParaEnvio {
   mime: string;
   nomeArquivo: string;
@@ -76,6 +121,8 @@ export interface MidiaParaEnvio {
  * Lê um arquivo do storage privado a partir da URL canônica `/api/files/...` para o
  * despachante entregar ao driver. Lança ErroDriver com motivo estável (vira FALHOU na
  * intenção + fila humana) quando o caminho é inválido ou o arquivo sumiu.
+ * DEFESA EM PROFUNDIDADE (review PR #51 P1-2): só lê de `whatsapp-out/` — mesmo que uma
+ * intenção nasça com caminho de comprovante/documento, o despachante não o entrega.
  */
 export async function lerMidiaParaEnvio(midiaPath: string): Promise<MidiaParaEnvio> {
   const prefixo = "/api/files/";
@@ -83,6 +130,8 @@ export async function lerMidiaParaEnvio(midiaPath: string): Promise<MidiaParaEnv
   const segmentos = midiaPath.slice(prefixo.length).split("/").filter(Boolean);
   const caminho = resolverCaminhoUpload(segmentos);
   if (!caminho) throw new ErroDriver("midia_caminho_invalido");
+  const baseSaida = path.normalize(path.join(UPLOAD_DIR, SUBPASTA_SAIDA) + path.sep);
+  if (!caminho.startsWith(baseSaida)) throw new ErroDriver("midia_fora_do_storage_de_envio");
   const mime = contentTypePorExtensao(caminho);
   if (!mime) throw new ErroDriver("midia_tipo_nao_permitido");
   let bytes: Buffer;

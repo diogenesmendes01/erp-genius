@@ -7,11 +7,12 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
-import { seedCanal } from "@/test/integracao-whatsapp";
+import { agoraAs, diasDepois, seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
 import { listarConversas, carregarThread } from "./consultas";
 import { despacharFila } from "./despachante";
-import { processarMensagemNormalizada } from "./inbound";
+import { processarMensagemNormalizada, processarStatusNormalizado } from "./inbound";
 import {
+  enviarMidiaInbox,
   enviarTextoInbox,
   marcarConversaTratada,
   registrarOptOutContato,
@@ -205,6 +206,129 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     const r = await marcarConversaTratada({ conversaId: conversa.id, motivo: "retomar_regua" });
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
+  it("financeiro recebe a cobrança; vendedor recebe null MESMO com contato vinculado a aluno devedor", async () => {
+    const agora = agoraAs(10);
+    const { numero: numeroCobranca } = await seedCanal({ estado: "SHADOW" });
+    const { aluno, cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
+
+    // Conversa no número de COBRANCA, contato vinculado ao aluno devedor.
+    const contatoCobranca = await prisma.contatoWhatsApp.create({
+      data: { telefoneE164: "+50677770001", alunoId: aluno.id },
+    });
+    const antes = new Date(Date.now() - 60_000);
+    const conversaCobranca = await prisma.conversaWhatsApp.create({
+      data: { numeroId: numeroCobranca.id, contatoId: contatoCobranca.id, ultimaMensagemEm: new Date() },
+    });
+    await prisma.mensagemWhatsApp.createMany({
+      data: [
+        { conversaId: conversaCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "primeira", driver: "META_CLOUD", criadoEm: antes },
+        { conversaId: conversaCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "última", driver: "META_CLOUD" },
+      ],
+    });
+
+    const doFinanceiro = await carregarThread(
+      { id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] },
+      conversaCobranca.id,
+    );
+    expect(doFinanceiro?.cobrancaAtiva?.id).toBe(cobranca.id);
+    // Thread em ordem cronológica mesmo com o take desc (P2-5).
+    expect(doFinanceiro?.mensagens.map((m) => m.corpo)).toEqual(["primeira", "última"]);
+
+    // Mesmo aluno devedor, mas num número de VENDAS do vendedor: o payload NÃO leva
+    // saldo/vencimento — o gate é no server, não no botão do client.
+    const { numero: numeroVendas } = await seedConversaVendas(vendedor.id);
+    const contatoVendas = await prisma.contatoWhatsApp.create({
+      data: { telefoneE164: "+50677770002", alunoId: aluno.id },
+    });
+    const conversaVendas = await prisma.conversaWhatsApp.create({
+      data: { numeroId: numeroVendas.id, contatoId: contatoVendas.id, ultimaMensagemEm: new Date() },
+    });
+    const doVendedor = await carregarThread(
+      { id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] },
+      conversaVendas.id,
+    );
+    expect(doVendedor).not.toBeNull();
+    expect(doVendedor?.cobrancaAtiva).toBeNull();
+  });
+});
+
+describe("posse do anexo no envio de mídia (P1-2)", () => {
+  it("URL que não é do storage de envio do PRÓPRIO autor é recusada", async () => {
+    const { conversa } = await seedConversaVendas(vendedor.id);
+    const outro = await criarUsuario([Papel.VENDEDOR]);
+    authMock.mockResolvedValue({ user: { id: vendedor.id } });
+
+    // Comprovante financeiro (fora de whatsapp-out): exfiltração barrada na action.
+    const comprovante = await enviarMidiaInbox({ conversaId: conversa.id, url: "/api/files/999-comprovante.jpg" });
+    expect(comprovante.ok).toBe(false);
+    expect((comprovante as { erro?: string }).erro).toContain("Anexo inválido");
+
+    // Anexo de OUTRO usuário: idem.
+    const alheio = await enviarMidiaInbox({
+      conversaId: conversa.id,
+      url: `/api/files/whatsapp-out/${outro.id}/foto.jpg`,
+    });
+    expect(alheio.ok).toBe(false);
+
+    // Traversal disfarçado de anexo próprio: idem.
+    const traversal = await enviarMidiaInbox({
+      conversaId: conversa.id,
+      url: `/api/files/whatsapp-out/${vendedor.id}/../${outro.id}/foto.jpg`,
+    });
+    expect(traversal.ok).toBe(false);
+
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+
+    // Anexo do próprio autor passa (vira SIMULADA no ambiente sem live).
+    const proprio = await enviarMidiaInbox({
+      conversaId: conversa.id,
+      url: `/api/files/whatsapp-out/${vendedor.id}/foto.jpg`,
+    });
+    expect(proprio.ok, proprio.ok ? "" : `falhou: ${(proprio as { erro?: string }).erro}`).toBe(true);
+    expect(proprio.ok && proprio.dado!.status).toBe("SIMULADA");
+  });
+});
+
+describe("roteamento de webhook por driver (P2-6)", () => {
+  it("mesmo providerRef em drivers diferentes: cada mensagem cai no número do SEU driver", async () => {
+    const { numero: numeroBaileys } = await seedConversaVendas(vendedor.id); // providerRef "inst-teste", BAILEYS
+    const numeroMeta = await prisma.numeroWhatsApp.create({
+      data: {
+        telefoneE164: "+5511977770000",
+        rotulo: "Cobrança Meta (teste)",
+        driver: "META_CLOUD",
+        finalidade: "COBRANCA",
+        providerRef: numeroBaileys.providerRef, // colisão de referência ENTRE drivers
+      },
+    });
+
+    const r = await processarMensagemNormalizada({
+      numeroProviderRef: numeroBaileys.providerRef,
+      contatoWaId: "50633334445",
+      providerMessageId: "MSG-DRIVER-1",
+      corpo: "oi",
+      tipo: "TEXTO",
+      driver: "META_CLOUD",
+      fromMe: false,
+      quando: new Date(),
+    });
+    expect(r).toBe("gravada");
+    const msg = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "MSG-DRIVER-1" } });
+    expect(msg.numeroId).toBe(numeroMeta.id); // e NÃO o número Baileys de mesmo ref
+
+    // Status idem: o ack do Baileys não atualiza mensagem do número Meta.
+    const ignorado = await processarStatusNormalizado({
+      numeroProviderRef: numeroBaileys.providerRef,
+      providerMessageId: "MSG-DRIVER-1",
+      status: "LIDA",
+      driver: "BAILEYS",
+      quando: new Date(),
+    });
+    expect(ignorado).toBe("ignorado");
   });
 });
 

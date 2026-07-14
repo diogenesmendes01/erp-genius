@@ -154,6 +154,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           numeroProviderRef: evento.instance ?? null,
           providerMessageId: dados.key.id,
           status,
+          driver: "BAILEYS",
           quando: new Date(),
         });
       }
