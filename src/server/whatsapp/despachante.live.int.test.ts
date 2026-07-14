@@ -1,0 +1,169 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { mkdir, rm, writeFile } from "fs/promises";
+import path from "path";
+import { UPLOAD_DIR } from "@/lib/uploads";
+
+// Drivers FALSOS: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
+// despachante (o que os outros int tests nunca fazem) — nenhuma mensagem pode sair.
+const { enviarTextoMock, enviarTemplateMock, enviarMidiaMock } = vi.hoisted(() => ({
+  enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-texto" }),
+  enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-template" }),
+  enviarMidiaMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-midia" }),
+}));
+vi.mock("./drivers/meta-cloud", () => ({
+  driverMetaCloud: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
+}));
+vi.mock("./drivers/evolution", () => ({
+  driverEvolution: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
+}));
+
+import { prisma } from "@/lib/prisma";
+import { truncarBanco, criarUsuario } from "@/test/integracao";
+import { seedCanal } from "@/test/integracao-whatsapp";
+import { despacharFila } from "./despachante";
+
+// Integração do SHADOW por política com o canal LIVE (review PR #51 P1-3): com
+// WHATSAPP_LIVE=1, política em ensaio (SHADOW/DESLIGADA) precisa simular TODA automação —
+// CRON e LOTE. Só origem HUMANO (resposta na inbox/fila) atravessa o ensaio.
+
+beforeEach(async () => {
+  await truncarBanco();
+  vi.stubEnv("WHATSAPP_LIVE", "1");
+  enviarTextoMock.mockClear();
+  enviarTemplateMock.mockClear();
+  enviarMidiaMock.mockClear();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+async function seedContato(telefone = "+50611112222") {
+  return prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
+}
+
+describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
+  it("política SHADOW: LOTE vira SIMULADA — o driver NUNCA é chamado no ensaio", async () => {
+    const { numero, politica, templates } = await seedCanal({ estado: "SHADOW", janela: [0, 24] });
+    const contato = await seedContato();
+    await prisma.intencaoMensagem.create({
+      data: {
+        numeroId: numero.id,
+        contatoId: contato.id,
+        origem: "LOTE",
+        corpoRenderizado: "lote em ensaio",
+        politicaId: politica.id,
+        templateId: templates.get("amigavel"),
+      },
+    });
+
+    const r = await despacharFila();
+    expect(r.simuladas).toBe(1);
+    expect(r.despachadas).toBe(0);
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect(enviarTemplateMock).not.toHaveBeenCalled();
+
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.status).toBe("SIMULADA");
+  });
+
+  it("política ATIVA: o MESMO lote envia de verdade (contra-prova)", async () => {
+    const { numero, politica, templates } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
+    const contato = await seedContato();
+    await prisma.intencaoMensagem.create({
+      data: {
+        numeroId: numero.id,
+        contatoId: contato.id,
+        origem: "LOTE",
+        corpoRenderizado: "lote aprovado",
+        politicaId: politica.id,
+        templateId: templates.get("amigavel"),
+      },
+    });
+
+    const r = await despacharFila();
+    expect(r.despachadas).toBe(1);
+    expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.status).toBe("DESPACHADA");
+  });
+
+  it("política SHADOW: origem HUMANO atravessa o ensaio (decisão humana envia)", async () => {
+    const { numero } = await seedCanal({ estado: "SHADOW", janela: [0, 24] });
+    const humano = await criarUsuario([]);
+    const contato = await seedContato();
+    await prisma.intencaoMensagem.create({
+      data: {
+        numeroId: numero.id,
+        contatoId: contato.id,
+        origem: "HUMANO",
+        corpoRenderizado: "resposta humana",
+        autorId: humano.id,
+      },
+    });
+
+    const r = await despacharFila();
+    expect(r.despachadas).toBe(1);
+    expect(enviarTextoMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
+  it("midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)", async () => {
+    const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
+    const humano = await criarUsuario([]);
+    const contato = await seedContato();
+    await prisma.intencaoMensagem.create({
+      data: {
+        numeroId: numero.id,
+        contatoId: contato.id,
+        origem: "HUMANO",
+        tipo: "IMAGEM",
+        midiaPath: "/api/files/999-comprovante.jpg", // comprovante financeiro, não anexo da inbox
+        corpoRenderizado: "",
+        autorId: humano.id,
+      },
+    });
+
+    const r = await despacharFila();
+    expect(r.falhas).toBe(1);
+    expect(enviarMidiaMock).not.toHaveBeenCalled();
+
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.status).toBe("FALHOU");
+    expect(intencao.motivoFalha).toBe("midia_fora_do_storage_de_envio");
+  });
+
+  it("midiaPath do próprio storage de envio é entregue ao driver", async () => {
+    const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
+    const humano = await criarUsuario([]);
+    const contato = await seedContato();
+
+    const dir = path.join(UPLOAD_DIR, "whatsapp-out", humano.id);
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, "foto.jpg"), Buffer.from("jpg-de-teste"));
+    try {
+      await prisma.intencaoMensagem.create({
+        data: {
+          numeroId: numero.id,
+          contatoId: contato.id,
+          origem: "HUMANO",
+          tipo: "IMAGEM",
+          midiaPath: `/api/files/whatsapp-out/${humano.id}/foto.jpg`,
+          corpoRenderizado: "legenda",
+          autorId: humano.id,
+        },
+      });
+
+      const r = await despacharFila();
+      expect(r.despachadas).toBe(1);
+      expect(enviarMidiaMock).toHaveBeenCalledTimes(1);
+      const chamada = enviarMidiaMock.mock.calls[0][2] as { mime: string; dadosBase64: string };
+      expect(chamada.mime).toBe("image/jpeg");
+      expect(Buffer.from(chamada.dadosBase64, "base64").toString()).toBe("jpg-de-teste");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

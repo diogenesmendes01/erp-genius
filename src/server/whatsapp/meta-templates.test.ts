@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { corpoParaMeta, statusMetaParaLocal } from "./meta-templates";
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { corpoParaMeta, statusMetaParaLocal, submeterTemplateNaMeta } from "./meta-templates";
 
 // Conversão amigável → posicional (doc 26 §Camada 2, Marco 2) + mapa de status da Meta.
 
@@ -39,5 +39,56 @@ describe("statusMetaParaLocal", () => {
     expect(statusMetaParaLocal("IN_APPEAL")).toBe("EM_REVISAO");
     expect(statusMetaParaLocal("qualquer-coisa")).toBeNull();
     expect(statusMetaParaLocal(null)).toBeNull();
+  });
+});
+
+// Re-submissão (review PR #51 P2-4): nome+idioma são a IDENTIDADE do template na Meta —
+// quem já tem metaTemplateId EDITA (POST /<id>), nunca re-cria (duplicaria e falharia).
+describe("submeterTemplateNaMeta — criar × editar", () => {
+  const base = { nome: "cobranca_vencida", corpo: "Olá {nome}.", idioma: "es", categoria: "utility" };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  function stubFetch(json: Record<string, unknown>) {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => json });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("META_WA_TOKEN", "token-teste");
+    vi.stubEnv("META_WA_WABA_ID", "waba-teste");
+    return fetchMock;
+  }
+
+  it("sem metaTemplateId cria na WABA (name+language no corpo)", async () => {
+    const fetchMock = stubFetch({ id: "meta-novo" });
+    const r = await submeterTemplateNaMeta(base);
+    expect(r.metaTemplateId).toBe("meta-novo");
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    expect(url).toContain("/waba-teste/message_templates");
+    const body = JSON.parse(init.body) as Record<string, unknown>;
+    expect(body.name).toBe("cobranca_vencida");
+    expect(body.language).toBe("es");
+  });
+
+  it("com metaTemplateId edita o template existente (POST /<id>, sem name/language)", async () => {
+    const fetchMock = stubFetch({ success: true });
+    const r = await submeterTemplateNaMeta({ ...base, metaTemplateId: "meta-123" });
+    expect(r.metaTemplateId).toBe("meta-123");
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    expect(url).toMatch(/\/meta-123$/);
+    const body = JSON.parse(init.body) as Record<string, unknown>;
+    expect(body.name).toBeUndefined();
+    expect(body.language).toBeUndefined();
+    expect(body.components).toBeDefined();
+  });
+
+  it("edição sem confirmação da Meta vira erro claro", async () => {
+    stubFetch({});
+    await expect(submeterTemplateNaMeta({ ...base, metaTemplateId: "meta-123" })).rejects.toThrow(
+      "não confirmou a edição",
+    );
   });
 });

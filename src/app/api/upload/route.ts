@@ -10,20 +10,9 @@ import { UPLOAD_DIR } from "@/lib/uploads";
 // Para serverless, trocar por S3/Supabase (signed URLs).
 export const runtime = "nodejs";
 
-// Áudio/webp entraram na E3 (mídia da inbox WhatsApp — gap A3 do doc 28); a gravação de
-// voz no navegador produz ogg/opus (Firefox) ou webm/opus (Chrome).
-const TIPOS_OK = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/jpg",
-  "image/webp",
-  "audio/ogg",
-  "audio/mpeg",
-  "audio/mp4",
-  "audio/webm",
-  "video/mp4",
-];
+// Só documentos/imagens: comprovante e contrato não têm áudio/vídeo. A mídia da inbox
+// WhatsApp usa a rota própria POST /api/whatsapp/upload (posse por autor — PR #51 P1-2).
+const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function POST(req: Request) {
@@ -38,7 +27,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Arquivo ausente." }, { status: 400 });
   }
   if (!TIPOS_OK.includes(file.type.split(";")[0].trim())) {
-    return NextResponse.json({ erro: "Tipo inválido (use PDF, imagem ou áudio)." }, { status: 400 });
+    return NextResponse.json({ erro: "Tipo inválido (use PDF, JPG ou PNG)." }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ erro: "Arquivo acima de 10MB." }, { status: 400 });

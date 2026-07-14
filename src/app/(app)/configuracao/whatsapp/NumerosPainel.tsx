@@ -265,7 +265,9 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
   }
 
   useEffect(() => {
-    void pedirQr();
+    // Agendado (não síncrono no corpo do effect): satisfaz react-hooks/set-state-in-effect.
+    const t = setTimeout(() => void pedirQr(), 0);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

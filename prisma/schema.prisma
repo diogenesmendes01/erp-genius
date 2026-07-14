@@ -822,6 +822,11 @@ model NumeroWhatsApp {
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   politicas PoliticaRegua[]
+
+  // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
+  // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
+  // mensagem cairia na conversa/dono errados (review PR #51 P2-6).
+  @@unique([driver, providerRef])
 }
 
 model ContatoWhatsApp {

@@ -196,43 +196,65 @@ export interface ResultadoSubmissao {
   metaTemplateId: string;
 }
 
+/**
+ * Cria OU edita o template na WABA (review PR #51 P2-4): nome+idioma são a IDENTIDADE na
+ * Meta — re-submeter um template que já tem `metaTemplateId` via endpoint de criação
+ * falharia como duplicado. Edição usa POST /<template-id> (só categoria/components; a
+ * própria edição devolve o template à revisão da Meta).
+ */
 export async function submeterTemplateNaMeta(template: {
   nome: string;
   corpo: string;
   idioma: string;
   categoria: string;
+  metaTemplateId?: string | null;
 }): Promise<ResultadoSubmissao> {
   const { token, wabaId } = credenciais();
   const { texto, exemplos } = corpoParaMeta(template.corpo);
 
-  let resposta: Response;
-  try {
-    resposta = await fetch(`${GRAPH_BASE}/${wabaId}/message_templates`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+  const components = [
+    {
+      type: "BODY",
+      text: texto,
+      ...(exemplos.length ? { example: { body_text: [exemplos] } } : {}),
+    },
+  ];
+  const edicao = !!template.metaTemplateId;
+  const url = edicao
+    ? `${GRAPH_BASE}/${template.metaTemplateId}`
+    : `${GRAPH_BASE}/${wabaId}/message_templates`;
+  const body = edicao
+    ? { category: template.categoria.toUpperCase(), components }
+    : {
         name: template.nome,
         language: template.idioma,
         category: template.categoria.toUpperCase(),
-        components: [
-          {
-            type: "BODY",
-            text: texto,
-            ...(exemplos.length ? { example: { body_text: [exemplos] } } : {}),
-          },
-        ],
-      }),
+        components,
+      };
+
+  let resposta: Response;
+  try {
+    resposta = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
   } catch (e) {
     throw new ErroMeta(e instanceof Error ? e.message : "Falha de rede na Graph API.");
   }
   const json = (await resposta.json().catch(() => ({}))) as {
     id?: string;
+    success?: boolean;
     error?: { message?: string; error_user_msg?: string };
   };
-  if (!resposta.ok || !json.id) {
+  if (!resposta.ok) {
     throw new ErroMeta(json.error?.error_user_msg ?? json.error?.message ?? `Graph API HTTP ${resposta.status}`);
   }
+  if (edicao) {
+    if (json.success !== true) throw new ErroMeta("A Meta não confirmou a edição do template.");
+    return { metaTemplateId: template.metaTemplateId! };
+  }
+  if (!json.id) throw new ErroMeta("Graph API não devolveu o id do template.");
   return { metaTemplateId: json.id };
 }
 

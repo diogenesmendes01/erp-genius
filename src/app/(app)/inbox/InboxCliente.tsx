@@ -537,7 +537,9 @@ function Composer({
     try {
       const form = new FormData();
       form.append("file", file);
-      const up = await fetch("/api/upload", { method: "POST", body: form });
+      // Upload dedicado da inbox (review PR #51 P1-2): grava em whatsapp-out/<autor>/ —
+      // a action de envio só aceita anexos desta pasta do próprio autor.
+      const up = await fetch("/api/whatsapp/upload", { method: "POST", body: form });
       const json = (await up.json()) as { url?: string; erro?: string };
       if (!up.ok || !json.url) {
         onErro(json.erro ?? "Falha no upload.");
@@ -671,16 +673,20 @@ function VincularPainel({
 
   useEffect(() => {
     const termo = q.trim();
-    if (termo.length < 2) {
-      setResultados(null);
-      return;
-    }
-    const t = setTimeout(async () => {
-      setBuscando(true);
-      const r = await buscarVinculosInbox(termo);
-      setBuscando(false);
-      if (r.ok) setResultados(r.dado!);
-    }, 300);
+    // Todo setState dentro do callback do timer (react-hooks/set-state-in-effect).
+    const t = setTimeout(
+      async () => {
+        if (termo.length < 2) {
+          setResultados(null);
+          return;
+        }
+        setBuscando(true);
+        const r = await buscarVinculosInbox(termo);
+        setBuscando(false);
+        if (r.ok) setResultados(r.dado!);
+      },
+      termo.length < 2 ? 0 : 300,
+    );
     return () => clearTimeout(t);
   }, [q]);
 

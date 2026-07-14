@@ -130,6 +130,7 @@ export interface StatusNormalizado {
   numeroTelefoneE164?: string | null;
   providerMessageId: string;
   status: StatusMensagem;
+  driver: DriverWhatsApp;
   quando: Date;
 }
 
@@ -160,9 +161,19 @@ export async function processarStatusNormalizado(s: StatusNormalizado): Promise<
   return "atualizado";
 }
 
-async function acharNumero(ref: { numeroProviderRef?: string | null; numeroTelefoneE164?: string | null }) {
+// providerRef só identifica DENTRO do driver (phone_number_id da Meta × instância da
+// Evolution são namespaces distintos) — o lookup filtra por driver e o schema garante
+// @@unique([driver, providerRef]) (review PR #51 P2-6: sem isso, dois números com a mesma
+// referência roteariam mensagens para a conversa/dono errados).
+async function acharNumero(ref: {
+  numeroProviderRef?: string | null;
+  numeroTelefoneE164?: string | null;
+  driver: DriverWhatsApp;
+}) {
   if (ref.numeroProviderRef) {
-    const porRef = await prisma.numeroWhatsApp.findFirst({ where: { providerRef: ref.numeroProviderRef } });
+    const porRef = await prisma.numeroWhatsApp.findFirst({
+      where: { providerRef: ref.numeroProviderRef, driver: ref.driver },
+    });
     if (porRef) return porRef;
   }
   if (ref.numeroTelefoneE164) {

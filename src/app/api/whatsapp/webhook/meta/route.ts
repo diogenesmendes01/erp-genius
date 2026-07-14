@@ -153,6 +153,7 @@ export async function POST(req: Request): Promise<NextResponse> {
             numeroProviderRef: providerRef,
             providerMessageId: s.id,
             status,
+            driver: "META_CLOUD",
             quando: s.timestamp ? new Date(Number(s.timestamp) * 1000) : new Date(),
           });
         }
