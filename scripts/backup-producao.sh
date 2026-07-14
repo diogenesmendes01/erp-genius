@@ -45,11 +45,26 @@ find "$DESTINO" -mindepth 1 -maxdepth 1 -type d -mtime +"$RETENCAO_DIAS" -exec r
 echo "[backup] ok — $(du -sh "$PASTA" | cut -f1) · retenção ${RETENCAO_DIAS}d"
 
 # ---------------------------------------------------------------------------
-# RESTORE (testar ANTES do go-live — backup sem teste de restore não é backup):
-#   1. banco:      $COMPOSE exec -T db pg_restore -U erp -d erp --clean --if-exists < erp.dump
-#                  $COMPOSE exec -T db pg_restore -U erp -d evolution --clean --if-exists < evolution.dump
-#   2. uploads:    $COMPOSE exec -T app  tar -xzf - -C /app/data      < uploads.tar.gz
-#   3. instâncias: $COMPOSE exec -T evolution tar -xzf - -C /evolution < evolution-instances.tar.gz
-#   4. docker compose -f docker-compose.prod.yml restart app evolution
-# O passo a passo comentado vive no doc 31 §backup.
+# RESTORE (testar ANTES do go-live — backup sem teste de restore não é backup).
+# DETERMINÍSTICO: restaurar dump completo por cima de banco já migrado conflita em
+# constraints (review PR #52) — o banco é RECRIADO vazio, o dump entra inteiro (inclui
+# _prisma_migrations) e o migrate deploy aplica só migrations mais novas que o dump.
+#
+#   0. parar quem escreve:
+#        $COMPOSE stop app evolution
+#   1. recriar os bancos vazios e restaurar:
+#        $COMPOSE exec -T db psql -U erp -d postgres -c 'DROP DATABASE erp WITH (FORCE);'
+#        $COMPOSE exec -T db psql -U erp -d postgres -c 'CREATE DATABASE erp;'
+#        $COMPOSE exec -T db pg_restore -U erp -d erp --no-owner < erp.dump
+#        $COMPOSE exec -T db psql -U erp -d postgres -c 'DROP DATABASE evolution WITH (FORCE);'
+#        $COMPOSE exec -T db psql -U erp -d postgres -c 'CREATE DATABASE evolution;'
+#        $COMPOSE exec -T db pg_restore -U erp -d evolution --no-owner < evolution.dump
+#   2. migrations mais novas que o dump (idempotente; nada a fazer = sai limpo):
+#        $COMPOSE up -d migrate
+#   3. arquivos:
+#        $COMPOSE start app evolution   # containers precisam existir p/ o exec abaixo
+#        $COMPOSE exec -T app       tar -xzf - -C /app/data   < uploads.tar.gz
+#        $COMPOSE exec -T evolution tar -xzf - -C /evolution  < evolution-instances.tar.gz
+#        $COMPOSE restart app evolution
+#   4. VALIDAR: login + fila de cobrança + thread da inbox + sessão do número.
 # ---------------------------------------------------------------------------

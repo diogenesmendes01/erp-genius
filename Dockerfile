@@ -30,9 +30,10 @@ ENV PORT=3000
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs \
   && mkdir -p /app/data/uploads && chown -R nextjs:nodejs /app/data
 
+# Sem COPY de public/: o repo não tem assets públicos (fontes vivem em src/app/fonts e
+# uploads são privados em data/ — review PR #52). Se public/ nascer um dia, adicionar a cópia.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 EXPOSE 3000
