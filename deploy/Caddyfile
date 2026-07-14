@@ -1,0 +1,11 @@
+# Borda pública do ERP (doc 31). TLS automático via Let's Encrypt — basta o DNS do
+# domínio apontar para a VPS. Só o app é exposto; Evolution/Postgres ficam na rede interna.
+{$DOMINIO_APP} {
+	encode gzip
+	reverse_proxy app:3000
+
+	# Uploads e webhooks têm corpo maior que o default? Não: teto do app é 10MB + folga.
+	request_body {
+		max_size 12MB
+	}
+}
