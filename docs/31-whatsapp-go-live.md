@@ -23,37 +23,50 @@ Pré-requisitos: VPS Linux com Docker + compose plugin; DNS do domínio → IP d
 ```bash
 git clone https://github.com/diogenesmendes01/erp-genius /opt/erp-genius
 cd /opt/erp-genius
-cp deploy/env.production.example .env   # preencher (segredos: openssl rand -base64 32)
+cp deploy/env.production.example .env   # preencher (segredos: openssl rand -hex 32 — HEX é URL-safe)
+```
+> **Escolha o caminho AGORA — não rode os dois.** Vai trazer o banco atual? Pule o `up`
+> abaixo e siga direto para **§1.2** (o quickstart migra um schema vazio e o restore
+> posterior colidiria). Instalação limpa (sem dados a importar): use o **§1.1**.
+
+O compose sobe, em ordem: **Postgres** (interno, SEM porta pública — bancos `erp` +
+`evolution`, gap A5) → **migrate** (`prisma migrate deploy`, aditivo) → **app** (Next
+standalone) → **Evolution API** (só na rede interna — doc 26: "fora da internet pública")
+→ **Caddy** (única borda; TLS automático — o webhook da Meta exige HTTPS).
+
+### 1.1 Instalação nova (banco vazio)
+```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
-O compose sobe: **Postgres** (interno, SEM porta pública — bancos `erp` + `evolution`,
-gap A5) → **migrate** (`prisma migrate deploy`, aditivo, roda antes do app) → **app**
-(Next standalone) → **Evolution API** (só na rede interna — doc 26: "fora da internet
-pública") → **Caddy** (única borda; TLS automático — o webhook da Meta exige HTTPS).
+O serviço `migrate` cria o schema do zero antes do app subir. Fim.
 
-- **Webhook Meta**: no app da Meta, apontar para `https://<dominio>/api/whatsapp/webhook/meta`
+### 1.2 Migração do banco atual (traz dados)
+O restore vai em banco **vazio, ANTES** de qualquer migration (dump completo por cima de
+schema já migrado colide em constraints e deixa restauração parcial):
+```bash
+docker compose -f docker-compose.prod.yml up -d db      # SÓ o banco (cria erp vazio)
+pg_dump -Fc "$DATABASE_URL_ATUAL" > antes.dump
+docker compose -f docker-compose.prod.yml exec -T db pg_restore -U erp -d erp --no-owner < antes.dump
+docker compose -f docker-compose.prod.yml up -d --build  # AGORA a stack: migrate aplica só o delta
+```
+O dump carrega a tabela `_prisma_migrations`, então o `migrate deploy` aplica apenas as
+migrations mais novas que o backup — fluxo determinístico. **Validar**: login + fila de
+cobrança + contagem de alunos/cobranças contra o banco de origem.
+
+Depois (em qualquer um dos caminhos, se o banco veio de um ambiente de teste do canal):
+**reset do canal** (doc 26 §motores: "banco será resetado no go-live" = as tabelas do
+CANAL, não o ERP) — truncar `MensagemWhatsApp`, `ConversaWhatsApp`, `IntencaoMensagem`,
+`ContatoWhatsApp` e recadastrar os números reais na tela do canal. O banco antigo vira o
+de DEV (ou é desligado) — dev e produção nunca mais compartilham banco (gap A5; em dev,
+sem `WHATSAPP_LIVE=1` nada dispara de verdade).
+
+### 1.3 Webhooks (depois da stack de pé)
+- **Meta**: no app da Meta, apontar para `https://<dominio>/api/whatsapp/webhook/meta`
   com o `META_WA_VERIFY_TOKEN` do `.env`; assinar os campos `messages` e
   `message_template_status_update`.
-- **Webhook Evolution**: configurado sozinho pelo fluxo "conectar via QR" da tela do
-  canal (aponta para `http://app:3000/...` na rede interna — evento Baileys nunca sai
-  para a internet).
-- **Migração dos dados atuais** — o restore acontece em banco **vazio, ANTES** do app e
-  das migrations (restaurar dump completo por cima de schema já migrado conflita em
-  constraints e deixa restauração parcial):
-  ```bash
-  docker compose -f docker-compose.prod.yml up -d db     # SÓ o banco (cria erp vazio)
-  pg_dump -Fc "$DATABASE_URL_ATUAL" > antes.dump
-  docker compose -f docker-compose.prod.yml exec -T db pg_restore -U erp -d erp --no-owner < antes.dump
-  docker compose -f docker-compose.prod.yml up -d --build  # migrate deploy aplica só o que o dump não tem
-  ```
-  O dump carrega a tabela `_prisma_migrations`, então o `migrate deploy` aplica apenas
-  migrations mais novas — fluxo determinístico. **Validar**: login + fila de cobrança +
-  contagem de alunos/cobranças contra o banco de origem.
-  Depois, **reset do canal de teste** (doc 26 §motores: "banco será resetado no go-live"
-  = as tabelas do CANAL, não o ERP): truncar `MensagemWhatsApp`, `ConversaWhatsApp`,
-  `IntencaoMensagem`, `ContatoWhatsApp` e recadastrar os números reais na tela do canal.
-  O banco antigo vira o banco de DEV (ou é desligado) — dev e produção nunca mais
-  compartilham banco (gap A5; em dev, sem `WHATSAPP_LIVE=1` nada dispara de verdade).
+- **Evolution**: configurado sozinho pelo fluxo "conectar via QR" da tela do canal
+  (aponta para `http://app:3000/...` na rede interna — evento Baileys nunca sai para a
+  internet).
 
 ## 2. Cron — modelo de execução do despachante (gap A2)
 Uma instância do app; concorrência interna resolvida por **claim atômico** na intenção
@@ -73,13 +86,16 @@ Rodar 2× não duplica nada — testado (`cron.int.test.ts`, `@@unique cobrancaI
 
 ## 3. Monitoramento (gap A7)
 `GET /api/whatsapp/health` (header `x-cron-secret`) → **200** saudável · **503** com a
-lista de alertas no corpo:
-| Alerta | Significado | Ação |
-|---|---|---|
-| item mais velho na fila > 6h | cron parado / driver mudo | checar crontab e `docker compose logs app` |
-| sessão "X" caiu | Baileys desconectou (fila acumula, nada se perde) | reconectar via QR na tela do canal |
-| N envio(s) falharam 24h | itens voltaram à fila humana com motivo | tratar na fila de cobrança |
-| kill switch LIGADO | automação congelada de propósito | desligar quando o incidente passar |
+lista de alertas no corpo. Cada estado da fila tem seu relógio (o contrato vive em
+`saude.ts`); uma `ADIADA` esperando a janela abrir **não** é alerta — só o que já venceu:
+| Alerta | Gatilho | Significado | Ação |
+|---|---|---|---|
+| intenção PENDENTE há Xh | PENDENTE parada > 2h | tick não roda | checar crontab e `docker compose logs app` |
+| intenção ADIADA venceu há Xh | `despacharAposEm` vencido > 2h sem redespachar | tick não roda | idem |
+| envio em claim expirado | `ENVIANDO` além do prazo do claim > 30min | despachante/recuperação parados | idem |
+| sessão "X" caiu | número BAILEYS ativo em `CAIU` | Baileys desconectou (fila acumula, nada se perde) | reconectar via QR na tela do canal |
+| N envio(s) falharam 24h | transição p/ `FALHOU` nas últimas 24h | itens voltaram à fila humana com motivo | tratar na fila de cobrança |
+| kill switch LIGADO | flag ligada | automação congelada de propósito | desligar quando o incidente passar |
 Monitor externo (UptimeRobot/Better Stack): keyword/status check no endpoint a cada 5min
 com o header. Segundo check no domínio raiz (o webhook da Meta é suspenso após 5xx
 repetidos — gap A8; o handler já responde 200 mesmo com erro interno, mas o monitor pega

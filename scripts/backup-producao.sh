@@ -52,19 +52,22 @@ echo "[backup] ok — $(du -sh "$PASTA" | cut -f1) · retenção ${RETENCAO_DIAS
 #
 #   0. parar quem escreve:
 #        $COMPOSE stop app evolution
-#   1. recriar os bancos vazios e restaurar:
+#   1. recriar os bancos vazios e restaurar (db de pé; app/evolution PARADOS):
+#        $COMPOSE up -d db
 #        $COMPOSE exec -T db psql -U erp -d postgres -c 'DROP DATABASE erp WITH (FORCE);'
 #        $COMPOSE exec -T db psql -U erp -d postgres -c 'CREATE DATABASE erp;'
 #        $COMPOSE exec -T db pg_restore -U erp -d erp --no-owner < erp.dump
 #        $COMPOSE exec -T db psql -U erp -d postgres -c 'DROP DATABASE evolution WITH (FORCE);'
 #        $COMPOSE exec -T db psql -U erp -d postgres -c 'CREATE DATABASE evolution;'
 #        $COMPOSE exec -T db pg_restore -U erp -d evolution --no-owner < evolution.dump
-#   2. migrations mais novas que o dump (idempotente; nada a fazer = sai limpo):
-#        $COMPOSE up -d migrate
-#   3. arquivos:
-#        $COMPOSE start app evolution   # containers precisam existir p/ o exec abaixo
-#        $COMPOSE exec -T app       tar -xzf - -C /app/data   < uploads.tar.gz
-#        $COMPOSE exec -T evolution tar -xzf - -C /evolution  < evolution-instances.tar.gz
-#        $COMPOSE restart app evolution
-#   4. VALIDAR: login + fila de cobrança + thread da inbox + sessão do número.
+#   2. migrations mais novas que o dump — SÍNCRONO (run --rm espera o exit; `up -d` NÃO):
+#        $COMPOSE run --rm migrate        # idempotente; falhou aqui = NÃO siga (confira o log)
+#   3. arquivos NOS VOLUMES com app/evolution ainda parados — `run --rm --no-deps` monta o
+#      volume do serviço num container efêmero, sem subir o serviço (nem as dependências);
+#      `--entrypoint tar` ignora o entrypoint da imagem (a da Evolution tem um):
+#        $COMPOSE run --rm --no-deps -T --entrypoint tar app       -xzf - -C /app/data   < uploads.tar.gz
+#        $COMPOSE run --rm --no-deps -T --entrypoint tar evolution -xzf - -C /evolution  < evolution-instances.tar.gz
+#   4. só agora subir os serviços (contra dados JÁ restaurados):
+#        $COMPOSE up -d app evolution
+#   5. VALIDAR: login + fila de cobrança + thread da inbox + sessão do número.
 # ---------------------------------------------------------------------------
