@@ -65,6 +65,9 @@ export async function despacharFila(
   opts: OpcoesDespacho = {},
 ): Promise<ResultadoDespacho> {
   const politicaPadrao = await carregarPoliticaRegua();
+  // Shadow PRÓPRIO da saudação (review PR #53 · doc 27): a classe reativa não olha o estado
+  // da política de COBRANÇA — o ensaio dela é o saudacaoEstado da ConfigComercial.
+  const saudacaoEstado = (await prisma.configComercial.findUnique({ where: { id: "comercial" } }))?.saudacaoEstado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
@@ -226,9 +229,13 @@ export async function despacharFila(
     //    review PR #51 P1-3: lote aprovado durante o ensaio não pode disparar de verdade);
     //    origem HUMANO (resposta na inbox/fila) é decisão humana e envia mesmo em ensaio.
     //    SIMULADA não é terminal: a fila reabre quando o canal sair do ensaio (review PR #49).
-    // Reativa não olha o estado da política de COBRANÇA (o toggle da saudação é a
-    // ConfigComercial, checada no enfileiramento) — só respeita o WHATSAPP_LIVE do ambiente.
-    const shadow = !live || (automatica && !reativa && politica.estado !== "ATIVA");
+    // SHADOW (S8): ensaio da automação. Cobrança olha o estado da SUA política; a saudação
+    // reativa olha o seu shadow PRÓPRIO (saudacaoEstado — review PR #53). Ambiente sem
+    // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
+    const shadow =
+      !live ||
+      (automatica && !reativa && politica.estado !== "ATIVA") ||
+      (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente

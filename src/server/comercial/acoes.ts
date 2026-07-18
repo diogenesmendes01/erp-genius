@@ -552,7 +552,7 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
         autorId: autor.id,
         payload: {
           antes: antes
-            ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoAtiva: antes.saudacaoAtiva, saudacaoTexto: antes.saudacaoTexto }
+            ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoEstado: antes.saudacaoEstado, saudacaoTexto: antes.saudacaoTexto }
             : null,
           depois: dados,
         },
