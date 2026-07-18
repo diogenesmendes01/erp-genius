@@ -1,0 +1,125 @@
+# Produção do ERP + canal WhatsApp (doc 31 — E5, gaps A1/A5 do doc 28).
+# Sobe: Postgres (banco do app + banco da Evolution) · migrações · app Next standalone ·
+# Evolution API (Baileys) SÓ na rede interna · Caddy (TLS automático) como única borda.
+#
+# Uso (VPS):   cp deploy/env.production.example .env   →   preencher   →
+#              docker compose -f docker-compose.prod.yml up -d --build
+# As variáveis ${...} vêm do .env ao lado deste arquivo (compose lê sozinho).
+
+name: erp-genius
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?defina no .env}
+      # ATENÇÃO: a senha entra CRUA nas connection URLs abaixo — use `openssl rand -hex 32`
+      # (URL-safe). Base64 pode conter / + = e quebrar migrations/app/Evolution (PR #52).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
+      POSTGRES_DB: erp
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Cria o banco separado da Evolution no primeiro boot (banco por serviço — A5).
+      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # SEM ports: o banco não escuta na internet. Acesso administrativo via `docker exec`
+    # ou túnel SSH — nunca porta pública (o banco atual em porta pública é o que a E5 aposenta).
+
+  # Migrações ANTES do app (prisma migrate deploy é aditivo e idempotente — nunca reset).
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?defina no .env}
+      NEXTAUTH_URL: https://${DOMINIO_APP:?defina no .env}
+      AUTH_TRUST_HOST: "true" # atrás do Caddy, o Auth.js confia no Host encaminhado
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+      # Chave-mestra do envio real: só vira "1" no go-live, depois do piloto (doc 31 §rollout).
+      WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
+      # Driver oficial (Meta Cloud API)
+      META_WA_TOKEN: ${META_WA_TOKEN:-}
+      META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
+      META_WA_VERIFY_TOKEN: ${META_WA_VERIFY_TOKEN:-}
+      META_WA_WABA_ID: ${META_WA_WABA_ID:-}
+      # Driver Baileys (Evolution na rede interna do compose — nunca a internet)
+      EVOLUTION_URL: http://evolution:8080
+      EVOLUTION_APIKEY: ${EVOLUTION_APIKEY:-}
+      EVOLUTION_WEBHOOK_TOKEN: ${EVOLUTION_WEBHOOK_TOKEN:-}
+      # A Evolution entrega webhooks direto na rede interna (não sai para a internet).
+      EVOLUTION_WEBHOOK_PUBLIC_URL: http://app:3000
+    volumes:
+      # Mídia do WhatsApp + comprovantes/documentos (entra no backup — doc 31 §backup).
+      - uploads:/app/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # SEM ports: só o Caddy fala com o app.
+
+  # Baileys via Evolution API (doc 26 §motores): self-hosted, FORA da internet pública —
+  # nenhuma porta publicada; app e Evolution se falam pela rede interna do compose.
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8080"
+      AUTHENTICATION_API_KEY: ${EVOLUTION_APIKEY:?defina no .env}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      CACHE_LOCAL_ENABLED: "true"
+      CACHE_REDIS_ENABLED: "false"
+      # Estado da sessão persiste no banco + volume: queda de container não derruba o QR.
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false" # o log de mensagens é NOSSO (MensagemWhatsApp)
+      LOG_LEVEL: ERROR
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Única borda pública: TLS automático (Let's Encrypt) para o app — webhook da Meta
+  # exige HTTPS válido. Evolution NÃO passa por aqui.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO_APP: ${DOMINIO_APP}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  db_data:
+  uploads:
+  evolution_instances:
+  caddy_data:
+  caddy_config:
