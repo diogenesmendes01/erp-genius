@@ -962,6 +962,7 @@ model IntencaoMensagem {
   politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
 
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
+  atualizadoEm    DateTime          @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
   despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
   despachadaEm    DateTime?
   motivoFalha     String? // sem_destino, driver, opt_out... — estampado na fila humana

@@ -1,0 +1,5 @@
+# Artefatos que rodam em Linux (VPS) saem SEMPRE com LF, mesmo em checkout no Windows —
+# bash com CRLF quebra com "bad interpreter" (doc 31 §deploy).
+*.sh text eol=lf
+Dockerfile text eol=lf
+deploy/** text eol=lf

@@ -1,0 +1,14 @@
+# Contexto de build enxuto (o COPY . . do builder não pode arrastar isto)
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+data
+docs
+*.md
+.claude
+.vscode
+scripts/test-db.mjs
+coverage
