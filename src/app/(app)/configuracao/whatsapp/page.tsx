@@ -1,7 +1,7 @@
 import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
-import { listarVendedores } from "@/server/comercial/consultas";
+import { carregarConfigComercial, listarVendedores } from "@/server/comercial/consultas";
 import {
   carregarPoliticaConfig,
   listarNumerosConfig,
@@ -10,6 +10,7 @@ import {
 import { NumerosPainel } from "./NumerosPainel";
 import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
+import { ComercialPainel } from "./ComercialPainel";
 
 // CONFIG DO CANAL WHATSAPP (docs 26/30 — E3/E4): tela do número (sessão/QR), templates
 // (entidade única, ciclo duplo) e política da régua (config como dado). Exclusiva do
@@ -19,11 +20,12 @@ export default async function WhatsAppConfigPage() {
   const papeis = await exigirPapelLeitura(Papel.ADMINISTRADOR);
   if (!papeis) return <AcessoNegado recurso="a configuração do WhatsApp" />;
 
-  const [numeros, templates, politica, vendedores] = await Promise.all([
+  const [numeros, templates, politica, vendedores, configComercial] = await Promise.all([
     listarNumerosConfig(),
     listarTemplatesConfig(),
     carregarPoliticaConfig(),
     listarVendedores(),
+    carregarConfigComercial(),
   ]);
 
   return (
@@ -31,6 +33,7 @@ export default async function WhatsAppConfigPage() {
       <NumerosPainel numeros={numeros} vendedores={vendedores} />
       <TemplatesPainel templates={templates} />
       <PoliticaPainel politica={politica} numeros={numeros} templates={templates} />
+      <ComercialPainel config={configComercial} />
     </div>
   );
 }
