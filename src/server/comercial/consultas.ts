@@ -14,7 +14,7 @@ export async function listarVendedores() {
 
 export interface ConfigComercialView {
   autoLeadAtivo: boolean;
-  saudacaoAtiva: boolean;
+  saudacaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
   saudacaoTexto: string;
 }
 
@@ -23,7 +23,7 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
   const c = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
   return {
     autoLeadAtivo: c?.autoLeadAtivo ?? false,
-    saudacaoAtiva: c?.saudacaoAtiva ?? false,
+    saudacaoEstado: c?.saudacaoEstado ?? "DESLIGADA",
     saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
   };
 }

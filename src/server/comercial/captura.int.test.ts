@@ -31,11 +31,14 @@ async function seedNumeroVendas() {
   });
 }
 
-async function ligarConfig(over: { autoLeadAtivo?: boolean; saudacaoAtiva?: boolean } = {}) {
+async function ligarConfig(
+  over: { autoLeadAtivo?: boolean; saudacaoEstado?: "DESLIGADA" | "SHADOW" | "ATIVA" } = {},
+) {
+  const data = { autoLeadAtivo: over.autoLeadAtivo ?? false, saudacaoEstado: over.saudacaoEstado ?? ("DESLIGADA" as const) };
   return prisma.configComercial.upsert({
     where: { id: "comercial" },
-    create: { id: "comercial", autoLeadAtivo: over.autoLeadAtivo ?? false, saudacaoAtiva: over.saudacaoAtiva ?? false },
-    update: { autoLeadAtivo: over.autoLeadAtivo ?? false, saudacaoAtiva: over.saudacaoAtiva ?? false },
+    create: { id: "comercial", ...data },
+    update: data,
   });
 }
 
@@ -128,7 +131,7 @@ describe("auto-lead (gap 17 dedupe)", () => {
 describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
   it("saudação ligada → intenção reativa enfileirada e SIMULADA (sem live), NÃO cancelada pela trava S1", async () => {
     const numero = await seedNumeroVendas(); // BAILEYS: uma automação CRON normal seria cancelada por S1
-    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: false });
+    await ligarConfig({ saudacaoEstado: "ATIVA", autoLeadAtivo: false });
 
     await inbound(numero);
 
@@ -153,7 +156,7 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
 
   it("auto-lead e saudação são independentes: só saudação ligada → saudação vai, sem lead", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: false });
+    await ligarConfig({ saudacaoEstado: "ATIVA", autoLeadAtivo: false });
     await inbound(numero);
     expect(await prisma.lead.count()).toBe(0);
     expect(await prisma.intencaoMensagem.count({ where: { reativa: true } })).toBe(1);
@@ -161,7 +164,7 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
 
   it("opt-out na 1ª mensagem → sem captura e sem saudação", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: true });
+    await ligarConfig({ saudacaoEstado: "ATIVA", autoLeadAtivo: true });
     await inbound(numero, { corpo: "sair" });
     expect(await prisma.lead.count()).toBe(0);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
@@ -171,7 +174,7 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
 
   it("só o 1º inbound dispara — a 2ª mensagem não duplica lead nem saudação", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: true });
+    await ligarConfig({ saudacaoEstado: "ATIVA", autoLeadAtivo: true });
     await inbound(numero, { providerMessageId: "MSG-1", corpo: "oi" });
     await inbound(numero, { providerMessageId: "MSG-2", corpo: "ainda aí?" });
     expect(await prisma.lead.count()).toBe(1);
@@ -180,7 +183,7 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
 
   it("kill switch congela a saudação reativa (freio de emergência) — review PR #53 P1", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ saudacaoAtiva: true });
+    await ligarConfig({ saudacaoEstado: "ATIVA" });
     // Kill switch na política de cobrança (a que o despachante carrega p/ intenção sem política).
     await prisma.politicaRegua.create({
       data: { nome: "Cobrança", escopo: "COBRANCA", killSwitch: true },
@@ -194,7 +197,7 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
 
   it("dois inbounds CONCORRENTES do mesmo contato criam UM lead e UMA saudação (claim atômico)", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: true });
+    await ligarConfig({ saudacaoEstado: "ATIVA", autoLeadAtivo: true });
     // Conversa pré-existente (capturadaEm null): o cenário do review — dois inbounds novos
     // que ambos veriam "primeiro inbound" sem o claim atômico.
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5511970001111", nomeExibicao: "Maria" } });

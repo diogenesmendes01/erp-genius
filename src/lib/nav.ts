@@ -55,10 +55,12 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL],
   },
   {
+    // Gerente Comercial entra p/ a config comercial (auto-lead/saudação — doc 27 C1);
+    // as sub-abas (tabs.ts) filtram o que ele vê (só WhatsApp) — o index redireciona p/ ela.
     href: "/configuracao",
     label: "Configuração",
     icon: "Settings",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO],
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.GERENTE_COMERCIAL],
   },
 ];
 

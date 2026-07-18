@@ -64,16 +64,16 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
-// Config comercial C1 (doc 27): auto-lead + saudação. Toggles independentes, nascem
-// desligados; o texto da saudação é editável (nunca vazio quando a saudação está ligada).
+// Config comercial C1 (doc 27): auto-lead (toggle) + saudação (shadow próprio
+// DESLIGADA/SHADOW/ATIVA — doc 27 §regra de ouro). Texto exigido fora de DESLIGADA.
 export const ConfigComercialSchema = z
   .object({
     autoLeadAtivo: z.boolean(),
-    saudacaoAtiva: z.boolean(),
+    saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
     saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
   })
-  .refine((c) => !c.saudacaoAtiva || c.saudacaoTexto.length >= 2, {
-    message: "Escreva o texto da saudação antes de ativá-la.",
+  .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
+    message: "Escreva o texto da saudação antes de armá-la.",
     path: ["saudacaoTexto"],
   });
 export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;

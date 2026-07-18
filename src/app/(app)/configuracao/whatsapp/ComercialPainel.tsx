@@ -15,7 +15,7 @@ const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm out
 export function ComercialPainel({ config }: { config: ConfigComercialView }) {
   const router = useRouter();
   const [autoLeadAtivo, setAutoLead] = useState(config.autoLeadAtivo);
-  const [saudacaoAtiva, setSaudacao] = useState(config.saudacaoAtiva);
+  const [saudacaoEstado, setSaudacaoEstado] = useState(config.saudacaoEstado);
   const [saudacaoTexto, setTexto] = useState(config.saudacaoTexto);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function ComercialPainel({ config }: { config: ConfigComercialView }) {
     setOcupado(true);
     setErro(null);
     setNota(null);
-    const r = await salvarConfigComercial({ autoLeadAtivo, saudacaoAtiva, saudacaoTexto });
+    const r = await salvarConfigComercial({ autoLeadAtivo, saudacaoEstado, saudacaoTexto });
     setOcupado(false);
     if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
     setNota("Configuração comercial salva.");
@@ -61,20 +61,22 @@ export function ComercialPainel({ config }: { config: ConfigComercialView }) {
           </span>
         </label>
 
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 accent-brand-600"
-            checked={saudacaoAtiva}
-            onChange={(e) => setSaudacao(e.target.checked)}
-          />
-          <span className="text-sm">
-            <span className="font-medium">Enviar saudação automática</span>
-            <span className="block text-gray-500">
-              Responde o 1º inbound em segundos, fora da janela de horário. Texto fixo (a IA não fala com o lead nesta fase).
-            </span>
-          </span>
-        </label>
+        <div>
+          <div className="text-sm font-medium">Saudação automática</div>
+          <p className="mb-2 text-sm text-gray-500">
+            Responde o 1º inbound em segundos, fora da janela de horário. Texto fixo (a IA não fala com o lead nesta fase).
+            Em <span className="font-medium">ensaio</span> o sistema só registra o que teria sido enviado, sem enviar.
+          </p>
+          <select
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+            value={saudacaoEstado}
+            onChange={(e) => setSaudacaoEstado(e.target.value as ConfigComercialView["saudacaoEstado"])}
+          >
+            <option value="DESLIGADA">Desligada</option>
+            <option value="SHADOW">Ensaio (shadow) — não envia</option>
+            <option value="ATIVA">Ativa — envia</option>
+          </select>
+        </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-600">Texto da saudação</label>
@@ -83,7 +85,7 @@ export function ComercialPainel({ config }: { config: ConfigComercialView }) {
             rows={3}
             value={saudacaoTexto}
             onChange={(e) => setTexto(e.target.value)}
-            disabled={!saudacaoAtiva}
+            disabled={saudacaoEstado === "DESLIGADA"}
             placeholder="Olá! Recebemos sua mensagem e já retornamos. 😊"
           />
         </div>

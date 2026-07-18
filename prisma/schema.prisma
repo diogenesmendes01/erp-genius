@@ -1074,8 +1074,10 @@ model ConfigComercial {
   // Auto-criar lead no 1º inbound de um número VENDAS sem vínculo (gap 17 dedupe na ação).
   autoLeadAtivo Boolean  @default(false)
   // Saudação automática (resposta reativa, "em segundos") ao 1º inbound de um lead novo.
-  saudacaoAtiva Boolean  @default(false)
-  saudacaoTexto String   @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @updatedAt
+  // Shadow PRÓPRIO (doc 27 §regra de ouro): DESLIGADA · SHADOW (registra o que TERIA sido
+  // enviado, sem enviar) · ATIVA. Reusa o enum das políticas de cobrança.
+  saudacaoEstado EstadoPolitica @default(DESLIGADA)
+  saudacaoTexto  String         @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
+  criadoEm       DateTime       @default(now())
+  atualizadoEm   DateTime       @updatedAt
 }

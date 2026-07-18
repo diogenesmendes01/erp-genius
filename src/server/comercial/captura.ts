@@ -160,8 +160,9 @@ export async function capturarComercial(
   }
 
   // SAUDAÇÃO (reativa, isenta de janela — gap C20). Só texto fixo; a IA da C3 não fala.
+  // Enfileira em SHADOW e ATIVA (o despachante simula a de shadow); DESLIGADA não gera nada.
   let saudacaoIntencaoId: string | null = null;
-  if (config.saudacaoAtiva) {
+  if (config.saudacaoEstado !== "DESLIGADA") {
     const intencao = await tx.intencaoMensagem.create({
       data: {
         numeroId: ctx.numero.id,

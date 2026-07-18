@@ -24,33 +24,33 @@ describe("salvarConfigComercial", () => {
 
     // Fábrica: tudo desligado antes de salvar.
     const antes = await carregarConfigComercial();
-    expect(antes).toEqual({ autoLeadAtivo: false, saudacaoAtiva: false, saudacaoTexto: expect.any(String) });
+    expect(antes).toEqual({ autoLeadAtivo: false, saudacaoEstado: "DESLIGADA", saudacaoTexto: expect.any(String) });
 
     const r = await salvarConfigComercial({
       autoLeadAtivo: true,
-      saudacaoAtiva: true,
+      saudacaoEstado: "ATIVA",
       saudacaoTexto: "Oi! Já te respondo.",
     });
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
 
     const depois = await carregarConfigComercial();
-    expect(depois).toEqual({ autoLeadAtivo: true, saudacaoAtiva: true, saudacaoTexto: "Oi! Já te respondo." });
+    expect(depois).toEqual({ autoLeadAtivo: true, saudacaoEstado: "ATIVA", saudacaoTexto: "Oi! Já te respondo." });
 
     const eventos = await eventosDo("ConfigComercial", "comercial");
     expect(eventos.map((e) => e.tipo)).toContain("ConfigComercialAlterada");
   });
 
-  it("ativar a saudação sem texto é recusado (Zod refine)", async () => {
+  it("armar a saudação (SHADOW/ATIVA) sem texto é recusado (Zod refine)", async () => {
     const gerente = await criarUsuario([Papel.GERENTE_COMERCIAL]);
     authMock.mockResolvedValue({ user: { id: gerente.id } });
-    const r = await salvarConfigComercial({ autoLeadAtivo: false, saudacaoAtiva: true, saudacaoTexto: "" });
+    const r = await salvarConfigComercial({ autoLeadAtivo: false, saudacaoEstado: "ATIVA", saudacaoTexto: "" });
     expect(r.ok).toBe(false);
   });
 
   it("vendedor não tem alçada", async () => {
     const vendedor = await criarUsuario([Papel.VENDEDOR]);
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
-    const r = await salvarConfigComercial({ autoLeadAtivo: true, saudacaoAtiva: false, saudacaoTexto: "x" });
+    const r = await salvarConfigComercial({ autoLeadAtivo: true, saudacaoEstado: "DESLIGADA", saudacaoTexto: "x" });
     expect(r.ok).toBe(false);
     expect(await prisma.configComercial.count()).toBe(0);
   });
