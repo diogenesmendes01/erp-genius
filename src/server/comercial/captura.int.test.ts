@@ -177,4 +177,35 @@ describe("saudação reativa (isenta de janela/trava S1 — gap C20)", () => {
     expect(await prisma.lead.count()).toBe(1);
     expect(await prisma.intencaoMensagem.count({ where: { reativa: true } })).toBe(1);
   });
+
+  it("kill switch congela a saudação reativa (freio de emergência) — review PR #53 P1", async () => {
+    const numero = await seedNumeroVendas();
+    await ligarConfig({ saudacaoAtiva: true });
+    // Kill switch na política de cobrança (a que o despachante carrega p/ intenção sem política).
+    await prisma.politicaRegua.create({
+      data: { nome: "Cobrança", escopo: "COBRANCA", killSwitch: true },
+    });
+
+    await inbound(numero);
+
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { reativa: true } });
+    expect(intencao.status).toBe("PENDENTE"); // congelada, NÃO despachada/simulada
+  });
+
+  it("dois inbounds CONCORRENTES do mesmo contato criam UM lead e UMA saudação (claim atômico)", async () => {
+    const numero = await seedNumeroVendas();
+    await ligarConfig({ saudacaoAtiva: true, autoLeadAtivo: true });
+    // Conversa pré-existente (capturadaEm null): o cenário do review — dois inbounds novos
+    // que ambos veriam "primeiro inbound" sem o claim atômico.
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5511970001111", nomeExibicao: "Maria" } });
+    await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
+
+    await Promise.all([
+      inbound(numero, { providerMessageId: "MSG-A", corpo: "oi" }),
+      inbound(numero, { providerMessageId: "MSG-B", corpo: "olá" }),
+    ]);
+
+    expect(await prisma.lead.count()).toBe(1);
+    expect(await prisma.intencaoMensagem.count({ where: { reativa: true } })).toBe(1);
+  });
 });
