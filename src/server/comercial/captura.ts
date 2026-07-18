@@ -12,11 +12,13 @@ import { registrarEvento } from "@/server/_shared/evento";
 // de "lead novo" metralhando um aluno matriculado é o cenário concreto que isto evita.
 
 export interface ReferralInbound {
-  /** Bloco referral do click-to-WhatsApp (Meta). Baileys normalmente não traz. */
-  campanha?: string | null;
-  conjunto?: string | null;
-  anuncio?: string | null;
-  palavra?: string | null;
+  /** Bloco referral CRU do click-to-WhatsApp (Meta). Baileys normalmente não traz.
+   *  Campos com a semântica REAL da Meta — NÃO são campanha/conjunto/anúncio/palavra. */
+  sourceType?: string | null; // "ad" | "post"
+  sourceId?: string | null; // id do anúncio/post
+  headline?: string | null; // título do anúncio/post
+  sourceUrl?: string | null;
+  ctwaClid?: string | null; // id do clique (click-to-WhatsApp)
 }
 
 export interface PessoaPorTelefone {
@@ -69,10 +71,14 @@ export async function criarLeadDeInboundWhatsApp(
       telefoneE164: dados.telefoneE164,
       paisId: dados.paisId ?? null,
       vendedorDonoId: dados.donoId,
-      origemCampanha: dados.referral?.campanha ?? null,
-      origemConjunto: dados.referral?.conjunto ?? null,
-      origemAnuncio: dados.referral?.anuncio ?? null,
-      origemPalavra: dados.referral?.palavra ?? null,
+      // Referral CRU (review PR #53): guarda os campos da Meta com a semântica deles;
+      // NÃO preenche origemCampanha/Conjunto/Anúncio/Palavra (a hierarquia de anúncio exige
+      // a Marketing API — fora da C1; corromper esses campos quebraria relatórios de origem).
+      waReferralSourceType: dados.referral?.sourceType ?? null,
+      waReferralSourceId: dados.referral?.sourceId ?? null,
+      waReferralHeadline: dados.referral?.headline ?? null,
+      waReferralSourceUrl: dados.referral?.sourceUrl ?? null,
+      waReferralCtwaClid: dados.referral?.ctwaClid ?? null,
     },
   });
   await registrarEvento(tx, {

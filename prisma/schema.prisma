@@ -473,11 +473,22 @@ model Lead {
   professorExperimentalId String?
   professorExperimental   Usuario? @relation("ProfessorExperimentais", fields: [professorExperimentalId], references: [id])
 
-  // origem inteligente
+  // origem inteligente (hierarquia de anúncio: campanha/conjunto/anúncio/palavra). Só é
+  // preenchida quando resolvida corretamente (form manual, ou Marketing API no futuro).
   origemCampanha String?
   origemConjunto String?
   origemAnuncio  String?
   origemPalavra  String?
+
+  // Referral CRU do click-to-WhatsApp (doc 27 C1 · review PR #53): os campos da Meta têm
+  // SEMÂNTICA PRÓPRIA e NÃO são a hierarquia de anúncio — `sourceType` é só `ad|post`,
+  // `sourceId` é o id do anúncio/post, `headline` é o título, `ctwaClid` é o id do clique.
+  // Guardados crus aqui; a resolução p/ campanha/conjunto exige a Marketing API (fora da C1).
+  waReferralSourceType String?
+  waReferralSourceId   String?
+  waReferralHeadline   String?
+  waReferralSourceUrl  String?
+  waReferralCtwaClid   String?
 
   // resumo executivo (manual no V0, IA na Fase 1)
   interesse   String?

@@ -140,15 +140,16 @@ export async function POST(req: Request): Promise<NextResponse> {
             if (baixada) midiaPath = await salvarMidiaInbound(baixada.bytes, baixada.mime || midia.mime_type);
           }
 
-          // Referral do click-to-WhatsApp → origem do lead na auto-captura (C1). A Meta não
-          // dá nomes de campanha/conjunto direto; mapeamos o que vem (headline/id/click id).
+          // Referral do click-to-WhatsApp → auto-captura (C1). Campos CRUS, 1:1 com a
+          // semântica da Meta (review PR #53): não são campanha/conjunto/anúncio/palavra.
           const ref = m.referral;
           const referral = ref
             ? {
-                campanha: ref.headline ?? ref.source_type ?? null,
-                conjunto: ref.source_type ?? null,
-                anuncio: ref.source_id ?? null,
-                palavra: ref.ctwa_clid ?? null,
+                sourceType: ref.source_type ?? null,
+                sourceId: ref.source_id ?? null,
+                headline: ref.headline ?? null,
+                sourceUrl: ref.source_url ?? null,
+                ctwaClid: ref.ctwa_clid ?? null,
               }
             : null;
 
