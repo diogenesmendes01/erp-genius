@@ -98,17 +98,23 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
       ? { ...politicaPadrao, ...configDe(it.politica) }
       : politicaPadrao;
     const automatica = it.origem !== "HUMANO"; // guard-rails de automação valem p/ CRON e LOTE
+    // Classe REATIVA (doc 27 · gap C20): saudação/resposta automática a um inbound. É isenta
+    // dos guard-rails de HORÁRIO (janela/teto/silêncio) e da trava S1 — a janela de 24h está
+    // aberta (o contato acabou de falar), então até o oficial aceita texto livre. Continua
+    // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela) e shadow (WHATSAPP_LIVE).
+    const reativa = it.reativa;
 
-    // 1. Kill switch: congela a AUTOMAÇÃO (nada é perdido nem cancelado). Origem HUMANO
-    //    passa — resposta humana na inbox/fila é decisão humana, não automação (S13, E3).
-    if (politica.killSwitch && automatica) {
+    // 1. Kill switch: congela a AUTOMAÇÃO (nada é perdido nem cancelado). Origem HUMANO e
+    //    reativa passam — resposta a uma conversa aberta não é disparo desassistido (S13).
+    if (politica.killSwitch && automatica && !reativa) {
       r.pendentes += 1;
       continue;
     }
 
     // 2. TRAVA S1 (lei): disparo do CRON exige driver oficial — Baileys nunca recebe
     //    automação desassistida (padrão de ban, doc 26 §Em aberto → decidido no doc 30).
-    if (it.origem === "CRON" && it.numero.driver !== "META_CLOUD") {
+    //    Reativa é isenta: responder no número de vendas (Baileys) é o caso de uso.
+    if (it.origem === "CRON" && !reativa && it.numero.driver !== "META_CLOUD") {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
@@ -141,7 +147,7 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     const inboundNaoTratado =
       !!conversa?.ultimoInboundEm &&
       (!conversa.inboundTratadoEm || conversa.inboundTratadoEm < conversa.ultimoInboundEm);
-    if (it.origem === "CRON" && conversa?.ultimoInboundEm && inboundNaoTratado) {
+    if (it.origem === "CRON" && !reativa && conversa?.ultimoInboundEm && inboundNaoTratado) {
       const limite = new Date(conversa.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000);
       if (agora < limite) {
         await adiar(it.id, limite, "silencio_pos_inbound");
@@ -169,8 +175,8 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     }
 
     // 7. Teto por contato/dia (S5): soma mensagens AUTOMÁTICAS de hoje; suprimida = ADIADA,
-    //    nunca descartada em silêncio (doc 27 §regra de ouro).
-    if (automatica) {
+    //    nunca descartada em silêncio (doc 27 §regra de ouro). Reativa não conta no teto.
+    if (automatica && !reativa) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
@@ -188,7 +194,8 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     }
 
     // 8. Janela de horário + dias da semana (S3), no FUSO DO CONTATO (Aluno.fuso ?? Pais.fuso).
-    if (automatica) {
+    //    Reativa é isenta: uma saudação "em segundos" não pode esperar o horário comercial.
+    if (automatica && !reativa) {
       const fuso = fusoDoDestino(it);
       const hora = horaLocal(agora, fuso);
       const dia = diaSemanaLocal(agora, fuso);
@@ -204,7 +211,9 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     //    review PR #51 P1-3: lote aprovado durante o ensaio não pode disparar de verdade);
     //    origem HUMANO (resposta na inbox/fila) é decisão humana e envia mesmo em ensaio.
     //    SIMULADA não é terminal: a fila reabre quando o canal sair do ensaio (review PR #49).
-    const shadow = !live || (automatica && politica.estado !== "ATIVA");
+    // Reativa não olha o estado da política de COBRANÇA (o toggle da saudação é a
+    // ConfigComercial, checada no enfileiramento) — só respeita o WHATSAPP_LIVE do ambiente.
+    const shadow = !live || (automatica && !reativa && politica.estado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente
@@ -215,7 +224,8 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     }
 
     // 10. Driver oficial fora da janela de 24h exige template APROVADO na Meta (Camada 2).
-    if (it.numero.driver === "META_CLOUD" && automatica && it.template?.statusMeta !== "APROVADO") {
+    //     Reativa é isenta: a janela de 24h está aberta (o contato acabou de mandar mensagem).
+    if (it.numero.driver === "META_CLOUD" && automatica && !reativa && it.template?.statusMeta !== "APROVADO") {
       await marcar(it.id, "FALHOU", "template_nao_aprovado_meta");
       r.falhas += 1;
       continue;

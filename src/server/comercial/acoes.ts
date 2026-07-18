@@ -39,6 +39,7 @@ import {
   InteracaoSchema,
   PerdaSchema,
   AgendarExperimentalSchema,
+  ConfigComercialSchema,
   ETAPAS_MANUAIS,
   type LeadInput,
   type ResumoInput,
@@ -46,6 +47,7 @@ import {
   type InteracaoInput,
   type PerdaInput,
   type AgendarExperimentalInput,
+  type ConfigComercialInput,
 } from "./schema";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
@@ -525,6 +527,38 @@ export async function atribuirProfessorExperimental(
     });
     revalidarLead(leadId);
     revalidatePath("/home");
+  });
+}
+
+// Config comercial C1 (doc 27): auto-lead + saudação. Alçada = Gerente Comercial (dono da
+// automação comercial) + Admin. Evento auditável (antes→depois) — mudar quem o robô fala
+// em nome da escola é uma ação sensível.
+export async function salvarConfigComercial(input: ConfigComercialInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
+    const dados = ConfigComercialSchema.parse(input);
+
+    await prisma.$transaction(async (tx) => {
+      const antes = await tx.configComercial.findUnique({ where: { id: "comercial" } });
+      await tx.configComercial.upsert({
+        where: { id: "comercial" },
+        create: { id: "comercial", ...dados },
+        update: dados,
+      });
+      await registrarEvento(tx, {
+        tipo: "ConfigComercialAlterada",
+        agregadoTipo: "ConfigComercial",
+        agregadoId: "comercial",
+        autorId: autor.id,
+        payload: {
+          antes: antes
+            ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoAtiva: antes.saudacaoAtiva, saudacaoTexto: antes.saudacaoTexto }
+            : null,
+          depois: dados,
+        },
+      });
+    });
+    revalidatePath("/configuracao/whatsapp");
   });
 }
 

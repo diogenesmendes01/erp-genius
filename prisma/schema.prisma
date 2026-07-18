@@ -961,6 +961,11 @@ model IntencaoMensagem {
   politicaId String?
   politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
 
+  // Classe REATIVA (doc 27 §regras transversais · gap C20): resposta automática a um
+  // inbound (saudação) — isenta de janela/teto/silêncio (uma saudação "em segundos" não
+  // pode esperar o horário comercial), mas respeita opt-out/kill switch/shadow.
+  reativa Boolean @default(false)
+
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
   atualizadoEm    DateTime          @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
   despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
@@ -1049,4 +1054,23 @@ model DegrauPolitica {
   template   TemplateWhatsApp? @relation(fields: [templateId], references: [id])
 
   @@unique([politicaId, passo])
+}
+
+// ============================================================
+// COMERCIAL — fase pós-V1 (doc 27). C1 "captura + velocidade": auto-lead no 1º inbound
+// do número de vendas + saudação automática (texto fixo, reativa). Config como DADO,
+// singleton (id fixo "comercial"). Regra de ouro (doc 27): TODA automação nasce DESLIGADA.
+// A régua "lead novo sem resposta" e as demais políticas comerciais (C1 cadência + C2)
+// entram na fatia seguinte, no mesmo motor generalizado por âncora.
+// ============================================================
+
+model ConfigComercial {
+  id            String   @id @default("comercial") // singleton
+  // Auto-criar lead no 1º inbound de um número VENDAS sem vínculo (gap 17 dedupe na ação).
+  autoLeadAtivo Boolean  @default(false)
+  // Saudação automática (resposta reativa, "em segundos") ao 1º inbound de um lead novo.
+  saudacaoAtiva Boolean  @default(false)
+  saudacaoTexto String   @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
 }

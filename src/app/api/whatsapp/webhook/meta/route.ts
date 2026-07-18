@@ -80,6 +80,15 @@ interface PayloadMeta {
           audio?: MidiaMeta;
           video?: MidiaMeta;
           document?: MidiaMeta;
+          // Bloco referral do click-to-WhatsApp (só na 1ª mensagem que vem de um anúncio).
+          referral?: {
+            source_type?: string;
+            source_id?: string;
+            source_url?: string;
+            headline?: string;
+            body?: string;
+            ctwa_clid?: string;
+          };
         }[];
         statuses?: { id?: string; status?: string; timestamp?: string }[];
       };
@@ -131,6 +140,18 @@ export async function POST(req: Request): Promise<NextResponse> {
             if (baixada) midiaPath = await salvarMidiaInbound(baixada.bytes, baixada.mime || midia.mime_type);
           }
 
+          // Referral do click-to-WhatsApp → origem do lead na auto-captura (C1). A Meta não
+          // dá nomes de campanha/conjunto direto; mapeamos o que vem (headline/id/click id).
+          const ref = m.referral;
+          const referral = ref
+            ? {
+                campanha: ref.headline ?? ref.source_type ?? null,
+                conjunto: ref.source_type ?? null,
+                anuncio: ref.source_id ?? null,
+                palavra: ref.ctwa_clid ?? null,
+              }
+            : null;
+
           await processarMensagemNormalizada({
             numeroProviderRef: providerRef,
             contatoWaId: m.from,
@@ -141,6 +162,7 @@ export async function POST(req: Request): Promise<NextResponse> {
             midiaPath,
             driver: "META_CLOUD",
             fromMe: false, // Cloud API só entrega inbound aqui; echo de saída chega em statuses
+            referral,
             quando: m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date(),
           });
         }

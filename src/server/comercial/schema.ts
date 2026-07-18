@@ -64,6 +64,20 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
+// Config comercial C1 (doc 27): auto-lead + saudação. Toggles independentes, nascem
+// desligados; o texto da saudação é editável (nunca vazio quando a saudação está ligada).
+export const ConfigComercialSchema = z
+  .object({
+    autoLeadAtivo: z.boolean(),
+    saudacaoAtiva: z.boolean(),
+    saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
+  })
+  .refine((c) => !c.saudacaoAtiva || c.saudacaoTexto.length >= 2, {
+    message: "Escreva o texto da saudação antes de ativá-la.",
+    path: ["saudacaoTexto"],
+  });
+export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;
+
 export const PerdaSchema = z
   .object({
     motivoPerda: z.nativeEnum(MotivoPerda),

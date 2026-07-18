@@ -12,6 +12,22 @@ export async function listarVendedores() {
   });
 }
 
+export interface ConfigComercialView {
+  autoLeadAtivo: boolean;
+  saudacaoAtiva: boolean;
+  saudacaoTexto: string;
+}
+
+/** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
+export async function carregarConfigComercial(): Promise<ConfigComercialView> {
+  const c = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  return {
+    autoLeadAtivo: c?.autoLeadAtivo ?? false,
+    saudacaoAtiva: c?.saudacaoAtiva ?? false,
+    saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
+  };
+}
+
 // Visibilidade row-level (doc 07): Vendedor vê só os próprios; Gerente Comercial/Admin veem tudo.
 export function escopoLeads(usuario: UsuarioSessao): Prisma.LeadWhereInput {
   const amplo =
