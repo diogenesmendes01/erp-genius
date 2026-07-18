@@ -124,8 +124,8 @@ export interface CapturaContexto {
 export async function capturarComercial(
   tx: Prisma.TransactionClient,
   ctx: CapturaContexto,
-): Promise<{ enfileirouSaudacao: boolean; leadCriadoId: string | null }> {
-  const nada = { enfileirouSaudacao: false, leadCriadoId: null };
+): Promise<{ saudacaoIntencaoId: string | null; leadCriadoId: string | null }> {
+  const nada = { saudacaoIntencaoId: null, leadCriadoId: null };
   // Só número de vendas, só o 1º inbound, nunca depois de um opt-out imediato.
   if (ctx.numero.finalidade !== "VENDAS" || !ctx.primeiroInbound || ctx.contato.optOut) return nada;
 
@@ -160,9 +160,9 @@ export async function capturarComercial(
   }
 
   // SAUDAÇÃO (reativa, isenta de janela — gap C20). Só texto fixo; a IA da C3 não fala.
-  let enfileirouSaudacao = false;
+  let saudacaoIntencaoId: string | null = null;
   if (config.saudacaoAtiva) {
-    await tx.intencaoMensagem.create({
+    const intencao = await tx.intencaoMensagem.create({
       data: {
         numeroId: ctx.numero.id,
         contatoId: ctx.contato.id,
@@ -171,9 +171,10 @@ export async function capturarComercial(
         corpoRenderizado: config.saudacaoTexto,
         autorId: null,
       },
+      select: { id: true },
     });
-    enfileirouSaudacao = true;
+    saudacaoIntencaoId = intencao.id;
   }
 
-  return { enfileirouSaudacao, leadCriadoId };
+  return { saudacaoIntencaoId, leadCriadoId };
 }

@@ -50,7 +50,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
   if (!numero) return "numero_desconhecido";
 
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
-  let saudacaoEnfileirada = false;
+  let saudacaoIntencaoId: string | null = null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -66,11 +66,17 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         update: {},
       });
 
-      // 1º inbound da conversa? (antes de inserir esta mensagem) — chave da auto-captura
-      // e da saudação (C1), idempotente por conversa independentemente dos toggles.
-      const primeiroInbound =
-        !m.fromMe &&
-        (await tx.mensagemWhatsApp.count({ where: { conversaId: conversa.id, direcao: "ENTRADA" } })) === 0;
+      // 1º inbound da conversa? CLAIM ATÔMICO (review PR #53 P1): o updateMany condicional
+      // (capturadaEm IS NULL) toma o lock da linha — dois inbounds concorrentes do mesmo
+      // contato não passam ambos, então nasce no máximo um lead/saudação por conversa.
+      let primeiroInbound = false;
+      if (!m.fromMe) {
+        const claim = await tx.conversaWhatsApp.updateMany({
+          where: { id: conversa.id, capturadaEm: null },
+          data: { capturadaEm: m.quando },
+        });
+        primeiroInbound = claim.count === 1;
+      }
 
       // Dedupe S7: o @@unique(numeroId, providerMessageId) faz o retry do webhook explodir
       // aqui dentro — capturado fora como "duplicada", sem efeito colateral.
@@ -147,14 +153,16 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           quando: m.quando,
           referral: m.referral ?? null,
         });
-        saudacaoEnfileirada = captura.enfileirouSaudacao;
+        saudacaoIntencaoId = captura.saudacaoIntencaoId;
       }
     });
-    // Saudação "em segundos" (reativa): drena a fila JÁ, fora da transação (chama driver).
-    // Sem WHATSAPP_LIVE=1 vira SIMULADA; falha do driver não derruba o webhook.
-    if (saudacaoEnfileirada) {
+    // Saudação "em segundos" (reativa): despacha JÁ, fora da transação. ESCOPADO à intenção
+    // recém-criada (review PR #53 P2) — nunca drena a fila global (cobranças/lotes sem
+    // relação) a partir de um inbound. Sem WHATSAPP_LIVE=1 vira SIMULADA; falha não derruba
+    // o webhook.
+    if (saudacaoIntencaoId) {
       try {
-        await despacharFila();
+        await despacharFila(new Date(), { intencaoId: saudacaoIntencaoId });
       } catch (e) {
         console.error("[inbound] falha ao despachar saudação reativa:", e);
       }

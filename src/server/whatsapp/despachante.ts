@@ -54,20 +54,33 @@ function diaSemanaLocal(data: Date, fuso: string): number {
 /** Prazo do claim: intenção ENVIANDO além disto = worker morreu no meio do envio. */
 const CLAIM_STALE_MS = 15 * 60_000;
 
-export async function despacharFila(agora: Date = new Date()): Promise<ResultadoDespacho> {
+export interface OpcoesDespacho {
+  /** Limita o dreno a UMA intenção (review PR #53 P2): o webhook despacha só a saudação
+   *  reativa recém-criada, nunca a fila global de cobrança/lotes a partir de um inbound. */
+  intencaoId?: string;
+}
+
+export async function despacharFila(
+  agora: Date = new Date(),
+  opts: OpcoesDespacho = {},
+): Promise<ResultadoDespacho> {
   const politicaPadrao = await carregarPoliticaRegua();
   const live = process.env.WHATSAPP_LIVE === "1";
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
   // vira FALHOU com motivo — o item volta à fila humana; nunca re-tenta sozinho, porque o
-  // driver PODE ter enviado antes da queda (só o humano decide se repete).
-  await prisma.intencaoMensagem.updateMany({
-    where: { status: "ENVIANDO", despacharAposEm: { lt: agora } },
-    data: { status: "FALHOU", motivoFalha: "envio_interrompido" },
-  });
+  // driver PODE ter enviado antes da queda (só o humano decide se repete). A recuperação é
+  // global (do cron); um despacho escopado (webhook) não a executa — é trabalho do tick.
+  if (!opts.intencaoId) {
+    await prisma.intencaoMensagem.updateMany({
+      where: { status: "ENVIANDO", despacharAposEm: { lt: agora } },
+      data: { status: "FALHOU", motivoFalha: "envio_interrompido" },
+    });
+  }
 
   const intencoes = await prisma.intencaoMensagem.findMany({
     where: {
+      ...(opts.intencaoId ? { id: opts.intencaoId } : {}),
       OR: [
         { status: "PENDENTE" },
         { status: "ADIADA", despacharAposEm: { lte: agora } },
@@ -101,12 +114,14 @@ export async function despacharFila(agora: Date = new Date()): Promise<Resultado
     // Classe REATIVA (doc 27 · gap C20): saudação/resposta automática a um inbound. É isenta
     // dos guard-rails de HORÁRIO (janela/teto/silêncio) e da trava S1 — a janela de 24h está
     // aberta (o contato acabou de falar), então até o oficial aceita texto livre. Continua
-    // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela) e shadow (WHATSAPP_LIVE).
+    // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela), shadow (WHATSAPP_LIVE)
+    // e ao KILL SWITCH (freio de emergência de TODA automação — review PR #53 P1).
     const reativa = it.reativa;
 
-    // 1. Kill switch: congela a AUTOMAÇÃO (nada é perdido nem cancelado). Origem HUMANO e
-    //    reativa passam — resposta a uma conversa aberta não é disparo desassistido (S13).
-    if (politica.killSwitch && automatica && !reativa) {
+    // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
+    //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
+    //    decisão humana explícita, não automação (S13, E3).
+    if (politica.killSwitch && automatica) {
       r.pendentes += 1;
       continue;
     }

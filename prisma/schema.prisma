@@ -861,6 +861,11 @@ model ConversaWhatsApp {
   // "Tratar" o inbound (S4/E3): promessa/pagamento pela inbox ou "retomar régua" marcam
   // aqui; o despachante só aplica o silêncio quando ultimoInboundEm > inboundTratadoEm.
   inboundTratadoEm DateTime?
+  // Captura comercial C1 (doc 27): CLAIM ATÔMICO do "1º inbound" — marcado uma única vez
+  // por um updateMany condicional (where capturadaEm IS NULL). Dois inbounds concorrentes
+  // do mesmo contato: só um vence o claim (lock de linha), então só um lead/saudação nasce
+  // (review PR #53 P1 — o count===0 anterior não era atômico).
+  capturadaEm      DateTime?
   naoLidas         Int             @default(0)
   criadoEm         DateTime        @default(now())
 
