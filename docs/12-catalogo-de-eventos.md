@@ -42,8 +42,8 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 ## Comercial (agregado `Lead`)
 | Evento | Gatilho | Quem | Payload (essencial) |
 |---|---|---|---|
-| `LeadCriado` | Lead entra no sistema | Sistema/Vendedor | `{ origem, segmento, paisId }` |
-| `LeadAtribuido` | Define/troca o dono | Sistema/Gerente | `{ de, para, motivo }` |
+| `LeadCriado` | Lead entra no sistema — formulário OU **auto-captura no 1º inbound de um número de vendas** (fase doc 27 C1; autor `null` = sistema, `payload.origem="whatsapp_inbound"`) | Sistema/Vendedor | `{ codigo, nome, origem, segmento?, b2b }` |
+| `LeadAtribuido` | Define/troca o dono (auto-captura: dono = dono do número, `via="whatsapp_inbound"`) | Sistema/Gerente | `{ de, para, motivo?, via? }` |
 | `EtapaAlterada` | Muda a etapa do funil (manual no Kanban e também no fluxo de matrícula: → Aguardando matrícula / Matriculado) | Vendedor/Secretaria | `{ de, para }` |
 | `ExperimentalAgendada` | Agenda aula experimental | Vendedor | `{ data }` |
 | `ExperimentalRealizada` | Check-in "Compareceu" | Professor | `{ turmaId, data }` |
@@ -111,6 +111,7 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `TemplateSubmetido` | Submissão à revisão da Meta (Marco 2) | Admin | `{ metaTemplateId }` |
 | `TemplateAprovado` / `TemplateRejeitado` | Transição de status vinda da Meta (webhook `message_template_status_update` ou mapeador/sync) | Sistema | `{ via: "sync"\|"webhook", de, motivo? }` |
 | `PoliticaReguaAlterada` | Salvar política / kill switch (D26) | Admin | `{ antes, depois }` (snapshot; `antes: null` na 1ª materialização) |
+| `ConfigComercialAlterada` | Salvar a config comercial (auto-lead / saudação — fase doc 27 C1); agregado `ConfigComercial` | Gerente Com./Admin | `{ antes, depois }` (`antes: null` na 1ª materialização) |
 
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |

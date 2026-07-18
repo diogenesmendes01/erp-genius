@@ -109,6 +109,35 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
   });
 });
 
+describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #53 2ª passada)", () => {
+  async function seedSaudacao(estado: "SHADOW" | "ATIVA") {
+    const numero = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-x" },
+    });
+    const contato = await seedContato();
+    await prisma.configComercial.create({ data: { id: "comercial", saudacaoEstado: estado, saudacaoTexto: "Oi!" } });
+    await prisma.intencaoMensagem.create({
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi!" },
+    });
+  }
+
+  it("saudação em SHADOW: SIMULADA mesmo com live — o driver NÃO é chamado", async () => {
+    await seedSaudacao("SHADOW");
+    const r = await despacharFila();
+    expect(r.simuladas).toBe(1);
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
+  });
+
+  it("saudação ATIVA: a MESMA reativa envia de verdade (contra-prova) — em Baileys, sem trava S1", async () => {
+    await seedSaudacao("ATIVA");
+    const r = await despacharFila();
+    expect(r.despachadas).toBe(1);
+    expect(enviarTextoMock).toHaveBeenCalledTimes(1);
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
+  });
+});
+
 describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
   it("midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });

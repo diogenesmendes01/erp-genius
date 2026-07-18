@@ -4,6 +4,15 @@
 > ([`26`](26-whatsapp-v1.md)) estabilizar. Executa o menu de automações do
 > [`08`](08-comercial-crm-whatsapp.md) sobre a infraestrutura bimotor — quase tudo aqui é
 > **política + gatilho sobre o motor que já existe**, não módulo novo.
+>
+> **Estado (2026-07-18):** C1 "captura + velocidade" **parcialmente implementada** — o
+> **auto-lead no 1º inbound** (com dedupe gap 17 + origem via referral) e a **saudação
+> automática** (classe *reativa*, isenta de janela — fecha o gap C20) estão no código
+> (`ConfigComercial` singleton, nasce desligada; `comercial/captura.ts`; toggles em
+> `/configuracao/whatsapp`). **Falta da C1:** a régua "lead novo sem resposta" (cadência
+> D0·+30min·+4h…), que precisa da **generalização do motor por âncora** (§Tese) — vai na
+> fatia seguinte, junto de **C2** (experimental). **C3 (IA)** aguarda a decisão de
+> fornecedor de LLM + os requisitos LGPD do gap D29 (doc 28).
 
 ## Tese estrutural: um motor de réguas, N políticas
 A régua de follow-up comercial (doc 08) é **a mesma máquina** da régua de cobrança (doc 24):
