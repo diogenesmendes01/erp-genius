@@ -8,7 +8,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import { salvarConfigComercial } from "./acoes";
-import { carregarConfigComercial } from "./consultas";
+import { carregarConfigComercial, carregarSaudacoesSimuladas } from "./consultas";
 
 // Integração E6/C1: ação de config comercial (auto-lead + saudação). Alçada = Gerente
 // Comercial/Admin; toggles nascem desligados; evento auditável antes→depois.
@@ -53,5 +53,25 @@ describe("salvarConfigComercial", () => {
     const r = await salvarConfigComercial({ autoLeadAtivo: true, saudacaoEstado: "DESLIGADA", saudacaoTexto: "x" });
     expect(r.ok).toBe(false);
     expect(await prisma.configComercial.count()).toBe(0);
+  });
+});
+
+describe("carregarSaudacoesSimuladas (ensaio observável — review PR #53)", () => {
+  it("lista as saudações reativas SIMULADAs com contato, texto e horário; ignora as reais", async () => {
+    const numero = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-s" },
+    });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50611112222", nomeExibicao: "Ana" } });
+    await prisma.intencaoMensagem.create({
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi Ana!", status: "SIMULADA" },
+    });
+    // Uma reativa DESPACHADA (real) e uma não-reativa SIMULADA não entram na lista de ensaio.
+    await prisma.intencaoMensagem.create({
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "enviada", status: "DESPACHADA" },
+    });
+
+    const lista = await carregarSaudacoesSimuladas();
+    expect(lista).toHaveLength(1);
+    expect(lista[0]).toMatchObject({ contato: "Ana", texto: "Oi Ana!" });
   });
 });

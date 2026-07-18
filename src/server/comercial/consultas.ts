@@ -28,6 +28,32 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
   };
 }
 
+export interface SaudacaoSimulada {
+  id: string;
+  contato: string;
+  texto: string;
+  quando: string;
+}
+
+/**
+ * Ensaio observável (doc 27 §regra de ouro — review PR #53): as últimas saudações que o
+ * shadow SIMULOU (o que TERIA sido enviado), para o gerente validar o piloto antes de ativar.
+ */
+export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoSimulada[]> {
+  const intencoes = await prisma.intencaoMensagem.findMany({
+    where: { reativa: true, status: "SIMULADA" },
+    orderBy: { criadaEm: "desc" },
+    take: limite,
+    include: { contato: { select: { nomeExibicao: true, telefoneE164: true } } },
+  });
+  return intencoes.map((i) => ({
+    id: i.id,
+    contato: i.contato.nomeExibicao ?? i.contato.telefoneE164,
+    texto: i.corpoRenderizado,
+    quando: (i.despachadaEm ?? i.criadaEm).toISOString(),
+  }));
+}
+
 // Visibilidade row-level (doc 07): Vendedor vê só os próprios; Gerente Comercial/Admin veem tudo.
 export function escopoLeads(usuario: UsuarioSessao): Prisma.LeadWhereInput {
   const amplo =

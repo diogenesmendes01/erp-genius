@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ConfigComercialView } from "@/server/comercial/consultas";
+import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
@@ -12,7 +12,13 @@ import { salvarConfigComercial } from "@/server/comercial/acoes";
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
-export function ComercialPainel({ config }: { config: ConfigComercialView }) {
+export function ComercialPainel({
+  config,
+  simuladas,
+}: {
+  config: ConfigComercialView;
+  simuladas: SaudacaoSimulada[];
+}) {
   const router = useRouter();
   const [autoLeadAtivo, setAutoLead] = useState(config.autoLeadAtivo);
   const [saudacaoEstado, setSaudacaoEstado] = useState(config.saudacaoEstado);
@@ -93,6 +99,30 @@ export function ComercialPainel({ config }: { config: ConfigComercialView }) {
         <button className={btnPri} disabled={ocupado} onClick={salvar}>
           {ocupado ? "Salvando…" : "Salvar configuração comercial"}
         </button>
+      </div>
+
+      {/* Ensaio observável (doc 27): o que a saudação TERIA enviado — valida o piloto. */}
+      <div className="mt-4">
+        <div className="mb-1 text-sm font-medium">Ensaio — últimas saudações simuladas</div>
+        {simuladas.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            Nada simulado ainda. Em ensaio (shadow), cada 1º inbound registra aqui a saudação que teria sido enviada.
+          </p>
+        ) : (
+          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-surface">
+            {simuladas.map((s) => (
+              <li key={s.id} className="px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-gray-800">{s.contato}</span>
+                  <span className="shrink-0 text-xs text-gray-400">
+                    {new Date(s.quando).toLocaleString("pt-BR")}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-gray-600">{s.texto}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

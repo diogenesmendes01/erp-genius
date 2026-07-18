@@ -63,7 +63,7 @@ describe("auto-lead (gap 17 dedupe)", () => {
     await ligarConfig({ autoLeadAtivo: true });
 
     const r = await inbound(numero, {
-      referral: { campanha: "Promo Julho", conjunto: "FB_ADS", anuncio: "ad-123", palavra: "clid-xyz" },
+      referral: { sourceType: "ad", sourceId: "ad-123", headline: "Promo Julho", sourceUrl: "https://fb.me/x", ctwaClid: "clid-xyz" },
     });
     expect(r).toBe("gravada");
 
@@ -71,8 +71,13 @@ describe("auto-lead (gap 17 dedupe)", () => {
     expect(lead.codigo).toMatch(/^L-\d{6}$/); // passou pelo Contador (regra 6)
     expect(lead.vendedorDonoId).toBe(dono.id); // dono do número
     expect(lead.telefoneE164).toBe("+5511970001111");
-    expect(lead.origemCampanha).toBe("Promo Julho");
-    expect(lead.origemAnuncio).toBe("ad-123");
+    // Referral CRU nas colunas próprias; origem* NÃO é corrompida (review PR #53).
+    expect(lead.waReferralSourceType).toBe("ad");
+    expect(lead.waReferralSourceId).toBe("ad-123");
+    expect(lead.waReferralHeadline).toBe("Promo Julho");
+    expect(lead.waReferralCtwaClid).toBe("clid-xyz");
+    expect(lead.origemCampanha).toBeNull();
+    expect(lead.origemConjunto).toBeNull();
 
     const contato = await prisma.contatoWhatsApp.findFirstOrThrow();
     expect(contato.leadId).toBe(lead.id); // contato vinculado ao lead criado

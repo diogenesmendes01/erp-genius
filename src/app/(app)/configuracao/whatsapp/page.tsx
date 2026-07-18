@@ -1,7 +1,11 @@
 import { Papel } from "@prisma/client";
 import { exigirPapelLeitura, papeisTem } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
-import { carregarConfigComercial, listarVendedores } from "@/server/comercial/consultas";
+import {
+  carregarConfigComercial,
+  carregarSaudacoesSimuladas,
+  listarVendedores,
+} from "@/server/comercial/consultas";
 import {
   carregarPoliticaConfig,
   listarNumerosConfig,
@@ -25,11 +29,12 @@ export default async function WhatsAppConfigPage() {
   const ehAdmin = papeisTem(papeis, Papel.ADMINISTRADOR);
 
   // Dados administrativos só são buscados para o admin (o gerente comercial vê só o comercial).
-  const [admin, configComercial] = await Promise.all([
+  const [admin, configComercial, saudacoesSimuladas] = await Promise.all([
     ehAdmin
       ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores()])
       : Promise.resolve(null),
     carregarConfigComercial(),
+    carregarSaudacoesSimuladas(),
   ]);
 
   return (
@@ -41,7 +46,7 @@ export default async function WhatsAppConfigPage() {
           <PoliticaPainel politica={admin[2]} numeros={admin[0]} templates={admin[1]} />
         </>
       )}
-      <ComercialPainel config={configComercial} />
+      <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} />
     </div>
   );
 }
