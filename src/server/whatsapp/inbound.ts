@@ -2,6 +2,8 @@ import type { DriverWhatsApp, StatusMensagem, TipoMensagem } from "@prisma/clien
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
+import { capturarComercial, type ReferralInbound } from "@/server/comercial/captura";
+import { despacharFila } from "./despachante";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
@@ -26,6 +28,8 @@ export interface InboundNormalizado {
   driver: DriverWhatsApp;
   /** true = mensagem enviada pela escola FORA do ERP (app do celular / outro aparelho). */
   fromMe: boolean;
+  /** Bloco referral do click-to-WhatsApp (Meta) → origem do lead na auto-captura (C1). */
+  referral?: ReferralInbound | null;
   quando: Date;
 }
 
@@ -46,6 +50,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
   if (!numero) return "numero_desconhecido";
 
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
+  let saudacaoIntencaoId: string | null = null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -60,6 +65,18 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         create: { numeroId: numero.id, contatoId: contato.id },
         update: {},
       });
+
+      // 1º inbound da conversa? CLAIM ATÔMICO (review PR #53 P1): o updateMany condicional
+      // (capturadaEm IS NULL) toma o lock da linha — dois inbounds concorrentes do mesmo
+      // contato não passam ambos, então nasce no máximo um lead/saudação por conversa.
+      let primeiroInbound = false;
+      if (!m.fromMe) {
+        const claim = await tx.conversaWhatsApp.updateMany({
+          where: { id: conversa.id, capturadaEm: null },
+          data: { capturadaEm: m.quando },
+        });
+        primeiroInbound = claim.count === 1;
+      }
 
       // Dedupe S7: o @@unique(numeroId, providerMessageId) faz o retry do webhook explodir
       // aqui dentro — capturado fora como "duplicada", sem efeito colateral.
@@ -103,7 +120,8 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
 
         // Opt-out por keyword (S10): marca o contato + evento auditável (autor = sistema).
         // A LEI que respeita o opt-out já mora no despachante; aqui é só a captura.
-        if (!contato.optOutEm && ehPedidoOptOut(m.corpo)) {
+        const optOutAgora = !contato.optOutEm && ehPedidoOptOut(m.corpo);
+        if (optOutAgora) {
           await tx.contatoWhatsApp.update({
             where: { id: contato.id },
             data: { optOutEm: m.quando },
@@ -116,8 +134,39 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
             payload: { via: "keyword", palavra: (m.corpo ?? "").trim().toLowerCase() },
           });
         }
+
+        // C1 (doc 27): auto-captura de lead + saudação no 1º inbound de um número de vendas.
+        // Só dispara se a ConfigComercial estiver ligada (nasce desligada); nunca sobre um
+        // opt-out imediato. O contato de garantirContato traz os vínculos preservados.
+        const captura = await capturarComercial(tx, {
+          numero: { id: numero.id, finalidade: numero.finalidade, donoId: numero.donoId },
+          contato: {
+            id: contato.id,
+            telefoneE164: contato.telefoneE164,
+            nomeExibicao: contato.nomeExibicao,
+            alunoId: contato.alunoId,
+            responsavelId: contato.responsavelId,
+            leadId: contato.leadId,
+            optOut: !!contato.optOutEm || optOutAgora,
+          },
+          primeiroInbound,
+          quando: m.quando,
+          referral: m.referral ?? null,
+        });
+        saudacaoIntencaoId = captura.saudacaoIntencaoId;
       }
     });
+    // Saudação "em segundos" (reativa): despacha JÁ, fora da transação. ESCOPADO à intenção
+    // recém-criada (review PR #53 P2) — nunca drena a fila global (cobranças/lotes sem
+    // relação) a partir de um inbound. Sem WHATSAPP_LIVE=1 vira SIMULADA; falha não derruba
+    // o webhook.
+    if (saudacaoIntencaoId) {
+      try {
+        await despacharFila(new Date(), { intencaoId: saudacaoIntencaoId });
+      } catch (e) {
+        console.error("[inbound] falha ao despachar saudação reativa:", e);
+      }
+    }
     return "gravada";
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "duplicada";

@@ -25,7 +25,9 @@ export type AgregadoTipo =
   | "NumeroWhatsApp"
   | "ContatoWhatsApp"
   | "TemplateWhatsApp"
-  | "PoliticaRegua";
+  | "PoliticaRegua"
+  // Fase comercial (doc 27): config de automação comercial (auto-lead + saudação).
+  | "ConfigComercial";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
