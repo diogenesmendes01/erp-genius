@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { proximaAcaoAncora, selecionarDegrau, type DegrauAncora } from "./regua";
+import { proximaAcao, proximaAcaoAncora, selecionarDegrau, REGUA, type DegrauAncora } from "./regua";
 
 // Motor generalizado por âncora (doc 27 §Tese · doc 29 regra 1). A régua "lead novo sem
 // resposta" (doc 08: D0·+30min·+4h·+24h·+3d·+7d) usa o MESMO núcleo da cobrança, em MINUTOS.
@@ -98,5 +98,51 @@ describe("selecionarDegrau — núcleo genérico compartilhado com a cobrança",
 
   it("política vazia nunca conclui nem arma", () => {
     expect(selecionarDegrau(100, [], feitos).estado).toBe("futuro");
+  });
+
+  it("corte de progresso: feito um degrau do meio, os anteriores nunca mais armam", () => {
+    // "c" (offset 20) feito, posição 25: "a"/"b" (offset 0/10) estão ATRÁS do corte.
+    const r = selecionarDegrau(25, degraus, new Set(["c"]));
+    expect(r.estado).toBe("concluida");
+    expect(r.degrau).toBeNull();
+  });
+});
+
+// O bug que o review do PR #54 pegou: selecionar o passo mais avançado → registrá-lo como
+// feito → recalcular NÃO pode voltar e disparar o backlog em ordem reversa. Vale nos DOIS
+// wrappers (mesmo núcleo): comercial (minutos) e cobrança (dias).
+describe("corte de progresso forward-only (review PR #54)", () => {
+  it("âncora: enviado o +30min, o recálculo NÃO volta pro D0", () => {
+    const p1 = proximaAcaoAncora({ ancoraEm: ANCORA, encerrada: false, passosFeitos: [] }, maisMin(45), CADENCIA);
+    expect(p1.passo).toBe("+30min"); // pula o D0 (superado)
+    const p2 = proximaAcaoAncora({ ancoraEm: ANCORA, encerrada: false, passosFeitos: ["+30min"] }, maisMin(45), CADENCIA);
+    expect(p2.estado).toBe("futuro"); // e NÃO volta pro D0
+    expect(p2.passo).toBeNull();
+  });
+
+  it("âncora: cadência executada em ordem nunca retrocede", () => {
+    // aos 300min (5h): D0/+30min/+4h já chegaram. Feitos D0 e +30min → devido é +4h, não D0.
+    const r = proximaAcaoAncora({ ancoraEm: ANCORA, encerrada: false, passosFeitos: ["D0", "+30min"] }, maisMin(300), CADENCIA);
+    expect(r.passo).toBe("+4h");
+  });
+
+  it("cobrança: enviado o D+3 num backlog, o recálculo NÃO volta pro D0/D-7", () => {
+    const hoje = new Date(2026, 6, 18);
+    const vencimento = new Date(2026, 6, 13); // diasAtraso = 5
+    // Sem nada feito, o backlog escolhe o mais avançado que chegou (D+3, offset 3 ≤ 5).
+    const p1 = proximaAcao({ vencimento, quitada: false, passosFeitos: [] }, hoje);
+    expect(p1.degrau?.passo).toBe("D+3");
+    // Feito o D+3, recalcular: D0/D-3/D-7 estão ATRÁS do corte → nada devido (D+7 só aos 7).
+    const p2 = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje);
+    expect(p2.estado).toBe("futuro");
+    expect(p2.degrau).toBeNull();
+  });
+
+  it("cobrança: régua feita em ordem completa → concluída (contra-prova, comportamento preservado)", () => {
+    const hoje = new Date(2026, 6, 18);
+    const vencimento = new Date(2026, 6, 3); // diasAtraso = 15 (D+15)
+    const todos = REGUA.map((d) => d.passo);
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: todos }, hoje);
+    expect(r.estado).toBe("concluida");
   });
 });

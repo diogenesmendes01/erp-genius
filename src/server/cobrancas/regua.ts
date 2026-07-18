@@ -104,10 +104,20 @@ export function selecionarDegrau<D extends { offset: number; chave: string }>(
   feitos: ReadonlySet<string>,
 ): SelecaoDegrau<D> {
   const ultimoOffset = degraus.length ? degraus[degraus.length - 1].offset : Infinity;
-  const devidos = degraus.filter((d) => d.offset <= posicao && !feitos.has(d.chave));
+
+  // CORTE DE PROGRESSO — a régua só anda para FRENTE (review PR #54). O offset do degrau
+  // mais avançado JÁ executado é a linha de corte: um degrau anterior a ela nunca mais é
+  // devido, mesmo que nunca tenha sido enviado (foi SUPERADO). Sem isto, feito o +30min e
+  // recalculando, o motor voltaria e metralharia o D0 (backlog em ordem reversa).
+  let corte = -Infinity;
+  for (const d of degraus) if (feitos.has(d.chave) && d.offset > corte) corte = d.offset;
+
+  // Devido: já chegou (offset ≤ posição), está à FRENTE do corte e não foi cumprido.
+  const devidos = degraus.filter((d) => d.offset <= posicao && d.offset > corte && !feitos.has(d.chave));
   if (devidos.length === 0) {
-    const todosCumpridos = degraus.every((d) => d.offset > posicao || feitos.has(d.chave));
-    if (posicao >= ultimoOffset && todosCumpridos) return { estado: "concluida", degrau: null, atrasada: false };
+    // Sem nada à frente por fazer: concluída se a última posição já passou (o degrau final
+    // foi executado ou superado); senão, ainda é futuro (esperando o próximo offset chegar).
+    if (posicao >= ultimoOffset) return { estado: "concluida", degrau: null, atrasada: false };
     return { estado: "futuro", degrau: null, atrasada: false };
   }
   const degrau = devidos[devidos.length - 1];
