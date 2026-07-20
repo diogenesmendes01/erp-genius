@@ -71,3 +71,62 @@ export async function enfileirarIntencaoCobranca(
   });
   return "criada";
 }
+
+// Idem para a cadência COMERCIAL (doc 27): idempotência por @@unique([leadId, passoComercial]).
+// Mesmo ciclo de vida da cobrança — só troca o vínculo de domínio (Lead + passo da cadência).
+export interface EnfileirarComercial {
+  leadId: string;
+  passoComercial: string;
+  numeroId: string;
+  contatoId: string;
+  corpoRenderizado: string;
+  variaveis: string[];
+  templateId: string | null;
+  politicaComercialId: string | null;
+}
+
+export async function enfileirarIntencaoComercial(
+  tx: Prisma.TransactionClient,
+  e: EnfileirarComercial,
+): Promise<ResultadoEnfileirar> {
+  const existente = await tx.intencaoMensagem.findUnique({
+    where: { leadId_passoComercial: { leadId: e.leadId, passoComercial: e.passoComercial } },
+  });
+
+  if (existente) {
+    if (["PENDENTE", "ENVIANDO", "DESPACHADA"].includes(existente.status)) return "ja_existente";
+    await tx.intencaoMensagem.update({
+      where: { id: existente.id },
+      data: {
+        status: "PENDENTE",
+        numeroId: e.numeroId,
+        contatoId: e.contatoId,
+        origem: "CRON",
+        corpoRenderizado: e.corpoRenderizado,
+        variaveis: e.variaveis,
+        templateId: e.templateId,
+        politicaComercialId: e.politicaComercialId,
+        criadaEm: new Date(),
+        despacharAposEm: null,
+        motivoFalha: null,
+      },
+    });
+    return "reaberta";
+  }
+
+  await tx.intencaoMensagem.create({
+    data: {
+      leadId: e.leadId,
+      passoComercial: e.passoComercial,
+      numeroId: e.numeroId,
+      contatoId: e.contatoId,
+      origem: "CRON",
+      corpoRenderizado: e.corpoRenderizado,
+      variaveis: e.variaveis,
+      templateId: e.templateId,
+      politicaComercialId: e.politicaComercialId,
+      autorId: null,
+    },
+  });
+  return "criada";
+}

@@ -3,7 +3,11 @@ import { exigirPapelLeitura, papeisTem } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import {
   carregarConfigComercial,
+  carregarReguaComercialConfig,
+  carregarEnsaioComercial,
   carregarSaudacoesSimuladas,
+  listarNumerosVendasResumo,
+  listarTemplatesResumo,
   listarVendedores,
 } from "@/server/comercial/consultas";
 import {
@@ -15,6 +19,7 @@ import { NumerosPainel } from "./NumerosPainel";
 import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
 import { ComercialPainel } from "./ComercialPainel";
+import { ReguaComercialPainel } from "./ReguaComercialPainel";
 
 // CONFIG DO CANAL WHATSAPP (docs 26/30 · fase comercial doc 27).
 // - Canal (número/QR, templates, política da régua): exclusivo do ADMINISTRADOR (D21).
@@ -29,13 +34,18 @@ export default async function WhatsAppConfigPage() {
   const ehAdmin = papeisTem(papeis, Papel.ADMINISTRADOR);
 
   // Dados administrativos só são buscados para o admin (o gerente comercial vê só o comercial).
-  const [admin, configComercial, saudacoesSimuladas] = await Promise.all([
-    ehAdmin
-      ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores()])
-      : Promise.resolve(null),
-    carregarConfigComercial(),
-    carregarSaudacoesSimuladas(),
-  ]);
+  const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial] =
+    await Promise.all([
+      ehAdmin
+        ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores()])
+        : Promise.resolve(null),
+      carregarConfigComercial(),
+      carregarSaudacoesSimuladas(),
+      carregarReguaComercialConfig(),
+      listarNumerosVendasResumo(),
+      listarTemplatesResumo(),
+      carregarEnsaioComercial(),
+    ]);
 
   return (
     <div className="space-y-10">
@@ -47,6 +57,7 @@ export default async function WhatsAppConfigPage() {
         </>
       )}
       <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} />
+      <ReguaComercialPainel regua={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} />
     </div>
   );
 }

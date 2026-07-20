@@ -5,14 +5,16 @@
 > [`08`](08-comercial-crm-whatsapp.md) sobre a infraestrutura bimotor — quase tudo aqui é
 > **política + gatilho sobre o motor que já existe**, não módulo novo.
 >
-> **Estado (2026-07-18):** C1 "captura + velocidade" **parcialmente implementada** — o
-> **auto-lead no 1º inbound** (com dedupe gap 17 + origem via referral) e a **saudação
-> automática** (classe *reativa*, isenta de janela — fecha o gap C20) estão no código
-> (`ConfigComercial` singleton, nasce desligada; `comercial/captura.ts`; toggles em
-> `/configuracao/whatsapp`). **Falta da C1:** a régua "lead novo sem resposta" (cadência
-> D0·+30min·+4h…), que precisa da **generalização do motor por âncora** (§Tese) — vai na
-> fatia seguinte, junto de **C2** (experimental). **C3 (IA)** aguarda a decisão de
-> fornecedor de LLM + os requisitos LGPD do gap D29 (doc 28).
+> **Estado (2026-07-20):** **C1 "captura + velocidade" COMPLETA.** Auto-lead no 1º inbound
+> (dedupe gap 17 + referral cru) + saudação reativa (fecha o gap C20) + **motor generalizado
+> por âncora** (`proximaAcaoAncora`, corte de progresso forward-only por ordem imutável) +
+> **régua "lead novo sem resposta"** (`PoliticaComercial`/`DegrauComercial`, cadência
+> +30min·+4h·+24h·+3d·+7d — o D0 é a saudação): enfileirador no mesmo tick do cron da
+> cobrança (um por cenário, isolados), stop-conditions (etapa/inbound/opt-out/vendedor
+> assumiu), trava S1 **liberada no Baileys** (decisão de produto), shadow próprio por
+> política, ensaio observável e tela editável em `/configuracao/whatsapp`. Tudo nasce
+> DESLIGADO. **Próximo: C2** (experimental — confirmação 24h/2h, no-show, check-in) no mesmo
+> motor. **C3 (IA)** aguarda a decisão de fornecedor de LLM + os requisitos LGPD do gap D29.
 
 ## Tese estrutural: um motor de réguas, N políticas
 A régua de follow-up comercial (doc 08) é **a mesma máquina** da régua de cobrança (doc 24):
