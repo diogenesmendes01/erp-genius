@@ -7,16 +7,85 @@
 > `GET /api/whatsapp/health`.
 
 ## 0. Burocracia Meta (dia 1 — corre em paralelo a tudo)
-Caminho crítico com prazo de TERCEIRO (dias a semanas). Iniciar antes de qualquer infra:
-1. **Business Manager** verificado (verificação do negócio — 1× por empresa; exige
-   documento da empresa e site/telefone verificáveis).
-2. **WABA** criada + **número novo de cobrança** registrado (o número sai do app do
-   celular; histórico não migra — por isso número NOVO, doc 26 §motores).
-3. **System user** com token permanente (`META_WA_TOKEN`) e o app com produto WhatsApp;
-   anotar `phone_number_id` (vira `NumeroWhatsApp.providerRef`) e `WABA_ID`.
-4. **Templates**: criar/submeter os 4 da régua (`amigavel · dados · vencida · firme`,
-   categoria *utility*) pelo editor do ERP (E4) ou importar pelo mapeador se já existirem.
-5. Enquanto isso não sai: canal roda em **shadow** e o braço manual (wa.me) segue operando.
+
+Caminho crítico com prazo de TERCEIRO: a **verificação do negócio leva ~3–5 dias úteis** e
+pode voltar para correção. **Começar por ela, antes de qualquer infra** — o resto do go-live
+espera nela. Enquanto não sai: o canal roda em **shadow** e o braço manual (wa.me) opera
+normalmente, então nada da operação para.
+
+> Esta seção é **execução do dono** (exige a conta Meta da empresa, documentos e verificação
+> de identidade). O ERP já está pronto para receber os valores — o mapa está no §0.4.
+
+### 0.1 Antes de começar — tenha em mãos
+- [ ] **Meta Business Manager** (business.facebook.com) com a empresa cadastrada e você como
+      **administrador**.
+- [ ] **Documento da empresa**: registro/CNPJ + comprovante com **nome e endereço idênticos**
+      ao cadastro no Business Manager (divergência é a causa nº 1 de rejeição).
+- [ ] **Site da escola no ar**, com nome da empresa e forma de contato visíveis; e-mail
+      corporativo no mesmo domínio ajuda.
+- [ ] **Número NOVO para a cobrança**, capaz de receber **SMS ou ligação**, e que **não esteja
+      ativo no app do WhatsApp**. Se já tiver conta WhatsApp, é preciso **excluir a conta
+      daquele número** antes de registrá-lo na WABA — o histórico **não migra** (doc 26).
+      *Não use o número de vendas atual*: ele continua no Baileys/app do vendedor.
+- [ ] **Domínio com HTTPS** para o webhook — depende do deploy (§1). Pode ser feito em
+      paralelo, mas o webhook só é configurável depois que a stack estiver no ar.
+
+### 0.2 Ordem de execução (o que trava o quê)
+| # | Passo | Depende de | Prazo típico |
+|---|---|---|---|
+| 1 | **Verificação do negócio** no Business Manager | documentos (§0.1) | **3–5 dias úteis** |
+| 2 | **App Meta** + produto **WhatsApp** (developers.facebook.com) | — (pode em paralelo ao 1) | minutos |
+| 3 | **WABA** + registrar o número de cobrança (SMS/voz) | 2 (e 1, para limites melhores) | ~1h |
+| 4 | **System user** + **token permanente** | 2, 3 | minutos |
+| 5 | **Webhook** apontando para o ERP | deploy §1 no ar (HTTPS) | minutos |
+| 6 | **Templates** submetidos e aprovados | 4, 5 | horas a dias |
+
+**Token: nunca use o token temporário de teste em produção.** O token de desenvolvedor
+expira em 24h e derruba o canal — o de produção é o **system user token** (permanente).
+Permissões necessárias: **`whatsapp_business_messaging`** (enviar/receber) **e
+`whatsapp_business_management`** (gerir templates). Sem a segunda, o mapeador e o editor de
+templates da E4 quebram na Graph API.
+
+### 0.3 Enquanto a verificação não sai
+Dá para desenvolver e ensaiar tudo: **número de teste da Meta** (limitado a 5 destinatários
+whitelistados) + `WHATSAPP_LIVE` vazio (tudo `SIMULADA`). As telas, o cron, a inbox e as
+réguas funcionam ponta a ponta em ensaio.
+
+### 0.4 Mapa: o que a Meta te dá → onde entra no ERP
+| Valor | Onde pegar | Onde entra |
+|---|---|---|
+| Token permanente | System user → *Gerar token* (com as 2 permissões acima) | `META_WA_TOKEN` (`.env`) |
+| App Secret | App Meta → *Configurações › Básico* | `META_WA_APP_SECRET` (`.env`) — valida a assinatura do webhook |
+| Verify token | **você inventa** (string aleatória) | `META_WA_VERIFY_TOKEN` (`.env`) **e** cola no painel do webhook |
+| WABA ID | Business Manager → *Contas do WhatsApp* | `META_WA_WABA_ID` (`.env`) — usado pelos templates |
+| `phone_number_id` | WABA → o número registrado | **não é env**: vai no campo de referência do número em `/configuracao/whatsapp` |
+| URL do webhook | você configura na Meta | `https://<dominio>/api/whatsapp/webhook/meta` |
+| Campos do webhook | assinar na Meta | **`messages`** e **`message_template_status_update`** |
+
+### 0.5 Como validar cada etapa (com o que já existe no ERP)
+1. **Webhook**: ao salvar na Meta, ela chama o `GET` de verificação — se o `META_WA_VERIFY_TOKEN`
+   bater, a rota devolve o `hub.challenge` e a Meta aceita. Erro aqui = token divergente.
+2. **Token/permissões**: na tela do canal, clique em **"Sincronizar com a Meta"** (mapeador da
+   E4). Se listar os templates, o token e o `WABA_ID` estão certos; se falhar, falta a
+   permissão `whatsapp_business_management`.
+3. **Número**: cadastre-o em `/configuracao/whatsapp` com o `phone_number_id` na referência.
+4. **Canal**: `GET /api/whatsapp/health` (header `x-cron-secret`) → 200 = saudável.
+5. **Primeira mensagem real**: só depois do §6 (rollout), com `WHATSAPP_LIVE=1`.
+
+### 0.6 Armadilhas que causam rejeição/atraso
+- Nome/endereço do documento **diferente** do cadastro no Business Manager.
+- Site fora do ar, sem nome da empresa ou sem contato.
+- Número **ainda ativo no app do WhatsApp** ao tentar registrar na WABA.
+- Usar o **token de 24h** em produção (canal cai no dia seguinte).
+- Faltar `whatsapp_business_management` (templates não sincronizam).
+- Webhook sem HTTPS válido, ou devolvendo **5xx repetido** — a Meta **suspende a entrega**
+  (por isso o handler responde 200 mesmo com erro interno — gap A8).
+- Submeter template de cobrança como *marketing*: use **categoria `utility`** (os 4 da régua
+  já nascem assim no seed).
+
+**Referências oficiais:** [Access Tokens](https://developers.facebook.com/documentation/business-messaging/whatsapp/access-tokens/) ·
+[Business phone numbers](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers) ·
+[Cloud API (Postman)](https://www.postman.com/meta/whatsapp-business-platform/collection/wlk6lh4/whatsapp-cloud-api)
 
 ## 1. Deploy (VPS) — gap A1
 Pré-requisitos: VPS Linux com Docker + compose plugin; DNS do domínio → IP da VPS.
