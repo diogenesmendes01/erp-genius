@@ -3,7 +3,7 @@ import { exigirPapelLeitura, papeisTem } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import {
   carregarConfigComercial,
-  carregarReguaComercialConfig,
+  carregarReguasComerciaisConfig,
   carregarEnsaioComercial,
   carregarSaudacoesSimuladas,
   listarNumerosVendasResumo,
@@ -19,7 +19,7 @@ import { NumerosPainel } from "./NumerosPainel";
 import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
 import { ComercialPainel } from "./ComercialPainel";
-import { ReguaComercialPainel } from "./ReguaComercialPainel";
+import { ReguasComerciaisPainel } from "./ReguaComercialPainel";
 
 // CONFIG DO CANAL WHATSAPP (docs 26/30 · fase comercial doc 27).
 // - Canal (número/QR, templates, política da régua): exclusivo do ADMINISTRADOR (D21).
@@ -41,7 +41,7 @@ export default async function WhatsAppConfigPage() {
         : Promise.resolve(null),
       carregarConfigComercial(),
       carregarSaudacoesSimuladas(),
-      carregarReguaComercialConfig(),
+      carregarReguasComerciaisConfig(),
       listarNumerosVendasResumo(),
       listarTemplatesResumo(),
       carregarEnsaioComercial(),
@@ -57,7 +57,7 @@ export default async function WhatsAppConfigPage() {
         </>
       )}
       <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} />
-      <ReguaComercialPainel regua={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} />
+      <ReguasComerciaisPainel reguas={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} />
     </div>
   );
 }

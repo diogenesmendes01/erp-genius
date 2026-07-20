@@ -79,6 +79,8 @@ export const DegrauComercialSchema = z.object({
 });
 
 export const ReguaComercialSchema = z.object({
+  /** Cenário da cadência (lead-novo, pré-experimental, no-show — doc 27 C1/C2). */
+  chave: z.string().min(1),
   estado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
   numeroRemetenteId: z
     .string()
