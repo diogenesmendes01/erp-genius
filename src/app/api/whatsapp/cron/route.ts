@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
-import { rodarLeadNovoSemResposta } from "@/server/whatsapp/cron-comercial";
+import { rodarLeadNovoSemResposta, rodarNoShow, rodarPreExperimental } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
@@ -32,10 +32,12 @@ export async function POST(req: Request): Promise<NextResponse> {
   const agora = new Date();
   // Cobrança: enfileira + drena (o rodarCronRegua já chama o despachante no fim).
   const cobranca = await seguro("cobranca", () => rodarCronRegua(agora));
-  // Comercial lead-novo: só ENFILEIRA...
-  const comercial = await seguro("comercial_lead_novo", () => rodarLeadNovoSemResposta(agora));
-  // ...então uma passada do despachante drena o que o comercial enfileirou (idempotente).
+  // Cenários comerciais: só ENFILEIRAM (um enfileirador isolado por cadência)...
+  const leadNovo = await seguro("comercial_lead_novo", () => rodarLeadNovoSemResposta(agora));
+  const preExperimental = await seguro("comercial_pre_experimental", () => rodarPreExperimental(agora));
+  const noShow = await seguro("comercial_no_show", () => rodarNoShow(agora));
+  // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
-  return NextResponse.json({ cobranca, comercial, despacho });
+  return NextResponse.json({ cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
 }

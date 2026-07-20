@@ -51,7 +51,7 @@ import {
   type ConfigComercialInput,
   type ReguaComercialInput,
 } from "./schema";
-import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } from "./regua-fabrica";
+import { CADENCIAS_COMERCIAIS } from "./regua-fabrica";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -573,8 +573,10 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
     const dados = ReguaComercialSchema.parse(input);
     if (dados.janelaFim <= dados.janelaInicio) throw new ErroRegra("A janela precisa terminar depois de começar.");
 
-    // Só passos da cadência canônica entram (a ordem é imutável — review PR #54).
-    const rotuloPorPasso = new Map(CADENCIA_LEAD_NOVO.map((d) => [d.passo, d.rotulo]));
+    // Só passos da cadência CANÔNICA daquele cenário entram (ordem imutável — review PR #54).
+    const cadencia = CADENCIAS_COMERCIAIS.find((c) => c.chave === dados.chave);
+    if (!cadencia) throw new ErroRegra(`Cenário de régua desconhecido: ${dados.chave}.`);
+    const rotuloPorPasso = new Map(cadencia.degraus.map((d) => [d.passo, d.rotulo]));
     for (const d of dados.degraus) {
       if (!rotuloPorPasso.has(d.passo)) throw new ErroRegra(`Passo desconhecido na cadência: ${d.passo}.`);
     }
@@ -634,12 +636,12 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
 
     await prisma.$transaction(async (tx) => {
       const existente = await tx.politicaComercial.findUnique({
-        where: { chave: CHAVE_LEAD_NOVO },
+        where: { chave: dados.chave },
         include: { degraus: true },
       });
       const politicaId = existente
         ? existente.id
-        : (await tx.politicaComercial.create({ data: { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME } })).id;
+        : (await tx.politicaComercial.create({ data: { chave: cadencia.chave, nome: cadencia.nome } })).id;
 
       await tx.politicaComercial.update({
         where: { id: politicaId },

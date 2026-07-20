@@ -503,6 +503,11 @@ model Lead {
   dataExperimental DateTime?
   dataProposta     DateTime?
 
+  // Estado de CONFIRMAÇÃO da experimental (doc 27 C2 · gap 33 do doc 28): o lead respondeu
+  // confirmando a presença (botão no oficial ou "SIM" no Baileys). O histórico de
+  // reagendamento já vem dos eventos `ExperimentalAgendada` repetidos — não precisa coluna.
+  experimentalConfirmadaEm DateTime?
+
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?

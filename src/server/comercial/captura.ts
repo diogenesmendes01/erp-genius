@@ -101,6 +101,69 @@ export async function criarLeadDeInboundWhatsApp(
 }
 
 // ---------------------------------------------------------------------------
+// C2 — resposta à confirmação da experimental (doc 27 §nota bimotor)
+// ---------------------------------------------------------------------------
+
+// Botões interativos são confiáveis no driver OFICIAL e instáveis no Baileys — por isso o
+// fallback textual ("responda SIM"). O match é EXATO e conservador, como o do opt-out:
+// uma frase que contenha "sim" não confirma (falso positivo marcaria presença errada).
+const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo", "confirmar", "confirmado", "si", "ok"]);
+const KEYWORDS_REAGENDA = new Set(["reagendar", "remarcar", "reagendo", "outro horario", "outro horário"]);
+
+export type RespostaExperimental = "confirmada" | "reagendar" | null;
+
+export function classificarRespostaExperimental(corpo: string | null): RespostaExperimental {
+  if (!corpo) return null;
+  const t = corpo.trim().toLowerCase();
+  if (KEYWORDS_CONFIRMA.has(t)) return "confirmada";
+  if (KEYWORDS_REAGENDA.has(t)) return "reagendar";
+  return null;
+}
+
+/**
+ * Captura a resposta do lead à confirmação da experimental. Só vale enquanto há uma
+ * experimental AGENDADA (mesma guarda do check-in). Confirmar grava
+ * `experimentalConfirmadaEm` + evento; pedir reagendamento só SINALIZA (evento) — quem
+ * remarca é o vendedor, pela ação existente (a máquina de funil é uma só, doc 29 regra 7).
+ */
+export async function capturarRespostaExperimental(
+  tx: Prisma.TransactionClient,
+  ctx: { leadId: string | null; corpo: string | null; quando: Date },
+): Promise<RespostaExperimental> {
+  if (!ctx.leadId) return null;
+  const resposta = classificarRespostaExperimental(ctx.corpo);
+  if (!resposta) return null;
+
+  const lead = await tx.lead.findUnique({
+    where: { id: ctx.leadId },
+    select: { id: true, etapa: true, experimentalConfirmadaEm: true },
+  });
+  if (!lead || lead.etapa !== "EXPERIMENTAL_AGENDADA") return null;
+
+  if (resposta === "confirmada") {
+    if (lead.experimentalConfirmadaEm) return null; // já confirmada — não duplica evento
+    await tx.lead.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
+    await registrarEvento(tx, {
+      tipo: "ExperimentalConfirmada",
+      agregadoTipo: "Lead",
+      agregadoId: lead.id,
+      autorId: null, // o próprio lead respondeu
+      payload: { via: "whatsapp_keyword" },
+    });
+    return "confirmada";
+  }
+
+  await registrarEvento(tx, {
+    tipo: "ExperimentalReagendamentoSolicitado",
+    agregadoTipo: "Lead",
+    agregadoId: lead.id,
+    autorId: null,
+    payload: { via: "whatsapp_keyword" },
+  });
+  return "reagendar";
+}
+
+// ---------------------------------------------------------------------------
 // Orquestração no inbound (chamada por whatsapp/inbound.ts, dentro da transação)
 // ---------------------------------------------------------------------------
 

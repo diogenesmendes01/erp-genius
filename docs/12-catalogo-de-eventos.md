@@ -56,7 +56,9 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `InteracaoRegistrada` | Registro manual de interação | Vendedor | `{ canal, nota }` |
 | `DocumentoAnexado` | Upload de documento ao lead | Vendedor | `{ categoria, nome }` |
 | `DocumentoArquivado` | Arquiva documento (soft-delete) | Vendedor | `{ documentoId, nome }` |
-| `ReguaComercialEnviada` | Degrau da cadência comercial cumprido (lead-novo etc. — fase doc 27 C1); o motor conta como passo feito | Sistema/cron | `{ chave, passo, canal: "api" }` |
+| `ReguaComercialEnviada` | Degrau da cadência comercial cumprido (lead-novo, pré-experimental, no-show — doc 27 C1/C2); o motor conta como passo feito | Sistema/cron | `{ chave, passo, canal: "api" }` |
+| `ExperimentalConfirmada` | O lead confirmou presença na experimental (botão no oficial / "SIM" no Baileys — doc 27 C2) | Sistema (o próprio lead) | `{ via: "whatsapp_keyword" }` |
+| `ExperimentalReagendamentoSolicitado` | O lead pediu para remarcar; só SINALIZA — quem remarca é o vendedor (a máquina de funil é uma só) | Sistema (o próprio lead) | `{ via: "whatsapp_keyword" }` |
 
 > A timeline do lead e a fila da Home são **projeções** desses eventos + dos campos de data
 > do `Lead` (`proximoFollowUp`, `dataExperimental`, `dataProposta`).
