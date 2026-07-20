@@ -1003,7 +1003,10 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
-  @@unique([leadId, passoComercial]) // idem, para a cadência comercial (doc 27)
+  // Cadência comercial: a chave inclui a POLÍTICA (review PR #55 P2) — "um motor, N
+  // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
+  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead.
+  @@unique([politicaComercialId, leadId, passoComercial])
   @@index([status, despacharAposEm])
 }
 

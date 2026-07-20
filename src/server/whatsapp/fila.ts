@@ -72,7 +72,11 @@ export async function enfileirarIntencaoCobranca(
   return "criada";
 }
 
-// Idem para a cadência COMERCIAL (doc 27): idempotência por @@unique([leadId, passoComercial]).
+// Idem para a cadência COMERCIAL (doc 27): idempotência por
+// @@unique([politicaComercialId, leadId, passoComercial]). A POLÍTICA faz parte da chave
+// (review PR #55) — cadências distintas compartilham nomes de passo (+30min/+3d/+7d em
+// lead-novo e no-show) e não podem se bloquear no mesmo lead. Por isso `politicaComercialId`
+// é OBRIGATÓRIO aqui: sem ele não há identidade de degrau (e o NULL do Postgres não é único).
 // Mesmo ciclo de vida da cobrança — só troca o vínculo de domínio (Lead + passo da cadência).
 export interface EnfileirarComercial {
   leadId: string;
@@ -82,7 +86,7 @@ export interface EnfileirarComercial {
   corpoRenderizado: string;
   variaveis: string[];
   templateId: string | null;
-  politicaComercialId: string | null;
+  politicaComercialId: string;
 }
 
 export async function enfileirarIntencaoComercial(
@@ -90,7 +94,13 @@ export async function enfileirarIntencaoComercial(
   e: EnfileirarComercial,
 ): Promise<ResultadoEnfileirar> {
   const existente = await tx.intencaoMensagem.findUnique({
-    where: { leadId_passoComercial: { leadId: e.leadId, passoComercial: e.passoComercial } },
+    where: {
+      politicaComercialId_leadId_passoComercial: {
+        politicaComercialId: e.politicaComercialId,
+        leadId: e.leadId,
+        passoComercial: e.passoComercial,
+      },
+    },
   });
 
   if (existente) {
