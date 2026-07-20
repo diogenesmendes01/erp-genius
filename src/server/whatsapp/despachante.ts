@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
+import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
@@ -95,6 +95,7 @@ export async function despacharFila(
       contato: true,
       template: true,
       politica: true,
+      politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
     },
   });
@@ -110,9 +111,22 @@ export async function despacharFila(
   };
 
   for (const it of intencoes) {
-    const politica: PoliticaCarregada = it.politica
-      ? { ...politicaPadrao, ...configDe(it.politica) }
-      : politicaPadrao;
+    // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
+    // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
+    const comercialPol = it.leadId != null && it.politicaComercial;
+    const politica: PoliticaCarregada = comercialPol
+      ? {
+          ...politicaPadrao, // killSwitch global + defaults
+          estado: it.politicaComercial!.estado,
+          janelaInicio: it.politicaComercial!.janelaInicio,
+          janelaFim: it.politicaComercial!.janelaFim,
+          diasSemana: it.politicaComercial!.diasSemana,
+          tetoPorContatoDia: it.politicaComercial!.tetoPorContatoDia,
+          silencioPosInboundHoras: it.politicaComercial!.silencioPosInboundHoras,
+        }
+      : it.politica
+        ? { ...politicaPadrao, ...configDe(it.politica) }
+        : politicaPadrao;
     const automatica = it.origem !== "HUMANO"; // guard-rails de automação valem p/ CRON e LOTE
     // Classe REATIVA (doc 27 · gap C20): saudação/resposta automática a um inbound. É isenta
     // dos guard-rails de HORÁRIO (janela/teto/silêncio) e da trava S1 — a janela de 24h está
@@ -120,6 +134,10 @@ export async function despacharFila(
     // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela), shadow (WHATSAPP_LIVE)
     // e ao KILL SWITCH (freio de emergência de TODA automação — review PR #53 P1).
     const reativa = it.reativa;
+    // Cadência COMERCIAL (doc 27): vínculo Lead + passo. Isenta da trava S1 (liberada no
+    // Baileys por decisão de produto); shadow pela SUA política (não a de cobrança); janela/
+    // teto/silêncio VALEM (é disparo proativo). Kill switch de cobrança a congela também.
+    const comercial = it.leadId != null && it.passoComercial != null;
 
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
@@ -131,8 +149,8 @@ export async function despacharFila(
 
     // 2. TRAVA S1 (lei): disparo do CRON exige driver oficial — Baileys nunca recebe
     //    automação desassistida (padrão de ban, doc 26 §Em aberto → decidido no doc 30).
-    //    Reativa é isenta: responder no número de vendas (Baileys) é o caso de uso.
-    if (it.origem === "CRON" && !reativa && it.numero.driver !== "META_CLOUD") {
+    //    Reativa e cadência comercial são isentas: rodam no número de vendas (Baileys).
+    if (it.origem === "CRON" && !reativa && !comercial && it.numero.driver !== "META_CLOUD") {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
@@ -183,6 +201,22 @@ export async function despacharFila(
           agregadoId: it.cobrancaId,
           tipo: "CobrancaEnviadaWhatsApp",
           payload: { path: ["passo"], equals: it.passo },
+        },
+      });
+      if (jaCumprido > 0) {
+        await marcar(it.id, "CANCELADA", "degrau_ja_cumprido");
+        r.canceladas += 1;
+        continue;
+      }
+    }
+    // 6b. Idempotência da cadência comercial: o passo pode já ter sido enviado (evento).
+    if (comercial && it.leadId && it.passoComercial) {
+      const jaCumprido = await prisma.evento.count({
+        where: {
+          agregadoTipo: "Lead",
+          agregadoId: it.leadId,
+          tipo: "ReguaComercialEnviada",
+          payload: { path: ["passo"], equals: it.passoComercial },
         },
       });
       if (jaCumprido > 0) {
@@ -246,8 +280,8 @@ export async function despacharFila(
     }
 
     // 10. Driver oficial fora da janela de 24h exige template APROVADO na Meta (Camada 2).
-    //     Reativa é isenta: a janela de 24h está aberta (o contato acabou de mandar mensagem).
-    if (it.numero.driver === "META_CLOUD" && automatica && !reativa && it.template?.statusMeta !== "APROVADO") {
+    //     Reativa e cadência comercial são isentas: texto livre dentro da janela de 24h.
+    if (it.numero.driver === "META_CLOUD" && automatica && !reativa && !comercial && it.template?.statusMeta !== "APROVADO") {
       await marcar(it.id, "FALHOU", "template_nao_aprovado_meta");
       r.falhas += 1;
       continue;
@@ -325,6 +359,13 @@ export async function despacharFila(
             passo: it.passo as PassoRegua,
             canal: "api",
             autorId: it.autorId, // humano que aprovou (LOTE/HUMANO) ou null (CRON)
+          });
+        } else if (comercial && it.leadId && it.passoComercial) {
+          // Evento de domínio da cadência comercial — o motor conta como passo cumprido.
+          await registrarEventoReguaComercialEnviada(tx, {
+            leadId: it.leadId,
+            chave: it.politicaComercial?.chave ?? "COMERCIAL",
+            passo: it.passoComercial,
           });
         }
         await tx.intencaoMensagem.update({

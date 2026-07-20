@@ -138,6 +138,39 @@ describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #5
   });
 });
 
+describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys)", () => {
+  async function seedComercial(estado: "SHADOW" | "ATIVA") {
+    const numero = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
+    });
+    const contato = await seedContato();
+    const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana" } });
+    const politica = await prisma.politicaComercial.create({
+      data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
+    });
+    await prisma.intencaoMensagem.create({
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", leadId: lead.id, passoComercial: "+30min", politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!" },
+    });
+  }
+
+  it("ATIVA: a cadência ENVIA no Baileys (trava S1 NÃO cancela) — review doc 27", async () => {
+    await seedComercial("ATIVA");
+    const r = await despacharFila();
+    expect(r.despachadas).toBe(1);
+    expect(r.canceladas).toBe(0);
+    expect(enviarTextoMock).toHaveBeenCalledTimes(1);
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
+  });
+
+  it("SHADOW: mesmo com live, a cadência SIMULA (ensaio próprio da política comercial)", async () => {
+    await seedComercial("SHADOW");
+    const r = await despacharFila();
+    expect(r.simuladas).toBe(1);
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
+  });
+});
+
 describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
   it("midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });

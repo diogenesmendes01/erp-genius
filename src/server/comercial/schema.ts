@@ -64,6 +64,34 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
+// Régua comercial "lead novo sem resposta" (doc 27 C1). Nasce DESLIGADA; armar
+// (SHADOW/ATIVA) exige número remetente (validado na ação). A ORDEM dos passos é lei de
+// código — aqui só offset/ativo/template por degrau.
+export const DegrauComercialSchema = z.object({
+  passo: z.string().min(1),
+  offsetMinutos: z.number().int().min(0).max(43200), // até 30 dias
+  ativo: z.boolean(),
+  templateId: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v : null)),
+});
+
+export const ReguaComercialSchema = z.object({
+  estado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
+  numeroRemetenteId: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v : null)),
+  janelaInicio: z.number().int().min(0).max(23),
+  janelaFim: z.number().int().min(1).max(24),
+  tetoPorContatoDia: z.number().int().min(1).max(10),
+  degraus: z.array(DegrauComercialSchema).min(1),
+});
+export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
+
 // Config comercial C1 (doc 27): auto-lead (toggle) + saudação (shadow próprio
 // DESLIGADA/SHADOW/ATIVA — doc 27 §regra de ouro). Texto exigido fora de DESLIGADA.
 export const ConfigComercialSchema = z

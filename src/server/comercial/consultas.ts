@@ -28,11 +28,125 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
   };
 }
 
+export interface DegrauComercialConfig {
+  passo: string;
+  offsetMinutos: number;
+  rotulo: string;
+  ativo: boolean;
+  templateId: string | null;
+}
+
+export interface ReguaComercialConfig {
+  id: string | null;
+  chave: string;
+  nome: string;
+  estado: "DESLIGADA" | "SHADOW" | "ATIVA";
+  numeroRemetenteId: string | null;
+  janelaInicio: number;
+  janelaFim: number;
+  tetoPorContatoDia: number;
+  degraus: DegrauComercialConfig[];
+}
+
+/** Config da régua comercial lead-novo (doc 27) — banco ou fábrica (DESLIGADA). */
+export async function carregarReguaComercialConfig(): Promise<ReguaComercialConfig> {
+  const { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } = await import("./regua-fabrica");
+  const p = await prisma.politicaComercial.findUnique({
+    where: { chave: CHAVE_LEAD_NOVO },
+    include: { degraus: { orderBy: { offsetMinutos: "asc" } } },
+  });
+  if (!p) {
+    return {
+      id: null,
+      chave: CHAVE_LEAD_NOVO,
+      nome: POLITICA_LEAD_NOVO_NOME,
+      estado: "DESLIGADA",
+      numeroRemetenteId: null,
+      janelaInicio: 9,
+      janelaFim: 20,
+      tetoPorContatoDia: 2,
+      degraus: CADENCIA_LEAD_NOVO.map((d) => ({
+        passo: d.passo,
+        offsetMinutos: d.offsetMinutos,
+        rotulo: d.rotulo,
+        ativo: true,
+        templateId: null,
+      })),
+    };
+  }
+  return {
+    id: p.id,
+    chave: p.chave,
+    nome: p.nome,
+    estado: p.estado,
+    numeroRemetenteId: p.numeroRemetenteId,
+    janelaInicio: p.janelaInicio,
+    janelaFim: p.janelaFim,
+    tetoPorContatoDia: p.tetoPorContatoDia,
+    degraus: p.degraus.map((d) => ({
+      passo: d.passo,
+      offsetMinutos: d.offsetMinutos,
+      rotulo: d.rotulo,
+      ativo: d.ativo,
+      templateId: d.templateId,
+    })),
+  };
+}
+
 export interface SaudacaoSimulada {
   id: string;
   contato: string;
   texto: string;
   quando: string;
+}
+
+export interface NumeroResumo {
+  id: string;
+  rotulo: string;
+  finalidade: string;
+}
+export interface TemplateResumo {
+  id: string;
+  nome: string;
+}
+
+/** Projeção MÍNIMA p/ os selects da config comercial — sem expor providerRef/sessão/dono. */
+export async function listarNumerosVendasResumo(): Promise<NumeroResumo[]> {
+  const numeros = await prisma.numeroWhatsApp.findMany({
+    where: { finalidade: "VENDAS" },
+    orderBy: { criadoEm: "asc" },
+    select: { id: true, rotulo: true, finalidade: true },
+  });
+  return numeros;
+}
+
+export async function listarTemplatesResumo(): Promise<TemplateResumo[]> {
+  return prisma.templateWhatsApp.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } });
+}
+
+export interface EnsaioComercial {
+  id: string;
+  lead: string;
+  passo: string;
+  texto: string;
+  quando: string;
+}
+
+/** Ensaio observável da cadência comercial (doc 27 §regra de ouro): as últimas simuladas. */
+export async function carregarEnsaioComercial(limite = 10): Promise<EnsaioComercial[]> {
+  const intencoes = await prisma.intencaoMensagem.findMany({
+    where: { leadId: { not: null }, status: "SIMULADA" },
+    orderBy: { criadaEm: "desc" },
+    take: limite,
+    include: { lead: { select: { nome: true, codigo: true } } },
+  });
+  return intencoes.map((i) => ({
+    id: i.id,
+    lead: i.lead?.nome ?? i.lead?.codigo ?? "lead",
+    passo: i.passoComercial ?? "—",
+    texto: i.corpoRenderizado,
+    quando: (i.despachadaEm ?? i.criadaEm).toISOString(),
+  }));
 }
 
 /**
