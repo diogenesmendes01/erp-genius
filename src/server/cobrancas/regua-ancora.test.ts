@@ -146,3 +146,59 @@ describe("corte de progresso forward-only (review PR #54)", () => {
     expect(r.estado).toBe("concluida");
   });
 });
+
+// 2ª passada do review do PR #54: a política é EDITÁVEL — remover/desativar um degrau já
+// executado, ou trocar seu offset, não pode devolver a régua para trás. O corte é ancorado
+// na ORDEM IMUTÁVEL dos passos (lei de código), não no offset atual da config.
+describe("corte de progresso sobrevive à edição da política (review PR #54, 2ª passada)", () => {
+  const hoje = new Date(2026, 6, 18);
+  const vencimento = new Date(2026, 6, 13); // diasAtraso = 5 (repro do review)
+
+  it("cobrança: D+3 feito e depois REMOVIDO/desativado da política → NÃO volta pro D0", () => {
+    const politicaSemD3 = REGUA.filter((d) => d.passo !== "D+3");
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, politicaSemD3);
+    expect(r.estado).toBe("futuro"); // D0/D-3/D-7 superados; D+7 ainda não chegou
+    expect(r.degrau).toBeNull();
+  });
+
+  it("cobrança: D+3 feito e depois RE-OFFSETADO para -10 → NÃO volta pro D0", () => {
+    // O loader entrega ordenado por offset asc: D+3 com -10 vira o primeiro degrau.
+    const politicaEditada = [
+      { ...REGUA[3], offsetDias: -10 }, // D+3 movido p/ -10 DEPOIS do envio
+      ...REGUA.filter((d) => d.passo !== "D+3"),
+    ];
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, politicaEditada);
+    expect(r.estado).toBe("futuro"); // corte pela ordem canônica: D-7..D0 atrás do D+3
+    expect(r.degrau).toBeNull();
+  });
+
+  it("cobrança: com o degrau removido, a régua segue PARA FRENTE quando o próximo chega", () => {
+    const politicaSemD3 = REGUA.filter((d) => d.passo !== "D+3");
+    const em7dias = new Date(2026, 6, 20); // diasAtraso = 7
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, em7dias, politicaSemD3);
+    expect(r.degrau?.passo).toBe("D+7");
+  });
+
+  it("âncora com ordem imutável: passo feito removido da cadência → não retrocede", () => {
+    const ordem = CADENCIA.map((d) => d.passo); // a ordem canônica da cadência (lei)
+    const cadenciaSem30 = CADENCIA.filter((d) => d.passo !== "+30min");
+    const r = proximaAcaoAncora(
+      { ancoraEm: ANCORA, encerrada: false, passosFeitos: ["+30min"] },
+      maisMin(45),
+      cadenciaSem30,
+      ordem,
+    );
+    expect(r.estado).toBe("futuro"); // D0 superado pelo corte; +4h ainda não chegou
+    expect(r.passo).toBeNull();
+  });
+
+  it("núcleo: feito ausente dos degraus atuais mas presente na ordem segura o corte", () => {
+    const degraus = [
+      { offset: 0, chave: "a" },
+      { offset: 20, chave: "c" },
+    ];
+    const r = selecionarDegrau(5, degraus, new Set(["b"]), ["a", "b", "c"]); // "b" foi removido da config
+    expect(r.estado).toBe("futuro"); // "a" está atrás do corte; "c" só aos 20
+    expect(r.degrau).toBeNull();
+  });
+});
