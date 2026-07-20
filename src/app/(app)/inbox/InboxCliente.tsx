@@ -12,9 +12,12 @@ import {
   IconPlayerStopFilled,
   IconSend2,
   IconLink,
+  IconLock,
   IconX,
 } from "@tabler/icons-react";
+import type { EtapaLead, Temperatura } from "@prisma/client";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
 import type { ConversaResumo, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
 import {
   buscarVinculosInbox,
@@ -27,6 +30,7 @@ import {
   vincularContatoWhatsApp,
 } from "@/server/whatsapp/acoes";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
+import { definirTemperatura, moverEtapa, registrarNotaInterna } from "@/server/comercial/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
@@ -384,6 +388,9 @@ function Thread({
         </div>
       )}
 
+      {/* Cockpit do vendedor: funil do lead sem sair da conversa (doc 08 §CRM pela conversa) */}
+      {thread.lead && <CockpitLead lead={thread.lead} onErro={onErro} onNota={onNota} />}
+
       {/* Mensagens */}
       <div className="flex-1 space-y-2 overflow-y-auto bg-surface-muted px-4 py-3">
         {grupos.map((g) => (
@@ -728,6 +735,150 @@ function VincularPainel({
             itens={resultados.leads.map((l) => ({ id: l.id, nome: `${l.nome}${l.codigo ? ` (${l.codigo})` : ""}` }))}
             onEscolher={(i) => vincular({ tipo: "lead", id: i.id }, i.nome)}
           />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// COCKPIT DO VENDEDOR (doc 08 §CRM pela conversa): etapa do funil, temperatura e nota
+// interna sem sair da thread. Só aparece se o contato tem lead vinculado E o usuário é
+// comercial — o gate real é do servidor (carregarThread devolve `lead: null` para quem
+// não pode ver), aqui é só render.
+//
+// A nota interna vive num bloco VISUALMENTE distinto do composer (fundo âmbar, cadeado,
+// aviso explícito): o pior erro possível seria o vendedor achar que comentou e ter
+// mandado para o cliente — ou o contrário. Nunca colocar nota e mensagem no mesmo campo.
+function CockpitLead({
+  lead,
+  onErro,
+  onNota,
+}: {
+  lead: NonNullable<ThreadConversa["lead"]>;
+  onErro: (m: string) => void;
+  onNota: (m: string) => void;
+}) {
+  const router = useRouter();
+  const [ocupado, setOcupado] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [abrirNotas, setAbrirNotas] = useState(false);
+
+  async function run(p: Promise<{ ok: boolean; erro?: string }>, sucesso: string) {
+    setOcupado(true);
+    try {
+      const r = await p;
+      if (!r.ok) return onErro(r.erro ?? "Não foi possível concluir.");
+      onNota(sucesso);
+      router.refresh();
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  const etapa = lead.etapa as EtapaLead;
+  const temperatura = lead.temperatura as Temperatura;
+
+  return (
+    <div className="border-b border-gray-100 bg-white px-4 py-2 text-xs">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <Link href={`/leads/${lead.id}`} className="font-medium text-gray-700 hover:underline">
+          {lead.nome} →
+        </Link>
+
+        {/* Etapa: atual + destinos manuais válidos (a máquina de estados já filtrou no servidor) */}
+        <span className="flex items-center gap-1">
+          <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-gray-700">{ETAPA_LABEL[etapa]}</span>
+          {lead.etapasPermitidas.map((destino) => (
+            <button
+              key={destino}
+              disabled={ocupado}
+              className={btnSec}
+              onClick={() =>
+                run(
+                  moverEtapa(lead.id, destino as EtapaLead),
+                  `Etapa alterada para ${ETAPA_LABEL[destino as EtapaLead]}.`,
+                )
+              }
+            >
+              → {ETAPA_LABEL[destino as EtapaLead]}
+            </button>
+          ))}
+        </span>
+
+        {/* Temperatura: um clique, sem sair da conversa */}
+        <span className="flex items-center gap-1">
+          {(Object.keys(TEMPERATURA_LABEL) as Temperatura[]).map((t) => (
+            <button
+              key={t}
+              disabled={ocupado || t === temperatura}
+              title={t === temperatura ? "Temperatura atual" : `Marcar como ${TEMPERATURA_LABEL[t]}`}
+              className={
+                "rounded-full px-1.5 py-0.5 disabled:opacity-100 " +
+                (t === temperatura ? TEMPERATURA_CLS[t] : "text-gray-400 hover:bg-gray-100")
+              }
+              onClick={() => run(definirTemperatura(lead.id, t), `Lead marcado como ${TEMPERATURA_LABEL[t]}.`)}
+            >
+              {TEMPERATURA_LABEL[t]}
+            </button>
+          ))}
+        </span>
+
+        {lead.dataExperimental && (
+          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-violet-700">
+            experimental {new Date(lead.dataExperimental).toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        )}
+
+        <button className={btnSec + " ml-auto"} onClick={() => setAbrirNotas((v) => !v)}>
+          <span className="flex items-center gap-1">
+            <IconLock className="h-3.5 w-3.5" />
+            Notas internas{lead.notas.length > 0 ? ` (${lead.notas.length})` : ""}
+          </span>
+        </button>
+      </div>
+
+      {abrirNotas && (
+        <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2">
+          <p className="mb-1.5 flex items-center gap-1 font-medium text-amber-800">
+            <IconLock className="h-3.5 w-3.5" />
+            Só a equipe vê — nada aqui é enviado ao contato.
+          </p>
+          <div className="flex items-start gap-1.5">
+            <textarea
+              rows={2}
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Ex.: prefere aula à noite, decide com a esposa até sexta."
+              className="flex-1 resize-none rounded-md border border-amber-300 bg-white px-2 py-1 outline-none focus:border-amber-500"
+            />
+            <button
+              className={btnPri + " text-xs"}
+              disabled={ocupado || texto.trim().length === 0}
+              onClick={async () => {
+                await run(registrarNotaInterna(lead.id, { nota: texto }), "Nota interna salva (não enviada).");
+                setTexto("");
+              }}
+            >
+              Salvar nota
+            </button>
+          </div>
+          {lead.notas.length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-amber-200 pt-2 text-amber-900">
+              {lead.notas.map((n) => (
+                <li key={n.id}>
+                  <span className="text-amber-700">
+                    {new Date(n.criadoEm).toLocaleString("pt-BR")} · {n.autorNome ?? "sistema"}
+                  </span>{" "}
+                  — {n.nota}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
