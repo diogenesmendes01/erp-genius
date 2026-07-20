@@ -31,6 +31,15 @@ export const REGUA: readonly DegrauRegua[] = [
 // (PoliticaRegua/DegrauPolitica — ver ./politica.ts); o cérebro recebe os degraus como
 // parâmetro e continua puro. Pressuposto mantido: ordem CRESCENTE de offset.
 
+/**
+ * Ordem CANÔNICA e IMUTÁVEL dos passos da cobrança — lei de código, não config: o admin
+ * edita offset/modo/ativo de cada degrau, mas a ORDEM relativa dos passos nunca muda.
+ * É ela que ancora o corte de progresso do motor (review PR #54, 2ª passada): o evento
+ * histórico guarda só `{ passo }`, então um passo já executado continua ordenável mesmo
+ * que o degrau tenha sido removido/desativado/re-offsetado na política depois do envio.
+ */
+export const ORDEM_PASSOS: readonly PassoRegua[] = ["D-7", "D-3", "D0", "D+3", "D+7", "D+15"];
+
 export type EstadoCobranca =
   | "quitada" // paga/cancelada — fora da régua
   | "promessa" // promessa de pagamento vigente — dormente até a data prometida
@@ -77,6 +86,71 @@ function prioridadeDe(d: DegrauRegua): number {
   return 20 - d.offsetDias; // lembrar: D-3→23 · D-7→27
 }
 
+// ── NÚCLEO GENÉRICO (doc 27 §Tese: "um motor de réguas, N políticas") ─────────
+// Um cérebro só (doc 29 regra 1): a régua da cobrança (âncora = vencimento, unidade =
+// DIAS de calendário) e as réguas comerciais (âncora = evento, unidade = MINUTOS) usam a
+// MESMA seleção de degrau — muda só a ÂNCORA e a UNIDADE, resolvidas por cada wrapper.
+//
+// A ação devida é o degrau MAIS AVANÇADO cujo offset já chegou (offset ≤ posição) e que
+// ainda não foi cumprido; os anteriores não cumpridos são "superados". `concluida` quando
+// a última posição passou e todos os degraus foram feitos. Pressuposto: degraus em ordem
+// CRESCENTE de offset. Puro e sem unidade — a "posição" é `agora − âncora` na unidade da
+// política (o chamador calcula).
+
+export type EstadoDegrau = "futuro" | "acao_devida" | "concluida";
+
+export interface SelecaoDegrau<D> {
+  estado: EstadoDegrau;
+  /** Degrau devido (o mais avançado que chegou e não foi feito), ou null. */
+  degrau: D | null;
+  /** A posição já passou do offset do degrau (backlog) — não é "ação no ponto exato". */
+  atrasada: boolean;
+}
+
+export function selecionarDegrau<D extends { offset: number; chave: string }>(
+  posicao: number,
+  degraus: readonly D[],
+  feitos: ReadonlySet<string>,
+  /**
+   * Ordem CANÔNICA e imutável de TODAS as chaves possíveis (feitas OU configuradas).
+   * É a âncora do corte de progresso: réguas com política EDITÁVEL devem passá-la
+   * (cobrança usa ORDEM_PASSOS). Sem ela, cai na sequência dos próprios degraus —
+   * suficiente apenas para cadências imutáveis.
+   */
+  ordem?: readonly string[],
+): SelecaoDegrau<D> {
+  const ultimoOffset = degraus.length ? degraus[degraus.length - 1].offset : Infinity;
+
+  // CORTE DE PROGRESSO por ORDEM IMUTÁVEL — a régua só anda para FRENTE (review PR #54,
+  // 2ª passada). O corte é o ÍNDICE, na ordem canônica, do passo mais avançado JÁ
+  // executado: um degrau em posição anterior nunca mais é devido, mesmo que jamais tenha
+  // sido enviado (foi SUPERADO). Índice — e não o offset ATUAL — porque a política é
+  // editável: remover/desativar o degrau feito, ou trocar seu offset depois do envio,
+  // não pode devolver a régua para trás (o evento histórico guarda só `{ passo }`).
+  const ordemEfetiva = ordem ?? degraus.map((d) => d.chave);
+  const indice = new Map(ordemEfetiva.map((chave, i) => [chave, i]));
+  let corte = -1;
+  for (const chave of feitos) {
+    const i = indice.get(chave);
+    if (i !== undefined && i > corte) corte = i;
+  }
+
+  // Devido: já chegou (offset ≤ posição), está à FRENTE do corte e não foi cumprido.
+  // Degrau fora da ordem canônica é malformação (o loader da política filtra antes) —
+  // fica "à frente" para preservar o comportamento de antes do corte existir.
+  const devidos = degraus.filter(
+    (d) => d.offset <= posicao && (indice.get(d.chave) ?? Infinity) > corte && !feitos.has(d.chave),
+  );
+  if (devidos.length === 0) {
+    // Sem nada à frente por fazer: concluída se a última posição já passou (o degrau final
+    // foi executado ou superado); senão, ainda é futuro (esperando o próximo offset chegar).
+    if (posicao >= ultimoOffset) return { estado: "concluida", degrau: null, atrasada: false };
+    return { estado: "futuro", degrau: null, atrasada: false };
+  }
+  const degrau = devidos[devidos.length - 1];
+  return { estado: "acao_devida", degrau, atrasada: posicao > degrau.offset };
+}
+
 /**
  * Decide a ação devida de UMA cobrança na régua. Regras (doc 24):
  * - quitada → sai da régua;
@@ -102,30 +176,90 @@ export function proximaAcao(
     return { estado: "promessa", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 900, promessaAte };
   }
 
-  // Política vazia (todos os degraus desativados) → nunca há ação devida nem conclusão.
-  const ultimoOffset = politica.length ? politica[politica.length - 1].offsetDias : Infinity;
+  // Seleção pelo núcleo genérico. Unidade da cobrança = DIAS (posição = diasAtraso);
+  // `orig` preserva o DegrauRegua original no retorno (template/tipo/rotulo intactos).
+  // ORDEM_PASSOS ancora o corte de progresso: a política é editável, a ordem dos passos não.
+  const sel = selecionarDegrau(
+    diasAtraso,
+    politica.map((d) => ({ offset: d.offsetDias, chave: d.passo, orig: d })),
+    new Set(entrada.passosFeitos),
+    ORDEM_PASSOS,
+  );
 
-  const feitos = new Set(entrada.passosFeitos);
-  // Degraus que já chegaram (offset ≤ diasAtraso) e ainda não foram cumpridos.
-  const devidos = politica.filter((d) => d.offsetDias <= diasAtraso && !feitos.has(d.passo));
-
-  if (devidos.length === 0) {
-    const todosCumpridos = politica.every((d) => d.offsetDias > diasAtraso || feitos.has(d.passo));
-    if (diasAtraso >= ultimoOffset && todosCumpridos) {
-      return { estado: "concluida", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 800, promessaAte };
-    }
-    // Nada a fazer ainda: ou antes do D-7, ou os degraus que chegaram já foram feitos.
+  if (sel.estado === "concluida") {
+    return { estado: "concluida", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 800, promessaAte };
+  }
+  if (sel.estado === "futuro") {
     return { estado: "futuro", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 700, promessaAte };
   }
 
-  const degrau = devidos[devidos.length - 1]; // o mais avançado que chegou e não foi feito
-  const atrasadaNaAcao = diasAtraso > degrau.offsetDias; // já passou a data do degrau
+  const degrau = sel.degrau!.orig; // o mais avançado que chegou e não foi feito
   return {
     estado: "acao_devida",
     degrau,
-    atrasadaNaAcao,
+    atrasadaNaAcao: sel.atrasada,
     diasAtraso,
     prioridade: prioridadeDe(degrau),
     promessaAte,
+  };
+}
+
+// ── Wrapper COMERCIAL (doc 27): réguas ancoradas em EVENTO, unidade = MINUTOS ──
+// "Lead novo sem resposta" (D0·+30min·+4h·+24h·+3d·+7d — doc 08), no-show, proposta etc.
+// entram AQUI, no mesmo núcleo — nunca num "followUpEngine" paralelo (doc 29 regra 1).
+// As stop-conditions (inbound novo, mudança de etapa, opt-out, vendedor assumiu) são
+// avaliadas pelo despachante/cron (doc 27 §regras transversais), não pelo cérebro puro:
+// aqui `encerrada` chega já resolvida pelo chamador.
+
+export interface DegrauAncora {
+  /** Identificador do degrau (idempotência por passo, como na cobrança). */
+  passo: string;
+  /** Minutos após a âncora (0 = no evento; 30 = +30min; 10080 = +7d). */
+  offsetMinutos: number;
+}
+
+export interface EntradaAncora {
+  /** O evento âncora (ex.: 1ª mensagem do lead sem resposta). */
+  ancoraEm: Date;
+  /** A régua saiu de cena (lead respondeu / mudou etapa / opt-out / perdido) — resolvido fora. */
+  encerrada: boolean;
+  passosFeitos: readonly string[];
+}
+
+export interface ResultadoAncora {
+  estado: "encerrada" | "futuro" | "acao_devida" | "concluida";
+  /** Passo devido agora, ou null. */
+  passo: string | null;
+  atrasada: boolean;
+  minutosDesdeAncora: number;
+}
+
+/**
+ * Decide o passo devido de UMA régua ancorada em evento (minutos). Puro — sem I/O.
+ * `ordem` = ordem canônica IMUTÁVEL dos passos da cadência (a lei de código da política
+ * comercial, como ORDEM_PASSOS na cobrança). Cadência EDITÁVEL deve passá-la — é ela que
+ * segura o corte de progresso quando um passo já executado é removido/re-offsetado depois.
+ */
+export function proximaAcaoAncora(
+  entrada: EntradaAncora,
+  agora: Date,
+  degraus: readonly DegrauAncora[],
+  ordem?: readonly string[],
+): ResultadoAncora {
+  const minutosDesdeAncora = Math.floor((agora.getTime() - entrada.ancoraEm.getTime()) / 60_000);
+  if (entrada.encerrada) {
+    return { estado: "encerrada", passo: null, atrasada: false, minutosDesdeAncora };
+  }
+  const sel = selecionarDegrau(
+    minutosDesdeAncora,
+    degraus.map((d) => ({ offset: d.offsetMinutos, chave: d.passo })),
+    new Set(entrada.passosFeitos),
+    ordem,
+  );
+  return {
+    estado: sel.estado,
+    passo: sel.degrau?.chave ?? null,
+    atrasada: sel.atrasada,
+    minutosDesdeAncora,
   };
 }
