@@ -5,6 +5,7 @@ import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO } from "@/server/comercial/regua-fabrica";
 import { rodarLeadNovoSemResposta } from "./cron-comercial";
 import { despacharFila } from "./despachante";
+import { enfileirarIntencaoComercial } from "./fila";
 
 // Integração E6/C1 — régua "lead novo sem resposta" (doc 27). Sem WHATSAPP_LIVE → o
 // despacho vira SIMULADA. Cobre: dispara o degrau devido, stop-conditions (etapa/resposta),
@@ -113,6 +114,19 @@ describe("rodarLeadNovoSemResposta", () => {
     expect(r.enfileiradas).toBe(0);
   });
 
+  // EM_ATENDIMENTO significa que o vendedor JÁ assumiu o lead (review PR #55 P1): só NOVO
+  // é "frio". A automação não pode falar por cima do humano só porque ele ainda não mandou
+  // a primeira mensagem pelo canal — a etapa basta para encerrar a cadência.
+  it("stop: etapa EM_ATENDIMENTO (vendedor assumiu) → encerrada, nada enfileirado", async () => {
+    const { numero } = await seedReguaComercial("SHADOW");
+    await seedLeadFrio(numero.id, 45, EtapaLead.EM_ATENDIMENTO);
+    const r = await rodarLeadNovoSemResposta();
+    expect(r.encerrados).toBe(1);
+    expect(r.acoesDevidas).toBe(0);
+    expect(r.enfileiradas).toBe(0);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
   it("stop: opt-out do contato → nem entra na varredura", async () => {
     const { numero } = await seedReguaComercial("SHADOW");
     const { contato } = await seedLeadFrio(numero.id, 45);
@@ -144,5 +158,56 @@ describe("rodarLeadNovoSemResposta", () => {
     expect(r.enfileiradas).toBe(1);
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(intencao.passoComercial).toBe("+4h");
+  });
+});
+
+// A idempotência do outbox comercial é [politicaComercialId, leadId, passoComercial] — a
+// POLÍTICA faz parte da chave (review PR #55 P2). "Um motor, N políticas" (doc 27 §Tese) só
+// se sustenta se cadências distintas puderem reusar nomes de passo (+30min/+3d/+7d existem
+// em lead-novo e no-show) sem uma bloquear a outra no MESMO lead.
+describe("enfileirarIntencaoComercial × identidade da política", () => {
+  const degrauBase = {
+    passoComercial: "+30min",
+    corpoRenderizado: "Oi Maria!",
+    variaveis: [] as string[],
+    templateId: null,
+  };
+
+  it("políticas DIFERENTES com o mesmo passo no mesmo lead: as duas enfileiram", async () => {
+    const { numero, politica } = await seedReguaComercial("SHADOW");
+    const outra = await prisma.politicaComercial.create({
+      data: {
+        chave: "NO_SHOW_SEM_RESPOSTA",
+        nome: "No-show sem resposta",
+        estado: "SHADOW",
+        janelaInicio: 0,
+        janelaFim: 24,
+        diasSemana: [0, 1, 2, 3, 4, 5, 6],
+        numeroRemetenteId: numero.id,
+      },
+    });
+    const { lead, contato } = await seedLeadFrio(numero.id, 45);
+    const comum = { ...degrauBase, leadId: lead.id, numeroId: numero.id, contatoId: contato.id };
+
+    const primeira = await prisma.$transaction((tx) =>
+      enfileirarIntencaoComercial(tx, { ...comum, politicaComercialId: politica.id }),
+    );
+    const segunda = await prisma.$transaction((tx) =>
+      enfileirarIntencaoComercial(tx, { ...comum, politicaComercialId: outra.id }),
+    );
+
+    expect(primeira).toBe("criada");
+    expect(segunda).toBe("criada"); // não é "ja_existente": a chave inclui a política
+    expect(await prisma.intencaoMensagem.count()).toBe(2);
+  });
+
+  it("contra-prova: a MESMA política + passo no mesmo lead não re-enfileira", async () => {
+    const { numero, politica } = await seedReguaComercial("SHADOW");
+    const { lead, contato } = await seedLeadFrio(numero.id, 45);
+    const comum = { ...degrauBase, leadId: lead.id, numeroId: numero.id, contatoId: contato.id, politicaComercialId: politica.id };
+
+    expect(await prisma.$transaction((tx) => enfileirarIntencaoComercial(tx, comum))).toBe("criada");
+    expect(await prisma.$transaction((tx) => enfileirarIntencaoComercial(tx, comum))).toBe("ja_existente");
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
   });
 });

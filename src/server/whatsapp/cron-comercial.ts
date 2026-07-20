@@ -16,8 +16,11 @@ import { renderizarTemplate } from "./render";
 // ÂNCORA = 1º inbound do lead (ConversaWhatsApp.capturadaEm). O D0 imediato é a SAUDAÇÃO da
 // C1 (reativa); esta régua cobre os follow-ups quando o lead esfria.
 
-// Etapas em que o lead ainda é "novo sem resposta". Sair delas ENCERRA a cadência.
-const ETAPAS_FRIAS: EtapaLead[] = [EtapaLead.NOVO, EtapaLead.EM_ATENDIMENTO];
+// Etapa em que o lead ainda é "novo sem resposta". Sair dela ENCERRA a cadência (regra
+// transversal do doc 27: mudança de etapa encerra a política). Só NOVO permanece frio —
+// EM_ATENDIMENTO significa que o vendedor JÁ assumiu, e a automação não pode falar por cima
+// dele antes de existir uma mensagem HUMANO na conversa (review PR #55 P1).
+const ETAPAS_FRIAS: EtapaLead[] = [EtapaLead.NOVO];
 
 export interface ResultadoCronComercial {
   executou: boolean;
@@ -47,6 +50,10 @@ export async function rodarLeadNovoSemResposta(agora: Date = new Date()): Promis
   // Toda automação nasce desligada (doc 27). DESLIGADA não gera nem intenção; SHADOW gera
   // intenções que o despachante marcará como SIMULADA (ensaio observável).
   if (politica.estado === "DESLIGADA") return zerado("politica_desligada");
+  // Sem registro no banco (fábrica) não há identidade de política — e a identidade é parte
+  // da chave de idempotência da intenção (review PR #55). Nada é enfileirado.
+  const politicaId = politica.id;
+  if (!politicaId) return zerado("politica_nao_persistida");
   if (!politica.numeroRemetenteId) return zerado("sem_numero_remetente");
   if (politica.degraus.length === 0) return zerado("sem_degraus_ativos");
 
@@ -120,7 +127,7 @@ export async function rodarLeadNovoSemResposta(agora: Date = new Date()): Promis
         corpoRenderizado: corpo,
         variaveis,
         templateId: degrau.templateId,
-        politicaComercialId: politica.id,
+        politicaComercialId: politicaId,
       }),
     );
     if (resultado === "criada") r.enfileiradas += 1;

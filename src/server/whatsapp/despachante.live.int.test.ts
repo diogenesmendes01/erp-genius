@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { DriverWhatsApp, StatusTemplate } from "@prisma/client";
 import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
@@ -139,17 +140,25 @@ describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #5
 });
 
 describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys)", () => {
-  async function seedComercial(estado: "SHADOW" | "ATIVA") {
+  async function seedComercial(
+    estado: "SHADOW" | "ATIVA",
+    over: { driver?: DriverWhatsApp; template?: StatusTemplate | null } = {},
+  ) {
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
+      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
     });
     const contato = await seedContato();
     const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana" } });
     const politica = await prisma.politicaComercial.create({
       data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
     });
+    const template = over.template
+      ? await prisma.templateWhatsApp.create({
+          data: { nome: "lead_novo_30min", corpo: "Oi {{1}}!", statusMeta: over.template },
+        })
+      : null;
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", leadId: lead.id, passoComercial: "+30min", politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!" },
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", leadId: lead.id, passoComercial: "+30min", politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!", templateId: template?.id ?? null, variaveis: ["Ana"] },
     });
   }
 
@@ -168,6 +177,40 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
     expect(r.simuladas).toBe(1);
     expect(enviarTextoMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
+  });
+
+  // Camada 2 (doc 26 · review PR #55 P1): no número OFICIAL a cadência não é reativa —
+  // +3d/+7d caem fora da janela de 24h. Sem template APROVADO, mandar texto livre é envio
+  // indevido (ou erro da API); FALHAR aqui é o comportamento certo — a fila humana mostra
+  // o motivo em vez de o degrau sumir em silêncio.
+  it("META_CLOUD sem template APROVADO: a cadência FALHA sem tocar o driver", async () => {
+    await seedComercial("ATIVA", { driver: "META_CLOUD", template: null });
+    const r = await despacharFila();
+    expect(r.falhas).toBe(1);
+    expect(r.despachadas).toBe(0);
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect(enviarTemplateMock).not.toHaveBeenCalled();
+
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.status).toBe("FALHOU");
+    expect(intencao.motivoFalha).toBe("template_nao_aprovado_meta");
+  });
+
+  it("META_CLOUD com template só EM_REVISAO também falha (aprovado é aprovado)", async () => {
+    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "EM_REVISAO" });
+    const r = await despacharFila();
+    expect(r.falhas).toBe(1);
+    expect(enviarTemplateMock).not.toHaveBeenCalled();
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("template_nao_aprovado_meta");
+  });
+
+  it("contra-prova: com template APROVADO, o MESMO degrau sai como template na Meta", async () => {
+    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "APROVADO" });
+    const r = await despacharFila();
+    expect(r.despachadas).toBe(1);
+    expect(r.falhas).toBe(0);
+    expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
   });
 });
 
