@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { EtapaLead, Papel, Temperatura } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
@@ -18,6 +18,7 @@ import {
   registrarOptOutContato,
   vincularContatoWhatsApp,
 } from "./acoes";
+import { definirTemperatura, registrarNotaInterna } from "@/server/comercial/acoes";
 
 // Integração E3 (doc 30): inbox — escopo por número (D22/S11), envio HUMANO pela mesma
 // fila/despachante, opt-out (S10), silêncio pós-inbound tratado (S4) e vínculo de contato.
@@ -329,6 +330,80 @@ describe("roteamento de webhook por driver (P2-6)", () => {
       quando: new Date(),
     });
     expect(ignorado).toBe("ignorado");
+  });
+});
+
+describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
+  async function seedLeadNaConversa(donoId: string | null) {
+    const seed = await seedConversaVendas(vendedor.id);
+    const lead = await prisma.lead.create({
+      data: { nome: "Lead Cockpit", vendedorDonoId: donoId, etapa: EtapaLead.NOVO },
+    });
+    await prisma.contatoWhatsApp.update({ where: { id: seed.contato.id }, data: { leadId: lead.id } });
+    return { ...seed, lead };
+  }
+
+  it("thread traz o lead com os destinos MANUAIS válidos (etapa de evento nunca entra)", async () => {
+    const { conversa, lead } = await seedLeadNaConversa(vendedor.id);
+
+    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(thread?.lead?.id).toBe(lead.id);
+    expect(thread?.lead?.etapa).toBe(EtapaLead.NOVO);
+    expect(thread?.lead?.etapasPermitidas).toContain(EtapaLead.EM_ATENDIMENTO);
+    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.NOVO); // a atual não se repete
+    // Etapas geradas por evento (proposta, experimental realizada, matrícula) não são arrastáveis.
+    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.PROPOSTA);
+    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.MATRICULADO);
+  });
+
+  it("papel sem alçada comercial não recebe o lead na thread (gate no servidor, não no botão)", async () => {
+    const { numero } = await seedCanal({ estado: "SHADOW" });
+    const lead = await prisma.lead.create({ data: { nome: "Lead alheio ao financeiro" } });
+    const contato = await prisma.contatoWhatsApp.create({
+      data: { telefoneE164: "+50699990001", leadId: lead.id },
+    });
+    const conversa = await prisma.conversaWhatsApp.create({
+      data: { numeroId: numero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
+    });
+
+    const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, conversa.id);
+    expect(thread).not.toBeNull();
+    expect(thread?.lead).toBeNull();
+  });
+
+  it("nota interna vira EVENTO e nunca mensagem/intenção — não sai para o contato", async () => {
+    const { conversa, lead } = await seedLeadNaConversa(vendedor.id);
+    authMock.mockResolvedValue({ user: { id: vendedor.id } });
+
+    const r = await registrarNotaInterna(lead.id, { nota: "Prefere aula à noite; decide com a esposa." });
+    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+    expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("NotaInterna");
+    // O ponto da nota interna: NADA foi enfileirado nem gravado como mensagem do canal.
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+
+    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(thread?.lead?.notas).toHaveLength(1);
+    expect(thread?.lead?.notas[0].nota).toBe("Prefere aula à noite; decide com a esposa.");
+    expect(thread?.lead?.notas[0].autorNome).toBe(vendedor.nome);
+
+    const vazia = await registrarNotaInterna(lead.id, { nota: "   " });
+    expect(vazia.ok).toBe(false);
+  });
+
+  it("temperatura em 1 clique grava evento; lead de outro vendedor é negado", async () => {
+    const { lead } = await seedLeadNaConversa(vendedor.id);
+    authMock.mockResolvedValue({ user: { id: vendedor.id } });
+
+    const ok = await definirTemperatura(lead.id, Temperatura.QUENTE);
+    expect(ok.ok, ok.ok ? "" : `falhou: ${(ok as { erro?: string }).erro}`).toBe(true);
+    expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).temperatura).toBe(Temperatura.QUENTE);
+    expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("LeadEditado");
+
+    const outro = await criarUsuario([Papel.VENDEDOR]);
+    const leadAlheio = await prisma.lead.create({ data: { nome: "Alheio", vendedorDonoId: outro.id } });
+    const negado = await definirTemperatura(leadAlheio.id, Temperatura.QUENTE);
+    expect(negado.ok).toBe(false);
   });
 });
 
