@@ -56,7 +56,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `InteracaoRegistrada` | Registro manual de interação | Vendedor | `{ canal, nota }` |
 | `DocumentoAnexado` | Upload de documento ao lead | Vendedor | `{ categoria, nome }` |
 | `DocumentoArquivado` | Arquiva documento (soft-delete) | Vendedor | `{ documentoId, nome }` |
-| `ReguaComercialEnviada` | Degrau da cadência comercial cumprido (lead-novo, pré-experimental, no-show — doc 27 C1/C2); o motor conta como passo feito | Sistema/cron | `{ chave, passo, canal: "api" }` |
+| `ReguaComercialEnviada` | Degrau da cadência comercial cumprido (lead-novo, pré-experimental, no-show — doc 27 C1/C2); o motor conta como passo feito. `ocorrencia` = âncora em ISO, a identidade do CICLO: sem ela uma experimental reagendada herdaria os passos da anterior | Sistema/cron | `{ chave, passo, ocorrencia, canal: "api" }` |
 | `ExperimentalConfirmada` | O lead confirmou presença na experimental (botão no oficial / "SIM" no Baileys — doc 27 C2) | Sistema (o próprio lead) | `{ via: "whatsapp_keyword" }` |
 | `ExperimentalReagendamentoSolicitado` | O lead pediu para remarcar; só SINALIZA — quem remarca é o vendedor (a máquina de funil é uma só) | Sistema (o próprio lead) | `{ via: "whatsapp_keyword" }` |
 

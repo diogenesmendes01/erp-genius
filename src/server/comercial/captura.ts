@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { gerarCodigo } from "@/lib/codigo";
 import { registrarEvento } from "@/server/_shared/evento";
+import { CHAVE_PRE_EXPERIMENTAL } from "./regua-fabrica";
 
 // CAPTURA AUTOMÁTICA DE LEAD (doc 27 C1 · doc 29 §fluxo F5, regra 6).
 // O 1º inbound de um número de VENDAS sem vínculo vira um Lead — MAS pelo MESMO caminho
@@ -107,7 +108,15 @@ export async function criarLeadDeInboundWhatsApp(
 // Botões interativos são confiáveis no driver OFICIAL e instáveis no Baileys — por isso o
 // fallback textual ("responda SIM"). O match é EXATO e conservador, como o do opt-out:
 // uma frase que contenha "sim" não confirma (falso positivo marcaria presença errada).
-const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo", "confirmar", "confirmado", "si", "ok"]);
+//
+// O conjunto de CONFIRMAÇÃO é exatamente o PUBLICADO no template ("Responda SIM para
+// confirmar ou REAGENDAR...") — review PR #56 P2. `ok`/`si`/`confirmar`/`confirmado` saíram:
+// são respostas genéricas de conversa ("ok" fecha qualquer assunto) e marcavam presença por
+// engano. Confirmar muda ESTADO do funil; pedir reagendamento só emite um sinal para o
+// vendedor, então esse lado pode aceitar os sinônimos naturais sem risco.
+const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo"]);
+/** Folga entre o relógio do banco (evento) e o do WhatsApp (mensagem) na correlação. */
+const TOLERANCIA_RELOGIO_MS = 5 * 60_000;
 const KEYWORDS_REAGENDA = new Set(["reagendar", "remarcar", "reagendo", "outro horario", "outro horário"]);
 
 export type RespostaExperimental = "confirmada" | "reagendar" | null;
@@ -125,6 +134,12 @@ export function classificarRespostaExperimental(corpo: string | null): RespostaE
  * experimental AGENDADA (mesma guarda do check-in). Confirmar grava
  * `experimentalConfirmadaEm` + evento; pedir reagendamento só SINALIZA (evento) — quem
  * remarca é o vendedor, pela ação existente (a máquina de funil é uma só, doc 29 regra 7).
+ *
+ * CORRELAÇÃO com o pedido (review PR #56 P2): uma confirmação é a RESPOSTA a uma pergunta.
+ * Sem um lembrete pré-experimental efetivamente enviado para ESTA ocorrência, um "sim" solto
+ * numa conversa qualquer não confirma presença nenhuma. A prova do pedido é o evento
+ * `ReguaComercialEnviada { chave: PRE_EXPERIMENTAL, ocorrencia }` — o mesmo que o motor usa
+ * para contar o degrau cumprido (em SHADOW nada é enviado, logo não há o que confirmar).
  */
 export async function capturarRespostaExperimental(
   tx: Prisma.TransactionClient,
@@ -136,9 +151,27 @@ export async function capturarRespostaExperimental(
 
   const lead = await tx.lead.findUnique({
     where: { id: ctx.leadId },
-    select: { id: true, etapa: true, experimentalConfirmadaEm: true },
+    select: { id: true, etapa: true, dataExperimental: true, experimentalConfirmadaEm: true },
   });
-  if (!lead || lead.etapa !== "EXPERIMENTAL_AGENDADA") return null;
+  if (!lead || lead.etapa !== "EXPERIMENTAL_AGENDADA" || !lead.dataExperimental) return null;
+
+  const pedido = await tx.evento.count({
+    where: {
+      agregadoTipo: "Lead",
+      agregadoId: lead.id,
+      tipo: "ReguaComercialEnviada",
+      // A resposta vem DEPOIS da pergunta — com folga: `criadoEm` é relógio do Postgres e
+      // `quando` é o timestamp da mensagem no WhatsApp (granularidade de segundo). Sem a
+      // tolerância, quem responde no mesmo instante em que o lembrete é gravado teria a
+      // confirmação descartada em silêncio.
+      criadoEm: { lte: new Date(ctx.quando.getTime() + TOLERANCIA_RELOGIO_MS) },
+      AND: [
+        { payload: { path: ["chave"], equals: CHAVE_PRE_EXPERIMENTAL } },
+        { payload: { path: ["ocorrencia"], equals: lead.dataExperimental.toISOString() } },
+      ],
+    },
+  });
+  if (pedido === 0) return null; // ninguém perguntou nada sobre ESTA experimental
 
   if (resposta === "confirmada") {
     if (lead.experimentalConfirmadaEm) return null; // já confirmada — não duplica evento

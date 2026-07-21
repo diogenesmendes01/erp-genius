@@ -989,6 +989,10 @@ model IntencaoMensagem {
   leadId             String?
   lead               Lead?             @relation(fields: [leadId], references: [id])
   passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
+  // OCORRÊNCIA da cadência (review PR #56): a âncora em ISO. É o que separa um CICLO do
+  // outro — experimental reagendada, segundo no-show. Sem ela a idempotência é eterna por
+  // lead e a cadência nova nasce com os passos do ciclo anterior já cumpridos.
+  ocorrenciaComercial String?
   politicaComercialId String?
   politicaComercial  PoliticaComercial? @relation(fields: [politicaComercialId], references: [id])
 
@@ -1010,8 +1014,10 @@ model IntencaoMensagem {
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
   // Cadência comercial: a chave inclui a POLÍTICA (review PR #55 P2) — "um motor, N
   // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
-  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead.
-  @@unique([politicaComercialId, leadId, passoComercial])
+  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead — e a
+  // OCORRÊNCIA (review PR #56), que separa um ciclo do outro no mesmo lead/cadência.
+  // `map` explícito: o nome default passaria dos 63 bytes do Postgres e seria truncado.
+  @@unique([politicaComercialId, leadId, ocorrenciaComercial, passoComercial], map: "IntencaoMensagem_polComercial_lead_ocorrencia_passo_key")
   @@index([status, despacharAposEm])
 }
 

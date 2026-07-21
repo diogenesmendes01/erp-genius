@@ -162,7 +162,8 @@ function ReguaComercialPainel({
                 <tr key={d.passo} className="border-t border-gray-100">
                   <td className="px-3 py-2">{d.rotulo}</td>
                   <td className="px-3 py-2">
-                    <input type="number" min={0} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
+                    {/* Negativo = ANTES da âncora (pré-experimental: -1440, -120). */}
+                    <input type="number" min={-43200} max={43200} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
                   </td>
                   <td className="px-3 py-2">
                     <select className={inputCls} value={d.templateId} onChange={(e) => editarDegrau(i, { templateId: e.target.value })}>

@@ -333,6 +333,10 @@ export async function agendarExperimental(
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
           dataExperimental: data,
           professorExperimentalId: professorId,
+          // (Re)agendar abre uma OCORRÊNCIA nova: a confirmação do compromisso ANTERIOR não
+          // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
+          // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
+          experimentalConfirmadaEm: null,
         },
       });
       await registrarEvento(tx, {
@@ -585,8 +589,9 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
     // fábrica, mas o loader ordena os degraus por OFFSET: se a UI gravasse +4h antes de
     // +30min, o +4h sairia primeiro e o +30min ficaria eliminado para sempre (forward-only).
     // Exige-se, então: todos os passos, uma única vez, com offsets ESTRITAMENTE CRESCENTES
-    // na ordem de fábrica.
-    const ordemFabrica = CADENCIA_LEAD_NOVO.map((d) => d.passo);
+    // na ordem de fábrica. Vale para as três cadências — inclusive a pré-experimental, cujos
+    // offsets são NEGATIVOS (-24h antes de -2h continua sendo "estritamente crescente").
+    const ordemFabrica = cadencia.degraus.map((d) => d.passo);
     const offsetPorPasso = new Map(dados.degraus.map((d) => [d.passo, d.offsetMinutos]));
     if (offsetPorPasso.size !== dados.degraus.length) {
       throw new ErroRegra("Cada passo da cadência pode aparecer uma única vez.");

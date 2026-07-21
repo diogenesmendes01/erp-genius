@@ -71,6 +71,37 @@ async function seedLeadExperimental(numeroId: string, emMin: number, etapa: Etap
   return { lead, contato, conversa };
 }
 
+/**
+ * Marca um degrau como CUMPRIDO do jeito que o despachante marca: evento
+ * `ReguaComercialEnviada { chave, passo, ocorrencia }`. A OCORRÊNCIA é a âncora em ISO
+ * (review PR #56) — é ela que amarra o passo ao CICLO, e não ao lead para sempre.
+ */
+async function marcarPassoFeito(leadId: string, chave: string, passo: string, ancoraEm: Date) {
+  return prisma.evento.create({
+    data: {
+      tipo: "ReguaComercialEnviada",
+      agregadoTipo: "Lead",
+      agregadoId: leadId,
+      payload: { chave, passo, ocorrencia: ancoraEm.toISOString(), canal: "api" },
+      // `criadoEm` EXPLÍCITO no passado. A captura da resposta exige que a pergunta tenha sido
+      // feita ANTES dela (`criadoEm <= quando`), e o default `now()` é o relógio do POSTGRES
+      // enquanto o `quando` do inbound é o relógio do NODE — poucos ms de desvio entre os dois
+      // deixariam o teste intermitente. Um minuto atrás também é o que acontece de verdade.
+      criadoEm: new Date(Date.now() - 60_000),
+    },
+  });
+}
+
+/** Move a experimental do lead para um horário novo (o que `agendarExperimental` faz no banco). */
+async function reagendarPara(leadId: string, emMin: number, etapa: EtapaLead = EtapaLead.EXPERIMENTAL_AGENDADA) {
+  const dataExperimental = new Date(Date.now() + emMin * 60_000);
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: { dataExperimental, etapa, experimentalConfirmadaEm: null },
+  });
+  return dataExperimental;
+}
+
 describe("pré-experimental (24h/2h ANTES — offsets negativos)", () => {
   it("faltando 3h → dispara o degrau de 24h antes (o de 2h ainda não chegou)", async () => {
     const numero = await seedNumero();
@@ -150,14 +181,60 @@ describe("recuperação de no-show", () => {
     const numero = await seedNumero();
     await seedPolitica(CHAVE_NO_SHOW, "No-show", CADENCIA_NO_SHOW, numero.id);
     const { lead } = await seedLeadExperimental(numero.id, -1500, EtapaLead.NO_SHOW); // 25h atrás
-    await prisma.evento.create({
-      data: { tipo: "ReguaComercialEnviada", agregadoTipo: "Lead", agregadoId: lead.id, payload: { chave: CHAVE_NO_SHOW, passo: "+30min", canal: "api" } },
-    });
+    await marcarPassoFeito(lead.id, CHAVE_NO_SHOW, "+30min", lead.dataExperimental!);
 
     const r = await rodarNoShow();
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(intencao.passoComercial).toBe("+1d");
     expect(r.enfileiradas).toBe(1);
+  });
+});
+
+// A cadência pertence à OCORRÊNCIA, não ao lead (review PR #56). O histórico do lead é
+// eterno; o ciclo, não. Sem o recorte por ocorrência, o `-24h` de uma experimental que o
+// lead furou marcaria o `-24h` da experimental REMARCADA como já cumprido — e o lembrete
+// mais importante da régua (o que ataca o no-show) nunca sairia na segunda tentativa.
+describe("ocorrência: cada ciclo nasce com a cadência limpa", () => {
+  it("experimental REAGENDADA: o -24h do ciclo anterior não cumpre o do novo horário", async () => {
+    const numero = await seedNumero();
+    await seedPolitica(CHAVE_PRE_EXPERIMENTAL, "Pré", CADENCIA_PRE_EXPERIMENTAL, numero.id);
+    // Ciclo 1: experimental para daqui a 3h, com o -24h JÁ enviado.
+    const { lead } = await seedLeadExperimental(numero.id, 180, EtapaLead.EXPERIMENTAL_AGENDADA);
+    await marcarPassoFeito(lead.id, CHAVE_PRE_EXPERIMENTAL, "-24h", lead.dataExperimental!);
+
+    // Contra-prova: no MESMO ciclo o -24h está cumprido e o -2h ainda não chegou (faltam 3h).
+    expect((await rodarPreExperimental()).enfileiradas).toBe(0);
+
+    // Ciclo 2: o vendedor remarca para daqui a 20h — JÁ dentro da janela do -24h (e ainda
+    // longe do -2h), então o 1º degrau do ciclo novo está vencido neste mesmo tick.
+    await reagendarPara(lead.id, 20 * 60);
+
+    const r = await rodarPreExperimental();
+    expect(r.enfileiradas).toBe(1); // antes da #56 isto era 0: o -24h "já feito" matava o ciclo novo
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.passoComercial).toBe("-24h");
+    // A intenção carrega a identidade do ciclo NOVO (é ela que garante a unicidade por ciclo).
+    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(intencao.ocorrenciaComercial).toBe(atualizado.dataExperimental!.toISOString());
+  });
+
+  it("SEGUNDO no-show do mesmo lead: o +30min da falta anterior não cumpre o da nova", async () => {
+    const numero = await seedNumero();
+    await seedPolitica(CHAVE_NO_SHOW, "No-show", CADENCIA_NO_SHOW, numero.id);
+    // Falta 1: aula perdida há 25h, com +30min e +1d já enviados → o +3d só chega em 3 dias.
+    const { lead } = await seedLeadExperimental(numero.id, -1500, EtapaLead.NO_SHOW);
+    await marcarPassoFeito(lead.id, CHAVE_NO_SHOW, "+30min", lead.dataExperimental!);
+    await marcarPassoFeito(lead.id, CHAVE_NO_SHOW, "+1d", lead.dataExperimental!);
+    expect((await rodarNoShow()).enfileiradas).toBe(0);
+
+    // Falta 2: o lead remarcou, veio outra aula há 45min e ele furou de novo (o check-in do
+    // professor devolveu o lead para NO_SHOW). A recuperação recomeça do primeiro degrau.
+    await reagendarPara(lead.id, -45, EtapaLead.NO_SHOW);
+
+    const r = await rodarNoShow();
+    expect(r.enfileiradas).toBe(1);
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao.passoComercial).toBe("+30min");
   });
 });
 
@@ -175,9 +252,15 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
     });
   }
 
+  /** O lembrete pré-experimental DESTA ocorrência de fato saiu (é a "pergunta" do diálogo). */
+  async function lembretePreExperimentalEnviado(leadId: string, ancoraEm: Date) {
+    return marcarPassoFeito(leadId, CHAVE_PRE_EXPERIMENTAL, "-24h", ancoraEm);
+  }
+
   it('"SIM" confirma a presença e grava o evento', async () => {
     const numero = await seedNumero();
     const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+    await lembretePreExperimentalEnviado(lead.id, lead.dataExperimental!);
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "SIM");
 
@@ -189,6 +272,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
   it('"REAGENDAR" só sinaliza (evento) — quem remarca é o vendedor', async () => {
     const numero = await seedNumero();
     const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+    await lembretePreExperimentalEnviado(lead.id, lead.dataExperimental!);
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "reagendar");
 
@@ -201,6 +285,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
   it("frase que contém 'sim' NÃO confirma (match exato e conservador)", async () => {
     const numero = await seedNumero();
     const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+    await lembretePreExperimentalEnviado(lead.id, lead.dataExperimental!);
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim, mas preciso ver o horário");
 
@@ -211,6 +296,48 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
   it("lead sem experimental agendada: 'SIM' não confirma nada", async () => {
     const numero = await seedNumero();
     const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.QUALIFICADO);
+
+    await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
+
+    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(atualizado.experimentalConfirmadaEm).toBeNull();
+    expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).not.toContain("ExperimentalConfirmada");
+  });
+
+  // CORRELAÇÃO (review PR #56 P2): confirmar é RESPONDER a uma pergunta. A prova de que a
+  // pergunta foi feita é o evento `ReguaComercialEnviada { PRE_EXPERIMENTAL, ocorrencia }`.
+  // Sem isso, um "sim" solto (fim de qualquer conversa com o vendedor, ou o eco de um assunto
+  // completamente diferente) marcaria presença — e presença falsa é pior que nenhuma: o
+  // vendedor deixa de ligar para quem não vai aparecer.
+  it("(a) sem lembrete pré-experimental enviado, 'sim' NÃO confirma", async () => {
+    const numero = await seedNumero();
+    const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+
+    await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
+
+    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(atualizado.experimentalConfirmadaEm).toBeNull();
+    expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).not.toContain("ExperimentalConfirmada");
+  });
+
+  it("(b) com o lembrete DESTA ocorrência, 'sim' confirma", async () => {
+    const numero = await seedNumero();
+    const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+    await lembretePreExperimentalEnviado(lead.id, lead.dataExperimental!);
+
+    await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
+
+    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(atualizado.experimentalConfirmadaEm).not.toBeNull();
+    expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("ExperimentalConfirmada");
+  });
+
+  it("(c) lembrete da ocorrência ANTERIOR não vale para a experimental remarcada", async () => {
+    const numero = await seedNumero();
+    const { lead, contato } = await seedLeadExperimental(numero.id, 120, EtapaLead.EXPERIMENTAL_AGENDADA);
+    // O lembrete saiu para o horário ANTIGO; depois o vendedor remarcou (ocorrência nova).
+    await lembretePreExperimentalEnviado(lead.id, lead.dataExperimental!);
+    await reagendarPara(lead.id, 3 * 24 * 60);
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
 

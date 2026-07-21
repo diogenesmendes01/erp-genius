@@ -58,6 +58,14 @@ interface CandidatoCadencia {
 }
 
 /**
+ * Identidade da OCORRÊNCIA (review PR #56): a âncora em ISO. A cadência pertence ao CICLO,
+ * não ao lead — uma experimental reagendada e um segundo no-show são ocorrências NOVAS, e
+ * precisam nascer com a cadência limpa. Sem isto o histórico do lead é eterno: os `-24h`/
+ * `-2h` do compromisso anterior já marcariam os passos do novo como cumpridos.
+ */
+const ocorrenciaDe = (ancoraEm: Date): string => ancoraEm.toISOString();
+
+/**
  * NÚCLEO compartilhado: roda o motor para cada candidato e enfileira o passo devido.
  * Cada cenário entrega os candidatos; daqui para frente tudo é igual.
  */
@@ -87,7 +95,8 @@ async function processarCadencia(
   const r: ResultadoCronComercial = { ...zerado(""), executou: true, motivoParada: null, leadsAvaliados: candidatos.length };
 
   for (const c of candidatos) {
-    const passosFeitos = await passosComerciaisFeitos(c.leadId, chave);
+    const ocorrencia = ocorrenciaDe(c.ancoraEm);
+    const passosFeitos = await passosComerciaisFeitos(c.leadId, chave, ocorrencia);
     const acao = proximaAcaoAncora(
       { ancoraEm: c.ancoraEm, encerrada: c.encerrada, passosFeitos },
       agora,
@@ -117,6 +126,7 @@ async function processarCadencia(
       enfileirarIntencaoComercial(tx, {
         leadId: c.leadId,
         passoComercial: acao.passo!,
+        ocorrenciaComercial: ocorrencia,
         numeroId: numero.id,
         contatoId: c.contatoId,
         corpoRenderizado: corpo,
@@ -236,16 +246,22 @@ export async function rodarNoShow(agora: Date = new Date()): Promise<ResultadoCr
   }, agora);
 }
 
-/** Passos da cadência já cumpridos (eventos ReguaComercialEnviada `{ chave, passo }`). */
-async function passosComerciaisFeitos(leadId: string, chave: string): Promise<string[]> {
+/**
+ * Passos já cumpridos DESTA ocorrência (eventos `ReguaComercialEnviada
+ * { chave, passo, ocorrencia }`). O filtro por `ocorrencia` é o que impede o histórico
+ * eterno do lead de matar a cadência do ciclo novo (review PR #56).
+ */
+async function passosComerciaisFeitos(leadId: string, chave: string, ocorrencia: string): Promise<string[]> {
   const eventos = await prisma.evento.findMany({
     where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: "ReguaComercialEnviada" },
     select: { payload: true },
   });
   const passos: string[] = [];
   for (const e of eventos) {
-    const p = e.payload as { chave?: string; passo?: string } | null;
-    if (p && p.chave === chave && typeof p.passo === "string") passos.push(p.passo);
+    const p = e.payload as { chave?: string; passo?: string; ocorrencia?: string } | null;
+    if (!p || p.chave !== chave || typeof p.passo !== "string") continue;
+    if (p.ocorrencia !== ocorrencia) continue;
+    passos.push(p.passo);
   }
   return passos;
 }

@@ -18,7 +18,11 @@
 > **C2 "experimental" também implementada:** cadências **pré-experimental** (24h/2h ANTES —
 > offsets negativos no mesmo núcleo) e **recuperação de no-show** (30min·1d·3d·7d após a
 > aula perdida), com **confirmação capturada por keyword** ("SIM"/"REAGENDAR" — o fallback
-> textual do Baileys da §nota bimotor; `Lead.experimentalConfirmadaEm` fecha o gap 33) e o
+> textual do Baileys da §nota bimotor; `Lead.experimentalConfirmadaEm` fecha o gap 33). A
+> keyword só vale como RESPOSTA a um lembrete pré-experimental efetivamente enviado para
+> **aquela ocorrência**, e (re)agendar zera a confirmação anterior: confirmação é resposta a
+> uma pergunta, não estado solto do lead. A cadência pertence à **ocorrência** (âncora), não
+> ao lead — reagendar ou levar um segundo no-show abre um ciclo limpo. E o
 > **check-in do professor** que já movia o funil. Lembrete pré-evento **nunca chega
 > atrasado** (a aula começar encerra a cadência). Enfileirador genérico: um núcleo,
 > N cenários. **C3 (IA)** aguarda a decisão de fornecedor de LLM + os requisitos LGPD do
