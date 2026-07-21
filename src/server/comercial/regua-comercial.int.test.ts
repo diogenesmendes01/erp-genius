@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { salvarReguaComercial } from "./acoes";
 import { carregarPoliticaComercial } from "./regua-comercial";
-import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO } from "./regua-fabrica";
+import { CADENCIA_LEAD_NOVO, CADENCIA_PRE_EXPERIMENTAL, CHAVE_LEAD_NOVO, CHAVE_PRE_EXPERIMENTAL } from "./regua-fabrica";
 import type { ReguaComercialInput } from "./schema";
 
 // Integração E6/C1 — SALVAMENTO da régua comercial (doc 27 C1). Duas leis são verificadas
@@ -31,6 +31,9 @@ function cadenciaFabrica(): ReguaComercialInput["degraus"] {
 
 function payload(over: Partial<ReguaComercialInput> = {}): ReguaComercialInput {
   return {
+    // A CHAVE do cenário é obrigatória desde a C2 (doc 27): "um motor, N políticas" — o
+    // salvamento precisa saber QUAL cadência canônica validar (review PR #56).
+    chave: CHAVE_LEAD_NOVO,
     estado: "SHADOW",
     janelaInicio: 9,
     janelaFim: 20,
@@ -122,6 +125,47 @@ describe("salvarReguaComercial × ordem canônica da cadência", () => {
     const r = await salvarReguaComercial(payload({ estado: "DESLIGADA", degraus }));
     expect(r.ok).toBe(false);
     expect((r as { erro: string }).erro).toContain("+15d");
+  });
+});
+
+// A pré-experimental (C2) é o caso limite da mesma lei: os offsets são NEGATIVOS (minutos
+// ANTES da aula). "Estritamente crescente na ordem de fábrica" continua valendo — -1440 vem
+// antes de -120 —, e é justamente o que impede alguém de gravar o lembrete de 2h antes do de
+// 24h e apagar o degrau mais importante da régua (o que ataca o no-show).
+//
+// O piso do Zod era 0, herdado da C1 (só offsets positivos): NENHUMA cadência negativa
+// atravessava a validação, e a régua pré-experimental que a C2 entrega de fábrica era
+// inatingível pela UI. O piso agora é simétrico (±30 dias), no schema e no painel.
+describe("salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimental)", () => {
+  function cadenciaPreExperimental(): ReguaComercialInput["degraus"] {
+    return CADENCIA_PRE_EXPERIMENTAL.map((d) => ({ passo: d.passo, offsetMinutos: d.offsetMinutos, ativo: true }));
+  }
+
+  it("offsets de fábrica (-1440 então -120) são aceitos e materializam os 2 degraus", async () => {
+    await gerenteAutenticado();
+    const numero = await seedRemetente("BAILEYS");
+
+    const r = await salvarReguaComercial(
+      payload({ chave: CHAVE_PRE_EXPERIMENTAL, numeroRemetenteId: numero.id, degraus: cadenciaPreExperimental() }),
+    );
+    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+
+    const politica = await carregarPoliticaComercial(CHAVE_PRE_EXPERIMENTAL);
+    expect(politica.degraus.map((d) => d.passo)).toEqual(["-24h", "-2h"]);
+    expect(politica.degraus.map((d) => d.offsetMinutos)).toEqual([-1440, -120]);
+    expect(politica.ordem).toEqual(["-24h", "-2h"]);
+  });
+
+  it("offsets invertidos (-2h antes do -24h) são recusados", async () => {
+    await gerenteAutenticado();
+    const degraus = cadenciaPreExperimental().map((d) =>
+      d.passo === "-24h" ? { ...d, offsetMinutos: -60 } : d, // -60 > -120: fura a ordem
+    );
+
+    const r = await salvarReguaComercial(payload({ chave: CHAVE_PRE_EXPERIMENTAL, estado: "DESLIGADA", degraus }));
+    expect(r.ok).toBe(false);
+    expect((r as { erro: string }).erro).toContain("-2h");
+    expect(await prisma.politicaComercial.count()).toBe(0);
   });
 });
 

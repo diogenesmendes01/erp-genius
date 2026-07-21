@@ -232,6 +232,9 @@ export async function despacharFila(
           AND: [
             { payload: { path: ["chave"], equals: chaveComercial(it) } },
             { payload: { path: ["passo"], equals: it.passoComercial } },
+            // ...e da MESMA ocorrência (review PR #56): o degrau homônimo de um ciclo
+            // anterior (experimental reagendada, segundo no-show) não cumpre este.
+            { payload: { path: ["ocorrencia"], equals: it.ocorrenciaComercial ?? "" } },
           ],
         },
       });
@@ -389,6 +392,7 @@ export async function despacharFila(
             leadId: it.leadId,
             chave: chaveComercial(it),
             passo: it.passoComercial,
+            ocorrencia: it.ocorrenciaComercial ?? "",
           });
         }
         await tx.intencaoMensagem.update({

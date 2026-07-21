@@ -58,6 +58,23 @@ async function seedLeadFrio(numeroId: string, capturadaHaMin: number, etapa: Eta
   return { lead, contato, conversa };
 }
 
+/**
+ * Marca um degrau como CUMPRIDO do jeito que o despachante marca: evento
+ * `ReguaComercialEnviada { chave, passo, ocorrencia }`. A OCORRÊNCIA é a âncora em ISO
+ * (review PR #56) — sem ela o motor não reconhece o passo como feito, porque o filtro é por
+ * chave E ocorrência (é isso que impede o histórico eterno do lead).
+ */
+async function marcarPassoFeito(leadId: string, passo: string, ancoraEm: Date, chave = CHAVE_LEAD_NOVO) {
+  return prisma.evento.create({
+    data: {
+      tipo: "ReguaComercialEnviada",
+      agregadoTipo: "Lead",
+      agregadoId: leadId,
+      payload: { chave, passo, ocorrencia: ancoraEm.toISOString(), canal: "api" },
+    },
+  });
+}
+
 describe("rodarLeadNovoSemResposta", () => {
   it("política DESLIGADA → não roda", async () => {
     const { numero } = await seedReguaComercial("DESLIGADA");
@@ -138,10 +155,8 @@ describe("rodarLeadNovoSemResposta", () => {
 
   it("idempotência: passo já cumprido (evento) não re-enfileira", async () => {
     const { numero } = await seedReguaComercial("SHADOW");
-    const { lead } = await seedLeadFrio(numero.id, 45);
-    await prisma.evento.create({
-      data: { tipo: "ReguaComercialEnviada", agregadoTipo: "Lead", agregadoId: lead.id, payload: { chave: CHAVE_LEAD_NOVO, passo: "+30min", canal: "api" } },
-    });
+    const { lead, conversa } = await seedLeadFrio(numero.id, 45);
+    await marcarPassoFeito(lead.id, "+30min", conversa.capturadaEm!);
     const r = await rodarLeadNovoSemResposta();
     // +30min feito → aos 45min o +4h ainda não chegou → futuro; nada devido.
     expect(r.enfileiradas).toBe(0);
@@ -150,10 +165,8 @@ describe("rodarLeadNovoSemResposta", () => {
 
   it("forward-only ponta a ponta: +30min cumprido, aos 5h o devido é +4h (não volta)", async () => {
     const { numero } = await seedReguaComercial("SHADOW");
-    const { lead } = await seedLeadFrio(numero.id, 300); // 5h
-    await prisma.evento.create({
-      data: { tipo: "ReguaComercialEnviada", agregadoTipo: "Lead", agregadoId: lead.id, payload: { chave: CHAVE_LEAD_NOVO, passo: "+30min", canal: "api" } },
-    });
+    const { lead, conversa } = await seedLeadFrio(numero.id, 300); // 5h
+    await marcarPassoFeito(lead.id, "+30min", conversa.capturadaEm!);
     const r = await rodarLeadNovoSemResposta();
     expect(r.enfileiradas).toBe(1);
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
@@ -168,6 +181,9 @@ describe("rodarLeadNovoSemResposta", () => {
 describe("enfileirarIntencaoComercial × identidade da política", () => {
   const degrauBase = {
     passoComercial: "+30min",
+    // A OCORRÊNCIA (âncora em ISO) entra na chave desde a #56; aqui é fixa porque o que se
+    // testa é a dimensão POLÍTICA da unicidade.
+    ocorrenciaComercial: "2026-01-01T12:00:00.000Z",
     corpoRenderizado: "Oi Maria!",
     variaveis: [] as string[],
     templateId: null,
