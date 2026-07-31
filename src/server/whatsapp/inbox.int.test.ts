@@ -371,6 +371,23 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     expect(thread?.lead).toBeNull();
   });
 
+  it("lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)", async () => {
+    // A conversa é escopada pelo dono do NÚMERO (vendedor A), mas o lead vinculado ao
+    // contato pertence a OUTRO vendedor B — o cockpit (etapa/temperatura/notas) não pode
+    // vazar para A só porque a conversa cai no número dele (review PR #58 P1).
+    const b = await criarUsuario([Papel.VENDEDOR]);
+    const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
+
+    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(thread).not.toBeNull(); // A vê a conversa (é o dono do número)…
+    expect(thread?.lead).toBeNull(); // …mas NÃO o funil de um lead alheio.
+
+    // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
+    await prisma.lead.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
+    const propria = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(propria?.lead?.id).toBe(lead.id);
+  });
+
   it("nota interna vira EVENTO e nunca mensagem/intenção — não sai para o contato", async () => {
     const { conversa, lead } = await seedLeadNaConversa(vendedor.id);
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
