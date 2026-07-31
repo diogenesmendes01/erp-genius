@@ -202,7 +202,15 @@ export async function carregarThread(
           aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
           responsavel: { select: { id: true, nome: true } },
           lead: {
-            select: { id: true, nome: true, etapa: true, temperatura: true, dataExperimental: true },
+            select: {
+              id: true,
+              nome: true,
+              etapa: true,
+              temperatura: true,
+              dataExperimental: true,
+              // Dono do lead p/ o escopo row-level do cockpit (review PR #58 P1).
+              vendedorDonoId: true,
+            },
           },
         },
       },
@@ -247,10 +255,17 @@ export async function carregarThread(
 
   // Cockpit do vendedor: o funil do lead só vai ao client para quem OPERA o comercial
   // (mesmo princípio do gate financeiro acima — esconder botão no client não basta).
-  const lead =
-    c.contato.lead && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
-      ? await leadNaThread(c.contato.lead)
-      : null;
+  // Além do papel, respeitar o ESCOPO ROW-LEVEL do lead (review PR #58 P1): a conversa é
+  // escopada pelo dono do NÚMERO, então um lead de OUTRO vendedor pode estar vinculado
+  // aqui — não pode vazar etapa/temperatura/notas. Reusa escopoLeads (mesma regra das
+  // telas do comercial) para "amplo" não divergir: {} = gerente comercial/admin veem
+  // tudo; vendedor só o próprio lead.
+  const escopoAmplo = !("vendedorDonoId" in escopoLeads(usuario));
+  const podeVerLead =
+    !!c.contato.lead &&
+    temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL) &&
+    (escopoAmplo || c.contato.lead.vendedorDonoId === usuario.id);
+  const lead = podeVerLead ? await leadNaThread(c.contato.lead!) : null;
 
   return {
     conversaId: c.id,
@@ -304,6 +319,8 @@ async function leadNaThread(lead: {
   etapa: EtapaLead;
   temperatura: string;
   dataExperimental: Date | null;
+  // Não usado no corpo — só para o tipo bater com o select do carregarThread (review PR #58 P1).
+  vendedorDonoId: string | null;
 }): Promise<LeadNaThread> {
   const notas = await prisma.evento.findMany({
     where: { agregadoTipo: "Lead", agregadoId: lead.id, tipo: "NotaInterna" },

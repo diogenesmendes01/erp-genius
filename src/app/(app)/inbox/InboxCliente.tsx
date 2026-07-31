@@ -763,13 +763,17 @@ function CockpitLead({
   const [texto, setTexto] = useState("");
   const [abrirNotas, setAbrirNotas] = useState(false);
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>, sucesso: string) {
+  async function run(p: Promise<{ ok: boolean; erro?: string }>, sucesso: string): Promise<boolean> {
     setOcupado(true);
     try {
       const r = await p;
-      if (!r.ok) return onErro(r.erro ?? "Não foi possível concluir.");
+      if (!r.ok) {
+        onErro(r.erro ?? "Não foi possível concluir.");
+        return false;
+      }
       onNota(sucesso);
       router.refresh();
+      return true;
     } finally {
       setOcupado(false);
     }
@@ -853,6 +857,8 @@ function CockpitLead({
               rows={2}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
+              // Feedback antes do round-trip: o NotaInternaSchema limita em 2000 (review PR #58 P2).
+              maxLength={2000}
               placeholder="Ex.: prefere aula à noite, decide com a esposa até sexta."
               className="flex-1 resize-none rounded-md border border-amber-300 bg-white px-2 py-1 outline-none focus:border-amber-500"
             />
@@ -860,8 +866,10 @@ function CockpitLead({
               className={btnPri + " text-xs"}
               disabled={ocupado || texto.trim().length === 0}
               onClick={async () => {
-                await run(registrarNotaInterna(lead.id, { nota: texto }), "Nota interna salva (não enviada).");
-                setTexto("");
+                // Limpa o campo SÓ no sucesso (review PR #58 P2): se o servidor recusa
+                // (ex.: >2000 chars), preserva o que foi digitado em vez de apagar tudo.
+                const ok = await run(registrarNotaInterna(lead.id, { nota: texto }), "Nota interna salva (não enviada).");
+                if (ok) setTexto("");
               }}
             >
               Salvar nota
