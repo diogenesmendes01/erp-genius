@@ -40,7 +40,7 @@ import {
   PerdaSchema,
   AgendarExperimentalSchema,
   ConfigComercialSchema,
-  ETAPAS_MANUAIS,
+  NotaInternaSchema,
   type LeadInput,
   type ResumoInput,
   type DatasInput,
@@ -48,7 +48,9 @@ import {
   type PerdaInput,
   type AgendarExperimentalInput,
   type ConfigComercialInput,
+  type NotaInternaInput,
 } from "./schema";
+import { Temperatura } from "@prisma/client";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -64,6 +66,8 @@ const PAPEIS_COMERCIAL: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
   revalidatePath("/pipeline");
+  // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
+  revalidatePath("/inbox");
   if (id) revalidatePath(`/leads/${id}`);
 }
 
@@ -129,6 +133,57 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
 
     revalidarLead(id);
     return { id };
+  });
+}
+
+// ── Cockpit do vendedor na inbox (doc 08 §CRM alimentado pela conversa) ──────
+// Ações pequenas para o vendedor operar o funil SEM sair da conversa. Reusam as mesmas
+// garantias das telas: papel comercial, escopo row-level do lead e evento auditável.
+
+/**
+ * NOTA INTERNA sobre o lead: comentário da equipe, **nunca enviado ao contato**.
+ * Distinta de `registrarInteracao` (que registra um contato REAL — ligação/presencial).
+ */
+export async function registrarNotaInterna(leadId: string, input: NotaInternaInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_COMERCIAL);
+    await exigirLeadVisivel(leadId, autor);
+    const { nota } = NotaInternaSchema.parse(input);
+
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "NotaInterna",
+        agregadoTipo: "Lead",
+        agregadoId: leadId,
+        autorId: autor.id,
+        payload: { nota },
+      });
+    });
+    revalidarLead(leadId);
+  });
+}
+
+/** Temperatura do lead em 1 clique (Quente/Morno/Frio) — sem abrir o formulário inteiro. */
+export async function definirTemperatura(leadId: string, temperatura: Temperatura): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_COMERCIAL);
+    const lead = await exigirLeadVisivel(leadId, autor);
+    if (!Object.values(Temperatura).includes(temperatura)) throw new ErroRegra("Temperatura inválida.");
+    if (lead.temperatura === temperatura) return;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.lead.update({ where: { id: leadId }, data: { temperatura } });
+      await registrarEvento(tx, {
+        tipo: "LeadEditado",
+        agregadoTipo: "Lead",
+        agregadoId: leadId,
+        autorId: autor.id,
+        payload: { de: lead.temperatura, temperatura, campo: "temperatura" },
+      });
+    });
+    revalidarLead(leadId);
   });
 }
 
