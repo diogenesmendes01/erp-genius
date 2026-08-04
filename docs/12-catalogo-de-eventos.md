@@ -53,7 +53,8 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 | `LeadEditado` | Edição de dados do lead | Vendedor | `{ nome, temperatura }` |
 | `ResumoAtualizado` | Atualiza o resumo executivo (interesse, objetivo, urgência, orçamento, objeção, próximo passo) | Vendedor | `{ interesse, objetivo, urgencia, orcamento, objecao, proximaAcao }` |
 | `DatasAtualizadas` | Atualiza datas / próximos passos (follow-up, experimental, proposta) | Vendedor | `{ proximoFollowUp, dataExperimental, dataProposta }` |
-| `InteracaoRegistrada` | Registro manual de interação | Vendedor | `{ canal, nota }` |
+| `InteracaoRegistrada` | Registro manual de interação (contato REAL com o cliente) | Vendedor | `{ canal, nota }` |
+| `NotaInterna` | Comentário da equipe sobre o lead — **nunca enviado ao contato** (cockpit da inbox) | Vendedor | `{ nota }` |
 | `DocumentoAnexado` | Upload de documento ao lead | Vendedor | `{ categoria, nome }` |
 | `DocumentoArquivado` | Arquiva documento (soft-delete) | Vendedor | `{ documentoId, nome }` |
 | `ReguaComercialEnviada` | Degrau da cadência comercial cumprido (lead-novo, pré-experimental, no-show — doc 27 C1/C2); o motor conta como passo feito. `ocorrencia` = âncora em ISO, a identidade do CICLO: sem ela uma experimental reagendada herdaria os passos da anterior | Sistema/cron | `{ chave, passo, ocorrencia, canal: "api" }` |
@@ -163,7 +164,7 @@ Evento: tabelas operacionais (doc 29 regra 3).
 Conferido contra `src/server/**/acoes.ts` (junho/2026):
 
 - **Disparados hoje pelo código (Fase 0):** `LeadCriado · LeadAtribuido · EtapaAlterada ·
-  ExperimentalAgendada · PropostaEnviada · LeadPerdido · LeadEditado · InteracaoRegistrada ·
+  ExperimentalAgendada · PropostaEnviada · LeadPerdido · LeadEditado · InteracaoRegistrada · NotaInterna ·
   DocumentoAnexado · DocumentoArquivado · MatriculaCriada · MatriculaAtivada · CobrancaGerada ·
   ComissaoGerada · ComissaoAprovada · PagamentoRegistrado · DescontoSolicitado ·
   AprovacaoDecidida · ComissaoPaga · CobrancaEnviadaWhatsApp · TaxasCambioDefinidas · AlunoMatriculado · AlunoEditado ·
