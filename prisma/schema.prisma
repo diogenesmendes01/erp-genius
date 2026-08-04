@@ -1012,12 +1012,16 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
-  // Cadência comercial: a chave inclui a POLÍTICA (review PR #55 P2) — "um motor, N
-  // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
-  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead — e a
-  // OCORRÊNCIA (review PR #56), que separa um ciclo do outro no mesmo lead/cadência.
-  // `map` explícito: o nome default passaria dos 63 bytes do Postgres e seria truncado.
-  @@unique([politicaComercialId, leadId, ocorrenciaComercial, passoComercial], map: "IntencaoMensagem_polComercial_lead_ocorrencia_passo_key")
+  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55) e a OCORRÊNCIA
+  // (review PR #56). "Um motor, N políticas" só se sustenta se cadências distintas puderem
+  // compartilhar nomes de passo sem colidir no mesmo lead (+30min/+3d/+7d aparecem em
+  // lead-novo e no-show); a ocorrência (âncora em ISO — horário da aula, 1º inbound) separa
+  // um CICLO do outro no mesmo lead/cadência (um 2º no-show não nasce "feito"). É um índice
+  // UNIQUE PARCIAL (WHERE as colunas comerciais IS NOT NULL), no padrão do repo para
+  // unicidade condicional (cf. integridade_alocacao_preco): mora na migration
+  // `ocorrencia_cadencia_comercial` (Prisma não modela WHERE em @@unique) e o predicado
+  // mantém as intenções de COBRANÇA (essas colunas nulas) fora da constraint. O mesmo índice
+  // cobre o lookup do enfileirador (findFirst com as quatro colunas presentes).
   @@index([status, despacharAposEm])
 }
 

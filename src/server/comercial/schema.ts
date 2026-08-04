@@ -97,6 +97,14 @@ export const ReguaComercialSchema = z.object({
 });
 export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
 
+// NOTA INTERNA (cockpit da inbox): comentário da equipe sobre o lead. É DISTINTA de
+// `InteracaoRegistrada` — aquela registra um contato REAL com o cliente (ligação,
+// presencial); esta nunca sai do ERP e jamais é enviada ao contato.
+export const NotaInternaSchema = z.object({
+  nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "Nota longa demais (máx. 2000)."),
+});
+export type NotaInternaInput = z.input<typeof NotaInternaSchema>;
+
 // Config comercial C1 (doc 27): auto-lead (toggle) + saudação (shadow próprio
 // DESLIGADA/SHADOW/ATIVA — doc 27 §regra de ouro). Texto exigido fora de DESLIGADA.
 export const ConfigComercialSchema = z
