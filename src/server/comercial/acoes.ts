@@ -40,6 +40,7 @@ import {
   PerdaSchema,
   AgendarExperimentalSchema,
   ConfigComercialSchema,
+  ReguaComercialSchema,
   NotaInternaSchema,
   type LeadInput,
   type ResumoInput,
@@ -48,9 +49,11 @@ import {
   type PerdaInput,
   type AgendarExperimentalInput,
   type ConfigComercialInput,
+  type ReguaComercialInput,
   type NotaInternaInput,
 } from "./schema";
 import { Temperatura } from "@prisma/client";
+import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } from "./regua-fabrica";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -610,6 +613,123 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
             ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoEstado: antes.saudacaoEstado, saudacaoTexto: antes.saudacaoTexto }
             : null,
           depois: dados,
+        },
+      });
+    });
+    revalidatePath("/configuracao/whatsapp");
+  });
+}
+
+// Régua comercial "lead novo sem resposta" (doc 27 C1). Gerente Comercial/Admin. A ORDEM
+// dos passos é lei de código (regua-fabrica) — a UI só edita offset/ativo/template + estado.
+export async function salvarReguaComercial(input: ReguaComercialInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
+    const dados = ReguaComercialSchema.parse(input);
+    if (dados.janelaFim <= dados.janelaInicio) throw new ErroRegra("A janela precisa terminar depois de começar.");
+
+    // Só passos da cadência canônica entram (a ordem é imutável — review PR #54).
+    const rotuloPorPasso = new Map(CADENCIA_LEAD_NOVO.map((d) => [d.passo, d.rotulo]));
+    for (const d of dados.degraus) {
+      if (!rotuloPorPasso.has(d.passo)) throw new ErroRegra(`Passo desconhecido na cadência: ${d.passo}.`);
+    }
+
+    // A ORDEM CANÔNICA é lei (review PR #55 P2). O motor corta o progresso pela ordem de
+    // fábrica, mas o loader ordena os degraus por OFFSET: se a UI gravasse +4h antes de
+    // +30min, o +4h sairia primeiro e o +30min ficaria eliminado para sempre (forward-only).
+    // Exige-se, então: todos os passos, uma única vez, com offsets ESTRITAMENTE CRESCENTES
+    // na ordem de fábrica.
+    const ordemFabrica = CADENCIA_LEAD_NOVO.map((d) => d.passo);
+    const offsetPorPasso = new Map(dados.degraus.map((d) => [d.passo, d.offsetMinutos]));
+    if (offsetPorPasso.size !== dados.degraus.length) {
+      throw new ErroRegra("Cada passo da cadência pode aparecer uma única vez.");
+    }
+    const faltando = ordemFabrica.filter((p) => !offsetPorPasso.has(p));
+    if (faltando.length > 0) {
+      throw new ErroRegra(`A cadência precisa trazer todos os passos. Faltam: ${faltando.join(", ")}.`);
+    }
+    let offsetAnterior: number | null = null;
+    let passoAnterior: string | null = null;
+    for (const passo of ordemFabrica) {
+      const offset = offsetPorPasso.get(passo)!;
+      if (offsetAnterior !== null && offset <= offsetAnterior) {
+        throw new ErroRegra(
+          `A ordem da cadência é fixa: o intervalo de ${passo} precisa ser maior que o de ${passoAnterior}.`,
+        );
+      }
+      offsetAnterior = offset;
+      passoAnterior = passo;
+    }
+
+    // Prontidão (como na cobrança): armar (SHADOW/ATIVA) exige número remetente ativo.
+    if (dados.estado !== "DESLIGADA") {
+      if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a régua.");
+      const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
+      if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
+      // Remetente OFICIAL: TODO degrau ativo precisa de template APROVADO na Meta (review
+      // PR #55 P1). +3d/+7d caem fora da janela de 24h — sem template aprovado o envio falha
+      // na API. A régua não pode ser armada num estado que só quebra na hora do disparo.
+      if (remetente.driver === "META_CLOUD") {
+        const ativos = dados.degraus.filter((d) => d.ativo);
+        const ids = ativos.map((d) => d.templateId).filter((id): id is string => !!id);
+        const templates = ids.length
+          ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids } }, select: { id: true, statusMeta: true } })
+          : [];
+        const statusPorId = new Map(templates.map((t) => [t.id, t.statusMeta]));
+        const semAprovacao = ativos.filter((d) => !d.templateId || statusPorId.get(d.templateId) !== "APROVADO");
+        if (semAprovacao.length > 0) {
+          throw new ErroRegra(
+            `No número oficial, todo degrau ativo precisa de template aprovado na Meta. Pendentes: ${semAprovacao
+              .map((d) => d.passo)
+              .join(", ")}.`,
+          );
+        }
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const existente = await tx.politicaComercial.findUnique({
+        where: { chave: CHAVE_LEAD_NOVO },
+        include: { degraus: true },
+      });
+      const politicaId = existente
+        ? existente.id
+        : (await tx.politicaComercial.create({ data: { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME } })).id;
+
+      await tx.politicaComercial.update({
+        where: { id: politicaId },
+        data: {
+          estado: dados.estado,
+          numeroRemetenteId: dados.numeroRemetenteId,
+          janelaInicio: dados.janelaInicio,
+          janelaFim: dados.janelaFim,
+          tetoPorContatoDia: dados.tetoPorContatoDia,
+        },
+      });
+      for (const d of dados.degraus) {
+        await tx.degrauComercial.upsert({
+          where: { politicaId_passo: { politicaId, passo: d.passo } },
+          create: {
+            politicaId,
+            passo: d.passo,
+            offsetMinutos: d.offsetMinutos,
+            rotulo: rotuloPorPasso.get(d.passo)!,
+            ativo: d.ativo,
+            templateId: d.templateId,
+          },
+          update: { offsetMinutos: d.offsetMinutos, ativo: d.ativo, templateId: d.templateId },
+        });
+      }
+      await registrarEvento(tx, {
+        tipo: "PoliticaComercialAlterada",
+        agregadoTipo: "PoliticaComercial",
+        agregadoId: politicaId,
+        autorId: autor.id,
+        payload: {
+          antes: existente
+            ? { estado: existente.estado, numeroRemetenteId: existente.numeroRemetenteId }
+            : null,
+          depois: { estado: dados.estado, numeroRemetenteId: dados.numeroRemetenteId, degraus: dados.degraus },
         },
       });
     });

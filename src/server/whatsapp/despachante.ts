@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
+import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
@@ -95,6 +95,8 @@ export async function despacharFila(
       contato: true,
       template: true,
       politica: true,
+      politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
+      lead: { include: { pais: true } }, // fuso do destino no caminho comercial (S3)
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
     },
   });
@@ -110,9 +112,22 @@ export async function despacharFila(
   };
 
   for (const it of intencoes) {
-    const politica: PoliticaCarregada = it.politica
-      ? { ...politicaPadrao, ...configDe(it.politica) }
-      : politicaPadrao;
+    // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
+    // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
+    const comercialPol = it.leadId != null && it.politicaComercial;
+    const politica: PoliticaCarregada = comercialPol
+      ? {
+          ...politicaPadrao, // killSwitch global + defaults
+          estado: it.politicaComercial!.estado,
+          janelaInicio: it.politicaComercial!.janelaInicio,
+          janelaFim: it.politicaComercial!.janelaFim,
+          diasSemana: it.politicaComercial!.diasSemana,
+          tetoPorContatoDia: it.politicaComercial!.tetoPorContatoDia,
+          silencioPosInboundHoras: it.politicaComercial!.silencioPosInboundHoras,
+        }
+      : it.politica
+        ? { ...politicaPadrao, ...configDe(it.politica) }
+        : politicaPadrao;
     const automatica = it.origem !== "HUMANO"; // guard-rails de automação valem p/ CRON e LOTE
     // Classe REATIVA (doc 27 · gap C20): saudação/resposta automática a um inbound. É isenta
     // dos guard-rails de HORÁRIO (janela/teto/silêncio) e da trava S1 — a janela de 24h está
@@ -120,6 +135,10 @@ export async function despacharFila(
     // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela), shadow (WHATSAPP_LIVE)
     // e ao KILL SWITCH (freio de emergência de TODA automação — review PR #53 P1).
     const reativa = it.reativa;
+    // Cadência COMERCIAL (doc 27): vínculo Lead + passo. Isenta da trava S1 (liberada no
+    // Baileys por decisão de produto); shadow pela SUA política (não a de cobrança); janela/
+    // teto/silêncio VALEM (é disparo proativo). Kill switch de cobrança a congela também.
+    const comercial = it.leadId != null && it.passoComercial != null;
 
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
@@ -131,8 +150,8 @@ export async function despacharFila(
 
     // 2. TRAVA S1 (lei): disparo do CRON exige driver oficial — Baileys nunca recebe
     //    automação desassistida (padrão de ban, doc 26 §Em aberto → decidido no doc 30).
-    //    Reativa é isenta: responder no número de vendas (Baileys) é o caso de uso.
-    if (it.origem === "CRON" && !reativa && it.numero.driver !== "META_CLOUD") {
+    //    Reativa e cadência comercial são isentas: rodam no número de vendas (Baileys).
+    if (it.origem === "CRON" && !reativa && !comercial && it.numero.driver !== "META_CLOUD") {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
@@ -148,7 +167,7 @@ export async function despacharFila(
 
     const conversa = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
-      select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true },
+      select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
     });
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
@@ -162,11 +181,21 @@ export async function despacharFila(
     // 5. Silêncio pós-inbound (S4): inbound recente (mesmo anterior à intenção) suspende o
     //    CRON até o humano TRATAR (promessa/pagamento/"retomar régua" marcam
     //    inboundTratadoEm — E3) ou a janela de silêncio expirar.
+    //    A cadência COMERCIAL ancora NO 1º inbound (`capturadaEm`, gravado no mesmo instante
+    //    que `ultimoInboundEm`): aplicar o silêncio sobre a PRÓPRIA âncora adiaria a cadência
+    //    inteira por 72h e faria +30min/+4h/+24h vencerem todos juntos depois (review PR #55
+    //    P1). O inbound que a ancorou é ignorado; um inbound POSTERIOR continua silenciando
+    //    (e, de todo modo, encerra a cadência no enfileirador e na regra 4).
+    const ancoraComercial = comercial ? conversa?.capturadaEm ?? null : null;
+    const inboundSilenciador =
+      ancoraComercial && conversa?.ultimoInboundEm && conversa.ultimoInboundEm <= ancoraComercial
+        ? null
+        : conversa?.ultimoInboundEm ?? null;
     const inboundNaoTratado =
-      !!conversa?.ultimoInboundEm &&
-      (!conversa.inboundTratadoEm || conversa.inboundTratadoEm < conversa.ultimoInboundEm);
-    if (it.origem === "CRON" && !reativa && conversa?.ultimoInboundEm && inboundNaoTratado) {
-      const limite = new Date(conversa.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000);
+      !!inboundSilenciador &&
+      (!conversa?.inboundTratadoEm || conversa.inboundTratadoEm < inboundSilenciador);
+    if (it.origem === "CRON" && !reativa && inboundSilenciador && inboundNaoTratado) {
+      const limite = new Date(inboundSilenciador.getTime() + politica.silencioPosInboundHoras * 3600_000);
       if (agora < limite) {
         await adiar(it.id, limite, "silencio_pos_inbound");
         r.adiadas += 1;
@@ -191,9 +220,33 @@ export async function despacharFila(
         continue;
       }
     }
+    // 6b. Idempotência da cadência comercial: o passo pode já ter sido enviado (evento).
+    //     Confere CHAVE + passo (review PR #55 P2): cadências diferentes compartilham nomes
+    //     de passo (+30min/+3d/+7d), então só o passo não identifica o degrau cumprido.
+    if (comercial && it.leadId && it.passoComercial) {
+      const jaCumprido = await prisma.evento.count({
+        where: {
+          agregadoTipo: "Lead",
+          agregadoId: it.leadId,
+          tipo: "ReguaComercialEnviada",
+          AND: [
+            { payload: { path: ["chave"], equals: chaveComercial(it) } },
+            { payload: { path: ["passo"], equals: it.passoComercial } },
+          ],
+        },
+      });
+      if (jaCumprido > 0) {
+        await marcar(it.id, "CANCELADA", "degrau_ja_cumprido");
+        r.canceladas += 1;
+        continue;
+      }
+    }
 
     // 7. Teto por contato/dia (S5): soma mensagens AUTOMÁTICAS de hoje; suprimida = ADIADA,
-    //    nunca descartada em silêncio (doc 27 §regra de ouro). Reativa não conta no teto.
+    //    nunca descartada em silêncio (doc 27 §regra de ouro). Reativa não conta no teto —
+    //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
+    //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
+    //    e o 1º follow-up da cadência não saía no mesmo dia.
     if (automatica && !reativa) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
@@ -202,6 +255,7 @@ export async function despacharFila(
           direcao: "SAIDA",
           origem: { in: ["CRON", "LOTE"] },
           criadoEm: { gte: inicioDia },
+          NOT: { intencao: { is: { reativa: true } } },
         },
       });
       if (enviadasHoje >= politica.tetoPorContatoDia) {
@@ -246,7 +300,10 @@ export async function despacharFila(
     }
 
     // 10. Driver oficial fora da janela de 24h exige template APROVADO na Meta (Camada 2).
-    //     Reativa é isenta: a janela de 24h está aberta (o contato acabou de mandar mensagem).
+    //     Só a REATIVA é isenta (ela responde DENTRO da janela de 24h, texto livre vale). A
+    //     cadência comercial NÃO é: +3d e +7d caem fora da janela e, sem template aprovado, o
+    //     envio ou falha na API ou tenta texto livre indevido (review PR #55 P1). Falhar aqui
+    //     é o comportamento correto — a fila humana mostra o motivo.
     if (it.numero.driver === "META_CLOUD" && automatica && !reativa && it.template?.statusMeta !== "APROVADO") {
       await marcar(it.id, "FALHOU", "template_nao_aprovado_meta");
       r.falhas += 1;
@@ -326,6 +383,13 @@ export async function despacharFila(
             canal: "api",
             autorId: it.autorId, // humano que aprovou (LOTE/HUMANO) ou null (CRON)
           });
+        } else if (comercial && it.leadId && it.passoComercial) {
+          // Evento de domínio da cadência comercial — o motor conta como passo cumprido.
+          await registrarEventoReguaComercialEnviada(tx, {
+            leadId: it.leadId,
+            chave: chaveComercial(it),
+            passo: it.passoComercial,
+          });
         }
         await tx.intencaoMensagem.update({
           where: { id: it.id },
@@ -373,11 +437,24 @@ type IntencaoComDestino = {
   cobranca: {
     matricula: { pais: { fuso: string } | null; aluno: { fuso: string | null; pais: { fuso: string } | null } };
   } | null;
+  /** Caminho COMERCIAL: `cobranca` é null, o destino é o lead (review PR #55 P1). */
+  lead: { pais: { fuso: string } | null } | null;
 };
 
 function fusoDoDestino(it: IntencaoComDestino): string {
   const aluno = it.cobranca?.matricula.aluno;
-  return aluno?.fuso ?? aluno?.pais?.fuso ?? it.cobranca?.matricula.pais?.fuso ?? "America/Sao_Paulo";
+  return (
+    aluno?.fuso ??
+    aluno?.pais?.fuso ??
+    it.cobranca?.matricula.pais?.fuso ??
+    it.lead?.pais?.fuso ?? // cadência comercial: janela no fuso LOCAL do lead
+    "America/Sao_Paulo"
+  );
+}
+
+/** Chave da cadência que gerou a intenção comercial (identidade do degrau no evento). */
+function chaveComercial(it: { politicaComercial: { chave: string } | null }): string {
+  return it.politicaComercial?.chave ?? "COMERCIAL";
 }
 
 // Marks dos guard-rails só transitam de estados "na fila" — nunca clobberam um claim
