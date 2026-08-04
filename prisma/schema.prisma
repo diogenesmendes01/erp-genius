@@ -1003,10 +1003,14 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
-  // Cadência comercial: a chave inclui a POLÍTICA (review PR #55 P2) — "um motor, N
+  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55 P2) — "um motor, N
   // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
-  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead.
-  @@unique([politicaComercialId, leadId, passoComercial])
+  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead. É um índice
+  // UNIQUE PARCIAL (WHERE as três colunas IS NOT NULL), no padrão do repo para unicidade
+  // condicional (cf. integridade_alocacao_preco): mora na migration
+  // `idempotencia_comercial_indice_parcial` (Prisma não modela WHERE em @@unique) e o
+  // predicado mantém as intenções de COBRANÇA (essas três colunas nulas) fora da constraint.
+  // O mesmo índice cobre o lookup do enfileirador (findFirst com as três colunas presentes).
   @@index([status, despacharAposEm])
 }
 

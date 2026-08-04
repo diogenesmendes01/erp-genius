@@ -93,13 +93,14 @@ export async function enfileirarIntencaoComercial(
   tx: Prisma.TransactionClient,
   e: EnfileirarComercial,
 ): Promise<ResultadoEnfileirar> {
-  const existente = await tx.intencaoMensagem.findUnique({
+  // Lookup por findFirst: a unicidade é um índice UNIQUE PARCIAL (na migration), não um
+  // @@unique — então o client não expõe um `findUnique` composto. O índice parcial cobre
+  // esta busca (as três colunas presentes) e é o backstop de idempotência no INSERT.
+  const existente = await tx.intencaoMensagem.findFirst({
     where: {
-      politicaComercialId_leadId_passoComercial: {
-        politicaComercialId: e.politicaComercialId,
-        leadId: e.leadId,
-        passoComercial: e.passoComercial,
-      },
+      politicaComercialId: e.politicaComercialId,
+      leadId: e.leadId,
+      passoComercial: e.passoComercial,
     },
   });
 
