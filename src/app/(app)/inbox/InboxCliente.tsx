@@ -783,7 +783,7 @@ function CockpitLead({
   const temperatura = lead.temperatura as Temperatura;
 
   return (
-    <div className="border-b border-gray-100 bg-white px-4 py-2 text-xs">
+    <div className="border-b border-gray-100 bg-surface px-4 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <Link href={`/leads/${lead.id}`} className="font-medium text-gray-700 hover:underline">
           {lead.nome} →
@@ -860,7 +860,7 @@ function CockpitLead({
               // Feedback antes do round-trip: o NotaInternaSchema limita em 2000 (review PR #58 P2).
               maxLength={2000}
               placeholder="Ex.: prefere aula à noite, decide com a esposa até sexta."
-              className="flex-1 resize-none rounded-md border border-amber-300 bg-white px-2 py-1 outline-none focus:border-amber-500"
+              className="flex-1 resize-none rounded-md border border-amber-300 bg-surface px-2 py-1 outline-none focus:border-amber-500"
             />
             <button
               className={btnPri + " text-xs"}
@@ -876,7 +876,7 @@ function CockpitLead({
             </button>
           </div>
           {lead.notas.length > 0 && (
-            <ul className="mt-2 space-y-1 border-t border-amber-200 pt-2 text-amber-900">
+            <ul className="mt-2 space-y-1 border-t border-amber-200 pt-2 text-amber-800">
               {lead.notas.map((n) => (
                 <li key={n.id}>
                   <span className="text-amber-700">
