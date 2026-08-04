@@ -237,6 +237,29 @@ describe("agendarExperimental", () => {
     expect(eventos[0].data.payload).toMatchObject({ de: "prof1", professorId: null });
   });
 
+  // (Re)agendar abre uma OCORRÊNCIA nova (review PR #56): a confirmação do compromisso
+  // ANTERIOR não vale para o horário novo. Sem este reset o lead ficaria "confirmado" para
+  // sempre — e a captura da resposta ao novo lembrete nem gravaria evento (ela só grava
+  // quando o campo está vazio), então a presença do ciclo novo nunca seria registrada.
+  it("reagendar ZERA a confirmação da experimental anterior", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    prismaMock.lead.findUnique
+      .mockResolvedValueOnce({
+        id: "lead1",
+        vendedorDonoId: "vend1",
+        experimentalConfirmadaEm: new Date("2026-06-20T09:00:00Z"), // o lead confirmou o ciclo antigo
+      })
+      .mockResolvedValueOnce({ professorExperimentalId: null });
+
+    const r = await agendarExperimental("lead1", { dataISO: "2026-06-23T11:00:00Z" });
+
+    expect(r.ok).toBe(true);
+    const dataArg = (prismaMock.lead.update.mock.calls[0]![0] as { data: Record<string, unknown> })
+      .data;
+    expect(dataArg.experimentalConfirmadaEm).toBeNull();
+    expect(dataArg.dataExperimental).toEqual(new Date("2026-06-23T11:00:00Z"));
+  });
+
   it("reagendar sem mudar o professor não duplica o evento de vínculo", async () => {
     comoUsuario("vend1", [Papel.VENDEDOR]);
     // lead já tinha prof1; reagenda mantendo prof1

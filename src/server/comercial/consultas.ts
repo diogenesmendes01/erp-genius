@@ -48,49 +48,53 @@ export interface ReguaComercialConfig {
   degraus: DegrauComercialConfig[];
 }
 
-/** Config da régua comercial lead-novo (doc 27) — banco ou fábrica (DESLIGADA). */
-export async function carregarReguaComercialConfig(): Promise<ReguaComercialConfig> {
-  const { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } = await import("./regua-fabrica");
-  const p = await prisma.politicaComercial.findUnique({
-    where: { chave: CHAVE_LEAD_NOVO },
+/** Config de TODAS as réguas comerciais (doc 27 C1/C2) — banco ou fábrica (DESLIGADA). */
+export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialConfig[]> {
+  const { CADENCIAS_COMERCIAIS } = await import("./regua-fabrica");
+  const registros = await prisma.politicaComercial.findMany({
     include: { degraus: { orderBy: { offsetMinutos: "asc" } } },
   });
-  if (!p) {
+  const porChave = new Map(registros.map((p) => [p.chave, p]));
+
+  return CADENCIAS_COMERCIAIS.map((cadencia) => {
+    const p = porChave.get(cadencia.chave);
+    if (!p) {
+      return {
+        id: null,
+        chave: cadencia.chave,
+        nome: cadencia.nome,
+        estado: "DESLIGADA" as const,
+        numeroRemetenteId: null,
+        janelaInicio: 9,
+        janelaFim: 20,
+        tetoPorContatoDia: 2,
+        degraus: cadencia.degraus.map((d) => ({
+          passo: d.passo,
+          offsetMinutos: d.offsetMinutos,
+          rotulo: d.rotulo,
+          ativo: true,
+          templateId: null,
+        })),
+      };
+    }
     return {
-      id: null,
-      chave: CHAVE_LEAD_NOVO,
-      nome: POLITICA_LEAD_NOVO_NOME,
-      estado: "DESLIGADA",
-      numeroRemetenteId: null,
-      janelaInicio: 9,
-      janelaFim: 20,
-      tetoPorContatoDia: 2,
-      degraus: CADENCIA_LEAD_NOVO.map((d) => ({
+      id: p.id,
+      chave: p.chave,
+      nome: p.nome,
+      estado: p.estado,
+      numeroRemetenteId: p.numeroRemetenteId,
+      janelaInicio: p.janelaInicio,
+      janelaFim: p.janelaFim,
+      tetoPorContatoDia: p.tetoPorContatoDia,
+      degraus: p.degraus.map((d) => ({
         passo: d.passo,
         offsetMinutos: d.offsetMinutos,
         rotulo: d.rotulo,
-        ativo: true,
-        templateId: null,
+        ativo: d.ativo,
+        templateId: d.templateId,
       })),
     };
-  }
-  return {
-    id: p.id,
-    chave: p.chave,
-    nome: p.nome,
-    estado: p.estado,
-    numeroRemetenteId: p.numeroRemetenteId,
-    janelaInicio: p.janelaInicio,
-    janelaFim: p.janelaFim,
-    tetoPorContatoDia: p.tetoPorContatoDia,
-    degraus: p.degraus.map((d) => ({
-      passo: d.passo,
-      offsetMinutos: d.offsetMinutos,
-      rotulo: d.rotulo,
-      ativo: d.ativo,
-      templateId: d.templateId,
-    })),
-  };
+  });
 }
 
 export interface SaudacaoSimulada {

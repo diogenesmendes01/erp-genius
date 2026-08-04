@@ -24,16 +24,43 @@ interface DegrauForm {
   templateId: string;
 }
 
-export function ReguaComercialPainel({
-  regua,
+/** Uma seção por cenário (lead-novo, pré-experimental, no-show — doc 27 C1/C2). */
+export function ReguasComerciaisPainel({
+  reguas,
   numeros,
   templates,
   ensaio,
 }: {
-  regua: ReguaComercialConfig;
+  reguas: ReguaComercialConfig[];
   numeros: NumeroResumo[];
   templates: TemplateResumo[];
   ensaio: EnsaioComercial[];
+}) {
+  return (
+    <section className="space-y-8">
+      <div>
+        <h2 className="text-lg font-medium">Réguas comerciais</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Cadências automáticas do funil. Todas começam desligadas; em ensaio (shadow) só registram o que teria
+          sido enviado. O envio passa pela mesma fila e pelos mesmos guard-rails da cobrança.
+        </p>
+      </div>
+      {reguas.map((r) => (
+        <ReguaComercialPainel key={r.chave} regua={r} numeros={numeros} templates={templates} />
+      ))}
+      <EnsaioComercialLista ensaio={ensaio} />
+    </section>
+  );
+}
+
+function ReguaComercialPainel({
+  regua,
+  numeros,
+  templates,
+}: {
+  regua: ReguaComercialConfig;
+  numeros: NumeroResumo[];
+  templates: TemplateResumo[];
 }) {
   const router = useRouter();
   const [estado, setEstado] = useState(regua.estado);
@@ -59,6 +86,7 @@ export function ReguaComercialPainel({
     setErro(null);
     setNota(null);
     const r = await salvarReguaComercial({
+      chave: regua.chave,
       estado,
       numeroRemetenteId,
       janelaInicio,
@@ -73,18 +101,14 @@ export function ReguaComercialPainel({
     });
     setOcupado(false);
     if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
-    setNota("Régua de lead novo salva.");
+    setNota(`Régua "${regua.nome}" salva.`);
     router.refresh();
   }
 
   return (
-    <section>
-      <div className="mb-3">
-        <h2 className="text-lg font-medium">Régua de lead novo (sem resposta)</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Follow-ups automáticos quando o lead entra e esfria (o D0 imediato é a saudação). Começa desligada;
-          em ensaio (shadow) só registra o que teria sido enviado.
-        </p>
+    <div>
+      <div className="mb-2">
+        <h3 className="text-sm font-medium">{regua.nome}</h3>
       </div>
 
       {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
@@ -138,7 +162,8 @@ export function ReguaComercialPainel({
                 <tr key={d.passo} className="border-t border-gray-100">
                   <td className="px-3 py-2">{d.rotulo}</td>
                   <td className="px-3 py-2">
-                    <input type="number" min={0} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
+                    {/* Negativo = ANTES da âncora (pré-experimental: -1440, -120). */}
+                    <input type="number" min={-43200} max={43200} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
                   </td>
                   <td className="px-3 py-2">
                     <select className={inputCls} value={d.templateId} onChange={(e) => editarDegrau(i, { templateId: e.target.value })}>
@@ -158,28 +183,33 @@ export function ReguaComercialPainel({
         </div>
 
         <button className={btnPri} disabled={ocupado} onClick={salvar}>
-          {ocupado ? "Salvando…" : "Salvar régua de lead novo"}
+          {ocupado ? "Salvando…" : `Salvar "${regua.nome}"`}
         </button>
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-4">
-        <div className="mb-1 text-sm font-medium">Ensaio — últimos follow-ups simulados</div>
-        {ensaio.length === 0 ? (
-          <p className="text-sm text-gray-500">Nada simulado ainda. Em ensaio, cada degrau devido registra aqui o que teria sido enviado.</p>
-        ) : (
-          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-surface">
-            {ensaio.map((e) => (
-              <li key={e.id} className="px-3 py-2 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-medium text-gray-800">{e.lead} · {e.passo}</span>
-                  <span className="shrink-0 text-xs text-gray-400">{new Date(e.quando).toLocaleString("pt-BR")}</span>
-                </div>
-                <p className="mt-0.5 text-gray-600">{e.texto}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
+/** Ensaio observável (doc 27 §regra de ouro): o que as cadências TERIAM enviado. */
+function EnsaioComercialLista({ ensaio }: { ensaio: EnsaioComercial[] }) {
+  return (
+    <div>
+      <div className="mb-1 text-sm font-medium">Ensaio — últimos follow-ups simulados</div>
+      {ensaio.length === 0 ? (
+        <p className="text-sm text-gray-500">Nada simulado ainda. Em ensaio, cada degrau devido registra aqui o que teria sido enviado.</p>
+      ) : (
+        <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-surface">
+          {ensaio.map((e) => (
+            <li key={e.id} className="px-3 py-2 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium text-gray-800">{e.lead} · {e.passo}</span>
+                <span className="shrink-0 text-xs text-gray-400">{new Date(e.quando).toLocaleString("pt-BR")}</span>
+              </div>
+              <p className="mt-0.5 text-gray-600">{e.texto}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

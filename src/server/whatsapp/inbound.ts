@@ -2,7 +2,11 @@ import type { DriverWhatsApp, StatusMensagem, TipoMensagem } from "@prisma/clien
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
-import { capturarComercial, type ReferralInbound } from "@/server/comercial/captura";
+import {
+  capturarComercial,
+  capturarRespostaExperimental,
+  type ReferralInbound,
+} from "@/server/comercial/captura";
 import { despacharFila } from "./despachante";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 
@@ -154,6 +158,18 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           referral: m.referral ?? null,
         });
         saudacaoIntencaoId = captura.saudacaoIntencaoId;
+
+        // C2 (doc 27): resposta à confirmação da experimental ("SIM"/"REAGENDAR" — fallback
+        // textual do Baileys). Só vale com experimental AGENDADA; o vínculo do contato pode
+        // ter acabado de ser criado pela captura acima.
+        const leadDoContato = captura.leadCriadoId ?? contato.leadId;
+        if (!optOutAgora) {
+          await capturarRespostaExperimental(tx, {
+            leadId: leadDoContato,
+            corpo: m.corpo,
+            quando: m.quando,
+          });
+        }
       }
     });
     // Saudação "em segundos" (reativa): despacha JÁ, fora da transação. ESCOPADO à intenção
