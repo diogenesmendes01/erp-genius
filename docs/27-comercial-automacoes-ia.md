@@ -71,6 +71,17 @@ cima de conversa viva).
   - Gatilho: conversa quieta ~10min após o último inbound · mudança de etapa · sob demanda.
   - **Métrica-gate**: taxa de aceitação por tipo de sugestão — é ela que autoriza (ou não) a
     auto-aplicação futura.
+  - **Base manual (implementada antes da IA — o "cockpit")**: a thread da inbox já traz o
+    lead vinculado com **etapa do funil** (só os destinos manuais que a máquina de estados
+    aceita), **temperatura em 1 clique** e **nota interna**. Assim o vendedor opera o CRM
+    sem trocar de tela, e a C3 estreia como *sugestão sobre controles que já existem* —
+    não como uma segunda forma de editar o lead (doc [`29`](29-whatsapp-integracao-codigo.md)
+    §uma máquina de funil só).
+    - **Nota interna ≠ mensagem**: é evento `NotaInterna` no agregado `Lead`, nunca entra na
+      fila do canal. A UI a isola do composer (bloco âmbar + cadeado + aviso explícito) —
+      confundir as duas coisas manda para o cliente o que era da equipe.
+    - **Nota interna ≠ `InteracaoRegistrada`**: aquela registra contato REAL (ligação,
+      presencial); esta é comentário da equipe sobre o lead.
 
 ### Onda 2: C4 — Fechamento
 Contrato enviado sem assinatura em 48h · link de pagamento sem pagamento · **matrícula

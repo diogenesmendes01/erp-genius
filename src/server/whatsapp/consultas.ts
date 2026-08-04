@@ -1,7 +1,8 @@
-import { Papel, StatusCobranca, type Prisma } from "@prisma/client";
+import { EtapaLead, Papel, StatusCobranca, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
-import { temPapel, type UsuarioSessao } from "@/server/_shared";
+import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
+import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { numero as decimalParaNumero, numeroOuNull } from "@/server/_shared/decimal";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "@/server/cobrancas/fabrica";
@@ -164,7 +165,28 @@ export interface ThreadConversa {
   /** Silêncio pós-inbound (S4): inbound não tratado suspende a régua automática. */
   silencio: { ativo: boolean; ate: string | null };
   cobrancaAtiva: CobrancaAtivaThread | null;
+  /** Cockpit do vendedor: o funil do lead vinculado, editável sem sair da conversa. */
+  lead: LeadNaThread | null;
   mensagens: MensagemThread[];
+}
+
+export interface NotaInternaThread {
+  id: string;
+  nota: string;
+  autorNome: string | null;
+  criadoEm: string;
+}
+
+export interface LeadNaThread {
+  id: string;
+  nome: string;
+  etapa: string;
+  temperatura: string;
+  dataExperimental: string | null;
+  /** Destinos MANUAIS válidos a partir da etapa atual (máquina de estados — doc 10 §1). */
+  etapasPermitidas: string[];
+  /** Comentários da equipe — nunca enviados ao contato. */
+  notas: NotaInternaThread[];
 }
 
 export async function carregarThread(
@@ -179,7 +201,17 @@ export async function carregarThread(
         include: {
           aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
           responsavel: { select: { id: true, nome: true } },
-          lead: { select: { id: true, nome: true } },
+          lead: {
+            select: {
+              id: true,
+              nome: true,
+              etapa: true,
+              temperatura: true,
+              dataExperimental: true,
+              // Dono do lead p/ o escopo row-level do cockpit (review PR #58 P1).
+              vendedorDonoId: true,
+            },
+          },
         },
       },
       // As 300 mais RECENTES (review PR #51 P2-5): desc + take, invertidas na projeção —
@@ -221,6 +253,20 @@ export async function carregarThread(
     ? await cobrancaAtivaDoContato(c.contato)
     : null;
 
+  // Cockpit do vendedor: o funil do lead só vai ao client para quem OPERA o comercial
+  // (mesmo princípio do gate financeiro acima — esconder botão no client não basta).
+  // Além do papel, respeitar o ESCOPO ROW-LEVEL do lead (review PR #58 P1): a conversa é
+  // escopada pelo dono do NÚMERO, então um lead de OUTRO vendedor pode estar vinculado
+  // aqui — não pode vazar etapa/temperatura/notas. Reusa escopoLeads (mesma regra das
+  // telas do comercial) para "amplo" não divergir: {} = gerente comercial/admin veem
+  // tudo; vendedor só o próprio lead.
+  const escopoAmplo = !("vendedorDonoId" in escopoLeads(usuario));
+  const podeVerLead =
+    !!c.contato.lead &&
+    temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL) &&
+    (escopoAmplo || c.contato.lead.vendedorDonoId === usuario.id);
+  const lead = podeVerLead ? await leadNaThread(c.contato.lead!) : null;
+
   return {
     conversaId: c.id,
     numero: {
@@ -246,6 +292,7 @@ export async function carregarThread(
     janela24h,
     silencio: { ativo: silencioAtivo, ate: silencioAtivo ? limiteSilencio!.toISOString() : null },
     cobrancaAtiva,
+    lead,
     mensagens: [...c.mensagens].reverse().map((m) => ({
       id: m.id,
       direcao: m.direcao,
@@ -257,6 +304,45 @@ export async function carregarThread(
       autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null,
       criadoEm: m.criadoEm.toISOString(),
+    })),
+  };
+}
+
+/**
+ * Cockpit do vendedor (doc 08 §CRM alimentado pela conversa): o funil do lead na thread.
+ * As transições permitidas vêm da MESMA máquina de estados do Kanban
+ * (`transicaoManualPermitida`) — a inbox nunca abre um caminho que o funil proíbe.
+ */
+async function leadNaThread(lead: {
+  id: string;
+  nome: string;
+  etapa: EtapaLead;
+  temperatura: string;
+  dataExperimental: Date | null;
+  // Não usado no corpo — só para o tipo bater com o select do carregarThread (review PR #58 P1).
+  vendedorDonoId: string | null;
+}): Promise<LeadNaThread> {
+  const notas = await prisma.evento.findMany({
+    where: { agregadoTipo: "Lead", agregadoId: lead.id, tipo: "NotaInterna" },
+    orderBy: { criadoEm: "desc" },
+    take: 20,
+    include: { autor: { select: { nome: true } } },
+  });
+
+  return {
+    id: lead.id,
+    nome: lead.nome,
+    etapa: lead.etapa,
+    temperatura: lead.temperatura,
+    dataExperimental: lead.dataExperimental?.toISOString() ?? null,
+    etapasPermitidas: ETAPAS_MANUAIS.filter(
+      (destino) => destino !== lead.etapa && transicaoManualPermitida(lead.etapa, destino),
+    ),
+    notas: notas.map((e) => ({
+      id: e.id,
+      nota: typeof (e.payload as { nota?: string } | null)?.nota === "string" ? (e.payload as { nota: string }).nota : "",
+      autorNome: e.autor?.nome ?? null,
+      criadoEm: e.criadoEm.toISOString(),
     })),
   };
 }
