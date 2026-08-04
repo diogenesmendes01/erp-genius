@@ -515,6 +515,7 @@ model Lead {
   matricula        Matricula?
   documentos       Documento[]
   contatosWhatsApp ContatoWhatsApp[]
+  intencoesWhatsApp IntencaoMensagem[]
 
   @@index([telefoneE164])
 }
@@ -829,10 +830,11 @@ model NumeroWhatsApp {
   ativo        Boolean          @default(true)
   criadoEm     DateTime         @default(now())
 
-  conversas ConversaWhatsApp[]
-  mensagens MensagemWhatsApp[]
-  intencoes IntencaoMensagem[]
-  politicas PoliticaRegua[]
+  conversas           ConversaWhatsApp[]
+  mensagens           MensagemWhatsApp[]
+  intencoes           IntencaoMensagem[]
+  politicas           PoliticaRegua[]
+  politicasComerciais PoliticaComercial[]
 
   // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
@@ -977,6 +979,14 @@ model IntencaoMensagem {
   politicaId String?
   politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
 
+  // Régua COMERCIAL (doc 27 C1 §Tese): lead-novo e demais cadências. Mesmo outbox/
+  // despachante da cobrança; o vínculo de domínio é o Lead + o passo da cadência.
+  leadId             String?
+  lead               Lead?             @relation(fields: [leadId], references: [id])
+  passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
+  politicaComercialId String?
+  politicaComercial  PoliticaComercial? @relation(fields: [politicaComercialId], references: [id])
+
   // Classe REATIVA (doc 27 §regras transversais · gap C20): resposta automática a um
   // inbound (saudação) — isenta de janela/teto/silêncio (uma saudação "em segundos" não
   // pode esperar o horário comercial), mas respeita opt-out/kill switch/shadow.
@@ -993,6 +1003,14 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
+  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55 P2) — "um motor, N
+  // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
+  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead. É um índice
+  // UNIQUE PARCIAL (WHERE as três colunas IS NOT NULL), no padrão do repo para unicidade
+  // condicional (cf. integridade_alocacao_preco): mora na migration
+  // `idempotencia_comercial_indice_parcial` (Prisma não modela WHERE em @@unique) e o
+  // predicado mantém as intenções de COBRANÇA (essas três colunas nulas) fora da constraint.
+  // O mesmo índice cobre o lookup do enfileirador (findFirst com as três colunas presentes).
   @@index([status, despacharAposEm])
 }
 
@@ -1016,9 +1034,10 @@ model TemplateWhatsApp {
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 
-  degraus   DegrauPolitica[]
-  mensagens MensagemWhatsApp[]
-  intencoes IntencaoMensagem[]
+  degraus            DegrauPolitica[]
+  degrausComerciais  DegrauComercial[]
+  mensagens          MensagemWhatsApp[]
+  intencoes          IntencaoMensagem[]
 }
 
 enum ModoDegrau {
@@ -1079,6 +1098,44 @@ model DegrauPolitica {
 // A régua "lead novo sem resposta" e as demais políticas comerciais (C1 cadência + C2)
 // entram na fatia seguinte, no mesmo motor generalizado por âncora.
 // ============================================================
+
+// Régua COMERCIAL como DADO (doc 27 §Tese: "um motor de réguas, N políticas"). A cadência
+// "lead novo sem resposta" (D0=saudação já na C1; +30min·+4h·+24h·+3d·+7d — doc 08) é a
+// 1ª política; no-show/proposta/nutrição entram no MESMO modelo. Nasce DESLIGADA (regra de
+// ouro do doc 27). Guard-rails próprios (janela/dias/teto/silêncio) — o despachante os aplica
+// como na cobrança. A ORDEM dos passos é lei de código (regua.ts) — aqui só offset/ativo.
+model PoliticaComercial {
+  id                      String            @id @default(cuid())
+  chave                   String            @unique // "LEAD_NOVO_SEM_RESPOSTA" (âncora/cenário)
+  nome                    String
+  estado                  EstadoPolitica    @default(DESLIGADA)
+  janelaInicio            Int               @default(9) // hora local do contato
+  janelaFim               Int               @default(20)
+  diasSemana              Int[]             @default([1, 2, 3, 4, 5])
+  tetoPorContatoDia       Int               @default(2)
+  silencioPosInboundHoras Int               @default(72)
+  numeroRemetenteId       String?
+  numeroRemetente         NumeroWhatsApp?   @relation(fields: [numeroRemetenteId], references: [id])
+  criadoEm                DateTime          @default(now())
+  atualizadoEm            DateTime          @updatedAt
+
+  degraus   DegrauComercial[]
+  intencoes IntencaoMensagem[]
+}
+
+model DegrauComercial {
+  id           String            @id @default(cuid())
+  politicaId   String
+  politica     PoliticaComercial @relation(fields: [politicaId], references: [id])
+  passo        String // "+30min", "+4h", "+24h", "+3d", "+7d"
+  offsetMinutos Int // minutos após a âncora (1º inbound do lead)
+  rotulo       String
+  ativo        Boolean           @default(true)
+  templateId   String?
+  template     TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+
+  @@unique([politicaId, passo])
+}
 
 model ConfigComercial {
   id            String   @id @default("comercial") // singleton

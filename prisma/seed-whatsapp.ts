@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { REGUA } from "../src/server/cobrancas/regua";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "../src/server/cobrancas/fabrica";
+import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } from "../src/server/comercial/regua-fabrica";
 
 // Seed do canal WhatsApp (doc 30 E1): templates de fábrica + política padrão da régua.
 // Idempotente (upsert por nome) e SEGURO: a política nasce DESLIGADA e sem número
@@ -46,6 +47,36 @@ export async function semearWhatsApp(prisma: PrismaClient): Promise<void> {
     });
   }
   console.log(`WhatsApp: política "${POLITICA_COBRANCA_NOME}" garantida (DESLIGADA) com ${REGUA.length} degraus.`);
+
+  // 3. Régua COMERCIAL "lead novo sem resposta" (doc 27 C1) — templates + política DESLIGADA.
+  for (const d of CADENCIA_LEAD_NOVO) {
+    const t = await prisma.templateWhatsApp.upsert({
+      where: { nome: d.template },
+      create: { nome: d.template, corpo: d.texto, idioma: "es", categoria: "marketing", statusMeta: "RASCUNHO" },
+      update: {},
+    });
+    templates.set(d.template, t.id);
+  }
+  const politicaComercial = await prisma.politicaComercial.upsert({
+    where: { chave: CHAVE_LEAD_NOVO },
+    create: { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME, estado: "DESLIGADA" },
+    update: {},
+  });
+  for (const d of CADENCIA_LEAD_NOVO) {
+    await prisma.degrauComercial.upsert({
+      where: { politicaId_passo: { politicaId: politicaComercial.id, passo: d.passo } },
+      create: {
+        politicaId: politicaComercial.id,
+        passo: d.passo,
+        offsetMinutos: d.offsetMinutos,
+        rotulo: d.rotulo,
+        ativo: true,
+        templateId: templates.get(d.template) ?? null,
+      },
+      update: {},
+    });
+  }
+  console.log(`WhatsApp: régua comercial "${POLITICA_LEAD_NOVO_NOME}" garantida (DESLIGADA) com ${CADENCIA_LEAD_NOVO.length} degraus.`);
 }
 
 // Execução direta (npm run seed:whatsapp) — quando importado pelo seed.ts, não roda.

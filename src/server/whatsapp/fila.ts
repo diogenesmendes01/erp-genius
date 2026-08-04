@@ -71,3 +71,73 @@ export async function enfileirarIntencaoCobranca(
   });
   return "criada";
 }
+
+// Idem para a cadência COMERCIAL (doc 27): idempotência por
+// @@unique([politicaComercialId, leadId, passoComercial]). A POLÍTICA faz parte da chave
+// (review PR #55) — cadências distintas compartilham nomes de passo (+30min/+3d/+7d em
+// lead-novo e no-show) e não podem se bloquear no mesmo lead. Por isso `politicaComercialId`
+// é OBRIGATÓRIO aqui: sem ele não há identidade de degrau (e o NULL do Postgres não é único).
+// Mesmo ciclo de vida da cobrança — só troca o vínculo de domínio (Lead + passo da cadência).
+export interface EnfileirarComercial {
+  leadId: string;
+  passoComercial: string;
+  numeroId: string;
+  contatoId: string;
+  corpoRenderizado: string;
+  variaveis: string[];
+  templateId: string | null;
+  politicaComercialId: string;
+}
+
+export async function enfileirarIntencaoComercial(
+  tx: Prisma.TransactionClient,
+  e: EnfileirarComercial,
+): Promise<ResultadoEnfileirar> {
+  // Lookup por findFirst: a unicidade é um índice UNIQUE PARCIAL (na migration), não um
+  // @@unique — então o client não expõe um `findUnique` composto. O índice parcial cobre
+  // esta busca (as três colunas presentes) e é o backstop de idempotência no INSERT.
+  const existente = await tx.intencaoMensagem.findFirst({
+    where: {
+      politicaComercialId: e.politicaComercialId,
+      leadId: e.leadId,
+      passoComercial: e.passoComercial,
+    },
+  });
+
+  if (existente) {
+    if (["PENDENTE", "ENVIANDO", "DESPACHADA"].includes(existente.status)) return "ja_existente";
+    await tx.intencaoMensagem.update({
+      where: { id: existente.id },
+      data: {
+        status: "PENDENTE",
+        numeroId: e.numeroId,
+        contatoId: e.contatoId,
+        origem: "CRON",
+        corpoRenderizado: e.corpoRenderizado,
+        variaveis: e.variaveis,
+        templateId: e.templateId,
+        politicaComercialId: e.politicaComercialId,
+        criadaEm: new Date(),
+        despacharAposEm: null,
+        motivoFalha: null,
+      },
+    });
+    return "reaberta";
+  }
+
+  await tx.intencaoMensagem.create({
+    data: {
+      leadId: e.leadId,
+      passoComercial: e.passoComercial,
+      numeroId: e.numeroId,
+      contatoId: e.contatoId,
+      origem: "CRON",
+      corpoRenderizado: e.corpoRenderizado,
+      variaveis: e.variaveis,
+      templateId: e.templateId,
+      politicaComercialId: e.politicaComercialId,
+      autorId: null,
+    },
+  });
+  return "criada";
+}

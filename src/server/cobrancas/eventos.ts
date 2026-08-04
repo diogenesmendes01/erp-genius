@@ -31,3 +31,18 @@ export async function registrarEventoCobrancaEnviada(
     payload: { modelo: entrada.modelo, passo: entrada.passo, canal: entrada.canal },
   });
 }
+
+// Evento de domínio da cadência COMERCIAL (doc 27). Agregado Lead; `{ passo }` é o fato que
+// o motor conta como cumprido (passosFeitos) — a projeção da timeline do lead o exibe grátis.
+export async function registrarEventoReguaComercialEnviada(
+  tx: Prisma.TransactionClient,
+  entrada: { leadId: string; chave: string; passo: string },
+): Promise<void> {
+  await registrarEvento(tx, {
+    tipo: "ReguaComercialEnviada",
+    agregadoTipo: "Lead",
+    agregadoId: entrada.leadId,
+    autorId: null, // sistema/cron
+    payload: { chave: entrada.chave, passo: entrada.passo, canal: "api" },
+  });
+}
