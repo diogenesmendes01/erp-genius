@@ -52,10 +52,15 @@ async function seedComercial(over: SeedComercial = {}) {
   return { numero, pais, lead, contato, politica };
 }
 
+// OCORRÊNCIA (review PR #56): a âncora do ciclo em ISO. Toda intenção comercial carrega a
+// sua, e o guard-rail 6b só reconhece como "degrau cumprido" o evento do MESMO ciclo.
+const OCORRENCIA = "2026-03-10T14:00:00.000Z";
+
 /** Intenção da cadência comercial já pronta na outbox (o enfileirador é testado à parte). */
 async function enfileirarDegrau(
   ctx: Awaited<ReturnType<typeof seedComercial>>,
   passo = "+30min",
+  ocorrencia = OCORRENCIA,
 ) {
   return prisma.intencaoMensagem.create({
     data: {
@@ -64,8 +69,24 @@ async function enfileirarDegrau(
       origem: "CRON",
       leadId: ctx.lead.id,
       passoComercial: passo,
+      ocorrenciaComercial: ocorrencia,
       politicaComercialId: ctx.politica.id,
       corpoRenderizado: "Oi Ana!",
+    },
+  });
+}
+
+/** Evento de degrau cumprido, como o despachante o grava (chave + passo + ocorrência). */
+async function eventoDegrauEnviado(
+  ctx: Awaited<ReturnType<typeof seedComercial>>,
+  payload: { chave: string; passo: string; ocorrencia: string },
+) {
+  return prisma.evento.create({
+    data: {
+      tipo: "ReguaComercialEnviada",
+      agregadoTipo: "Lead",
+      agregadoId: ctx.lead.id,
+      payload: { ...payload, canal: "api" },
     },
   });
 }
@@ -225,13 +246,25 @@ describe("idempotência do degrau comercial inclui a CHAVE da cadência (review 
     const ctx = await seedComercial(); // chave LEAD_NOVO_SEM_RESPOSTA
     // O no-show também tem um "+30min": sem a chave no filtro, ele mataria a cadência do
     // lead-novo no mesmo lead.
-    await prisma.evento.create({
-      data: {
-        tipo: "ReguaComercialEnviada",
-        agregadoTipo: "Lead",
-        agregadoId: ctx.lead.id,
-        payload: { chave: "NO_SHOW_SEM_RESPOSTA", passo: "+30min", canal: "api" },
-      },
+    await eventoDegrauEnviado(ctx, { chave: "NO_SHOW_SEM_RESPOSTA", passo: "+30min", ocorrencia: OCORRENCIA });
+    await enfileirarDegrau(ctx);
+
+    const r = await despacharFila();
+    expect(r.canceladas).toBe(0);
+    expect(r.simuladas).toBe(1);
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).not.toBe("degrau_ja_cumprido");
+  });
+
+  // ...e a OCORRÊNCIA (review PR #56). O guard-rail 6b existe porque o degrau pode ter sido
+  // cumprido DEPOIS que a intenção nasceu; se ele olhasse só chave+passo, o `-24h` da
+  // experimental anterior cancelaria o `-24h` da remarcada — a mesma falha que o motor já
+  // corrige na hora de enfileirar, reaparecendo na hora de despachar.
+  it("evento da MESMA chave + passo, mas de OUTRA ocorrência, não cancela este degrau", async () => {
+    const ctx = await seedComercial();
+    await eventoDegrauEnviado(ctx, {
+      chave: CHAVE_LEAD_NOVO,
+      passo: "+30min",
+      ocorrencia: "2026-03-01T14:00:00.000Z", // ciclo anterior
     });
     await enfileirarDegrau(ctx);
 
@@ -241,16 +274,9 @@ describe("idempotência do degrau comercial inclui a CHAVE da cadência (review 
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).not.toBe("degrau_ja_cumprido");
   });
 
-  it("contra-prova: evento da MESMA chave + passo cancela (degrau já cumprido)", async () => {
+  it("contra-prova: evento da MESMA chave + passo + ocorrência cancela (degrau já cumprido)", async () => {
     const ctx = await seedComercial();
-    await prisma.evento.create({
-      data: {
-        tipo: "ReguaComercialEnviada",
-        agregadoTipo: "Lead",
-        agregadoId: ctx.lead.id,
-        payload: { chave: CHAVE_LEAD_NOVO, passo: "+30min", canal: "api" },
-      },
-    });
+    await eventoDegrauEnviado(ctx, { chave: CHAVE_LEAD_NOVO, passo: "+30min", ocorrencia: OCORRENCIA });
     await enfileirarDegrau(ctx);
 
     const r = await despacharFila();

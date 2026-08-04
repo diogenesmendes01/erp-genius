@@ -78,9 +78,14 @@ export async function enfileirarIntencaoCobranca(
 // lead-novo e no-show) e não podem se bloquear no mesmo lead. Por isso `politicaComercialId`
 // é OBRIGATÓRIO aqui: sem ele não há identidade de degrau (e o NULL do Postgres não é único).
 // Mesmo ciclo de vida da cobrança — só troca o vínculo de domínio (Lead + passo da cadência).
+// A chave carrega também a OCORRÊNCIA (review PR #56) — a âncora em ISO. Sem ela a
+// idempotência seria eterna por lead: uma experimental REAGENDADA herdaria os passos já
+// cumpridos do ciclo anterior e nunca dispararia.
 export interface EnfileirarComercial {
   leadId: string;
   passoComercial: string;
+  /** Identidade do ciclo: âncora em ISO (horário da aula, 1º inbound do lead...). */
+  ocorrenciaComercial: string;
   numeroId: string;
   contatoId: string;
   corpoRenderizado: string;
@@ -95,11 +100,13 @@ export async function enfileirarIntencaoComercial(
 ): Promise<ResultadoEnfileirar> {
   // Lookup por findFirst: a unicidade é um índice UNIQUE PARCIAL (na migration), não um
   // @@unique — então o client não expõe um `findUnique` composto. O índice parcial cobre
-  // esta busca (as três colunas presentes) e é o backstop de idempotência no INSERT.
+  // esta busca (política + lead + ocorrência + passo, todas presentes) e é o backstop de
+  // idempotência no INSERT.
   const existente = await tx.intencaoMensagem.findFirst({
     where: {
       politicaComercialId: e.politicaComercialId,
       leadId: e.leadId,
+      ocorrenciaComercial: e.ocorrenciaComercial,
       passoComercial: e.passoComercial,
     },
   });
@@ -129,6 +136,7 @@ export async function enfileirarIntencaoComercial(
     data: {
       leadId: e.leadId,
       passoComercial: e.passoComercial,
+      ocorrenciaComercial: e.ocorrenciaComercial,
       numeroId: e.numeroId,
       contatoId: e.contatoId,
       origem: "CRON",

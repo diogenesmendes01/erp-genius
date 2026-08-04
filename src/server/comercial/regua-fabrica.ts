@@ -58,3 +58,79 @@ export const CADENCIA_LEAD_NOVO: readonly DegrauLeadNovoFabrica[] = [
 
 /** Ordem canônica só das chaves (o que o motor precisa para o corte de progresso). */
 export const ORDEM_PASSOS_LEAD_NOVO: readonly string[] = CADENCIA_LEAD_NOVO.map((d) => d.passo);
+
+// ── C2 — EXPERIMENTAL (doc 27 · doc 08): ataca o maior vazamento, o no-show ──────────
+
+export const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
+export const POLITICA_PRE_EXPERIMENTAL_NOME = "Pré-experimental (confirmação)";
+
+// ÂNCORA = horário da aula experimental. Offsets NEGATIVOS (antes do evento) — o mesmo
+// núcleo da cobrança (que já usa D-7/D-3 negativos), agora em minutos.
+export const CADENCIA_PRE_EXPERIMENTAL: readonly DegrauLeadNovoFabrica[] = [
+  {
+    passo: "-24h",
+    offsetMinutos: -1440,
+    rotulo: "24 horas antes",
+    template: "pre_experimental_24h",
+    texto:
+      "Oi {nome}! Sua aula experimental é amanhã. Podemos confirmar sua presença? Responda SIM para confirmar ou REAGENDAR se precisar de outro horário.",
+  },
+  {
+    passo: "-2h",
+    offsetMinutos: -120,
+    rotulo: "2 horas antes",
+    template: "pre_experimental_2h",
+    texto: "{nome}, sua aula experimental é daqui a pouco! Te esperamos. 😊",
+  },
+] as const;
+
+export const ORDEM_PASSOS_PRE_EXPERIMENTAL: readonly string[] = CADENCIA_PRE_EXPERIMENTAL.map((d) => d.passo);
+
+export const CHAVE_NO_SHOW = "NO_SHOW";
+export const POLITICA_NO_SHOW_NOME = "Recuperação de no-show";
+
+// ÂNCORA = horário da aula perdida (o check-in do professor marcou NO_SHOW).
+export const CADENCIA_NO_SHOW: readonly DegrauLeadNovoFabrica[] = [
+  {
+    passo: "+30min",
+    offsetMinutos: 30,
+    rotulo: "30 min após a falta",
+    template: "no_show_30min",
+    texto: "Oi {nome}! Percebemos que você não conseguiu participar da aula de hoje. Posso remarcar para outro dia?",
+  },
+  {
+    passo: "+1d",
+    offsetMinutos: 1440,
+    rotulo: "1 dia após",
+    template: "no_show_1d",
+    texto: "{nome}, ainda dá tempo de conhecer a escola. Quer que eu veja um novo horário para a experimental?",
+  },
+  {
+    passo: "+3d",
+    offsetMinutos: 4320,
+    rotulo: "3 dias após",
+    template: "no_show_3d",
+    texto: "Olá {nome}! Tenho horários novos abrindo esta semana. Quer remarcar sua aula experimental?",
+  },
+  {
+    passo: "+7d",
+    offsetMinutos: 10080,
+    rotulo: "7 dias após",
+    template: "no_show_7d",
+    texto: "Oi {nome}! Última tentativa por aqui. Se quiser remarcar a experimental, é só me chamar. 🙏",
+  },
+] as const;
+
+export const ORDEM_PASSOS_NO_SHOW: readonly string[] = CADENCIA_NO_SHOW.map((d) => d.passo);
+
+/** Todas as cadências comerciais (seed + loader + UI). */
+export const CADENCIAS_COMERCIAIS = [
+  { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME, degraus: CADENCIA_LEAD_NOVO, ordem: ORDEM_PASSOS_LEAD_NOVO },
+  {
+    chave: CHAVE_PRE_EXPERIMENTAL,
+    nome: POLITICA_PRE_EXPERIMENTAL_NOME,
+    degraus: CADENCIA_PRE_EXPERIMENTAL,
+    ordem: ORDEM_PASSOS_PRE_EXPERIMENTAL,
+  },
+  { chave: CHAVE_NO_SHOW, nome: POLITICA_NO_SHOW_NOME, degraus: CADENCIA_NO_SHOW, ordem: ORDEM_PASSOS_NO_SHOW },
+] as const;

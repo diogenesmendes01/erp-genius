@@ -53,7 +53,7 @@ import {
   type NotaInternaInput,
 } from "./schema";
 import { Temperatura } from "@prisma/client";
-import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO, POLITICA_LEAD_NOVO_NOME } from "./regua-fabrica";
+import { CADENCIAS_COMERCIAIS } from "./regua-fabrica";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -388,6 +388,10 @@ export async function agendarExperimental(
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
           dataExperimental: data,
           professorExperimentalId: professorId,
+          // (Re)agendar abre uma OCORRÊNCIA nova: a confirmação do compromisso ANTERIOR não
+          // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
+          // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
+          experimentalConfirmadaEm: null,
         },
       });
       await registrarEvento(tx, {
@@ -628,8 +632,10 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
     const dados = ReguaComercialSchema.parse(input);
     if (dados.janelaFim <= dados.janelaInicio) throw new ErroRegra("A janela precisa terminar depois de começar.");
 
-    // Só passos da cadência canônica entram (a ordem é imutável — review PR #54).
-    const rotuloPorPasso = new Map(CADENCIA_LEAD_NOVO.map((d) => [d.passo, d.rotulo]));
+    // Só passos da cadência CANÔNICA daquele cenário entram (ordem imutável — review PR #54).
+    const cadencia = CADENCIAS_COMERCIAIS.find((c) => c.chave === dados.chave);
+    if (!cadencia) throw new ErroRegra(`Cenário de régua desconhecido: ${dados.chave}.`);
+    const rotuloPorPasso = new Map(cadencia.degraus.map((d) => [d.passo, d.rotulo]));
     for (const d of dados.degraus) {
       if (!rotuloPorPasso.has(d.passo)) throw new ErroRegra(`Passo desconhecido na cadência: ${d.passo}.`);
     }
@@ -638,8 +644,9 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
     // fábrica, mas o loader ordena os degraus por OFFSET: se a UI gravasse +4h antes de
     // +30min, o +4h sairia primeiro e o +30min ficaria eliminado para sempre (forward-only).
     // Exige-se, então: todos os passos, uma única vez, com offsets ESTRITAMENTE CRESCENTES
-    // na ordem de fábrica.
-    const ordemFabrica = CADENCIA_LEAD_NOVO.map((d) => d.passo);
+    // na ordem de fábrica. Vale para as três cadências — inclusive a pré-experimental, cujos
+    // offsets são NEGATIVOS (-24h antes de -2h continua sendo "estritamente crescente").
+    const ordemFabrica = cadencia.degraus.map((d) => d.passo);
     const offsetPorPasso = new Map(dados.degraus.map((d) => [d.passo, d.offsetMinutos]));
     if (offsetPorPasso.size !== dados.degraus.length) {
       throw new ErroRegra("Cada passo da cadência pode aparecer uma única vez.");
@@ -689,12 +696,12 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
 
     await prisma.$transaction(async (tx) => {
       const existente = await tx.politicaComercial.findUnique({
-        where: { chave: CHAVE_LEAD_NOVO },
+        where: { chave: dados.chave },
         include: { degraus: true },
       });
       const politicaId = existente
         ? existente.id
-        : (await tx.politicaComercial.create({ data: { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME } })).id;
+        : (await tx.politicaComercial.create({ data: { chave: cadencia.chave, nome: cadencia.nome } })).id;
 
       await tx.politicaComercial.update({
         where: { id: politicaId },

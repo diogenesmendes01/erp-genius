@@ -1,12 +1,7 @@
 import type { EstadoPolitica } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { DegrauAncora } from "@/server/cobrancas/regua";
-import {
-  CADENCIA_LEAD_NOVO,
-  CHAVE_LEAD_NOVO,
-  ORDEM_PASSOS_LEAD_NOVO,
-  POLITICA_LEAD_NOVO_NOME,
-} from "./regua-fabrica";
+import { CADENCIAS_COMERCIAIS, CHAVE_LEAD_NOVO } from "./regua-fabrica";
 
 // Política COMERCIAL como DADO (doc 27 §Tese). Carrega o registro do banco e o traduz para o
 // formato puro que o motor (`proximaAcaoAncora`) consome — degraus ATIVOS em ordem crescente
@@ -35,20 +30,25 @@ export interface PoliticaComercialCarregada {
   numeroRemetenteId: string | null;
 }
 
-function fabricaLeadNovo(): PoliticaComercialCarregada {
+/** Cadência de fábrica por chave (lei de código: ordem canônica + textos padrão). */
+type CadenciaFabrica = (typeof CADENCIAS_COMERCIAIS)[number];
+const FABRICA_POR_CHAVE = new Map<string, CadenciaFabrica>(CADENCIAS_COMERCIAIS.map((c) => [c.chave, c]));
+
+function politicaDeFabrica(chave: string): PoliticaComercialCarregada {
+  const f = FABRICA_POR_CHAVE.get(chave) ?? FABRICA_POR_CHAVE.get(CHAVE_LEAD_NOVO)!;
   return {
     id: null,
-    chave: CHAVE_LEAD_NOVO,
-    nome: POLITICA_LEAD_NOVO_NOME,
+    chave: f.chave,
+    nome: f.nome,
     estado: "DESLIGADA",
-    degraus: CADENCIA_LEAD_NOVO.map((d) => ({
+    degraus: f.degraus.map((d) => ({
       passo: d.passo,
       offsetMinutos: d.offsetMinutos,
       rotulo: d.rotulo,
       templateId: null,
       templateCorpo: d.texto,
     })),
-    ordem: ORDEM_PASSOS_LEAD_NOVO,
+    ordem: f.ordem,
     janelaInicio: 9,
     janelaFim: 20,
     diasSemana: [1, 2, 3, 4, 5],
@@ -58,14 +58,6 @@ function fabricaLeadNovo(): PoliticaComercialCarregada {
   };
 }
 
-/** Ordem canônica por chave de cenário (lei de código). Só lead-novo na C1. */
-const ORDEM_POR_CHAVE: Record<string, readonly string[]> = {
-  [CHAVE_LEAD_NOVO]: ORDEM_PASSOS_LEAD_NOVO,
-};
-
-/** Corpo de fábrica por passo (fallback quando o degrau não tem template no banco). */
-const TEXTO_FABRICA_POR_PASSO = new Map(CADENCIA_LEAD_NOVO.map((d) => [d.passo, d.texto]));
-
 export async function carregarPoliticaComercial(
   chave: string = CHAVE_LEAD_NOVO,
 ): Promise<PoliticaComercialCarregada> {
@@ -73,9 +65,11 @@ export async function carregarPoliticaComercial(
     where: { chave },
     include: { degraus: { include: { template: true }, orderBy: { offsetMinutos: "asc" } } },
   });
-  if (!p) return fabricaLeadNovo();
+  if (!p) return politicaDeFabrica(chave);
 
-  const ordem = ORDEM_POR_CHAVE[chave] ?? p.degraus.map((d) => d.passo);
+  const fabrica = FABRICA_POR_CHAVE.get(chave);
+  const ordem = fabrica?.ordem ?? p.degraus.map((d) => d.passo);
+  const textoFabrica = new Map((fabrica?.degraus ?? []).map((d) => [d.passo, d.texto]));
   const degraus: DegrauComercialCarregado[] = p.degraus
     .filter((d) => d.ativo)
     .map((d) => ({
@@ -83,7 +77,7 @@ export async function carregarPoliticaComercial(
       offsetMinutos: d.offsetMinutos,
       rotulo: d.rotulo,
       templateId: d.templateId,
-      templateCorpo: d.template?.corpo ?? TEXTO_FABRICA_POR_PASSO.get(d.passo) ?? "",
+      templateCorpo: d.template?.corpo ?? textoFabrica.get(d.passo) ?? "",
     }));
 
   return {

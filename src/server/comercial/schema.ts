@@ -69,7 +69,10 @@ export type InteracaoInput = z.input<typeof InteracaoSchema>;
 // código — aqui só offset/ativo/template por degrau.
 export const DegrauComercialSchema = z.object({
   passo: z.string().min(1),
-  offsetMinutos: z.number().int().min(0).max(43200), // até 30 dias
+  // Offset NEGATIVO é legítimo: a cadência pré-experimental dispara ANTES da âncora (-24h,
+  // -2h), como o D-7/D-3 da cobrança. O piso em 0, herdado da C1, tornava a cadência de
+  // fábrica da C2 impossível de salvar. ±30 dias.
+  offsetMinutos: z.number().int().min(-43200).max(43200),
   ativo: z.boolean(),
   templateId: z
     .string()
@@ -79,6 +82,8 @@ export const DegrauComercialSchema = z.object({
 });
 
 export const ReguaComercialSchema = z.object({
+  /** Cenário da cadência (lead-novo, pré-experimental, no-show — doc 27 C1/C2). */
+  chave: z.string().min(1),
   estado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
   numeroRemetenteId: z
     .string()

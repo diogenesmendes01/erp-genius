@@ -13,8 +13,20 @@
 > cobrança (um por cenário, isolados), stop-conditions (etapa/inbound/opt-out/vendedor
 > assumiu), trava S1 **liberada no Baileys** (decisão de produto), shadow próprio por
 > política, ensaio observável e tela editável em `/configuracao/whatsapp`. Tudo nasce
-> DESLIGADO. **Próximo: C2** (experimental — confirmação 24h/2h, no-show, check-in) no mesmo
-> motor. **C3 (IA)** aguarda a decisão de fornecedor de LLM + os requisitos LGPD do gap D29.
+> DESLIGADO.
+>
+> **C2 "experimental" também implementada:** cadências **pré-experimental** (24h/2h ANTES —
+> offsets negativos no mesmo núcleo) e **recuperação de no-show** (30min·1d·3d·7d após a
+> aula perdida), com **confirmação capturada por keyword** ("SIM"/"REAGENDAR" — o fallback
+> textual do Baileys da §nota bimotor; `Lead.experimentalConfirmadaEm` fecha o gap 33). A
+> keyword só vale como RESPOSTA a um lembrete pré-experimental efetivamente enviado para
+> **aquela ocorrência**, e (re)agendar zera a confirmação anterior: confirmação é resposta a
+> uma pergunta, não estado solto do lead. A cadência pertence à **ocorrência** (âncora), não
+> ao lead — reagendar ou levar um segundo no-show abre um ciclo limpo. E o
+> **check-in do professor** que já movia o funil. Lembrete pré-evento **nunca chega
+> atrasado** (a aula começar encerra a cadência). Enfileirador genérico: um núcleo,
+> N cenários. **C3 (IA)** aguarda a decisão de fornecedor de LLM + os requisitos LGPD do
+> gap D29 — é o que resta da fase comercial.
 
 ## Tese estrutural: um motor de réguas, N políticas
 A régua de follow-up comercial (doc 08) é **a mesma máquina** da régua de cobrança (doc 24):

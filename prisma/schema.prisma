@@ -503,6 +503,11 @@ model Lead {
   dataExperimental DateTime?
   dataProposta     DateTime?
 
+  // Estado de CONFIRMAÇÃO da experimental (doc 27 C2 · gap 33 do doc 28): o lead respondeu
+  // confirmando a presença (botão no oficial ou "SIM" no Baileys). O histórico de
+  // reagendamento já vem dos eventos `ExperimentalAgendada` repetidos — não precisa coluna.
+  experimentalConfirmadaEm DateTime?
+
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
@@ -984,6 +989,10 @@ model IntencaoMensagem {
   leadId             String?
   lead               Lead?             @relation(fields: [leadId], references: [id])
   passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
+  // OCORRÊNCIA da cadência (review PR #56): a âncora em ISO. É o que separa um CICLO do
+  // outro — experimental reagendada, segundo no-show. Sem ela a idempotência é eterna por
+  // lead e a cadência nova nasce com os passos do ciclo anterior já cumpridos.
+  ocorrenciaComercial String?
   politicaComercialId String?
   politicaComercial  PoliticaComercial? @relation(fields: [politicaComercialId], references: [id])
 
@@ -1003,14 +1012,16 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo]) // idempotência por degrau EM BANCO (doc 29 regra 8)
-  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55 P2) — "um motor, N
-  // políticas" só se sustenta se cadências distintas puderem compartilhar nomes de passo
-  // (+30min/+3d/+7d aparecem em lead-novo e no-show) sem colidir no mesmo lead. É um índice
-  // UNIQUE PARCIAL (WHERE as três colunas IS NOT NULL), no padrão do repo para unicidade
-  // condicional (cf. integridade_alocacao_preco): mora na migration
-  // `idempotencia_comercial_indice_parcial` (Prisma não modela WHERE em @@unique) e o
-  // predicado mantém as intenções de COBRANÇA (essas três colunas nulas) fora da constraint.
-  // O mesmo índice cobre o lookup do enfileirador (findFirst com as três colunas presentes).
+  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55) e a OCORRÊNCIA
+  // (review PR #56). "Um motor, N políticas" só se sustenta se cadências distintas puderem
+  // compartilhar nomes de passo sem colidir no mesmo lead (+30min/+3d/+7d aparecem em
+  // lead-novo e no-show); a ocorrência (âncora em ISO — horário da aula, 1º inbound) separa
+  // um CICLO do outro no mesmo lead/cadência (um 2º no-show não nasce "feito"). É um índice
+  // UNIQUE PARCIAL (WHERE as colunas comerciais IS NOT NULL), no padrão do repo para
+  // unicidade condicional (cf. integridade_alocacao_preco): mora na migration
+  // `ocorrencia_cadencia_comercial` (Prisma não modela WHERE em @@unique) e o predicado
+  // mantém as intenções de COBRANÇA (essas colunas nulas) fora da constraint. O mesmo índice
+  // cobre o lookup do enfileirador (findFirst com as quatro colunas presentes).
   @@index([status, despacharAposEm])
 }
 
