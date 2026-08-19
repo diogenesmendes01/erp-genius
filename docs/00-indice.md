@@ -44,6 +44,7 @@
 | [`29-whatsapp-integracao-codigo.md`](29-whatsapp-integracao-codigo.md) | **Mapa de integração**: o que reusa, o que muda (arquivo:linha), fluxos, projeções e as 10 regras anti-duplicação |
 | [`30-whatsapp-spec-implementacao.md`](30-whatsapp-spec-implementacao.md) | **Spec mestre (em implementação)**: decisões S1–S10, modelo de dados final, contratos e etapas E1–E6 |
 | [`31-whatsapp-go-live.md`](31-whatsapp-go-live.md) | **Go-live (E5)**: deploy VPS (compose app+Evolution+Caddy), cron/despachante, health, backup+restore, rollout e runbooks |
+| [`32-comercial-c1-c2-piloto-baileys.md`](32-comercial-c1-c2-piloto-baileys.md) | **Piloto C1/C2 no Baileys (pré-WABA)**: bloqueadores, portões, matriz de cenários, rollout, aceite, stop/rollback e migração p/ WABA |
 | [`16-plano-execucao.md`](16-plano-execucao.md) | **Plano mestre** de documentação + implementação (checklist) |
 | [`15-decisoes-adr.md`](15-decisoes-adr.md) | Log de decisões e pendências em aberto |
 
