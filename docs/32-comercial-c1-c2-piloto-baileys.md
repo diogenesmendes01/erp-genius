@@ -23,6 +23,9 @@ dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 | B4 | **Cron horário incompatível com `+30min`.** O tick de hora em hora transforma "+30min" em quase "+90min". | [`31-whatsapp-go-live.md:145`](31-whatsapp-go-live.md) | Definir tolerância máxima por degrau; para C1/C2, tick a cada **5–10 min**. |
 | B5 | **Spec em contradição.** A [`30`](30-whatsapp-spec-implementacao.md) §S1 ainda diz "régua automática exige driver oficial"; código e doc 27 abrem a exceção C1/C2 no Baileys. | [`30`](30-whatsapp-spec-implementacao.md) §S1 × [`despachante.ts:138`](../src/server/whatsapp/despachante.ts) | Registrar a decisão final (exceção comercial no Baileys), seus limites e o risco aceito, como ADR no [`15`](15-decisoes-adr.md) e reconciliar o texto da S1. |
 | B6 | **Origem do lead no Baileys.** O referral de anúncio não é garantido nesse driver — origem pode ser inferida errada. | captura em [`captura.ts`](../src/server/comercial/captura.ts) | No piloto, origem fica explicitamente **"não identificada (Baileys)"** ou tem preenchimento manual — nunca inferida incorretamente. |
+| B7 | **Stop-conditions só avaliadas no enqueue, não no despacho.** O despachante revalida a idempotência (passo+ocorrência já enviados), mas NÃO a **etapa** nem a **ocorrência atual**. Uma intenção já `PENDENTE`/`ADIADA` dispara mesmo que, após o enqueue, o lead vá para `EM_ATENDIMENTO`, faça check-in ou a experimental seja reagendada → follow-up de C1 sai após o vendedor assumir, e no-show/pré-experimental sai para a **ocorrência anterior**. (Generaliza B2/B3: o despacho não pode confiar no snapshot do enqueue.) | idempotência em [`despachante.ts:223`](../src/server/whatsapp/despachante.ts); stop-conditions só em [`cron-comercial.ts:163`](../src/server/whatsapp/cron-comercial.ts) | Revalidar no despachante **etapa + `ocorrenciaComercial` + takeover** (e `validaAte`, B3); **cancelar** as intenções obsoletas em vez de enviar. Testes cobrindo itens **adiados**. |
+| B8 | **`REAGENDAR` não pausa a cadência.** `capturarRespostaExperimental` só grava `ExperimentalReagendamentoSolicitado`; o lead segue `EXPERIMENTAL_AGENDADA` com a MESMA `dataExperimental`, e `rodarPreExperimental` consulta só etapa/data — ignora o evento. O inbound cancela as intenções que existiam, mas o tick seguinte enfileira o próximo degrau (ex.: `-2h`). É **falha conhecida**, não cenário a validar. | evento em [`captura.ts:190`](../src/server/comercial/captura.ts); resolver em [`cron-comercial.ts:187`](../src/server/whatsapp/cron-comercial.ts) | Estado persistido **"aguardando reagendamento"** (flag no lead ou o cron respeitando o evento sem remarcação posterior) que o cron honra **até a ação humana**. |
+| B9 | **Sem alerta de check-in ausente/vencido.** A Home do professor lista todos os `EXPERIMENTAL_AGENDADA` e escolhe o mais antigo como "Próxima aula" — inclusive com a data já vencida; não há estado de vencido, evento nem notificação para cobrar o check-in. Como a recuperação de no-show **só começa após o check-in**, sem isso o cenário C2 nunca dispara de forma confiável. | [`home/consultas.ts`](../src/server/home/consultas.ts) · [`HomeProfessor.tsx`](../src/app/(app)/home/HomeProfessor.tsx) | Alerta operacional de check-in vencido — **responsável, tolerância e canal** definidos; estado/estilo de vencido na Home + evento/notificação. |
 
 ---
 
@@ -53,7 +56,10 @@ dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 - [ ] Templates (texto livre do Baileys) revisados em **espanhol/português** com variáveis reais.
 - [ ] **Fuso e data/hora** da experimental validados (a janela usa `Aluno/Pais.fuso`; cron em UTC).
 - [ ] Consentimento, **opt-out**, retenção e responsáveis definidos (docs 31 §8: D23/D25/D21).
-- [ ] **Bloqueadores B1–B6 (§0) fechados** — ou o mitigador operacional aplicado e registrado.
+- [ ] **Despacho revalida estado** (B7): etapa/ocorrência/takeover conferidos no despachante, não só no enqueue; intenção obsoleta é **cancelada**, não enviada.
+- [ ] **`REAGENDAR` pausa a cadência** (B8): estado "aguardando reagendamento" respeitado pelo cron até ação humana.
+- [ ] **Alerta de check-in vencido** (B9) no ar — responsável, tolerância e canal definidos.
+- [ ] **Bloqueadores B1–B9 (§0) fechados** — ou o mitigador operacional aplicado e registrado.
 
 ## 3. Matriz de cenários obrigatórios
 Cada cenário precisa de **evidência** (print, evento, consulta ou mensagem identificável) — ver §7.
@@ -65,22 +71,22 @@ Cada cenário precisa de **evidência** (print, evento, consulta ou mensagem ide
 - [ ] Aluno, responsável ou lead **existente** não cria outro lead.
 - [ ] Grupo, status, broadcast e reação são **ignorados**.
 - [ ] **Resposta do lead** (inbound após a âncora) encerra a cadência.
-- [ ] **Resposta do vendedor** pela inbox **e pelo celular** (`fromMe`) encerra a cadência (B2).
-- [ ] Mudança para **`EM_ATENDIMENTO`** encerra a cadência (só `NOVO` é frio).
+- [ ] **Resposta do vendedor** pela inbox **e pelo celular** (`fromMe`) encerra a cadência (B2 no enqueue; **B7** para item já adiado).
+- [ ] Mudança para **`EM_ATENDIMENTO`** encerra a cadência (só `NOVO` é frio) — inclusive um degrau **já adiado** não sai depois disso (**B7**).
 - [ ] **Opt-out** na primeira mensagem impede saudação e follow-ups.
 - [ ] Saudação sai **fora do horário** (reativa); follow-up respeita **janela/fuso/teto**.
 
 ### C2 — experimental
 - [ ] Experimental marcada com **mais e menos de 24h** (degraus ‑24h/‑2h corretos).
 - [ ] Confirmação **exata** por `SIM`/`CONFIRMO`.
-- [ ] `REAGENDAR` gera **sinal visível** e **pausa** a cadência até ação humana.
+- [ ] `REAGENDAR` gera **sinal visível** e **pausa** a cadência até ação humana (**B8** — hoje não pausa).
 - [ ] Frases **ambíguas não confirmam** presença.
-- [ ] **Reagendamento** inicia uma **ocorrência limpa** (nova âncora).
-- [ ] **Segundo no-show** inicia **outro ciclo** (nova ocorrência).
-- [ ] Check-in **"compareceu"** encerra a recuperação.
+- [ ] **Reagendamento** inicia uma **ocorrência limpa** (nova âncora) e o degrau da ocorrência antiga **não sai** (**B7/B8**).
+- [ ] **Segundo no-show** inicia **outro ciclo** (nova ocorrência); degrau do ciclo anterior não sai no despacho (**B7**).
+- [ ] Check-in **"compareceu"** encerra a recuperação — inclusive um degrau já adiado (**B7**).
 - [ ] Check-in **"não compareceu"** inicia no-show.
-- [ ] **Ausência de check-in** gera alerta operacional.
-- [ ] **Nenhum lembrete pré-experimental** sai **após o começo** da aula (B3 — inclusive adiados).
+- [ ] **Ausência de check-in** gera alerta operacional (**B9** — hoje inexistente).
+- [ ] **Nenhum lembrete pré-experimental** sai **após o começo** da aula (**B3**) nem para a **ocorrência anterior** (**B7**) — inclusive itens adiados.
 - [ ] Confirmação/resposta sempre se relaciona ao **lembrete e à ocorrência corretos**.
 
 ## 4. Rollout progressivo
@@ -119,6 +125,7 @@ reduz o risco de comportamento agressivo no Baileys e isola qual política causo
 **Interromper imediatamente** (kill switch) se ocorrer:
 - Duplicidade (lead/saudação/envio).
 - Mensagem após resposta/opt-out.
+- Mensagem depois de o vendedor assumir (`EM_ATENDIMENTO`/takeover) ou para uma **ocorrência obsoleta** (reagendada / ciclo anterior) — B7/B8.
 - Destinatário incorreto.
 - Mensagem temporalmente inválida (lembrete pós-evento; "amanhã" no dia).
 - Sessão instável ou risco de bloqueio do número.
