@@ -24,10 +24,13 @@ export function ComercialPainel({
   config,
   simuladas,
   metricasCopiloto,
+  numerosVendas = [],
 }: {
   config: ConfigComercialView;
   simuladas: SaudacaoSimulada[];
   metricasCopiloto: MetricaCopilotoTipo[];
+  /** C5: remetentes possíveis das mensagens do gestor (números de vendas). */
+  numerosVendas?: { id: string; rotulo: string }[];
 }) {
   const router = useRouter();
   const [autoLeadAtivo, setAutoLead] = useState(config.autoLeadAtivo);
@@ -36,6 +39,11 @@ export function ComercialPainel({
   const [copilotoAtivo, setCopiloto] = useState(config.copilotoAtivo);
   const [copilotoQuietudeMinutos, setQuietude] = useState(config.copilotoQuietudeMinutos);
   const [matriculaAutomaticaAtiva, setMatriculaAuto] = useState(config.matriculaAutomaticaAtiva);
+  const [gestaoEstado, setGestaoEstado] = useState(config.gestaoEstado);
+  const [gestaoTelefoneE164, setGestaoTel] = useState(config.gestaoTelefoneE164 ?? "");
+  const [gestaoNumeroId, setGestaoNumero] = useState(config.gestaoNumeroId ?? "");
+  const [gestaoSlaMinutos, setGestaoSla] = useState(config.gestaoSlaMinutos);
+  const [gestaoRelatorioHora, setGestaoHora] = useState(config.gestaoRelatorioHora);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
@@ -51,6 +59,11 @@ export function ComercialPainel({
       copilotoAtivo,
       copilotoQuietudeMinutos,
       matriculaAutomaticaAtiva,
+      gestaoEstado,
+      gestaoTelefoneE164,
+      gestaoNumeroId,
+      gestaoSlaMinutos,
+      gestaoRelatorioHora,
     });
     setOcupado(false);
     if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
@@ -167,6 +180,73 @@ export function ComercialPainel({
               </span>
             </span>
           </label>
+        </div>
+
+        {/* C5 (doc 27): gestão — alerta de SLA + relatório diário no WhatsApp do gestor */}
+        <div className="border-t border-gray-100 pt-4">
+          <div className="text-sm font-medium">Gestão — alertas e relatório do gestor</div>
+          <p className="mb-2 text-sm text-gray-500">
+            Alerta de SLA (lead novo parado) e relatório diário com funil e gargalos, no WhatsApp do gestor.
+            Em ensaio, registra sem enviar. Use um número Baileys (vendas) como remetente.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-gray-600">Estado</span>
+              <select
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
+                value={gestaoEstado}
+                onChange={(e) => setGestaoEstado(e.target.value as ConfigComercialView["gestaoEstado"])}
+              >
+                <option value="DESLIGADA">Desligada</option>
+                <option value="SHADOW">Ensaio (shadow) — não envia</option>
+                <option value="ATIVA">Ativa — envia</option>
+              </select>
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-gray-600">WhatsApp do gestor (E.164)</span>
+              <input
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
+                placeholder="+5511999998888"
+                value={gestaoTelefoneE164}
+                onChange={(e) => setGestaoTel(e.target.value)}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-gray-600">Número remetente</span>
+              <select
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
+                value={gestaoNumeroId}
+                onChange={(e) => setGestaoNumero(e.target.value)}
+              >
+                <option value="">—</option>
+                {numerosVendas.map((n) => (
+                  <option key={n.id} value={n.id}>{n.rotulo}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-gray-600">SLA (min)</span>
+              <input
+                type="number"
+                min={5}
+                max={1440}
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
+                value={gestaoSlaMinutos}
+                onChange={(e) => setGestaoSla(Number(e.target.value))}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-medium text-gray-600">Relatório às (h)</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
+                value={gestaoRelatorioHora}
+                onChange={(e) => setGestaoHora(Number(e.target.value))}
+              />
+            </label>
+          </div>
         </div>
 
         <button className={btnPri} disabled={ocupado} onClick={salvar}>

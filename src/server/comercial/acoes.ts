@@ -607,6 +607,12 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
     const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
     const dados = ConfigComercialSchema.parse(input);
 
+    // C5: armar a gestão exige número remetente EXISTENTE e ativo (prontidão, como nas réguas).
+    if (dados.gestaoEstado !== "DESLIGADA" && dados.gestaoNumeroId) {
+      const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.gestaoNumeroId } });
+      if (!numero || !numero.ativo) throw new ErroRegra("Número remetente da gestão inexistente ou inativo.");
+    }
+
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configComercial.findUnique({ where: { id: "comercial" } });
       await tx.configComercial.upsert({
@@ -628,6 +634,8 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
                 copilotoAtivo: antes.copilotoAtivo,
                 copilotoQuietudeMinutos: antes.copilotoQuietudeMinutos,
                 matriculaAutomaticaAtiva: antes.matriculaAutomaticaAtiva,
+                gestaoEstado: antes.gestaoEstado,
+                gestaoTelefoneE164: antes.gestaoTelefoneE164,
               }
             : null,
           depois: dados,

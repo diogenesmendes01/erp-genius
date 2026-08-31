@@ -58,7 +58,12 @@ export default async function WhatsAppConfigPage() {
           <PoliticaPainel politica={admin[2]} numeros={admin[0]} templates={admin[1]} />
         </>
       )}
-      <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} metricasCopiloto={metricasIA} />
+      <ComercialPainel
+        config={configComercial}
+        simuladas={saudacoesSimuladas}
+        metricasCopiloto={metricasIA}
+        numerosVendas={numerosResumo.filter((n) => n.finalidade === "VENDAS").map((n) => ({ id: n.id, rotulo: n.rotulo }))}
+      />
       <ReguasComerciaisPainel reguas={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} />
     </div>
   );

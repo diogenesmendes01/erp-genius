@@ -21,6 +21,12 @@ export interface ConfigComercialView {
   copilotoQuietudeMinutos: number;
   /** C4 (doc 27): matrícula automática — nasce desligada. */
   matriculaAutomaticaAtiva: boolean;
+  /** C5 (doc 27): gestão (alerta SLA + relatório diário) — nasce desligada. */
+  gestaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
+  gestaoTelefoneE164: string | null;
+  gestaoNumeroId: string | null;
+  gestaoSlaMinutos: number;
+  gestaoRelatorioHora: number;
 }
 
 /** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
@@ -33,6 +39,11 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
     copilotoAtivo: c?.copilotoAtivo ?? false,
     copilotoQuietudeMinutos: c?.copilotoQuietudeMinutos ?? 10,
     matriculaAutomaticaAtiva: c?.matriculaAutomaticaAtiva ?? false,
+    gestaoEstado: c?.gestaoEstado ?? "DESLIGADA",
+    gestaoTelefoneE164: c?.gestaoTelefoneE164 ?? null,
+    gestaoNumeroId: c?.gestaoNumeroId ?? null,
+    gestaoSlaMinutos: c?.gestaoSlaMinutos ?? 30,
+    gestaoRelatorioHora: c?.gestaoRelatorioHora ?? 19,
   };
 }
 

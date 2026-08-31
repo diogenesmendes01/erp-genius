@@ -10,6 +10,7 @@ import {
 } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { rodarCopilotoQuietude } from "@/server/ia/copiloto";
+import { rodarGestao } from "@/server/whatsapp/cron-gestao";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
 // autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
@@ -54,6 +55,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const checkInVencido = await seguro("comercial_checkin_vencido", () => rodarCheckInVencido(agora));
   // C3 (doc 27): gatilho de QUIETUDE do copiloto (~10min sem resposta ao último inbound).
   const copiloto = await seguro("copiloto_quietude", () => rodarCopilotoQuietude(agora));
+  // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor.
+  const gestao = await seguro("gestao", () => rodarGestao(agora));
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
@@ -61,6 +64,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     cobranca,
     comercial: { leadNovo, preExperimental, noShow, contrato, linkPagamento, checkInVencido },
     copiloto,
+    gestao,
     despacho,
   });
 }
