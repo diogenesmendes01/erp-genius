@@ -32,6 +32,7 @@ const ICONS: Record<string, Icone> = {
   Settings: IconSettings,
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
+  School: IconSchool,
 };
 
 function ThemeToggle() {

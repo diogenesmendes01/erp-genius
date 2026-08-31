@@ -26,6 +26,7 @@ enum Papel {
   PROFESSOR
   FINANCEIRO
   SECRETARIA_ACADEMICA
+  ALUNO // Fase 3 (doc 03): portal do aluno — acesso restrito aos PRÓPRIOS dados
 }
 
 model Usuario {
@@ -57,6 +58,7 @@ model Usuario {
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
   intencoesWhatsApp IntencaoMensagem[]  @relation("AutorIntencoesWhatsApp")
   sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
+  acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
 }
 
 // ============================================================
@@ -139,7 +141,9 @@ model Nivel {
   codigo   String // Pré A1, A1, A2, B1, B2, C1, C2
   ordem    Int
 
-  turmas Turma[]
+  turmas       Turma[]
+  testesNivel  TesteNivel[]  // Fase 3
+  certificados Certificado[] // Fase 3
 }
 
 // Produto vendável = idioma + modalidade
@@ -243,7 +247,9 @@ model Turma {
   rolling       Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
   criadoEm      DateTime    @default(now())
 
-  alocacoes AlocacaoTurma[]
+  alocacoes  AlocacaoTurma[]
+  aulas      Aula[]
+  avaliacoes Avaliacao[]
 }
 
 // ============================================================
@@ -328,6 +334,14 @@ model Aluno {
   // Operacional (doc 09 §Operacional)
   fuso        String? // sobrescreve o fuso do país (envio de mensagens); default = país
   observacoes String?
+  // Fase 3 (portal do aluno): usuário de acesso (papel ALUNO) vinculado 1:1.
+  usuarioId   String?  @unique
+  usuario     Usuario? @relation("AcessoAluno", fields: [usuarioId], references: [id])
+  // Fase 3 (acadêmico)
+  presencas    Presenca[]
+  notas        Nota[]
+  testesNivel  TesteNivel[]
+  certificados Certificado[]
 
   // Estado
   status   StatusAluno @default(ATIVO)
@@ -1338,4 +1352,87 @@ model ConfigFinanceiro {
   fechamentoComissaoAutomatico  Boolean @default(false)
   criadoEm                      DateTime @default(now())
   atualizadoEm                  DateTime @updatedAt
+}
+
+
+// ============================================================
+// ACADÊMICO — FASE 3 (doc 03): frequência · notas · teste de nível · progressão ·
+// certificados · portal do aluno. Diário de classe por AULA (frequência), avaliações
+// com notas, teste de nível como registro auditável, progressão por aprovação humana
+// (o sistema CALCULA e sugere; quem aprova é gente — mesma filosofia híbrida do C4) e
+// certificado com código de validação público.
+// ============================================================
+
+model Aula {
+  id        String   @id @default(cuid())
+  turmaId   String
+  turma     Turma    @relation(fields: [turmaId], references: [id])
+  data      DateTime
+  conteudo  String?
+  criadoEm  DateTime @default(now())
+
+  presencas Presenca[]
+
+  @@unique([turmaId, data]) // uma aula por turma×data (re-registrar edita, não duplica)
+}
+
+model Presenca {
+  id      String  @id @default(cuid())
+  aulaId  String
+  aula    Aula    @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  alunoId String
+  aluno   Aluno   @relation(fields: [alunoId], references: [id])
+  presente Boolean
+  observacao String?
+
+  @@unique([aulaId, alunoId])
+}
+
+model Avaliacao {
+  id      String    @id @default(cuid())
+  turmaId String
+  turma   Turma     @relation(fields: [turmaId], references: [id])
+  nome    String // "Prova 1", "Oral", "Projeto"...
+  peso    Decimal   @default(1) @db.Decimal(5, 2)
+  data    DateTime?
+  criadoEm DateTime @default(now())
+
+  notas Nota[]
+
+  @@unique([turmaId, nome])
+}
+
+model Nota {
+  id          String    @id @default(cuid())
+  avaliacaoId String
+  avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  alunoId     String
+  aluno       Aluno     @relation(fields: [alunoId], references: [id])
+  valor       Decimal   @db.Decimal(5, 2) // 0–100
+  criadoEm    DateTime  @default(now())
+
+  @@unique([avaliacaoId, alunoId])
+}
+
+model TesteNivel {
+  id         String   @id @default(cuid())
+  alunoId    String
+  aluno      Aluno    @relation(fields: [alunoId], references: [id])
+  nivelId    String
+  nivel      Nivel    @relation(fields: [nivelId], references: [id])
+  pontuacao  Decimal? @db.Decimal(5, 2)
+  observacao String?
+  data       DateTime @default(now())
+}
+
+model Certificado {
+  id              String   @id @default(cuid())
+  alunoId         String
+  aluno           Aluno    @relation(fields: [alunoId], references: [id])
+  nivelId         String
+  nivel           Nivel    @relation(fields: [nivelId], references: [id])
+  turmaId         String?
+  // Código PÚBLICO de validação (portal/terceiros conferem a autenticidade).
+  codigoValidacao String   @unique
+  emitidoEm       DateTime @default(now())
 }
