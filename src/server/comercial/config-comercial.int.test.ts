@@ -24,7 +24,14 @@ describe("salvarConfigComercial", () => {
 
     // Fábrica: tudo desligado antes de salvar.
     const antes = await carregarConfigComercial();
-    expect(antes).toEqual({ autoLeadAtivo: false, saudacaoEstado: "DESLIGADA", saudacaoTexto: expect.any(String) });
+    expect(antes).toEqual({
+      autoLeadAtivo: false,
+      saudacaoEstado: "DESLIGADA",
+      saudacaoTexto: expect.any(String),
+      // C3: copiloto também nasce desligado (regra de ouro do doc 27).
+      copilotoAtivo: false,
+      copilotoQuietudeMinutos: 10,
+    });
 
     const r = await salvarConfigComercial({
       autoLeadAtivo: true,
@@ -34,7 +41,13 @@ describe("salvarConfigComercial", () => {
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
 
     const depois = await carregarConfigComercial();
-    expect(depois).toEqual({ autoLeadAtivo: true, saudacaoEstado: "ATIVA", saudacaoTexto: "Oi! Já te respondo." });
+    expect(depois).toEqual({
+      autoLeadAtivo: true,
+      saudacaoEstado: "ATIVA",
+      saudacaoTexto: "Oi! Já te respondo.",
+      copilotoAtivo: false,
+      copilotoQuietudeMinutos: 10,
+    });
 
     const eventos = await eventosDo("ConfigComercial", "comercial");
     expect(eventos.map((e) => e.tipo)).toContain("ConfigComercialAlterada");

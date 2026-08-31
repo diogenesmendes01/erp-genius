@@ -18,6 +18,7 @@ import {
 import { NumerosPainel } from "./NumerosPainel";
 import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
+import { metricasCopiloto } from "@/server/ia/consultas";
 import { ComercialPainel } from "./ComercialPainel";
 import { ReguasComerciaisPainel } from "./ReguaComercialPainel";
 
@@ -34,7 +35,7 @@ export default async function WhatsAppConfigPage() {
   const ehAdmin = papeisTem(papeis, Papel.ADMINISTRADOR);
 
   // Dados administrativos só são buscados para o admin (o gerente comercial vê só o comercial).
-  const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial] =
+  const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial, metricasIA] =
     await Promise.all([
       ehAdmin
         ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores()])
@@ -45,6 +46,7 @@ export default async function WhatsAppConfigPage() {
       listarNumerosVendasResumo(),
       listarTemplatesResumo(),
       carregarEnsaioComercial(),
+      metricasCopiloto(),
     ]);
 
   return (
@@ -56,7 +58,7 @@ export default async function WhatsAppConfigPage() {
           <PoliticaPainel politica={admin[2]} numeros={admin[0]} templates={admin[1]} />
         </>
       )}
-      <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} />
+      <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} metricasCopiloto={metricasIA} />
       <ReguasComerciaisPainel reguas={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} />
     </div>
   );

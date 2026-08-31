@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/consultas";
+import type { MetricaCopilotoTipo } from "@/server/ia/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
@@ -12,17 +13,28 @@ import { salvarConfigComercial } from "@/server/comercial/acoes";
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
+const TIPO_SUGESTAO_LABEL: Record<string, string> = {
+  RESUMO: "Resumo executivo",
+  TEMPERATURA: "Temperatura",
+  SEGMENTO: "Segmento",
+  ETAPA: "Etapa do funil",
+};
+
 export function ComercialPainel({
   config,
   simuladas,
+  metricasCopiloto,
 }: {
   config: ConfigComercialView;
   simuladas: SaudacaoSimulada[];
+  metricasCopiloto: MetricaCopilotoTipo[];
 }) {
   const router = useRouter();
   const [autoLeadAtivo, setAutoLead] = useState(config.autoLeadAtivo);
   const [saudacaoEstado, setSaudacaoEstado] = useState(config.saudacaoEstado);
   const [saudacaoTexto, setTexto] = useState(config.saudacaoTexto);
+  const [copilotoAtivo, setCopiloto] = useState(config.copilotoAtivo);
+  const [copilotoQuietudeMinutos, setQuietude] = useState(config.copilotoQuietudeMinutos);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
@@ -31,7 +43,13 @@ export function ComercialPainel({
     setOcupado(true);
     setErro(null);
     setNota(null);
-    const r = await salvarConfigComercial({ autoLeadAtivo, saudacaoEstado, saudacaoTexto });
+    const r = await salvarConfigComercial({
+      autoLeadAtivo,
+      saudacaoEstado,
+      saudacaoTexto,
+      copilotoAtivo,
+      copilotoQuietudeMinutos,
+    });
     setOcupado(false);
     if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
     setNota("Configuração comercial salva.");
@@ -96,10 +114,79 @@ export function ComercialPainel({
           />
         </div>
 
+        {/* C3 (doc 27): copiloto IA — SÓ-LEITURA (resume/sugere; nunca fala com o lead) */}
+        <div className="border-t border-gray-100 pt-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-brand-600"
+              checked={copilotoAtivo}
+              onChange={(e) => setCopiloto(e.target.checked)}
+            />
+            <span className="text-sm">
+              <span className="font-medium">Copiloto IA (só-leitura)</span>
+              <span className="block text-gray-500">
+                Sugere resumo executivo, temperatura, segmento e mudança de etapa na inbox e na ficha do lead. O
+                vendedor aceita, corrige ou descarta — a IA nunca altera o CRM sozinha e nunca fala com o lead.
+                Sem <code>ANTHROPIC_API_KEY</code> no ambiente, roda uma heurística local (rotulada “simulado”).
+              </span>
+            </span>
+          </label>
+          {copilotoAtivo && (
+            <label className="mt-2 flex items-center gap-2 text-sm">
+              <span className="text-xs font-medium text-gray-600">Analisar conversa quieta após</span>
+              <input
+                type="number"
+                min={1}
+                max={1440}
+                className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
+                value={copilotoQuietudeMinutos}
+                onChange={(e) => setQuietude(Number(e.target.value))}
+              />
+              <span className="text-xs text-gray-500">min sem resposta ao último inbound</span>
+            </label>
+          )}
+        </div>
+
         <button className={btnPri} disabled={ocupado} onClick={salvar}>
           {ocupado ? "Salvando…" : "Salvar configuração comercial"}
         </button>
       </div>
+
+      {/* Métrica-gate (doc 27): taxa de aceitação por tipo — autoriza (ou não) auto-aplicação futura. */}
+      {metricasCopiloto.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1 text-sm font-medium">Copiloto — aceitação por tipo de sugestão</div>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-surface">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-muted text-xs text-gray-500">
+                <tr>
+                  <th className="px-3 py-2 text-left">Tipo</th>
+                  <th className="px-3 py-2 text-right">Aceitas</th>
+                  <th className="px-3 py-2 text-right">Corrigidas</th>
+                  <th className="px-3 py-2 text-right">Descartadas</th>
+                  <th className="px-3 py-2 text-right">Pendentes</th>
+                  <th className="px-3 py-2 text-right">Aceitação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metricasCopiloto.map((m) => (
+                  <tr key={m.tipo} className="border-t border-gray-100">
+                    <td className="px-3 py-2">{TIPO_SUGESTAO_LABEL[m.tipo] ?? m.tipo}</td>
+                    <td className="px-3 py-2 text-right">{m.aceitas}</td>
+                    <td className="px-3 py-2 text-right">{m.corrigidas}</td>
+                    <td className="px-3 py-2 text-right">{m.descartadas}</td>
+                    <td className="px-3 py-2 text-right">{m.pendentes}</td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      {m.taxaAceitacaoPct === null ? "—" : `${m.taxaAceitacaoPct}%`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Ensaio observável (doc 27): o que a saudação TERIA enviado — valida o piloto. */}
       <div className="mt-4">

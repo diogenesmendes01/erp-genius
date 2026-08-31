@@ -116,6 +116,9 @@ export const ConfigComercialSchema = z
     autoLeadAtivo: z.boolean(),
     saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
     saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
+    // C3 (doc 27): copiloto IA só-leitura — nasce desligado (regra de ouro).
+    copilotoAtivo: z.boolean().default(false),
+    copilotoQuietudeMinutos: z.number().int().min(1).max(1440).default(10),
   })
   .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
     message: "Escreva o texto da saudação antes de armá-la.",

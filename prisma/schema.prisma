@@ -56,6 +56,7 @@ model Usuario {
   numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
   intencoesWhatsApp IntencaoMensagem[]  @relation("AutorIntencoesWhatsApp")
+  sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
 }
 
 // ============================================================
@@ -526,6 +527,7 @@ model Lead {
   documentos       Documento[]
   contatosWhatsApp ContatoWhatsApp[]
   intencoesWhatsApp IntencaoMensagem[]
+  sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
 }
@@ -1182,6 +1184,62 @@ model ConfigComercial {
   // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
   // a recuperação de no-show (C2) nunca dispara — o alerta é o que fecha esse ciclo.
   checkInToleranciaMinutos Int @default(30)
+  // C3 (doc 27): IA copiloto SÓ-LEITURA — resume, sugere temperatura/segmento/etapa; um
+  // humano aceita/corrige/descarta. A IA NUNCA fala com o cliente e nasce DESLIGADA.
+  copilotoAtivo            Boolean @default(false)
+  // Gatilho "conversa quieta": ~N min após o último inbound sem resposta do vendedor.
+  copilotoQuietudeMinutos  Int     @default(10)
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
+}
+
+// ============================================================
+// C3 — IA COPILOTO (doc 27): sugestões SÓ-LEITURA sobre o lead. Cada análise (lote) gera
+// até uma sugestão POR TIPO; o vendedor decide uma a uma (aceitar/corrigir/descartar) —
+// é essa decisão que alimenta a MÉTRICA-GATE (taxa de aceitação por tipo), a condição
+// para qualquer auto-aplicação futura. A IA nunca envia mensagem (lei do doc 27).
+// ============================================================
+
+enum TipoSugestaoIA {
+  RESUMO // os 6 campos do resumo executivo (doc 08)
+  TEMPERATURA
+  SEGMENTO
+  ETAPA // só destinos MANUAIS que a máquina de estados aceita (doc 29 regra 7)
+}
+
+enum StatusSugestaoIA {
+  PENDENTE
+  ACEITA
+  CORRIGIDA // aceita com edição — conta separado na métrica
+  DESCARTADA
+  EXPIRADA // superada por um lote mais novo antes de decisão humana
+}
+
+enum GatilhoSugestaoIA {
+  QUIETUDE // conversa quieta ~10min após o último inbound
+  MUDANCA_ETAPA
+  SOB_DEMANDA
+}
+
+model SugestaoIA {
+  id      String            @id @default(cuid())
+  leadId  String
+  lead    Lead              @relation(fields: [leadId], references: [id])
+  loteId  String // agrupa as sugestões geradas numa MESMA análise
+  tipo    TipoSugestaoIA
+  status  StatusSugestaoIA  @default(PENDENTE)
+  gatilho GatilhoSugestaoIA
+  payload Json // { campos sugeridos } — shape por tipo (ver ia/tipos.ts)
+  justificativa String? // por que a IA sugeriu (exibida ao vendedor)
+  modelo  String // "simulado" ou o id do modelo LLM
+  // Idempotência do gatilho QUIETUDE: o inbound que ancorou a análise.
+  ancoraInbound DateTime?
+
+  criadoEm      DateTime  @default(now())
+  decididaEm    DateTime?
+  decididaPorId String?
+  decididaPor   Usuario?  @relation("DecisorSugestoesIA", fields: [decididaPorId], references: [id])
+
+  @@index([leadId, status])
+  @@index([status, criadoEm])
 }

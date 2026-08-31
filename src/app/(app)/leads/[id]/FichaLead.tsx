@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } from "@prisma/client";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { anexarDocumentoLead, arquivarDocumentoLead } from "@/server/comercial/acoes";
+import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
+import type { SugestaoPendente } from "@/server/ia/consultas";
 import {
   ETAPA_LABEL,
   SEGMENTO_LABEL,
@@ -108,10 +110,14 @@ export function FichaLead({
   lead,
   timeline,
   professores = [],
+  sugestoesIA = [],
+  copilotoAtivo = false,
 }: {
   lead: LeadFicha;
   timeline: EventoTimeline[];
   professores?: { id: string; nome: string }[];
+  sugestoesIA?: SugestaoPendente[];
+  copilotoAtivo?: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -186,6 +192,9 @@ export function FichaLead({
       </header>
 
       <ValorOportunidade lead={lead} />
+
+      {/* C3 (doc 27): sugestões do copiloto — só-leitura até o vendedor decidir. */}
+      <CopilotoSugestoes leadId={lead.id} sugestoes={sugestoesIA} copilotoAtivo={copilotoAtivo} />
 
       <BarraAcoes lead={lead} run={run} professores={professores} />
 
