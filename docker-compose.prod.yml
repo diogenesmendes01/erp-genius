@@ -55,6 +55,11 @@ services:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
       # Chave-mestra do envio real: só vira "1" no go-live, depois do piloto (doc 31 §rollout).
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
+      # C3 — copiloto IA (vazio = heurística local "simulado"); modelo opcional.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      IA_MODELO: ${IA_MODELO:-}
+      # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção real.
+      PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
       # Driver oficial (Meta Cloud API)
       META_WA_TOKEN: ${META_WA_TOKEN:-}
       META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
