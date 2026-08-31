@@ -883,3 +883,48 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string): P
     revalidar(leadId);
   });
 }
+
+/**
+ * Gera o link de pagamento pelo GATEWAY (driver ativo — Fase 2) para uma cobrança aberta,
+ * gravando `gatewayRef` (chave da conciliação) + `linkPagamento`/`linkEnviadoEm` (âncora
+ * da régua C4). Substitui o registro manual quando o gateway está disponível.
+ */
+export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Resultado<{ url: string }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const { gatewayAtivo } = await import("@/server/financeiro/gateway");
+    const driver = gatewayAtivo();
+
+    const agora = new Date();
+    const { url, leadId } = await prisma.$transaction(async (tx) => {
+      const cobranca = await tx.cobranca.findUnique({
+        where: { id: cobrancaId },
+        include: { matricula: { select: { leadId: true } } },
+      });
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
+        throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
+
+      const link = await driver.gerarLink({
+        id: cobranca.id,
+        valor: numero(cobranca.valorNegociado),
+        moeda: cobranca.moeda,
+      });
+      await tx.cobranca.update({
+        where: { id: cobrancaId },
+        data: { gatewayRef: link.gatewayRef, linkPagamento: link.url, linkEnviadoEm: agora },
+      });
+      await registrarEvento(tx, {
+        tipo: "LinkPagamentoEnviado",
+        agregadoTipo: "Cobranca",
+        agregadoId: cobrancaId,
+        autorId: autor.id,
+        payload: { quando: agora.toISOString(), via: `gateway_${driver.nome}`, reenvio: cobranca.linkEnviadoEm != null },
+      });
+      return { url: link.url, leadId: cobranca.matricula.leadId };
+    });
+    revalidar(leadId);
+    return { url };
+  });
+}

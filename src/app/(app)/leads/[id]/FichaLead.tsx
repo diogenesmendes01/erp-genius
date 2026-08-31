@@ -6,7 +6,12 @@ import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } fro
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { anexarDocumentoLead, arquivarDocumentoLead } from "@/server/comercial/acoes";
 import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
-import { marcarContratoAssinado, registrarContratoEnviado, registrarLinkPagamento } from "@/server/matricula/acoes";
+import {
+  gerarLinkPagamentoGateway,
+  marcarContratoAssinado,
+  registrarContratoEnviado,
+  registrarLinkPagamento,
+} from "@/server/matricula/acoes";
 import type { SugestaoPendente } from "@/server/ia/consultas";
 import {
   ETAPA_LABEL,
@@ -713,6 +718,15 @@ function FechamentoCard({
           </>
         )}
         {!taxaPaga && matricula.taxa && (
+          <button
+            className={btnSec + " border-brand-300 text-brand-700 hover:bg-brand-50"}
+            title="Gera o link pelo gateway (driver simulado em dev; GreenPay/PIX no futuro) e ancora a régua"
+            onClick={() => run(gerarLinkPagamentoGateway(matricula.taxa!.id))}
+          >
+            Gerar link (gateway)
+          </button>
+        )}
+        {!taxaPaga && matricula.taxa && (
           <span className="flex items-center gap-1">
             <input
               className={inputCls + " w-64"}
@@ -730,6 +744,11 @@ function FechamentoCard({
           </span>
         )}
       </div>
+      {matricula.taxa?.linkPagamento && !taxaPaga && (
+        <p className="mt-2 break-all text-[11px] text-blue-700">
+          Link atual: <a className="underline" href={matricula.taxa.linkPagamento} target="_blank" rel="noreferrer">{matricula.taxa.linkPagamento}</a>
+        </p>
+      )}
       <p className="mt-2 text-[11px] text-blue-700/70">
         Com a matrícula automática ligada (Configuração → WhatsApp → Comercial), contrato assinado + taxa paga
         ativam a matrícula sozinhos; as réguas de contrato/link cuidam do follow-up.

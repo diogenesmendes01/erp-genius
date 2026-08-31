@@ -1,16 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { TipoCobranca, Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
+import { Papel, StatusComissao, FormaPagamento } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ativarSeFechamentoCompletoTx } from "@/server/matricula/acoes";
+import { baixarCobrancaTx } from "./baixa";
 import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
-  acumularPagamento,
   numero,
-  numeroOuNull,
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
@@ -39,59 +37,21 @@ export async function registrarPagamento(
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const dados = PagamentoSchema.parse(input);
 
-    const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
-    if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-    if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");
-    if (cobranca.status === StatusCobranca.CANCELADA)
-      throw new ErroRegra("Cobrança cancelada não recebe pagamento.");
-
-    // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
-    // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.
-    const jaRecebido = numeroOuNull(cobranca.valorRecebido) ?? 0;
-    const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
-      jaRecebido,
-      numero(cobranca.valorNegociado),
-      dados.valorRecebido,
-      dados.permitirExcedente,
+    // Miolo COMPARTILHADO (Fase 2): mesma baixa da conciliação do gateway e da fatura B2B
+    // — acumula parciais, grava evento e dispara a matrícula automática (C4) quando quita
+    // uma taxa. Aqui só ficam a sessão/papéis e a validação de input (schema).
+    await prisma.$transaction((tx) =>
+      baixarCobrancaTx(tx, autor.id, cobrancaId, {
+        valorRecebido: dados.valorRecebido,
+        forma: dados.forma as FormaPagamento,
+        dataPagamento: dados.dataPagamento ?? null,
+        comprovanteUrl: dados.comprovanteUrl ?? null,
+        comprovanteNome: dados.comprovanteNome ?? null,
+        comentario: dados.comentario || null,
+        permitirExcedente: dados.permitirExcedente,
+        via: "manual",
+      }),
     );
-
-    await prisma.$transaction(async (tx) => {
-      await tx.cobranca.update({
-        where: { id: cobrancaId },
-        data: {
-          valorRecebido: recebidoTotal,
-          saldo,
-          status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
-          pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
-          formaPagamento: dados.forma as FormaPagamento,
-          comprovanteUrl: dados.comprovanteUrl ?? null,
-          comprovanteNome: dados.comprovanteNome ?? null,
-          comentario: dados.comentario || null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "PagamentoRegistrado",
-        agregadoTipo: "Cobranca",
-        agregadoId: cobrancaId,
-        autorId: autor.id,
-        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + excedente + comprovante.
-        payload: {
-          valorRecebido: dados.valorRecebido,
-          recebidoAcumulado: recebidoTotal,
-          forma: dados.forma,
-          quitada,
-          saldo,
-          excedente,
-          comprovanteUrl: dados.comprovanteUrl ?? null,
-          comprovanteNome: dados.comprovanteNome ?? null,
-        },
-      });
-      // C4 (doc 27): taxa de matrícula QUITADA é gatilho da matrícula automática —
-      // se o contrato já está OK e a config está ligada, ativa na MESMA transação.
-      if (quitada && cobranca.tipo === TipoCobranca.MATRICULA) {
-        await ativarSeFechamentoCompletoTx(tx, cobranca.matriculaId, autor.id);
-      }
-    });
     revalidatePath("/financeiro");
   });
 }
@@ -127,27 +87,60 @@ export async function registrarCobrancaWhatsApp(
 export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
-    const aprovadas = await prisma.comissao.findMany({ where: { status: StatusComissao.APROVADA } });
-    if (aprovadas.length === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
+    const pagas = await prisma.$transaction((tx) => fecharComissoesAprovadasTx(tx, autor.id));
+    if (pagas === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
+    revalidatePath("/financeiro");
+    return { pagas };
+  });
+}
 
-    const agora = new Date();
+/**
+ * NÚCLEO do fechamento (Fase 2): paga TODAS as comissões APROVADAS. Compartilhado entre a
+ * ação manual (botão "Fechar mês") e o fechamento AUTOMÁTICO do cron (autorId = null).
+ */
+export async function fecharComissoesAprovadasTx(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  autorId: string | null,
+): Promise<number> {
+  const aprovadas = await tx.comissao.findMany({ where: { status: StatusComissao.APROVADA } });
+  const agora = new Date();
+  for (const c of aprovadas) {
+    await tx.comissao.update({
+      where: { id: c.id },
+      data: { status: StatusComissao.PAGA, pagaEm: agora },
+    });
+    await registrarEvento(tx, {
+      tipo: "ComissaoPaga",
+      agregadoTipo: "Comissao",
+      agregadoId: c.id,
+      autorId,
+      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
+    });
+  }
+  return aprovadas.length;
+}
+
+/** Config do financeiro automatizado (Fase 2). Financeiro/Admin; evento auditável. */
+export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomatico: boolean }): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
+    const ligado = !!input.fechamentoComissaoAutomatico;
     await prisma.$transaction(async (tx) => {
-      for (const c of aprovadas) {
-        await tx.comissao.update({
-          where: { id: c.id },
-          data: { status: StatusComissao.PAGA, pagaEm: agora },
-        });
-        await registrarEvento(tx, {
-          tipo: "ComissaoPaga",
-          agregadoTipo: "Comissao",
-          agregadoId: c.id,
-          autorId: autor.id,
-          payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
-        });
-      }
+      const antes = await tx.configFinanceiro.findUnique({ where: { id: "financeiro" } });
+      await tx.configFinanceiro.upsert({
+        where: { id: "financeiro" },
+        create: { id: "financeiro", fechamentoComissaoAutomatico: ligado },
+        update: { fechamentoComissaoAutomatico: ligado },
+      });
+      await registrarEvento(tx, {
+        tipo: "ConfigFinanceiroAlterada",
+        agregadoTipo: "ConfigFinanceiro",
+        agregadoId: "financeiro",
+        autorId: autor.id,
+        payload: { antes: antes?.fechamentoComissaoAutomatico ?? false, depois: ligado },
+      });
     });
     revalidatePath("/financeiro");
-    return { pagas: aprovadas.length };
   });
 }
 
