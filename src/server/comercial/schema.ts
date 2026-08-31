@@ -119,6 +119,8 @@ export const ConfigComercialSchema = z
     // C3 (doc 27): copiloto IA só-leitura — nasce desligado (regra de ouro).
     copilotoAtivo: z.boolean().default(false),
     copilotoQuietudeMinutos: z.number().int().min(1).max(1440).default(10),
+    // C4 (doc 27): matrícula automática (contrato OK + taxa PAGA ativam) — nasce desligada.
+    matriculaAutomaticaAtiva: z.boolean().default(false),
   })
   .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
     message: "Escreva o texto da saudação antes de armá-la.",

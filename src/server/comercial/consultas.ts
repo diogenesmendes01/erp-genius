@@ -19,6 +19,8 @@ export interface ConfigComercialView {
   /** C3 (doc 27): copiloto IA só-leitura — nasce desligado. */
   copilotoAtivo: boolean;
   copilotoQuietudeMinutos: number;
+  /** C4 (doc 27): matrícula automática — nasce desligada. */
+  matriculaAutomaticaAtiva: boolean;
 }
 
 /** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
@@ -30,6 +32,7 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
     saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
     copilotoAtivo: c?.copilotoAtivo ?? false,
     copilotoQuietudeMinutos: c?.copilotoQuietudeMinutos ?? 10,
+    matriculaAutomaticaAtiva: c?.matriculaAutomaticaAtiva ?? false,
   };
 }
 
@@ -262,7 +265,20 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
     include: {
       pais: { select: { id: true, nome: true } },
       vendedor: { select: { id: true, nome: true } },
-      matricula: { select: { id: true, codigo: true, status: true } },
+      matricula: {
+        select: {
+          id: true,
+          codigo: true,
+          status: true,
+          // C4 (fechamento): estado do contrato + taxa (link de pagamento) para a ficha.
+          contratoOk: true,
+          contratoEnviadoEm: true,
+          cobrancas: {
+            where: { tipo: "MATRICULA" },
+            select: { id: true, status: true, linkPagamento: true, linkEnviadoEm: true },
+          },
+        },
+      },
       documentos: { where: { arquivado: false }, orderBy: { criadoEm: "desc" } },
     },
   });

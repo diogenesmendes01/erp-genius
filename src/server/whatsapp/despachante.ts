@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
-import { CHAVE_LEAD_NOVO, CHAVE_NO_SHOW, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
+import {
+  CHAVE_CONTRATO,
+  CHAVE_LEAD_NOVO,
+  CHAVE_LINK_PAGAMENTO,
+  CHAVE_NO_SHOW,
+  CHAVE_PRE_EXPERIMENTAL,
+} from "@/server/comercial/regua-fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
@@ -97,7 +103,8 @@ export async function despacharFila(
       template: true,
       politica: true,
       politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
-      lead: { include: { pais: true } }, // fuso do destino no caminho comercial (S3)
+      // Fuso do destino no caminho comercial (S3) + estado de FECHAMENTO (B7 nas cadências C4).
+      lead: { include: { pais: true, matricula: { include: { cobrancas: { where: { tipo: "MATRICULA" } } } } } },
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
     },
   });
@@ -247,6 +254,16 @@ export async function despacharFila(
         if (lead.etapa !== "NO_SHOW") motivoObsoleta = "etapa_mudou";
         else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
           motivoObsoleta = "ocorrencia_mudou"; // já remarcou: a recuperação era da falta anterior
+      } else if (chave === CHAVE_CONTRATO) {
+        const m = lead.matricula;
+        if (!m || m.status !== "AGUARDANDO" || m.contratoOk) motivoObsoleta = "estado_mudou";
+        else if (m.contratoEnviadoEm?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // contrato reenviado: cadência é do envio novo
+      } else if (chave === CHAVE_LINK_PAGAMENTO) {
+        const m = lead.matricula;
+        const taxa = m?.cobrancas.find((c) => c.linkEnviadoEm?.toISOString() === it.ocorrenciaComercial);
+        if (!m || m.status !== "AGUARDANDO" || !taxa) motivoObsoleta = "estado_mudou";
+        else if (taxa.status !== "PENDENTE") motivoObsoleta = "estado_mudou"; // pagou/cancelou
       }
 
       if (motivoObsoleta) {

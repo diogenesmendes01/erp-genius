@@ -11,7 +11,7 @@ import {
   FormaPagamento,
   PapelResponsavel,
   Prisma,
-} from "@prisma/client";
+ StatusTurma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import {
@@ -470,103 +470,14 @@ async function ativarMatriculaTx(
     },
   });
 
-  // ----- 1ª mensalidade: apenas AGENDADA (não é baixada na ativação) -----
-  // Vencimento = início da 1ª aula + 30 dias, ajustado ao dia escolhido.
-  const venc1 = vencimentoPrimeiraMensalidade(matricula.diaVencimento, dataInicioAula, agora);
-  await tx.cobranca.update({
-    where: { id: primeiraMensalidade.id },
-    data: {
-      competencia: venc1.competencia,
-      vencimento: venc1.data,
-      status: StatusCobranca.PENDENTE,
-    },
+  // O restante da ativação (cronograma, comissão, lead, eventos) é o NÚCLEO compartilhado —
+  // o mesmo que a matrícula AUTOMÁTICA (C4) usa quando contrato + taxa fecham sozinhos.
+  return concluirAtivacaoMatriculaTx(tx, autor.id, matriculaId, {
+    lastro: "TAXA_QUITADA",
+    forma: dados.forma,
+    valorRecebido: dados.valorRecebido,
+    troco: alocacao.troco,
   });
-
-  await tx.matricula.update({
-    where: { id: matriculaId },
-    data: {
-      status: StatusMatricula.ATIVA,
-      contratoOk: true,
-      pagamentoTaxaOk: true,
-      // 1ª mensalidade NÃO é exigida para ativar — apenas agendada.
-      primeiraMensalidadeOk: false,
-      ativadaComPendencia: false,
-      ativadaEm: agora,
-    },
-  });
-
-  // Gera o restante do cronograma de mensalidades (meses 2..N), a partir do mês
-  // de vencimento da 1ª mensalidade.
-  for (let i = 0; i < restante; i++) {
-    const { data, competencia } = vencimentoMes(matricula.diaVencimento, i + 1, venc1.data);
-    await tx.cobranca.create({
-      data: {
-        codigo: codsRestante[i],
-        matriculaId,
-        tipo: TipoCobranca.MENSALIDADE,
-        competencia,
-        valorOriginal: primeiraMensalidade.valorOriginal,
-        valorNegociado: primeiraMensalidade.valorNegociado,
-        moeda: matricula.moeda,
-        vencimento: data,
-        status: StatusCobranca.PENDENTE,
-      },
-    });
-  }
-  if (restante > 0) {
-    await registrarEvento(tx, {
-      tipo: "CobrancaGerada",
-      agregadoTipo: "Matricula",
-      agregadoId: matriculaId,
-      autorId: autor.id,
-      payload: { quantidade: restante, tipo: "MENSALIDADE" },
-    });
-  }
-
-  // Comissão: Pendente → Aprovada (matrícula ativa)
-  for (const com of matricula.comissoes) {
-    await tx.comissao.update({
-      where: { id: com.id },
-      data: { status: StatusComissao.APROVADA },
-    });
-  }
-
-  if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
-    await tx.lead.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
-    // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
-    // `etapaDesde` confiável (issue #15).
-    await registrarEvento(tx, {
-      tipo: "EtapaAlterada",
-      agregadoTipo: "Lead",
-      agregadoId: matricula.leadId,
-      autorId: autor.id,
-      payload: { de: matricula.lead?.etapa ?? null, para: EtapaLead.MATRICULADO },
-    });
-  }
-
-  await registrarEvento(tx, {
-    tipo: "MatriculaAtivada",
-    agregadoTipo: "Matricula",
-    agregadoId: matriculaId,
-    autorId: autor.id,
-    payload: {
-      ativadaEm: agora.toISOString(),
-      lastro: "TAXA_QUITADA",
-      forma: dados.forma,
-      valorRecebido: dados.valorRecebido,
-      taxaValor: numero(taxa.valorNegociado),
-      troco: alocacao.troco,
-      primeiraMensalidadeVencimento: venc1.data.toISOString(),
-    },
-  });
-  await registrarEvento(tx, {
-    tipo: "ComissaoAprovada",
-    agregadoTipo: "Matricula",
-    agregadoId: matriculaId,
-    autorId: autor.id,
-  });
-
-  return { leadId: matricula.leadId };
 }
 
 /**
@@ -653,5 +564,335 @@ export async function criarEAtivarMatricula(
 
     revalidar(res.leadId);
     return { id: res.id, alunoId: res.alunoId };
+  });
+}
+
+/** Dados exibidos no evento MatriculaAtivada (variam entre ativação manual e automática). */
+interface InfoAtivacao {
+  lastro: string;
+  forma: FormaPagamento | null;
+  valorRecebido: number | null;
+  troco?: number;
+}
+
+/**
+ * NÚCLEO da ativação (extraído para a C4): tudo que acontece DEPOIS da taxa quitada —
+ * agenda a 1ª mensalidade, gera o cronograma (meses 2..N), aprova a comissão, move o lead
+ * para MATRICULADO, ativa a matrícula e registra os eventos. Compartilhado entre:
+ *  - `ativarMatricula` (manual: recebe o pagamento E ativa);
+ *  - `ativarSeFechamentoCompletoTx` (automática: contrato OK + taxa PAGA — doc 27 C4).
+ * Pressupõe a taxa JÁ PAGA (o chamador garante o lastro).
+ */
+async function concluirAtivacaoMatriculaTx(
+  tx: Prisma.TransactionClient,
+  autorId: string | null,
+  matriculaId: string,
+  info: InfoAtivacao,
+): Promise<{ leadId: string | null }> {
+  const matricula = await tx.matricula.findUnique({
+    where: { id: matriculaId },
+    include: {
+      cobrancas: { orderBy: { vencimento: "asc" } },
+      comissoes: true,
+      lead: { select: { etapa: true } },
+    },
+  });
+  if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+  if (matricula.status === StatusMatricula.ATIVA) throw new ErroRegra("Matrícula já está ativa.");
+  const taxa = matricula.cobrancas.find((c) => c.tipo === TipoCobranca.MATRICULA);
+  const primeiraMensalidade = matricula.cobrancas.find((c) => c.tipo === TipoCobranca.MENSALIDADE);
+  if (!taxa || !primeiraMensalidade)
+    throw new ErroRegra("Matrícula sem taxa ou mensalidade para receber.");
+
+  // Início da 1ª aula = Turma.dataInicio da turma alocada (quando houver).
+  const alocacaoTurma = await tx.alocacaoTurma.findFirst({
+    where: { alunoId: matricula.alunoId, ativa: true },
+    orderBy: { criadoEm: "desc" },
+    include: { turma: { select: { dataInicio: true } } },
+  });
+  const dataInicioAula = alocacaoTurma?.turma.dataInicio ?? null;
+
+  // Cronograma gerado NA ATIVAÇÃO (doc 09 / P18): meses 2..N (o 1º já existe).
+  const restante = Math.max(0, matricula.mesesPlano - 1);
+  const codsRestante: string[] = [];
+  for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca", tx));
+
+  const agora = new Date();
+
+  // ----- 1ª mensalidade: apenas AGENDADA (não é baixada na ativação) -----
+  // Vencimento = início da 1ª aula + 30 dias, ajustado ao dia escolhido.
+  const venc1 = vencimentoPrimeiraMensalidade(matricula.diaVencimento, dataInicioAula, agora);
+  await tx.cobranca.update({
+    where: { id: primeiraMensalidade.id },
+    data: {
+      competencia: venc1.competencia,
+      vencimento: venc1.data,
+      status: StatusCobranca.PENDENTE,
+    },
+  });
+
+  await tx.matricula.update({
+    where: { id: matriculaId },
+    data: {
+      status: StatusMatricula.ATIVA,
+      contratoOk: true,
+      pagamentoTaxaOk: true,
+      // 1ª mensalidade NÃO é exigida para ativar — apenas agendada.
+      primeiraMensalidadeOk: false,
+      ativadaComPendencia: false,
+      ativadaEm: agora,
+    },
+  });
+
+  // Gera o restante do cronograma de mensalidades (meses 2..N), a partir do mês
+  // de vencimento da 1ª mensalidade.
+  for (let i = 0; i < restante; i++) {
+    const { data, competencia } = vencimentoMes(matricula.diaVencimento, i + 1, venc1.data);
+    await tx.cobranca.create({
+      data: {
+        codigo: codsRestante[i],
+        matriculaId,
+        tipo: TipoCobranca.MENSALIDADE,
+        competencia,
+        valorOriginal: primeiraMensalidade.valorOriginal,
+        valorNegociado: primeiraMensalidade.valorNegociado,
+        moeda: matricula.moeda,
+        vencimento: data,
+        status: StatusCobranca.PENDENTE,
+      },
+    });
+  }
+  if (restante > 0) {
+    await registrarEvento(tx, {
+      tipo: "CobrancaGerada",
+      agregadoTipo: "Matricula",
+      agregadoId: matriculaId,
+      autorId,
+      payload: { quantidade: restante, tipo: "MENSALIDADE" },
+    });
+  }
+
+  // Comissão: Pendente → Aprovada (matrícula ativa)
+  for (const com of matricula.comissoes) {
+    await tx.comissao.update({
+      where: { id: com.id },
+      data: { status: StatusComissao.APROVADA },
+    });
+  }
+
+  if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
+    await tx.lead.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
+    // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
+    // `etapaDesde` confiável (issue #15).
+    await registrarEvento(tx, {
+      tipo: "EtapaAlterada",
+      agregadoTipo: "Lead",
+      agregadoId: matricula.leadId,
+      autorId,
+      payload: { de: matricula.lead?.etapa ?? null, para: EtapaLead.MATRICULADO },
+    });
+  }
+
+  await registrarEvento(tx, {
+    tipo: "MatriculaAtivada",
+    agregadoTipo: "Matricula",
+    agregadoId: matriculaId,
+    autorId,
+    payload: {
+      ativadaEm: agora.toISOString(),
+      lastro: info.lastro,
+      forma: info.forma,
+      valorRecebido: info.valorRecebido,
+      taxaValor: numero(taxa.valorNegociado),
+      troco: info.troco ?? 0,
+      primeiraMensalidadeVencimento: venc1.data.toISOString(),
+    },
+  });
+  await registrarEvento(tx, {
+    tipo: "ComissaoAprovada",
+    agregadoTipo: "Matricula",
+    agregadoId: matriculaId,
+    autorId,
+  });
+
+
+  // C4 (doc 08 §auto-alocação HÍBRIDA): aluno ativado SEM turma → o sistema SUGERE a
+  // melhor turma compatível (idioma+modalidade do produto, nível inicial, com vaga) e o
+  // consultor confirma na ficha do aluno. NUNCA aloca sozinho — a sugestão é evento.
+  if (!alocacaoTurma) {
+    const sugerida = await sugerirTurmaTx(tx, matricula.produtoId, matricula.nivelInicialId);
+    if (sugerida) {
+      await registrarEvento(tx, {
+        tipo: "TurmaSugerida",
+        agregadoTipo: "Matricula",
+        agregadoId: matriculaId,
+        autorId,
+        payload: { turmaId: sugerida.id, codigo: sugerida.codigo, nome: sugerida.nome, alunoId: matricula.alunoId },
+      });
+    }
+  }
+
+  return { leadId: matricula.leadId };
+}
+
+/**
+ * Melhor turma para alocar um aluno recém-ativado: mesmo idioma+modalidade do produto,
+ * mesmo nível inicial (quando informado), com VAGA (alocações ativas < capacidade),
+ * status PLANEJADA/ABERTA. Empate: a que começa antes.
+ */
+async function sugerirTurmaTx(
+  tx: Prisma.TransactionClient,
+  produtoId: string,
+  nivelInicialId: string | null,
+): Promise<{ id: string; codigo: string | null; nome: string | null } | null> {
+  const produto = await tx.produto.findUnique({ where: { id: produtoId } });
+  if (!produto) return null;
+  const turmas = await tx.turma.findMany({
+    where: {
+      modalidadeId: produto.modalidadeId,
+      nivel: { idiomaId: produto.idiomaId, ...(nivelInicialId ? { id: nivelInicialId } : {}) },
+      status: { in: [StatusTurma.PLANEJADA, StatusTurma.ABERTA] },
+    },
+    include: { _count: { select: { alocacoes: { where: { ativa: true } } } } },
+    orderBy: { dataInicio: "asc" },
+  });
+  const comVaga = turmas.find((t) => t._count.alocacoes < t.capacidade);
+  return comVaga ? { id: comVaga.id, codigo: comVaga.codigo, nome: comVaga.nome } : null;
+}
+
+/**
+ * MATRÍCULA AUTOMÁTICA (C4, doc 27): se a config está ligada e o fechamento está completo
+ * (matrícula AGUARDANDO + contrato OK + taxa PAGA), conclui a ativação na MESMA transação
+ * do gatilho (assinatura do contrato ou baixa da taxa). Silenciosa quando incompleta.
+ */
+export async function ativarSeFechamentoCompletoTx(
+  tx: Prisma.TransactionClient,
+  matriculaId: string,
+  autorId: string | null,
+): Promise<{ ativou: boolean; leadId: string | null }> {
+  const config = await tx.configComercial.findUnique({ where: { id: "comercial" } });
+  if (!config?.matriculaAutomaticaAtiva) return { ativou: false, leadId: null };
+
+  const matricula = await tx.matricula.findUnique({
+    where: { id: matriculaId },
+    include: { cobrancas: { where: { tipo: TipoCobranca.MATRICULA } } },
+  });
+  if (!matricula || matricula.status !== StatusMatricula.AGUARDANDO) return { ativou: false, leadId: null };
+  if (!matricula.contratoOk) return { ativou: false, leadId: null };
+  const taxa = matricula.cobrancas[0];
+  if (!taxa || taxa.status !== StatusCobranca.PAGO) return { ativou: false, leadId: null };
+
+  const { leadId } = await concluirAtivacaoMatriculaTx(tx, autorId, matriculaId, {
+    lastro: "FECHAMENTO_AUTOMATICO",
+    forma: taxa.formaPagamento,
+    valorRecebido: numeroOuNull(taxa.valorRecebido),
+  });
+  return { ativou: true, leadId };
+}
+
+// ---------------------------------------------------------------------------
+// C4 — FECHAMENTO (doc 27 Onda 2): contrato e link de pagamento como ESTADO
+// auditável + gatilhos da matrícula automática. A assinatura digital real
+// (DocuSign etc.) é integração futura — o provedor chamará `marcarContratoAssinado`
+// pelo mesmo caminho; hoje quem marca é o humano que conferiu a assinatura.
+// ---------------------------------------------------------------------------
+
+/** Papéis que operam o fechamento: comercial (cria/negocia) + quem ativa (recebe). */
+const PAPEIS_FECHAMENTO: Papel[] = [...PAPEIS_CRIAR, ...PAPEIS_ATIVAR];
+
+/**
+ * Registra que o CONTRATO foi enviado ao cliente — âncora da régua "contrato sem
+ * assinatura" (C4). Reenviar atualiza a âncora (ocorrência nova da cadência).
+ */
+export async function registrarContratoEnviado(matriculaId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const agora = new Date();
+    const leadId = await prisma.$transaction(async (tx) => {
+      const matricula = await tx.matricula.findUnique({ where: { id: matriculaId } });
+      if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+      if (matricula.status !== StatusMatricula.AGUARDANDO)
+        throw new ErroRegra("Só matrícula AGUARDANDO tem contrato em fechamento.");
+      if (matricula.contratoOk) throw new ErroRegra("O contrato desta matrícula já está assinado.");
+      await tx.matricula.update({ where: { id: matriculaId }, data: { contratoEnviadoEm: agora } });
+      await registrarEvento(tx, {
+        tipo: "ContratoEnviado",
+        agregadoTipo: "Matricula",
+        agregadoId: matriculaId,
+        autorId: autor.id,
+        payload: { quando: agora.toISOString(), reenvio: matricula.contratoEnviadoEm != null },
+      });
+      return matricula.leadId;
+    });
+    revalidar(leadId);
+  });
+}
+
+/**
+ * Marca o CONTRATO como assinado (contratoOk) e, com a config de matrícula automática
+ * LIGADA e a taxa já PAGA, conclui a ativação na mesma transação (C4).
+ */
+export async function marcarContratoAssinado(matriculaId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const { leadId, ativou } = await prisma.$transaction(async (tx) => {
+      const matricula = await tx.matricula.findUnique({ where: { id: matriculaId } });
+      if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+      if (matricula.status !== StatusMatricula.AGUARDANDO)
+        throw new ErroRegra("Só matrícula AGUARDANDO tem contrato em fechamento.");
+      if (matricula.contratoOk) throw new ErroRegra("O contrato já está marcado como assinado.");
+      await tx.matricula.update({ where: { id: matriculaId }, data: { contratoOk: true } });
+      await registrarEvento(tx, {
+        tipo: "ContratoAssinado",
+        agregadoTipo: "Matricula",
+        agregadoId: matriculaId,
+        autorId: autor.id,
+        payload: { via: "manual" },
+      });
+      const auto = await ativarSeFechamentoCompletoTx(tx, matriculaId, autor.id);
+      return { leadId: auto.leadId ?? matricula.leadId, ativou: auto.ativou };
+    });
+    revalidar(leadId);
+    return void ativou;
+  });
+}
+
+/**
+ * Registra o LINK DE PAGAMENTO enviado ao cliente (taxa de matrícula) — âncora da régua
+ * "link sem pagamento" (C4). Na Fase 2 o gateway gera o link; aqui pode ser colado
+ * manualmente (Pix copia-e-cola, link do provedor). Reenviar atualiza a âncora.
+ */
+export async function registrarLinkPagamento(cobrancaId: string, url: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const link = url.trim();
+    if (!link) throw new ErroRegra("Informe o link (ou código) de pagamento enviado.");
+    if (link.length > 2048) throw new ErroRegra("Link longo demais.");
+    const agora = new Date();
+    const leadId = await prisma.$transaction(async (tx) => {
+      const cobranca = await tx.cobranca.findUnique({
+        where: { id: cobrancaId },
+        include: { matricula: { select: { leadId: true, status: true } } },
+      });
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
+        throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
+      await tx.cobranca.update({
+        where: { id: cobrancaId },
+        data: { linkPagamento: link, linkEnviadoEm: agora },
+      });
+      await registrarEvento(tx, {
+        tipo: "LinkPagamentoEnviado",
+        agregadoTipo: "Cobranca",
+        agregadoId: cobrancaId,
+        autorId: autor.id,
+        payload: { quando: agora.toISOString(), reenvio: cobranca.linkEnviadoEm != null },
+      });
+      return cobranca.matricula.leadId;
+    });
+    revalidar(leadId);
   });
 }

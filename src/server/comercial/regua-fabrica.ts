@@ -138,6 +138,77 @@ export const CADENCIA_NO_SHOW: readonly DegrauLeadNovoFabrica[] = [
 
 export const ORDEM_PASSOS_NO_SHOW: readonly string[] = CADENCIA_NO_SHOW.map((d) => d.passo);
 
+// ── C4 — FECHAMENTO (doc 27 Onda 2): contrato parado e link de pagamento parado ──────
+
+export const CHAVE_CONTRATO = "CONTRATO_SEM_ASSINATURA";
+export const POLITICA_CONTRATO_NOME = "Contrato sem assinatura";
+
+// ÂNCORA = quando o contrato foi ENVIADO (Matricula.contratoEnviadoEm). Reenviar o
+// contrato abre uma ocorrência nova. Stop: contrato assinado, matrícula ativa/cancelada.
+export const CADENCIA_CONTRATO: readonly DegrauLeadNovoFabrica[] = [
+  {
+    passo: "+48h",
+    offsetMinutos: 2880,
+    rotulo: "48 horas sem assinatura",
+    toleranciaMinutos: 1440,
+    template: "contrato_48h",
+    texto:
+      "Oi {nome}! Seu contrato de matrícula está te esperando. 📄 Ficou alguma dúvida antes de assinar? Estou por aqui para ajudar.",
+  },
+  {
+    passo: "+4d",
+    offsetMinutos: 5760,
+    rotulo: "4 dias sem assinatura",
+    toleranciaMinutos: 1440,
+    template: "contrato_4d",
+    texto: "{nome}, sua vaga fica reservada por tempo limitado. Consigo te ajudar a concluir a assinatura do contrato?",
+  },
+  {
+    passo: "+7d",
+    offsetMinutos: 10080,
+    rotulo: "7 dias sem assinatura",
+    toleranciaMinutos: 2880,
+    template: "contrato_7d",
+    texto: "Oi {nome}! Última lembrança sobre o contrato — se preferir outro caminho para a matrícula, é só me falar. 🙏",
+  },
+] as const;
+
+export const ORDEM_PASSOS_CONTRATO: readonly string[] = CADENCIA_CONTRATO.map((d) => d.passo);
+
+export const CHAVE_LINK_PAGAMENTO = "LINK_PAGAMENTO_SEM_PAGAMENTO";
+export const POLITICA_LINK_PAGAMENTO_NOME = "Link de pagamento sem pagamento";
+
+// ÂNCORA = quando o link foi ENVIADO (Cobranca.linkEnviadoEm da taxa de matrícula).
+// Stop: cobrança paga/cancelada, matrícula deixa de AGUARDAR.
+export const CADENCIA_LINK_PAGAMENTO: readonly DegrauLeadNovoFabrica[] = [
+  {
+    passo: "+24h",
+    offsetMinutos: 1440,
+    rotulo: "1 dia sem pagamento",
+    toleranciaMinutos: 720,
+    template: "link_pagamento_24h",
+    texto: "Oi {nome}! Vi que o pagamento da matrícula ainda não entrou. O link segue válido — precisa de ajuda com ele?",
+  },
+  {
+    passo: "+3d",
+    offsetMinutos: 4320,
+    rotulo: "3 dias sem pagamento",
+    toleranciaMinutos: 1440,
+    template: "link_pagamento_3d",
+    texto: "{nome}, para garantir sua vaga na turma, falta só o pagamento da matrícula. Posso te reenviar o link?",
+  },
+  {
+    passo: "+7d",
+    offsetMinutos: 10080,
+    rotulo: "7 dias sem pagamento",
+    toleranciaMinutos: 2880,
+    template: "link_pagamento_7d",
+    texto: "Oi {nome}! Último lembrete do pagamento da matrícula. Se algo mudou, me conta que a gente encontra uma solução. 😊",
+  },
+] as const;
+
+export const ORDEM_PASSOS_LINK_PAGAMENTO: readonly string[] = CADENCIA_LINK_PAGAMENTO.map((d) => d.passo);
+
 /** Todas as cadências comerciais (seed + loader + UI). */
 export const CADENCIAS_COMERCIAIS = [
   { chave: CHAVE_LEAD_NOVO, nome: POLITICA_LEAD_NOVO_NOME, degraus: CADENCIA_LEAD_NOVO, ordem: ORDEM_PASSOS_LEAD_NOVO },
@@ -148,4 +219,11 @@ export const CADENCIAS_COMERCIAIS = [
     ordem: ORDEM_PASSOS_PRE_EXPERIMENTAL,
   },
   { chave: CHAVE_NO_SHOW, nome: POLITICA_NO_SHOW_NOME, degraus: CADENCIA_NO_SHOW, ordem: ORDEM_PASSOS_NO_SHOW },
+  { chave: CHAVE_CONTRATO, nome: POLITICA_CONTRATO_NOME, degraus: CADENCIA_CONTRATO, ordem: ORDEM_PASSOS_CONTRATO },
+  {
+    chave: CHAVE_LINK_PAGAMENTO,
+    nome: POLITICA_LINK_PAGAMENTO_NOME,
+    degraus: CADENCIA_LINK_PAGAMENTO,
+    ordem: ORDEM_PASSOS_LINK_PAGAMENTO,
+  },
 ] as const;

@@ -54,7 +54,21 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     dataProposta: lead.dataProposta ? lead.dataProposta.toISOString() : null,
     motivoPerda: lead.motivoPerda,
     matricula: lead.matricula
-      ? { id: lead.matricula.id, codigo: lead.matricula.codigo, status: lead.matricula.status }
+      ? {
+          id: lead.matricula.id,
+          codigo: lead.matricula.codigo,
+          status: lead.matricula.status,
+          contratoOk: lead.matricula.contratoOk,
+          contratoEnviadoEm: lead.matricula.contratoEnviadoEm?.toISOString() ?? null,
+          taxa: lead.matricula.cobrancas[0]
+            ? {
+                id: lead.matricula.cobrancas[0].id,
+                status: lead.matricula.cobrancas[0].status,
+                linkPagamento: lead.matricula.cobrancas[0].linkPagamento,
+                linkEnviadoEm: lead.matricula.cobrancas[0].linkEnviadoEm?.toISOString() ?? null,
+              }
+            : null,
+        }
       : null,
     valorPrevisto: numeroOuNull(lead.valorPrevisto),
     planoPrevisto: lead.planoPrevisto,

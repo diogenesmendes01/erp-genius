@@ -6,6 +6,7 @@ import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } fro
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { anexarDocumentoLead, arquivarDocumentoLead } from "@/server/comercial/acoes";
 import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
+import { marcarContratoAssinado, registrarContratoEnviado, registrarLinkPagamento } from "@/server/matricula/acoes";
 import type { SugestaoPendente } from "@/server/ia/consultas";
 import {
   ETAPA_LABEL,
@@ -64,7 +65,14 @@ export interface LeadFicha {
   dataExperimental: string | null;
   dataProposta: string | null;
   motivoPerda: MotivoPerda | null;
-  matricula: { id: string; codigo: string | null; status: string } | null;
+  matricula: {
+    id: string;
+    codigo: string | null;
+    status: string;
+    contratoOk: boolean;
+    contratoEnviadoEm: string | null;
+    taxa: { id: string; status: string; linkPagamento: string | null; linkEnviadoEm: string | null } | null;
+  } | null;
   valorPrevisto: number | null;
   planoPrevisto: string | null;
   comissaoPrevista: number | null;
@@ -197,6 +205,10 @@ export function FichaLead({
       <CopilotoSugestoes leadId={lead.id} sugestoes={sugestoesIA} copilotoAtivo={copilotoAtivo} />
 
       <BarraAcoes lead={lead} run={run} professores={professores} />
+
+      {/* C4 (doc 27): fechamento — contrato + pagamento; com a matrícula automática ligada,
+          contrato OK + taxa paga ativam sozinhos. */}
+      {lead.matricula?.status === "AGUARDANDO" && <FechamentoCard matricula={lead.matricula} run={run} />}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Resumo lead={lead} run={run} />
@@ -645,6 +657,83 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+
+/** C4 — cockpit de FECHAMENTO da matrícula AGUARDANDO (contrato + link de pagamento). */
+function FechamentoCard({
+  matricula,
+  run,
+}: {
+  matricula: NonNullable<LeadFicha["matricula"]>;
+  run: (p: Promise<{ ok: boolean; erro?: string }>) => Promise<void>;
+}) {
+  const [linkUrl, setLinkUrl] = useState("");
+  const taxaPaga = matricula.taxa?.status === "PAGO";
+
+  return (
+    <section className="rounded-lg border border-blue-200 bg-blue-50/50 p-4">
+      <h2 className="mb-2 text-sm font-medium text-blue-800">
+        Fechamento — matrícula {matricula.codigo ?? ""} aguardando
+      </h2>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span
+          className={
+            "rounded-full px-2 py-0.5 font-medium " +
+            (matricula.contratoOk
+              ? "bg-green-100 text-green-700"
+              : matricula.contratoEnviadoEm
+                ? "bg-amber-100 text-amber-700"
+                : "bg-gray-100 text-gray-600")
+          }
+        >
+          Contrato: {matricula.contratoOk ? "assinado" : matricula.contratoEnviadoEm ? "enviado, sem assinatura" : "não enviado"}
+        </span>
+        <span
+          className={
+            "rounded-full px-2 py-0.5 font-medium " +
+            (taxaPaga ? "bg-green-100 text-green-700" : matricula.taxa?.linkEnviadoEm ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600")
+          }
+        >
+          Taxa: {taxaPaga ? "paga" : matricula.taxa?.linkEnviadoEm ? "link enviado, sem pagamento" : "pendente"}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!matricula.contratoOk && (
+          <>
+            <button className={btnSec} onClick={() => run(registrarContratoEnviado(matricula.id))}>
+              {matricula.contratoEnviadoEm ? "Reenviar contrato (nova régua)" : "Marcar contrato enviado"}
+            </button>
+            <button className={btnSec + " border-green-300 text-green-700 hover:bg-green-50"} onClick={() => run(marcarContratoAssinado(matricula.id))}>
+              Contrato assinado
+            </button>
+          </>
+        )}
+        {!taxaPaga && matricula.taxa && (
+          <span className="flex items-center gap-1">
+            <input
+              className={inputCls + " w-64"}
+              placeholder="Link/código de pagamento enviado"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+            />
+            <button
+              className={btnSec}
+              disabled={!linkUrl.trim()}
+              onClick={() => run(registrarLinkPagamento(matricula.taxa!.id, linkUrl))}
+            >
+              {matricula.taxa.linkEnviadoEm ? "Reenviar link" : "Registrar link"}
+            </button>
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-[11px] text-blue-700/70">
+        Com a matrícula automática ligada (Configuração → WhatsApp → Comercial), contrato assinado + taxa paga
+        ativam a matrícula sozinhos; as réguas de contrato/link cuidam do follow-up.
+      </p>
     </section>
   );
 }

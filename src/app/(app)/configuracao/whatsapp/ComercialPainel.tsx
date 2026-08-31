@@ -35,6 +35,7 @@ export function ComercialPainel({
   const [saudacaoTexto, setTexto] = useState(config.saudacaoTexto);
   const [copilotoAtivo, setCopiloto] = useState(config.copilotoAtivo);
   const [copilotoQuietudeMinutos, setQuietude] = useState(config.copilotoQuietudeMinutos);
+  const [matriculaAutomaticaAtiva, setMatriculaAuto] = useState(config.matriculaAutomaticaAtiva);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function ComercialPainel({
       saudacaoTexto,
       copilotoAtivo,
       copilotoQuietudeMinutos,
+      matriculaAutomaticaAtiva,
     });
     setOcupado(false);
     if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
@@ -146,6 +148,25 @@ export function ComercialPainel({
               <span className="text-xs text-gray-500">min sem resposta ao último inbound</span>
             </label>
           )}
+        </div>
+
+        {/* C4 (doc 27): matrícula automática — fechamento sem clique */}
+        <div className="border-t border-gray-100 pt-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-brand-600"
+              checked={matriculaAutomaticaAtiva}
+              onChange={(e) => setMatriculaAuto(e.target.checked)}
+            />
+            <span className="text-sm">
+              <span className="font-medium">Matrícula automática (fechamento C4)</span>
+              <span className="block text-gray-500">
+                Numa matrícula aguardando: contrato assinado + taxa paga ativam sozinhos (cronograma, comissão e
+                lead matriculado). A turma continua híbrida — o sistema sugere, o consultor confirma na ficha do aluno.
+              </span>
+            </span>
+          </label>
         </div>
 
         <button className={btnPri} disabled={ocupado} onClick={salvar}>
