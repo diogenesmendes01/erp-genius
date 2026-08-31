@@ -426,19 +426,6 @@ async function ativarMatriculaTx(
     );
   }
 
-  // Início da 1ª aula = Turma.dataInicio da turma alocada (quando houver).
-  const alocacaoTurma = await tx.alocacaoTurma.findFirst({
-    where: { alunoId: matricula.alunoId, ativa: true },
-    orderBy: { criadoEm: "desc" },
-    include: { turma: { select: { dataInicio: true } } },
-  });
-  const dataInicioAula = alocacaoTurma?.turma.dataInicio ?? null;
-
-  // Cronograma gerado NA ATIVAÇÃO (doc 09 / P18): meses 2..N (o 1º já existe).
-  const restante = Math.max(0, matricula.mesesPlano - 1);
-  const codsRestante: string[] = [];
-  for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca"));
-
   const agora = new Date();
   const dataPagamento = dados.dataPagamento ?? agora;
 
