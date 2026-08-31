@@ -7,7 +7,7 @@ import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import type { FilaCobranca as FilaCobrancaDados } from "@/server/cobrancas/consultas";
-import { fecharMesComissoes, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
+import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
 import { FilaCobranca } from "./FilaCobranca";
 
@@ -71,6 +71,7 @@ export function FinanceiroPainel({
   podeOperarCobranca,
   cotacoes,
   relatorio,
+  configFinanceiro,
   podeGerenciarCambio,
 }: {
   fila: FilaCobrancaDados;
@@ -81,6 +82,7 @@ export function FinanceiroPainel({
   podeOperarCobranca: boolean;
   cotacoes: CotacaoVigente[];
   relatorio: RelatorioDados;
+  configFinanceiro: { fechamentoComissaoAutomatico: boolean };
   podeGerenciarCambio: boolean;
 }) {
   const router = useRouter();
@@ -172,7 +174,12 @@ export function FinanceiroPainel({
       )}
 
       {aba === "comissoes" && (
-        <Comissoes comissoes={comissoes} onFechar={() => run(fecharMesComissoes())} />
+        <Comissoes
+          comissoes={comissoes}
+          onFechar={() => run(fecharMesComissoes())}
+          fechamentoAutomatico={configFinanceiro.fechamentoComissaoAutomatico}
+          onToggleAutomatico={(ligado) => run(salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
+        />
       )}
 
       {aba === "descontos" && <Descontos relatorio={relatorio} />}
@@ -190,15 +197,37 @@ export function FinanceiroPainel({
   );
 }
 
-function Comissoes({ comissoes, onFechar }: { comissoes: ComissaoRow[]; onFechar: () => void }) {
+function Comissoes({
+  comissoes,
+  onFechar,
+  fechamentoAutomatico,
+  onToggleAutomatico,
+}: {
+  comissoes: ComissaoRow[];
+  onFechar: () => void;
+  fechamentoAutomatico: boolean;
+  onToggleAutomatico: (ligado: boolean) => void;
+}) {
   const aPagar = somarPorMoeda(
     comissoes.filter((c) => c.status === StatusComissao.APROVADA).map((c) => ({ moeda: c.moeda, valor: c.valor })),
   );
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
-        <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>
+        <span className="flex items-center gap-3">
+          {/* Fase 2 (doc 03): fechamento MENSAL automático — 1x por mês, no 1º tick do cron. */}
+          <label className="flex items-center gap-1.5 text-xs text-gray-600">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-brand-600"
+              checked={fechamentoAutomatico}
+              onChange={(e) => onToggleAutomatico(e.target.checked)}
+            />
+            Fechamento mensal automático
+          </label>
+          <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>
+        </span>
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <table className="w-full text-sm">
@@ -458,7 +487,7 @@ function CambioPainel({
 }
 
 function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
-  const { descontoPorMoeda, descontoPorVendedor, comissoesPorStatus } = relatorio;
+  const { descontoPorMoeda, descontoPorVendedor, comissoesPorStatus, comissoesPorVendedor } = relatorio;
   const vazio = descontoPorMoeda.length === 0 && comissoesPorStatus.length === 0;
   if (vazio) {
     return (
@@ -498,6 +527,37 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
       </section>
 
       <section>
+        {/* Fase 2 (doc 03 §Comissão): apuração POR VENDEDOR (moeda × status). */}
+        <h2 className="mb-2 text-sm font-medium text-gray-700">Comissão por vendedor</h2>
+        {comissoesPorVendedor.length === 0 ? (
+          <p className="text-sm text-gray-400">Sem comissões.</p>
+        ) : (
+          <div className="mb-6 overflow-hidden rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Vendedor</th>
+                  <th className="px-4 py-2 font-medium">Moeda</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">Total</th>
+                  <th className="px-4 py-2 font-medium">Qtd</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {comissoesPorVendedor.map((c, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-2 font-medium text-gray-700">{c.vendedor}</td>
+                    <td className="px-4 py-2 text-gray-700">{c.moeda}</td>
+                    <td className="px-4 py-2 text-gray-500">{c.status}</td>
+                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
+                    <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <h2 className="mb-2 text-sm font-medium text-gray-700">Desconto por vendedor</h2>
         {descontoPorVendedor.length === 0 ? (
           <p className="text-sm text-gray-400">Sem descontos por vendedor.</p>

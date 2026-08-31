@@ -597,6 +597,9 @@ model Matricula {
   // C4 (doc 27 §fechamento): quando o CONTRATO foi enviado ao cliente — âncora da régua
   // "contrato sem assinatura em 48h". Re-enviar atualiza (abre ocorrência nova da cadência).
   contratoEnviadoEm      DateTime?
+  // B2B (doc 03 Fase 2): matrícula CORPORATIVA — o pagador é a empresa (fatura única).
+  empresaId              String?
+  empresa                Empresa?        @relation(fields: [empresaId], references: [id])
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId         String?
   origemNivel            OrigemNivel?
@@ -631,6 +634,8 @@ enum FormaPagamento {
   GREENPAY
   DINHEIRO
   CARTAO
+  PIX // Fase 2 (doc 03): integrações de pagamento
+  BOLETO
 }
 
 model Cobranca {
@@ -654,6 +659,12 @@ model Cobranca {
   // registrado manualmente (Pix copia-e-cola, link do provedor etc.).
   linkPagamento   String?
   linkEnviadoEm   DateTime?
+  // Fase 2 (gateway por DRIVER): referência opaca no provedor (token da página simulada,
+  // id da cobrança no GreenPay/PIX futuro). Única — é a chave do webhook de conciliação.
+  gatewayRef      String?   @unique
+  // B2B (doc 03 Fase 2): mensalidade de matrícula corporativa agrupada numa FATURA ÚNICA.
+  faturaB2BId     String?
+  faturaB2B       FaturaB2B? @relation(fields: [faturaB2BId], references: [id])
   comprovanteUrl  String?
   comprovanteNome String?
   comentario      String?
@@ -1266,4 +1277,65 @@ model SugestaoIA {
 
   @@index([leadId, status])
   @@index([status, criadoEm])
+}
+
+
+// ============================================================
+// B2B — FASE 2 (doc 03): contrato corporativo · fatura única · matrículas em lote ·
+// relatório por colaborador. A empresa é o PAGADOR das matrículas corporativas; as
+// mensalidades dos colaboradores são agrupadas numa FaturaB2B por competência, e a baixa
+// da fatura baixa as cobranças em lote (mesma máquina de cobrança da Fase 0 por baixo).
+// ============================================================
+
+model Empresa {
+  id              String   @id @default(cuid())
+  codigo          String?  @unique // E-000001
+  nome            String
+  paisId          String?
+  documento       String? // CNPJ/RUC/NIT... conforme o país
+  contatoNome     String?
+  contatoEmail    String?
+  contatoTelefone String?
+  // Termos do CONTRATO CORPORATIVO (fatura única): dia de vencimento e observações.
+  diaVencimento   Int      @default(10)
+  observacoes     String?
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now())
+
+  matriculas Matricula[]
+  faturas    FaturaB2B[]
+}
+
+enum StatusFaturaB2B {
+  ABERTA // agrupando cobranças da competência
+  FECHADA // emitida — aguarda pagamento
+  PAGA
+  CANCELADA
+}
+
+model FaturaB2B {
+  id          String          @id @default(cuid())
+  codigo      String?         @unique // F-000001
+  empresaId   String
+  empresa     Empresa         @relation(fields: [empresaId], references: [id])
+  competencia String // "2026-09"
+  moeda       String
+  valorTotal  Decimal         @db.Decimal(12, 2)
+  status      StatusFaturaB2B @default(ABERTA)
+  vencimento  DateTime
+  pagoEm      DateTime?
+  criadoEm    DateTime        @default(now())
+
+  cobrancas Cobranca[]
+
+  @@unique([empresaId, competencia]) // uma fatura por empresa×mês
+}
+
+// Config do FINANCEIRO automatizado (Fase 2) — singleton, tudo nasce desligado.
+model ConfigFinanceiro {
+  id                            String  @id @default("financeiro")
+  // Fechamento MENSAL de comissões automático (dia 1: paga as APROVADAS do mês anterior).
+  fechamentoComissaoAutomatico  Boolean @default(false)
+  criadoEm                      DateTime @default(now())
+  atualizadoEm                  DateTime @updatedAt
 }

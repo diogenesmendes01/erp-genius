@@ -11,6 +11,7 @@ import {
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { rodarCopilotoQuietude } from "@/server/ia/copiloto";
 import { rodarGestao } from "@/server/whatsapp/cron-gestao";
+import { rodarFechamentoComissoes } from "@/server/financeiro/cron-financeiro";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
 // autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
@@ -57,6 +58,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const copiloto = await seguro("copiloto_quietude", () => rodarCopilotoQuietude(agora));
   // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor.
   const gestao = await seguro("gestao", () => rodarGestao(agora));
+  // Fase 2 (doc 03): fechamento mensal automático de comissões (1x por mês, se ligado).
+  const comissoes = await seguro("fechamento_comissoes", () => rodarFechamentoComissoes(agora));
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
@@ -65,6 +68,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     comercial: { leadNovo, preExperimental, noShow, contrato, linkPagamento, checkInVencido },
     copiloto,
     gestao,
+    comissoes,
     despacho,
   });
 }
