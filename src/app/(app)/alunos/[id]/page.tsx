@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { turmaSugeridaParaAluno } from "@/server/matricula/consultas";
 import { Papel } from "@prisma/client";
 import {
   obterAluno,
@@ -28,6 +29,8 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   if (!dados) notFound();
   const { aluno, financeiro } = dados;
   const turma = aluno.alocacoes[0]?.turma ?? null;
+  // C4 (auto-alocação híbrida): sem turma ativa, mostra a sugestão da ativação (se viva).
+  const turmaSugerida = turma ? null : await turmaSugeridaParaAluno(id);
 
   const ficha: AlunoFicha = {
     id: aluno.id,
@@ -90,7 +93,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   };
 
   return (
-    <FichaAluno
+    <FichaAluno turmaSugerida={turmaSugerida}
       aluno={ficha}
       turmas={turmas}
       paises={paises.map((p) => ({

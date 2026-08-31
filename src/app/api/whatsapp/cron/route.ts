@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
 import {
   rodarCheckInVencido,
+  rodarContratoSemAssinatura,
   rodarLeadNovoSemResposta,
+  rodarLinkPagamentoSemPagamento,
   rodarNoShow,
   rodarPreExperimental,
 } from "@/server/whatsapp/cron-comercial";
@@ -45,6 +47,9 @@ export async function POST(req: Request): Promise<NextResponse> {
   const leadNovo = await seguro("comercial_lead_novo", () => rodarLeadNovoSemResposta(agora));
   const preExperimental = await seguro("comercial_pre_experimental", () => rodarPreExperimental(agora));
   const noShow = await seguro("comercial_no_show", () => rodarNoShow(agora));
+  // C4 (doc 27 §fechamento): contrato parado e link de pagamento parado.
+  const contrato = await seguro("comercial_contrato", () => rodarContratoSemAssinatura(agora));
+  const linkPagamento = await seguro("comercial_link_pagamento", () => rodarLinkPagamentoSemPagamento(agora));
   // B9 (doc 32): alerta de check-in vencido — roda no mesmo tick, independe de política.
   const checkInVencido = await seguro("comercial_checkin_vencido", () => rodarCheckInVencido(agora));
   // C3 (doc 27): gatilho de QUIETUDE do copiloto (~10min sem resposta ao último inbound).
@@ -54,7 +59,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   return NextResponse.json({
     cobranca,
-    comercial: { leadNovo, preExperimental, noShow, checkInVencido },
+    comercial: { leadNovo, preExperimental, noShow, contrato, linkPagamento, checkInVencido },
     copiloto,
     despacho,
   });

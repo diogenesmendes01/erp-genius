@@ -28,9 +28,10 @@ describe("salvarConfigComercial", () => {
       autoLeadAtivo: false,
       saudacaoEstado: "DESLIGADA",
       saudacaoTexto: expect.any(String),
-      // C3: copiloto também nasce desligado (regra de ouro do doc 27).
+      // C3/C4: copiloto e matrícula automática também nascem desligados (regra de ouro).
       copilotoAtivo: false,
       copilotoQuietudeMinutos: 10,
+      matriculaAutomaticaAtiva: false,
     });
 
     const r = await salvarConfigComercial({
@@ -47,6 +48,7 @@ describe("salvarConfigComercial", () => {
       saudacaoTexto: "Oi! Já te respondo.",
       copilotoAtivo: false,
       copilotoQuietudeMinutos: 10,
+      matriculaAutomaticaAtiva: false,
     });
 
     const eventos = await eventosDo("ConfigComercial", "comercial");

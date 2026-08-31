@@ -594,6 +594,9 @@ model Matricula {
   // preços fechada (doc 06 §Em aberto) sem perder a auditoria.
   precoReferenciaAusente Boolean         @default(false)
   justificativaSemPreco  String?
+  // C4 (doc 27 §fechamento): quando o CONTRATO foi enviado ao cliente — âncora da régua
+  // "contrato sem assinatura em 48h". Re-enviar atualiza (abre ocorrência nova da cadência).
+  contratoEnviadoEm      DateTime?
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId         String?
   origemNivel            OrigemNivel?
@@ -646,6 +649,11 @@ model Cobranca {
   status          StatusCobranca  @default(PENDENTE)
   pagoEm          DateTime?
   formaPagamento  FormaPagamento?
+  // C4 (doc 27 §fechamento): link de pagamento enviado ao cliente. `linkEnviadoEm` é a
+  // âncora da régua "link sem pagamento". Na Fase 2 o gateway gera o link; aqui pode ser
+  // registrado manualmente (Pix copia-e-cola, link do provedor etc.).
+  linkPagamento   String?
+  linkEnviadoEm   DateTime?
   comprovanteUrl  String?
   comprovanteNome String?
   comentario      String?
@@ -1189,6 +1197,10 @@ model ConfigComercial {
   copilotoAtivo            Boolean @default(false)
   // Gatilho "conversa quieta": ~N min após o último inbound sem resposta do vendedor.
   copilotoQuietudeMinutos  Int     @default(10)
+  // C4 (doc 27): matrícula AUTOMÁTICA — contrato OK + taxa PAGA numa matrícula AGUARDANDO
+  // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
+  // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
+  matriculaAutomaticaAtiva Boolean @default(false)
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 }

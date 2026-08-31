@@ -627,6 +627,7 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
                 saudacaoTexto: antes.saudacaoTexto,
                 copilotoAtivo: antes.copilotoAtivo,
                 copilotoQuietudeMinutos: antes.copilotoQuietudeMinutos,
+                matriculaAutomaticaAtiva: antes.matriculaAutomaticaAtiva,
               }
             : null,
           depois: dados,

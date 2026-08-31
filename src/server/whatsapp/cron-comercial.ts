@@ -5,7 +5,13 @@ import {
   carregarPoliticaComercial,
   type PoliticaComercialCarregada,
 } from "@/server/comercial/regua-comercial";
-import { CHAVE_LEAD_NOVO, CHAVE_NO_SHOW, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
+import {
+  CHAVE_CONTRATO,
+  CHAVE_LEAD_NOVO,
+  CHAVE_LINK_PAGAMENTO,
+  CHAVE_NO_SHOW,
+  CHAVE_PRE_EXPERIMENTAL,
+} from "@/server/comercial/regua-fabrica";
 import { enfileirarIntencaoComercial } from "./fila";
 import { renderizarTemplate } from "./render";
 
@@ -17,7 +23,9 @@ import { renderizarTemplate } from "./render";
 // Cenários:
 //  - LEAD_NOVO_SEM_RESPOSTA: âncora = 1º inbound do lead (ConversaWhatsApp.capturadaEm);
 //  - PRE_EXPERIMENTAL: âncora = horário da aula (offsets NEGATIVOS: 24h e 2h ANTES);
-//  - NO_SHOW: âncora = horário da aula perdida (check-in do professor marcou NO_SHOW).
+//  - NO_SHOW: âncora = horário da aula perdida (check-in do professor marcou NO_SHOW);
+//  - CONTRATO_SEM_ASSINATURA (C4): âncora = envio do contrato (Matricula.contratoEnviadoEm);
+//  - LINK_PAGAMENTO_SEM_PAGAMENTO (C4): âncora = envio do link (Cobranca.linkEnviadoEm da taxa).
 
 // Etapa em que o lead ainda é "novo sem resposta". Sair dela ENCERRA a cadência (regra
 // transversal do doc 27: mudança de etapa encerra a política). Só NOVO permanece frio —
@@ -278,6 +286,92 @@ export async function rodarNoShow(agora: Date = new Date()): Promise<ResultadoCr
         nome: lead.nome,
         idioma: lead.pais?.idioma ?? "es",
         ancoraEm: lead.dataExperimental,
+        encerrada: false,
+      }];
+    });
+  }, agora);
+}
+
+// ── Cenário 4 (C4): contrato enviado sem assinatura ──────────────────────────
+export async function rodarContratoSemAssinatura(agora: Date = new Date()): Promise<ResultadoCronComercial> {
+  return processarCadencia(CHAVE_CONTRATO, async (_politica, numeroId) => {
+    const conversas = await prisma.conversaWhatsApp.findMany({
+      where: {
+        numeroId,
+        contato: {
+          optOutEm: null,
+          lead: {
+            etapa: { not: EtapaLead.PERDIDO },
+            matricula: { status: "AGUARDANDO", contratoOk: false, contratoEnviadoEm: { not: null } },
+          },
+        },
+      },
+      include: {
+        contato: { include: { lead: { include: { pais: true, matricula: { select: { contratoEnviadoEm: true } } } } } },
+      },
+    });
+
+    return conversas.flatMap((conversa) => {
+      const lead = conversa.contato.lead;
+      const enviadoEm = lead?.matricula?.contratoEnviadoEm;
+      if (!lead || !enviadoEm) return [];
+      return [{
+        leadId: lead.id,
+        contatoId: conversa.contatoId,
+        nome: lead.nome,
+        idioma: lead.pais?.idioma ?? "es",
+        ancoraEm: enviadoEm,
+        // O filtro do WHERE já é a stop-condition (assinou/ativou/cancelou = sai da query);
+        // o despachante revalida no despacho (B7).
+        encerrada: false,
+      }];
+    });
+  }, agora);
+}
+
+// ── Cenário 5 (C4): link de pagamento sem pagamento ──────────────────────────
+export async function rodarLinkPagamentoSemPagamento(agora: Date = new Date()): Promise<ResultadoCronComercial> {
+  return processarCadencia(CHAVE_LINK_PAGAMENTO, async (_politica, numeroId) => {
+    const conversas = await prisma.conversaWhatsApp.findMany({
+      where: {
+        numeroId,
+        contato: {
+          optOutEm: null,
+          lead: {
+            etapa: { not: EtapaLead.PERDIDO },
+            matricula: {
+              status: "AGUARDANDO",
+              cobrancas: { some: { tipo: "MATRICULA", status: "PENDENTE", linkEnviadoEm: { not: null } } },
+            },
+          },
+        },
+      },
+      include: {
+        contato: {
+          include: {
+            lead: {
+              include: {
+                pais: true,
+                matricula: {
+                  include: { cobrancas: { where: { tipo: "MATRICULA" }, select: { linkEnviadoEm: true, status: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return conversas.flatMap((conversa) => {
+      const lead = conversa.contato.lead;
+      const taxa = lead?.matricula?.cobrancas.find((c) => c.status === "PENDENTE" && c.linkEnviadoEm);
+      if (!lead || !taxa?.linkEnviadoEm) return [];
+      return [{
+        leadId: lead.id,
+        contatoId: conversa.contatoId,
+        nome: lead.nome,
+        idioma: lead.pais?.idioma ?? "es",
+        ancoraEm: taxa.linkEnviadoEm,
         encerrada: false,
       }];
     });

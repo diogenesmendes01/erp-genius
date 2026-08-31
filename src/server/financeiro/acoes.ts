@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
+import { TipoCobranca, Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ativarSeFechamentoCompletoTx } from "@/server/matricula/acoes";
 import {
   exigirSessaoComPapel,
   registrarEvento,
@@ -85,6 +86,11 @@ export async function registrarPagamento(
           comprovanteNome: dados.comprovanteNome ?? null,
         },
       });
+      // C4 (doc 27): taxa de matrícula QUITADA é gatilho da matrícula automática —
+      // se o contrato já está OK e a config está ligada, ativa na MESMA transação.
+      if (quitada && cobranca.tipo === TipoCobranca.MATRICULA) {
+        await ativarSeFechamentoCompletoTx(tx, cobranca.matriculaId, autor.id);
+      }
     });
     revalidatePath("/financeiro");
   });
