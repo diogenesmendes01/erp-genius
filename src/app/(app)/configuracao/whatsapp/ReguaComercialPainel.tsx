@@ -9,6 +9,7 @@ import type {
   TemplateResumo,
 } from "@/server/comercial/consultas";
 import { salvarReguaComercial } from "@/server/comercial/acoes";
+import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
@@ -71,6 +72,11 @@ function ReguaComercialPainel({
   const [degraus, setDegraus] = useState<DegrauForm[]>(
     regua.degraus.map((d) => ({ ...d, templateId: d.templateId ?? "" })),
   );
+  // B1 (doc 32): cohort do piloto — allowlist explícita; desligar o modo piloto é go-live.
+  const [modoPiloto, setModoPiloto] = useState(regua.modoPiloto);
+  const [pilotoLeads, setPilotoLeads] = useState(regua.pilotoLeads);
+  const [buscaPiloto, setBuscaPiloto] = useState("");
+  const [opcoesPiloto, setOpcoesPiloto] = useState<{ id: string; nome: string; codigo: string | null }[]>([]);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
@@ -79,6 +85,31 @@ function ReguaComercialPainel({
 
   function editarDegrau(i: number, patch: Partial<DegrauForm>) {
     setDegraus((ds) => ds.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
+  }
+
+  async function buscarLeadsPiloto(q: string) {
+    setBuscaPiloto(q);
+    if (q.trim().length < 2) return setOpcoesPiloto([]);
+    const r = await buscarVinculosInbox(q);
+    if (r.ok && r.dado) {
+      const jaNaLista = new Set(pilotoLeads.map((l) => l.id));
+      setOpcoesPiloto(r.dado.leads.filter((l) => !jaNaLista.has(l.id)));
+    }
+  }
+
+  function adicionarLeadPiloto(l: { id: string; nome: string; codigo: string | null }) {
+    setPilotoLeads((ls) => (ls.some((x) => x.id === l.id) ? ls : [...ls, l]));
+    setBuscaPiloto("");
+    setOpcoesPiloto([]);
+  }
+
+  function alternarModoPiloto(ligado: boolean) {
+    // Desligar o piloto = GO-LIVE GERAL (todos os leads elegíveis do número) — nunca por
+    // clique distraído (B1).
+    if (!ligado && !window.confirm(
+      "Desligar o modo piloto faz esta cadência alcançar TODOS os leads elegíveis do número (go-live geral). Confirmar?",
+    )) return;
+    setModoPiloto(ligado);
   }
 
   async function salvar() {
@@ -92,6 +123,8 @@ function ReguaComercialPainel({
       janelaInicio,
       janelaFim,
       tetoPorContatoDia,
+      modoPiloto,
+      pilotoLeadIds: pilotoLeads.map((l) => l.id),
       degraus: degraus.map((d) => ({
         passo: d.passo,
         offsetMinutos: d.offsetMinutos,
@@ -180,6 +213,72 @@ function ReguaComercialPainel({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* B1 (doc 32): cohort do piloto */}
+        <div className="rounded-md border border-amber-200 bg-amber-50/50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-brand-600"
+                checked={modoPiloto}
+                onChange={(e) => alternarModoPiloto(e.target.checked)}
+              />
+              Modo piloto (cohort restrito)
+            </label>
+            <span className="text-xs text-gray-500">
+              {modoPiloto
+                ? `Só os ${pilotoLeads.length} lead(s) da lista recebem esta cadência.`
+                : "GO-LIVE GERAL: todos os leads elegíveis do número recebem."}
+            </span>
+          </div>
+          {modoPiloto && (
+            <div className="mt-2 space-y-2">
+              {pilotoLeads.length === 0 ? (
+                <p className="text-xs text-amber-700">
+                  Lista vazia = ninguém recebe. Adicione os leads do piloto abaixo.
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-1">
+                  {pilotoLeads.map((l) => (
+                    <li key={l.id} className="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                      {l.codigo ? `${l.codigo} · ` : ""}{l.nome}
+                      <button
+                        aria-label={`Remover ${l.nome} do piloto`}
+                        className="text-gray-400 hover:text-red-600"
+                        onClick={() => setPilotoLeads((ls) => ls.filter((x) => x.id !== l.id))}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="relative">
+                <input
+                  className={inputCls + " w-64"}
+                  placeholder="Buscar lead por nome…"
+                  value={buscaPiloto}
+                  onChange={(e) => buscarLeadsPiloto(e.target.value)}
+                />
+                {opcoesPiloto.length > 0 && (
+                  <ul className="absolute z-10 mt-1 w-64 rounded-md border border-gray-200 bg-surface shadow">
+                    {opcoesPiloto.map((l) => (
+                      <li key={l.id}>
+                        <button
+                          className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50"
+                          onClick={() => adicionarLeadPiloto(l)}
+                        >
+                          {l.codigo ? `${l.codigo} · ` : ""}{l.nome}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <button className={btnPri} disabled={ocupado} onClick={salvar}>

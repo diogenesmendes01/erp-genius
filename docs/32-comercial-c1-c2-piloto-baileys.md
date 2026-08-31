@@ -15,6 +15,23 @@
 Levantados na revisão de prontidão; enquanto abertos, o piloto não começa. Cada um vira item
 dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 
+> **Status (ago/2026): TODOS os bloqueadores B1–B9 estão implementados.**
+> B1 — allowlist na política (`modoPiloto` + `pilotoLeadIds`, migration
+> `piloto_comercial_bloqueadores` + UI no painel da régua; desligar o piloto pede
+> confirmação explícita de go-live). B2 — takeover por TODA saída manual (origem
+> `HUMANO`/`null`) após a âncora, no enfileirador E no despacho. B3 — `validaAte` na
+> intenção (teto duro = horário da aula nos degraus pré-evento) + `toleranciaMinutos` por
+> degrau; o despachante cancela com motivo `validade_expirada`, inclusive itens ADIADOS.
+> B4 — tolerância por degrau (fábrica) + serviço `cron` no `docker-compose.prod.yml` com
+> tick de **5 min**. B5 — ADR **D34** no doc 15 + §S1 do doc 30 reconciliada. B6 — ficha do
+> lead mostra "Origem: não identificada (WhatsApp)" quando não há referral (nunca infere).
+> B7 — revalidação de etapa + ocorrência + takeover no despachante (§5b), cancelando
+> intenções obsoletas (`etapa_mudou`/`ocorrencia_mudou`/`vendedor_assumiu`/
+> `aguardando_reagendamento`). B8 — `Lead.aguardandoReagendamentoEm` pausa a cadência até a
+> remarcação (que limpa o campo). B9 — `rodarCheckInVencido` no tick (evento
+> `ExperimentalCheckInVencido`, idempotente por ocorrência) + alerta vermelho nas Homes do
+> professor e do gerente. Cobertura: `src/server/whatsapp/piloto-bloqueadores.int.test.ts`.
+
 | # | Bloqueador | Onde | Correção |
 |---|---|---|---|
 | B1 | **Sem cohort real.** Ativar uma régua alcança TODOS os leads elegíveis do número — isso é go-live geral, não piloto. | resolvers em [`cron-comercial.ts`](../src/server/whatsapp/cron-comercial.ts) | **Allowlist de leads na política** (decidido): `PoliticaComercial` ganha uma lista explícita de `leadId`s do piloto + UI; o cron só enfileira para leads na allowlist. Migração + tela. |
@@ -56,8 +73,8 @@ dos **portões de entrada** (§2) e/ou dos **critérios de stop** (§6).
 - [ ] Templates (texto livre do Baileys) revisados em **espanhol/português** com variáveis reais.
 - [ ] **Fuso e data/hora** da experimental validados (a janela usa `Aluno/Pais.fuso`; cron em UTC).
 - [ ] Consentimento, **opt-out**, retenção e responsáveis definidos (docs 31 §8: D23/D25/D21).
-- [ ] **Despacho revalida estado** (B7): etapa/ocorrência/takeover conferidos no despachante, não só no enqueue; intenção obsoleta é **cancelada**, não enviada.
-- [ ] **`REAGENDAR` pausa a cadência** (B8): estado "aguardando reagendamento" respeitado pelo cron até ação humana.
+- [x] **Despacho revalida estado** (B7): etapa/ocorrência/takeover conferidos no despachante, não só no enqueue; intenção obsoleta é **cancelada**, não enviada.
+- [x] **`REAGENDAR` pausa a cadência** (B8): estado "aguardando reagendamento" respeitado pelo cron até ação humana.
 - [ ] **Alerta de check-in vencido** (B9) no ar — responsável, tolerância e canal definidos.
 - [ ] **Bloqueadores B1–B9 (§0) fechados** — ou o mitigador operacional aplicado e registrado.
 

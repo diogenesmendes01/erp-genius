@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
-import { rodarLeadNovoSemResposta, rodarNoShow, rodarPreExperimental } from "@/server/whatsapp/cron-comercial";
+import {
+  rodarCheckInVencido,
+  rodarLeadNovoSemResposta,
+  rodarNoShow,
+  rodarPreExperimental,
+} from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
 // autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
-// chama POST 1x+/hora — a idempotência por degrau torna chamadas repetidas inofensivas.
+// chama POST — a idempotência por degrau torna chamadas repetidas inofensivas.
+// CADÊNCIA (B4, doc 32): as réguas COMERCIAIS têm degraus de "+30min" — tick a cada
+// 5–10 min (o serviço `cron` do docker-compose.prod.yml bate a cada 5). Um tick horário
+// transformaria "+30min" em quase "+90min" e estouraria a tolerância dos degraus (B3).
 //
 // UM tick, N enfileiradores ISOLADOS (decisão de arquitetura — doc 27 §Tese): cada cenário
 // (cobrança, lead-novo, e amanhã no-show/proposta) grava intenções na FILA ÚNICA; o
@@ -36,8 +44,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   const leadNovo = await seguro("comercial_lead_novo", () => rodarLeadNovoSemResposta(agora));
   const preExperimental = await seguro("comercial_pre_experimental", () => rodarPreExperimental(agora));
   const noShow = await seguro("comercial_no_show", () => rodarNoShow(agora));
+  // B9 (doc 32): alerta de check-in vencido — roda no mesmo tick, independe de política.
+  const checkInVencido = await seguro("comercial_checkin_vencido", () => rodarCheckInVencido(agora));
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
-  return NextResponse.json({ cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
+  return NextResponse.json({
+    cobranca,
+    comercial: { leadNovo, preExperimental, noShow, checkInVencido },
+    despacho,
+  });
 }

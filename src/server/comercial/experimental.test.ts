@@ -22,6 +22,10 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
     turma: {
       findMany: vi.fn(),
     },
+    // B9 (doc 32): a Home do professor lê a tolerância do check-in vencido.
+    configComercial: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     $transaction: vi.fn(),
   },
   authMock: vi.fn(),

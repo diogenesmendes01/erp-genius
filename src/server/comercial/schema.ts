@@ -94,6 +94,10 @@ export const ReguaComercialSchema = z.object({
   janelaFim: z.number().int().min(1).max(24),
   tetoPorContatoDia: z.number().int().min(1).max(10),
   degraus: z.array(DegrauComercialSchema).min(1),
+  // B1 (doc 32): cohort do piloto. modoPiloto=true (default) restringe o alcance à
+  // allowlist explícita; desligar É o go-live geral — por isso exige confirmação na UI.
+  modoPiloto: z.boolean().default(true),
+  pilotoLeadIds: z.array(z.string().min(1)).max(500, "Allowlist grande demais (máx. 500).").default([]),
 });
 export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
 

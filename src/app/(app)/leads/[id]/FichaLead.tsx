@@ -47,6 +47,10 @@ export interface LeadFicha {
   pais: { nome: string } | null;
   vendedor: { nome: string } | null;
   origemCampanha: string | null;
+  waReferralHeadline: string | null;
+  waReferralSourceType: string | null;
+  /** Lead nasceu de inbound do WhatsApp (auto-captura C1). */
+  capturadoViaWhatsApp: boolean;
   origemAnuncio: string | null;
   interesse: string | null;
   objetivo: string | null;
@@ -140,11 +144,20 @@ export function FichaLead({
           {lead.codigo} · {lead.telefoneE164 ?? "sem telefone"} · {lead.pais?.nome ?? "sem país"} ·
           no funil há {diasNoFunil(lead.criadoEm)}d · dono: {lead.vendedor?.nome ?? "—"}
         </p>
-        {(lead.origemCampanha || lead.origemAnuncio) && (
+        {(lead.origemCampanha || lead.origemAnuncio) ? (
           <p className="mt-1 text-xs text-gray-400">
             Origem: {lead.origemCampanha ?? "—"} {lead.origemAnuncio ? `· ${lead.origemAnuncio}` : ""}
           </p>
-        )}
+        ) : lead.waReferralHeadline || lead.waReferralSourceType ? (
+          <p className="mt-1 text-xs text-gray-400">
+            Origem: {lead.waReferralSourceType === "ad" ? "anúncio" : lead.waReferralSourceType ?? "referral"}
+            {lead.waReferralHeadline ? ` · ${lead.waReferralHeadline}` : ""} (click-to-WhatsApp)
+          </p>
+        ) : lead.capturadoViaWhatsApp ? (
+          // B6 (doc 32): no Baileys o referral de anúncio não é garantido — a origem é
+          // declarada como NÃO IDENTIFICADA (nunca inferida) até o preenchimento manual.
+          <p className="mt-1 text-xs text-gray-400">Origem: não identificada (WhatsApp)</p>
+        ) : null}
 
         {/* Trilha de estágios */}
         <div className="mt-3 flex flex-wrap gap-1">

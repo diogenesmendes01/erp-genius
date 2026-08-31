@@ -28,6 +28,15 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     vendedor: lead.vendedor ? { nome: lead.vendedor.nome } : null,
     origemCampanha: lead.origemCampanha,
     origemAnuncio: lead.origemAnuncio,
+    // B6 (doc 32): origem NUNCA inferida. Referral cru da Meta quando veio; capturado via
+    // WhatsApp sem referral (Baileys) = explicitamente "não identificada".
+    waReferralHeadline: lead.waReferralHeadline,
+    waReferralSourceType: lead.waReferralSourceType,
+    capturadoViaWhatsApp: timeline.some(
+      (ev) =>
+        ev.tipo === "LeadCriado" &&
+        (ev.payload as { origem?: string } | null)?.origem === "whatsapp_inbound",
+    ),
     interesse: lead.interesse,
     objetivo: lead.objetivo,
     urgencia: lead.urgencia,
