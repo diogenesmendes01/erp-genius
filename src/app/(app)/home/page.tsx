@@ -6,10 +6,16 @@ import { HomeVendedor } from "./HomeVendedor";
 import { HomeGerente } from "./HomeGerente";
 import { HomeProfessor } from "./HomeProfessor";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { redirect } from "next/navigation";
 
 export default async function HomePage() {
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina();
+
+  // Fase 3: papel ALUNO vive no PORTAL — a Home interna não é dele.
+  if (usuario.papeis.includes(Papel.ALUNO) && usuario.papeis.length === 1) {
+    redirect("/portal");
+  }
 
   const ehGerente =
     usuario.papeis.includes(Papel.ADMINISTRADOR) ||

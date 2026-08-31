@@ -5,6 +5,9 @@ import { obterTurma } from "@/server/alunos/consultas";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
 import { nomeCompleto } from "@/lib/nome";
+import { diarioDaTurma, progressaoDaTurma } from "@/server/academico/consultas";
+import { temPapel } from "@/server/_shared";
+import { TurmaAcademico } from "./TurmaAcademico";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,6 +22,11 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
   const turma = await obterTurma(id, usuario);
   if (!turma) notFound();
   const vagas = turma.capacidade - turma.alocacoes.length;
+
+  // Fase 3 (acadêmico): diário, avaliações e progressão sugerida da turma.
+  const [diario, progressao] = await Promise.all([diarioDaTurma(id), progressaoDaTurma(id)]);
+  const podeEditar = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
+  const podeAprovar = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,6 +74,15 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
           </tbody>
         </table>
       </section>
+
+      {/* Fase 3 — acadêmico da turma (frequência · notas · progressão) */}
+      <TurmaAcademico
+        turmaId={id}
+        diario={diario}
+        progressao={progressao}
+        podeEditar={podeEditar}
+        podeAprovar={podeAprovar}
+      />
     </div>
   );
 }

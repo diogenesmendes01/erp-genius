@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
 import { turmaSugeridaParaAluno } from "@/server/matricula/consultas";
+import { listarNiveis } from "@/server/turmas/consultas";
+import { prisma } from "@/lib/prisma";
+import { AcademicoAluno } from "./AcademicoAluno";
 import { Papel } from "@prisma/client";
 import {
   obterAluno,
@@ -31,6 +34,13 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   const turma = aluno.alocacoes[0]?.turma ?? null;
   // C4 (auto-alocação híbrida): sem turma ativa, mostra a sugestão da ativação (se viva).
   const turmaSugerida = turma ? null : await turmaSugeridaParaAluno(id);
+  // Fase 3 (acadêmico): testes de nível, certificados e acesso ao portal.
+  const [niveis, testes, certificados, alunoPortal] = await Promise.all([
+    listarNiveis(),
+    prisma.testeNivel.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { data: "desc" } }),
+    prisma.certificado.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { emitidoEm: "desc" } }),
+    prisma.aluno.findUnique({ where: { id }, select: { usuarioId: true } }),
+  ]);
 
   const ficha: AlunoFicha = {
     id: aluno.id,
@@ -93,6 +103,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   };
 
   return (
+    <div className="flex flex-col gap-6">
     <FichaAluno turmaSugerida={turmaSugerida}
       aluno={ficha}
       turmas={turmas}
@@ -103,5 +114,23 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       }))}
       podeMovimentar={podeMovimentarAluno(usuario)}
     />
+    <AcademicoAluno
+      alunoId={id}
+      niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}
+      testes={testes.map((t) => ({
+        id: t.id,
+        nivel: `${t.nivel.idioma.nome} ${t.nivel.codigo}`,
+        pontuacao: t.pontuacao !== null ? Number(t.pontuacao) : null,
+        dataISO: t.data.toISOString(),
+      }))}
+      certificados={certificados.map((c) => ({
+        nivel: `${c.nivel.idioma.nome} ${c.nivel.codigo}`,
+        codigoValidacao: c.codigoValidacao,
+        emitidoEmISO: c.emitidoEm.toISOString(),
+      }))}
+      temAcessoPortal={!!alunoPortal?.usuarioId}
+      podeEditar={podeMovimentarAluno(usuario)}
+    />
+    </div>
   );
 }
