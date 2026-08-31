@@ -183,6 +183,9 @@ export interface LeadNaThread {
   etapa: string;
   temperatura: string;
   dataExperimental: string | null;
+  /** C3 (doc 27): sugestões pendentes do copiloto + estado da config (render do cockpit). */
+  sugestoesIA: import("@/server/ia/consultas").SugestaoPendente[];
+  copilotoAtivo: boolean;
   /** Destinos MANUAIS válidos a partir da etapa atual (máquina de estados — doc 10 §1). */
   etapasPermitidas: string[];
   /** Comentários da equipe — nunca enviados ao contato. */
@@ -329,12 +332,24 @@ async function leadNaThread(lead: {
     include: { autor: { select: { nome: true } } },
   });
 
+  // C3 (doc 27): sugestões pendentes do copiloto entram no cockpit da thread.
+  const [{ sugestoesPendentesDoLead }, { carregarConfigComercial }] = await Promise.all([
+    import("@/server/ia/consultas"),
+    import("@/server/comercial/consultas"),
+  ]);
+  const [sugestoesIA, configComercial] = await Promise.all([
+    sugestoesPendentesDoLead(lead.id),
+    carregarConfigComercial(),
+  ]);
+
   return {
     id: lead.id,
     nome: lead.nome,
     etapa: lead.etapa,
     temperatura: lead.temperatura,
     dataExperimental: lead.dataExperimental?.toISOString() ?? null,
+    sugestoesIA,
+    copilotoAtivo: configComercial.copilotoAtivo,
     etapasPermitidas: ETAPAS_MANUAIS.filter(
       (destino) => destino !== lead.etapa && transicaoManualPermitida(lead.etapa, destino),
     ),

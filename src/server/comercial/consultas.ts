@@ -16,6 +16,9 @@ export interface ConfigComercialView {
   autoLeadAtivo: boolean;
   saudacaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
   saudacaoTexto: string;
+  /** C3 (doc 27): copiloto IA só-leitura — nasce desligado. */
+  copilotoAtivo: boolean;
+  copilotoQuietudeMinutos: number;
 }
 
 /** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
@@ -25,6 +28,8 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
     autoLeadAtivo: c?.autoLeadAtivo ?? false,
     saudacaoEstado: c?.saudacaoEstado ?? "DESLIGADA",
     saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
+    copilotoAtivo: c?.copilotoAtivo ?? false,
+    copilotoQuietudeMinutos: c?.copilotoQuietudeMinutos ?? 10,
   };
 }
 
