@@ -74,7 +74,10 @@ export async function despacharFila(
   const politicaPadrao = await carregarPoliticaRegua();
   // Shadow PRÓPRIO da saudação (review PR #53 · doc 27): a classe reativa não olha o estado
   // da política de COBRANÇA — o ensaio dela é o saudacaoEstado da ConfigComercial.
-  const saudacaoEstado = (await prisma.configComercial.findUnique({ where: { id: "comercial" } }))?.saudacaoEstado ?? "DESLIGADA";
+  const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const saudacaoEstado = configComercial?.saudacaoEstado ?? "DESLIGADA";
+  // C5: shadow PRÓPRIO das mensagens de GESTÃO (alerta SLA/relatório do gestor).
+  const gestaoEstado = configComercial?.gestaoEstado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
@@ -147,6 +150,10 @@ export async function despacharFila(
     // Baileys por decisão de produto); shadow pela SUA política (não a de cobrança); janela/
     // teto/silêncio VALEM (é disparo proativo). Kill switch de cobrança a congela também.
     const comercial = it.leadId != null && it.passoComercial != null;
+    // C5 (doc 27): mensagem para a EQUIPE (gestor) — não é conversa de cliente. Isenta de
+    // janela/teto/silêncio/conversa-viva; segue automática (kill switch congela) e com
+    // shadow próprio (gestaoEstado). Nunca associada a lead/cobrança.
+    const gestao = it.origem === "GESTAO";
 
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
@@ -189,7 +196,7 @@ export async function despacharFila(
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
     //    contato posterior à criação da intenção cancela a intenção automática.
-    if (automatica && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
+    if (automatica && !gestao && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
       await marcar(it.id, "CANCELADA", "conversa_viva");
       r.canceladas += 1;
       continue;
@@ -320,7 +327,7 @@ export async function despacharFila(
     //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
-    if (automatica && !reativa) {
+    if (automatica && !reativa && !gestao) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
@@ -340,7 +347,7 @@ export async function despacharFila(
 
     // 8. Janela de horário + dias da semana (S3), no FUSO DO CONTATO (Aluno.fuso ?? Pais.fuso).
     //    Reativa é isenta: uma saudação "em segundos" não pode esperar o horário comercial.
-    if (automatica && !reativa) {
+    if (automatica && !reativa && !gestao) {
       const fuso = fusoDoDestino(it);
       const hora = horaLocal(agora, fuso);
       const dia = diaSemanaLocal(agora, fuso);
@@ -361,7 +368,8 @@ export async function despacharFila(
     // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
     const shadow =
       !live ||
-      (automatica && !reativa && politica.estado !== "ATIVA") ||
+      (gestao && gestaoEstado !== "ATIVA") ||
+      (automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
       (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({

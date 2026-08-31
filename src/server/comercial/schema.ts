@@ -121,10 +121,29 @@ export const ConfigComercialSchema = z
     copilotoQuietudeMinutos: z.number().int().min(1).max(1440).default(10),
     // C4 (doc 27): matrícula automática (contrato OK + taxa PAGA ativam) — nasce desligada.
     matriculaAutomaticaAtiva: z.boolean().default(false),
+    // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor. Nasce desligada.
+    gestaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]).default("DESLIGADA"),
+    gestaoTelefoneE164: z
+      .string()
+      .trim()
+      .max(20)
+      .optional()
+      .transform((v) => (v ? v : null)),
+    gestaoNumeroId: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v ? v : null)),
+    gestaoSlaMinutos: z.number().int().min(5).max(1440).default(30),
+    gestaoRelatorioHora: z.number().int().min(0).max(23).default(19),
   })
   .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
     message: "Escreva o texto da saudação antes de armá-la.",
     path: ["saudacaoTexto"],
+  })
+  .refine((c) => c.gestaoEstado === "DESLIGADA" || (!!c.gestaoTelefoneE164 && !!c.gestaoNumeroId), {
+    message: "Armar a gestão exige o WhatsApp do gestor e um número remetente.",
+    path: ["gestaoTelefoneE164"],
   });
 export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;
 

@@ -855,6 +855,7 @@ model NumeroWhatsApp {
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
   politicasComerciais PoliticaComercial[]
+  configsGestao       ConfigComercial[]   @relation("NumeroGestao") // C5: remetente das msgs do gestor
 
   // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
@@ -930,6 +931,7 @@ enum StatusMensagem {
 }
 
 enum OrigemEnvio {
+  GESTAO // C5 (doc 27): mensagens do sistema para a EQUIPE (alerta de SLA, relatório do gestor)
   HUMANO
   CRON
   LOTE
@@ -1201,6 +1203,16 @@ model ConfigComercial {
   // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
   // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
   matriculaAutomaticaAtiva Boolean @default(false)
+  // C5 (doc 27): GESTÃO — alerta de SLA + relatório diário no WhatsApp do gestor.
+  // Shadow próprio (DESLIGADA/SHADOW/ATIVA — nasce DESLIGADA); mensagens saem pela MESMA
+  // outbox/despachante com origem GESTAO (isentas de janela/teto/silêncio: são para a
+  // equipe, não para clientes; o kill switch global congela também).
+  gestaoEstado        EstadoPolitica @default(DESLIGADA)
+  gestaoTelefoneE164  String? // WhatsApp do gestor (destino)
+  gestaoNumeroId      String? // número remetente (vendas)
+  gestaoNumero        NumeroWhatsApp? @relation("NumeroGestao", fields: [gestaoNumeroId], references: [id])
+  gestaoSlaMinutos    Int            @default(30) // lead NOVO parado além disto = alerta
+  gestaoRelatorioHora Int            @default(19) // hora (do servidor) do relatório diário
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 }

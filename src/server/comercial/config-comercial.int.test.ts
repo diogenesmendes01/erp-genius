@@ -32,6 +32,11 @@ describe("salvarConfigComercial", () => {
       copilotoAtivo: false,
       copilotoQuietudeMinutos: 10,
       matriculaAutomaticaAtiva: false,
+      gestaoEstado: "DESLIGADA",
+      gestaoTelefoneE164: null,
+      gestaoNumeroId: null,
+      gestaoSlaMinutos: 30,
+      gestaoRelatorioHora: 19,
     });
 
     const r = await salvarConfigComercial({
@@ -49,6 +54,11 @@ describe("salvarConfigComercial", () => {
       copilotoAtivo: false,
       copilotoQuietudeMinutos: 10,
       matriculaAutomaticaAtiva: false,
+      gestaoEstado: "DESLIGADA",
+      gestaoTelefoneE164: null,
+      gestaoNumeroId: null,
+      gestaoSlaMinutos: 30,
+      gestaoRelatorioHora: 19,
     });
 
     const eventos = await eventosDo("ConfigComercial", "comercial");
