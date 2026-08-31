@@ -392,6 +392,9 @@ export async function agendarExperimental(
           // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
           // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
           experimentalConfirmadaEm: null,
+          // B8 (doc 32): remarcar É a ação humana que o pedido de REAGENDAR esperava —
+          // libera a cadência pré-experimental para a ocorrência nova.
+          aguardandoReagendamentoEm: null,
         },
       });
       await registrarEvento(tx, {
@@ -694,6 +697,17 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
       }
     }
 
+    // B1: allowlist só com leads que EXISTEM (id colado errado não vira lead fantasma que
+    // "some" do piloto em silêncio) — e sem duplicatas.
+    const idsUnicos = [...new Set(dados.pilotoLeadIds)];
+    const leadsExistentes = idsUnicos.length
+      ? await prisma.lead.findMany({ where: { id: { in: idsUnicos } }, select: { id: true } })
+      : [];
+    if (leadsExistentes.length !== idsUnicos.length) {
+      throw new ErroRegra("A allowlist do piloto contém leads inexistentes.");
+    }
+    const leadIdsValidos = leadsExistentes.map((l) => l.id);
+
     await prisma.$transaction(async (tx) => {
       const existente = await tx.politicaComercial.findUnique({
         where: { chave: dados.chave },
@@ -711,6 +725,9 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
           janelaInicio: dados.janelaInicio,
           janelaFim: dados.janelaFim,
           tetoPorContatoDia: dados.tetoPorContatoDia,
+          // B1 (doc 32): cohort do piloto — allowlist explícita; ids inexistentes caem fora.
+          modoPiloto: dados.modoPiloto,
+          pilotoLeadIds: leadIdsValidos,
         },
       });
       for (const d of dados.degraus) {

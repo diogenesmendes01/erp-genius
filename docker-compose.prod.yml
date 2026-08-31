@@ -100,6 +100,23 @@ services:
       db:
         condition: service_healthy
 
+  # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min — degraus de
+  # "+30min" (C1/C2) não sobrevivem a um tick horário (virariam ~"+90min" e estourariam a
+  # tolerância/validade dos degraus). Idempotente: chamadas repetidas são inofensivas.
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    command: >-
+      sh -c 'while true; do
+        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron
+          -o /dev/null -w "cron tick %{http_code}\n" || true;
+        sleep 300;
+      done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+    depends_on:
+      - app
+
   # Única borda pública: TLS automático (Let's Encrypt) para o app — webhook da Meta
   # exige HTTPS válido. Evolution NÃO passa por aqui.
   caddy:

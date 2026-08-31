@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
+import { CHAVE_LEAD_NOVO, CHAVE_NO_SHOW, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
@@ -165,6 +166,15 @@ export async function despacharFila(
       continue;
     }
 
+    // 3b. VALIDADE (B3, doc 32): intenção com prazo vencido é CANCELADA, nunca enviada —
+    //     inclusive as ADIADAS por janela/silêncio/kill switch. É o que impede o lembrete
+    //     "-2h" de sair DEPOIS da aula e o degrau "+30min" de sair no dia seguinte.
+    if (it.validaAte && agora > it.validaAte) {
+      await marcar(it.id, "CANCELADA", "validade_expirada");
+      r.canceladas += 1;
+      continue;
+    }
+
     const conversa = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
       select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
@@ -199,6 +209,49 @@ export async function despacharFila(
       if (agora < limite) {
         await adiar(it.id, limite, "silencio_pos_inbound");
         r.adiadas += 1;
+        continue;
+      }
+    }
+
+    // 5b. REVALIDAÇÃO NO DESPACHO (B7, doc 32): o despacho não pode confiar no snapshot do
+    //     enqueue. Uma intenção PENDENTE/ADIADA dispararia mesmo que, DEPOIS do enqueue, o
+    //     lead tenha avançado de etapa, o vendedor assumido (B2) ou a experimental sido
+    //     reagendada — aqui a etapa + a ocorrência + o takeover são conferidos de novo, e a
+    //     intenção obsoleta é CANCELADA em vez de enviada.
+    if (comercial && it.lead) {
+      const chave = chaveComercial(it);
+      const lead = it.lead;
+      let motivoObsoleta: string | null = null;
+
+      if (chave === CHAVE_LEAD_NOVO) {
+        if (lead.etapa !== "NOVO") motivoObsoleta = "etapa_mudou";
+        else if (conversa && it.ocorrenciaComercial) {
+          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox) e
+          // origem null (fromMe: app do celular) — significa "vendedor assumiu".
+          const manuais = await prisma.mensagemWhatsApp.count({
+            where: {
+              conversaId: conversa.id,
+              direcao: "SAIDA",
+              OR: [{ origem: "HUMANO" }, { origem: null }],
+              criadoEm: { gt: new Date(it.ocorrenciaComercial) },
+            },
+          });
+          if (manuais > 0) motivoObsoleta = "vendedor_assumiu";
+        }
+      } else if (chave === CHAVE_PRE_EXPERIMENTAL) {
+        if (lead.etapa !== "EXPERIMENTAL_AGENDADA") motivoObsoleta = "etapa_mudou";
+        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // aula reagendada: o lembrete era da anterior
+        else if (lead.aguardandoReagendamentoEm) motivoObsoleta = "aguardando_reagendamento"; // B8
+      } else if (chave === CHAVE_NO_SHOW) {
+        if (lead.etapa !== "NO_SHOW") motivoObsoleta = "etapa_mudou";
+        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // já remarcou: a recuperação era da falta anterior
+      }
+
+      if (motivoObsoleta) {
+        await marcar(it.id, "CANCELADA", motivoObsoleta);
+        r.canceladas += 1;
         continue;
       }
     }

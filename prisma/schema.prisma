@@ -508,6 +508,11 @@ model Lead {
   // reagendamento já vem dos eventos `ExperimentalAgendada` repetidos — não precisa coluna.
   experimentalConfirmadaEm DateTime?
 
+  // B8 (doc 32): o lead pediu REAGENDAR — a cadência pré-experimental fica PAUSADA até a
+  // ação humana (o vendedor remarcar limpa o campo em `agendarExperimental`). Sem estado
+  // persistido, o tick seguinte re-enfileirava o próximo degrau por cima do pedido.
+  aguardandoReagendamentoEm DateTime?
+
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
@@ -1004,6 +1009,11 @@ model IntencaoMensagem {
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
   atualizadoEm    DateTime          @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
   despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
+  // B3 (doc 32): VALIDADE do disparo — intenção pré-evento (lembrete -24h/-2h) não pode
+  // sair depois da aula, nem um degrau atrasado além da tolerância. O despachante CANCELA
+  // (nunca envia) quando `agora > validaAte`, inclusive itens ADIADOS por janela/silêncio/
+  // kill switch. NULL = sem validade (comportamento de backlog da cobrança).
+  validaAte       DateTime?
   despachadaEm    DateTime?
   motivoFalha     String? // sem_destino, driver, opt_out... — estampado na fila humana
   mensagemId      String?           @unique
@@ -1127,6 +1137,13 @@ model PoliticaComercial {
   silencioPosInboundHoras Int               @default(72)
   numeroRemetenteId       String?
   numeroRemetente         NumeroWhatsApp?   @relation(fields: [numeroRemetenteId], references: [id])
+
+  // B1 (doc 32): COHORT REAL do piloto. Em modo piloto (default — regra de ouro), o cron
+  // só enfileira para leads da allowlist explícita; lista vazia = ninguém. Desligar o modo
+  // piloto é o go-live geral da cadência — decisão explícita do gerente, nunca acidente.
+  modoPiloto    Boolean  @default(true)
+  pilotoLeadIds String[] @default([])
+
   criadoEm                DateTime          @default(now())
   atualizadoEm            DateTime          @updatedAt
 
@@ -1142,6 +1159,9 @@ model DegrauComercial {
   offsetMinutos Int // minutos após a âncora (1º inbound do lead)
   rotulo       String
   ativo        Boolean           @default(true)
+  // B3/B4 (doc 32): tolerância MÁXIMA de atraso do degrau, em minutos — além dela o
+  // disparo perde sentido e a intenção é cancelada via `validaAte`. NULL = sem limite.
+  toleranciaMinutos Int?
   templateId   String?
   template     TemplateWhatsApp? @relation(fields: [templateId], references: [id])
 
@@ -1157,6 +1177,11 @@ model ConfigComercial {
   // enviado, sem enviar) · ATIVA. Reusa o enum das políticas de cobrança.
   saudacaoEstado EstadoPolitica @default(DESLIGADA)
   saudacaoTexto  String         @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
+  // B9 (doc 32): tolerância (minutos após o horário da aula) para o professor registrar o
+  // check-in da experimental. Vencida a tolerância sem check-in: evento
+  // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
+  // a recuperação de no-show (C2) nunca dispara — o alerta é o que fecha esse ciclo.
+  checkInToleranciaMinutos Int @default(30)
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 }
