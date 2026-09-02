@@ -8,6 +8,7 @@ import {
   TipoAprovacao,
   StatusAprovacao,
   StatusCobranca,
+  StatusFaturaB2B,
   Vigencia,
   TipoCobranca,
 } from "@prisma/client";
@@ -102,6 +103,18 @@ async function aplicarAjuste(
     select: { id: true, tipo: true, vencimento: true, status: true },
   });
   const alvos = cobrancasAlvo(cobranca, todas, vigencia);
+
+  // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): mudar valor/perdoar
+  // aqui deixaria o documento fechado divergente do liquidado. Cancele a fatura antes.
+  const faturada = await tx.cobranca.findFirst({
+    where: { id: { in: alvos }, faturaB2B: { status: StatusFaturaB2B.FECHADA } },
+    include: { faturaB2B: { select: { codigo: true } } },
+  });
+  if (faturada) {
+    throw new ErroRegra(
+      `A cobrança ${faturada.codigo ?? faturada.id} está na fatura B2B ${faturada.faturaB2B?.codigo ?? ""} (fechada) — cancele a fatura antes de ajustar.`,
+    );
+  }
 
   for (const id of alvos) {
     await tx.cobranca.update({

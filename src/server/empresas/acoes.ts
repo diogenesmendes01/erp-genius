@@ -308,31 +308,39 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
       if (!fatura) throw new ErroRegra("Fatura não encontrada.");
       if (fatura.status !== StatusFaturaB2B.FECHADA) throw new ErroRegra("Só fatura FECHADA recebe pagamento.");
 
-      // RECONCILIAÇÃO (review PR #60): os itens seguem mutáveis por outros fluxos depois do
-      // fechamento — cobrança CANCELADA (aluno pausado) é PULADA (nunca trava a fatura
-      // inteira) e cada item vivo é baixado pelo saldo aberto ATUAL. Divergências entre o
-      // documento (valorTotal/snapshot) e o efetivamente baixado ficam auditadas no evento.
+      // RECONCILIAÇÃO ESTRITA (review PR #60 rodada 2): a fatura só vira PAGA se a
+      // liquidação COBRIR o documento — cada item vivo é baixado exatamente pelo snapshot
+      // `valorFaturado` e a soma precisa fechar com `valorTotal`. Item cancelado/baixado
+      // fora da fatura (mutações agora bloqueadas na origem; estado legado/fora de banda)
+      // NÃO é pulado em silêncio: o caminho formal é cancelar a fatura e fechá-la de novo
+      // (reemissão), que recompõe o documento sem o item.
+      const divergente = (motivo: string) =>
+        new ErroRegra(
+          `${motivo} — a fatura diverge do documento fechado. Cancele a fatura e feche-a novamente (reemissão).`,
+        );
       const agora = new Date();
       let n = 0;
       let totalBaixado = 0;
-      const pulados: string[] = [];
       for (const c of fatura.cobrancas) {
-        if (c.status === StatusCobranca.PAGO) continue;
-        if (c.status === StatusCobranca.CANCELADA) {
-          pulados.push(c.codigo ?? c.id);
-          continue;
-        }
+        if (c.status === StatusCobranca.CANCELADA) throw divergente(`A cobrança ${c.codigo ?? c.id} foi cancelada`);
+        if (c.status === StatusCobranca.PAGO) throw divergente(`A cobrança ${c.codigo ?? c.id} já foi baixada fora da fatura`);
+        const snapshot = numeroOuNull(c.valorFaturado);
         const restante = numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0);
-        if (restante <= 0) continue;
+        if (snapshot === null || restante !== snapshot) {
+          throw divergente(`A cobrança ${c.codigo ?? c.id} mudou depois do fechamento`);
+        }
         await baixarCobrancaTx(tx, autor.id, c.id, {
-          valorRecebido: restante,
+          valorRecebido: snapshot,
           forma: "TRANSFERENCIA",
           dataPagamento: agora,
           comentario: `Fatura B2B ${fatura.codigo ?? fatura.id}`,
           via: "fatura_b2b",
         });
-        totalBaixado += restante;
+        totalBaixado += snapshot;
         n += 1;
+      }
+      if (n === 0 || totalBaixado !== numero(fatura.valorTotal)) {
+        throw divergente("A soma baixada não cobre o valor do documento");
       }
       await tx.faturaB2B.update({
         where: { id: fatura.id },
@@ -348,7 +356,6 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
           cobrancasBaixadas: n,
           totalBaixado,
           valorTotalDocumento: numero(fatura.valorTotal),
-          itensCanceladosPulados: pulados,
         },
       });
       return n;

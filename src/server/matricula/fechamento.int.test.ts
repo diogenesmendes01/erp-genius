@@ -12,6 +12,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";
 import {
+  ativarSeFechamentoCompletoTx,
   criarMatricula,
   marcarContratoAssinado,
   registrarContratoEnviado,
@@ -326,5 +327,81 @@ describe("backfill da matrícula automática (review PR #60)", () => {
     );
     const r2 = await rodarFechamentosPendentes();
     expect(r2.avaliadas).toBe(0);
+  });
+});
+
+describe("review PR #60 rodada 2 — fechamento", () => {
+  it("ativações CONCORRENTES da mesma matrícula: claim FOR UPDATE — só uma ativa, cronograma único", async () => {
+    await ligarMatriculaAutomatica();
+    const { matriculaId, taxa } = await seedMatriculaAguardando();
+    // Estado completo SEM disparar os gatilhos (simula dois ticks/webhooks na iminência).
+    await prisma.matricula.update({ where: { id: matriculaId }, data: { contratoOk: true } });
+    await prisma.cobranca.update({ where: { id: taxa.id }, data: { status: StatusCobranca.PAGO } });
+
+    const [a, b] = await Promise.all([
+      prisma.$transaction((tx) => ativarSeFechamentoCompletoTx(tx, matriculaId, null)),
+      prisma.$transaction((tx) => ativarSeFechamentoCompletoTx(tx, matriculaId, null)),
+    ]);
+    expect([a.ativou, b.ativou].filter(Boolean)).toHaveLength(1); // o 2º espera o lock e relê ATIVA
+
+    const mensalidades = await prisma.cobranca.count({
+      where: { matriculaId, tipo: TipoCobranca.MENSALIDADE },
+    });
+    expect(mensalidades).toBe(3); // mesesPlano=3 — NADA duplicado
+    const ativacoes = (await eventosDo("Matricula", matriculaId)).filter((e) => e.tipo === "MatriculaAtivada");
+    expect(ativacoes).toHaveLength(1);
+  });
+
+  it("cronograma tem defesa no BANCO: 2ª cobrança viva na mesma matrícula×tipo×competência é rejeitada", async () => {
+    const { matriculaId } = await seedMatriculaAguardando();
+    // Competência LONGE do cronograma real da matrícula (que já ocupa os meses vizinhos).
+    const base = {
+      matriculaId,
+      tipo: TipoCobranca.MENSALIDADE,
+      competencia: "2027-05",
+      valorOriginal: MENSALIDADE,
+      valorNegociado: MENSALIDADE,
+      moeda: "CRC",
+      vencimento: new Date(2027, 4, 5),
+    };
+    await prisma.cobranca.create({ data: { ...base, status: StatusCobranca.CANCELADA } });
+    await prisma.cobranca.create({ data: { ...base, status: StatusCobranca.PENDENTE } }); // reemissão OK
+    await expect(prisma.cobranca.create({ data: { ...base, status: StatusCobranca.PENDENTE } })).rejects.toThrow(); // 2ª viva não
+  });
+
+  it("matrícula SEM lead (fluxo direto): o vendedor CRIADOR fecha; outro vendedor não", async () => {
+    authMock.mockResolvedValue({ user: { id: vendedor.id } });
+    const r = await criarMatricula({
+      alunoPrimeiroNome: "Direto",
+      alunoSobrenome: "SemLead",
+      alunoGenero: "NAO_INFORMADO",
+      alunoNascimento: "1990-01-01",
+      alunoPaisId: catalogo.pais.id,
+      alunoTipoDocumentoId: catalogo.pais.tiposDocumento[0].id,
+      alunoDocumento: "1-3333-3333",
+      alunoNacionalidade: "CR",
+      alunoEmail: "direto@teste.cr",
+      alunoTelefone: "88880000",
+      alunoWhatsapp: true,
+      alunoAceitaComunicacoes: true,
+      alunoPaisResidencia: "CR",
+      pagador: "ALUNO",
+      produtoId: catalogo.produto.id,
+      taxaValor: TAXA,
+      mensalidadeValor: MENSALIDADE,
+      comissaoPct: 10,
+      diaVencimento: 5,
+      mesesPlano: 3,
+    });
+    expect(r.ok, r.ok ? "" : `criar falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+    const matriculaId = r.ok ? r.dado!.id : "";
+
+    // O dono é quem leva a comissão (o criador) — a rodada 2 apontou o "sempre negado" aqui.
+    const envio = await registrarContratoEnviado(matriculaId);
+    expect(envio.ok, envio.ok ? "" : `envio falhou: ${(envio as { erro?: string }).erro}`).toBe(true);
+
+    const outro = await criarUsuario([Papel.VENDEDOR], "Outro Vendedor");
+    authMock.mockResolvedValue({ user: { id: outro.id } });
+    expect((await marcarContratoAssinado(matriculaId)).ok).toBe(false);
   });
 });

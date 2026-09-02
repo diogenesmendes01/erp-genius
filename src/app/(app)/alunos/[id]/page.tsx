@@ -10,7 +10,7 @@ import {
   podeMovimentarAluno,
 } from "@/server/alunos/consultas";
 import { listarPaises } from "@/server/paises/consultas";
-import { exigirSessaoPagina } from "@/server/_shared";
+import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { nomeCompleto } from "@/lib/nome";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
@@ -34,13 +34,18 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   const turma = aluno.alocacoes[0]?.turma ?? null;
   // C4 (auto-alocação híbrida): sem turma ativa, mostra a sugestão da ativação (se viva).
   const turmaSugerida = turma ? null : await turmaSugeridaParaAluno(id);
-  // Fase 3 (acadêmico): testes de nível, certificados e acesso ao portal.
-  const [niveis, testes, certificados, alunoPortal] = await Promise.all([
-    listarNiveis(),
-    prisma.testeNivel.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { data: "desc" } }),
-    prisma.certificado.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { emitidoEm: "desc" } }),
-    prisma.aluno.findUnique({ where: { id }, select: { usuarioId: true } }),
-  ]);
+  // Fase 3 (acadêmico): testes de nível, certificados e acesso ao portal — SÓ para papéis
+  // acadêmicos (review PR #60 rodada 2): FINANCEIRO vê a ficha/financeiro, mas o RSC nem
+  // consulta histórico, códigos de validação e estado do portal (mesmo gate da turma).
+  const podeVerAcademico = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
+  const [niveis, testes, certificados, alunoPortal] = podeVerAcademico
+    ? await Promise.all([
+        listarNiveis(),
+        prisma.testeNivel.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { data: "desc" } }),
+        prisma.certificado.findMany({ where: { alunoId: id }, include: { nivel: { include: { idioma: true } } }, orderBy: { emitidoEm: "desc" } }),
+        prisma.aluno.findUnique({ where: { id }, select: { usuarioId: true } }),
+      ])
+    : [null, null, null, null];
 
   const ficha: AlunoFicha = {
     id: aluno.id,
@@ -114,23 +119,25 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       }))}
       podeMovimentar={podeMovimentarAluno(usuario)}
     />
-    <AcademicoAluno
-      alunoId={id}
-      niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}
-      testes={testes.map((t) => ({
-        id: t.id,
-        nivel: `${t.nivel.idioma.nome} ${t.nivel.codigo}`,
-        pontuacao: t.pontuacao !== null ? Number(t.pontuacao) : null,
-        dataISO: t.data.toISOString(),
-      }))}
-      certificados={certificados.map((c) => ({
-        nivel: `${c.nivel.idioma.nome} ${c.nivel.codigo}`,
-        codigoValidacao: c.codigoValidacao,
-        emitidoEmISO: c.emitidoEm.toISOString(),
-      }))}
-      temAcessoPortal={!!alunoPortal?.usuarioId}
-      podeEditar={podeMovimentarAluno(usuario)}
-    />
+    {podeVerAcademico && niveis && testes && certificados && (
+      <AcademicoAluno
+        alunoId={id}
+        niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}
+        testes={testes.map((t) => ({
+          id: t.id,
+          nivel: `${t.nivel.idioma.nome} ${t.nivel.codigo}`,
+          pontuacao: t.pontuacao !== null ? Number(t.pontuacao) : null,
+          dataISO: t.data.toISOString(),
+        }))}
+        certificados={certificados.map((c) => ({
+          nivel: `${c.nivel.idioma.nome} ${c.nivel.codigo}`,
+          codigoValidacao: c.codigoValidacao,
+          emitidoEmISO: c.emitidoEm.toISOString(),
+        }))}
+        temAcessoPortal={!!alunoPortal?.usuarioId}
+        podeEditar={podeMovimentarAluno(usuario)}
+      />
+    )}
     </div>
   );
 }

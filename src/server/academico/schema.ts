@@ -3,9 +3,22 @@ import { z } from "zod";
 // ACADÊMICO — Fase 3 (doc 03): validação de diário (aula/frequência), avaliações/notas,
 // teste de nível, progressão e acesso ao portal.
 
+// Data SEM horário, estrita (review PR #60 rodada 2): aceitar qualquer string deixava
+// "2026-08-20T09:00" e "...T10:00" criarem DUAS aulas do mesmo dia (timestamps distintos
+// furam o upsert por turma×data) — e "2026-02-31" passava. Formato + calendário validados.
+const DATA_SO_DIA = /^\d{4}-\d{2}-\d{2}$/;
+function diaDeCalendarioValido(s: string): boolean {
+  const [ano, mes, dia] = s.split("-").map(Number);
+  const d = new Date(ano, mes - 1, dia);
+  return d.getFullYear() === ano && d.getMonth() === mes - 1 && d.getDate() === dia;
+}
+
 export const RegistrarAulaSchema = z.object({
   turmaId: z.string().min(1),
-  dataISO: z.string().min(4, "Informe a data da aula."),
+  dataISO: z
+    .string()
+    .regex(DATA_SO_DIA, "Informe a data da aula no formato AAAA-MM-DD (sem horário).")
+    .refine(diaDeCalendarioValido, "Data da aula inválida."),
   conteudo: z
     .string()
     .trim()
@@ -25,7 +38,11 @@ export const AvaliacaoSchema = z.object({
   dataISO: z
     .string()
     .optional()
-    .transform((v) => (v ? v : null)),
+    .transform((v) => (v ? v : null))
+    // Mesma regra estrita da aula (review PR #60 rodada 2), preservando o opcional/vazio.
+    .refine((v) => v === null || (DATA_SO_DIA.test(v) && diaDeCalendarioValido(v)), {
+      message: "Informe a data no formato AAAA-MM-DD (sem horário).",
+    }),
 });
 export type AvaliacaoInput = z.input<typeof AvaliacaoSchema>;
 
