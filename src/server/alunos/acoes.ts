@@ -6,6 +6,7 @@ import {
   Prisma,
   StatusAluno,
   StatusCobranca,
+  StatusFaturaB2B,
   TipoMovimentacao,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -159,10 +160,19 @@ async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId
   const matriculas = await tx.matricula.findMany({ where: { alunoId }, select: { id: true } });
   const ids = matriculas.map((m) => m.id);
   if (ids.length === 0) return;
-  await tx.cobranca.updateMany({
-    where: { matriculaId: { in: ids }, status: StatusCobranca.PENDENTE, vencimento: { gt: new Date() } },
-    data: { status: StatusCobranca.CANCELADA },
+  const alvo = { matriculaId: { in: ids }, status: StatusCobranca.PENDENTE, vencimento: { gt: new Date() } };
+  // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): cancelar por aqui
+  // deixaria a fatura impagável/divergente. O caminho é cancelar a fatura primeiro.
+  const faturada = await tx.cobranca.findFirst({
+    where: { ...alvo, faturaB2B: { status: StatusFaturaB2B.FECHADA } },
+    include: { faturaB2B: { select: { codigo: true } } },
   });
+  if (faturada) {
+    throw new ErroRegra(
+      `Há mensalidade na fatura B2B ${faturada.faturaB2B?.codigo ?? ""} (fechada) — cancele a fatura antes de pausar/cancelar o aluno.`,
+    );
+  }
+  await tx.cobranca.updateMany({ where: alvo, data: { status: StatusCobranca.CANCELADA } });
 }
 
 export async function pausarAluno(id: string, input: PausarInput): Promise<Resultado> {

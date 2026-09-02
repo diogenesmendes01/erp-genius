@@ -11,6 +11,9 @@ export default async function HomePage() {
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina();
 
+  // Papel ALUNO (só-portal) nem chega aqui: exigirSessaoPagina redireciona para /portal
+  // no núcleo da sessão (review PR #60 — barreira fail-closed única, não por tela).
+
   const ehGerente =
     usuario.papeis.includes(Papel.ADMINISTRADOR) ||
     usuario.papeis.includes(Papel.GERENTE_COMERCIAL);

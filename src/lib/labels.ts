@@ -100,6 +100,8 @@ export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
   GREENPAY: "GreenPay",
   DINHEIRO: "Dinheiro",
   CARTAO: "Cartão",
+  PIX: "PIX",
+  BOLETO: "Boleto",
 };
 
 // Gênero (doc 09 §Identificação) — lista curta. NAO_INFORMADO = "Prefiro não informar".

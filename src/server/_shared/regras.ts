@@ -385,6 +385,14 @@ export function transicaoManualPermitida(origem: EtapaLead, destino: EtapaLead):
 }
 
 /**
+ * Destinos MANUAIS válidos a partir de `origem` (exclui a própria etapa). Fonte única
+ * para todo lugar que oferece uma mudança de etapa — cockpit da inbox, copiloto (C3).
+ */
+export function destinosManuaisPermitidos(origem: EtapaLead): EtapaLead[] {
+  return ETAPAS_MANUAIS.filter((destino) => destino !== origem && transicaoManualPermitida(origem, destino));
+}
+
+/**
  * Vagas disponíveis numa turma (issue #1): capacidade menos alocações ATIVAS.
  * `alocacoesAtivas` DEVE vir de uma contagem filtrada por `ativa = true` — alocações
  * inativas (histórico/troca de turma) não ocupam vaga. Nunca negativo.

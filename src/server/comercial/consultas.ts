@@ -16,6 +16,17 @@ export interface ConfigComercialView {
   autoLeadAtivo: boolean;
   saudacaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
   saudacaoTexto: string;
+  /** C3 (doc 27): copiloto IA só-leitura — nasce desligado. */
+  copilotoAtivo: boolean;
+  copilotoQuietudeMinutos: number;
+  /** C4 (doc 27): matrícula automática — nasce desligada. */
+  matriculaAutomaticaAtiva: boolean;
+  /** C5 (doc 27): gestão (alerta SLA + relatório diário) — nasce desligada. */
+  gestaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
+  gestaoTelefoneE164: string | null;
+  gestaoNumeroId: string | null;
+  gestaoSlaMinutos: number;
+  gestaoRelatorioHora: number;
 }
 
 /** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
@@ -25,6 +36,14 @@ export async function carregarConfigComercial(): Promise<ConfigComercialView> {
     autoLeadAtivo: c?.autoLeadAtivo ?? false,
     saudacaoEstado: c?.saudacaoEstado ?? "DESLIGADA",
     saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
+    copilotoAtivo: c?.copilotoAtivo ?? false,
+    copilotoQuietudeMinutos: c?.copilotoQuietudeMinutos ?? 10,
+    matriculaAutomaticaAtiva: c?.matriculaAutomaticaAtiva ?? false,
+    gestaoEstado: c?.gestaoEstado ?? "DESLIGADA",
+    gestaoTelefoneE164: c?.gestaoTelefoneE164 ?? null,
+    gestaoNumeroId: c?.gestaoNumeroId ?? null,
+    gestaoSlaMinutos: c?.gestaoSlaMinutos ?? 30,
+    gestaoRelatorioHora: c?.gestaoRelatorioHora ?? 19,
   };
 }
 
@@ -46,6 +65,9 @@ export interface ReguaComercialConfig {
   janelaFim: number;
   tetoPorContatoDia: number;
   degraus: DegrauComercialConfig[];
+  /** B1 (doc 32): cohort do piloto — allowlist explícita de leads. */
+  modoPiloto: boolean;
+  pilotoLeads: { id: string; codigo: string | null; nome: string }[];
 }
 
 /** Config de TODAS as réguas comerciais (doc 27 C1/C2) — banco ou fábrica (DESLIGADA). */
@@ -55,6 +77,13 @@ export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialCo
     include: { degraus: { orderBy: { offsetMinutos: "asc" } } },
   });
   const porChave = new Map(registros.map((p) => [p.chave, p]));
+
+  // Resolve nome/código dos leads das allowlists (B1) numa consulta só.
+  const todosIds = [...new Set(registros.flatMap((p) => p.pilotoLeadIds))];
+  const leadsAllow = todosIds.length
+    ? await prisma.lead.findMany({ where: { id: { in: todosIds } }, select: { id: true, codigo: true, nome: true } })
+    : [];
+  const leadsPorId = new Map(leadsAllow.map((l) => [l.id, { id: l.id, codigo: l.codigo, nome: l.nome }]));
 
   return CADENCIAS_COMERCIAIS.map((cadencia) => {
     const p = porChave.get(cadencia.chave);
@@ -75,6 +104,8 @@ export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialCo
           ativo: true,
           templateId: null,
         })),
+        modoPiloto: true,
+        pilotoLeads: [],
       };
     }
     return {
@@ -93,6 +124,10 @@ export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialCo
         ativo: d.ativo,
         templateId: d.templateId,
       })),
+      modoPiloto: p.modoPiloto,
+      pilotoLeads: leadsPorId
+        ? p.pilotoLeadIds.map((id) => leadsPorId.get(id) ?? { id, codigo: null, nome: "(lead removido)" })
+        : [],
     };
   });
 }
@@ -241,7 +276,20 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
     include: {
       pais: { select: { id: true, nome: true } },
       vendedor: { select: { id: true, nome: true } },
-      matricula: { select: { id: true, codigo: true, status: true } },
+      matricula: {
+        select: {
+          id: true,
+          codigo: true,
+          status: true,
+          // C4 (fechamento): estado do contrato + taxa (link de pagamento) para a ficha.
+          contratoOk: true,
+          contratoEnviadoEm: true,
+          cobrancas: {
+            where: { tipo: "MATRICULA" },
+            select: { id: true, status: true, linkPagamento: true, linkEnviadoEm: true },
+          },
+        },
+      },
       documentos: { where: { arquivado: false }, orderBy: { criadoEm: "desc" } },
     },
   });

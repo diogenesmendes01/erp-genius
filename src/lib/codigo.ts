@@ -8,6 +8,8 @@ const PREFIXO = {
   matricula: "M",
   cobranca: "C",
   turma: "T",
+  empresa: "E", // B2B (Fase 2)
+  fatura: "F", // fatura única B2B
 } as const;
 
 export type EntidadeCodigo = keyof typeof PREFIXO;

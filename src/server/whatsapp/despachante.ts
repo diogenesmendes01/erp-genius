@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
+import {
+  CHAVE_CONTRATO,
+  CHAVE_LEAD_NOVO,
+  CHAVE_LINK_PAGAMENTO,
+  CHAVE_NO_SHOW,
+  CHAVE_PRE_EXPERIMENTAL,
+} from "@/server/comercial/regua-fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
@@ -67,7 +74,10 @@ export async function despacharFila(
   const politicaPadrao = await carregarPoliticaRegua();
   // Shadow PRÓPRIO da saudação (review PR #53 · doc 27): a classe reativa não olha o estado
   // da política de COBRANÇA — o ensaio dela é o saudacaoEstado da ConfigComercial.
-  const saudacaoEstado = (await prisma.configComercial.findUnique({ where: { id: "comercial" } }))?.saudacaoEstado ?? "DESLIGADA";
+  const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const saudacaoEstado = configComercial?.saudacaoEstado ?? "DESLIGADA";
+  // C5: shadow PRÓPRIO das mensagens de GESTÃO (alerta SLA/relatório do gestor).
+  const gestaoEstado = configComercial?.gestaoEstado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
@@ -96,7 +106,8 @@ export async function despacharFila(
       template: true,
       politica: true,
       politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
-      lead: { include: { pais: true } }, // fuso do destino no caminho comercial (S3)
+      // Fuso do destino no caminho comercial (S3) + estado de FECHAMENTO (B7 nas cadências C4).
+      lead: { include: { pais: true, matricula: { include: { cobrancas: { where: { tipo: "MATRICULA" } } } } } },
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
     },
   });
@@ -139,6 +150,10 @@ export async function despacharFila(
     // Baileys por decisão de produto); shadow pela SUA política (não a de cobrança); janela/
     // teto/silêncio VALEM (é disparo proativo). Kill switch de cobrança a congela também.
     const comercial = it.leadId != null && it.passoComercial != null;
+    // C5 (doc 27): mensagem para a EQUIPE (gestor) — não é conversa de cliente. Isenta de
+    // janela/teto/silêncio/conversa-viva; segue automática (kill switch congela) e com
+    // shadow próprio (gestaoEstado). Nunca associada a lead/cobrança.
+    const gestao = it.origem === "GESTAO";
 
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
@@ -165,6 +180,15 @@ export async function despacharFila(
       continue;
     }
 
+    // 3b. VALIDADE (B3, doc 32): intenção com prazo vencido é CANCELADA, nunca enviada —
+    //     inclusive as ADIADAS por janela/silêncio/kill switch. É o que impede o lembrete
+    //     "-2h" de sair DEPOIS da aula e o degrau "+30min" de sair no dia seguinte.
+    if (it.validaAte && agora > it.validaAte) {
+      await marcar(it.id, "CANCELADA", "validade_expirada");
+      r.canceladas += 1;
+      continue;
+    }
+
     const conversa = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
       select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
@@ -172,7 +196,7 @@ export async function despacharFila(
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
     //    contato posterior à criação da intenção cancela a intenção automática.
-    if (automatica && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
+    if (automatica && !gestao && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
       await marcar(it.id, "CANCELADA", "conversa_viva");
       r.canceladas += 1;
       continue;
@@ -199,6 +223,59 @@ export async function despacharFila(
       if (agora < limite) {
         await adiar(it.id, limite, "silencio_pos_inbound");
         r.adiadas += 1;
+        continue;
+      }
+    }
+
+    // 5b. REVALIDAÇÃO NO DESPACHO (B7, doc 32): o despacho não pode confiar no snapshot do
+    //     enqueue. Uma intenção PENDENTE/ADIADA dispararia mesmo que, DEPOIS do enqueue, o
+    //     lead tenha avançado de etapa, o vendedor assumido (B2) ou a experimental sido
+    //     reagendada — aqui a etapa + a ocorrência + o takeover são conferidos de novo, e a
+    //     intenção obsoleta é CANCELADA em vez de enviada.
+    if (comercial && it.lead) {
+      const chave = chaveComercial(it);
+      const lead = it.lead;
+      let motivoObsoleta: string | null = null;
+
+      if (chave === CHAVE_LEAD_NOVO) {
+        if (lead.etapa !== "NOVO") motivoObsoleta = "etapa_mudou";
+        else if (conversa && it.ocorrenciaComercial) {
+          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox) e
+          // origem null (fromMe: app do celular) — significa "vendedor assumiu".
+          const manuais = await prisma.mensagemWhatsApp.count({
+            where: {
+              conversaId: conversa.id,
+              direcao: "SAIDA",
+              OR: [{ origem: "HUMANO" }, { origem: null }],
+              criadoEm: { gt: new Date(it.ocorrenciaComercial) },
+            },
+          });
+          if (manuais > 0) motivoObsoleta = "vendedor_assumiu";
+        }
+      } else if (chave === CHAVE_PRE_EXPERIMENTAL) {
+        if (lead.etapa !== "EXPERIMENTAL_AGENDADA") motivoObsoleta = "etapa_mudou";
+        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // aula reagendada: o lembrete era da anterior
+        else if (lead.aguardandoReagendamentoEm) motivoObsoleta = "aguardando_reagendamento"; // B8
+      } else if (chave === CHAVE_NO_SHOW) {
+        if (lead.etapa !== "NO_SHOW") motivoObsoleta = "etapa_mudou";
+        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // já remarcou: a recuperação era da falta anterior
+      } else if (chave === CHAVE_CONTRATO) {
+        const m = lead.matricula;
+        if (!m || m.status !== "AGUARDANDO" || m.contratoOk) motivoObsoleta = "estado_mudou";
+        else if (m.contratoEnviadoEm?.toISOString() !== it.ocorrenciaComercial)
+          motivoObsoleta = "ocorrencia_mudou"; // contrato reenviado: cadência é do envio novo
+      } else if (chave === CHAVE_LINK_PAGAMENTO) {
+        const m = lead.matricula;
+        const taxa = m?.cobrancas.find((c) => c.linkEnviadoEm?.toISOString() === it.ocorrenciaComercial);
+        if (!m || m.status !== "AGUARDANDO" || !taxa) motivoObsoleta = "estado_mudou";
+        else if (taxa.status !== "PENDENTE") motivoObsoleta = "estado_mudou"; // pagou/cancelou
+      }
+
+      if (motivoObsoleta) {
+        await marcar(it.id, "CANCELADA", motivoObsoleta);
+        r.canceladas += 1;
         continue;
       }
     }
@@ -250,7 +327,7 @@ export async function despacharFila(
     //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
-    if (automatica && !reativa) {
+    if (automatica && !reativa && !gestao) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
@@ -270,7 +347,7 @@ export async function despacharFila(
 
     // 8. Janela de horário + dias da semana (S3), no FUSO DO CONTATO (Aluno.fuso ?? Pais.fuso).
     //    Reativa é isenta: uma saudação "em segundos" não pode esperar o horário comercial.
-    if (automatica && !reativa) {
+    if (automatica && !reativa && !gestao) {
       const fuso = fusoDoDestino(it);
       const hora = horaLocal(agora, fuso);
       const dia = diaSemanaLocal(agora, fuso);
@@ -291,7 +368,8 @@ export async function despacharFila(
     // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
     const shadow =
       !live ||
-      (automatica && !reativa && politica.estado !== "ATIVA") ||
+      (gestao && gestaoEstado !== "ATIVA") ||
+      (automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
       (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({

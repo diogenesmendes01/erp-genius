@@ -26,6 +26,7 @@ import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
 } from "./experimental";
+import { dispararCopilotoMudancaEtapa } from "@/server/ia/copiloto";
 
 /** DDI do país do lead (para normalizar o telefone); "" se sem país. */
 async function ddiDoPais(paisId?: string | null): Promise<string> {
@@ -335,6 +336,9 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
         payload: { de: lead.etapa, para: etapa, origem: "manual" },
       });
     });
+    // C3 (doc 27): mudança de etapa é gatilho do copiloto — pós-commit, nunca derruba a
+    // ação (erro só loga) e é no-op com o copiloto desligado.
+    await dispararCopilotoMudancaEtapa(id);
     revalidarLead(id);
   });
 }
@@ -392,6 +396,9 @@ export async function agendarExperimental(
           // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
           // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
           experimentalConfirmadaEm: null,
+          // B8 (doc 32): remarcar É a ação humana que o pedido de REAGENDAR esperava —
+          // libera a cadência pré-experimental para a ocorrência nova.
+          aguardandoReagendamentoEm: null,
         },
       });
       await registrarEvento(tx, {
@@ -600,6 +607,12 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
     const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
     const dados = ConfigComercialSchema.parse(input);
 
+    // C5: armar a gestão exige número remetente EXISTENTE e ativo (prontidão, como nas réguas).
+    if (dados.gestaoEstado !== "DESLIGADA" && dados.gestaoNumeroId) {
+      const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.gestaoNumeroId } });
+      if (!numero || !numero.ativo) throw new ErroRegra("Número remetente da gestão inexistente ou inativo.");
+    }
+
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configComercial.findUnique({ where: { id: "comercial" } });
       await tx.configComercial.upsert({
@@ -614,7 +627,16 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
         autorId: autor.id,
         payload: {
           antes: antes
-            ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoEstado: antes.saudacaoEstado, saudacaoTexto: antes.saudacaoTexto }
+            ? {
+                autoLeadAtivo: antes.autoLeadAtivo,
+                saudacaoEstado: antes.saudacaoEstado,
+                saudacaoTexto: antes.saudacaoTexto,
+                copilotoAtivo: antes.copilotoAtivo,
+                copilotoQuietudeMinutos: antes.copilotoQuietudeMinutos,
+                matriculaAutomaticaAtiva: antes.matriculaAutomaticaAtiva,
+                gestaoEstado: antes.gestaoEstado,
+                gestaoTelefoneE164: antes.gestaoTelefoneE164,
+              }
             : null,
           depois: dados,
         },
@@ -694,6 +716,17 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
       }
     }
 
+    // B1: allowlist só com leads que EXISTEM (id colado errado não vira lead fantasma que
+    // "some" do piloto em silêncio) — e sem duplicatas.
+    const idsUnicos = [...new Set(dados.pilotoLeadIds)];
+    const leadsExistentes = idsUnicos.length
+      ? await prisma.lead.findMany({ where: { id: { in: idsUnicos } }, select: { id: true } })
+      : [];
+    if (leadsExistentes.length !== idsUnicos.length) {
+      throw new ErroRegra("A allowlist do piloto contém leads inexistentes.");
+    }
+    const leadIdsValidos = leadsExistentes.map((l) => l.id);
+
     await prisma.$transaction(async (tx) => {
       const existente = await tx.politicaComercial.findUnique({
         where: { chave: dados.chave },
@@ -711,6 +744,9 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
           janelaInicio: dados.janelaInicio,
           janelaFim: dados.janelaFim,
           tetoPorContatoDia: dados.tetoPorContatoDia,
+          // B1 (doc 32): cohort do piloto — allowlist explícita; ids inexistentes caem fora.
+          modoPiloto: dados.modoPiloto,
+          pilotoLeadIds: leadIdsValidos,
         },
       });
       for (const d of dados.degraus) {

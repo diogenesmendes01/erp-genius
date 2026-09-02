@@ -88,12 +88,15 @@ export function FichaAluno({
   turmas,
   paises,
   podeMovimentar = true,
+  turmaSugerida = null,
 }: {
   aluno: AlunoFicha;
   turmas: { id: string; label: string }[];
   paises: PaisOpt[];
   // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
   podeMovimentar?: boolean;
+  /** C4 (auto-alocação híbrida): turma SUGERIDA na ativação — o consultor confirma aqui. */
+  turmaSugerida?: { turmaId: string; label: string; diasHorario: string | null } | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -452,7 +455,31 @@ export function FichaAluno({
               <div className="text-gray-500">Professor: {aluno.turmaAtual.professor ?? "—"}</div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
+            <div className="text-sm">
+              <p className="text-gray-400">Sem turma (lista de espera).</p>
+              {turmaSugerida && podeMovimentar && (
+                // C4 (doc 08 §auto-alocação híbrida): o sistema SUGERIU na ativação;
+                // alocar de verdade é decisão do consultor — 1 clique aqui.
+                <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 p-2">
+                  <div className="text-xs font-medium text-blue-800">Turma sugerida na ativação</div>
+                  <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
+                  {turmaSugerida.diasHorario && <div className="text-xs text-gray-500">{turmaSugerida.diasHorario}</div>}
+                  <button
+                    className={btnPri + " mt-2"}
+                    onClick={() =>
+                      run(
+                        trocarTurma(aluno.id, {
+                          turmaDestinoId: turmaSugerida.turmaId,
+                          justificativa: "Sugestão automática (fechamento C4) confirmada",
+                        }),
+                      )
+                    }
+                  >
+                    Alocar nesta turma
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           <h2 className="mb-2 mt-5 font-medium">Dados pessoais</h2>
