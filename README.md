@@ -10,14 +10,16 @@ vendas/CRM com automação de atendimento via WhatsApp.
 
 ## Módulos
 
-| Módulo | O que faz | Fase |
+| Módulo | O que faz | Status |
 |---|---|---|
-| Alunos e Matrículas | Cadastro de alunos, responsáveis, turmas e matrículas | 1 (MVP) |
-| Financeiro | Mensalidades, pagamentos, inadimplência, relatórios | 2 |
-| Acadêmico | Notas, frequência, boletins, calendário | 3 |
-| Professores e Funcionários | Cadastro de equipe, horários | 3 |
-| Vendas / CRM | Funil de leads, follow-up, conversão em matrícula | 4 |
-| Automação WhatsApp | Atendimento e follow-up automatizados | 4 |
+| Alunos e Matrículas | Cadastro de alunos, responsáveis, turmas e matrículas | ✅ |
+| Vendas / CRM | Funil de leads, follow-up, conversão em matrícula, cockpit na inbox | ✅ |
+| Automação WhatsApp | Saudação, réguas C1/C2 (piloto), cobrança, fechamento C4, gestão C5 | ✅ |
+| IA copiloto (C3) | Resumo/temperatura/segmento/etapa sugeridos — só-leitura, humano decide | ✅ |
+| Financeiro | Base manual + gateway por driver, conciliação, comissões automáticas | ✅ |
+| B2B | Empresas, matrículas em lote, fatura única, relatório por colaborador | ✅ |
+| Acadêmico | Frequência, notas, teste de nível, progressão, certificados | ✅ |
+| Portal do aluno | Turma, frequência, boletim, financeiro (com pagamento), certificados | ✅ |
 
 ## Documentação
 
@@ -35,7 +37,11 @@ Para rodar localmente, ver [`SETUP.md`](SETUP.md).
 
 ## Status
 
-🟢 **Fase 0 implementada** — operação manual ponta a ponta: Configuração (países, catálogo,
-turmas, usuários), CRM (pipeline, ficha do lead), matrícula manual, Homes (vendedor/gerente/
-professor), área de alunos e financeiro manual. Tudo backed pelo banco (eventos + estado) com
-permissões por papel. Próximo: Fase 1 (automações). Ver [`docs/16-plano-execucao.md`](docs/16-plano-execucao.md).
+🟢 **Fases 0–3 implementadas** (ago/2026) — operação ponta a ponta: Fase 0 (operação
+manual completa), Fase 1 (canal WhatsApp + automações comerciais C1–C5, com os
+bloqueadores B1–B9 do piloto fechados — doc 32), Fase 2 (gateway de pagamento por driver
+com conciliação automática, comissões, B2B com fatura única) e Fase 3 (acadêmico +
+portal do aluno). **Toda automação nasce DESLIGADA** (regra de ouro do doc 27) — ligar é
+decisão explícita na configuração. Integrações externas reais (WABA/Meta, DocuSign,
+GreenPay) permanecem por trás de drivers — o driver simulado roda tudo localmente.
+Ver [`docs/16-plano-execucao.md`](docs/16-plano-execucao.md).

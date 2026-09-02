@@ -5,7 +5,13 @@ import {
   carregarPoliticaComercial,
   type PoliticaComercialCarregada,
 } from "@/server/comercial/regua-comercial";
-import { CHAVE_LEAD_NOVO, CHAVE_NO_SHOW, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
+import {
+  CHAVE_CONTRATO,
+  CHAVE_LEAD_NOVO,
+  CHAVE_LINK_PAGAMENTO,
+  CHAVE_NO_SHOW,
+  CHAVE_PRE_EXPERIMENTAL,
+} from "@/server/comercial/regua-fabrica";
 import { enfileirarIntencaoComercial } from "./fila";
 import { renderizarTemplate } from "./render";
 
@@ -17,7 +23,9 @@ import { renderizarTemplate } from "./render";
 // Cenários:
 //  - LEAD_NOVO_SEM_RESPOSTA: âncora = 1º inbound do lead (ConversaWhatsApp.capturadaEm);
 //  - PRE_EXPERIMENTAL: âncora = horário da aula (offsets NEGATIVOS: 24h e 2h ANTES);
-//  - NO_SHOW: âncora = horário da aula perdida (check-in do professor marcou NO_SHOW).
+//  - NO_SHOW: âncora = horário da aula perdida (check-in do professor marcou NO_SHOW);
+//  - CONTRATO_SEM_ASSINATURA (C4): âncora = envio do contrato (Matricula.contratoEnviadoEm);
+//  - LINK_PAGAMENTO_SEM_PAGAMENTO (C4): âncora = envio do link (Cobranca.linkEnviadoEm da taxa).
 
 // Etapa em que o lead ainda é "novo sem resposta". Sair dela ENCERRA a cadência (regra
 // transversal do doc 27: mudança de etapa encerra a política). Só NOVO permanece frio —
@@ -34,6 +42,8 @@ export interface ResultadoCronComercial {
   reabertas: number;
   jaExistentes: number;
   encerrados: number;
+  /** B1 (doc 32): candidatos elegíveis pela regra, mas FORA da allowlist do piloto. */
+  foraDoPiloto: number;
 }
 
 const zerado = (motivo: string): ResultadoCronComercial => ({
@@ -45,6 +55,7 @@ const zerado = (motivo: string): ResultadoCronComercial => ({
   reabertas: 0,
   jaExistentes: 0,
   encerrados: 0,
+  foraDoPiloto: 0,
 });
 
 /** Um lead pronto para o motor: âncora resolvida + stop-conditions já avaliadas. */
@@ -94,7 +105,16 @@ async function processarCadencia(
   const candidatos = await resolverCandidatos(politica, numero.id);
   const r: ResultadoCronComercial = { ...zerado(""), executou: true, motivoParada: null, leadsAvaliados: candidatos.length };
 
+  // B1 (doc 32): COHORT REAL. Em modo piloto, só a allowlist explícita da política é
+  // elegível — lista vazia = ninguém. Ligar a régua nunca alcança "todos os leads do
+  // número" por acidente; o go-live geral é desligar o modo piloto (decisão explícita).
+  const allowlist = politica.modoPiloto ? new Set(politica.pilotoLeadIds) : null;
+
   for (const c of candidatos) {
+    if (allowlist && !allowlist.has(c.leadId)) {
+      r.foraDoPiloto += 1;
+      continue;
+    }
     const ocorrencia = ocorrenciaDe(c.ancoraEm);
     const passosFeitos = await passosComerciaisFeitos(c.leadId, chave, ocorrencia);
     const acao = proximaAcaoAncora(
@@ -113,6 +133,20 @@ async function processarCadencia(
 
     const degrau = politica.degraus.find((d) => d.passo === acao.passo);
     if (!degrau) continue;
+
+    // B3 (doc 32): VALIDADE do disparo. Degrau pré-evento (offset negativo) tem a AULA como
+    // teto duro — lembrete "antes" jamais sai depois dela, nem quando a intenção ficou
+    // ADIADA por janela/silêncio/kill switch. A tolerância por degrau (B4) limita também o
+    // atraso dos degraus pós-âncora: além dela, o disparo perde sentido e é cancelado.
+    const devidoEm = new Date(c.ancoraEm.getTime() + degrau.offsetMinutos * 60_000);
+    const limiteTolerancia =
+      degrau.toleranciaMinutos != null
+        ? new Date(devidoEm.getTime() + degrau.toleranciaMinutos * 60_000)
+        : null;
+    const validaAte =
+      degrau.offsetMinutos < 0
+        ? new Date(Math.min(c.ancoraEm.getTime(), limiteTolerancia?.getTime() ?? Infinity))
+        : limiteTolerancia;
 
     const { corpo, variaveis } = renderizarTemplate(degrau.templateCorpo, {
       nome: c.nome,
@@ -133,6 +167,7 @@ async function processarCadencia(
         variaveis,
         templateId: degrau.templateId,
         politicaComercialId: politicaId,
+        validaAte,
       }),
     );
     if (resultado === "criada") r.enfileiradas += 1;
@@ -161,13 +196,20 @@ export async function rodarLeadNovoSemResposta(agora: Date = new Date()): Promis
       if (!lead || !conversa.capturadaEm) continue;
 
       // STOP-CONDITIONS (doc 27 §regras transversais): etapa avançou, lead respondeu
-      // (inbound DEPOIS da âncora) ou vendedor assumiu (envio HUMANO manual).
+      // (inbound DEPOIS da âncora) ou vendedor assumiu. B2 (doc 32): "assumiu" é TODA
+      // saída manual após a âncora — origem HUMANO (inbox) E origem null (fromMe: app do
+      // celular/outro aparelho, gap 16). Só as automáticas (CRON/LOTE) não contam.
       const [respostas, humanas] = await Promise.all([
         prisma.mensagemWhatsApp.count({
           where: { conversaId: conversa.id, direcao: "ENTRADA", criadoEm: { gt: conversa.capturadaEm } },
         }),
         prisma.mensagemWhatsApp.count({
-          where: { conversaId: conversa.id, direcao: "SAIDA", origem: "HUMANO" },
+          where: {
+            conversaId: conversa.id,
+            direcao: "SAIDA",
+            OR: [{ origem: "HUMANO" }, { origem: null }],
+            criadoEm: { gt: conversa.capturadaEm },
+          },
         }),
       ]);
       candidatos.push({
@@ -202,14 +244,18 @@ export async function rodarPreExperimental(agora: Date = new Date()): Promise<Re
       if (!lead?.dataExperimental) return [];
       // ENCERRADA quando a aula JÁ COMEÇOU: lembrete "2h antes" não pode chegar depois da
       // aula (o backlog do motor é certo para cobrança, errado para lembrete pré-evento).
+      // B8 (doc 32): pedido de REAGENDAR pausa a cadência até a ação humana — o cron honra
+      // o estado persistido (`aguardandoReagendamentoEm`); remarcar limpa o campo e abre
+      // uma ocorrência nova.
       const jaComecou = agora >= lead.dataExperimental;
+      const aguardandoReagendamento = lead.aguardandoReagendamentoEm != null;
       return [{
         leadId: lead.id,
         contatoId: conversa.contatoId,
         nome: lead.nome,
         idioma: lead.pais?.idioma ?? "es",
         ancoraEm: lead.dataExperimental,
-        encerrada: jaComecou,
+        encerrada: jaComecou || aguardandoReagendamento,
       }];
     });
   }, agora);
@@ -246,6 +292,92 @@ export async function rodarNoShow(agora: Date = new Date()): Promise<ResultadoCr
   }, agora);
 }
 
+// ── Cenário 4 (C4): contrato enviado sem assinatura ──────────────────────────
+export async function rodarContratoSemAssinatura(agora: Date = new Date()): Promise<ResultadoCronComercial> {
+  return processarCadencia(CHAVE_CONTRATO, async (_politica, numeroId) => {
+    const conversas = await prisma.conversaWhatsApp.findMany({
+      where: {
+        numeroId,
+        contato: {
+          optOutEm: null,
+          lead: {
+            etapa: { not: EtapaLead.PERDIDO },
+            matricula: { status: "AGUARDANDO", contratoOk: false, contratoEnviadoEm: { not: null } },
+          },
+        },
+      },
+      include: {
+        contato: { include: { lead: { include: { pais: true, matricula: { select: { contratoEnviadoEm: true } } } } } },
+      },
+    });
+
+    return conversas.flatMap((conversa) => {
+      const lead = conversa.contato.lead;
+      const enviadoEm = lead?.matricula?.contratoEnviadoEm;
+      if (!lead || !enviadoEm) return [];
+      return [{
+        leadId: lead.id,
+        contatoId: conversa.contatoId,
+        nome: lead.nome,
+        idioma: lead.pais?.idioma ?? "es",
+        ancoraEm: enviadoEm,
+        // O filtro do WHERE já é a stop-condition (assinou/ativou/cancelou = sai da query);
+        // o despachante revalida no despacho (B7).
+        encerrada: false,
+      }];
+    });
+  }, agora);
+}
+
+// ── Cenário 5 (C4): link de pagamento sem pagamento ──────────────────────────
+export async function rodarLinkPagamentoSemPagamento(agora: Date = new Date()): Promise<ResultadoCronComercial> {
+  return processarCadencia(CHAVE_LINK_PAGAMENTO, async (_politica, numeroId) => {
+    const conversas = await prisma.conversaWhatsApp.findMany({
+      where: {
+        numeroId,
+        contato: {
+          optOutEm: null,
+          lead: {
+            etapa: { not: EtapaLead.PERDIDO },
+            matricula: {
+              status: "AGUARDANDO",
+              cobrancas: { some: { tipo: "MATRICULA", status: "PENDENTE", linkEnviadoEm: { not: null } } },
+            },
+          },
+        },
+      },
+      include: {
+        contato: {
+          include: {
+            lead: {
+              include: {
+                pais: true,
+                matricula: {
+                  include: { cobrancas: { where: { tipo: "MATRICULA" }, select: { linkEnviadoEm: true, status: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return conversas.flatMap((conversa) => {
+      const lead = conversa.contato.lead;
+      const taxa = lead?.matricula?.cobrancas.find((c) => c.status === "PENDENTE" && c.linkEnviadoEm);
+      if (!lead || !taxa?.linkEnviadoEm) return [];
+      return [{
+        leadId: lead.id,
+        contatoId: conversa.contatoId,
+        nome: lead.nome,
+        idioma: lead.pais?.idioma ?? "es",
+        ancoraEm: taxa.linkEnviadoEm,
+        encerrada: false,
+      }];
+    });
+  }, agora);
+}
+
 /**
  * Passos já cumpridos DESTA ocorrência (eventos `ReguaComercialEnviada
  * { chave, passo, ocorrencia }`). O filtro por `ocorrencia` é o que impede o histórico
@@ -264,4 +396,66 @@ async function passosComerciaisFeitos(leadId: string, chave: string, ocorrencia:
     passos.push(p.passo);
   }
   return passos;
+}
+
+// ── B9 (doc 32): alerta de check-in vencido da experimental ──────────────────
+//
+// A recuperação de no-show (C2) SÓ começa após o check-in do professor — sem cobrar o
+// check-in atrasado, o cenário nunca dispara de forma confiável. Definições do bloqueador:
+//  - RESPONSÁVEL: o professor atribuído à experimental (fallback: o vendedor dono do lead);
+//  - TOLERÂNCIA: ConfigComercial.checkInToleranciaMinutos após o horário da aula (default 30);
+//  - CANAL: alerta nas Homes (professor vê o "check-in vencido" em vermelho; o gerente vê o
+//    total pendente) + evento `ExperimentalCheckInVencido` no log (auditável/notificável).
+// O evento é IDEMPOTENTE por ocorrência (1 por aula vencida) e roda no MESMO tick do cron —
+// não depende de política ligada: é alerta operacional, não mensagem ao lead.
+
+export interface ResultadoCheckInVencido {
+  avaliados: number;
+  alertados: number;
+  jaAlertados: number;
+}
+
+export async function rodarCheckInVencido(agora: Date = new Date()): Promise<ResultadoCheckInVencido> {
+  const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const toleranciaMin = config?.checkInToleranciaMinutos ?? 30;
+  const limite = new Date(agora.getTime() - toleranciaMin * 60_000);
+
+  // Aula já passou (além da tolerância) e o lead segue EXPERIMENTAL_AGENDADA = o professor
+  // não registrou Compareceu/Faltou. O check-in é o que move a etapa (doc 27 C2).
+  const vencidos = await prisma.lead.findMany({
+    where: { etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null, lt: limite } },
+    select: { id: true, dataExperimental: true, professorExperimentalId: true, vendedorDonoId: true },
+  });
+
+  const r: ResultadoCheckInVencido = { avaliados: vencidos.length, alertados: 0, jaAlertados: 0 };
+  for (const lead of vencidos) {
+    const ocorrencia = lead.dataExperimental!.toISOString();
+    const ja = await prisma.evento.count({
+      where: {
+        agregadoTipo: "Lead",
+        agregadoId: lead.id,
+        tipo: "ExperimentalCheckInVencido",
+        payload: { path: ["ocorrencia"], equals: ocorrencia },
+      },
+    });
+    if (ja > 0) {
+      r.jaAlertados += 1;
+      continue;
+    }
+    await prisma.evento.create({
+      data: {
+        tipo: "ExperimentalCheckInVencido",
+        agregadoTipo: "Lead",
+        agregadoId: lead.id,
+        autorId: null, // sistema (cron)
+        payload: {
+          ocorrencia,
+          toleranciaMinutos: toleranciaMin,
+          responsavelId: lead.professorExperimentalId ?? lead.vendedorDonoId,
+        },
+      },
+    });
+    r.alertados += 1;
+  }
+  return r;
 }

@@ -186,6 +186,11 @@ export async function capturarRespostaExperimental(
     return "confirmada";
   }
 
+  // B8 (doc 32): o pedido de reagendamento PAUSA a cadência pré-experimental — estado
+  // persistido que o cron e o despachante honram até a ação humana (remarcar limpa o campo
+  // em `agendarExperimental` e abre uma ocorrência nova). Sem isso, o inbound cancelava as
+  // intenções existentes mas o tick seguinte enfileirava o próximo degrau por cima do pedido.
+  await tx.lead.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
   await registrarEvento(tx, {
     tipo: "ExperimentalReagendamentoSolicitado",
     agregadoTipo: "Lead",

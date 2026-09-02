@@ -24,7 +24,20 @@ describe("salvarConfigComercial", () => {
 
     // Fábrica: tudo desligado antes de salvar.
     const antes = await carregarConfigComercial();
-    expect(antes).toEqual({ autoLeadAtivo: false, saudacaoEstado: "DESLIGADA", saudacaoTexto: expect.any(String) });
+    expect(antes).toEqual({
+      autoLeadAtivo: false,
+      saudacaoEstado: "DESLIGADA",
+      saudacaoTexto: expect.any(String),
+      // C3/C4: copiloto e matrícula automática também nascem desligados (regra de ouro).
+      copilotoAtivo: false,
+      copilotoQuietudeMinutos: 10,
+      matriculaAutomaticaAtiva: false,
+      gestaoEstado: "DESLIGADA",
+      gestaoTelefoneE164: null,
+      gestaoNumeroId: null,
+      gestaoSlaMinutos: 30,
+      gestaoRelatorioHora: 19,
+    });
 
     const r = await salvarConfigComercial({
       autoLeadAtivo: true,
@@ -34,7 +47,19 @@ describe("salvarConfigComercial", () => {
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
 
     const depois = await carregarConfigComercial();
-    expect(depois).toEqual({ autoLeadAtivo: true, saudacaoEstado: "ATIVA", saudacaoTexto: "Oi! Já te respondo." });
+    expect(depois).toEqual({
+      autoLeadAtivo: true,
+      saudacaoEstado: "ATIVA",
+      saudacaoTexto: "Oi! Já te respondo.",
+      copilotoAtivo: false,
+      copilotoQuietudeMinutos: 10,
+      matriculaAutomaticaAtiva: false,
+      gestaoEstado: "DESLIGADA",
+      gestaoTelefoneE164: null,
+      gestaoNumeroId: null,
+      gestaoSlaMinutos: 30,
+      gestaoRelatorioHora: 19,
+    });
 
     const eventos = await eventosDo("ConfigComercial", "comercial");
     expect(eventos.map((e) => e.tipo)).toContain("ConfigComercialAlterada");

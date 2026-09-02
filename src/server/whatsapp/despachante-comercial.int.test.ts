@@ -38,6 +38,8 @@ async function seedComercial(over: SeedComercial = {}) {
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50699998888", leadId: lead.id } });
   const politica = await prisma.politicaComercial.create({
     data: {
+        // B1 (doc 32): estas suites cobrem o comportamento GERAL — go-live explícito.
+        modoPiloto: false,
       chave: over.chave ?? CHAVE_LEAD_NOVO,
       nome: "Lead novo",
       estado: over.estado ?? "SHADOW",

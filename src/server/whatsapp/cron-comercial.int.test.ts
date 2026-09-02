@@ -24,6 +24,8 @@ async function seedReguaComercial(estado: EstadoPolitica) {
   });
   const politica = await prisma.politicaComercial.create({
     data: {
+        // B1 (doc 32): estas suites cobrem o comportamento GERAL — go-live explícito.
+        modoPiloto: false,
       chave: CHAVE_LEAD_NOVO,
       nome: "Lead novo",
       estado,
@@ -187,12 +189,15 @@ describe("enfileirarIntencaoComercial × identidade da política", () => {
     corpoRenderizado: "Oi Maria!",
     variaveis: [] as string[],
     templateId: null,
+    validaAte: null,
   };
 
   it("políticas DIFERENTES com o mesmo passo no mesmo lead: as duas enfileiram", async () => {
     const { numero, politica } = await seedReguaComercial("SHADOW");
     const outra = await prisma.politicaComercial.create({
       data: {
+        // B1 (doc 32): estas suites cobrem o comportamento GERAL — go-live explícito.
+        modoPiloto: false,
         chave: "NO_SHOW_SEM_RESPOSTA",
         nome: "No-show sem resposta",
         estado: "SHADOW",

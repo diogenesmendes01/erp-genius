@@ -3,6 +3,8 @@ import { obterLead } from "@/server/comercial/consultas";
 import { listarProfessores } from "@/server/turmas/consultas";
 import { FichaLead, type LeadFicha, type EventoTimeline } from "./FichaLead";
 import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
+import { sugestoesPendentesDoLead } from "@/server/ia/consultas";
+import { carregarConfigComercial } from "@/server/comercial/consultas";
 
 export default async function LeadDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,6 +15,10 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
   if (!dados) notFound();
   const { lead, timeline } = dados;
   const professores = await listarProfessores();
+  const [sugestoesIA, configComercial] = await Promise.all([
+    sugestoesPendentesDoLead(id),
+    carregarConfigComercial(),
+  ]);
 
   const ficha: LeadFicha = {
     id: lead.id,
@@ -28,6 +34,15 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     vendedor: lead.vendedor ? { nome: lead.vendedor.nome } : null,
     origemCampanha: lead.origemCampanha,
     origemAnuncio: lead.origemAnuncio,
+    // B6 (doc 32): origem NUNCA inferida. Referral cru da Meta quando veio; capturado via
+    // WhatsApp sem referral (Baileys) = explicitamente "não identificada".
+    waReferralHeadline: lead.waReferralHeadline,
+    waReferralSourceType: lead.waReferralSourceType,
+    capturadoViaWhatsApp: timeline.some(
+      (ev) =>
+        ev.tipo === "LeadCriado" &&
+        (ev.payload as { origem?: string } | null)?.origem === "whatsapp_inbound",
+    ),
     interesse: lead.interesse,
     objetivo: lead.objetivo,
     urgencia: lead.urgencia,
@@ -39,7 +54,21 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     dataProposta: lead.dataProposta ? lead.dataProposta.toISOString() : null,
     motivoPerda: lead.motivoPerda,
     matricula: lead.matricula
-      ? { id: lead.matricula.id, codigo: lead.matricula.codigo, status: lead.matricula.status }
+      ? {
+          id: lead.matricula.id,
+          codigo: lead.matricula.codigo,
+          status: lead.matricula.status,
+          contratoOk: lead.matricula.contratoOk,
+          contratoEnviadoEm: lead.matricula.contratoEnviadoEm?.toISOString() ?? null,
+          taxa: lead.matricula.cobrancas[0]
+            ? {
+                id: lead.matricula.cobrancas[0].id,
+                status: lead.matricula.cobrancas[0].status,
+                linkPagamento: lead.matricula.cobrancas[0].linkPagamento,
+                linkEnviadoEm: lead.matricula.cobrancas[0].linkEnviadoEm?.toISOString() ?? null,
+              }
+            : null,
+        }
       : null,
     valorPrevisto: numeroOuNull(lead.valorPrevisto),
     planoPrevisto: lead.planoPrevisto,
@@ -56,5 +85,13 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     autor: ev.autor ? { nome: ev.autor.nome } : null,
   }));
 
-  return <FichaLead lead={ficha} timeline={eventos} professores={professores} />;
+  return (
+    <FichaLead
+      lead={ficha}
+      timeline={eventos}
+      professores={professores}
+      sugestoesIA={sugestoesIA}
+      copilotoAtivo={configComercial.copilotoAtivo}
+    />
+  );
 }

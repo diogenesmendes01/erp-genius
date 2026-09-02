@@ -14,7 +14,11 @@
 **Sem automações nem integrações.**
 **Objetivo:** conseguir operar a escola inteira **manualmente** dentro do sistema.
 
-## Fase 1 — CRM operacional (automações)
+> **Status (ago/2026):** Fases 0–3 **implementadas** — as automações nascem DESLIGADAS
+> (regra de ouro do doc 27) e as integrações externas (WABA, DocuSign, GreenPay) ficam
+> por trás de drivers (simulado local). Detalhe por fase no [`16`](16-plano-execucao.md).
+
+## Fase 1 — CRM operacional (automações) ✅
 - Captura de leads (origem inteligente)
 - Distribuição (dono do lead) + SLA
 - WhatsApp (Cloud API direto)
@@ -22,7 +26,7 @@
 - Aula experimental / avaliação
 - Matrícula (máquina de estados + DocuSign)
 
-## Fase 2 — Financeiro (automação/integração)
+## Fase 2 — Financeiro (automação/integração) ✅
 > A base **manual** (cobranças, baixa, inadimplência, comissões, visão geral) já está na Fase 0.
 > A Fase 2 adiciona **automação e integração** por cima dela.
 
@@ -31,7 +35,7 @@
 **Integrações:** GreenPay · PIX · Boleto · Cartão.
 **Comissão:** apuração automática · fechamento mensal · relatório por vendedor.
 
-## Fase 3 — Acadêmico
+## Fase 3 — Acadêmico ✅
 - Turmas (online e — a confirmar — presencial em Campinas)
 - Frequência
 - Notas

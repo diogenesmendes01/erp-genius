@@ -55,6 +55,21 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL],
   },
   {
+    // Fase 3 (doc 03): PORTAL DO ALUNO — só o papel ALUNO vê; row-level pelo vínculo
+    // Aluno.usuarioId (o portal mostra exclusivamente os dados do próprio aluno).
+    href: "/portal",
+    label: "Meu portal",
+    icon: "School",
+    papeis: [Papel.ALUNO],
+  },
+  {
+    // B2B — Fase 2 (doc 03): contrato corporativo, lote de colaboradores e fatura única.
+    href: "/empresas",
+    label: "Empresas",
+    icon: "Building",
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA],
+  },
+  {
     // Gerente Comercial entra p/ a config comercial (auto-lead/saudação — doc 27 C1);
     // as sub-abas (tabs.ts) filtram o que ele vê (só WhatsApp) — o index redireciona p/ ela.
     href: "/configuracao",

@@ -102,3 +102,19 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
   `GET /api/files/[...path]`, que **exige sessão válida e autorização por papel/escopo**
   sobre o objeto que referencia o arquivo (ex.: a cobrança/lead correspondente). O envio é por
   `POST /api/upload` (também autenticado). A pasta `data/uploads/` está no `.gitignore`.
+
+
+## Variáveis novas (Fases 1–3, ago/2026)
+
+| Variável | Para quê | Default |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | C3 — copiloto IA (sem a chave roda a heurística local "simulado") | vazio |
+| `IA_MODELO` | Modelo da API Anthropic usado pelo copiloto | `claude-sonnet-5` |
+| `PAGAMENTO_SIMULADO` | Habilita o botão de pagar da página `/pagar/[token]` (dev/demo) | vazio |
+
+Rotas públicas novas: `/pagar/[token]` (link de pagamento do gateway simulado) e
+`/certificado/[codigo]` (validação pública de certificado). Portal do aluno em `/portal`
+(papel `ALUNO`; a secretaria cria o acesso na ficha do aluno). O tick do cron
+(`POST /api/whatsapp/cron`, header `x-cron-secret`) agora roda também: cadências C4,
+check-in vencido (B9), copiloto (quietude), gestão (C5) e fechamento mensal de comissões
+— em produção o serviço `cron` do `docker-compose.prod.yml` bate a cada 5 minutos.

@@ -150,7 +150,8 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
     const contato = await seedContato();
     const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana" } });
     const politica = await prisma.politicaComercial.create({
-      data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
+      // B1 (doc 32): comportamento geral — go-live explícito.
+      data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, modoPiloto: false, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
     });
     const template = over.template
       ? await prisma.templateWhatsApp.create({

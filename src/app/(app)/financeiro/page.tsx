@@ -6,6 +6,7 @@ import {
   kpisFinanceiro,
   dadosCambio,
   relatorioDescontosComissoes,
+  carregarConfigFinanceiro,
 } from "@/server/financeiro/consultas";
 import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
@@ -32,13 +33,14 @@ export default async function FinanceiroPage() {
   const podeOperarCobranca =
     papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 
-  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio] = await Promise.all([
+  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, configFinanceiro] = await Promise.all([
     listarFilaCobranca(),
     listarComissoes(),
     kpisFinanceiro(),
     listarAprovacoesPendentes(),
     dadosCambio(),
     relatorioDescontosComissoes(),
+    carregarConfigFinanceiro(),
   ]);
 
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
@@ -60,6 +62,7 @@ export default async function FinanceiroPage() {
 
   return (
     <FinanceiroPainel
+      configFinanceiro={configFinanceiro}
       fila={fila}
       comissoes={comissoes}
       kpis={kpis}

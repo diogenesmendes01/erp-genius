@@ -26,6 +26,7 @@ enum Papel {
   PROFESSOR
   FINANCEIRO
   SECRETARIA_ACADEMICA
+  ALUNO // Fase 3 (doc 03): portal do aluno — acesso restrito aos PRÓPRIOS dados
 }
 
 model Usuario {
@@ -56,6 +57,8 @@ model Usuario {
   numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
   intencoesWhatsApp IntencaoMensagem[]  @relation("AutorIntencoesWhatsApp")
+  sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
+  acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
 }
 
 // ============================================================
@@ -138,7 +141,9 @@ model Nivel {
   codigo   String // Pré A1, A1, A2, B1, B2, C1, C2
   ordem    Int
 
-  turmas Turma[]
+  turmas       Turma[]
+  testesNivel  TesteNivel[]  // Fase 3
+  certificados Certificado[] // Fase 3
 }
 
 // Produto vendável = idioma + modalidade
@@ -242,7 +247,9 @@ model Turma {
   rolling       Boolean     @default(false) // Pré A1 (entrada contínua) — A1 herda janela maior
   criadoEm      DateTime    @default(now())
 
-  alocacoes AlocacaoTurma[]
+  alocacoes  AlocacaoTurma[]
+  aulas      Aula[]
+  avaliacoes Avaliacao[]
 }
 
 // ============================================================
@@ -327,6 +334,14 @@ model Aluno {
   // Operacional (doc 09 §Operacional)
   fuso        String? // sobrescreve o fuso do país (envio de mensagens); default = país
   observacoes String?
+  // Fase 3 (portal do aluno): usuário de acesso (papel ALUNO) vinculado 1:1.
+  usuarioId   String?  @unique
+  usuario     Usuario? @relation("AcessoAluno", fields: [usuarioId], references: [id])
+  // Fase 3 (acadêmico)
+  presencas    Presenca[]
+  notas        Nota[]
+  testesNivel  TesteNivel[]
+  certificados Certificado[]
 
   // Estado
   status   StatusAluno @default(ATIVO)
@@ -508,6 +523,11 @@ model Lead {
   // reagendamento já vem dos eventos `ExperimentalAgendada` repetidos — não precisa coluna.
   experimentalConfirmadaEm DateTime?
 
+  // B8 (doc 32): o lead pediu REAGENDAR — a cadência pré-experimental fica PAUSADA até a
+  // ação humana (o vendedor remarcar limpa o campo em `agendarExperimental`). Sem estado
+  // persistido, o tick seguinte re-enfileirava o próximo degrau por cima do pedido.
+  aguardandoReagendamentoEm DateTime?
+
   // valor da oportunidade (Ficha do Lead — doc 09)
   valorPrevisto    Decimal? @db.Decimal(12, 2)
   planoPrevisto    String?
@@ -521,6 +541,7 @@ model Lead {
   documentos       Documento[]
   contatosWhatsApp ContatoWhatsApp[]
   intencoesWhatsApp IntencaoMensagem[]
+  sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
 }
@@ -587,6 +608,12 @@ model Matricula {
   // preços fechada (doc 06 §Em aberto) sem perder a auditoria.
   precoReferenciaAusente Boolean         @default(false)
   justificativaSemPreco  String?
+  // C4 (doc 27 §fechamento): quando o CONTRATO foi enviado ao cliente — âncora da régua
+  // "contrato sem assinatura em 48h". Re-enviar atualiza (abre ocorrência nova da cadência).
+  contratoEnviadoEm      DateTime?
+  // B2B (doc 03 Fase 2): matrícula CORPORATIVA — o pagador é a empresa (fatura única).
+  empresaId              String?
+  empresa                Empresa?        @relation(fields: [empresaId], references: [id])
   // Nível inicial + origem (doc 09 §Matrícula): de onde veio o nível do aluno.
   nivelInicialId         String?
   origemNivel            OrigemNivel?
@@ -621,6 +648,8 @@ enum FormaPagamento {
   GREENPAY
   DINHEIRO
   CARTAO
+  PIX // Fase 2 (doc 03): integrações de pagamento
+  BOLETO
 }
 
 model Cobranca {
@@ -639,12 +668,30 @@ model Cobranca {
   status          StatusCobranca  @default(PENDENTE)
   pagoEm          DateTime?
   formaPagamento  FormaPagamento?
+  // C4 (doc 27 §fechamento): link de pagamento enviado ao cliente. `linkEnviadoEm` é a
+  // âncora da régua "link sem pagamento". Na Fase 2 o gateway gera o link; aqui pode ser
+  // registrado manualmente (Pix copia-e-cola, link do provedor etc.).
+  linkPagamento   String?
+  linkEnviadoEm   DateTime?
+  // Fase 2 (gateway por DRIVER): referência opaca no provedor (token da página simulada,
+  // id da cobrança no GreenPay/PIX futuro). Única — é a chave do webhook de conciliação.
+  gatewayRef      String?   @unique
+  // B2B (doc 03 Fase 2): mensalidade de matrícula corporativa agrupada numa FATURA ÚNICA.
+  faturaB2BId     String?
+  faturaB2B       FaturaB2B? @relation(fields: [faturaB2BId], references: [id])
+  // SNAPSHOT do valor levado à fatura no fechamento (= saldo aberto naquele momento —
+  // review PR #60): mudanças posteriores na cobrança não mudam a composição do documento.
+  valorFaturado   Decimal?   @db.Decimal(12, 2)
   comprovanteUrl  String?
   comprovanteNome String?
   comentario      String?
   criadoEm        DateTime        @default(now())
 
   intencoesWhatsApp IntencaoMensagem[]
+
+  // Índice PARCIAL (SQL puro na migration review_pr60, Prisma não modela): no máximo UMA
+  // cobrança viva por matrícula×tipo×competência — dupla ativação não duplica cronograma.
+  // WHERE status <> 'CANCELADA' AND competencia IS NOT NULL.
 }
 
 enum StatusComissao {
@@ -665,6 +712,9 @@ model Comissao {
   moeda                 String
   status                StatusComissao @default(PENDENTE)
   dataPrevistaPagamento DateTime?
+  // Quando a comissão foi APROVADA (ativação da matrícula) — é o corte de competência do
+  // fechamento mensal automático (review PR #60): o cron paga só o período já fechado.
+  aprovadaEm            DateTime?
   pagaEm                DateTime?
   criadoEm              DateTime       @default(now())
 }
@@ -840,6 +890,7 @@ model NumeroWhatsApp {
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
   politicasComerciais PoliticaComercial[]
+  configsGestao       ConfigComercial[]   @relation("NumeroGestao") // C5: remetente das msgs do gestor
 
   // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
@@ -915,6 +966,7 @@ enum StatusMensagem {
 }
 
 enum OrigemEnvio {
+  GESTAO // C5 (doc 27): mensagens do sistema para a EQUIPE (alerta de SLA, relatório do gestor)
   HUMANO
   CRON
   LOTE
@@ -1004,6 +1056,11 @@ model IntencaoMensagem {
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
   atualizadoEm    DateTime          @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
   despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
+  // B3 (doc 32): VALIDADE do disparo — intenção pré-evento (lembrete -24h/-2h) não pode
+  // sair depois da aula, nem um degrau atrasado além da tolerância. O despachante CANCELA
+  // (nunca envia) quando `agora > validaAte`, inclusive itens ADIADOS por janela/silêncio/
+  // kill switch. NULL = sem validade (comportamento de backlog da cobrança).
+  validaAte       DateTime?
   despachadaEm    DateTime?
   motivoFalha     String? // sem_destino, driver, opt_out... — estampado na fila humana
   mensagemId      String?           @unique
@@ -1127,6 +1184,13 @@ model PoliticaComercial {
   silencioPosInboundHoras Int               @default(72)
   numeroRemetenteId       String?
   numeroRemetente         NumeroWhatsApp?   @relation(fields: [numeroRemetenteId], references: [id])
+
+  // B1 (doc 32): COHORT REAL do piloto. Em modo piloto (default — regra de ouro), o cron
+  // só enfileira para leads da allowlist explícita; lista vazia = ninguém. Desligar o modo
+  // piloto é o go-live geral da cadência — decisão explícita do gerente, nunca acidente.
+  modoPiloto    Boolean  @default(true)
+  pilotoLeadIds String[] @default([])
+
   criadoEm                DateTime          @default(now())
   atualizadoEm            DateTime          @updatedAt
 
@@ -1142,6 +1206,9 @@ model DegrauComercial {
   offsetMinutos Int // minutos após a âncora (1º inbound do lead)
   rotulo       String
   ativo        Boolean           @default(true)
+  // B3/B4 (doc 32): tolerância MÁXIMA de atraso do degrau, em minutos — além dela o
+  // disparo perde sentido e a intenção é cancelada via `validaAte`. NULL = sem limite.
+  toleranciaMinutos Int?
   templateId   String?
   template     TemplateWhatsApp? @relation(fields: [templateId], references: [id])
 
@@ -1157,6 +1224,229 @@ model ConfigComercial {
   // enviado, sem enviar) · ATIVA. Reusa o enum das políticas de cobrança.
   saudacaoEstado EstadoPolitica @default(DESLIGADA)
   saudacaoTexto  String         @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
+  // B9 (doc 32): tolerância (minutos após o horário da aula) para o professor registrar o
+  // check-in da experimental. Vencida a tolerância sem check-in: evento
+  // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
+  // a recuperação de no-show (C2) nunca dispara — o alerta é o que fecha esse ciclo.
+  checkInToleranciaMinutos Int @default(30)
+  // C3 (doc 27): IA copiloto SÓ-LEITURA — resume, sugere temperatura/segmento/etapa; um
+  // humano aceita/corrige/descarta. A IA NUNCA fala com o cliente e nasce DESLIGADA.
+  copilotoAtivo            Boolean @default(false)
+  // Gatilho "conversa quieta": ~N min após o último inbound sem resposta do vendedor.
+  copilotoQuietudeMinutos  Int     @default(10)
+  // C4 (doc 27): matrícula AUTOMÁTICA — contrato OK + taxa PAGA numa matrícula AGUARDANDO
+  // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
+  // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
+  matriculaAutomaticaAtiva Boolean @default(false)
+  // C5 (doc 27): GESTÃO — alerta de SLA + relatório diário no WhatsApp do gestor.
+  // Shadow próprio (DESLIGADA/SHADOW/ATIVA — nasce DESLIGADA); mensagens saem pela MESMA
+  // outbox/despachante com origem GESTAO (isentas de janela/teto/silêncio: são para a
+  // equipe, não para clientes; o kill switch global congela também).
+  gestaoEstado        EstadoPolitica @default(DESLIGADA)
+  gestaoTelefoneE164  String? // WhatsApp do gestor (destino)
+  gestaoNumeroId      String? // número remetente (vendas)
+  gestaoNumero        NumeroWhatsApp? @relation("NumeroGestao", fields: [gestaoNumeroId], references: [id])
+  gestaoSlaMinutos    Int            @default(30) // lead NOVO parado além disto = alerta
+  gestaoRelatorioHora Int            @default(19) // hora (do servidor) do relatório diário
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
+}
+
+// ============================================================
+// C3 — IA COPILOTO (doc 27): sugestões SÓ-LEITURA sobre o lead. Cada análise (lote) gera
+// até uma sugestão POR TIPO; o vendedor decide uma a uma (aceitar/corrigir/descartar) —
+// é essa decisão que alimenta a MÉTRICA-GATE (taxa de aceitação por tipo), a condição
+// para qualquer auto-aplicação futura. A IA nunca envia mensagem (lei do doc 27).
+// ============================================================
+
+enum TipoSugestaoIA {
+  RESUMO // os 6 campos do resumo executivo (doc 08)
+  TEMPERATURA
+  SEGMENTO
+  ETAPA // só destinos MANUAIS que a máquina de estados aceita (doc 29 regra 7)
+}
+
+enum StatusSugestaoIA {
+  PENDENTE
+  ACEITA
+  CORRIGIDA // aceita com edição — conta separado na métrica
+  DESCARTADA
+  EXPIRADA // superada por um lote mais novo antes de decisão humana
+}
+
+enum GatilhoSugestaoIA {
+  QUIETUDE // conversa quieta ~10min após o último inbound
+  MUDANCA_ETAPA
+  SOB_DEMANDA
+}
+
+model SugestaoIA {
+  id      String            @id @default(cuid())
+  leadId  String
+  lead    Lead              @relation(fields: [leadId], references: [id])
+  loteId  String // agrupa as sugestões geradas numa MESMA análise
+  tipo    TipoSugestaoIA
+  status  StatusSugestaoIA  @default(PENDENTE)
+  gatilho GatilhoSugestaoIA
+  payload Json // { campos sugeridos } — shape por tipo (ver ia/tipos.ts)
+  justificativa String? // por que a IA sugeriu (exibida ao vendedor)
+  modelo  String // "simulado" ou o id do modelo LLM
+  // Idempotência do gatilho QUIETUDE: o inbound que ancorou a análise.
+  ancoraInbound DateTime?
+
+  criadoEm      DateTime  @default(now())
+  decididaEm    DateTime?
+  decididaPorId String?
+  decididaPor   Usuario?  @relation("DecisorSugestoesIA", fields: [decididaPorId], references: [id])
+
+  @@index([leadId, status])
+  @@index([status, criadoEm])
+}
+
+
+// ============================================================
+// B2B — FASE 2 (doc 03): contrato corporativo · fatura única · matrículas em lote ·
+// relatório por colaborador. A empresa é o PAGADOR das matrículas corporativas; as
+// mensalidades dos colaboradores são agrupadas numa FaturaB2B por competência, e a baixa
+// da fatura baixa as cobranças em lote (mesma máquina de cobrança da Fase 0 por baixo).
+// ============================================================
+
+model Empresa {
+  id              String   @id @default(cuid())
+  codigo          String?  @unique // E-000001
+  nome            String
+  paisId          String?
+  documento       String? // CNPJ/RUC/NIT... conforme o país
+  contatoNome     String?
+  contatoEmail    String?
+  contatoTelefone String?
+  // Termos do CONTRATO CORPORATIVO (fatura única): dia de vencimento e observações.
+  diaVencimento   Int      @default(10)
+  observacoes     String?
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now())
+
+  matriculas Matricula[]
+  faturas    FaturaB2B[]
+}
+
+enum StatusFaturaB2B {
+  ABERTA // agrupando cobranças da competência
+  FECHADA // emitida — aguarda pagamento
+  PAGA
+  CANCELADA
+}
+
+model FaturaB2B {
+  id          String          @id @default(cuid())
+  codigo      String?         @unique // F-000001
+  empresaId   String
+  empresa     Empresa         @relation(fields: [empresaId], references: [id])
+  competencia String // "2026-09"
+  moeda       String
+  valorTotal  Decimal         @db.Decimal(12, 2)
+  status      StatusFaturaB2B @default(ABERTA)
+  vencimento  DateTime
+  pagoEm      DateTime?
+  criadoEm    DateTime        @default(now())
+
+  cobrancas Cobranca[]
+
+  @@unique([empresaId, competencia]) // uma fatura por empresa×mês
+}
+
+// Config do FINANCEIRO automatizado (Fase 2) — singleton, tudo nasce desligado.
+model ConfigFinanceiro {
+  id                            String  @id @default("financeiro")
+  // Fechamento MENSAL de comissões automático (dia 1: paga as APROVADAS do mês anterior).
+  fechamentoComissaoAutomatico  Boolean @default(false)
+  criadoEm                      DateTime @default(now())
+  atualizadoEm                  DateTime @updatedAt
+}
+
+
+// ============================================================
+// ACADÊMICO — FASE 3 (doc 03): frequência · notas · teste de nível · progressão ·
+// certificados · portal do aluno. Diário de classe por AULA (frequência), avaliações
+// com notas, teste de nível como registro auditável, progressão por aprovação humana
+// (o sistema CALCULA e sugere; quem aprova é gente — mesma filosofia híbrida do C4) e
+// certificado com código de validação público.
+// ============================================================
+
+model Aula {
+  id        String   @id @default(cuid())
+  turmaId   String
+  turma     Turma    @relation(fields: [turmaId], references: [id])
+  data      DateTime
+  conteudo  String?
+  criadoEm  DateTime @default(now())
+
+  presencas Presenca[]
+
+  @@unique([turmaId, data]) // uma aula por turma×data (re-registrar edita, não duplica)
+}
+
+model Presenca {
+  id      String  @id @default(cuid())
+  aulaId  String
+  aula    Aula    @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  alunoId String
+  aluno   Aluno   @relation(fields: [alunoId], references: [id])
+  presente Boolean
+  observacao String?
+
+  @@unique([aulaId, alunoId])
+}
+
+model Avaliacao {
+  id      String    @id @default(cuid())
+  turmaId String
+  turma   Turma     @relation(fields: [turmaId], references: [id])
+  nome    String // "Prova 1", "Oral", "Projeto"...
+  peso    Decimal   @default(1) @db.Decimal(5, 2)
+  data    DateTime?
+  criadoEm DateTime @default(now())
+
+  notas Nota[]
+
+  @@unique([turmaId, nome])
+}
+
+model Nota {
+  id          String    @id @default(cuid())
+  avaliacaoId String
+  avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  alunoId     String
+  aluno       Aluno     @relation(fields: [alunoId], references: [id])
+  valor       Decimal   @db.Decimal(5, 2) // 0–100
+  criadoEm    DateTime  @default(now())
+
+  @@unique([avaliacaoId, alunoId])
+}
+
+model TesteNivel {
+  id         String   @id @default(cuid())
+  alunoId    String
+  aluno      Aluno    @relation(fields: [alunoId], references: [id])
+  nivelId    String
+  nivel      Nivel    @relation(fields: [nivelId], references: [id])
+  pontuacao  Decimal? @db.Decimal(5, 2)
+  observacao String?
+  data       DateTime @default(now())
+}
+
+model Certificado {
+  id              String   @id @default(cuid())
+  alunoId         String
+  aluno           Aluno    @relation(fields: [alunoId], references: [id])
+  nivelId         String
+  nivel           Nivel    @relation(fields: [nivelId], references: [id])
+  turmaId         String?
+  // Código PÚBLICO de validação (portal/terceiros conferem a autenticidade).
+  codigoValidacao String   @unique
+  emitidoEm       DateTime @default(now())
+
+  // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
+  // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
+  @@unique([alunoId, nivelId])
 }
