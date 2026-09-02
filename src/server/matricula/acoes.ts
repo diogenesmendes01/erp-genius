@@ -397,6 +397,9 @@ async function ativarMatriculaTx(
     comentario?: string | null;
   },
 ): Promise<{ leadId: string | null }> {
+  // Mesmo claim da ativação automática (review PR #60 rodada 2): serializa a ativação
+  // manual com o cron/webhook — o check de "já está ativa" abaixo passa a valer de fato.
+  await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
   const matricula = await tx.matricula.findUnique({
     where: { id: matriculaId },
     include: {
@@ -761,6 +764,12 @@ export async function ativarSeFechamentoCompletoTx(
   const config = await tx.configComercial.findUnique({ where: { id: "comercial" } });
   if (!config?.matriculaAutomaticaAtiva) return { ativou: false, leadId: null };
 
+  // CLAIM da matrícula (review PR #60 rodada 2): dois gatilhos concorrentes (webhook +
+  // varredura do cron, ou dois ticks) selecionam a mesma AGUARDANDO antes de qualquer
+  // commit — sem o lock, ambos passam na releitura e o cronograma sai DUPLICADO. Com o
+  // FOR UPDATE, o segundo espera e relê status=ATIVA (no-op). Defesa extra no banco:
+  // índice único parcial matrícula×tipo×competência (migration review_pr60).
+  await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
   const matricula = await tx.matricula.findUnique({
     where: { id: matriculaId },
     include: { cobrancas: { where: { tipo: TipoCobranca.MATRICULA } } },
@@ -805,8 +814,17 @@ async function exigirMatriculaNoEscopoTx(
   });
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
   const amplo = temPapel(autor, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
-  if (!amplo && matricula.lead?.vendedorDonoId !== autor.id) {
-    throw new ErroPermissao("Esta matrícula não está na sua carteira.");
+  if (!amplo) {
+    // Matrícula SEM lead (fluxo direto — review PR #60 rodada 2): o dono é quem recebe a
+    // comissão (criarMatricula amarra `vendedorId` = dono do lead OU o próprio criador).
+    // Sem este fallback, o vendedor que criou a matrícula direta não fecha o próprio negócio.
+    const dono = matricula.lead
+      ? matricula.lead.vendedorDonoId === autor.id
+      : (await tx.comissao.findFirst({
+          where: { matriculaId, vendedorId: autor.id },
+          select: { id: true },
+        })) !== null;
+    if (!dono) throw new ErroPermissao("Esta matrícula não está na sua carteira.");
   }
   return matricula;
 }
@@ -938,11 +956,18 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
       if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
         throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
 
-      const link = await driver.gerarLink({
-        id: cobranca.id,
-        valor: numero(cobranca.valorNegociado),
-        moeda: cobranca.moeda,
-      });
+      // REUSA o link ativo (review PR #60 rodada 2): trocar o `gatewayRef` a cada geração
+      // deixaria o link já enviado órfão no provedor — cliente paga e o webhook não acha
+      // mais a cobrança pela referência. Enquanto a cobrança está aberta, re-gerar só
+      // re-ancora a régua (linkEnviadoEm) e devolve o MESMO link pagável.
+      const link =
+        cobranca.gatewayRef && cobranca.linkPagamento
+          ? { gatewayRef: cobranca.gatewayRef, url: cobranca.linkPagamento }
+          : await driver.gerarLink({
+              id: cobranca.id,
+              valor: numero(cobranca.valorNegociado),
+              moeda: cobranca.moeda,
+            });
       await tx.cobranca.update({
         where: { id: cobrancaId },
         data: { gatewayRef: link.gatewayRef, linkPagamento: link.url, linkEnviadoEm: agora },
@@ -952,7 +977,12 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        payload: { quando: agora.toISOString(), via: `gateway_${driver.nome}`, reenvio: cobranca.linkEnviadoEm != null },
+        payload: {
+          quando: agora.toISOString(),
+          via: `gateway_${driver.nome}`,
+          reenvio: cobranca.linkEnviadoEm != null,
+          linkReutilizado: !!(cobranca.gatewayRef && cobranca.linkPagamento),
+        },
       });
       return { url: link.url, leadId: cobranca.matricula.leadId };
     });

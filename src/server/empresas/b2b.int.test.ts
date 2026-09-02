@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Papel, StatusCobranca, StatusMatricula } from "@prisma/client";
+import { FormaPagamento, Papel, StatusCobranca, StatusMatricula } from "@prisma/client";
 
 // B2B — Fase 2 (doc 03): lote de matrículas corporativas, fatura única por competência,
 // baixa em lote e relatório por colaborador. Sessão mockada; papéis frescos do banco.
@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";
 import { cancelarFaturaB2B, criarMatriculasLoteB2B, fecharFaturaB2B, pagarFaturaB2B, salvarEmpresa } from "./acoes";
 import { obterEmpresa } from "./consultas";
+import { baixarCobrancaTx } from "@/server/financeiro/baixa";
+import { pausarAluno } from "@/server/alunos/acoes";
 
 let gerente: Awaited<ReturnType<typeof criarUsuario>>;
 let financeiro: Awaited<ReturnType<typeof criarUsuario>>;
@@ -220,11 +222,12 @@ describe("fatura única — review PR #60", () => {
     expect(Number(depois.valorRecebido)).toBe(50000); // 20000 antigos + 30000 da fatura
   });
 
-  it("item CANCELADO após o fechamento não trava o pagamento (pulado e auditado)", async () => {
+  it("item cancelado FORA DE BANDA não quita o documento: pagar recusa; o caminho é a REEMISSÃO", async () => {
     const { empresaId, competencia } = await seedLote();
     await fecharFaturaB2B({ empresaId, competencia });
     const fatura = await prisma.faturaB2B.findFirstOrThrow({ include: { cobrancas: true } });
-    // Uma mensalidade é cancelada por outro fluxo (ex.: aluno pausado).
+    // Estado fora de banda (os fluxos do app agora BLOQUEIAM mutação de item faturado —
+    // rodada 2): simula legado/manutenção direta no banco.
     await prisma.cobranca.update({
       where: { id: fatura.cobrancas[0].id },
       data: { status: StatusCobranca.CANCELADA },
@@ -232,14 +235,59 @@ describe("fatura única — review PR #60", () => {
 
     authMock.mockResolvedValue({ user: { id: financeiro.id } });
     const r = await pagarFaturaB2B(fatura.id);
-    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
-    expect(r.ok && r.dado!.baixadas).toBe(1); // só a viva
+    expect(r.ok).toBe(false); // liquidação não cobriria o documento de 100000
+    expect(!r.ok && r.erro).toContain("reemissão");
+    const aindaFechada = await prisma.faturaB2B.findUniqueOrThrow({ where: { id: fatura.id } });
+    expect(aindaFechada.status).toBe("FECHADA"); // nada foi meio-pago
 
+    // REEMISSÃO formal: cancela e fecha de novo — o novo documento sai SEM o item.
+    authMock.mockResolvedValue({ user: { id: gerente.id } });
+    expect((await cancelarFaturaB2B(fatura.id)).ok).toBe(true);
+    const r2 = await fecharFaturaB2B({ empresaId, competencia });
+    expect(r2.ok).toBe(true);
+    expect(r2.ok && r2.dado!.total).toBe(50000);
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const pago = await pagarFaturaB2B(fatura.id);
+    expect(pago.ok, pago.ok ? "" : `falhou: ${(pago as { erro?: string }).erro}`).toBe(true);
+    expect(pago.ok && pago.dado!.baixadas).toBe(1);
     const evento = await prisma.evento.findFirstOrThrow({
       where: { tipo: "FaturaB2BPaga", agregadoId: fatura.id },
     });
-    const payload = evento.payload as { itensCanceladosPulados?: string[]; totalBaixado?: number };
-    expect(payload.itensCanceladosPulados).toHaveLength(1);
-    expect(payload.totalBaixado).toBe(50000);
+    expect((evento.payload as { totalBaixado?: number }).totalBaixado).toBe(50000);
+  });
+
+  it("item de fatura FECHADA é CONGELADO: baixa avulsa e pausa do aluno são recusadas", async () => {
+    const { empresaId, competencia } = await seedLote();
+    await fecharFaturaB2B({ empresaId, competencia });
+    const item = await prisma.cobranca.findFirstOrThrow({ where: { faturaB2BId: { not: null } } });
+
+    // Baixa AVULSA (fora da fatura) no miolo compartilhado → recusada pelo congelamento.
+    await expect(
+      prisma.$transaction((tx) =>
+        baixarCobrancaTx(tx, financeiro.id, item.id, {
+          valorRecebido: 1000,
+          forma: FormaPagamento.TRANSFERENCIA,
+          via: "manual",
+        }),
+      ),
+    ).rejects.toThrow(/fatura B2B/);
+    const intacta = await prisma.cobranca.findUniqueOrThrow({ where: { id: item.id } });
+    expect(intacta.valorRecebido).toBeNull();
+
+    // Pausar o aluno cancelaria a mensalidade faturada → recusado até cancelar a fatura.
+    // Vencimento explícito no futuro: a pausa só cancela PENDENTE com vencimento > agora.
+    await prisma.cobranca.update({
+      where: { id: item.id },
+      data: { vencimento: new Date(Date.now() + 30 * 24 * 3600 * 1000) },
+    });
+    const secretaria = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria");
+    authMock.mockResolvedValue({ user: { id: secretaria.id } });
+    const aluno = await prisma.matricula.findFirstOrThrow({
+      where: { id: item.matriculaId },
+      select: { alunoId: true },
+    });
+    const pausa = await pausarAluno(aluno.alunoId, { motivo: "Viagem" });
+    expect(pausa.ok).toBe(false);
+    expect(!pausa.ok && pausa.erro).toContain("fatura B2B");
   });
 });

@@ -10,7 +10,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";
-import { aprovarNivelAluno, criarAcessoPortal, lancarNotas, registrarAula, salvarAvaliacao } from "./acoes";
+import { aprovarNivelAluno, criarAcessoPortal, lancarNotas, registrarAula, registrarTesteNivel, salvarAvaliacao } from "./acoes";
 import { dadosPortalDoUsuario, progressaoDaTurma, validarCertificado } from "./consultas";
 
 let professor: Awaited<ReturnType<typeof criarUsuario>>;
@@ -208,5 +208,84 @@ describe("review PR #60 — acadêmico", () => {
     const aula = await prisma.aula.findFirstOrThrow();
     expect(aula.data.getDate()).toBe(20); // dia LOCAL preservado (meio-dia local)
     expect(aula.data.getHours()).toBe(12);
+  });
+});
+
+describe("review PR #60 rodada 2 — acadêmico", () => {
+  it("teste de nível: PROFESSOR só registra para aluno das SUAS turmas; secretaria registra qualquer", async () => {
+    const { aluno, nivel } = await seedTurmaComAluno();
+    const forasteiro = await prisma.aluno.create({
+      data: { codigo: "A-000077", primeiroNome: "Bia", paisId: catalogo.pais.id },
+    });
+    authMock.mockResolvedValue({ user: { id: professor.id } });
+    const negado = await registrarTesteNivel({ alunoId: forasteiro.id, nivelId: nivel.id, pontuacao: 80 });
+    expect(negado.ok).toBe(false);
+    expect(await prisma.testeNivel.count()).toBe(0);
+
+    const proprio = await registrarTesteNivel({ alunoId: aluno.id, nivelId: nivel.id, pontuacao: 90 });
+    expect(proprio.ok, proprio.ok ? "" : `falhou: ${(proprio as { erro?: string }).erro}`).toBe(true);
+
+    authMock.mockResolvedValue({ user: { id: secretaria.id } });
+    const amplo = await registrarTesteNivel({ alunoId: forasteiro.id, nivelId: nivel.id });
+    expect(amplo.ok).toBe(true);
+  });
+
+  it("frequência exige o ROSTER: aluno omitido vira FALTA materializada; repetido é rejeitado", async () => {
+    const { turma, aluno } = await seedTurmaComAluno();
+    const segundo = await prisma.aluno.create({
+      data: { codigo: "A-000078", primeiroNome: "Leo", paisId: catalogo.pais.id },
+    });
+    await prisma.alocacaoTurma.create({ data: { alunoId: segundo.id, turmaId: turma.id } });
+    authMock.mockResolvedValue({ user: { id: professor.id } });
+
+    const r = await registrarAula({
+      turmaId: turma.id,
+      dataISO: "2026-08-21",
+      presencas: [{ alunoId: aluno.id, presente: true }], // Leo omitido
+    });
+    expect(r.ok).toBe(true);
+    const doSegundo = await prisma.presenca.findFirstOrThrow({ where: { alunoId: segundo.id } });
+    expect(doSegundo.presente).toBe(false); // falta materializada — entra no denominador
+    expect(await prisma.presenca.count()).toBe(2);
+
+    const dup = await registrarAula({
+      turmaId: turma.id,
+      dataISO: "2026-08-22",
+      presencas: [
+        { alunoId: aluno.id, presente: true },
+        { alunoId: aluno.id, presente: false },
+      ],
+    });
+    expect(dup.ok).toBe(false);
+  });
+
+  it("datetime e data de calendário inválida são rejeitados no schema (só 'AAAA-MM-DD')", async () => {
+    const { turma, aluno } = await seedTurmaComAluno();
+    authMock.mockResolvedValue({ user: { id: professor.id } });
+    const comHora = await registrarAula({
+      turmaId: turma.id,
+      dataISO: "2026-08-20T09:00",
+      presencas: [{ alunoId: aluno.id, presente: true }],
+    });
+    expect(comHora.ok).toBe(false);
+    const invalida = await registrarAula({
+      turmaId: turma.id,
+      dataISO: "2026-02-31",
+      presencas: [{ alunoId: aluno.id, presente: true }],
+    });
+    expect(invalida.ok).toBe(false);
+    expect(await prisma.aula.count()).toBe(0);
+  });
+
+  it("certificado aluno×nível é ÚNICO no banco (duas aprovações concorrentes não geram dois códigos)", async () => {
+    const { aluno, nivel } = await seedTurmaComAluno();
+    await prisma.certificado.create({
+      data: { alunoId: aluno.id, nivelId: nivel.id, codigoValidacao: "AAAAAAAAAAAA" },
+    });
+    await expect(
+      prisma.certificado.create({
+        data: { alunoId: aluno.id, nivelId: nivel.id, codigoValidacao: "BBBBBBBBBBBB" },
+      }),
+    ).rejects.toThrow(); // P2002 — @@unique(alunoId, nivelId)
   });
 });

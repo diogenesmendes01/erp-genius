@@ -1,5 +1,5 @@
 import type { FormaPagamento, Prisma } from "@prisma/client";
-import { StatusCobranca, TipoCobranca } from "@prisma/client";
+import { StatusCobranca, StatusFaturaB2B, TipoCobranca } from "@prisma/client";
 import { acumularPagamento, ErroRegra, numero, numeroOuNull, registrarEvento } from "@/server/_shared";
 import { ativarSeFechamentoCompletoTx } from "@/server/matricula/acoes";
 
@@ -38,11 +38,21 @@ export async function baixarCobrancaTx(
   // (dois eventos, um só crédito). O `FOR UPDATE` faz a transação concorrente esperar aqui,
   // então a leitura abaixo já enxerga o acumulado da outra baixa.
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${cobrancaId} FOR UPDATE`;
-  const cobranca = await tx.cobranca.findUnique({ where: { id: cobrancaId } });
+  const cobranca = await tx.cobranca.findUnique({
+    where: { id: cobrancaId },
+    include: { faturaB2B: { select: { status: true, codigo: true } } },
+  });
   if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
   if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");
   if (cobranca.status === StatusCobranca.CANCELADA)
     throw new ErroRegra("Cobrança cancelada não recebe pagamento.");
+  // Item de fatura B2B FECHADA é CONGELADO (review PR #60 rodada 2): baixa avulsa aqui
+  // faria o documento divergir do liquidado. Só a própria fatura baixa (via "fatura_b2b").
+  if (cobranca.faturaB2B?.status === StatusFaturaB2B.FECHADA && dados.via !== "fatura_b2b") {
+    throw new ErroRegra(
+      `Esta cobrança está na fatura B2B ${cobranca.faturaB2B.codigo ?? ""} (fechada) — receba pela fatura ou cancele-a antes.`,
+    );
+  }
 
   // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
   // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.

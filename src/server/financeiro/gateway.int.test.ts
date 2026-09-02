@@ -181,3 +181,41 @@ describe("review PR #60 — financeiro", () => {
     expect(depois.status).toBe(StatusCobranca.PENDENTE); // ainda não quitou os 20000
   });
 });
+
+describe("review PR #60 rodada 2 — financeiro", () => {
+  it("re-gerar o link REUSA o gatewayRef ativo — o link já enviado segue conciliável", async () => {
+    const { taxa } = await seedMatriculaAguardando();
+    const r1 = await gerarLinkPagamentoGateway(taxa.id);
+    expect(r1.ok).toBe(true);
+    const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
+
+    const r2 = await gerarLinkPagamentoGateway(taxa.id);
+    expect(r2.ok).toBe(true);
+    const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
+    // A referência NÃO muda: quem recebeu o 1º link ainda paga e o webhook concilia.
+    expect(depois.gatewayRef).toBe(antes.gatewayRef);
+    expect(depois.linkPagamento).toBe(antes.linkPagamento);
+
+    const baixa = await processarPagamentoGateway(depois.gatewayRef!);
+    expect(baixa.quitada).toBe(true);
+  });
+
+  it("dois ticks SIMULTÂNEOS do fechamento mensal pagam UMA vez (advisory lock por mês)", async () => {
+    const { matriculaId } = await seedMatriculaAguardando();
+    await prisma.configFinanceiro.upsert({
+      where: { id: "financeiro" },
+      create: { id: "financeiro", fechamentoComissaoAutomatico: true },
+      update: { fechamentoComissaoAutomatico: true },
+    });
+    const hoje = new Date();
+    await prisma.comissao.updateMany({
+      where: { matriculaId },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: new Date(hoje.getFullYear(), hoje.getMonth() - 1, 15) },
+    });
+
+    const [a, b] = await Promise.all([rodarFechamentoComissoes(), rodarFechamentoComissoes()]);
+    expect([a.executou, b.executou].filter(Boolean)).toHaveLength(1); // um fecha, o outro desiste
+    expect(await prisma.comissao.count({ where: { status: StatusComissao.PAGA } })).toBe(1);
+    expect(await prisma.evento.count({ where: { tipo: "FechamentoComissoesMensal" } })).toBe(1);
+  });
+});

@@ -688,6 +688,10 @@ model Cobranca {
   criadoEm        DateTime        @default(now())
 
   intencoesWhatsApp IntencaoMensagem[]
+
+  // Índice PARCIAL (SQL puro na migration review_pr60, Prisma não modela): no máximo UMA
+  // cobrança viva por matrícula×tipo×competência — dupla ativação não duplica cronograma.
+  // WHERE status <> 'CANCELADA' AND competencia IS NOT NULL.
 }
 
 enum StatusComissao {
@@ -1441,4 +1445,8 @@ model Certificado {
   // Código PÚBLICO de validação (portal/terceiros conferem a autenticidade).
   codigoValidacao String   @unique
   emitidoEm       DateTime @default(now())
+
+  // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
+  // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
+  @@unique([alunoId, nivelId])
 }

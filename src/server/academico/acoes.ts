@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { Papel } from "@prisma/client";
+import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   ErroPermissao,
@@ -79,6 +79,16 @@ export async function registrarAula(input: RegistrarAulaInput): Promise<Resultad
     );
     const fora = dados.presencas.filter((p) => !alocados.has(p.alunoId));
     if (fora.length > 0) throw new ErroRegra("Há presenças de alunos que não estão na turma.");
+    // Roster COMPLETO (review PR #60 rodada 2): aluno repetido é rejeitado; aluno alocado
+    // OMITIDO vira FALTA materializada (linha presente:false) — sem isso ele some do
+    // denominador da frequência em vez de contar ausência. Re-registro parcial não
+    // sobrescreve o que já foi lançado para quem ficou de fora da edição.
+    const vistos = new Set<string>();
+    for (const p of dados.presencas) {
+      if (vistos.has(p.alunoId)) throw new ErroRegra("Há aluno repetido na lista de presenças.");
+      vistos.add(p.alunoId);
+    }
+    const omitidos = [...alocados].filter((id) => !vistos.has(id));
 
     const aulaId = await prisma.$transaction(async (tx) => {
       // Re-registrar a mesma data EDITA a aula (upsert por turma×data — @@unique).
@@ -94,6 +104,13 @@ export async function registrarAula(input: RegistrarAulaInput): Promise<Resultad
           update: { presente: p.presente },
         });
       }
+      for (const alunoId of omitidos) {
+        await tx.presenca.upsert({
+          where: { aulaId_alunoId: { aulaId: aula.id, alunoId } },
+          create: { aulaId: aula.id, alunoId, presente: false },
+          update: {}, // já lançado antes: a edição parcial não mexe
+        });
+      }
       await registrarEvento(tx, {
         tipo: "AulaRegistrada",
         agregadoTipo: "Turma",
@@ -102,7 +119,8 @@ export async function registrarAula(input: RegistrarAulaInput): Promise<Resultad
         payload: {
           data: data.toISOString(),
           presentes: dados.presencas.filter((p) => p.presente).length,
-          total: dados.presencas.length,
+          total: alocados.size,
+          faltasMaterializadas: omitidos.length,
         },
       });
       return aula.id;
@@ -200,6 +218,18 @@ export async function registrarTesteNivel(input: TesteNivelInput): Promise<Resul
     if (!nivel) throw new ErroRegra("Nível inexistente.");
 
     await prisma.$transaction(async (tx) => {
+      const aluno = await tx.aluno.findUnique({ where: { id: dados.alunoId }, select: { id: true } });
+      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
+      // Escopo do PROFESSOR (review PR #60 rodada 2): sem esta checagem, qualquer alunoId
+      // colado deixava inserir teste no histórico/portal de aluno de fora das suas turmas.
+      // Secretaria/gerência pedagógica (e admin) seguem sem restrição.
+      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO)) {
+        const naMinhaTurma = await tx.alocacaoTurma.findFirst({
+          where: { alunoId: dados.alunoId, ativa: true, turma: { professorId: autor.id } },
+          select: { id: true },
+        });
+        if (!naMinhaTurma) throw new ErroPermissao("Este aluno não está nas suas turmas.");
+      }
       await tx.testeNivel.create({
         data: {
           alunoId: dados.alunoId,
@@ -239,18 +269,27 @@ export async function aprovarNivelAluno(turmaId: string, alunoId: string): Promi
     if (ja) throw new ErroRegra(`Este aluno já tem certificado do nível ${turma.nivel.codigo}.`);
 
     const codigoValidacao = randomBytes(6).toString("hex").toUpperCase();
-    await prisma.$transaction(async (tx) => {
-      await tx.certificado.create({
-        data: { alunoId, nivelId: turma.nivelId, turmaId, codigoValidacao },
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.certificado.create({
+          data: { alunoId, nivelId: turma.nivelId, turmaId, codigoValidacao },
+        });
+        await registrarEvento(tx, {
+          tipo: "NivelConcluido",
+          agregadoTipo: "Aluno",
+          agregadoId: alunoId,
+          autorId: autor.id,
+          payload: { nivelId: turma.nivelId, nivel: turma.nivel.codigo, turmaId, codigoValidacao },
+        });
       });
-      await registrarEvento(tx, {
-        tipo: "NivelConcluido",
-        agregadoTipo: "Aluno",
-        agregadoId: alunoId,
-        autorId: autor.id,
-        payload: { nivelId: turma.nivelId, nivel: turma.nivel.codigo, turmaId, codigoValidacao },
-      });
-    });
+    } catch (e) {
+      // @@unique(alunoId, nivelId) — review PR #60 rodada 2: o pré-check acima não segura
+      // duas aprovações CONCORRENTES; o banco garante e o conflito é idempotência.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        throw new ErroRegra(`Este aluno já tem certificado do nível ${turma.nivel.codigo}.`);
+      }
+      throw e;
+    }
     revalidar(turmaId, alunoId);
     return { codigoValidacao };
   });
