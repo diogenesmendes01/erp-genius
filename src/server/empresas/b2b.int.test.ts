@@ -10,7 +10,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";
-import { criarMatriculasLoteB2B, fecharFaturaB2B, pagarFaturaB2B, salvarEmpresa } from "./acoes";
+import { cancelarFaturaB2B, criarMatriculasLoteB2B, fecharFaturaB2B, pagarFaturaB2B, salvarEmpresa } from "./acoes";
 import { obterEmpresa } from "./consultas";
 
 let gerente: Awaited<ReturnType<typeof criarUsuario>>;
@@ -152,5 +152,94 @@ describe("relatório por colaborador", () => {
     expect(dados!.colaboradores[0].mensalidadesPagas).toBe(1);
     expect(dados!.colaboradores[0].mensalidadesAbertas).toBe(1);
     expect(dados!.colaboradores[0].totalPago).toBe(50000);
+  });
+});
+
+
+describe("fatura única — review PR #60", () => {
+  async function seedLote(mensalidade = 50000) {
+    const empresaId = await seedEmpresa();
+    await criarMatriculasLoteB2B({
+      empresaId,
+      produtoId: catalogo.produto.id,
+      mensalidadeValor: mensalidade,
+      mesesPlano: 2,
+      colaboradores: [{ primeiroNome: "Ana" }, { primeiroNome: "Luis" }],
+    });
+    const primeira = await prisma.cobranca.findFirstOrThrow({
+      where: { matricula: { empresaId } },
+      orderBy: { vencimento: "asc" },
+    });
+    return { empresaId, competencia: primeira.competencia! };
+  }
+
+  it("fatura CANCELADA é reaberta na mesma linha (sem P2002 do @@unique)", async () => {
+    const { empresaId, competencia } = await seedLote();
+    const r1 = await fecharFaturaB2B({ empresaId, competencia });
+    expect(r1.ok).toBe(true);
+    const fatura = await prisma.faturaB2B.findFirstOrThrow();
+
+    expect((await cancelarFaturaB2B(fatura.id)).ok).toBe(true);
+    // Cobranças voltam soltas e SEM snapshot.
+    expect(await prisma.cobranca.count({ where: { faturaB2BId: fatura.id } })).toBe(0);
+    expect(await prisma.cobranca.count({ where: { valorFaturado: { not: null } } })).toBe(0);
+
+    // Fechar de novo a MESMA competência: reutiliza a linha (mesmo id), volta a FECHADA.
+    const r2 = await fecharFaturaB2B({ empresaId, competencia });
+    expect(r2.ok, r2.ok ? "" : `falhou: ${(r2 as { erro?: string }).erro}`).toBe(true);
+    expect(await prisma.faturaB2B.count()).toBe(1);
+    const reaberta = await prisma.faturaB2B.findUniqueOrThrow({ where: { id: fatura.id } });
+    expect(reaberta.status).toBe("FECHADA");
+  });
+
+  it("fecha pelo SALDO ABERTO (snapshot valorFaturado); pagar baixa só o restante", async () => {
+    const { empresaId, competencia } = await seedLote(50000);
+    // Ana já pagou 20000 da 1ª mensalidade (parcial avulsa).
+    const parcial = await prisma.cobranca.findFirstOrThrow({
+      where: { matricula: { empresaId }, competencia },
+      orderBy: { criadoEm: "asc" },
+    });
+    await prisma.cobranca.update({
+      where: { id: parcial.id },
+      data: { valorRecebido: 20000, saldo: 30000 },
+    });
+
+    const r = await fecharFaturaB2B({ empresaId, competencia });
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.dado!.total).toBe(80000); // 30000 (saldo) + 50000
+
+    const snapshot = await prisma.cobranca.findUniqueOrThrow({ where: { id: parcial.id } });
+    expect(Number(snapshot.valorFaturado)).toBe(30000);
+
+    const fatura = await prisma.faturaB2B.findFirstOrThrow();
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const pago = await pagarFaturaB2B(fatura.id);
+    expect(pago.ok).toBe(true);
+    const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: parcial.id } });
+    expect(depois.status).toBe(StatusCobranca.PAGO);
+    expect(Number(depois.valorRecebido)).toBe(50000); // 20000 antigos + 30000 da fatura
+  });
+
+  it("item CANCELADO após o fechamento não trava o pagamento (pulado e auditado)", async () => {
+    const { empresaId, competencia } = await seedLote();
+    await fecharFaturaB2B({ empresaId, competencia });
+    const fatura = await prisma.faturaB2B.findFirstOrThrow({ include: { cobrancas: true } });
+    // Uma mensalidade é cancelada por outro fluxo (ex.: aluno pausado).
+    await prisma.cobranca.update({
+      where: { id: fatura.cobrancas[0].id },
+      data: { status: StatusCobranca.CANCELADA },
+    });
+
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const r = await pagarFaturaB2B(fatura.id);
+    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+    expect(r.ok && r.dado!.baixadas).toBe(1); // só a viva
+
+    const evento = await prisma.evento.findFirstOrThrow({
+      where: { tipo: "FaturaB2BPaga", agregadoId: fatura.id },
+    });
+    const payload = evento.payload as { itensCanceladosPulados?: string[]; totalBaixado?: number };
+    expect(payload.itensCanceladosPulados).toHaveLength(1);
+    expect(payload.totalBaixado).toBe(50000);
   });
 });

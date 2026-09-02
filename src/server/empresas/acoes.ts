@@ -10,6 +10,7 @@ import {
   exigirSessao,
   exigirPapel,
   numero,
+  numeroOuNull,
   registrarEvento,
   type Resultado,
 } from "@/server/_shared";
@@ -230,32 +231,61 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
       }
       const moedas = new Set(cobrancas.map((c) => c.moeda));
       if (moedas.size > 1) throw new ErroRegra("Cobranças em moedas diferentes não entram na mesma fatura.");
-      const total = cobrancas.reduce((soma, c) => soma + numero(c.valorNegociado), 0);
+
+      // A fatura leva o SALDO ABERTO de cada item, não o valor integral (review PR #60):
+      // uma cobrança de 100 com 40 já recebidos entra por 60 — documento e recebimento
+      // fecham. O saldo entra como SNAPSHOT (`valorFaturado`) por cobrança: mudanças
+      // posteriores não alteram a composição do documento fechado.
+      const aberto = (c: (typeof cobrancas)[number]) =>
+        Math.max(0, numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0));
+      const total = cobrancas.reduce((soma, c) => soma + aberto(c), 0);
+      if (total <= 0) throw new ErroRegra("As mensalidades desta competência não têm saldo aberto.");
 
       const [ano, mes] = dados.competencia.split("-").map(Number);
       const vencimento = new Date(ano, mes - 1, empresa.diaVencimento);
-      const codigo = await gerarCodigo("fatura", tx);
-      const fatura = await tx.faturaB2B.create({
-        data: {
-          codigo,
-          empresaId: empresa.id,
-          competencia: dados.competencia,
-          moeda: cobrancas[0].moeda,
-          valorTotal: total,
-          status: StatusFaturaB2B.FECHADA,
-          vencimento,
-        },
-      });
-      await tx.cobranca.updateMany({
-        where: { id: { in: cobrancas.map((c) => c.id) } },
-        data: { faturaB2BId: fatura.id },
-      });
+
+      // Fatura CANCELADA da mesma competência é REABERTA na mesma linha (review PR #60):
+      // o @@unique(empresaId, competencia) tornaria um novo create um P2002 eterno.
+      const fatura = existente
+        ? await tx.faturaB2B.update({
+            where: { id: existente.id },
+            data: {
+              moeda: cobrancas[0].moeda,
+              valorTotal: total,
+              status: StatusFaturaB2B.FECHADA,
+              vencimento,
+              pagoEm: null,
+            },
+          })
+        : await tx.faturaB2B.create({
+            data: {
+              codigo: await gerarCodigo("fatura", tx),
+              empresaId: empresa.id,
+              competencia: dados.competencia,
+              moeda: cobrancas[0].moeda,
+              valorTotal: total,
+              status: StatusFaturaB2B.FECHADA,
+              vencimento,
+            },
+          });
+      for (const c of cobrancas) {
+        await tx.cobranca.update({
+          where: { id: c.id },
+          data: { faturaB2BId: fatura.id, valorFaturado: aberto(c) },
+        });
+      }
       await registrarEvento(tx, {
         tipo: "FaturaB2BFechada",
         agregadoTipo: "FaturaB2B",
         agregadoId: fatura.id,
         autorId: autor.id,
-        payload: { codigo, competencia: dados.competencia, cobrancas: cobrancas.length, total },
+        payload: {
+          codigo: fatura.codigo,
+          competencia: dados.competencia,
+          cobrancas: cobrancas.length,
+          total,
+          reabertura: !!existente,
+        },
       });
       return { id: fatura.id, total };
     });
@@ -278,17 +308,30 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
       if (!fatura) throw new ErroRegra("Fatura não encontrada.");
       if (fatura.status !== StatusFaturaB2B.FECHADA) throw new ErroRegra("Só fatura FECHADA recebe pagamento.");
 
+      // RECONCILIAÇÃO (review PR #60): os itens seguem mutáveis por outros fluxos depois do
+      // fechamento — cobrança CANCELADA (aluno pausado) é PULADA (nunca trava a fatura
+      // inteira) e cada item vivo é baixado pelo saldo aberto ATUAL. Divergências entre o
+      // documento (valorTotal/snapshot) e o efetivamente baixado ficam auditadas no evento.
       const agora = new Date();
       let n = 0;
+      let totalBaixado = 0;
+      const pulados: string[] = [];
       for (const c of fatura.cobrancas) {
         if (c.status === StatusCobranca.PAGO) continue;
+        if (c.status === StatusCobranca.CANCELADA) {
+          pulados.push(c.codigo ?? c.id);
+          continue;
+        }
+        const restante = numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0);
+        if (restante <= 0) continue;
         await baixarCobrancaTx(tx, autor.id, c.id, {
-          valorRecebido: numero(c.valorNegociado) - (c.valorRecebido ? numero(c.valorRecebido) : 0),
+          valorRecebido: restante,
           forma: "TRANSFERENCIA",
           dataPagamento: agora,
           comentario: `Fatura B2B ${fatura.codigo ?? fatura.id}`,
           via: "fatura_b2b",
         });
+        totalBaixado += restante;
         n += 1;
       }
       await tx.faturaB2B.update({
@@ -300,7 +343,13 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
         agregadoTipo: "FaturaB2B",
         agregadoId: fatura.id,
         autorId: autor.id,
-        payload: { pagoEm: agora.toISOString(), cobrancasBaixadas: n },
+        payload: {
+          pagoEm: agora.toISOString(),
+          cobrancasBaixadas: n,
+          totalBaixado,
+          valorTotalDocumento: numero(fatura.valorTotal),
+          itensCanceladosPulados: pulados,
+        },
       });
       return n;
     });
@@ -319,7 +368,10 @@ export async function cancelarFaturaB2B(faturaId: string): Promise<Resultado> {
       if (!fatura) throw new ErroRegra("Fatura não encontrada.");
       if (fatura.status !== StatusFaturaB2B.FECHADA)
         throw new ErroRegra("Só fatura FECHADA (não paga) pode ser cancelada.");
-      await tx.cobranca.updateMany({ where: { faturaB2BId: fatura.id }, data: { faturaB2BId: null } });
+      await tx.cobranca.updateMany({
+        where: { faturaB2BId: fatura.id },
+        data: { faturaB2BId: null, valorFaturado: null },
+      });
       await tx.faturaB2B.update({ where: { id: fatura.id }, data: { status: StatusFaturaB2B.CANCELADA } });
       await registrarEvento(tx, {
         tipo: "FaturaB2BCancelada",

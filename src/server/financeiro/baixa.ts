@@ -33,6 +33,11 @@ export async function baixarCobrancaTx(
   cobrancaId: string,
   dados: DadosBaixa,
 ): Promise<ResultadoBaixa> {
+  // LOCK DE LINHA (review PR #60): a acumulação é read-modify-write — sem serializar, duas
+  // baixas concorrentes leem o MESMO `valorRecebido` e a segunda sobrescreve a primeira
+  // (dois eventos, um só crédito). O `FOR UPDATE` faz a transação concorrente esperar aqui,
+  // então a leitura abaixo já enxerga o acumulado da outra baixa.
+  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${cobrancaId} FOR UPDATE`;
   const cobranca = await tx.cobranca.findUnique({ where: { id: cobrancaId } });
   if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
   if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");

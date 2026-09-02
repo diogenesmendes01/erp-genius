@@ -13,8 +13,9 @@ const STATUS_COBRANCA: Record<string, { rotulo: string; cls: string }> = {
 };
 
 export default async function PortalPage() {
-  const usuario = await exigirSessaoPagina();
-  if (!usuario.papeis.includes(Papel.ALUNO)) {
+  // Papel explícito no guard: só ALUNO (e Admin, que passa em tudo) entra aqui.
+  const usuario = await exigirSessaoPagina(Papel.ALUNO);
+  if (!usuario.papeis.includes(Papel.ALUNO) && !usuario.papeis.includes(Papel.ADMINISTRADOR)) {
     return <AcessoNegado recurso="o portal do aluno" />;
   }
   const dados = await dadosPortalDoUsuario(usuario);

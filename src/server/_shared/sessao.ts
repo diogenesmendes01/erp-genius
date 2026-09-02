@@ -52,8 +52,20 @@ async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> 
 }
 
 /**
+ * Usuário EXCLUSIVO do portal (review PR #60): o papel ALUNO existe só para o /portal.
+ * Quem tem apenas ALUNO não opera NENHUMA tela ou ação interna — a barreira é fail-closed
+ * aqui no núcleo (toda página passa por exigirSessaoPagina/exigirPapelLeitura e toda ação
+ * por exigirSessao), não espalhada por tela.
+ */
+export function apenasPortal(usuario: UsuarioSessao): boolean {
+  return usuario.papeis.length > 0 && usuario.papeis.every((p) => p === Papel.ALUNO);
+}
+
+/**
  * Exige uma sessão autenticada e retorna o usuário (papéis frescos do banco).
  * Use no início de toda Server Action.
+ * Usuário só-portal (papel ALUNO) é NEGADO: nenhuma Server Action interna é dele — o
+ * portal é leitura via página própria (review PR #60).
  */
 export async function exigirSessao(): Promise<UsuarioSessao> {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o NextAuth.
@@ -63,6 +75,7 @@ export async function exigirSessao(): Promise<UsuarioSessao> {
   if (!user?.id) throw new ErroAutenticacao();
   const usuario = await carregarUsuarioFresco(user.id);
   if (!usuario) throw new ErroAutenticacao();
+  if (apenasPortal(usuario)) throw new ErroPermissao("Acesso restrito ao portal do aluno.");
   return usuario;
 }
 
@@ -109,6 +122,12 @@ export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessa
   if (!usuario) {
     redirect("/login");
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
+  }
+  // Usuário só-portal (review PR #60): a única página dele é o /portal — qualquer outra
+  // rota interna redireciona para lá (fail-closed; a UX de "só tenho portal" é o portal).
+  if (apenasPortal(usuario)) {
+    if (!alvo.includes(Papel.ALUNO)) redirect("/portal");
+    return usuario;
   }
   if (alvo.length > 0 && !temPapel(usuario, ...alvo)) redirect("/acesso-negado");
   return usuario;
