@@ -95,14 +95,30 @@ export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>
 }
 
 /**
- * NÚCLEO do fechamento (Fase 2): paga TODAS as comissões APROVADAS. Compartilhado entre a
- * ação manual (botão "Fechar mês") e o fechamento AUTOMÁTICO do cron (autorId = null).
+ * NÚCLEO do fechamento (Fase 2): paga as comissões APROVADAS. Compartilhado entre a ação
+ * manual (botão "Fechar mês" — sem corte: decisão humana paga tudo) e o fechamento
+ * AUTOMÁTICO do cron, que passa `aprovadasAntesDe` = 1º dia do mês corrente (review PR #60):
+ * o robô só paga o período JÁ FECHADO — vendas do mês corrente ficam para o próximo ciclo.
+ * Comissões antigas sem `aprovadaEm` (pré-migration) caem no corte pelo `criadoEm`.
  */
 export async function fecharComissoesAprovadasTx(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   autorId: string | null,
+  aprovadasAntesDe: Date | null = null,
 ): Promise<number> {
-  const aprovadas = await tx.comissao.findMany({ where: { status: StatusComissao.APROVADA } });
+  const aprovadas = await tx.comissao.findMany({
+    where: {
+      status: StatusComissao.APROVADA,
+      ...(aprovadasAntesDe
+        ? {
+            OR: [
+              { aprovadaEm: { lt: aprovadasAntesDe } },
+              { aprovadaEm: null, criadoEm: { lt: aprovadasAntesDe } },
+            ],
+          }
+        : {}),
+    },
+  });
   const agora = new Date();
   for (const c of aprovadas) {
     await tx.comissao.update({

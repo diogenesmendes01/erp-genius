@@ -679,6 +679,9 @@ model Cobranca {
   // B2B (doc 03 Fase 2): mensalidade de matrícula corporativa agrupada numa FATURA ÚNICA.
   faturaB2BId     String?
   faturaB2B       FaturaB2B? @relation(fields: [faturaB2BId], references: [id])
+  // SNAPSHOT do valor levado à fatura no fechamento (= saldo aberto naquele momento —
+  // review PR #60): mudanças posteriores na cobrança não mudam a composição do documento.
+  valorFaturado   Decimal?   @db.Decimal(12, 2)
   comprovanteUrl  String?
   comprovanteNome String?
   comentario      String?
@@ -705,6 +708,9 @@ model Comissao {
   moeda                 String
   status                StatusComissao @default(PENDENTE)
   dataPrevistaPagamento DateTime?
+  // Quando a comissão foi APROVADA (ativação da matrícula) — é o corte de competência do
+  // fechamento mensal automático (review PR #60): o cron paga só o período já fechado.
+  aprovadaEm            DateTime?
   pagaEm                DateTime?
   criadoEm              DateTime       @default(now())
 }

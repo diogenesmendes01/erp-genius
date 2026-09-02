@@ -18,6 +18,7 @@ import {
   registrarLinkPagamento,
 } from "./acoes";
 import { registrarPagamento } from "@/server/financeiro/acoes";
+import { rodarFechamentosPendentes } from "./cron-fechamento";
 import { CADENCIA_CONTRATO, CADENCIA_LINK_PAGAMENTO, CHAVE_CONTRATO, CHAVE_LINK_PAGAMENTO } from "@/server/comercial/regua-fabrica";
 import { rodarContratoSemAssinatura, rodarLinkPagamentoSemPagamento } from "@/server/whatsapp/cron-comercial";
 
@@ -278,5 +279,52 @@ describe("réguas de fechamento (C4) no motor comercial", () => {
     const r2 = await rodarLinkPagamentoSemPagamento();
     expect(r2.leadsAvaliados).toBe(0);
     void matriculaId;
+  });
+});
+
+
+describe("titularidade do fechamento (review PR #60)", () => {
+  it("VENDEDOR de outra carteira não opera contrato/link; o dono opera", async () => {
+    const outro = await criarUsuario([Papel.VENDEDOR], "Outro Vendedor");
+    const { matriculaId, taxa } = await seedMatriculaAguardando(); // lead do `vendedor`
+
+    authMock.mockResolvedValue({ user: { id: outro.id } });
+    expect((await registrarContratoEnviado(matriculaId)).ok).toBe(false);
+    expect((await marcarContratoAssinado(matriculaId)).ok).toBe(false);
+    expect((await registrarLinkPagamento(taxa.id, "https://x.exemplo/1")).ok).toBe(false);
+    const intocada = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+    expect(intocada.contratoOk).toBe(false);
+    expect(intocada.contratoEnviadoEm).toBeNull();
+
+    // O DONO do lead consegue.
+    authMock.mockResolvedValue({ user: { id: vendedor.id } });
+    expect((await registrarContratoEnviado(matriculaId)).ok).toBe(true);
+    expect((await registrarLinkPagamento(taxa.id, "https://x.exemplo/2")).ok).toBe(true);
+  });
+});
+
+describe("backfill da matrícula automática (review PR #60)", () => {
+  it("fechamento completo com a config DESLIGADA ativa no 1º tick após ligar", async () => {
+    const { matriculaId, taxa } = await seedMatriculaAguardando();
+    // Tudo acontece com a automação desligada — matrícula fica presa em AGUARDANDO.
+    await registrarPagamento(taxa.id, { valorRecebido: TAXA, forma: "TRANSFERENCIA", comprovanteUrl: "uploads/comprovante-teste.pdf" });
+    await marcarContratoAssinado(matriculaId);
+    expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe(
+      StatusMatricula.AGUARDANDO,
+    );
+
+    // Desligada: o scanner nem roda.
+    const r0 = await rodarFechamentosPendentes();
+    expect(r0.executou).toBe(false);
+
+    // Liga a config → o tick seguinte ativa (idempotente: o 2º tick não encontra nada).
+    await ligarMatriculaAutomatica();
+    const r1 = await rodarFechamentosPendentes();
+    expect(r1.ativadas).toBe(1);
+    expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe(
+      StatusMatricula.ATIVA,
+    );
+    const r2 = await rodarFechamentosPendentes();
+    expect(r2.avaliadas).toBe(0);
   });
 });

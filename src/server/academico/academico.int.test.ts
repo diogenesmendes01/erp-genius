@@ -179,3 +179,34 @@ describe("portal do aluno", () => {
     expect(r.ok).toBe(false);
   });
 });
+
+
+describe("review PR #60 — acadêmico", () => {
+  it("nota de aluno de OUTRA turma é recusada (nada é gravado)", async () => {
+    const { turma } = await seedTurmaComAluno();
+    const forasteiro = await prisma.aluno.create({
+      data: { codigo: "A-000099", primeiroNome: "Zé", paisId: catalogo.pais.id },
+    });
+    authMock.mockResolvedValue({ user: { id: professor.id } });
+    const av = await salvarAvaliacao({ turmaId: turma.id, nome: "Prova X", peso: 1 });
+    const r = await lancarNotas({
+      avaliacaoId: av.ok ? av.dado!.id : "",
+      notas: [{ alunoId: forasteiro.id, valor: 90 }],
+    });
+    expect(r.ok).toBe(false);
+    expect(await prisma.nota.count()).toBe(0);
+  });
+
+  it("data da aula 'YYYY-MM-DD' é ancorada no DIA LOCAL (não vira véspera em UTC-)", async () => {
+    const { turma, aluno } = await seedTurmaComAluno();
+    authMock.mockResolvedValue({ user: { id: professor.id } });
+    await registrarAula({
+      turmaId: turma.id,
+      dataISO: "2026-08-20",
+      presencas: [{ alunoId: aluno.id, presente: true }],
+    });
+    const aula = await prisma.aula.findFirstOrThrow();
+    expect(aula.data.getDate()).toBe(20); // dia LOCAL preservado (meio-dia local)
+    expect(aula.data.getHours()).toBe(12);
+  });
+});

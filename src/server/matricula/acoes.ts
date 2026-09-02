@@ -659,11 +659,12 @@ async function concluirAtivacaoMatriculaTx(
     });
   }
 
-  // Comissão: Pendente → Aprovada (matrícula ativa)
+  // Comissão: Pendente → Aprovada (matrícula ativa). `aprovadaEm` é o corte de competência
+  // do fechamento mensal automático (review PR #60).
   for (const com of matricula.comissoes) {
     await tx.comissao.update({
       where: { id: com.id },
-      data: { status: StatusComissao.APROVADA },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: agora },
     });
   }
 
@@ -788,6 +789,29 @@ export async function ativarSeFechamentoCompletoTx(
 const PAPEIS_FECHAMENTO: Papel[] = [...PAPEIS_CRIAR, ...PAPEIS_ATIVAR];
 
 /**
+ * Titularidade do fechamento (review PR #60): VENDEDOR só opera matrícula cujo LEAD é da
+ * carteira dele — sem isto, qualquer `matriculaId` colado dava contrato/link (e até a
+ * autoativação) sobre negócio alheio. Papéis amplos (gerente/financeiro/secretaria; admin
+ * via temPapel) passam. Roda DENTRO da transação da ação.
+ */
+async function exigirMatriculaNoEscopoTx(
+  tx: Prisma.TransactionClient,
+  matriculaId: string,
+  autor: UsuarioSessao,
+) {
+  const matricula = await tx.matricula.findUnique({
+    where: { id: matriculaId },
+    include: { lead: { select: { vendedorDonoId: true } } },
+  });
+  if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+  const amplo = temPapel(autor, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
+  if (!amplo && matricula.lead?.vendedorDonoId !== autor.id) {
+    throw new ErroPermissao("Esta matrícula não está na sua carteira.");
+  }
+  return matricula;
+}
+
+/**
  * Registra que o CONTRATO foi enviado ao cliente — âncora da régua "contrato sem
  * assinatura" (C4). Reenviar atualiza a âncora (ocorrência nova da cadência).
  */
@@ -797,8 +821,7 @@ export async function registrarContratoEnviado(matriculaId: string): Promise<Res
     exigirPapel(autor, ...PAPEIS_FECHAMENTO);
     const agora = new Date();
     const leadId = await prisma.$transaction(async (tx) => {
-      const matricula = await tx.matricula.findUnique({ where: { id: matriculaId } });
-      if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+      const matricula = await exigirMatriculaNoEscopoTx(tx, matriculaId, autor);
       if (matricula.status !== StatusMatricula.AGUARDANDO)
         throw new ErroRegra("Só matrícula AGUARDANDO tem contrato em fechamento.");
       if (matricula.contratoOk) throw new ErroRegra("O contrato desta matrícula já está assinado.");
@@ -825,8 +848,7 @@ export async function marcarContratoAssinado(matriculaId: string): Promise<Resul
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_FECHAMENTO);
     const { leadId, ativou } = await prisma.$transaction(async (tx) => {
-      const matricula = await tx.matricula.findUnique({ where: { id: matriculaId } });
-      if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+      const matricula = await exigirMatriculaNoEscopoTx(tx, matriculaId, autor);
       if (matricula.status !== StatusMatricula.AGUARDANDO)
         throw new ErroRegra("Só matrícula AGUARDANDO tem contrato em fechamento.");
       if (matricula.contratoOk) throw new ErroRegra("O contrato já está marcado como assinado.");
@@ -862,9 +884,14 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string): P
     const leadId = await prisma.$transaction(async (tx) => {
       const cobranca = await tx.cobranca.findUnique({
         where: { id: cobrancaId },
-        include: { matricula: { select: { leadId: true, status: true } } },
+        include: { matricula: { select: { id: true, leadId: true, status: true } } },
       });
       if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
+      await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
+      if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
+        throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
+      }
       if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
         throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
       await tx.cobranca.update({
@@ -900,9 +927,14 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
     const { url, leadId } = await prisma.$transaction(async (tx) => {
       const cobranca = await tx.cobranca.findUnique({
         where: { id: cobrancaId },
-        include: { matricula: { select: { leadId: true } } },
+        include: { matricula: { select: { id: true, leadId: true } } },
       });
       if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
+      await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
+      if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
+        throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
+      }
       if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
         throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
 

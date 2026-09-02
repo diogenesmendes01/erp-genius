@@ -11,6 +11,7 @@ import {
   executarAcao,
   exigirPapel,
   exigirSessao,
+  paraDataLocal,
   registrarEvento,
   temPapel,
   type Resultado,
@@ -61,7 +62,10 @@ export async function registrarAula(input: RegistrarAulaInput): Promise<Resultad
     exigirPapel(autor, ...PAPEIS_ACADEMICO);
     const dados = RegistrarAulaSchema.parse(input);
     await exigirTurmaNoEscopo(dados.turmaId, autor);
-    const data = new Date(dados.dataISO);
+    // Date-only vem de <input type="date"> ("YYYY-MM-DD"): parse LOCAL (meio-dia) pelo
+    // helper compartilhado — `new Date("2026-08-20")` seria meia-noite UTC e a aula
+    // apareceria no dia ANTERIOR em fusos negativos (review PR #60).
+    const data = new Date(paraDataLocal(dados.dataISO) as string | Date);
     if (isNaN(data.getTime())) throw new ErroRegra("Data da aula inválida.");
 
     // Presenças só de alunos ATUALMENTE alocados na turma (alocação ativa).
@@ -122,9 +126,13 @@ export async function salvarAvaliacao(input: AvaliacaoInput): Promise<Resultado<
           turmaId: dados.turmaId,
           nome: dados.nome,
           peso: dados.peso,
-          data: dados.dataISO ? new Date(dados.dataISO) : null,
+          // Mesmo parse LOCAL de date-only da aula (review PR #60).
+          data: dados.dataISO ? new Date(paraDataLocal(dados.dataISO) as string | Date) : null,
         },
-        update: { peso: dados.peso, data: dados.dataISO ? new Date(dados.dataISO) : null },
+        update: {
+          peso: dados.peso,
+          data: dados.dataISO ? new Date(paraDataLocal(dados.dataISO) as string | Date) : null,
+        },
       });
       await registrarEvento(tx, {
         tipo: "AvaliacaoDefinida",
@@ -150,6 +158,19 @@ export async function lancarNotas(input: LancarNotasInput): Promise<Resultado> {
     await exigirTurmaNoEscopo(avaliacao.turmaId, autor);
 
     await prisma.$transaction(async (tx) => {
+      // Nota só de aluno ALOCADO na turma da avaliação (review PR #60): sem esta checagem,
+      // um professor gravaria na avaliação da turma A nota de aluno da turma B,
+      // contaminando boletim e progressão. Mesma regra do diário, na MESMA transação.
+      const alocados = new Set(
+        (
+          await tx.alocacaoTurma.findMany({
+            where: { turmaId: avaliacao.turmaId, ativa: true },
+            select: { alunoId: true },
+          })
+        ).map((a) => a.alunoId),
+      );
+      const fora = dados.notas.filter((n) => !alocados.has(n.alunoId));
+      if (fora.length > 0) throw new ErroRegra("Há notas de alunos que não estão na turma desta avaliação.");
       for (const n of dados.notas) {
         await tx.nota.upsert({
           where: { avaliacaoId_alunoId: { avaliacaoId: avaliacao.id, alunoId: n.alunoId } },

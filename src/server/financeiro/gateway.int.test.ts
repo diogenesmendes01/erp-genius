@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { EtapaLead, Papel, StatusCobranca, StatusComissao, StatusMatricula, TipoCobranca } from "@prisma/client";
+import { EtapaLead, FormaPagamento, Papel, StatusCobranca, StatusComissao, StatusMatricula, TipoCobranca } from "@prisma/client";
 
 // Fase 2 (doc 03): gateway por driver (simulado) — geração de link + CONCILIAÇÃO
 // automática (webhook) pela baixa compartilhada, incluindo o gatilho C4 (taxa quitada
@@ -14,6 +14,7 @@ import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/tes
 import { criarMatricula, gerarLinkPagamentoGateway, marcarContratoAssinado } from "@/server/matricula/acoes";
 import { processarPagamentoGateway } from "./gateway";
 import { rodarFechamentoComissoes } from "./cron-financeiro";
+import { baixarCobrancaTx } from "./baixa";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
@@ -103,9 +104,12 @@ describe("gateway simulado — link + conciliação", () => {
 describe("fechamento mensal automático de comissões", () => {
   it("desligado (default) → nada; ligado → paga aprovadas 1x por mês (idempotente)", async () => {
     const { matriculaId } = await seedMatriculaAguardando();
+    // Aprovada no MÊS PASSADO: o fechamento automático só paga competência fechada
+    // (corte da review PR #60) — aprovadas no mês corrente têm teste próprio abaixo.
+    const hoje = new Date();
     await prisma.comissao.updateMany({
       where: { matriculaId },
-      data: { status: StatusComissao.APROVADA },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: new Date(hoje.getFullYear(), hoje.getMonth() - 1, 15) },
     });
 
     const r0 = await rodarFechamentoComissoes();
@@ -126,5 +130,54 @@ describe("fechamento mensal automático de comissões", () => {
     const r2 = await rodarFechamentoComissoes();
     expect(r2.executou).toBe(false);
     expect(r2.motivoParada).toBe("ja_fechado_no_mes");
+  });
+});
+
+
+describe("review PR #60 — financeiro", () => {
+  it("corte de competência: comissão aprovada NO mês corrente NÃO entra no fechamento automático", async () => {
+    const { matriculaId } = await seedMatriculaAguardando();
+    await prisma.configFinanceiro.upsert({
+      where: { id: "financeiro" },
+      create: { id: "financeiro", fechamentoComissaoAutomatico: true },
+      update: { fechamentoComissaoAutomatico: true },
+    });
+    // Aprovada AGORA (mês corrente): fica para o próximo ciclo.
+    await prisma.comissao.updateMany({
+      where: { matriculaId },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: new Date() },
+    });
+    const r1 = await rodarFechamentoComissoes(new Date());
+    expect(r1.executou).toBe(true);
+    expect(r1.pagas).toBe(0);
+    expect(await prisma.comissao.count({ where: { status: StatusComissao.APROVADA } })).toBe(1);
+
+    // No mês seguinte, a mesma comissão (agora do "mês anterior") entra.
+    const mesQueVem = new Date();
+    mesQueVem.setMonth(mesQueVem.getMonth() + 1, 2);
+    const r2 = await rodarFechamentoComissoes(mesQueVem);
+    expect(r2.pagas).toBe(1);
+  });
+
+  it("baixas PARCIAIS CONCORRENTES acumulam a soma (lock de linha — nada se perde)", async () => {
+    const { taxa } = await seedMatriculaAguardando(); // taxa de 20000
+    // Direto no miolo compartilhado (onde o FOR UPDATE vive): duas transações reais em
+    // paralelo — sem o lock, ambas leriam recebido=0 e a 2ª sobrescreveria a 1ª (6000).
+    const parcial = (valor: number) =>
+      prisma.$transaction((tx) =>
+        baixarCobrancaTx(tx, admin.id, taxa.id, {
+          valorRecebido: valor,
+          forma: FormaPagamento.TRANSFERENCIA,
+          comprovanteUrl: "uploads/comprovante-teste.pdf",
+          via: "manual",
+        }),
+      );
+
+    const [a, b] = await Promise.all([parcial(6000), parcial(6000)]);
+    expect(a.recebidoTotal + b.recebidoTotal).toBe(6000 + 12000); // 1ª vê 6000, 2ª vê 12000
+
+    const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
+    expect(Number(depois.valorRecebido)).toBe(12000); // 6000 + 6000 — sem sobrescrita
+    expect(depois.status).toBe(StatusCobranca.PENDENTE); // ainda não quitou os 20000
   });
 });

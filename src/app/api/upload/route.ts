@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { auth } from "@/lib/auth";
+import { ErroAutenticacao, exigirSessao } from "@/server/_shared/sessao";
 import { UPLOAD_DIR } from "@/lib/uploads";
 
 // Upload de comprovantes / contratos / documentos (doc 09).
@@ -16,9 +16,12 @@ const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
+  // Sessão pelo guard central (papéis frescos + bloqueio do usuário só-portal — PR #60).
+  try {
+    await exigirSessao();
+  } catch (e) {
+    const status = e instanceof ErroAutenticacao ? 401 : 403;
+    return NextResponse.json({ erro: "Não autorizado." }, { status });
   }
 
   const form = await req.formData();
