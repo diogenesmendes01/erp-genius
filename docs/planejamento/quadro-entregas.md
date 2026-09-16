@@ -8,8 +8,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
-| M01 — preparação operacional de migração | DEV 2 Terra | Preparação e aplicação de alunos integradas; vínculos e conciliação pendentes | 16/09/2026 | Até e6c73a63, migrações 155/180; 7 integrações no TESTER e principal; sem carga real |
-| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e revisão de quantidade integrados; avisos da quantidade e cobertura complementar pendentes | 16/09/2026 | Até 41f26140; 4 integrações aprovadas no TESTER e principal; Q38 da quantidade pendente |
+| M01 — preparação operacional de migração | DEV 2 Terra | Cadastros aplicáveis e mapeamento de vínculos integrados; ensaio/aplicação de vínculos e conciliação pendentes | 16/09/2026 | Até 61cdfe27; aplicação de alunos com 7 integrações; mapeamento CSV/XLSX validado; sem carga real |
+| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e revisão de quantidade integrados; detalhes Q37 em revisão e avisos da quantidade pendentes | 16/09/2026 | Até 8c7d6111; 7 integrações aprovadas no TESTER e principal; Q38 da quantidade pendente |
 
 ## EMAIL — aceite do DEV
 
@@ -38,6 +38,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Migração 183 reservada exclusivamente para correspondências versionadas e ensaio de vínculos M01. Proposta SQL deve ser revisada antes de aplicação em banco descartável. Não converter estado histórico ativo em rascunho para contornar requisitos: dados e evidências insuficientes permanecem em conferência. Migração 182 continua reservada à origem de avisos de quantidade, aguardando aprovação específica.
 - M01 mapeamento de vínculos integrado até `61cdfe27`: campos de produto, moeda, país e datas preservados; validação civil estrita e intervalo de matrícula/alocação. TESTER `6d52030d`: 13 testes puros, 8 integrações e TypeScript aprovados. Principal: 12 testes de preparação/leitura, mais 3 testes independentes/XLSX aprovados. A prova XLSX usa o leitor real com data nativa bissexta e texto impossível preservado. Isso prepara a fonte; aplicação de vínculos e estados históricos continua pendente.
 - F07 revisão `324a511a` ainda não integrada: falso positivo em grade legada sem frequência explícita e apresentação insuficiente dos detalhes Q37 na proposta. DEV corrige ambos, com teste isolado de frequência e visualização revisável.
 - Regressão unitária após integração M01 de aplicação e complemento F07: sessão 66814, 204 arquivos e 1.372 testes aprovados (11,97 s) no principal `fa38d50c`. O novo mapeamento de vínculos ainda está no TESTER (`6d52030d`), portanto não faz parte desta evidência.
