@@ -38,6 +38,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- M01 mapeamento de vínculos integrado até `61cdfe27`: campos de produto, moeda, país e datas preservados; validação civil estrita e intervalo de matrícula/alocação. TESTER `6d52030d`: 13 testes puros, 8 integrações e TypeScript aprovados. Principal: 12 testes de preparação/leitura, mais 3 testes independentes/XLSX aprovados. A prova XLSX usa o leitor real com data nativa bissexta e texto impossível preservado. Isso prepara a fonte; aplicação de vínculos e estados históricos continua pendente.
+- F07 revisão `324a511a` ainda não integrada: falso positivo em grade legada sem frequência explícita e apresentação insuficiente dos detalhes Q37 na proposta. DEV corrige ambos, com teste isolado de frequência e visualização revisável.
 - Regressão unitária após integração M01 de aplicação e complemento F07: sessão 66814, 204 arquivos e 1.372 testes aprovados (11,97 s) no principal `fa38d50c`. O novo mapeamento de vínculos ainda está no TESTER (`6d52030d`), portanto não faz parte desta evidência.
 - F07.3: complemento `8c7d6111` integrado (origem DEV `93bd0ee4`), incluindo alteração de quantidade quando ainda não há turmas. Integração direcionada do principal: sessão 51621, 7/7 testes aprovados em 20,91 s; TESTER também aprovou 7/7 e TypeScript. Avisos da quantidade continuam pendentes da aprovação específica já solicitada.
 - M01: `57bf31e9` permanece fora do principal. Revisões do integrador e TESTER encontraram validação permissiva de datas da matrícula e ausência de validação das datas de alocação. DEV prepara correção e provas do mapeamento CSV/XLSX; não há aceite de aplicação de vínculos.
