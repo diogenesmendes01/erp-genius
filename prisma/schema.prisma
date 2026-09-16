@@ -25,6 +25,12 @@ model ConfiguracaoOperacional {
   prazoRespostaCorrecaoReposicaoMinutos Int?
   prazoRegularizacaoDiarioMinutos Int?
   intervaloLembreteDiarioMinutos Int?
+  // Canal institucional de avisos de agenda: a escola o escolhe de forma
+  // explícita; nunca é inferido do número comercial ou financeiro.
+  numeroAvisosAgendaId String? @unique
+  numeroAvisosAgenda NumeroWhatsApp? @relation("NumeroAvisosAgenda", fields: [numeroAvisosAgendaId], references: [id], onDelete: Restrict)
+  templateAvisosAgendaId String? @unique
+  templateAvisosAgenda TemplateWhatsApp? @relation("TemplateAvisosAgenda", fields: [templateAvisosAgendaId], references: [id], onDelete: Restrict)
 
   id String @id @default("escola")
   fusoInstitucional String?
@@ -1932,6 +1938,7 @@ model AvisoAlteracaoAgenda {
  atualizadoEm DateTime @updatedAt
  itens ItemAvisoAlteracaoAgenda[]
  tentativas TentativaAvisoAlteracaoAgenda[]
+ intencaoWhatsApp IntencaoMensagem?
  @@index([situacao, criadoEm])
  @@index([turmaId, alunoId])
 }
@@ -1994,6 +2001,7 @@ enum DriverWhatsApp {
 enum FinalidadeNumero {
   COBRANCA
   VENDAS
+  AGENDA
 }
 
 enum SessaoNumero {
@@ -2021,6 +2029,7 @@ model NumeroWhatsApp {
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
   politicasComerciais PoliticaComercial[]
+  configuracaoAvisosAgenda ConfiguracaoOperacional? @relation("NumeroAvisosAgenda")
 
   // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
@@ -2164,6 +2173,8 @@ model IntencaoMensagem {
   variaveis        Json? // valores posicionais p/ template Meta (mesma renderização do corpo)
   templateId       String?
   template         TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+  avisoAlteracaoAgendaId String? @unique
+  avisoAlteracaoAgenda AvisoAlteracaoAgenda? @relation(fields: [avisoAlteracaoAgendaId], references: [id], onDelete: Restrict)
 
   // Vínculo de domínio — cobrança na E1; lead na E6 (fase doc 27).
   cobrancaId String?
@@ -2237,6 +2248,7 @@ model TemplateWhatsApp {
   degrausComerciais  DegrauComercial[]
   mensagens          MensagemWhatsApp[]
   intencoes          IntencaoMensagem[]
+  configuracaoAvisosAgenda ConfiguracaoOperacional? @relation("TemplateAvisosAgenda")
 }
 
 enum ModoDegrau {

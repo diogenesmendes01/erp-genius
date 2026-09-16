@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { cicloDoEventoCobranca, registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
@@ -11,6 +12,7 @@ import { atendimentoVisivel } from "./atendimentos";
 import { Papel } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
+import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -105,6 +107,7 @@ export async function despacharFila(
       politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
       lead: { include: { pais: true } }, // fuso do destino no caminho comercial (S3)
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
+      avisoAlteracaoAgenda: true,
     },
   });
 
@@ -133,6 +136,7 @@ export async function despacharFila(
     }
     // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
     // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
+    const agenda = it.avisoAlteracaoAgendaId != null;
     const comercialPol = it.leadId != null && it.politicaComercial;
     const politica: PoliticaCarregada = comercialPol
       ? {
@@ -162,7 +166,7 @@ export async function despacharFila(
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
     //    decisão humana explícita, não automação (S13, E3).
-    if (politica.killSwitch && automatica) {
+    if (!agenda && politica.killSwitch && automatica) {
       r.pendentes += 1;
       continue;
     }
@@ -277,7 +281,7 @@ export async function despacharFila(
     //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
-    if (automatica && !reativa) {
+    if (!agenda && automatica && !reativa) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
@@ -318,7 +322,7 @@ export async function despacharFila(
     // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
     const shadow =
       !live ||
-      (automatica && !reativa && politica.estado !== "ATIVA") ||
+      (!agenda && automatica && !reativa && politica.estado !== "ATIVA") ||
       (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
@@ -343,16 +347,25 @@ export async function despacharFila(
     // 11. CLAIM ATÔMICO (review PR #49): só quem mover a intenção para ENVIANDO chama o
     //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
     //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
-    const claim = await prisma.intencaoMensagem.updateMany({
-      where: { id: it.id, status: it.status },
-      data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
-    });
-    if (claim.count === 0) continue; // outro worker levou — não conta em nada
+    let claimCount = 0;
+    await prisma.$transaction(confirmarTransacao(async (tx) => {
+      const claim = await tx.intencaoMensagem.updateMany({
+        where: { id: it.id, status: it.status },
+        data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+      });
+      if (claim.count !== 1) return;
+      if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
+        await tx.intencaoMensagem.update({ where: { id: it.id }, data: { status: it.status, despacharAposEm: it.despacharAposEm } });
+        return;
+      }
+      claimCount = 1;
+    }));
+    if (claimCount === 0) continue; // outro worker levou — não conta em nada
 
     // A autorização do momento do enfileiramento não vale para sempre. Releitura após
     // o claim evita despachar com autor revogado, destinatário alterado ou saldo antigo.
     const atual = await prisma.intencaoMensagem.findUnique({
-      where: { id: it.id }, include: { numero: true, contato: true, politicaComercial: true },
+      where: { id: it.id }, include: { numero: true, contato: true, politicaComercial: true, avisoAlteracaoAgenda: true },
     });
     const invalidaAgora = atual ? await motivoIntencaoInvalida(atual, agora) : "intencao_ausente";
     const conferirAgora = atual?.cobrancaId ? await suspensaoPorConferencia(atual.cobrancaId, agora) : null;
@@ -366,6 +379,7 @@ export async function despacharFila(
     if (invalidaAgora || !atual) {
       await prisma.intencaoMensagem.updateMany({ where: { id: it.id, status: "ENVIANDO" },
         data: { status: "CANCELADA", motivoFalha: invalidaAgora, despacharAposEm: null } });
+      if (it.avisoAlteracaoAgendaId) await prisma.$transaction(confirmarTransacao((tx) => registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId!, "FALHOU")));
       r.canceladas += 1;
       continue;
     }
@@ -401,7 +415,7 @@ export async function despacharFila(
         envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
       }
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(confirmarTransacao(async (tx) => {
         const conv =
           conversa ??
           (await tx.conversaWhatsApp.create({
@@ -456,13 +470,15 @@ export async function despacharFila(
             motivoFalha: null,
           },
         });
-      });
+        if (it.avisoAlteracaoAgendaId) await registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId, "ENVIADO", envio.providerMessageId);
+      }));
       r.despachadas += 1;
     } catch (e) {
       // Uma resposta perdida, timeout ou falha de persistência pode ocorrer DEPOIS de
       // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
       const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
+      if (it.avisoAlteracaoAgendaId) await prisma.$transaction(confirmarTransacao((tx) => registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId!, "FALHOU")));
       r.falhas += 1;
     }
   }
@@ -473,14 +489,18 @@ export async function despacharFila(
 type IntencaoParaValidar = {
   id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
   atendimentoId: string | null; cobrancaId: string | null; referenciaCobranca: string | null; cicloCobranca: number;
+  templateId: string | null; corpoRenderizado: string; variaveis: unknown;
   leadId: string | null; ocorrenciaComercial: string | null; passoComercial: string | null;
   politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
+  avisoAlteracaoAgendaId: string | null;
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
 
 async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
   if (!it.numero.ativo) return "numero_remetente_inativo";
   if (it.contato.optOutEm) return "opt_out";
+  const motivoAgenda = await motivoAvisoAgendaInvalido(it);
+  if (motivoAgenda) return motivoAgenda;
   if (it.origem !== "CRON") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";

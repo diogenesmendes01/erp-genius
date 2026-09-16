@@ -47,6 +47,8 @@ import {
   type EnviarTextoInboxInput,
   type LoteCobrancaInput,
   type NumeroWhatsAppInput,
+  type ConfiguracaoAvisosAgendaInput,
+  ConfiguracaoAvisosAgendaSchema,
   type PoliticaReguaInput,
   type TemplateWhatsAppInput,
   type TratarConversaInput,
@@ -595,6 +597,38 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
 
     revalidatePath("/configuracao/whatsapp");
     return { id };
+  });
+}
+
+/** Configura o único caminho proativo de agenda: Meta oficial + template utility aprovado. */
+export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const dados = ConfiguracaoAvisosAgendaSchema.parse(input);
+    const [numero, template] = await Promise.all([
+      prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroAvisosAgendaId } }),
+      prisma.templateWhatsApp.findUnique({ where: { id: dados.templateAvisosAgendaId } }),
+    ]);
+    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "META_CLOUD" || !numero.providerRef?.trim()) {
+      throw new ErroRegra("Escolha um número de agenda ativo, oficial Meta Cloud e com phone_number_id.");
+    }
+    if (!template || template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility") {
+      throw new ErroRegra("Escolha um template utility aprovado e sincronizado na Meta.");
+    }
+    if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
+      throw new ErroRegra("O template de agenda deve usar somente {nome} e {horarios}, incluindo {horarios}.");
+    }
+    await prisma.$transaction(async (tx) => {
+      const antes = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } });
+      await tx.configuracaoOperacional.upsert({
+        where: { id: "escola" }, create: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
+        update: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
+      });
+      await registrarEvento(tx, { tipo: "ConfiguracaoAvisosAgendaAlterada", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id,
+        payload: { antes, depois: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } } });
+    });
+    revalidatePath("/configuracao/whatsapp");
+    return undefined;
   });
 }
 

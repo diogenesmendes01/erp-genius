@@ -10,15 +10,18 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
 }) {
   if (dados.finalidade === "FINANCEIRO") {
     if (!dados.matriculaId || !dados.alunoId) throw new Error("Atendimento financeiro exige matrícula e aluno.");
+  }
+  if (dados.matriculaId) {
+    if (!dados.alunoId) throw new Error("Atendimento com matrícula exige aluno.");
     const matricula = await tx.matricula.findFirst({ where: { id: dados.matriculaId, alunoId: dados.alunoId }, select: { id: true } });
-    if (!matricula) throw new Error("Matrícula não pertence ao aluno do atendimento financeiro.");
+    if (!matricula) throw new Error("Matrícula não pertence ao aluno do atendimento.");
   }
   const conversa = await tx.conversaWhatsApp.upsert({
     where: { numeroId_contatoId: { numeroId: dados.numeroId, contatoId: dados.contatoId } },
     create: { numeroId: dados.numeroId, contatoId: dados.contatoId }, update: {},
   });
   const contextoChave = [dados.finalidade, dados.leadId ?? "", dados.alunoId ?? "", dados.turmaId ?? "",
-    ...(dados.finalidade === "FINANCEIRO" ? [dados.matriculaId!] : [])].join(":");
+    ...(dados.matriculaId ? [dados.matriculaId] : [])].join(":");
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId: conversa.id, contextoChave } },
     create: { conversaId: conversa.id, contextoChave, finalidade: dados.finalidade,

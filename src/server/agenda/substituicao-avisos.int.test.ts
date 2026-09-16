@@ -1,14 +1,16 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const { authMock, enviarEmailMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn() }));
+const { authMock, enviarEmailMock, enviarTemplateMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn(), enviarTemplateMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmailMock }));
+vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate: enviarTemplateMock } }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { criarAvisosAlteracaoAgendaTx, despacharAvisoAlteracaoAgendaInterna, entregarAvisoAlteracaoAgenda } from "@/server/comunicacoes-agenda/avisos";
 import { prepararSubstituicaoDocente } from "./substituicao";
 import { decidirSubstituicaoDocente } from "./substituicao-decisao";
+import { processarAvisosAlteracaoAgenda } from "@/server/comunicacoes-agenda/avisos";
 
 let secretariaId: string;
 let gestorId: string;
@@ -68,7 +70,10 @@ beforeEach(async () => {
     fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula regular com substituição", chaveIdempotencia: "aula-regular-substituicao", entradaHash: "fixture",
   } })).id;
   enviarEmailMock.mockReset();
+  enviarTemplateMock.mockReset();
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca docente", async () => {
   expect(await decidir(true)).toMatchObject({ ok: true, dado: { aplicada: true } });
@@ -195,4 +200,35 @@ it("trata aceite do provedor como ENVIADO sem inferir entrega ao aluno", async (
   await expect(despacharAvisoAlteracaoAgendaInterna(aviso.id, async () => ({ situacao: "ACEITO" as const, provedorId: "aceite-externo" }))).resolves.toEqual({ enviado: true });
   expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: aviso.id } })).toMatchObject({ situacao: "ENVIADO" });
   expect(await prisma.tentativaAvisoAlteracaoAgenda.findFirstOrThrow({ where: { avisoId: aviso.id, situacao: "ENVIADO" } })).toMatchObject({ provedorId: "aceite-externo" });
+});
+
+it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o aceite Meta", async () => {
+  for (const [indice, matriculaId] of matriculasElegiveis.entries()) {
+    const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+    await prisma.aluno.update({ where: { id: matricula.alunoId }, data: { whatsapp: true, telefoneE164: `+5067000000${indice}` } });
+  }
+  const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável pedagógico", telefoneE164: "+50679999999" } });
+  const primeira = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: primeira.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
+  const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { canal: "WHATSAPP" }, include: { aluno: true } });
+  expect(avisos).toHaveLength(2);
+  expect(avisos.filter((a) => a.alunoId === primeira.alunoId)).toHaveLength(1);
+  vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
+  vi.stubEnv("WHATSAPP_LIVE", "1");
+  enviarTemplateMock.mockImplementation(async () => ({ providerMessageId: `wamid-agenda-${enviarTemplateMock.mock.calls.length}` }));
+  // Sem configuração não há claim, tentativa ou envio; a pendência pode ser
+  // resolvida pelo admin sem deixar o worker preso em reprocessamento.
+  await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "PREPARADO" } })).toBe(2);
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
+  await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
+  expect(enviarTemplateMock).toHaveBeenCalledTimes(2);
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "ENVIADO" } })).toBe(2);
+  const intencoes = await prisma.intencaoMensagem.findMany({ where: { avisoAlteracaoAgendaId: { not: null } }, include: { atendimento: true } });
+  expect(intencoes).toHaveLength(2);
+  expect(intencoes.every((i) => i.atendimento?.finalidade === "PEDAGOGICO" && i.numeroId === numero.id && i.templateId === template.id)).toBe(true);
 });

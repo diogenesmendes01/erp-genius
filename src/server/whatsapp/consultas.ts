@@ -64,6 +64,24 @@ export async function listarTemplatesConfig(): Promise<TemplateConfig[]> {
   }));
 }
 
+export interface ConfiguracaoAvisosAgendaConfig {
+  numeroAvisosAgendaId: string | null;
+  templateAvisosAgendaId: string | null;
+  numeros: Pick<NumeroConfig, "id" | "rotulo" | "driver" | "finalidade" | "providerRef" | "ativo">[];
+  templates: Pick<TemplateConfig, "id" | "nome" | "idioma" | "categoria" | "statusMeta" | "metaTemplateId" | "corpo">[];
+}
+
+/** Não devolve contatos/conversas: esta tela é só a escolha do canal institucional. */
+export async function carregarConfiguracaoAvisosAgenda(): Promise<ConfiguracaoAvisosAgendaConfig> {
+  await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+  const [config, numeros, templates] = await Promise.all([
+    prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } }),
+    prisma.numeroWhatsApp.findMany({ where: { finalidade: "AGENDA" }, select: { id: true, rotulo: true, driver: true, finalidade: true, providerRef: true, ativo: true }, orderBy: { criadoEm: "asc" } }),
+    prisma.templateWhatsApp.findMany({ select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
+  ]);
+  return { numeroAvisosAgendaId: config?.numeroAvisosAgendaId ?? null, templateAvisosAgendaId: config?.templateAvisosAgendaId ?? null, numeros, templates };
+}
+
 export interface DegrauConfig {
   passo: string;
   offsetDias: number;
