@@ -182,3 +182,30 @@ it("não inventa exceção Q37 para snapshot legado padrão sem frequência", as
  const impacto = previa.impactos.find((i) => i.turmaId === turma.id);
  expect(impacto?.excecoesQ37).toEqual([]);
 });
+
+it("invalida a decisão se a modalidade muda depois da revisão", async () => {
+ const { turma } = await turmaComGrade();
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento aguardando decisão conjunta", chaveIdempotencia: "quantidade-concorrencia-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta concorrente ausente.");
+ await prisma.modalidade.update({ where: { id: modalidadeId }, data: { aulasPorNivel: 4 } });
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ const decisao = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Decisão após alteração concorrente" });
+ expect(decisao.ok).toBe(false);
+ expect(await prisma.decisaoQuantidadeAulasModalidade.count({ where: { propostaId: proposta.dado.id } })).toBe(0);
+ expect(await prisma.aplicacaoQuantidadeAulasModalidade.count({ where: { propostaId: proposta.dado.id } })).toBe(0);
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(4);
+});
+
+it("invalida a decisão se a turma conclui durante a revisão", async () => {
+ const { turma } = await turmaComGrade();
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento aguardando conclusão da turma", chaveIdempotencia: "quantidade-conclusao-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta de conclusão ausente.");
+ await prisma.turma.update({ where: { id: turma.id }, data: { status: "CONCLUIDA" } });
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ const decisao = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Decisão após conclusão concorrente" });
+ expect(decisao.ok).toBe(false);
+ expect(await prisma.decisaoQuantidadeAulasModalidade.count({ where: { propostaId: proposta.dado.id } })).toBe(0);
+ expect(await prisma.aplicacaoQuantidadeAulasModalidade.count({ where: { propostaId: proposta.dado.id } })).toBe(0);
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(2);
+});
