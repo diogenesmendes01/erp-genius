@@ -115,6 +115,30 @@ it("projeção do agendamento inicial é exclusiva da Secretaria ou Administraç
   expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: { fuso: "UTC" } }] } });
 });
 
+it("fila docente expõe somente a particular própria e a conclusão exige presença já registrada", async () => {
+  await inserirReposicao("particular-docente"); await autorizarReposicao("particular-docente", adminId);
+  const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  const agenda = await criarAgendaParticularIsentaFixture({ reposicaoId: "particular-docente", matriculaId, alunoId, professorId, secretariaId: secretaria.id, decisorId: adminId, inicio: new Date("2026-01-12T10:00:00Z"), fim: new Date("2026-01-12T11:00:00Z") });
+  entrar(professorId);
+  expect(await consultarFilaReposicoesDocente()).toMatchObject({ ok: true, dado: { itens: [{ id: "particular-docente", encontros: [{ id: agenda.encontroId, status: "MINISTRADO", participacao: "PRESENTE" }] }] } });
+  const outro = await criarUsuario(["PROFESSOR"]); entrar(outro.id);
+  expect(await consultarFilaReposicoesDocente()).toMatchObject({ ok: true, dado: { itens: [] } });
+  entrar(professorId);
+  expect(await concluirReposicaoIndividual({ reposicaoId: "particular-docente", versaoAnterior: 0, encontroReposicaoId: agenda.encontroId, evidencia: "Docente confirmou presença no encontro próprio" })).toMatchObject({ ok: true });
+  expect(await consultarFilaReposicoesDocente()).toMatchObject({ ok: true, dado: { itens: [] } });
+});
+
+it("falta na particular mantém a origem sem regularização e não cria conclusão", async () => {
+  await inserirReposicao("particular-falta"); await autorizarReposicao("particular-falta", adminId);
+  const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  const agenda = await criarAgendaParticularIsentaFixture({ reposicaoId: "particular-falta", matriculaId, alunoId, professorId, secretariaId: secretaria.id, decisorId: adminId, inicio: new Date("2026-01-12T10:00:00Z"), fim: new Date("2026-01-12T11:00:00Z"), participacao: "FALTA" });
+  entrar(professorId);
+  expect(await concluirReposicaoIndividual({ reposicaoId: "particular-falta", versaoAnterior: 0, encontroReposicaoId: agenda.encontroId, evidencia: "Falta registrada na própria reposição" })).toMatchObject({ ok: false });
+  expect(await prisma.conclusaoReposicaoIndividual.count({ where: { reposicaoId: "particular-falta" } })).toBe(0);
+  expect(await prisma.registroAulaAluno.findFirstOrThrow({ where: { aula: { encontroId: aulaId }, matriculaId } })).toMatchObject({ participacao: "FALTA", presente: false });
+  expect(await prisma.agendaReposicaoIndividual.findUniqueOrThrow({ where: { id: agenda.agendaId } })).toMatchObject({ statusBeneficio: "ISENTA_EXCECAO" });
+});
+
 it("consulta da equipe usa correção aprovada sem restaurar a data anulada", async () => {
   await inserirReposicao("consulta-corrigida", gestorId, "GRAVACAO");
   await autorizarReposicao("consulta-corrigida", adminId);
