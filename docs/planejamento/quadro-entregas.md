@@ -8,7 +8,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 1 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
-| M01 — preparação operacional de migração | DEV 2 Terra | Preparação implementada; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
+| M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
 
 ## EMAIL — aceite do DEV
 
@@ -30,6 +30,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- M01 CSV/XLSX integrado até 23b8359: 6 testes unitários/SSR e 2 integrações de arquivo real até lote persistido passaram no integrador; a base já passou 6 integrações. Parser interno, mapeamento estrito, erros sem sucesso falso e preservação de valores/colunas foram revisados. Removido limite arbitrário de 100 abas na submissão; a aba escolhida precisa existir no arquivo. Isso conclui a preparação local, não a aplicação da migração nem a conferência dos dados reais.
 
 - Regressão global da base EMAIL/VIDEO/Q166 finalizada: 124 arquivos e 1.310 testes de integração aprovados, duração 2.387,72 s. Essa evidência precede M01/N01. Base M01 integrada em dcf8abe/57bf751/7a651f3; migrações 155/158/160 aplicadas no banco descartável do integrador. Sete testes unitários/SSR/codificação SQL passaram; integração direcionada em execução.
 
