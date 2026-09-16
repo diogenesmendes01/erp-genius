@@ -38,6 +38,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Reconferência N01: correção DEV `263bdd87` preparada no TESTER como `f090b498`, preservando os seis testes adversariais independentes. DEV informou 7/7 integrações e TypeScript aprovados; validação independente do novo commit em execução. A correção revalida matrícula ativa, vínculo histórico, destinatário congelado e autorização vigente, sem reenviar resultados incertos. Ainda não integrada no principal.
+
 - Referência ausente do doc 36 reconstruída com proveniência explícita nos docs 37–40 e na SPEC atual. A busca no histórico Git disponível não recuperou o original; o novo texto identifica essa limitação, restaura os links de política e não acrescenta permissões nem afirma implementação. A pendência documental da SPEC central foi atualizada com essa distinção.
 - Complemento N01 integrado em `042fcc35`/`ec18b509`, com tipos dos testes corrigidos em `67a1e3d9`. TESTER `931b2803`: 20 integrações e 2 SSR aprovados; após manutenção `c5a6639e`, TypeScript aprovado na sessão 91336. Build principal 47507 passou (compilação, TypeScript e 79 páginas). Auditoria identificou que `resolverPendenciaAvisoAgendaTx` ainda não tinha chamador operacional: DEV 2 prepara reconferência por motivo na UI já existente, base `67a1e3d9`, sem transporte ou reemissão de incertos. N01 não está concluído apenas por exibir pendências.
 - Migração 179 permanece não aplicada: revisão inicial pediu correção de tipos temporais, validação explícita de decisão existente, estados derivados/coerentes e prova material do conjunto aplicado. DEV 1 continua preview/servidor/tela enquanto fecha o contrato SQL; migrações antigas preservadas.
