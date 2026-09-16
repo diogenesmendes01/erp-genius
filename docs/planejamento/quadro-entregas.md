@@ -1,5 +1,7 @@
 # Quadro único de entregas
 
+M01 — revisão do conjunto em 16/09: TESTER isolado preparado no commit `534845fa`, com Prisma regenerado e migrações 185/186 aplicadas apenas no seu banco descartável (também já aplicadas no DEV). Revisão/testes independentes em andamento; interface de aplicação de vínculos em desenvolvimento. Evidências DEV: paridade SQL/TS com importação e pausa/retomada reais nos fusos UTC/São Paulo, frequência/chamada históricas e consumidores de avisos. A implantação no principal e a migração real continuam pendentes; as notas anteriores de corretiva não aplicada descrevem o histórico.
+
 Última integração: Q19 concluída localmente em `dcf7f763`/`a3448cc2`. TESTER aprovou `b14728c3` (12 integrações e 2 controles/SSR); principal confirmou 28 integrações de agenda/permissões. A interface permite propor e decidir exceções pontuais, com aprovação independente, sem agendar automaticamente. Proposta obsoleta pode ser rejeitada e a decisão repetida de forma idempotente; aprovação continua revalidando disponibilidade. M01 permanece em desenvolvimento no DEV, incluindo frequência histórica em `9795887`; não está integrado como entrega completa.
 
 Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e bloqueadas; tempo de ciclo registrado desde início até aceite. Não utilizar 36,9% como progresso global.
