@@ -142,8 +142,10 @@ export async function motivoAvisoAgendaInvalido(it: { avisoAlteracaoAgendaId: st
   const aviso = await prisma.avisoAlteracaoAgenda.findUnique({ where: { id: it.avisoAlteracaoAgendaId }, include: { evento: true, itens: { include: { encontro: true } }, aluno: { include: { pais: { select: { idioma: true } }, responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true, responsavel: { select: { telefoneE164: true } } } } } }, matricula: true } });
   if (!aviso || aviso.canal !== "WHATSAPP" || !["PREPARADO", "INCERTO"].includes(aviso.situacao) || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !aviso.aluno.aceitaComunicacoes || !await fonteAvisoValida(prisma, aviso)) return "aviso_agenda_alterado";
   const horarios = horariosDoAviso(aviso);
-  const destino = destinosAgenda(aviso.aluno).find((c) => hashContato(c.telefone) === aviso.contatoHash) ?? null;
-  if (!destino || !horarios) return "aviso_agenda_alterado";
+  const destino = aviso.destinatarioResponsavelId
+    ? await prisma.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId } : null)
+    : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;
+  if (!destino || hashContato(destino.telefone) !== aviso.contatoHash || !horarios) return "aviso_agenda_alterado";
   if (aviso.destinatarioResponsavelId) {
     const autorizacao = aviso.autorizacaoComunicacaoAcademicaId
       ? await prisma.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId, matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } })

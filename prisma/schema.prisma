@@ -1964,9 +1964,10 @@ model AutorizacaoComunicacaoAcademica {
  autorizadaPorId String
   autorizadaPor Usuario @relation("AutorizadorComunicacaoAcademica", fields:[autorizadaPorId], references:[id], onDelete:Restrict)
  evidencia String
- vigenteEm DateTime @default(now())
- revogadaEm DateTime?
+ vigenteEm DateTime @default(now()) @db.Timestamptz
+ revogadaEm DateTime? @db.Timestamptz
  revogadaPorId String?
+ motivoRevogacao String?
   revogadaPor Usuario? @relation("RevogadorComunicacaoAcademica", fields:[revogadaPorId], references:[id])
  avisosAgenda AvisoAlteracaoAgenda[]
  @@index([matriculaId, responsavelId, vigenteEm])
