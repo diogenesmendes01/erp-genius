@@ -4,9 +4,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
-| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Preparação de ambiente | 16/09/2026 | Pendente |
-| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Preparação de ambiente | 16/09/2026 | Pendente |
-| Revisão independente EMAIL/VIDEO | TESTER Terra | Aguardando commits | — | Pendente |
+| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Em implementação | 16/09/2026 | Commit intermediário 0c65266; aceite pendente |
+| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Em implementação | 16/09/2026 | Pendente |
+| Revisão independente EMAIL/VIDEO | TESTER Terra | Preparando cenários; aguarda entregas completas | 16/09/2026 | Pendente |
 
 ## EMAIL — aceite do DEV
 
@@ -28,6 +28,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Cada DEV entrega commits autocontidos e lista dos testes executados. TESTER revisa os commits exatos no banco `erp_genius_test_tester`, uma frente por vez.
 - Integrador revisa conflitos e schema, reúne alterações e executa regressões pertinentes antes de fechar a entrega.
 - Ambiente: worktrees independentes para dev-email, dev-gravacoes e tester; bancos distintos no cluster local descartável localhost:54329. node_modules próprios, lockfile npm preservado.
+- Ambientes criados em `C:/Users/Mendes/.codex/worktrees/erp-dev-email`, `erp-dev-gravacoes` e `erp-tester`, cada um na branch `codex/equipe-<perfil>`. Instalação npm ci pelo integrador e geração Prisma concluídas nos três. Consulta real `current_database()` confirmou respectivamente `erp_genius_test_dev_email`, `erp_genius_test_dev_gravacoes` e `erp_genius_test_tester`. Migrações das funcionalidades são aplicadas pelos respectivos DEVs somente nesses bancos.
+- Infraestrutura de perfis: três testes passaram (isolamento, recusa de perfil divergente e de destino arbitrário), TypeScript passou. Commit de base: 480c0a3.
 - Comandos por worktree: `node scripts/prepare-test-profile.mjs`; executável local Prisma generate; Vitest local com `-c vitest.integration.config.ts`. Preparação/instalação das dependências é exclusiva do integrador.
 - Não abrir terceira funcionalidade. Bloqueios externos não devem aparecer como falta de código nem ser ocultados por testes locais.
 
