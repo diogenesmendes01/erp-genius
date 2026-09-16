@@ -23,7 +23,7 @@ async function adminFrescoTx(tx: Prisma.TransactionClient, usuarioId: string) {
 
 function dadosDaLinha(linha: LinhaPreparacaoEntrada) {
   return {
-    aluno: linha.aluno ?? null, turma: linha.turma ?? null, matricula: linha.matricula ?? null,
+    aluno: linha.aluno ?? null, turma: linha.turma ?? null, matricula: linha.matricula ?? null, alocacao: linha.alocacao ?? null,
     financeiro: linha.financeiro ?? null, consentimentoOrigem: linha.consentimentoOrigem ?? null,
     presencaOrigem: linha.presencaOrigem ?? null, dadosAdicionais: linha.dadosAdicionais,
   };
