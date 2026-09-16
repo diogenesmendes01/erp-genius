@@ -5,8 +5,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Fila/guard SQL validados; Q166 em implementação | 16/09/2026 | Integração parcial revisada; aceite completo pendente |
-| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Em implementação | 16/09/2026 | Pendente |
-| Revisão independente EMAIL/VIDEO | TESTER Terra | Preparando cenários; aguarda entregas completas | 16/09/2026 | Pendente |
+| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Corrigindo achados da revisão de servidor/SQL | 16/09/2026 | Integração e aceite pendentes |
+| Revisão independente EMAIL/VIDEO | TESTER Terra | EMAIL parcial validado; revisão VIDEO encaminhada ao DEV | 16/09/2026 | Q166 e VIDEO aguardam commits completos |
 
 ## EMAIL — aceite do DEV
 
@@ -23,6 +23,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Integrar publicação, materiais de reposição, rotas de reprodução, estados de erro e telas necessárias. Preservar autoria, permissões, prazos e dados já existentes.
 - Migração reservada: 147, independente da 146 de identidade. Rascunho 146 antigo de Drive é referência rejeitada, não migração pronta. Testes devem comprovar troca de head sem mistura de bytes, legado incompleto, aprovação e revogação.
 - Provedor real, desempenho/custos e credenciais continuam sujeitos a homologação separada; não enviar PATCH real nem declarar integração homologada com mock.
+- Revisão de implementação em 16/09 identificou: fixação usando credencial readonly; substituição de material sem conferir a fonte completa da publicação vinculada; ausência de guard SQL do preparador; chave idempotente sem comparar entrada; aprovação sem reconferir a revisão no Drive. DEV recebeu correções e cenários de teste. Migração 147 já aplicada apenas no banco DEV: preservar seu conteúdo exato e usar a 149 para correções SQL, mantendo 148 reservada para EMAIL.
 
 ## Integração e revisão
 
