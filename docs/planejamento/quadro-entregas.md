@@ -220,3 +220,5 @@ Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 tes
 - Regressão unitária global do principal após M01 concluída (sessão7088): 217 arquivos, 1.409 testes aprovados, 14,15 s. Regressão global de integração iniciada na sessão81314, banco erp_genius_test reservado ao integrador; ainda sem resultado final. Conciliação financeira192 em preparação no DEV1, incluindo vínculo a recebimento já existente para evitar nova baixa e preservação de data/proveniência/documentos.
 
 - Ambiente DEV1 da conciliação financeira preparado em codex/dev-conciliacao-financeira-migracao, base e2cc0172, worktree erp-dev-email limpo e cliente Prisma próprio gerado (sessão77514 concluída). Banco principal segue reservado à regressão81314, confirmada ativa; não houve reinício ou suíte concorrente.
+
+- M01/192: helper de fotografia financeira integrado separadamente; preserva chaves aninhadas, ordem de arrays, datas UTC e precisão Decimal, rejeitando valores não finitos. Vitest dirigido: 15/15 aprovados; TypeScript aprovado. Núcleo de conciliação permanece em correção e migração192 não aplicada; esse teste não comprova aprovação/baixa financeira.
