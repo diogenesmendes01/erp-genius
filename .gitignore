@@ -38,3 +38,6 @@ next-env.d.ts
 
 # Arquivos intermediários de validação; relatórios finais ficam em docs/.
 /tmp/
+
+# Identidade local do banco descartável de cada worktree.
+/.erp-test-profile
