@@ -8,7 +8,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
-| M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
+| M01 — preparação operacional de migração | DEV 2 Terra | Preparação CSV/XLSX integrada; ensaio/aplicação de alunos em implementação; demais cadastros/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e avisos globais integrados; quantidade de aulas da modalidade em implementação | 16/09/2026 | Base a8adfec6; Q41/Q42/Q43 ainda não concluídas |
 
 ## EMAIL — aceite do DEV
@@ -37,6 +37,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- M01: DEV 2 implementa ensaio e aplicação administrativa de cadastros de alunos com identidade persistente de origem, replay sem duplicação, divergências em conferência e indicação das entidades/campos não aplicados. Migração 180 reservada; não criar matrícula/turma com dados insuficientes nem consentimento presumido. Contratos, vínculos e conciliação permanecem no escopo pendente.
+- F07.3: preflight transacional da 179 passou no banco descartável DEV EMAIL, com rollback e conexão encerrada. Liberada aplicação apenas nesse perfil para testes reais de aprovação/publicação; não equivale a aceite funcional ou revisão SQL completa. TESTER realiza leitura independente enquanto o DEV prepara integração.
 
 - Reconferência N01 integrada até `188a13d3`: TESTER no commit `f090b498` executou 2 arquivos/7 integrações aprovadas (13,20 s), preservando os testes que antes expunham matrícula pausada e vínculo encerrado. Revisão independente sem defeito adicional; TypeScript no principal passou na sessão 93417. Correção incremental do formulário libera o estado ocupado mesmo após falha inesperada. Sem transporte externo; build da integração passou na sessão 6170, incluindo compilação, TypeScript e 79 páginas.
 
