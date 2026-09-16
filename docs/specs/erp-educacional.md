@@ -49,7 +49,7 @@ A geração de PDF por modelo aprovado, a assinatura integrada de Q104–Q106 e 
 
 Precedência: decisão explícita mais recente do usuário; requisito correspondente nesta SPEC e fontes incorporadas; proposta técnica compatível. O schema e o código demonstram a implementação existente, não anulam um requisito aprovado ainda ausente. Divergência deve ser registrada e corrigida na entrega responsável. Revisões técnicas não podem criar uma política de negócio por omissão.
 
-**Pendência documental encontrada em 10/09/2026:** há referências antigas a `docs/36-politica-de-acesso-aprovada.md`, mas o arquivo não foi localizado neste worktree nem no checkout principal consultado. Não foi tratado como fonte lida ou restaurado por suposição. As regras consolidadas aqui usam os documentos disponíveis acima e as decisões da conversa. Recuperar o original ou registrar uma reconstrução com sua proveniência antes de declarar a cadeia documental integralmente recuperada; isso não reabre Q102.
+**Referência documental reconstruída em 16/09/2026:** o original de `docs/36-politica-de-acesso-aprovada.md` não foi localizado, inclusive no histórico Git disponível. A [reconstrução documentada](../36-politica-de-acesso-aprovada.md) restaura a referência com proveniência explícita nos docs 37–40 e nas decisões posteriores desta SPEC, sem presumir o conteúdo do original nem ampliar permissões. O original continua não recuperado; a reconstrução não comprova implementação e não reabre Q102.
 
 ## 3. Modelo operacional e invariantes
 
