@@ -9,7 +9,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 1 Terra | E-mail integrado e validado localmente; WhatsApp em implementação | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
-| F07.3 — aplicação conjunta do calendário | DEV 2 Terra | Banco/servidor/tela em implementação | 16/09/2026 | Branch codex/dev-aplicacao-calendario; migração 162 reservada; exige conjunto atômico e revisão independente |
+| F07.3 — aplicação conjunta do calendário | DEV 2 Terra | Aplicação validada no TESTER; integração principal e avisos globais pendentes | 16/09/2026 | 843f886/d75c5b2, 20 testes; producer 79322e5 com 4 unitários, ainda sem aceite ponta a ponta |
 
 ## EMAIL — aceite do DEV
 
@@ -38,6 +38,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- TESTER preparado para N01 em `111ef99`: incrementos `fb2db23`/`017662c`/`b2c7291` aplicados como `beeb0aa`/`0ffefb7`/`111ef99`, preservando F07 e seus testes. Prisma gerado e migrações 163/WA165/168/169/174/176 aplicadas somente em `erp_genius_test_tester`. Testes adversariais de autorização/identidade atribuídos ao TESTER; preparação do ambiente não equivale a aprovação da entrega.
 - N01 identidade em `b2c7291` (DEV): 11 integrações aprovadas, com aluno opt-in e responsável autorizado como destinatários distintos. Revisão independente apontou pendências de autorização cruzada/imutabilidade SQL, locks das ações e seleção por identidade na releitura antes do envio; corretiva 177 e interface continuam no DEV 1. Não integrado nem aceito como fluxo completo.
 - Composição F07/N01: DEV 2 recebeu base N01/proteção Prisma no merge `2839e15`, com generate/deploy do perfil isolado e TypeScript aprovados. Producer `79322e5` confere fotografia anterior/nova e agrupa matrículas atingidas por qualquer dos horários; 4 unitários passaram, integração real pendente. Ownership da migração 175 e do novo `fonte-replanejamento.ts` passou ao DEV 2; DEV 1 mantém helper/worker/interface e encaixa a API combinada. Não editar arquivos do outro DEV. TESTER atual: `terra_decisao_admin_597`, worktree exclusivo `erp-tester`.
 - F07.3 `843f886` validado no worktree TESTER `b3f774a`: execução controlada pelo integrador dos três arquivos (rascunho, adversarial e concorrência) terminou na sessão 75262 com exit 0, 20/20 testes, 37,36 s. Migração 173 rejeita o cenário antes vulnerável; revisão estática independente sem defeito adicional. Documentação central DEV em `d75c5b2`. Integração principal aguarda a regressão em curso; ligação dos avisos globais continua pendente em N01.
