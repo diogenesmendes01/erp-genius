@@ -38,6 +38,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Regressão unitária após integração M01 de aplicação e complemento F07: sessão 66814, 204 arquivos e 1.372 testes aprovados (11,97 s) no principal `fa38d50c`. O novo mapeamento de vínculos ainda está no TESTER (`6d52030d`), portanto não faz parte desta evidência.
 - F07.3: complemento `8c7d6111` integrado (origem DEV `93bd0ee4`), incluindo alteração de quantidade quando ainda não há turmas. Integração direcionada do principal: sessão 51621, 7/7 testes aprovados em 20,91 s; TESTER também aprovou 7/7 e TypeScript. Avisos da quantidade continuam pendentes da aprovação específica já solicitada.
 - M01: `57bf31e9` permanece fora do principal. Revisões do integrador e TESTER encontraram validação permissiva de datas da matrícula e ausência de validação das datas de alocação. DEV prepara correção e provas do mapeamento CSV/XLSX; não há aceite de aplicação de vínculos.
 
