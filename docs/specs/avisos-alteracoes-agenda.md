@@ -1,6 +1,6 @@
 # SPEC-ACA-N01 — Avisos de alterações da agenda
 
-Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências e avisos globais do calendário incorporados até `a8adfec6`, com revisão independente e regressão dirigida aprovadas. O complemento dos diagnósticos para todas as origens e falhas de configuração/contato está em revisão. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
+Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos globais e diagnósticos de configuração/contato incorporados até `67a1e3d9`, com revisão independente, testes dirigidos e build aprovados. A reconferência operacional para encerrar pendências corrigidas ainda está em implementação; a existência do helper interno de resolução não fecha esse caminho da equipe. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
 
 ## Escopo
 
