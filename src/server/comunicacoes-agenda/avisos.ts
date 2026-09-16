@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from "crypto";
-import { Prisma, SituacaoAvisoAlteracaoAgenda } from "@prisma/client";
+import { MotivoPendenciaAvisoAgenda, Prisma, SituacaoAvisoAlteracaoAgenda } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { enviarEmailResend } from "@/server/email/resend";
 import { enfileirarAvisosAgendaWhatsApp } from "./whatsapp";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
+import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 type Canal = "EMAIL" | "WHATSAPP";
@@ -19,7 +20,7 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
     : null;
   if (!remarcacao && !substituicao && !replanejamento) throw new Error("Evento aplicado incompatível com o aviso.");
   const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, autorizacoesComunicacaoAcademica: { where: { vigenteEm: { lte: new Date() }, revogadaEm: null }, select: { id: true, responsavelId: true, responsavel: { select: { telefoneE164: true, alunos: { where: { papel: "PEDAGOGICO" }, select: { alunoId: true } } } } } }, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true } } } });
-  if (!matricula?.aluno.aceitaComunicacoes) return [];
+  if (!matricula) return [];
   const encontrosIds = [...new Set(entrada.encontrosIds)];
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: encontrosIds } }, select: { id: true, matriculaId: true, turmaId: true, inicio: true } });
   const turmasIds = encontros.flatMap((encontro) => encontro.turmaId ? [encontro.turmaId] : []);
@@ -32,11 +33,25 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   ));
   if (!encontrosIds.length || encontros.length !== encontrosIds.length || encontros.some((encontro) => !pertenceAMatricula(encontro))) throw new Error("Encontros da alteração não pertencem à matrícula.");
   const canais: { canal: Canal; contato: string; destinatarioAlunoId?: string; destinatarioResponsavelId?: string; autorizacaoComunicacaoAcademicaId?: string }[] = [];
+  const haIdentidadeAcademica = !!matricula.aluno.email || (matricula.aluno.whatsapp && !!matricula.aluno.telefoneE164) || matricula.autorizacoesComunicacaoAcademica.some((autorizacao) =>
+    !!autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId),
+  );
+  if (!matricula.aluno.aceitaComunicacoes) {
+    if (replanejamento) await registrarPendenciaAvisoAgendaTx(tx, {
+      eventoId: entrada.eventoId, matriculaId: matricula.id,
+      motivo: haIdentidadeAcademica ? MotivoPendenciaAvisoAgenda.CONTATO_SEM_OPT_IN : MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO,
+    });
+    return [];
+  }
   if (matricula.aluno.email) canais.push({ canal: "EMAIL", contato: matricula.aluno.email.trim().toLowerCase(), destinatarioAlunoId: matricula.alunoId });
   // Responsável financeiro não é destinatário acadêmico. O aluno opt-in e cada
   // responsável pedagógico com autorização vigente podem coexistir como destinos.
   if (matricula.aluno.whatsapp && matricula.aluno.telefoneE164) canais.push({ canal: "WHATSAPP", contato: matricula.aluno.telefoneE164, destinatarioAlunoId: matricula.alunoId });
   for (const autorizacao of matricula.autorizacoesComunicacaoAcademica) if (autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId)) canais.push({ canal: "WHATSAPP", contato: autorizacao.responsavel.telefoneE164, destinatarioResponsavelId: autorizacao.responsavelId, autorizacaoComunicacaoAcademicaId: autorizacao.id });
+  if (!canais.length) {
+    if (replanejamento) await registrarPendenciaAvisoAgendaTx(tx, { eventoId: entrada.eventoId, matriculaId: matricula.id, motivo: MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO });
+    return [];
+  }
   const avisos = [];
   for (const { canal, contato, destinatarioAlunoId, destinatarioResponsavelId, autorizacaoComunicacaoAcademicaId } of canais) {
     // Email preserva a chave histórica, inclusive se o endereço atual mudou;

@@ -69,6 +69,18 @@ it("prepara aviso com helper real sem I/O externo", async () => {
   const matriculaSemVinculo = await prisma.matricula.create({ data: {
     alunoId: alunoSemVinculo.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
   } });
+  const alunoSemConsentimento = await prisma.aluno.create({ data: {
+    primeiroNome: "Aluno sem consentimento", paisId: catalogo.pais.id, email: "sem-consentimento@example.test", aceitaComunicacoes: false, whatsapp: false,
+  } });
+  const matriculaSemConsentimento = await prisma.matricula.create({ data: {
+    alunoId: alunoSemConsentimento.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
+  } });
+  const alunoSemContato = await prisma.aluno.create({ data: {
+    primeiroNome: "Aluno sem contato", paisId: catalogo.pais.id, aceitaComunicacoes: true, whatsapp: false,
+  } });
+  const matriculaSemContato = await prisma.matricula.create({ data: {
+    alunoId: alunoSemContato.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
+  } });
   const responsavelFuturo = await prisma.responsavel.create({ data: { nome: "Responsável futuro", telefoneE164: "+5511999999999" } });
   await prisma.alunoResponsavel.create({ data: { alunoId: aluno.id, responsavelId: responsavelFuturo.id, papel: "PEDAGOGICO" } });
   await prisma.autorizacaoComunicacaoAcademica.create({ data: {
@@ -78,6 +90,10 @@ it("prepara aviso com helper real sem I/O externo", async () => {
   await prisma.alocacaoTurma.create({ data: {
     alunoId: aluno.id, matriculaId: matricula.id, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00Z"),
   } });
+  await prisma.alocacaoTurma.createMany({ data: [
+    { alunoId: alunoSemConsentimento.id, matriculaId: matriculaSemConsentimento.id, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00Z") },
+    { alunoId: alunoSemContato.id, matriculaId: matriculaSemContato.id, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00Z") },
+  ] });
 
   sessaoId.atual = preparador.id;
   const calendario = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 1, motivo: "Feriado que exige replanejamento", chaveIdempotencia: "concorrencia-feriado", periodos: [{ id: "feriado", nome: "Feriado", tipo: "FERIADO", inicio: primeiro.inicio.toISOString().slice(0, 10), fim: primeiro.inicio.toISOString().slice(0, 10) }] });
@@ -112,6 +128,12 @@ it("prepara aviso com helper real sem I/O externo", async () => {
   expect(avisos[0]).toMatchObject({ canal: "EMAIL", situacao: "PREPARADO", matriculaId: matricula.id });
   expect(avisos[0].itens.map((item) => item.encontroId).sort()).toEqual(propostas.map((p) => p.encontroId).sort());
   expect(await prisma.avisoAlteracaoAgenda.count({ where: { eventoId: eventos[0].id, matriculaId: matriculaSemVinculo.id } })).toBe(0);
+  expect(await prisma.pendenciaAvisoAgenda.findMany({ where: { eventoId: eventos[0].id }, orderBy: { matriculaId: "asc" } })).toEqual(expect.arrayContaining([
+    expect.objectContaining({ matriculaId: matriculaSemConsentimento.id, motivo: "CONTATO_SEM_OPT_IN", situacao: "PENDENTE" }),
+    expect.objectContaining({ matriculaId: matriculaSemContato.id, motivo: "SEM_DESTINATARIO_AUTORIZADO", situacao: "PENDENTE" }),
+  ]));
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventos[0].id } })).toBe(2);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventos[0].id, matriculaId: matriculaSemVinculo.id } })).toBe(0);
   expect(fetch).not.toHaveBeenCalled();
   expect(enviarEmailMock).not.toHaveBeenCalled();
 });
