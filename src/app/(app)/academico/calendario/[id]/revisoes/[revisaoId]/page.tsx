@@ -4,6 +4,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRevisaoReplanejamento } from "@/server/agenda/replanejamento-historico";
 import { ConteudoRevisao } from "../../replanejamento/ConteudoRevisao";
+import { DecidirReplanejamento } from "./DecidirReplanejamento";
 
 export default async function RevisaoPage({ params }: { params: Promise<{ id: string; revisaoId: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -25,7 +26,7 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
         <p>{conferencia.dado.estadoCorresponde ? "O conjunto ainda corresponde à consulta atual." : "Não foi confirmada a correspondência com a agenda atual."}</p>
         <ul className="list-inside list-disc">{conferencia.dado.motivos.map((m) => <li key={m}>{m}</li>)}</ul>
         {!!conferencia.dado.excecoes.length && <p>{conferencia.dado.excecoes.length} encontros exigem exceção explícita de dia não letivo; consulte suas datas e justificativas no conteúdo abaixo.</p>}
-        <p>A aprovação e aplicação conjunta ainda não estão disponíveis. Esta conferência não altera o registro histórico nem a agenda.</p>
+        {conferencia.dado.decisaoConjunta ? <p>{conferencia.dado.decisaoConjunta.aprovada ? "Esta revisão foi aprovada" : "Esta revisão foi rejeitada"} por {conferencia.dado.decisaoConjunta.decisorNome}. Motivo: {conferencia.dado.decisaoConjunta.motivo}</p> : <DecidirReplanejamento calendarioId={id} revisaoId={revisaoId} podeAprovar={conferencia.dado.aprovacaoDisponivel} podeRejeitar={conferencia.dado.rejeicaoDisponivel} excecoes={conferencia.dado.excecoes.map((e) => ({ encontroId: e.encontroId, codigo: e.codigo, inicio: e.inicio, fusoOrigem: e.fusoOrigem, motivoProposto: e.motivoProposto }))} />}
       </>}
     </section>
     <ConteudoRevisao r={r.snapshot} historico />

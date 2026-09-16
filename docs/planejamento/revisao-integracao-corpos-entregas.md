@@ -160,6 +160,8 @@ Incluir identidade operacional por matrícula/contrato e correspondência das al
 - [ ] Cancelamento mantém origem e reposição, sem contar ambos para a meta; substituto recebe somente os encontros atribuídos.
 - [ ] Aviso de N01 só nasce após aplicação efetiva e repetição não duplica mudança ou envio.
 
+**Implementação Q20/Q21:** a revisão conjunta é uma fotografia imutável. Outra pessoa da Gerência Pedagógica/Administração pode rejeitá-la ou aprová-la com motivo; a aprovação trava o calendário, revalida hash, versão, professor, conflitos, indisponibilidades e reservas particulares vigentes, publica a versão de calendário e altera somente os encontros futuros previstos no mesmo commit. Exceções de dia não letivo exigem justificativa no ajuste e autorização explícita por encontro na decisão. Particulares e recuperações futuras fora do intervalo afetado não bloqueiam; os afetados permanecem para seu fluxo próprio. O evento transacional `ReplanejamentoConjuntoAplicado` referencia a revisão e traz `encontrosIds` realmente alterados para N01, sem produzir cobrança ou envio.
+
 **Dependências/limites:** F07.1/F07.2 e N01 para comunicação completa. Aprovação acadêmica não autoriza compensação financeira, que mantém B02/F07.5/P01/P02.
 
 ### F07.4 — Concluir aulas e manter diário histórico com correções aprovadas

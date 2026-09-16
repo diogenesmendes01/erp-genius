@@ -5,10 +5,10 @@ import type { z } from "zod";
 
 function estado(snapshot: z.infer<typeof ReplanejamentoSnapshotSchema>) {
   return estadoReplanejamento({ ...snapshot, ajustes: [], revisoes: [], particulares: [],
-    recursos: { internos: [], externos: [], indisponibilidades: [], semDocenteApto: [], reservasConferidas: false },
+    recursos: { internos: [], externos: [], indisponibilidades: [], reservas: [], semDocenteApto: [], reservasConferidas: false },
     aplicada: false, revisaoCompleta: false,
     ...(snapshot.recuperacoes ? { recuperacoes: snapshot.recuperacoes.map((e) => ({ ...e,
-      inicio: new Date(e.inicio), fim: new Date(e.fim), professorId: null })) } : { recuperacoes: undefined }),
+      inicio: new Date(e.inicio), fim: new Date(e.fim), professorId: null, periodosNaoLetivos: e.periodosNaoLetivos ?? [] })) } : { recuperacoes: undefined }),
   });
 }
 

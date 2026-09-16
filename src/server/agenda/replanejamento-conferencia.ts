@@ -17,7 +17,7 @@ export async function conferirRevisaoParaDecisao(input: { calendarioId: string; 
       const u = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
       if (!u?.ativo || !u.papeis.some((p) => ["SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO", "ADMINISTRADOR"].includes(p))) throw new ErroPermissao();
       const r = await tx.rascunhoReplanejamento.findFirst({ where: { id: d.revisaoId, calendarioId: d.calendarioId },
-        include: { calendario: { include: { decisao: true } } } });
+        include: { calendario: { include: { decisao: true } }, decisaoConjunta: { include: { aplicacao: true, decisor: { select: { nome: true } } } } } });
       if (!r) throw new ErroRegra("Revisão não encontrada neste calendário.");
       const motivos: string[] = [];
       const independente = autor.id !== r.preparadorId && autor.id !== r.calendario.preparadorId;
@@ -37,9 +37,11 @@ export async function conferirRevisaoParaDecisao(input: { calendarioId: string; 
           if (!estadoCorresponde) motivos.push("A agenda ou suas condições mudaram desde o registro; conferir e guardar nova revisão.");
           if (atual.recursos.internos.length || atual.recursos.externos.length) motivos.push("Resolver os conflitos de horário apontados na conferência atual.");
           if (atual.recursos.indisponibilidades.length) motivos.push("Há indisponibilidade docente nos horários propostos.");
+          if (atual.recursos.reservas.length) motivos.push("Há reserva particular vigente nos horários propostos.");
           if (atual.recursos.semDocenteApto.length) motivos.push("Há encontro sem professor ativo e apto.");
           if (atual.revisoes.some((t) => !t.previsao)) motivos.push("Há turma sem proposta válida para integrar o conjunto.");
-          if (atual.particulares.length) motivos.push("Conferir os encontros particulares e seus horários contratados.");
+          if (atual.particulares.length) motivos.push("Há encontro particular atingido por período não letivo; use seu fluxo próprio.");
+          if (atual.recuperacoes?.length) motivos.push("Há recuperação atingida por período não letivo; use seu fluxo próprio.");
           if (!atual.recursos.reservasConferidas) motivos.push("A conferência das reservas comerciais ainda está pendente.");
         } catch (erro) {
           if (!(erro instanceof ErroRegra)) throw erro;
@@ -50,10 +52,13 @@ export async function conferirRevisaoParaDecisao(input: { calendarioId: string; 
         turmaId: t.turmaId, codigo: t.codigo, encontroId: p.encontroId, inicio: p.inicioProposto, fim: p.fimProposto,
         fusoOrigem: t.fusoOrigem, periodos: p.periodosNaoLetivos!, motivoProposto: p.motivoAjuste ?? null,
       })) ?? []) : [];
-      if (excecoes.length) motivos.push("Exceções de dia não letivo precisam de autorização explícita para os encontros identificados.");
+      if (excecoes.some((e) => !e.motivoProposto)) motivos.push("Exceções de dia não letivo precisam de justificativa explícita para os encontros identificados.");
       return { conferidoEm: new Date().toISOString(), estadoCorresponde, independente, papelDecisor, motivos, excecoes,
         decisaoCalendario: r.calendario.decisao ? { aprovada: r.calendario.decisao.aprovada } : null,
-        aplicada: false as const, aprovacaoDisponivel: false as const };
+        decisaoConjunta: r.decisaoConjunta ? { aprovada: r.decisaoConjunta.aprovada, decisorNome: r.decisaoConjunta.decisor.nome, motivo: r.decisaoConjunta.motivo } : null,
+        aplicada: !!r.decisaoConjunta?.aplicacao,
+        aprovacaoDisponivel: !r.decisaoConjunta && !r.calendario.decisao && estadoCorresponde && independente && papelDecisor && !motivos.length,
+        rejeicaoDisponivel: !r.decisaoConjunta && independente && papelDecisor };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 20000 });
   });
 }

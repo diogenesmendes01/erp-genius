@@ -17,9 +17,10 @@ export const ReplanejamentoSnapshotSchema = z.object({
     internos: z.array(z.object({ primeiro: z.string(), segundo: z.string() })),
     externos: z.array(z.object({ encontroPropostoId: z.string(), encontroExistenteId: z.string() })),
     indisponibilidades: z.array(z.object({ encontroId: z.string(), indisponibilidadeId: z.string() })),
+    reservas: z.array(z.object({ encontroId: z.string(), reservaId: z.string(), horarioId: z.string() })).optional(),
     semDocenteApto: z.array(z.string()),
   }),
-  particulares: z.array(z.object({ id: z.string(), inicio: z.string().datetime(), fim: z.string().datetime() })),
-  recuperacoes: z.array(z.object({ id: z.string(), inicio: z.string().datetime(), fim: z.string().datetime() })).optional(),
+  particulares: z.array(z.object({ id: z.string(), inicio: z.string().datetime(), fim: z.string().datetime(), periodosNaoLetivos: z.array(z.string()).optional() })),
+  recuperacoes: z.array(z.object({ id: z.string(), inicio: z.string().datetime(), fim: z.string().datetime(), periodosNaoLetivos: z.array(z.string()).optional() })).optional(),
 });
 export type ReplanejamentoSnapshot = z.infer<typeof ReplanejamentoSnapshotSchema>;
