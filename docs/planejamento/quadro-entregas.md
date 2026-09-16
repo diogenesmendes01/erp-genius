@@ -9,7 +9,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação CSV/XLSX integrada; ensaio/aplicação de alunos em implementação; demais cadastros/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
-| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e avisos globais integrados; quantidade de aulas da modalidade em implementação | 16/09/2026 | Base a8adfec6; Q41/Q42/Q43 ainda não concluídas |
+| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e revisão de quantidade integrados; avisos da quantidade e cobertura complementar pendentes | 16/09/2026 | Até 41f26140; 4 integrações aprovadas no TESTER e principal; Q38 da quantidade pendente |
 
 ## EMAIL — aceite do DEV
 
@@ -37,6 +37,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- F07.3 integrada até `41f26140`: revisão/aplicação da meta, rascunho com publicação posterior, origem aprovada e bijeção de impactos. Migrações 179/181 aplicadas no banco descartável do integrador; sessão 88757 passou 4/4 integrações (8,13s), repetindo TESTER 2d5e7609. Build da integração aprovado na sessão 34112 (TypeScript e 80 páginas). TESTER identificou 3 mocks antigos de reservas em falha, ajuste em curso. Avisos da quantidade continuam no DEV; não declarar funcionalidade integral concluída.
 
 - M01: integrador concluiu generate e deploy da 180 apenas em `erp_genius_test_dev_gravacoes` (sessão 54899, exit 0). Migração aplicada é imutável. Testes de ensaio/aplicação/replay, concorrência e guardas SQL seguem no DEV; compilação isolada não comprova funcionamento. Revisão pediu diagnóstico de candidatos também no ensaio e confirmação persistente com resultado por linha antes de aplicar.
 - F07.3: checkpoint DEV `99530361` preparado no TESTER como `102c90fa`; generate e deploy 179/181 passaram no banco exclusivo (sessão 61439). DEV informou 1 integração aprovada de aumento publicado 2→3; TESTER executa revisão SQL e origem vigente, enquanto DEV completa rascunho/publicação e avisos. Não integrado no principal.
