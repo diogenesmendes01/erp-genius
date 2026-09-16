@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const mocks=vi.hoisted(()=>({sessao:vi.fn(),consultar:vi.fn()}));
 vi.mock("@/server/_shared",()=>({exigirSessaoPagina:mocks.sessao}));
 vi.mock("@/server/comunicacoes-agenda/consultas",()=>({consultarAvisosAlteracaoAgenda:mocks.consultar}));
