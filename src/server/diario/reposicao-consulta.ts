@@ -22,6 +22,11 @@ type LinhaCicloAgenda = {
 
 type LinhaAutorizacaoExcecao = { reposicaoId: string; id: string; motivo: string; decididaEm: Date };
 type LinhaProfessorAgenda = { id: string; nome: string };
+type LinhaExcecaoAgenda = {
+  reposicaoId: string; id: string; professor: string; inicio: Date; fim: Date; fuso: string; motivo: string; evidencia: string;
+  solicitanteId: string; solicitante: string; criadaEm: Date; versao: number;
+  decisaoId: string | null; aprovada: boolean | null; motivoDecisao: string | null; decididaEm: Date | null; decisor: string | null;
+};
 
 type LinhaOrigem = { aulaOriginalId: string; inicio: Date; fim: Date; fuso: string; turma: string | null; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" };
 
@@ -150,7 +155,7 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
       `) : [];
       const cicloPorReposicao = new Map(ciclos.map((c) => [c.reposicaoId, c]));
       const idsPagina = pagina.map((r) => r.id);
-      const [operacao, professores, autorizacoes] = await Promise.all([
+      const [operacao, professores, autorizacoes, excecoesAgenda] = await Promise.all([
         tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
         tx.$queryRaw<LinhaProfessorAgenda[]>(Prisma.sql`
           SELECT id,nome FROM "Usuario" WHERE ativo AND 'PROFESSOR' = ANY(papeis) ORDER BY nome ASC, id ASC
@@ -162,13 +167,33 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
           WHERE a."reposicaoId" IN (${Prisma.join(idsPagina.length ? idsPagina : ["__sem_reposicao__"])})
           ORDER BY decisao."decididaEm" DESC, a.id DESC
         `),
+        tx.$queryRaw<LinhaExcecaoAgenda[]>(Prisma.sql`
+          SELECT x."reposicaoId" AS "reposicaoId", x.id, professor.nome AS professor, x.inicio, x.fim,
+            x."fusoOrigem" AS fuso, x.motivo, x.evidencia, x."solicitanteId" AS "solicitanteId",
+            solicitante.nome AS solicitante, x."criadaEm" AS "criadaEm", x.versao,
+            decisao.id AS "decisaoId", decisao.aprovada, decisao.motivo AS "motivoDecisao",
+            decisao."decididaEm" AS "decididaEm", decisor.nome AS decisor
+          FROM "ExcecaoAgendaReposicaoIndividual" x
+          JOIN "Usuario" professor ON professor.id=x."professorId"
+          JOIN "Usuario" solicitante ON solicitante.id=x."solicitanteId"
+          LEFT JOIN "DecisaoExcecaoAgendaReposicaoIndividual" decisao ON decisao."excecaoId"=x.id
+          LEFT JOIN "Usuario" decisor ON decisor.id=decisao."decisorId"
+          WHERE x."reposicaoId" IN (${Prisma.join(idsPagina.length ? idsPagina : ["__sem_reposicao__"])})
+          ORDER BY x."criadaEm" DESC, x.id DESC
+        `),
       ]);
       const autorizacoesPorReposicao = new Map<string, LinhaAutorizacaoExcecao[]>();
       for (const autorizacao of autorizacoes) {
         const lista = autorizacoesPorReposicao.get(autorizacao.reposicaoId) ?? [];
         lista.push(autorizacao); autorizacoesPorReposicao.set(autorizacao.reposicaoId, lista);
       }
+      const excecoesPorReposicao = new Map<string, LinhaExcecaoAgenda[]>();
+      for (const excecao of excecoesAgenda) {
+        const lista = excecoesPorReposicao.get(excecao.reposicaoId) ?? [];
+        lista.push(excecao); excecoesPorReposicao.set(excecao.reposicaoId, lista);
+      }
       const podeAgendar = matricula.status === "ATIVA" && fresco.papeis.some((papel) => papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR);
+      const podeGerirExcecao = fresco.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR);
       return {
         matricula: { id: matricula.id, codigo: matricula.codigo ?? "Sem código", ativa: matricula.status === "ATIVA" },
         origensElegiveis: paginaOrigens.map((o) => ({ ...o, inicio: o.inicio.toISOString(), fim: o.fim.toISOString() })),
@@ -185,6 +210,12 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
             professores,
             autorizacoesExcepcionais: (autorizacoesPorReposicao.get(r.id) ?? []).map((a) => ({ id: a.id, motivo: a.motivo, decididaEm: a.decididaEm.toISOString() })),
           } : null,
+          excecoesAgenda: (excecoesPorReposicao.get(r.id) ?? []).map((x) => ({
+            id: x.id, professor: x.professor, inicio: x.inicio.toISOString(), fim: x.fim.toISOString(), fuso: x.fuso,
+            motivo: x.motivo, evidencia: x.evidencia, solicitante: x.solicitante, criadaEm: x.criadaEm.toISOString(), versao: x.versao,
+            decisao: x.decisaoId ? { aprovada: !!x.aprovada, motivo: x.motivoDecisao ?? "", decididaEm: x.decididaEm!.toISOString(), decisor: x.decisor ?? "Pessoa autorizada" } : null,
+            podeDecidir: matricula.status === "ATIVA" && !x.decisaoId && x.solicitanteId !== usuario.id && podeGerirExcecao,
+          })),
         })),
         proximoCursor: reposicoes.length > d.limite ? pagina.at(-1)?.id ?? null : null,
         proximoOrigemCursor: origens.length > d.limite ? paginaOrigens.at(-1)?.aulaOriginalId ?? null : null,
