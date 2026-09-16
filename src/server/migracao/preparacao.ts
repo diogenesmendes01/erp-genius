@@ -15,7 +15,8 @@ export const LinhaPreparacaoSchema = z.object({
   tipoEntrada: z.enum(["CADASTRO", "VINCULO_MATRICULA", "FINANCEIRO_HISTORICO", "HISTORICO_PRESENCA"]),
   aluno: z.object({ id: Celula, nome: Celula, email: Celula, documento: Celula, pais: Celula, fuso: Celula }).strict().optional(),
   turma: z.object({ id: Celula, codigo: Celula, nome: Celula }).strict().optional(),
-  matricula: z.object({ id: Celula, situacao: Celula, inicio: Celula, fim: Celula }).strict().optional(),
+  matricula: z.object({ id: Celula, situacao: Celula, inicio: Celula, fim: Celula, produtoOrigem: Celula, moeda: Celula, pais: Celula }).strict().optional(),
+  alocacao: z.object({ inicio: Celula, fim: Celula }).strict().optional(),
   financeiro: z.object({ id: Celula, tipo: Celula, valor: Celula, moeda: Celula, situacao: Celula }).strict().optional(),
   consentimentoOrigem: Celula,
   presencaOrigem: Celula,
@@ -55,6 +56,15 @@ export function pendenciasDaLinha(linha: LinhaPreparacaoEntrada): PendenciaPrepa
   if (!documento) adicionar("aluno.documento", "DOCUMENTO_AUSENTE", "A origem não informou o documento do aluno.");
   if (linha.tipoEntrada === "VINCULO_MATRICULA" && !matriculaId) adicionar("matricula.id", "MATRICULA_ORIGEM_AUSENTE", "O vínculo não identifica a matrícula na origem.");
   if (linha.tipoEntrada === "VINCULO_MATRICULA" && !turmaId) adicionar("turma.id", "TURMA_AUSENTE", "A matrícula de origem não está vinculada a uma turma identificável.");
+  if (linha.tipoEntrada === "VINCULO_MATRICULA") {
+    const inicio = textoDaCelula(matricula?.inicio), fim = textoDaCelula(matricula?.fim), produto = textoDaCelula(matricula?.produtoOrigem), moedaContratual = textoDaCelula(matricula?.moeda), paisContratual = textoDaCelula(matricula?.pais);
+    if (!inicio || Number.isNaN(Date.parse(inicio))) adicionar("matricula.inicio", "INICIO_MATRICULA_INVALIDO", "Início da matrícula deve usar data ISO válida.");
+    if (fim && Number.isNaN(Date.parse(fim))) adicionar("matricula.fim", "FIM_MATRICULA_INVALIDO", "Fim da matrícula deve usar data ISO válida.");
+    if (inicio && fim && !Number.isNaN(Date.parse(inicio)) && !Number.isNaN(Date.parse(fim)) && new Date(fim) < new Date(inicio)) adicionar("matricula.fim", "FIM_ANTES_INICIO", "Fim da matrícula antecede o início informado.");
+    if (!produto) adicionar("matricula.produtoOrigem", "PRODUTO_ORIGEM_AUSENTE", "Produto/oferta exige mapeamento administrativo explícito.");
+    if (!moedaContratual || !/^[A-Z]{3}$/.test(moedaContratual)) adicionar("matricula.moeda", "MOEDA_CONTRATUAL_INVALIDA", "Moeda contratual precisa ser código ISO de três letras.");
+    if (!paisContratual || !/^[A-Z]{2}$/.test(paisContratual)) adicionar("matricula.pais", "PAIS_CONTRATUAL_INVALIDO", "País contratual precisa ser ISO de duas letras.");
+  }
   if (turma && !textoDaCelula(turma.codigo) && !textoDaCelula(turma.nome)) adicionar("turma", "TURMA_SEM_IDENTIFICACAO", "A turma tem ID de origem, mas não possui código ou nome para conferência.");
   if (matricula && !situacaoMatricula) adicionar("matricula.situacao", "SITUACAO_NAO_INFORMADA", "A situação da matrícula não foi informada; nenhuma situação será criada.");
   if (situacaoMatricula) adicionar("matricula.situacao", "SITUACAO_NAO_CONFIRMADA", "A situação foi preservada como texto de origem e exige conferência antes de qualquer aplicação.");
