@@ -79,6 +79,14 @@ it("aplica vínculo histórico ATIVA sem criar efeitos comerciais e repete a mes
   expect(segunda).toMatchObject({ ok: true, dado: { repetida: true } });
   if (!primeira.ok || !primeira.dado || !segunda.ok || !segunda.dado) throw new Error("Aplicação falhou.");
   expect(segunda.dado).toMatchObject({ id: primeira.dado.id, matriculaId: primeira.dado.matriculaId, alocacaoId: primeira.dado.alocacaoId });
+  for (const alteracao of [
+    { diaVencimento: 20 }, { mesesPlano: 12 }, { fusoReferencia: "UTC" },
+    { evidenciaContrato: { referencia: "outro contrato" } },
+    { inicioAlocacao: "2025-01-02" },
+    { fatos: [{ ...input.fatos[0], evidencia: { referencia: "outra evidência" } }] },
+  ]) {
+    expect(await aplicarVinculoMigracao({ ...input, ...alteracao })).toMatchObject({ ok: false, erro: expect.stringContaining("condições diferentes") });
+  }
   expect(await prisma.matricula.count()).toBe(1);
   expect(await prisma.alocacaoTurma.count()).toBe(1);
   expect(await prisma.aplicacaoVinculoMigracao.count()).toBe(1);
