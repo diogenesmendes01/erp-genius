@@ -12,6 +12,7 @@ Estado mais recente (18h54): Q19 integrado e validado; M01 permanece em desenvol
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
+| M01 — conferência inicial de regra histórica | DEV 1 Terra | Implementação atribuída após confirmação independente da lacuna | 16/09/2026 | Somente turma sem regra e sem avaliações; evidência, proposta e aprovação independente; preservar Q141 e regras existentes. Migração 188 reservada: `20260916200000_conferencia_regra_historica`, ainda não aplicada |
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
