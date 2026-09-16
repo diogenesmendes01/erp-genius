@@ -168,13 +168,21 @@ describe("régua e despachante revalidam a conferência", () => {
 
   it("informe recebido após o claim também impede chamar o driver", async () => {
     const intencao = await prepararIntencao();
-    const original = prisma.intencaoMensagem.updateMany.bind(prisma.intencaoMensagem);
-    vi.spyOn(prisma.intencaoMensagem, "updateMany").mockImplementation((args) => {
+    const original = prisma.intencaoMensagem.findUnique.bind(prisma.intencaoMensagem);
+    let injecoesDuranteClaim = 0;
+    vi.spyOn(prisma.intencaoMensagem, "findUnique").mockImplementation((args) => {
       const resultado = original(args);
-      if (args?.data.status !== "ENVIANDO") return resultado;
-      return resultado.then(async (alterado) => { await informar("durante-claim"); return alterado; }) as typeof resultado;
+      if (args?.where.id !== intencao.id) return resultado;
+      return resultado.then(async (atual) => {
+        expect(atual?.status).toBe("ENVIANDO");
+        expect(injecoesDuranteClaim).toBe(0);
+        injecoesDuranteClaim += 1;
+        await informar("durante-claim");
+        return atual;
+      }) as typeof resultado;
     });
     const r = await despacharFila();
+    expect(injecoesDuranteClaim).toBe(1);
     expect(r.adiadas).toBe(1); expect(enviarMock).not.toHaveBeenCalled();
     expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "ADIADA", motivoFalha: "comprovante_em_conferencia" });
   });
