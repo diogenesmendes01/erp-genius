@@ -7,6 +7,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
+| N01 — avisos de alteração de agenda | DEV 1 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
+| M01 — preparação rastreável de migração | DEV 2 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; lote/prévia/pendências; não equivale à carga final |
 
 ## EMAIL — aceite do DEV
 
@@ -28,6 +30,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- Próxima rodada: DEV 1 usa branch `codex/dev-avisos-institucionais` no worktree EMAIL; DEV 2 usa `codex/dev-preparacao-migracao` no worktree de gravações. Ambas partem de `2df2f4d`, com dependências próprias, Prisma regenerado e os mesmos perfis de banco exclusivos. Migrações 154 e 155 reservadas respectivamente. EMAIL/VIDEO estão em regressão, sem nova implementação paralela nesses recortes.
 
 - Cada DEV entrega commits autocontidos e lista dos testes executados. TESTER revisa os commits exatos no banco `erp_genius_test_tester`, uma frente por vez.
 - Integrador revisa conflitos e schema, reúne alterações e executa regressões pertinentes antes de fechar a entrega.
