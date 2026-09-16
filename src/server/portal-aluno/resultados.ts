@@ -228,7 +228,7 @@ export async function consultarResultadosPortalAluno(sessao?: SessaoPortalAluno)
       where: { alunoId: identidade.alunoId, matriculaId: { not: null }, matricula: { alunoId: identidade.alunoId } },
       orderBy: [{ matriculaId: "asc" }, { criadoEm: "asc" }, { id: "asc" }],
       select: {
-        id: true, matriculaId: true, alunoId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true,
+        id: true, matriculaId: true, alunoId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true,
         matricula: { select: { codigo: true } },
         turma: { select: {
           nome: true, nivelId: true, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } },
