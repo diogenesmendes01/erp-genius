@@ -106,3 +106,55 @@ it("aumenta rascunho por nova versão de grade, sem publicar nem duplicar encont
  expect(publicada).toMatchObject({ ok: true, dado: { publicada: true } });
  expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
 });
+
+it("redução preserva turmas iniciada e finalizada, mas reduz turma ainda não iniciada", async () => {
+ const iniciada = await turmaComGrade("EM_ANDAMENTO");
+ const finalizada = await turmaComGrade("CONCLUIDA");
+ const futura = await turmaComGrade("ABERTA");
+ const passado = new Date("2020-01-06T10:00:00.000Z");
+ await prisma.turma.updateMany({ where: { id: { in: [iniciada.turma.id, finalizada.turma.id] } }, data: { dataInicio: passado } });
+ await prisma.encontroAgenda.updateMany({ where: { turmaId: { in: [iniciada.turma.id, finalizada.turma.id] } }, data: { inicio: passado, fim: new Date(passado.getTime() + 3_600_000) } });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 1, versaoAnterior: 0, motivo: "Redução com preservação histórica", chaveIdempotencia: "quantidade-reducao-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta de redução ausente.");
+ const impactos = await prisma.impactoQuantidadeAulasModalidade.findMany({ where: { propostaId: proposta.dado.id }, orderBy: { turmaId: "asc" } });
+ expect(impactos.find(i => i.turmaId === iniciada.turma.id)).toMatchObject({ alcance: "REDUCAO_INICIADA_PRESERVADA", quantidadeNova: 2 });
+ expect(impactos.find(i => i.turmaId === finalizada.turma.id)).toMatchObject({ alcance: "FINALIZADA_PRESERVADA", quantidadeNova: 2 });
+ expect(impactos.find(i => i.turmaId === futura.turma.id)).toMatchObject({ alcance: "REDUCAO_NAO_INICIADA", quantidadeNova: 1 });
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect((await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação independente da redução" })).ok).toBe(true);
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: iniciada.turma.id } })).toBe(2);
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: finalizada.turma.id } })).toBe(2);
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: futura.turma.id, status: "PREVISTO" } })).toBe(1);
+});
+
+it("permite atualizar a meta sem turmas e invalida proposta antiga após outra revisão", async () => {
+ const primeira = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Meta futura sem turma existente", chaveIdempotencia: "quantidade-sem-turma-1" });
+ if (!primeira.ok || !primeira.dado) throw new Error("Primeira proposta ausente.");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect(await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: primeira.dado.id, aprovar: true, motivo: "Aplicação de meta sem turma" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(3);
+ expect(await prisma.impactoQuantidadeAulasModalidade.count()).toBe(0);
+ authMock.mockResolvedValue({ user: { id: secretariaId } });
+ const antiga = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 4, versaoAnterior: 1, motivo: "Proposta que ficará obsoleta", chaveIdempotencia: "quantidade-obsoleta-1" });
+ const atual = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 5, versaoAnterior: 2, motivo: "Revisão posterior da meta futura", chaveIdempotencia: "quantidade-atual-1" });
+ if (!antiga.ok || !antiga.dado || !atual.ok || !atual.dado) throw new Error("Propostas para replay ausentes.");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect((await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: antiga.dado.id, aprovar: true, motivo: "Tentativa de aprovar versão superada" })).ok).toBe(false);
+ expect(await prisma.decisaoQuantidadeAulasModalidade.count({ where: { propostaId: antiga.dado.id } })).toBe(0);
+ expect(await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: atual.dado.id, aprovar: true, motivo: "Aprovação da versão vigente" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(5);
+});
+
+it("não persiste decisão nem meta quando um conflito bloqueia o conjunto", async () => {
+ const { turma } = await turmaComGrade();
+ const ocupado = await turmaComGrade();
+ const encontro = await prisma.encontroAgenda.findFirstOrThrow({ where: { turmaId: ocupado.turma.id }, orderBy: { inicio: "asc" } });
+ await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { inicio: new Date("2099-01-19T10:00:00.000Z"), fim: new Date("2099-01-19T11:00:00.000Z"), professorId: turma.professorId } });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento que encontra conflito", chaveIdempotencia: "quantidade-conflito-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta com conflito ausente.");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect((await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Não aprovar conjunto conflituoso" })).ok).toBe(false);
+ expect(await prisma.decisaoQuantidadeAulasModalidade.count()).toBe(0);
+ expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(0);
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
+});

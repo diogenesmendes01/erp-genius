@@ -39,7 +39,6 @@ export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<
       const ultima = await tx.propostaQuantidadeAulasModalidade.findFirst({ where: { modalidadeId: d.modalidadeId }, orderBy: { versao: "desc" }, select: { versao: true } });
       if ((ultima?.versao ?? 0) !== d.versaoAnterior) throw new ErroRegra("A modalidade possui outra revisão; atualize a prévia.");
       const previa = await carregarPreviaQuantidadeAulasTx(tx, { modalidadeId: d.modalidadeId, quantidadeNova: d.quantidadeNova });
-      if (!previa.impactos.length) throw new ErroRegra("Não há turmas para compor a revisão da modalidade.");
       const p = await tx.propostaQuantidadeAulasModalidade.create({ data: {
         modalidadeId: d.modalidadeId, preparadorId: autor.id, versao: d.versaoAnterior + 1,
         quantidadeAnterior: previa.quantidadeAnterior, quantidadeNova: d.quantidadeNova, motivo: d.motivo,
