@@ -38,6 +38,10 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Regressão unitária do principal: sessão 49369 passou 204 arquivos/1.372 testes após corrigir o mock de roteador do formulário de reconferência (`039514ed`). Reservas do replanejamento corrigidas em `fafe7000`, com 19 testes dirigidos aprovados. Essas evidências precedem a integração M01 de aplicação.
+- M01: DEV entregou `526034d5` para consulta SSR de evidências persistidas, após 5 integrações da aplicação e 1 SSR. TESTER confirmou aplicação e candidato surgido após ensaio, mas a prova de recarga exige nova execução contra a correção; não integrado no principal.
+- Avisos da quantidade: `fb74080a` permanece fora do principal, pois ainda falha com matrícula alocada sem a guarda SQL 182. Revisão automática recusou a alteração dos guards compartilhados e o ramo real Resend; aprovação específica foi solicitada ao usuário após proposta revisável `8065741`. Não executar essas alterações nem ativar envios enquanto pendente; trabalho independente F07/M01 continua.
+
 - F07.3 integrada até `41f26140`: revisão/aplicação da meta, rascunho com publicação posterior, origem aprovada e bijeção de impactos. Migrações 179/181 aplicadas no banco descartável do integrador; sessão 88757 passou 4/4 integrações (8,13s), repetindo TESTER 2d5e7609. Build da integração aprovado na sessão 34112 (TypeScript e 80 páginas). TESTER identificou 3 mocks antigos de reservas em falha, ajuste em curso. Avisos da quantidade continuam no DEV; não declarar funcionalidade integral concluída.
 
 - M01: integrador concluiu generate e deploy da 180 apenas em `erp_genius_test_dev_gravacoes` (sessão 54899, exit 0). Migração aplicada é imutável. Testes de ensaio/aplicação/replay, concorrência e guardas SQL seguem no DEV; compilação isolada não comprova funcionamento. Revisão pediu diagnóstico de candidatos também no ensaio e confirmação persistente com resultado por linha antes de aplicar.
