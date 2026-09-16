@@ -284,7 +284,7 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
       // Fechar o vínculo ao executar a progressão não muda frequência já
       // conferida. Os limites continuam selecionando as aulas e produzindo
       // pendências; quando afetarem a apuração, essas fontes mudarão o hash.
-      vinculos: vinculosConferidos.map(vinculo => ({ id: vinculo.id, turmaId: vinculo.turmaId, criadoEm: vinculo.criadoEm.toISOString(), provenienciaVinculo: vinculo.provenienciaVinculo, inicioVigencia: vinculo.inicioVigencia?.toISOString() ?? null, fimVigencia: vinculo.fimVigencia?.toISOString() ?? null, encerradaEm: vinculo.encerradaEm?.toISOString() ?? null })),
+      vinculos: vinculosConferidos.map(vinculo => ({ id: vinculo.id, turmaId: vinculo.turmaId, criadoEm: vinculo.criadoEm.toISOString(), provenienciaVinculo: vinculo.provenienciaVinculo, inicioVigencia: vinculo.inicioVigencia?.toISOString() ?? null, fimVigencia: vinculo.fimVigencia?.toISOString() ?? null })),
       fontes,
       // A classificação temporal de futuro/passado não compõe o hash.
       pendenciasPersistidas: ordenarPendencias(pendenciasHistoricas),
