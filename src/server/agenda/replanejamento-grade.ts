@@ -18,7 +18,7 @@ export function proporReplanejamentoGrade(input: z.input<typeof Entrada>) {
   if (new Set(d.encontros.map((e) => e.id)).size !== d.encontros.length) throw new Error("Encontro repetido na revisão.");
   if (d.encontros.some((e) => Date.parse(e.fim) <= Date.parse(e.inicio))) throw new Error("Intervalo de encontro inválido.");
   if (d.encontros.some((e) => e.status === "MINISTRADO" && Date.parse(e.fim) > agora)) throw new Error("Aula ministrada futura exige conferência antes de replanejar.");
-  const futuros = d.encontros.filter((e) => e.status === "PREVISTO" && Date.parse(e.inicio) > agora)
+  const futuros = d.encontros.filter((e) => (e.status === "PREVISTO" || (d.quantidadeAulasAlvo !== undefined && e.status === "RASCUNHO")) && Date.parse(e.inicio) > agora)
     .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.id.localeCompare(b.id));
   const preservados = d.encontros.filter((e) => !futuros.some((f) => f.id === e.id));
   const limite = Math.max(agora, ...preservados.filter((e) => e.status === "PREVISTO" || e.status === "MINISTRADO").map((e) => Date.parse(e.fim)));
