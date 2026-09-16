@@ -12,6 +12,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário, quantidade e detalhes Q37 integrados; avisos da quantidade pendentes | 16/09/2026 | Até f7e84c12; revisão independente e cenários dirigidos aprovados antes da integração; ver evidências abaixo; Q38 da quantidade pendente |
 | F07.6 — agendamento inicial de reposição particular | DEV 1 Terra | Implementado, integrado e validado localmente | 16/09/2026 | 37c9a22f/952dbceb; TESTER: 22 integrações, 15 controles/SSR e TypeScript; principal: 22 integrações e 2 controles/SSR. Sem homologação operacional presumida |
 
+- Revisão independente da proposta 185: aplicação histórica ainda bloqueada por ensaio com correspondências obsoletas, fato final sem coerência obrigatória com o estado, snapshot sem confronto material dos limites/termos e divergências SQL/Prisma. DEV corrige antes de qualquer aplicação; nenhum banco recebeu a 185. DEV 1 atualizado para `codex/dev-reposicoes-operacao` na base integrada `d4fc8c72`, preservando a branch anterior com a proposta 182 pendente.
+
 ## EMAIL — aceite do DEV
 
 - Secretaria/Administração localiza e acompanha solicitações com paginação e permissões revalidadas. Tela distingue preparado, aceito pelo provedor, incerto e demais estados sem apresentar aceitação como entrega.
