@@ -5,6 +5,9 @@ import { dataCivilInstitucional } from "@/server/operacao/fuso";
 const Entrada = z.object({
   grade: GradeEncontrosSchema.omit({ quantidadeAulas: true }),
   agora: z.string().datetime(),
+  // Q41–Q43 usa meta explícita; a revisão de calendário mantém o padrão de
+  // regenerar exatamente os futuros já existentes.
+  quantidadeAulasAlvo: z.number().int().positive().optional(),
   encontros: z.array(z.object({ id: z.string().min(1), inicio: z.string().datetime(), fim: z.string().datetime(),
     status: z.enum(["PREVISTO", "MINISTRADO", "CANCELADO", "RASCUNHO", "NAO_REALIZADO", "IMPEDIDO_ESCOLA"]) }).strict()).max(10000),
 }).strict();
@@ -21,21 +24,29 @@ export function proporReplanejamentoGrade(input: z.input<typeof Entrada>) {
   const limite = Math.max(agora, ...preservados.filter((e) => e.status === "PREVISTO" || e.status === "MINISTRADO").map((e) => Date.parse(e.fim)));
   const diaLimite = dataCivilInstitucional(new Date(limite), d.grade.fusoOrigem);
   let dataInicial = d.grade.dataInicial > diaLimite ? d.grade.dataInicial : diaLimite;
+  // Há duas métricas: cumprimento conta só MINISTRADO, mas planejamento também
+  // reserva PREVISTO passado. Diário atrasado não pode criar aula extra.
+  const oficiaisPreservados = preservados.filter((e) => e.status === "MINISTRADO" || e.status === "PREVISTO").length;
+  const quantidadeFutura = d.quantidadeAulasAlvo === undefined ? futuros.length : Math.max(0, d.quantidadeAulasAlvo - oficiaisPreservados);
   let grade: ReturnType<typeof gerarGradeEncontros> | null = null;
-  if (futuros.length) {
-    grade = gerarGradeEncontros({ ...d.grade, dataInicial, quantidadeAulas: futuros.length });
+  if (quantidadeFutura) {
+    grade = gerarGradeEncontros({ ...d.grade, dataInicial, quantidadeAulas: quantidadeFutura });
     // Pode haver um encontro da grade mais cedo no mesmo dia do limite.
     if (Date.parse(grade.primeiraAula) <= limite) {
       dataInicial = new Date(Date.parse(`${dataInicial}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
-      grade = gerarGradeEncontros({ ...d.grade, dataInicial, quantidadeAulas: futuros.length });
+      grade = gerarGradeEncontros({ ...d.grade, dataInicial, quantidadeAulas: quantidadeFutura });
     }
   }
-  const propostas = futuros.map((e, i) => {
+  const propostas = futuros.slice(0, quantidadeFutura).map((e, i) => {
     const novo = grade!.encontros[i];
     return { encontroId: e.id, inicioAnterior: e.inicio, fimAnterior: e.fim, inicioProposto: novo.inicio, fimProposto: novo.fim,
       alterado: e.inicio !== novo.inicio || e.fim !== novo.fim };
   });
-  return { propostas, preservados, previsaoTermino: grade?.previsaoTermino ?? null,
+  const extensaoQuantidade = d.quantidadeAulasAlvo === undefined ? {} : {
+    removidos: futuros.slice(quantidadeFutura).map((e) => ({ encontroId: e.id, inicioAnterior: e.inicio, fimAnterior: e.fim })),
+    adicionados: grade?.encontros.slice(futuros.length).map((e) => ({ inicioProposto: e.inicio, fimProposto: e.fim })) ?? [],
+  };
+  return { propostas, preservados, previsaoTermino: grade?.previsaoTermino ?? null, ...extensaoQuantidade,
     verificacoesPendentes: ["Atribuições e exceções específicas dos encontros", "Conflitos e indisponibilidade docente", "Reservas comerciais", "Revisão e aprovação conjunta"],
     aplicada: false as const };
 }
