@@ -704,6 +704,7 @@ model Usuario {
   decisoesRemarcacaoAgendaReposicao DecisaoRemarcacaoAgendaReposicaoIndividual[] @relation("DecisorRemarcacaoAgendaReposicao")
   remarcacoesAgendaReposicaoDocente PropostaRemarcacaoAgendaReposicaoIndividual[] @relation("ProfessorRemarcacaoAgendaReposicao")
   lotesPreparacaoMigracao LotePreparacaoMigracao[] @relation("PreparadorLoteMigracao")
+  aplicacoesCadastroMigracao AplicacaoCadastroMigracao[] @relation("ExecutorAplicacaoCadastroMigracao")
 }
 
 // ============================================================
@@ -1039,6 +1040,8 @@ model Aluno {
   contatosWhatsApp ContatoWhatsApp[]
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
   avisosAgendaDestinatario AvisoAlteracaoAgenda[] @relation("DestinatarioAlunoAvisoAgenda")
+  mapasOrigemMigracao MapaOrigemAlunoMigracao[]
+  aplicacoesCadastroMigracao AplicacaoCadastroMigracao[]
 
   @@index([telefoneE164])
 }
@@ -6547,6 +6550,20 @@ enum EstadoLinhaPreparacaoMigracao {
   COLISAO_ORIGEM
 }
 
+enum TipoEntradaPreparacaoMigracao {
+  CADASTRO
+  VINCULO_MATRICULA
+  FINANCEIRO_HISTORICO
+  HISTORICO_PRESENCA
+}
+
+enum SituacaoAplicacaoCadastroMigracao {
+  ENSAIO_VALIDO
+  APLICADO
+  BLOQUEADO
+  DIVERGENCIA_DESTINO
+}
+
 model LotePreparacaoMigracao {
   id String @id @default(cuid())
   origem String
@@ -6576,16 +6593,53 @@ model LinhaPreparacaoMigracao {
   dadosOrigem Json
   entradaHash String
   estado EstadoLinhaPreparacaoMigracao
+  // Lotes anteriores à migration 180 não carregavam tipo; permanecem sem
+  // aplicação até conferência, em vez de serem reinterpretados como cadastro.
+  tipoEntrada TipoEntradaPreparacaoMigracao?
   criadoEm DateTime @default(now())
   pendencias PendenciaCampoPreparacaoMigracao[]
   colisoesComoExistente ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemExistenteMigracao")
   colisoesComoConflitante ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemConflitanteMigracao")
+  aplicacoesCadastro AplicacaoCadastroMigracao[]
 
   @@unique([loteId, linhaOrigem], map: "LinhaPreparacaoMigracao_lote_linha_key")
   @@index([alunoOrigemId], map: "LinhaPreparacaoMigracao_aluno_origem_idx")
   @@index([turmaOrigemId], map: "LinhaPreparacaoMigracao_turma_origem_idx")
   @@index([matriculaOrigemId], map: "LinhaPreparacaoMigracao_matricula_origem_idx")
   @@index([financeiroOrigemId], map: "LinhaPreparacaoMigracao_financeiro_origem_idx")
+}
+
+// M01: a aplicação não reaproveita nome/e-mail como chave. Este mapa é a única
+// associação durável entre uma identidade declarada pela fonte e o aluno criado.
+model MapaOrigemAlunoMigracao {
+  id String @id @default(cuid())
+  origem String
+  alunoOrigemId String
+  alunoId String
+  aluno Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadoEm DateTime @default(now())
+
+  @@unique([origem, alunoOrigemId], map: "MapaOrigemAlunoMigracao_origem_aluno_key")
+  @@unique([alunoId], map: "MapaOrigemAlunoMigracao_aluno_key")
+}
+
+// Um ensaio ou aplicação é evidência append-only da linha imutável; falhas de
+// conferência não alteram a fotografia nem o destino já associado.
+model AplicacaoCadastroMigracao {
+  id String @id @default(cuid())
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  entradaHash String
+  situacao SituacaoAplicacaoCadastroMigracao
+  alunoId String?
+  aluno Aluno? @relation(fields: [alunoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  detalhe String?
+  executadoPorId String
+  executadoPor Usuario @relation("ExecutorAplicacaoCadastroMigracao", fields: [executadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadoEm DateTime @default(now())
+
+  @@unique([linhaId, entradaHash, situacao], map: "AplicacaoCadastroMigracao_linha_hash_situacao_key")
+  @@index([linhaId, criadoEm], map: "AplicacaoCadastroMigracao_linha_criado_idx")
 }
 
 model PendenciaCampoPreparacaoMigracao {

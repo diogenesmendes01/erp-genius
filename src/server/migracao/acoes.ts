@@ -65,6 +65,8 @@ export async function prepararLoteMigracao(input: unknown) {
           loteId: lote.id, linhaOrigem: linha.linhaOrigem, alunoOrigemId: textoDaCelula(linha.aluno?.id), turmaOrigemId: textoDaCelula(linha.turma?.id),
           matriculaOrigemId: textoDaCelula(linha.matricula?.id), financeiroOrigemId: textoDaCelula(linha.financeiro?.id),
           dadosOrigem: dadosDaLinha(linha), entradaHash: hash(linha), estado: estadoDaLinha(pendencias),
+          // O cliente Prisma é regenerado pelo integrador junto da migration 180.
+          ...( { tipoEntrada: linha.tipoEntrada } as unknown as Record<string, unknown> ),
           pendencias: { create: pendencias },
         } });
         if (pendencias.length) possuiPendencias = true;
