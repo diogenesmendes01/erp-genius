@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  IconHome,
+  IconHome, IconMail,
   IconLayoutKanban,
   IconUsers,
   IconUserCheck,
@@ -23,7 +23,7 @@ import { navParaPapeis } from "@/lib/nav";
 type Icone = React.ComponentType<IconProps>;
 
 const ICONS: Record<string, Icone> = {
-  Home: IconHome,
+  Home: IconHome, IconMail,
   KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
