@@ -38,8 +38,14 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   for (const telefone of [...new Set(telefonesAgenda)]) canais.push({ canal: "WHATSAPP", contato: telefone });
   const avisos = [];
   for (const { canal, contato } of canais) {
-    const chave = `agenda:${entrada.eventoId}:${matricula.id}:${canal}:${hashContato(contato)}`;
-    const existente = await tx.avisoAlteracaoAgenda.findUnique({ where: { chave } });
+    // Email preserva a chave histórica, inclusive se o endereço atual mudou;
+    // WhatsApp pode ter vários destinatários autorizados e inclui o hash.
+    const chave = canal === "EMAIL"
+      ? `agenda:${entrada.eventoId}:${matricula.id}:${canal}`
+      : `agenda:${entrada.eventoId}:${matricula.id}:${canal}:${hashContato(contato)}`;
+    const existente = canal === "EMAIL"
+      ? await tx.avisoAlteracaoAgenda.findFirst({ where: { eventoId: entrada.eventoId, matriculaId: matricula.id, canal } })
+      : await tx.avisoAlteracaoAgenda.findUnique({ where: { chave } });
     if (existente) {
       await tx.itemAvisoAlteracaoAgenda.createMany({ data: encontros.map(({ id }) => ({ id: randomUUID(), avisoId: existente.id, encontroId: id })), skipDuplicates: true });
       avisos.push(existente); continue;
@@ -102,7 +108,8 @@ export async function processarAvisosAlteracaoAgenda(entregar: EntregarAvisoAgen
     processados += avisos.length;
   }
   const enfileirados = await enfileirarAvisosAgendaWhatsApp();
-  if (enfileirados) await despacharFila();
+  // Também escoa itens já enfileirados, sem tocar as filas financeira/comercial.
+  await despacharFila(new Date(), { somenteAvisosAgenda: true });
   return processados + enfileirados;
 }
 

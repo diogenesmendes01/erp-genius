@@ -11,6 +11,9 @@ import { criarAvisosAlteracaoAgendaTx, despacharAvisoAlteracaoAgendaInterna, ent
 import { prepararSubstituicaoDocente } from "./substituicao";
 import { decidirSubstituicaoDocente } from "./substituicao-decisao";
 import { processarAvisosAlteracaoAgenda } from "@/server/comunicacoes-agenda/avisos";
+import { enfileirarAvisosAgendaWhatsApp } from "@/server/comunicacoes-agenda/whatsapp";
+import { despacharFila } from "@/server/whatsapp/despachante";
+import { ErroDriver } from "@/server/whatsapp/canal";
 
 let secretariaId: string;
 let gestorId: string;
@@ -74,6 +77,18 @@ beforeEach(async () => {
 });
 
 afterEach(() => vi.unstubAllEnvs());
+
+async function configurarCanalAgenda() {
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
+  const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
+  return { numero, template };
+}
+
+async function ativarWhatsappDaPrimeira() {
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  await prisma.aluno.update({ where: { id: matricula.alunoId }, data: { whatsapp: true, telefoneE164: "+50670000001" } });
+}
 
 it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca docente", async () => {
   expect(await decidir(true)).toMatchObject({ ok: true, dado: { aplicada: true } });
@@ -231,4 +246,40 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   const intencoes = await prisma.intencaoMensagem.findMany({ where: { avisoAlteracaoAgendaId: { not: null } }, include: { atendimento: true } });
   expect(intencoes).toHaveLength(2);
   expect(intencoes.every((i) => i.atendimento?.finalidade === "PEDAGOGICO" && i.numeroId === numero.id && i.templateId === template.id)).toBe(true);
+});
+
+it("resultado incerto do driver preserva INCERTO e não reenvia automaticamente", async () => {
+  await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
+  enviarTemplateMock.mockRejectedValue(new ErroDriver("recusado_meta"));
+  await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
+  const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP" } });
+  expect(aviso.situacao).toBe("INCERTO");
+  const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: aviso.id } });
+  expect(intencao).toMatchObject({ status: "FALHOU", motivoFalha: "recusado_meta" });
+  await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
+  expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+});
+
+it("opt-out depois da preparação cancela antes do driver", async () => {
+  await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  expect(await enfileirarAvisosAgendaWhatsApp()).toBe(1);
+  const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: { not: null } } });
+  await prisma.contatoWhatsApp.update({ where: { id: intencao.contatoId }, data: { optOutEm: new Date() } });
+  vi.stubEnv("WHATSAPP_LIVE", "1");
+  await despacharFila();
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "opt_out" });
+});
+
+it("template revogado antes da preparação deixa o aviso pendente sem chamar o driver", async () => {
+  await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda();
+  await prisma.templateWhatsApp.update({ where: { id: template.id }, data: { statusMeta: "RASCUNHO" } });
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
+  await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+  expect(await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP" } })).toMatchObject({ situacao: "PREPARADO" });
 });
