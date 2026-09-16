@@ -8,7 +8,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
-| M01 — preparação operacional de migração | DEV 2 Terra | Preparação CSV/XLSX integrada; ensaio/aplicação de alunos em implementação; demais cadastros/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
+| M01 — preparação operacional de migração | DEV 2 Terra | Preparação e aplicação de alunos integradas; vínculos e conciliação pendentes | 16/09/2026 | Até e6c73a63, migrações 155/180; 7 integrações no TESTER e principal; sem carga real |
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e revisão de quantidade integrados; avisos da quantidade e cobertura complementar pendentes | 16/09/2026 | Até 41f26140; 4 integrações aprovadas no TESTER e principal; Q38 da quantidade pendente |
 
 ## EMAIL — aceite do DEV
@@ -37,6 +37,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- M01 aplicação de alunos integrada até `e6c73a63`: migração 180 aplicada no banco descartável do integrador; sessão 5588 passou 7/7 integrações (12,46 s). TESTER também aprovou 7 integrações, 2 SSR e TypeScript, incluindo histórico persistido após recarga e candidato criado depois do ensaio. Build do conjunto aprovado na sessão 45633, incluindo TypeScript e 80 páginas; vínculos e financeiro continuam pendentes.
 
 - Regressão unitária do principal: sessão 49369 passou 204 arquivos/1.372 testes após corrigir o mock de roteador do formulário de reconferência (`039514ed`). Reservas do replanejamento corrigidas em `fafe7000`, com 19 testes dirigidos aprovados. Essas evidências precedem a integração M01 de aplicação.
 - M01: DEV entregou `526034d5` para consulta SSR de evidências persistidas, após 5 integrações da aplicação e 1 SSR. TESTER confirmou aplicação e candidato surgido após ensaio, mas a prova de recarga exige nova execução contra a correção; não integrado no principal.
