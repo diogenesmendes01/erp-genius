@@ -38,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Reservas de migração vigentes: F07.3 usa 162/165/166 e corretiva 167; WhatsApp N01 usa 163 e corretiva 168; e-mail N01 já usa 164. IDs adicionais exigem coordenação antes da aplicação. Não renomear nem editar migração aplicada.
+- Build após N01 e-mail integrado passou (79 páginas estáticas). Regressão dirigida dos produtores existentes de remarcação/reposição está em execução; não confundir com a regressão global anterior à integração.
+
 - Integração N01 e-mail: 11 testes de integração, 3 de rota/codificação e TypeScript passaram no checkout principal. Migrações 154/156/157/159/161/164 aplicadas somente no banco descartável do integrador. Fila acessível pela navegação da Secretaria/Administração. Gate de envio permanece desligado; não houve envio ou homologação externa.
 
 - N01 e-mail até 1182f97 aprovado no TESTER: 11 integrações (7 substituição e 4 fila), 2 testes de rota, TypeScript e migrações 159/161/164 passaram. Revisão confirma itens persistidos por matrícula, origem canônica e recusa de contato alterado após claim. Integração não inclui WhatsApp ou homologação externa.
