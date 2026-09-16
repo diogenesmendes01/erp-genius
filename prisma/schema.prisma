@@ -625,6 +625,7 @@ model Usuario {
   decisoesAcessoAulas SolicitacaoAcessoAulas[] @relation("AprovadorAcessoAulas")
   vinculosDocentes VinculoDocente[]
   aulasDiario AulaDiario[]
+  pendenciasAvisosAgendaResolvidas PendenciaAvisoAgenda[] @relation("ResolutorPendenciaAvisoAgenda")
   uploadsRegistrados RegistroUpload[]
   id                String    @id @default(cuid())
   nome              String
@@ -1576,6 +1577,7 @@ model ItemPropostaRetomadaMatriculas {
 
 model Matricula {
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
+  pendenciasAvisosAgenda PendenciaAvisoAgenda[]
   autorizacoesComunicacaoAcademica AutorizacaoComunicacaoAcademica[]
   pedidosDesistenciaPreparacao PedidoDesistenciaPreparacao[]
   efetivacaoDesistenciaPreparacao EfetivacaoPedidoDesistenciaPreparacao?
@@ -1973,6 +1975,34 @@ model AutorizacaoComunicacaoAcademica {
  @@index([matriculaId, responsavelId, vigenteEm])
 }
 
+enum MotivoPendenciaAvisoAgenda {
+ SEM_DESTINATARIO_AUTORIZADO
+ CONFIGURACAO_INDISPONIVEL
+ CONTATO_SEM_OPT_IN
+ CONTATO_INDISPONIVEL
+}
+
+enum SituacaoPendenciaAvisoAgenda {
+ PENDENTE
+ RESOLVIDA
+}
+
+model PendenciaAvisoAgenda {
+ id String @id @default(cuid())
+ eventoId String
+ evento Evento @relation(fields: [eventoId], references: [id], onDelete: Restrict)
+ matriculaId String
+ matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
+ motivo MotivoPendenciaAvisoAgenda
+ situacao SituacaoPendenciaAvisoAgenda @default(PENDENTE)
+ criadoEm DateTime @default(now()) @db.Timestamptz
+ resolvidaEm DateTime? @db.Timestamptz
+ resolvidaPorId String?
+ resolvidaPor Usuario? @relation("ResolutorPendenciaAvisoAgenda", fields: [resolvidaPorId], references: [id], onDelete: Restrict)
+ observacaoResolucao String?
+ @@index([matriculaId, situacao, criadoEm])
+ @@index([eventoId, situacao])
+}
 model ItemAvisoAlteracaoAgenda {
  id String @id
  avisoId String
@@ -1993,6 +2023,7 @@ model TentativaAvisoAlteracaoAgenda {
 
 model Evento {
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
+  pendenciasAvisosAgenda PendenciaAvisoAgenda[]
   id           String   @id @default(cuid())
   tipo         String // LeadCriado, MatriculaAtivada, PagamentoRegistrado, AlunoPausado...
   agregadoTipo String // "Lead", "Matricula", "Aluno", "Cobranca"...
