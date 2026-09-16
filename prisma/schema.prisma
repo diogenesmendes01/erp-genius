@@ -418,6 +418,8 @@ enum Papel {
 }
 
 model Usuario {
+  conferenciasRegraHistoricaPreparadas PropostaConferenciaRegraHistoricaTurma[] @relation("PreparadorConferenciaRegraHistorica")
+  conferenciasRegraHistoricaDecididas DecisaoConferenciaRegraHistoricaTurma[] @relation("DecisorConferenciaRegraHistorica")
   aplicacoesVinculoMigracao AplicacaoVinculoMigracao[] @relation("ExecutorAplicacaoVinculoMigracao")
   fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[] @relation("ConferidorFatoSituacaoMatriculaMigracao")
   termosHistoricosMigracao TermosHistoricosMatriculaMigracao[] @relation("RevisorTermosHistoricosMatriculaMigracao")
@@ -898,6 +900,7 @@ enum StatusTurma {
 }
 
 model Turma {
+  conferenciasRegraHistorica PropostaConferenciaRegraHistoricaTurma[]
   correspondenciasMigracao CorrespondenciaTurmaMigracao[]
   registrosAvaliacao RegistroAvaliacaoMatricula[]
   equivalenciasAvaliacaoOrigem PropostaEquivalenciaAvaliacao[] @relation("TurmaOrigemEquivalenciaAvaliacao")
@@ -3720,6 +3723,7 @@ model RetomadaReservaParticular {
 }
 
 model VersaoRegraAvaliacao {
+  conferenciasHistoricasDestino PropostaConferenciaRegraHistoricaTurma[] @relation("RegraConferenciaHistoricaDestino")
   planosRecuperacao PropostaPlanoRecuperacao[]
   registrosAvaliacao RegistroAvaliacaoMatricula[]
   equivalenciasAvaliacaoOrigem PropostaEquivalenciaAvaliacao[] @relation("RegraOrigemEquivalenciaAvaliacao")
@@ -6885,3 +6889,45 @@ model AplicacaoVinculoMigracao {
 }
 
 // Add inverses: LinhaPreparacaoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]; EnsaioVinculoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]
+
+// Adicionar em Usuario
+// conferenciasRegraHistoricaPreparadas PropostaConferenciaRegraHistoricaTurma[] @relation("PreparadorConferenciaRegraHistorica")
+// conferenciasRegraHistoricaDecididas DecisaoConferenciaRegraHistoricaTurma[] @relation("DecisorConferenciaRegraHistorica")
+
+// Adicionar em Turma
+// conferenciasRegraHistorica PropostaConferenciaRegraHistoricaTurma[]
+
+// Adicionar em VersaoRegraAvaliacao
+// conferenciasHistoricasDestino PropostaConferenciaRegraHistoricaTurma[] @relation("RegraConferenciaHistoricaDestino")
+
+model PropostaConferenciaRegraHistoricaTurma {
+  id String @id @default(cuid())
+  turmaId String
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  destinoId String
+  destino VersaoRegraAvaliacao @relation("RegraConferenciaHistoricaDestino", fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorConferenciaRegraHistorica", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  snapshot Json
+  estadoHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoConferenciaRegraHistoricaTurma?
+  @@unique([turmaId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+}
+
+model DecisaoConferenciaRegraHistoricaTurma {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaConferenciaRegraHistoricaTurma @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorConferenciaRegraHistorica", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  criadaEm DateTime @default(now())
+}
