@@ -38,13 +38,16 @@ export function renderizarTemplateAgenda(corpo: string, dados: { nome: string; h
   return { texto, variaveis };
 }
 
-function horariosDoAviso(aviso: { evento: { tipo: string; payload: unknown } | null; itens: { encontroId: string; encontro: { inicio: Date; fim: Date; fusoOrigem: string } }[] }, fonteReplanejamento: Awaited<ReturnType<typeof validarFonteReplanejamentoConjuntoTx>> | false = false) {
+function horariosDoAviso(aviso: { evento: { tipo: string; payload: unknown } | null; itens: { encontroId: string; encontro: { inicio: Date; fim: Date; fusoOrigem: string } }[] }, fonte: Awaited<ReturnType<typeof validarFonteReplanejamentoConjuntoTx>> | boolean = false) {
   const horario = (id?: string) => {
     const e = aviso.itens.find((item) => item.encontroId === id)?.encontro;
     return e && `${e.inicio.toLocaleString("pt-BR", { timeZone: e.fusoOrigem })}–${e.fim.toLocaleTimeString("pt-BR", { timeZone: e.fusoOrigem })} (${e.fusoOrigem})`;
   };
   const payload = (aviso.evento?.payload ?? {}) as { encontroOriginalId?: string; encontroNovoId?: string };
-  if (fonteReplanejamento) return renderizarHorariosReplanejamento(fonteReplanejamento.horarios);
+  if (aviso.evento?.tipo === "ReplanejamentoConjuntoAplicado") {
+    if (!fonte || fonte === true) return null;
+    return renderizarHorariosReplanejamento(fonte.horarios);
+  }
   if (aviso.evento?.tipo === "SubstituicaoDocenteDecidida") return aviso.itens.map(({ encontro }) => `${encontro.inicio.toLocaleString("pt-BR", { timeZone: encontro.fusoOrigem })}–${encontro.fim.toLocaleTimeString("pt-BR", { timeZone: encontro.fusoOrigem })} (${encontro.fusoOrigem})`).join("; ");
   const anterior = horario(payload.encontroOriginalId), novo = horario(payload.encontroNovoId);
   return anterior && novo ? `de ${anterior} para ${novo}` : null;
