@@ -3,6 +3,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
+import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { hashPrevia } from "@/server/contratos/previa-estado";
 import { conferirRemarcacaoParticularTx, RemarcacaoEntrada } from "./remarcacao-particular-estado";
@@ -67,7 +68,8 @@ export async function decidirRemarcacaoParticular(input: { propostaId: string; a
         encontroNovoId = novo.id;
       }
       const decisao = await tx.decisaoRemarcacaoParticular.create({ data: { propostaId: p.id, encontroOriginalId: p.encontroOriginalId, encontroNovoId, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } });
-      await registrarEvento(tx, { tipo: "RemarcacaoParticularDecidida", agregadoTipo: "Matricula", agregadoId: matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, encontroOriginalId: p.encontroOriginalId, encontroNovoId, aprovada: d.aprovar, motivo: d.motivo } });
+      const evento = await registrarEvento(tx, { tipo: "RemarcacaoParticularDecidida", agregadoTipo: "Matricula", agregadoId: matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, encontroOriginalId: p.encontroOriginalId, encontroNovoId, aprovada: d.aprovar, motivo: d.motivo } });
+      if (d.aprovar && encontroNovoId) await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId, encontrosIds: [p.encontroOriginalId, encontroNovoId] });
       return { id: decisao.id, encontroNovoId };
     });
   });

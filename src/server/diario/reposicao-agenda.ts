@@ -5,6 +5,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "@/server/_shared";
+import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { dataCivilInstitucional, FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { DataHoraAvaliacaoSchema, instanteAvaliacaoLocal } from "@/server/avaliacoes/tempo";
 import { conferirAgendaReposicaoIndividualTx, exigirAtorAgendaAtual, hashAgendaReposicao, instanteUtcAgendaReposicao, vigenciaNovoBeneficioReposicao, reposicaoAgendaTx, textoAgendaReposicao, type RegraBeneficio } from "./reposicao-agenda-tx";
@@ -398,7 +399,8 @@ export async function decidirRemarcacaoReposicaoIndividual(input: z.input<typeof
         const cancelado = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`UPDATE "EncontroAgenda" SET status='CANCELADO'::"StatusEncontroAgenda" WHERE id=${agenda.encontroId} AND "reposicaoIndividualId"=${agenda.reposicaoId} AND status='PREVISTO'::"StatusEncontroAgenda" RETURNING id`);
         if (!cancelado[0]) throw new ErroRegra("O encontro original mudou antes da remarcação.");
       }
-      await registrarEvento(tx, { tipo: "RemarcacaoAgendaReposicaoDecidida", agregadoTipo: "Matricula", agregadoId: agenda.matriculaId, autorId: autor.id, payload: { propostaId: proposta.id, decisaoId, aprovada: d.aprovar, encontroOriginalId: agenda.encontroId, encontroNovoId } });
+      const evento = await registrarEvento(tx, { tipo: "RemarcacaoAgendaReposicaoDecidida", agregadoTipo: "Matricula", agregadoId: agenda.matriculaId, autorId: autor.id, payload: { propostaId: proposta.id, decisaoId, aprovada: d.aprovar, encontroOriginalId: agenda.encontroId, encontroNovoId } });
+      if (d.aprovar && encontroNovoId) await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId: agenda.matriculaId, encontrosIds: [agenda.encontroId, encontroNovoId] });
       await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
       return { id: decisaoId, aprovada: d.aprovar, encontroId: encontroNovoId, idempotente: false };
     });
