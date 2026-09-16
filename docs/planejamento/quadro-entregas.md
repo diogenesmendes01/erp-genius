@@ -8,7 +8,7 @@ M01 — revisão do conjunto em 16/09: TESTER isolado preparado no commit `53484
 
 Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e bloqueadas; tempo de ciclo registrado desde início até aceite. Não utilizar 36,9% como progresso global.
 
-Estado mais recente (18h54): Q19 integrado e validado; M01 permanece em desenvolvimento, sem liberação da aplicação histórica no principal. A execução dirigida de `m01-lancamento-historico.int.test.ts` terminou com falha na preparação da turma: o banco impede informar livremente `regraAvaliacaoId`. A atribuição automática atende somente turmas futuras, e `contextoMigracaoRegra` bloqueia turmas iniciadas. Falta resolver a conferência da regra histórica antes de comprovar lançamento acadêmico nessa situação; não transformar a turma em futura nem remover a proteção para passar o teste. Dois DEVs verificam interface e fluxo histórico, com revisão independente. Migrações aplicadas permanecem imutáveis. Nenhum dado real ou provedor externo foi acionado.
+Estado mais recente (19h27): aplicação de vínculos históricos e conferência inicial de regras integradas até b254ba81. No principal, 19 testes de integração em 10 arquivos e 10 testes de interface passaram; TypeScript aprovado. TESTER independente validou 56 testes do conjunto anterior à última melhoria visual. M01 ainda requer conciliação financeira e carga real conferida; essas etapas não estão concluídas. DEV1 inicia conciliação contra cobranças existentes, migração192 reservada (20260916204000_conciliacao_financeira_migracao). Nenhum dado real ou serviço externo foi acionado.
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
