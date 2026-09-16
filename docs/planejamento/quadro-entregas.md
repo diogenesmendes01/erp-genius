@@ -194,3 +194,5 @@ Estado mais recente (18h54): Q19 integrado e validado; M01 permanece em desenvol
 
 Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 testes aprovados. Unitária 618: 1.318 aprovados. Essas execuções não comprovam as novas entregas acima nem substituem homologação real. Relatórios e auditorias anteriores são históricos; atualizações futuras de estado ficam neste quadro.
 - M01 revisão independente: bloqueante confirmado entre situação histórica TS e SQL. situacao_matricula_no_instante ainda exige ativadaEm comercial e ignora FatoSituacaoMatriculaMigracao; recuperações/segunda chamada podem ser recusadas indevidamente. Corretiva 186 (20260916190000_situacao_contratual_migrada) reservada para proposta e revisão; não aplicada. Preservar 185 imutável. Aplicação M01 continua não liberada.
+
+- M01/187: regressão dirigida de segunda chamada no DEV2 concluída na sessão 65110: 3 arquivos, 28 testes aprovados em 56,25 s (agenda inicial, intervalo e substituição). SQL atual SHA-256 A76F32D3AD213F4D901A9B7A4CE59F099610124F1B44CDD0F2CB21C9795BDA50. Não comprova lançamento histórico, ainda dependente da conferência de regra 188.
