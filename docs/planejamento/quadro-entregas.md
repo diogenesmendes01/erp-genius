@@ -10,7 +10,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Cadastros e ensaio de vínculos integrados; aplicação de vínculos e conciliação pendentes | 16/09/2026 | DEV 68d791d2 revisado no TESTER: 7 integrações, 1 SSR e TypeScript aprovados; validação do principal em seguida; sem carga real |
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário, quantidade e detalhes Q37 integrados; avisos da quantidade pendentes | 16/09/2026 | Até f7e84c12; revisão independente e cenários dirigidos aprovados antes da integração; ver evidências abaixo; Q38 da quantidade pendente |
-| F07.6 — agendamento inicial de reposição particular | DEV 1 Terra | Ligação operacional em implementação | 16/09/2026 | Servidor existente sem chamador na tela; conectar autorização, prévia, professor/horários, benefício ou exceção aprovada e ciclo de agenda |
+| F07.6 — agendamento inicial de reposição particular | DEV 1 Terra | Implementado, integrado e validado localmente | 16/09/2026 | 37c9a22f/952dbceb; TESTER: 22 integrações, 15 controles/SSR e TypeScript; principal: 22 integrações e 2 controles/SSR. Sem homologação operacional presumida |
 
 ## EMAIL — aceite do DEV
 
