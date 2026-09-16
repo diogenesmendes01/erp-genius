@@ -21,6 +21,7 @@ export async function prepararReproducaoContinua(reposicaoId: string) {
     revalidar: async () => {
       const atual = await conferir();
       if (atual.fileId !== fonte.fileId || atual.driveId !== fonte.driveId ||
+          atual.revisionId !== fonte.revisionId || atual.md5Checksum !== fonte.md5Checksum || atual.size !== fonte.size || atual.mimeType !== fonte.mimeType ||
           atual.matriculaId !== fonte.matriculaId || atual.reposicaoId !== fonte.reposicaoId) {
         throw new ErroPermissao("Reprodução indisponível.");
       }

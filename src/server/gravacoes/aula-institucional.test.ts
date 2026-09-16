@@ -14,6 +14,10 @@ beforeEach(() => {
   m.carregar.mockResolvedValue({ snapshot: { gravacao: { tipo: "OFICIAL", publicacaoId: "publicacao" } } });
   m.tx.usuario = { findUnique: vi.fn().mockResolvedValue({ ativo: true, papeis: ["PROFESSOR"] }) };
   m.tx.publicacaoGravacaoAula = { findFirst: vi.fn().mockResolvedValue({ arquivoOficialId: "arquivo", driveOrganizacaoId: "drive-escola" }) };
+  m.tx.fonteRevisaoGravacao = { findFirst: vi.fn().mockResolvedValue({
+    arquivoOficialId: "arquivo", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-1",
+    driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4",
+  }) };
 });
 
 describe("prepararVideoAulaInstitucionalContinuo", () => {
@@ -40,7 +44,10 @@ describe("prepararVideoAulaInstitucionalContinuo", () => {
 
   it("interrompe quando a fonte oficial muda durante o stream", async () => {
     const acesso = await prepararVideoAulaInstitucionalContinuo("encontro");
-    (m.tx.publicacaoGravacaoAula as { findFirst: ReturnType<typeof vi.fn> }).findFirst.mockResolvedValueOnce({ arquivoOficialId: "outro-arquivo", driveOrganizacaoId: "drive-escola" });
+    (m.tx.fonteRevisaoGravacao as { findFirst: ReturnType<typeof vi.fn> }).findFirst.mockResolvedValueOnce({
+      arquivoOficialId: "outro-arquivo", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-1",
+      driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4",
+    });
 
     await expect(acesso.revalidar()).rejects.toThrow("Vídeo institucional indisponível");
   });

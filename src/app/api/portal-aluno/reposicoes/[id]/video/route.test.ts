@@ -2,14 +2,23 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ autorizar: vi.fn(), revalidar: vi.fn(), abrir: vi.fn(), token: vi.fn() }));
 vi.mock("@/server/gravacoes/reproducao-continua", () => ({ prepararReproducaoContinua: async (id: string) => ({ fonte: await mocks.autorizar(id), revalidar: mocks.revalidar }) }));
-vi.mock("@/server/gravacoes/drive", () => ({ abrirVideoDriveOrganizacional: mocks.abrir }));
+vi.mock("@/server/gravacoes/drive-revisao-stream", () => ({ abrirVideoRevisaoDrive: mocks.abrir }));
 vi.mock("@/server/gravacoes/credenciais", () => ({ obterTokenDrive: mocks.token, obterDriveOrganizacaoId: () => "drive-institucional" }));
 import { GET } from "./route";
 
 const contexto = { params: Promise.resolve({ id: "reposicao-1" }) };
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.autorizar.mockResolvedValue({ fileId: "arquivo-interno", matriculaId: "matricula-1", reposicaoId: "reposicao-1" });
+  mocks.autorizar.mockResolvedValue({
+    fileId: "arquivo-interno",
+    matriculaId: "matricula-1",
+    reposicaoId: "reposicao-1",
+    driveId: "drive-institucional",
+    revisionId: "revisao-1",
+    md5Checksum: "a".repeat(32),
+    size: "10",
+    mimeType: "video/mp4",
+  });
   mocks.abrir.mockImplementation(async () => ({ status: 206, body: new ReadableStream({ start(c) { c.enqueue(new Uint8Array([1, 2])); c.close(); } }), headers: new Headers({ "Content-Type": "video/mp4", "Content-Length": "2", "Content-Range": "bytes 0-1/10", "Location": "https://example.invalid/secreto", "Set-Cookie": "indevido" }) }));
 });
 
@@ -18,7 +27,11 @@ it("revalida cada Range e transmite somente bytes e cabeçalhos permitidos", asy
   const response = await GET(request, contexto);
   expect(response.status).toBe(206);
   expect(mocks.autorizar).toHaveBeenCalledWith("reposicao-1");
-  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({ fileId: "arquivo-interno", range: "bytes=0-1", signal: request.signal }));
+  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({
+    fonte: expect.objectContaining({ fileId: "arquivo-interno", driveId: "drive-institucional", revisionId: "revisao-1" }),
+    range: "bytes=0-1",
+    signal: request.signal,
+  }));
   expect(response.headers.get("Content-Disposition")).toBe("inline");
   expect(response.headers.get("Cache-Control")).toContain("no-store");
   expect(response.headers.get("Location")).toBeNull();
@@ -39,10 +52,10 @@ it("recusa inclusão por outro site antes de consultar conta ou Drive", async ()
 });
 
 it("transmite usando o drive conferido na autorização da publicação", async () => {
-  mocks.autorizar.mockResolvedValue({ fileId: "arquivo-interno", matriculaId: "matricula-1", reposicaoId: "reposicao-1", driveId: "drive-publicado" });
+  mocks.autorizar.mockResolvedValue({ fileId: "arquivo-interno", matriculaId: "matricula-1", reposicaoId: "reposicao-1", driveId: "drive-publicado", revisionId: "revisao-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
   const response = await GET(new Request("http://localhost/video"), contexto);
   expect(response.status).toBe(206);
-  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({ driveIdOrganizacao: "drive-publicado" }));
+  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({ fonte: expect.objectContaining({ driveId: "drive-publicado" }) }));
   await response.arrayBuffer();
 });
 

@@ -4,6 +4,7 @@ import { ErroPermissao } from "@/server/_shared";
 import { cobrancaGeraRestricaoAutomatica } from "@/server/cobrancas/acesso-aulas-regras";
 import { exigirSessaoPortalAluno, type SessaoPortalAluno } from "@/server/portal-aluno/sessao";
 import { obterDriveOrganizacaoId } from "./credenciais";
+import { resolverFonteRevisaoGravacaoTx } from "./fonte-revisao-tx";
 
 export type AutorizacaoReproducaoGravacao = {
   /** Identificador interno da fonte oficial; nunca deve atravessar uma resposta HTTP. */
@@ -11,9 +12,13 @@ export type AutorizacaoReproducaoGravacao = {
   reposicaoId: string;
   matriculaId: string;
   driveId?: string;
+  revisionId: string;
+  md5Checksum: string;
+  size: string;
+  mimeType: string;
 };
 
-type FonteAutorizada = AutorizacaoReproducaoGravacao & { publicacaoAulaId: string | null; aulaOriginalId: string };
+type FonteAutorizada = { fileId: string; reposicaoId: string; matriculaId: string; materialId: string; publicacaoAulaId: string | null; aulaOriginalId: string };
 
 /**
  * Guard interno para o adaptador de streaming. Cada chamada resolve a fonte a
@@ -37,7 +42,7 @@ export async function autorizarReproducaoGravacaoTx(
 ): Promise<AutorizacaoReproducaoGravacao> {
     if (!reposicaoId || reposicaoId.length > 200) throw new ErroPermissao("Reprodução não autorizada.");
     const [fonte] = await tx.$queryRaw<FonteAutorizada[]>(Prisma.sql`
-      SELECT material."arquivoOficialId" AS "fileId", r.id AS "reposicaoId", m.id AS "matriculaId",
+      SELECT material.id AS "materialId", material."arquivoOficialId" AS "fileId", r.id AS "reposicaoId", m.id AS "matriculaId",
         material."publicacaoAulaId", r."aulaOriginalId"
       FROM "ReposicaoIndividual" r
       JOIN "Matricula" m ON m.id = r."matriculaId"
@@ -63,14 +68,13 @@ export async function autorizarReproducaoGravacaoTx(
       FOR SHARE OF r, m, conta, decisao, material, disponibilizacao
     `);
     if (!fonte) throw new ErroPermissao("Reprodução não autorizada.");
-    let driveId: string | undefined;
+    const fonteFixa = await resolverFonteRevisaoGravacaoTx(tx, { materialReposicaoId: fonte.materialId });
     if (fonte.publicacaoAulaId) {
       const publicacao = await tx.publicacaoGravacaoAula.findUnique({ where: { id: fonte.publicacaoAulaId } });
       if (!publicacao || publicacao.encontroId !== fonte.aulaOriginalId ||
-          publicacao.arquivoOficialId !== fonte.fileId || publicacao.driveOrganizacaoId !== obterDriveOrganizacaoId()) {
+          publicacao.driveOrganizacaoId !== obterDriveOrganizacaoId()) {
         throw new ErroPermissao("Reprodução não autorizada.");
       }
-      driveId = publicacao.driveOrganizacaoId;
     }
 
     // A rotina agendada persiste o bloqueio, mas uma nova leitura não pode
@@ -89,6 +93,7 @@ export async function autorizarReproducaoGravacaoTx(
     }, agora));
     if (bloqueioD30) throw new ErroPermissao("Reprodução não autorizada.");
 
-    return { fileId: fonte.fileId, reposicaoId: fonte.reposicaoId, matriculaId: fonte.matriculaId,
-      ...(driveId ? { driveId } : {}) };
+    return { fileId: fonteFixa.fileId, reposicaoId: fonte.reposicaoId, matriculaId: fonte.matriculaId,
+      driveId: fonteFixa.driveId, revisionId: fonteFixa.revisionId, md5Checksum: fonteFixa.md5Checksum,
+      size: fonteFixa.size, mimeType: fonteFixa.mimeType };
 }

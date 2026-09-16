@@ -1,7 +1,7 @@
 import { prepararReproducaoContinua } from "@/server/gravacoes/reproducao-continua";
 import { criarStreamAutorizado } from "@/server/gravacoes/stream-autorizado";
-import { abrirVideoDriveOrganizacional } from "@/server/gravacoes/drive";
-import { obterTokenDrive, obterDriveOrganizacaoId } from "@/server/gravacoes/credenciais";
+import { abrirVideoRevisaoDrive } from "@/server/gravacoes/drive-revisao-stream";
+import { obterTokenDrive } from "@/server/gravacoes/credenciais";
 import { origemPortalAlunoPermitida } from "@/server/portal-aluno/politica";
 
 export const runtime = "nodejs";
@@ -24,9 +24,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const { fonte, revalidar } = await prepararReproducaoContinua(id);
-    const video = await abrirVideoDriveOrganizacional({
-      fileId: fonte.fileId,
-      driveIdOrganizacao: fonte.driveId ?? obterDriveOrganizacaoId(),
+    const video = await abrirVideoRevisaoDrive({
+      fonte: { fileId: fonte.fileId, driveId: fonte.driveId, revisionId: fonte.revisionId,
+        md5Checksum: fonte.md5Checksum, size: fonte.size, mimeType: fonte.mimeType },
       token: obterTokenDrive,
       range: request.headers.get("range"),
       signal: request.signal,

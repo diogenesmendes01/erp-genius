@@ -450,6 +450,8 @@ model Usuario {
   atribuicoesReposicao DesignacaoAvaliadorReposicaoIndividual[] @relation("AvaliadorReposicaoDesignado")
   designacoesReposicaoPreparadas DesignacaoAvaliadorReposicaoIndividual[] @relation("DesignadorAvaliadorReposicao")
   materiaisReposicaoPublicados MaterialReposicaoGravacao[] @relation("MaterialReposicaoPublicado")
+  propostasRegularizacaoFonteGravacao PropostaRegularizacaoFonteGravacao[] @relation("PreparadorRegularizacaoFonteGravacao")
+  decisoesRegularizacaoFonteGravacao DecisaoRegularizacaoFonteGravacao[] @relation("DecisorRegularizacaoFonteGravacao")
   disponibilizacoesEntregaReposicaoPublicadas DisponibilizacaoEntregaReposicao[] @relation("DisponibilizacaoEntregaPublicada")
   relatosMaterialReposicaoEquipe RelatoIndisponibilidadeMaterialReposicao[] @relation("RelatoMaterialEquipe")
   indisponibilidadesMaterialReposicaoConfirmadas IndisponibilidadeMaterialReposicao[] @relation("IndisponibilidadeMaterialConfirmada")
@@ -4940,6 +4942,11 @@ enum SituacaoRelatoMaterialReposicao {
   DESCARTADO
 }
 
+enum AlvoRegularizacaoFonteGravacao {
+  PUBLICACAO_AULA
+  MATERIAL_REPOSICAO
+}
+
 model MaterialReposicaoGravacao {
   id String @id @default(cuid())
   reposicaoId String @unique
@@ -4948,6 +4955,11 @@ model MaterialReposicaoGravacao {
   publicacaoAula PublicacaoGravacaoAula? @relation("MaterialReposicaoPublicacaoAula", fields: [publicacaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   provedor ProvedorMaterialReposicao
   arquivoOficialId String
+  driveOrganizacaoId String?
+  driveRevisionId String?
+  driveRevisionMd5 String?
+  driveRevisionSize BigInt?
+  mimeType String?
   disponivel Boolean @default(true)
   publicadoPorId String
   publicadoPor Usuario @relation("MaterialReposicaoPublicado", fields: [publicadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4956,6 +4968,8 @@ model MaterialReposicaoGravacao {
   disponibilizacao DisponibilizacaoEntregaReposicao?
   relatos RelatoIndisponibilidadeMaterialReposicao[]
   indisponibilidades IndisponibilidadeMaterialReposicao[]
+  fontesRevisao FonteRevisaoGravacao[] @relation("FonteMaterialReposicaoGravacao")
+  propostasRegularizacaoFonte PropostaRegularizacaoFonteGravacao[] @relation("PropostaRegularizacaoMaterialReposicao")
 }
 
 model DisponibilizacaoEntregaReposicao {
@@ -6155,12 +6169,79 @@ model PublicacaoGravacaoAula {
   arquivoOficialId String
   driveOrganizacaoId String
   mimeType String
+  driveRevisionId String?
+  driveRevisionMd5 String?
+  driveRevisionSize BigInt?
   conferidaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
   chaveIdempotencia String
   entradaHash String
   snapshot Json
   materiaisReposicao MaterialReposicaoGravacao[] @relation("MaterialReposicaoPublicacaoAula")
+  fontesRevisao FonteRevisaoGravacao[] @relation("FontePublicacaoGravacaoAula")
+  propostasRegularizacaoFonte PropostaRegularizacaoFonteGravacao[] @relation("PropostaRegularizacaoPublicacaoAula")
 
   @@unique([publicadorId, chaveIdempotencia])
+}
+
+model FonteRevisaoGravacao {
+  id String @id @default(cuid())
+  alvo AlvoRegularizacaoFonteGravacao
+  publicacaoAulaId String?
+  publicacaoAula PublicacaoGravacaoAula? @relation("FontePublicacaoGravacaoAula", fields: [publicacaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  materialReposicaoId String?
+  materialReposicao MaterialReposicaoGravacao? @relation("FonteMaterialReposicaoGravacao", fields: [materialReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  arquivoOficialId String
+  driveOrganizacaoId String
+  driveRevisionId String
+  driveRevisionMd5 String
+  driveRevisionSize BigInt
+  mimeType String
+  propostaId String? @unique
+  proposta PropostaRegularizacaoFonteGravacao? @relation("FonteDaPropostaRegularizacao", fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+
+  @@unique([publicacaoAulaId, versao], map: "FonteRevisaoGravacao_publicacao_versao_key")
+  @@unique([materialReposicaoId, versao], map: "FonteRevisaoGravacao_material_versao_key")
+  @@index([publicacaoAulaId, versao], map: "FonteRevisaoGravacao_publicacao_versao_idx")
+  @@index([materialReposicaoId, versao], map: "FonteRevisaoGravacao_material_versao_idx")
+}
+
+model PropostaRegularizacaoFonteGravacao {
+  id String @id @default(cuid())
+  alvo AlvoRegularizacaoFonteGravacao
+  publicacaoAulaId String?
+  publicacaoAula PublicacaoGravacaoAula? @relation("PropostaRegularizacaoPublicacaoAula", fields: [publicacaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  materialReposicaoId String?
+  materialReposicao MaterialReposicaoGravacao? @relation("PropostaRegularizacaoMaterialReposicao", fields: [materialReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoEsperada Int
+  arquivoOficialId String
+  driveOrganizacaoId String
+  driveRevisionId String
+  driveRevisionMd5 String
+  driveRevisionSize BigInt
+  mimeType String
+  motivo String
+  preparadorId String
+  preparador Usuario @relation("PreparadorRegularizacaoFonteGravacao", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  chaveIdempotencia String
+  criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+  decisao DecisaoRegularizacaoFonteGravacao?
+  fonte FonteRevisaoGravacao? @relation("FonteDaPropostaRegularizacao")
+
+  @@unique([preparadorId, chaveIdempotencia], map: "PropostaRegularizacaoFonteGravacao_preparador_chave_key")
+  @@index([publicacaoAulaId, criadaEm], map: "PropostaRegularizacaoFonteGravacao_publicacao_idx")
+  @@index([materialReposicaoId, criadaEm], map: "PropostaRegularizacaoFonteGravacao_material_idx")
+}
+
+model DecisaoRegularizacaoFonteGravacao {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaRegularizacaoFonteGravacao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorRegularizacaoFonteGravacao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 }

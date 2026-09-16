@@ -5,9 +5,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
 import { obterDriveOrganizacaoId } from "@/server/gravacoes/credenciais";
-import { verificarDisponibilidadeGravacaoDrive } from "@/server/gravacoes/disponibilidade";
-import { conferirVideoDriveOrganizacional, ErroVideoDrive } from "@/server/gravacoes/drive";
-import { obterTokenDrive } from "@/server/gravacoes/credenciais";
+import { obterTokenPublicacaoDrive } from "@/server/gravacoes/credenciais-publicacao";
+import { fixarRevisaoDriveOrganizacional } from "@/server/gravacoes/drive-revisao";
 import { exigirAcessoRegularizacaoAulaTx } from "./regularizacao-acesso";
 import { contextoConclusaoTx } from "./conclusao-contexto";
 import { hashCorrecaoAula } from "./correcao-aula-schema";
@@ -37,17 +36,7 @@ export async function registrarGravacaoAula(input: z.input<typeof entradaSchema>
     const revisao = await preparar();
     if (revisao.id && revisao.concluida) return { id: revisao.id };
     const driveOrganizacaoId = obterDriveOrganizacaoId();
-    const controlador = new AbortController();
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    let mimeType: string;
-    try {
-      const metadata = await Promise.race([
-        conferirVideoDriveOrganizacional({ fileId: d.arquivoOficialId, driveIdOrganizacao: driveOrganizacaoId, token: obterTokenDrive, signal: controlador.signal }),
-        new Promise<never>((_, rejeitar) => { timeout = setTimeout(() => { controlador.abort(); rejeitar(new ErroVideoDrive()); }, 10_000); }),
-      ]);
-      mimeType = metadata.mimeType;
-    } finally { clearTimeout(timeout); }
-    await verificarDisponibilidadeGravacaoDrive(d.arquivoOficialId, { obterDriveId: () => driveOrganizacaoId });
+    const fonteFixa = await fixarRevisaoDriveOrganizacional({ fileId: d.arquivoOficialId, driveIdOrganizacao: driveOrganizacaoId, token: obterTokenPublicacaoDrive });
     const conferidaEm = new Date();
     return prisma.$transaction(async tx => {
       const acesso = await exigirAcessoRegularizacaoAulaTx(tx, { atorId: autor.id, encontroId: d.encontroId });
@@ -60,9 +49,15 @@ export async function registrarGravacaoAula(input: z.input<typeof entradaSchema>
       }
       const snapshot = await contextoConclusaoTx(tx, d.encontroId);
       if (hashCorrecaoAula(snapshot) !== hashCorrecaoAula(revisao.snapshot)) throw new ErroRegra("A aula mudou durante a conferência do vídeo. Recarregue antes de publicar.");
-      const p = anterior ?? await tx.publicacaoGravacaoAula.create({ data: { ...d, publicadorId: autor.id, entradaHash, driveOrganizacaoId, mimeType, conferidaEm, snapshot } });
-      if (!anterior) await registrarEvento(tx, { tipo: "GravacaoAulaRegistrada", agregadoTipo: "EncontroAgenda", agregadoId: d.encontroId, autorId: autor.id,
+      const p = anterior ?? await tx.publicacaoGravacaoAula.create({ data: { ...d, publicadorId: autor.id, entradaHash, driveOrganizacaoId,
+        mimeType: fonteFixa.mimeType, driveRevisionId: fonteFixa.revisionId, driveRevisionMd5: fonteFixa.md5Checksum, driveRevisionSize: BigInt(fonteFixa.size), conferidaEm, snapshot } });
+      if (!anterior) {
+        await tx.fonteRevisaoGravacao.create({ data: { alvo: "PUBLICACAO_AULA", publicacaoAulaId: p.id, versao: 1,
+          arquivoOficialId: fonteFixa.fileId, driveOrganizacaoId: fonteFixa.driveId, driveRevisionId: fonteFixa.revisionId,
+          driveRevisionMd5: fonteFixa.md5Checksum, driveRevisionSize: BigInt(fonteFixa.size), mimeType: fonteFixa.mimeType } });
+        await registrarEvento(tx, { tipo: "GravacaoAulaRegistrada", agregadoTipo: "EncontroAgenda", agregadoId: d.encontroId, autorId: autor.id,
         payload: { publicacaoId: p.id, designacaoId: acesso.designacaoId, diarioId: snapshot.diarioId } });
+      }
       await tx.encontroAgenda.update({ where: { id: d.encontroId }, data: { status: "MINISTRADO" } });
       await registrarEvento(tx, { tipo: "AulaConcluidaComGravacao", agregadoTipo: "EncontroAgenda", agregadoId: d.encontroId, autorId: autor.id,
         payload: { publicacaoId: p.id, designacaoId: acesso.designacaoId, conferidaEm: conferidaEm.toISOString(), snapshot } });

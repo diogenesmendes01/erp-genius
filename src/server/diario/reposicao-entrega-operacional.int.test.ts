@@ -2,10 +2,12 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
 const { authMock, preflightMock } = vi.hoisted(() => ({ authMock: vi.fn(), preflightMock: vi.fn() }));
+const { tokenPublicacaoMock } = vi.hoisted(() => ({ tokenPublicacaoMock: vi.fn() }));
 const driveConfigurado = vi.hoisted(() => ({ id: "drive-escola" }));
-vi.mock("@/server/gravacoes/credenciais", () => ({ obterDriveOrganizacaoId: () => driveConfigurado.id }));
+vi.mock("@/server/gravacoes/credenciais", () => ({ obterDriveOrganizacaoId: () => driveConfigurado.id, obterTokenDrive: vi.fn() }));
+vi.mock("@/server/gravacoes/credenciais-publicacao", () => ({ obterTokenPublicacaoDrive: tokenPublicacaoMock }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
-vi.mock("@/server/gravacoes/disponibilidade", () => ({ verificarDisponibilidadeGravacaoDrive: preflightMock }));
+vi.mock("@/server/gravacoes/drive-revisao", () => ({ fixarRevisaoDriveOrganizacional: preflightMock, consultarRevisaoDriveFixada: preflightMock }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -47,9 +49,13 @@ async function prepararReposicao(id: string, donoMatriculaId: string, donoAlunoI
   const materialId = `material-op-${id}`, arquivoOficialId = `drive-op-${id}`;
   if (!publicarMaterial) return { materialId, arquivoOficialId };
   await prisma.$executeRaw(Prisma.sql`
-    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId",disponivel,"publicadoPorId","publicadoEm")
-    VALUES (${materialId},${id},'GOOGLE_DRIVE',${arquivoOficialId},true,${secretariaId},${utc(new Date("2026-09-01T10:00:00.000Z"))})
+    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId","driveOrganizacaoId","driveRevisionId","driveRevisionMd5","driveRevisionSize","mimeType",disponivel,"publicadoPorId","publicadoEm")
+    VALUES (${materialId},${id},'GOOGLE_DRIVE',${arquivoOficialId},'drive-escola',${`revisao-op-${id}`},${"a".repeat(32)},10,'video/mp4',true,${secretariaId},${utc(new Date("2026-09-01T10:00:00.000Z"))})
   `);
+  await prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: materialId, versao: 1, arquivoOficialId,
+    driveOrganizacaoId: "drive-escola", driveRevisionId: `revisao-op-${id}`, driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4",
+  } });
   await prisma.$executeRaw(Prisma.sql`
     INSERT INTO "DisponibilizacaoEntregaReposicao" (id,"reposicaoId","materialId","disponibilizadaEm","prazoBaseMinutos","prazoInicialAte","publicadaPorId")
     VALUES (${`disp-op-${id}`},${id},${materialId},${utc(new Date("2026-09-01T10:00:00.000Z"))},120,${utc(new Date(Date.now()+3_600_000))},${secretariaId})
@@ -60,7 +66,8 @@ async function prepararReposicao(id: string, donoMatriculaId: string, donoAlunoI
 beforeEach(async () => {
   driveConfigurado.id = "drive-escola";
   preflightMock.mockReset();
-  preflightMock.mockResolvedValue(undefined);
+  tokenPublicacaoMock.mockReset();
+  preflightMock.mockResolvedValue({ fileId: "arquivo-opcional", driveId: "drive-escola", revisionId: "revisao-opcional", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
   await truncarBanco();
   catalogo = await seedCatalogoMinimo();
   secretariaId = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id;
@@ -90,6 +97,7 @@ it("publicação pelo painel exige prazo configurado e preserva o início da pri
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { prazoPrimeiraEntregaReposicaoMinutos: 120 } });
   const publicado = await publicarMaterialOperacional(entrada);
   expect(publicado, JSON.stringify(publicado)).toMatchObject({ ok: true });
+  expect(preflightMock).toHaveBeenCalledWith(expect.objectContaining({ token: tokenPublicacaoMock }));
   const original = await prisma.disponibilizacaoEntregaReposicao.findFirst({ where: { reposicaoId: entrada.reposicaoId } });
   expect(original).not.toBeNull();
   expect(original!.prazoInicialAte.getTime() - original!.disponibilizadaEm.getTime()).toBe(120 * 60_000);
@@ -107,7 +115,7 @@ it("falha de preflight do Drive não publica material nem inicia a janela", asyn
   const resultado = await publicarMaterialOperacional({ reposicaoId: "repo-op-preflight-falha", arquivoOficialId: "drive-preflight-falha" });
 
   expect(resultado).toMatchObject({ ok: false });
-  expect(preflightMock).toHaveBeenCalledWith("drive-preflight-falha");
+  expect(preflightMock).toHaveBeenCalledWith(expect.objectContaining({ fileId: "drive-preflight-falha" }));
   expect(await prisma.materialReposicaoGravacao.count({ where: { reposicaoId: "repo-op-preflight-falha" } })).toBe(0);
   expect(await prisma.disponibilizacaoEntregaReposicao.count({ where: { reposicaoId: "repo-op-preflight-falha" } })).toBe(0);
   expect(await prisma.evento.count({ where: { tipo: "MaterialReposicaoGravacaoDisponibilizado" } })).toBe(0);
@@ -212,8 +220,8 @@ it.each(["FALHA_DRIVE", "GESTOR_REVOGADO", "MATERIAL_RETIRADO", "DRIVE_ALTERADO"
     const confirmacao = await confirmarIndisponibilidadeOperacional({ reposicaoId: "repo-retomada", relatoId: "relato-retomada", motivo: "Falha confirmada pela gestão pedagógica" });
     if (!confirmacao.ok || !confirmacao.dado) throw new Error(JSON.stringify(confirmacao));
     const entrada = { reposicaoId: "repo-retomada", indisponibilidadeId: confirmacao.dado.id, motivo: "Fonte novamente acessível após conferência" };
-    preflightMock.mockImplementationOnce(async (_arquivo: string, deps: { obterDriveId: () => string }) => {
-      expect(deps.obterDriveId()).toBe("drive-escola");
+    preflightMock.mockImplementationOnce(async ({ fonte }: { fonte: { driveId: string } }) => {
+      expect(fonte.driveId).toBe("drive-escola");
       if (caso === "FALHA_DRIVE") throw new Error("Gravação inacessível");
       if (caso === "GESTOR_REVOGADO") await prisma.usuario.update({ where: { id: gestorId }, data: { ativo: false } });
       if (caso === "MATERIAL_RETIRADO") await prisma.materialReposicaoGravacao.update({ where: { id: propria.materialId }, data: { disponivel: false } });

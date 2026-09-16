@@ -62,10 +62,14 @@ async function prepararReposicao(
     const diario = await prisma.aulaDiario.findUniqueOrThrow({ where: { encontroId: aula.id } });
     const publicacao = await prisma.publicacaoGravacaoAula.create({ data: {
       encontroId: aula.id, publicadorId: professorId, arquivoOficialId: `drive-${id}`,
-      driveOrganizacaoId: "drive-escola", mimeType: "video/mp4", chaveIdempotencia: `publicacao-${id}`,
+      driveOrganizacaoId: "drive-escola", driveRevisionId: `revisao-${id}`, driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4", chaveIdempotencia: `publicacao-${id}`,
       entradaHash: "a".repeat(64), snapshot: { encontroId: aula.id, diarioId: diario.id },
     } });
     publicacaoAulaId = publicacao.id;
+    await prisma.fonteRevisaoGravacao.create({ data: {
+      alvo: "PUBLICACAO_AULA", publicacaoAulaId, versao: 1, arquivoOficialId: `drive-${id}`,
+      driveOrganizacaoId: "drive-escola", driveRevisionId: `revisao-${id}`, driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4",
+    } });
   }
   await prisma.encontroAgenda.update({ where: { id: aula.id }, data: { status: "MINISTRADO" } });
   await prisma.$executeRaw(Prisma.sql`
@@ -78,9 +82,13 @@ async function prepararReposicao(
   `);
   const materialId = `material-${id}`;
   await prisma.$executeRaw(Prisma.sql`
-    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId",disponivel,"publicadoPorId","publicadoEm","publicacaoAulaId")
-    VALUES (${materialId},${id},'GOOGLE_DRIVE',${`drive-${id}`},true,${secretariaId},${utc(new Date("2026-09-01T10:00:00.000Z"))},${publicacaoAulaId})
+    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId","driveOrganizacaoId","driveRevisionId","driveRevisionMd5","driveRevisionSize","mimeType",disponivel,"publicadoPorId","publicadoEm","publicacaoAulaId")
+    VALUES (${materialId},${id},'GOOGLE_DRIVE',${`drive-${id}`},'drive-escola',${`revisao-${id}`},${"a".repeat(32)},10,'video/mp4',true,${secretariaId},${utc(new Date("2026-09-01T10:00:00.000Z"))},${publicacaoAulaId})
   `);
+  await prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: materialId, versao: 1, arquivoOficialId: `drive-${id}`,
+    driveOrganizacaoId: "drive-escola", driveRevisionId: `revisao-${id}`, driveRevisionMd5: "a".repeat(32), driveRevisionSize: 10n, mimeType: "video/mp4",
+  } });
   if (opcoes.publicada !== false) await prisma.$executeRaw(Prisma.sql`
     INSERT INTO "DisponibilizacaoEntregaReposicao" (id,"reposicaoId","materialId","disponibilizadaEm","prazoBaseMinutos","prazoInicialAte","publicadaPorId")
     VALUES (${`disp-${id}`},${id},${materialId},${utc(new Date("2026-09-01T10:00:00.000Z"))},120,${utc(new Date("2026-09-01T12:00:00.000Z"))},${secretariaId})
@@ -109,16 +117,49 @@ it("autoriza somente a reposição gravada aprovada e publicada da matrícula at
   const propria = await prepararReposicao("repo-ativa", matriculaAtivaId, alunoId);
   const autorizacao = await autorizarReproducaoGravacao("repo-ativa");
 
-  expect(autorizacao).toEqual({ fileId: propria.fileId, reposicaoId: "repo-ativa", matriculaId: matriculaAtivaId });
+  expect(autorizacao).toMatchObject({ fileId: propria.fileId, reposicaoId: "repo-ativa", matriculaId: matriculaAtivaId, driveId: "drive-escola", revisionId: "revisao-repo-ativa" });
 });
 
 it("vincula a reprodução ao drive oficial publicado e recusa mudança de repositório", async () => {
   await prepararReposicao("repo-original", matriculaAtivaId, alunoId, { fonteOriginal: true });
-  expect(await autorizarReproducaoGravacao("repo-original")).toEqual({
-    fileId: "drive-repo-original", reposicaoId: "repo-original", matriculaId: matriculaAtivaId, driveId: "drive-escola",
+  expect(await autorizarReproducaoGravacao("repo-original")).toMatchObject({
+    fileId: "drive-repo-original", reposicaoId: "repo-original", matriculaId: matriculaAtivaId, driveId: "drive-escola", revisionId: "revisao-repo-original",
   });
   drive.id = "outro-drive";
   await expect(autorizarReproducaoGravacao("repo-original")).rejects.toThrow(/não autorizada/i);
+});
+
+it("troca a fonte somente pela próxima versão aprovada, sem reutilizar a cabeça do arquivo anterior", async () => {
+  const preparada = await prepararReposicao("repo-substituicao", matriculaAtivaId, alunoId);
+  const autoaprovacao = await prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: preparada.materialId, versaoEsperada: 1,
+    arquivoOficialId: "drive-auto-recusada", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-auto-recusada",
+    driveRevisionMd5: "c".repeat(32), driveRevisionSize: 12n, mimeType: "video/mp4",
+    motivo: "Tentativa que exige decisão de outra pessoa", preparadorId: gestorId, chaveIdempotencia: "regularizacao-auto-recusa-1",
+  } });
+  await expect(prisma.decisaoRegularizacaoFonteGravacao.create({ data: {
+    propostaId: autoaprovacao.id, decisorId: gestorId, aprovada: true, motivo: "A mesma pessoa não pode aprovar a própria fonte",
+  } })).rejects.toThrow(/Outra pessoa/i);
+  const preparador = await criarUsuario(["GERENTE_PEDAGOGICO"], "Preparador da fonte substituta");
+  const proposta = await prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: preparada.materialId, versaoEsperada: 1,
+    arquivoOficialId: "drive-substituta", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-substituta",
+    driveRevisionMd5: "b".repeat(32), driveRevisionSize: 11n, mimeType: "video/mp4",
+    motivo: "Arquivo original regularizado com revisão fixa", preparadorId: preparador.id, chaveIdempotencia: "regularizacao-material-1",
+  } });
+  await prisma.decisaoRegularizacaoFonteGravacao.create({ data: {
+    propostaId: proposta.id, decisorId: gestorId, aprovada: true, motivo: "Fonte conferida por outra pessoa",
+  } });
+  await prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: preparada.materialId, versao: 2, propostaId: proposta.id,
+    arquivoOficialId: "drive-substituta", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-substituta",
+    driveRevisionMd5: "b".repeat(32), driveRevisionSize: 11n, mimeType: "video/mp4",
+  } });
+
+  await expect(autorizarReproducaoGravacao("repo-substituicao")).resolves.toMatchObject({
+    fileId: "drive-substituta", revisionId: "revisao-substituta", md5Checksum: "b".repeat(32), size: "11",
+  });
+  await expect(prisma.fonteRevisaoGravacao.delete({ where: { id: (await prisma.fonteRevisaoGravacao.findFirstOrThrow({ where: { materialReposicaoId: preparada.materialId, versao: 2 } })).id } })).rejects.toThrow(/imutáveis/i);
 });
 
 it("isola dois contratos do mesmo aluno e nega cada origem de bloqueio", async () => {
@@ -188,4 +229,38 @@ it("nega pausa e encerramento mesmo com liberação de entrega, que não é conc
   await expect(autorizarReproducaoGravacao("repo-pausada")).rejects.toThrow(/não autorizada/i);
   await prisma.matricula.update({ where: { id: matriculaAtivaId }, data: { status: "ENCERRADA" } });
   await expect(autorizarReproducaoGravacao("repo-pausada")).rejects.toThrow(/não autorizada/i);
+});
+
+it("SQL recusa preparador sem gestão e fonte derivada divergente mesmo após decisão independente", async () => {
+  const derivada = await prepararReposicao("repo-derivada", matriculaAtivaId, alunoId, { fonteOriginal: true });
+  const professor = await criarUsuario(["PROFESSOR"], "Professor sem gestão");
+  const dados = {
+    alvo: "MATERIAL_REPOSICAO" as const, materialReposicaoId: derivada.materialId, versaoEsperada: 1,
+    arquivoOficialId: "drive-divergente", driveOrganizacaoId: "drive-escola", driveRevisionId: "revisao-divergente",
+    driveRevisionMd5: "d".repeat(32), driveRevisionSize: 12n, mimeType: "video/mp4",
+    motivo: "Tentativa de substituir material derivado por arquivo distinto",
+  };
+  await expect(prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    ...dados, preparadorId: professor.id, chaveIdempotencia: "professor-sem-gestao-147",
+  } })).rejects.toThrow(/Preparador sem papel de gestão ativo/i);
+
+  const inativo = await criarUsuario(["GERENTE_PEDAGOGICO"], "Gestor inativo");
+  await prisma.usuario.update({ where: { id: inativo.id }, data: { ativo: false } });
+  await expect(prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    ...dados, preparadorId: inativo.id, chaveIdempotencia: "gestor-inativo-147",
+  } })).rejects.toThrow(/Preparador sem papel de gestão ativo/i);
+
+  const proposta = await prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    ...dados, preparadorId: gestorId, chaveIdempotencia: "material-derivado-diverge-147",
+  } });
+  const outroGestor = await criarUsuario(["GERENTE_PEDAGOGICO"], "Outro gestor");
+  await prisma.decisaoRegularizacaoFonteGravacao.create({ data: {
+    propostaId: proposta.id, decisorId: outroGestor.id, aprovada: true, motivo: "Decisão independente sobre fonte divergente",
+  } });
+  await expect(prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: dados.alvo, materialReposicaoId: dados.materialReposicaoId, versao: 2, propostaId: proposta.id,
+    arquivoOficialId: dados.arquivoOficialId, driveOrganizacaoId: dados.driveOrganizacaoId,
+    driveRevisionId: dados.driveRevisionId, driveRevisionMd5: dados.driveRevisionMd5,
+    driveRevisionSize: dados.driveRevisionSize, mimeType: dados.mimeType,
+  } })).rejects.toThrow(/Fonte derivada não corresponde à publicação/i);
 });

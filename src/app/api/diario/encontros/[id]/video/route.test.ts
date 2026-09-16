@@ -2,14 +2,14 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ autorizar: vi.fn(), revalidar: vi.fn(), abrir: vi.fn(), token: vi.fn() }));
 vi.mock("@/server/gravacoes/aula-institucional", () => ({ prepararVideoAulaInstitucionalContinuo: async (id: string) => ({ fonte: await mocks.autorizar(id), revalidar: mocks.revalidar }) }));
-vi.mock("@/server/gravacoes/drive", () => ({ abrirVideoDriveOrganizacional: mocks.abrir }));
+vi.mock("@/server/gravacoes/drive-revisao-stream", () => ({ abrirVideoRevisaoDrive: mocks.abrir }));
 vi.mock("@/server/gravacoes/credenciais", () => ({ obterTokenDrive: mocks.token }));
 import { GET } from "./route";
 
 const contexto = { params: Promise.resolve({ id: "encontro-1" }) };
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.autorizar.mockResolvedValue({ fileId: "arquivo-interno", driveId: "drive-aula" });
+  mocks.autorizar.mockResolvedValue({ fileId: "arquivo-interno", driveId: "drive-aula", revisionId: "revisao-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
   mocks.abrir.mockImplementation(async () => ({ status: 206, body: new ReadableStream({ start(controlador) { controlador.enqueue(new Uint8Array([1, 2])); controlador.close(); } }), headers: new Headers({ "Content-Type": "video/mp4", "Content-Length": "2", "Content-Range": "bytes 0-1/10", Location: "https://example.invalid/secreto", "Set-Cookie": "indevido" }) }));
 });
 
@@ -18,7 +18,7 @@ it("reautoriza cada Range e transmite somente bytes e cabeçalhos permitidos", a
   const response = await GET(request, contexto);
   expect(response.status).toBe(206);
   expect(mocks.autorizar).toHaveBeenCalledWith("encontro-1");
-  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({ fileId: "arquivo-interno", driveIdOrganizacao: "drive-aula", range: "bytes=0-1", signal: request.signal }));
+  expect(mocks.abrir).toHaveBeenCalledWith(expect.objectContaining({ fonte: expect.objectContaining({ fileId: "arquivo-interno", driveId: "drive-aula", revisionId: "revisao-1" }), range: "bytes=0-1", signal: request.signal }));
   expect(response.headers.get("Content-Disposition")).toBe("inline");
   expect(response.headers.get("Cache-Control")).toContain("no-store");
   expect(response.headers.get("Location")).toBeNull();

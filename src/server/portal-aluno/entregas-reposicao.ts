@@ -3,10 +3,13 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
-import { verificarDisponibilidadeGravacaoDrive } from "@/server/gravacoes/disponibilidade";
 import { exigirSessaoPortalAluno } from "./sessao";
 import { obterDriveOrganizacaoId } from "@/server/gravacoes/credenciais";
 import { autorizarReproducaoGravacaoTx } from "@/server/gravacoes/autorizacao";
+import { consultarRevisaoDriveFixada, fixarRevisaoDriveOrganizacional } from "@/server/gravacoes/drive-revisao";
+import { obterTokenDrive } from "@/server/gravacoes/credenciais";
+import { obterTokenPublicacaoDrive } from "@/server/gravacoes/credenciais-publicacao";
+import { resolverFonteRevisaoGravacaoTx } from "@/server/gravacoes/fonte-revisao-tx";
 
 const texto = z.string().trim().min(5).max(4_000);
 const instanteUtc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
@@ -182,7 +185,8 @@ async function fonteDaAulaOriginalTx(tx: Prisma.TransactionClient, reposicaoId: 
     excecoesGravacao: { where: { decisao: { aprovada: true } }, select: { id: true }, take: 1 } } }) : null;
   if (!e || e.status !== "MINISTRADO" || !e.publicacaoGravacao || e.excecoesGravacao.length || e.publicacaoGravacao.driveOrganizacaoId !== obterDriveOrganizacaoId())
     throw new ErroRegra("A aula original não possui gravação oficial disponível para esta publicação.");
-  return { publicacaoAulaId: e.publicacaoGravacao.id, arquivoOficialId: e.publicacaoGravacao.arquivoOficialId };
+  return { publicacaoAulaId: e.publicacaoGravacao.id,
+    fonte: await resolverFonteRevisaoGravacaoTx(tx, { publicacaoAulaId: e.publicacaoGravacao.id }) };
 }
 
 type PublicacaoConferida = { matriculaId: string; prazo: number };
@@ -229,21 +233,24 @@ export async function publicarMaterialReposicaoGravacao(input: unknown) {
     // externo autentica, consulta metadata e entrega seu primeiro byte.
     const fonte = await prisma.$transaction(async tx => {
       await conferirPublicacaoMaterialTx(tx, autor.id, entrada.reposicaoId, false);
-      return entrada.usarGravacaoAulaOriginal ? fonteDaAulaOriginalTx(tx, entrada.reposicaoId) : { publicacaoAulaId: null, arquivoOficialId: entrada.arquivoOficialId! };
+      return entrada.usarGravacaoAulaOriginal ? fonteDaAulaOriginalTx(tx, entrada.reposicaoId) : { publicacaoAulaId: null, fonte: null, arquivoOficialId: entrada.arquivoOficialId! };
     });
-    await verificarDisponibilidadeGravacaoDrive(fonte.arquivoOficialId);
+    const fonteFixa = fonte.fonte ?? await fixarRevisaoDriveOrganizacional({ fileId: fonte.arquivoOficialId!, driveIdOrganizacao: obterDriveOrganizacaoId(), token: obterTokenPublicacaoDrive });
     return prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       const conferida = await conferirPublicacaoMaterialTx(tx, autor.id, entrada.reposicaoId, true);
       if (entrada.usarGravacaoAulaOriginal) {
         const atual = await fonteDaAulaOriginalTx(tx, entrada.reposicaoId);
-        if (atual.publicacaoAulaId !== fonte.publicacaoAulaId || atual.arquivoOficialId !== fonte.arquivoOficialId) throw new ErroRegra("A fonte mudou durante a conferência. Consulte novamente.");
+        if (atual.publicacaoAulaId !== fonte.publicacaoAulaId || atual.fonte.revisionId !== fonteFixa.revisionId || atual.fonte.md5Checksum !== fonteFixa.md5Checksum) throw new ErroRegra("A fonte mudou durante a conferência. Consulte novamente.");
       }
       const agora = new Date(), prazoAte = new Date(agora.getTime() + conferida.prazo * 60_000), materialId = randomUUID();
       await tx.$executeRaw(Prisma.sql`
-        INSERT INTO "MaterialReposicaoGravacao" (id, "reposicaoId", provedor, "arquivoOficialId", "publicacaoAulaId", disponivel, "publicadoPorId", "publicadoEm")
-        VALUES (${materialId}, ${entrada.reposicaoId}, 'GOOGLE_DRIVE', ${fonte.arquivoOficialId}, ${fonte.publicacaoAulaId}, true, ${autor.id}, ${instanteUtc(agora)})
+        INSERT INTO "MaterialReposicaoGravacao" (id, "reposicaoId", provedor, "arquivoOficialId", "driveOrganizacaoId", "driveRevisionId", "driveRevisionMd5", "driveRevisionSize", "mimeType", "publicacaoAulaId", disponivel, "publicadoPorId", "publicadoEm")
+        VALUES (${materialId}, ${entrada.reposicaoId}, 'GOOGLE_DRIVE', ${fonteFixa.fileId}, ${fonteFixa.driveId}, ${fonteFixa.revisionId}, ${fonteFixa.md5Checksum}, ${BigInt(fonteFixa.size)}, ${fonteFixa.mimeType}, ${fonte.publicacaoAulaId}, true, ${autor.id}, ${instanteUtc(agora)})
       `);
+      await tx.fonteRevisaoGravacao.create({ data: { alvo: "MATERIAL_REPOSICAO", materialReposicaoId: materialId, versao: 1,
+        arquivoOficialId: fonteFixa.fileId, driveOrganizacaoId: fonteFixa.driveId, driveRevisionId: fonteFixa.revisionId,
+        driveRevisionMd5: fonteFixa.md5Checksum, driveRevisionSize: BigInt(fonteFixa.size), mimeType: fonteFixa.mimeType } });
       await tx.$executeRaw(Prisma.sql`
         INSERT INTO "DisponibilizacaoEntregaReposicao" (id, "reposicaoId", "materialId", "disponibilizadaEm", "prazoBaseMinutos", "prazoInicialAte", "publicadaPorId")
         VALUES (${randomUUID()}, ${entrada.reposicaoId}, ${materialId}, ${instanteUtc(agora)}, ${conferida.prazo}, ${instanteUtc(prazoAte)}, ${autor.id})
@@ -341,7 +348,9 @@ async function conferirRetomadaMaterialTx(tx: Prisma.TransactionClient, usuarioI
       throw new ErroRegra("A fonte oficial mudou; confira o material antes de retomar.");
     }
   }
-  return { ...pausa, driveId };
+  const fonte = await resolverFonteRevisaoGravacaoTx(tx, { materialReposicaoId: pausa.materialId });
+  if (fonte.driveId !== driveId) throw new ErroRegra("A fonte oficial mudou; confira o material antes de retomar.");
+  return { ...pausa, fonte };
 }
 
 export async function retomarMaterialReposicaoGravacao(input: unknown) {
@@ -349,10 +358,10 @@ export async function retomarMaterialReposicaoGravacao(input: unknown) {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const entrada = retomarIndisponibilidade.parse(input);
     const conferida = await prisma.$transaction((tx) => conferirRetomadaMaterialTx(tx, autor.id, entrada.indisponibilidadeId));
-    await verificarDisponibilidadeGravacaoDrive(conferida.arquivoOficialId, { obterDriveId: () => conferida.driveId });
+    await consultarRevisaoDriveFixada({ fonte: conferida.fonte, token: obterTokenDrive });
     return prisma.$transaction(async (tx) => {
       const pausa = await conferirRetomadaMaterialTx(tx, autor.id, entrada.indisponibilidadeId);
-      if (JSON.stringify(pausa) !== JSON.stringify(conferida)) throw new ErroRegra("O material mudou durante a conferência; confira novamente.");
+      if (pausa.materialId !== conferida.materialId || pausa.fonte.revisionId !== conferida.fonte.revisionId || pausa.fonte.md5Checksum !== conferida.fonte.md5Checksum || pausa.fonte.size !== conferida.fonte.size || pausa.fonte.mimeType !== conferida.fonte.mimeType) throw new ErroRegra("O material mudou durante a conferência; confira novamente.");
       const agora = new Date();
       await tx.$executeRaw(Prisma.sql`UPDATE "IndisponibilidadeMaterialReposicao" SET fim = ${instanteUtc(agora)}, motivo = motivo || E'\nRetomada: ' || ${entrada.motivo} WHERE id = ${entrada.indisponibilidadeId} AND fim IS NULL`);
       await registrarEvento(tx, { tipo: "MaterialReposicaoGravacaoRetomado", agregadoTipo: "Matricula", agregadoId: pausa.matriculaId, autorId: autor.id,
