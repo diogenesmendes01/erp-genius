@@ -50,22 +50,34 @@ function encontrosDoEvento(payload: unknown) {
 }
 
 /** Reconferência explícita: prepara apenas a intenção válida e nunca toca no driver. */
-export async function reconferirPendenciaAvisoAgenda(input: unknown): Promise<Resultado<{ resolvida: boolean; explicacao: string }>> {
+export async function reconferirPendenciaAvisoAgendaInterna(input: unknown): Promise<Resultado<{ resolvida: boolean; explicacao: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
     const entrada = ReconferirSchema.parse(input);
     return prisma.$transaction(confirmarTransacao(async (tx) => {
-      const pendencia = await tx.pendenciaAvisoAgenda.findUnique({ where: { id: entrada.pendenciaId }, include: { evento: true } });
-      if (!pendencia) return { resolvida: false, explicacao: "Pendência não encontrada." };
-      if (pendencia.situacao === "RESOLVIDA") return { resolvida: true, explicacao: "Pendência já encerrada por reconferência anterior." };
       const usuario = await tx.usuario.findFirst({ where: { id: autor.id, ativo: true, papeis: { hasSome: [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR] } }, select: { id: true } });
       if (!usuario) return { resolvida: false, explicacao: "Seu papel atual não permite reconferir esta pendência." };
-      const encontrosIds = encontrosDoEvento(pendencia.evento.payload);
+      await tx.$executeRaw`SELECT id FROM "PendenciaAvisoAgenda" WHERE id = ${entrada.pendenciaId} FOR UPDATE`;
+      const pendencia = await tx.pendenciaAvisoAgenda.findUnique({ where: { id: entrada.pendenciaId }, include: { evento: true } });
+      if (!pendencia) return { resolvida: false, explicacao: "Pendência não encontrada." };
+      if (pendencia.situacao === "RESOLVIDA") return pendencia.resolvidaPorId === autor.id && pendencia.observacaoResolucao === entrada.motivo ? { resolvida: true, explicacao: "Pendência já encerrada por esta reconferência." } : { resolvida: false, explicacao: "Pendência já foi encerrada com outra evidência." };
+      let encontrosIds = encontrosDoEvento(pendencia.evento.payload);
+      if (pendencia.evento.tipo === "ReplanejamentoConjuntoAplicado") {
+        const horarios = (pendencia.evento.payload as { horarios?: { encontroId: string; inicioAnterior: string; inicioProposto: string }[] }).horarios ?? [];
+        const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: encontrosIds }, matriculaId: null }, select: { id: true, turmaId: true } });
+        const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: pendencia.matriculaId, turmaId: { in: encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []) } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } });
+        encontrosIds = encontros.filter((encontro) => {
+          const horario = horarios.find((h) => h.encontroId === encontro.id);
+          return !!horario && !!encontro.turmaId && alocacoes.some((a) => a.turmaId === encontro.turmaId && ([horario.inicioAnterior, horario.inicioProposto].some((instante) => a.criadoEm <= new Date(instante) && (!a.encerradaEm || a.encerradaEm > new Date(instante)))));
+        }).map((encontro) => encontro.id);
+      }
       if (!encontrosIds.length) return { resolvida: false, explicacao: "A origem aplicada não possui encontros reconferíveis." };
       const existentes = await tx.avisoAlteracaoAgenda.findMany({ where: { eventoId: pendencia.eventoId, matriculaId: pendencia.matriculaId }, include: { aluno: true, itens: true } });
       if (existentes.some((aviso) => aviso.situacao === "INCERTO")) return { resolvida: false, explicacao: "Existe aviso com resultado incerto; a reconferência não o reemite." };
-      const { criarAvisosAlteracaoAgendaTx } = await import("./avisos");
-      await criarAvisosAlteracaoAgendaTx(tx, { eventoId: pendencia.eventoId, matriculaId: pendencia.matriculaId, encontrosIds });
+      if (!existentes.length) {
+        const { criarAvisosAlteracaoAgendaTx } = await import("./avisos");
+        await criarAvisosAlteracaoAgendaTx(tx, { eventoId: pendencia.eventoId, matriculaId: pendencia.matriculaId, encontrosIds });
+      }
       const avisos = await tx.avisoAlteracaoAgenda.findMany({ where: { eventoId: pendencia.eventoId, matriculaId: pendencia.matriculaId }, include: { aluno: true, itens: true } });
       if (!avisos.length) return { resolvida: false, explicacao: "A matrícula ainda não possui destinatário acadêmico elegível." };
       const destinosAtuais = avisos.every((aviso) => {

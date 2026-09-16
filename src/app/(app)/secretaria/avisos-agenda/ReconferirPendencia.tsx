@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { reconferirPendenciaAvisoAgenda } from "@/server/comunicacoes-agenda/pendencias";
+import { reconferirPendenciaAvisoAgenda } from "@/server/comunicacoes-agenda/reconferencia";
 
 export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   const router = useRouter();
