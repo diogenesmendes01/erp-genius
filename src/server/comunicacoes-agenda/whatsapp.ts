@@ -5,6 +5,7 @@ import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-atual";
 import { garantirContato } from "@/server/whatsapp/identidade";
+import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
 
 const VARIAVEIS_AGENDA = /\{(nome|horarios)\}/g;
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
@@ -37,12 +38,13 @@ export function renderizarTemplateAgenda(corpo: string, dados: { nome: string; h
   return { texto, variaveis };
 }
 
-function horariosDoAviso(aviso: { evento: { tipo: string; payload: unknown } | null; itens: { encontroId: string; encontro: { inicio: Date; fim: Date; fusoOrigem: string } }[] }) {
+function horariosDoAviso(aviso: { evento: { tipo: string; payload: unknown } | null; itens: { encontroId: string; encontro: { inicio: Date; fim: Date; fusoOrigem: string } }[] }, fonteReplanejamento: Awaited<ReturnType<typeof validarFonteReplanejamentoConjuntoTx>> | false = false) {
   const horario = (id?: string) => {
     const e = aviso.itens.find((item) => item.encontroId === id)?.encontro;
     return e && `${e.inicio.toLocaleString("pt-BR", { timeZone: e.fusoOrigem })}–${e.fim.toLocaleTimeString("pt-BR", { timeZone: e.fusoOrigem })} (${e.fusoOrigem})`;
   };
   const payload = (aviso.evento?.payload ?? {}) as { encontroOriginalId?: string; encontroNovoId?: string };
+  if (fonteReplanejamento) return renderizarHorariosReplanejamento(fonteReplanejamento.horarios);
   if (aviso.evento?.tipo === "SubstituicaoDocenteDecidida") return aviso.itens.map(({ encontro }) => `${encontro.inicio.toLocaleString("pt-BR", { timeZone: encontro.fusoOrigem })}–${encontro.fim.toLocaleTimeString("pt-BR", { timeZone: encontro.fusoOrigem })} (${encontro.fusoOrigem})`).join("; ");
   const anterior = horario(payload.encontroOriginalId), novo = horario(payload.encontroNovoId);
   return anterior && novo ? `de ${anterior} para ${novo}` : null;
@@ -53,7 +55,11 @@ async function fonteAvisoValida(db: Prisma.TransactionClient | typeof prisma, av
   const payload = (evento?.payload ?? {}) as { aprovada?: unknown; encontroOriginalId?: string; encontroNovoId?: string; encontrosIds?: string[] };
   const remarcacao = !!evento && evento.agregadoTipo === "Matricula" && evento.agregadoId === aviso.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(evento.tipo) && payload.aprovada === true;
   const substituicao = !!evento && evento.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "SubstituicaoDocenteDecidida" && payload.aprovada === true;
-  if (!(remarcacao || substituicao) || !aviso.matriculaId || !aviso.itens.length) return false;
+  const replanejamento = !!evento && evento.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "ReplanejamentoConjuntoAplicado" && aviso.matriculaId
+    ? await validarFonteReplanejamentoConjuntoTx(db, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map((item) => item.encontroId) })
+    : null;
+  if (!(remarcacao || substituicao || replanejamento) || !aviso.matriculaId || !aviso.itens.length) return false;
+  if (replanejamento) return replanejamento;
   const turmas = aviso.itens.flatMap((i) => i.encontro.turmaId ? [i.encontro.turmaId] : []);
   const alocacoes = substituicao && turmas.length ? await db.alocacaoTurma.findMany({ where: { matriculaId: aviso.matriculaId, turmaId: { in: turmas } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } }) : [];
   return aviso.itens.every((item) => {
@@ -91,7 +97,8 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
       intencaoWhatsApp: true,
     },
   });
-  if (!aviso || aviso.canal !== "WHATSAPP" || aviso.situacao !== "PREPARADO" || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !await fonteAvisoValida(tx, aviso)) return "ignorado" as const;
+  const fonte = aviso && await fonteAvisoValida(tx, aviso);
+  if (!aviso || aviso.canal !== "WHATSAPP" || aviso.situacao !== "PREPARADO" || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !fonte) return "ignorado" as const;
   const destino = aviso.destinatarioResponsavelId
     ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId } : null)
     : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;
@@ -101,7 +108,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   const motivoConfig = motivoConfiguracaoAgendaInvalida(config, idioma);
   if (motivoConfig || !aviso.aluno.aceitaComunicacoes || !telefone || !aviso.itens.length) return "pendente" as const;
   if (hashContato(telefone) !== aviso.contatoHash) return "pendente" as const;
-  const horarios = horariosDoAviso(aviso);
+  const horarios = horariosDoAviso(aviso, fonte);
   if (!horarios) return "pendente" as const;
   const renderizado = renderizarTemplateAgenda(config!.templateAvisosAgenda!.corpo, { nome: aviso.aluno.primeiroNome, horarios });
   if (!renderizado) return "pendente" as const;
@@ -140,8 +147,9 @@ export async function enfileirarAvisosAgendaWhatsApp(limite = 20) {
 export async function motivoAvisoAgendaInvalido(it: { avisoAlteracaoAgendaId: string | null; numeroId: string; contatoId: string; templateId: string | null; atendimentoId: string | null; corpoRenderizado?: string; variaveis?: unknown }) {
   if (!it.avisoAlteracaoAgendaId) return null;
   const aviso = await prisma.avisoAlteracaoAgenda.findUnique({ where: { id: it.avisoAlteracaoAgendaId }, include: { evento: true, itens: { include: { encontro: true } }, aluno: { include: { pais: { select: { idioma: true } }, responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true, responsavel: { select: { telefoneE164: true } } } } } }, matricula: true } });
-  if (!aviso || aviso.canal !== "WHATSAPP" || !["PREPARADO", "INCERTO"].includes(aviso.situacao) || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !aviso.aluno.aceitaComunicacoes || !await fonteAvisoValida(prisma, aviso)) return "aviso_agenda_alterado";
-  const horarios = horariosDoAviso(aviso);
+  const fonte = aviso && await fonteAvisoValida(prisma, aviso);
+  if (!aviso || aviso.canal !== "WHATSAPP" || !["PREPARADO", "INCERTO"].includes(aviso.situacao) || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !aviso.aluno.aceitaComunicacoes || !fonte) return "aviso_agenda_alterado";
+  const horarios = horariosDoAviso(aviso, fonte);
   const destino = aviso.destinatarioResponsavelId
     ? await prisma.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId } : null)
     : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;

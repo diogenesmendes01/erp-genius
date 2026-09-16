@@ -63,6 +63,18 @@ it("prepara aviso com helper real sem I/O externo", async () => {
   const matricula = await prisma.matricula.create({ data: {
     alunoId: aluno.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
   } });
+  const alunoSemVinculo = await prisma.aluno.create({ data: {
+    primeiroNome: "Aluno sem vínculo", paisId: catalogo.pais.id, email: "sem-vinculo@example.test", aceitaComunicacoes: true, whatsapp: false,
+  } });
+  const matriculaSemVinculo = await prisma.matricula.create({ data: {
+    alunoId: alunoSemVinculo.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
+  } });
+  const responsavelFuturo = await prisma.responsavel.create({ data: { nome: "Responsável futuro", telefoneE164: "+5511999999999" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: aluno.id, responsavelId: responsavelFuturo.id, papel: "PEDAGOGICO" } });
+  await prisma.autorizacaoComunicacaoAcademica.create({ data: {
+    matriculaId: matricula.id, responsavelId: responsavelFuturo.id, autorizadaPorId: preparador.id,
+    evidencia: "Autorização futura não deve formar destinatário atual", vigenteEm: new Date("2100-01-01T00:00:00Z"),
+  } });
   await prisma.alocacaoTurma.create({ data: {
     alunoId: aluno.id, matriculaId: matricula.id, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00Z"),
   } });
@@ -99,6 +111,7 @@ it("prepara aviso com helper real sem I/O externo", async () => {
   expect(avisos).toHaveLength(1);
   expect(avisos[0]).toMatchObject({ canal: "EMAIL", situacao: "PREPARADO", matriculaId: matricula.id });
   expect(avisos[0].itens.map((item) => item.encontroId).sort()).toEqual(propostas.map((p) => p.encontroId).sort());
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { eventoId: eventos[0].id, matriculaId: matriculaSemVinculo.id } })).toBe(0);
   expect(fetch).not.toHaveBeenCalled();
   expect(enviarEmailMock).not.toHaveBeenCalled();
 });

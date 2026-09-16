@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { enviarEmailResend } from "@/server/email/resend";
 import { enfileirarAvisosAgendaWhatsApp } from "./whatsapp";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
 
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 type Canal = "EMAIL" | "WHATSAPP";
@@ -13,8 +14,11 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   const evento = await tx.evento.findUnique({ where: { id: entrada.eventoId }, select: { agregadoTipo: true, agregadoId: true, tipo: true, payload: true } });
   const remarcacao = evento?.agregadoTipo === "Matricula" && evento.agregadoId === entrada.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(evento.tipo);
   const substituicao = evento?.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "SubstituicaoDocenteDecidida" && (evento.payload as { aprovada?: unknown }).aprovada === true;
-  if (!remarcacao && !substituicao) throw new Error("Evento aplicado incompatível com o aviso.");
-  const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, autorizacoesComunicacaoAcademica: { where: { revogadaEm: null }, select: { id: true, responsavelId: true, responsavel: { select: { telefoneE164: true } } } }, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true } } } });
+  const replanejamento = evento?.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "ReplanejamentoConjuntoAplicado"
+    ? await validarFonteReplanejamentoConjuntoTx(tx, entrada)
+    : null;
+  if (!remarcacao && !substituicao && !replanejamento) throw new Error("Evento aplicado incompatível com o aviso.");
+  const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, autorizacoesComunicacaoAcademica: { where: { vigenteEm: { lte: new Date() }, revogadaEm: null }, select: { id: true, responsavelId: true, responsavel: { select: { telefoneE164: true, alunos: { where: { papel: "PEDAGOGICO" }, select: { alunoId: true } } } } } }, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true } } } });
   if (!matricula?.aluno.aceitaComunicacoes) return [];
   const encontrosIds = [...new Set(entrada.encontrosIds)];
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: encontrosIds } }, select: { id: true, matriculaId: true, turmaId: true, inicio: true } });
@@ -23,17 +27,16 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
     where: { matriculaId: matricula.id, turmaId: { in: turmasIds } },
     select: { turmaId: true, criadoEm: true, encerradaEm: true },
   }) : [];
-  const pertenceAMatricula = (encontro: typeof encontros[number]) => encontro.matriculaId === matricula.id || (substituicao && !!encontro.turmaId && alocacoes.some((alocacao) =>
+  const pertenceAMatricula = (encontro: typeof encontros[number]) => !!replanejamento?.horarios.some((horario) => horario.encontroId === encontro.id) || encontro.matriculaId === matricula.id || (substituicao && !!encontro.turmaId && alocacoes.some((alocacao) =>
     alocacao.turmaId === encontro.turmaId && alocacao.criadoEm <= encontro.inicio && (!alocacao.encerradaEm || alocacao.encerradaEm > encontro.inicio),
   ));
   if (!encontrosIds.length || encontros.length !== encontrosIds.length || encontros.some((encontro) => !pertenceAMatricula(encontro))) throw new Error("Encontros da alteração não pertencem à matrícula.");
   const canais: { canal: Canal; contato: string; destinatarioAlunoId?: string; destinatarioResponsavelId?: string; autorizacaoComunicacaoAcademicaId?: string }[] = [];
   if (matricula.aluno.email) canais.push({ canal: "EMAIL", contato: matricula.aluno.email.trim().toLowerCase(), destinatarioAlunoId: matricula.alunoId });
-  // Responsável financeiro não é destinatário acadêmico. Quando há responsáveis
-  // pedagógicos vigentes, eles são os únicos contatos WhatsApp autorizados;
-  // sem eles, usa-se o telefone opt-in do próprio aluno.
+  // Responsável financeiro não é destinatário acadêmico. O aluno opt-in e cada
+  // responsável pedagógico com autorização vigente podem coexistir como destinos.
   if (matricula.aluno.whatsapp && matricula.aluno.telefoneE164) canais.push({ canal: "WHATSAPP", contato: matricula.aluno.telefoneE164, destinatarioAlunoId: matricula.alunoId });
-  for (const autorizacao of matricula.autorizacoesComunicacaoAcademica) if (autorizacao.responsavel.telefoneE164) canais.push({ canal: "WHATSAPP", contato: autorizacao.responsavel.telefoneE164, destinatarioResponsavelId: autorizacao.responsavelId, autorizacaoComunicacaoAcademicaId: autorizacao.id });
+  for (const autorizacao of matricula.autorizacoesComunicacaoAcademica) if (autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId)) canais.push({ canal: "WHATSAPP", contato: autorizacao.responsavel.telefoneE164, destinatarioResponsavelId: autorizacao.responsavelId, autorizacaoComunicacaoAcademicaId: autorizacao.id });
   const avisos = [];
   for (const { canal, contato, destinatarioAlunoId, destinatarioResponsavelId, autorizacaoComunicacaoAcademicaId } of canais) {
     // Email preserva a chave histórica, inclusive se o endereço atual mudou;
@@ -63,6 +66,9 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
     const contato = aviso.canal === "EMAIL" ? aviso.aluno.email?.trim().toLowerCase() : (aviso.aluno.whatsapp ? aviso.aluno.telefoneE164 : null);
     const fonteRemarcacao = aviso.evento?.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(aviso.evento?.tipo ?? "");
     const fonteSubstituicao = aviso.evento?.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "SubstituicaoDocenteDecidida" && (aviso.evento.payload as { aprovada?: unknown }).aprovada === true;
+    const fonteReplanejamento = aviso.evento?.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "ReplanejamentoConjuntoAplicado" && aviso.matriculaId
+      ? await validarFonteReplanejamentoConjuntoTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map((item) => item.encontroId) })
+      : null;
     const turmasIds = aviso.itens.flatMap((item) => item.encontro.turmaId ? [item.encontro.turmaId] : []);
     const alocacoes = fonteSubstituicao && aviso.matriculaId && turmasIds.length ? await tx.alocacaoTurma.findMany({
       where: { matriculaId: aviso.matriculaId, turmaId: { in: turmasIds } },
@@ -71,7 +77,7 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
     const pertenceAMatricula = (item: typeof aviso.itens[number]) => item.encontro.matriculaId === aviso.matriculaId || (fonteSubstituicao && !!item.encontro.turmaId && alocacoes.some((alocacao) =>
       alocacao.turmaId === item.encontro.turmaId && alocacao.criadoEm <= item.encontro.inicio && (!alocacao.encerradaEm || alocacao.encerradaEm > item.encontro.inicio),
     ));
-    const fonteValida = (fonteRemarcacao || fonteSubstituicao) && aviso.matricula?.status === "ATIVA" && aviso.itens.length > 0 && aviso.itens.every(pertenceAMatricula);
+    const fonteValida = (fonteRemarcacao || fonteSubstituicao || fonteReplanejamento) && aviso.matricula?.status === "ATIVA" && aviso.itens.length > 0 && (fonteReplanejamento ? true : aviso.itens.every(pertenceAMatricula));
     if (!fonteValida || !aviso.aluno.aceitaComunicacoes || !contato || hashContato(contato) !== aviso.contatoHash) {
       await tx.avisoAlteracaoAgenda.update({ where: { id }, data: { situacao: "FALHOU", tentativas: { create: { id: randomUUID(), situacao: "FALHOU" } } } }); return null;
     }
@@ -118,6 +124,9 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
   const payload = aviso.evento.payload as { aprovada?: unknown; encontroOriginalId?: string; encontroNovoId?: string; encontrosIds?: string[] };
   const fonteRemarcacao = aviso.evento.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(aviso.evento.tipo) && payload.aprovada === true;
   const fonteSubstituicao = aviso.evento.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "SubstituicaoDocenteDecidida" && payload.aprovada === true;
+  const fonteReplanejamento = aviso.evento.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "ReplanejamentoConjuntoAplicado"
+    ? await prisma.$transaction(tx => validarFonteReplanejamentoConjuntoTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, encontrosIds: aviso.itens.map((item) => item.encontroId) }))
+    : null;
   const itensIds = new Set(aviso.itens.map((item) => item.encontroId));
   if (!entrada.encontrosIds.every((id) => itensIds.has(id)) || aviso.matricula.status !== "ATIVA" || !aviso.itens.length) return { situacao: "RECUSADO" as const };
   const turmasIds = aviso.itens.flatMap((item) => item.encontro.turmaId ? [item.encontro.turmaId] : []);
@@ -131,8 +140,14 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
     ));
     return !!noEvento && pertenceAMatricula;
   };
-  if (!(fonteRemarcacao || fonteSubstituicao) || !aviso.itens.every(itemValido)) return { situacao: "RECUSADO" as const };
+  if (!(fonteRemarcacao || fonteSubstituicao || fonteReplanejamento) || (!fonteReplanejamento && !aviso.itens.every(itemValido))) return { situacao: "RECUSADO" as const };
   const encontrosDoAviso = aviso.itens.map((item) => item.encontro);
+  if (fonteReplanejamento) {
+    const horarios = renderizarHorariosReplanejamento(fonteReplanejamento.horarios);
+    if (!horarios || entrada.canal !== "EMAIL") return { situacao: "RECUSADO" as const };
+    const resultado = await enviarEmailResend({ destinatario: entrada.destinatario, assunto: "Alteração na agenda", texto: `A agenda da matrícula ${aviso.matricula.codigo} foi alterada: ${horarios}. Consulte a Secretaria em caso de dúvida.`, chaveIdempotencia: `agenda:${entrada.avisoId}` });
+    return resultado.situacao === "ACEITO" ? { situacao: "ACEITO" as const, provedorId: resultado.provedorId } : { situacao: resultado.situacao };
+  }
   if (aviso.evento.tipo === "SubstituicaoDocenteDecidida") {
     const horarios = encontrosDoAviso.map(e => `${e.inicio.toLocaleString("pt-BR", { timeZone: e.fusoOrigem })}–${e.fim.toLocaleTimeString("pt-BR", { timeZone: e.fusoOrigem })} (${e.fusoOrigem})`).join("; ");
     const texto = `O docente da sua aula foi alterado. Horários afetados: ${horarios}. Consulte a Secretaria em caso de dúvida.`;

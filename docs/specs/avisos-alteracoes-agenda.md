@@ -4,7 +4,7 @@ Estado: e-mail validado localmente; canal WhatsApp e autorizações incorporados
 
 ## Escopo
 
-Uma remarcação aprovada ou uma substituição docente aprovada cria avisos por matrícula e canal disponível, dentro da mesma transação que aplica a mudança. Cada aviso referencia o evento aplicado e seus encontros; a chave por evento, matrícula e canal impede duplicação e chamadas repetidas reúnem itens da mesma origem.
+Uma remarcação aprovada, uma substituição docente aprovada ou um replanejamento global aprovado cria avisos por matrícula e canal disponível, dentro da mesma transação que aplica a mudança. Cada aviso referencia o evento aplicado e seus encontros; a chave por evento, matrícula e canal impede duplicação e chamadas repetidas reúnem itens da mesma origem.
 
 Para encontro particular, o encontro pertence diretamente à matrícula. Para encontro de turma regular, cada matrícula é avaliada no instante do encontro: a alocação precisa ter sido criada até aquele instante e não pode estar encerrada nele. Uma alocação encerrada exatamente no início já não recebe aviso. Matrícula sem esse vínculo não recebe item nem aviso.
 
@@ -19,6 +19,7 @@ Cada destinatário conserva sua identidade, além do hash do contato. O aluno co
 Autorização, matrícula, responsável, evidência e autoria são preservados; revogação registra pessoa e motivo. As ações conferem o papel atual, serializam operações do mesmo vínculo e rejeitam entradas divergentes sem substituir o histórico. A guarda SQL 177 rejeita autorização criada por papel inadequado, exclusão/alteração da identidade e aviso que usa autorização de outra matrícula, futura ou revogada. Registrar o resultado de tentativa já iniciada continua permitido após revogação, sem autorizar outro envio.
 
 O aviso por e-mail mantém sua chave lógica existente. A chave WhatsApp inclui o hash do contato, mas o registro preserva também a identidade selecionada: contato compartilhado não permite trocar o destinatário histórico nem reutilizar autorização de outra pessoa. Incerto continua sem retentativa automática. As verificações de driver usam transportes simulados, não comprovam operação externa.
+Para `ReplanejamentoConjuntoAplicado`, a origem canônica inclui decisão e aplicação aprovadas, fotografia do rascunho e a correspondência exata entre os horários anterior/proposto da fotografia, do evento e da agenda aplicada. A matrícula somente recebe os encontros da turma aos quais esteve alocada no horário anterior ou no proposto; outra matrícula não recebe os seus itens. Criação, enfileiramento, claim e releitura imediatamente antes do driver repetem essa validação. O texto é renderizado da fotografia `antes → depois`, nunca do horário atual como se ele fosse a origem.
 
 ## Despacho e estados
 
