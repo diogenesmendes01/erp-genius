@@ -2,6 +2,8 @@
 
 Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e bloqueadas; tempo de ciclo registrado desde início até aceite. Não utilizar 36,9% como progresso global.
 
+Estado mais recente (18h05): Q19 está no DEV `da4b6d8f` e no TESTER `9aa7727c`, em revisão independente; DEV comprovou 16 integrações, 3 controles/SSR e TypeScript. M01 ganhou o checkpoint DEV `c7fe85b2`: chamada histórica usa vigência e fatos contratuais importados; teste real de aplicação e chamada passou (1/1, 3,59 s), cobrindo pausa e transferência. Ainda faltam consumidores de frequência, interface e validação completa para integrar a aplicação M01. A migração 185 já foi aplicada somente no banco descartável do DEV, com bytes preservados; as notas anteriores de “não aplicada” abaixo são históricas. Nenhum dado real ou provedor externo foi acionado.
+
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
