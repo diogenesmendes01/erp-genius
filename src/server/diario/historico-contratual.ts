@@ -5,11 +5,12 @@ export async function carregarHistoricosContratuais(tx: Pick<Prisma.TransactionC
   const contratos = await tx.matricula.findMany({ where: { id: { in: ids } }, select: {
     id: true, status: true, ativadaEm: true,
     encerramento: { select: { statusAnterior: true, limiteVinculo: true } },
+    fatosSituacaoMigracao: { select: { tipo: true, efetivoEm: true, ordem: true }, orderBy: { ordem: "asc" } },
     itensPropostaPausa: { where: { proposta: { status: "APLICADA" } }, select: { proposta: { select: { aplicadaEm: true, snapshot: true } } } },
     itensPropostaRetomadaContratual: { where: { proposta: { status: "APLICADA" } }, select: { proposta: { select: { aplicadaEm: true, snapshot: true } } } },
   } });
   return new Map(contratos.map((m) => [m.id, {
-    status: m.status, ativadaEm: m.ativadaEm, encerramento: m.encerramento,
+    status: m.status, ativadaEm: m.ativadaEm, encerramento: m.encerramento, fatosMigracao: m.fatosSituacaoMigracao,
     pausas: m.itensPropostaPausa.map((i) => i.proposta), retomadas: m.itensPropostaRetomadaContratual.map((i) => i.proposta),
   }]));
 }

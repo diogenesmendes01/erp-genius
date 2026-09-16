@@ -7,6 +7,7 @@ import { carregarChamadaTx } from "./chamada-tx";
 import { estadoDiario } from "./estado";
 import { carregarAlunoParticularTx } from "./particular-contexto";
 import { exigirAcessoRegularizacaoAulaTx } from "./regularizacao-acesso";
+import { alocacaoCobreAula } from "./alocacoes";
 
 export async function listarChamadaEncontro(input: { encontroId: string }) {
   return executarAcao(async () => {
@@ -21,10 +22,14 @@ export async function listarChamadaEncontro(input: { encontroId: string }) {
       if (e.status !== "PREVISTO" || e.fim > new Date()) throw new ErroRegra("A chamada exige encontro previsto já terminado.");
       if (e.diario && e.diario.professorId !== e.professorId) throw new ErroPermissao("O diário possui autoria diferente do professor original.");
       const chamada = e.turmaId ? await carregarChamadaTx(tx, e.turmaId, e.inicio) : await carregarAlunoParticularTx(tx, e.matriculaId!, e.inicio);
+      // Edição continua dependente de vínculo ativo hoje; esta consulta não amplia acesso docente.
       const ativos = new Set(e.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: e.turmaId, ativa: true }, select: { alunoId: true } })).map((a) => a.alunoId) : chamada.alunos.map(a => a.alunoId));
       const anteriores = new Map(e.diario?.registros.map((r) => [r.alunoId, r]));
-      const identificados = new Set(e.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: e.turmaId, matriculaId: { not: null }, criadoEm: { lte: e.inicio },
-        OR: [{ encerradaEm: { gt: e.inicio } }, { ativa: true, encerradaEm: null }] }, select: { alunoId: true } })).map(a => a.alunoId) : chamada.alunos.map(a => a.alunoId));
+      const candidatosIdentificados = e.turmaId ? await tx.alocacaoTurma.findMany({ where: { turmaId: e.turmaId, matriculaId: { not: null }, OR: [
+        { provenienciaVinculo: "MIGRACAO" },
+        { provenienciaVinculo: null, criadoEm: { lte: e.inicio }, OR: [{ encerradaEm: { gt: e.inicio } }, { ativa: true, encerradaEm: null }] },
+      ] }, select: { alunoId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } }) : [];
+      const identificados = new Set(e.turmaId ? candidatosIdentificados.filter((a) => alocacaoCobreAula(a, e.inicio)).map((a) => a.alunoId) : chamada.alunos.map(a => a.alunoId));
       const alunos = new Map(chamada.alunos.map((a) => {
         const anterior = anteriores.get(a.alunoId);
         return [a.alunoId, { ...a, nomeAluno: anterior?.nomeAluno ?? a.nomeAluno, presente: anterior?.presente ?? null,

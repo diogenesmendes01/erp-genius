@@ -11,9 +11,7 @@ export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
   if (!usuario?.papeis.includes(Papel.PROFESSOR)) return [];
   const turmas = await prisma.turma.findMany({
     where: escopoTurmasDocente(usuario.id), orderBy: { codigo: "asc" },
-    select: {
-      id: true, codigo: true, nome: true,
-    },
+    select: { id: true, codigo: true, nome: true },
   });
   return turmas.map((t) => ({ id: t.id, label: [t.codigo, t.nome].filter(Boolean).join(" · ") }));
 }
@@ -34,15 +32,17 @@ export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string
       encontroId: true, encontro: { select: { professorId: true, status: true, fim: true, finalidade: true, matriculaId: true,
         publicacaoGravacao: { select: { id: true } }, excecoesGravacao: { where: { decisao: { aprovada: true } }, take: 1, select: { id: true } } } },
       professor: { select: { nome: true } },
-      turma: { select: { codigo: true, professorId: true, status: true, vinculosDocentes: true, alocacoes: { where: { ativa: true,
-        OR: [{ matriculaId: null, aluno: { status: "ATIVO" } }, { matricula: { status: { in: ["ATIVA", "PAUSADA"] } } }],
-      }, select: { alunoId: true, matriculaId: true, criadoEm: true, encerradaEm: true, ativa: true } } } },
+      turma: { select: { codigo: true, professorId: true, status: true, vinculosDocentes: true, alocacoes: { where: { OR: [
+        // O bloco legado é intencionalmente idêntico ao anterior.
+        { provenienciaVinculo: null, ativa: true, OR: [{ matriculaId: null, aluno: { status: "ATIVO" } }, { matricula: { status: { in: ["ATIVA", "PAUSADA"] } } }] },
+        // Histórico migrado depende da matrícula âncora e será limitado pela vigência abaixo.
+        { provenienciaVinculo: "MIGRACAO", matriculaId: { not: null } },
+      ] }, select: { alunoId: true, matriculaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } } } },
       // O histórico usa exclusivamente nome capturado na aula, nunca a ficha atual do aluno.
       registros: { select: { alunoId: true, nomeAluno: true, presente: true, observacao: true, participacao: true }, orderBy: { nomeAluno: "asc" } },
     },
   });
   const pagina = registros.slice(0, 50);
-  // A lista já foi delimitada por autoria ou gestão acima; só então consultamos projeções efetivas das aulas AULA.
   const correcoesEfetivas = await carregarCorrecoesAulaEfetivasTx(prisma, pagina.flatMap((a) => a.encontroId && a.encontro?.finalidade === "AULA" ? [a.encontroId] : []));
   const ids = [...new Set(pagina.flatMap((a) => (a.turma?.alocacoes ?? []).flatMap((v) => v.matriculaId ? [v.matriculaId] : [])))];
   const historicos = await carregarHistoricosContratuais(prisma, ids);
