@@ -17,6 +17,7 @@ function base(over: Record<string, unknown> = {}) {
     alunoPaisResidencia: "CR",
     produtoId: "prod-1",
     diaVencimento: 5,
+    cobertura: { referencia: "MES_CIVIL" as const, inicio: "2026-06-01" }, primeiroVencimento: "2026-06-05",
     taxaValor: 100,
     mensalidadeValor: 200,
     ...over,
@@ -24,6 +25,16 @@ function base(over: Record<string, unknown> = {}) {
 }
 
 describe("MatriculaSchema — exceção de preço", () => {
+  it("cobertura explícita exige primeiro vencimento válido sem inferir a data", () => {
+    const cobertura = { referencia: "MES_CIVIL", inicio: "2028-02-01" };
+    expect(MatriculaSchema.safeParse(base({ cobertura, primeiroVencimento: undefined })).success).toBe(false);
+    expect(MatriculaSchema.safeParse(base({ cobertura, primeiroVencimento: "2028-02-30" })).success).toBe(false);
+    expect(MatriculaSchema.safeParse(base({ cobertura, primeiroVencimento: "2028-02-29" })).success).toBe(true);
+  });
+  it("aceita dias de 1 a 31 e rejeita referências inválidas", () => {
+    for (let dia = 1; dia <= 31; dia++) expect(MatriculaSchema.safeParse(base({ diaVencimento: dia })).success).toBe(true);
+    for (const dia of [0, 32, 1.5]) expect(MatriculaSchema.safeParse(base({ diaVencimento: dia })).success).toBe(false);
+  });
   it("não expõe mais um boolean livre excecaoPreco", () => {
     const dados = MatriculaSchema.parse(base()) as Record<string, unknown>;
     expect("excecaoPreco" in dados).toBe(false);

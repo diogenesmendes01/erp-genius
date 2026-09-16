@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusPais } from "@prisma/client";
+import { Papel, Prisma, StatusPais } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   exigirSessaoComPapel,
@@ -11,6 +11,7 @@ import {
   type Resultado,
 } from "@/server/_shared";
 import { PaisSchema, type PaisInput } from "./schema";
+import { planejarTiposDocumento } from "./tipos-documento";
 
 const PATH = "/configuracao/paises";
 
@@ -60,7 +61,7 @@ export async function criarPais(input: PaisInput): Promise<Resultado<{ id: strin
           fuso: dados.fuso,
           idioma: dados.idioma,
           status: StatusPais.RASCUNHO,
-          tiposDocumento: { create: dados.tiposDocumento },
+          tiposDocumento: { create: dados.tiposDocumento.map(({ nome, validador }) => ({ nome, validador })) },
         },
       });
       await registrarEvento(tx, {
@@ -92,7 +93,15 @@ export async function editarPais(id: string, input: PaisInput): Promise<Resultad
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.tipoDocumento.deleteMany({ where: { paisId: id } });
+      const atuais = await tx.tipoDocumento.findMany({ where: { paisId: id }, include: { _count: { select: { alunos: true } } } });
+      const plano = planejarTiposDocumento(atuais, dados.tiposDocumento);
+      if (plano.remover.length) {
+        const removidos = await tx.tipoDocumento.deleteMany({ where: { paisId: id, id: { in: plano.remover }, alunos: { none: {} } } });
+        if (removidos.count !== plano.remover.length) throw new ErroRegra("Um tipo passou a ser utilizado. Atualize a página e tente novamente.");
+      }
+      for (const tipo of plano.atualizar) {
+        await tx.tipoDocumento.update({ where: { id: tipo.id }, data: { nome: tipo.nome, validador: tipo.validador } });
+      }
       await tx.pais.update({
         where: { id },
         data: {
@@ -102,7 +111,7 @@ export async function editarPais(id: string, input: PaisInput): Promise<Resultad
           ddi: dados.ddi,
           fuso: dados.fuso,
           idioma: dados.idioma,
-          tiposDocumento: { create: dados.tiposDocumento },
+          tiposDocumento: { create: plano.criar },
         },
       });
       await registrarEvento(tx, {
@@ -110,9 +119,9 @@ export async function editarPais(id: string, input: PaisInput): Promise<Resultad
         agregadoTipo: "Pais",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: { nome: atual.nome, moeda: atual.moedaLocal }, para: { nome: dados.nome, moeda: dados.moedaLocal } },
+        payload: { de: { nome: atual.nome, moeda: atual.moedaLocal }, para: { nome: dados.nome, moeda: dados.moedaLocal }, tiposDocumento: { de: atuais.map(({ id, nome, validador }) => ({ id, nome, validador })), para: dados.tiposDocumento } },
       });
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     revalidatePath(PATH);
   });

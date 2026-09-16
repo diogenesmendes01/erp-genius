@@ -31,6 +31,7 @@ export const EnviarMidiaInboxSchema = z.object({
 export type EnviarMidiaInboxInput = z.input<typeof EnviarMidiaInboxSchema>;
 
 export const VincularContatoSchema = z.object({
+  atendimentoId: z.string().min(1).optional(),
   contatoId: z.string().min(1),
   alvo: z.discriminatedUnion("tipo", [
     z.object({ tipo: z.literal("aluno"), id: z.string().min(1) }),

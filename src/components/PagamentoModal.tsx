@@ -24,6 +24,7 @@ export const FORMAS_EXIGEM_COMPROVANTE: FormaPagamento[] = [
  */
 export function PagamentoModal({
   cobrancaId,
+  somenteInformar = false,
   alunoNome,
   moeda,
   valorEsperado,
@@ -34,6 +35,7 @@ export function PagamentoModal({
   onErro,
 }: {
   cobrancaId: string;
+  somenteInformar?: boolean;
   alunoNome?: string;
   moeda: string;
   valorEsperado: number;
@@ -47,6 +49,7 @@ export function PagamentoModal({
 }) {
   // A baixa parte do saldo restante (issue #10): pagar o que falta, não o negociado cheio.
   const saldo = saldoRestante ?? valorEsperado;
+  const [chaveIdempotencia] = useState(() => crypto.randomUUID());
   const [valor, setValor] = useState(String(saldo));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
@@ -68,6 +71,7 @@ export function PagamentoModal({
     }
     setSalvando(true);
     const r = await registrarPagamento(cobrancaId, {
+      chaveIdempotencia,
       valorRecebido: valor === "" ? 0 : Number(valor),
       forma,
       dataPagamento: data,
@@ -85,8 +89,9 @@ export function PagamentoModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-lg bg-surface p-5" onClick={(e) => e.stopPropagation()}>
         <h3 className="mb-3 text-sm font-medium">
-          Registrar pagamento{alunoNome ? ` — ${alunoNome}` : ""}
+          {somenteInformar ? "Informar pagamento a conferir" : "Registrar recebimento"}{alunoNome ? ` — ${alunoNome}` : ""}
         </h3>
+        {somenteInformar && <p className="mb-3 text-sm text-blue-700">O Financeiro conferirá este informe. O saldo permanece em aberto até a confirmação.</p>}
         <p className="text-xs text-gray-600">Negociado: {formatarMoeda(valorEsperado, moeda)}</p>
         {jaRecebido > 0 && (
           <p className="text-xs text-gray-600">Já recebido: {formatarMoeda(jaRecebido, moeda)}</p>
@@ -131,7 +136,7 @@ export function PagamentoModal({
         <input className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
         <div className="flex gap-2">
           <button className={btnPri} disabled={salvando || faltaComprovante} onClick={salvar}>
-            {salvando ? "Salvando…" : "Registrar pagamento"}
+            {salvando ? "Salvando…" : somenteInformar ? "Enviar para conferência" : "Registrar recebimento"}
           </button>
           <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
         </div>

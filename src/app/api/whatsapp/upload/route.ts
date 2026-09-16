@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exigirSessao, ErroAutenticacao, exigirPapel, ErroPermissao } from "@/server/_shared/sessao";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { extensaoPorMime, salvarMidiaSaida, MAX_BYTES_MIDIA } from "@/server/whatsapp/midia";
+import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 
 // Upload de mídia para ENVIO pela inbox (doc 26 §Camada 3 · review PR #51 P1-2).
 // Separado do /api/upload genérico (comprovantes/documentos) por dois motivos:
@@ -34,6 +35,10 @@ export async function POST(req: Request) {
   }
 
   const form = await req.formData();
+  const atendimentoId = form.get("atendimentoId");
+  if (typeof atendimentoId !== "string" || !await atendimentoVisivel(usuario, atendimentoId, true)) {
+    return NextResponse.json({ erro: "Atendimento fora do seu escopo de envio." }, { status: 403 });
+  }
   const file = form.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ erro: "Arquivo ausente." }, { status: 400 });

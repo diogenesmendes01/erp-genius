@@ -1,10 +1,11 @@
+import { referenciaDestinoCobranca } from "./elegibilidade";
 import { StatusCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { despacharFila, type ResultadoDespacho } from "./despachante";
-import { enfileirarIntencaoCobranca } from "./fila";
+import { enfileirarIntencaoCobranca, ErroCobrancaAlterada } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
 import { renderizarTemplate, TEXTOS_FABRICA } from "./render";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
@@ -17,6 +18,7 @@ export interface ResultadoCron {
   executou: boolean;
   motivoParada: string | null;
   cobrancasAvaliadas: number;
+  cobrancasAlteradas: number;
   acoesDevidas: number;
   enfileiradas: number;
   reabertas: number;
@@ -30,6 +32,7 @@ const zerado = (motivo: string): ResultadoCron => ({
   executou: false,
   motivoParada: motivo,
   cobrancasAvaliadas: 0,
+  cobrancasAlteradas: 0,
   acoesDevidas: 0,
   enfileiradas: 0,
   reabertas: 0,
@@ -59,7 +62,7 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
   });
 
   const regua = await montarReguaPorCobranca(
-    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: c.matricula.acessoBloqueado })),
+    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
     agora,
     politica.degraus,
   );
@@ -110,26 +113,37 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
       idioma,
     });
 
-    const resultado = await prisma.$transaction(async (tx) => {
-      const contato = await garantirContato(tx, {
-        telefoneE164: destino.telefoneE164,
-        alunoId: destino.responsavelId ? null : destino.alunoId,
-        responsavelId: destino.responsavelId,
-        nomeExibicao: destino.nome,
+    let resultado;
+    try {
+      resultado = await prisma.$transaction(async (tx) => {
+        const contato = await garantirContato(tx, {
+          telefoneE164: destino.telefoneE164,
+          alunoId: destino.contatoAlunoId,
+          responsavelId: destino.responsavelId,
+          nomeExibicao: destino.nome,
+        });
+        return enfileirarIntencaoCobranca(tx, {
+          cobrancaId: cobranca.id,
+          referenciaCalendario: { versao: cobranca.versao, vencimento: cobranca.vencimento.toISOString(), cicloRegua: cobranca.cicloRegua },
+          referenciaDestino: referenciaDestinoCobranca(destino),
+          passo,
+          numeroId: numero.id,
+          contatoId: contato.id,
+          origem: "CRON",
+          corpoRenderizado: corpo,
+          variaveis,
+          templateId: template?.id ?? null,
+          politicaId: politica.id,
+          autorId: null,
+        });
       });
-      return enfileirarIntencaoCobranca(tx, {
-        cobrancaId: cobranca.id,
-        passo,
-        numeroId: numero.id,
-        contatoId: contato.id,
-        origem: "CRON",
-        corpoRenderizado: corpo,
-        variaveis,
-        templateId: template?.id ?? null,
-        politicaId: politica.id,
-        autorId: null,
-      });
-    });
+    } catch (erro) {
+      // Outro pagamento/ajuste/retomada mudou esta cobrança. A próxima rodada
+      // recalcula seu degrau e texto; as demais cobranças continuam nesta rodada.
+      if (!(erro instanceof ErroCobrancaAlterada)) throw erro;
+      r.cobrancasAlteradas += 1;
+      continue;
+    }
     if (resultado === "criada") r.enfileiradas += 1;
     else if (resultado === "reaberta") r.reabertas += 1;
     else r.jaExistentes += 1;

@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import {
   listarComissoes,
+  listarInformesPagamento,
+  configuracaoComissoes,
   kpisFinanceiro,
   dadosCambio,
   relatorioDescontosComissoes,
@@ -10,6 +13,7 @@ import {
 import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
+import { listarPropostasRetomada } from "@/server/retomada/consultas";
 
 // Guard server-side por papel ANTES de buscar dados sensíveis (issue #1).
 // Papéis alinhados ao nav.ts; Administrador passa sempre (exigirPapelLeitura).
@@ -32,13 +36,16 @@ export default async function FinanceiroPage() {
   const podeOperarCobranca =
     papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 
-  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio] = await Promise.all([
-    listarFilaCobranca(),
+  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, informes, politicas, retomadas] = await Promise.all([
+    podeOperarCobranca ? listarFilaCobranca() : Promise.resolve({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] }),
     listarComissoes(),
-    kpisFinanceiro(),
+    podeOperarCobranca ? kpisFinanceiro() : Promise.resolve({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 }),
     listarAprovacoesPendentes(),
-    dadosCambio(),
+    podeOperarCobranca ? dadosCambio() : Promise.resolve([]),
     relatorioDescontosComissoes(),
+    podeOperarCobranca ? listarInformesPagamento() : Promise.resolve([]),
+    configuracaoComissoes(),
+    podeOperarCobranca ? listarPropostasRetomada() : Promise.resolve({ ok: true as const, dado: [] }),
   ]);
 
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
@@ -59,8 +66,17 @@ export default async function FinanceiroPage() {
   });
 
   return (
+    <>
+    {podeOperarCobranca && <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1">
+      <Link className="underline" href="/financeiro/desistencias">Conferir desistências de matrículas</Link>
+      <Link className="underline" href="/financeiro/continuidade">Acompanhar continuidade mensal</Link>
+    </div>}
     <FinanceiroPainel
       fila={fila}
+      informes={informes}
+      politicas={politicas}
+      retomadas={retomadas.ok ? retomadas.dado ?? [] : []}
+      erroRetomadas={retomadas.ok ? null : retomadas.erro}
       comissoes={comissoes}
       kpis={kpis}
       aprovacoes={aprovacoes}
@@ -70,5 +86,6 @@ export default async function FinanceiroPage() {
       relatorio={relatorio}
       podeGerenciarCambio={podeGerenciarCambio}
     />
+    </>
   );
 }

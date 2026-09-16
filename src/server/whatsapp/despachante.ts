@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
+import { cicloDoEventoCobranca, registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
 import { driverEvolution } from "./drivers/evolution";
 import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
+import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
+import { atendimentoVisivel } from "./atendimentos";
+import { Papel } from "@prisma/client";
+import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
+import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -87,6 +92,8 @@ export async function despacharFila(
       OR: [
         { status: "PENDENTE" },
         { status: "ADIADA", despacharAposEm: { lte: agora } },
+        // Conferência pode terminar antes do prazo: revalidar a cada execução.
+        { status: "ADIADA", motivoFalha: "comprovante_em_conferencia" },
       ],
     },
     orderBy: { criadaEm: "asc" },
@@ -112,6 +119,18 @@ export async function despacharFila(
   };
 
   for (const it of intencoes) {
+    const invalida = await motivoIntencaoInvalida(it, agora);
+    if (invalida) {
+      await marcar(it.id, "CANCELADA", invalida);
+      r.canceladas += 1;
+      continue;
+    }
+    const conferirAte = it.cobrancaId ? await suspensaoPorConferencia(it.cobrancaId, agora) : null;
+    if (conferirAte) {
+      await adiar(it.id, conferirAte, "comprovante_em_conferencia");
+      r.adiadas += 1;
+      continue;
+    }
     // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
     // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
     const comercialPol = it.leadId != null && it.politicaComercial;
@@ -165,10 +184,17 @@ export async function despacharFila(
       continue;
     }
 
-    const conversa = await prisma.conversaWhatsApp.findUnique({
+    const transporte = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
       select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
     });
+    const estadoAtendimento = it.atendimentoId ? await prisma.atendimentoWhatsApp.findUnique({
+      where: { id: it.atendimentoId }, select: { ultimoInboundEm: true, inboundTratadoEm: true },
+    }) : null;
+    const conversa = transporte ? { ...transporte,
+      ultimoInboundEm: estadoAtendimento?.ultimoInboundEm ?? transporte.ultimoInboundEm,
+      inboundTratadoEm: estadoAtendimento?.inboundTratadoEm ?? transporte.inboundTratadoEm,
+    } : null;
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
     //    contato posterior à criação da intenção cancela a intenção automática.
@@ -206,15 +232,16 @@ export async function despacharFila(
     // 6. Idempotência dupla (além do @@unique): o degrau pode ter sido cumprido MANUALMENTE
     //    depois que a intenção nasceu — re-checa o evento antes de enviar.
     if (it.cobrancaId && it.passo) {
-      const jaCumprido = await prisma.evento.count({
+      const enviosDoPasso = await prisma.evento.findMany({
         where: {
           agregadoTipo: "Cobranca",
           agregadoId: it.cobrancaId,
           tipo: "CobrancaEnviadaWhatsApp",
           payload: { path: ["passo"], equals: it.passo },
         },
+        select: { payload: true },
       });
-      if (jaCumprido > 0) {
+      if (enviosDoPasso.some((e) => cicloDoEventoCobranca(e.payload) === it.cicloCobranca)) {
         await marcar(it.id, "CANCELADA", "degrau_ja_cumprido");
         r.canceladas += 1;
         continue;
@@ -322,6 +349,27 @@ export async function despacharFila(
     });
     if (claim.count === 0) continue; // outro worker levou — não conta em nada
 
+    // A autorização do momento do enfileiramento não vale para sempre. Releitura após
+    // o claim evita despachar com autor revogado, destinatário alterado ou saldo antigo.
+    const atual = await prisma.intencaoMensagem.findUnique({
+      where: { id: it.id }, include: { numero: true, contato: true, politicaComercial: true },
+    });
+    const invalidaAgora = atual ? await motivoIntencaoInvalida(atual, agora) : "intencao_ausente";
+    const conferirAgora = atual?.cobrancaId ? await suspensaoPorConferencia(atual.cobrancaId, agora) : null;
+    if (!invalidaAgora && conferirAgora) {
+      await prisma.intencaoMensagem.updateMany({ where: { id: it.id, status: "ENVIANDO" }, data: {
+        status: "ADIADA", motivoFalha: "comprovante_em_conferencia", despacharAposEm: conferirAgora,
+      } });
+      r.adiadas += 1;
+      continue;
+    }
+    if (invalidaAgora || !atual) {
+      await prisma.intencaoMensagem.updateMany({ where: { id: it.id, status: "ENVIANDO" },
+        data: { status: "CANCELADA", motivoFalha: invalidaAgora, despacharAposEm: null } });
+      r.canceladas += 1;
+      continue;
+    }
+
     // 12. Envio real + gravação em transação (mensagem + evento de domínio + intenção).
     try {
       const numeroCanal: NumeroCanal = {
@@ -363,6 +411,7 @@ export async function despacharFila(
         const msg = await tx.mensagemWhatsApp.create({
           data: {
             conversaId: conv.id,
+            atendimentoId: it.atendimentoId,
             numeroId: it.numeroId,
             direcao: "SAIDA",
             tipo: it.tipo,
@@ -378,11 +427,13 @@ export async function despacharFila(
           },
         });
         await tx.conversaWhatsApp.update({ where: { id: conv.id }, data: { ultimaMensagemEm: agora } });
+        if (it.atendimentoId) await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
             cobrancaId: it.cobrancaId,
             modelo: it.template?.nome ?? "texto",
             passo: it.passo as PassoRegua,
+            cicloRegua: it.cicloCobranca,
             canal: "api",
             autorId: it.autorId, // humano que aprovou (LOTE/HUMANO) ou null (CRON)
           });
@@ -408,13 +459,57 @@ export async function despacharFila(
       });
       r.despachadas += 1;
     } catch (e) {
-      const motivo = e instanceof ErroDriver ? e.motivo : "erro_inesperado";
+      // Uma resposta perdida, timeout ou falha de persistência pode ocorrer DEPOIS de
+      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
+      const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
       r.falhas += 1;
     }
   }
 
   return r;
+}
+
+type IntencaoParaValidar = {
+  id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
+  atendimentoId: string | null; cobrancaId: string | null; referenciaCobranca: string | null; cicloCobranca: number;
+  leadId: string | null; ocorrenciaComercial: string | null; passoComercial: string | null;
+  politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
+  numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
+};
+
+async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
+  if (!it.numero.ativo) return "numero_remetente_inativo";
+  if (it.contato.optOutEm) return "opt_out";
+  if (it.origem !== "CRON") {
+    const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
+    if (!autor?.ativo) return "autor_sem_acesso";
+    if (it.cobrancaId && !autor.papeis.some((p) => [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA].includes(p as "ADMINISTRADOR" | "FINANCEIRO" | "SECRETARIA_ACADEMICA"))) return "autor_sem_acesso";
+    if (!it.atendimentoId || !await atendimentoVisivel(autor, it.atendimentoId, true)) return "atendimento_sem_acesso";
+  }
+  let matriculaAtendimento: string | null = null;
+  let finalidadeAtendimento: string | null = null;
+  if (it.atendimentoId) {
+    const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: it.atendimentoId }, include: { conversa: { include: { contato: true } } } });
+    if (!a || a.encerradoEm || a.conversa.numeroId !== it.numeroId || a.conversa.contatoId !== it.contatoId) return "atendimento_alterado";
+    matriculaAtendimento = a.matriculaId;
+    finalidadeAtendimento = a.finalidade;
+    if (!await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
+  }
+  if (it.cobrancaId) {
+    const snapshot = await snapshotCobranca(it.cobrancaId);
+    if (!snapshot) return "cobranca_encerrada";
+    if (finalidadeAtendimento !== "FINANCEIRO" || !matriculaAtendimento || matriculaAtendimento !== snapshot.c.matriculaId) return "contrato_atendimento_divergente";
+    if (snapshot.c.cicloRegua !== it.cicloCobranca) return "ciclo_cobranca_alterado";
+    if (!["PENDENTE", "ATRASADO"].includes(snapshot.c.status) || snapshot.saldo.lte(0)) return "cobranca_encerrada";
+    if (!snapshot.destino || snapshot.destino.telefoneE164 !== it.contato.telefoneE164) return "destinatario_alterado";
+    if (!it.referenciaCobranca || snapshot.assinatura !== it.referenciaCobranca) return "cobranca_alterada_revisar";
+  }
+  if (it.passoComercial) {
+    if (!it.politicaComercial || it.politicaComercial.estado === "DESLIGADA" || it.politicaComercial.numeroRemetenteId !== it.numeroId) return "politica_comercial_alterada";
+    return motivoCadenciaInvalida(it, agora);
+  }
+  return null;
 }
 
 function configDe(p: {

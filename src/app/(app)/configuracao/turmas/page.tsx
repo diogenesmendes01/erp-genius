@@ -1,5 +1,5 @@
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { exigirSessaoPagina } from "@/server/_shared";
 import {
   listarTurmas,
   listarNiveis,
@@ -9,15 +9,15 @@ import { listarModalidades } from "@/server/catalogo/consultas";
 import { TurmasPainel, type TurmaRow } from "./TurmasPainel";
 
 export default async function TurmasPage() {
-  const [session, turmas, modalidades, niveis, professores] = await Promise.all([
-    auth(),
+  const usuario = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
+  const [turmas, modalidades, niveis, professores] = await Promise.all([
     listarTurmas(),
     listarModalidades(),
     listarNiveis(),
     listarProfessores(),
   ]);
   // Importar turmas em lote é exclusivo do Administrador (doc 12).
-  const podeImportar = ((session?.user?.papeis ?? []) as Papel[]).includes(Papel.ADMINISTRADOR);
+  const podeImportar = usuario.papeis.includes(Papel.ADMINISTRADOR);
 
   const rows: TurmaRow[] = turmas.map((t) => ({
     id: t.id,
@@ -37,6 +37,7 @@ export default async function TurmasPage() {
     modalidade: { nome: t.modalidade.nome },
     nivel: { codigo: t.nivel.codigo, idioma: { nome: t.nivel.idioma.nome } },
     professor: t.professor,
+    regraAvaliacao: t.regraAvaliacao,
     _count: t._count,
   }));
 

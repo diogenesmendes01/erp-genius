@@ -82,7 +82,10 @@ export function vencimentoMensalidade(
   offset: number,
   agora: Date = new Date(),
 ): { data: Date; competencia: string } {
-  const d = new Date(agora.getFullYear(), agora.getMonth() + offset, dia);
+  if (!Number.isInteger(dia) || dia < 1 || dia > 31) throw new Error("Dia de vencimento deve estar entre 1 e 31.");
+  if (!Number.isInteger(offset) || !Number.isFinite(agora.getTime())) throw new Error("Referência de vencimento inválida.");
+  const ultimoDia = new Date(agora.getFullYear(), agora.getMonth() + offset + 1, 0).getDate();
+  const d = new Date(agora.getFullYear(), agora.getMonth() + offset, Math.min(dia, ultimoDia));
   const competencia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   return { data: d, competencia };
 }
@@ -103,9 +106,7 @@ export function vencimentoPrimeiraMensalidade(
 ): { data: Date; competencia: string } {
   const base = dataInicioAula ?? fallback;
   const mais30 = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 30);
-  const data = new Date(mais30.getFullYear(), mais30.getMonth(), diaVencimento);
-  const competencia = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
-  return { data, competencia };
+  return vencimentoMensalidade(diaVencimento, 0, mais30);
 }
 
 /** O usuário pode mover o lead para esta etapa manualmente? (Perdido/Matriculado têm fluxo próprio.) */

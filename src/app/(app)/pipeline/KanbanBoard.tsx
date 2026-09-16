@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,7 +15,6 @@ import {
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { EtapaLead, Temperatura, MotivoPerda } from "@prisma/client";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } from "@/lib/labels";
-import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
 
@@ -33,11 +32,11 @@ export interface KanbanLead {
   etapaDesde: string;
 }
 
-function diasDesde(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+function diasDesde(iso: string, agora: number): number {
+  return Math.floor((agora - new Date(iso).getTime()) / 86400000);
 }
-function minutosDesde(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+function minutosDesde(iso: string, agora: number): number {
+  return Math.floor((agora - new Date(iso).getTime()) / 60000);
 }
 
 // Funil completo na ordem do doc 08. As etapas geradas por evento (Exp. Realizada,
@@ -55,7 +54,7 @@ const COLUNAS: EtapaLead[] = [
   EtapaLead.PERDIDO,
 ];
 
-function Card({ lead }: { lead: KanbanLead }) {
+function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { etapa: lead.etapa },
@@ -81,9 +80,9 @@ function Card({ lead }: { lead: KanbanLead }) {
         {lead.valorPrevisto != null ? ` · ${lead.valorPrevisto.toLocaleString("pt-BR")}` : ""}
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] text-gray-400">
-        <span>{diasDesde(lead.etapaDesde)}d nesta etapa</span>
-        <span>· últ. ação {diasDesde(lead.ultimaAcaoEm)}d</span>
-        {lead.etapa === EtapaLead.NOVO && minutosDesde(lead.etapaDesde) > 60 && (
+        <span>{diasDesde(lead.etapaDesde, agora)}d nesta etapa</span>
+        <span>· últ. ação {diasDesde(lead.ultimaAcaoEm, agora)}d</span>
+        {lead.etapa === EtapaLead.NOVO && minutosDesde(lead.etapaDesde, agora) > 60 && (
           <span className="inline-flex items-center gap-0.5 rounded bg-red-100 px-1 font-medium text-red-600">
             <IconAlertTriangle className="h-3 w-3" /> SLA
           </span>
@@ -102,7 +101,7 @@ function Card({ lead }: { lead: KanbanLead }) {
   );
 }
 
-function Coluna({ etapa, leads }: { etapa: EtapaLead; leads: KanbanLead[] }) {
+function Coluna({ etapa, leads, agora }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa });
   const total = leads.reduce((s, l) => s + (l.valorPrevisto ?? 0), 0);
   const gargalo =
@@ -127,7 +126,7 @@ function Coluna({ etapa, leads }: { etapa: EtapaLead; leads: KanbanLead[] }) {
         className={"flex min-h-[60px] flex-col gap-2 rounded-md p-1 " + (isOver ? "bg-brand-50 ring-1 ring-brand-300" : "")}
       >
         {leads.map((l) => (
-          <Card key={l.id} lead={l} />
+          <Card key={l.id} lead={l} agora={agora} />
         ))}
         {leads.length === 0 && (
           <div className="rounded-lg border border-dashed border-gray-200 p-3 text-center text-xs text-gray-300">vazio</div>
@@ -137,7 +136,12 @@ function Coluna({ etapa, leads }: { etapa: EtapaLead; leads: KanbanLead[] }) {
   );
 }
 
-export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
+export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]; referenciaTemporal: number }) {
+  const [agora, setAgora] = useState(referenciaTemporal);
+  useEffect(() => {
+    const timer = window.setInterval(() => setAgora(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const router = useRouter();
   const [tipo, setTipo] = useState<"pf" | "b2b">("pf");
   const [erro, setErro] = useState<string | null>(null);
@@ -214,7 +218,7 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
         </div>
       </div>
       <p className="mb-3 text-xs text-gray-400">
-        Arraste o card pela alça "⠿ arrastar" para mover de etapa. Soltar em <strong>Matriculado</strong> abre a matrícula; em <strong>Perdido</strong> pede o motivo.
+        Arraste o card pela alça &quot;⠿ arrastar&quot; para mover de etapa. Soltar em <strong>Matriculado</strong> abre a matrícula; em <strong>Perdido</strong> pede o motivo.
       </p>
       {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
@@ -236,10 +240,10 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
           {COLUNAS.map((col) => {
             let itens = porEtapa.get(col) ?? [];
             if (col === EtapaLead.PERDIDO && periodoPerdido > 0) {
-              const limite = Date.now() - periodoPerdido * 86400000;
+              const limite = agora - periodoPerdido * 86400000;
               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);
             }
-            return <Coluna key={col} etapa={col} leads={itens} />;
+            return <Coluna key={col} etapa={col} leads={itens} agora={agora} />;
           })}
         </div>
       </DndContext>

@@ -54,10 +54,10 @@ describe("regua — proximaAcao por degrau (caminho feliz)", () => {
     expect(r.atrasadaNaAcao).toBe(false);
   });
 
-  it("D+15: bloqueio, tipo bloquear, template firme", () => {
+  it("D+15 mantém ID histórico como cobrança final; restrição é independente em D+30", () => {
     const r = proximaAcao(entrada({ passosFeitos: TODOS_ATE("D+15") }), d(2026, 7, 8));
     expect(r.degrau?.passo).toBe("D+15");
-    expect(r.degrau?.tipo).toBe("bloquear");
+    expect(r.degrau?.tipo).toBe("cobrar");
     expect(r.degrau?.template).toBe("firme");
   });
 });
@@ -168,7 +168,7 @@ describe("regua — política como dado (doc 26/30: proximaAcao recebe os degrau
 });
 
 describe("regua — prioridade (menor = mais urgente)", () => {
-  it("bloquear < cobrar < lembrar, e mais atraso é mais urgente", () => {
+  it("cobrança final precede cobranças anteriores e lembretes", () => {
     const bloq = proximaAcao(entrada({ passosFeitos: TODOS_ATE("D+15") }), d(2026, 7, 8));
     const cobrarD7 = proximaAcao(entrada({ passosFeitos: TODOS_ATE("D+7") }), d(2026, 6, 30));
     const cobrarD3 = proximaAcao(entrada({ passosFeitos: TODOS_ATE("D+3") }), d(2026, 6, 26));

@@ -24,7 +24,7 @@ export const REGUA: readonly DegrauRegua[] = [
   { passo: "D0", offsetDias: 0, tipo: "cobrar", template: "dados", rotulo: "Cobrança no vencimento" },
   { passo: "D+3", offsetDias: 3, tipo: "cobrar", template: "vencida", rotulo: "Cobrança · 3 dias de atraso" },
   { passo: "D+7", offsetDias: 7, tipo: "cobrar", template: "vencida", rotulo: "Cobrança · 7 dias de atraso" },
-  { passo: "D+15", offsetDias: 15, tipo: "bloquear", template: "firme", rotulo: "Bloqueio de acesso · 15 dias" },
+  { passo: "D+15", offsetDias: 15, tipo: "cobrar", template: "firme", rotulo: "Cobrança final · 15 dias de atraso" },
 ] as const;
 
 // (doc 26/30) A REGUA acima é o DEFAULT DE FÁBRICA. Em runtime a política pode vir do banco
@@ -41,6 +41,7 @@ export const REGUA: readonly DegrauRegua[] = [
 export const ORDEM_PASSOS: readonly PassoRegua[] = ["D-7", "D-3", "D0", "D+3", "D+7", "D+15"];
 
 export type EstadoCobranca =
+  | "em_conferencia" // comprovante informado, sem quitação; lembretes suspensos até o prazo
   | "quitada" // paga/cancelada — fora da régua
   | "promessa" // promessa de pagamento vigente — dormente até a data prometida
   | "futuro" // ainda não chegou no primeiro degrau (ou os que chegaram já foram feitos)

@@ -1,0 +1,2 @@
+ALTER INDEX "SolicitacaoEncerramentoMatriculas_registradorId_chaveIdempotenc"
+RENAME TO "SolicitacaoEncerramentoMatriculas_registradorId_chaveIdempo_key";

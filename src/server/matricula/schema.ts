@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FormaPagamento, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
+import { CoberturaInicialSchema, DataCivilSchema } from "./cobertura";
 import {
   emailSchema,
   dataOpcional,
@@ -71,14 +72,14 @@ export const MatriculaSchema = z.object({
   nivelInicialId: z.string().optional(),
   origemNivel: z.nativeEnum(OrigemNivel).optional(),
   dataAvaliacaoNivel: dataOpcional,
-  diaVencimento: z.coerce.number().int().refine((d) => [5, 10, 15, 20, 25].includes(d), {
-    message: "Dia de vencimento deve ser 5, 10, 15, 20 ou 25",
-  }),
+  diaVencimento: z.coerce.number().int().min(1).max(31),
   // Contrato (valores negociados)
   taxaValor: z.coerce.number().min(0, "Valor inválido"),
   mensalidadeValor: z.coerce.number().min(0, "Valor inválido"),
   certificadoValor: z.coerce.number().min(0).optional().default(0), // só Costa Rica (doc 04)
   mesesPlano: z.coerce.number().int().positive().default(12),
+  cobertura: CoberturaInicialSchema,
+  primeiroVencimento: DataCivilSchema,
   // Exceção de preço (Issue #7): quando NÃO há preço de referência válido, a
   // matrícula só prossegue com uma JUSTIFICATIVA (texto) E papel autorizado
   // (apurado no servidor). NÃO há flag booleana livre do client — evita que
@@ -88,31 +89,25 @@ export const MatriculaSchema = z.object({
   // produto (issue #22); a validação fica na ação, que conhece a matriz de preços.
   justificativaSemPreco: z.string().trim().optional(),
   // Comissão
-  comissaoPct: z.coerce.number().min(0).max(100).default(20),
+  comissaoPct: z.never().optional(), // calculada no servidor pela política vigente
+}).refine((d) => !d.cobertura || !!d.primeiroVencimento, {
+  message: "Informe o vencimento acordado da primeira mensalidade.", path: ["primeiroVencimento"],
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
   message: "Informe o nome do responsável financeiro",
   path: ["responsavelNome"],
 });
 export type MatriculaInput = z.input<typeof MatriculaSchema>;
 
-// ------------------------------------------------------------
-// Ativação (regra de domínio do PO): ATIVAR EXIGE A TAXA QUITADA.
-// Só existe UM caminho de ativação — "Receber pagamento e ativar":
-//   - exige valor recebido, forma, data e comprovante (quando aplicável — só
-//     DINHEIRO dispensa o comprovante);
-//   - o valor é alocado à TAXA; se NÃO cobrir a taxa, a matrícula NÃO ativa
-//     (fica AGUARDANDO). A 1ª mensalidade NÃO é exigida para ativar — é apenas
-//     agendada (vencimento = início da 1ª aula + 30 dias).
-// Não há mais "ativar sem pagamento": sem taxa paga não há ativação. Quem só
-// quer registrar a matrícula usa "Salvar matrícula" (fica AGUARDANDO).
-// ------------------------------------------------------------
+// Ativação com recebimento novo, ou valor zero quando já existe quitação.
+// O servidor preserva os pagamentos anteriores e autoriza caixa separadamente.
+// Evidência de contrato não é inferida do preenchimento deste formulário.
 
 /** Formas em que NÃO faz sentido exigir comprovante (recebimento em espécie). */
 const FORMAS_SEM_COMPROVANTE: FormaPagamento[] = [FormaPagamento.DINHEIRO];
 
 export const AtivacaoSchema = z
   .object({
-    valorRecebido: z.coerce.number().positive("Informe o valor pago"),
+    valorRecebido: z.coerce.number().min(0, "Valor inválido").finite(),
     forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
     dataPagamento: z.preprocess(
       (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
@@ -122,7 +117,7 @@ export const AtivacaoSchema = z
     comentario: z.string().optional(),
   })
   .superRefine((d, ctx) => {
-    if (!FORMAS_SEM_COMPROVANTE.includes(d.forma) && !d.comprovanteUrl?.trim()) {
+    if (d.valorRecebido > 0 && !FORMAS_SEM_COMPROVANTE.includes(d.forma) && !d.comprovanteUrl?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Informe o comprovante do pagamento",

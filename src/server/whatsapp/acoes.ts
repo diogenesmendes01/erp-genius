@@ -1,4 +1,5 @@
 "use server";
+import { referenciaDestinoCobranca } from "./elegibilidade";
 
 import { revalidatePath } from "next/cache";
 import { Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
@@ -10,17 +11,19 @@ import {
   exigirSessao,
   exigirSessaoComPapel,
   registrarEvento,
+  temPapel,
   type Resultado,
 } from "@/server/_shared";
 import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { REGUA } from "@/server/cobrancas/regua";
 import { POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
-import { escopoLeads } from "@/server/comercial/consultas";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
 import { escopoConversas } from "./escopo";
+import { garantirAtendimento } from "./atendimentos";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
 import {
@@ -87,7 +90,7 @@ async function enfileirarDegrauDevido(
   cobrancaId: string,
   origem: OrigemEnvio,
   autorId: string,
-): Promise<{ passo: string; resultado: "criada" | "reaberta" | "ja_existente" }> {
+): Promise<{ passo: string; cicloCobranca: number; resultado: "criada" | "reaberta" | "ja_existente" }> {
   const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId }, include: INCLUDE_DESTINO });
   if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
   if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO) {
@@ -96,7 +99,7 @@ async function enfileirarDegrauDevido(
 
   const hoje = new Date();
   const regua = await montarReguaPorCobranca(
-    [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: cobranca.matricula.acessoBloqueado }],
+    [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: cobranca.matricula.acessoBloqueado }],
     hoje,
     canal.politica.degraus,
   );
@@ -107,7 +110,7 @@ async function enfileirarDegrauDevido(
 
   const destino = resolverDestinoCobranca(cobranca);
   if (!destino) {
-    throw new ErroRegra("Sem destino: cadastre o telefone do responsável financeiro (ou do aluno adulto).");
+    throw new ErroRegra("Sem destino: confira o pagador e o telefone desta matrícula; contratos sem referência suficiente exigem conferência.");
   }
 
   const tId = canal.politica.templateIdPorPasso.get(calc.passo) ?? null;
@@ -129,12 +132,14 @@ async function enfileirarDegrauDevido(
   const resultado = await prisma.$transaction(async (tx) => {
     const contato = await garantirContato(tx, {
       telefoneE164: destino.telefoneE164,
-      alunoId: destino.responsavelId ? null : destino.alunoId,
+      alunoId: destino.contatoAlunoId,
       responsavelId: destino.responsavelId,
       nomeExibicao: destino.nome,
     });
     return enfileirarIntencaoCobranca(tx, {
       cobrancaId: cobranca.id,
+      referenciaCalendario: { versao: cobranca.versao, vencimento: cobranca.vencimento.toISOString(), cicloRegua: cobranca.cicloRegua },
+          referenciaDestino: referenciaDestinoCobranca(destino),
       passo,
       numeroId: canal.numeroId,
       contatoId: contato.id,
@@ -146,7 +151,7 @@ async function enfileirarDegrauDevido(
       autorId,
     });
   });
-  return { passo, resultado };
+  return { passo, cicloCobranca: cobranca.cicloRegua, resultado };
 }
 
 export interface EnvioApiResultado {
@@ -161,16 +166,16 @@ export async function enfileirarCobrancaWhatsApp(cobrancaId: string): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_ENVIO);
     const canal = await prepararCanal();
-    const { passo } = await enfileirarDegrauDevido(canal, cobrancaId, "HUMANO", autor.id);
-
-    await despacharFila();
+    const { passo, cicloCobranca } = await enfileirarDegrauDevido(canal, cobrancaId, "HUMANO", autor.id);
 
     const intencao = await prisma.intencaoMensagem.findUnique({
-      where: { cobrancaId_passo: { cobrancaId, passo } },
-      select: { status: true, motivoFalha: true },
+      where: { cobrancaId_passo_cicloCobranca: { cobrancaId, passo, cicloCobranca } },
+      select: { id: true },
     });
+    if (intencao) await despacharFila(new Date(), { intencaoId: intencao.id });
+    const final = intencao ? await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id } }) : null;
     revalidatePath("/financeiro");
-    return { passo, status: intencao?.status ?? "PENDENTE", motivo: intencao?.motivoFalha ?? null };
+    return { passo, status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
   });
 }
 
@@ -201,7 +206,12 @@ export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Res
       }
     }
 
-    const despacho = await despacharFila();
+    const intenções = await prisma.intencaoMensagem.findMany({ where: { cobrancaId: { in: cobrancaIds }, autorId: autor.id, origem: "LOTE", status: "PENDENTE" }, select: { id: true } });
+    const despacho = { despachadas: 0, simuladas: 0, falhas: 0 };
+    for (const i of intenções) {
+      const r = await despacharFila(new Date(), { intencaoId: i.id });
+      despacho.despachadas += r.despachadas; despacho.simuladas += r.simuladas; despacho.falhas += r.falhas;
+    }
     revalidatePath("/financeiro");
     return {
       enfileiradas,
@@ -226,7 +236,7 @@ export interface EnvioInboxResultado {
 }
 
 async function despacharIntencaoInbox(intencaoId: string): Promise<EnvioInboxResultado> {
-  await despacharFila();
+  await despacharFila(new Date(), { intencaoId });
   const final = await prisma.intencaoMensagem.findUnique({
     where: { id: intencaoId },
     select: { status: true, motivoFalha: true },
@@ -240,7 +250,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, texto } = EnviarTextoInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId);
+    const conversa = await conversaVisivel(autor, conversaId, true);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.contato.optOutEm) {
@@ -250,6 +260,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
     const intencao = await prisma.intencaoMensagem.create({
       data: {
         numeroId: conversa.numeroId,
+        atendimentoId: conversa.id,
         contatoId: conversa.contatoId,
         origem: "HUMANO",
         tipo: "TEXTO",
@@ -266,7 +277,7 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, url, legenda } = EnviarMidiaInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId);
+    const conversa = await conversaVisivel(autor, conversaId, true);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.contato.optOutEm) {
@@ -290,6 +301,7 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
     const intencao = await prisma.intencaoMensagem.create({
       data: {
         numeroId: conversa.numeroId,
+        atendimentoId: conversa.id,
         contatoId: conversa.contatoId,
         origem: "HUMANO",
         tipo,
@@ -309,7 +321,7 @@ export async function marcarConversaLida(conversaId: string): Promise<Resultado>
     const conversa = await conversaVisivel(autor, conversaId);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (conversa.naoLidas > 0) {
-      await prisma.conversaWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
+      await prisma.atendimentoWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
     }
     revalidatePath("/inbox");
   });
@@ -325,9 +337,10 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
     const { conversaId, motivo } = TratarConversaSchema.parse(input);
     const conversa = await conversaVisivel(autor, conversaId);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+    if (conversa.finalidade !== "FINANCEIRO") throw new ErroRegra("Retomada de cobrança exige atendimento financeiro.");
 
     await prisma.$transaction(async (tx) => {
-      await tx.conversaWhatsApp.update({
+      await tx.atendimentoWhatsApp.update({
         where: { id: conversaId },
         data: { inboundTratadoEm: new Date() },
       });
@@ -347,10 +360,10 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
 }
 
 /** Busca de pessoas para o vínculo (client-side da inbox — respeita escopoLeads). */
-export async function buscarVinculosInbox(q: string): Promise<Resultado<PessoasVinculo>> {
+export async function buscarVinculosInbox(q: string, atendimentoId?: string): Promise<Resultado<PessoasVinculo>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    return buscarPessoasVinculo(autor, q);
+    return buscarPessoasVinculo(autor, q, atendimentoId);
   });
 }
 
@@ -358,39 +371,48 @@ export async function buscarVinculosInbox(q: string): Promise<Resultado<PessoasV
 export async function vincularContatoWhatsApp(input: VincularContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    const { contatoId, alvo } = VincularContatoSchema.parse(input);
-
-    // Guard: o contato precisa estar em alguma conversa visível ao usuário.
-    const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
-      select: { id: true },
-    });
-    if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
+    const { contatoId, alvo, atendimentoId } = VincularContatoSchema.parse(input);
+    const alcance = atendimentoId ? await conversaVisivel(autor, atendimentoId, true) : null;
+    if (!alcance || alcance.contatoId !== contatoId || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para vinculação.");
 
     const contato = await prisma.contatoWhatsApp.findUnique({ where: { id: contatoId } });
     if (!contato) throw new ErroRegra("Contato não encontrado.");
 
     let data: { alunoId?: string; responsavelId?: string; leadId?: string };
     if (alvo.tipo === "aluno") {
-      const aluno = await prisma.aluno.findUnique({ where: { id: alvo.id }, select: { id: true } });
-      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
+      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) || alcance.finalidade === "COMERCIAL") throw new ErroRegra("Vínculo de aluno exige atendimento da secretaria/financeiro.");
+      const aluno = await prisma.aluno.findFirst({ where: { id: alvo.id, telefoneE164: contato.telefoneE164 }, select: { id: true } });
+      if (!aluno) throw new ErroRegra("Telefone do contato não corresponde ao aluno informado.");
+      if (alcance.finalidade === "FINANCEIRO" && aluno.id !== alcance.alunoId) {
+        throw new ErroRegra("O atendimento financeiro permanece no aluno e na matrícula já selecionados.");
+      }
+      if (contato.alunoId && contato.alunoId !== aluno.id) throw new ErroRegra("Vínculo existente deve ser corrigido pela administração com revisão do histórico.");
       data = { alunoId: aluno.id };
     } else if (alvo.tipo === "responsavel") {
-      const resp = await prisma.responsavel.findUnique({ where: { id: alvo.id }, select: { id: true } });
-      if (!resp) throw new ErroRegra("Responsável não encontrado.");
+      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) || !alcance.alunoId || alcance.finalidade === "COMERCIAL") throw new ErroRegra("Selecione um atendimento do aluno para vincular responsável.");
+      const resp = await prisma.responsavel.findFirst({ where: { id: alvo.id, telefoneE164: contato.telefoneE164, alunos: { some: {
+        alunoId: alcance.alunoId, ...(alcance.finalidade === "FINANCEIRO" ? { papel: "FINANCEIRO" as const } : {}),
+      } } }, select: { id: true } });
+      if (!resp) throw new ErroRegra("Responsável fora da finalidade ou vínculo deste atendimento.");
+      if (contato.responsavelId && contato.responsavelId !== resp.id) throw new ErroRegra("Contato já vinculado a outro responsável.");
       data = { responsavelId: resp.id };
     } else {
-      // Vendedor só vincula aos PRÓPRIOS leads (mesmo row-level das telas).
+      if (alcance.finalidade !== "COMERCIAL" || !temPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) throw new ErroRegra("Vínculo de lead exige atendimento comercial.");
       const lead = await prisma.lead.findFirst({
-        where: { id: alvo.id, ...escopoLeads(autor) },
+        where: { AND: [{ id: alvo.id, telefoneE164: contato.telefoneE164 }, await escopoComercialAtual(autor)] },
         select: { id: true },
       });
       if (!lead) throw new ErroRegra("Lead não encontrado ou fora do seu escopo.");
+      if (contato.leadId && contato.leadId !== lead.id) throw new ErroRegra("Contato já vinculado a outro lead. Preserve o contexto histórico.");
       data = { leadId: lead.id };
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.contatoWhatsApp.update({ where: { id: contatoId }, data });
+      await garantirAtendimento(tx, { numeroId: alcance.numeroId, contatoId, finalidade: alcance.finalidade,
+        leadId: data.leadId ?? alcance.leadId,
+        alunoId: alcance.finalidade === "FINANCEIRO" ? alcance.alunoId : data.alunoId ?? alcance.alunoId,
+        turmaId: alcance.turmaId, matriculaId: alcance.finalidade === "FINANCEIRO" ? alcance.matriculaId : undefined });
       await registrarEvento(tx, {
         tipo: "ContatoVinculado",
         agregadoTipo: "ContatoWhatsApp",
@@ -411,7 +433,7 @@ export async function registrarOptOutContato(contatoId: string): Promise<Resulta
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
+      where: { AND: [{ contatoId }, await escopoConversas(autor)] },
       select: { id: true },
     });
     if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
@@ -434,11 +456,12 @@ export async function registrarOptOutContato(contatoId: string): Promise<Resulta
   });
 }
 
-export async function removerOptOutContato(contatoId: string): Promise<Resultado> {
+export async function removerOptOutContato(contatoId: string, evidencia = ""): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    if (evidencia.trim().length < 12 || evidencia.length > 1000) throw new ErroRegra("Registre a evidência da nova autorização do contato (12 a 1000 caracteres).");
     const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
+      where: { AND: [{ contatoId }, await escopoConversas(autor)] },
       select: { id: true },
     });
     if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
@@ -454,7 +477,7 @@ export async function removerOptOutContato(contatoId: string): Promise<Resultado
         agregadoTipo: "ContatoWhatsApp",
         agregadoId: contatoId,
         autorId: autor.id,
-        payload: {},
+        payload: { evidencia: evidencia.trim() },
       });
     });
     revalidatePath("/inbox");
@@ -733,11 +756,11 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = PoliticaReguaSchema.parse(input);
 
-    // LEI (doc 26/30): D+15 (bloquear) nunca automatiza — força MANUAL mesmo que a UI minta.
+    // D+15 conserva envio manual. A restrição automática de aulas tem política própria D+30.
     const degraus = dados.degraus.map((d) => {
       const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
       if (!fixo) throw new ErroRegra(`Passo desconhecido: ${d.passo}.`);
-      return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: fixo.tipo === "bloquear" ? ("MANUAL" as const) : d.modo };
+      return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: d.passo === "D+15" ? ("MANUAL" as const) : d.modo };
     });
 
     // Prontidão (S15): armar a política (SHADOW/ATIVA) valida o canal por número

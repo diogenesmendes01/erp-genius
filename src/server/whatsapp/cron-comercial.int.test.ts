@@ -45,8 +45,9 @@ async function seedReguaComercial(estado: EstadoPolitica) {
 }
 
 async function seedLeadFrio(numeroId: string, capturadaHaMin: number, etapa: EtapaLead = EtapaLead.NOVO) {
-  const lead = await prisma.lead.create({ data: { codigo: `L-${Math.floor(Math.random() * 1e6)}`, nome: "Maria", etapa, vendedorDonoId: dono.id } });
-  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: `+5069${Math.floor(Math.random() * 1e7)}`, leadId: lead.id } });
+  const telefoneE164 = `+5069${Math.floor(Math.random() * 1e7)}`;
+  const lead = await prisma.lead.create({ data: { codigo: `L-${Math.floor(Math.random() * 1e6)}`, nome: "Maria", telefoneE164, etapa, vendedorDonoId: dono.id } });
+  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164, leadId: lead.id } });
   const capturadaEm = new Date(Date.now() - capturadaHaMin * 60_000);
   const conversa = await prisma.conversaWhatsApp.create({
     data: { numeroId, contatoId: contato.id, capturadaEm, ultimaMensagemEm: capturadaEm },

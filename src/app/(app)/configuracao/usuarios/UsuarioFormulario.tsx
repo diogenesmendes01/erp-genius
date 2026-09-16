@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { PAPEL_LABEL } from "@/lib/roles";
+import { CAPACIDADES_LISTA, CAPACIDADES_LABEL } from "@/lib/capacidades";
 import {
   CriarUsuarioSchema,
   EditarUsuarioSchema,
@@ -22,15 +23,21 @@ export interface UsuarioParaEditar {
   email: string;
   papeis: Papel[];
   limiteDescontoPct: number | null;
+  limiteDescontoTaxaPct: number | null;
+  limiteDescontoMensalidadePct: number | null;
+  gerenteComercialId: string | null;
+  permissoes: string[];
 }
 
 type FormValues = CriarUsuarioInput;
 
 export function UsuarioFormulario({
   usuario,
+  gerentes = [],
   onClose,
 }: {
   usuario?: UsuarioParaEditar;
+  gerentes?: { id: string; nome: string }[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -48,9 +55,13 @@ export function UsuarioFormulario({
           email: usuario.email,
           papeis: usuario.papeis,
           limiteDescontoPct: usuario.limiteDescontoPct,
+          limiteDescontoTaxaPct: usuario.limiteDescontoTaxaPct,
+          limiteDescontoMensalidadePct: usuario.limiteDescontoMensalidadePct,
+          gerenteComercialId: usuario.gerenteComercialId,
+          permissoes: CAPACIDADES_LISTA.filter((p) => usuario.permissoes.includes(p)),
           senha: "",
         }
-      : { nome: "", email: "", papeis: [], limiteDescontoPct: null, senha: "" },
+      : { nome: "", email: "", papeis: [], limiteDescontoPct: null, limiteDescontoTaxaPct: null, limiteDescontoMensalidadePct: null, gerenteComercialId: null, permissoes: [], senha: "" },
   });
 
   async function onSubmit(data: FormValues) {
@@ -90,14 +101,25 @@ export function UsuarioFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">
-            Limite de desconto % (vazio = sem limite)
+            Gerente comercial da equipe
           </label>
-          <input type="number" step="1" {...register("limiteDescontoPct")} className={inputCls} />
-          {errors.limiteDescontoPct && (
-            <p className="mt-1 text-xs text-red-600">{errors.limiteDescontoPct.message}</p>
-          )}
+          <select {...register("gerenteComercialId")} className={inputCls}>
+            <option value="">Sem equipe atribuída</option>
+            {gerentes.filter((g) => g.id !== usuario?.id).map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-600">Desconto máximo na taxa (%)</label>
+          <input type="number" min="0" max="100" step="0.01" {...register("limiteDescontoTaxaPct")} className={inputCls} />
+          {errors.limiteDescontoTaxaPct && <p className="text-xs text-red-600">{String(errors.limiteDescontoTaxaPct.message)}</p>}
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-600">Desconto máximo na mensalidade (%)</label>
+          <input type="number" min="0" max="100" step="0.01" {...register("limiteDescontoMensalidadePct")} className={inputCls} />
+          {errors.limiteDescontoMensalidadePct && <p className="text-xs text-red-600">{String(errors.limiteDescontoMensalidadePct.message)}</p>}
         </div>
       </div>
+      <p className="mt-2 text-xs text-gray-500">Limite vazio exige aprovação para conceder desconto. Taxa e mensalidade são verificadas separadamente.</p>
 
       <div className="mt-4">
         <label className="mb-2 block text-xs text-gray-600">Papéis</label>
@@ -118,6 +140,13 @@ export function UsuarioFormulario({
       </div>
 
       {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
+
+      <fieldset className="mt-4">
+        <legend className="mb-2 text-xs text-gray-600">Permissões específicas</legend>
+        <div className="grid gap-2 md:grid-cols-2">
+          {CAPACIDADES_LISTA.map((p) => <label key={p} className="flex items-center gap-2 text-sm"><input type="checkbox" value={p} {...register("permissoes")} />{CAPACIDADES_LABEL[p]}</label>)}
+        </div>
+      </fieldset>
 
       <div className="mt-5 flex gap-2">
         <button

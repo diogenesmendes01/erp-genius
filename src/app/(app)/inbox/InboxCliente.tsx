@@ -205,6 +205,7 @@ function Thread({
   const [pagar, setPagar] = useState(false);
   const [promessaData, setPromessaData] = useState("");
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
+  const [evidenciaOptIn, setEvidenciaOptIn] = useState("");
   const optOut = !!thread.contato.optOutEm;
 
   useEffect(() => {
@@ -235,6 +236,7 @@ function Thread({
   }, [thread.mensagens]);
 
   const vinculos = [
+    thread.matricula && { label: `matrícula · ${thread.matricula.codigo ?? thread.matricula.id}`, href: null },
     thread.contato.alunoId && { label: `aluno · ${thread.contato.alunoNome}`, href: `/alunos/${thread.contato.alunoId}` },
     thread.contato.responsavelId && { label: `responsável · ${thread.contato.responsavelNome}`, href: null },
     thread.contato.leadId && { label: `lead · ${thread.contato.leadNome}`, href: `/leads/${thread.contato.leadId}` },
@@ -279,18 +281,21 @@ function Thread({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button className={btnSec} onClick={() => setVincular((v) => !v)}>
+            {thread.podeVincular && <button className={btnSec} onClick={() => setVincular((v) => !v)}>
               <span className="flex items-center gap-1">
                 <IconLink className="h-3.5 w-3.5" /> Vincular
               </span>
-            </button>
+            </button>}
             {optOut ? (
+              thread.podeReautorizar ? <label className="grid gap-1 text-xs">Evidência da nova autorização
+              <input value={evidenciaOptIn} onChange={(e) => setEvidenciaOptIn(e.target.value)} minLength={12} maxLength={1000} className="rounded border p-1.5" />
               <button
                 className={btnSec}
-                onClick={() => run(removerOptOutContato(thread.contato.id), "Opt-out removido — envios liberados.")}
+                disabled={evidenciaOptIn.trim().length < 12}
+                onClick={() => run(removerOptOutContato(thread.contato.id, evidenciaOptIn), "Nova autorização registrada.")}
               >
                 Remover opt-out
-              </button>
+              </button></label> : null
             ) : (
               <button
                 className={btnSec}
@@ -306,6 +311,7 @@ function Thread({
       {vincular && (
         <VincularPainel
           contatoId={thread.contato.id}
+          atendimentoId={thread.conversaId}
           onFechar={() => setVincular(false)}
           onFeito={(msg) => {
             setVincular(false);
@@ -409,8 +415,8 @@ function Thread({
       {/* Composer */}
       <Composer
         conversaId={thread.conversaId}
-        desabilitado={optOut || !thread.numero.ativo}
-        motivoDesabilitado={optOut ? "Contato em opt-out." : !thread.numero.ativo ? "Número inativo." : null}
+        desabilitado={optOut || !thread.numero.ativo || !thread.podeEnviar}
+        motivoDesabilitado={optOut ? "Contato em opt-out." : !thread.numero.ativo ? "Número inativo." : !thread.podeEnviar ? "Atendimento em leitura." : null}
         onErro={onErro}
         onNota={onNota}
       />
@@ -544,6 +550,7 @@ function Composer({
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("atendimentoId", conversaId);
       // Upload dedicado da inbox (review PR #51 P1-2): grava em whatsapp-out/<autor>/ —
       // a action de envio só aceita anexos desta pasta do próprio autor.
       const up = await fetch("/api/whatsapp/upload", { method: "POST", body: form });
@@ -665,11 +672,13 @@ function Composer({
 
 function VincularPainel({
   contatoId,
+  atendimentoId,
   onFechar,
   onFeito,
   onErro,
 }: {
   contatoId: string;
+  atendimentoId: string;
   onFechar: () => void;
   onFeito: (msg: string) => void;
   onErro: (m: string | null) => void;
@@ -688,17 +697,17 @@ function VincularPainel({
           return;
         }
         setBuscando(true);
-        const r = await buscarVinculosInbox(termo);
+        const r = await buscarVinculosInbox(termo, atendimentoId);
         setBuscando(false);
         if (r.ok) setResultados(r.dado!);
       },
       termo.length < 2 ? 0 : 300,
     );
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, atendimentoId]);
 
   async function vincular(alvo: { tipo: "aluno" | "responsavel" | "lead"; id: string }, nome: string) {
-    const r = await vincularContatoWhatsApp({ contatoId, alvo });
+    const r = await vincularContatoWhatsApp({ contatoId, atendimentoId, alvo });
     if (!r.ok) return onErro(r.erro ?? "Erro ao vincular.");
     onFeito(`Contato vinculado a ${nome}.`);
   }
