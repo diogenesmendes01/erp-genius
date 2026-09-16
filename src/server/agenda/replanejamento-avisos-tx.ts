@@ -3,15 +3,16 @@ import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { ReplanejamentoSnapshotSchema } from "./replanejamento-snapshot";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 const HorarioSchema = z.object({ encontroId: z.string().min(1), inicioAnterior: z.string().datetime(), fimAnterior: z.string().datetime(), inicioProposto: z.string().datetime(), fimProposto: z.string().datetime() }).strict();
 const EventoSchema = z.object({ aprovada: z.literal(true), revisaoId: z.string().min(1), decisaoId: z.string().min(1), encontrosIds: z.array(z.string().min(1)).min(1), horarios: z.array(HorarioSchema).min(1) }).passthrough();
 type Horario = z.infer<typeof HorarioSchema>;
 type Encontro = { id: string; turmaId: string | null; matriculaId: string | null; inicio: Date; fim: Date };
-type Alocacao = { matriculaId: string | null; turmaId: string; criadoEm: Date; encerradaEm: Date | null };
+type Alocacao = { matriculaId: string | null; turmaId: string; criadoEm: Date; encerradaEm: Date | null; ativa: boolean; provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null };
 export type AvisoReplanejamento = { matriculaId: string; encontrosIds: string[]; origem: "HORARIO_ORIGINAL" | "HORARIO_PROPOSTO" | "AMBOS" };
 
-const cobre = (alocacao: Alocacao, instante: string) => alocacao.criadoEm <= new Date(instante) && (!alocacao.encerradaEm || alocacao.encerradaEm > new Date(instante));
+const cobre = (alocacao: Alocacao, instante: string) => alocacaoCobreAula(alocacao, new Date(instante));
 
 /** A mudança alcança quem estava alocado no horário que existia OU no proposto.
  * A origem é derivada da fotografia canônica e mantém a razão da projeção. */
@@ -47,7 +48,7 @@ export async function criarAvisosReplanejamentoConjuntoTx(tx: Prisma.Transaction
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: payload.data.encontrosIds } }, select: { id: true, turmaId: true, matriculaId: true, inicio: true, fim: true } });
   if (encontros.length !== payload.data.encontrosIds.length || !payload.data.horarios.every((h) => encontros.some((e) => e.id === h.encontroId && e.inicio.toISOString() === h.inicioProposto && e.fim.toISOString() === h.fimProposto))) throw new ErroRegra("Agenda atual não corresponde aos horários aplicados.");
   const turmasIds = [...new Set(encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []))];
-  const alocacoes = turmasIds.length ? await tx.alocacaoTurma.findMany({ where: { turmaId: { in: turmasIds } }, select: { matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true } }) : [];
+  const alocacoes = turmasIds.length ? await tx.alocacaoTurma.findMany({ where: { turmaId: { in: turmasIds } }, select: { matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } }) : [];
   const grupos = agruparAvisosReplanejamento(payload.data.horarios, encontros, alocacoes);
   for (const grupo of grupos) await criarAvisosAlteracaoAgendaTx(tx, { eventoId: entrada.eventoId, matriculaId: grupo.matriculaId, encontrosIds: grupo.encontrosIds });
   return grupos;

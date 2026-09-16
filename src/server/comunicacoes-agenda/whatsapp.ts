@@ -7,6 +7,7 @@ import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-a
 import { garantirContato } from "@/server/whatsapp/identidade";
 import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
 import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 const VARIAVEIS_AGENDA = /\{(nome|horarios)\}/g;
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
@@ -65,10 +66,10 @@ async function fonteAvisoValida(db: Prisma.TransactionClient | typeof prisma, av
   if (!(remarcacao || substituicao || replanejamento) || !aviso.matriculaId || !aviso.itens.length) return false;
   if (replanejamento) return replanejamento;
   const turmas = aviso.itens.flatMap((i) => i.encontro.turmaId ? [i.encontro.turmaId] : []);
-  const alocacoes = substituicao && turmas.length ? await db.alocacaoTurma.findMany({ where: { matriculaId: aviso.matriculaId, turmaId: { in: turmas } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } }) : [];
+  const alocacoes = substituicao && turmas.length ? await db.alocacaoTurma.findMany({ where: { matriculaId: aviso.matriculaId, turmaId: { in: turmas } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } }) : [];
   return aviso.itens.every((item) => {
     const noEvento = substituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
-    const pertence = item.encontro.matriculaId === aviso.matriculaId || (substituicao && !!item.encontro.turmaId && alocacoes.some((a) => a.turmaId === item.encontro.turmaId && a.criadoEm <= item.encontro.inicio && (!a.encerradaEm || a.encerradaEm > item.encontro.inicio)));
+    const pertence = item.encontro.matriculaId === aviso.matriculaId || (substituicao && !!item.encontro.turmaId && alocacoes.some((a) => a.turmaId === item.encontro.turmaId && alocacaoCobreAula(a, item.encontro.inicio)));
     return !!noEvento && pertence;
   });
 }

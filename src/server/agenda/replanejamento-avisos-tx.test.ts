@@ -10,19 +10,24 @@ const snapshot = { calendarioId: "cal1", conferidoEm: "2099-09-01T00:00:00.000Z"
 describe("agruparAvisosReplanejamento", () => {
   it("inclui alocação original ou nova, registra a origem e não inclui estranhos", () => {
     expect(agruparAvisosReplanejamento([horario], [encontro], [
-      { matriculaId: "historica", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: new Date("2099-10-02T00:00:00Z") },
-      { matriculaId: "nova", turmaId: "t1", criadoEm: new Date("2099-10-02T00:00:00Z"), encerradaEm: null },
-      { matriculaId: "continua", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null },
-      { matriculaId: "fora", turmaId: "t1", criadoEm: new Date("2099-10-09T00:00:00Z"), encerradaEm: null },
-      { matriculaId: "outra-turma", turmaId: "t2", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null },
+      { matriculaId: "historica", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: new Date("2099-10-02T00:00:00Z"), ativa: false, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
+      { matriculaId: "nova", turmaId: "t1", criadoEm: new Date("2099-10-02T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
+      { matriculaId: "continua", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
+      { matriculaId: "fora", turmaId: "t1", criadoEm: new Date("2099-10-09T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
+      { matriculaId: "outra-turma", turmaId: "t2", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
     ])).toEqual([
       { matriculaId: "continua", encontrosIds: ["e1"], origem: "AMBOS" },
       { matriculaId: "historica", encontrosIds: ["e1"], origem: "HORARIO_ORIGINAL" },
       { matriculaId: "nova", encontrosIds: ["e1"], origem: "HORARIO_PROPOSTO" },
     ]);
   });
+  it("usa a vigência acadêmica migrada, não a data técnica de importação", () => {
+    expect(agruparAvisosReplanejamento([horario], [encontro], [
+      { matriculaId: "migrada", turmaId: "t1", criadoEm: new Date("2100-01-01T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: "MIGRACAO", inicioVigencia: new Date("2099-09-01T00:00:00Z"), fimVigencia: new Date("2099-10-02T00:00:00Z") },
+    ])).toEqual([{ matriculaId: "migrada", encontrosIds: ["e1"], origem: "HORARIO_ORIGINAL" }]);
+  });
   it("não projeta encontro particular", () => {
-    expect(agruparAvisosReplanejamento([horario], [{ ...encontro, matriculaId: "m-particular" }], [{ matriculaId: "m1", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null }])).toEqual([]);
+    expect(agruparAvisosReplanejamento([horario], [{ ...encontro, matriculaId: "m-particular" }], [{ matriculaId: "m1", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null }])).toEqual([]);
   });
 
   it("revalida a fonte e chama o helper uma vez por matrícula agrupada", async () => {
@@ -32,8 +37,8 @@ describe("agruparAvisosReplanejamento", () => {
       rascunhoReplanejamento: { findUnique: vi.fn().mockResolvedValue({ snapshot, decisaoConjunta: { id: "d1", aprovada: true, aplicacao: { id: "a1" } } }) },
       encontroAgenda: { findMany: vi.fn().mockResolvedValue([encontro]) },
       alocacaoTurma: { findMany: vi.fn().mockResolvedValue([
-        { matriculaId: "historica", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: new Date("2099-10-02T00:00:00Z") },
-        { matriculaId: "nova", turmaId: "t1", criadoEm: new Date("2099-10-02T00:00:00Z"), encerradaEm: null },
+        { matriculaId: "historica", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: new Date("2099-10-02T00:00:00Z"), ativa: false, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
+        { matriculaId: "nova", turmaId: "t1", criadoEm: new Date("2099-10-02T00:00:00Z"), encerradaEm: null, ativa: true, provenienciaVinculo: null, inicioVigencia: null, fimVigencia: null },
       ]) },
     };
     await expect(criarAvisosReplanejamentoConjuntoTx(tx as never, { eventoId: "evento-1", rascunhoId: "r1" })).resolves.toEqual([

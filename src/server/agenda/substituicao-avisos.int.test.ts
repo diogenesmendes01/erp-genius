@@ -14,6 +14,9 @@ import { processarAvisosAlteracaoAgenda } from "@/server/comunicacoes-agenda/avi
 import { enfileirarAvisosAgendaWhatsApp } from "@/server/comunicacoes-agenda/whatsapp";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { ErroDriver } from "@/server/whatsapp/canal";
+import { prepararLoteMigracao } from "@/server/migracao/acoes";
+import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
+import { aplicarVinculoMigracao } from "@/server/migracao/aplicar-vinculo";
 
 let secretariaId: string;
 let gestorId: string;
@@ -114,6 +117,42 @@ it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca do
   }));
 });
 
+it("mantém o aviso e a intenção WhatsApp para vínculo migrado aplicado com prova", async () => {
+  const admin = await criarUsuario(["ADMINISTRADOR"]);
+  authMock.mockResolvedValue({ user: { id: admin.id } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Migrada", paisId: catalogo.pais.id, email: "migrada@example.test", aceitaComunicacoes: true, whatsapp: true, telefoneE164: "+50670000999" } });
+  const preparado = await prepararLoteMigracao({ origem: "PLANILHA", chaveLote: "aviso-vinculo-migrado", linhas: [{
+    linhaOrigem: "vinculos!2", tipoEntrada: "VINCULO_MATRICULA",
+    aluno: { id: "aluno-aviso", nome: "Migrada", email: "migrada@example.test", documento: "DOC-AVISO", pais: "CR", fuso: "America/Costa_Rica" },
+    turma: { id: "turma-aviso", codigo: "AVISO-REGULAR" },
+    matricula: { id: "matricula-aviso", produtoOrigem: "produto-aviso", situacao: "ATIVA", inicio: "2099-09-01", moeda: "CRC", pais: "CR" },
+    alocacao: { inicio: "2099-09-01" }, consentimentoOrigem: "fonte",
+  }] });
+  if (!preparado.ok || !preparado.dado) throw new Error("Preparação de vínculo migrado falhou.");
+  const linha = await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { loteId: preparado.dado.loteId } });
+  await prisma.mapaOrigemAlunoMigracao.create({ data: { origem: "PLANILHA", alunoOrigemId: "aluno-aviso", alunoId: aluno.id } });
+  await revisarCorrespondenciaProdutoMigracao({ origem: "PLANILHA", produtoOrigemId: "produto-aviso", produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", ativa: true });
+  await revisarCorrespondenciaTurmaMigracao({ origem: "PLANILHA", turmaOrigemId: "turma-aviso", turmaId, ativa: true });
+  await revisarCorrespondenciaStatusMatriculaMigracao({ origem: "PLANILHA", statusOrigem: "ATIVA", statusDestino: "ATIVA", ativa: true });
+  const ensaio = await ensaiarVinculoMigracao({ linhaId: linha.id });
+  if (!ensaio.ok || !ensaio.dado || ensaio.dado.resultado !== "PRONTO_PARA_REVISAO") throw new Error("Ensaio de vínculo migrado não ficou pronto.");
+  const aplicado = await aplicarVinculoMigracao({
+    linhaId: linha.id, ensaioId: ensaio.dado.id, entradaHash: linha.entradaHash, contextoHash: (await prisma.ensaioVinculoMigracao.findUniqueOrThrow({ where: { id: ensaio.dado.id } })).contextoHash,
+    fusoReferencia: "America/Costa_Rica", semanticaFim: "LIMITE_EXCLUSIVO", inicioAlocacao: "2099-09-01", fimAlocacao: null,
+    diaVencimento: 10, mesesPlano: 9, evidenciaContrato: { arquivo: "contrato" }, evidenciaPagamento: { arquivo: "pagamento" },
+    fatos: [{ tipo: "ATIVACAO", data: "2099-09-01", evidencia: { etapa: "ativacao" } }],
+  });
+  expect(aplicado.ok, aplicado.ok ? undefined : aplicado.erro).toBe(true);
+  if (!aplicado.ok || !aplicado.dado) throw new Error("Aplicação de vínculo migrado ausente.");
+  expect(await prisma.aplicacaoVinculoMigracao.findUniqueOrThrow({ where: { id: aplicado.dado.id }, include: { alocacao: true } })).toMatchObject({
+    matriculaId: aplicado.dado.matriculaId, alocacao: { provenienciaVinculo: "MIGRACAO", inicioVigencia: new Date("2099-09-01T06:00:00.000Z") },
+  });
+  await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true, dado: { aplicada: true } });
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { matriculaId: aplicado.dado.matriculaId, canal: "WHATSAPP", itens: { some: { encontroId } } } })).toBe(1);
+  expect(await enfileirarAvisosAgendaWhatsApp()).toBe(1);
+  expect(await prisma.intencaoMensagem.count({ where: { avisoAlteracaoAgenda: { matriculaId: aplicado.dado.matriculaId } } })).toBe(1);
+});
 it("registra uma pendência por matrícula afetada sem opt-in ou canal, sem duplicar no replay", async () => {
   const primeiraMatricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] }, include: { aluno: true } });
   await prisma.aluno.update({ where: { id: primeiraMatricula.alunoId }, data: { aceitaComunicacoes: false } });

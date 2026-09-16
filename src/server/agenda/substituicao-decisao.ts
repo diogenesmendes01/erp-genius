@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { conferirSubstituicaoTx } from "./substituicao-conferencia";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 export async function decidirSubstituicaoDocente(input: { propostaId: string; aprovar: boolean; motivo: string }) {
   return executarAcao(async () => {
@@ -37,7 +38,7 @@ export async function decidirSubstituicaoDocente(input: { propostaId: string; ap
         const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: p.itens.map(i => i.encontroId) } }, select: { id: true, matriculaId: true, turmaId: true, inicio: true } });
         const grupos = new Map<string, string[]>();
         for (const encontro of encontros) {
-          const matriculas = encontro.matriculaId ? [encontro.matriculaId] : encontro.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: encontro.turmaId, matriculaId: { not: null }, criadoEm: { lte: encontro.inicio }, OR: [{ encerradaEm: null }, { encerradaEm: { gt: encontro.inicio } }] }, select: { matriculaId: true } })).flatMap(a => a.matriculaId ? [a.matriculaId] : []) : [];
+          const matriculas = encontro.matriculaId ? [encontro.matriculaId] : encontro.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: encontro.turmaId, matriculaId: { not: null } }, select: { matriculaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } })).flatMap((a) => a.matriculaId && alocacaoCobreAula(a, encontro.inicio) ? [a.matriculaId] : []) : [];
           for (const matriculaId of matriculas) grupos.set(matriculaId, [...(grupos.get(matriculaId) ?? []), encontro.id]);
         }
         for (const [matriculaId, encontrosIds] of grupos) await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId, encontrosIds });

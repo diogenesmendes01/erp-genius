@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { executarAcao, exigirSessaoComPapel, type Resultado } from "@/server/_shared";
 import { validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 export const motivosPendenciaAvisoAgenda = [
   MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO,
@@ -71,20 +72,20 @@ async function encontrosElegiveisDaFonteTx(tx: Prisma.TransactionClient, entrada
   if (replanejamento) {
     const horarios = Array.isArray(payload.horarios) ? payload.horarios as { encontroId?: unknown; inicioAnterior?: unknown; inicioProposto?: unknown }[] : [];
     const turmasIds = encontros.flatMap((encontro) => encontro.turmaId ? [encontro.turmaId] : []);
-    const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } });
+    const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } });
     const elegiveis = encontros.filter((encontro) => {
       const horario = horarios.find((h) => h.encontroId === encontro.id);
       if (!encontro.turmaId || typeof horario?.inicioAnterior !== "string" || typeof horario.inicioProposto !== "string") return false;
       const instantes = [horario.inicioAnterior, horario.inicioProposto] as string[];
-      return alocacoes.some((a) => a.turmaId === encontro.turmaId && instantes.some((instante) => a.criadoEm <= new Date(instante) && (!a.encerradaEm || a.encerradaEm > new Date(instante))));
+      return alocacoes.some((a) => a.turmaId === encontro.turmaId && instantes.some((instante) => alocacaoCobreAula(a, new Date(instante))));
     }).map((encontro) => encontro.id);
     if (!elegiveis.length) return null;
     return (await validarFonteReplanejamentoConjuntoTx(tx, { eventoId: entrada.eventoId, matriculaId: entrada.matriculaId, encontrosIds: elegiveis })) ? elegiveis : null;
   }
 
   const turmasIds = encontros.flatMap((encontro) => encontro.turmaId ? [encontro.turmaId] : []);
-  const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } });
-  return encontros.filter((encontro) => encontro.matriculaId === entrada.matriculaId || (!!encontro.turmaId && alocacoes.some((a) => a.turmaId === encontro.turmaId && a.criadoEm <= encontro.inicio && (!a.encerradaEm || a.encerradaEm > encontro.inicio)))).map((encontro) => encontro.id);
+  const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } });
+  return encontros.filter((encontro) => encontro.matriculaId === entrada.matriculaId || (!!encontro.turmaId && alocacoes.some((a) => a.turmaId === encontro.turmaId && alocacaoCobreAula(a, encontro.inicio)))).map((encontro) => encontro.id);
 }
 
 /** Reconferência explícita: prepara apenas a intenção válida e nunca toca no driver. */
