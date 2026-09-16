@@ -55,6 +55,7 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
     const proposta = origensEfetivas.get(turma.id) ?? null;
     const pendencias: string[] = [...base.dadosIncoerentes];
     const excecoesQ37: string[] = [];
+    let parametrosGradeAprovada: { duracaoMinutos: number; frequencia: string | null; diasSemana: number[] } | null = null;
     let previsao: ReturnType<typeof proporReplanejamentoGrade> | null = null;
     if (base.quantidadeNova !== base.quantidadeAnterior) {
       if (!proposta && base.publicada) pendencias.push("Turma publicada sem grade aprovada com meta histórica: confira antes de alterar a meta.");
@@ -68,6 +69,7 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
         if (!origem.success) pendencias.push("Snapshot da grade aprovada está incompleto.");
         else {
           const o = origem.data.origem;
+          parametrosGradeAprovada = { duracaoMinutos: o.duracaoMinutos, frequencia: typeof o.frequencia === "string" ? o.frequencia : null, diasSemana: [...o.diasSemana] };
           const quantidadeSnapshot = typeof o.quantidadeAulas === "number" ? o.quantidadeAulas : modalidade.aulasPorNivel;
           const frequenciaDaOrigem = typeof o.frequencia === "string" ? o.frequencia : null;
           const frequenciaPadrao = diasPorSemanaDaFrequencia(modalidade.frequencia);
@@ -75,7 +77,7 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
           // A aplicação de quantidade reutiliza exatamente a grade já aprovada
           // da turma. Duração ou frequência particular são uma exceção Q37
           // visível, não autorização para reverter ao padrão da modalidade.
-          if (quantidadeSnapshot !== modalidade.aulasPorNivel || o.duracaoMinutos !== modalidade.horasAula * 60 || frequenciaDaOrigem !== modalidade.frequencia || diasDaOrigem !== frequenciaPadrao) excecoesQ37.push(proposta.id);
+          if (quantidadeSnapshot !== modalidade.aulasPorNivel || o.duracaoMinutos !== modalidade.horasAula * 60 || (frequenciaDaOrigem !== null && frequenciaDaOrigem !== modalidade.frequencia) || diasDaOrigem !== frequenciaPadrao) excecoesQ37.push(proposta.id);
           try { previsao = proporReplanejamentoGrade({ agora: agora.toISOString(), quantidadeAulasAlvo: base.quantidadeNova,
             grade: { dataInicial: o.dataInicial, diasSemana: o.diasSemana, horario: o.horario, duracaoMinutos: o.duracaoMinutos,
               fusoOrigem: proposta.fusoOrigem, fusoEscola: calendario.fusoInstitucional, periodos },
@@ -91,7 +93,7 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
       ...(previsao.removidos ?? []).map((e) => ({ ...agendaAntes.find((a) => a.id === e.encontroId)!, inicio: e.inicioAnterior, fim: e.fimAnterior, status: "CANCELADO" })),
       ...(previsao.adicionados ?? []).map((e) => ({ id: null, inicio: e.inicioProposto, fim: e.fimProposto, status: base.publicada ? "PREVISTO" : "RASCUNHO", professorId: turma.professorId, propostaGradeId: proposta?.id ?? null })),
     ] : agendaAntes;
-    return { ...base, codigo: turma.codigo, professorId: turma.professorId, propostaGradeId: proposta?.id ?? null, fusoOrigem: proposta?.fusoOrigem ?? null,
+    return { ...base, codigo: turma.codigo, professorId: turma.professorId, propostaGradeId: proposta?.id ?? null, fusoOrigem: proposta?.fusoOrigem ?? null, parametrosGradeAprovada,
       excecoesQ37, pendencias, agendaAntes, agendaDepois, previsao };
   });
   const intervalos = impactos.filter((i) => i.publicaAgenda).flatMap((i) => i.previsao?.propostas.map((p) => ({ encontroId: p.encontroId, turmaId: i.turmaId, professorId: turmas.find((t) => t.id === i.turmaId)?.encontrosAgenda.find((e) => e.id === p.encontroId)?.professorId ?? null, inicio: p.inicioProposto, fim: p.fimProposto })) ?? [])

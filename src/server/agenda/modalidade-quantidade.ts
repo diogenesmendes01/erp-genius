@@ -46,7 +46,7 @@ export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<
         snapshot: JSON.parse(JSON.stringify({ ...previa, impactos: previa.impactos.map(({ previsao, ...i }) => ({ ...i, quantidadeAnterior: i.quantidadeVigente })) }) as string) as Prisma.InputJsonValue,
         impactos: { create: previa.impactos.map((i) => ({ turmaId: i.turmaId, alcance: i.alcance, quantidadeAnterior: i.quantidadeVigente,
           quantidadeNova: i.quantidadeNova, iniciadaEm: i.iniciadaEm ? new Date(i.iniciadaEm) : null, publicada: i.publicada,
-          excecoesQ37: i.excecoesQ37, snapshot: JSON.parse(JSON.stringify({ agendaAntes: i.agendaAntes, agendaDepois: i.agendaDepois, causa: i.causa, pendencias: i.pendencias })) as Prisma.InputJsonValue })) },
+          excecoesQ37: i.excecoesQ37, snapshot: JSON.parse(JSON.stringify({ agendaAntes: i.agendaAntes, agendaDepois: i.agendaDepois, causa: i.causa, pendencias: i.pendencias, parametrosGradeAprovada: i.parametrosGradeAprovada })) as Prisma.InputJsonValue })) },
       } });
       await registrarEvento(tx, { tipo: "QuantidadeAulasModalidadePreparada", agregadoTipo: "Modalidade", agregadoId: p.modalidadeId, autorId: autor.id,
         payload: { propostaId: p.id, versao: p.versao, quantidadeAnterior: p.quantidadeAnterior, quantidadeNova: p.quantidadeNova } });
