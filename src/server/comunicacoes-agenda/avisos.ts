@@ -6,9 +6,12 @@ import { enfileirarAvisosAgendaWhatsApp } from "./whatsapp";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
 import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 type Canal = "EMAIL" | "WHATSAPP";
+type AlocacaoAviso = { turmaId: string; criadoEm: Date; encerradaEm: Date | null; ativa: boolean; provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null };
+export const alocacaoDaMatriculaCobreEncontro = (alocacao: AlocacaoAviso, turmaId: string | null, inicio: Date) => turmaId !== null && alocacao.turmaId === turmaId && alocacaoCobreAula(alocacao, inicio);
 
 /** Cria avisos para a matrícula afetada, na transação da alteração aplicada. */
 export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; encontrosIds: string[] }) {
@@ -26,10 +29,10 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   const turmasIds = encontros.flatMap((encontro) => encontro.turmaId ? [encontro.turmaId] : []);
   const alocacoes = substituicao && turmasIds.length ? await tx.alocacaoTurma.findMany({
     where: { matriculaId: matricula.id, turmaId: { in: turmasIds } },
-    select: { turmaId: true, criadoEm: true, encerradaEm: true },
+    select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
   }) : [];
   const pertenceAMatricula = (encontro: typeof encontros[number]) => !!replanejamento?.horarios.some((horario) => horario.encontroId === encontro.id) || encontro.matriculaId === matricula.id || (substituicao && !!encontro.turmaId && alocacoes.some((alocacao) =>
-    alocacao.turmaId === encontro.turmaId && alocacao.criadoEm <= encontro.inicio && (!alocacao.encerradaEm || alocacao.encerradaEm > encontro.inicio),
+    alocacaoDaMatriculaCobreEncontro(alocacao, encontro.turmaId, encontro.inicio),
   ));
   if (!encontrosIds.length || encontros.length !== encontrosIds.length || encontros.some((encontro) => !pertenceAMatricula(encontro))) throw new Error("Encontros da alteração não pertencem à matrícula.");
   const canais: { canal: Canal; contato: string; destinatarioAlunoId?: string; destinatarioResponsavelId?: string; autorizacaoComunicacaoAcademicaId?: string }[] = [];
@@ -87,10 +90,10 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
     const turmasIds = aviso.itens.flatMap((item) => item.encontro.turmaId ? [item.encontro.turmaId] : []);
     const alocacoes = fonteSubstituicao && aviso.matriculaId && turmasIds.length ? await tx.alocacaoTurma.findMany({
       where: { matriculaId: aviso.matriculaId, turmaId: { in: turmasIds } },
-      select: { turmaId: true, criadoEm: true, encerradaEm: true },
+      select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
     }) : [];
     const pertenceAMatricula = (item: typeof aviso.itens[number]) => item.encontro.matriculaId === aviso.matriculaId || (fonteSubstituicao && !!item.encontro.turmaId && alocacoes.some((alocacao) =>
-      alocacao.turmaId === item.encontro.turmaId && alocacao.criadoEm <= item.encontro.inicio && (!alocacao.encerradaEm || alocacao.encerradaEm > item.encontro.inicio),
+      alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, item.encontro.inicio),
     ));
     const fonteValida = (fonteRemarcacao || fonteSubstituicao || fonteReplanejamento) && aviso.matricula?.status === "ATIVA" && aviso.itens.length > 0 && (fonteReplanejamento ? true : aviso.itens.every(pertenceAMatricula));
     if (!fonteValida || !aviso.aluno.aceitaComunicacoes || !contato || hashContato(contato) !== aviso.contatoHash) {
@@ -146,12 +149,12 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
   if (!entrada.encontrosIds.every((id) => itensIds.has(id)) || aviso.matricula.status !== "ATIVA" || !aviso.itens.length) return { situacao: "RECUSADO" as const };
   const turmasIds = aviso.itens.flatMap((item) => item.encontro.turmaId ? [item.encontro.turmaId] : []);
   const alocacoes = fonteSubstituicao && turmasIds.length ? await prisma.alocacaoTurma.findMany({
-    where: { matriculaId: aviso.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true },
+    where: { matriculaId: aviso.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
   }) : [];
   const itemValido = (item: typeof aviso.itens[number]) => {
     const noEvento = fonteSubstituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
     const pertenceAMatricula = item.encontro.matriculaId === aviso.matriculaId || (fonteSubstituicao && !!item.encontro.turmaId && alocacoes.some((alocacao) =>
-      alocacao.turmaId === item.encontro.turmaId && alocacao.criadoEm <= item.encontro.inicio && (!alocacao.encerradaEm || alocacao.encerradaEm > item.encontro.inicio),
+      alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, item.encontro.inicio),
     ));
     return !!noEvento && pertenceAMatricula;
   };
