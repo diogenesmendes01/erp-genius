@@ -1,7 +1,7 @@
 export type CelulaPlanilha = string | number | null;
 export type CabecalhoPlanilha = { id: string; rotulo: string };
 export type AbaPlanilha = { nome: string; cabecalhos: CabecalhoPlanilha[]; linhas: { numero: number; valores: Record<string, CelulaPlanilha> }[] };
-export const CAMPOS_MIGRACAO = ["aluno.id", "aluno.nome", "aluno.email", "aluno.documento", "aluno.pais", "aluno.fuso", "turma.id", "turma.codigo", "turma.nome", "matricula.id", "matricula.situacao", "financeiro.id", "financeiro.tipo", "financeiro.valor", "financeiro.moeda", "financeiro.situacao", "consentimentoOrigem", "presencaOrigem"] as const;
+export const CAMPOS_MIGRACAO = ["aluno.id", "aluno.nome", "aluno.email", "aluno.documento", "aluno.pais", "aluno.fuso", "turma.id", "turma.codigo", "turma.nome", "matricula.id", "matricula.situacao", "matricula.inicio", "matricula.fim", "matricula.produtoOrigem", "matricula.moeda", "matricula.pais", "alocacao.inicio", "alocacao.fim", "financeiro.id", "financeiro.tipo", "financeiro.valor", "financeiro.moeda", "financeiro.situacao", "consentimentoOrigem", "presencaOrigem"] as const;
 export type CampoMigracao = typeof CAMPOS_MIGRACAO[number];
 export type MapeamentoMigracao = Partial<Record<CampoMigracao, string>>;
 
@@ -28,7 +28,7 @@ export function linhasMapeadasPreparacao(aba: AbaPlanilha, mapeamento: Mapeament
   const valor = (linha: AbaPlanilha["linhas"][number], campo: CampoMigracao) => { const coluna = mapeamento[campo]; return coluna ? linha.valores[coluna] ?? null : null; };
   const bloco = (linha: AbaPlanilha["linhas"][number], prefixo: "aluno" | "turma" | "matricula" | "financeiro", campos: string[]) => Object.fromEntries(campos.map((campo) => [campo, valor(linha, `${prefixo}.${campo}` as CampoMigracao)]));
   return aba.linhas.map((linha) => ({ linhaOrigem: `${aba.nome}!${linha.numero}`, tipoEntrada,
-    aluno: bloco(linha, "aluno", ["id", "nome", "email", "documento", "pais", "fuso"]), turma: bloco(linha, "turma", ["id", "codigo", "nome"]), matricula: bloco(linha, "matricula", ["id", "situacao"]), financeiro: bloco(linha, "financeiro", ["id", "tipo", "valor", "moeda", "situacao"]),
+    aluno: bloco(linha, "aluno", ["id", "nome", "email", "documento", "pais", "fuso"]), turma: bloco(linha, "turma", ["id", "codigo", "nome"]), matricula: bloco(linha, "matricula", ["id", "situacao", "inicio", "fim", "produtoOrigem", "moeda", "pais"]), alocacao: bloco(linha, "alocacao" as never, ["inicio", "fim"]), financeiro: bloco(linha, "financeiro", ["id", "tipo", "valor", "moeda", "situacao"]),
     consentimentoOrigem: valor(linha, "consentimentoOrigem"), presencaOrigem: valor(linha, "presencaOrigem"),
     // Toda coluna, inclusive não mapeada e cabeçalho duplicado, continua na fotografia.
     dadosAdicionais: Object.fromEntries(aba.cabecalhos.map((cabecalho) => [cabecalho.rotulo, linha.valores[cabecalho.id] ?? null])),
