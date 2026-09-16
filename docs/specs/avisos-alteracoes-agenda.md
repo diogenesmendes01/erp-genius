@@ -1,6 +1,6 @@
 # SPEC-ACA-N01 — Avisos de alterações da agenda
 
-Estado: e-mail validado localmente; canal WhatsApp e autorizações incorporados até `c2b0d43`, com revisão independente e regressão dirigida do integrador aprovadas. Avisos globais do calendário, tela de autorizações e tratamento das pendências ainda estão em integração. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
+Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências e avisos globais do calendário incorporados até `a8adfec6`, com revisão independente e regressão dirigida aprovadas. O complemento dos diagnósticos para todas as origens e falhas de configuração/contato está em revisão. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
 
 ## Escopo
 
@@ -8,7 +8,7 @@ Uma remarcação aprovada, uma substituição docente aprovada ou um replanejame
 
 Para encontro particular, o encontro pertence diretamente à matrícula. Para encontro de turma regular, cada matrícula é avaliada no instante do encontro: a alocação precisa ter sido criada até aquele instante e não pode estar encerrada nele. Uma alocação encerrada exatamente no início já não recebe aviso. Matrícula sem esse vínculo não recebe item nem aviso.
 
-O banco preserva a origem, a matrícula, o aluno, os itens e as tentativas. A guarda SQL aceita o caminho de turma somente para `SubstituicaoDocenteDecidida` aprovada, do agregado canônico `ConfiguracaoOperacional/escola`, com o encontro presente no payload; as guardas de origem e compatibilidade entre aluno e matrícula continuam obrigatórias.
+O banco preserva a origem, a matrícula, o aluno, os itens e as tentativas. A guarda SQL aceita o caminho de turma para `SubstituicaoDocenteDecidida` aprovada e para `ReplanejamentoConjuntoAplicado` comprovado, do agregado canônico `ConfiguracaoOperacional/escola`, com o encontro presente no payload e pertencente ao vínculo histórico aplicável; as guardas de origem e compatibilidade entre aluno e matrícula continuam obrigatórias.
 
 ## Destinatários e canal institucional
 
