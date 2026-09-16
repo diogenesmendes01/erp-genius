@@ -35,6 +35,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
       <Link className="text-sm underline" href={`/matriculas/${m.id}/condicoes`}>Conferir condições de entrada</Link>
       <Link className="text-sm underline" href={`/matriculas/${m.id}/emissao`}>Conferir e emitir cobranças iniciais</Link>
       <Link className="text-sm underline" href={`/matriculas/${m.id}/contrato`}>Preparar e consultar prévias contratuais</Link>
+      <Link className="text-sm underline" href={`/matriculas/${m.id}/autorizacoes-comunicacao`}>Gerir destinatários acadêmicos</Link>
       </>}
       <Link className="text-sm underline" href={`/matriculas/${m.id}/reserva`}>Consultar ou reservar vaga</Link>
       <div className="flex flex-wrap justify-between gap-2"><h2 className="font-medium">{m.codigo ?? "Matrícula"} · {m.nome}</h2>{m.alunoId && <a className="text-sm text-brand-700" href={`/alunos/${m.alunoId}`}>Abrir cadastro do aluno</a>}</div>
