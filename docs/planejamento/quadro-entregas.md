@@ -42,4 +42,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Evidência de base
 
+- Rodada de 16/09: integração do worker EMAIL aprovada em 3 cenários (concorrência sem duplicidade, incerteza sem reenvio automático e rotina desligada sem token/transporte), com provedor simulado; TypeScript passou após ajustar o estreitamento do retorno no fixture. Não comprova entrega externa.
+- TESTER validou VIDEO `51d4ff8` + `7bc0f41`: 97 testes unitários/rotas/SSR e 10 integrações; reforços independentes em `2466a48`. Ainda em revisão: paginação da fila, identificação do destino, motivo real de decisão e estabilidade da chave de tentativa na tela. Q166 `523743c` segue em revisão independente, incluindo recuperação assistida Q74 e repetição de decisão após mudança de estado. Nenhuma das duas frentes está encerrada.
+
 Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 testes aprovados. Unitária 618: 1.318 aprovados. Essas execuções não comprovam as novas entregas acima nem substituem homologação real. Relatórios e auditorias anteriores são históricos; atualizações futuras de estado ficam neste quadro.
