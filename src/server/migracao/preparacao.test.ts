@@ -21,6 +21,12 @@ describe("preparação de migração", () => {
     expect(linha.financeiro?.valor).toBe("12,3x");
   });
 
+  it("aceita células numéricas e nulas da planilha, preservando o valor bruto", () => {
+    const linha = EntradaPrepararLoteMigracao.parse({ origem: "OPERACIONAL_LETICIA", chaveLote: "fixture-celula-tipado", linhas: [{ linhaOrigem: "financeiro!4", tipoEntrada: "FINANCEIRO_HISTORICO", aluno: { ...cadastroCompleto.aluno, email: null }, financeiro: { id: 401, valor: 12.5, moeda: null, situacao: null }, dadosAdicionais: {} }] }).linhas[0];
+    expect(linha.financeiro).toMatchObject({ id: 401, valor: 12.5, moeda: null });
+    expect(pendenciasDaLinha(linha).map((p) => p.codigo)).toEqual(expect.arrayContaining(["EMAIL_AUSENTE", "MOEDA_FINANCEIRA_AUSENTE", "SITUACAO_FINANCEIRA_NAO_INFORMADA"]));
+  });
+
   it("recusa somente envelopes sem linha estável ou com colunas desconhecidas fora de dadosAdicionais", () => {
     expect(() => EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [{ tipoEntrada: "CADASTRO" }] })).toThrow();
     expect(() => EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [{ ...cadastroCompleto, colunaPerdida: "x" }] })).toThrow();

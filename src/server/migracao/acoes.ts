@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
-import { EntradaPrepararLoteMigracao, estadoDaLinha, identidadeDaFonte, pendenciasDaLinha, type LinhaPreparacaoEntrada } from "./preparacao";
+import { EntradaPrepararLoteMigracao, estadoDaLinha, identidadeDaFonte, pendenciasDaLinha, textoDaCelula, type LinhaPreparacaoEntrada } from "./preparacao";
 
 const TIPOS = ["ALUNO", "TURMA", "MATRICULA", "FINANCEIRO"] as const;
 type TipoFonte = typeof TIPOS[number];
@@ -46,10 +46,12 @@ export async function prepararLoteMigracao(input: unknown) {
         if (existente.entradaHash !== entradaHash) {
           const linhasAnteriores = await tx.linhaPreparacaoMigracao.findMany({ where: { loteId: existente.id }, select: { linhaOrigem: true, entradaHash: true } });
           const porLinha = new Map(linhasAnteriores.map((linha) => [linha.linhaOrigem, linha.entradaHash]));
-          const conflitos = entrada.linhas.filter((linha) => porLinha.get(linha.linhaOrigem) !== hash(linha));
-          await tx.conflitoLinhaPreparacaoMigracao.createMany({ data: conflitos.map((linha) => ({ loteId: existente.id, linhaOrigem: linha.linhaOrigem, entradaHash: hash(linha), codigo: porLinha.has(linha.linhaOrigem) ? "LINHA_ORIGEM_DIVERGENTE" : "LINHA_ORIGEM_NOVA", dadosConflitantes: dadosDaLinha(linha) })), skipDuplicates: true });
+          const conflitos: { linhaOrigem: string; entradaHash: string; codigo: string; dadosConflitantes: Prisma.InputJsonValue }[] = entrada.linhas.filter((linha) => porLinha.get(linha.linhaOrigem) !== hash(linha)).map((linha) => ({ linhaOrigem: linha.linhaOrigem, entradaHash: hash(linha), codigo: porLinha.has(linha.linhaOrigem) ? "LINHA_ORIGEM_DIVERGENTE" : "LINHA_ORIGEM_NOVA", dadosConflitantes: dadosDaLinha(linha) }));
+          const linhasRecebidas = new Set(entrada.linhas.map((linha) => linha.linhaOrigem));
+          for (const linhaAnterior of linhasAnteriores) if (!linhasRecebidas.has(linhaAnterior.linhaOrigem)) conflitos.push({ linhaOrigem: linhaAnterior.linhaOrigem, entradaHash: hash({ loteId: existente.id, linhaOrigem: linhaAnterior.linhaOrigem, codigo: "LINHA_ORIGEM_AUSENTE_NO_REENVIO" }), codigo: "LINHA_ORIGEM_AUSENTE_NO_REENVIO", dadosConflitantes: { ausenteDoReenvio: true } });
+          await tx.conflitoLinhaPreparacaoMigracao.createMany({ data: conflitos.map((conflito) => ({ loteId: existente.id, ...conflito })), skipDuplicates: true });
           await tx.lotePreparacaoMigracao.update({ where: { id: existente.id }, data: { estado: "COM_PENDENCIAS" } });
-          if (conflitos.length) await registrarEvento(tx, { tipo: "ConflitoPreparacaoMigracaoRegistrado", agregadoTipo: "LotePreparacaoMigracao", agregadoId: existente.id, autorId: autor.id, payload: { origem: entrada.origem, chaveLote: entrada.chaveLote, linhas: conflitos.map((linha) => linha.linhaOrigem) } });
+          if (conflitos.length) await registrarEvento(tx, { tipo: "ConflitoPreparacaoMigracaoRegistrado", agregadoTipo: "LotePreparacaoMigracao", agregadoId: existente.id, autorId: autor.id, payload: { origem: entrada.origem, chaveLote: entrada.chaveLote, conflitos: conflitos.map((conflito) => ({ linhaOrigem: conflito.linhaOrigem, entradaHash: conflito.entradaHash })) } });
           return { loteId: existente.id, repetido: false, estado: "COM_PENDENCIAS" as const, revisaoNecessaria: true };
         }
         return { loteId: existente.id, repetido: true, estado: existente.estado };
@@ -60,8 +62,8 @@ export async function prepararLoteMigracao(input: unknown) {
       for (const linha of entrada.linhas) {
         const pendencias = pendenciasDaLinha(linha);
         const criada = await tx.linhaPreparacaoMigracao.create({ data: {
-          loteId: lote.id, linhaOrigem: linha.linhaOrigem, alunoOrigemId: linha.aluno?.id, turmaOrigemId: linha.turma?.id,
-          matriculaOrigemId: linha.matricula?.id, financeiroOrigemId: linha.financeiro?.id,
+          loteId: lote.id, linhaOrigem: linha.linhaOrigem, alunoOrigemId: textoDaCelula(linha.aluno?.id), turmaOrigemId: textoDaCelula(linha.turma?.id),
+          matriculaOrigemId: textoDaCelula(linha.matricula?.id), financeiroOrigemId: textoDaCelula(linha.financeiro?.id),
           dadosOrigem: dadosDaLinha(linha), entradaHash: hash(linha), estado: estadoDaLinha(pendencias),
           pendencias: { create: pendencias },
         } });

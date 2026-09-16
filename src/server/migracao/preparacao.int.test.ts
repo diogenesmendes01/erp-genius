@@ -53,6 +53,17 @@ describe("M01 preparação de migração", () => {
     const salvo = await prisma.lotePreparacaoMigracao.findUniqueOrThrow({ where: { origem_chaveLote: { origem: original.origem, chaveLote: original.chaveLote } }, include: { linhas: true, conflitosEntrada: true } });
     expect(salvo.linhas).toHaveLength(1); expect(salvo.linhas[0]?.dadosOrigem).toMatchObject({ aluno: { nome: "Ana Lima" } });
     expect(salvo.conflitosEntrada).toHaveLength(1); expect(salvo.conflitosEntrada[0]?.dadosConflitantes).toMatchObject({ aluno: { nome: "Outro nome" } });
+    const consulta = await (await import("./consultas")).consultarLotePreparacaoMigracao(salvo.id);
+    expect(consulta).toMatchObject({ ok: true, dado: { preparadoPor: { nome: "Admin migração" }, linhas: [expect.objectContaining({ entradaHash: salvo.linhas[0]?.entradaHash, dadosOrigem: expect.objectContaining({ aluno: expect.objectContaining({ nome: "Ana Lima" }) }) })], conflitosEntrada: [expect.objectContaining({ dadosConflitantes: expect.objectContaining({ aluno: expect.objectContaining({ nome: "Outro nome" }) }), registradoPorNome: "Admin migração" })] } });
+  });
+
+  it("registra uma linha omitida no reenvio sem apagar a fotografia original", async () => {
+    const original = lote("replay-omissao", [linha("alunos!2", "aluno-1"), linha("alunos!3", "aluno-2", "Bia")]);
+    await prepararLoteMigracao(original);
+    await prepararLoteMigracao(lote("replay-omissao", [linha("alunos!2", "aluno-1")]));
+    const salvo = await prisma.lotePreparacaoMigracao.findUniqueOrThrow({ where: { origem_chaveLote: { origem: original.origem, chaveLote: original.chaveLote } }, include: { linhas: true, conflitosEntrada: true } });
+    expect(salvo.linhas).toHaveLength(2);
+    expect(salvo.conflitosEntrada).toEqual(expect.arrayContaining([expect.objectContaining({ linhaOrigem: "alunos!3", codigo: "LINHA_ORIGEM_AUSENTE_NO_REENVIO", dadosConflitantes: { ausenteDoReenvio: true } })]));
   });
 
   it("marca todas as linhas de uma colisão tripla e serializa lotes concorrentes da mesma origem", async () => {
@@ -69,5 +80,15 @@ describe("M01 preparação de migração", () => {
     await prisma.usuario.update({ where: { id: adminId }, data: { ativo: false } });
     expect(await prepararLoteMigracao(lote("revogado", [linha("a!1", "a")]))).toMatchObject({ ok: false });
     expect(await prisma.lotePreparacaoMigracao.count()).toBe(0);
+  });
+
+  it("protege fotografia, estados e evidências contra SQL direto", async () => {
+    await prepararLoteMigracao(lote("imutavel", [{ ...linha("a!1", "a"), aluno: { ...aluno("a"), email: "invalido" } } ]));
+    const salvo = await prisma.lotePreparacaoMigracao.findUniqueOrThrow({ where: { origem_chaveLote: { origem: "OPERACIONAL_LETICIA", chaveLote: "imutavel" } }, include: { linhas: { include: { pendencias: true } } } });
+    const linhaSalva = salvo.linhas[0]!;
+    await expect(prisma.lotePreparacaoMigracao.update({ where: { id: salvo.id }, data: { chaveLote: "alterado" } })).rejects.toThrow();
+    await expect(prisma.linhaPreparacaoMigracao.update({ where: { id: linhaSalva.id }, data: { estado: "PRONTA_PARA_REVISAO" } })).rejects.toThrow();
+    await expect(prisma.pendenciaCampoPreparacaoMigracao.update({ where: { id: linhaSalva.pendencias[0]!.id }, data: { detalhe: "ocultar" } })).rejects.toThrow();
+    await expect(prisma.linhaPreparacaoMigracao.delete({ where: { id: linhaSalva.id } })).rejects.toThrow();
   });
 });
