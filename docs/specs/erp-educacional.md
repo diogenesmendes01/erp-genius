@@ -377,6 +377,18 @@ A tela `/secretaria/envios-portal` integra consulta paginada e guard de Secretar
 
 ## M01 — preparação operacional de migração
 
+Estado corrente: a aplicação de vínculos históricos e a conferência inicial de regras foram integradas até `b254ba81`, com validação local registrada no quadro único. Os parágrafos de evidências abaixo conservam o estágio de cada incremento. Conciliação financeira, importação de outros históricos e carga real conferida continuam pendentes; M01 não está concluído.
+
+### Conciliação financeira — fonte e complementos
+
+A conciliação identifica explicitamente origem, registro financeiro e contrato mapeado. A proposta preserva a fonte e distingue pendência sem recebimento, vínculo a um recebimento existente e registro de recebimento histórico comprovado. Preparação e aprovação pertencem a pessoas distintas autorizadas do Financeiro/Administração. A aprovação revalida os dados atuais; repetir uma operação não cria nova baixa nem aceita condições diferentes sob a mesma chave.
+
+Valores e condições usados devem corresponder à fonte ou a complemento evidenciado. Cada campo ausente, inválido ou divergente identifica o valor proposto, motivo e evidência próprios. O complemento integra a proposta revisada e não sobrescreve a fotografia original. Valor parcial diferente do total da fonte exige essa explicação; não inferir pagamento pelo saldo ou pelo texto “pago”. Data, forma e pagador não fornecidos pela fonte precisam ser documentados. Vincular um recebimento existente exige igualdade com o registro escolhido e não cria outro recebimento.
+
+A interface deve mostrar origem, destino contratual, valores propostos, complementos e autoria antes da decisão. Recusar autoaprovação, dados obsoletos e recibos de outro contrato. Preservar data histórica, recebimentos, documentos e decisões anteriores. O recorte inicial contra cobranças existentes não comprova a migração completa de obrigações financeiras ainda ausentes no ERP.
+
+### Preparação e evidências dos incrementos
+
 A preparação registra um lote imutável por `origem` e `chaveLote`, com linhas da fonte, identificadores de aluno, turma, matrícula e financeiro quando declarados, fotografia do valor recebido e pendências por campo. É acessível somente à Administração, com papel relido no banco dentro da transação.
 
 A interface aceita quatro tipos de linha: cadastro, vínculo de matrícula, histórico financeiro e histórico de presença. Valores ausentes ou inválidos permanecem na fotografia e viram pendências; não criam situação, consentimento, presença, cobrança, recebimento, aluno, turma, matrícula ou alocação. Colunas adicionais precisam ficar explicitamente em `dadosAdicionais`.
