@@ -1,12 +1,14 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ReplanejamentoSnapshotSchema } from "@/server/agenda/replanejamento-snapshot";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 const Horario = z.object({ encontroId: z.string().min(1), inicioAnterior: z.string().datetime(), fimAnterior: z.string().datetime(), inicioProposto: z.string().datetime(), fimProposto: z.string().datetime() }).strict();
 const Payload = z.object({ aprovada: z.literal(true), revisaoId: z.string().min(1), decisaoId: z.string().min(1), encontrosIds: z.array(z.string().min(1)).min(1), horarios: z.array(Horario).min(1) }).passthrough();
 export type HorarioReplanejamento = z.infer<typeof Horario> & { fusoOrigem: string };
 
-const cobre = (criadoEm: Date, encerradaEm: Date | null, instante: string) => criadoEm <= new Date(instante) && (!encerradaEm || encerradaEm > new Date(instante));
+type AlocacaoHistorica = { turmaId: string; criadoEm: Date; encerradaEm: Date | null; ativa: boolean; provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null };
+export const alocacaoCobreHorarioReplanejado = (alocacao: AlocacaoHistorica, instante: string) => alocacaoCobreAula(alocacao, new Date(instante));
 
 /** Fonte restrita a uma matrícula: não devolve nem renderiza encontros de outras
  * turmas. O vínculo histórico vale no horário original OU no proposto. */
@@ -23,13 +25,13 @@ export async function validarFonteReplanejamentoConjuntoTx(tx: Prisma.Transactio
   if (!solicitados.length || solicitados.some((id) => !payload.data.encontrosIds.includes(id))) return null;
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: solicitados }, matriculaId: null }, select: { id: true, turmaId: true, inicio: true, fim: true, fusoOrigem: true } });
   if (encontros.length !== solicitados.length) return null;
-  const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []) } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } });
+  const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []) } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } });
   const horarios: (HorarioReplanejamento & { origem: "HORARIO_ORIGINAL" | "HORARIO_PROPOSTO" | "AMBOS" })[] = [];
   for (const encontro of encontros) {
     const h = payload.data.horarios.find((x) => x.encontroId === encontro.id);
     if (!h || !encontro.turmaId || encontro.inicio.toISOString() !== h.inicioProposto || encontro.fim.toISOString() !== h.fimProposto) return null;
-    const original = alocacoes.some((a) => a.turmaId === encontro.turmaId && cobre(a.criadoEm, a.encerradaEm, h.inicioAnterior));
-    const proposto = alocacoes.some((a) => a.turmaId === encontro.turmaId && cobre(a.criadoEm, a.encerradaEm, h.inicioProposto));
+    const original = alocacoes.some((a) => a.turmaId === encontro.turmaId && alocacaoCobreHorarioReplanejado(a, h.inicioAnterior));
+    const proposto = alocacoes.some((a) => a.turmaId === encontro.turmaId && alocacaoCobreHorarioReplanejado(a, h.inicioProposto));
     if (!original && !proposto) return null;
     horarios.push({ ...h, fusoOrigem: encontro.fusoOrigem, origem: original && proposto ? "AMBOS" : original ? "HORARIO_ORIGINAL" : "HORARIO_PROPOSTO" });
   }
