@@ -26,9 +26,9 @@ export function lerCsvPreparacao(conteudo: string, nome = "CSV", delimitador = d
 
 export function linhasMapeadasPreparacao(aba: AbaPlanilha, mapeamento: MapeamentoMigracao, tipoEntrada: "CADASTRO" | "VINCULO_MATRICULA" | "FINANCEIRO_HISTORICO" | "HISTORICO_PRESENCA") {
   const valor = (linha: AbaPlanilha["linhas"][number], campo: CampoMigracao) => { const coluna = mapeamento[campo]; return coluna ? linha.valores[coluna] ?? null : null; };
-  const bloco = (linha: AbaPlanilha["linhas"][number], prefixo: "aluno" | "turma" | "matricula" | "financeiro", campos: string[]) => Object.fromEntries(campos.map((campo) => [campo, valor(linha, `${prefixo}.${campo}` as CampoMigracao)]));
+  const bloco = (linha: AbaPlanilha["linhas"][number], prefixo: "aluno" | "turma" | "matricula" | "alocacao" | "financeiro", campos: string[]) => Object.fromEntries(campos.map((campo) => [campo, valor(linha, `${prefixo}.${campo}` as CampoMigracao)]));
   return aba.linhas.map((linha) => ({ linhaOrigem: `${aba.nome}!${linha.numero}`, tipoEntrada,
-    aluno: bloco(linha, "aluno", ["id", "nome", "email", "documento", "pais", "fuso"]), turma: bloco(linha, "turma", ["id", "codigo", "nome"]), matricula: bloco(linha, "matricula", ["id", "situacao", "inicio", "fim", "produtoOrigem", "moeda", "pais"]), alocacao: bloco(linha, "alocacao" as never, ["inicio", "fim"]), financeiro: bloco(linha, "financeiro", ["id", "tipo", "valor", "moeda", "situacao"]),
+    aluno: bloco(linha, "aluno", ["id", "nome", "email", "documento", "pais", "fuso"]), turma: bloco(linha, "turma", ["id", "codigo", "nome"]), matricula: bloco(linha, "matricula", ["id", "situacao", "inicio", "fim", "produtoOrigem", "moeda", "pais"]), alocacao: bloco(linha, "alocacao", ["inicio", "fim"]), financeiro: bloco(linha, "financeiro", ["id", "tipo", "valor", "moeda", "situacao"]),
     consentimentoOrigem: valor(linha, "consentimentoOrigem"), presencaOrigem: valor(linha, "presencaOrigem"),
     // Toda coluna, inclusive não mapeada e cabeçalho duplicado, continua na fotografia.
     dadosAdicionais: Object.fromEntries(aba.cabecalhos.map((cabecalho) => [cabecalho.rotulo, linha.valores[cabecalho.id] ?? null])),
