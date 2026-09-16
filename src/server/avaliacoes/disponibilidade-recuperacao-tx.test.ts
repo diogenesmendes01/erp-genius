@@ -29,3 +29,15 @@ it("considera a turma histórica apenas para encontros coletivos", async () => {
   expect(where.OR).toContainEqual({ matricula: { alunoId: "aluno-1" } });
   expect(where.OR).toContainEqual({ professorId: "professor-1" });
 });
+
+it("usa início importado e o menor término ao procurar conflitos de turma", async () => {
+  const historico = new Date("2025-01-01T00:00:00Z");
+  const fimHistorico = new Date("2025-04-01T00:00:00Z");
+  const fimOperacional = new Date("2025-03-01T00:00:00Z");
+  const encontros = vi.fn().mockResolvedValue([]);
+  const alocacoes = vi.fn().mockResolvedValue([{ turmaId: "historica", criadoEm: new Date("2026-09-16T00:00:00Z"), provenienciaVinculo: "MIGRACAO", inicioVigencia: historico, fimVigencia: fimHistorico, encerradaEm: fimOperacional }]);
+  const tx = { alocacaoTurma: { findMany: alocacoes }, encontroAgenda: { findMany: encontros }, indisponibilidadeDocente: { count: vi.fn() }, horarioReservaParticular: { count: vi.fn().mockResolvedValue(0) } } as unknown as Prisma.TransactionClient;
+  await disponibilidadeRecuperacaoTx(tx, { alunoId: "a", professorId: null, inicio: new Date("2025-02-28T23:30:00Z"), fim: new Date("2025-03-01T01:00:00Z") });
+  expect(encontros.mock.calls[0][0].where.OR).toContainEqual({ turmaId: "historica", matriculaId: null, inicio: { lt: fimOperacional }, fim: { gt: historico } });
+  expect(alocacoes.mock.calls[0][0].where.OR[0]).toMatchObject({ provenienciaVinculo: "MIGRACAO", inicioVigencia: { lt: new Date("2025-03-01T01:00:00Z") } });
+});

@@ -121,3 +121,4 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 testes aprovados. Unitária 618: 1.318 aprovados. Essas execuções não comprovam as novas entregas acima nem substituem homologação real. Relatórios e auditorias anteriores são históricos; atualizações futuras de estado ficam neste quadro.
 - M01/DEV: chamada histórica c7fe85b2 validada; frequência por vínculo/nível e projeção do portal ajustadas para vigência importada. Seis regressões de frequência e um teste de importação+frequência passaram. Demais consumidores, interface e revisão independente pendentes; nenhum dado real importado.
+- M01 DEV: 96/96 integrações de lançamentos (193,41 s), 2/2 testes de disponibilidade e TypeScript aprovados após adaptação temporal. Pendência bloqueante SQL186 permanece; nenhum banco recebeu a corretiva.

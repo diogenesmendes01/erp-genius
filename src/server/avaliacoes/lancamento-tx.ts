@@ -5,6 +5,7 @@ import { ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { docenteAtual, vinculoCobre } from "@/server/diario/permissoes";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { NotasLancamentoSchema, OficializarLancamentoSchema, SalvarLancamentoSchema } from "./lancamento-schema";
 import { conferirGestorAvaliacao } from "./regras-tx";
@@ -71,7 +72,8 @@ export async function salvarLancamentoTx(tx: Prisma.TransactionClient, autorId: 
     if (repetida.entradaHash !== hash(d)) throw new ErroRegra("Chave já utilizada com outro lançamento.");
     return { id: repetida.id, registroId: repetida.registroId, versao: repetida.versao };
   }
-  if (quando > new Date() || quando < a.criadoEm || (!segundaEspecial && ((a.encerradaEm && quando >= a.encerradaEm) || (!a.ativa && !a.encerradaEm)))) throw new ErroRegra("A data da avaliação precisa estar no vínculo histórico conferido do aluno e não pode ser futura.");
+  const inicioVinculo = a.provenienciaVinculo === "MIGRACAO" ? a.inicioVigencia : a.criadoEm;
+  if (quando > new Date() || !inicioVinculo || quando < inicioVinculo || (!segundaEspecial && !alocacaoCobreAula(a, quando))) throw new ErroRegra("A data da avaliação precisa estar no vínculo histórico conferido do aluno e não pode ser futura.");
   const regularizacao = realizadaPorId !== autorId;
   if (regularizacao && (!designado || !d.motivoRegularizacao || !d.evidenciasRegularizacao)) throw new ErroRegra("Regularização de outra pessoa exige designação vigente, motivo e evidências.");
   if (!regularizacao && (d.motivoRegularizacao || d.evidenciasRegularizacao)) throw new ErroRegra("Informe regularização somente para avaliação realizada por outra pessoa.");
