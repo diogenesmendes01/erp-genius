@@ -39,6 +39,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Próximo M01: migração 185 reservada para aplicação fiel de vínculos históricos, ainda em proposta e não aplicada. Datas da fonte exigem fuso e semântica explícitos; vigência canônica é separada da auditoria de importação. Revisão independente identificou consumidores em diário, frequência, avaliações, portal, avisos, continuidade e reservas, além dos escritores de encerramento/transferência. A aplicação não será habilitada antes de preservar essa coerência; não reexecutar acertos de pausa/encerramento nem inferir assinatura ou pagamento.
+
 - Build do conjunto com ensaio M01 aprovado na sessão 12342: compilação, TypeScript e geração de 80 páginas concluídos. Não houve carga real, transporte externo, push ou deploy.
 
 - M01 ensaio integrado até `1b644918`, incluindo correspondências versionadas, formulários sem destino presumido, histórico persistido e revogação com revisão esperada. Migrações 183/184 aplicadas somente no banco descartável do integrador. TESTER: 7 integrações, 1 SSR e TypeScript aprovados; principal: os mesmos 7 testes de integração passaram em 12,35 s (sessão 1613) e SSR passou. Build 12342 em execução. Aplicação de vínculos e conciliação financeira continuam pendentes.
