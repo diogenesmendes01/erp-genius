@@ -12,6 +12,7 @@ import {
 } from "@/server/comercial/consultas";
 import {
   carregarPoliticaConfig,
+  carregarConfiguracaoAvisosAgenda,
   listarNumerosConfig,
   listarTemplatesConfig,
 } from "@/server/whatsapp/consultas";
@@ -20,6 +21,7 @@ import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
 import { ComercialPainel } from "./ComercialPainel";
 import { ReguasComerciaisPainel } from "./ReguaComercialPainel";
+import { AvisosAgendaPainel } from "./AvisosAgendaPainel";
 
 // CONFIG DO CANAL WHATSAPP (docs 26/30 · fase comercial doc 27).
 // - Canal (número/QR, templates, política da régua): exclusivo do ADMINISTRADOR (D21).
@@ -37,7 +39,7 @@ export default async function WhatsAppConfigPage() {
   const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial] =
     await Promise.all([
       ehAdmin
-        ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores()])
+        ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores(), carregarConfiguracaoAvisosAgenda()])
         : Promise.resolve(null),
       carregarConfigComercial(),
       carregarSaudacoesSimuladas(),
@@ -54,6 +56,7 @@ export default async function WhatsAppConfigPage() {
           <NumerosPainel numeros={admin[0]} vendedores={admin[3]} />
           <TemplatesPainel templates={admin[1]} />
           <PoliticaPainel politica={admin[2]} numeros={admin[0]} templates={admin[1]} />
+          <AvisosAgendaPainel config={admin[4]} />
         </>
       )}
       <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} />

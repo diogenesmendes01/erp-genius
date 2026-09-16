@@ -2,6 +2,8 @@ import { createHash, randomUUID } from "crypto";
 import { Prisma, SituacaoAvisoAlteracaoAgenda } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { enviarEmailResend } from "@/server/email/resend";
+import { enfileirarAvisosAgendaWhatsApp } from "./whatsapp";
+import { despacharFila } from "@/server/whatsapp/despachante";
 
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 type Canal = "EMAIL" | "WHATSAPP";
@@ -12,7 +14,7 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   const remarcacao = evento?.agregadoTipo === "Matricula" && evento.agregadoId === entrada.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(evento.tipo);
   const substituicao = evento?.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "SubstituicaoDocenteDecidida" && (evento.payload as { aprovada?: unknown }).aprovada === true;
   if (!remarcacao && !substituicao) throw new Error("Evento aplicado incompatível com o aviso.");
-  const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true } } } });
+  const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true, responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true, responsavel: { select: { telefoneE164: true } } } } } } } });
   if (!matricula?.aluno.aceitaComunicacoes) return [];
   const encontrosIds = [...new Set(entrada.encontrosIds)];
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: encontrosIds } }, select: { id: true, matriculaId: true, turmaId: true, inicio: true } });
@@ -27,15 +29,22 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   if (!encontrosIds.length || encontros.length !== encontrosIds.length || encontros.some((encontro) => !pertenceAMatricula(encontro))) throw new Error("Encontros da alteração não pertencem à matrícula.");
   const canais: { canal: Canal; contato: string }[] = [];
   if (matricula.aluno.email) canais.push({ canal: "EMAIL", contato: matricula.aluno.email.trim().toLowerCase() });
-  if (matricula.aluno.whatsapp && matricula.aluno.telefoneE164) canais.push({ canal: "WHATSAPP", contato: matricula.aluno.telefoneE164 });
+  // Responsável financeiro não é destinatário acadêmico. Quando há responsáveis
+  // pedagógicos vigentes, eles são os únicos contatos WhatsApp autorizados;
+  // sem eles, usa-se o telefone opt-in do próprio aluno.
+  const telefonesAgenda = matricula.aluno.responsaveis.length
+    ? matricula.aluno.responsaveis.flatMap((r) => r.responsavel.telefoneE164 ? [r.responsavel.telefoneE164] : [])
+    : matricula.aluno.whatsapp && matricula.aluno.telefoneE164 ? [matricula.aluno.telefoneE164] : [];
+  for (const telefone of [...new Set(telefonesAgenda)]) canais.push({ canal: "WHATSAPP", contato: telefone });
   const avisos = [];
   for (const { canal, contato } of canais) {
-    const existente = await tx.avisoAlteracaoAgenda.findFirst({ where: { eventoId: entrada.eventoId, matriculaId: matricula.id, canal } });
+    const chave = `agenda:${entrada.eventoId}:${matricula.id}:${canal}:${hashContato(contato)}`;
+    const existente = await tx.avisoAlteracaoAgenda.findUnique({ where: { chave } });
     if (existente) {
       await tx.itemAvisoAlteracaoAgenda.createMany({ data: encontros.map(({ id }) => ({ id: randomUUID(), avisoId: existente.id, encontroId: id })), skipDuplicates: true });
       avisos.push(existente); continue;
     }
-    avisos.push(await tx.avisoAlteracaoAgenda.create({ data: { id: randomUUID(), mudancaId: entrada.eventoId, eventoId: entrada.eventoId, matriculaId: matricula.id, alunoId: matricula.alunoId, canal, contatoHash: hashContato(contato), chave: `agenda:${entrada.eventoId}:${matricula.id}:${canal}`, itens: { createMany: { data: encontros.map(({ id }) => ({ id: randomUUID(), encontroId: id })) } } } }));
+    avisos.push(await tx.avisoAlteracaoAgenda.create({ data: { id: randomUUID(), mudancaId: entrada.eventoId, eventoId: entrada.eventoId, matriculaId: matricula.id, alunoId: matricula.alunoId, canal, contatoHash: hashContato(contato), chave, itens: { createMany: { data: encontros.map(({ id }) => ({ id: randomUUID(), encontroId: id })) } } } }));
   }
   return avisos;
 }
@@ -84,12 +93,17 @@ export async function processarAvisosAlteracaoAgenda(entregar: EntregarAvisoAgen
   if (process.env.COMUNICACOES_AGENDA_ENVIO_ENABLED !== "true") return 0;
   // Configuração ausente é pendência anterior ao envio: não faz claim, tentativa
   // nem transforma o aviso em INCERTO.
-  if (!process.env.RESEND_API_KEY?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.EMAIL_INSTITUCIONAL_REMETENTE?.trim() ?? "")) return 0;
+  let processados = 0;
   // WhatsApp só entra no worker quando houver finalidade institucional explícita
   // para avisos de agenda; não reutiliza números de vendas ou cobrança.
-  const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { situacao: "PREPARADO", canal: "EMAIL" }, take: 20, select: { id: true } });
-  for (const aviso of avisos) await despacharAvisoAlteracaoAgendaInterna(aviso.id, entregar);
-  return avisos.length;
+  if (process.env.RESEND_API_KEY?.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.EMAIL_INSTITUCIONAL_REMETENTE?.trim() ?? "")) {
+    const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { situacao: "PREPARADO", canal: "EMAIL" }, take: 20, select: { id: true } });
+    for (const aviso of avisos) await despacharAvisoAlteracaoAgendaInterna(aviso.id, entregar);
+    processados += avisos.length;
+  }
+  const enfileirados = await enfileirarAvisosAgendaWhatsApp();
+  if (enfileirados) await despacharFila();
+  return processados + enfileirados;
 }
 
 export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; destinatario: string; avisoId: string; encontrosIds: string[] }) {
