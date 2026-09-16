@@ -9,6 +9,12 @@ export function textoDaCelula(valor: string | number | null | undefined) {
   if (typeof valor === "number") return String(valor);
   return undefined;
 }
+function dataCivilIso(valor: string | undefined) {
+  if (!valor || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;
+  const [ano, mes, dia] = valor.split("-").map(Number);
+  const data = new Date(Date.UTC(ano!, mes! - 1, dia!));
+  return data.getUTCFullYear() === ano && data.getUTCMonth() === mes! - 1 && data.getUTCDate() === dia ? data : null;
+}
 
 export const LinhaPreparacaoSchema = z.object({
   linhaOrigem: Texto.max(120),
@@ -57,10 +63,14 @@ export function pendenciasDaLinha(linha: LinhaPreparacaoEntrada): PendenciaPrepa
   if (linha.tipoEntrada === "VINCULO_MATRICULA" && !matriculaId) adicionar("matricula.id", "MATRICULA_ORIGEM_AUSENTE", "O vínculo não identifica a matrícula na origem.");
   if (linha.tipoEntrada === "VINCULO_MATRICULA" && !turmaId) adicionar("turma.id", "TURMA_AUSENTE", "A matrícula de origem não está vinculada a uma turma identificável.");
   if (linha.tipoEntrada === "VINCULO_MATRICULA") {
-    const inicio = textoDaCelula(matricula?.inicio), fim = textoDaCelula(matricula?.fim), produto = textoDaCelula(matricula?.produtoOrigem), moedaContratual = textoDaCelula(matricula?.moeda), paisContratual = textoDaCelula(matricula?.pais);
-    if (!inicio || Number.isNaN(Date.parse(inicio))) adicionar("matricula.inicio", "INICIO_MATRICULA_INVALIDO", "Início da matrícula deve usar data ISO válida.");
-    if (fim && Number.isNaN(Date.parse(fim))) adicionar("matricula.fim", "FIM_MATRICULA_INVALIDO", "Fim da matrícula deve usar data ISO válida.");
-    if (inicio && fim && !Number.isNaN(Date.parse(inicio)) && !Number.isNaN(Date.parse(fim)) && new Date(fim) < new Date(inicio)) adicionar("matricula.fim", "FIM_ANTES_INICIO", "Fim da matrícula antecede o início informado.");
+    const inicio = textoDaCelula(matricula?.inicio), fim = textoDaCelula(matricula?.fim), inicioAlocacao = textoDaCelula(linha.alocacao?.inicio), fimAlocacao = textoDaCelula(linha.alocacao?.fim), produto = textoDaCelula(matricula?.produtoOrigem), moedaContratual = textoDaCelula(matricula?.moeda), paisContratual = textoDaCelula(matricula?.pais);
+    const dataInicio = dataCivilIso(inicio), dataFim = dataCivilIso(fim), dataInicioAlocacao = dataCivilIso(inicioAlocacao), dataFimAlocacao = dataCivilIso(fimAlocacao);
+    if (!dataInicio) adicionar("matricula.inicio", "INICIO_MATRICULA_INVALIDO", "Início da matrícula deve usar data civil ISO válida.");
+    if (fim && !dataFim) adicionar("matricula.fim", "FIM_MATRICULA_INVALIDO", "Fim da matrícula deve usar data civil ISO válida.");
+    if (dataInicio && dataFim && dataFim < dataInicio) adicionar("matricula.fim", "FIM_ANTES_INICIO", "Fim da matrícula antecede o início informado.");
+    if (!dataInicioAlocacao) adicionar("alocacao.inicio", "INICIO_ALOCACAO_INVALIDO", "Início da alocação deve usar data civil ISO válida.");
+    if (fimAlocacao && !dataFimAlocacao) adicionar("alocacao.fim", "FIM_ALOCACAO_INVALIDO", "Fim da alocação deve usar data civil ISO válida.");
+    if (dataInicioAlocacao && dataFimAlocacao && dataFimAlocacao < dataInicioAlocacao) adicionar("alocacao.fim", "FIM_ALOCACAO_ANTES_INICIO", "Fim da alocação antecede o início informado.");
     if (!produto) adicionar("matricula.produtoOrigem", "PRODUTO_ORIGEM_AUSENTE", "Produto/oferta exige mapeamento administrativo explícito.");
     if (!moedaContratual || !/^[A-Z]{3}$/.test(moedaContratual)) adicionar("matricula.moeda", "MOEDA_CONTRATUAL_INVALIDA", "Moeda contratual precisa ser código ISO de três letras.");
     if (!paisContratual || !/^[A-Z]{2}$/.test(paisContratual)) adicionar("matricula.pais", "PAIS_CONTRATUAL_INVALIDO", "País contratual precisa ser ISO de duas letras.");
