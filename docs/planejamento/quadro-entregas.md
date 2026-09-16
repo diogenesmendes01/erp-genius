@@ -38,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Segunda chamada: `35d15c8b` observa o bloqueador real por `pg_blocking_pids`, sem depender de texto da consulta; mantém tentativas, intervalo, timeout e exigência de contenção. Cinco cenários passaram no DEV e no principal (sessão 60824, 17,09 s; demais 52 filtrados). TypeScript da integração passou na sessão 26329. Isso resolve a prova direcionada; não transforma retroativamente a regressão 7297 em sucesso.
+- M01/184 revisada pelo integrador e TESTER e aplicada exclusivamente em `erp_genius_test_dev_gravacoes`: normalização de produto/situação com espaços nas chaves e comparações do ensaio. Guardas e migração 183 preservadas. DEV valida sucesso com a fonte original intacta; integração principal e revisão do fluxo completo ainda pendentes.
+
 - Regressão global 7297 finalizada: 139 arquivos, 1.371 testes aprovados e dois reprovados, 2.542,96 s. Conferência falhou pela fixture obsoleta; segunda chamada falhou porque a observação de contenção não encontrou espera (linha 1103), sem comprovar inversão de locks. O arquivo completo de segunda chamada passou 57/57 no DEV isolado; a observação do teste segue em revisão, sem afrouxar a ordem exigida.
 - Integração posterior: Q37 e invalidação concorrente incorporadas até `f7e84c12`; correção da fixture de comprovante em `5703af59`; comentário obsoleto de alocação corrigido em `0c31aef4` após conferir índices reais. Principal: 19/19 integrações de quantidade/conferência em 47,96 s (sessão 20888), mais 7 testes de preview/SSR aprovados. Avisos de quantidade continuam pendentes; a regressão global anterior não é declarada aprovada.
 
