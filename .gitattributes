@@ -3,3 +3,5 @@
 *.sh text eol=lf
 Dockerfile text eol=lf
 deploy/** text eol=lf
+
+prisma/migrations/20260916185000_aplicacao_vinculos_historicos_migracao/migration.sql -text
