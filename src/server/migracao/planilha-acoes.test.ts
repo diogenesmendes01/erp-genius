@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
-import { lerArquivoPreparacao } from "./planilha-acoes";
+import { lerArquivoPreparacao } from "./planilha-leitura";
 
 async function arquivo(livro: ExcelJS.Workbook, nome = "origem.xlsx") { return new File([new Uint8Array(await livro.xlsx.writeBuffer())], nome, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); }
 describe("leitura XLSX de preparação", () => {

@@ -1,0 +1,12 @@
+import ExcelJS from "exceljs";
+import { ErroRegra } from "@/server/_shared";
+import { lerCsvPreparacao, type AbaPlanilha } from "./planilha";
+const LIMITE_BYTES = 5 * 1024 * 1024; const LIMITE_LINHAS = 500;
+function texto(valor: ExcelJS.CellValue) { if (valor == null) return null; if (valor instanceof Date) return valor.toISOString().slice(0, 10); if (typeof valor === "object") { if ("formula" in valor) return `fórmula: ${valor.formula}; resultado: ${String(valor.result ?? "")}`; if ("richText" in valor && Array.isArray(valor.richText)) return valor.richText.map((parte) => parte.text).join(""); if ("text" in valor && valor.text != null) return String(valor.text); if ("error" in valor) return `erro: ${String(valor.error)}`; return JSON.stringify(valor); } return typeof valor === "number" ? valor : String(valor); }
+export async function lerArquivoPreparacao(file: File, delimitador?: string): Promise<AbaPlanilha[]> {
+  if (file.size === 0 || file.size > LIMITE_BYTES) throw new ErroRegra("Arquivo ausente ou acima de 5MB.");
+  if (/\.csv$/i.test(file.name)) return [lerCsvPreparacao(await file.text(), file.name, delimitador === ";" ? ";" : delimitador === "," ? "," : undefined)];
+  if (!/\.xlsx$/i.test(file.name)) throw new ErroRegra("Use um arquivo CSV ou XLSX.");
+  const livro = new ExcelJS.Workbook(); try { await livro.xlsx.load(await file.arrayBuffer()); } catch { throw new ErroRegra("Não foi possível ler o XLSX informado."); }
+  return livro.worksheets.map((sheet) => { if (sheet.rowCount - 1 > LIMITE_LINHAS) throw new ErroRegra(`Aba ${sheet.name} tem mais de ${LIMITE_LINHAS} linhas; separe a origem em lotes explícitos.`); const usados = new Set<string>(); const cabecalhos = Array.from({ length: sheet.columnCount }, (_, indice) => { const base = String(texto(sheet.getRow(1).getCell(indice + 1).value) ?? "").trim() || `Coluna ${indice + 1}`; let rotulo = base, repeticao = 2; while (usados.has(rotulo)) rotulo = `${base} (${repeticao++})`; usados.add(rotulo); return { id: `c${indice + 1}`, rotulo }; }); const linhas = Array.from({ length: Math.max(sheet.rowCount - 1, 0) }, (_, indice) => { const numero = indice + 2, row = sheet.getRow(numero), valores = Object.fromEntries(cabecalhos.map((cabecalho, coluna) => { const cell = row.getCell(coluna + 1); return [cabecalho.id, typeof cell.value === "number" ? cell.text : texto(cell.value)]; })); return { numero, valores }; }).filter((linha) => Object.values(linha.valores).some((valor) => valor !== null && valor !== "")); return { nome: sheet.name, cabecalhos, linhas }; });
+}
