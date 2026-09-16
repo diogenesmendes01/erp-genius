@@ -40,3 +40,39 @@ it("usa o limite exclusivo comprovado do encerramento sem perder as aulas anteri
   expect(situacaoMatriculaNaAula({ ...h, status: "ATIVA" }, new Date("2026-10-15T12:00:00Z"))).toBe("A_CONFERIR");
   expect(situacaoMatriculaNaAula({ ...h, encerramento: { statusAnterior: "ATIVA", limiteVinculo: new Date("inválida") } }, new Date())).toBe("A_CONFERIR");
 });
+
+describe("situação comprovada da matrícula migrada", () => {
+  const migrada = (): HistoricoSituacaoMatricula => ({ status: "ATIVA", ativadaEm: null, pausas: [], retomadas: [], fatosMigracao: [
+    { ordem: 1, tipo: "ATIVACAO", efetivoEm: new Date("2025-01-01T06:00:00Z") },
+    { ordem: 2, tipo: "PAUSA", efetivoEm: new Date("2025-03-01T06:00:00Z") },
+    { ordem: 3, tipo: "ATIVACAO", efetivoEm: new Date("2025-04-01T06:00:00Z") },
+  ] });
+  it("reconstrói a situação sem preencher ativadaEm comercial", () => {
+    const h = migrada();
+    expect(situacaoMatriculaNaAula(h, new Date("2024-12-31T23:00:00Z"))).toBe("NAO_ATIVADA");
+    expect(situacaoMatriculaNaAula(h, new Date("2025-02-01T06:00:00Z"))).toBe("ATIVA");
+    expect(situacaoMatriculaNaAula(h, new Date("2025-03-01T06:00:00Z"))).toBe("PAUSADA");
+    expect(situacaoMatriculaNaAula(h, new Date("2025-04-01T06:00:00Z"))).toBe("ATIVA");
+    expect(h.ativadaEm).toBeNull();
+  });
+  it("combina fatos importados com pausa e encerramento operacionais posteriores", () => {
+    const h = migrada(); h.status = "ENCERRADA";
+    h.pausas = [{ aplicadaEm: new Date("2026-01-03T12:00:00Z"), snapshot: { dataEfetiva: "2026-01-02", fusoInstitucional: "America/Costa_Rica" } }];
+    h.encerramento = { statusAnterior: "PAUSADA", limiteVinculo: new Date("2026-02-01T06:00:00Z") };
+    expect(situacaoMatriculaNaAula(h, new Date("2026-01-02T05:59:59Z"))).toBe("ATIVA");
+    expect(situacaoMatriculaNaAula(h, new Date("2026-01-02T06:00:00Z"))).toBe("PAUSADA");
+    expect(situacaoMatriculaNaAula(h, new Date("2026-02-01T06:00:00Z"))).toBe("ENCERRADA");
+  });
+  it("preserva o histórico anterior a cancelamento comprovado", () => {
+    const h = migrada(); h.status = "CANCELADA";
+    h.fatosMigracao = [...h.fatosMigracao!, { ordem: 4, tipo: "CANCELAMENTO", efetivoEm: new Date("2025-05-01T06:00:00Z") }];
+    expect(situacaoMatriculaNaAula(h, new Date("2025-04-15T06:00:00Z"))).toBe("ATIVA");
+    expect(situacaoMatriculaNaAula(h, new Date("2025-05-01T06:00:00Z"))).toBe("CANCELADA");
+  });
+  it("exige conferência para cadeia contraditória ou divergente do estado atual", () => {
+    const h = migrada();
+    expect(situacaoMatriculaNaAula({ ...h, status: "PAUSADA" }, new Date())).toBe("A_CONFERIR");
+    expect(situacaoMatriculaNaAula({ ...h, fatosMigracao: h.fatosMigracao!.slice(1) }, new Date())).toBe("A_CONFERIR");
+    expect(situacaoMatriculaNaAula({ ...h, ativadaEm: new Date("2026-01-01") }, new Date())).toBe("A_CONFERIR");
+  });
+});
