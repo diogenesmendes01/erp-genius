@@ -1100,9 +1100,11 @@ model AlocacaoTurma {
   ativa    Boolean  @default(true)
   criadoEm DateTime @default(now())
 
-  // Integridade (issue #1): no máx. UMA alocação ATIVA por aluno. Índice único PARCIAL
-  // (só linhas ativa=true) — Prisma não modela WHERE em @@unique, então mora na migration
-  // `integridade_alocacao_preco` (UNIQUE ... WHERE "ativa"). Histórico (ativa=false) é livre.
+  // Integridade parcial em SQL: uma alocação ATIVA por matrícula e por par
+  // aluno/turma; para legado sem matrícula, no máximo uma ativa por aluno. O
+  // trigger também impede combinar vínculo legado ativo com contrato simultâneo.
+  // Prisma não modela índices parciais; ver `alocacao_matricula_expansao` e
+  // `alocacoes_contratos_independentes`. Histórico (ativa=false) é livre.
   @@index([alunoId])
   @@index([turmaId])
   @@index([matriculaId, alunoId])
