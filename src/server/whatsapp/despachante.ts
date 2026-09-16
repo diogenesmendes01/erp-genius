@@ -65,6 +65,8 @@ export interface OpcoesDespacho {
   /** Limita o dreno a UMA intenção (review PR #53 P2): o webhook despacha só a saudação
    *  reativa recém-criada, nunca a fila global de cobrança/lotes a partir de um inbound. */
   intencaoId?: string;
+  /** Cron de agenda nunca pode drenar cobrança/comercial por acidente. */
+  somenteAvisosAgenda?: boolean;
 }
 
 export async function despacharFila(
@@ -91,6 +93,7 @@ export async function despacharFila(
   const intencoes = await prisma.intencaoMensagem.findMany({
     where: {
       ...(opts.intencaoId ? { id: opts.intencaoId } : {}),
+      ...(opts.somenteAvisosAgenda ? { avisoAlteracaoAgendaId: { not: null } } : {}),
       OR: [
         { status: "PENDENTE" },
         { status: "ADIADA", despacharAposEm: { lte: agora } },
@@ -478,7 +481,8 @@ export async function despacharFila(
       // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
       const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
-      if (it.avisoAlteracaoAgendaId) await prisma.$transaction(confirmarTransacao((tx) => registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId!, "FALHOU")));
+      // A falha pode ter ocorrido após a Meta aceitar a requisição. O aviso já
+      // recebeu claim INCERTO antes do I/O e não é reaberto automaticamente.
       r.falhas += 1;
     }
   }
