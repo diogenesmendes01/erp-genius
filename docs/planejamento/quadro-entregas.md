@@ -8,7 +8,7 @@ M01 — revisão do conjunto em 16/09: TESTER isolado preparado no commit `53484
 
 Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e bloqueadas; tempo de ciclo registrado desde início até aceite. Não utilizar 36,9% como progresso global.
 
-Estado mais recente (18h05): Q19 está no DEV `da4b6d8f` e no TESTER `9aa7727c`, em revisão independente; DEV comprovou 16 integrações, 3 controles/SSR e TypeScript. M01 ganhou o checkpoint DEV `c7fe85b2`: chamada histórica usa vigência e fatos contratuais importados; teste real de aplicação e chamada passou (1/1, 3,59 s), cobrindo pausa e transferência. Ainda faltam consumidores de frequência, interface e validação completa para integrar a aplicação M01. A migração 185 já foi aplicada somente no banco descartável do DEV, com bytes preservados; as notas anteriores de “não aplicada” abaixo são históricas. Nenhum dado real ou provedor externo foi acionado.
+Estado mais recente (18h54): Q19 integrado e validado; M01 permanece em desenvolvimento, sem liberação da aplicação histórica no principal. A execução dirigida de `m01-lancamento-historico.int.test.ts` terminou com falha na preparação da turma: o banco impede informar livremente `regraAvaliacaoId`. A atribuição automática atende somente turmas futuras, e `contextoMigracaoRegra` bloqueia turmas iniciadas. Falta resolver a conferência da regra histórica antes de comprovar lançamento acadêmico nessa situação; não transformar a turma em futura nem remover a proteção para passar o teste. Dois DEVs verificam interface e fluxo histórico, com revisão independente. Migrações aplicadas permanecem imutáveis. Nenhum dado real ou provedor externo foi acionado.
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
