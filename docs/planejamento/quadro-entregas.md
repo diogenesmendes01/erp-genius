@@ -14,6 +14,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 - Revisão independente da proposta 185: aplicação histórica ainda bloqueada por ensaio com correspondências obsoletas, fato final sem coerência obrigatória com o estado, snapshot sem confronto material dos limites/termos e divergências SQL/Prisma. DEV corrige antes de qualquer aplicação; nenhum banco recebeu a 185. DEV 1 atualizado para `codex/dev-reposicoes-operacao` na base integrada `d4fc8c72`, preservando a branch anterior com a proposta 182 pendente.
 
+- M01/185: proposta SQL passou em transação revertida no banco descartável DEV (após correção de CASE); schema Prisma atualizado e TypeScript passaram na sessão 20990. Migração ainda não aplicada: faltam testes funcionais de aplicação, reuso do contrato e rejeições. Artefatos seguem no worktree DEV; validação sintática não comprova integridade operacional.
+
 ## EMAIL — aceite do DEV
 
 - Secretaria/Administração localiza e acompanha solicitações com paginação e permissões revalidadas. Tela distingue preparado, aceito pelo provedor, incerto e demais estados sem apresentar aceitação como entrega.
