@@ -59,7 +59,7 @@ enum AcaoResolucaoRevisaoProgressao {
 
 // A aprovação pedagógica autoriza a execução posterior; não altera a alocação sozinha.
 model SolicitacaoMudancaAcademica {
-  id String @id @default(cuid())
+  id String @id @default(cuid()) @map("id")
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: NoAction)
   // Legado pode não ter fechamento; progressão nova exige esta referência na
@@ -418,6 +418,10 @@ enum Papel {
 }
 
 model Usuario {
+  correspondenciasProdutoMigracao CorrespondenciaProdutoMigracao[] @relation("RevisorCorrespondenciaProdutoMigracao")
+  correspondenciasTurmaMigracao CorrespondenciaTurmaMigracao[] @relation("RevisorCorrespondenciaTurmaMigracao")
+  correspondenciasStatusMatriculaMigracao CorrespondenciaStatusMatriculaMigracao[] @relation("RevisorCorrespondenciaStatusMatriculaMigracao")
+  ensaiosVinculoMigracao EnsaioVinculoMigracao[] @relation("ExecutorEnsaioVinculoMigracao")
     conferenciasParticipantesAditivo ConferenciaParticipantesAditivo[]
     conferenciasAssinaturaAditivo ConferenciaAssinaturaAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
@@ -719,6 +723,7 @@ enum StatusPais {
 }
 
 model Pais {
+  correspondenciasProdutoMigracao CorrespondenciaProdutoMigracao[]
   id         String     @id @default(cuid())
   nome       String
   codigoISO  String     @unique
@@ -800,6 +805,7 @@ model Nivel {
 
 // Produto vendável = idioma + modalidade
 model Produto {
+  correspondenciasMigracao CorrespondenciaProdutoMigracao[]
   politicasComissao PoliticaComissao[]
   id           String            @id @default(cuid())
   idiomaId     String
@@ -888,6 +894,7 @@ enum StatusTurma {
 }
 
 model Turma {
+  correspondenciasMigracao CorrespondenciaTurmaMigracao[]
   registrosAvaliacao RegistroAvaliacaoMatricula[]
   equivalenciasAvaliacaoOrigem PropostaEquivalenciaAvaliacao[] @relation("TurmaOrigemEquivalenciaAvaliacao")
   equivalenciasAvaliacaoDestino PropostaEquivalenciaAvaliacao[] @relation("TurmaDestinoEquivalenciaAvaliacao")
@@ -6603,6 +6610,7 @@ model LinhaPreparacaoMigracao {
   colisoesComoExistente ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemExistenteMigracao")
   colisoesComoConflitante ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemConflitanteMigracao")
   aplicacoesCadastro AplicacaoCadastroMigracao[]
+  ensaiosVinculo EnsaioVinculoMigracao[]
 
   @@unique([loteId, linhaOrigem], map: "LinhaPreparacaoMigracao_lote_linha_key")
   @@index([alunoOrigemId], map: "LinhaPreparacaoMigracao_aluno_origem_idx")
@@ -6642,6 +6650,83 @@ model AplicacaoCadastroMigracao {
 
   @@unique([linhaId, entradaHash, situacao], map: "AplicacaoCadastroMigracao_linha_hash_situacao_key")
   @@index([linhaId, criadoEm], map: "AplicacaoCadastroMigracao_linha_criado_idx")
+}
+
+// M01/183: correspondências são revisões administrativas append-only. A vigência
+// é determinada pela maior versão de cada chave, nunca por uma versão ativa antiga.
+enum ResultadoEnsaioVinculoMigracao {
+  REQUISITO_AUSENTE
+  PRONTO_PARA_REVISAO
+  DIVERGENTE
+}
+
+model CorrespondenciaProdutoMigracao {
+  id String @id @default(cuid())
+  origem String
+  produtoOrigemId String
+  versao Int
+  produtoId String
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paisId String
+  pais Pais @relation(fields: [paisId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  moeda String
+  ativa Boolean
+  revisadaPorId String
+  revisadaPor Usuario @relation("RevisorCorrespondenciaProdutoMigracao", fields: [revisadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revisadaEm DateTime @default(now()) @db.Timestamptz(6)
+  ensaios EnsaioVinculoMigracao[] @relation("CorrespondenciaProdutoEnsaioVinculo")
+  @@unique([origem, produtoOrigemId, versao], map: "CorrespondenciaProdutoMigracao_origem_produto_versao_key")
+}
+
+model CorrespondenciaTurmaMigracao {
+  id String @id @default(cuid())
+  origem String
+  turmaOrigemId String
+  versao Int
+  turmaId String
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ativa Boolean
+  revisadaPorId String
+  revisadaPor Usuario @relation("RevisorCorrespondenciaTurmaMigracao", fields: [revisadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revisadaEm DateTime @default(now()) @db.Timestamptz(6)
+  ensaios EnsaioVinculoMigracao[] @relation("CorrespondenciaTurmaEnsaioVinculo")
+  @@unique([origem, turmaOrigemId, versao], map: "CorrespondenciaTurmaMigracao_origem_turma_versao_key")
+}
+
+model CorrespondenciaStatusMatriculaMigracao {
+  id String @id @default(cuid())
+  origem String
+  statusOrigem String
+  versao Int
+  statusDestino StatusMatricula
+  ativa Boolean
+  revisadaPorId String
+  revisadaPor Usuario @relation("RevisorCorrespondenciaStatusMatriculaMigracao", fields: [revisadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revisadaEm DateTime @default(now()) @db.Timestamptz(6)
+  ensaios EnsaioVinculoMigracao[] @relation("CorrespondenciaStatusEnsaioVinculo")
+  @@unique([origem, statusOrigem, versao], map: "CorrespondenciaStatusMatriculaMigracao_origem_status_versao_key")
+}
+
+model EnsaioVinculoMigracao {
+  id String @id @default(cuid())
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  entradaHash String
+  contextoHash String
+  resultado ResultadoEnsaioVinculoMigracao
+  requisitos Json
+  snapshot Json
+  correspondenciaProdutoId String?
+  correspondenciaProduto CorrespondenciaProdutoMigracao? @relation("CorrespondenciaProdutoEnsaioVinculo", fields: [correspondenciaProdutoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  correspondenciaTurmaId String?
+  correspondenciaTurma CorrespondenciaTurmaMigracao? @relation("CorrespondenciaTurmaEnsaioVinculo", fields: [correspondenciaTurmaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  correspondenciaStatusId String?
+  correspondenciaStatus CorrespondenciaStatusMatriculaMigracao? @relation("CorrespondenciaStatusEnsaioVinculo", fields: [correspondenciaStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ensaiadoPorId String
+  ensaiadoPor Usuario @relation("ExecutorEnsaioVinculoMigracao", fields: [ensaiadoPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([linhaId, entradaHash, contextoHash], map: "EnsaioVinculoMigracao_contexto_key")
+  @@index([linhaId, criadoEm], map: "EnsaioVinculoMigracao_linhaId_criadoEm_idx")
 }
 
 model PendenciaCampoPreparacaoMigracao {
