@@ -87,7 +87,9 @@ describe("M01 preparação de migração", () => {
     const salvo = await prisma.lotePreparacaoMigracao.findUniqueOrThrow({ where: { origem_chaveLote: { origem: "OPERACIONAL_LETICIA", chaveLote: "imutavel" } }, include: { linhas: { include: { pendencias: true } } } });
     const linhaSalva = salvo.linhas[0]!;
     await expect(prisma.lotePreparacaoMigracao.update({ where: { id: salvo.id }, data: { chaveLote: "alterado" } })).rejects.toThrow();
+    await expect(prisma.$executeRaw`UPDATE "LotePreparacaoMigracao" SET "criadoEm" = CURRENT_TIMESTAMP + interval '1 day' WHERE id = ${salvo.id}`).rejects.toThrow();
     await expect(prisma.linhaPreparacaoMigracao.update({ where: { id: linhaSalva.id }, data: { estado: "PRONTA_PARA_REVISAO" } })).rejects.toThrow();
+    await expect(prisma.$executeRaw`UPDATE "LinhaPreparacaoMigracao" SET "criadoEm" = CURRENT_TIMESTAMP + interval '1 day' WHERE id = ${linhaSalva.id}`).rejects.toThrow();
     await expect(prisma.pendenciaCampoPreparacaoMigracao.update({ where: { id: linhaSalva.pendencias[0]!.id }, data: { detalhe: "ocultar" } })).rejects.toThrow();
     await expect(prisma.linhaPreparacaoMigracao.delete({ where: { id: linhaSalva.id } })).rejects.toThrow();
   });
