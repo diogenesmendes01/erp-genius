@@ -37,7 +37,7 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
     !!autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId),
   );
   if (!matricula.aluno.aceitaComunicacoes) {
-    if (replanejamento) await registrarPendenciaAvisoAgendaTx(tx, {
+    await registrarPendenciaAvisoAgendaTx(tx, {
       eventoId: entrada.eventoId, matriculaId: matricula.id,
       motivo: haIdentidadeAcademica ? MotivoPendenciaAvisoAgenda.CONTATO_SEM_OPT_IN : MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO,
     });
@@ -49,7 +49,7 @@ export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient,
   if (matricula.aluno.whatsapp && matricula.aluno.telefoneE164) canais.push({ canal: "WHATSAPP", contato: matricula.aluno.telefoneE164, destinatarioAlunoId: matricula.alunoId });
   for (const autorizacao of matricula.autorizacoesComunicacaoAcademica) if (autorizacao.responsavel.telefoneE164 && autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === matricula.alunoId)) canais.push({ canal: "WHATSAPP", contato: autorizacao.responsavel.telefoneE164, destinatarioResponsavelId: autorizacao.responsavelId, autorizacaoComunicacaoAcademicaId: autorizacao.id });
   if (!canais.length) {
-    if (replanejamento) await registrarPendenciaAvisoAgendaTx(tx, { eventoId: entrada.eventoId, matriculaId: matricula.id, motivo: MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO });
+    await registrarPendenciaAvisoAgendaTx(tx, { eventoId: entrada.eventoId, matriculaId: matricula.id, motivo: MotivoPendenciaAvisoAgenda.SEM_DESTINATARIO_AUTORIZADO });
     return [];
   }
   const avisos = [];
