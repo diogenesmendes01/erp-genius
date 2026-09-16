@@ -574,6 +574,9 @@ model Usuario {
   janelasAdmissaoPreparadas JanelaAdmissaoTurma[]
   janelasAdmissaoDecididas DecisaoJanelaAdmissao[]
   gradesDecididas DecisaoGradeTurma[]
+  propostasQuantidadeAulasPreparadas PropostaQuantidadeAulasModalidade[] @relation("PreparadorQuantidadeAulasModalidade")
+  decisoesQuantidadeAulas DecisaoQuantidadeAulasModalidade[] @relation("DecisorQuantidadeAulasModalidade")
+  aplicacoesQuantidadeAulas AplicacaoQuantidadeAulasModalidade[] @relation("AplicadorQuantidadeAulasModalidade")
   replanejamentosPreparados RascunhoReplanejamento[]
   decisoesReplanejamentoConjunto DecisaoReplanejamentoConjunto[] @relation("DecisorReplanejamentoConjunto")
   gradesPreparadas PropostaGradeTurma[]
@@ -775,6 +778,7 @@ model Modalidade {
   produtos Produto[]
   turmas   Turma[]
   precos   PrecoReferencia[]
+  propostasQuantidadeAulas PropostaQuantidadeAulasModalidade[]
 }
 
 model Nivel {
@@ -927,6 +931,7 @@ model Turma {
 
   alocacoes AlocacaoTurma[]
   propostasSegundaChamada PropostaSegundaChamada[]
+  impactosQuantidadeAulas ImpactoQuantidadeAulasModalidade[]
 }
 
 // ============================================================
@@ -3010,6 +3015,92 @@ model DecisaoGradeTurma {
   aprovada Boolean
   motivo String
   decididaEm DateTime @default(now())
+}
+
+// Q41–Q43: alteração versionada da quantidade de aulas. A modalidade só recebe
+// o novo valor durante a aplicação conjunta; cada turma mantém seu impacto
+// congelado para que redução, aumento e histórico possam ser auditados.
+enum SituacaoPropostaQuantidadeAulas {
+  PREPARADA
+  REJEITADA
+  APROVADA
+  APLICADA
+}
+
+enum AlcanceImpactoQuantidadeAulas {
+  FINALIZADA_PRESERVADA
+  REDUCAO_INICIADA_PRESERVADA
+  REDUCAO_NAO_INICIADA
+  REDUCAO_RASCUNHO
+  AUMENTO_INICIADA
+  AUMENTO_NAO_INICIADA
+  AUMENTO_RASCUNHO
+}
+
+model PropostaQuantidadeAulasModalidade {
+  id String @id @default(cuid())
+  modalidadeId String
+  modalidade Modalidade @relation(fields: [modalidadeId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorQuantidadeAulasModalidade", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  quantidadeAnterior Int
+  quantidadeNova Int
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  estadoHash String
+  snapshot Json
+  situacao SituacaoPropostaQuantidadeAulas @default(PREPARADA)
+  criadaEm DateTime @default(now()) @db.Timestamptz(6)
+  impactos ImpactoQuantidadeAulasModalidade[]
+  decisao DecisaoQuantidadeAulasModalidade?
+  aplicacao AplicacaoQuantidadeAulasModalidade?
+
+  @@unique([modalidadeId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([modalidadeId, situacao, criadaEm])
+}
+
+model ImpactoQuantidadeAulasModalidade {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaQuantidadeAulasModalidade @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  turmaId String
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  alcance AlcanceImpactoQuantidadeAulas
+  quantidadeAnterior Int
+  quantidadeNova Int
+  iniciadaEm DateTime? @db.Timestamptz(6)
+  publicada Boolean
+  excecoesQ37 Json @default("[]")
+  snapshot Json
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([propostaId, turmaId])
+  @@index([turmaId, criadoEm])
+}
+
+model DecisaoQuantidadeAulasModalidade {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaQuantidadeAulasModalidade @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorQuantidadeAulasModalidade", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  estadoHash String
+  decididaEm DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model AplicacaoQuantidadeAulasModalidade {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaQuantidadeAulasModalidade @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicadorId String
+  aplicador Usuario @relation("AplicadorQuantidadeAulasModalidade", fields: [aplicadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
+  estadoHash String
 }
 
 model RascunhoReplanejamento {
