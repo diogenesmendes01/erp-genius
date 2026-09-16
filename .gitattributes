@@ -6,3 +6,4 @@ deploy/** text eol=lf
 
 prisma/migrations/20260916185000_aplicacao_vinculos_historicos_migracao/migration.sql -text
 prisma/migrations/20260916190000_situacao_contratual_migrada/migration.sql -text
+prisma/migrations/20260916193000_guards_vigencia_migrada/migration.sql -text
