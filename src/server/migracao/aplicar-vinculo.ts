@@ -9,7 +9,10 @@ import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { instanteAvaliacaoLocal } from "@/server/avaliacoes/tempo";
 
 const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const evidencia = z.record(z.string().min(1), z.union([z.string().min(1), z.number().finite(), z.boolean(), z.null()])).refine(v => Object.keys(v).length > 0);
+/** Preserva os valores aceitos no snapshot; só recusa chaves e textos sem conteúdo comprovável. */
+const chaveEvidencia = z.string().min(1).refine((chave) => chave.trim().length > 0, "A chave da evidência não pode estar em branco.");
+const textoEvidencia = z.string().min(1).refine((texto) => texto.trim().length > 0, "O texto da evidência não pode estar em branco.");
+const evidencia = z.record(chaveEvidencia, z.union([textoEvidencia, z.number().finite(), z.boolean(), z.null()])).refine(v => Object.keys(v).length > 0, "Informe uma evidência.");
 const fato = z.object({ tipo: z.enum(["ATIVACAO", "PAUSA", "ENCERRAMENTO", "CANCELAMENTO"]), data: data, evidencia }).strict();
 const entrada = z.object({
   linhaId: z.string().min(1), ensaioId: z.string().min(1), entradaHash: z.string().regex(/^[0-9a-f]{64}$/), contextoHash: z.string().regex(/^[0-9a-f]{64}$/),
