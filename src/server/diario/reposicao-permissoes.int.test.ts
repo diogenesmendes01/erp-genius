@@ -103,6 +103,15 @@ it("consulta da equipe conserva matrícula e recusa docente ou papel revogado", 
   expect((await consultarReposicoesEquipe({ matriculaId })).ok).toBe(false);
 });
 
+it.each(["RASCUNHO", "CANCELADA"] as const)("gravação não conclui por chamada direta em matrícula %s", async status => {
+  await inserirReposicao(`entrega-${status}`, gestorId, "GRAVACAO"); await autorizarReposicao(`entrega-${status}`, adminId);
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: `entrega-${status}`, professorId, designadorId: gestorId, inicio: new Date("2026-01-11T00:00:00Z"), motivo: "Docente designado" } });
+  const entrega = await prisma.entregaReposicaoGravacao.create({ data: { reposicaoId: `entrega-${status}`, alunoId, contaPortalAlunoId, versao: 1, resumo: "Resumo registrado", atividade: "Atividade enviada", evidencia: "Evidência", entregueEm: new Date("2026-01-12T10:00:00Z") } });
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { status } }); entrar(professorId);
+  expect(await concluirReposicaoIndividual({ reposicaoId: `entrega-${status}`, versaoAnterior: 0, entregaId: entrega.id, validadaEm: new Date().toISOString(), evidencia: "Tentativa de validar fora de estado permitido" })).toMatchObject({ ok: false });
+});
+
+
 it("projeção do agendamento inicial é exclusiva da Secretaria ou Administração, nunca da Gestão", async () => {
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
