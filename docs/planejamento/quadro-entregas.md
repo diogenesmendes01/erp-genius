@@ -39,6 +39,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- M01 ensaio integrado até `1b644918`, incluindo correspondências versionadas, formulários sem destino presumido, histórico persistido e revogação com revisão esperada. Migrações 183/184 aplicadas somente no banco descartável do integrador. TESTER: 7 integrações, 1 SSR e TypeScript aprovados; principal: os mesmos 7 testes de integração passaram em 12,35 s (sessão 1613) e SSR passou. Build 12342 em execução. Aplicação de vínculos e conciliação financeira continuam pendentes.
+
 - M01 checkpoint DEV `68d791d2` preparado no TESTER `9a5c4335` (correção documental `ce2aa81f`), com 184 aplicada no banco exclusivo de validação. DEV: 4 integrações, SSR e TypeScript sem incremental aprovados; revogação revalida a revisão vista. Revisão independente em andamento; ainda fora do principal.
 - Regressão unitária do principal após Q37 e manutenção dos testes: 207 arquivos, 1.378 testes aprovados em 13,42 s (sessão 1831). Não inclui o ensaio M01 ainda no DEV/TESTER.
 
