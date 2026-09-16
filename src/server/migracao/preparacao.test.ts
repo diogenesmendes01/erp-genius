@@ -4,6 +4,11 @@ import { EntradaPrepararLoteMigracao, estadoDaLinha, pendenciasDaLinha } from ".
 const cadastroCompleto = { linhaOrigem: "alunos!2", tipoEntrada: "CADASTRO" as const, aluno: { id: "aluno-1", nome: "Ana Lima", email: "ana@example.test", documento: "DOC-1", pais: "BR", fuso: "America/Sao_Paulo" }, dadosAdicionais: { observacao: "fonte preservada" } };
 
 describe("preparação de migração", () => {
+  it("preserva vínculo inválido e registra datas, moeda, país e produto para conferência", () => {
+    const linha = EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "vinculo", linhas: [{ linhaOrigem: "v!2", tipoEntrada: "VINCULO_MATRICULA", aluno: cadastroCompleto.aluno, turma: { id: "t1" }, matricula: { id: "m1", situacao: "ATIVA", inicio: "data", fim: "2020-01-01", produtoOrigem: null, moeda: "br", pais: "BRA" }, dadosAdicionais: {} }] }).linhas[0];
+    expect(pendenciasDaLinha(linha).map((p) => p.codigo)).toEqual(expect.arrayContaining(["INICIO_MATRICULA_INVALIDO", "PRODUTO_ORIGEM_AUSENTE", "MOEDA_CONTRATUAL_INVALIDA", "PAIS_CONTRATUAL_INVALIDO"]));
+    expect(linha.matricula?.inicio).toBe("data");
+  });
   it("preserva duas linhas legíveis quando uma célula é inválida e não transfere sua pendência", () => {
     const entrada = EntradaPrepararLoteMigracao.parse({ origem: "OPERACIONAL_LETICIA", chaveLote: "fixture-celulas-1", linhas: [{ ...cadastroCompleto, linhaOrigem: "alunos!1", aluno: { ...cadastroCompleto.aluno, email: "invalido" } }, cadastroCompleto] });
     const [ruim, boa] = entrada.linhas.map(pendenciasDaLinha);
