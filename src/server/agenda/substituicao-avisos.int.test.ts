@@ -114,6 +114,32 @@ it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca do
   }));
 });
 
+it("registra uma pendência por matrícula afetada sem opt-in ou canal, sem duplicar no replay", async () => {
+  const primeiraMatricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] }, include: { aluno: true } });
+  await prisma.aluno.update({ where: { id: primeiraMatricula.alunoId }, data: { aceitaComunicacoes: false } });
+  const alunoSemCanal = await prisma.aluno.create({ data: { primeiroNome: "Sem canal", paisId: catalogo.pais.id, aceitaComunicacoes: true, whatsapp: false } });
+  const matriculaSemCanal = await prisma.matricula.create({ data: { alunoId: alunoSemCanal.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
+  await prisma.alocacaoTurma.create({ data: { alunoId: alunoSemCanal.id, matriculaId: matriculaSemCanal.id, turmaId, criadoEm: new Date("2099-09-01T00:00:00.000Z") } });
+
+  const propostaId = await prepararTroca();
+  authMock.mockResolvedValue({ user: { id: gestorId } });
+  const entrada = { propostaId, aprovar: true, motivo: "Troca conferida por outra pessoa" };
+  const primeira = await decidirSubstituicaoDocente(entrada);
+  expect(primeira).toMatchObject({ ok: true, dado: { aplicada: true } });
+  expect(await decidirSubstituicaoDocente(entrada)).toEqual(primeira);
+
+  const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "SubstituicaoDocenteDecidida" } });
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { eventoId: evento.id, matriculaId: primeiraMatricula.id } })).toBe(0);
+  expect(await prisma.pendenciaAvisoAgenda.findMany({ where: { eventoId: evento.id }, orderBy: { matriculaId: "asc" } })).toEqual(expect.arrayContaining([
+    expect.objectContaining({ matriculaId: primeiraMatricula.id, motivo: "CONTATO_SEM_OPT_IN", situacao: "PENDENTE" }),
+    expect.objectContaining({ matriculaId: matriculaSemCanal.id, motivo: "SEM_DESTINATARIO_AUTORIZADO", situacao: "PENDENTE" }),
+  ]));
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: evento.id } })).toBe(2);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: evento.id, matriculaId: matriculasElegiveis[1] } })).toBe(0);
+  expect(enviarEmailMock).not.toHaveBeenCalled();
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+});
+
 it("renderiza somente os itens persistidos do aviso quando a decisão abrange turmas distintas", async () => {
   const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "AVISO-SEGUNDA-TURMA", ordem: 2 } });
   const segundaTurma = await prisma.turma.create({ data: { modalidadeId: catalogo.modalidade.id, nivelId: nivel.id, professorId: titularId, status: "ABERTA" } });
