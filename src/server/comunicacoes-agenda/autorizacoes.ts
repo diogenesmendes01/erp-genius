@@ -113,3 +113,30 @@ export async function listarAutorizacoesComunicacaoAcademica(input: unknown) {
   const itens = registros.slice(0, 25);
   return { itens, proximoCursor: registros.length > itens.length ? itens.at(-1)?.id ?? null : null };
 }
+export async function consultarTelaAutorizacoesComunicacaoAcademica(input: unknown) {
+  const sessao = await exigirSessaoComPapel(...papeisPermitidos);
+  const dados = z.object({ matriculaId: id }).strict().parse(input);
+  const usuario = await prisma.usuario.findFirst({ where: { id: sessao.id, ativo: true, papeis: { hasSome: [...papeisPermitidos] } }, select: { id: true } });
+  if (!usuario) throw new ErroRegra("Seu papel atual não permite gerir autorizações acadêmicas.");
+  const matricula = await prisma.matricula.findUnique({
+    where: { id: dados.matriculaId },
+    select: {
+      id: true,
+      codigo: true,
+      aluno: {
+        select: {
+          primeiroNome: true,
+          sobrenome: true,
+          responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavel: { select: { id: true, nome: true } } } },
+        },
+      },
+    },
+  });
+  if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+  const historico = await listarAutorizacoesComunicacaoAcademica({ matriculaId: dados.matriculaId });
+  return {
+    matricula: { id: matricula.id, codigo: matricula.codigo, alunoNome: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome ?? ""}`.trim() },
+    responsaveis: matricula.aluno.responsaveis.map((v) => v.responsavel),
+    historico,
+  };
+}
