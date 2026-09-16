@@ -31,6 +31,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- N01: conferência dos produtores encontrou prévia/rascunho/conferência do replanejamento global, mas nenhum executor conjunto nesse fluxo. Essa dependência de F07.3 permanece aberta. Recorte inicial de avisos conecta remarcações particulares/reposições e substituições efetivamente aplicadas, com origem transacional e matrícula identificadas. Migração 154 já aplicada somente no DEV; corretiva estrutural 156 reservada, sem reutilizar 155 de M01. Retorno do ID de `registrarEvento` foi autorizado ao DEV 1, preservando os chamadores atuais.
+
 - Próxima rodada: DEV 1 usa branch `codex/dev-avisos-institucionais` no worktree EMAIL; DEV 2 usa `codex/dev-preparacao-migracao` no worktree de gravações. Ambas partem de `2df2f4d`, com dependências próprias, Prisma regenerado e os mesmos perfis de banco exclusivos. Migrações 154 e 155 reservadas respectivamente. EMAIL/VIDEO estão em regressão, sem nova implementação paralela nesses recortes.
 
 - Cada DEV entrega commits autocontidos e lista dos testes executados. TESTER revisa os commits exatos no banco `erp_genius_test_tester`, uma frente por vez.
