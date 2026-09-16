@@ -38,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- F07.3: complemento `8c7d6111` integrado (origem DEV `93bd0ee4`), incluindo alteração de quantidade quando ainda não há turmas. Integração direcionada do principal: sessão 51621, 7/7 testes aprovados em 20,91 s; TESTER também aprovou 7/7 e TypeScript. Avisos da quantidade continuam pendentes da aprovação específica já solicitada.
+- M01: `57bf31e9` permanece fora do principal. Revisões do integrador e TESTER encontraram validação permissiva de datas da matrícula e ausência de validação das datas de alocação. DEV prepara correção e provas do mapeamento CSV/XLSX; não há aceite de aplicação de vínculos.
+
 - M01 aplicação de alunos integrada até `e6c73a63`: migração 180 aplicada no banco descartável do integrador; sessão 5588 passou 7/7 integrações (12,46 s). TESTER também aprovou 7 integrações, 2 SSR e TypeScript, incluindo histórico persistido após recarga e candidato criado depois do ensaio. Build do conjunto aprovado na sessão 45633, incluindo TypeScript e 80 páginas; vínculos e financeiro continuam pendentes.
 
 - Regressão unitária do principal: sessão 49369 passou 204 arquivos/1.372 testes após corrigir o mock de roteador do formulário de reconferência (`039514ed`). Reservas do replanejamento corrigidas em `fafe7000`, com 19 testes dirigidos aprovados. Essas evidências precedem a integração M01 de aplicação.
