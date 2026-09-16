@@ -38,6 +38,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Falha de conferência reproduzida e corrigida somente no teste: o claim passou a usar o delegate transacional, que o spy antigo no delegate raiz não interceptava. DEV `8e67c6bd` injeta o comprovante na releitura posterior ao claim, confirma estado `ENVIANDO` e uma única injeção; preserva adiamento e ausência de chamada ao driver. Arquivo completo: 8/8 aprovados em 14,33 s no banco DEV EMAIL. Commit aguarda término da regressão 7297 para integração.
+
 - Diagnóstico de tempo no banco isolado DEV EMAIL: três amostras de limpeza completa das 300 tabelas levaram 1.160/1.541/1.471 ms (média 1.391 ms); seed mínimo, média 13,6 ms. O custo está no TRUNCATE global, não na descoberta das tabelas (~3 ms). Preservar isolamento; não substituir limpeza por seed nem prometer ganho sem validar uma alternativa. Nenhuma dependência ou configuração foi alterada.
 - M01 ensaio: servidor DEV `8c00b4ee`, preparado no TESTER como `e1e66401`, passou três cenários adversariais em 5,02 s. Revisão encontrou falta de bloqueio antes de escolher a versão do produto, contexto sem identidade do aluno resolvido e pendência de situação exibida mesmo depois de conferida. DEV corrige esses pontos e exige seleção explícita de destinos na tela. Não integrado nem considerado aplicação de vínculos concluída.
 - Regressão global 7297 permanece em execução: falhas observadas em segunda chamada (`CRIAR não bloqueia a proposta antes da reserva/calendário em uso`) e conferência (`informe recebido após o claim também impede chamar o driver`). Diagnóstico isolado em andamento; ainda não há resultado final nem aceite dessa regressão.
