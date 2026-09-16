@@ -23,6 +23,8 @@ Para `ReplanejamentoConjuntoAplicado`, a origem canônica inclui decisão e apli
 
 Se uma matrícula afetada por qualquer alteração aprovada não puder formar aviso, a própria transação mantém a aplicação e registra uma única pendência operacional por evento, matrícula e motivo. Falta de identidade acadêmica elegível registra `SEM_DESTINATARIO_AUTORIZADO`; identidade existente com comunicações recusadas registra `CONTATO_SEM_OPT_IN`. Replays não duplicam a pendência. Ausência de vínculo com os encontros não cria aviso nem pendência. Configuração ou contato que se tornem indisponíveis depois da criação são revalidados pela fila e não fabricam tentativa ou reenvio.
 
+No enfileiramento WhatsApp, aviso com origem e matrícula ainda válidas permanece `PREPARADO` quando faltar configuração institucional, contato atual ou opt-in. A fila registra, de modo idempotente, respectivamente `CONFIGURACAO_INDISPONIVEL`, `CONTATO_INDISPONIVEL` ou `CONTATO_SEM_OPT_IN`; ela não cria intenção, tentativa, `INCERTO` nem reenvio automático. A resolução exige um fluxo autorizado que confirme a condição corrigida.
+
 ## Despacho e estados
 
 O worker revalida evento, matrícula ativa, consentimento, contato, hash do contato e pertencimento do encontro pela mesma regra histórica antes de chamar o transporte injetado. Uma chamada concorrente somente obtém um claim. Resultado recusado registra `FALHOU`; resultado incerto preserva `INCERTO` e não é reenviado automaticamente; aceite com recibo registra `ENVIADO`. `ENVIADO` significa que o provedor aceitou a solicitação, não que o destinatário recebeu ou leu a mensagem.

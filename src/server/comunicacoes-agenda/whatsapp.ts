@@ -1,11 +1,12 @@
 import { createHash, randomUUID } from "crypto";
-import type { Prisma } from "@prisma/client";
+import { MotivoPendenciaAvisoAgenda, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-atual";
 import { garantirContato } from "@/server/whatsapp/identidade";
 import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
+import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 
 const VARIAVEIS_AGENDA = /\{(nome|horarios)\}/g;
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
@@ -89,7 +90,7 @@ async function configuracaoAgenda(db: Prisma.TransactionClient | typeof prisma =
   });
 }
 
-/** Cria/reabre a intenção sem enviar. Configuração ausente deixa o aviso PREPARADO. */
+/** Cria/reabre a intenção sem enviar. Diagnósticos operacionais permanecem em PREPARADO. */
 export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClient, avisoId: string) {
   const aviso = await tx.avisoAlteracaoAgenda.findUnique({
     where: { id: avisoId },
@@ -102,6 +103,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   });
   const fonte = aviso && await fonteAvisoValida(tx, aviso);
   if (!aviso || aviso.canal !== "WHATSAPP" || aviso.situacao !== "PREPARADO" || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !fonte) return "ignorado" as const;
+  const registrarPendencia = (motivo: MotivoPendenciaAvisoAgenda) => registrarPendenciaAvisoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, motivo });
   const destino = aviso.destinatarioResponsavelId
     ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId } : null)
     : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;
@@ -109,8 +111,9 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   const idioma = aviso.aluno.pais?.idioma ?? "es";
   const config = await configuracaoAgenda(tx);
   const motivoConfig = motivoConfiguracaoAgendaInvalida(config, idioma);
-  if (motivoConfig || !aviso.aluno.aceitaComunicacoes || !telefone || !aviso.itens.length) return "pendente" as const;
-  if (hashContato(telefone) !== aviso.contatoHash) return "pendente" as const;
+  if (!aviso.aluno.aceitaComunicacoes) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_SEM_OPT_IN); return "pendente" as const; }
+  if (!telefone || !aviso.itens.length || hashContato(telefone) !== aviso.contatoHash) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_INDISPONIVEL); return "pendente" as const; }
+  if (motivoConfig) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONFIGURACAO_INDISPONIVEL); return "pendente" as const; }
   const horarios = horariosDoAviso(aviso, fonte);
   if (!horarios) return "pendente" as const;
   const renderizado = renderizarTemplateAgenda(config!.templateAvisosAgenda!.corpo, { nome: aviso.aluno.primeiroNome, horarios });
@@ -120,7 +123,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
     numeroId: config!.numeroAvisosAgendaId!, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aviso.alunoId, matriculaId: aviso.matriculaId,
   });
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id: atendimento.id }, include: { conversa: { include: { contato: true } } } });
-  if (!atual || atual.conversa.contato.telefoneE164 !== telefone || (destino!.responsavelId ? !await destinatarioAtualDoAtendimento(atual, tx) : atual.conversa.contato.alunoId !== aviso.alunoId)) return "pendente" as const;
+  if (!atual || atual.conversa.contato.telefoneE164 !== telefone || (destino!.responsavelId ? !await destinatarioAtualDoAtendimento(atual, tx) : atual.conversa.contato.alunoId !== aviso.alunoId)) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_INDISPONIVEL); return "pendente" as const; }
   const existente = aviso.intencaoWhatsApp;
   if (existente?.status && existente.status !== "SIMULADA") return "ja_existente" as const;
   const dados = {
