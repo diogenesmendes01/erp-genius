@@ -24,16 +24,17 @@ export async function validarFonteReplanejamentoConjuntoTx(tx: Prisma.Transactio
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: solicitados }, matriculaId: null }, select: { id: true, turmaId: true, inicio: true, fim: true, fusoOrigem: true } });
   if (encontros.length !== solicitados.length) return null;
   const alocacoes = await tx.alocacaoTurma.findMany({ where: { matriculaId: entrada.matriculaId, turmaId: { in: encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []) } }, select: { turmaId: true, criadoEm: true, encerradaEm: true } });
-  const horarios: HorarioReplanejamento[] = [];
+  const horarios: (HorarioReplanejamento & { origem: "HORARIO_ORIGINAL" | "HORARIO_PROPOSTO" | "AMBOS" })[] = [];
   for (const encontro of encontros) {
     const h = payload.data.horarios.find((x) => x.encontroId === encontro.id);
     if (!h || !encontro.turmaId || encontro.inicio.toISOString() !== h.inicioProposto || encontro.fim.toISOString() !== h.fimProposto) return null;
-    const vinculo = alocacoes.some((a) => a.turmaId === encontro.turmaId && (cobre(a.criadoEm, a.encerradaEm, h.inicioAnterior) || cobre(a.criadoEm, a.encerradaEm, h.inicioProposto)));
-    if (!vinculo) return null;
-    horarios.push({ ...h, fusoOrigem: encontro.fusoOrigem });
+    const original = alocacoes.some((a) => a.turmaId === encontro.turmaId && cobre(a.criadoEm, a.encerradaEm, h.inicioAnterior));
+    const proposto = alocacoes.some((a) => a.turmaId === encontro.turmaId && cobre(a.criadoEm, a.encerradaEm, h.inicioProposto));
+    if (!original && !proposto) return null;
+    horarios.push({ ...h, fusoOrigem: encontro.fusoOrigem, origem: original && proposto ? "AMBOS" : original ? "HORARIO_ORIGINAL" : "HORARIO_PROPOSTO" });
   }
   const ordenados = horarios.sort((a, b) => a.encontroId.localeCompare(b.encontroId));
-  return { horarios: ordenados, origemPorEncontro: Object.fromEntries(ordenados.map((h) => [h.encontroId, "AMBOS" as const])) };
+  return { horarios: ordenados.map(({ origem: _origem, ...h }) => h), origemPorEncontro: Object.fromEntries(ordenados.map((h) => [h.encontroId, h.origem])) };
 }
 
 export function renderizarHorariosReplanejamento(horarios: readonly HorarioReplanejamento[]) {
