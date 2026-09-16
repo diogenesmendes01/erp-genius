@@ -25,6 +25,14 @@ Se uma matrícula afetada por qualquer alteração aprovada não puder formar av
 
 No enfileiramento WhatsApp, aviso com origem e matrícula ainda válidas permanece `PREPARADO` quando faltar configuração institucional, contato atual ou opt-in. A fila registra, de modo idempotente, respectivamente `CONFIGURACAO_INDISPONIVEL`, `CONTATO_INDISPONIVEL` ou `CONTATO_SEM_OPT_IN`; ela não cria intenção, tentativa, `INCERTO` nem reenvio automático. A resolução exige um fluxo autorizado que confirme a condição corrigida.
 
+## Reconferência operacional de pendência
+
+Secretaria Acadêmica ou Administração pode solicitar uma reconferência com observação identificável. A ação bloqueia a pendência e os avisos do mesmo evento e matrícula, relê o papel atual antes de qualquer resposta e conserva a primeira autoria e observação; replay só é reconhecido quando traz a mesma evidência. Matrícula precisa estar `ATIVA`, a origem aplicada precisa continuar canônica e cada item congelado de aviso precisa pertencer à matrícula no instante histórico aplicável.
+
+Para replanejamento global, o subconjunto da matrícula é calculado pela alocação no horário anterior ou proposto e é validado contra a fotografia aplicada. Para substituição, cada turma é filtrada pela alocação daquela matrícula no início do encontro. A reconferência não lê, anexa ou renderiza encontros de outra turma. Avisos existentes são somente relidos: contato, hash, identidade e itens permanecem congelados; `INCERTO` não é preparado nem reemitido. Quando não existia aviso por falta de destinatário ou opt-in, a ação só prepara uma intenção pela mesma fonte depois de todas as verificações; se não puder prepará-la, mantém a pendência.
+
+Responsável só satisfaz a reconferência quando sua autorização daquela matrícula está vigente, seu vínculo pedagógico com o aluno permanece atual e seu telefone ainda corresponde ao hash congelado. Para configuração, a ação reutiliza a validação institucional por idioma do destinatário. Encerrar a pendência não afirma envio ou entrega e não encerra outra pendência do mesmo evento/matrícula que tenha motivo próprio.
+
 ## Despacho e estados
 
 O worker revalida evento, matrícula ativa, consentimento, contato, hash do contato e pertencimento do encontro pela mesma regra histórica antes de chamar o transporte injetado. Uma chamada concorrente somente obtém um claim. Resultado recusado registra `FALHOU`; resultado incerto preserva `INCERTO` e não é reenviado automaticamente; aceite com recibo registra `ENVIADO`. `ENVIADO` significa que o provedor aceitou a solicitação, não que o destinatário recebeu ou leu a mensagem.
@@ -34,3 +42,5 @@ Para substituição, o renderer informa alteração de docente e os horários af
 ## Critérios de verificação
 
 Integração com PostgreSQL descartável: aprovar uma substituição de turma por pessoa diferente do preparador, com duas matrículas vinculadas e uma alocação encerrada no limite do encontro; criar somente os dois avisos elegíveis; validar renderer por transporte de email simulado, inclusive proposta com duas turmas sem expor o horário da outra e mudança de contato após o claim; rejeição e rollback sem avisos; guardas de origem/matrícula; e transições `RECUSADO → FALHOU`, `INCERTO → INCERTO` e `ACEITO → ENVIADO`.
+
+A reconferência é coberta em banco descartável para responsável pedagógico vigente e duas turmas, matrícula pausada, vínculo encerrado antes da aula, contato congelado alterado, `INCERTO`, replay concorrente e pendências de motivos distintos. Drivers e `fetch` são bloqueados nesses cenários.
