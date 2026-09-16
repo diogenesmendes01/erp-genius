@@ -1,3 +1,4 @@
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
@@ -24,15 +25,23 @@ type VinculoNivel = {
   criadoEm: Date;
   encerradaEm: Date | null;
   ativa: boolean;
+  provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null;
 };
 
 const ordenarPendencias = (pendencias: PendenciaHistorica[]) => pendencias
   .sort((a, b) => a.motivo.localeCompare(b.motivo) || a.origemId.localeCompare(b.origemId));
 
 function cobreInstante(vinculo: VinculoNivel, instante: Date) {
-  return instante >= vinculo.criadoEm && (!vinculo.encerradaEm || instante < vinculo.encerradaEm);
+  return alocacaoCobreAula(vinculo, instante);
 }
 
+function inicioVinculo(v: VinculoNivel) {
+  return v.provenienciaVinculo === "MIGRACAO" ? v.inicioVigencia : v.criadoEm;
+}
+function fimVinculo(v: VinculoNivel) {
+  const limites = [v.encerradaEm, ...(v.provenienciaVinculo === "MIGRACAO" ? [v.fimVigencia] : [])].filter((d): d is Date => d != null);
+  return limites.length ? new Date(Math.min(...limites.map(d => d.getTime()))) : null;
+}
 function hashFontes(entrada: unknown) {
   return createHash("sha256").update(JSON.stringify(entrada)).digest("hex");
 }
@@ -78,22 +87,22 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
     tx.alocacaoTurma.findMany({
       where: { matriculaId: contexto.matriculaId, turma: { nivelId: contexto.nivelId } },
       orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
-      select: { id: true, alunoId: true, matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true },
+      select: { id: true, alunoId: true, matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
     }),
     // Não é seguro inferir que um vínculo legado do mesmo aluno pertence a
     // esta matrícula. Ele fica explícito até uma conferência própria.
     tx.alocacaoTurma.findMany({
       where: { alunoId: matricula.alunoId, matriculaId: null, turma: { nivelId: contexto.nivelId } },
       orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
-      select: { id: true, alunoId: true, matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true },
+      select: { id: true, alunoId: true, matriculaId: true, turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
     }),
     carregarHistoricosContratuais(tx, [contexto.matriculaId]),
   ]);
   const pendenciasHistoricas: PendenciaHistorica[] = [];
   const vinculosConferidos = vinculos as VinculoNivel[];
   for (const vinculo of vinculosConferidos) {
-    if (!vinculo.ativa && !vinculo.encerradaEm) pendenciasHistoricas.push({ origemId: vinculo.id, motivo: "VINCULO_SEM_LIMITE_HISTORICO" });
-    if (vinculo.encerradaEm && vinculo.encerradaEm <= vinculo.criadoEm) pendenciasHistoricas.push({ origemId: vinculo.id, motivo: "INTERVALO_DE_VINCULO_INVALIDO" });
+    if (!vinculo.ativa && !vinculo.encerradaEm && !(vinculo.provenienciaVinculo === "MIGRACAO" && vinculo.fimVigencia)) pendenciasHistoricas.push({ origemId: vinculo.id, motivo: "VINCULO_SEM_LIMITE_HISTORICO" });
+    if (!inicioVinculo(vinculo) || !alocacaoCobreAula({ ...vinculo, ativa: true }, inicioVinculo(vinculo)!)) pendenciasHistoricas.push({ origemId: vinculo.id, motivo: "INTERVALO_DE_VINCULO_INVALIDO" });
   }
   for (const legado of legados) {
     pendenciasHistoricas.push({ origemId: legado.id, motivo: "VINCULO_LEGADO_SEM_MATRICULA" });
@@ -104,9 +113,9 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
     for (const posterior of vinculosConferidos.slice(indice + 1)) {
       // Um ativo é aberto até o instante da apuração. Isso detecta uma linha
       // histórica indevidamente mantida aberta sem presumir data de término.
-      const fimAtual = atual.encerradaEm ?? agora;
-      const fimPosterior = posterior.encerradaEm ?? agora;
-      if (atual.criadoEm < fimPosterior && posterior.criadoEm < fimAtual) {
+      const fimAtual = fimVinculo(atual) ?? agora;
+      const fimPosterior = fimVinculo(posterior) ?? agora;
+      if (inicioVinculo(atual) && inicioVinculo(posterior) && inicioVinculo(atual)! < fimPosterior && inicioVinculo(posterior)! < fimAtual) {
         pendenciasHistoricas.push({ origemId: `${atual.id}:${posterior.id}`, motivo: "VINCULOS_SOBREPOSTOS_NO_NIVEL" });
       }
     }
@@ -275,7 +284,7 @@ async function apurarFontesFrequenciaNivelTx(tx: Prisma.TransactionClient, conte
       // Fechar o vínculo ao executar a progressão não muda frequência já
       // conferida. Os limites continuam selecionando as aulas e produzindo
       // pendências; quando afetarem a apuração, essas fontes mudarão o hash.
-      vinculos: vinculosConferidos.map(vinculo => ({ id: vinculo.id, turmaId: vinculo.turmaId, criadoEm: vinculo.criadoEm.toISOString() })),
+      vinculos: vinculosConferidos.map(vinculo => ({ id: vinculo.id, turmaId: vinculo.turmaId, criadoEm: vinculo.criadoEm.toISOString(), provenienciaVinculo: vinculo.provenienciaVinculo, inicioVigencia: vinculo.inicioVigencia?.toISOString() ?? null, fimVigencia: vinculo.fimVigencia?.toISOString() ?? null, encerradaEm: vinculo.encerradaEm?.toISOString() ?? null })),
       fontes,
       // A classificação temporal de futuro/passado não compõe o hash.
       pendenciasPersistidas: ordenarPendencias(pendenciasHistoricas),
