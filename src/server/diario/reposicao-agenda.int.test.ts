@@ -143,6 +143,28 @@ it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir be
   expect(isenta).toEqual({ beneficioId: null, status: "ISENTA_EXCECAO", autorizacaoId: autorizacao.dado.id });
 });
 
+it("rejeição Q19 permanece possível e idempotente quando a proposta fica indisponível ou passada", async () => {
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-rejeicao", nome: "Recesso para rejeição", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Calendário para rejeitar proposta obsoleta", chaveIdempotencia: "calendario-rejeicao-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
+  await inserirPedido("pedido-rejeitar-conflito");
+  entrar(secretariaId);
+  const conflito = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-conflito", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Horário inicialmente disponível", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-conflito" });
+  if (!conflito.ok || !conflito.dado) throw new Error(JSON.stringify(conflito));
+  await criarAulaOriginal("conflito-posterior-q19", "2026-10-12T10:00:00.000Z");
+  entrar(adminId);
+  const rejeitada = await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: conflito.dado.id, aprovar: false, motivo: "Conflito posterior impede a aprovação" });
+  expect(rejeitada, JSON.stringify(rejeitada)).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: conflito.dado.id, aprovar: false, motivo: "Conflito posterior impede a aprovação" })).toEqual(rejeitada);
+
+  await inserirPedido("pedido-rejeitar-passado", aulaExtraId);
+  entrar(secretariaId);
+  const passada = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-passado", professorId, inicioLocal: "2026-10-12T12:00", fimLocal: "2026-10-12T13:00", fuso: "UTC", motivo: "Horário que se tornou obsoleto", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-passado" });
+  if (!passada.ok || !passada.dado) throw new Error(JSON.stringify(passada));
+  await prisma.excecaoAgendaReposicaoIndividual.update({ where: { id: passada.dado.id }, data: { inicio: new Date("2026-01-12T12:00:00.000Z"), fim: new Date("2026-01-12T13:00:00.000Z") } });
+  entrar(adminId);
+  expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: passada.dado.id, aprovar: false, motivo: "Horário passou antes da decisão" })).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await prisma.decisaoExcecaoAgendaReposicaoIndividual.count({ where: { excecaoId: passada.dado.id, aprovada: false } })).toBe(1);
+});
+
 it("pedido rejeitado é terminal e não permite pendentes simultâneos para a mesma falta", async () => {
   await prisma.$executeRaw(Prisma.sql`INSERT INTO "ReposicaoIndividual" (id,"aulaOriginalId","matriculaId",modalidade,"solicitanteId",motivo,evidencia,"chaveIdempotencia","entradaHash") VALUES ('pedido-rejeitado',${aulaId},${matriculaId},'PARTICULAR'::"ModalidadeReposicaoIndividual",${gestorId},'Pedido anterior','Evidência anterior','pedido-rejeitado','fixture')`);
   await prisma.$executeRaw(Prisma.sql`INSERT INTO "DecisaoReposicaoIndividual" (id,"reposicaoId","decisorId",aprovada,motivo) VALUES ('decisao-rejeitada','pedido-rejeitado',${adminId},false,'Pedido não atendia a condição anterior')`);

@@ -126,13 +126,16 @@ export async function decidirExcecaoAgendaReposicaoIndividual(input: { excecaoId
       if (!e) throw new ErroRegra("Exceção de agenda não encontrada.");
       await exigirAtorAgendaAtual(tx, autor.id, [Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR]);
       if (e.solicitanteId === autor.id) throw new ErroRegra("Outra pessoa da gestão deve decidir a exceção.");
-      const c = await conferirAgendaReposicaoIndividualTx(tx, { reposicaoId: e.reposicaoId, professorId: e.professorId, inicio: e.inicio, fim: e.fim, fuso: e.fusoOrigem, permitirSemBeneficio: true });
-      if (c.jaAgendada || !c.diasNaoLetivos.length || c.disponibilidade.encontros.length || c.disponibilidade.indisponibilidades || c.disponibilidade.reservas || (c.regra && (c.saldo ?? 0) <= 0)) throw new ErroRegra("A disponibilidade, saldo ou calendário mudou; prepare nova exceção.");
       const [atual] = await tx.$queryRaw<{ id: string; decisorId: string; aprovada: boolean; motivo: string }[]>(Prisma.sql`SELECT id,"decisorId" AS "decisorId",aprovada,motivo FROM "DecisaoExcecaoAgendaReposicaoIndividual" WHERE "excecaoId"=${e.id}`);
       if (atual) { if (atual.decisorId === autor.id && atual.aprovada === d.aprovar && atual.motivo === d.motivo) return { id: atual.id, aprovada: atual.aprovada }; throw new ErroRegra("A exceção já foi decidida."); }
+      const reposicao = await reposicaoAgendaTx(tx, e.reposicaoId);
+      if (d.aprovar) {
+        const c = await conferirAgendaReposicaoIndividualTx(tx, { reposicaoId: e.reposicaoId, professorId: e.professorId, inicio: e.inicio, fim: e.fim, fuso: e.fusoOrigem, permitirSemBeneficio: true });
+        if (c.jaAgendada || !c.diasNaoLetivos.length || c.disponibilidade.encontros.length || c.disponibilidade.indisponibilidades || c.disponibilidade.reservas || (c.regra && (c.saldo ?? 0) <= 0)) throw new ErroRegra("A disponibilidade, saldo ou calendário mudou; prepare nova exceção.");
+      }
       const novoId = randomUUID();
       await tx.$executeRaw(Prisma.sql`INSERT INTO "DecisaoExcecaoAgendaReposicaoIndividual" (id,"excecaoId","decisorId",aprovada,motivo) VALUES (${novoId},${e.id},${autor.id},${d.aprovar},${d.motivo})`);
-      await registrarEvento(tx, { tipo: "ExcecaoAgendaReposicaoDecidida", agregadoTipo: "Matricula", agregadoId: c.reposicao.matriculaId, autorId: autor.id, payload: { excecaoId: e.id, decisaoId: novoId, aprovada: d.aprovar } });
+      await registrarEvento(tx, { tipo: "ExcecaoAgendaReposicaoDecidida", agregadoTipo: "Matricula", agregadoId: reposicao.matriculaId, autorId: autor.id, payload: { excecaoId: e.id, decisaoId: novoId, aprovada: d.aprovar } });
       return { id: novoId, aprovada: d.aprovar };
     });
   });
