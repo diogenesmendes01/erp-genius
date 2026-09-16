@@ -217,3 +217,5 @@ Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 tes
 - M01 UI: componente de aplicação, consulta de ensaio vigente e histórico integrados ao DEV; SSR preservando conflitos/pendências passou, TypeScript passou. Revisão completa da UI e corretiva187 pendentes; não liberado como M01 concluído.
 
 - Regressão unitária global do principal após M01 concluída (sessão7088): 217 arquivos, 1.409 testes aprovados, 14,15 s. Regressão global de integração iniciada na sessão81314, banco erp_genius_test reservado ao integrador; ainda sem resultado final. Conciliação financeira192 em preparação no DEV1, incluindo vínculo a recebimento já existente para evitar nova baixa e preservação de data/proveniência/documentos.
+
+- Ambiente DEV1 da conciliação financeira preparado em codex/dev-conciliacao-financeira-migracao, base e2cc0172, worktree erp-dev-email limpo e cliente Prisma próprio gerado (sessão77514 concluída). Banco principal segue reservado à regressão81314, confirmada ativa; não houve reinício ou suíte concorrente.
