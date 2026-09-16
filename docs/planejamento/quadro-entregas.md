@@ -31,6 +31,10 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Revisão da rodada N01/M01: TESTER executou M01 `8344772` (4 unitários e 4 integrações aprovados), mas encontrou imutabilidade SQL incompleta, replay com linha omitida sem conflito e células numéricas/nulas abortando o lote. Correções seguem no DEV 2, com migração 158 reservada; 155 aplicada permanece imutável. A prévia também precisa mostrar os valores originais/conflitantes e colisões dos dois lados. M01 não está aprovado para integração.
+- N01 `55b341f` (migração 157) passou 4 integrações independentes: rollback, consolidação, vínculo SQL de origem e concorrência do despacho. O adapter/rota de e-mail `92bce0a` ainda está em revisão. WhatsApp sem vínculo/configuração não deve ser marcado incerto sem tentativa externa; correção e testes seguem no DEV 1. Esses commits ainda não estão integrados neste checkout.
+- Build da interface Q166 terminou com sucesso (Next.js, 76 páginas estáticas). A regressão global de integração continua no processo 50868, sem resultado final; não iniciar outra suíte no mesmo banco enquanto estiver ativo.
+
 - N01: conferência dos produtores encontrou prévia/rascunho/conferência do replanejamento global, mas nenhum executor conjunto nesse fluxo. Essa dependência de F07.3 permanece aberta. Recorte inicial de avisos conecta remarcações particulares/reposições e substituições efetivamente aplicadas, com origem transacional e matrícula identificadas. Migração 154 já aplicada somente no DEV; corretiva estrutural 156 reservada, sem reutilizar 155 de M01. Retorno do ID de `registrarEvento` foi autorizado ao DEV 1, preservando os chamadores atuais.
 
 - Próxima rodada: DEV 1 usa branch `codex/dev-avisos-institucionais` no worktree EMAIL; DEV 2 usa `codex/dev-preparacao-migracao` no worktree de gravações. Ambas partem de `2df2f4d`, com dependências próprias, Prisma regenerado e os mesmos perfis de banco exclusivos. Migrações 154 e 155 reservadas respectivamente. EMAIL/VIDEO estão em regressão, sem nova implementação paralela nesses recortes.
