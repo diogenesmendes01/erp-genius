@@ -22,6 +22,8 @@ let matriculaId: string;
 let alunoId: string;
 let eventoId: string;
 let pendenciaId: string;
+let encontroId: string;
+let alocacaoId: string;
 
 async function criarAvisosEpendencia() {
   const catalogo = await seedCatalogoMinimo();
@@ -35,8 +37,9 @@ async function criarAvisosEpendencia() {
   alunoId = aluno.id;
   const matricula = await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
   matriculaId = matricula.id;
-  await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00.000Z") } });
+  alocacaoId = (await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00.000Z") } })).id;
   const encontro = await prisma.encontroAgenda.create({ data: { turmaId: turma.id, professorId: titularId, preparadorId: secretariaId, inicio: new Date("2099-10-01T10:00:00.000Z"), fim: new Date("2099-10-01T11:00:00.000Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula regular", chaveIdempotencia: "reconf-encontro", entradaHash: "fixture" } });
+  encontroId = encontro.id;
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_reconf", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "agenda-reconf" } });
   await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
@@ -82,6 +85,45 @@ it("não encerra a pendência se a matrícula perdeu elegibilidade", async () =>
   await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "PAUSADA" } });
   expect(await reconferirPendenciaAvisoAgenda({ pendenciaId, motivo: "Matrícula conferida como pausada" })).toMatchObject({ ok: true, dado: { resolvida: false } });
   expect(await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendenciaId } })).toMatchObject({ situacao: "PENDENTE" });
+  expect(await prisma.tentativaAvisoAlteracaoAgenda.count()).toBe(0);
+});
+
+it("não encerra a pendência quando o vínculo da turma já havia terminado antes do encontro", async () => {
+  estadoSessao.id = secretariaId;
+  await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { encerradaEm: new Date("2099-10-01T09:59:59.000Z") } });
+  const antes = await prisma.avisoAlteracaoAgenda.findMany({ where: { eventoId, matriculaId }, select: { id: true, contatoHash: true, situacao: true } });
+  expect(await reconferirPendenciaAvisoAgenda({ pendenciaId, motivo: "Vínculo histórico conferido" })).toMatchObject({ ok: true, dado: { resolvida: false } });
+  expect(await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendenciaId } })).toMatchObject({ situacao: "PENDENTE" });
+  expect(await prisma.avisoAlteracaoAgenda.findMany({ where: { eventoId, matriculaId }, select: { id: true, contatoHash: true, situacao: true } })).toEqual(antes);
+  expect(await prisma.itemAvisoAlteracaoAgenda.count({ where: { encontroId } })).toBe(2);
+  expect(await prisma.tentativaAvisoAlteracaoAgenda.count()).toBe(0);
+});
+
+it("não reemite nem altera fatos quando já existe resultado incerto", async () => {
+  estadoSessao.id = secretariaId;
+  const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { eventoId, matriculaId, canal: "EMAIL" } });
+  await prisma.$transaction(async (tx) => {
+    await tx.avisoAlteracaoAgenda.update({ where: { id: aviso.id }, data: { situacao: "INCERTO" } });
+    await tx.tentativaAvisoAlteracaoAgenda.create({ data: { id: "tentativa-incerta-reconferencia", avisoId: aviso.id, situacao: "INCERTO" } });
+  });
+  const antes = {
+    avisos: await prisma.avisoAlteracaoAgenda.findMany({ where: { eventoId, matriculaId }, select: { id: true, situacao: true, contatoHash: true }, orderBy: { id: "asc" } }),
+    itens: await prisma.itemAvisoAlteracaoAgenda.findMany({ select: { avisoId: true, encontroId: true }, orderBy: { id: "asc" } }),
+    tentativas: await prisma.tentativaAvisoAlteracaoAgenda.findMany({ select: { avisoId: true, situacao: true, provedorId: true }, orderBy: { id: "asc" } }),
+  };
+  expect(await reconferirPendenciaAvisoAgenda({ pendenciaId, motivo: "Resultado incerto preservado" })).toMatchObject({ ok: true, dado: { resolvida: false } });
+  expect(await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendenciaId } })).toMatchObject({ situacao: "PENDENTE" });
+  expect({ avisos: await prisma.avisoAlteracaoAgenda.findMany({ where: { eventoId, matriculaId }, select: { id: true, situacao: true, contatoHash: true }, orderBy: { id: "asc" } }), itens: await prisma.itemAvisoAlteracaoAgenda.findMany({ select: { avisoId: true, encontroId: true }, orderBy: { id: "asc" } }), tentativas: await prisma.tentativaAvisoAlteracaoAgenda.findMany({ select: { avisoId: true, situacao: true, provedorId: true }, orderBy: { id: "asc" } }) }).toEqual(antes);
+  expect(enviarEmail).not.toHaveBeenCalled(); expect(enviarTemplate).not.toHaveBeenCalled();
+});
+
+it("resolver uma pendência não encerra outra de motivo distinto na mesma origem", async () => {
+  estadoSessao.id = secretariaId;
+  const outra = await prisma.$transaction((tx) => registrarPendenciaAvisoAgendaTx(tx, { eventoId, matriculaId, motivo: "CONFIGURACAO_INDISPONIVEL" }));
+  const entrada = { pendenciaId, motivo: "Destinatários e origem reconferidos" };
+  expect(await reconferirPendenciaAvisoAgenda(entrada)).toMatchObject({ ok: true, dado: { resolvida: true } });
+  expect(await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendenciaId } })).toMatchObject({ situacao: "RESOLVIDA", observacaoResolucao: entrada.motivo });
+  expect(await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: outra.id } })).toMatchObject({ situacao: "PENDENTE", motivo: "CONFIGURACAO_INDISPONIVEL" });
   expect(await prisma.tentativaAvisoAlteracaoAgenda.count()).toBe(0);
 });
 
