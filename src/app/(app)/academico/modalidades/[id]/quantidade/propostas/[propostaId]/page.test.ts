@@ -17,8 +17,8 @@ it("renderiza os parâmetros aprovados que justificam a exceção Q37", async ()
   impactos: [{ id: "i", turmaId: "t", turma: { codigo: "T-01" }, quantidadeAnterior: 2, quantidadeNova: 3, alcance: "AUMENTO_NAO_INICIADA", excecoesQ37: ["grade"], snapshot: { parametrosGradeAprovada: { duracaoMinutos: 90, frequencia: "2x/semana", diasSemana: [1, 3] } } }],
  } });
  const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m", propostaId: "p" }) }));
- expect(html).toContain("Exceção Q37 preservada da grade aprovada");
+ expect(html).toContain("Condições específicas da turma preservadas");
  expect(html).toContain("90 min");
  expect(html).toContain("2x/semana");
- expect(html).toContain("dias 1, 3");
+ expect(html).toContain("segunda-feira, quarta-feira");
 });
