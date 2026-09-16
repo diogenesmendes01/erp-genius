@@ -8,6 +8,7 @@ import { AjustesReplanejamentoSchema } from "./replanejamento-ajustes";
 import { estadoReplanejamento } from "./replanejamento-estado";
 import { ReplanejamentoSnapshotSchema } from "./replanejamento-snapshot";
 import { carregarReplanejamentoTx } from "./replanejamento-tx";
+import { criarAvisosReplanejamentoConjuntoTx } from "./replanejamento-avisos-tx";
 
 const Entrada = z.object({ calendarioId: z.string().min(1), revisaoId: z.string().min(1), aprovar: z.boolean(), motivo: z.string().trim().min(5).max(2000), excecoesAutorizadas: z.array(z.string().min(1)).max(1000).default([]) }).strict();
 const autorizacoesCanonicas = (ids: readonly string[]) => [...new Set(ids)].sort();
@@ -66,7 +67,8 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
    const decisaoCalendario = await tx.decisaoCalendarioEscolar.create({ data: { calendarioId: r.calendarioId, decisorId: autor.id, aprovada: true, motivo: d.motivo } });
    const decisao = await tx.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: r.id, decisorId: autor.id, aprovada: true, motivo: d.motivo, estadoHash: r.estadoHash, excecoesAutorizadas: autorizacoes } });
    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: r.id, decisaoId: decisao.id, estadoHash: r.estadoHash } });
-   await registrarEvento(tx, { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id, payload: { aprovada: true, calendarioId: r.calendarioId, decisaoCalendarioId: decisaoCalendario.id, revisaoId: r.id, decisaoId: decisao.id, encontrosIds: ids, horarios: propostas.map((p) => ({ encontroId: p.encontroId, inicioAnterior: p.inicioAnterior, fimAnterior: p.fimAnterior, inicioProposto: p.inicioProposto, fimProposto: p.fimProposto })), excecoesAutorizadas: autorizacoes, motivo: d.motivo } });
+   const evento = await registrarEvento(tx, { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id, payload: { aprovada: true, calendarioId: r.calendarioId, decisaoCalendarioId: decisaoCalendario.id, revisaoId: r.id, decisaoId: decisao.id, encontrosIds: ids, horarios: propostas.map((p) => ({ encontroId: p.encontroId, inicioAnterior: p.inicioAnterior, fimAnterior: p.fimAnterior, inicioProposto: p.inicioProposto, fimProposto: p.fimProposto })), excecoesAutorizadas: autorizacoes, motivo: d.motivo } });
+   await criarAvisosReplanejamentoConjuntoTx(tx, { eventoId: evento.id, rascunhoId: r.id });
    // Avalia já dentro do callback para que uma violação deferred retorne um erro
    // de negócio, sem parecer uma aplicação bem-sucedida ao chamador.
    await tx.$executeRawUnsafe('SET CONSTRAINTS "validar_aplicacao_replanejamento_material_167" IMMEDIATE');
