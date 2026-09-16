@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { prepararAlteracaoQuantidadeAulasModalidade, decidirAlteracaoQuantidadeAulasModalidade } from "./modalidade-quantidade";
 import { carregarPreviaQuantidadeAulasTx } from "./modalidade-quantidade-tx";
+import { decidirGradeInicialTurma } from "./grade-decisao";
 
 let secretariaId: string, gerenteId: string, modalidadeId: string, nivelId: string, calendarioId: string;
 beforeEach(async () => {
@@ -19,14 +20,14 @@ beforeEach(async () => {
  authMock.mockResolvedValue({ user: { id: secretariaId } });
 });
 
-async function turmaComGrade(status: "PLANEJADA" | "ABERTA" | "EM_ANDAMENTO" | "CONCLUIDA" = "ABERTA") {
+async function turmaComGrade(status: "PLANEJADA" | "ABERTA" | "EM_ANDAMENTO" | "CONCLUIDA" = "ABERTA", publicada = true) {
  const professorId = (await criarUsuario(["PROFESSOR"])).id;
  const turma = await prisma.turma.create({ data: { modalidadeId, nivelId, professorId, status, diasSemana: [1], horarioInicio: "10:00", dataInicio: new Date("2099-01-05T00:00:00Z") } });
  const encontros = ["2099-01-05T10:00:00.000Z", "2099-01-12T10:00:00.000Z"].map((inicio, indice) => ({ inicio, fim: new Date(Date.parse(inicio) + 3600000).toISOString() }));
  const snapshot = { origem: { quantidadeAulas: 2, dataInicial: "2099-01-05", diasSemana: [1], horario: "10:00", duracaoMinutos: 60 }, grade: { dataInicialInformada: "2099-01-05", primeiraAula: encontros[0].inicio, previsaoTermino: encontros[1].fim, encontros } };
  const grade = await prisma.propostaGradeTurma.create({ data: { turmaId: turma.id, calendarioId, preparadorId: secretariaId, versao: 1, fusoOrigem: "UTC", motivo: "Grade de origem aprovada", chaveIdempotencia: `grade-${turma.id}`, entradaHash: "b".repeat(64), snapshot } });
- await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: gerenteId, aprovada: true, motivo: "Grade aprovada para teste" } });
- await prisma.encontroAgenda.createMany({ data: encontros.map((e, indice) => ({ turmaId: turma.id, professorId, propostaGradeId: grade.id, preparadorId: secretariaId, inicio: new Date(e.inicio), fim: new Date(e.fim), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Grade publicada", chaveIdempotencia: `encontro-${turma.id}-${indice}`, entradaHash: "c".repeat(64) })) });
+ if (publicada) await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: gerenteId, aprovada: true, motivo: "Grade aprovada para teste" } });
+ if (publicada) await prisma.encontroAgenda.createMany({ data: encontros.map((e, indice) => ({ turmaId: turma.id, professorId, propostaGradeId: grade.id, preparadorId: secretariaId, inicio: new Date(e.inicio), fim: new Date(e.fim), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Grade publicada", chaveIdempotencia: `encontro-${turma.id}-${indice}`, entradaHash: "c".repeat(64) })) });
  return { turma, grade };
 }
 
@@ -34,6 +35,8 @@ it("aprova aumento publicado e aplica modalidade e encontros no mesmo callback",
  const { turma } = await turmaComGrade();
  const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento regular de meta", chaveIdempotencia: "quantidade-publicada-1" });
  expect(proposta).toMatchObject({ ok: true }); if (!proposta.ok || !proposta.dado) throw new Error("proposta ausente");
+ expect((await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Autoaprovação deve ser recusada" })).ok).toBe(false);
+ expect(await prisma.decisaoQuantidadeAulasModalidade.count()).toBe(0);
  authMock.mockResolvedValue({ user: { id: gerenteId } });
  const salva = await prisma.propostaQuantidadeAulasModalidade.findUniqueOrThrow({ where: { id: proposta.dado.id } });
  const atual = await prisma.$transaction((tx) => carregarPreviaQuantidadeAulasTx(tx, { modalidadeId, quantidadeNova: 3 }));
@@ -42,6 +45,7 @@ it("aprova aumento publicado e aplica modalidade e encontros no mesmo callback",
  const decidida = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação conjunta do aumento" });
  if (!decidida.ok) throw new Error(decidida.erro);
  expect(decidida).toMatchObject({ ok: true, dado: { aprovada: true, aplicada: true } });
+ expect(await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação conjunta do aumento" })).toEqual(decidida);
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(3);
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(1);
   expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
@@ -84,4 +88,21 @@ it("rejeita no constraint trigger a fotografia que duplica A e omite B", async (
  })).rejects.toThrow("bijeção completa de impactos");
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(0);
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
+});
+
+it("aumenta rascunho por nova versão de grade, sem publicar nem duplicar encontros", async () => {
+ const { turma } = await turmaComGrade("PLANEJADA", false);
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento de rascunho regular", chaveIdempotencia: "quantidade-rascunho-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta de rascunho ausente.");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ const decidida = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação conjunta do rascunho" });
+ expect(decidida).toMatchObject({ ok: true, dado: { aplicada: true } });
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id } })).toBe(0);
+ const grades = await prisma.propostaGradeTurma.findMany({ where: { turmaId: turma.id }, orderBy: { versao: "asc" } });
+ expect(grades).toHaveLength(2);
+ expect(grades[1].snapshot).toMatchObject({ origem: { quantidadeAulas: 3 }, grade: { encontros: expect.arrayContaining([expect.any(Object), expect.any(Object), expect.any(Object)]) } });
+ const publicada = await decidirGradeInicialTurma({ propostaId: grades[1].id, aprovar: true, motivo: "Publicação da grade recalculada" });
+ if (!publicada.ok) throw new Error(publicada.erro);
+ expect(publicada).toMatchObject({ ok: true, dado: { publicada: true } });
+ expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
 });

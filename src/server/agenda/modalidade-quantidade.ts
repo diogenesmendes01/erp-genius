@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { carregarPreviaQuantidadeAulasTx } from "./modalidade-quantidade-tx";
+import { carregarGradeInicialTx } from "./grade-turma-tx";
 
 const texto = z.string().trim().min(5).max(2000);
 const chave = z.string().trim().min(8).max(100);
@@ -83,6 +84,7 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
       await tx.$queryRaw`SELECT id FROM "Turma" WHERE "modalidadeId"=${p.modalidadeId} ORDER BY id FOR UPDATE`;
       const decisao = await tx.decisaoQuantidadeAulasModalidade.create({ data: { propostaId: p.id, decisorId: autor.id, aprovada: true, motivo: d.motivo, estadoHash: p.estadoHash } });
       await tx.propostaQuantidadeAulasModalidade.update({ where: { id: p.id }, data: { situacao: "APROVADA" } });
+      await tx.modalidade.update({ where: { id: p.modalidadeId }, data: { aulasPorNivel: p.quantidadeNova } });
       for (const impacto of atual.impactos.filter((i) => !i.preservada && i.previsao)) {
         // Rascunho recebe uma nova versão de grade, sem criar encontro de
         // agenda. A publicação normal continuará a consumir essa versão.
@@ -90,13 +92,7 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
           const origem = impacto.propostaGradeId ? await tx.propostaGradeTurma.findUnique({ where: { id: impacto.propostaGradeId } }) : null;
           if (!origem) throw new ErroRegra("Rascunho sem proposta de grade de origem; confira antes de aplicar.");
           const ultimo = await tx.propostaGradeTurma.findFirst({ where: { turmaId: impacto.turmaId }, orderBy: { versao: "desc" }, select: { versao: true } });
-          const snapshot = JSON.parse(JSON.stringify(origem.snapshot)) as { origem?: { quantidadeAulas?: number }; grade?: { encontros?: unknown[]; primeiraAula?: string; previsaoTermino?: string } };
-          if (!snapshot.origem || !snapshot.grade) throw new ErroRegra("Snapshot de grade do rascunho está incompleto.");
-          const encontros = impacto.agendaDepois.map(({ inicio, fim }) => ({ inicio, fim }));
-          snapshot.origem.quantidadeAulas = impacto.quantidadeNova;
-          snapshot.grade.encontros = encontros;
-          snapshot.grade.primeiraAula = encontros[0]?.inicio;
-          snapshot.grade.previsaoTermino = encontros.at(-1)?.fim;
+          const snapshot = await carregarGradeInicialTx(tx, { turmaId: impacto.turmaId, fusoOrigem: origem.fusoOrigem });
           await tx.propostaGradeTurma.create({ data: { turmaId: impacto.turmaId, calendarioId: origem.calendarioId, preparadorId: p.preparadorId, versao: (ultimo?.versao ?? 0) + 1, fusoOrigem: origem.fusoOrigem, motivo: p.motivo, chaveIdempotencia: `quantidade-rascunho:${p.id}:${impacto.turmaId}`, entradaHash: hash({ propostaId: p.id, turmaId: impacto.turmaId, quantidade: impacto.quantidadeNova }), snapshot: snapshot as Prisma.InputJsonValue } });
           continue;
         }
@@ -108,7 +104,6 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
         for (const encontro of impacto.previsao!.removidos ?? []) await tx.encontroAgenda.update({ where: { id: encontro.encontroId }, data: { status: "CANCELADO", motivo: p.motivo } });
         for (const [indice, encontro] of (impacto.previsao!.adicionados ?? []).entries()) await tx.encontroAgenda.create({ data: { turmaId: impacto.turmaId, professorId: impacto.professorId, propostaGradeId: impacto.propostaGradeId, preparadorId: p.preparadorId, inicio: new Date(encontro.inicioProposto), fim: new Date(encontro.fimProposto), fusoOrigem: impacto.fusoOrigem!, status: impacto.publicada ? "PREVISTO" : "RASCUNHO", motivo: p.motivo, chaveIdempotencia: `quantidade:${p.id}:${impacto.turmaId}:${indice}`, entradaHash: hash({ propostaId: p.id, turmaId: impacto.turmaId, indice, encontro }) } });
       }
-      await tx.modalidade.update({ where: { id: p.modalidadeId }, data: { aulasPorNivel: p.quantidadeNova } });
       const aplicacao = await tx.aplicacaoQuantidadeAulasModalidade.create({ data: { propostaId: p.id, aplicadorId: autor.id, estadoHash: p.estadoHash } });
       await tx.propostaQuantidadeAulasModalidade.update({ where: { id: p.id }, data: { situacao: "APLICADA" } });
       await registrarEvento(tx, { tipo: "QuantidadeAulasModalidadeAplicada", agregadoTipo: "Modalidade", agregadoId: p.modalidadeId, autorId: autor.id, payload: { propostaId: p.id, decisaoId: decisao.id, aplicacaoId: aplicacao.id, quantidadeAnterior: p.quantidadeAnterior, quantidadeNova: p.quantidadeNova, motivo: d.motivo } });
