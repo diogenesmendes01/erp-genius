@@ -5,6 +5,7 @@ import { agruparAvisosReplanejamento, criarAvisosReplanejamentoConjuntoTx } from
 
 const horario = { encontroId: "e1", inicioAnterior: "2099-10-01T19:00:00.000Z", fimAnterior: "2099-10-01T20:00:00.000Z", inicioProposto: "2099-10-08T19:00:00.000Z", fimProposto: "2099-10-08T20:00:00.000Z" };
 const encontro = { id: "e1", turmaId: "t1", matriculaId: null, inicio: new Date(horario.inicioProposto), fim: new Date(horario.fimProposto) };
+const snapshot = { calendarioId: "cal1", conferidoEm: "2099-09-01T00:00:00.000Z", pendencias: [], revisoes: [{ turmaId: "t1", codigo: "T1", fusoOrigem: "UTC", pendencias: [], previsao: { previsaoTermino: null, propostas: [{ ...horario, alterado: true, motivoAjuste: null }], preservados: [] } }], recursos: { internos: [], externos: [], indisponibilidades: [], reservas: [], semDocenteApto: [] }, particulares: [], recuperacoes: [] };
 
 describe("agruparAvisosReplanejamento", () => {
   it("inclui alocação original ou nova, registra a origem e não inclui estranhos", () => {
@@ -28,7 +29,7 @@ describe("agruparAvisosReplanejamento", () => {
     criarAvisos.mockResolvedValue([]);
     const tx = {
       evento: { findUnique: vi.fn().mockResolvedValue({ agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", tipo: "ReplanejamentoConjuntoAplicado", payload: { aprovada: true, revisaoId: "r1", decisaoId: "d1", encontrosIds: ["e1"], horarios: [horario] } }) },
-      rascunhoReplanejamento: { findUnique: vi.fn().mockResolvedValue({ decisaoConjunta: { id: "d1", aprovada: true, aplicacao: { id: "a1" } } }) },
+      rascunhoReplanejamento: { findUnique: vi.fn().mockResolvedValue({ snapshot, decisaoConjunta: { id: "d1", aprovada: true, aplicacao: { id: "a1" } } }) },
       encontroAgenda: { findMany: vi.fn().mockResolvedValue([encontro]) },
       alocacaoTurma: { findMany: vi.fn().mockResolvedValue([
         { matriculaId: "historica", turmaId: "t1", criadoEm: new Date("2099-09-01T00:00:00Z"), encerradaEm: new Date("2099-10-02T00:00:00Z") },
@@ -42,5 +43,16 @@ describe("agruparAvisosReplanejamento", () => {
     expect(criarAvisos).toHaveBeenCalledTimes(2);
     expect(criarAvisos).toHaveBeenCalledWith(tx, { eventoId: "evento-1", matriculaId: "historica", encontrosIds: ["e1"] });
     expect(criarAvisos).toHaveBeenCalledWith(tx, { eventoId: "evento-1", matriculaId: "nova", encontrosIds: ["e1"] });
+  });
+
+  it("recusa horário anterior forjado antes de consultar alocações", async () => {
+    const tx = {
+      evento: { findUnique: vi.fn().mockResolvedValue({ agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", tipo: "ReplanejamentoConjuntoAplicado", payload: { aprovada: true, revisaoId: "r1", decisaoId: "d1", encontrosIds: ["e1"], horarios: [{ ...horario, inicioAnterior: "2099-10-02T19:00:00.000Z" }] } }) },
+      rascunhoReplanejamento: { findUnique: vi.fn().mockResolvedValue({ snapshot, decisaoConjunta: { id: "d1", aprovada: true, aplicacao: { id: "a1" } } }) },
+      encontroAgenda: { findMany: vi.fn() }, alocacaoTurma: { findMany: vi.fn() },
+    };
+    await expect(criarAvisosReplanejamentoConjuntoTx(tx as never, { eventoId: "evento-forjado", rascunhoId: "r1" })).rejects.toThrow("Fotografia da revisão");
+    expect(tx.encontroAgenda.findMany).not.toHaveBeenCalled();
+    expect(tx.alocacaoTurma.findMany).not.toHaveBeenCalled();
   });
 });
