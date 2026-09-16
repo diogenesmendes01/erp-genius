@@ -9,7 +9,12 @@ import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/finan
 import type { FilaCobranca as FilaCobrancaDados } from "@/server/cobrancas/consultas";
 import { fecharMesComissoes, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
+import { InformesPagamento } from "./InformesPagamento";
+import { PoliticasComissao } from "./PoliticasComissao";
+import type { listarInformesPagamento, configuracaoComissoes } from "@/server/financeiro/consultas";
 import { FilaCobranca } from "./FilaCobranca";
+import { RetomadasPainel } from "./RetomadasPainel";
+import type { listarPropostasRetomada } from "@/server/retomada/consultas";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -20,6 +25,7 @@ export interface ComissaoRow {
   valor: number;
   moeda: string;
   percentual: number;
+  tipo?: "PERCENTUAL" | "VALOR_FIXO";
   status: StatusComissao;
 }
 export interface Kpis {
@@ -60,10 +66,14 @@ const VIGENCIA_LABEL: Record<Vigencia, string> = {
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
 
-type Aba = "cobrancas" | "comissoes" | "descontos" | "geral" | "aprovacoes" | "cambio";
+type Aba = "informes" | "politicas" | "cobrancas" | "comissoes" | "descontos" | "geral" | "aprovacoes" | "cambio" | "retomadas";
 
 export function FinanceiroPainel({
   fila,
+  informes,
+  politicas,
+  retomadas,
+  erroRetomadas,
   comissoes,
   kpis,
   aprovacoes,
@@ -74,6 +84,10 @@ export function FinanceiroPainel({
   podeGerenciarCambio,
 }: {
   fila: FilaCobrancaDados;
+  informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
+  politicas: Awaited<ReturnType<typeof configuracaoComissoes>>;
+  retomadas: NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
+  erroRetomadas?: string | null;
   comissoes: ComissaoRow[];
   kpis: Kpis;
   aprovacoes: AprovacaoRow[];
@@ -84,7 +98,7 @@ export function FinanceiroPainel({
   podeGerenciarCambio: boolean;
 }) {
   const router = useRouter();
-  const [aba, setAba] = useState<Aba>("cobrancas");
+  const [aba, setAba] = useState<Aba>(podeOperarCobranca ? "cobrancas" : "comissoes");
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
 
@@ -135,10 +149,12 @@ export function FinanceiroPainel({
   }
 
   const abas: [Aba, string][] = [
-    ["cobrancas", "Cobranças"],
+    ...(podeOperarCobranca ? ([["cobrancas", "Cobranças"], ["informes", `A conferir (${informes.length})`]] as [Aba, string][]) : []),
+    ...(podeOperarCobranca ? ([["retomadas", `Retomadas (${retomadas.filter((p) => p.status === "PENDENTE").length})`]] as [Aba, string][]) : []),
     ["comissoes", "Comissões"],
     ["descontos", "Descontos"],
-    ["geral", "Visão geral"],
+    ...(podeOperarCobranca ? ([["geral", "Visão geral"]] as [Aba, string][]) : []),
+    ...(politicas ? ([["politicas", "Política de comissão"]] as [Aba, string][]) : []),
     ...(podeAprovar ? ([["aprovacoes", `Aprovações${aprovacoes.length ? ` (${aprovacoes.length})` : ""}`]] as [Aba, string][]) : []),
     ...(podeGerenciarCambio ? ([["cambio", "Câmbio"]] as [Aba, string][]) : []),
   ];
@@ -161,7 +177,10 @@ export function FinanceiroPainel({
       {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       {nota && <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
 
-      {aba === "cobrancas" && (
+      {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} />}
+      {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} />}
+      {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} />}
+      {aba === "cobrancas" && podeOperarCobranca && (
         <FilaCobranca
           itens={fila.itens}
           dashs={fila.dashs}
@@ -172,7 +191,7 @@ export function FinanceiroPainel({
       )}
 
       {aba === "comissoes" && (
-        <Comissoes comissoes={comissoes} onFechar={() => run(fecharMesComissoes())} />
+        <Comissoes podePagar={podeOperarCobranca} comissoes={comissoes} onFechar={() => run(fecharMesComissoes())} />
       )}
 
       {aba === "descontos" && <Descontos relatorio={relatorio} />}
@@ -190,7 +209,7 @@ export function FinanceiroPainel({
   );
 }
 
-function Comissoes({ comissoes, onFechar }: { comissoes: ComissaoRow[]; onFechar: () => void }) {
+function Comissoes({ comissoes, onFechar, podePagar }: { comissoes: ComissaoRow[]; onFechar: () => void; podePagar: boolean }) {
   const aPagar = somarPorMoeda(
     comissoes.filter((c) => c.status === StatusComissao.APROVADA).map((c) => ({ moeda: c.moeda, valor: c.valor })),
   );
@@ -198,7 +217,7 @@ function Comissoes({ comissoes, onFechar }: { comissoes: ComissaoRow[]; onFechar
     <div>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
-        <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>
+        {podePagar && <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>}
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <table className="w-full text-sm">
@@ -217,7 +236,7 @@ function Comissoes({ comissoes, onFechar }: { comissoes: ComissaoRow[]; onFechar
               comissoes.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-800">{c.vendedor}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.percentual}%</td>
+                  <td className="px-4 py-3 text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
                   <td className="px-4 py-3 text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
                   <td className="px-4 py-3 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
                 </tr>

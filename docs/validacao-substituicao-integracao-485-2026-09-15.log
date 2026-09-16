@@ -1,0 +1,55 @@
+[MIXED_EXPORTS] Entry module "vitest.integration.config.ts" is using named (including "DATABASE_URL_TESTE", "default") and default exports together. Consumers of your bundle will have to use `chunk.default` to access the default export, which may not be what you want. Use `output.exports: "named"` to disable this warning.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.11 C:/Users/Mendes/.codex/worktrees/de19/erp-genius
+
+stdout | src/server/contratos/substituicao.int.test.ts > prepara e aprova independentemente, preservando fonte enviada e cobranças
+prisma:error 
+Invalid `expect(prisma.propostaSubstituicaoContratual.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/contratos/substituicao.int.test.ts:31:54
+
+  28 expect(await prisma.processoAssinaturaContratual.findUnique({ where: { id: base.processoId } })).toMatchObject({ estado: "ENVIADO", artefatoId: base.artefatoFonteId, referenciaExterna: base.referenciaExternaFonte });
+  29 expect(await prisma.processoAssinaturaContratual.count()).toBe(1);
+  30 expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancas);
+→ 31 await expect(prisma.propostaSubstituicaoContratual.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Proposta de substituição contratual é imutável", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/contratos/substituicao.int.test.ts > prepara e aprova independentemente, preservando fonte enviada e cobranças
+prisma:error 
+Invalid `expect(prisma.decisaoSubstituicaoContratual.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/contratos/substituicao.int.test.ts:32:53
+
+  29 expect(await prisma.processoAssinaturaContratual.count()).toBe(1);
+  30 expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancas);
+  31 await expect(prisma.propostaSubstituicaoContratual.update({ where: { id: p.id }, data: { motivo: "Outro motivo posterior" } })).rejects.toThrow("imutável");
+→ 32 await expect(prisma.decisaoSubstituicaoContratual.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Decisão de substituição contratual é imutável", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/contratos/substituicao.int.test.ts > nega autoaprovação no serviço e no banco mesmo com acúmulo de papéis
+prisma:error 
+Invalid `expect(prisma.decisaoSubstituicaoContratual.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/contratos/substituicao.int.test.ts:39:53
+
+  36 await prisma.usuario.update({ where: { id: base.secretariaId }, data: { papeis: ["SECRETARIA_ACADEMICA", "ADMINISTRADOR"] } });
+  37 const p = await preparar();
+  38 await expect(decidir(p, true, base.secretariaId)).rejects.toThrow("Outra pessoa");
+→ 39 await expect(prisma.decisaoSubstituicaoContratual.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Decisão exige outro administrador ativo", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ src/server/contratos/substituicao.int.test.ts (5 tests) 6391ms
+   ✓ prepara e aprova independentemente, preservando fonte enviada e cobranças  1386ms
+   ✓ nega autoaprovação no serviço e no banco mesmo com acúmulo de papéis  1266ms
+   ✓ rejeita hash errado, chave reaproveitada e aprovação de versão superada  1256ms
+   ✓ revogação do aprovador impede decisão e chamadas concorrentes não duplicam proposta  1235ms
+   ✓ alteração dos dados após proposta bloqueia aprovação e permite rejeição histórica  1247ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  03:53:34
+   Duration  8.07s (transform 255ms, setup 0ms, import 411ms, tests 6.39s, environment 0ms)
+
+JSON report written to C:/Users/Mendes/.codex/worktrees/de19/erp-genius/docs/validacao-substituicao-integracao-485-2026-09-15.json

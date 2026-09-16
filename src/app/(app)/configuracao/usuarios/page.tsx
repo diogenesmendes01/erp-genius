@@ -20,6 +20,10 @@ export default async function UsuariosPage() {
     papeis: u.papeis,
     ativo: u.ativo,
     limiteDescontoPct: u.limiteDescontoPct,
+    limiteDescontoTaxaPct: u.limiteDescontoTaxaPct,
+    limiteDescontoMensalidadePct: u.limiteDescontoMensalidadePct,
+    permissoes: u.permissoes,
+    gerenteComercialId: u.gerenteComercialId,
     ultimoAcesso: u.ultimoAcesso ? u.ultimoAcesso.toISOString() : null,
   }));
   return <UsuariosPainel usuarios={rows} />;

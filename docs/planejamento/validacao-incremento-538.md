@@ -1,0 +1,9 @@
+# Incremento 538 — interface de autorização específica
+
+A gestão acessa a autorização por item do plano de recuperação. A página mostra aluno, matrícula, oferta, turma/nível, habilidade e situação contratual. O formulário registra motivo e prazo com fuso explícito; a conversão é feita pela função institucional no servidor. Reenvios sem alteração conservam a chave idempotente. O histórico mostra autor, data, prazo e motivo, sem snapshot técnico ou hashes.
+
+`consultarAutorizacoesEspeciaisRecuperacao` exige gestão autenticada e reconfere papel/atividade na transação. A capacidade de autorizar considera pendência, plano aprovado/disponibilizado, situação pausada/encerrada e correspondência de regra/nível/alocação. A ação de gravação continua revalidando essas condições. Não concede consulta desse histórico ao docente apenas por ter papel de professor.
+
+Validação: cenário integrado aprovado em `docs/validacao-consulta-autorizacao-final-538-2026-09-15.json`, incluindo rejeição docente, consulta da gestão, projeção sem campos internos, reenvio pelo adaptador de horário e fuso inválido. Um teste selecionado, outros 90 não selecionados. ESLint passou. Build passou (`docs/validacao-build-538-2026-09-15.log`); após o build foram acrescentadas identificação da matrícula e melhoria textual, com repetição do teste e conferência de tipos.
+
+Limites: não houve ensaio interativo da interface. A autorização para tentativa já reservada agora possui tela; Q151 ainda requer os demais casos de encerramento, pendência sem reserva e proteção SQL temporal discriminados no incremento 537. A projeção geral de realização permite registro de fatos históricos e não é prova de autorização para uma nova realização em qualquer data: a ação confere a data e suas permissões ao registrar. Não houve produção ou envio externo.

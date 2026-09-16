@@ -1,0 +1,25 @@
+{
+  "incremento": 241,
+  "data": "2026-09-12",
+  "migration": "20260913070000_proposta_correcao_nota",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 17,
+    "falhasFinais": 0,
+    "execucoesIniciaisComFalha": 2,
+    "motivo": "Import concorrente da autenticação simulada; concorrência passou a testar transação diretamente e ação mantém teste autenticado."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 48
+  },
+  "homologacaoInterativa": false,
+  "limites": [
+    "Somente preparação de proposta",
+    "Sem decisão, aplicação ou tela de correção"
+  ]
+}

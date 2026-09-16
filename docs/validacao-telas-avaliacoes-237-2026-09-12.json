@@ -1,0 +1,29 @@
+{
+  "incremento": 237,
+  "data": "2026-09-12",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 12,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "status": "aprovado",
+    "paginasEstaticas": 47,
+    "novasRotas": [
+      "/academico/avaliacoes/[alocacaoId]",
+      "/academico/avaliacoes/[alocacaoId]/[codigo]"
+    ]
+  },
+  "diffCheck": "aprovado",
+  "migrationsNovas": 0,
+  "homologacaoInterativa": false,
+  "regressaoIntegral": "não repetida; incremento235",
+  "limites": [
+    "Fuso UTC explícito; preferência ainda pendente",
+    "Navegação histórica de alocações encerradas pendente",
+    "Sem consolidação, correção, oportunidades ou portal"
+  ]
+}

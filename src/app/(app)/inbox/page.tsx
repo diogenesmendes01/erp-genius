@@ -3,6 +3,8 @@ import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { carregarThread, listarConversas } from "@/server/whatsapp/consultas";
 import { InboxCliente } from "./InboxCliente";
+import { AtendimentosPainel } from "./AtendimentosPainel";
+import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 
 // INBOX MÍNIMA (doc 26 §Camada 3 · doc 30 E3): lista (não-lidas primeiro) + thread +
 // texto livre + mídia + vínculo + ação rápida de cobrança. Guard de página ANTES de
@@ -16,9 +18,12 @@ export default async function InboxPage({
   const usuario = await exigirSessaoPagina(...PAPEIS_INBOX);
   const { c } = await searchParams;
 
-  const [conversas, thread] = await Promise.all([
+  const [conversas, thread, opcoes, triagem, revisoes] = await Promise.all([
     listarConversas(usuario),
     c ? carregarThread(usuario, c) : Promise.resolve(null),
+    listarOpcoesAtendimento(),
+    temPapel(usuario, Papel.ADMINISTRADOR) ? listarTriagemWhatsApp() : Promise.resolve(null),
+    temPapel(usuario, Papel.ADMINISTRADOR) ? listarRevisoesEnvio() : Promise.resolve(null),
   ]);
 
   // Alçadas das ações rápidas seguem o doc 12: promessa/pagamento = Financeiro/Secretaria.
@@ -28,9 +33,12 @@ export default async function InboxPage({
     <div>
       <h1 className="text-2xl font-medium">Inbox</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Conversas de WhatsApp dos números da escola — vendas e respostas de cobrança.
+        Atendimentos institucionais separados por finalidade e vínculo com a escola.
       </p>
       <div className="mt-6">
+        <AtendimentosPainel opcoes={opcoes} triagem={triagem} revisoes={revisoes} />
+      </div>
+      <div className="mt-4">
         <InboxCliente conversas={conversas} thread={thread} podeCobranca={podeCobranca} />
       </div>
     </div>

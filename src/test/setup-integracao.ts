@@ -1,10 +1,12 @@
 import { execSync } from "node:child_process";
 import { DATABASE_URL_TESTE } from "../../vitest.integration.config";
+import { conferirDependenciasInstaladas } from "./dependencias";
 
 // globalSetup dos testes de integração: aplica as migrations no Postgres de TESTE
 // (docker, porta 54329 — npm run test:db) antes de qualquer suite. A URL vem fixa do
 // config (nunca do .env): rodar isto jamais toca o banco de produção.
 export default function setup() {
+  conferirDependenciasInstaladas();
   if (!DATABASE_URL_TESTE.includes("localhost:54329")) {
     throw new Error("Guarda de segurança: a URL de teste deve apontar para localhost:54329.");
   }

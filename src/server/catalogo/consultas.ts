@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { Papel } from "@prisma/client";
+import { exigirSessaoComPapel } from "@/server/_shared";
 import { semDecimais } from "@/server/_shared/decimal";
 
 // Consultas (leitura) do Catálogo — chamadas por Server Components.
 
 export async function listarIdiomas() {
+  await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   return prisma.idioma.findMany({
     orderBy: { nome: "asc" },
     include: {
@@ -14,6 +17,7 @@ export async function listarIdiomas() {
 }
 
 export async function listarModalidades() {
+  await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   return prisma.modalidade.findMany({
     orderBy: { nome: "asc" },
     include: { _count: { select: { produtos: true, turmas: true } } },
@@ -21,6 +25,7 @@ export async function listarModalidades() {
 }
 
 export async function listarProdutos() {
+  await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   return prisma.produto.findMany({
     orderBy: [{ idioma: { nome: "asc" } }, { modalidade: { nome: "asc" } }],
     include: {
@@ -32,6 +37,7 @@ export async function listarProdutos() {
 }
 
 export async function listarPrecos() {
+  await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   // Ordem determinística: ativos primeiro, mais recente antes; `id` desempata
   // quando há `criadoEm` idêntico (evita ordem instável entre execuções).
   const precos = await prisma.precoReferencia.findMany({

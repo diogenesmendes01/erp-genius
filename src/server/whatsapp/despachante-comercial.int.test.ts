@@ -5,6 +5,7 @@ import { truncarBanco } from "@/test/integracao";
 import { agoraAs } from "@/test/integracao-whatsapp";
 import { CHAVE_LEAD_NOVO } from "@/server/comercial/regua-fabrica";
 import { despacharFila } from "./despachante";
+import { garantirAtendimento } from "./atendimentos";
 
 // Integração dos GUARD-RAILS do despachante no caminho COMERCIAL (doc 27 · review PR #55).
 // Sem WHATSAPP_LIVE: tudo que ATRAVESSA os guard-rails morre no shadow como SIMULADA — é
@@ -34,7 +35,7 @@ async function seedComercial(over: SeedComercial = {}) {
         data: { nome: "Japão", codigoISO: "JP", moedaLocal: "JPY", ddi: "+81", fuso: over.fusoLead, status: "ATIVO" },
       })
     : null;
-  const lead = await prisma.lead.create({ data: { codigo: "L-000900", nome: "Ana", paisId: pais?.id ?? null } });
+  const lead = await prisma.lead.create({ data: { codigo: "L-000900", nome: "Ana", telefoneE164: "+50699998888", paisId: pais?.id ?? null } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50699998888", leadId: lead.id } });
   const politica = await prisma.politicaComercial.create({
     data: {
@@ -62,14 +63,23 @@ async function enfileirarDegrau(
   passo = "+30min",
   ocorrencia = OCORRENCIA,
 ) {
+  const conversa = await prisma.conversaWhatsApp.upsert({
+    where: { numeroId_contatoId: { numeroId: ctx.numero.id, contatoId: ctx.contato.id } },
+    create: { numeroId: ctx.numero.id, contatoId: ctx.contato.id, capturadaEm: new Date(ocorrencia) }, update: {},
+  });
+  if (!conversa.capturadaEm) await prisma.conversaWhatsApp.update({ where: { id: conversa.id }, data: { capturadaEm: new Date(ocorrencia) } });
+  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+    numeroId: ctx.numero.id, contatoId: ctx.contato.id, finalidade: "COMERCIAL", leadId: ctx.lead.id,
+  }));
   return prisma.intencaoMensagem.create({
     data: {
       numeroId: ctx.numero.id,
+      atendimentoId: atendimento.id,
       contatoId: ctx.contato.id,
       origem: "CRON",
       leadId: ctx.lead.id,
       passoComercial: passo,
-      ocorrenciaComercial: ocorrencia,
+      ocorrenciaComercial: conversa.capturadaEm?.toISOString() ?? ocorrencia,
       politicaComercialId: ctx.politica.id,
       corpoRenderizado: "Oi Ana!",
     },

@@ -8,7 +8,7 @@ import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labe
 import { formatarValores, type ValorMoeda } from "@/lib/dinheiro";
 import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
-import { pausarAluno, reativarAluno, encerrarAluno, trocarTurma, editarAluno } from "@/server/alunos/acoes";
+import { pausarAluno, encerrarAluno, editarAluno } from "@/server/alunos/acoes";
 import { Drawer } from "@/components/Drawer";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
@@ -59,10 +59,12 @@ export interface AlunoFicha {
   idiomaNativo: string | null;
   fuso: string | null;
   observacoes: string | null;
-  turmaAtual: { id: string; label: string; professor: string | null; diasHorario: string | null } | null;
+  turmasAtuais: { id: string; matriculaCodigo: string | null; label: string; professor: string | null; diasHorario: string | null }[];
   // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
   financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: string | null } | null;
   movimentacoes: {
+    matriculaId: string | null;
+    matriculaCodigo: string | null;
     id: string;
     tipo: TipoMovimentacao;
     motivo: string | null;
@@ -85,27 +87,29 @@ const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-
 
 export function FichaAluno({
   aluno,
-  turmas,
   paises,
-  podeMovimentar = true,
+  podeMovimentar = false,
+  podeMovimentarGlobal = false,
+  podeEditarCadastro = false,
+  podeConsultarAcademico = false,
 }: {
   aluno: AlunoFicha;
-  turmas: { id: string; label: string }[];
   paises: PaisOpt[];
   // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
   podeMovimentar?: boolean;
+  podeMovimentarGlobal?: boolean;
+  podeEditarCadastro?: boolean;
+  podeConsultarAcademico?: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
-  const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "trocar" | "editar">("none");
+  const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "editar">("none");
 
   // estados dos modais
   const [motivoPausa, setMotivoPausa] = useState("");
   const [retorno, setRetorno] = useState("");
   const [motivoEnc, setMotivoEnc] = useState<(typeof MOTIVOS_ENCERRAMENTO)[number]>("Concluiu");
   const [obsEnc, setObsEnc] = useState("");
-  const [turmaDest, setTurmaDest] = useState("");
-  const [justif, setJustif] = useState("");
 
   // edição de dados cadastrais (prefill com TODOS os valores atuais — edição lenient).
   const valoresEd = () => ({
@@ -174,35 +178,38 @@ export function FichaAluno({
           <h1 className="text-2xl font-medium">{aluno.nome}</h1>
           {aluno.nomePreferido && <span className="text-sm text-gray-500">({aluno.nomePreferido})</span>}
           <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_CLS[aluno.status]}>
-            {STATUS_ALUNO_LABEL[aluno.status]}
+            Cadastro: {STATUS_ALUNO_LABEL[aluno.status]}
           </span>
         </div>
         <p className="mt-1 text-sm text-gray-500">
-          {aluno.codigo} · {aluno.pais} · {aluno.telefone ?? "sem telefone"}
+          {aluno.codigo} · {aluno.pais}{podeEditarCadastro ? ` · ${aluno.telefone ?? "sem telefone"}` : ""}
         </p>
       </header>
 
       {/* Ações (apenas papéis que movimentam — professor tem visão somente leitura, doc 10) */}
       {podeMovimentar && (
         <div className="flex flex-wrap gap-2">
-          <button className={btnSec} onClick={abrirEdicao}>
+          {podeEditarCadastro && <button className={btnSec} onClick={abrirEdicao}>
             Editar dados
-          </button>
-          {aluno.status === StatusAluno.ATIVO && (
+          </button>}
+          {podeMovimentarGlobal && aluno.status === StatusAluno.ATIVO && (
             <>
-              <button className={btnSec} onClick={() => setModal("trocar")}>Trocar turma</button>
               <button className={btnSec} onClick={() => setModal("pausar")}>Pausar</button>
               <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
             </>
           )}
-          {aluno.status === StatusAluno.PAUSADO && (
+          {podeMovimentarGlobal && aluno.status === StatusAluno.PAUSADO && (
             <>
-              <button className={btnPri} onClick={() => run(reativarAluno(aluno.id))}>Reativar</button>
+              {podeEditarCadastro ? <Link className={btnPri} href={`/alunos/${aluno.id}/financeiro#retomada`}>Propor retomada</Link> : <span className="self-center text-sm text-gray-500">A secretaria deve encaminhar uma proposta de retomada para aprovação financeira.</span>}
               <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
             </>
           )}
         </div>
       )}
+
+      {podeMovimentar && !podeMovimentarGlobal && <p className="text-sm text-gray-600">Pausa, retomada e encerramento devem identificar as matrículas envolvidas. A Secretaria acompanha essas solicitações no fluxo por matrícula.</p>}
+
+      {podeConsultarAcademico && <div><Link className={btnSec} href={`/alunos/${aluno.id}/academico`}>{podeMovimentar ? "Turma, nível e solicitações acadêmicas" : "Consultar solicitações e emitir parecer"}</Link></div>}
 
       <Drawer
         open={modal === "editar"}
@@ -425,36 +432,21 @@ export function FichaAluno({
         </div>
       )}
 
-      {modal === "trocar" && (
-        <div className="rounded-lg border border-gray-200 bg-surface p-4">
-          <h3 className="mb-2 text-sm font-medium">Trocar turma</h3>
-          <select className={inputCls + " mb-2"} value={turmaDest} onChange={(e) => setTurmaDest(e.target.value)}>
-            <option value="">Selecione a turma…</option>
-            {turmas.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
-            ))}
-          </select>
-          <input className={inputCls + " mb-3"} placeholder="Justificativa (exigida entre níveis)" value={justif} onChange={(e) => setJustif(e.target.value)} />
-          <div className="flex gap-2">
-            <button className={btnPri} disabled={!turmaDest} onClick={() => run(trocarTurma(aluno.id, { turmaDestinoId: turmaDest, justificativa: justif }))}>Confirmar troca</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
       <div className="grid gap-6 md:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
-          <h2 className="mb-3 font-medium">Turma atual</h2>
-          {aluno.turmaAtual ? (
-            <div className="text-sm text-gray-700">
-              <div className="font-medium">{aluno.turmaAtual.label}</div>
-              <div className="text-gray-500">{aluno.turmaAtual.diasHorario ?? "Horário a definir"}</div>
-              <div className="text-gray-500">Professor: {aluno.turmaAtual.professor ?? "—"}</div>
+          <h2 className="mb-3 font-medium">Turmas atuais</h2>
+          {aluno.turmasAtuais.length > 0 ? aluno.turmasAtuais.map((turma) => (
+            <div key={turma.id} className="mb-3 text-sm text-gray-700">
+              <div className="font-medium">{turma.label}</div>
+              <div className="text-gray-500">{turma.matriculaCodigo ? `Matrícula ${turma.matriculaCodigo}` : "Matrícula sem código ou vínculo a conferir"}</div>
+              <div className="text-gray-500">{turma.diasHorario ?? "Horário a definir"}</div>
+              <div className="text-gray-500">Professor: {turma.professor ?? "—"}</div>
             </div>
-          ) : (
+          )) : (
             <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
           )}
 
+          {podeEditarCadastro && <>
           <h2 className="mb-2 mt-5 font-medium">Dados pessoais</h2>
           <dl className="grid grid-cols-1 gap-1 text-sm text-gray-700">
             <Linha rotulo="Documento">
@@ -487,6 +479,7 @@ export function FichaAluno({
             <Linha rotulo="Idioma nativo">{aluno.idiomaNativo ?? "—"}</Linha>
             {aluno.observacoes && <Linha rotulo="Observações">{aluno.observacoes}</Linha>}
           </dl>
+          </>}
         </section>
 
         {/* Financeiro: oculto na projeção pedagógica (professor — doc 10). */}
@@ -522,6 +515,7 @@ export function FichaAluno({
             {aluno.movimentacoes.map((m) => (
               <li key={m.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-sm font-medium text-gray-800">{TIPO_MOV_LABEL[m.tipo]}</div>
+                <div className="text-xs text-gray-500">{m.matriculaId ? `Matrícula: ${m.matriculaCodigo ?? "sem código"}` : "Registro global ou legado sem matrícula identificada"}</div>
                 {m.motivo && <div className="text-sm text-gray-600">{m.motivo}</div>}
                 {m.observacao && <div className="text-xs text-gray-500">{m.observacao}</div>}
                 <div className="text-xs text-gray-400">

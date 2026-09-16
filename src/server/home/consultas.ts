@@ -2,13 +2,14 @@ import {
   EtapaLead,
   StatusComissao,
   StatusMatricula,
-  StatusCobranca,
   Papel,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero } from "@/server/_shared/decimal";
-import type { UsuarioSessao } from "@/server/_shared";
+import { exigirPapel, ErroAutenticacao, type UsuarioSessao } from "@/server/_shared";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
 const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
 const SLA_MINUTOS = 60; // SLA do 1º contato (default; tunável — P10, doc 10 §10)
@@ -36,13 +37,16 @@ export interface ItemFila {
 }
 
 export async function dadosHomeVendedor(usuario: UsuarioSessao) {
+  if (!usuario?.id) throw new ErroAutenticacao();
+  exigirPapel(usuario, Papel.VENDEDOR);
+  const escopo = await escopoComercialAtual(usuario);
   const { ini, fim } = hojeIntervalo();
   const agora = new Date();
   const limiteProposta = new Date(agora.getTime() - DIAS_PROPOSTA_PARADA * 86400000);
 
   const leads = await prisma.lead.findMany({
     where: {
-      vendedorDonoId: usuario.id,
+      AND: [escopo],
       etapa: { notIn: [EtapaLead.PERDIDO, EtapaLead.MATRICULADO] },
     },
     orderBy: { criadoEm: "desc" },
@@ -79,7 +83,7 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
   // kanban resumido
   const agrup = await prisma.lead.groupBy({
     by: ["etapa"],
-    where: { vendedorDonoId: usuario.id },
+    where: escopo,
     _count: { _all: true },
   });
   const kanban = agrup.map((g) => ({ etapa: g.etapa, total: g._count._all }));
@@ -112,8 +116,10 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
 }
 
 export async function dadosHomeProfessor(usuario: UsuarioSessao) {
+  if (!usuario?.id) throw new ErroAutenticacao();
+  exigirPapel(usuario, Papel.PROFESSOR);
   const turmas = await prisma.turma.findMany({
-    where: { professorId: usuario.id },
+    where: escopoTurmasDocente(usuario.id),
     orderBy: { criadoEm: "desc" },
     include: {
       modalidade: true,
@@ -151,35 +157,39 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
   };
 }
 
-export async function dadosHomeGerente() {
+export async function dadosHomeGerente(usuario: UsuarioSessao) {
+  if (!usuario?.id) throw new ErroAutenticacao();
+  exigirPapel(usuario, Papel.GERENTE_COMERCIAL);
+  const escopo = await escopoComercialAtual(usuario);
+  const escopoMatriculas = usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { lead: { is: escopo } };
   const { ini, fim } = hojeIntervalo();
 
   const [leadsHoje, totalLeads, matriculados, matriculasMes] = await Promise.all([
-    prisma.lead.count({ where: { criadoEm: { gte: ini, lte: fim } } }),
-    prisma.lead.count(),
-    prisma.lead.count({ where: { etapa: EtapaLead.MATRICULADO } }),
-    prisma.matricula.count({ where: { status: StatusMatricula.ATIVA, ativadaEm: { gte: inicioDoMes() } } }),
+    prisma.lead.count({ where: { AND: [escopo], criadoEm: { gte: ini, lte: fim } } }),
+    prisma.lead.count({ where: escopo }),
+    prisma.lead.count({ where: { AND: [escopo], etapa: EtapaLead.MATRICULADO } }),
+    prisma.matricula.count({ where: { ...escopoMatriculas, status: StatusMatricula.ATIVA, ativadaEm: { gte: inicioDoMes() } } }),
   ]);
 
   const conversao = totalLeads > 0 ? Math.round((matriculados / totalLeads) * 100) : 0;
 
   const limiteSla = new Date(Date.now() - SLA_MINUTOS * 60000);
   const alertasSla = await prisma.lead.count({
-    where: { etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
+    where: { AND: [escopo], etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
   });
 
-  // receita: cobranças pagas no mês, agrupada por moeda (nunca soma CRC+USD num total só).
-  const pagasMes = await prisma.cobranca.findMany({
-    where: { status: StatusCobranca.PAGO, pagoEm: { gte: inicioDoMes() } },
-    select: { valorRecebido: true, valorNegociado: true, moeda: true },
+  // Cada recebimento entra no mês em que ocorreu, inclusive baixa parcial.
+  const pagasMes = await prisma.recebimento.findMany({
+    where: { dataPagamento: { gte: inicioDoMes() }, cobranca: { matricula: escopoMatriculas } },
+    select: { valor: true, moeda: true },
   });
   const receitaMes = somarPorMoeda(
-    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valorRecebido ?? c.valorNegociado) })),
+    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })),
   );
 
   // ranking simples por matrículas (leads matriculados por dono)
   const vendedores = await prisma.usuario.findMany({
-    where: { papeis: { has: Papel.VENDEDOR }, ativo: true },
+    where: { papeis: { has: Papel.VENDEDOR }, ativo: true, ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { gerenteComercialId: usuario.id }) },
     select: { id: true, nome: true },
   });
   const ranking = await Promise.all(
@@ -192,7 +202,7 @@ export async function dadosHomeGerente() {
   );
   ranking.sort((a, b) => b.matriculados - a.matriculados);
 
-  const funil = await prisma.lead.groupBy({ by: ["etapa"], _count: { _all: true } });
+  const funil = await prisma.lead.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
 
   return {
     kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla },

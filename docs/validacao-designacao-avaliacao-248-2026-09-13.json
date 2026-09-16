@@ -1,0 +1,18 @@
+{
+  "incremento": 248,
+  "data": "2026-09-13",
+  "escopo": "Persistência e ação de designação/revogação; integração de permissões e telas ainda pendente",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 27,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "migration": "20260913110000_designacao_avaliacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "ultimoBuild": 247,
+  "homologacaoInterativa": false
+}

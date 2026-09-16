@@ -1,0 +1,10 @@
+{
+ "incremento": 300, "data": "2026-09-13",
+ "escopo": "Plano reproduzível de lançamentos por origem integrado à prévia e ao rascunho",
+ "unitarios": { "aprovados": 11, "falhos": 0 },
+ "integracao": { "aprovados": 7, "falhos": 0 },
+ "lintDirecionado": "aprovado", "build": { "aprovado": true, "paginasEstaticas": 52 },
+ "typescript": "aprovado no build", "migrationsNovas": 0, "ultimaRegressaoIntegral": 298,
+ "limites": ["Persistência e aplicação dos lançamentos ainda pendentes", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false, "producao": false, "enviosExternos": false
+}

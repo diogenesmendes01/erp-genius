@@ -1,0 +1,24 @@
+{
+  "incremento": 274,
+  "data": "2026-09-13",
+  "escopo": "Conferência dos pagamentos de entrada particulares, sem ativação",
+  "unitarios": {
+    "arquivo": "src/server/matricula/entrada-particular-pagamentos.test.ts",
+    "aprovados": 10
+  },
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "aprovados": 61,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "paginasEstaticas": 52
+  },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 273,
+  "homologacaoInterativa": false,
+  "producao": false
+}

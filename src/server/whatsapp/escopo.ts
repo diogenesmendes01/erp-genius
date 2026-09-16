@@ -1,11 +1,11 @@
 import { Papel, type Prisma } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { prisma } from "@/lib/prisma";
+import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
-// ESCOPO ROW-LEVEL DA CONVERSA (gap D22 do doc 28, decidido na E3 — doc 30 §S11):
-// a conversa é do NÚMERO, não do lead. Admin vê tudo; Financeiro/Secretaria veem os
-// números de COBRANCA; Gerente Comercial supervisiona os números de VENDAS; Vendedor vê
-// só os números dos quais é DONO (dono da conversa = dono do número, doc 26 §Camada 3).
-// Sem papel que dê acesso → fail-closed (mesmo padrão de escopoAlunos).
+// Doc 36/37: transporte e acesso são dimensões diferentes. Escopo de número só serve
+// para listagens operacionais do canal. Mensagens/arquivos exigem escopoAtendimentos.
 
 export const PAPEIS_INBOX: Papel[] = [
   Papel.ADMINISTRADOR,
@@ -13,6 +13,8 @@ export const PAPEIS_INBOX: Papel[] = [
   Papel.VENDEDOR,
   Papel.FINANCEIRO,
   Papel.SECRETARIA_ACADEMICA,
+  Papel.PROFESSOR,
+  Papel.GERENTE_PEDAGOGICO,
 ];
 
 export function escopoNumeros(usuario: UsuarioSessao): Prisma.NumeroWhatsAppWhereInput {
@@ -30,11 +32,52 @@ export function escopoNumeros(usuario: UsuarioSessao): Prisma.NumeroWhatsAppWher
   return { OR: ors };
 }
 
-export function escopoConversas(usuario: UsuarioSessao): Prisma.ConversaWhatsAppWhereInput {
-  return { numero: escopoNumeros(usuario) };
+/** O transporte nunca concede leitura das mensagens. Cada finalidade tem seus vínculos. */
+export async function escopoAtendimentos(
+  usuario: Pick<UsuarioSessao, "id" | "papeis">,
+  opcoes: { enviar?: boolean; agora?: Date } = {},
+): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
+  const agora = opcoes.agora ?? new Date();
+  const ativo: Prisma.AtendimentoWhatsAppWhereInput = opcoes.enviar ? {
+    encerradoEm: null, conversa: { numero: { ativo: true } },
+    OR: [{ finalidade: { not: "FINANCEIRO" } }, { matriculaId: { not: null } }],
+  } : {};
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return ativo;
+  const ors: Prisma.AtendimentoWhatsAppWhereInput[] = [];
+  const participante = { participantes: { some: {
+    usuarioId: usuario.id, inicio: { lte: agora }, fim: { gt: agora }, revogadoEm: null,
+    ...(opcoes.enviar ? { podeEnviar: true } : {}),
+  } } };
+  if (usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL)) {
+    ors.push({ finalidade: "COMERCIAL", OR: [
+      { lead: { is: await escopoComercialAtual({ ...usuario, nome: "" }) } },
+      { leadId: null, responsavelId: usuario.id },
+      participante,
+    ] });
+  }
+  if (usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
+    ors.push({ finalidade: "FINANCEIRO", alunoId: { not: null } });
+  }
+  if (usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
+    ors.push({ finalidade: "SECRETARIA" }, { finalidade: "PEDAGOGICO" });
+  }
+  if (usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO)) ors.push({ finalidade: "PEDAGOGICO" });
+  if (usuario.papeis.includes(Papel.PROFESSOR)) {
+    const vinculos = await prisma.alocacaoTurma.findMany({ where: { ativa: true, turma: escopoTurmasDocente(usuario.id, agora) }, select: { alunoId: true, turmaId: true } });
+    // Vínculo ATUAL: o diário próprio é outra capacidade, não acesso perpétuo à inbox.
+    ors.push({ finalidade: "PEDAGOGICO", encerradoEm: null, OR: [
+      ...vinculos.map((v) => ({ alunoId: v.alunoId, turmaId: v.turmaId })),
+      { lead: { is: { professorExperimentalId: usuario.id, etapa: "EXPERIMENTAL_AGENDADA" } }, turmaId: null },
+    ] });
+  }
+  return { AND: [ativo, ors.length ? { OR: ors } : { id: "__sem_acesso__" }] };
 }
 
-/** Versão booleana do escopo (autorização por objeto de mídia — podeLerArquivo). */
+export async function escopoConversas(usuario: UsuarioSessao): Promise<Prisma.ConversaWhatsAppWhereInput> {
+  return { atendimentos: { some: await escopoAtendimentos(usuario) } };
+}
+
+/** Consulta de transporte legada. Não usar para autorizar mensagem ou arquivo. */
 export function usuarioVeNumero(
   usuario: { id: string; papeis: Papel[] },
   numero: { donoId: string | null; finalidade: string },

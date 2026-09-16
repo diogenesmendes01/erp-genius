@@ -1,0 +1,17 @@
+{
+  "incremento": 298,
+  "data": "2026-09-13",
+  "estado": "CONCLUIDA",
+  "unitarios": { "aprovados": 804, "falhos": 0, "arquivos": 87, "comando": "node node_modules/vitest/vitest.mjs run --silent" },
+  "integracao": { "aprovados": 665, "falhos": 0, "arquivos": 51, "duracaoSegundos": 640.60, "sessionId": 25259, "exitCode": 0, "comando": "node node_modules/vitest/vitest.mjs run -c vitest.integration.config.ts --silent", "banco": "localhost:54329/erp_genius_test" },
+  "correcao": "Fixtures de cobranças em ajustes/aprovacao.test.ts e financeiro/operacoes.test.ts atualizadas com valorLiquidadoCredito zero, conforme campo obrigatório e default do schema; expectativas originais mantidas",
+  "coberturaAdicional": ["Desconto abaixo da quitação mista recusado", "Ajuste compatível preserva dinheiro e crédito e recalcula apenas o saldo"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "buildUltimoIncremento": 297,
+  "ultimaRegressaoIntegralConcluida": 298,
+  "limites": ["Sucesso dos testes existentes não comprova implementação integral das SPECs", "Aprovação e efetivação financeira de encerramento ainda pendentes", "Homologação interativa e integrações reais não executadas nesta regressão"],
+  "producao": false,
+  "enviosExternos": false
+}

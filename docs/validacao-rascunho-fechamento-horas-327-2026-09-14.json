@@ -1,0 +1,17 @@
+{
+  "incremento": 327,
+  "data": "2026-09-14",
+  "escopo": "Rascunho imutável e versionado do fechamento mensal por hora",
+  "integracao": {"aprovados": 11, "falhos": 0, "arquivos": 1},
+  "unitariosDirecionados": {"aprovados": 17, "falhos": 0, "arquivos": 2},
+  "typescript": "aprovado",
+  "lint": "aprovado",
+  "migrationsAplicadasBaseDescartavel": 154,
+  "schemaDiff": "vazio",
+  "ultimoBuild": 325,
+  "ultimaSuiteUnitariaIntegral": 326,
+  "ultimaRegressaoIntegralIntegracao": 298,
+  "limites": ["Sem interface do fechamento", "Aprovação e emissão pendentes", "Referência contratual proposta exige conferência", "Proteção da emissão e itens faturados pendentes"],
+  "producao": false,
+  "enviosExternos": false
+}

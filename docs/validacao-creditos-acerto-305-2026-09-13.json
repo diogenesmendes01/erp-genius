@@ -1,0 +1,15 @@
+{
+  "incremento": 305,
+  "data": "2026-09-13",
+  "escopo": "Emissão interna de créditos na mesma transação dos ajustes de encerramento",
+  "integracao": { "aprovados": 7, "falhos": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "ultimaRegressaoIntegral": 298,
+  "buildUltimoIncremento": 302,
+  "coberturaNova": ["Crédito de cobrança exige ajuste da mesma decisão", "Falha posterior reverte ajuste, origem e crédito", "Recebimento original preservado"],
+  "limites": ["Efetivação completa do encerramento ainda pendente", "Liquidação de horas precisa ser integrada antes de uso público", "Objetivo geral não concluído"],
+  "producao": false,
+  "enviosExternos": false,
+  "homologacaoInterativa": false
+}

@@ -18,7 +18,7 @@ export interface PaisParaEditar {
   ddi: string;
   fuso: string;
   idioma: string;
-  tiposDocumento: { nome: string; validador: string }[];
+  tiposDocumento: { id?: string; nome: string; validador: string }[];
 }
 
 const inputCls =
@@ -52,7 +52,7 @@ export function PaisFormulario({
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "tiposDocumento" });
+  const { fields, append, remove } = useFieldArray({ control, name: "tiposDocumento", keyName: "_formKey" });
 
   async function onSubmit(data: PaisInput) {
     setErro(null);
@@ -129,7 +129,7 @@ export function PaisFormulario({
 
         <div className="flex flex-col gap-2">
           {fields.map((f, i) => (
-            <div key={f.id} className="flex items-center gap-2">
+            <div key={f._formKey} className="flex items-center gap-2">
               <input
                 {...register(`tiposDocumento.${i}.nome`)}
                 placeholder="Cédula"

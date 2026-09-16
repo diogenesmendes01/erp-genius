@@ -1,0 +1,7 @@
+{
+ "incremento":328,"data":"2026-09-14","escopo":"Consulta autorizada das versões de fechamento por hora",
+ "integracao":{"aprovados":12,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado",
+ "ultimoBuild":325,"ultimoSchemaDiffVazio":327,"ultimaSuiteUnitariaIntegral":326,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Sem interface de fechamento","Aprovação e emissão pendentes","Consulta histórica não valida a proposta atual"],
+ "producao":false,"enviosExternos":false
+}

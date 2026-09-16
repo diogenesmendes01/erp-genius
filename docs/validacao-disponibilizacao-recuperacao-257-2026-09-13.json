@@ -1,0 +1,14 @@
+{
+  "incremento": 257,
+  "data": "2026-09-13",
+  "escopo": "Disponibilização comprovada e prazo configurado para reserva de recuperação",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 42, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migration": "20260913180000_disponibilizacao_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

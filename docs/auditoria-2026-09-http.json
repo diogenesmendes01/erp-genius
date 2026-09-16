@@ -1,0 +1,36 @@
+[
+  {
+    "id": "H00",
+    "cenario": "Login real de professor",
+    "passou": true
+  },
+  {
+    "id": "/configuracao/paises",
+    "status": 200,
+    "dadosPrivadosNoHTML": true,
+    "acessoNegado": false
+  },
+  {
+    "id": "/configuracao/catalogo",
+    "status": 200,
+    "dadosPrivadosNoHTML": true,
+    "acessoNegado": false
+  },
+  {
+    "id": "/configuracao/usuarios",
+    "status": 200,
+    "dadosPrivadosNoHTML": false,
+    "acessoNegado": true
+  },
+  {
+    "id": "H04",
+    "cenario": "Upload com usuario desativado e cookie anterior",
+    "status": 200,
+    "uploadAceito": true
+  },
+  {
+    "id": "H05",
+    "cenario": "Leitura do arquivo com mesmo usuario desativado",
+    "status": 401
+  }
+]

@@ -17,7 +17,7 @@ export default async function HomePage() {
   const ehVendedor = usuario.papeis.includes(Papel.VENDEDOR);
 
   if (ehGerente) {
-    const dados = await dadosHomeGerente();
+    const dados = await dadosHomeGerente(usuario);
     return <HomeGerente nome={usuario.nome} dados={dados} />;
   }
   if (ehVendedor) {

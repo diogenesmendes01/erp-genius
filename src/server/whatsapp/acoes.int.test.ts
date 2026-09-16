@@ -118,7 +118,7 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
 
     const politica = await carregarPoliticaRegua();
     const regua = await montarReguaPorCobranca(
-      [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: false }],
+      [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: false }],
       agora,
       politica.degraus,
     );
@@ -144,7 +144,7 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
 
     const politica = await carregarPoliticaRegua();
     const regua = await montarReguaPorCobranca(
-      [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: false }],
+      [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: false }],
       agora,
       politica.degraus,
     );

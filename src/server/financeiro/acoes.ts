@@ -1,92 +1,165 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
+import { Papel, StatusCobranca, StatusComissao } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
   exigirSessaoComPapel,
   registrarEvento,
   executarAcao,
-  acumularPagamento,
   numero,
-  numeroOuNull,
   ErroRegra,
+  ErroPermissao,
   type Resultado,
 } from "@/server/_shared";
 import {
   PagamentoSchema,
+  ConferenciaSchema,
+  PoliticaComissaoSchema,
+  type PoliticaComissaoInput,
   SalvarTaxasCambioSchema,
   type PagamentoInput,
   type ModeloWhatsapp,
   type SalvarTaxasCambioInput,
+  MODELOS_WHATSAPP,
 } from "./schema";
+import { exigirCapacidade } from "@/server/_shared/capacidades";
+import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
+import { bloquearCobranca, receberTx, hashDadosPagamento } from "./recebimentos";
+import { exigirConferenciaIndependente, dinheiro } from "./regras";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
+import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
+import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 const PAPEIS_COMISSAO: Papel[] = [Papel.FINANCEIRO];
 const PAPEIS_CAMBIO: Papel[] = [Papel.FINANCEIRO]; // + Admin (passa sempre em exigirSessaoComPapel)
+const RegistroCobrancaWhatsAppSchema = z.object({
+  cobrancaId: z.string().min(1),
+  modelo: z.enum(MODELOS_WHATSAPP),
+  passo: z.enum(PASSOS_POLITICA).nullable(),
+  cicloRegua: z.number().int().nonnegative(),
+}).strict();
 // Fonte de câmbio pública: grátis, sem chave, base USD. `rates[X]` = unidades por 1 USD,
 // que é EXATAMENTE o nosso `unidadesPorUsd` (pivô USD) — grava direto, sem conversão.
 const CAMBIO_API_URL = "https://open.er-api.com/v6/latest/USD";
 
-export async function registrarPagamento(
-  cobrancaId: string,
-  input: PagamentoInput,
-): Promise<Resultado> {
+/** O cron reconcilia o acesso se esta tentativa falhar; a operação financeira já foi confirmada. */
+async function reavaliarAcessoAposCommit(cobrancaId: string) {
+  try {
+    await reavaliarAcessoAutomaticoDaCobranca(cobrancaId);
+  } catch {
+    // Não registrar o erro bruto: mensagens do banco podem conter dados pessoais/financeiros.
+    console.error("[financeiro] Operação confirmada. Falha no recálculo de acesso às aulas; reavaliação pendente pelo cron institucional.");
+  }
+}
+
+/** FIN registra recebimento; SEC envia informe imutável para conferência. */
+export async function registrarPagamento(cobrancaId: string, input: PagamentoInput): Promise<Resultado<{ informado: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const dados = PagamentoSchema.parse(input);
-
-    const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
-    if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-    if (cobranca.status === StatusCobranca.PAGO) throw new ErroRegra("Cobrança já está paga.");
-    if (cobranca.status === StatusCobranca.CANCELADA)
-      throw new ErroRegra("Cobrança cancelada não recebe pagamento.");
-
-    // ACUMULA baixas parciais (issues #1/#10): nunca sobrescreve o total já recebido; saldo/
-    // quitação pelo ACUMULADO; excedente acima do negociado só passa como crédito explícito.
-    const jaRecebido = numeroOuNull(cobranca.valorRecebido) ?? 0;
-    const { recebidoTotal, saldo, quitada, excedente } = acumularPagamento(
-      jaRecebido,
-      numero(cobranca.valorNegociado),
-      dados.valorRecebido,
-      dados.permitirExcedente,
-    );
-
+    const hashDados = hashDadosPagamento({ ...dados, cobrancaId, autorId: autor.id });
+    const concessoes = await prisma.usuario.findUniqueOrThrow({ where: { id: autor.id }, select: { permissoes: true } });
+    const financeiro = autor.papeis.includes(Papel.FINANCEIRO) || autor.papeis.includes(Papel.ADMINISTRADOR) || concessoes.permissoes.includes("pagamento.caixa");
     await prisma.$transaction(async (tx) => {
-      await tx.cobranca.update({
-        where: { id: cobrancaId },
-        data: {
-          valorRecebido: recebidoTotal,
-          saldo,
-          status: quitada ? StatusCobranca.PAGO : StatusCobranca.PENDENTE,
-          pagoEm: quitada ? dados.dataPagamento ?? new Date() : null,
-          formaPagamento: dados.forma as FormaPagamento,
-          comprovanteUrl: dados.comprovanteUrl ?? null,
-          comprovanteNome: dados.comprovanteNome ?? null,
-          comentario: dados.comentario || null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "PagamentoRegistrado",
-        agregadoTipo: "Cobranca",
-        agregadoId: cobrancaId,
-        autorId: autor.id,
-        // payload preserva o histórico da baixa: valor desta baixa + acumulado + saldo + excedente + comprovante.
-        payload: {
-          valorRecebido: dados.valorRecebido,
-          recebidoAcumulado: recebidoTotal,
-          forma: dados.forma,
-          quitada,
-          saldo,
-          excedente,
-          comprovanteUrl: dados.comprovanteUrl ?? null,
-          comprovanteNome: dados.comprovanteNome ?? null,
-        },
-      });
+      const cobranca = await bloquearCobranca(tx, cobrancaId);
+      const vinculo = await tx.matricula.findUniqueOrThrow({ where: { id: cobranca.matriculaId }, select: { alunoId: true, leadId: true } });
+      if (dados.comprovanteUrl) await exigirArquivoVinculavel(autor, dados.comprovanteUrl, { cobrancaId, alunoId: vinculo.alunoId, leadId: vinculo.leadId ?? undefined }, tx);
+      if (financeiro) {
+        await receberTx(tx, { ...dados, cobrancaId, autorId: autor.id, hashDados, dataPagamento: dados.dataPagamento ?? new Date() });
+        return;
+      }
+      const anterior = await tx.pagamentoInformado.findUnique({ where: { chaveIdempotencia: dados.chaveIdempotencia } });
+      if (anterior) {
+        if (anterior.cobrancaId !== cobrancaId || anterior.autorId !== autor.id || !anterior.valor.equals(dinheiro(dados.valorRecebido)) || anterior.comprovanteUrl !== (dados.comprovanteUrl ?? null) || (anterior.hashDados && anterior.hashDados !== hashDados)) {
+          throw new ErroRegra("Identificador do informe já usado para outros dados.");
+        }
+        return;
+      }
+      if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança paga ou cancelada não aceita informe.");
+      const configuracao = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { prazoConferenciaHoras: true } });
+      const criadoEm = new Date();
+      const suspenderLembretesAte = new Date(criadoEm.getTime() + (configuracao?.prazoConferenciaHoras ?? 48) * 3600_000);
+      const informe = await tx.pagamentoInformado.create({ data: {
+        chaveIdempotencia: dados.chaveIdempotencia, cobrancaId, autorId: autor.id, hashDados,
+        valor: dinheiro(dados.valorRecebido), moeda: cobranca.moeda, forma: dados.forma,
+        dataPagamento: dados.dataPagamento ?? new Date(), comprovanteUrl: dados.comprovanteUrl ?? null,
+        comprovanteNome: dados.comprovanteNome ?? null, comentario: dados.comentario ?? null,
+        permitirExcedente: dados.permitirExcedente,
+        criadoEm, suspenderLembretesAte,
+      } });
+      await registrarEvento(tx, { tipo: "PagamentoInformado", agregadoTipo: "Cobranca", agregadoId: cobrancaId,
+        autorId: autor.id, payload: { informeId: informe.id, versao: informe.versao, valor: dados.valorRecebido,
+          suspenderLembretesAte: suspenderLembretesAte?.toISOString() ?? null } });
     });
-    revalidatePath("/financeiro");
+    await reavaliarAcessoAposCommit(cobrancaId);
+    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    return { informado: !financeiro };
+  });
+}
+
+export async function conferirPagamento(informeId: string, input: { versao: number; confirmar: boolean; motivo?: string }): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const dados = ConferenciaSchema.parse(input);
+    const cobrancaId = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "PagamentoInformado" WHERE id = ${informeId} FOR UPDATE`;
+      const informe = await tx.pagamentoInformado.findUnique({ where: { id: informeId } });
+      if (!informe) throw new ErroRegra("Informe não encontrado.");
+      exigirConferenciaIndependente(informe.autorId, autor.id);
+      if (informe.versao !== dados.versao) throw new ErroRegra("Versão do informe inválida. Atualize a tela.");
+      if (informe.status === (dados.confirmar ? "CONFIRMADO" : "REJEITADO") && informe.conferenteId === autor.id) return informe.cobrancaId;
+      if (informe.status !== "A_CONFERIR" || informe.versao !== dados.versao) throw new ErroRegra("O informe já mudou ou foi conferido; atualize a tela.");
+      if (dados.confirmar) {
+        await receberTx(tx, {
+          cobrancaId: informe.cobrancaId, chaveIdempotencia: `informe:${informe.id}:${informe.versao}`,
+          informeId: informe.id, autorId: autor.id, valorRecebido: numero(informe.valor), forma: informe.forma,
+          dataPagamento: informe.dataPagamento, comprovanteUrl: informe.comprovanteUrl,
+          comprovanteNome: informe.comprovanteNome, comentario: informe.comentario,
+          permitirExcedente: informe.permitirExcedente,
+          moeda: informe.moeda,
+        });
+      }
+      await tx.pagamentoInformado.update({ where: { id: informe.id }, data: {
+        status: dados.confirmar ? "CONFIRMADO" : "REJEITADO", conferenteId: autor.id, conferidoEm: new Date(),
+        motivoConferencia: dados.motivo ?? null,
+      } });
+      await registrarEvento(tx, { tipo: dados.confirmar ? "PagamentoConfirmado" : "PagamentoRejeitado",
+        agregadoTipo: "Cobranca", agregadoId: informe.cobrancaId, autorId: autor.id,
+        payload: { informeId, versao: informe.versao, motivo: dados.motivo ?? null } });
+      return informe.cobrancaId;
+    });
+    await reavaliarAcessoAposCommit(cobrancaId);
+    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+  });
+}
+
+/** Publicação versionada: fecha a vigência anterior, sem alterar comissões existentes. */
+export async function publicarPoliticaComissao(input: PoliticaComissaoInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
+    await exigirCapacidade(autor, "comissao.configurar");
+    const dados = PoliticaComissaoSchema.parse(input);
+    if (dados.vigenteEm.getTime() < Date.now() - 60_000) throw new ErroRegra("Publique a política com vigência atual ou futura.");
+    await prisma.$transaction(async (tx) => {
+      // Todos os publicadores bloqueiam a mesma oferta; não há duas versões simultâneas.
+      await tx.$queryRaw`SELECT id FROM "Produto" WHERE id = ${dados.produtoId} FOR UPDATE`;
+      const pais = await tx.pais.findUnique({ where: { id: dados.paisId } });
+      const produto = await tx.produto.findUnique({ where: { id: dados.produtoId } });
+      if (!pais || !produto || pais.moedaLocal !== dados.moeda) throw new ErroRegra("Oferta/moeda inválida para a política.");
+      const anterior = await tx.politicaComissao.findFirst({ where: { paisId: pais.id, produtoId: produto.id }, orderBy: { versao: "desc" } });
+      if (anterior && dados.vigenteEm <= anterior.vigenteEm) throw new ErroRegra("A nova versão deve começar depois da versão anterior.");
+      if (anterior) await tx.politicaComissao.update({ where: { id: anterior.id }, data: { encerraEm: dados.vigenteEm } });
+      const politica = await tx.politicaComissao.create({ data: {
+        ...dados, base: "TAXA_MATRICULA", criadaPorId: autor.id, versao: (anterior?.versao ?? 0) + 1,
+      } });
+      await registrarEvento(tx, { tipo: "PoliticaComissaoPublicada", agregadoTipo: "PoliticaComissao", agregadoId: politica.id,
+        autorId: autor.id, payload: { versao: politica.versao, tipo: politica.tipo, vigenteEm: politica.vigenteEm.toISOString() } });
+    });
+    revalidatePath("/financeiro"); revalidatePath("/matriculas/nova");
   });
 }
 
@@ -94,21 +167,33 @@ export async function registrarCobrancaWhatsApp(
   cobrancaId: string,
   modelo: ModeloWhatsapp,
   passo?: PassoRegua,
+  cicloRegua = 0,
 ): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
-    const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
-    if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+    const dados = RegistroCobrancaWhatsAppSchema.parse({ cobrancaId, modelo, passo: passo ?? null, cicloRegua });
 
     // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     // `passo` = degrau da régua cumprido (doc 24) — é o que faz a fila avançar e o que o
     // cron de automação lê. `canal:"manual"` (doc 26): o despachante grava o MESMO evento
     // com canal:"api" — humano e cron continuam um do outro (helper único em cobrancas/eventos).
     await prisma.$transaction(async (tx) => {
+      // A confirmação é declaratória e aceita o ciclo histórico exibido antes de uma
+      // reprogramação; o lock impede que a leitura e o evento cruzem uma alteração da cobrança.
+      await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${dados.cobrancaId} FOR SHARE`;
+      await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
+      const [usuario, cobranca] = await Promise.all([
+        tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } }),
+        tx.cobranca.findUnique({ where: { id: dados.cobrancaId }, select: { cicloRegua: true } }),
+      ]);
+      if (!usuario?.ativo || !usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || PAPEIS_BAIXA.includes(p))) throw new ErroPermissao();
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      if (dados.cicloRegua > cobranca.cicloRegua) throw new ErroRegra("Ciclo de cobrança inválido. Atualize a fila financeira.");
       await registrarEventoCobrancaEnviada(tx, {
-        cobrancaId,
-        modelo,
-        passo: passo ?? null,
+        cobrancaId: dados.cobrancaId,
+        modelo: dados.modelo,
+        passo: dados.passo,
+        cicloRegua: dados.cicloRegua,
         canal: "manual",
         autorId: autor.id,
       });
@@ -121,27 +206,20 @@ export async function registrarCobrancaWhatsApp(
 export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
-    const aprovadas = await prisma.comissao.findMany({ where: { status: StatusComissao.APROVADA } });
-    if (aprovadas.length === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
-
-    const agora = new Date();
-    await prisma.$transaction(async (tx) => {
+    const pagas = await prisma.$transaction(async (tx) => {
+      const bloqueadas = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "Comissao" WHERE status = 'APROVADA' ORDER BY id FOR UPDATE`;
+      const aprovadas = await tx.comissao.findMany({ where: { id: { in: bloqueadas.map((c) => c.id) }, status: StatusComissao.APROVADA } });
+      if (!aprovadas.length) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
+      const agora = new Date();
       for (const c of aprovadas) {
-        await tx.comissao.update({
-          where: { id: c.id },
-          data: { status: StatusComissao.PAGA, pagaEm: agora },
-        });
-        await registrarEvento(tx, {
-          tipo: "ComissaoPaga",
-          agregadoTipo: "Comissao",
-          agregadoId: c.id,
-          autorId: autor.id,
-          payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
-        });
+        await tx.comissao.update({ where: { id: c.id }, data: { status: StatusComissao.PAGA, pagaEm: agora } });
+        await registrarEvento(tx, { tipo: "ComissaoPaga", agregadoTipo: "Comissao", agregadoId: c.id, autorId: autor.id,
+          payload: { pagaEm: agora.toISOString(), valor: numero(c.valor), moeda: c.moeda, politicaId: c.politicaId } });
       }
+      return aprovadas.length;
     });
     revalidatePath("/financeiro");
-    return { pagas: aprovadas.length };
+    return { pagas };
   });
 }
 

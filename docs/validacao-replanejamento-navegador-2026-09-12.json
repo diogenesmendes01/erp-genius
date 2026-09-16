@@ -1,0 +1,11 @@
+{
+  "executadoEm": "2026-09-12T19:01:55.790Z",
+  "ambiente": "Local descartável, dados fictícios; base de agenda semeada diretamente",
+  "checks": {
+    "registroUnico": true,
+    "autoria": true,
+    "ajusteGuardado": true,
+    "agendaPreservada": true,
+    "calendarioNaoAprovado": true
+  }
+}

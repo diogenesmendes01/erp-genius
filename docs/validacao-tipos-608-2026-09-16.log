@@ -1,0 +1,5 @@
+src/app/(app)/financeiro/continuidade/page.tsx(20,29): error TS2322: Type 'import("C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/matricula/continuidade-fila").ItemFilaContinuidadeMensal[]' is not assignable to type 'import("C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal").ItemFilaContinuidadeMensal[]'.
+  Type 'import("C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/matricula/continuidade-fila").ItemFilaContinuidadeMensal' is not assignable to type 'import("C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal").ItemFilaContinuidadeMensal'.
+    Types of property 'estado' are incompatible.
+      Type 'EstadoFilaContinuidade' is not assignable to type '"AGUARDAR_PRAZO" | "PRONTA" | "OFERTA_PENDENTE" | "INDISPONIVEL" | "A_CONFERIR"'.
+        Type '"CONFERENCIA"' is not assignable to type '"AGUARDAR_PRAZO" | "PRONTA" | "OFERTA_PENDENTE" | "INDISPONIVEL" | "A_CONFERIR"'.

@@ -1,0 +1,25 @@
+{
+  "incremento": 228,
+  "data": "2026-09-12",
+  "integracaoDirecionada": {
+    "success": true,
+    "numTotalTests": 61,
+    "numPassedTests": 4,
+    "numFailedTests": 0,
+    "numPendingTests": 57
+  },
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "paginasEstaticas": 46,
+    "resultado": "aprovado"
+  },
+  "migrationNova": false,
+  "ultimaRegressaoIntegral": 221,
+  "limites": [
+    "Ensaio interativo pendente",
+    "Conciliacao contratual externa e alteracao de condicoes permanecem pendentes",
+    "Sem producao ou envio externo"
+  ]
+}

@@ -35,3 +35,6 @@ next-env.d.ts
 
 # Postgres de teste (npm run test:db)
 .testdb/
+
+# Arquivos intermediários de validação; relatórios finais ficam em docs/.
+/tmp/

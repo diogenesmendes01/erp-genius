@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // Schema compartilhado País (form ↔ ação). Ver docs/04 (país = espinha dorsal).
 export const TipoDocumentoSchema = z.object({
+  id: z.string().min(1).optional(),
   nome: z.string().min(1, "Informe o nome do documento"),
   validador: z.string().min(1, "Informe o validador"),
 });
@@ -21,7 +22,10 @@ export const PaisSchema = z.object({
   ddi: z.string().regex(/^\+\d{1,4}$/, "DDI no formato +XXX (ex.: +506)"),
   fuso: z.string().min(1).default("America/Sao_Paulo"),
   idioma: z.string().min(1).default("es"),
-  tiposDocumento: z.array(TipoDocumentoSchema).default([]),
+  tiposDocumento: z.array(TipoDocumentoSchema).default([]).refine((tipos) => {
+    const nomes = tipos.map((t) => t.nome.trim().toLocaleLowerCase("pt-BR"));
+    return new Set(nomes).size === nomes.length;
+  }, "Cada tipo de documento deve ter um nome distinto"),
 });
 
 export type PaisInput = z.input<typeof PaisSchema>;

@@ -6,6 +6,18 @@ import { Prisma } from "@prisma/client";
 
 /** Agregados conhecidos (mantém consistência com o catálogo de eventos). */
 export type AgregadoTipo =
+  | "RegraAvaliacao"
+  | "ModeloContratual"
+  | "ConfiguracaoOperacional"
+  | "PoliticaComissao"
+  | "CoberturaCarteira"
+  | "AtendimentoWhatsApp"
+  | "PagamentoInformado"
+  | "SolicitacaoCorrecaoCadastro"
+  | "AulaDiario"
+  | "EncontroAgenda"
+  | "VinculoDocente"
+  | "Exportacao"
   | "Lead"
   | "Matricula"
   | "Aluno"
@@ -18,6 +30,7 @@ export type AgregadoTipo =
   | "Modalidade"
   | "Nivel"
   | "Produto"
+  | "ProdutoPais"
   | "Preco"
   | "TaxaCambio"
   // Canal WhatsApp (docs 26/30). Conversa/Mensagem NÃO são agregados de Evento:

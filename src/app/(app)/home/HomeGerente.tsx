@@ -51,7 +51,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
               ))}
             </ol>
           )}
-          <p className="mt-2 text-xs text-gray-400">Critério "justo" (volume/qualidade) — refinar (P10).</p>
+          <p className="mt-2 text-xs text-gray-400">Critério &quot;justo&quot; (volume/qualidade) — refinar (P10).</p>
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-surface p-4">

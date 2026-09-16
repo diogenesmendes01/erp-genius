@@ -58,16 +58,21 @@ describe("salvarConfigComercial", () => {
 
 describe("carregarSaudacoesSimuladas (ensaio observável — review PR #53)", () => {
   it("lista as saudações reativas SIMULADAs com contato, texto e horário; ignora as reais", async () => {
+    const gerente = await criarUsuario([Papel.GERENTE_COMERCIAL]);
+    const vendedor = await criarUsuario([Papel.VENDEDOR]);
+    await prisma.usuario.update({ where: { id: vendedor.id }, data: { gerenteComercialId: gerente.id } });
+    const lead = await prisma.lead.create({ data: { nome: "Ana", vendedorDonoId: vendedor.id } });
+    authMock.mockResolvedValue({ user: { id: gerente.id } });
     const numero = await prisma.numeroWhatsApp.create({
       data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-s" },
     });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50611112222", nomeExibicao: "Ana" } });
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi Ana!", status: "SIMULADA" },
+      data: { numeroId: numero.id, contatoId: contato.id, leadId: lead.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi Ana!", status: "SIMULADA" },
     });
     // Uma reativa DESPACHADA (real) e uma não-reativa SIMULADA não entram na lista de ensaio.
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "enviada", status: "DESPACHADA" },
+      data: { numeroId: numero.id, contatoId: contato.id, leadId: lead.id, origem: "CRON", reativa: true, corpoRenderizado: "enviada", status: "DESPACHADA" },
     });
 
     const lista = await carregarSaudacoesSimuladas();

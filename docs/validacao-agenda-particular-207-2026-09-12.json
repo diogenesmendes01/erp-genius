@@ -1,0 +1,25 @@
+{
+  "incremento": 207,
+  "data": "2026-09-12",
+  "escopo": "Conferência interna da agenda particular, sem reserva",
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "success": true,
+    "numTotalTests": 54,
+    "numPassedTests": 54,
+    "numFailedTests": 0,
+    "numPendingTests": 0
+  },
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "diffCheck": "aprovado",
+  "ultimoBuild": 206,
+  "ultimaRegressaoIntegral": 201,
+  "migrationNova": false,
+  "limites": [
+    "Não persiste reserva nem garante disponibilidade futura",
+    "Sem Server Action ou interface",
+    "Recorrência, reservas concorrentes e ciclo de reserva pendentes",
+    "Sem produção ou envios externos"
+  ]
+}

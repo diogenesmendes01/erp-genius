@@ -10,14 +10,25 @@ import { ModalidadesPainel } from "./ModalidadesPainel";
 import { NiveisPainel } from "./NiveisPainel";
 import { ProdutosPainel } from "./ProdutosPainel";
 import { PrecosPainel } from "./PrecosPainel";
+import { Papel } from "@prisma/client";
+import { consultarEntradasOfertas } from "@/server/catalogo/entrada-oferta";
+import { EntradasOfertas } from "./EntradasOfertas";
+import { exigirSessaoPagina } from "@/server/_shared";
 
 export default async function CatalogoPage() {
-  const [idiomas, modalidades, produtos, precos, paises] = await Promise.all([
+  const usuario = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
+  const administrador = usuario.papeis.includes(Papel.ADMINISTRADOR);
+  if (!administrador) {
+    const idiomas = await listarIdiomas();
+    return <div className="flex flex-col gap-10"><IdiomasPainel idiomas={idiomas} /><NiveisPainel idiomas={idiomas} /></div>;
+  }
+  const [idiomas, modalidades, produtos, precos, paises, ofertas] = await Promise.all([
     listarIdiomas(),
     listarModalidades(),
     listarProdutos(),
     listarPrecos(),
     listarPaises(),
+    consultarEntradasOfertas(),
   ]);
 
   const produtosOpcoes = produtos.map((p) => ({
@@ -40,6 +51,7 @@ export default async function CatalogoPage() {
         paises={paises.map((p) => ({ id: p.id, nome: p.nome, moedaLocal: p.moedaLocal }))}
         produtos={produtosOpcoes}
       />
+      <EntradasOfertas ofertas={ofertas} />
     </div>
   );
 }

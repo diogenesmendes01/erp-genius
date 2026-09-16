@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { IconPlus } from "@tabler/icons-react";
 import { TurmaFormulario, type TurmaParaEditar, type Opcao, type ModalidadeOpcao } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
@@ -23,7 +24,8 @@ export interface TurmaRow {
   modalidade: { nome: string };
   nivel: { codigo: string; idioma: { nome: string } };
   professor: { id: string; nome: string } | null;
-  _count: { alocacoes: number };
+  regraAvaliacao: { id: string; versao: number } | null;
+  _count: { alocacoes: number; reservasMatricula: number };
 }
 
 /**
@@ -118,11 +120,12 @@ export function TurmasPainel({
             <tbody className="divide-y divide-gray-100">
               {turmas.map((t) => {
                 // _count.alocacoes já vem filtrado por { ativa: true } (ver listarTurmas).
-                const vagas = Math.max(0, t.capacidade - t._count.alocacoes);
+                const vagas = Math.max(0, t.capacidade - t._count.alocacoes - t._count.reservasMatricula);
                 const sit = situacao(t.dataInicio, t.dataFim);
                 return (
                   <tr key={t.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
+                      <Link href={`/academico/regras/turmas/${t.id}`} className="text-xs text-gray-600 underline">{t.regraAvaliacao ? `Avaliações: versão ${t.regraAvaliacao.versao}` : "Regras de avaliação pendentes de vinculação"}</Link>
                       <div className="font-medium text-gray-800">
                         {t.nome ? t.nome : `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo}`}
                         <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
@@ -148,7 +151,7 @@ export function TurmasPainel({
                     </td>
                     <td className="px-4 py-3 text-gray-600">{t.professor?.nome ?? "—"}</td>
                     <td className="px-4 py-3 text-gray-600">
-                      {t._count.alocacoes} matriculados · {vagas} vagas
+                      {t._count.alocacoes} matriculados · {t._count.reservasMatricula} reservas · {vagas} vagas
                     </td>
                     <td className="px-4 py-3">
                       <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + sit.cls}>

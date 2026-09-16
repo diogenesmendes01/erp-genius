@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { Papel } from "@prisma/client";
+import { CAPACIDADES_LISTA } from "@/lib/capacidades";
 
-// Usuário & papéis (ver docs/07). Multi-papel; limiteDescontoPct null = sem limite (Admin).
+// Limite ausente não concede autonomia; o campo antigo permanece para compatibilidade.
 const limite = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
   z.number().min(0).max(100, "Limite em % (0–100)").nullable(),
@@ -12,6 +13,10 @@ const base = {
   email: z.string().email("E-mail inválido"),
   papeis: z.array(z.nativeEnum(Papel)).min(1, "Selecione ao menos um papel"),
   limiteDescontoPct: limite,
+  limiteDescontoTaxaPct: limite,
+  limiteDescontoMensalidadePct: limite,
+  permissoes: z.array(z.enum(CAPACIDADES_LISTA)).default([]),
+  gerenteComercialId: z.string().nullish().transform((v) => v || null),
 };
 
 export const CriarUsuarioSchema = z.object({

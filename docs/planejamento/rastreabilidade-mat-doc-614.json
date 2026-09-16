@@ -1,0 +1,553 @@
+[
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-01",
+    "textoOrigem": "Aluno existente contrata curso regular e particular por hora — Uma pessoa, duas matrículas; criação não exige duplicação de cadastro ou mensalidade fictícia para hora.",
+    "criterios": [
+      "B01.Aceite.5",
+      "P01.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "B01 separa dois contratos e P01 veda mensalidade fictícia na particular por hora."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-02",
+    "textoOrigem": "Duas matrículas precisam de vínculos acadêmicos simultâneos — Permitidos vínculos independentes; duplicidade incompatível no mesmo vínculo é rejeitada.",
+    "criterios": [
+      "B01.Aceite.5"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "O critério trata vínculos independentes e rejeição de duplicidade no vínculo."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-03",
+    "textoOrigem": "Pausar somente o contrato regular — Particular mantém situação, agenda, cobranças e direitos; regular passa às regras aprovadas de pausa.",
+    "criterios": [
+      "F07.5.Aceite.2",
+      "P01.Aceite.6",
+      "V01.Aceite.3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Os critérios preservam contrato excluído durante pausa seletiva e operação por matrícula."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-04",
+    "textoOrigem": "Encerrar somente a particular com horas antecipadas — Regular permanece; saldo da particular entra no acerto pelas condições originais, sem duplicar crédito.",
+    "criterios": [
+      "P01.Aceite.5",
+      "P01.Aceite.6",
+      "V01.Aceite.3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "P01 preserva saldo/condições da particular e isola o contrato regular."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-05",
+    "textoOrigem": "Selecionar ambos para encerramento — Prévia e aprovação mostram cada contrato/modelo; aplicação abrange exatamente o conjunto válido.",
+    "criterios": [
+      "F07.5.Aceite.6"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "A seleção coletiva confere cada contrato e só aplica o conjunto válido."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-06",
+    "textoOrigem": "Um item muda depois da aprovação ou falha na aplicação — Nenhum item é aplicado parcialmente; revisão necessária mantém data efetiva conforme decisão aprovada.",
+    "criterios": [
+      "F07.5.Aceite.6",
+      "F07.3-2"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Mudança invalida revisão e falha não aplica subconjunto."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-07",
+    "textoOrigem": "Alterar ID do aluno, matrícula, vínculo ou material em chamada direta — Rejeitar inconsistência/falta de acesso sem consultar ou alterar outro contrato indevidamente.",
+    "criterios": [
+      "B01.Aceite.5",
+      "F07.7.Aceite.1",
+      "DCT01-5"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Há proteção de contrato identificado, portal e documento; não há um aceite único para todas as associações diretas citadas."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-08",
+    "textoOrigem": "Outro contrato permanece ativo enquanto o alvo está bloqueado — Não libera material/entrega do alvo; acesso ao contrato válido permanece.",
+    "criterios": [
+      "P01.Aceite.6",
+      "F07.7.Aceite.3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "P01 limita acesso do contrato pausado e F07.7 trata revogação de leitura."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-09",
+    "textoOrigem": "Aluno transferido depois de uma aula com chamada pendente — Participação histórica correta; responsáveis autorizados não recebem acesso amplo ao cadastro/contrato atual.",
+    "criterios": [
+      "F07.4-1",
+      "V01.Aceite.2"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "A chamada usa elegibilidade histórica e V01 preserva autoria/restrição após mudança."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-10",
+    "textoOrigem": "D13/D14 executados para uma matrícula — Retomar/mudar nível não escolhe a primeira matrícula nem encerra alocações de outra.",
+    "criterios": [
+      "B01.Aceite.5",
+      "V01.Aceite.3"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Os critérios exigem matrícula identificada e isolamento, mas não descrevem integralmente D13/D14."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-11",
+    "textoOrigem": "Turma/material compartilhados por várias matrículas — Alteração de um participante não remove aula/material nem direitos de outros participantes autorizados.",
+    "criterios": [
+      "F07.4-1",
+      "F07.7.Aceite.1"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Há preservação de elegibilidade e guard de material, mas não um aceite geral da coexistência compartilhada de turma/material."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-12",
+    "textoOrigem": "Repetir operação ou executar decisões concorrentes — Uma aplicação coerente; sem movimentos, créditos, cobranças ou avisos lógicos duplicados.",
+    "criterios": [
+      "B02.Aceite.2",
+      "F07.3-2",
+      "N01.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Os critérios cobrem repetição, concorrência, conjunto atômico e aviso apenas após aplicação."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-13",
+    "textoOrigem": "Recebimento único com várias destinações e crédito sem destino — Origem, titular e moeda preservados; contratos identificados nas destinações, sem exigir destino fictício.",
+    "criterios": [
+      "B02.Aceite.1",
+      "B02.Aceite.5"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Recebimento único, destinações e ausência de dinheiro fictício estão explícitos."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-14",
+    "textoOrigem": "Migração encontra duas matrículas possíveis para vínculo antigo — Registrar pendência; nenhuma atribuição por primeira linha/nome ou alteração financeira presumida.",
+    "criterios": [
+      "M01.Aceite.1",
+      "M01.Aceite.2",
+      "M01.Aceite.3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "M01 exige pendência de ambiguidade e proíbe converter divergência em histórico confirmado."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-15",
+    "textoOrigem": "Professor/comercial consulta ficha com vários contratos — Somente contratos/registros/campos autorizados; resumo não revela valores, contatos ou materiais proibidos.",
+    "criterios": [
+      "B01.Aceite.5",
+      "DCT01-5",
+      "F07.7.Aceite.1"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobrem escopos específicos, mas não a projeção completa de ficha para professor/comercial."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-16",
+    "textoOrigem": "Remover permissão de aprovador durante análise — Aplicação revalida acesso e separação de pessoas; múltiplos papéis não permitem autoaprovação.",
+    "criterios": [
+      "B02.Aceite.4",
+      "DCT01-1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Ambos exigem pessoa distinta, papel vigente e revalidação de aprovação."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-17",
+    "textoOrigem": "Avançar para pagamento da taxa/assinatura sem disponibilidade ou admissão permitida — Bloquear o avanço no servidor; turma opcional no formulário legado ou mera presença no catálogo não satisfaz Q103. Validar mudança de disponibilidade entre consulta e ação e, após o limite, a exceção específica válida de Q110, sem ampliar a janela geral. Nas particulares, validar o regime e as reservas de Q111/MAT-22.",
+    "criterios": [
+      "COM01-3",
+      "F07.2-4",
+      "P01.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "COM01/F07.2 conferem disponibilidade no servidor e P01 cobre a contratação por hora."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-18",
+    "textoOrigem": "Duas preparações simultâneas disputam a última vaga, ou a mesma preparação é repetida — Reservar no máximo a capacidade disponível e uma vez por contratação; vaga reservada não é oferecida de novo. Distinguir reserva de alocação e evitar contagem dupla na transição.",
+    "criterios": [
+      "COM01-1",
+      "F07.2-3",
+      "COM01-6"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Reserva única sob disputa, conflito e conversão única são explícitos."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-19",
+    "textoOrigem": "Vencer reserva de matrícula ainda não ativa, com/sem avanço formal, e repetir o processamento — Sem comprovante em conferência/pagamento confirmado/assinatura, expirar uma vez. Havendo algum desses registros, manter vaga e abrir pendência, inclusive após a data-limite; repetição não libera nem duplica ocupação.",
+    "criterios": [
+      "COM01-1",
+      "COM01-5"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "A contagem protegida e pendência concorrente aparecem, mas a regra completa de expiração condicionada não está textualizada em um critério."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-20",
+    "textoOrigem": "Turma em andamento dentro/fora da data-limite de admissão — Dentro da janela, pode aceitar nova contratação com demais requisitos válidos; depois, bloquear novas admissões, ressalvado o caso de reserva anterior com exceção Q110/MAT-21. A lista não exige início futuro, e o ingresso não cria faltas/presenças anteriores ao vínculo.",
+    "criterios": [
+      "COM01-3",
+      "F07.2-4",
+      "F07.4-1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Admissão é conferida no servidor e entrada posterior não cria chamada histórica."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-21",
+    "textoOrigem": "Reserva anterior ao limite tenta concluir ingresso após ele, com/sem aprovação específica, autoaprovação ou mudança de viabilidade — Exigir reserva ainda válida ou mantida por pendência, decisão com motivo de outra pessoa autorizada e turma apta, nunca concluída. Rejeitar falta de aprovação/autoaprovação e exigir nova conferência diante de mudança relevante. Preservar proteção Q108, pagamentos e documentos; aprovação não ativa sozinha nem permite ingresso de outras contratações fora da janela.",
+    "criterios": [
+      "COM01-3",
+      "F07.3-2",
+      "B02.Aceite.4"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobrem chamada direta, versão e aprovação, mas não todos os efeitos da reserva protegida descritos pela fonte."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-22",
+    "textoOrigem": "Contratar particular mensal/por hora com grade fixa ou agenda flexível, faltando reserva ou havendo conflito concorrente — Regime registrado por matrícula/contrato; grade fixa exige horários recorrentes acordados reservados, flexível exige ao menos primeiro encontro com professor disponível. Bloquear avanço sem requisitos ou com conflito; não duplicar reservas. Demais encontros flexíveis exigem novo agendamento, sem promessa de recorrência. Não alterar cobrança, consumir benefício de reposição ou permitir aula antes da ativação.",
+    "criterios": [
+      "P01.Aceite.1",
+      "F07.2-3",
+      "COM01-3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Regime/adiantamento, conflito de professor e conferência no servidor estão representados."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-23",
+    "textoOrigem": "Salvar preparação, conferir com requisito faltante e repetir uma conferência válida, inclusive com taxa já emitida/recebida ou após falha — Preparação sozinha não emite taxa. Conferência válida da Secretaria e requisitos atendidos geram emissão automática única; pendência de requisito é identificada. Concorrência/repetição ou taxa preexistente não duplicam nem sobrescrevem histórico. Não confirmar recebimento, assinatura ou ativação pela emissão; preservar Q105 e regras dos demais valores.",
+    "criterios": [
+      "COM01-2",
+      "COM01-6",
+      "B02.Aceite.5"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobrem emissão/ativação e não baixa fictícia; falta texto explícito para toda a conferência da Secretaria e taxa preexistente."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-24",
+    "textoOrigem": "Vendedor prepara com identificação básica/contato/negociação; Secretaria complementa, com cliente novo ou existente — Permitir a preparação com dados mínimos da etapa e pendências explícitas, sem exigir todos os dados cadastrais finais ou inventá-los. Taxa/contrato exigem dados suficientes e conferência. Reutilizar identidade confirmada sem abrir outros contratos. Depois da assunção, vendedor solicita correção; alteração direta no servidor é rejeitada.",
+    "criterios": [
+      "COM01-4",
+      "B01.Aceite.5",
+      "DCT01-2"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "COM01 separa nova contratação e escopo; B01/DCT01 preservam identidade e pendências sem dados inventados."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-25",
+    "textoOrigem": "Prorrogar/liberar reserva protegida com aprovador igual, papel insuficiente, versão alterada ou repetição — Exigir proposta de Secretaria/Administração, outra pessoa da Administração e dados ainda válidos. Aplicar uma vez prazo/liberação, preservando histórico e tratamento separado de documentos/valores. Não prorrogar admissão nem confirmar recebimento/devolução/cancelamento; no novo vencimento, reaplicar Q108.",
+    "criterios": [
+      "COM01-1",
+      "COM01-3",
+      "B02.Aceite.4"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Há reserva protegida, chamada direta e aprovação independente, sem texto específico de prorrogação individual."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-26",
+    "textoOrigem": "Mensal com/sem primeira mensalidade exigida e hora com/sem adiantamento; repetir conferência/ativação com cobranças existentes — Se pagamento das aulas for exigido, emitir após conferência e exigir confirmação antes de ativar. Mensal sem exigência emite na ativação, sem bloqueio circular por ausência anterior. Hora sem adiantamento não gera mensalidade fictícia e segue Q93. Preservar requisitos de taxa/contrato e dados de cobertura/horas/vencimento; não duplicar cobrança/recebimento nem aceitar informe como quitação.",
+    "criterios": [
+      "COM01-2",
+      "P01.Aceite.1",
+      "B01.Aceite.4"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Os quatro gatilhos de mensalidade/adiantamento e ausência de mensalidade fictícia são explícitos."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-27",
+    "textoOrigem": "Aluno com matrícula vendida por A abre nova negociação com B; converter/repetir e testar acesso/transferência — Nova oportunidade e matrícula usam responsável B e a mesma identidade confirmada; operação repetida não duplica conversão. Vendas/autoria/comissões anteriores permanecem. B não lê outros contratos nem sobrescreve cadastro conferido por essa origem; cobertura não muda titular, transferência exige autorização e comissão segue política da nova contratação.",
+    "criterios": [
+      "COM01-4",
+      "B01.Aceite.5"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Nova negociação reutiliza identidade sem leitura/alteração do contrato anterior."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-28",
+    "textoOrigem": "Desistir antes da ativação, com/sem avanço formal; inserir comprovante/pagamento/assinatura durante a revisão; repetir operação — Sem avanço formal, Secretaria efetiva somente com requisitos cumpridos. Havendo algum registro, exigir proposta de Secretaria/Administração e outra pessoa da Administração aprovadora; evento concorrente impede execução direta. Acerto necessário exige Financeiro e aprovação independente; assinatura aberta com resultado de encerramento incerto mantém pendência. Preservar matrícula/documentos/recebimentos, liberar reserva coerentemente uma vez e não alterar contratos excluídos nem presumir devolução.",
+    "criterios": [
+      "COM01-5",
+      "B02.Aceite.3",
+      "B02.Aceite.4"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobrem incerteza, conciliação e segregação, mas não toda a cadeia de desistência/reserva/assinatura da fonte."
+  },
+  {
+    "fonte": "docs/specs/matricula-como-unidade-operacional.md",
+    "idOrigem": "MAT-29",
+    "textoOrigem": "Expiração sem avanço formal e nova tentativa de reserva; assinatura/pagamento concorrente — Mesma matrícula fica em preparação sem vaga garantida; nova tentativa confere disponibilidade, dados e condições atuais. Solicitação de assinatura aberta é encerrada com confirmação. Preservar cobranças/recebimentos e não usar retomada de matrícula pausada. Fato formal já registrado impede expiração; fato tardio abre conferência sem retirar vaga alheia ou criar ativação/devolução automática.",
+    "criterios": [
+      "COM01-1",
+      "COM01-3",
+      "COM01-5"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobrem nova reserva, revalidação e fatos concorrentes, mas não descrevem integralmente a expiração e encerramento de assinatura."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-01",
+    "textoOrigem": "Gerar contrato de matrícula mensal e de matrícula por hora — Campos e condições do modelo aplicável refletem a contratação identificada; não criar mensalidade fictícia no modelo por hora.",
+    "criterios": [
+      "DCT01-2",
+      "P01.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "DCT01 exige modelo/campos aplicáveis; P01 veda mensalidade fictícia para hora."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-02",
+    "textoOrigem": "Falta modelo aprovado aplicável ou dado exigido — Apresentar pendência e impedir documento final incompleto; não inventar cláusula, valor ou evidência.",
+    "criterios": [
+      "DCT01-2"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Campo/dado obrigatório ausente gera pendência sem preenchimento inventado."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-03",
+    "textoOrigem": "Alterar catálogo/cadastro depois de gerar uma versão — PDF preservado continua com os dados de origem; eventual nova versão identifica as mudanças e passa pela conferência aplicável.",
+    "criterios": [
+      "DCT01-3",
+      "DCT03-4"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Versões anteriores permanecem e alteração posterior não reescreve o documento."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-04",
+    "textoOrigem": "Tentar editar cláusula livre ou preço não aprovado pelo cliente da ação — Servidor rejeita a alteração e conserva o documento/condições anteriores.",
+    "criterios": [
+      "DCT01-2",
+      "DCT01-3"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Há bloqueio de condição inexistente e preservação de versão; não há texto específico sobre toda edição livre/preço por cliente."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-05",
+    "textoOrigem": "Tentar liberar prévia sem conferência ou com condições alteradas desde a revisão — Impedir liberação até conferência válida da versão correspondente.",
+    "criterios": [
+      "DCT02-1",
+      "DCT02-6"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Requisitos e conferência estão cobertos, mas o vínculo exato entre prévia e condições alteradas não aparece integralmente."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-06",
+    "textoOrigem": "Oferta exige taxa antes da assinatura e há apenas informe a conferir — Bloquear liberação; confirmação financeira efetiva é necessária.",
+    "criterios": [
+      "DCT02-1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Taxa prévia exigida distingue informe e confirmação suficiente para liberação."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-07",
+    "textoOrigem": "Oferta dispensa taxa prévia à assinatura — Permitir liberação com demais requisitos válidos, sem marcar pagamento, aceite ou ativação automaticamente.",
+    "criterios": [
+      "DCT02-1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "O caminho dispensado é previsto sem marcar aceite/ativação automaticamente."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-08",
+    "textoOrigem": "Disponibilidade/admissão deixa de atender a contratação — Não avançar à assinatura sem requisitos válidos de Q103/Q107–Q111. Após o limite, reserva anterior exige exceção específica Q110; nas particulares, conferir regime e horários de Q111. Preservar fatos e proteção da reserva aplicável.",
+    "criterios": [
+      "COM01-3",
+      "F07.2-4",
+      "P01.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Disponibilidade, admissão e particular são conferidas no servidor antes do avanço."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-09",
+    "textoOrigem": "Usuário troca documentoId/matriculaId ou tenta acessar contrato por outro vínculo — Rejeitar acesso indevido e inconsistência, inclusive na prévia, arquivo e metadados.",
+    "criterios": [
+      "DCT01-5",
+      "F07.7.Aceite.1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Ambos recusam consulta/troca de identificador fora do escopo."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-10",
+    "textoOrigem": "Repetir geração/liberação após resposta incerta — Não duplicar versão/envio lógico por repetição; resultado de envio e assinatura continuam distinguíveis.",
+    "criterios": [
+      "DCT01-3",
+      "DCT02-4"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Repetição não duplica versão e incerteza exige conciliação antes de repetir."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-11",
+    "textoOrigem": "Contrato aceito recebe atualização posterior no modelo institucional — Documento/evidências anteriores permanecem; não sobrescrever nem transferir o aceite para versão nova.",
+    "criterios": [
+      "DCT01-3",
+      "DCT03-4"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Documento/evidência anterior é preservado e não aprova outra versão."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-12",
+    "textoOrigem": "Arquivo parcial, falha de geração ou retorno de assinatura de outra matrícula — Não liberar/confirmar artefato inválido; apresentar pendência rastreável.",
+    "criterios": [
+      "DCT01-3",
+      "DCT02-3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Falha/artefato inválido e retorno de origem errada não concluem o fluxo."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-13",
+    "textoOrigem": "Secretaria/Administração prepara modelo e tenta publicar; aprovador possui vários papéis ou proposta muda durante a revisão — Preparação não publica. Exigir outra pessoa da Administração e versão efetivamente conferida; rejeitar autoaprovação/falta de permissão e exigir nova conferência de mudança relevante. Publicação válida libera somente a versão aprovada, preservando anteriores e sem alterar contratos por si só.",
+    "criterios": [
+      "DCT01-1"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Preparador não publica/aprova e mudança relevante exige versão conferida."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-14",
+    "textoOrigem": "Modelo exige participantes condicionais; falta identificação, chega assinatura parcial ou retorno de participante/documento errado — Resolver exigências do modelo e bloquear envio com dados/participante obrigatório faltantes. Validar correspondência dos retornos; assinatura parcial não conclui os obrigatórios nem autoriza ativação. Preservar evidências, proteção da reserva aplicável e conferência da Secretaria. Pagador/signatário não ganha acesso acadêmico automaticamente.",
+    "criterios": [
+      "DCT01-4",
+      "DCT02-2",
+      "DCT02-3",
+      "DCT02-6"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Modelo resolve participantes, assinatura parcial/origem errada não conclui e Secretaria confere."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-15",
+    "textoOrigem": "Substituir documento ainda em assinatura, com autoaprovação, resultado externo incerto, repetição ou conclusão concorrente das assinaturas — Exigir proposta válida e aprovação de outra pessoa da Administração. Nova versão só é liberada após encerramento anterior confirmado. Resultado incerto permanece pendente; assinatura completa impede tratar o caso como Q116. Repetição/retorno tardio não duplica envio/taxa nem transfere aceite; documentos, assinaturas e pagamentos anteriores permanecem.",
+    "criterios": [
+      "DCT02-4",
+      "DCT02-5",
+      "DCT02-3"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Cancelamento incerto, conclusão concorrente e retornos repetidos são tratados sem herdar aceite."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-16",
+    "textoOrigem": "Propor aditivo, tentar aplicar após só aprovação interna/assinatura parcial, ou aplicar com vigência/base incompatível e repetir — Exigir modelo aprovado, aprovação administrativa independente e demais alçadas, todas as assinaturas exigidas e conferência da Secretaria. Aplicação respeita vigência e base válidas e ocorre uma vez; não sobrepõe proposta concorrente silenciosamente. Original/aditivos anteriores e pagamentos permanecem; não criar matrícula/taxa automaticamente nem impor novo fluxo a pausa/encerramento/mudanças acadêmicas já definidos.",
+    "criterios": [
+      "DCT03-1",
+      "DCT03-2",
+      "DCT03-3",
+      "DCT03-4",
+      "DCT03-5"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "O conjunto DCT03 cobre formalização, vigência, concorrência, histórico e fronteiras com outros fluxos."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-17",
+    "textoOrigem": "Desistência com solicitação de assinatura aberta, encerramento incerto ou assinaturas concluídas durante a operação — Aplicar autorização conforme avanço formal de Q121 e impedir autoaprovação onde exigida. Somente encerramento confirmado da solicitação aberta permite prosseguir com demais requisitos; resultado incerto mantém pendência. Assinaturas concluídas permanecem registradas e exigem conferência do tratamento documental/financeiro, sem invalidar contrato automaticamente, apagar evidência, duplicar envio/ajuste ou presumir dinheiro devolvido.",
+    "criterios": [
+      "COM01-5",
+      "DCT02-4",
+      "B02.Aceite.3",
+      "B02.Aceite.4"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobre incerteza/segregação e conciliação, mas não expressa por completo a autorização por avanço formal e todos os efeitos de desistência."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-18",
+    "textoOrigem": "Contrato/aditivo com vários participantes do cliente; testar assinatura parcial, retorno repetido e modelo sem escola signatária — Cliente/responsáveis recebem juntos; escola só recebe após todas as assinaturas exigidas do cliente, se prevista no modelo. Ausência de escola obrigatória não cria etapa impeditiva. Não aceitar assinatura de outro processo/versão nem duplicar liberação. Nenhuma etapa assina automaticamente pela escola; Secretaria ainda confere o aceite antes de satisfazer ativação/aplicação de aditivo.",
+    "criterios": [
+      "DCT02-2",
+      "DCT02-3",
+      "DCT02-6"
+    ],
+    "lacunaDeAlcance": false,
+    "justificativa": "Etapas cliente/escola, retorno correto e conferência final estão explicitamente cobertos."
+  },
+  {
+    "fonte": "docs/specs/documento-contratual.md",
+    "idOrigem": "DOC-19",
+    "textoOrigem": "Reserva expira sem avanço formal com solicitação de assinatura aberta; retomar preparação após nova reserva — Encerrar solicitação antiga com resultado confirmado; incerteza bloqueia nova liberação. Manter matrícula/documentos/cobranças e revalidar requisitos antes de liberar processo novo. Retorno formal concorrente exige conferência, sem ativar ou tomar vaga alheia automaticamente; repetição não duplica envio/taxa.",
+    "criterios": [
+      "COM01-1",
+      "COM01-3",
+      "COM01-5",
+      "DCT02-4"
+    ],
+    "lacunaDeAlcance": true,
+    "justificativa": "Cobre reserva/revalidação/incerteza, mas não o encerramento confirmado da solicitação e toda a transição de expiração."
+  }
+]

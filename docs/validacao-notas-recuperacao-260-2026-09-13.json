@@ -1,0 +1,16 @@
+{
+  "incremento": 260,
+  "data": "2026-09-13",
+  "escopo": "Notas versionadas de recuperação, conferência independente e consolidação pelo melhor resultado",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 47, "falhas": 0 },
+  "unitarios": { "arquivo": "src/server/avaliacoes/calculo.test.ts", "aprovados": 27, "falhas": 0 },
+  "typescript": "aprovado após alterações finais",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49, "observacao": "Anterior somente ao acréscimo dos identificadores das fontes de recuperação; tipos e integrações revalidados depois" },
+  "migration": "20260913210000_notas_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false,
+  "limites": ["Telas próprias de lançamento e conferência ainda pendentes", "Correção e designação específica de recuperação ainda pendentes", "Sem publicação em produção"]
+}

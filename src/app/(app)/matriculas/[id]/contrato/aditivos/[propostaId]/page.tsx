@@ -1,0 +1,36 @@
+import Link from "next/link";
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { consultarPropostaAditivo } from "@/server/contratos/aditivos";
+import { consultarEfeitosAditivo } from "@/server/contratos/aditivo-efeitos-consulta";
+import { DecidirAditivo } from "../Formularios";
+import { ParticipantesFormulario } from "../ParticipantesFormulario";
+import { ParticipantesHistorico } from "../ParticipantesHistorico";
+import { OriginaisPainel } from "../OriginaisPainel";
+import { ImpactosPainel } from "../ImpactosPainel";
+const dominios = { CADASTRO: "Dados deste contrato", CONTRATUAL: "Condições contratadas", CONDICOES_FUTURAS: "Próximas cobranças", COBRANCA_EMITIDA: "Cobranças existentes", AGENDA: "Agenda" };
+export default async function PropostaAditivoPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ paginaConferencias?: string; paginaOriginais?: string }> }) {
+  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA); const { id, propostaId } = await params;
+  const r = await consultarPropostaAditivo({ matriculaId: id, propostaId }); if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
+  const d = r.dado, data = d.criadaEm.toISOString().replace("T", " ").slice(0, 19) + " UTC";
+  const efeitosResultado = await consultarEfeitosAditivo({ matriculaId: id, propostaId });
+  const efeitos = efeitosResultado.ok ? efeitosResultado.dado : null;
+  const paginaInformada = Number((await searchParams).paginaConferencias ?? 1);
+  const pagina = Number.isInteger(paginaInformada) && paginaInformada >= 1 && paginaInformada <= 100000 ? paginaInformada : 1;
+  const paginaOriginalInformada = Number((await searchParams).paginaOriginais ?? 1);
+  const paginaOriginais = Number.isInteger(paginaOriginalInformada) && paginaOriginalInformada >= 1 && paginaOriginalInformada <= 100000 ? paginaOriginalInformada : 1;
+  return <div className="space-y-5"><Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos`}>Voltar às propostas</Link><h1 className="text-2xl">Proposta de aditivo · versão {d.versao}</h1><p>Preparada por {d.preparadaPor} em {data}.</p><p className="whitespace-pre-wrap">{d.motivo}</p>{d.ambiente === "SANDBOX" && <p role="status">Ambiente de teste: esta fonte não comprova formalização em produção.</p>}
+    <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/originais/${encodeURIComponent(d.artefatoOriginalId)}/pdf`} target="_blank" rel="noopener noreferrer">Abrir PDF do original preservado</a>
+    <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(d.conclusaoOriginalId)}/pdf`} target="_blank" rel="noopener noreferrer">Abrir documento assinado e preservado</a>
+    <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/aditivos/${encodeURIComponent(d.id)}/previa-pdf`} target="_blank" rel="noopener noreferrer">Abrir prévia do aditivo em PDF (sem assinatura)</a>
+    <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Documento projetado</h2><h3 className="text-lg">{d.documento.titulo}</h3>{d.documento.secoes.map((s, i) => <section key={`${s.titulo}:${i}`}><h4 className="font-medium">{s.titulo}</h4><p className="whitespace-pre-wrap">{s.texto}</p></section>)}</section>
+    <ImpactosPainel classificacao={d.impactos} /><p>Vigência proposta: {d.vigenciaInicio.toISOString().replace("T", " ").slice(0, 19)} UTC.</p>
+    <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Revisão dos efeitos</h2>{!efeitos ? <p role="alert">{efeitosResultado.ok ? "Revisão de efeitos indisponível." : efeitosResultado.erro}</p> : <div className="space-y-3"><p>Esta revisão descreve os efeitos previstos para a vigência indicada. As condições ainda não foram aplicadas e nada altera o cadastro global do aluno.</p><p>Vigência prevista: {efeitos.vigenciaInicio.toISOString().replace("T", " ").slice(0, 19)} UTC.</p><ul className="space-y-2">{efeitos.efeitos.map(efeito => { const alteracao = d.alteracoes.find(a => a.campo === efeito.origem); return <li className="rounded border p-3" key={`${efeito.origem}:${efeito.dominio}:${efeito.destino}`}><p className="font-medium">{alteracao?.rotulo ?? efeito.origem}</p><p>{dominios[efeito.dominio] ?? "Condições deste contrato"}.</p><p>Novo valor: {alteracao?.novo ?? "Valor estruturado preservado para revisão."}</p>{efeito.exigeAcerto && <p role="status">Exige acerto próprio antes de qualquer aplicação.</p>}</li>; })}</ul>{efeitos.pendencias.length > 0 && <section><h3 className="font-medium">Pendências</h3><ul className="list-disc pl-5">{efeitos.pendencias.map(pendencia => <li key={`${pendencia.origem}:${pendencia.mensagem}`}>{d.alteracoes.find(a => a.campo === pendencia.origem)?.rotulo ?? pendencia.origem}: {pendencia.mensagem}</li>)}</ul></section>}<p role="status">{efeitos.aplicado ? "O estado de aplicação é registrado separadamente." : "Nenhum efeito foi aplicado por esta revisão."}</p></div>}</section>
+    <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos/${encodeURIComponent(propostaId)}/alcadas`}>Consultar alçadas aplicáveis</Link>
+    {d.superada && <p role="status">Existe uma proposta mais recente. Esta versão pode ser consultada ou rejeitada, mas não aprovada.</p>}{d.decisao ? <section className="rounded border p-4"><h2 className="text-xl">{d.decisao.aprovada ? "Proposta aprovada" : "Proposta rejeitada"}</h2><p>{d.decisao.decisor.nome} · {d.decisao.decididaEm.toISOString().replace("T", " ").slice(0, 19)} UTC</p><p className="whitespace-pre-wrap">{d.decisao.motivo}</p></section> : d.podeDecidir ? <DecidirAditivo propostaId={d.id} propostaHash={d.propostaHash} superada={d.superada} /> : <p>A decisão exige outra pessoa da Administração.</p>}
+    {d.decisao?.aprovada && !d.superada && <ParticipantesFormulario matriculaId={id} propostaId={propostaId} />}
+    <ParticipantesHistorico matriculaId={id} propostaId={propostaId} pagina={pagina} />
+    <OriginaisPainel matriculaId={id} propostaId={propostaId} pagina={paginaOriginais} podeGerar={Boolean(d.decisao?.aprovada && !d.superada)} />
+    <p role="status">A prévia em PDF não é um documento assinado. A assinatura do aditivo e a aplicação das novas condições ainda não estão disponíveis.</p>
+  </div>;
+}

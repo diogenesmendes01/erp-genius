@@ -1,0 +1,19 @@
+{
+  "incremento": 230,
+  "data": "2026-09-12",
+  "unitarios": {
+    "arquivo": "src/server/avaliacoes/calculo.test.ts",
+    "aprovados": 12,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lint_direcionado": "aprovado",
+  "diff_check": "aprovado",
+  "integracao": "nao executada; nucleo puro sem banco",
+  "build": "nao executado",
+  "limites": [
+    "Sem persistencia ou tela",
+    "Sem recuperacao/equivalencia/frequencia",
+    "Sem autorizacao ou progressao operacional"
+  ]
+}

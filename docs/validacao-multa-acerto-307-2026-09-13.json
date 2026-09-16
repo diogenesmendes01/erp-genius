@@ -1,0 +1,8 @@
+{
+ "incremento":307,"data":"2026-09-13","escopo":"Emissão interna da multa do acerto com origem aprovada",
+ "unitarios":{"aprovados":806,"arquivos":87},"integracao":{"aprovados":10,"arquivos":2,"falhos":0},
+ "typescript":"aprovado","lint":"aprovado sem avisos","build":"aprovado, 52 páginas",
+ "migrations":144,"schemaDiff":"vazio","ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Efetivação completa do encerramento pendente","Sem ação pública de emissão isolada","Sem homologação interativa"],
+ "producao":false,"enviosExternos":false
+}

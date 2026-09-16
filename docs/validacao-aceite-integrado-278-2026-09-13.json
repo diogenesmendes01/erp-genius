@@ -1,0 +1,24 @@
+{
+  "incremento": 278,
+  "data": "2026-09-13",
+  "escopo": "Aceite integrado do original pela Secretaria, registro imutável e reconhecimento pelo guard contratual da ativação",
+  "integracao": {
+    "arquivos": ["src/server/matricula/reserva-vaga.int.test.ts", "src/server/matricula/ativacao.int.test.ts", "src/server/secretaria/politica.int.test.ts"],
+    "aprovados": 79,
+    "falhasFinais": 0,
+    "execucoesFinais": ["63/63 reserva/preparação", "16/16 Secretaria/ativação"],
+    "concorrencia": "Duas transações reais da primitiva interna, com revalidação do autor; repetição e permissões também testadas pela Server Action.",
+    "ajustePrimeiraExecucao": "Runner falhou no carregamento de NextAuth com duas ações simultâneas; operação transacional extraída e concorrência exercitada diretamente, preservando testes de autorização."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "migration": "20260914003000_aceite_original_integrado",
+  "migrations": 128,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 273,
+  "assinaturasReais": false,
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

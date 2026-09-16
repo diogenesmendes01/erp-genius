@@ -1,0 +1,14 @@
+{
+  "executadoEm": "2026-09-12T00:14:12.290Z",
+  "ambiente": "Banco local descartável; dados fictícios",
+  "checks": {
+    "calendarioPreparador": true,
+    "calendarioAprovado": true,
+    "periodoPreservado": true,
+    "gradeUnica": true,
+    "gradePreparador": true,
+    "gradeAprovada": true,
+    "encontrosPublicados": true,
+    "feriadoRespeitado": true
+  }
+}

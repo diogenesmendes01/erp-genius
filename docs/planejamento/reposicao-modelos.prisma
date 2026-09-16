@@ -1,0 +1,144 @@
+// Fragmento para a migration 20260914234000_regularizacao_reposicao.
+// Não é aplicado por este incremento. Acrescentar as relações inversas em
+// Usuario, Matricula e EncontroAgenda ao integrar ao schema principal.
+
+enum FinalidadeEncontroAgenda {
+  AULA
+  RECUPERACAO // recuperação de nota; nunca é reposição de frequência
+  REPOSICAO // encontro individual de benefício acadêmico, sem cobrança contratada
+}
+
+enum ModalidadeReposicaoIndividual {
+  PARTICULAR
+  GRAVACAO
+}
+
+model ReposicaoIndividual {
+  id String @id @default(cuid())
+  aulaOriginalId String
+  aulaOriginal EncontroAgenda @relation("AulaOriginalReposicao", fields: [aulaOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  modalidade ModalidadeReposicaoIndividual
+  solicitanteId String
+  solicitante Usuario @relation("SolicitanteReposicao", fields: [solicitanteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoReposicaoIndividual?
+  conclusoes ConclusaoReposicaoIndividual[]
+  designacoes DesignacaoAvaliadorReposicaoIndividual[]
+  @@unique([solicitanteId, chaveIdempotencia])
+  @@index([matriculaId, aulaOriginalId])
+}
+
+// Q11: autoriza o pedido, mas não confirma particular nem entrega gravada.
+model DecisaoReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String @unique
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Uma conclusão é imutável. PARTICULAR requer encontro REPOSICAO, diário e
+// chamada presente. GRAVACAO requer entrega, resumo/atividade e validação.
+model ConclusaoReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  concluida Boolean
+  encontroReposicaoId String?
+  encontroReposicao EncontroAgenda? @relation("EncontroReposicaoIndividual", fields: [encontroReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  realizadaEm DateTime?
+  entregaId String?
+  entrega EntregaReposicaoGravacao? @relation(fields: [entregaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  validadaEm DateTime?
+  validadaPorId String?
+  validadaPor Usuario? @relation("AvaliadorConclusaoReposicao", fields: [validadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  evidencia String
+  criadaEm DateTime @default(now())
+  correcoes CorrecaoConclusaoReposicaoIndividual[]
+  @@unique([reposicaoId, versao])
+  @@index([encontroReposicaoId])
+}
+
+// Q13: origem de aluno separada da validação docente. `registradaPorId` não
+// existe até o portal ter identidade Aluno↔Usuario; não preencher por docente.
+model EntregaReposicaoGravacao {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  alunoId String
+  aluno Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  resumo String
+  atividade String
+  evidencia String
+  entregueEm DateTime
+  criadaEm DateTime @default(now())
+  conclusoes ConclusaoReposicaoIndividual[]
+  correcoes CorrecaoConclusaoReposicaoIndividual[]
+  @@unique([reposicaoId, versao])
+  @@index([alunoId, entregueEm])
+}
+
+// Q54: correção só produz efeito depois da decisão aprovada. Até então a
+// conclusão anterior permanece a fonte vigente para a frequência.
+model CorrecaoConclusaoReposicaoIndividual {
+  id String @id @default(cuid())
+  conclusaoId String
+  conclusao ConclusaoReposicaoIndividual @relation(fields: [conclusaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  autorId String
+  autor Usuario @relation("AutorCorrecaoConclusaoReposicao", fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  concluida Boolean
+  encontroReposicaoId String?
+  encontroReposicao EncontroAgenda? @relation("EncontroReposicaoCorrecao", fields: [encontroReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  realizadaEm DateTime?
+  entregaId String?
+  entrega EntregaReposicaoGravacao? @relation(fields: [entregaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  validadaEm DateTime?
+  validadaPorId String?
+  validadaPor Usuario? @relation("AvaliadorCorrecaoReposicao", fields: [validadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  evidencia String
+  motivo String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoCorrecaoConclusaoReposicao?
+  @@unique([conclusaoId, versao])
+}
+
+model DecisaoCorrecaoConclusaoReposicao {
+  id String @id @default(cuid())
+  correcaoId String @unique
+  correcao CorrecaoConclusaoReposicaoIndividual @relation(fields: [correcaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorCorrecaoConclusaoReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Q13/Q40: a validação gravada só vale enquanto esta designação estiver
+// vigente. A ação deve criar/alterar esta designação com motivo e auditoria.
+model DesignacaoAvaliadorReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  professorId String
+  professor Usuario @relation("AvaliadorReposicaoDesignado", fields: [professorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  designadorId String
+  designador Usuario @relation("DesignadorAvaliadorReposicao", fields: [designadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  inicio DateTime
+  fim DateTime?
+  motivo String
+  criadaEm DateTime @default(now())
+  @@index([reposicaoId, professorId, inicio])
+}

@@ -1,0 +1,10 @@
+"use server";
+import { Papel } from "@prisma/client";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
+import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
+import { registrarConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-tx";
+const id=z.string().min(1).max(100), alvo=z.object({matriculaId:id,propostaId:id,conclusaoId:id}).strict();
+export async function registrarConferenciaFinalAditivo(input: unknown) { return executarAcao(async()=>{const ator=await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA); return prisma.$transaction(tx=>registrarConferenciaFinalAditivoTx(tx,ator.id,input),{timeout:30000});});}
+export async function consultarConferenciaFinalAditivo(input: z.input<typeof alvo>) { return executarAcao(async()=>{const ator=await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA),d=alvo.parse(input); return prisma.$transaction(async tx=>{const fresco=await tx.usuario.findUnique({where:{id:ator.id},select:{ativo:true,papeis:true}});if(!fresco?.ativo||!fresco.papeis.some(p=>p===Papel.SECRETARIA_ACADEMICA||p===Papel.ADMINISTRADOR))throw new ErroRegra("Permissão de Secretaria necessária.");const existe=await tx.conclusaoAssinaturaAditivo.count({where:{id:d.conclusaoId,processo:{propostaId:d.propostaId,proposta:{matriculaId:d.matriculaId}}}});if(!existe)throw new ErroRegra("Conclusão indisponível neste escopo.");const historico=await tx.conferenciaFinalAditivo.findFirst({where:{conclusaoId:d.conclusaoId},select:{id:true,revisaoHash:true,criadaEm:true,motivo:true,autor:{select:{nome:true}}}}); try {const e=await carregarEstadoConferenciaFinalAditivoTx(tx,d);return {revisao:{hash:e.revisaoHash,dados:e.dados},pendencia:null,historico:historico?{...historico,autor:historico.autor.nome}:null};}catch(e){if(!(e instanceof ErroRegra))throw e;return {revisao:null,pendencia:e.message,historico:historico?{...historico,autor:historico.autor.nome}:null};}});});}

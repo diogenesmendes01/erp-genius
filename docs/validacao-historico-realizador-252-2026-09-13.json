@@ -1,0 +1,12 @@
+{
+  "incremento": 252,
+  "data": "2026-09-13",
+  "escopo": "Leitura histórica restrita às versões registradas ou realizadas pelo professor",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 33, "falhas": 0 },
+  "typescript": "aprovado após explicitar o tipo completo da entrada no helper de teste",
+  "lintDirecionado": "aprovado",
+  "ultimoBuild": 251,
+  "ultimaRegressaoIntegral": 245,
+  "migrationsNovas": 0,
+  "homologacaoInterativa": false
+}

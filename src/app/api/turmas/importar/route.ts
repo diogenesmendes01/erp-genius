@@ -4,7 +4,8 @@ import { Papel, StatusTurma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
-import { registrarEvento } from "@/server/_shared";
+import { registrarEvento, ErroPermissao } from "@/server/_shared";
+import { sincronizarVinculoDocente } from "@/server/turmas/vinculo-docente";
 import { diasPorSemanaDaFrequencia, rotuloDiasHorario, emMinutos } from "@/server/turmas/schema";
 import {
   chaveDoCabecalhoTurma,
@@ -195,6 +196,10 @@ export async function POST(req: Request) {
     try {
       const codigo = await gerarCodigo("turma");
       await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`regra-avaliacao-nivel:${nivel.id}`}, 0))`;
+        await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
+        const atual = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
+        if (!atual?.ativo || !atual.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();
         const turma = await tx.turma.create({
           data: {
             codigo,
@@ -213,12 +218,13 @@ export async function POST(req: Request) {
             status: StatusTurma.PLANEJADA,
           },
         });
+        await sincronizarVinculoDocente(tx, turma.id, turma.professorId);
         await registrarEvento(tx, {
           tipo: "TurmaImportada",
           agregadoTipo: "Turma",
           agregadoId: turma.id,
           autorId: autor.id,
-          payload: { origem: "xlsx", linha: r, codigo },
+          payload: { origem: "xlsx", linha: r, codigo, regraAvaliacaoId: turma.regraAvaliacaoId },
         });
       });
       criadas++;

@@ -1,0 +1,5 @@
+{
+ "incremento":340,"data":"2026-09-14","escopo":"Contrato do fechamento e autorização financeira do arquivo",
+ "integracao":{"aprovados":19,"falhos":0,"arquivos":1},"unitariosDirecionados":{"aprovados":23,"falhos":0,"arquivos":1},"typescriptFinal":"aprovado","build":"aprovado antes do ajuste final de visibilidade","paginasEstaticasGeradas":52,
+ "migration":false,"homologacaoVisual":false,"limites":["Existência física de arquivos legados não comprovada","Contratos substituídos/aditivos pendentes","Encerramento e ajustes pendentes"],"producao":false,"enviosExternos":false
+}

@@ -10,12 +10,22 @@ import type { PassoRegua } from "./regua";
 
 export type CanalEnvioCobranca = "manual" | "api";
 
+/** Eventos anteriores ao versionamento do calendário pertencem ao ciclo inicial. */
+export function cicloDoEventoCobranca(payload: unknown): number | null {
+  const valor = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? (payload as Record<string, unknown>).cicloRegua : undefined;
+  if (valor === undefined) return 0;
+  return typeof valor === "number" && Number.isInteger(valor) && valor >= 0 ? valor : null;
+}
+
 export async function registrarEventoCobrancaEnviada(
   tx: Prisma.TransactionClient,
   entrada: {
     cobrancaId: string;
     modelo: string;
     passo: PassoRegua | null;
+    /** Ciclo do texto enviado; não reler a cobrança após a resposta do provedor. */
+    cicloRegua: number;
     canal: CanalEnvioCobranca;
     /** null = sistema/cron (despachante). */
     autorId: string | null;
@@ -26,9 +36,9 @@ export async function registrarEventoCobrancaEnviada(
     agregadoTipo: "Cobranca",
     agregadoId: entrada.cobrancaId,
     autorId: entrada.autorId,
-    // versao 2 = payload ganhou `canal` (leitores v1 só extraem `passo` — retrocompatível).
-    versao: 2,
-    payload: { modelo: entrada.modelo, passo: entrada.passo, canal: entrada.canal },
+    // v3 vincula o envio ao calendário; eventos v1/v2 sem campo continuam no ciclo 0.
+    versao: 3,
+    payload: { modelo: entrada.modelo, passo: entrada.passo, canal: entrada.canal, cicloRegua: entrada.cicloRegua },
   });
 }
 

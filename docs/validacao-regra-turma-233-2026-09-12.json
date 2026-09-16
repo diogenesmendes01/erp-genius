@@ -1,0 +1,38 @@
+{
+  "incremento": 233,
+  "data": "2026-09-12",
+  "migration": {
+    "nome": "20260913040000_regra_inicial_turma",
+    "total": 106,
+    "ambiente": "erp_genius_test local descartavel",
+    "schema_diff": "vazio"
+  },
+  "integracao": {
+    "arquivos": [
+      "src/server/avaliacoes/regra-turma.int.test.ts",
+      "src/server/avaliacoes/regras.int.test.ts",
+      "src/server/turmas/integridade-academica.int.test.ts"
+    ],
+    "aprovados": 36,
+    "falhas": 0,
+    "repeticao_apos_reforco_permissoes": {
+      "arquivo": "src/server/avaliacoes/regra-turma.int.test.ts",
+      "aprovados": 6,
+      "falhas": 0
+    }
+  },
+  "typescript": "aprovado",
+  "lint_direcionado": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "resultado": "aprovado",
+    "paginas_estaticas": 47
+  },
+  "ensaio_interativo": "pendente",
+  "limites": [
+    "Sem migracao aprovada de regra em turma existente",
+    "Sem preenchimento historico automatico",
+    "Sem lancamento de notas ou portal",
+    "Sem producao ou dados reais"
+  ]
+}

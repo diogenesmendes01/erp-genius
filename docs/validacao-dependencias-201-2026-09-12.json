@@ -1,0 +1,45 @@
+{
+  "incremento": 201,
+  "data": "2026-09-12",
+  "antes": {
+    "info": 0,
+    "low": 0,
+    "moderate": 5,
+    "high": 6,
+    "critical": 3,
+    "total": 14
+  },
+  "depois": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 163,
+      "dev": 497,
+      "optional": 126,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 697
+    }
+  },
+  "versoes": {
+    "next": "16.3.5",
+    "next-auth": "5.0.0-beta.32",
+    "@auth/core": "0.41.3",
+    "eslint-config-next": "16.3.5",
+    "vitest": "4.1.11",
+    "postcss": "8.5.28",
+    "sharp": "0.35.4",
+    "uuid": "11.1.1"
+  },
+  "overrideExcelJS": {
+    "uuid": "11.1.1",
+    "validacao": "Roundtrip XLSX com texto acentuado, valor, data e formatação estendida 3Stars que utiliza UUID v4."
+  },
+  "limite": "Auditoria de dependências conhecidas não comprova ausência de vulnerabilidades no código ou nas configurações."
+}

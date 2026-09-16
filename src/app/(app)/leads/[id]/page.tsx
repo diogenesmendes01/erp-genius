@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { obterLead } from "@/server/comercial/consultas";
 import { listarProfessores } from "@/server/turmas/consultas";
@@ -56,5 +57,5 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     autor: ev.autor ? { nome: ev.autor.nome } : null,
   }));
 
-  return <FichaLead lead={ficha} timeline={eventos} professores={professores} />;
+  return <div className="space-y-4">{usuario.papeis.some((p) => ["ADMINISTRADOR", "VENDEDOR", "GERENTE_COMERCIAL", "SECRETARIA_ACADEMICA"].includes(p)) && <Link className="underline" href={`/leads/${id}/contratacao`}>Preparar contratação com reserva</Link>}<FichaLead lead={ficha} timeline={eventos} professores={professores} /></div>;
 }

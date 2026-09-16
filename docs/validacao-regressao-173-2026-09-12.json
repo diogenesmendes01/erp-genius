@@ -1,0 +1,610 @@
+{
+  "executadoEm": "2026-09-12T20:21:19.718886+00:00",
+  "ambiente": "Banco local descartável; testes automatizados, sem homologação de produção",
+  "limite": "Suites existentes aprovadas não comprovam implementação integral da SPEC ou validação no navegador",
+  "suites": {
+    "unit": {
+      "testes": 692,
+      "aprovados": 692,
+      "falhas": 0,
+      "pendentes": 0,
+      "arquivos": 72,
+      "resultados": [
+        {
+          "arquivo": "src/lib/dinheiro.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/lib/guards.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/lib/rate-limit-login.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/academico/regras.test.ts",
+          "estado": "passed",
+          "testes": 38
+        },
+        {
+          "arquivo": "src/server/ajustes/aprovacao.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/ajustes/consultas.test.ts",
+          "estado": "passed",
+          "testes": 13
+        },
+        {
+          "arquivo": "src/server/ajustes/regras-ajuste.test.ts",
+          "estado": "passed",
+          "testes": 13
+        },
+        {
+          "arquivo": "src/server/alunos/consultas.test.ts",
+          "estado": "passed",
+          "testes": 17
+        },
+        {
+          "arquivo": "src/server/alunos/importacao.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/alunos/movimentacao.test.ts",
+          "estado": "passed",
+          "testes": 10
+        },
+        {
+          "arquivo": "src/server/alunos/projecao.test.ts",
+          "estado": "passed",
+          "testes": 10
+        },
+        {
+          "arquivo": "src/server/agenda/calendario-intervalo.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/agenda/grade.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/agenda/replanejamento-ajustes.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/agenda/replanejamento-conflitos.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/agenda/replanejamento-grade.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/cobrancas/acesso-aulas-regras.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/cobrancas/eventos.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/cobrancas/regua-ancora.test.ts",
+          "estado": "passed",
+          "testes": 22
+        },
+        {
+          "arquivo": "src/server/cobrancas/regua.test.ts",
+          "estado": "passed",
+          "testes": 21
+        },
+        {
+          "arquivo": "src/server/comercial/captura.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/comercial/consultas.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/comercial/experimental.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/comercial/schema.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/server/diario/diario.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/financeiro/operacoes.test.ts",
+          "estado": "passed",
+          "testes": 11
+        },
+        {
+          "arquivo": "src/server/financeiro/regras.test.ts",
+          "estado": "passed",
+          "testes": 19
+        },
+        {
+          "arquivo": "src/server/financeiro/schema.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/paises/tipos-documento.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/operacao/fuso.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/matricula/admissao-turma.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/matricula/cobertura.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/matricula/conclusao.test.ts",
+          "estado": "passed",
+          "testes": 17
+        },
+        {
+          "arquivo": "src/server/matricula/cronograma-cobertura.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-acerto.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-calculo.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-compensacao.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-horas.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-multa.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-outras-cobrancas.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-previa-calculo.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/matricula/escopo.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/matricula/historico-situacao.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/movimentacoes-detalhes.test.ts",
+          "estado": "passed",
+          "testes": 2
+        },
+        {
+          "arquivo": "src/server/matricula/ocorrencia-horas.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/permissoes.test.ts",
+          "estado": "passed",
+          "testes": 11
+        },
+        {
+          "arquivo": "src/server/matricula/recomposicao-cobertura.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/retomada-cobertura.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/matricula/saldo-horas.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/matricula/schema.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/matricula/validacao.test.ts",
+          "estado": "passed",
+          "testes": 19
+        },
+        {
+          "arquivo": "src/server/retomada/regras.test.ts",
+          "estado": "passed",
+          "testes": 31
+        },
+        {
+          "arquivo": "src/server/turmas/importacao.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/turmas/schema.test.ts",
+          "estado": "passed",
+          "testes": 10
+        },
+        {
+          "arquivo": "src/server/turmas/vinculo-docente.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/whatsapp/elegibilidade.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/whatsapp/escopo.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/whatsapp/fila-snapshot.test.ts",
+          "estado": "passed",
+          "testes": 10
+        },
+        {
+          "arquivo": "src/server/whatsapp/inbound.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/whatsapp/meta-templates.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/server/whatsapp/midia.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/whatsapp/render.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/uploads/autorizacao.test.ts",
+          "estado": "passed",
+          "testes": 22
+        },
+        {
+          "arquivo": "src/server/_shared/alocacao.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/_shared/decimal.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/_shared/regras.test.ts",
+          "estado": "passed",
+          "testes": 62
+        },
+        {
+          "arquivo": "src/server/_shared/resultado.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/_shared/sessao.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/_shared/validacao.test.ts",
+          "estado": "passed",
+          "testes": 20
+        },
+        {
+          "arquivo": "src/app/api/upload/route.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/app/api/alunos/modelo/route.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/app/api/files/[...path]/route.test.ts",
+          "estado": "passed",
+          "testes": 8
+        }
+      ]
+    },
+    "integracao": {
+      "testes": 509,
+      "aprovados": 509,
+      "falhas": 0,
+      "pendentes": 0,
+      "arquivos": 45,
+      "resultados": [
+        {
+          "arquivo": "src/lib/codigo.int.test.ts",
+          "estado": "passed",
+          "testes": 2
+        },
+        {
+          "arquivo": "src/server/acesso/politica.int.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/server/academico/fluxo.int.test.ts",
+          "estado": "passed",
+          "testes": 55
+        },
+        {
+          "arquivo": "src/server/academico/visibilidade.int.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/agenda/rascunho.int.test.ts",
+          "estado": "passed",
+          "testes": 14
+        },
+        {
+          "arquivo": "src/server/ajustes/ficha.int.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/catalogo/permissoes.int.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/alunos/cadastro.int.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/comercial/captura.int.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/comercial/config-comercial.int.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/comercial/leads.int.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/comercial/regua-comercial.int.test.ts",
+          "estado": "passed",
+          "testes": 13
+        },
+        {
+          "arquivo": "src/server/cobrancas/acesso-aulas.int.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/cobrancas/conferencia.int.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/server/diario/diario.int.test.ts",
+          "estado": "passed",
+          "testes": 14
+        },
+        {
+          "arquivo": "src/server/financeiro/politica.int.test.ts",
+          "estado": "passed",
+          "testes": 20
+        },
+        {
+          "arquivo": "src/server/operacao/acoes.int.test.ts",
+          "estado": "passed",
+          "testes": 13
+        },
+        {
+          "arquivo": "src/server/matricula/alocacao.int.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/matricula/ativacao.int.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/matricula/cobertura.int.test.ts",
+          "estado": "passed",
+          "testes": 2
+        },
+        {
+          "arquivo": "src/server/matricula/compensacao-cobertura.int.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/matricula/compra-horas.int.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/condicoes-encerramento.int.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/encerramento-solicitacao.int.test.ts",
+          "estado": "passed",
+          "testes": 5
+        },
+        {
+          "arquivo": "src/server/matricula/janela-admissao.int.test.ts",
+          "estado": "passed",
+          "testes": 3
+        },
+        {
+          "arquivo": "src/server/matricula/pausa-previa.int.test.ts",
+          "estado": "passed",
+          "testes": 4
+        },
+        {
+          "arquivo": "src/server/matricula/pausa-proposta.int.test.ts",
+          "estado": "passed",
+          "testes": 26
+        },
+        {
+          "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+          "estado": "passed",
+          "testes": 28
+        },
+        {
+          "arquivo": "src/server/retomada/fluxo.int.test.ts",
+          "estado": "passed",
+          "testes": 36
+        },
+        {
+          "arquivo": "src/server/secretaria/politica.int.test.ts",
+          "estado": "passed",
+          "testes": 11
+        },
+        {
+          "arquivo": "src/server/turmas/integridade-academica.int.test.ts",
+          "estado": "passed",
+          "testes": 20
+        },
+        {
+          "arquivo": "src/server/uploads/arquivos.int.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/whatsapp/acesso-atendimento.int.test.ts",
+          "estado": "passed",
+          "testes": 14
+        },
+        {
+          "arquivo": "src/server/whatsapp/acoes.int.test.ts",
+          "estado": "passed",
+          "testes": 6
+        },
+        {
+          "arquivo": "src/server/whatsapp/ciclo-cobranca.int.test.ts",
+          "estado": "passed",
+          "testes": 10
+        },
+        {
+          "arquivo": "src/server/whatsapp/cron-comercial.int.test.ts",
+          "estado": "passed",
+          "testes": 11
+        },
+        {
+          "arquivo": "src/server/whatsapp/cron-experimental.int.test.ts",
+          "estado": "passed",
+          "testes": 17
+        },
+        {
+          "arquivo": "src/server/whatsapp/cron.int.test.ts",
+          "estado": "passed",
+          "testes": 11
+        },
+        {
+          "arquivo": "src/server/whatsapp/despachante-comercial.int.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/server/whatsapp/despachante.live.int.test.ts",
+          "estado": "passed",
+          "testes": 12
+        },
+        {
+          "arquivo": "src/server/whatsapp/destinatario-atual.int.test.ts",
+          "estado": "passed",
+          "testes": 8
+        },
+        {
+          "arquivo": "src/server/whatsapp/inbox.int.test.ts",
+          "estado": "passed",
+          "testes": 18
+        },
+        {
+          "arquivo": "src/server/whatsapp/politica.int.test.ts",
+          "estado": "passed",
+          "testes": 7
+        },
+        {
+          "arquivo": "src/server/whatsapp/saude.int.test.ts",
+          "estado": "passed",
+          "testes": 9
+        },
+        {
+          "arquivo": "src/app/api/exportacoes/[tipo]/route.int.test.ts",
+          "estado": "passed",
+          "testes": 8
+        }
+      ]
+    }
+  }
+}

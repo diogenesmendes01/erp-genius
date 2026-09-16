@@ -1,0 +1,5 @@
+{
+ "incremento":344,"data":"2026-09-14","escopo":"Ajuste aprovado de cobrança por hora no encerramento",
+ "integracao":{"aprovados":22,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","build":"aprovado","paginasEstaticasGeradas":52,
+ "migration":false,"homologacaoVisual":false,"limites":["Cenários com recebimentos/antecipações pendentes","Crédito sobre valor pago pendente","Apresentação detalhada da decisão pendente"],"producao":false,"enviosExternos":false
+}

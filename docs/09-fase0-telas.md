@@ -291,16 +291,14 @@ Onde a turma **nasce** (o "criar" do princípio criar × alocar). Casa do **Gere
 | **Ativo** | Gera | Ocupa | Participa da turma |
 | **Pausado** | **Não gera novas** | **Não ocupa** | Dívidas permanecem · não aparece p/ professor · mantém histórico · reativável · **alerta após 90 dias** |
 | **Encerrado** | Não gera futuras | Não ocupa | Dívidas permanecem · **motivo obrigatório** · **sem aprovação** |
-| **Reativado** | — | — | Pausado → Ativo |
+| **Reativado** | Calendário mantido ou reprogramado conforme proposta aprovada | — | Pausado → Ativo somente após aprovação independente (D13, doc 39) |
 
 - **Pausar** captura: **data da pausa · motivo · data prevista de retorno (opcional)**. Aos **90 dias** → **alerta para a
   Secretaria** (não encerra automático — aluno volta de intercâmbio, gravidez, viagem, problema financeiro).
 - **Encerrar** **sem aprovação** (evita gargalo), por Secretaria/Pedagógico/Admin, com **motivo da lista fechada**:
   **Concluiu · Desistiu · Mudou de país · Inadimplência · Transferência · Outro**. Auditoria: quem · quando · motivo.
   > O motivo vira **indicador** ("por que estamos perdendo alunos?"), não só auditoria.
-- **Trocar turma:** respeita **vaga**. **Mesmo nível** (ex.: mudança de horário) livre; **entre níveis** (A1↔A2) permitido
-  **com justificativa** (avaliação errada, turma incompatível, ajuste pedagógico). A **progressão de nível** (A1→A2 ao
-  concluir) é **processo pedagógico separado**, não é troca de turma.
+- **Trocar turma:** transferência equivalente exige mesmo idioma, modalidade, formato e nível, vaga e horário conferido. **Entre níveis** (A1↔A2), abrir solicitação com motivo; professor emite parecer, outra pessoa da gestão pedagógica decide e Secretaria executa. Aprovação sem parecer exige dispensa justificada quando ele estiver indisponível. A progressão regular continua processo separado. Ver [D14](40-mudancas-academicas-com-aprovacao.md).
 
 ### Ficha do Aluno
 - Header: nome · país · contato · **status em destaque** (Ativo/Pausado/Encerrado — a info mais crítica da ficha).
@@ -312,7 +310,7 @@ Onde a turma **nasce** (o "criar" do princípio criar × alocar). Casa do **Gere
 - **Histórico de movimentações** (linha do tempo completa — **entidade própria**): matrícula · troca de turma ·
   pausa · reativação · encerramento · avanço de nível — cada um com **data · de→para · motivo · autor**.
   Responde "**por que a Maria está nessa turma?**" meses depois.
-- **Movimentações:** Trocar turma · Pausar · Encerrar · Reativar (conforme o status).
+- **Movimentações:** Trocar turma · Pausar · Encerrar · Propor retomada (conforme o status e a função).
 
 ### Lista de Alunos
 - **Busca** + filtros: **país · turma · status**.
@@ -327,8 +325,8 @@ Onde a turma **nasce** (o "criar" do princípio criar × alocar). Casa do **Gere
 ### Movimentações (modais)
 - **Pausar:** data da pausa · motivo · data prevista de retorno (opcional).
 - **Encerrar:** **motivo da lista fechada** (Concluiu/Desistiu/Mudou de país/Inadimplência/Transferência/Outro) + auditoria.
-- **Trocar turma:** seleciona turma compatível (respeita vaga); **entre níveis exige justificativa**.
-- **Reativar:** Pausado → Ativo.
+- **Trocar turma:** selecionar destino na ficha acadêmica; equivalente segue execução direta, enquanto mudança de nível exige parecer ou dispensa justificada, aprovação independente e execução posterior (D14).
+- **Retomar:** proposta na ficha financeira com escolha entre manter vencimentos e reprogramar parcelas restantes; outra pessoa do Financeiro/Administração decide antes de aplicar. Comparação e histórico no [doc 39](39-retomada-com-aprovacao.md).
 
 > **Entidade `MovimentacaoAluno`** (no schema: `id, alunoId, tipo, turmaOrigemId?, turmaDestinoId?,
 > statusOrigem?, statusDestino?, motivo?, observacao?, usuarioId?, criadoEm`) — registra **toda**

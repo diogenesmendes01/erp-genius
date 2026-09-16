@@ -1,0 +1,2 @@
+CREATE TYPE "FormaAgendaOferta" AS ENUM ('TURMA', 'PARTICULAR_GRADE_FIXA', 'PARTICULAR_FLEXIVEL');
+ALTER TABLE "ProdutoPais" ADD COLUMN "formaAgenda" "FormaAgendaOferta";

@@ -74,6 +74,8 @@ export interface FichaFinanceiraDados {
   contrato: { produto: string; moeda: string; status: string }[];
   cobrancas: {
     id: string;
+    compensacaoHref?: string;
+    regularizacaoIntegral?: { escolha: "CREDITO" | "COBERTURA_FUTURA"; aplicadaEm: string; href: string };
     tipo: TipoCobranca;
     status: StatusCobranca;
     valorNegociado: number;
@@ -97,8 +99,8 @@ export interface FichaFinanceiraDados {
     criadoEm: string;
     vigencia: Vigencia | null;
   }[];
-  comissoes: { id: string; vendedor: string; valor: number; moeda: string; percentual: number; status: StatusComissao }[];
-  permissoes: { registrarPagamento: boolean; renegociar: boolean; perdao: boolean };
+  comissoes: { id: string; vendedor: string; valor: number; moeda: string; percentual: number; tipo: "PERCENTUAL" | "VALOR_FIXO"; status: StatusComissao }[];
+  permissoes: { registrarPagamento: boolean; somenteInformar: boolean; renegociar: boolean; perdao: boolean };
 }
 
 export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
@@ -168,13 +170,16 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
                       {c.regua.tentativas}ª cobrança
                     </span>
                   )}
+                  {c.regularizacaoIntegral && <Link className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-700" href={c.regularizacaoIntegral.href} title={`Aplicada em ${new Date(c.regularizacaoIntegral.aplicadaEm).toLocaleString("pt-BR")}`}>{c.regularizacaoIntegral.escolha === "CREDITO" ? "Regularizada por crédito" : "Cobertura reprogramada"}</Link>}
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-end gap-2">
+                    {c.compensacaoHref && <Link className={btnSec} href={c.compensacaoHref}>Compensar dias sem oferta</Link>}
+                    {c.regularizacaoIntegral && <Link className={btnSec} href={c.regularizacaoIntegral.href}>Histórico da regularização</Link>}
                     {(c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO) && (
                       <>
                         {dados.permissoes.registrarPagamento && (
-                          <button className={btnSec} onClick={() => setPagar(c)}>Registrar pagamento</button>
+                          <button className={btnSec} onClick={() => setPagar(c)}>{dados.permissoes.somenteInformar ? "Informar pagamento" : "Registrar recebimento"}</button>
                         )}
                         {dados.permissoes.renegociar && (
                           <button className={btnSec} onClick={() => setReneg(c)}>Renegociar / ajustar</button>
@@ -217,7 +222,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
         ) : (
           <ul className="text-sm text-gray-700">
             {dados.comissoes.map((c) => (
-              <li key={c.id}>{c.vendedor} · {c.percentual}% · {formatarMoeda(c.valor, c.moeda)} · {STATUS_COMISSAO_LABEL[c.status]}</li>
+              <li key={c.id}>{c.vendedor} · {c.tipo === "VALOR_FIXO" ? "Valor fixo" : `${c.percentual}% da taxa`} · {formatarMoeda(c.valor, c.moeda)} · {STATUS_COMISSAO_LABEL[c.status]}</li>
             ))}
           </ul>
         )}
@@ -245,6 +250,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
 
       {pagar && (
         <PagamentoModal
+          somenteInformar={dados.permissoes.somenteInformar}
           cobrancaId={pagar.id}
           alunoNome={dados.aluno.nome}
           moeda={pagar.moeda}

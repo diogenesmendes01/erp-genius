@@ -1,7 +1,10 @@
+import { iniciarTurmasDaAgenda } from "@/server/agenda/inicio-turmas";
+import { rodarVencimentoParticulares } from "@/server/matricula/reserva-particular-cron";
 import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
 import { rodarLeadNovoSemResposta, rodarNoShow, rodarPreExperimental } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
 // autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
@@ -30,6 +33,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const agora = new Date();
+  // Controle acadêmico executa mesmo com WhatsApp desligado, sem gerar mensagens.
+  const reservasParticulares = await seguro("reservas_particulares", () => rodarVencimentoParticulares());
+  const inicioTurmas = await seguro("inicio_turmas", () => iniciarTurmasDaAgenda(agora));
+  const acessoAulas = await seguro("acesso_aulas", () => rodarControleAcessoAulas(agora));
   // Cobrança: enfileira + drena (o rodarCronRegua já chama o despachante no fim).
   const cobranca = await seguro("cobranca", () => rodarCronRegua(agora));
   // Cenários comerciais: só ENFILEIRAM (um enfileirador isolado por cadência)...
@@ -39,5 +46,5 @@ export async function POST(req: Request): Promise<NextResponse> {
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
-  return NextResponse.json({ cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
+  return NextResponse.json({ reservasParticulares, inicioTurmas, acessoAulas, cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
 }

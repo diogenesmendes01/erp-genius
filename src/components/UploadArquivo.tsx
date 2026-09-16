@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IconUpload } from "@tabler/icons-react";
+import type { CategoriaDocumento } from "@prisma/client";
 
 // Restrições espelham a validação do servidor (POST /api/upload).
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png"];
@@ -13,9 +14,15 @@ const RESTRICOES = "PDF, JPG ou PNG · até 10MB";
 export function UploadArquivo({
   onUpload,
   label = "Anexar arquivo",
+  leadId,
+  matriculaId,
+  categoriaDocumento,
 }: {
   onUpload: (r: { url: string; nome: string }) => void;
   label?: string;
+  leadId?: string;
+  matriculaId?: string;
+  categoriaDocumento?: CategoriaDocumento;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -39,6 +46,9 @@ export function UploadArquivo({
     try {
       const fd = new FormData();
       fd.append("file", file);
+      if (leadId) fd.append("leadId", leadId);
+      if (matriculaId) fd.append("matriculaId", matriculaId);
+      if (categoriaDocumento) fd.append("categoriaDocumento", categoriaDocumento);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) {
