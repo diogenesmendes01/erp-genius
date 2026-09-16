@@ -19,5 +19,7 @@ it("oferece agendamento inicial somente por docente legível e autorização exc
   expect(html).toContain("Conferir agenda");
   expect(html).toContain('name="fuso"');
   expect(html).toContain('value="UTC"');
+  expect(html).toContain("Fuso horário");
+  expect(html).toContain("America/Sao_Paulo");
   expect(html).not.toContain("ID do professor");
 });
