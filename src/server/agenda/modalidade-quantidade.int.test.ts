@@ -20,11 +20,13 @@ beforeEach(async () => {
  authMock.mockResolvedValue({ user: { id: secretariaId } });
 });
 
-async function turmaComGrade(status: "PLANEJADA" | "ABERTA" | "EM_ANDAMENTO" | "CONCLUIDA" = "ABERTA", publicada = true) {
+async function turmaComGrade(status: "PLANEJADA" | "ABERTA" | "EM_ANDAMENTO" | "CONCLUIDA" = "ABERTA", publicada = true, excecao?: { diasSemana: number[]; duracaoMinutos: number; frequencia: string }) {
  const professorId = (await criarUsuario(["PROFESSOR"])).id;
- const turma = await prisma.turma.create({ data: { modalidadeId, nivelId, professorId, status, diasSemana: [1], horarioInicio: "10:00", dataInicio: new Date("2099-01-05T00:00:00Z") } });
- const encontros = ["2099-01-05T10:00:00.000Z", "2099-01-12T10:00:00.000Z"].map((inicio, indice) => ({ inicio, fim: new Date(Date.parse(inicio) + 3600000).toISOString() }));
- const snapshot = { origem: { quantidadeAulas: 2, dataInicial: "2099-01-05", diasSemana: [1], horario: "10:00", duracaoMinutos: 60 }, grade: { dataInicialInformada: "2099-01-05", primeiraAula: encontros[0].inicio, previsaoTermino: encontros[1].fim, encontros } };
+ const diasSemana = excecao?.diasSemana ?? [1], duracaoMinutos = excecao?.duracaoMinutos ?? 60;
+ const turma = await prisma.turma.create({ data: { modalidadeId, nivelId, professorId, status, diasSemana, horarioInicio: "10:00", dataInicio: new Date("2099-01-05T00:00:00Z") } });
+ const inicios = diasSemana.length > 1 ? ["2099-01-05T10:00:00.000Z", "2099-01-07T10:00:00.000Z"] : ["2099-01-05T10:00:00.000Z", "2099-01-12T10:00:00.000Z"];
+ const encontros = inicios.map((inicio) => ({ inicio, fim: new Date(Date.parse(inicio) + duracaoMinutos * 60000).toISOString() }));
+ const snapshot = { origem: { quantidadeAulas: 2, dataInicial: "2099-01-05", diasSemana, horario: "10:00", duracaoMinutos, ...(excecao ? { frequencia: excecao.frequencia } : {}) }, grade: { dataInicialInformada: "2099-01-05", primeiraAula: encontros[0].inicio, previsaoTermino: encontros[1].fim, encontros } };
  const grade = await prisma.propostaGradeTurma.create({ data: { turmaId: turma.id, calendarioId, preparadorId: secretariaId, versao: 1, fusoOrigem: "UTC", motivo: "Grade de origem aprovada", chaveIdempotencia: `grade-${turma.id}`, entradaHash: "b".repeat(64), snapshot } });
  if (publicada) await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: gerenteId, aprovada: true, motivo: "Grade aprovada para teste" } });
  if (publicada) await prisma.encontroAgenda.createMany({ data: encontros.map((e, indice) => ({ turmaId: turma.id, professorId, propostaGradeId: grade.id, preparadorId: secretariaId, inicio: new Date(e.inicio), fim: new Date(e.fim), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Grade publicada", chaveIdempotencia: `encontro-${turma.id}-${indice}`, entradaHash: "c".repeat(64) })) });
@@ -157,4 +159,19 @@ it("não persiste decisão nem meta quando um conflito bloqueia o conjunto", asy
  expect(await prisma.decisaoQuantidadeAulasModalidade.count()).toBe(0);
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(0);
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
+});
+
+it("mantém duração e frequência aprovadas da turma como exceção Q37 ao mudar quantidade", async () => {
+ const { turma, grade } = await turmaComGrade("ABERTA", true, { diasSemana: [1, 3], duracaoMinutos: 90, frequencia: "2x/semana" });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento preservando exceção Q37", chaveIdempotencia: "quantidade-q37-1" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta Q37 ausente.");
+ const impacto = await prisma.impactoQuantidadeAulasModalidade.findUniqueOrThrow({ where: { propostaId_turmaId: { propostaId: proposta.dado.id, turmaId: turma.id } } });
+ expect(impacto.excecoesQ37).toEqual([grade.id]);
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ const decidido = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação independente preserva Q37" });
+ if (!decidido.ok) throw new Error(decidido.erro);
+ const encontros = await prisma.encontroAgenda.findMany({ where: { turmaId: turma.id, status: "PREVISTO" }, orderBy: { inicio: "asc" } });
+ expect(encontros).toHaveLength(3);
+ expect(encontros.every((e) => e.fim.getTime() - e.inicio.getTime() === 90 * 60_000)).toBe(true);
+ expect(encontros.map((e) => e.inicio.getUTCDay())).toEqual([1, 3, 1]);
 });
