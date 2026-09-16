@@ -6,6 +6,7 @@ import { PeriodosCalendarioSchema } from "./calendario-schema";
 import { GradeEncontrosSchema } from "./grade";
 import { conferirConflitosReplanejamento } from "./replanejamento-conflitos";
 import { proporReplanejamentoGrade } from "./replanejamento-grade";
+import { conferirDiasNaoLetivos } from "./calendario-intervalo";
 export async function carregarReplanejamentoTx(tx: Prisma.TransactionClient, calendarioId: string, ajustesInformados: AjusteReplanejamento[] = []) {
    const ajustes = AjustesReplanejamentoSchema.parse(ajustesInformados).sort((a,b) => a.encontroId.localeCompare(b.encontroId));
    const calendario = await tx.versaoCalendarioEscolar.findUnique({ where: { id: calendarioId }, include: { decisao: true } });
@@ -50,13 +51,18 @@ export async function carregarReplanejamentoTx(tx: Prisma.TransactionClient, cal
     const exigeExcecao = previsao.propostas.some((p) => p.periodosNaoLetivos.length);
     return { ...r, previsao, pendencias: [...r.pendencias, ...(exigeExcecao ? ["Encontro ajustado atinge dia não letivo; exige aprovação explícita da exceção para esse encontro."] : [])] };
    });
-   const particulares = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA", turmaId: null, status: "PREVISTO", inicio: { gt: agora } }, select: { id: true, inicio: true, fim: true, professorId: true }, orderBy: { id: "asc" } });
-   const recuperacoes = await tx.encontroAgenda.findMany({ where: { finalidade: "RECUPERACAO", status: "PREVISTO", inicio: { gt: agora } }, select: { id: true, inicio: true, fim: true, professorId: true }, orderBy: { id: "asc" } });
+   const futurosEspeciais = await tx.encontroAgenda.findMany({ where: { status: "PREVISTO", inicio: { gt: agora }, OR: [{ finalidade: "AULA", turmaId: null }, { finalidade: "RECUPERACAO" }] }, select: { id: true, finalidade: true, inicio: true, fim: true, professorId: true }, orderBy: { id: "asc" } });
+   // A presença futura por si só não bloqueia o conjunto: só entra na pendência
+   // quando a versão proposta torna aquele horário não letivo.
+   const especiaisAfetados = futurosEspeciais.map((e) => ({ ...e, periodosNaoLetivos: conferirDiasNaoLetivos({ inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoEscola: calendario.fusoInstitucional, periodos: periodos.map(({ id, inicio, fim }) => ({ id, inicio, fim })) }).periodosAfetados }))
+     .filter((e) => e.periodosNaoLetivos.length);
+   const particulares = especiaisAfetados.filter((e) => e.finalidade === "AULA").map(({ finalidade: _finalidade, ...e }) => e);
+   const recuperacoes = especiaisAfetados.filter((e) => e.finalidade === "RECUPERACAO").map(({ finalidade: _finalidade, ...e }) => e);
    const recursos = await conferirConflitosReplanejamento(tx, revisoes.flatMap((r) => r.previsao?.propostas.map((p) => ({
     encontroId: p.encontroId, turmaId: r.turmaId, professorId: r.atribuicoes.find((a) => a.encontroId === p.encontroId)?.professorId ?? null,
     inicio: p.inicioProposto, fim: p.fimProposto,
    })) ?? []));
    return { ajustes, recursos, calendarioId: calendario.id, conferidoEm: agora.toISOString(), revisoes, particulares, ...(recuperacoes.length ? { recuperacoes } : {}),
-    pendencias: ["Resolver conflitos e indisponibilidades apontados; conferir reservas e exceções antes da aprovação conjunta.", ...(particulares.length ? ["Particulares exigem revisão própria dos horários contratados."] : []), ...(recuperacoes.length ? ["Recuperações exigem revisão dos horários, avaliadores e prazos dos planos, sem efeito financeiro automático."] : [])],
-    aplicada: false as const, revisaoCompleta: false as const };
+    pendencias: ["Resolver conflitos e indisponibilidades apontados; conferir reservas e exceções antes da aprovação conjunta.", ...(particulares.length ? ["Particulares atingidos por período não letivo exigem fluxo próprio; este conjunto não os altera."] : []), ...(recuperacoes.length ? ["Recuperações atingidas por período não letivo exigem fluxo próprio; este conjunto não altera avaliações, tentativas ou cobrança."] : [])],
+    aplicada: false as const, revisaoCompleta: true as boolean };
 }

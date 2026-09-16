@@ -569,6 +569,7 @@ model Usuario {
   janelasAdmissaoDecididas DecisaoJanelaAdmissao[]
   gradesDecididas DecisaoGradeTurma[]
   replanejamentosPreparados RascunhoReplanejamento[]
+  decisoesReplanejamentoConjunto DecisaoReplanejamentoConjunto[] @relation("DecisorReplanejamentoConjunto")
   gradesPreparadas PropostaGradeTurma[]
   decisoesCalendario DecisaoCalendarioEscolar[]
   calendariosPreparados VersaoCalendarioEscolar[]
@@ -2939,6 +2940,8 @@ model DecisaoGradeTurma {
 }
 
 model RascunhoReplanejamento {
+ decisaoConjunta DecisaoReplanejamentoConjunto? @relation("DecisaoRascunhoReplanejamentoConjunto")
+ aplicacaoConjunta AplicacaoReplanejamentoConjunto? @relation("AplicacaoRascunhoReplanejamentoConjunto")
  id String @id @default(cuid())
  calendarioId String
  calendario VersaoCalendarioEscolar @relation(fields: [calendarioId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -6338,6 +6341,33 @@ model DecisaoRegularizacaoFonteGravacao {
   aprovada Boolean
   motivo String
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+}
+
+/// Decisão imutável do conjunto calendário + remarcações. Rejeições preservam a
+/// revisão; aprovações somente se tornam aplicadas pela relação abaixo.
+model DecisaoReplanejamentoConjunto {
+ id String @id @default(cuid())
+ rascunhoId String @unique
+ rascunho RascunhoReplanejamento @relation("DecisaoRascunhoReplanejamentoConjunto", fields: [rascunhoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ decisorId String
+ decisor Usuario @relation("DecisorReplanejamentoConjunto", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ aprovada Boolean
+ motivo String
+ estadoHash String
+ excecoesAutorizadas Json @default("[]")
+ decididaEm DateTime @default(now())
+ aplicacao AplicacaoReplanejamentoConjunto?
+}
+
+/// Fato append-only de que a aprovação foi efetivamente aplicada no mesmo TX.
+model AplicacaoReplanejamentoConjunto {
+ id String @id @default(cuid())
+ rascunhoId String @unique
+ rascunho RascunhoReplanejamento @relation("AplicacaoRascunhoReplanejamentoConjunto", fields: [rascunhoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ decisaoId String @unique
+ decisao DecisaoReplanejamentoConjunto @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ aplicadaEm DateTime @default(now())
+ estadoHash String
 }
 
 // M01: preparação é uma leitura rastreável da origem. Ela não cria dados

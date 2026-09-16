@@ -14,7 +14,9 @@ export async function conferirConflitosReplanejamento(tx: Prisma.TransactionClie
    OR: [{ professorId: { in: professores } }, { turmaId: { in: turmas } }], inicio: { lt: fim }, fim: { gt: inicio } },
    select: { id: true, professorId: true, turmaId: true, inicio: true, fim: true }, orderBy: { id: "asc" } }) : [];
  const ausencias = professores.length ? await tx.indisponibilidadeDocente.findMany({ where: { professorId: { in: professores }, decisao: { aprovada: true }, inicio: { lt: fim }, fim: { gt: inicio } },
-   select: { id: true, professorId: true, inicio: true, fim: true }, orderBy: { id: "asc" } }) : [];
+  select: { id: true, professorId: true, inicio: true, fim: true }, orderBy: { id: "asc" } }) : [];
+ const reservas = professores.length ? await tx.horarioReservaParticular.findMany({ where: { professorId: { in: professores }, reserva: { OR: [{ status: "MANTIDA_PENDENCIA" }, { status: "ATIVA", expiraEm: { gt: new Date() } }] }, inicio: { lt: fim }, fim: { gt: inicio } },
+   select: { id: true, reservaId: true, professorId: true, inicio: true, fim: true }, orderBy: { id: "asc" } }) : [];
  const aptos = professores.length ? await tx.usuario.findMany({ where: { id: { in: professores }, ativo: true, papeis: { has: "PROFESSOR" } }, select: { id: true } }) : [];
  const recurso = (a: EncontroProposto, b: { professorId: string | null; turmaId: string | null }) => a.turmaId === b.turmaId || (!!a.professorId && a.professorId === b.professorId);
  const internos: { primeiro: string; segundo: string }[] = [];
@@ -28,7 +30,9 @@ export async function conferirConflitosReplanejamento(tx: Prisma.TransactionClie
     .map((e) => ({ encontroPropostoId: p.encontroId, encontroExistenteId: e.id }))),
   indisponibilidades: intervalos.flatMap((p) => ausencias.filter((a) => a.professorId === p.professorId && p.inicioMs < a.fim.getTime() && a.inicio.getTime() < p.fimMs)
     .map((a) => ({ encontroId: p.encontroId, indisponibilidadeId: a.id }))),
+  reservas: intervalos.flatMap((p) => reservas.filter((r) => r.professorId === p.professorId && p.inicioMs < r.fim.getTime() && r.inicio.getTime() < p.fimMs)
+    .map((r) => ({ encontroId: p.encontroId, reservaId: r.reservaId, horarioId: r.id }))),
   semDocenteApto: intervalos.filter((p) => !aptos.some((a) => a.id === p.professorId)).map((p) => p.encontroId),
-  reservasConferidas: false as const,
+  reservasConferidas: true,
  };
 }

@@ -1,4 +1,5 @@
 import { conferirRevisaoParaDecisao } from "./replanejamento-conferencia";
+import { decidirEAplicarReplanejamentoConjunto } from "./replanejamento-decisao";
 import { consultarHistoricoReplanejamento, consultarRevisaoReplanejamento } from "./replanejamento-historico";
 import { beforeEach, expect, it, vi } from "vitest";
 import type { EncontroAgenda } from "@prisma/client";
@@ -427,6 +428,14 @@ it("publica grade inteira após aprovação independente e revalidação de disp
   const ajustada = await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id, ajustes });
   expect(ajustada).toMatchObject({ ok: true, dado: { ajustes, recursos: { externos: [] } } });
   if (!ajustada.ok || !ajustada.dado) throw new Error("Revisão ajustada ausente");
+  const propostaReservada = ajustada.dado.revisoes[0].previsao!.propostas.find((p) => p.encontroId === remarcado.encontroId)!;
+  const reservaParticular = await prisma.reservaAgendaParticular.create({ data: { matriculaId, preparadorId: autorId, status: "ATIVA", criadaEm: new Date("2019-01-01T00:00:00Z"), expiraEm: new Date("2100-01-01T00:00:00Z"), motivo: "Reserva contratada ainda vigente", chaveIdempotencia: "reserva-replanejamento", entradaHash: "fixture", snapshot: { professorId: professor.id, fusoOrigem: "UTC", encontros: [{ inicio: propostaReservada.inicioProposto, fim: propostaReservada.fimProposto }] } } });
+  await prisma.horarioReservaParticular.create({ data: { reservaId: reservaParticular.id, professorId: professor.id, inicio: new Date(propostaReservada.inicioProposto), fim: new Date(propostaReservada.fimProposto), fusoOrigem: "UTC" } });
+  expect(await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id, ajustes })).toMatchObject({ ok: true, dado: { recursos: { reservas: [expect.objectContaining({ reservaId: reservaParticular.id })] } } });
+  await prisma.reservaAgendaParticular.update({ where: { id: reservaParticular.id }, data: { status: "MANTIDA_PENDENCIA", expiraEm: new Date("2020-01-01T00:00:00Z") } });
+  expect(await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id, ajustes })).toMatchObject({ ok: true, dado: { recursos: { reservas: [expect.objectContaining({ reservaId: reservaParticular.id })] } } });
+  await prisma.reservaAgendaParticular.update({ where: { id: reservaParticular.id }, data: { status: "LIBERADA" } });
+  expect(await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id, ajustes })).toMatchObject({ ok: true, dado: { recursos: { reservas: [] } } });
   expect(ajustada.dado.revisoes[0].previsao?.propostas[0].inicioProposto).toBe("2099-12-20T10:00:00.000Z");
   expect((await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id, ajustes: [{ ...ajustes[0], encontroId: particular.id }] })).ok).toBe(false);
   const registroAntigo = { calendarioId: novoCalendario.dado.id, estadoHash: revisao.dado.estadoHash, versaoAnterior: 0, motivo: "Guardar conjunto conferido", chaveIdempotencia: "rascunho-conjunto" };
@@ -475,14 +484,30 @@ it("publica grade inteira após aprovação independente e revalidação de disp
   if (!excecaoSalva.ok || !excecaoSalva.dado) throw new Error("Exceção não registrada");
   const gestorIndependente = await criarUsuario(["GERENTE_PEDAGOGICO"]);
   authMock.mockResolvedValue({ user: { id: gestorIndependente.id } });
+  const rascunhoExcecao = await prisma.rascunhoReplanejamento.findUniqueOrThrow({ where: { id: excecaoSalva.dado!.id }, select: { preparadorId: true } });
+  await expect(prisma.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisorId: rascunhoExcecao.preparadorId, aprovada: true, motivo: "Autoaprovação direta indevida", estadoHash: previaExcecao.dado!.estadoHash, excecoesAutorizadas: [remarcado.encontroId] } })).rejects.toThrow();
+  await expect(prisma.$transaction(async (tx) => {
+    const decisaoDireta = await tx.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisorId: gestorIndependente.id, aprovada: true, motivo: "Decisão direta sem efeitos materiais", estadoHash: previaExcecao.dado!.estadoHash, excecoesAutorizadas: [remarcado.encontroId] } });
+    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisaoId: decisaoDireta.id, estadoHash: previaExcecao.dado!.estadoHash } });
+    await tx.$executeRawUnsafe("SET CONSTRAINTS ALL IMMEDIATE");
+  })).rejects.toThrow("Aplicação conjunta exige calendário publicado");
+  expect(await prisma.decisaoReplanejamentoConjunto.count()).toBe(0);
   expect(await conferirRevisaoParaDecisao({ calendarioId: novoCalendario.dado.id, revisaoId: excecaoSalva.dado.id })).toMatchObject({ ok: true, dado: {
-    estadoCorresponde: true, independente: true, papelDecisor: true, aprovacaoDisponivel: false,
+    estadoCorresponde: true, independente: true, papelDecisor: true, aprovacaoDisponivel: true,
     excecoes: [expect.objectContaining({ encontroId: remarcado.encontroId, periodos: ["novo"], motivoProposto: excecaoAjustes[0].motivo })],
-    motivos: expect.arrayContaining([expect.stringContaining("autorização explícita")]),
+    motivos: [],
   } });
+  expect(await decidirEAplicarReplanejamentoConjunto({ calendarioId: novoCalendario.dado.id, revisaoId: excecaoSalva.dado.id, aprovar: true, motivo: "Aprovar conjunto com exceção justificada" })).toMatchObject({ ok: false, erro: expect.stringContaining("autorização explícita") });
+  const entradaDecisao = { calendarioId: novoCalendario.dado.id, revisaoId: excecaoSalva.dado.id, aprovar: true, motivo: "Aprovar conjunto com exceção justificada", excecoesAutorizadas: [remarcado.encontroId] };
+  const aplicada = await decidirEAplicarReplanejamentoConjunto(entradaDecisao);
+  expect(aplicada).toMatchObject({ ok: true, dado: { aprovada: true, aplicada: true } });
+  expect(await decidirEAplicarReplanejamentoConjunto(entradaDecisao)).toEqual(aplicada);
+  expect(await prisma.aplicacaoReplanejamentoConjunto.count()).toBe(1);
+  expect(await consultarCalendarioEscolarVigente()).toMatchObject({ ok: true, dado: { id: novoCalendario.dado.id } });
   expect(await conferirRevisaoParaDecisao({ calendarioId: novoCalendario.dado.id, revisaoId: salvo.dado.id })).toMatchObject({ ok: true, dado: { motivos: expect.arrayContaining([expect.stringContaining("mais recente")]) } });
   expect(revisao.dado.revisoes[0].previsao?.propostas[0].inicioProposto).not.toBe(primeiro.inicio);
-  expect(await prisma.encontroAgenda.findMany({ where: { propostaGradeId: p.dado.id }, orderBy: { inicio: "asc" } })).toEqual(publicados);
+  const aposAplicacao = await prisma.encontroAgenda.findMany({ where: { propostaGradeId: p.dado.id }, orderBy: { id: "asc" } });
+  expect(aposAplicacao.map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() }))).toEqual(previaExcecao.dado.revisoes.flatMap((t) => t.previsao?.propostas ?? []).sort((a, b) => a.encontroId.localeCompare(b.encontroId)).map((p) => ({ id: p.encontroId, inicio: p.inicioProposto, fim: p.fimProposto })));
   authMock.mockResolvedValue({ user: { id: professor.id } });
   expect((await preverReplanejamentoCalendario({ calendarioId: novoCalendario.dado.id })).ok).toBe(false);
   expect((await consultarHistoricoReplanejamento({ calendarioId: novoCalendario.dado.id })).ok).toBe(false);
@@ -527,6 +552,45 @@ it("recusa preparação com fuso diferente do conferido e preserva repetição a
   if (!r.ok || !r.dado) throw new Error("Proposta ausente");
   const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]); authMock.mockResolvedValue({ user: { id: gestor.id } });
   expect(await decidirCalendarioEscolar({ calendarioId: r.dado.id, aprovar: true, motivo: "Conferência após mudança" })).toMatchObject({ ok: false, erro: expect.stringContaining("fuso da escola mudou") });
+});
+
+it("aplica duas turmas como conjunto e reverte tudo se uma delas mudar depois da fotografia", async () => {
+  const modalidade = await prisma.modalidade.findFirstOrThrow(), idioma = await prisma.idioma.findFirstOrThrow();
+  await prisma.modalidade.update({ where: { id: modalidade.id }, data: { frequencia: "1x/semana", aulasPorNivel: 2, horasAula: 1 } });
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  const preparador = await criarUsuario(["SECRETARIA_ACADEMICA"]), gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  const base = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 0, periodos: [], motivo: "Calendário base para conjunto", chaveIdempotencia: "conjunto-base" });
+  if (!base.ok || !base.dado) throw new Error("Calendário base ausente");
+  authMock.mockResolvedValue({ user: { id: gestor.id } });
+  expect((await decidirCalendarioEscolar({ calendarioId: base.dado.id, aprovar: true, motivo: "Publicar calendário base" })).ok).toBe(true);
+  const publicar = async (codigo: string, chave: string) => {
+    const professor = await criarUsuario(["PROFESSOR"]), nivel = await prisma.nivel.create({ data: { idiomaId: idioma.id, codigo, ordem: Math.floor(Math.random() * 100000) } });
+    const turma = await prisma.turma.create({ data: { modalidadeId: modalidade.id, nivelId: nivel.id, professorId: professor.id, diasSemana: [4], horarioInicio: "19:00", dataInicio: new Date("2099-10-01T00:00:00Z") } });
+    authMock.mockResolvedValue({ user: { id: preparador.id } });
+    const proposta = await prepararGradeInicialTurma({ turmaId: turma.id, fusoOrigem: "UTC", versaoAnterior: 0, motivo: `Publicar ${codigo}`, chaveIdempotencia: chave });
+    if (!proposta.ok || !proposta.dado) throw new Error("Proposta de turma ausente");
+    authMock.mockResolvedValue({ user: { id: gestor.id } });
+    expect((await decidirGradeInicialTurma({ propostaId: proposta.dado.id, aprovar: true, motivo: `Aprovar ${codigo}` })).ok).toBe(true);
+    return turma;
+  };
+  const turmaA = await publicar("CONJUNTO_A", "conjunto-grade-a"), turmaB = await publicar("CONJUNTO_B", "conjunto-grade-b");
+  const primeiro = await prisma.encontroAgenda.findFirstOrThrow({ where: { turmaId: turmaA.id }, orderBy: { inicio: "asc" } });
+  authMock.mockResolvedValue({ user: { id: preparador.id } });
+  const calendario = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 1, motivo: "Feriado para duas turmas", chaveIdempotencia: "conjunto-feriado", periodos: [{ id: "feriado-conjunto", nome: "Feriado conjunto", tipo: "FERIADO", inicio: primeiro.inicio.toISOString().slice(0, 10), fim: primeiro.inicio.toISOString().slice(0, 10) }] });
+  if (!calendario.ok || !calendario.dado) throw new Error("Calendário conjunto ausente");
+  const previa = await preverReplanejamentoCalendario({ calendarioId: calendario.dado.id });
+  if (!previa.ok || !previa.dado) throw new Error("Prévia conjunta ausente");
+  expect(previa.dado.revisoes.filter((r) => r.turmaId === turmaA.id || r.turmaId === turmaB.id)).toHaveLength(2);
+  const registro = await registrarRascunhoReplanejamento({ calendarioId: calendario.dado.id, estadoHash: previa.dado.estadoHash, versaoAnterior: 0, motivo: "Guardar conjunto de duas turmas", chaveIdempotencia: "conjunto-rascunho" });
+  if (!registro.ok || !registro.dado) throw new Error("Rascunho conjunto ausente");
+  const antes = await prisma.encontroAgenda.findMany({ where: { turmaId: { in: [turmaA.id, turmaB.id] } }, orderBy: { id: "asc" } });
+  await prisma.encontroAgenda.update({ where: { id: antes.find((e) => e.turmaId === turmaB.id)!.id }, data: { inicio: new Date("2099-12-31T19:00:00Z"), fim: new Date("2099-12-31T20:00:00Z") } });
+  authMock.mockResolvedValue({ user: { id: gestor.id } });
+  expect(await decidirEAplicarReplanejamentoConjunto({ calendarioId: calendario.dado.id, revisaoId: registro.dado.id, aprovar: true, motivo: "Aplicar duas turmas" })).toMatchObject({ ok: false, erro: expect.stringContaining("mudaram") });
+  const depoisFalha = await prisma.encontroAgenda.findMany({ where: { turmaId: { in: [turmaA.id, turmaB.id] } }, orderBy: { id: "asc" } });
+  const alteradoPosteriormente = antes.find((e) => e.turmaId === turmaB.id)!;
+  expect(depoisFalha.filter((e) => e.id !== alteradoPosteriormente.id).map((e) => ({ id: e.id, inicio: e.inicio, fim: e.fim }))).toEqual(antes.filter((e) => e.id !== alteradoPosteriormente.id).map((e) => ({ id: e.id, inicio: e.inicio, fim: e.fim })));
+  expect(await prisma.aplicacaoReplanejamentoConjunto.count()).toBe(0);
 });
 
 async function impactoAusenciaTeste(id: string) {
