@@ -364,3 +364,20 @@ it("não troca responsável autorizado por outra pessoa com o mesmo telefone ant
   const intencaoOriginal = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: avisoOriginal.id } });
   expect(intencaoOriginal.status).toBe("CANCELADA");
 });
+
+it("revogação da autorização entre enqueue e driver cancela a intenção", async () => {
+  const primeira = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável revogável", telefoneE164: "+50679999998" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: primeira.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const autorizacao = await prisma.autorizacaoComunicacaoAcademica.create({ data: { matriculaId: primeira.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização registrada" } });
+  await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  expect(await enfileirarAvisosAgendaWhatsApp()).toBeGreaterThan(0);
+  const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { destinatarioResponsavelId: responsavel.id } });
+  const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: aviso.id } });
+  await prisma.autorizacaoComunicacaoAcademica.update({ where: { id: autorizacao.id }, data: { revogadaEm: new Date(), revogadaPorId: secretariaId, motivoRevogacao: "Revogação antes do transporte" } });
+  vi.stubEnv("WHATSAPP_LIVE", "1"); await despacharFila(new Date(), { intencaoId: intencao.id });
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "aviso_agenda_alterado" });
+});
+

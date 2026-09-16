@@ -1,6 +1,6 @@
 # SPEC-ACA-N01 — Avisos de alterações da agenda
 
-Estado: implementação local validada em 16/09/2026. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
+Estado: e-mail validado localmente; canal WhatsApp e autorizações incorporados até `c2b0d43`, com revisão independente e regressão dirigida do integrador aprovadas. Avisos globais do calendário, tela de autorizações e tratamento das pendências ainda estão em integração. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
 
 ## Escopo
 
@@ -9,6 +9,16 @@ Uma remarcação aprovada ou uma substituição docente aprovada cria avisos por
 Para encontro particular, o encontro pertence diretamente à matrícula. Para encontro de turma regular, cada matrícula é avaliada no instante do encontro: a alocação precisa ter sido criada até aquele instante e não pode estar encerrada nele. Uma alocação encerrada exatamente no início já não recebe aviso. Matrícula sem esse vínculo não recebe item nem aviso.
 
 O banco preserva a origem, a matrícula, o aluno, os itens e as tentativas. A guarda SQL aceita o caminho de turma somente para `SubstituicaoDocenteDecidida` aprovada, do agregado canônico `ConfiguracaoOperacional/escola`, com o encontro presente no payload; as guardas de origem e compatibilidade entre aluno e matrícula continuam obrigatórias.
+
+## Destinatários e canal institucional
+
+O WhatsApp exige número institucional ativo com finalidade de agenda e template aprovado, de categoria e idioma compatíveis. O processamento da agenda seleciona apenas suas próprias intenções, sem despachar a fila comercial ou financeira por consequência. Ausência de configuração não cria tentativa externa nem transforma aviso preparado em resultado incerto.
+
+Cada destinatário conserva sua identidade, além do hash do contato. O aluno com consentimento e contato habilitados pode receber seu próprio aviso. Um responsável exige vínculo pedagógico e autorização explícita daquela matrícula, com evidência registrada pela Secretaria/Administração. Ser pagador ou ter o mesmo telefone de outra pessoa não transfere autorização. A releitura anterior ao transporte confere novamente identidade, autorização vigente, contato e configuração.
+
+Autorização, matrícula, responsável, evidência e autoria são preservados; revogação registra pessoa e motivo. As ações conferem o papel atual, serializam operações do mesmo vínculo e rejeitam entradas divergentes sem substituir o histórico. A guarda SQL 177 rejeita autorização criada por papel inadequado, exclusão/alteração da identidade e aviso que usa autorização de outra matrícula, futura ou revogada. Registrar o resultado de tentativa já iniciada continua permitido após revogação, sem autorizar outro envio.
+
+O aviso por e-mail mantém sua chave lógica existente. A chave WhatsApp inclui o hash do contato, mas o registro preserva também a identidade selecionada: contato compartilhado não permite trocar o destinatário histórico nem reutilizar autorização de outra pessoa. Incerto continua sem retentativa automática. As verificações de driver usam transportes simulados, não comprovam operação externa.
 
 ## Despacho e estados
 
