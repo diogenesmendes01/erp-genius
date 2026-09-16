@@ -6,6 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrar
 import { bloquearLancamento } from "./lancamento-tx";
 import { prazoRecuperacaoVigente } from "./recuperacao-prazo";
 import { docenteAtual, vinculoCobre } from "@/server/diario/permissoes";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autorizacao-tx";
@@ -44,7 +45,8 @@ export async function registrarRealizacaoRecuperacao(input: z.input<typeof schem
       const situacao = (await carregarSituacoesNaAula(tx, [a.matriculaId], quando)).get(a.matriculaId);
       const autorizacao = situacao === "PAUSADA" || situacao === "ENCERRADA"
         ? await carregarAutorizacaoEspecialRecuperacaoTx(tx, i.id, quando) : null;
-      if (quando < a.criadoEm || (!autorizacao && ((a.encerradaEm && quando >= a.encerradaEm) || (!a.ativa && !a.encerradaEm))) || !autorizadoNaData) throw new ErroRegra("A realização precisa corresponder ao vínculo histórico do aluno e professor.");
+      const inicioVinculo = a.provenienciaVinculo === "MIGRACAO" ? a.inicioVigencia : a.criadoEm;
+      if (!inicioVinculo || quando < inicioVinculo || (!autorizacao && !alocacaoCobreAula(a, quando)) || !autorizadoNaData) throw new ErroRegra("A realização precisa corresponder ao vínculo histórico do aluno e professor.");
       if (situacao !== "ATIVA" && !autorizacao) throw new ErroRegra("Confira a autorização contratual na data da realização.");
       const r = await tx.realizacaoRecuperacao.create({ data: { itemReservaId: i.id, professorId: realizadaPorId, registradaPorId: u.id, motivoRegularizacao: d.motivoRegularizacao ?? null, realizadaEm: quando, evidencia: d.evidencia, autorizacaoEspecialId: autorizacao?.id ?? null } });
       await registrarEvento(tx, { tipo: "RecuperacaoRealizada", agregadoTipo: "Matricula", agregadoId: a.matriculaId, autorId: u.id, payload: { realizacaoId: r.id, itemReservaId: i.id, reservaId: i.reservaId, habilidade: i.habilidade, realizadaPorId, registradaPorId: u.id, motivoRegularizacao: d.motivoRegularizacao ?? null, realizadaEm: quando.toISOString() } });
