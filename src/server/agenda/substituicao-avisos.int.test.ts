@@ -309,26 +309,32 @@ it("template revogado antes da preparação deixa o aviso pendente sem chamar o 
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
   expect(enviarTemplateMock).not.toHaveBeenCalled();
   const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP" } });
+  if (!aviso.eventoId || !aviso.matriculaId) throw new Error("Aviso sem origem ou matrícula");
+  const eventoIdDoAviso = aviso.eventoId;
+  const matriculaIdDoAviso = aviso.matriculaId;
   expect(aviso).toMatchObject({ situacao: "PREPARADO" });
-  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: aviso.eventoId, matriculaId: aviso.matriculaId, motivo: "CONFIGURACAO_INDISPONIVEL" } })).toBe(1);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventoIdDoAviso, matriculaId: matriculaIdDoAviso, motivo: "CONFIGURACAO_INDISPONIVEL" } })).toBe(1);
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
-  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: aviso.eventoId, matriculaId: aviso.matriculaId, motivo: "CONFIGURACAO_INDISPONIVEL" } })).toBe(1);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventoIdDoAviso, matriculaId: matriculaIdDoAviso, motivo: "CONFIGURACAO_INDISPONIVEL" } })).toBe(1);
 });
 
 it("registra sem duplicar pendência quando o opt-in ou contato muda antes de enfileirar WhatsApp", async () => {
   await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
   expect(await decidir(true)).toMatchObject({ ok: true });
   const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP", matriculaId: matriculasElegiveis[0] } });
+  if (!aviso.eventoId || !aviso.matriculaId) throw new Error("Aviso sem origem ou matrícula");
+  const eventoIdDoAviso = aviso.eventoId;
+  const matriculaIdDoAviso = aviso.matriculaId;
   await prisma.aluno.update({ where: { id: aviso.alunoId }, data: { aceitaComunicacoes: false } });
   expect(await enfileirarAvisosAgendaWhatsApp()).toBe(0);
   expect(await enfileirarAvisosAgendaWhatsApp()).toBe(0);
-  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: aviso.eventoId, matriculaId: aviso.matriculaId, motivo: "CONTATO_SEM_OPT_IN" } })).toBe(1);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventoIdDoAviso, matriculaId: matriculaIdDoAviso, motivo: "CONTATO_SEM_OPT_IN" } })).toBe(1);
   expect(await prisma.intencaoMensagem.count({ where: { avisoAlteracaoAgendaId: aviso.id } })).toBe(0);
 
   await prisma.aluno.update({ where: { id: aviso.alunoId }, data: { aceitaComunicacoes: true, telefoneE164: null } });
   expect(await enfileirarAvisosAgendaWhatsApp()).toBe(0);
   expect(await enfileirarAvisosAgendaWhatsApp()).toBe(0);
-  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: aviso.eventoId, matriculaId: aviso.matriculaId, motivo: "CONTATO_INDISPONIVEL" } })).toBe(1);
+  expect(await prisma.pendenciaAvisoAgenda.count({ where: { eventoId: eventoIdDoAviso, matriculaId: matriculaIdDoAviso, motivo: "CONTATO_INDISPONIVEL" } })).toBe(1);
   expect(await prisma.intencaoMensagem.count({ where: { avisoAlteracaoAgendaId: aviso.id } })).toBe(0);
   expect(enviarTemplateMock).not.toHaveBeenCalled();
 });

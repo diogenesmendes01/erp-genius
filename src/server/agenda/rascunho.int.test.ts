@@ -482,13 +482,15 @@ it("publica grade inteira após aprovação independente e revalidação de disp
   if (!previaExcecao.ok || !previaExcecao.dado) throw new Error("Exceção ausente");
   const excecaoSalva = await registrarRascunhoReplanejamento({ ...registro, ajustes: excecaoAjustes, versaoAnterior: 2, estadoHash: previaExcecao.dado.estadoHash, chaveIdempotencia: "ajuste-com-excecao" });
   if (!excecaoSalva.ok || !excecaoSalva.dado) throw new Error("Exceção não registrada");
+  const rascunhoExcecaoId = excecaoSalva.dado.id;
+  const estadoHashExcecao = previaExcecao.dado.estadoHash;
   const gestorIndependente = await criarUsuario(["GERENTE_PEDAGOGICO"]);
   authMock.mockResolvedValue({ user: { id: gestorIndependente.id } });
-  const rascunhoExcecao = await prisma.rascunhoReplanejamento.findUniqueOrThrow({ where: { id: excecaoSalva.dado!.id }, select: { preparadorId: true } });
-  await expect(prisma.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisorId: rascunhoExcecao.preparadorId, aprovada: true, motivo: "Autoaprovação direta indevida", estadoHash: previaExcecao.dado!.estadoHash, excecoesAutorizadas: [remarcado.encontroId] } })).rejects.toThrow();
+  const rascunhoExcecao = await prisma.rascunhoReplanejamento.findUniqueOrThrow({ where: { id: rascunhoExcecaoId }, select: { preparadorId: true } });
+  await expect(prisma.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: rascunhoExcecaoId, decisorId: rascunhoExcecao.preparadorId, aprovada: true, motivo: "Autoaprovação direta indevida", estadoHash: estadoHashExcecao, excecoesAutorizadas: [remarcado.encontroId] } })).rejects.toThrow();
   await expect(prisma.$transaction(async (tx) => {
-    const decisaoDireta = await tx.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisorId: gestorIndependente.id, aprovada: true, motivo: "Decisão direta sem efeitos materiais", estadoHash: previaExcecao.dado!.estadoHash, excecoesAutorizadas: [remarcado.encontroId] } });
-    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: excecaoSalva.dado!.id, decisaoId: decisaoDireta.id, estadoHash: previaExcecao.dado!.estadoHash } });
+    const decisaoDireta = await tx.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: rascunhoExcecaoId, decisorId: gestorIndependente.id, aprovada: true, motivo: "Decisão direta sem efeitos materiais", estadoHash: estadoHashExcecao, excecoesAutorizadas: [remarcado.encontroId] } });
+    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: rascunhoExcecaoId, decisaoId: decisaoDireta.id, estadoHash: estadoHashExcecao } });
     await tx.$executeRawUnsafe("SET CONSTRAINTS ALL IMMEDIATE");
   })).rejects.toThrow("Aplicação conjunta exige calendário publicado");
   expect(await prisma.decisaoReplanejamentoConjunto.count()).toBe(0);
