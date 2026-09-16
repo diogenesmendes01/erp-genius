@@ -14,7 +14,9 @@ export type ItemFilaEnviosPortalAluno = {
   situacao: "PREPARADO" | "CANCELADO" | "ENVIADO" | "FALHOU" | "INCERTO";
   criadoEm: Date;
   atualizadoEm: Date;
-  conciliacao: null | { id: string; estadoHash: string; evidencia: string; versao: number; decisao: null | { aprovada: boolean; solicitacaoReemitidaId: string | null } };
+  conciliacao: null | { id: string; estadoHash: string; evidencia: string; versao: number; secretariaNome: string; criadaEm: Date; decisao: null | { aprovada: boolean; solicitacaoReemitidaId: string | null } };
+  podeRegistrarEvidencia: boolean;
+  podeDecidirReemissao: boolean;
 };
 
 export type FilaEnviosPortalAluno = {
@@ -47,7 +49,7 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
           criadoEm: true,
           atualizadoEm: true,
           conta: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } },
-          conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, decisao: { select: { aprovada: true, solicitacaoReemitidaId: true } } } },
+          conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, criadaEm: true, secretariaId: true, secretaria: { select: { nome: true } }, decisao: { select: { aprovada: true, solicitacaoReemitidaId: true } } } },
         },
       });
       const itens = registros.slice(0, 20).map((registro) => ({
@@ -57,7 +59,9 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
         situacao: registro.situacao,
         criadoEm: registro.criadoEm,
         atualizadoEm: registro.atualizadoEm,
-        conciliacao: registro.conciliacoes[0] ? { ...registro.conciliacoes[0], decisao: registro.conciliacoes[0].decisao } : null,
+        conciliacao: registro.conciliacoes[0] ? { id: registro.conciliacoes[0].id, estadoHash: registro.conciliacoes[0].estadoHash, evidencia: registro.conciliacoes[0].evidencia, versao: registro.conciliacoes[0].versao, secretariaNome: registro.conciliacoes[0].secretaria.nome, criadaEm: registro.conciliacoes[0].criadaEm, decisao: registro.conciliacoes[0].decisao } : null,
+        podeRegistrarEvidencia: usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA) || usuario.papeis.includes(Papel.ADMINISTRADOR),
+        podeDecidirReemissao: usuario.papeis.includes(Papel.ADMINISTRADOR) && registro.conciliacoes[0]?.secretariaId !== sessao.id,
       })) satisfies ItemFilaEnviosPortalAluno[];
       return {
         itens,

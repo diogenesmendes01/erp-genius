@@ -43,7 +43,7 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect(resultado.dado.proximoCursor).toBe("19");
     expect(resultado.dado.itens[0]).toEqual({
       id: "00", alunoNome: "Ana Silva", finalidade: "CONVITE", situacao: "PREPARADO",
-      criadoEm: new Date("2026-09-16T10:00:00.000Z"), atualizadoEm: new Date("2026-09-16T11:00:00.000Z"), conciliacao: null,
+      criadoEm: new Date("2026-09-16T10:00:00.000Z"), atualizadoEm: new Date("2026-09-16T11:00:00.000Z"), conciliacao: null, podeRegistrarEvidencia: true, podeDecidirReemissao: false,
     });
     expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: "asc" }, take: 21 }));
     expect(JSON.stringify(resultado.dado)).not.toMatch(/segredo@example|nao-expor@example|chave-interna|token|link/i);
@@ -65,3 +65,13 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect(m.envios).not.toHaveBeenCalled();
   });
 });
+
+
+  it("projeta evid�ncia e controles apenas para a Administra��o independente", async () => {
+    m.usuario.mockResolvedValue({ ativo: true, papeis: ["ADMINISTRADOR"] });
+    const comConciliacao = linha("x");
+    comConciliacao.conciliacoes = [{ id: "c1", estadoHash: "a".repeat(64), evidencia: "Confer�ncia sem recibo do provedor.", versao: 2, criadaEm: new Date("2026-09-16T12:00:00Z"), secretariaId: "outra", secretaria: { nome: "Secretaria" }, decisao: null }] as never;
+    m.envios.mockResolvedValue([comConciliacao]);
+    const r = await consultarFilaEnviosPortalAluno();
+    expect(r).toMatchObject({ ok: true, dado: { itens: [{ podeRegistrarEvidencia: true, podeDecidirReemissao: true, conciliacao: { secretariaNome: "Secretaria", evidencia: "Confer�ncia sem recibo do provedor.", versao: 2 } }] } });
+  });
