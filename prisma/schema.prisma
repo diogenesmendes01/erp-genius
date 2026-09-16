@@ -663,6 +663,8 @@ model Usuario {
   ajustes           AjusteFinanceiro[]  @relation("AutorAjustes")
   movimentacoes     MovimentacaoAluno[] @relation("AutorMovimentacoes")
   numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
+  autorizacoesComunicacaoAcademicaAutorizadas AutorizacaoComunicacaoAcademica[] @relation("AutorizadorComunicacaoAcademica")
+  autorizacoesComunicacaoAcademicaRevogadas AutorizacaoComunicacaoAcademica[] @relation("RevogadorComunicacaoAcademica")
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
   intencoesWhatsApp IntencaoMensagem[]  @relation("AutorIntencoesWhatsApp")
   propostasSegundaChamada PropostaSegundaChamada[] @relation("AutorSegundaChamada")
@@ -1030,6 +1032,7 @@ model Aluno {
   movimentacoes    MovimentacaoAluno[]
   contatosWhatsApp ContatoWhatsApp[]
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
+  avisosAgendaDestinatario AvisoAlteracaoAgenda[] @relation("DestinatarioAlunoAvisoAgenda")
 
   @@index([telefoneE164])
 }
@@ -1043,6 +1046,8 @@ model Responsavel {
 
   alunos           AlunoResponsavel[]
   contatosWhatsApp ContatoWhatsApp[]
+  autorizacoesComunicacaoAcademica AutorizacaoComunicacaoAcademica[]
+  avisosAgendaDestinatario AvisoAlteracaoAgenda[]
 
   @@index([telefoneE164])
 }
@@ -1571,6 +1576,7 @@ model ItemPropostaRetomadaMatriculas {
 
 model Matricula {
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
+  autorizacoesComunicacaoAcademica AutorizacaoComunicacaoAcademica[]
   pedidosDesistenciaPreparacao PedidoDesistenciaPreparacao[]
   efetivacaoDesistenciaPreparacao EfetivacaoPedidoDesistenciaPreparacao?
   propostasAditivo PropostaAditivoContratual[]
@@ -1930,6 +1936,12 @@ model AvisoAlteracaoAgenda {
  matricula Matricula? @relation(fields:[matriculaId], references:[id])
  alunoId String
  aluno Aluno @relation(fields:[alunoId], references:[id], onDelete:Restrict)
+ destinatarioAlunoId String?
+ destinatarioAluno Aluno? @relation("DestinatarioAlunoAvisoAgenda", fields:[destinatarioAlunoId], references:[id])
+ destinatarioResponsavelId String?
+ destinatarioResponsavel Responsavel? @relation(fields:[destinatarioResponsavelId], references:[id])
+ autorizacaoComunicacaoAcademicaId String?
+ autorizacaoComunicacaoAcademica AutorizacaoComunicacaoAcademica? @relation(fields:[autorizacaoComunicacaoAcademicaId], references:[id])
  canal CanalAvisoAlteracaoAgenda
  contatoHash String
  situacao SituacaoAvisoAlteracaoAgenda @default(PREPARADO)
@@ -1941,6 +1953,23 @@ model AvisoAlteracaoAgenda {
  intencaoWhatsApp IntencaoMensagem?
  @@index([situacao, criadoEm])
  @@index([turmaId, alunoId])
+}
+
+model AutorizacaoComunicacaoAcademica {
+ id String @id @default(cuid())
+ matriculaId String
+ matricula Matricula @relation(fields:[matriculaId], references:[id], onDelete:Restrict)
+ responsavelId String
+ responsavel Responsavel @relation(fields:[responsavelId], references:[id], onDelete:Restrict)
+ autorizadaPorId String
+  autorizadaPor Usuario @relation("AutorizadorComunicacaoAcademica", fields:[autorizadaPorId], references:[id], onDelete:Restrict)
+ evidencia String
+ vigenteEm DateTime @default(now())
+ revogadaEm DateTime?
+ revogadaPorId String?
+  revogadaPor Usuario? @relation("RevogadorComunicacaoAcademica", fields:[revogadaPorId], references:[id])
+ avisosAgenda AvisoAlteracaoAgenda[]
+ @@index([matriculaId, responsavelId, vigenteEm])
 }
 
 model ItemAvisoAlteracaoAgenda {
