@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import {
   agendarReposicaoIndividual,
+  consultarPreviaAgendaReposicaoIndividual,
   aplicarBeneficioReposicaoParticularMatricula,
   decidirAutorizacaoExcecaoReposicaoParticular,
   decidirExcecaoAgendaReposicaoIndividual,
@@ -98,6 +99,18 @@ it("reserva benefício de oferta aprovada e cria encontro REPOSICAO ligado ao pe
   expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC", motivo: "Tentativa duplicada não pode criar outro encontro", chaveIdempotencia: "agenda-normal-002" })).toMatchObject({ ok: false });
 });
 
+it("a prévia autenticada informa período, saldo e conflitos antes de confirmar a agenda", async () => {
+  await regraESnapshot("regra-previa", 2);
+  await inserirPedido("pedido-previa");
+  entrar(secretariaId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({
+    ok: true, dado: { periodo: { inicio: "2026-10-01", fimExclusivo: "2026-11-01" }, quantidadePorPeriodo: 2, saldo: 2,
+      conflitos: { encontros: 0, indisponibilidades: 0, reservas: 0 }, podeAgendar: true },
+  });
+  entrar(gestorId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({ ok: false });
+});
+
 it("a última cota é reservável uma vez e bloqueia outra origem no mesmo período", async () => {
   await regraESnapshot("regra-uma-cota", 1);
   await inserirPedido("pedido-cota-1");
@@ -122,11 +135,34 @@ it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir be
   entrar(adminId);
   expect(await decidirAutorizacaoExcecaoReposicaoParticular({ autorizacaoId: autorizacao.dado.id, aprovar: true, motivo: "Gratuidade excepcional independente aprovada" })).toMatchObject({ ok: true });
   entrar(secretariaId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id })).toMatchObject({ ok: true, dado: { diasNaoLetivos: expect.any(Array), excecaoAgendaAprovada: true, podeAgendar: true } });
   const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id, motivo: "Agenda excepcional autorizada", chaveIdempotencia: "agenda-q34-001" });
   expect(agenda).toMatchObject({ ok: true });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));
   const [isenta] = await prisma.$queryRaw<{ beneficioId: string | null; status: string; autorizacaoId: string | null }[]>(Prisma.sql`SELECT "beneficioId" AS "beneficioId","statusBeneficio"::text AS status,"autorizacaoExcecaoId" AS "autorizacaoId" FROM "AgendaReposicaoIndividual" WHERE id=${agenda.dado.agendaId}`);
   expect(isenta).toEqual({ beneficioId: null, status: "ISENTA_EXCECAO", autorizacaoId: autorizacao.dado.id });
+});
+
+it("rejeição Q19 permanece possível e idempotente quando a proposta fica indisponível ou passada", async () => {
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-rejeicao", nome: "Recesso para rejeição", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Calendário para rejeitar proposta obsoleta", chaveIdempotencia: "calendario-rejeicao-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
+  await inserirPedido("pedido-rejeitar-conflito");
+  entrar(secretariaId);
+  const conflito = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-conflito", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Horário inicialmente disponível", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-conflito" });
+  if (!conflito.ok || !conflito.dado) throw new Error(JSON.stringify(conflito));
+  await criarAulaOriginal("conflito-posterior-q19", "2026-10-12T10:00:00.000Z");
+  entrar(adminId);
+  const rejeitada = await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: conflito.dado.id, aprovar: false, motivo: "Conflito posterior impede a aprovação" });
+  expect(rejeitada, JSON.stringify(rejeitada)).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: conflito.dado.id, aprovar: false, motivo: "Conflito posterior impede a aprovação" })).toEqual(rejeitada);
+
+  await inserirPedido("pedido-rejeitar-passado", aulaExtraId);
+  entrar(secretariaId);
+  const passada = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-passado", professorId, inicioLocal: "2026-10-12T12:00", fimLocal: "2026-10-12T13:00", fuso: "UTC", motivo: "Horário que se tornou obsoleto", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-passado" });
+  if (!passada.ok || !passada.dado) throw new Error(JSON.stringify(passada));
+  await prisma.excecaoAgendaReposicaoIndividual.update({ where: { id: passada.dado.id }, data: { inicio: new Date("2026-01-12T12:00:00.000Z"), fim: new Date("2026-01-12T13:00:00.000Z") } });
+  entrar(adminId);
+  expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: passada.dado.id, aprovar: false, motivo: "Horário passou antes da decisão" })).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await prisma.decisaoExcecaoAgendaReposicaoIndividual.count({ where: { excecaoId: passada.dado.id, aprovada: false } })).toBe(1);
 });
 
 it("pedido rejeitado é terminal e não permite pendentes simultâneos para a mesma falta", async () => {

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { concluirReposicaoIndividual } from "@/server/diario/reposicao-individual";
+import { concluirReposicaoIndividual, registrarDiarioReposicaoIndividual } from "@/server/diario/reposicao-individual";
 import { solicitarCorrecaoEntregaReposicao } from "@/server/diario/reposicao-gravacao-actions";
 import { descreverParticipacaoOrigem, type OrigemReposicao } from "./ReposicoesEquipe";
 import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeReposicao";
@@ -14,12 +14,21 @@ const data = (valor: string, fuso: string) => {
   catch { return valor.replace("T", " ").replace("Z", " UTC"); }
 };
 
-export function ReposicaoDocente({ reposicaoId, versaoAnterior, modalidade, origem, entrega }: {
-  reposicaoId: string; versaoAnterior: number; modalidade: "PARTICULAR" | "GRAVACAO"; origem: OrigemReposicao; entrega: EntregaGravadaPendente | null;
+export function ReposicaoDocente({ reposicaoId, versaoAnterior, modalidade, origem, entrega, encontros }: {
+  reposicaoId: string; versaoAnterior: number; modalidade: "PARTICULAR" | "GRAVACAO"; origem: OrigemReposicao; entrega: EntregaGravadaPendente | null; encontros?: { id: string; inicio: string; fim: string; fuso: string; status: string; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null }[];
 }) {
-  const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const router = useRouter();
+  const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const [sucesso, setSucesso] = useState(""); const router = useRouter();
   const avisoOrigemCorrigida = origem.participacao === "PRESENTE" && <p role="status" className="text-sm text-gray-600">A participação da aula de origem foi corrigida para presença. O pedido continua no histórico; essa correção não registra conclusão.</p>;
-  if (modalidade === "PARTICULAR") return <section className="space-y-4 rounded border p-4"><h1 className="text-xl font-medium">Reposição particular autorizada</h1><p>Origem: {descreverParticipacaoOrigem(origem.participacao)}, de {data(origem.inicio, origem.fuso)} a {data(origem.fim, origem.fuso)} ({origem.fuso}).</p>{avisoOrigemCorrigida}<p role="status">A Secretaria precisa vincular o encontro acadêmico próprio a este pedido. Esta tela não escolhe encontros por matrícula, não cria agenda e não cria reserva comercial ou cobrança.</p></section>;
+  if (modalidade === "PARTICULAR") {
+    const encontro = encontros?.[0];
+    if (!encontro) return <section className="space-y-4 rounded border p-4"><h1 className="text-xl font-medium">Reposição particular autorizada</h1><p role="status">Aguardando agenda própria atribuída a você.</p></section>;
+    return <form className="space-y-3 rounded border p-4" onSubmit={e => { e.preventDefault(); const dados = new FormData(e.currentTarget); iniciar(async () => { setErro(""); setSucesso(""); try {
+      if (encontro.status === "PREVISTO") { const r = await registrarDiarioReposicaoIndividual({ reposicaoId, encontroReposicaoId: encontro.id, participacao: dados.get("participacao") as "PRESENTE" | "FALTA", conteudo: String(dados.get("conteudo") ?? "") }); if (!r.ok) { setErro(r.erro); return; } setSucesso("Diário da reposição registrado. Atualizando a fila."); router.refresh(); return; }
+      if (encontro.participacao !== "PRESENTE") { setErro("A falta na particular consome a reserva, mas não conclui a reposição da origem."); return; }
+      const r = await concluirReposicaoIndividual({ reposicaoId, versaoAnterior, encontroReposicaoId: encontro.id, evidencia: String(dados.get("evidencia") ?? "") }); if (!r.ok) { setErro(r.erro); return; } setSucesso("Reposição concluída. Atualizando a fila."); router.refresh();
+    } catch { setErro("A realização não foi confirmada. Consulte a fila antes de reenviar."); } }); }}><fieldset disabled={ocupado} className="space-y-3"><legend className="text-xl font-medium">Realizar reposição particular</legend><p>Origem: {descreverParticipacaoOrigem(origem.participacao)}, de {data(origem.inicio, origem.fuso)} a {data(origem.fim, origem.fuso)} ({origem.fuso}).</p>{avisoOrigemCorrigida}<p>Horário da reposição: {data(encontro.inicio, encontro.fuso)} a {data(encontro.fim, encontro.fuso)} ({encontro.fuso}).</p>
+      {encontro.status === "PREVISTO" ? <><label className="block">Participação<select name="participacao" defaultValue="" required className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="PRESENTE">Presente</option><option value="FALTA">Falta</option></select></label><label className="block">Conteúdo realizado<textarea name="conteudo" required minLength={5} className="block w-full rounded border p-2" /></label><button className="rounded border px-4 py-2">Registrar diário da particular</button></> : encontro.participacao === "PRESENTE" ? <><p role="status">Diário com presença registrado. Confirme para regularizar somente a ausência de origem.</p><label className="block">Evidência da conclusão<textarea name="evidencia" required minLength={5} className="block w-full rounded border p-2" /></label><button className="rounded border px-4 py-2">Confirmar reposição</button></> : <p role="status">Diário registra {encontro.participacao === "FALTA" ? "falta" : "impedimento"}; a origem permanece sem regularização.</p>}</fieldset>{erro && <p role="alert">{erro}</p>}{sucesso && <p role="status">{sucesso}</p>}</form>;
+  }
   if (!entrega) return <section className="space-y-3 rounded border p-4"><h1 className="text-xl font-medium">Aguardando entrega gravada</h1><p>A gravação só pode ser validada após o aluno enviar resumo e atividade pela área autenticada própria.</p><p role="status">O portal e a publicação autorizada da gravação ainda são dependências separadas; nenhuma entrega é simulada aqui.</p><RelatarIndisponibilidadeReposicao reposicaoId={reposicaoId} /></section>;
   return <><form className="space-y-3 rounded border p-4" onSubmit={e => {
     e.preventDefault(); const dados = new FormData(e.currentTarget);

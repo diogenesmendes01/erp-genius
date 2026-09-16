@@ -30,7 +30,7 @@ import { salvarLancamentoAvaliacao, oficializarLancamentoAvaliacao } from "@/ser
 import { listarAulasDiario } from "./consultas";
 import { carregarImpactosCorrecaoAulaTx } from "./correcao-aula-impactos-tx";
 import { carregarCorrecoesAulaEfetivasTx } from "./correcao-aula-efetiva-tx";
-import { solicitarReposicaoIndividual, decidirReposicaoIndividual, proporCorrecaoConclusaoReposicao, decidirCorrecaoConclusaoReposicao } from "./reposicao-individual";
+import { solicitarReposicaoIndividual, decidirReposicaoIndividual, concluirReposicaoIndividual, proporCorrecaoConclusaoReposicao, decidirCorrecaoConclusaoReposicao } from "./reposicao-individual";
 import { consultarReposicoesEquipe } from "./reposicao-consulta";
 import { criarAgendaParticularIsentaFixture } from "@/test/reposicao-agenda";
 
@@ -147,6 +147,23 @@ async function entradaPublicacao(propostaId: string) {
   return { propostaId, propostaHash: revisao.dado.propostaHash, impactosHash: revisao.dado.impactosHash,
     motivo: "Gestão confere e aprova a correção apresentada." };
 }
+
+it("correção para presença recusa conflito com reposição autorizada e preserva a ausência", async () => {
+  const registro = await prisma.registroAulaAluno.findUniqueOrThrow({ where: { id: registroFaltaId } });
+  entrar(secretariaId);
+  const pedido = await solicitarReposicaoIndividual({ aulaOriginalId: encontroId, matriculaId: registro.matriculaId!, modalidade: "GRAVACAO", motivo: "Ausência inicialmente conferida para reposição", evidencia: "Registro de falta original", chaveIdempotencia: "reposicao-origem-corrigida" }); assertOk(pedido);
+  const gestor = await criarUsuario([Papel.GERENTE_PEDAGOGICO]); entrar(gestor.id);
+  assertOk(await decidirReposicaoIndividual({ reposicaoId: pedido.dado.id, aprovar: true, motivo: "Pedido autorizado antes da revisão da chamada" }));
+  const aluno = await prisma.aluno.findUniqueOrThrow({ where: { id: registro.alunoId } });
+  const conta = await prisma.contaPortalAluno.create({ data: { alunoId: aluno.id } });
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: pedido.dado.id, professorId, designadorId: gestor.id, inicio: new Date("2026-01-11T00:00:00Z"), motivo: "Docente designado antes da correção da origem" } });
+  const entrega = await prisma.entregaReposicaoGravacao.create({ data: { reposicaoId: pedido.dado.id, alunoId: aluno.id, contaPortalAlunoId: conta.id, versao: 1, resumo: "Resumo entregue", atividade: "Atividade entregue", evidencia: "Entrega registrada", entregueEm: new Date("2026-01-12T10:00:00Z") } });
+  entrar(professorId); const proposta = await proporCorrecaoAula(entrada(await conferenciaAtual(), "correcao-origem-presente")); assertOk(proposta);
+  entrar(gestor.id); expect(await aprovarCorrecaoAula(await entradaPublicacao(proposta.dado.id))).toMatchObject({ ok: false });
+  expect(await prisma.registroAulaAluno.findUniqueOrThrow({ where: { id: registroFaltaId } })).toMatchObject({ participacao: "FALTA", presente: false });
+  expect(await prisma.reposicaoIndividual.findUniqueOrThrow({ where: { id: pedido.dado.id } })).toMatchObject({ aulaOriginalId: encontroId });
+  expect(await prisma.conclusaoReposicaoIndividual.count({ where: { reposicaoId: pedido.dado.id } })).toBe(0);
+});
 
 it("publicação pública concorrente preserva original, projeta correção e registra uma decisão e evento", async () => {
   const original = await conferenciaAtual();

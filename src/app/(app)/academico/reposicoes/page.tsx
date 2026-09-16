@@ -7,7 +7,7 @@ import { ReposicoesEquipe, SolicitarReposicao } from "@/app/(app)/diario/reposic
 import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntregaReposicao";
 
 export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string }> }) {
-  const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
+  const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const podeOperarEntrega = usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
   const { matriculaId, cursor, origemCursor } = await searchParams;
   return <div className="space-y-5">

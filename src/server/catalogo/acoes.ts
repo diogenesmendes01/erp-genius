@@ -103,6 +103,7 @@ export async function editarModalidade(id: string, input: ModalidadeInput): Prom
     const dados = ModalidadeSchema.parse(input);
     const atual = await prisma.modalidade.findUnique({ where: { id } });
     if (!atual) throw new ErroRegra("Modalidade não encontrada.");
+    if (atual.aulasPorNivel !== dados.aulasPorNivel) throw new ErroRegra("A quantidade de aulas segue revisão conjunta em Acadêmico > Quantidade de aulas da modalidade.");
     await prisma.$transaction(async (tx) => {
       await tx.modalidade.update({
         where: { id },

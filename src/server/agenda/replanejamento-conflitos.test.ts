@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { conferirConflitosReplanejamento } from "./replanejamento-conflitos";
 const p = (id: string, turmaId: string, inicio = "2099-10-01T10:00:00Z", fim = "2099-10-01T11:00:00Z") => ({ encontroId: id, turmaId, professorId: "prof", inicio, fim });
 function banco() {
- const db = { encontroAgenda: { findMany: vi.fn().mockResolvedValue([]) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue([]) }, usuario: { findMany: vi.fn().mockResolvedValue([{id:"prof"}]) } };
+ const db = { encontroAgenda: { findMany: vi.fn().mockResolvedValue([]) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue([]) }, horarioReservaParticular: { findMany: vi.fn().mockResolvedValue([]) }, usuario: { findMany: vi.fn().mockResolvedValue([{id:"prof"}]) } };
  return { db, tx: db as unknown as Prisma.TransactionClient };
 }
 it("detecta professor compartilhado entre turmas e aceita horários consecutivos", async () => {
@@ -19,7 +19,24 @@ it("consulta somente horários que permanecem, mantendo conflitos externos e aus
  expect(db.encontroAgenda.findMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({id:{notIn:["a"]},status:{in:["PREVISTO","MINISTRADO"]}})}));
  expect(r.externos).toEqual([{encontroPropostoId:"a",encontroExistenteId:"particular"}]);
  expect(r.indisponibilidades).toEqual([{encontroId:"a",indisponibilidadeId:"licenca"}]);
- expect(r.reservasConferidas).toBe(false);
+ expect(r.reservasConferidas).toBe(true);
+});
+it("bloqueia reserva ativa ou mantida e consulta ativa somente enquanto vigente", async () => {
+ const {tx,db}=banco();
+ db.horarioReservaParticular.findMany.mockResolvedValue([
+  {id:"horario-ativa",reservaId:"ativa",professorId:"prof",inicio:new Date("2099-10-01T10:15:00Z"),fim:new Date("2099-10-01T10:45:00Z")},
+  {id:"horario-mantida",reservaId:"mantida",professorId:"prof",inicio:new Date("2099-10-01T10:30:00Z"),fim:new Date("2099-10-01T10:50:00Z")},
+ ]);
+ const r=await conferirConflitosReplanejamento(tx,[p("a","t1")]);
+ expect(r.reservas).toEqual([
+  {encontroId:"a",reservaId:"ativa",horarioId:"horario-ativa"},
+  {encontroId:"a",reservaId:"mantida",horarioId:"horario-mantida"},
+ ]);
+ const [consulta] = db.horarioReservaParticular.findMany.mock.calls[0];
+ expect(consulta.where.reserva.OR).toEqual([
+  {status:"MANTIDA_PENDENCIA"},
+  {status:"ATIVA",expiraEm:{gt:expect.any(Date)}},
+ ]);
 });
 it("identifica docente não apto e rejeita intervalo ou identidade inválidos", async () => {
  const {tx,db}=banco(); db.usuario.findMany.mockResolvedValue([]);

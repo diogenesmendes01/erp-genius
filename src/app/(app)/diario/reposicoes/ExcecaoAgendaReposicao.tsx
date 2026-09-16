@@ -1,0 +1,67 @@
+"use client";
+
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { decidirExcecaoAgendaReposicaoIndividual, proporExcecaoAgendaReposicaoIndividual } from "@/server/diario/reposicao-agenda";
+import { montarPropostaExcecaoAgenda, type HorarioExcecaoConferido } from "./ExcecaoAgendaControle";
+
+export type ExcecaoAgenda = {
+  id: string; professor: string; inicio: string; fim: string; fuso: string; motivo: string; evidencia: string;
+  solicitante: string; criadaEm: string; versao: number;
+  decisao: null | { aprovada: boolean; motivo: string; decididaEm: string; decisor: string };
+  podeDecidir: boolean;
+};
+
+export type HorarioExcecaoProposto = HorarioExcecaoConferido;
+
+function formato(data: string, fuso: string) {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(data));
+}
+
+/** Q19: a proposta reaproveita o horário já conferido; nunca aceita identificadores digitados. */
+export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes }: { reposicaoId: string; proposta?: HorarioExcecaoProposto | null; excecoes: ExcecaoAgenda[] }) {
+  const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const [sucesso, setSucesso] = useState(""); const router = useRouter();
+  const chaves = useRef(new Map<string, string>()).current;
+  const propor = (form: HTMLFormElement) => {
+    if (!proposta) return;
+    const dados = new FormData(form);
+    const base = montarPropostaExcecaoAgenda(reposicaoId, proposta, String(dados.get("motivo") ?? ""), String(dados.get("evidencia") ?? ""), "");
+    const identidade = JSON.stringify(base), chaveIdempotencia = chaves.get(identidade) ?? crypto.randomUUID();
+    chaves.set(identidade, chaveIdempotencia);
+    const entrada = { ...base, chaveIdempotencia };
+    iniciar(async () => {
+      setErro(""); setSucesso("");
+      try {
+        const r = await proporExcecaoAgendaReposicaoIndividual(entrada);
+        if (!r.ok) { setErro(r.erro); return; }
+        setSucesso("Exceção proposta para decisão independente. A agenda não foi criada."); router.refresh();
+      } catch { setErro("A proposta não foi confirmada. Consulte a agenda antes de reenviar."); }
+    });
+  };
+  const decidir = (form: HTMLFormElement, excecaoId: string) => {
+    const dados = new FormData(form);
+    iniciar(async () => {
+      setErro(""); setSucesso("");
+      try {
+        const r = await decidirExcecaoAgendaReposicaoIndividual({ excecaoId, aprovar: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") });
+        if (!r.ok) { setErro(r.erro); return; }
+        setSucesso("Decisão registrada. A aprovação não agenda a reposição."); router.refresh();
+      } catch { setErro("A decisão não foi confirmada. Consulte a fila antes de repetir."); }
+    });
+  };
+  return <section className="space-y-3 border-t pt-3" aria-label="Exceções de agenda da reposição">
+    {proposta && <form className="space-y-2 rounded border p-3" onSubmit={e => { e.preventDefault(); propor(e.currentTarget); }}>
+      <h3 className="font-medium">Propor exceção de agenda</h3>
+      <p role="status">O horário não letivo conferido é {proposta.inicioLocal} a {proposta.fimLocal}, no fuso {proposta.fuso}, com {proposta.professor}. A aprovação será de outra pessoa e não agenda a aula.</p>
+      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <button disabled={ocupado} className="rounded border px-3 py-2">{ocupado ? "Enviando…" : "Propor exceção"}</button>
+    </form>}
+    {excecoes.length > 0 && <div className="space-y-3"><h3 className="font-medium">Histórico de exceções de agenda</h3>{excecoes.map(excecao => <article key={excecao.id} className="space-y-2 rounded border p-3">
+      <p><strong>Versão {excecao.versao}:</strong> {excecao.professor}, {formato(excecao.inicio, excecao.fuso)} a {formato(excecao.fim, excecao.fuso)} ({excecao.fuso}).</p>
+      <p>Proposta por {excecao.solicitante} em {formato(excecao.criadaEm, excecao.fuso)}: {excecao.motivo}</p><p className="whitespace-pre-wrap">Evidência: {excecao.evidencia}</p>
+      {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {formato(excecao.decisao.decididaEm, excecao.fuso)}: {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border px-3 py-2">Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
+    </article>)}</div>}
+    {erro && <p role="alert">{erro}</p>}{sucesso && <p role="status">{sucesso}</p>}
+  </section>;
+}

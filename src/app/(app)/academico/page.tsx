@@ -18,6 +18,7 @@ export default async function AcademicoPage({ searchParams }: { searchParams: Pr
     {temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO) && <Link className="text-sm text-brand-700 underline" href="/academico/reposicoes">Reposições individuais de frequência</Link>}
     <Link className="text-sm text-brand-700 underline" href="/academico/indisponibilidades">Indisponibilidades docentes</Link>
     <Link className="text-sm text-brand-700 underline" href="/academico/grades">Grades das turmas</Link>
+    {temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR) && <Link className="text-sm text-brand-700 underline" href="/academico/modalidades/quantidade">Revisar quantidade de aulas da modalidade</Link>}
     <Link className="text-sm text-brand-700 underline" href="/diario/encontros">Encontros e cancelamentos de particulares</Link>
     <Link className="text-sm text-brand-700 underline" href="/academico/calendario">Calendário da escola</Link>
     <Link className="text-sm text-brand-700 underline" href="/academico/admissoes">Janelas de admissão</Link>

@@ -20,11 +20,20 @@ type LinhaCicloAgenda = {
   cancelamentoId: string | null; cancelamentoAutorId: string | null; remarcacaoId: string | null; remarcacaoAutorId: string | null;
 };
 
+type LinhaAutorizacaoExcecao = { reposicaoId: string; id: string; motivo: string; decididaEm: Date };
+type LinhaProfessorAgenda = { id: string; nome: string };
+type LinhaExcecaoAgenda = {
+  reposicaoId: string; id: string; professor: string; inicio: Date; fim: Date; fuso: string; motivo: string; evidencia: string;
+  solicitanteId: string; solicitante: string; criadaEm: Date; versao: number;
+  decisaoId: string | null; aprovada: boolean | null; motivoDecisao: string | null; decididaEm: Date | null; decisor: string | null;
+};
+
 type LinhaOrigem = { aulaOriginalId: string; inicio: Date; fim: Date; fuso: string; turma: string | null; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" };
 
 type LinhaDocente = {
   id: string; matriculaId: string; modalidade: "PARTICULAR" | "GRAVACAO"; aulaOriginalId: string; inicio: Date; fim: Date; fuso: string; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO";
   versaoAnterior: number; entregaId: string | null; entregueEm: Date | null; resumo: string | null; atividade: string | null; evidenciaEntrega: string | null;
+  encontroReposicaoId: string | null; encontroReposicaoInicio: Date | null; encontroReposicaoFim: Date | null; encontroReposicaoFuso: string | null; encontroReposicaoStatus: string | null; participacaoReposicao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null;
 };
 
 
@@ -145,6 +154,46 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
         WHERE a."reposicaoId" IN (${Prisma.join(pagina.map((r) => r.id).length ? pagina.map((r) => r.id) : ["__sem_reposicao__"])})
       `) : [];
       const cicloPorReposicao = new Map(ciclos.map((c) => [c.reposicaoId, c]));
+      const idsPagina = pagina.map((r) => r.id);
+      const [operacao, professores, autorizacoes, excecoesAgenda] = await Promise.all([
+        tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
+        tx.$queryRaw<LinhaProfessorAgenda[]>(Prisma.sql`
+          SELECT id,nome FROM "Usuario" WHERE ativo AND 'PROFESSOR' = ANY(papeis) ORDER BY nome ASC, id ASC
+        `),
+        tx.$queryRaw<LinhaAutorizacaoExcecao[]>(Prisma.sql`
+          SELECT a."reposicaoId" AS "reposicaoId",a.id,a.motivo,decisao."decididaEm" AS "decididaEm"
+          FROM "AutorizacaoExcecaoReposicaoParticular" a
+          JOIN "DecisaoAutorizacaoExcecaoReposicaoParticular" decisao ON decisao."autorizacaoId"=a.id AND decisao.aprovada
+          WHERE a."reposicaoId" IN (${Prisma.join(idsPagina.length ? idsPagina : ["__sem_reposicao__"])})
+          ORDER BY decisao."decididaEm" DESC, a.id DESC
+        `),
+        tx.$queryRaw<LinhaExcecaoAgenda[]>(Prisma.sql`
+          SELECT x."reposicaoId" AS "reposicaoId", x.id, professor.nome AS professor, x.inicio, x.fim,
+            x."fusoOrigem" AS fuso, x.motivo, x.evidencia, x."solicitanteId" AS "solicitanteId",
+            solicitante.nome AS solicitante, x."criadaEm" AS "criadaEm", x.versao,
+            decisao.id AS "decisaoId", decisao.aprovada, decisao.motivo AS "motivoDecisao",
+            decisao."decididaEm" AS "decididaEm", decisor.nome AS decisor
+          FROM "ExcecaoAgendaReposicaoIndividual" x
+          JOIN "Usuario" professor ON professor.id=x."professorId"
+          JOIN "Usuario" solicitante ON solicitante.id=x."solicitanteId"
+          LEFT JOIN "DecisaoExcecaoAgendaReposicaoIndividual" decisao ON decisao."excecaoId"=x.id
+          LEFT JOIN "Usuario" decisor ON decisor.id=decisao."decisorId"
+          WHERE x."reposicaoId" IN (${Prisma.join(idsPagina.length ? idsPagina : ["__sem_reposicao__"])})
+          ORDER BY x."criadaEm" DESC, x.id DESC
+        `),
+      ]);
+      const autorizacoesPorReposicao = new Map<string, LinhaAutorizacaoExcecao[]>();
+      for (const autorizacao of autorizacoes) {
+        const lista = autorizacoesPorReposicao.get(autorizacao.reposicaoId) ?? [];
+        lista.push(autorizacao); autorizacoesPorReposicao.set(autorizacao.reposicaoId, lista);
+      }
+      const excecoesPorReposicao = new Map<string, LinhaExcecaoAgenda[]>();
+      for (const excecao of excecoesAgenda) {
+        const lista = excecoesPorReposicao.get(excecao.reposicaoId) ?? [];
+        lista.push(excecao); excecoesPorReposicao.set(excecao.reposicaoId, lista);
+      }
+      const podeAgendar = matricula.status === "ATIVA" && fresco.papeis.some((papel) => papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR);
+      const podeGerirExcecao = fresco.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR);
       return {
         matricula: { id: matricula.id, codigo: matricula.codigo ?? "Sem código", ativa: matricula.status === "ATIVA" },
         origensElegiveis: paginaOrigens.map((o) => ({ ...o, inicio: o.inicio.toISOString(), fim: o.fim.toISOString() })),
@@ -156,6 +205,17 @@ export async function consultarReposicoesEquipe(input: z.input<typeof porMatricu
           conclusao: r.versaoConclusao === null ? null : { concluida: !!r.concluida, dataResultado: r.dataResultado?.toISOString() ?? null, versao: r.versaoConclusao },
           podeDecidir: matricula.status === "ATIVA" && !r.decisaoId && r.solicitanteId !== usuario.id && fresco.papeis.some((p) => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR),
           cicloAgenda: cicloPorReposicao.get(r.id) ?? null,
+          agendaInicial: r.modalidade === "PARTICULAR" && !!r.aprovada && !cicloPorReposicao.has(r.id) && podeAgendar ? {
+            fuso: operacao?.fusoInstitucional ?? null,
+            professores,
+            autorizacoesExcepcionais: (autorizacoesPorReposicao.get(r.id) ?? []).map((a) => ({ id: a.id, motivo: a.motivo, decididaEm: a.decididaEm.toISOString() })),
+          } : null,
+          excecoesAgenda: (excecoesPorReposicao.get(r.id) ?? []).map((x) => ({
+            id: x.id, professor: x.professor, inicio: x.inicio.toISOString(), fim: x.fim.toISOString(), fuso: x.fuso,
+            motivo: x.motivo, evidencia: x.evidencia, solicitante: x.solicitante, criadaEm: x.criadaEm.toISOString(), versao: x.versao,
+            decisao: x.decisaoId ? { aprovada: !!x.aprovada, motivo: x.motivoDecisao ?? "", decididaEm: x.decididaEm!.toISOString(), decisor: x.decisor ?? "Pessoa autorizada" } : null,
+            podeDecidir: matricula.status === "ATIVA" && !x.decisaoId && x.solicitanteId !== usuario.id && podeGerirExcecao,
+          })),
         })),
         proximoCursor: reposicoes.length > d.limite ? pagina.at(-1)?.id ?? null : null,
         proximoOrigemCursor: origens.length > d.limite ? paginaOrigens.at(-1)?.aulaOriginalId ?? null : null,
@@ -179,6 +239,7 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           original."fusoOrigem" AS fuso, participacao_aula_efetiva(registro.id)::text AS participacao,
           COALESCE((SELECT MAX(c.versao) FROM "ConclusaoReposicaoIndividual" c WHERE c."reposicaoId" = r.id), 0)::int AS "versaoAnterior",
           entrega.id AS "entregaId", entrega."entregueEm" AS "entregueEm", entrega.resumo, entrega.atividade, entrega.evidencia AS "evidenciaEntrega"
+          ,particular.id AS "encontroReposicaoId",particular.inicio AS "encontroReposicaoInicio",particular.fim AS "encontroReposicaoFim",particular."fusoOrigem" AS "encontroReposicaoFuso",particular.status::text AS "encontroReposicaoStatus",registroParticular.participacao::text AS "participacaoReposicao"
         FROM "ReposicaoIndividual" r
         JOIN "DecisaoReposicaoIndividual" decisao ON decisao."reposicaoId" = r.id AND decisao.aprovada = true
         JOIN "Matricula" matricula ON matricula.id = r."matriculaId"
@@ -193,6 +254,14 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
             AND NOT EXISTS (SELECT 1 FROM "CorrecaoConclusaoReposicaoIndividual" correcao WHERE correcao."entregaId" = e.id)
           ORDER BY e.versao DESC LIMIT 1
         ) entrega ON true
+        LEFT JOIN LATERAL (
+          SELECT e.id,e.inicio,e.fim,e."fusoOrigem",e.status FROM "AgendaReposicaoIndividual" agenda
+          JOIN "EncontroAgenda" e ON e.id=agenda."encontroId"
+          WHERE agenda."reposicaoId"=r.id AND e."professorId"=${usuario.id} AND e.status IN ('PREVISTO'::"StatusEncontroAgenda",'MINISTRADO'::"StatusEncontroAgenda")
+          LIMIT 1
+        ) particular ON true
+        LEFT JOIN "AulaDiario" diarioParticular ON diarioParticular."encontroId"=particular.id
+        LEFT JOIN "RegistroAulaAluno" registroParticular ON registroParticular."aulaId"=diarioParticular.id AND registroParticular."matriculaId"=r."matriculaId"
         WHERE COALESCE((
           SELECT CASE WHEN correcao.id IS NOT NULL THEN correcao.concluida ELSE c.concluida END
           FROM "ConclusaoReposicaoIndividual" c
@@ -204,11 +273,10 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           WHERE c."reposicaoId" = r.id ORDER BY c.versao DESC, c.id DESC LIMIT 1
         ), false) = false
           AND (matricula.status = 'ATIVA' OR (matricula.status IN ('PAUSADA', 'ENCERRADA') AND entrega.id IS NOT NULL))
-          AND r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND EXISTS (
-              SELECT 1 FROM "DesignacaoAvaliadorReposicaoIndividual" designacao
-              WHERE designacao."reposicaoId" = r.id AND designacao."professorId" = ${usuario.id}
+          AND ((r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND EXISTS (
+              SELECT 1 FROM "DesignacaoAvaliadorReposicaoIndividual" designacao WHERE designacao."reposicaoId" = r.id AND designacao."professorId" = ${usuario.id}
                 AND designacao.inicio <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AND (designacao.fim IS NULL OR designacao.fim > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
-            )
+            )) OR (r.modalidade = 'PARTICULAR'::"ModalidadeReposicaoIndividual" AND particular.id IS NOT NULL))
           AND (${d.cursor ?? null}::text IS NULL OR (original.inicio, r.id) > (
             SELECT cursorOriginal.inicio, cursor.id FROM "ReposicaoIndividual" cursor
             JOIN "EncontroAgenda" cursorOriginal ON cursorOriginal.id = cursor."aulaOriginalId"
@@ -225,7 +293,7 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           origem: { aulaOriginalId: r.aulaOriginalId, matriculaId: r.matriculaId, participacao: r.participacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fuso: r.fuso, turma: null },
           versaoAnterior: r.versaoAnterior,
           entrega: r.entregaId ? { id: r.entregaId, entregueEm: r.entregueEm!.toISOString(), resumo: r.resumo ?? "", atividade: r.atividade ?? "", evidencia: r.evidenciaEntrega ?? "" } : null,
-          encontros: [],
+          encontros: r.encontroReposicaoId ? [{ id: r.encontroReposicaoId, inicio: r.encontroReposicaoInicio!.toISOString(), fim: r.encontroReposicaoFim!.toISOString(), fuso: r.encontroReposicaoFuso!, status: r.encontroReposicaoStatus!, participacao: r.participacaoReposicao }] : [],
         })),
         proximoCursor: filas.length > d.limite ? pagina.at(-1)?.id ?? null : null,
       };

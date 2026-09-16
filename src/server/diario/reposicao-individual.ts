@@ -184,13 +184,18 @@ export async function concluirReposicaoIndividual(input: z.input<typeof conclusa
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       const r = await reposicaoTx(tx, d.reposicaoId);
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${r.matriculaId} FOR UPDATE`;
-      const matricula = await tx.matricula.findUnique({ where: { id: r.matriculaId }, select: { status: true } });
+      const matricula = await tx.matricula.findUnique({ where: { id: r.matriculaId }, select: { status: true, alunoId: true } });
       if (!matricula) throw new ErroRegra("A matrícula da reposição não existe.");
       // Q36/Q52: pausa ou encerramento bloqueiam novas entregas, não a
       // avaliação docente de uma gravação que já foi registrada pelo aluno.
       // A particular continua exigindo matrícula ativa porque cria/usa um
       // encontro acadêmico individual, não uma fonte já entregue.
       if (r.modalidade === "PARTICULAR" && matricula.status !== "ATIVA") throw new ErroRegra("A conclusão particular exige matrícula ativa.");
+      if (r.modalidade === "GRAVACAO" && !["ATIVA", "PAUSADA", "ENCERRADA"].includes(matricula.status)) throw new ErroRegra("A gravação só pode ser concluída em matrícula ativa, pausada ou encerrada.");
+      const original = await tx.encontroAgenda.findUnique({ where: { id: r.aulaOriginalId }, select: { diario: { select: { registros: { where: { matriculaId: r.matriculaId }, select: { id: true, alunoId: true } } } } } });
+      const registroOriginal = original?.diario?.registros.find((registro) => registro.alunoId === matricula.alunoId);
+      const participacaoOriginal = registroOriginal && await participacaoAulaOriginalEfetivaTx(tx, registroOriginal.id);
+      if (!registroOriginal || !["FALTA", "IMPEDIDO_POR_RESTRICAO"].includes(participacaoOriginal ?? "")) throw new ErroRegra("A ausência original não permite concluir reposição.");
       const [decisao] = await tx.$queryRaw<{ aprovada: boolean }[]>(Prisma.sql`SELECT aprovada FROM "DecisaoReposicaoIndividual" WHERE "reposicaoId" = ${r.id}`);
       if (!decisao?.aprovada) throw new ErroRegra("A reposição precisa de autorização aprovada antes da conclusão.");
       const [ultima] = await tx.$queryRaw<{ versao: number }[]>(Prisma.sql`SELECT versao FROM "ConclusaoReposicaoIndividual" WHERE "reposicaoId" = ${r.id} ORDER BY versao DESC LIMIT 1 FOR UPDATE`);
