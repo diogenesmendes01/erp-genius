@@ -38,6 +38,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- F07.3: 179 aplicada apenas no DEV EMAIL; conferência do integrador comprovou checksum idêntico no arquivo e em `_prisma_migrations` (`4f981b4e5ba918d33ae15c84d2b38567a2ab715620421b4e6518870b3059165d`). Preservar essa versão. TESTER encontrou referência de meta não aprovada, classificação de preservação por meta global e bijeção SQL incompleta entre turmas. DEV corrige código e prepara migração 181, reservada; 180 permanece M01. Não há aceite do fluxo enquanto os casos reais não passarem.
+
 - M01: DEV 2 implementa ensaio e aplicação administrativa de cadastros de alunos com identidade persistente de origem, replay sem duplicação, divergências em conferência e indicação das entidades/campos não aplicados. Migração 180 reservada; não criar matrícula/turma com dados insuficientes nem consentimento presumido. Contratos, vínculos e conciliação permanecem no escopo pendente.
 - F07.3: preflight transacional da 179 passou no banco descartável DEV EMAIL, com rollback e conexão encerrada. Liberada aplicação apenas nesse perfil para testes reais de aprovação/publicação; não equivale a aceite funcional ou revisão SQL completa. TESTER realiza leitura independente enquanto o DEV prepara integração.
 
