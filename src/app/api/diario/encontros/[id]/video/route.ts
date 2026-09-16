@@ -1,6 +1,6 @@
 import { prepararVideoAulaInstitucionalContinuo } from "@/server/gravacoes/aula-institucional";
 import { criarStreamAutorizado } from "@/server/gravacoes/stream-autorizado";
-import { abrirVideoDriveOrganizacional } from "@/server/gravacoes/drive";
+import { abrirVideoRevisaoDrive } from "@/server/gravacoes/drive-revisao-stream";
 import { obterTokenDrive } from "@/server/gravacoes/credenciais";
 import { origemPortalAlunoPermitida } from "@/server/portal-aluno/politica";
 
@@ -24,9 +24,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const { fonte, revalidar } = await prepararVideoAulaInstitucionalContinuo(id);
-    const video = await abrirVideoDriveOrganizacional({
-      fileId: fonte.fileId,
-      driveIdOrganizacao: fonte.driveId,
+    const video = await abrirVideoRevisaoDrive({
+      fonte,
       token: obterTokenDrive,
       range: request.headers.get("range"),
       signal: request.signal,

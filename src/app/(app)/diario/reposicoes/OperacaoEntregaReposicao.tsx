@@ -46,7 +46,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   });
   return <section className="space-y-3 border-t pt-4" aria-label="Material e entregas da reposição gravada">
     <h3 className="font-medium">Material e entregas gravadas</h3>
-    <p className="text-sm">O material usa uma fonte institucional identificada. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
+    <p className="text-sm">O material usa uma revisão institucional registrada; alteração externa não substitui o conteúdo aprovado. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
     {!operacao.material && <button type="button" disabled={ocupado} className="rounded border px-3 py-2" onClick={() => executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, usarGravacaoAulaOriginal: true }))}>Usar gravação da aula original e abrir prazo</button>}
     {!operacao.material ? <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, arquivoOficialId: String(dados.get("arquivoOficialId") ?? "") })); }}>
       <p className="font-medium">Publicar material</p>

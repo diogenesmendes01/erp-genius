@@ -15,6 +15,7 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
     <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/pendencias">Pendências do diário</Link>
     {usuario.papeis.includes(Papel.PROFESSOR) && <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/reposicoes">Fila de reposições individuais</Link>}
     <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/excecoes-gravacao">Exceções de gravação</Link>
+    {usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR) && <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/regularizacoes-gravacao">Regularizações de gravação</Link>}
     <DiarioAulas aulas={historico.aulas} turmas={turmas} />
     <div className="flex gap-4 text-sm text-brand-700">
       {antes && <Link href="/diario">Aulas recentes</Link>}

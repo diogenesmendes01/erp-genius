@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ErroPermissao, exigirSessaoComPapel } from "@/server/_shared";
 import { carregarCorrecaoAulaTx } from "@/server/diario/correcao-aula-tx";
 import { obterDriveOrganizacaoId } from "./credenciais";
+import { resolverFonteRevisaoGravacaoTx } from "./fonte-revisao-tx";
 
 /** Uso exclusivo no servidor. Reutiliza o escopo do histórico do diário;
  * não amplia a atribuição Q24 nem concede acesso a alunos/responsáveis.
@@ -17,9 +18,9 @@ async function autorizarVideoAulaInstitucionalTx(tx: Prisma.TransactionClient, u
   const fonte = contexto.snapshot.gravacao;
   if (fonte?.tipo !== "OFICIAL") throw new ErroPermissao();
   const p = await tx.publicacaoGravacaoAula.findFirst({ where: { id: fonte.publicacaoId, encontroId },
-    select: { arquivoOficialId: true, driveOrganizacaoId: true } });
+    select: { id: true, driveOrganizacaoId: true } });
   if (!p || p.driveOrganizacaoId !== obterDriveOrganizacaoId()) throw new ErroPermissao();
-  return { fileId: p.arquivoOficialId, driveId: p.driveOrganizacaoId };
+  return resolverFonteRevisaoGravacaoTx(tx, { publicacaoAulaId: p.id });
 }
 
 /**
@@ -41,7 +42,7 @@ export async function prepararVideoAulaInstitucionalContinuo(encontroId: string)
     fonte,
     async revalidar(): Promise<void> {
       const atual = await conferir();
-      if (atual.fileId !== fonte.fileId || atual.driveId !== fonte.driveId) throw new ErroPermissao("Vídeo institucional indisponível.");
+      if (atual.fileId !== fonte.fileId || atual.driveId !== fonte.driveId || atual.revisionId !== fonte.revisionId || atual.md5Checksum !== fonte.md5Checksum || atual.size !== fonte.size || atual.mimeType !== fonte.mimeType) throw new ErroPermissao("Vídeo institucional indisponível.");
     },
   };
 }

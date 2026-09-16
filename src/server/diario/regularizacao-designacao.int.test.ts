@@ -1,9 +1,11 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 const { metadataMock, disponibilidadeMock } = vi.hoisted(() => ({ metadataMock: vi.fn(), disponibilidadeMock: vi.fn() }));
+const { tokenPublicacaoMock } = vi.hoisted(() => ({ tokenPublicacaoMock: vi.fn() }));
 vi.mock("@/server/gravacoes/credenciais", () => ({ obterDriveOrganizacaoId: () => "drive-escola", obterTokenDrive: vi.fn() }));
+vi.mock("@/server/gravacoes/credenciais-publicacao", () => ({ obterTokenPublicacaoDrive: tokenPublicacaoMock }));
 vi.mock("@/server/gravacoes/disponibilidade", () => ({ verificarDisponibilidadeGravacaoDrive: disponibilidadeMock }));
-vi.mock("@/server/gravacoes/drive", async original => ({ ...await original<typeof import("@/server/gravacoes/drive")>(), conferirVideoDriveOrganizacional: metadataMock }));
+vi.mock("@/server/gravacoes/drive-revisao", () => ({ fixarRevisaoDriveOrganizacional: metadataMock, consultarRevisaoDriveFixada: metadataMock }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/_shared", async original => {
@@ -34,7 +36,8 @@ const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const entrada = () => ({ encontroId, responsavelId, motivo: "Responsável designado para conferir os registros pendentes.", chaveIdempotencia: "regularizacao-466" });
 
 beforeEach(async () => {
-  metadataMock.mockReset().mockResolvedValue({ fileId: "video-oficial", driveId: "drive-escola", mimeType: "video/mp4" });
+  metadataMock.mockReset().mockResolvedValue({ fileId: "video-oficial", driveId: "drive-escola", revisionId: "revisao-video-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
+  tokenPublicacaoMock.mockReset();
   disponibilidadeMock.mockReset().mockResolvedValue(undefined);
   await truncarBanco(); const c = await seedCatalogoMinimo();
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
@@ -241,12 +244,14 @@ it.each(["sucesso", "sucesso-concorrente", "sucesso-reposicao", "indisponivel", 
   const diario = await salvarAulaDiario({ encontroId, turmaId: e.turmaId!, ocorridaEm: e.inicio.toISOString(), conteudo: "Aula com vídeo institucional",
     registros: [{ alunoId: aluno.id, presente: caso !== "sucesso-reposicao", participacao: caso === "sucesso-reposicao" ? "FALTA" : "PRESENTE" }] });
   if (!diario.ok || !diario.dado) throw new Error(JSON.stringify(diario));
-  if (caso === "indisponivel") disponibilidadeMock.mockRejectedValueOnce(new Error("Vídeo indisponível"));
-  if (caso === "chamada-alterada") disponibilidadeMock.mockImplementationOnce(async () => {
+  if (caso === "indisponivel") metadataMock.mockRejectedValueOnce(new Error("Vídeo indisponível"));
+  if (caso === "chamada-alterada") metadataMock.mockImplementationOnce(async () => {
     await prisma.aulaDiario.update({ where: { id: diario.dado!.id }, data: { conteudo: "Aula alterada durante conferência" } });
+    return { fileId: "video-oficial", driveId: "drive-escola", revisionId: "revisao-video-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" };
   });
-  if (caso === "papel-revogado") disponibilidadeMock.mockImplementationOnce(async () => {
+  if (caso === "papel-revogado") metadataMock.mockImplementationOnce(async () => {
     await prisma.usuario.update({ where: { id: professorId }, data: { ativo: false } });
+    return { fileId: "video-oficial", driveId: "drive-escola", revisionId: "revisao-video-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" };
   });
   const resultados = caso === "sucesso-concorrente" ? await Promise.all([registrarGravacaoAula(entradaVideo), registrarGravacaoAula(entradaVideo)]) : [await registrarGravacaoAula(entradaVideo)];
   const r = resultados[0];
@@ -258,6 +263,7 @@ it.each(["sucesso", "sucesso-concorrente", "sucesso-reposicao", "indisponivel", 
     expect(r).toMatchObject({ ok: true });
     expect(await registrarGravacaoAula(entradaVideo)).toEqual(r);
     expect(metadataMock).toHaveBeenCalledTimes(caso === "sucesso-concorrente" ? 2 : 1);
+    expect(metadataMock).toHaveBeenCalledWith(expect.objectContaining({ token: tokenPublicacaoMock }));
     expect(await prisma.publicacaoGravacaoAula.count()).toBe(1);
     const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
     expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
@@ -303,9 +309,9 @@ it.each(["sucesso", "sucesso-concorrente", "sucesso-reposicao", "indisponivel", 
       expect(await prisma.disponibilizacaoEntregaReposicao.count({ where: { reposicaoId: pedido.dado.id } })).toBe(1);
       expect(await prisma.conclusaoReposicaoIndividual.count({ where: { reposicaoId: pedido.dado.id } })).toBe(0);
     }
-    expect(await autorizarVideoAulaInstitucional(encontroId)).toEqual({ fileId: "video-oficial", driveId: "drive-escola" });
+    expect(await autorizarVideoAulaInstitucional(encontroId)).toMatchObject({ fileId: "video-oficial", driveId: "drive-escola", revisionId: "revisao-video-1" });
     entrar(professorId);
-    expect(await autorizarVideoAulaInstitucional(encontroId)).toEqual({ fileId: "video-oficial", driveId: "drive-escola" });
+    expect(await autorizarVideoAulaInstitucional(encontroId)).toMatchObject({ fileId: "video-oficial", driveId: "drive-escola", revisionId: "revisao-video-1" });
     entrar(responsavelId);
     await expect(autorizarVideoAulaInstitucional(encontroId)).rejects.toThrow();
     entrar(secretariaId);

@@ -34,7 +34,7 @@ export function PublicarGravacao({ encontroId }: { encontroId: string }) {
 
   return <section className="space-y-3 rounded border p-4">
     <h2 className="font-medium">Publicar gravação da aula</h2>
-    {publicada ? <p role="status">Aula concluída com gravação. Consulte o <Link href="/diario" className="text-brand-700 underline">diário</Link>.</p> : <form className="space-y-3" onSubmit={publicar}>
+    {publicada ? <p role="status">Aula concluída com a revisão institucional do vídeo registrada. Alteração externa do arquivo não substitui este vídeo aprovado. Consulte o <Link href="/diario" className="text-brand-700 underline">diário</Link>.</p> : <form className="space-y-3" onSubmit={publicar}>
       <label className="block text-sm">Identificador do arquivo no Drive
         <input value={arquivoOficialId} onChange={(evento) => setArquivoOficialId(evento.target.value)} disabled={ocupado} required minLength={3} maxLength={500} pattern="[A-Za-z0-9_-]+" className="mt-1 block w-full rounded border p-2" />
       </label>

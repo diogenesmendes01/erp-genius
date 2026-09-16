@@ -5,7 +5,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Fila/guard SQL validados; Q166 em implementação | 16/09/2026 | Integração parcial revisada; aceite completo pendente |
-| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Servidor/SQL em teste independente; tela em implementação | 16/09/2026 | Commit 51d4ff8; integração e aceite pendentes |
+| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Servidor/SQL integrado e validado; ajustes da tela em implementação | 16/09/2026 | 51d4ff8 + 7bc0f41 + testes 2466a48; aceite completo pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | EMAIL parcial validado; revisão VIDEO encaminhada ao DEV | 16/09/2026 | Q166 e VIDEO aguardam commits completos |
 
 ## EMAIL — aceite do DEV
@@ -41,6 +41,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Não abrir terceira funcionalidade. Bloqueios externos não devem aparecer como falta de código nem ser ocultados por testes locais.
 
 ## Evidência de base
+
+- Integração VIDEO em 16/09: 102 testes unitários/rotas/SSR e 44 integrações passaram na branch principal de trabalho, com migrações 147/149 no banco descartável `erp_genius_test`; TypeScript e conferência de whitespace passaram. Inclui publicação, reposição e regularização docente. Ajustes incrementais da tela seguem no DEV; não houve homologação externa.
 
 - Rodada de 16/09: integração do worker EMAIL aprovada em 3 cenários (concorrência sem duplicidade, incerteza sem reenvio automático e rotina desligada sem token/transporte), com provedor simulado; TypeScript passou após ajustar o estreitamento do retorno no fixture. Não comprova entrega externa.
 - TESTER validou VIDEO `51d4ff8` + `7bc0f41`: 97 testes unitários/rotas/SSR e 10 integrações; reforços independentes em `2466a48`. Ainda em revisão: paginação da fila, identificação do destino, motivo real de decisão e estabilidade da chave de tentativa na tela. Q166 `523743c` segue em revisão independente, incluindo recuperação assistida Q74 e repetição de decisão após mudança de estado. Nenhuma das duas frentes está encerrada.
