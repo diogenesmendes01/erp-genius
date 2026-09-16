@@ -210,3 +210,4 @@ Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 tes
 
 - M01/DEV: chamada histórica c7fe85b2 validada; frequência por vínculo/nível e projeção do portal ajustadas para vigência importada. Seis regressões de frequência e um teste de importação+frequência passaram. Demais consumidores, interface e revisão independente pendentes; nenhum dado real importado.
 - M01 DEV: 96/96 integrações de lançamentos (193,41 s), 2/2 testes de disponibilidade e TypeScript aprovados após adaptação temporal. Pendência bloqueante SQL186 permanece; nenhum banco recebeu a corretiva.
+- M01/Q161 DEV: corrigida comprovação de oferta por agenda para vínculos importados; 11 testes de unidade aprovados. Não gera cobrança nem confirma oferta com lacuna de vigência.

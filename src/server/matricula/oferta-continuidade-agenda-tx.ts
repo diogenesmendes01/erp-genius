@@ -1,3 +1,5 @@
+import { instanteDaGrade } from "@/server/agenda/grade";
+import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -21,9 +23,9 @@ const civilFimInclusivo = (data: Date, fuso: string) => civil(new Date(data.getT
 export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Prisma.TransactionClient, "alocacaoTurma" | "indisponibilidadeDocente" | "versaoCalendarioEscolar">, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const alocacoes = await tx.alocacaoTurma.findMany({
-    where: { matriculaId: d.matriculaId, ativa: true, criadoEm: { lte: d.inicio }, encerradaEm: null },
+    where: { matriculaId: d.matriculaId, ativa: true, encerradaEm: null, OR: [{ provenienciaVinculo: null, criadoEm: { lte: d.inicio } }, { provenienciaVinculo: "MIGRACAO" }] },
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
-    select: { id: true, turmaId: true, turma: { select: {
+    select: { id: true, turmaId: true, ativa: true, criadoEm: true, encerradaEm: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true, turma: { select: {
       id: true, status: true, dataFim: true,
       propostasGrade: { where: { decisao: { aprovada: true }, calendario: { decisao: { aprovada: true } } }, orderBy: [{ versao: "desc" }, { id: "desc" }], take: 2, select: { id: true, versao: true, calendarioId: true, calendario: { select: { versao: true, fusoInstitucional: true } } } },
       encontrosAgenda: { orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { id: true, inicio: true, fim: true, status: true, finalidade: true, matriculaId: true, propostaGradeId: true, professorId: true, professor: { select: { ativo: true, papeis: true } } } },
@@ -47,6 +49,15 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
   const grade = turma.propostasGrade[0];
   if (!grade) return exigir("GRADE_NAO_PUBLICADA");
   const inicioCivil = d.inicio.toISOString().slice(0, 10), fimCivil = d.fim.toISOString().slice(0, 10), fuso = grade.calendario.fusoInstitucional;
+  if (alocacao.provenienciaVinculo === "MIGRACAO") {
+    // Cobertura é civil no fuso institucional; cadastro/importação não prova vínculo.
+    try {
+      const inicioCobertura = instanteDaGrade(inicioCivil, "00:00", fuso);
+      const proximoDia = new Date(d.fim.getTime() + 86_400_000).toISOString().slice(0, 10);
+      const fimCobertura = new Date(instanteDaGrade(proximoDia, "00:00", fuso).getTime() - 1);
+      if (!alocacaoCobreAula(alocacao, inicioCobertura) || !alocacaoCobreAula(alocacao, fimCobertura)) return exigir("VINCULO_AUSENTE");
+    } catch { return exigir("VINCULO_AUSENTE"); }
+  }
   if (turma.dataFim && civil(turma.dataFim, fuso) < fimCivil) return exigir("TURMA_TERMINA_NO_PERIODO");
   if (!calendarioVigente || calendarioVigente.id !== grade.calendarioId || calendarioVigente.versao !== grade.calendario.versao) return exigir("CALENDARIO_DIVERGENTE");
 
