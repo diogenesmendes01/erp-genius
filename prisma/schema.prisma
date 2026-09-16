@@ -690,6 +690,7 @@ model Usuario {
   propostasRemarcacaoAgendaReposicao PropostaRemarcacaoAgendaReposicaoIndividual[] @relation("AutorRemarcacaoAgendaReposicao")
   decisoesRemarcacaoAgendaReposicao DecisaoRemarcacaoAgendaReposicaoIndividual[] @relation("DecisorRemarcacaoAgendaReposicao")
   remarcacoesAgendaReposicaoDocente PropostaRemarcacaoAgendaReposicaoIndividual[] @relation("ProfessorRemarcacaoAgendaReposicao")
+  lotesPreparacaoMigracao LotePreparacaoMigracao[] @relation("PreparadorLoteMigracao")
 }
 
 // ============================================================
@@ -6283,4 +6284,100 @@ model DecisaoRegularizacaoFonteGravacao {
   aprovada Boolean
   motivo String
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+}
+
+// M01: preparação é uma leitura rastreável da origem. Ela não cria dados
+// acadêmicos, financeiros, de consentimento ou de presença no ERP.
+enum EstadoLotePreparacaoMigracao {
+  PREPARADO
+  COM_PENDENCIAS
+}
+
+enum EstadoLinhaPreparacaoMigracao {
+  PRONTA_PARA_REVISAO
+  COM_PENDENCIAS
+  COLISAO_ORIGEM
+}
+
+model LotePreparacaoMigracao {
+  id String @id @default(cuid())
+  origem String
+  chaveLote String
+  entradaHash String
+  estado EstadoLotePreparacaoMigracao
+  preparadoPorId String
+  preparadoPor Usuario @relation("PreparadorLoteMigracao", fields: [preparadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  linhas LinhaPreparacaoMigracao[]
+  conflitosEntrada ConflitoLinhaPreparacaoMigracao[]
+
+  @@unique([origem, chaveLote], map: "LotePreparacaoMigracao_origem_chave_key")
+  @@index([estado, criadoEm], map: "LotePreparacaoMigracao_estado_criado_idx")
+}
+
+model LinhaPreparacaoMigracao {
+  id String @id @default(cuid())
+  loteId String
+  lote LotePreparacaoMigracao @relation(fields: [loteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  linhaOrigem String
+  alunoOrigemId String?
+  turmaOrigemId String?
+  matriculaOrigemId String?
+  financeiroOrigemId String?
+  dadosOrigem Json
+  entradaHash String
+  estado EstadoLinhaPreparacaoMigracao
+  criadoEm DateTime @default(now())
+  pendencias PendenciaCampoPreparacaoMigracao[]
+  colisoesComoExistente ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemExistenteMigracao")
+  colisoesComoConflitante ColisaoOrigemPreparacaoMigracao[] @relation("LinhaOrigemConflitanteMigracao")
+
+  @@unique([loteId, linhaOrigem], map: "LinhaPreparacaoMigracao_lote_linha_key")
+  @@index([alunoOrigemId], map: "LinhaPreparacaoMigracao_aluno_origem_idx")
+  @@index([turmaOrigemId], map: "LinhaPreparacaoMigracao_turma_origem_idx")
+  @@index([matriculaOrigemId], map: "LinhaPreparacaoMigracao_matricula_origem_idx")
+  @@index([financeiroOrigemId], map: "LinhaPreparacaoMigracao_financeiro_origem_idx")
+}
+
+model PendenciaCampoPreparacaoMigracao {
+  id String @id @default(cuid())
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  campo String
+  codigo String
+  detalhe String
+  criadoEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+
+  @@unique([linhaId, campo, codigo], map: "PendenciaCampoPreparacaoMigracao_linha_campo_codigo_key")
+  @@index([campo], map: "PendenciaCampoPreparacaoMigracao_campo_idx")
+}
+
+model ColisaoOrigemPreparacaoMigracao {
+  id String @id @default(cuid())
+  tipo String
+  identificadorOrigem String
+  linhaExistenteId String
+  linhaExistente LinhaPreparacaoMigracao @relation("LinhaOrigemExistenteMigracao", fields: [linhaExistenteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  linhaConflitanteId String
+  linhaConflitante LinhaPreparacaoMigracao @relation("LinhaOrigemConflitanteMigracao", fields: [linhaConflitanteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadoEm DateTime @default(now())
+
+  @@unique([linhaConflitanteId, tipo, identificadorOrigem], map: "ColisaoOrigemPreparacaoMigracao_conflitante_tipo_id_key")
+  @@index([tipo, identificadorOrigem], map: "ColisaoOrigemPreparacaoMigracao_tipo_id_idx")
+}
+
+// Preserva uma nova tentativa divergente sem reescrever a linha imutável do lote.
+model ConflitoLinhaPreparacaoMigracao {
+  id String @id @default(cuid())
+  loteId String
+  lote LotePreparacaoMigracao @relation(fields: [loteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  linhaOrigem String
+  entradaHash String
+  codigo String
+  dadosConflitantes Json
+  criadoEm DateTime @default(now())
+
+  @@unique([loteId, linhaOrigem, entradaHash], map: "ConflitoLinhaPreparacaoMigracao_lote_linha_hash_key")
+  @@index([loteId, criadoEm], map: "ConflitoLinhaPreparacaoMigracao_lote_criado_idx")
 }

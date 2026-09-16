@@ -8,7 +8,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 1 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
-| M01 — preparação rastreável de migração | DEV 2 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; lote/prévia/pendências; não equivale à carga final |
+| M01 — preparação operacional de migração | DEV 2 Terra | Preparação implementada; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
 
 ## EMAIL — aceite do DEV
 

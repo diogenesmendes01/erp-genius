@@ -1,0 +1,33 @@
+import { describe, expect, it } from "vitest";
+import { EntradaPrepararLoteMigracao, estadoDaLinha, pendenciasDaLinha } from "./preparacao";
+
+const cadastroCompleto = { linhaOrigem: "alunos!2", tipoEntrada: "CADASTRO" as const, aluno: { id: "aluno-1", nome: "Ana Lima", email: "ana@example.test", documento: "DOC-1", pais: "BR", fuso: "America/Sao_Paulo" }, dadosAdicionais: { observacao: "fonte preservada" } };
+
+describe("preparação de migração", () => {
+  it("preserva duas linhas legíveis quando uma célula é inválida e não transfere sua pendência", () => {
+    const entrada = EntradaPrepararLoteMigracao.parse({ origem: "OPERACIONAL_LETICIA", chaveLote: "fixture-celulas-1", linhas: [{ ...cadastroCompleto, linhaOrigem: "alunos!1", aluno: { ...cadastroCompleto.aluno, email: "invalido" } }, cadastroCompleto] });
+    const [ruim, boa] = entrada.linhas.map(pendenciasDaLinha);
+    expect(ruim).toEqual(expect.arrayContaining([expect.objectContaining({ campo: "aluno.email", codigo: "EMAIL_INVALIDO" })]));
+    expect(estadoDaLinha(ruim)).toBe("COM_PENDENCIAS");
+    expect(boa).toEqual([]);
+    expect(estadoDaLinha(boa)).toBe("PRONTA_PARA_REVISAO");
+    expect(entrada.linhas[0].aluno?.email).toBe("invalido");
+  });
+
+  it("preserva valor financeiro inválido como origem e o apresenta como pendência", () => {
+    const linha = EntradaPrepararLoteMigracao.parse({ origem: "OPERACIONAL_LETICIA", chaveLote: "fixture-financeiro-1", linhas: [{ linhaOrigem: "financeiro!3", tipoEntrada: "FINANCEIRO_HISTORICO", aluno: cadastroCompleto.aluno, financeiro: { id: "f-1", valor: "12,3x", moeda: "br", situacao: "pago?" }, dadosAdicionais: {} }] }).linhas[0];
+    const pendencias = pendenciasDaLinha(linha);
+    expect(pendencias.map((p) => p.codigo)).toEqual(expect.arrayContaining(["VALOR_FINANCEIRO_INVALIDO", "MOEDA_FINANCEIRA_INVALIDA", "SITUACAO_FINANCEIRA_NAO_CONFIRMADA"]));
+    expect(linha.financeiro?.valor).toBe("12,3x");
+  });
+
+  it("recusa somente envelopes sem linha estável ou com colunas desconhecidas fora de dadosAdicionais", () => {
+    expect(() => EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [{ tipoEntrada: "CADASTRO" }] })).toThrow();
+    expect(() => EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [{ ...cadastroCompleto, colunaPerdida: "x" }] })).toThrow();
+    expect(EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [{ ...cadastroCompleto, dadosAdicionais: { colunaPerdida: "x" } }] }).linhas[0].dadosAdicionais.colunaPerdida).toBe("x");
+  });
+
+  it("não exige consentimento ou presença de uma linha cadastral simples", () => {
+    expect(pendenciasDaLinha(EntradaPrepararLoteMigracao.parse({ origem: "ORIGEM", chaveLote: "lote", linhas: [cadastroCompleto] }).linhas[0]).map((p) => p.campo)).not.toEqual(expect.arrayContaining(["consentimento", "presenca"]));
+  });
+});

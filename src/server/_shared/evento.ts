@@ -42,7 +42,8 @@ export type AgregadoTipo =
   // Fase comercial (doc 27): config de automação comercial (auto-lead + saudação) e a
   // régua comercial editável (lead-novo e demais cadências).
   | "ConfigComercial"
-  | "PoliticaComercial";
+  | "PoliticaComercial"
+  | "LotePreparacaoMigracao";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
