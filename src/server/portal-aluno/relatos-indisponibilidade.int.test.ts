@@ -33,9 +33,15 @@ async function prepararReposicao(reposicaoId: string, donoMatriculaId: string, d
   await prisma.$executeRaw(Prisma.sql`INSERT INTO "DecisaoReposicaoIndividual" (id,"reposicaoId","decisorId",aprovada,motivo) VALUES (${`decisao-${reposicaoId}`},${reposicaoId},${gestorId},true,'Aprovação independente')`);
   const materialId = `material-${reposicaoId}`;
   await prisma.$executeRaw(Prisma.sql`
-    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId",disponivel,"publicadoPorId","publicadoEm")
-    VALUES (${materialId},${reposicaoId},'GOOGLE_DRIVE',${`drive-${reposicaoId}`},true,${secretariaId},${utc(new Date())})
+    INSERT INTO "MaterialReposicaoGravacao" (id,"reposicaoId",provedor,"arquivoOficialId","driveOrganizacaoId","driveRevisionId","driveRevisionMd5","driveRevisionSize","mimeType",disponivel,"publicadoPorId","publicadoEm")
+    VALUES (${materialId},${reposicaoId},'GOOGLE_DRIVE',${`drive-${reposicaoId}`},'drive-escola',${`revisao-${reposicaoId}`},${"a".repeat(32)},10,'video/mp4',true,${secretariaId},${utc(new Date())})
   `);
+  await prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: "MATERIAL_REPOSICAO", materialReposicaoId: materialId, versao: 1,
+    arquivoOficialId: `drive-${reposicaoId}`, driveOrganizacaoId: "drive-escola",
+    driveRevisionId: `revisao-${reposicaoId}`, driveRevisionMd5: "a".repeat(32),
+    driveRevisionSize: 10n, mimeType: "video/mp4",
+  } });
   if (publicada) await prisma.$executeRaw(Prisma.sql`
     INSERT INTO "DisponibilizacaoEntregaReposicao" (id,"reposicaoId","materialId","disponibilizadaEm","prazoBaseMinutos","prazoInicialAte","publicadaPorId")
     VALUES (${`disp-${reposicaoId}`},${reposicaoId},${materialId},${utc(new Date("2026-09-01T10:00:00.000Z"))},120,${utc(new Date("2026-09-01T12:00:00.000Z"))},${secretariaId})

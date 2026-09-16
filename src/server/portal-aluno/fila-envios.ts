@@ -14,6 +14,7 @@ export type ItemFilaEnviosPortalAluno = {
   situacao: "PREPARADO" | "CANCELADO" | "ENVIADO" | "FALHOU" | "INCERTO";
   criadoEm: Date;
   atualizadoEm: Date;
+  conciliacao: null | { id: string; estadoHash: string; evidencia: string; versao: number; decisao: null | { aprovada: boolean; solicitacaoReemitidaId: string | null } };
 };
 
 export type FilaEnviosPortalAluno = {
@@ -46,6 +47,7 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
           criadoEm: true,
           atualizadoEm: true,
           conta: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } },
+          conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, decisao: { select: { aprovada: true, solicitacaoReemitidaId: true } } } },
         },
       });
       const itens = registros.slice(0, 20).map((registro) => ({
@@ -55,6 +57,7 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
         situacao: registro.situacao,
         criadoEm: registro.criadoEm,
         atualizadoEm: registro.atualizadoEm,
+        conciliacao: registro.conciliacoes[0] ? { ...registro.conciliacoes[0], decisao: registro.conciliacoes[0].decisao } : null,
       })) satisfies ItemFilaEnviosPortalAluno[];
       return {
         itens,

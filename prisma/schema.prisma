@@ -439,6 +439,8 @@ model Usuario {
 
   solicitacoesTrocaEmailPortalPreparadas SolicitacaoTrocaEmailPortalAluno[] @relation("PreparadorTrocaEmailPortal")
   decisoesTrocaEmailPortal DecisaoTrocaEmailPortalAluno[] @relation("DecisorTrocaEmailPortal")
+  conciliacoesEnvioPortalRegistradas ConciliacaoEnvioPortalAluno[] @relation("SecretariaConciliacaoEnvioPortal")
+  decisoesReemissaoEnvioPortal DecisaoReemissaoEnvioPortalAluno[] @relation("DecisorReemissaoEnvioPortal")
 
   reposicoesConcluidas ConclusaoReposicaoIndividual[] @relation("ConcluidorReposicao")
   reposicoesSolicitadas ReposicaoIndividual[] @relation("SolicitanteReposicao")
@@ -5368,11 +5370,48 @@ model SolicitacaoEnvioPortalAluno {
   trocaEmailId    String?
   trocaEmail SolicitacaoTrocaEmailPortalAluno? @relation(fields: [trocaEmailId], references: [id], onDelete: Restrict)
   situacao        SituacaoEnvioPortalAluno @default(PREPARADO)
+  conciliacoes    ConciliacaoEnvioPortalAluno[]
+  reemitidaPor    DecisaoReemissaoEnvioPortalAluno? @relation("ReemissaoEnvioPortal")
   chave            String @unique
   criadoEm        DateTime @default(now())
   atualizadoEm    DateTime @default(now()) @updatedAt
 
   @@index([situacao, criadoEm], map: "SolicitacaoEnvioPortalAluno_situacao_criada_idx")
+}
+
+enum ResultadoConciliacaoEnvioPortalAluno {
+  SEM_COMPROVACAO
+}
+
+model ConciliacaoEnvioPortalAluno {
+  id String @id @default(cuid())
+  solicitacaoId String
+  versao Int
+  solicitacao SolicitacaoEnvioPortalAluno @relation(fields: [solicitacaoId], references: [id], onDelete: Restrict)
+  secretariaId String
+  secretaria Usuario @relation("SecretariaConciliacaoEnvioPortal", fields: [secretariaId], references: [id], onDelete: Restrict)
+  resultado ResultadoConciliacaoEnvioPortalAluno @default(SEM_COMPROVACAO)
+  evidencia String
+  estadoHash String
+  versaoConta Int
+  criadaEm DateTime @default(now())
+  decisao DecisaoReemissaoEnvioPortalAluno?
+  @@unique([solicitacaoId, versao])
+  @@index([solicitacaoId, versao])
+}
+
+model DecisaoReemissaoEnvioPortalAluno {
+  id String @id @default(cuid())
+  conciliacaoId String @unique
+  conciliacao ConciliacaoEnvioPortalAluno @relation(fields: [conciliacaoId], references: [id], onDelete: Restrict)
+  decisorId String
+  decisor Usuario @relation("DecisorReemissaoEnvioPortal", fields: [decisorId], references: [id], onDelete: Restrict)
+  aprovada Boolean
+  motivo String
+  estadoHash String
+  solicitacaoReemitidaId String? @unique
+  solicitacaoReemitida SolicitacaoEnvioPortalAluno? @relation("ReemissaoEnvioPortal", fields: [solicitacaoReemitidaId], references: [id], onDelete: Restrict)
+  decididaEm DateTime @default(now())
 }
 
 model SolicitacaoTrocaEmailPortalAluno {
