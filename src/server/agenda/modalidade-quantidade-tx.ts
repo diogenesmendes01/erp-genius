@@ -7,6 +7,7 @@ import { GradeEncontrosSchema } from "./grade";
 import { conferirConflitosReplanejamento } from "./replanejamento-conflitos";
 import { proporReplanejamentoGrade } from "./replanejamento-grade";
 import { preverImpactoQuantidadeAulas } from "./modalidade-quantidade-preview";
+import { diasPorSemanaDaFrequencia } from "@/server/turmas/schema";
 
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 const origemGrade = z.object({ origem: GradeEncontrosSchema.pick({ dataInicial: true, diasSemana: true, horario: true, duracaoMinutos: true }).passthrough() }).passthrough();
@@ -68,7 +69,13 @@ export async function carregarPreviaQuantidadeAulasTx(tx: Prisma.TransactionClie
         else {
           const o = origem.data.origem;
           const quantidadeSnapshot = typeof o.quantidadeAulas === "number" ? o.quantidadeAulas : modalidade.aulasPorNivel;
-          if (quantidadeSnapshot !== modalidade.aulasPorNivel || o.duracaoMinutos !== modalidade.horasAula * 60) excecoesQ37.push(proposta.id);
+          const frequenciaDaOrigem = typeof o.frequencia === "string" ? o.frequencia : null;
+          const frequenciaPadrao = diasPorSemanaDaFrequencia(modalidade.frequencia);
+          const diasDaOrigem = new Set(o.diasSemana).size;
+          // A aplicação de quantidade reutiliza exatamente a grade já aprovada
+          // da turma. Duração ou frequência particular são uma exceção Q37
+          // visível, não autorização para reverter ao padrão da modalidade.
+          if (quantidadeSnapshot !== modalidade.aulasPorNivel || o.duracaoMinutos !== modalidade.horasAula * 60 || frequenciaDaOrigem !== modalidade.frequencia || diasDaOrigem !== frequenciaPadrao) excecoesQ37.push(proposta.id);
           try { previsao = proporReplanejamentoGrade({ agora: agora.toISOString(), quantidadeAulasAlvo: base.quantidadeNova,
             grade: { dataInicial: o.dataInicial, diasSemana: o.diasSemana, horario: o.horario, duracaoMinutos: o.duracaoMinutos,
               fusoOrigem: proposta.fusoOrigem, fusoEscola: calendario.fusoInstitucional, periodos },
