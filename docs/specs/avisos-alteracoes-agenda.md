@@ -1,6 +1,6 @@
 # SPEC-ACA-N01 — Avisos de alterações da agenda
 
-Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos globais e diagnósticos de configuração/contato incorporados até `67a1e3d9`, com revisão independente, testes dirigidos e build aprovados. A reconferência operacional para encerrar pendências corrigidas ainda está em implementação; a existência do helper interno de resolução não fecha esse caminho da equipe. A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
+Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos globais e diagnósticos de configuração/contato incorporados até `67a1e3d9`, com revisão independente, testes dirigidos e build aprovados. A reconferência operacional está integrada até `188a13d3`: a equipe registra motivo e o servidor revalida matrícula, vínculo histórico, destinatários congelados, autorizações e configuração aplicável antes de encerrar a pendência. Não reemite avisos incertos nem realiza transporte. Revisão independente em `f090b498`: 2 arquivos/7 integrações aprovadas; TypeScript aprovado no principal. Build da integração aprovado na sessão 6170 (compilação, TypeScript e 79 páginas). A fila persiste intenções de aviso; aceite do provedor não comprova entrega, leitura ou ciência pelo aluno. O transporte automático permanece desligado até configuração e homologação próprias.
 
 ## Escopo
 

@@ -7,7 +7,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
-| N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos integrados; reconferência operacional das pendências em implementação | 16/09/2026 | Até 67a1e3d9; testes dirigidos, revisão independente e build aprovados; sem envio real |
+| N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e avisos globais integrados; quantidade de aulas da modalidade em implementação | 16/09/2026 | Base a8adfec6; Q41/Q42/Q43 ainda não concluídas |
 
@@ -37,6 +37,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- Reconferência N01 integrada até `188a13d3`: TESTER no commit `f090b498` executou 2 arquivos/7 integrações aprovadas (13,20 s), preservando os testes que antes expunham matrícula pausada e vínculo encerrado. Revisão independente sem defeito adicional; TypeScript no principal passou na sessão 93417. Correção incremental do formulário libera o estado ocupado mesmo após falha inesperada. Sem transporte externo; build da integração passou na sessão 6170, incluindo compilação, TypeScript e 79 páginas.
 
 - Reconferência N01: correção DEV `263bdd87` preparada no TESTER como `f090b498`, preservando os seis testes adversariais independentes. DEV informou 7/7 integrações e TypeScript aprovados; validação independente do novo commit em execução. A correção revalida matrícula ativa, vínculo histórico, destinatário congelado e autorização vigente, sem reenviar resultados incertos. Ainda não integrada no principal.
 
