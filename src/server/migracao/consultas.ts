@@ -23,9 +23,9 @@ export async function consultarLotesPreparacaoMigracao(input: { cursor?: string 
       await adminFrescoTx(tx, sessao.id);
       const lotes = await tx.lotePreparacaoMigracao.findMany({
         ...(dados.cursor ? { where: { id: { gt: dados.cursor } } } : {}), orderBy: { id: "asc" }, take: 21,
-        select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, _count: { select: { linhas: true, conflitosEntrada: true } }, linhas: { select: { _count: { select: { pendencias: true, colisoesComoConflitante: true } } } } },
+        select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, _count: { select: { linhas: true, conflitosEntrada: true } }, linhas: { select: { _count: { select: { pendencias: true } }, colisoesComoConflitante: { select: { id: true } }, colisoesComoExistente: { select: { id: true } } } } },
       });
-      const pagina = lotes.slice(0, 20).map((lote) => ({ id: lote.id, origem: lote.origem, chaveLote: lote.chaveLote, estado: lote.estado, criadoEm: lote.criadoEm, preparadoPorNome: lote.preparadoPor.nome, linhas: lote._count.linhas, pendencias: lote.linhas.reduce((total, linha) => total + linha._count.pendencias, 0), colisoes: lote.linhas.reduce((total, linha) => total + linha._count.colisoesComoConflitante, 0), conflitosEntrada: lote._count.conflitosEntrada }));
+      const pagina = lotes.slice(0, 20).map((lote) => ({ id: lote.id, origem: lote.origem, chaveLote: lote.chaveLote, estado: lote.estado, criadoEm: lote.criadoEm, preparadoPorNome: lote.preparadoPor.nome, linhas: lote._count.linhas, pendencias: lote.linhas.reduce((total, linha) => total + linha._count.pendencias, 0), colisoes: new Set(lote.linhas.flatMap((linha) => [...linha.colisoesComoConflitante, ...linha.colisoesComoExistente].map((colisao) => colisao.id))).size, conflitosEntrada: lote._count.conflitosEntrada }));
       return { itens: pagina, proximoCursor: lotes.length > 20 ? pagina.at(-1)!.id : null } satisfies ConsultaLotesPreparacaoMigracao;
     });
   });
@@ -36,7 +36,22 @@ export async function consultarLotePreparacaoMigracao(loteId: string) {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     return prisma.$transaction(async (tx) => {
       await adminFrescoTx(tx, sessao.id);
-      return tx.lotePreparacaoMigracao.findUnique({ where: { id: z.string().min(1).max(100).parse(loteId) }, select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, conflitosEntrada: { orderBy: { criadoEm: "asc" }, select: { linhaOrigem: true, codigo: true, criadoEm: true } }, linhas: { orderBy: { linhaOrigem: "asc" }, select: { id: true, linhaOrigem: true, alunoOrigemId: true, turmaOrigemId: true, matriculaOrigemId: true, financeiroOrigemId: true, estado: true, pendencias: { orderBy: [{ campo: "asc" }, { codigo: "asc" }], select: { campo: true, codigo: true, detalhe: true } }, colisoesComoConflitante: { select: { tipo: true, identificadorOrigem: true, linhaExistente: { select: { linhaOrigem: true } } } } } } } });
+      const id = z.string().min(1).max(100).parse(loteId);
+      const lote = await tx.lotePreparacaoMigracao.findUnique({ where: { id }, select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, conflitosEntrada: { orderBy: { criadoEm: "asc" }, select: { linhaOrigem: true, codigo: true, entradaHash: true, dadosConflitantes: true, criadoEm: true } }, linhas: { orderBy: { linhaOrigem: "asc" }, select: { id: true, linhaOrigem: true, alunoOrigemId: true, turmaOrigemId: true, matriculaOrigemId: true, financeiroOrigemId: true, dadosOrigem: true, entradaHash: true, estado: true, pendencias: { orderBy: [{ campo: "asc" }, { codigo: "asc" }], select: { campo: true, codigo: true, detalhe: true } }, colisoesComoConflitante: { select: { id: true, tipo: true, identificadorOrigem: true, linhaExistente: { select: { linhaOrigem: true } } } }, colisoesComoExistente: { select: { id: true, tipo: true, identificadorOrigem: true, linhaConflitante: { select: { linhaOrigem: true } } } } } } } });
+      if (!lote) return null;
+      const eventos = await tx.evento.findMany({ where: { agregadoTipo: "LotePreparacaoMigracao", agregadoId: id, tipo: "ConflitoPreparacaoMigracaoRegistrado" }, select: { criadoEm: true, autor: { select: { nome: true } }, payload: true } });
+      const autorPorHash = new Map<string, { nome: string | null; criadoEm: Date }>();
+      for (const evento of eventos) {
+        const conflitos = (evento.payload as { conflitos?: unknown } | null)?.conflitos;
+        if (!Array.isArray(conflitos)) continue;
+        for (const conflito of conflitos) if (conflito && typeof conflito === "object" && typeof (conflito as { entradaHash?: unknown }).entradaHash === "string") autorPorHash.set((conflito as { entradaHash: string }).entradaHash, { nome: evento.autor?.nome ?? null, criadoEm: evento.criadoEm });
+      }
+      return { ...lote, conflitosEntrada: lote.conflitosEntrada.map((conflito) => ({ ...conflito, registradoPorNome: autorPorHash.get(conflito.entradaHash)?.nome ?? null, registradoEm: autorPorHash.get(conflito.entradaHash)?.criadoEm ?? conflito.criadoEm })), linhas: lote.linhas.map((linha) => {
+        const colisoes = new Map<string, { tipo: string; identificadorOrigem: string; outraLinhaOrigem: string }>();
+        for (const colisao of linha.colisoesComoConflitante) colisoes.set(colisao.id, { tipo: colisao.tipo, identificadorOrigem: colisao.identificadorOrigem, outraLinhaOrigem: colisao.linhaExistente.linhaOrigem });
+        for (const colisao of linha.colisoesComoExistente) colisoes.set(colisao.id, { tipo: colisao.tipo, identificadorOrigem: colisao.identificadorOrigem, outraLinhaOrigem: colisao.linhaConflitante.linhaOrigem });
+        return { ...linha, colisoes: [...colisoes.values()] };
+      }) };
     });
   });
 }
