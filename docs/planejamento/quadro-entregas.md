@@ -42,6 +42,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Evidência de base
 
+- Q166 integrada até `d0afd53`, com testes independentes `43c579b`/`a351a5d`: 45 unitários, TypeScript e lint passaram. A suíte ampliada do portal teve 63/66 aprovados; os três erros vinham do fixture antigo de gravação sem fonte fixa. Após atualizar esse fixture para a publicação vigente, seus 9/9 testes passaram. Nenhuma proteção foi afrouxada. Interface Q166 segue em ajuste: evidência visível ao aprovador e feedback de cada operação; a frente ainda não está concluída.
+
 - Paginação VIDEO integrada até `63811e4`: alvos e propostas têm limites e cursores, incluindo término independente de cada lista; contexto mostra matrícula/aluno e data da aula. Decisão exige motivo informado e a interface respeita `podeDecidir` por proposta. Na integração passaram 107 testes do recorte, TypeScript e lint. Testes independentes foram preservados e os cenários assimétricos ficaram em arquivo próprio; revisão final do TESTER ainda em conferência.
 
 - Q166: corretivas 152/153 no DEV EMAIL. P3015 da 153 foi causado por arquivo Windows-1252 inválido para UTF-8; integrador confirmou os bytes, converteu antes da aplicação e executou deploy Prisma com sucesso no banco exclusivo DEV. Migrações aplicadas permanecem preservadas. Teste de codificação dos SQL foi acrescentado e passou na integração; testes funcionais da Q166 continuam no DEV/TESTER.

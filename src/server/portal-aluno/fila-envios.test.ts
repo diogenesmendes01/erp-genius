@@ -19,6 +19,7 @@ const linha = (id: string) => ({
   destinatario: "segredo@example.test",
   chave: "chave-interna",
   conta: { aluno: { primeiroNome: "Ana", sobrenome: "Silva", email: "nao-expor@example.test" } },
+  conciliacoes: [],
 });
 
 beforeEach(() => {
@@ -42,7 +43,7 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect(resultado.dado.proximoCursor).toBe("19");
     expect(resultado.dado.itens[0]).toEqual({
       id: "00", alunoNome: "Ana Silva", finalidade: "CONVITE", situacao: "PREPARADO",
-      criadoEm: new Date("2026-09-16T10:00:00.000Z"), atualizadoEm: new Date("2026-09-16T11:00:00.000Z"),
+      criadoEm: new Date("2026-09-16T10:00:00.000Z"), atualizadoEm: new Date("2026-09-16T11:00:00.000Z"), conciliacao: null,
     });
     expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: "asc" }, take: 21 }));
     expect(JSON.stringify(resultado.dado)).not.toMatch(/segredo@example|nao-expor@example|chave-interna|token|link/i);

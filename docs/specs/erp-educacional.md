@@ -352,6 +352,8 @@ Q72/Q73/Q78 permanecem parcialmente entregues: faltam tela da fila, resolução 
 
 ### Q166 — resolução dos e-mails de acesso com resultado incerto (16/09/2026)
 
+Implementação local: conferências versionadas e decisão administrativa independente, com revalidação no servidor e SQL, revogação do token anterior e nova intenção de envio vinculada. Recuperação assistida Q74 permanece permitida nas condições aprovadas, e repetir uma decisão aplicada conserva o resultado. Migrações 148/150–153 preservam a evolução aplicada. O fechamento operacional depende dos ajustes da interface registrados no quadro; homologação externa permanece separada.
+
 Decisão aprovada: Secretaria registra a evidência consultada; Administração autoriza nova emissão quando necessária. Preservar tentativa anterior e histórico; não inferir entrega, aceitação ou falha sem comprovação. Nova emissão exige autorização administrativa independente conforme INV-07, destinatário e estado da conta válidos, novo token e revogação do anterior. Repetição/concorrência não duplica a emissão autorizada. Regras de contato, identidade e troca de e-mail permanecem aplicáveis; decisão de transporte não altera titularidade da conta.
 
 ### Integração da fila e proteção do convite
