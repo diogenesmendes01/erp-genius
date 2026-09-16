@@ -22,7 +22,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { prepararLoteMigracao } from "./acoes";
 
 let adminId = "", operadorId = "", linhaId = "", linhaCadastroId = "", entradaHash = "", entradaCadastroHash = "", origem = "MIGRACAO_TESTE";
-let produtoId = "", paisId = "", turmaId = "", alunoId = "", moeda = "";
+let produtoId = "", paisId = "", paisCodigo = "", turmaId = "", alunoId = "", moeda = "";
 const hash = "a".repeat(64), contexto = "b".repeat(64);
 const snapshotValido = (id: string, entrada: string, contextoHash: string) => JSON.stringify({ linhaId: id, entradaHash: entrada, contextoHash, correspondencias: { produto: null, turma: null, status: null } });
 
@@ -34,7 +34,7 @@ async function inserirMapas(ativa = true) {
 
 beforeEach(async () => {
   await truncarBanco();
-  const catalogo = await seedCatalogoMinimo(); produtoId = catalogo.produto.id; paisId = catalogo.pais.id;
+  const catalogo = await seedCatalogoMinimo(); produtoId = catalogo.produto.id; paisId = catalogo.pais.id; paisCodigo = catalogo.pais.codigoISO;
   const oferta = await prisma.produtoPais.findUniqueOrThrow({ where: { produtoId_paisId: { produtoId, paisId } } }); moeda = oferta.moeda;
   await prisma.produtoPais.update({ where: { id: oferta.id }, data: { oferecido: true } });
   adminId = (await criarUsuario([Papel.ADMINISTRADOR])).id;
@@ -44,7 +44,7 @@ beforeEach(async () => {
   turmaId = (await prisma.turma.create({ data: { modalidadeId: catalogo.modalidade.id, nivelId, professorId, status: "ABERTA", diasSemana: [1], horarioInicio: "10:00", dataInicio: new Date("2099-01-01") } })).id;
   alunoId = (await prisma.aluno.create({ data: { primeiroNome: "Ana", paisId, email: "ana@example.test" } })).id;
   authMock.mockResolvedValue({ user: { id: adminId } });
-  const preparado = await prepararLoteMigracao({ origem, chaveLote: "vinculos-183", linhas: [{ linhaOrigem: "vinculos!2", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "aluno-legado", nome: "Ana", email: "ana@example.test", documento: "DOC", pais: "BR", fuso: "UTC" }, turma: { id: "turma-legada", codigo: "T", nome: "Turma" }, matricula: { id: "matricula-legada", situacao: "ATIVA", inicio: "2026-01-01", fim: "2026-12-01", produtoOrigem: "oferta-legada", moeda, pais: "BR" }, alocacao: { inicio: "2026-01-01", fim: "2026-12-01" }, consentimentoOrigem: "evidência legada preservada", dadosAdicionais: {} }] });
+  const preparado = await prepararLoteMigracao({ origem, chaveLote: "vinculos-183", linhas: [{ linhaOrigem: "vinculos!2", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "aluno-legado", nome: "Ana", email: "ana@example.test", documento: "DOC", pais: paisCodigo, fuso: "UTC" }, turma: { id: "turma-legada", codigo: "T", nome: "Turma" }, matricula: { id: "matricula-legada", situacao: "ATIVA", inicio: "2026-01-01", fim: "2026-12-01", produtoOrigem: "oferta-legada", moeda, pais: paisCodigo }, alocacao: { inicio: "2026-01-01", fim: "2026-12-01" }, consentimentoOrigem: "evidência legada preservada", dadosAdicionais: {} }] });
   if (!preparado.ok || !preparado.dado) throw new Error("preparo ausente");
   await prepararLoteMigracao({ origem, chaveLote: "cadastro-183", linhas: [{ linhaOrigem: "cadastro!2", tipoEntrada: "CADASTRO", aluno: { id: "cadastro-legado", nome: "Bia", email: "bia@example.test", documento: "DOC2", pais: "BR", fuso: "UTC" }, dadosAdicionais: {} }] });
   const linha = await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { tipoEntrada: "VINCULO_MATRICULA" } }); linhaId = linha.id; entradaHash = linha.entradaHash;
