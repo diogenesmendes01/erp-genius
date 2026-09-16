@@ -3,6 +3,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
+import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { conferirSubstituicaoTx } from "./substituicao-conferencia";
 
 export async function decidirSubstituicaoDocente(input: { propostaId: string; aprovar: boolean; motivo: string }) {
@@ -30,8 +31,17 @@ export async function decidirSubstituicaoDocente(input: { propostaId: string; ap
         if (atualizados.count !== p.itens.length) throw new ErroRegra("A agenda mudou durante a conferência. Revise a proposta.");
       }
       const decisao = await tx.decisaoSubstituicaoDocente.create({ data: { propostaId: p.id, decisorId: autor.id, aprovada: d.aprovar, motivo: d.motivo } });
-      await registrarEvento(tx, { tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id,
+      const evento = await registrarEvento(tx, { tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id,
         payload: { propostaId: p.id, aprovada: d.aprovar, substitutoId: p.substitutoId, encontrosIds: p.itens.map((i) => i.encontroId), motivo: d.motivo } });
+      if (d.aprovar) {
+        const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: p.itens.map(i => i.encontroId) } }, select: { id: true, matriculaId: true, turmaId: true, inicio: true } });
+        const grupos = new Map<string, string[]>();
+        for (const encontro of encontros) {
+          const matriculas = encontro.matriculaId ? [encontro.matriculaId] : encontro.turmaId ? (await tx.alocacaoTurma.findMany({ where: { turmaId: encontro.turmaId, matriculaId: { not: null }, criadoEm: { lte: encontro.inicio }, OR: [{ encerradaEm: null }, { encerradaEm: { gt: encontro.inicio } }] }, select: { matriculaId: true } })).flatMap(a => a.matriculaId ? [a.matriculaId] : []) : [];
+          for (const matriculaId of matriculas) grupos.set(matriculaId, [...(grupos.get(matriculaId) ?? []), encontro.id]);
+        }
+        for (const [matriculaId, encontrosIds] of grupos) await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId, encontrosIds });
+      }
       return { id: decisao.id, aplicada: decisao.aprovada };
     });
   });

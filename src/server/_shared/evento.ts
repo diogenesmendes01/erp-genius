@@ -74,8 +74,8 @@ export interface EntradaEvento {
 export async function registrarEvento(
   tx: Prisma.TransactionClient,
   entrada: EntradaEvento,
-): Promise<void> {
-  await tx.evento.create({
+) {
+  return tx.evento.create({
     data: {
       tipo: entrada.tipo,
       agregadoTipo: entrada.agregadoTipo,

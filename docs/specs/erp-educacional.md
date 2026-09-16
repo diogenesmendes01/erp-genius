@@ -4,6 +4,7 @@ Este documento define o comportamento requerido. A existência de um requisito a
 
 - [Detalhamento da remarcação de segunda chamada — implementação parcial](remarcacao-segunda-chamada.md).
 - [Substituição docente de segunda chamada agendada — implementação e limites](substituicao-segunda-chamada.md).
+- [Avisos de alterações da agenda — escopo, estados e validação](avisos-alteracoes-agenda.md).
 - [Avisos internos de pendências do diário — Q22](avisos-pendencias-diario.md).
 - [Desistência durante a preparação — Q121, implementação parcial](desistencia-preparacao.md).
 - [Situação e evidências de implementação](../41-situacao-consolidada-do-projeto.md).
@@ -102,7 +103,7 @@ Os IDs abaixo são referências internas de especificação, não números do Gi
 | REQ-09 / F07.7 | Convite individual por e-mail, senha definida pelo aluno e recuperação com token único e validade. Área de reposições com histórico, entregas e avaliações. Drive compartilhado oficial; reprodução pelo servidor sem conta Google do aluno e sem função de download/offline. |
 | REQ-10 / P01 | Particular contratada mensal ou por hora, distinta de reposição por benefício. Hora de 60 minutos com frações, duração contratada, cancelamento/falta conforme contrato e fechamento mensal com ocorrências conferidas. Entrada própria, antecipação, validade e acerto do saldo. |
 | REQ-11 / P02 | Permuta exige acordo, evidência pedagógica por período, proposta financeira e aprovação independente. Compensar somente o serviço comprovado segundo a fórmula acordada; não criar dinheiro recebido. |
-| REQ-12 / N01 | Avisos consolidados após aplicação: equipe no ERP, WhatsApp institucional e e-mail cadastrado de destinatários autorizados. Resend como fornecedor escolhido; registrar tentativas/resultado e pendência de falha. Não enviar durante prévia ou migração. |
+| REQ-12 / N01 | Avisos consolidados após aplicação: equipe no ERP, WhatsApp institucional e e-mail cadastrado de destinatários autorizados. Resend como fornecedor escolhido; registrar tentativas/resultado e pendência de falha. Não enviar durante prévia ou migração. Remarcações aprovadas por matrícula entram em fila durável com itens de encontro, origem de evento e tentativa append-only; o transporte permanece desligado até a integração do fornecedor. |
 | REQ-13 / M01 | Migração por origem e IDs, prévia, conferência de ambiguidade, conciliação e ensaio rastreável. Aproveitar dados reais sem presumir histórico ausente ou disparar operação externa. Complementos podem ser coletados depois do refinamento. |
 | REQ-14 / V01 | Homologação dos fluxos integrados, acesso, concorrência, recuperação, migração e operação dos serviços reais. Resultados antigos não comprovam as novas regras. |
 | REQ-15 / COM01 | Negociação/matrícula própria e identidade reutilizada; vendedor coleta básico e Secretaria completa/confere. Reserva temporária/protegida, admissão e particulares disponíveis; emissão única conforme Q112/Q119, ativação com requisitos e desistência conforme Q121. |

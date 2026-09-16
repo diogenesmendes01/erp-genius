@@ -7,7 +7,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
-| N01 — avisos de alteração de agenda | DEV 1 Terra | Correção de isolamento/contato em revisão; WhatsApp em implementação | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
+| N01 — avisos de alteração de agenda | DEV 1 Terra | E-mail integrado e validado localmente; WhatsApp em implementação | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
 | F07.3 — aplicação conjunta do calendário | DEV 2 Terra | Banco/servidor/tela em implementação | 16/09/2026 | Branch codex/dev-aplicacao-calendario; migração 162 reservada; exige conjunto atômico e revisão independente |
 
@@ -20,6 +20,12 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Revisão Q166: separar registro de evidência da elegibilidade de nova emissão; permitir conferências versionadas após rejeição/estado obsoleto; preservar recuperação assistida Q74; validar no SQL autoria, aprovação e vínculo da nova intenção. Migração 148 já aplicada somente no DEV: correções reservadas na 150, preservando 148. TESTER revisará a corretiva antes da aplicação, enquanto DEV avança tela/testes.
 - Fluxo banco/servidor/tela/testes e SPEC na mesma entrega. Migração reservada: 146. Código de integração externo permanece desligado até homologação; limites externos ficam separados da implementação local.
 
+## N01 — avisos de alterações da agenda
+
+- Substituição docente aprovada em turma regular encontra somente as matrículas com alocação vigente no instante do encontro. O helper, worker e guards SQL 161/164 usam `criadoEm ≤ início < encerradaEm`; vínculo encerrado no início e matrícula fora da turma ficam fora da fila. A origem de substituição é `ConfiguracaoOperacional/escola` canônica.
+- O renderer de substituição tem assunto e texto próprios. O transporte é simulado nos testes: recusa vira `FALHOU`, incerteza é preservada sem reenvio e aceite vira `ENVIADO`, que significa aceite do provedor, não entrega ao aluno.
+- O renderer usa exclusivamente itens persistidos do aviso; decisão com turmas distintas não expõe horário da outra turma, identificador arbitrário é recusado e email alterado depois do claim não chega ao transporte. Integração local: `./node_modules/.bin/vitest.cmd run -c vitest.integration.config.ts src/server/agenda/substituicao-avisos.int.test.ts` — 7 testes aprovados. Migrations `20260916161000_guard_substituicao_turma_avisos` e `20260916164000_origem_canonica_avisos_agenda` aplicadas somente em `erp_genius_test_dev_email`; sem envio externo. Revisão independente pendente.
+
 ## VIDEO — aceite do DEV
 
 - Publicação fixa uma revisão organizacional do Drive e reprodução usa essa revisão para todos os ranges, com autorização contínua. Adapters 612/613 precisam estar realmente ligados ao fluxo.
@@ -31,6 +37,10 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- Integração N01 e-mail: 11 testes de integração, 3 de rota/codificação e TypeScript passaram no checkout principal. Migrações 154/156/157/159/161/164 aplicadas somente no banco descartável do integrador. Fila acessível pela navegação da Secretaria/Administração. Gate de envio permanece desligado; não houve envio ou homologação externa.
+
+- N01 e-mail até 1182f97 aprovado no TESTER: 11 integrações (7 substituição e 4 fila), 2 testes de rota, TypeScript e migrações 159/161/164 passaram. Revisão confirma itens persistidos por matrícula, origem canônica e recusa de contato alterado após claim. Integração não inclui WhatsApp ou homologação externa.
 
 - Build após integração M01: Next.js passou, com 77 páginas estáticas. O integrador executou 2 integrações XLSX e 6 unitários/SSR do incremento final; a revisão independente desse incremento foi por leitura, distinguida da execução anterior da base.
 - Rodada seguinte: DEV 2 em `codex/dev-aplicacao-calendario`, base 8cdcb25 e mesmo banco isolado, implementa F07.3 (migração 162 reservada). DEV 1 permanece em N01: substituição de turma testada em 7b50c1b, em revisão independente; configuração/despacho institucional WhatsApp ainda em implementação (163 reservada). Máximo de duas frentes mantido.

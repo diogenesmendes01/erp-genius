@@ -1,0 +1,198 @@
+import { beforeEach, expect, it, vi } from "vitest";
+
+const { authMock, enviarEmailMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmailMock }));
+
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarAvisosAlteracaoAgendaTx, despacharAvisoAlteracaoAgendaInterna, entregarAvisoAlteracaoAgenda } from "@/server/comunicacoes-agenda/avisos";
+import { prepararSubstituicaoDocente } from "./substituicao";
+import { decidirSubstituicaoDocente } from "./substituicao-decisao";
+
+let secretariaId: string;
+let gestorId: string;
+let titularId: string;
+let substitutoId: string;
+let turmaId: string;
+let encontroId: string;
+let matriculasElegiveis: string[];
+let catalogo: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
+
+async function prepararTroca() {
+  authMock.mockResolvedValue({ user: { id: secretariaId } });
+  const proposta = await prepararSubstituicaoDocente({
+    encontrosIds: [encontroId], substitutoId, motivo: "Cobertura do docente da turma regular", chaveIdempotencia: "substituicao-aviso-turma",
+  });
+  if (!proposta.ok || !proposta.dado) throw new Error("Proposta de substituição ausente.");
+  return proposta.dado.id;
+}
+
+async function decidir(aprovar: boolean) {
+  const propostaId = await prepararTroca();
+  authMock.mockResolvedValue({ user: { id: gestorId } });
+  return decidirSubstituicaoDocente({ propostaId, aprovar, motivo: aprovar ? "Troca conferida por outra pessoa" : "Troca recusada pela gestão" });
+}
+
+async function avisosPreparados() {
+  return prisma.avisoAlteracaoAgenda.findMany({
+    where: { matriculaId: { in: matriculasElegiveis } },
+    include: { itens: true, aluno: { select: { email: true } } },
+    orderBy: { matriculaId: "asc" },
+  });
+}
+
+beforeEach(async () => {
+  await truncarBanco();
+  catalogo = await seedCatalogoMinimo();
+  secretariaId = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id;
+  gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
+  titularId = (await criarUsuario(["PROFESSOR"])).id;
+  substitutoId = (await criarUsuario(["PROFESSOR"])).id;
+  const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "AVISO-REGULAR", ordem: 1 } });
+  turmaId = (await prisma.turma.create({ data: { modalidadeId: catalogo.modalidade.id, nivelId: nivel.id, professorId: titularId, status: "ABERTA" } })).id;
+  matriculasElegiveis = [];
+  for (const nome of ["Primeira", "Segunda", "Fora do vínculo"]) {
+    const aluno = await prisma.aluno.create({ data: { primeiroNome: nome, paisId: catalogo.pais.id, email: `${nome.replaceAll(" ", ".").toLowerCase()}@example.test`, aceitaComunicacoes: true } });
+    const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
+    await prisma.alocacaoTurma.create({ data: {
+      alunoId: aluno.id, matriculaId: matricula.id, turmaId, criadoEm: new Date("2099-09-01T00:00:00.000Z"),
+      ...(nome === "Fora do vínculo" ? { encerradaEm: new Date("2099-10-01T10:00:00.000Z") } : {}),
+    } });
+    if (nome !== "Fora do vínculo") {
+      matriculasElegiveis.push(matricula.id);
+    }
+  }
+  encontroId = (await prisma.encontroAgenda.create({ data: {
+    turmaId, professorId: titularId, preparadorId: secretariaId, inicio: new Date("2099-10-01T10:00:00.000Z"), fim: new Date("2099-10-01T11:00:00.000Z"),
+    fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula regular com substituição", chaveIdempotencia: "aula-regular-substituicao", entradaHash: "fixture",
+  } })).id;
+  enviarEmailMock.mockReset();
+});
+
+it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca docente", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true, dado: { aplicada: true } });
+  const avisos = await avisosPreparados();
+  expect(avisos).toHaveLength(2);
+  expect(avisos.map((aviso) => aviso.matriculaId).sort()).toEqual([...matriculasElegiveis].sort());
+  expect(avisos.every((aviso) => aviso.canal === "EMAIL" && aviso.itens.map((item) => item.encontroId).includes(encontroId))).toBe(true);
+  expect(await prisma.avisoAlteracaoAgenda.count()).toBe(2);
+
+  const transporte = vi.fn(async (_entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => ({ situacao: "ACEITO" as const, provedorId: "aceite-no-provedor" }));
+  await Promise.all(avisos.map((aviso) => despacharAvisoAlteracaoAgendaInterna(aviso.id, transporte)));
+  expect(transporte).toHaveBeenCalledTimes(2);
+  expect(transporte.mock.calls.map(([entrada]) => entrada).every((entrada) => entrada.canal === "EMAIL" && entrada.encontrosIds.includes(encontroId))).toBe(true);
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { situacao: "ENVIADO" } })).toBe(2);
+
+  enviarEmailMock.mockResolvedValue({ situacao: "ACEITO", provedorId: "renderer-aceito" });
+  const avisoPrimeira = avisos.find((aviso) => aviso.aluno.email === "primeira@example.test");
+  if (!avisoPrimeira) throw new Error("Aviso da primeira matrícula ausente.");
+  const renderizado = await entregarAvisoAlteracaoAgenda({ canal: "EMAIL", destinatario: "primeira@example.test", avisoId: avisoPrimeira.id, encontrosIds: [encontroId] });
+  expect(renderizado).toEqual({ situacao: "ACEITO", provedorId: "renderer-aceito" });
+  expect(enviarEmailMock).toHaveBeenCalledWith(expect.objectContaining({
+    destinatario: "primeira@example.test", assunto: "Alteração de docente", texto: expect.stringContaining("O docente da sua aula foi alterado."),
+  }));
+});
+
+it("renderiza somente os itens persistidos do aviso quando a decisão abrange turmas distintas", async () => {
+  const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "AVISO-SEGUNDA-TURMA", ordem: 2 } });
+  const segundaTurma = await prisma.turma.create({ data: { modalidadeId: catalogo.modalidade.id, nivelId: nivel.id, professorId: titularId, status: "ABERTA" } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Terceira turma", paisId: catalogo.pais.id, email: "terceira.turma@example.test", aceitaComunicacoes: true } });
+  const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
+  await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matricula.id, turmaId: segundaTurma.id, criadoEm: new Date("2099-09-01T00:00:00.000Z") } });
+  const encontroDaOutraTurma = await prisma.encontroAgenda.create({ data: {
+    turmaId: segundaTurma.id, professorId: titularId, preparadorId: secretariaId, inicio: new Date("2099-10-02T14:00:00.000Z"), fim: new Date("2099-10-02T15:00:00.000Z"),
+    fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula de outra turma", chaveIdempotencia: "aula-outra-turma-substituicao", entradaHash: "fixture",
+  } });
+  authMock.mockResolvedValue({ user: { id: secretariaId } });
+  const proposta = await prepararSubstituicaoDocente({
+    encontrosIds: [encontroId, encontroDaOutraTurma.id], substitutoId, motivo: "Cobertura de turmas distintas", chaveIdempotencia: "substituicao-aviso-duas-turmas",
+  });
+  if (!proposta.ok || !proposta.dado) throw new Error("Proposta de duas turmas ausente.");
+  authMock.mockResolvedValue({ user: { id: gestorId } });
+  expect(await decidirSubstituicaoDocente({ propostaId: proposta.dado.id, aprovar: true, motivo: "Troca conferida por outra pessoa" })).toMatchObject({ ok: true });
+  const avisoPrimeira = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { matriculaId: matriculasElegiveis[0] } });
+  const avisoTerceira = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { matriculaId: matricula.id } });
+  enviarEmailMock.mockResolvedValue({ situacao: "ACEITO", provedorId: "renderer-aceito" });
+  await expect(entregarAvisoAlteracaoAgenda({ canal: "EMAIL", destinatario: "primeira@example.test", avisoId: avisoPrimeira.id, encontrosIds: [encontroId, encontroDaOutraTurma.id] })).resolves.toEqual({ situacao: "RECUSADO" });
+  await entregarAvisoAlteracaoAgenda({ canal: "EMAIL", destinatario: "primeira@example.test", avisoId: avisoPrimeira.id, encontrosIds: [encontroId] });
+  await entregarAvisoAlteracaoAgenda({ canal: "EMAIL", destinatario: "terceira.turma@example.test", avisoId: avisoTerceira.id, encontrosIds: [encontroDaOutraTurma.id] });
+  expect(enviarEmailMock).toHaveBeenCalledTimes(2);
+  const [primeira, terceira] = enviarEmailMock.mock.calls.map(([entrada]) => entrada as { texto: string });
+  expect(primeira.texto).toContain("01/10/2099");
+  expect(primeira.texto).not.toContain("02/10/2099");
+  expect(terceira.texto).toContain("02/10/2099");
+  expect(terceira.texto).not.toContain("01/10/2099");
+});
+
+it("recusa o renderer quando o email muda entre o claim e o transporte", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { matriculaId: matriculasElegiveis[0] } });
+  enviarEmailMock.mockResolvedValue({ situacao: "ACEITO", provedorId: "nao-deve-enviar" });
+  await expect(despacharAvisoAlteracaoAgendaInterna(aviso.id, async (entrada) => {
+    await prisma.aluno.update({ where: { id: aviso.alunoId }, data: { email: "email-atualizado@example.test" } });
+    return entregarAvisoAlteracaoAgenda(entrada);
+  })).resolves.toMatchObject({ enviado: false, recusado: true });
+  expect(enviarEmailMock).not.toHaveBeenCalled();
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: aviso.id } })).toMatchObject({ situacao: "FALHOU" });
+});
+
+it("não cria avisos para uma decisão recusada e desfaz a fila quando a transação falha", async () => {
+  expect(await decidir(false)).toMatchObject({ ok: true, dado: { aplicada: false } });
+  expect(await prisma.avisoAlteracaoAgenda.count()).toBe(0);
+  const evento = await prisma.evento.create({ data: {
+    tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", payload: { aprovada: true, encontrosIds: [encontroId] },
+  } });
+  await expect(prisma.$transaction(async (tx) => {
+    await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId: matriculasElegiveis[0], encontrosIds: [encontroId] });
+    throw new Error("rollback deliberado");
+  })).rejects.toThrow("rollback deliberado");
+  expect(await prisma.avisoAlteracaoAgenda.count()).toBe(0);
+});
+
+it("preserva as guardas de origem e da matrícula antes de aceitar itens da turma", async () => {
+  const matriculaReferencia = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  const eventoIncompativel = await prisma.evento.create({ data: {
+    tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "Matricula", agregadoId: matriculasElegiveis[0], payload: { aprovada: true, encontrosIds: [encontroId] },
+  } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-origem-incompativel", mudancaId: eventoIncompativel.id, eventoId: eventoIncompativel.id, matriculaId: matriculasElegiveis[0],
+    alunoId: matriculaReferencia.alunoId, canal: "EMAIL", contatoHash: "hash", chave: "origem-incompativel",
+  } })).rejects.toThrow("Origem do aviso inválida");
+  const eventoSubstituicaoNaoCanonico = await prisma.evento.create({ data: {
+    tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "outra-configuracao", payload: { aprovada: true, encontrosIds: [encontroId] },
+  } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-origem-nao-canonica", mudancaId: eventoSubstituicaoNaoCanonico.id, eventoId: eventoSubstituicaoNaoCanonico.id, matriculaId: matriculasElegiveis[0],
+    alunoId: matriculaReferencia.alunoId, canal: "EMAIL", contatoHash: "hash", chave: "origem-nao-canonica",
+  } })).rejects.toThrow("Origem do aviso inválida");
+  const alunoDeOutraMatricula = await prisma.aluno.create({ data: { primeiroNome: "Outro aluno", paisId: matriculaReferencia.paisId } });
+  const outraMatricula = await prisma.matricula.create({ data: { alunoId: alunoDeOutraMatricula.id, produtoId: matriculaReferencia.produtoId, paisId: matriculaReferencia.paisId, moeda: "CRC", status: "ATIVA" } });
+  const eventoValido = await prisma.evento.create({ data: {
+    tipo: "SubstituicaoDocenteDecidida", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", payload: { aprovada: true, encontrosIds: [encontroId] },
+  } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-matricula-incompativel", mudancaId: eventoValido.id, eventoId: eventoValido.id, matriculaId: outraMatricula.id,
+    alunoId: matriculaReferencia.alunoId, canal: "EMAIL", contatoHash: "hash", chave: "matricula-incompativel",
+  } })).rejects.toThrow("Matrícula do aviso incompatível");
+});
+
+it("registra recusa como falha e conserva a incerteza sem reenvio automático", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const [primeiro, segundo] = await avisosPreparados();
+  await expect(despacharAvisoAlteracaoAgendaInterna(primeiro.id, async () => ({ situacao: "RECUSADO" as const }))).resolves.toMatchObject({ enviado: false, recusado: true });
+  await expect(despacharAvisoAlteracaoAgendaInterna(segundo.id, async () => ({ situacao: "INCERTO" as const }))).resolves.toMatchObject({ enviado: false, incerto: true });
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: primeiro.id } })).toMatchObject({ situacao: "FALHOU" });
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: segundo.id } })).toMatchObject({ situacao: "INCERTO" });
+  const transporte = vi.fn(async (_entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => ({ situacao: "ACEITO" as const, provedorId: "nao-deve-chamar" }));
+  await despacharAvisoAlteracaoAgendaInterna(segundo.id, transporte);
+  expect(transporte).not.toHaveBeenCalled();
+});
+
+it("trata aceite do provedor como ENVIADO sem inferir entrega ao aluno", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const [aviso] = await avisosPreparados();
+  await expect(despacharAvisoAlteracaoAgendaInterna(aviso.id, async () => ({ situacao: "ACEITO" as const, provedorId: "aceite-externo" }))).resolves.toEqual({ enviado: true });
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: aviso.id } })).toMatchObject({ situacao: "ENVIADO" });
+  expect(await prisma.tentativaAvisoAlteracaoAgenda.findFirstOrThrow({ where: { avisoId: aviso.id, situacao: "ENVIADO" } })).toMatchObject({ provedorId: "aceite-externo" });
+});
