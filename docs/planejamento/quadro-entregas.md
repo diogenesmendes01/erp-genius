@@ -31,6 +31,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Build após integração M01: Next.js passou, com 77 páginas estáticas. O integrador executou 2 integrações XLSX e 6 unitários/SSR do incremento final; a revisão independente desse incremento foi por leitura, distinguida da execução anterior da base.
+- Rodada seguinte: DEV 2 em `codex/dev-aplicacao-calendario`, base 8cdcb25 e mesmo banco isolado, implementa F07.3 (migração 162 reservada). DEV 1 permanece em N01: substituição de turma testada em 7b50c1b, em revisão independente; configuração/despacho institucional WhatsApp ainda em implementação (163 reservada). Máximo de duas frentes mantido.
+
 - M01 CSV/XLSX integrado até 23b8359: 6 testes unitários/SSR e 2 integrações de arquivo real até lote persistido passaram no integrador; a base já passou 6 integrações. Parser interno, mapeamento estrito, erros sem sucesso falso e preservação de valores/colunas foram revisados. Removido limite arbitrário de 100 abas na submissão; a aba escolhida precisa existir no arquivo. Isso conclui a preparação local, não a aplicação da migração nem a conferência dos dados reais.
 
 - Regressão global da base EMAIL/VIDEO/Q166 finalizada: 124 arquivos e 1.310 testes de integração aprovados, duração 2.387,72 s. Essa evidência precede M01/N01. Base M01 integrada em dcf8abe/57bf751/7a651f3; migrações 155/158/160 aplicadas no banco descartável do integrador. Sete testes unitários/SSR/codificação SQL passaram; integração direcionada em execução.
