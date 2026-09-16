@@ -9,6 +9,7 @@ import { criarAgendaParticularIsentaFixture } from "@/test/reposicao-agenda";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { concluirReposicaoIndividual, solicitarReposicaoIndividual } from "./reposicao-individual";
 import { consultarReposicoesEquipe, consultarFilaReposicoesDocente } from "./reposicao-consulta";
+import { decidirExcecaoAgendaReposicaoIndividual, proporExcecaoAgendaReposicaoIndividual } from "./reposicao-agenda";
 import { exigirReposicaoDoPortalAluno } from "@/server/portal-aluno/reposicoes";
 
 let gestorId: string, adminId: string, professorId: string, alunoId: string, contaPortalAlunoId: string, matriculaId: string, turmaId: string, aulaId: string;
@@ -122,6 +123,26 @@ it("projeção do agendamento inicial é exclusiva da Secretaria ou Administraç
   expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: null }] } });
   entrar(adminId);
   expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: { fuso: "UTC" } }] } });
+});
+
+it("fila Q19 expõe a exceção exata à gestão e a aprovação não cria agenda", async () => {
+  const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-q19", nome: "Recesso Q19", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Calendário com recesso pontual", chaveIdempotencia: "calendario-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
+  await inserirReposicao("excecao-projetada"); await autorizarReposicao("excecao-projetada", adminId);
+  entrar(secretaria.id);
+  const proposta = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "excecao-projetada", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Aluno disponível somente no recesso", evidencia: "Atendimento acadêmico registrado", chaveIdempotencia: "excecao-q19" });
+  expect(proposta, JSON.stringify(proposta)).toMatchObject({ ok: true });
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "excecao-projetada", excecoesAgenda: [{ professor: expect.any(String), fuso: "UTC", decisao: null, podeDecidir: false }] }] } });
+  entrar(gestorId);
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "excecao-projetada", agendaInicial: null, excecoesAgenda: [{ motivo: "Aluno disponível somente no recesso", evidencia: "Atendimento acadêmico registrado", podeDecidir: true }] }] } });
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "PAUSADA" } });
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "excecao-projetada", excecoesAgenda: [{ podeDecidir: false }] }] } });
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "ATIVA" } });
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: proposta.dado.id, aprovar: true, motivo: "Exceção pontual conferida" })).toMatchObject({ ok: true });
+  expect(await prisma.agendaReposicaoIndividual.count({ where: { reposicaoId: "excecao-projetada" } })).toBe(0);
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ excecoesAgenda: [{ decisao: { aprovada: true, motivo: "Exceção pontual conferida" } }] }] } });
 });
 
 it("fila docente expõe somente a particular própria e a conclusão exige presença já registrada", async () => {
