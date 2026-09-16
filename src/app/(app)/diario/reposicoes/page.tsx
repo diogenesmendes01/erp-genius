@@ -15,7 +15,7 @@ export default async function ReposicoesDocentePage({ searchParams }: { searchPa
     <header><h1 className="text-2xl font-medium">Fila de reposições individuais</h1><p className="mt-1 text-sm text-gray-600">Mostra apenas reposições atribuídas a você. Não há dados pessoais, contrato comercial ou cobrança nesta fila.</p></header>
     {!r.ok && <p role="alert">{r.erro}</p>}
     {r.ok && r.dado?.itens.length === 0 && <p>Nenhuma reposição pendente para sua atuação.</p>}
-    {r.ok && r.dado?.itens.map((item) => <ReposicaoDocente key={item.id} reposicaoId={item.id} versaoAnterior={item.versaoAnterior} modalidade={item.modalidade} origem={item.origem} entrega={item.entrega} />)}
+    {r.ok && r.dado?.itens.map((item) => <ReposicaoDocente key={item.id} reposicaoId={item.id} versaoAnterior={item.versaoAnterior} modalidade={item.modalidade} origem={item.origem} entrega={item.entrega} encontros={item.encontros} />)}
     {r.ok && r.dado?.proximoCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/reposicoes?cursor=${encodeURIComponent(r.dado.proximoCursor)}`}>Próximas reposições</Link>}
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">Histórico e correções</h2>

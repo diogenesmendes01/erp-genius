@@ -28,6 +28,7 @@ type LinhaOrigem = { aulaOriginalId: string; inicio: Date; fim: Date; fuso: stri
 type LinhaDocente = {
   id: string; matriculaId: string; modalidade: "PARTICULAR" | "GRAVACAO"; aulaOriginalId: string; inicio: Date; fim: Date; fuso: string; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO";
   versaoAnterior: number; entregaId: string | null; entregueEm: Date | null; resumo: string | null; atividade: string | null; evidenciaEntrega: string | null;
+  encontroReposicaoId: string | null; encontroReposicaoInicio: Date | null; encontroReposicaoFim: Date | null; encontroReposicaoFuso: string | null; encontroReposicaoStatus: string | null; participacaoReposicao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null;
 };
 
 
@@ -207,6 +208,7 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           original."fusoOrigem" AS fuso, participacao_aula_efetiva(registro.id)::text AS participacao,
           COALESCE((SELECT MAX(c.versao) FROM "ConclusaoReposicaoIndividual" c WHERE c."reposicaoId" = r.id), 0)::int AS "versaoAnterior",
           entrega.id AS "entregaId", entrega."entregueEm" AS "entregueEm", entrega.resumo, entrega.atividade, entrega.evidencia AS "evidenciaEntrega"
+          ,particular.id AS "encontroReposicaoId",particular.inicio AS "encontroReposicaoInicio",particular.fim AS "encontroReposicaoFim",particular."fusoOrigem" AS "encontroReposicaoFuso",particular.status::text AS "encontroReposicaoStatus",registroParticular.participacao::text AS "participacaoReposicao"
         FROM "ReposicaoIndividual" r
         JOIN "DecisaoReposicaoIndividual" decisao ON decisao."reposicaoId" = r.id AND decisao.aprovada = true
         JOIN "Matricula" matricula ON matricula.id = r."matriculaId"
@@ -221,6 +223,14 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
             AND NOT EXISTS (SELECT 1 FROM "CorrecaoConclusaoReposicaoIndividual" correcao WHERE correcao."entregaId" = e.id)
           ORDER BY e.versao DESC LIMIT 1
         ) entrega ON true
+        LEFT JOIN LATERAL (
+          SELECT e.id,e.inicio,e.fim,e."fusoOrigem",e.status FROM "AgendaReposicaoIndividual" agenda
+          JOIN "EncontroAgenda" e ON e.id=agenda."encontroId"
+          WHERE agenda."reposicaoId"=r.id AND e."professorId"=${usuario.id} AND e.status IN ('PREVISTO'::"StatusEncontroAgenda",'MINISTRADO'::"StatusEncontroAgenda")
+          LIMIT 1
+        ) particular ON true
+        LEFT JOIN "AulaDiario" diarioParticular ON diarioParticular."encontroId"=particular.id
+        LEFT JOIN "RegistroAulaAluno" registroParticular ON registroParticular."aulaId"=diarioParticular.id AND registroParticular."matriculaId"=r."matriculaId"
         WHERE COALESCE((
           SELECT CASE WHEN correcao.id IS NOT NULL THEN correcao.concluida ELSE c.concluida END
           FROM "ConclusaoReposicaoIndividual" c
@@ -232,11 +242,10 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           WHERE c."reposicaoId" = r.id ORDER BY c.versao DESC, c.id DESC LIMIT 1
         ), false) = false
           AND (matricula.status = 'ATIVA' OR (matricula.status IN ('PAUSADA', 'ENCERRADA') AND entrega.id IS NOT NULL))
-          AND r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND EXISTS (
-              SELECT 1 FROM "DesignacaoAvaliadorReposicaoIndividual" designacao
-              WHERE designacao."reposicaoId" = r.id AND designacao."professorId" = ${usuario.id}
+          AND ((r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND EXISTS (
+              SELECT 1 FROM "DesignacaoAvaliadorReposicaoIndividual" designacao WHERE designacao."reposicaoId" = r.id AND designacao."professorId" = ${usuario.id}
                 AND designacao.inicio <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AND (designacao.fim IS NULL OR designacao.fim > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
-            )
+            )) OR (r.modalidade = 'PARTICULAR'::"ModalidadeReposicaoIndividual" AND particular.id IS NOT NULL))
           AND (${d.cursor ?? null}::text IS NULL OR (original.inicio, r.id) > (
             SELECT cursorOriginal.inicio, cursor.id FROM "ReposicaoIndividual" cursor
             JOIN "EncontroAgenda" cursorOriginal ON cursorOriginal.id = cursor."aulaOriginalId"
@@ -253,7 +262,7 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           origem: { aulaOriginalId: r.aulaOriginalId, matriculaId: r.matriculaId, participacao: r.participacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fuso: r.fuso, turma: null },
           versaoAnterior: r.versaoAnterior,
           entrega: r.entregaId ? { id: r.entregaId, entregueEm: r.entregueEm!.toISOString(), resumo: r.resumo ?? "", atividade: r.atividade ?? "", evidencia: r.evidenciaEntrega ?? "" } : null,
-          encontros: [],
+          encontros: r.encontroReposicaoId ? [{ id: r.encontroReposicaoId, inicio: r.encontroReposicaoInicio!.toISOString(), fim: r.encontroReposicaoFim!.toISOString(), fuso: r.encontroReposicaoFuso!, status: r.encontroReposicaoStatus!, participacao: r.participacaoReposicao }] : [],
         })),
         proximoCursor: filas.length > d.limite ? pagina.at(-1)?.id ?? null : null,
       };
