@@ -4,9 +4,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
-| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Fila/guard SQL validados; Q166 em implementação | 16/09/2026 | Integração parcial revisada; aceite completo pendente |
-| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Servidor/SQL integrado e validado; ajustes da tela em implementação | 16/09/2026 | 51d4ff8 + 7bc0f41 + testes 2466a48; aceite completo pendente |
-| Revisão independente EMAIL/VIDEO | TESTER Terra | EMAIL parcial validado; revisão VIDEO encaminhada ao DEV | 16/09/2026 | Q166 e VIDEO aguardam commits completos |
+| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
+| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
+| Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 
 ## EMAIL — aceite do DEV
 
@@ -41,6 +41,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Não abrir terceira funcionalidade. Bloqueios externos não devem aparecer como falta de código nem ser ocultados por testes locais.
 
 ## Evidência de base
+
+- Interface Q166 `fc69c8e` e revisão independente `8c056f9` integradas: evidência/autoria/data visíveis, controles por capacidade e pessoa independente, retorno de erro/sucesso e refresh. Sete testes de fila/SSR passaram na integração; tipos e lint passaram. Regressão global de integração iniciada nesta rodada, ainda sem resultado final. Não houve envio externo.
 
 - Q166 integrada até `d0afd53`, com testes independentes `43c579b`/`a351a5d`: 45 unitários, TypeScript e lint passaram. A suíte ampliada do portal teve 63/66 aprovados; os três erros vinham do fixture antigo de gravação sem fonte fixa. Após atualizar esse fixture para a publicação vigente, seus 9/9 testes passaram. Nenhuma proteção foi afrouxada. Interface Q166 segue em ajuste: evidência visível ao aprovador e feedback de cada operação; a frente ainda não está concluída.
 
