@@ -1,4 +1,5 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
 import { DATABASE_URL_TESTE } from "../../vitest.integration.config";
 import { conferirDependenciasInstaladas } from "./dependencias";
 
@@ -11,7 +12,7 @@ export default function setup() {
     throw new Error("Guarda de segurança: a URL de teste deve apontar para localhost:54329.");
   }
   try {
-    execSync("npx prisma migrate deploy", {
+    execFileSync(process.execPath, [resolve("node_modules/prisma/build/index.js"), "migrate", "deploy"], {
       env: { ...process.env, DATABASE_URL: DATABASE_URL_TESTE },
       stdio: "pipe",
       timeout: 120_000,
