@@ -161,8 +161,8 @@ it("não persiste decisão nem meta quando um conflito bloqueia o conjunto", asy
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
 });
 
-it("mantém duração e frequência aprovadas da turma como exceção Q37 ao mudar quantidade", async () => {
- const { turma, grade } = await turmaComGrade("ABERTA", true, { diasSemana: [1, 3], duracaoMinutos: 90, frequencia: "2x/semana" });
+it("mantém frequência aprovada da turma como exceção Q37 ao mudar quantidade", async () => {
+ const { turma, grade } = await turmaComGrade("ABERTA", true, { diasSemana: [1, 3], duracaoMinutos: 60, frequencia: "2x/semana" });
  const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Aumento preservando exceção Q37", chaveIdempotencia: "quantidade-q37-1" });
  if (!proposta.ok || !proposta.dado) throw new Error("Proposta Q37 ausente.");
  const impacto = await prisma.impactoQuantidadeAulasModalidade.findUniqueOrThrow({ where: { propostaId_turmaId: { propostaId: proposta.dado.id, turmaId: turma.id } } });
@@ -172,6 +172,13 @@ it("mantém duração e frequência aprovadas da turma como exceção Q37 ao mud
  if (!decidido.ok) throw new Error(decidido.erro);
  const encontros = await prisma.encontroAgenda.findMany({ where: { turmaId: turma.id, status: "PREVISTO" }, orderBy: { inicio: "asc" } });
  expect(encontros).toHaveLength(3);
- expect(encontros.every((e) => e.fim.getTime() - e.inicio.getTime() === 90 * 60_000)).toBe(true);
+ expect(encontros.every((e) => e.fim.getTime() - e.inicio.getTime() === 60 * 60_000)).toBe(true);
  expect(encontros.map((e) => e.inicio.getUTCDay())).toEqual([1, 3, 1]);
+});
+
+it("não inventa exceção Q37 para snapshot legado padrão sem frequência", async () => {
+ const { turma } = await turmaComGrade();
+ const previa = await prisma.$transaction((tx) => carregarPreviaQuantidadeAulasTx(tx, { modalidadeId, quantidadeNova: 3 }));
+ const impacto = previa.impactos.find((i) => i.turmaId === turma.id);
+ expect(impacto?.excecoesQ37).toEqual([]);
 });
