@@ -225,12 +225,13 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável pedagógico", telefoneE164: "+50679999999" } });
   const primeira = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
   await prisma.alunoResponsavel.create({ data: { alunoId: primeira.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  await prisma.autorizacaoComunicacaoAcademica.create({ data: { matriculaId: primeira.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização acadêmica registrada no atendimento" } });
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
   expect(await decidir(true)).toMatchObject({ ok: true });
   const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { canal: "WHATSAPP" }, include: { aluno: true } });
-  expect(avisos).toHaveLength(2);
-  expect(avisos.filter((a) => a.alunoId === primeira.alunoId)).toHaveLength(1);
+  expect(avisos).toHaveLength(3);
+  expect(avisos.filter((a) => a.alunoId === primeira.alunoId)).toHaveLength(2);
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
   vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarTemplateMock.mockImplementation(async () => ({ providerMessageId: `wamid-agenda-${enviarTemplateMock.mock.calls.length}` }));
@@ -238,13 +239,13 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   // resolvida pelo admin sem deixar o worker preso em reprocessamento.
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
   expect(enviarTemplateMock).not.toHaveBeenCalled();
-  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "PREPARADO" } })).toBe(2);
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "PREPARADO" } })).toBe(3);
   await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
-  expect(enviarTemplateMock).toHaveBeenCalledTimes(2);
-  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "ENVIADO" } })).toBe(2);
+  expect(enviarTemplateMock).toHaveBeenCalledTimes(3);
+  expect(await prisma.avisoAlteracaoAgenda.count({ where: { canal: "WHATSAPP", situacao: "ENVIADO" } })).toBe(3);
   const intencoes = await prisma.intencaoMensagem.findMany({ where: { avisoAlteracaoAgendaId: { not: null } }, include: { atendimento: true } });
-  expect(intencoes).toHaveLength(2);
+  expect(intencoes).toHaveLength(3);
   expect(intencoes.every((i) => i.atendimento?.finalidade === "PEDAGOGICO" && i.numeroId === numero.id && i.templateId === template.id)).toBe(true);
 });
 

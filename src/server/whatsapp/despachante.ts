@@ -518,7 +518,9 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     if (!a || a.encerradoEm || a.conversa.numeroId !== it.numeroId || a.conversa.contatoId !== it.contatoId) return "atendimento_alterado";
     matriculaAtendimento = a.matriculaId;
     finalidadeAtendimento = a.finalidade;
-    if (!await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
+    // Aviso de agenda revalida sua identidade congelada (aluno ou responsável)
+    // no helper próprio; a regra genérica prefere responsável quando existe um.
+    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
   }
   if (it.cobrancaId) {
     const snapshot = await snapshotCobranca(it.cobrancaId);
