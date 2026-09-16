@@ -78,10 +78,10 @@ it("mantém a evidência aplicada na consulta do lote depois de recarregar a pá
   const consulta = await consultarLotePreparacaoMigracao(preparo.dado.loteId);
   expect(consulta.ok && consulta.dado).toBeTruthy();
   const linha = (consulta.ok && consulta.dado ? consulta.dado.linhas[0] : null) as unknown as {
-    aplicacoes?: { situacao: string; alunoId: string | null; executadoPorNome: string | null; detalhe: string | null }[];
+    aplicacoesCadastro?: { situacao: string; alunoId: string | null; detalhe: string | null; executadoPor: { nome: string | null } }[];
   } | null;
-  expect(linha?.aplicacoes).toEqual(expect.arrayContaining([
-    expect.objectContaining({ situacao: "ENSAIO_VALIDO", alunoId: null, executadoPorNome: expect.any(String) }),
-    expect.objectContaining({ situacao: "APLICADO", alunoId: expect.any(String), executadoPorNome: expect.any(String) }),
+  expect(linha?.aplicacoesCadastro).toEqual(expect.arrayContaining([
+    expect.objectContaining({ situacao: "ENSAIO_VALIDO", alunoId: null, executadoPor: { nome: expect.any(String) } }),
+    expect.objectContaining({ situacao: "APLICADO", alunoId: expect.any(String), executadoPor: { nome: expect.any(String) } }),
   ]));
 });
