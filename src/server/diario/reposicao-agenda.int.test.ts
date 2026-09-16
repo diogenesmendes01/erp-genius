@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import {
   agendarReposicaoIndividual,
+  consultarPreviaAgendaReposicaoIndividual,
   aplicarBeneficioReposicaoParticularMatricula,
   decidirAutorizacaoExcecaoReposicaoParticular,
   decidirExcecaoAgendaReposicaoIndividual,
@@ -98,6 +99,18 @@ it("reserva benefício de oferta aprovada e cria encontro REPOSICAO ligado ao pe
   expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC", motivo: "Tentativa duplicada não pode criar outro encontro", chaveIdempotencia: "agenda-normal-002" })).toMatchObject({ ok: false });
 });
 
+it("a prévia autenticada informa período, saldo e conflitos antes de confirmar a agenda", async () => {
+  await regraESnapshot("regra-previa", 2);
+  await inserirPedido("pedido-previa");
+  entrar(secretariaId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({
+    ok: true, dado: { periodo: { inicio: "2026-10-01", fimExclusivo: "2026-11-01" }, quantidadePorPeriodo: 2, saldo: 2,
+      conflitos: { encontros: 0, indisponibilidades: 0, reservas: 0 }, podeAgendar: true },
+  });
+  entrar(gestorId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({ ok: false });
+});
+
 it("a última cota é reservável uma vez e bloqueia outra origem no mesmo período", async () => {
   await regraESnapshot("regra-uma-cota", 1);
   await inserirPedido("pedido-cota-1");
@@ -122,6 +135,7 @@ it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir be
   entrar(adminId);
   expect(await decidirAutorizacaoExcecaoReposicaoParticular({ autorizacaoId: autorizacao.dado.id, aprovar: true, motivo: "Gratuidade excepcional independente aprovada" })).toMatchObject({ ok: true });
   entrar(secretariaId);
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id })).toMatchObject({ ok: true, dado: { diasNaoLetivos: expect.any(Array), excecaoAgendaAprovada: true, podeAgendar: true } });
   const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id, motivo: "Agenda excepcional autorizada", chaveIdempotencia: "agenda-q34-001" });
   expect(agenda).toMatchObject({ ok: true });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));

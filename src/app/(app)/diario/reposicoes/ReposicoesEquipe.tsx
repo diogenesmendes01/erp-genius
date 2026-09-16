@@ -4,9 +4,10 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { decidirReposicaoIndividual, solicitarReposicaoIndividual } from "@/server/diario/reposicao-individual";
-import { decidirCancelamentoReposicaoIndividual, decidirRemarcacaoReposicaoIndividual, proporCancelamentoReposicaoIndividual, proporRemarcacaoReposicaoIndividual } from "@/server/diario/reposicao-agenda";
+import { agendarReposicaoIndividual, consultarPreviaAgendaReposicaoIndividual, decidirCancelamentoReposicaoIndividual, decidirRemarcacaoReposicaoIndividual, proporCancelamentoReposicaoIndividual, proporRemarcacaoReposicaoIndividual } from "@/server/diario/reposicao-agenda";
 import { OperacaoEntregaReposicao, type OperacaoEntrega } from "./OperacaoEntregaReposicao";
 import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeReposicao";
+import { criarControleAgendaParticular } from "./AgendaParticularControle";
 
 export type OrigemReposicao = {
   aulaOriginalId: string;
@@ -42,6 +43,11 @@ export type ReposicaoEquipe = {
   cicloAgenda?: null | {
     agendaId: string; encontroId: string; professorId: string | null; fusoOrigem: string; statusBeneficio: "RESERVADA" | "CONSUMIDA" | "DEVOLVIDA" | "ISENTA_EXCECAO"; encontroStatus: string;
     cancelamentoId: string | null; cancelamentoAutorId: string | null; remarcacaoId: string | null; remarcacaoAutorId: string | null;
+  };
+  agendaInicial?: null | {
+    fuso: string | null;
+    professores: { id: string; nome: string }[];
+    autorizacoesExcepcionais: { id: string; motivo: string; decididaEm: string }[];
   };
 };
 
@@ -92,11 +98,53 @@ export function ReposicoesEquipe({ reposicoes, operacoes = {}, mostrarRelatoEqui
       {reposicao.decisao ? <div className="rounded bg-gray-50 p-3"><p className="font-medium">{reposicao.decisao.aprovada ? "Autorizada; aguarda conclusão" : "Pedido rejeitado"}</p><p>Decisão de {reposicao.decisao.decisor} em {formato(reposicao.decisao.decididaEm, "UTC")} (UTC).</p><p className="whitespace-pre-wrap">{reposicao.decisao.motivo}</p></div> : reposicao.podeDecidir ? <DecidirReposicao reposicaoId={reposicao.id} /> : <p role="status">Aguardando decisão independente.</p>}
       {reposicao.conclusao ? <p role="status">{reposicao.conclusao.concluida ? `Reposta em ${reposicao.conclusao.dataResultado ? formato(reposicao.conclusao.dataResultado, reposicao.origem.fuso) : "data a conferir"}.` : "Conclusão registrada sem regularização."} Versão {reposicao.conclusao.versao}.</p> : reposicao.decisao?.aprovada && <p role="status">A autorização não confirma a reposição nem altera a frequência.</p>}
       {mostrarCorrecoes && reposicao.conclusao && <Link className="inline-block text-sm text-brand-700 underline" href={`/academico/reposicoes/correcoes/${encodeURIComponent(reposicao.id)}`}>Consultar ou corrigir a conclusão</Link>}
+      {reposicao.modalidade === "PARTICULAR" && reposicao.decisao?.aprovada && reposicao.agendaInicial && <AgendarParticular reposicaoId={reposicao.id} opcoes={reposicao.agendaInicial} />}
       {reposicao.modalidade === "PARTICULAR" && reposicao.decisao?.aprovada && reposicao.cicloAgenda && <CicloAgenda agenda={reposicao.cicloAgenda} />}
       {reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada && mostrarRelatoEquipe && <RelatarIndisponibilidadeReposicao reposicaoId={reposicao.id} />}
       {reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada && operacoes[reposicao.id] && <OperacaoEntregaReposicao operacao={operacoes[reposicao.id]} />}
     </article>)}
   </section>;
+}
+
+type PreviaAgenda = {
+  periodo: null | { inicio: string; fimExclusivo: string };
+  quantidadePorPeriodo: number | null; saldo: number | null;
+  conflitos: { encontros: number; indisponibilidades: number; reservas: number };
+  diasNaoLetivos: unknown[]; excecaoAgendaAprovada: boolean; exigeAutorizacaoExcecao: boolean; podeAgendar: boolean;
+};
+
+function AgendarParticular({ reposicaoId, opcoes }: { reposicaoId: string; opcoes: NonNullable<ReposicaoEquipe["agendaInicial"]> }) {
+  const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const [previa, setPrevia] = useState<PreviaAgenda | null>(null);
+  const controle = useRef(criarControleAgendaParticular(() => crypto.randomUUID())).current; const router = useRouter();
+  if (!opcoes.fuso || !opcoes.professores.length) return <p role="status">Não há docente ativo ou fuso institucional disponível para preparar esta agenda.</p>;
+  const ler = (form: HTMLFormElement) => ({ reposicaoId, professorId: String(new FormData(form).get("professorId") ?? ""), inicioLocal: String(new FormData(form).get("inicioLocal") ?? ""), fimLocal: String(new FormData(form).get("fimLocal") ?? ""), fuso: String(new FormData(form).get("fuso") ?? ""), autorizacaoExcecaoId: String(new FormData(form).get("autorizacaoExcecaoId") ?? "") || undefined });
+  const conferir = (form: HTMLFormElement) => iniciar(async () => {
+    setErro(""); setPrevia(null); const entrada = ler(form), revisaoSolicitada = controle.iniciarPrevia();
+    try { const r = await consultarPreviaAgendaReposicaoIndividual(entrada); if (!controle.previaAindaAtual(revisaoSolicitada)) return; if (!r.ok || !r.dado) { setErro(r.ok ? "A prévia não foi confirmada." : r.erro); return; } setPrevia(r.dado); }
+    catch { if (controle.previaAindaAtual(revisaoSolicitada)) setErro("A prévia não foi confirmada. Consulte a agenda antes de tentar novamente."); }
+  });
+  return <form className="space-y-3 border-t pt-3" onChange={() => { controle.alterar(); setPrevia(null); setErro(""); }} onSubmit={e => {
+    e.preventDefault(); const form = e.currentTarget;
+    if (!previa?.podeAgendar) { conferir(form); return; }
+    const dados = new FormData(form), entrada = { ...ler(form), motivo: String(dados.get("motivo") ?? "") }, chaveIdempotencia = controle.chavePara(JSON.stringify(entrada));
+    iniciar(async () => {
+      setErro("");
+      try { const r = await agendarReposicaoIndividual({ ...entrada, chaveIdempotencia }); if (!r.ok) { setErro(r.erro); return; } setErro("Agendamento confirmado. Atualizando a consulta."); router.refresh(); }
+      catch { setErro("O agendamento não foi confirmado. Consulte a agenda antes de reenviar."); }
+    });
+  }}>
+    <fieldset disabled={ocupado} className="space-y-3"><h3 className="font-medium">Agendar aula particular autorizada</h3>
+    <p className="text-sm">Confira cota, período e conflitos antes de confirmar. O servidor confere tudo novamente no envio; uma data não letiva exige a aprovação específica daquele horário.</p>
+    <label className="block">Docente<select name="professorId" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione o docente</option>{opcoes.professores.map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
+    <div className="grid gap-3 md:grid-cols-2"><label className="block">Início local<input name="inicioLocal" type="datetime-local" required className="block w-full rounded border p-2" /></label><label className="block">Fim local<input name="fimLocal" type="datetime-local" required className="block w-full rounded border p-2" /></label></div>
+    <label className="block">Fuso IANA do horário<input name="fuso" required defaultValue={opcoes.fuso} className="block w-full rounded border p-2" /></label>
+    {opcoes.autorizacoesExcepcionais.length > 0 && <label className="block">Autorização excepcional aprovada (somente se não houver benefício)<select name="autorizacaoExcecaoId" defaultValue="" className="block rounded border p-2"><option value="">Usar benefício normal</option>{opcoes.autorizacoesExcepcionais.map((autorizacao) => <option key={autorizacao.id} value={autorizacao.id}>Autorização aprovada: {autorizacao.motivo}</option>)}</select></label>}
+    <label className="block">Motivo do agendamento<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <button type="button" onClick={e => conferir(e.currentTarget.form!)} disabled={ocupado} className="rounded border px-4 py-2">{ocupado ? "Conferindo…" : "Conferir agenda"}</button>
+    {previa && <div role="status" className="rounded bg-gray-50 p-3"><p>{previa.quantidadePorPeriodo === null ? "Sem benefício normal vigente." : `Cota: ${previa.saldo} de ${previa.quantidadePorPeriodo} disponível no período de ${previa.periodo?.inicio} até ${previa.periodo?.fimExclusivo} (fim exclusivo).`}</p><p>Conflitos: {previa.conflitos.encontros} encontro(s), {previa.conflitos.indisponibilidades ? "indisponibilidade docente" : "sem indisponibilidade docente"}, {previa.conflitos.reservas ? "reserva contratada" : "sem reserva contratada"}.</p>{previa.exigeAutorizacaoExcecao && <p>Sem benefício normal, selecione uma autorização excepcional aprovada para esta reposição.</p>}{previa.diasNaoLetivos.length > 0 && <p>{previa.excecaoAgendaAprovada ? "A exceção de agenda deste docente e horário já está aprovada." : "O horário atinge dia não letivo e requer exceção de agenda aprovada para este mesmo docente e intervalo."}</p>}{previa.podeAgendar ? <button className="mt-2 rounded border px-4 py-2">Confirmar agendamento</button> : <p className="mt-2">A prévia não permite confirmar este horário.</p>}</div>}
+    </fieldset>
+    {erro && <p role="alert">{erro}</p>}
+  </form>;
 }
 
 function CicloAgenda({ agenda }: { agenda: NonNullable<ReposicaoEquipe["cicloAgenda"]> }) {

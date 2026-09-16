@@ -16,6 +16,7 @@ const regraInput = z.object({ produtoPaisId: id, permiteParticular: z.boolean(),
   duracaoPeriodo: z.number().int().positive().max(120000), quantidadePorPeriodo: z.number().int().min(0).max(1000),
   antecedenciaCancelamentoMinutos: z.number().int().min(0).max(5256000), motivo: textoAgendaReposicao, chaveIdempotencia: chave }).strict();
 const agendaInput = z.object({ reposicaoId: id, professorId: id, inicioLocal: DataHoraAvaliacaoSchema, fimLocal: DataHoraAvaliacaoSchema, fuso: FusoInstitucionalSchema, autorizacaoExcecaoId: id.optional(), motivo: textoAgendaReposicao, chaveIdempotencia: chave }).strict();
+const previaAgendaInput = agendaInput.pick({ reposicaoId: true, professorId: true, inicioLocal: true, fimLocal: true, fuso: true, autorizacaoExcecaoId: true }).strict();
 const excecaoInput = agendaInput.extend({ evidencia: textoAgendaReposicao }).strict();
 const propostaCancelamentoInput = z.object({ agendaId: id, motivo: textoAgendaReposicao, evidencia: textoAgendaReposicao, chaveIdempotencia: chave }).strict();
 const decisaoCancelamentoInput = z.object({ propostaId: id, aprovar: z.boolean(), motivo: textoAgendaReposicao }).strict();
@@ -176,6 +177,41 @@ export async function decidirAutorizacaoExcecaoReposicaoParticular(input: { auto
       await tx.$executeRaw(Prisma.sql`INSERT INTO "DecisaoAutorizacaoExcecaoReposicaoParticular" (id,"autorizacaoId","decisorId",aprovada,motivo) VALUES (${novoId},${p.id},${autor.id},${d.aprovar},${d.motivo})`);
       await registrarEvento(tx, { tipo: "ExcecaoBeneficioReposicaoDecidida", agregadoTipo: "Matricula", agregadoId: r.matriculaId, autorId: autor.id, payload: { autorizacaoId: p.id, decisaoId: novoId, aprovada: d.aprovar } });
       return { id: novoId, aprovada: d.aprovar };
+    });
+  });
+}
+
+/** Q11/Q14: mostra a mesma cota, período e conflitos que o comando conferirá de novo. */
+export async function consultarPreviaAgendaReposicaoIndividual(input: z.input<typeof previaAgendaInput>) {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA), d = previaAgendaInput.parse(input);
+    const inicio = instanteAvaliacaoLocal(d.inicioLocal, d.fuso), fim = instanteAvaliacaoLocal(d.fimLocal, d.fuso);
+    return prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
+      await exigirAtorAgendaAtual(tx, autor.id, [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR]);
+      const c = await conferirAgendaReposicaoIndividualTx(tx, { reposicaoId: d.reposicaoId, professorId: d.professorId, inicio, fim, fuso: d.fuso, permitirSemBeneficio: true });
+      const [autorizacao] = d.autorizacaoExcecaoId ? await tx.$queryRaw<{ id: string; motivo: string }[]>(Prisma.sql`
+        SELECT a.id,a.motivo FROM "AutorizacaoExcecaoReposicaoParticular" a
+        JOIN "DecisaoAutorizacaoExcecaoReposicaoParticular" decisao ON decisao."autorizacaoId"=a.id AND decisao.aprovada
+        WHERE a.id=${d.autorizacaoExcecaoId} AND a."reposicaoId"=${c.reposicao.id} FOR SHARE
+      `) : [];
+      if (d.autorizacaoExcecaoId && !autorizacao) throw new ErroRegra("A autorização excepcional selecionada não está aprovada para esta reposição.");
+      const [excecaoAgenda] = c.diasNaoLetivos.length ? await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT x.id FROM "ExcecaoAgendaReposicaoIndividual" x
+        JOIN "DecisaoExcecaoAgendaReposicaoIndividual" decisao ON decisao."excecaoId"=x.id AND decisao.aprovada
+        WHERE x."reposicaoId"=${c.reposicao.id} AND x."professorId"=${d.professorId}
+          AND x.inicio=${instanteUtcAgendaReposicao(inicio)} AND x.fim=${instanteUtcAgendaReposicao(fim)} AND x."fusoOrigem"=${d.fuso}
+        ORDER BY x.versao DESC LIMIT 1 FOR SHARE
+      `) : [];
+      const conflito = c.disponibilidade.encontros.length > 0 || c.disponibilidade.indisponibilidades || c.disponibilidade.reservas;
+      return {
+        professor: c.professor, fusoInstitucional: c.fusoInstitucional, periodo: c.periodo,
+        quantidadePorPeriodo: c.regra?.quantidadePorPeriodo ?? null, saldo: c.saldo,
+        conflitos: { encontros: c.disponibilidade.encontros.length, indisponibilidades: c.disponibilidade.indisponibilidades, reservas: c.disponibilidade.reservas },
+        diasNaoLetivos: c.diasNaoLetivos, excecaoAgendaAprovada: !!excecaoAgenda,
+        exigeAutorizacaoExcecao: !c.regra, autorizacaoExcecao: autorizacao ?? null,
+        podeAgendar: !c.jaAgendada && !conflito && (!c.diasNaoLetivos.length || !!excecaoAgenda) && !!(autorizacao || (c.regra && (c.saldo ?? 0) > 0)),
+      };
     });
   });
 }

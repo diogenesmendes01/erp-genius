@@ -103,6 +103,18 @@ it("consulta da equipe conserva matrícula e recusa docente ou papel revogado", 
   expect((await consultarReposicoesEquipe({ matriculaId })).ok).toBe(false);
 });
 
+it("projeção do agendamento inicial é exclusiva da Secretaria ou Administração, nunca da Gestão", async () => {
+  const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
+  await inserirReposicao("agenda-projetada"); await autorizarReposicao("agenda-projetada", adminId);
+  entrar(secretaria.id);
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: { fuso: "UTC", professores: [{ id: professorId }] } }] } });
+  entrar(gestorId);
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: null }] } });
+  entrar(adminId);
+  expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "agenda-projetada", agendaInicial: { fuso: "UTC" } }] } });
+});
+
 it("consulta da equipe usa correção aprovada sem restaurar a data anulada", async () => {
   await inserirReposicao("consulta-corrigida", gestorId, "GRAVACAO");
   await autorizarReposicao("consulta-corrigida", adminId);
