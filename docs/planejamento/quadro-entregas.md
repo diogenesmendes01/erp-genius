@@ -10,6 +10,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Cadastros aplicáveis e mapeamento de vínculos integrados; ensaio/aplicação de vínculos e conciliação pendentes | 16/09/2026 | Até 61cdfe27; aplicação de alunos com 7 integrações; mapeamento CSV/XLSX validado; sem carga real |
 | F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário, quantidade e detalhes Q37 integrados; avisos da quantidade pendentes | 16/09/2026 | Até f7e84c12; revisão independente e cenários dirigidos aprovados antes da integração; ver evidências abaixo; Q38 da quantidade pendente |
+| F07.6 — agendamento inicial de reposição particular | DEV 1 Terra | Ligação operacional em implementação | 16/09/2026 | Servidor existente sem chamador na tela; conectar autorização, prévia, professor/horários, benefício ou exceção aprovada e ciclo de agenda |
 
 ## EMAIL — aceite do DEV
 
@@ -37,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- M01 checkpoint DEV `68d791d2` preparado no TESTER `9a5c4335` (correção documental `ce2aa81f`), com 184 aplicada no banco exclusivo de validação. DEV: 4 integrações, SSR e TypeScript sem incremental aprovados; revogação revalida a revisão vista. Revisão independente em andamento; ainda fora do principal.
+- Regressão unitária do principal após Q37 e manutenção dos testes: 207 arquivos, 1.378 testes aprovados em 13,42 s (sessão 1831). Não inclui o ensaio M01 ainda no DEV/TESTER.
 
 - Segunda chamada: `35d15c8b` observa o bloqueador real por `pg_blocking_pids`, sem depender de texto da consulta; mantém tentativas, intervalo, timeout e exigência de contenção. Cinco cenários passaram no DEV e no principal (sessão 60824, 17,09 s; demais 52 filtrados). TypeScript da integração passou na sessão 26329. Isso resolve a prova direcionada; não transforma retroativamente a regressão 7297 em sucesso.
 - M01/184 revisada pelo integrador e TESTER e aplicada exclusivamente em `erp_genius_test_dev_gravacoes`: normalização de produto/situação com espaços nas chaves e comparações do ensaio. Guardas e migração 183 preservadas. DEV valida sucesso com a fonte original intacta; integração principal e revisão do fluxo completo ainda pendentes.
