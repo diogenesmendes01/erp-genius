@@ -38,8 +38,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
-- Reservas de migração vigentes: F07.3 usa 162/165/166 e corretiva 167; WhatsApp N01 usa 163 e corretiva 168; e-mail N01 já usa 164. IDs adicionais exigem coordenação antes da aplicação. Não renomear nem editar migração aplicada.
-- Build após N01 e-mail integrado passou (79 páginas estáticas). Regressão dirigida dos produtores existentes de remarcação/reposição está em execução; não confundir com a regressão global anterior à integração.
+- Reservas de migração vigentes: F07.3 usa 162/165/166 e corretiva 167; WhatsApp N01 usa 163 e corretiva 168; e-mail N01 já usa 164. Exceção identificada: o DEV WhatsApp também aplicou `20260916165000_config_avisos_agenda_unica` antes de conferir a reserva; ela é distinta de `20260916165000_correcao_integridade_replanejamento_conjunto`. Preservar ambos os arquivos e checksums: Prisma identifica migrações pelo nome completo, e os objetos alterados são independentes. Não criar migração vazia para renumerar. IDs adicionais exigem coordenação antes da aplicação. Não renomear nem editar migração aplicada.
+- Build após N01 e-mail integrado passou (79 páginas estáticas). Regressão dirigida dos produtores existentes de remarcação/reposição passou: 3 arquivos e 40 testes (76,48 s); não confundir com a regressão global anterior à integração.
 
 - Integração N01 e-mail: 11 testes de integração, 3 de rota/codificação e TypeScript passaram no checkout principal. Migrações 154/156/157/159/161/164 aplicadas somente no banco descartável do integrador. Fila acessível pela navegação da Secretaria/Administração. Gate de envio permanece desligado; não houve envio ou homologação externa.
 
