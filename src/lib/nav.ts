@@ -12,6 +12,7 @@ export const NAV: NavItem[] = [
   { href: "/academico", label: "Mudanças acadêmicas", icon: "UserCheck", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
   { href: "/comissoes", label: "Comissões", icon: "Wallet", papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
   { href: "/secretaria", label: "Matrículas", icon: "UserCheck", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] },
+  { href: "/secretaria/envios-portal", label: "Envios do portal", icon: "Mail", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] },
   { href: "/diario", label: "Diário de aulas", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
   { href: "/carteiras", label: "Carteiras", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL] },
   { href: "/home", label: "Home", icon: "Home", papeis: "all" },

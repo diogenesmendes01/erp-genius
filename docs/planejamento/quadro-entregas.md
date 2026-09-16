@@ -4,7 +4,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
-| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Em implementação | 16/09/2026 | Commit intermediário 0c65266; aceite pendente |
+| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Fila/guard SQL validados; Q166 em implementação | 16/09/2026 | Integração parcial revisada; aceite completo pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Em implementação | 16/09/2026 | Pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Preparando cenários; aguarda entregas completas | 16/09/2026 | Pendente |
 
@@ -13,6 +13,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Secretaria/Administração localiza e acompanha solicitações com paginação e permissões revalidadas. Tela distingue preparado, aceito pelo provedor, incerto e demais estados sem apresentar aceitação como entrega.
 - Convite, recuperação e validação de troca usam o despacho existente; operação não revela token/senha/credencial. Contato antigo não ativa convite após alteração; proteção equivalente no banco e testes de concorrência.
 - Resultados incertos têm caminho operacional rastreável e seguro, preservando evidências; não reenviar automaticamente, não inventar confirmação do provedor e não reutilizar token vencido. Qualquer decisão de negócio realmente ausente deve ser destacada, sem bloquear trabalho independente.
+- Q166 aprovada em 16/09: Secretaria registra evidência; Administração autoriza nova emissão quando necessária. Aprovação independente, novo token/revogação do anterior e preservação da tentativa original. Migração 148 reservada para esse fluxo; não alterar a 146 já aplicada.
 - Fluxo banco/servidor/tela/testes e SPEC na mesma entrega. Migração reservada: 146. Código de integração externo permanece desligado até homologação; limites externos ficam separados da implementação local.
 
 ## VIDEO — aceite do DEV
@@ -30,6 +31,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - Ambiente: worktrees independentes para dev-email, dev-gravacoes e tester; bancos distintos no cluster local descartável localhost:54329. node_modules próprios, lockfile npm preservado.
 - Ambientes criados em `C:/Users/Mendes/.codex/worktrees/erp-dev-email`, `erp-dev-gravacoes` e `erp-tester`, cada um na branch `codex/equipe-<perfil>`. Instalação npm ci pelo integrador e geração Prisma concluídas nos três. Consulta real `current_database()` confirmou respectivamente `erp_genius_test_dev_email`, `erp_genius_test_dev_gravacoes` e `erp_genius_test_tester`. Migrações das funcionalidades são aplicadas pelos respectivos DEVs somente nesses bancos.
 - Infraestrutura de perfis: três testes passaram (isolamento, recusa de perfil divergente e de destino arbitrário), TypeScript passou. Commit de base: 480c0a3.
+- Primeira revisão EMAIL: tester validou fila/página 5/5 e identidade/envio/SQL 12/12. Integração repetiu 5 unitários e 10 integrações de identidade/envio; encontrou diferença de microssegundos no fixture SQL independente, corrigiu para relógio do banco e verificou 2/2 cenários SQL. Guard de convite vigente e preservação Q74 confirmados; tratamento Q166 permanece aberto. Não há homologação externa nem alegação de fluxo completo.
 - Comandos por worktree: `node scripts/prepare-test-profile.mjs`; executável local Prisma generate; Vitest local com `-c vitest.integration.config.ts`. Preparação/instalação das dependências é exclusiva do integrador.
 - Prisma manual seguro: `node scripts/prisma-teste.mjs generate`, `node scripts/prisma-teste.mjs migrate deploy` ou `node scripts/prisma-teste.mjs migrate status`. O comando injeta somente a URL do perfil local, não usa npx e não permite reset. Vitest já aplica migrações automaticamente no mesmo perfil.
 - Não abrir terceira funcionalidade. Bloqueios externos não devem aparecer como falta de código nem ser ocultados por testes locais.
