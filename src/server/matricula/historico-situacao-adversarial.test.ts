@@ -35,3 +35,10 @@ describe("contradições entre fatos migrados e operação posterior", () => {
   });
 });
 
+
+it("encaminha ano civil zero operacional para conferência também no ramo migrado", () => {
+  const h: HistoricoSituacaoMatricula = { status: "PAUSADA", ativadaEm: null,
+    fatosMigracao: [{ ordem: 1, tipo: "ATIVACAO", efetivoEm: new Date("0000-01-01T00:00:00Z") }],
+    pausas: [{ aplicadaEm: new Date("2026-09-16T00:00:00Z"), snapshot: { dataEfetiva: "0000-02-29", fusoInstitucional: "UTC" } }], retomadas: [] };
+  expect(situacaoMatriculaNaAula(h, new Date("0000-03-01T00:00:00Z"))).toBe("A_CONFERIR");
+});
