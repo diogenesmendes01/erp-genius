@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lerCsvPreparacao, linhasMapeadasPreparacao } from "./planilha";
+import { pendenciasDaLinha } from "./preparacao";
 
 describe("planilha de preparação M01", () => {
   it("lê acentos, textos numéricos, linhas vazias e cabeçalhos duplicados", () => {
@@ -19,5 +20,12 @@ describe("planilha de preparação M01", () => {
     const [linha] = linhasMapeadasPreparacao(aba, { "aluno.id": "c1", "aluno.nome": "c2" }, "CADASTRO");
     expect(linha).toMatchObject({ linhaOrigem: "dados.csv!2", aluno: { id: "42", nome: "Ana" }, dadosAdicionais: { id: "42", nome: "Ana", ignorada: "área antiga" } });
     expect(linha.financeiro).toMatchObject({ id: null, valor: null });
+  });
+  it("mapeia CSV de vínculo e preserva datas civis para a conferência", () => {
+    const aba = lerCsvPreparacao("aluno,turma,matricula,inicio,fim,produto,moeda,pais,alocInicio,alocFim\na1,t1,m1,2026-02-30,2026-02-01,p1,BRL,BR,2026-03-02,2026-03-01\na2,t2,m2,2024-02-29,2024-03-01,p2,BRL,BR,2024-02-29,2024-03-01", "vinculos.csv");
+    const [invalida, valida] = linhasMapeadasPreparacao(aba, { "aluno.id": "c1", "turma.id": "c2", "matricula.id": "c3", "matricula.inicio": "c4", "matricula.fim": "c5", "matricula.produtoOrigem": "c6", "matricula.moeda": "c7", "matricula.pais": "c8", "alocacao.inicio": "c9", "alocacao.fim": "c10" }, "VINCULO_MATRICULA");
+    expect(invalida?.matricula?.inicio).toBe("2026-02-30");
+    expect(pendenciasDaLinha(invalida!).map((p) => p.codigo)).toEqual(expect.arrayContaining(["INICIO_MATRICULA_INVALIDO", "FIM_ALOCACAO_ANTES_INICIO"]));
+    expect(pendenciasDaLinha(valida!).map((p) => p.codigo)).not.toContain("INICIO_MATRICULA_INVALIDO");
   });
 });
