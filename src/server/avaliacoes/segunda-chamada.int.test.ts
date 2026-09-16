@@ -1095,12 +1095,18 @@ it.each(["CRIAR", "AGENDAR", "DESIGNAR", "DECIDIR", "PRORROGAR"] as const)("%s n
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
     sinalizarBloqueio();
     let esperaConfirmada = false;
+    let atividades: Array<{ pid: number; state: string; waitEventType: string | null; waitEvent: string | null; query: string; bloqueadores: number[] }> = [];
     for (let tentativa = 0; tentativa < 100; tentativa++) {
-      const [estado] = await prisma.$queryRaw<{ esperando: boolean }[]>`SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>${sessao.pid} AND state='active' AND wait_event_type='Lock' AND (query LIKE '%calendario-escola%' OR query LIKE '%ReservaSegundaChamada%')) AS esperando`;
-      if (estado.esperando) { esperaConfirmada = true; break; }
+      atividades = await prisma.$queryRaw<typeof atividades>`
+        SELECT a.pid,a.state,a.wait_event_type AS "waitEventType",a.wait_event AS "waitEvent",
+          left(a.query, 240) AS query,pg_blocking_pids(a.pid) AS bloqueadores
+        FROM pg_stat_activity a
+        WHERE a.datname=current_database() AND a.pid<>${sessao.pid} AND a.pid<>pg_backend_pid()
+      `;
+      if (atividades.some((a) => a.bloqueadores.includes(sessao.pid))) { esperaConfirmada = true; break; }
       await new Promise(resolve => setTimeout(resolve, 20));
     }
-    expect(esperaConfirmada).toBe(true);
+    expect(esperaConfirmada, JSON.stringify(atividades)).toBe(true);
     // Mesma ordem do guard de realização: reserva, calendário, proposta.
     await tx.$queryRaw`SELECT id FROM "PropostaSegundaChamada" WHERE id=${reserva.propostaId} FOR SHARE`;
   }, { timeout: 10000 });
