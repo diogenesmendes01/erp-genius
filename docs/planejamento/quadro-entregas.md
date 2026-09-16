@@ -9,7 +9,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 2 Terra | Diagnósticos e reconferência operacional integrados; homologação externa pendente | 16/09/2026 | Até 188a13d3; reconferência com 7 integrações independentes e TypeScript aprovados; build 6170 aprovado; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Cadastros aplicáveis e mapeamento de vínculos integrados; ensaio/aplicação de vínculos e conciliação pendentes | 16/09/2026 | Até 61cdfe27; aplicação de alunos com 7 integrações; mapeamento CSV/XLSX validado; sem carga real |
-| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário e revisão de quantidade integrados; detalhes Q37 em revisão e avisos da quantidade pendentes | 16/09/2026 | Até 8c7d6111; 7 integrações aprovadas no TESTER e principal; Q38 da quantidade pendente |
+| F07.3 — aplicação conjunta do calendário e modalidade | DEV 1 Terra | Calendário, quantidade e detalhes Q37 integrados; avisos da quantidade pendentes | 16/09/2026 | Até f7e84c12; revisão independente e cenários dirigidos aprovados antes da integração; ver evidências abaixo; Q38 da quantidade pendente |
 
 ## EMAIL — aceite do DEV
 
