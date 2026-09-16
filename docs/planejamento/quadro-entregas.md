@@ -42,6 +42,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Evidência de base
 
+- Paginação VIDEO integrada até `63811e4`: alvos e propostas têm limites e cursores, incluindo término independente de cada lista; contexto mostra matrícula/aluno e data da aula. Decisão exige motivo informado e a interface respeita `podeDecidir` por proposta. Na integração passaram 107 testes do recorte, TypeScript e lint. Testes independentes foram preservados e os cenários assimétricos ficaram em arquivo próprio; revisão final do TESTER ainda em conferência.
+
 - Q166: corretivas 152/153 no DEV EMAIL. P3015 da 153 foi causado por arquivo Windows-1252 inválido para UTF-8; integrador confirmou os bytes, converteu antes da aplicação e executou deploy Prisma com sucesso no banco exclusivo DEV. Migrações aplicadas permanecem preservadas. Teste de codificação dos SQL foi acrescentado e passou na integração; testes funcionais da Q166 continuam no DEV/TESTER.
 
 - Integração VIDEO em 16/09: 102 testes unitários/rotas/SSR e 44 integrações passaram na branch principal de trabalho, com migrações 147/149 no banco descartável `erp_genius_test`; TypeScript e conferência de whitespace passaram. Inclui publicação, reposição e regularização docente. Ajustes incrementais da tela seguem no DEV; não houve homologação externa.

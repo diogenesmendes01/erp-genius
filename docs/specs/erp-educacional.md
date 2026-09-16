@@ -356,4 +356,6 @@ Decisão aprovada: Secretaria registra a evidência consultada; Administração 
 
 ### Integração da fila e proteção do convite
 
+A regularização de gravações possui consulta paginada de publicações, materiais e propostas, identificação da aula/matrícula, motivo informado para decisão e bloqueio de autoaprovação na interface e no servidor. A paginação preserva o término independente das listas para evitar repetição ou omissão. Testes de integração e revisão fixa não constituem homologação no Drive real; o estado corrente e a revisão final ficam no quadro único de entregas.
+
 A tela `/secretaria/envios-portal` integra consulta paginada e guard de Secretaria/Administração, distinguindo aceitação pelo provedor de entrega. A migração `20260916100000_convite_email_atual` impede por SQL a ativação inicial de convite para contato cadastral alterado/removido, preservando a identidade já estabelecida e o fluxo Q74. Testes SSR/fila: 5 aprovados. Identidade/envio: 10 aprovados na integração; os dois cenários SQL independentes passaram após corrigir a precisão do relógio do fixture. TypeScript passou; lint sem erros, com aviso preexistente na Sidebar. Q166 e homologação externa continuam pendentes; a entrega EMAIL ainda não está concluída. Estado corrente no quadro único.
