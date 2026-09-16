@@ -38,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- Regressão global 7297 finalizada: 139 arquivos, 1.371 testes aprovados e dois reprovados, 2.542,96 s. Conferência falhou pela fixture obsoleta; segunda chamada falhou porque a observação de contenção não encontrou espera (linha 1103), sem comprovar inversão de locks. O arquivo completo de segunda chamada passou 57/57 no DEV isolado; a observação do teste segue em revisão, sem afrouxar a ordem exigida.
+- Integração posterior: Q37 e invalidação concorrente incorporadas até `f7e84c12`; correção da fixture de comprovante em `5703af59`; comentário obsoleto de alocação corrigido em `0c31aef4` após conferir índices reais. Principal: 19/19 integrações de quantidade/conferência em 47,96 s (sessão 20888), mais 7 testes de preview/SSR aprovados. Avisos de quantidade continuam pendentes; a regressão global anterior não é declarada aprovada.
+
 - Falha de conferência reproduzida e corrigida somente no teste: o claim passou a usar o delegate transacional, que o spy antigo no delegate raiz não interceptava. DEV `8e67c6bd` injeta o comprovante na releitura posterior ao claim, confirma estado `ENVIANDO` e uma única injeção; preserva adiamento e ausência de chamada ao driver. Arquivo completo: 8/8 aprovados em 14,33 s no banco DEV EMAIL. Commit aguarda término da regressão 7297 para integração.
 
 - Diagnóstico de tempo no banco isolado DEV EMAIL: três amostras de limpeza completa das 300 tabelas levaram 1.160/1.541/1.471 ms (média 1.391 ms); seed mínimo, média 13,6 ms. O custo está no TRUNCATE global, não na descoberta das tabelas (~3 ms). Preservar isolamento; não substituir limpeza por seed nem prometer ganho sem validar uma alternativa. Nenhuma dependência ou configuração foi alterada.
