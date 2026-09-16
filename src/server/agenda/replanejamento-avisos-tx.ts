@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
+import { ReplanejamentoSnapshotSchema } from "./replanejamento-snapshot";
 
 const HorarioSchema = z.object({ encontroId: z.string().min(1), inicioAnterior: z.string().datetime(), fimAnterior: z.string().datetime(), inicioProposto: z.string().datetime(), fimProposto: z.string().datetime() }).strict();
 const EventoSchema = z.object({ aprovada: z.literal(true), revisaoId: z.string().min(1), decisaoId: z.string().min(1), encontrosIds: z.array(z.string().min(1)).min(1), horarios: z.array(HorarioSchema).min(1) }).passthrough();
@@ -40,6 +41,9 @@ export async function criarAvisosReplanejamentoConjuntoTx(tx: Prisma.Transaction
   if (new Set(payload.data.encontrosIds).size !== payload.data.encontrosIds.length || new Set(payload.data.horarios.map((h) => h.encontroId)).size !== payload.data.horarios.length || payload.data.encontrosIds.length !== payload.data.horarios.length || !payload.data.horarios.every((h) => payload.data.encontrosIds.includes(h.encontroId))) throw new ErroRegra("Evento de replanejamento possui encontros duplicados ou incompletos.");
   const rascunho = await tx.rascunhoReplanejamento.findUnique({ where: { id: entrada.rascunhoId }, include: { decisaoConjunta: { include: { aplicacao: true } } } });
   if (!rascunho?.decisaoConjunta?.aprovada || !rascunho.decisaoConjunta.aplicacao || rascunho.decisaoConjunta.id !== payload.data.decisaoId) throw new ErroRegra("Decisão aplicada não corresponde ao evento de replanejamento.");
+  const snapshot = ReplanejamentoSnapshotSchema.safeParse(rascunho.snapshot);
+  const propostas = snapshot.success ? snapshot.data.revisoes.flatMap((revisao) => revisao.previsao?.propostas.filter((proposta) => proposta.alterado) ?? []) : [];
+  if (!snapshot.success || propostas.length !== payload.data.horarios.length || !payload.data.horarios.every((horario) => propostas.some((proposta) => proposta.encontroId === horario.encontroId && proposta.inicioAnterior === horario.inicioAnterior && proposta.fimAnterior === horario.fimAnterior && proposta.inicioProposto === horario.inicioProposto && proposta.fimProposto === horario.fimProposto))) throw new ErroRegra("Fotografia da revisão não corresponde aos horários do evento.");
   const encontros = await tx.encontroAgenda.findMany({ where: { id: { in: payload.data.encontrosIds } }, select: { id: true, turmaId: true, matriculaId: true, inicio: true, fim: true } });
   if (encontros.length !== payload.data.encontrosIds.length || !payload.data.horarios.every((h) => encontros.some((e) => e.id === h.encontroId && e.inicio.toISOString() === h.inicioProposto && e.fim.toISOString() === h.fimProposto))) throw new ErroRegra("Agenda atual não corresponde aos horários aplicados.");
   const turmasIds = [...new Set(encontros.flatMap((e) => e.turmaId ? [e.turmaId] : []))];
