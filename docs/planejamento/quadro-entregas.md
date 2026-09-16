@@ -7,8 +7,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
-| N01 — avisos de alteração de agenda | DEV 1 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
+| N01 — avisos de alteração de agenda | DEV 1 Terra | Correção de isolamento/contato em revisão; WhatsApp em implementação | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação e entrada CSV/XLSX integradas; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
+| F07.3 — aplicação conjunta do calendário | DEV 2 Terra | Banco/servidor/tela em implementação | 16/09/2026 | Branch codex/dev-aplicacao-calendario; migração 162 reservada; exige conjunto atômico e revisão independente |
 
 ## EMAIL — aceite do DEV
 
