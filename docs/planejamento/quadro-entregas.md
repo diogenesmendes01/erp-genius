@@ -4,8 +4,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
-| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
-| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação e revisão local entregues; regressão global em execução | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
+| EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
+| VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
 | N01 — avisos de alteração de agenda | DEV 1 Terra | Conferência do código e implementação do próximo recorte | 16/09/2026 | Base 2df2f4d; fila, escopo e acompanhamento; sem envio real |
 | M01 — preparação operacional de migração | DEV 2 Terra | Preparação implementada; ensaio/aplicação/conciliação pendentes | 16/09/2026 | Migração 155, lotes/linhas/pêndencias/colisões e consulta administrativa; sem carga real |
@@ -30,6 +30,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 - A revisão inclui a tela de proposta/consulta/aprovação de fontes substitutas e material legado. Actions e mensagens de erro sem caminho operacional não fecham o aceite. O exemplo de ambiente agora distingue credenciais de publicação/escrita das credenciais de leitura do player.
 
 ## Integração e revisão
+
+- Regressão global da base EMAIL/VIDEO/Q166 finalizada: 124 arquivos e 1.310 testes de integração aprovados, duração 2.387,72 s. Essa evidência precede M01/N01. Base M01 integrada em dcf8abe/57bf751/7a651f3; migrações 155/158/160 aplicadas no banco descartável do integrador. Sete testes unitários/SSR/codificação SQL passaram; integração direcionada em execução.
 
 - M01: base `8344772` e corretivas `39ba53b`/`0aeef5a` aprovadas pelo TESTER (6 unitários/SSR e 6 integrações; migrações 155/158/160 no banco exclusivo). Integração aguarda a regressão global. A entrada operacional por arquivo/mapeamento segue no DEV 2: a tela de JSON não fecha o uso pela equipe. Preservar zeros iniciais, precisão dos identificadores e todas as colunas, inclusive cabeçalhos repetidos; não inferir consentimento ou aplicar cadastros.
 - N01: DEV 1 passou a ser `terra_avisos_validacao_fluxo`, no mesmo worktree/branch, substituindo o agente anterior. Aceite pendente inclui teste de aprovação real da substituição em turma regular, destinatários pelo vínculo histórico da matrícula, conteúdo específico da alteração e resultados distintos de aceitação, recusa e incerteza. Migração 159 aplicada deve permanecer preservada; 161 reservada para a correção do vínculo de turma.
