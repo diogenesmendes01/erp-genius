@@ -40,6 +40,7 @@ export default async function MigracaoPage({ params, searchParams }: { params: P
       <Comparacao origem={d.revisao.origem} destino={d.revisao.destino} alteracoes={d.revisao.alteracoes} encontros={d.revisao.encontrosRevisados} alocacoes={d.revisao.alocacoesAtivasRevisadas} />
       <ProporMigracao key={`${d.revisao.estadoHash}:${d.revisao.versaoEsperada}`} turmaId={turmaId} destinoId={d.revisao.destino.id} estadoHash={d.revisao.estadoHash} versaoEsperada={d.revisao.versaoEsperada} />
     </section>}
+    <Link className="underline" href={`/academico/regras/turmas/${turmaId}/historica`}>Conferência e histórico de regra legada</Link>
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
     {!h.propostas.length && <p>Nenhuma mudança proposta.</p>}
     {h.propostas.map(v => <article key={v.id} className="space-y-4 rounded border p-4">
