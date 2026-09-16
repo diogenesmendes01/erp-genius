@@ -43,6 +43,7 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 ## Evidência de base
 
 - Integração VIDEO em 16/09: 102 testes unitários/rotas/SSR e 44 integrações passaram na branch principal de trabalho, com migrações 147/149 no banco descartável `erp_genius_test`; TypeScript e conferência de whitespace passaram. Inclui publicação, reposição e regularização docente. Ajustes incrementais da tela seguem no DEV; não houve homologação externa.
+- Após `99741ba`, build Next.js passou (76 páginas estáticas, incluindo a rota dinâmica de regularização) e regressão unitária completa passou: 188 arquivos, 1.329 testes. Lint dos novos módulos de fonte fixa e regularização passou. Esta evidência precede os próximos ajustes da tela e a integração Q166.
 
 - Rodada de 16/09: integração do worker EMAIL aprovada em 3 cenários (concorrência sem duplicidade, incerteza sem reenvio automático e rotina desligada sem token/transporte), com provedor simulado; TypeScript passou após ajustar o estreitamento do retorno no fixture. Não comprova entrega externa.
 - TESTER validou VIDEO `51d4ff8` + `7bc0f41`: 97 testes unitários/rotas/SSR e 10 integrações; reforços independentes em `2466a48`. Ainda em revisão: paginação da fila, identificação do destino, motivo real de decisão e estabilidade da chave de tentativa na tela. Q166 `523743c` segue em revisão independente, incluindo recuperação assistida Q74 e repetição de decisão após mudança de estado. Nenhuma das duas frentes está encerrada.
