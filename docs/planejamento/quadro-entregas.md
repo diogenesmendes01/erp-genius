@@ -38,6 +38,9 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 ## Integração e revisão
 
+- M01: integrador concluiu generate e deploy da 180 apenas em `erp_genius_test_dev_gravacoes` (sessão 54899, exit 0). Migração aplicada é imutável. Testes de ensaio/aplicação/replay, concorrência e guardas SQL seguem no DEV; compilação isolada não comprova funcionamento. Revisão pediu diagnóstico de candidatos também no ensaio e confirmação persistente com resultado por linha antes de aplicar.
+- F07.3: checkpoint DEV `99530361` preparado no TESTER como `102c90fa`; generate e deploy 179/181 passaram no banco exclusivo (sessão 61439). DEV informou 1 integração aprovada de aumento publicado 2→3; TESTER executa revisão SQL e origem vigente, enquanto DEV completa rascunho/publicação e avisos. Não integrado no principal.
+
 - F07.3: 179 aplicada apenas no DEV EMAIL; conferência do integrador comprovou checksum idêntico no arquivo e em `_prisma_migrations` (`4f981b4e5ba918d33ae15c84d2b38567a2ab715620421b4e6518870b3059165d`). Preservar essa versão. TESTER encontrou referência de meta não aprovada, classificação de preservação por meta global e bijeção SQL incompleta entre turmas. DEV corrige código e prepara migração 181, reservada; 180 permanece M01. Não há aceite do fluxo enquanto os casos reais não passarem.
 
 - M01: DEV 2 implementa ensaio e aplicação administrativa de cadastros de alunos com identidade persistente de origem, replay sem duplicação, divergências em conferência e indicação das entidades/campos não aplicados. Migração 180 reservada; não criar matrícula/turma com dados insuficientes nem consentimento presumido. Contratos, vínculos e conciliação permanecem no escopo pendente.
