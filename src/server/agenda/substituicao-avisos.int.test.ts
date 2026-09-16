@@ -284,3 +284,83 @@ it("template revogado antes da preparação deixa o aviso pendente sem chamar o 
   expect(enviarTemplateMock).not.toHaveBeenCalled();
   expect(await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP" } })).toMatchObject({ situacao: "PREPARADO" });
 });
+
+it("SQL direto não aceita autorização de responsável pertencente a outra matrícula", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const avisoBase = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { matriculaId: matriculasElegiveis[0], canal: "EMAIL" } });
+  const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável cruzado", telefoneE164: "+50678888888" } });
+  const alvo = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: alvo.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const alunoOutro = await prisma.aluno.create({ data: { primeiroNome: "Outro contrato", paisId: catalogo.pais.id } });
+  const matriculaOutra = await prisma.matricula.create({ data: { alunoId: alunoOutro.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: alunoOutro.id, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const autorizacaoOutra = await prisma.autorizacaoComunicacaoAcademica.create({ data: { matriculaId: matriculaOutra.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização de outro contrato" } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "aviso-autorizacao-cruzada", mudancaId: avisoBase.mudancaId, eventoId: avisoBase.eventoId, matriculaId: alvo.id, alunoId: alvo.alunoId, canal: "WHATSAPP", contatoHash: "hash-cruzado", chave: "cruzado", destinatarioResponsavelId: responsavel.id, autorizacaoComunicacaoAcademicaId: autorizacaoOutra.id } })).rejects.toThrow();
+});
+
+it("SQL direto protege autoria, deleção e identidade imutável da autorização", async () => {
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável imutável", telefoneE164: "+50679999996" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const professor = await criarUsuario(["PROFESSOR"]);
+  await expect(prisma.autorizacaoComunicacaoAcademica.create({ data: {
+    matriculaId: matricula.id, responsavelId: responsavel.id, autorizadaPorId: professor.id, evidencia: "Inserção direta por professor",
+  } })).rejects.toThrow("papel ativo");
+  const autorizacao = await prisma.autorizacaoComunicacaoAcademica.create({ data: {
+    matriculaId: matricula.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização acadêmica válida",
+  } });
+  await expect(prisma.autorizacaoComunicacaoAcademica.delete({ where: { id: autorizacao.id } })).rejects.toThrow("não pode ser apagada");
+  await expect(prisma.$executeRaw`UPDATE "AutorizacaoComunicacaoAcademica" SET "matriculaId" = ${matriculasElegiveis[1]} WHERE id = ${autorizacao.id}`).rejects.toThrow("imutável");
+});
+
+it("bloqueia autorização futura ou revogada no aviso, mas preserva resultado histórico", async () => {
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  const email = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "EMAIL", matriculaId: matriculasElegiveis[0] } });
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  const responsavel = await prisma.responsavel.create({ data: { nome: "Responsável temporal", telefoneE164: "+50679999995" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
+  const futura = await prisma.autorizacaoComunicacaoAcademica.create({ data: {
+    matriculaId: matricula.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização futura registrada", vigenteEm: new Date("2100-01-01T00:00:00.000Z"),
+  } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-autorizacao-futura", mudancaId: email.mudancaId, eventoId: email.eventoId, matriculaId: matricula.id, alunoId: matricula.alunoId,
+    canal: "WHATSAPP", contatoHash: "hash-futura", chave: "autorizacao-futura", destinatarioResponsavelId: responsavel.id, autorizacaoComunicacaoAcademicaId: futura.id,
+  } })).rejects.toThrow("Autorização não corresponde");
+  const vigente = await prisma.autorizacaoComunicacaoAcademica.create({ data: {
+    matriculaId: matricula.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização vigente registrada",
+  } });
+  const aviso = await prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-autorizacao-vigente", mudancaId: email.mudancaId, eventoId: email.eventoId, matriculaId: matricula.id, alunoId: matricula.alunoId,
+    canal: "WHATSAPP", contatoHash: "hash-vigente", chave: "autorizacao-vigente", destinatarioResponsavelId: responsavel.id, autorizacaoComunicacaoAcademicaId: vigente.id,
+  } });
+  await prisma.autorizacaoComunicacaoAcademica.update({ where: { id: vigente.id }, data: { revogadaEm: new Date(), revogadaPorId: secretariaId, motivoRevogacao: "Revogação solicitada pelo responsável" } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: {
+    id: "aviso-autorizacao-revogada", mudancaId: email.mudancaId, eventoId: email.eventoId, matriculaId: matricula.id, alunoId: matricula.alunoId,
+    canal: "WHATSAPP", contatoHash: "hash-revogada", chave: "autorizacao-revogada", destinatarioResponsavelId: responsavel.id, autorizacaoComunicacaoAcademicaId: vigente.id,
+  } })).rejects.toThrow("Autorização não corresponde");
+  await expect(prisma.avisoAlteracaoAgenda.update({ where: { id: aviso.id }, data: { situacao: "FALHOU" } })).resolves.toMatchObject({ situacao: "FALHOU" });
+});
+
+it("não troca responsável autorizado por outra pessoa com o mesmo telefone antes do driver", async () => {
+  for (const [indice, matriculaId] of matriculasElegiveis.entries()) {
+    const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+    await prisma.aluno.update({ where: { id: matricula.alunoId }, data: { whatsapp: true, telefoneE164: `+5067333333${indice}` } });
+  }
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
+  const original = await prisma.responsavel.create({ data: { nome: "Responsável original", telefoneE164: "+50679999994" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: original.id, papel: "PEDAGOGICO" } });
+  await prisma.autorizacaoComunicacaoAcademica.create({ data: { matriculaId: matricula.id, responsavelId: original.id, autorizadaPorId: secretariaId, evidencia: "Autorização da pessoa original" } });
+  await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  expect(await enfileirarAvisosAgendaWhatsApp()).toBe(3);
+  await prisma.alunoResponsavel.deleteMany({ where: { alunoId: matricula.alunoId, responsavelId: original.id } });
+  const substitutoMesmoTelefone = await prisma.responsavel.create({ data: { nome: "Outra pessoa mesmo telefone", telefoneE164: "+50679999994" } });
+  await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: substitutoMesmoTelefone.id, papel: "PEDAGOGICO" } });
+  vi.stubEnv("WHATSAPP_LIVE", "1");
+  enviarTemplateMock.mockResolvedValue({ providerMessageId: "wamid-identidade" });
+  await despacharFila(new Date(), { somenteAvisosAgenda: true });
+  expect(enviarTemplateMock).toHaveBeenCalledTimes(2);
+  const avisoOriginal = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { destinatarioResponsavelId: original.id } });
+  const intencaoOriginal = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: avisoOriginal.id } });
+  expect(intencaoOriginal.status).toBe("CANCELADA");
+});
