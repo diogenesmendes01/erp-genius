@@ -418,6 +418,10 @@ enum Papel {
 }
 
 model Usuario {
+  aplicacoesVinculoMigracao AplicacaoVinculoMigracao[] @relation("ExecutorAplicacaoVinculoMigracao")
+  fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[] @relation("ConferidorFatoSituacaoMatriculaMigracao")
+  termosHistoricosMigracao TermosHistoricosMatriculaMigracao[] @relation("RevisorTermosHistoricosMatriculaMigracao")
+  mapasMatriculaMigracao MapaOrigemMatriculaMigracao[] @relation("AutorMapaOrigemMatriculaMigracao")
   correspondenciasProdutoMigracao CorrespondenciaProdutoMigracao[] @relation("RevisorCorrespondenciaProdutoMigracao")
   correspondenciasTurmaMigracao CorrespondenciaTurmaMigracao[] @relation("RevisorCorrespondenciaTurmaMigracao")
   correspondenciasStatusMatriculaMigracao CorrespondenciaStatusMatriculaMigracao[] @relation("RevisorCorrespondenciaStatusMatriculaMigracao")
@@ -1079,6 +1083,10 @@ model AlunoResponsavel {
 }
 
 model AlocacaoTurma {
+  aplicacaoVinculoMigracao AplicacaoVinculoMigracao?
+  fimVigencia DateTime? @db.Timestamptz(6)
+  inicioVigencia DateTime? @db.Timestamptz(6)
+  provenienciaVinculo ProvenienciaVinculoMatricula?
   autorizacoesEspeciaisPreparacaoRecuperacao AutorizacaoEspecialPreparacaoRecuperacao[]
   extrasRecuperacao PropostaExtraRecuperacao[]
   planosRecuperacao PropostaPlanoRecuperacao[]
@@ -1586,6 +1594,10 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  aplicacoesVinculoMigracao AplicacaoVinculoMigracao[]
+  fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[]
+  termosHistoricosMigracao TermosHistoricosMatriculaMigracao?
+  mapasOrigemMigracao MapaOrigemMatriculaMigracao?
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
   pendenciasAvisosAgenda PendenciaAvisoAgenda[]
   autorizacoesComunicacaoAcademica AutorizacaoComunicacaoAcademica[]
@@ -6498,6 +6510,10 @@ model LotePreparacaoMigracao {
 }
 
 model LinhaPreparacaoMigracao {
+  aplicacoesVinculoMigracao AplicacaoVinculoMigracao[]
+  fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[]
+  mapasMatriculaMigracao MapaOrigemMatriculaMigracao[]
+  termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]
   id String @id @default(cuid())
   loteId String
   lote LotePreparacaoMigracao @relation(fields: [loteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -6615,6 +6631,9 @@ model CorrespondenciaStatusMatriculaMigracao {
 }
 
 model EnsaioVinculoMigracao {
+  aplicacoes AplicacaoVinculoMigracao[]
+  fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[]
+  termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]
   id String @id @default(cuid())
   linhaId String
   linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -6677,3 +6696,99 @@ model ConflitoLinhaPreparacaoMigracao {
   @@unique([loteId, linhaOrigem, entradaHash], map: "ConflitoLinhaPreparacaoMigracao_lote_linha_hash_key")
   @@index([loteId, criadoEm], map: "ConflitoLinhaPreparacaoMigracao_lote_criado_idx")
 }
+enum ProvenienciaVinculoMatricula {
+  MIGRACAO
+}
+
+enum SemanticaFimVinculoMigracao {
+  LIMITE_EXCLUSIVO
+  ULTIMO_DIA_COBERTO
+}
+
+enum TipoFatoSituacaoMatriculaMigracao {
+  ATIVACAO
+  PAUSA
+  ENCERRAMENTO
+  CANCELAMENTO
+}
+
+model MapaOrigemMatriculaMigracao {
+  id String @id @default(cuid())
+  origem String
+  matriculaOrigemId String
+  matriculaId String @unique
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  entradaHash String
+  criadoPorId String
+  criadoPor Usuario @relation("AutorMapaOrigemMatriculaMigracao", fields: [criadoPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([origem, matriculaOrigemId], map: "MapaOrigemMatriculaMigracao_origem_matricula_key")
+  @@index([linhaId], map: "MapaOrigemMatriculaMigracao_linha_idx")
+}
+
+model TermosHistoricosMatriculaMigracao {
+  id String @id @default(cuid())
+  matriculaId String @unique
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  entradaHash String
+  ensaioId String
+  ensaio EnsaioVinculoMigracao @relation(fields: [ensaioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  proveniencia ProvenienciaVinculoMatricula
+  diaVencimento Int
+  mesesPlano Int
+  evidenciaContrato Json
+  evidenciaPagamento Json
+  revisadoPorId String
+  revisadoPor Usuario @relation("RevisorTermosHistoricosMatriculaMigracao", fields: [revisadoPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revisadoEm DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model FatoSituacaoMatriculaMigracao {
+  id String @id @default(cuid())
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  entradaHash String
+  contextoHash String
+  ensaioId String
+  ensaio EnsaioVinculoMigracao @relation(fields: [ensaioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ordem Int
+  tipo TipoFatoSituacaoMatriculaMigracao
+  efetivoEm DateTime @db.Timestamptz(6)
+  evidencia Json
+  conferidoPorId String
+  conferidoPor Usuario @relation("ConferidorFatoSituacaoMatriculaMigracao", fields: [conferidoPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  conferidoEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([matriculaId, ordem], map: "FatoSituacaoMatriculaMigracao_matricula_ordem_key")
+  @@unique([linhaId, entradaHash, contextoHash, ordem], map: "FatoSituacaoMatriculaMigracao_linha_hash_ordem_key")
+  @@index([ensaioId], map: "FatoSituacaoMatriculaMigracao_ensaio_idx")
+}
+
+model AplicacaoVinculoMigracao {
+  id String @id @default(cuid())
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  entradaHash String
+  contextoHash String
+  ensaioId String
+  ensaio EnsaioVinculoMigracao @relation(fields: [ensaioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  alocacaoId String @unique
+  alocacao AlocacaoTurma @relation(fields: [alocacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  fusoReferencia String
+  semanticaFim SemanticaFimVinculoMigracao
+  snapshot Json
+  aplicadoPorId String
+  aplicadoPor Usuario @relation("ExecutorAplicacaoVinculoMigracao", fields: [aplicadoPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  aplicadoEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([linhaId, entradaHash], map: "AplicacaoVinculoMigracao_linha_hash_key")
+  @@index([linhaId, aplicadoEm], map: "AplicacaoVinculoMigracao_linha_aplicado_idx")
+}
+
+// Add inverses: LinhaPreparacaoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]; EnsaioVinculoMigracao.termosHistoricosMigracao TermosHistoricosMatriculaMigracao[]
