@@ -44,5 +44,44 @@ it("aprova aumento publicado e aplica modalidade e encontros no mesmo callback",
  expect(decidida).toMatchObject({ ok: true, dado: { aprovada: true, aplicada: true } });
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(3);
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(1);
- expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
+  expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
+});
+
+it("usa a última grade aprovada, não uma proposta posterior ainda sem decisão, como meta vigente", async () => {
+ const { turma, grade } = await turmaComGrade();
+ const snapshot = structuredClone(grade.snapshot) as { origem: { quantidadeAulas: number } };
+ snapshot.origem.quantidadeAulas = 1;
+ await prisma.propostaGradeTurma.create({ data: {
+   turmaId: turma.id, calendarioId, preparadorId: secretariaId, versao: 2, fusoOrigem: "UTC",
+   motivo: "Rascunho posterior ainda não aprovado", chaveIdempotencia: `grade-pendente-${turma.id}`,
+   entradaHash: "d".repeat(64), snapshot,
+ } });
+ const previa = await prisma.$transaction((tx) => carregarPreviaQuantidadeAulasTx(tx, { modalidadeId, quantidadeNova: 3 }));
+ expect(previa.impactos).toEqual([expect.objectContaining({ turmaId: turma.id, quantidadeVigente: 2, quantidadeNova: 3 })]);
+});
+
+it("rejeita no constraint trigger a fotografia que duplica A e omite B", async () => {
+ const primeira = await turmaComGrade();
+ const segunda = await turmaComGrade();
+ const snapshotImpacto = (turmaId: string) => ({ turmaId, alcance: "AUMENTO_NAO_INICIADA", quantidadeAnterior: 2, quantidadeNova: 3, publicada: true, excecoesQ37: [], agendaAntes: [], agendaDepois: [] });
+ await expect(prisma.$transaction(async (tx) => {
+   const proposta = await tx.propostaQuantidadeAulasModalidade.create({ data: {
+     modalidadeId, preparadorId: secretariaId, versao: 1, quantidadeAnterior: 2, quantidadeNova: 3,
+     motivo: "Fotografia SQL adversarial para conjunto", chaveIdempotencia: "sql-duplicado-omitido", entradaHash: "e".repeat(64), estadoHash: "f".repeat(64),
+     snapshot: { impactos: [snapshotImpacto(primeira.turma.id), snapshotImpacto(primeira.turma.id)] },
+     impactos: { create: [
+       { turmaId: primeira.turma.id, alcance: "AUMENTO_NAO_INICIADA", quantidadeAnterior: 2, quantidadeNova: 3, publicada: true, excecoesQ37: [], snapshot: {} },
+       { turmaId: segunda.turma.id, alcance: "AUMENTO_NAO_INICIADA", quantidadeAnterior: 2, quantidadeNova: 3, publicada: true, excecoesQ37: [], snapshot: {} },
+     ] },
+   } });
+   const decisao = await tx.decisaoQuantidadeAulasModalidade.create({ data: { propostaId: proposta.id, decisorId: gerenteId, aprovada: true, motivo: "Decisão SQL adversarial independente", estadoHash: "f".repeat(64) } });
+   await tx.propostaQuantidadeAulasModalidade.update({ where: { id: proposta.id }, data: { situacao: "APROVADA" } });
+   await tx.modalidade.update({ where: { id: modalidadeId }, data: { aulasPorNivel: 3 } });
+   await tx.aplicacaoQuantidadeAulasModalidade.create({ data: { propostaId: proposta.id, aplicadorId: gerenteId, estadoHash: "f".repeat(64) } });
+   await tx.propostaQuantidadeAulasModalidade.update({ where: { id: proposta.id }, data: { situacao: "APLICADA" } });
+   await tx.$executeRawUnsafe("SET CONSTRAINTS ALL IMMEDIATE");
+   void decisao;
+ })).rejects.toThrow("bijeção completa de impactos");
+ expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(0);
+ expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
 });
