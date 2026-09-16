@@ -17,6 +17,8 @@ Atualização: 16/09/2026. Métrica: funcionalidades concluídas, em andamento e
 
 - M01/185: proposta SQL passou em transação revertida no banco descartável DEV (após correção de CASE); schema Prisma atualizado e TypeScript passaram na sessão 20990. Migração ainda não aplicada: faltam testes funcionais de aplicação, reuso do contrato e rejeições. Artefatos seguem no worktree DEV; validação sintática não comprova integridade operacional.
 
+- F07.6 docente integrado em `4c4e6470`/`17151ea8`: diário de presença/falta, conclusão e escopo docente; correções de estado e ausência efetiva. DEV e TESTER passaram 50 integrações cada; principal passou 3 controles/SSR. A correção da origem para presença continua bloqueada quando há reposição pendente, sem inventar um caminho incompatível. M01: 185 aplicada apenas em banco descartável DEV; primeiro teste funcional falhou e está em investigação. Arquivo aplicado é imutável.
+
 ## EMAIL — aceite do DEV
 
 - Secretaria/Administração localiza e acompanha solicitações com paginação e permissões revalidadas. Tela distingue preparado, aceito pelo provedor, incerto e demais estados sem apresentar aceitação como entrega.
