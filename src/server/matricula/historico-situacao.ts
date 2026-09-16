@@ -72,6 +72,8 @@ function situacaoHistoricaMigrada(h: HistoricoSituacaoMatricula, instante: Date)
       if (!parsed.success || !p.aplicadaEm || !Number.isFinite(p.aplicadaEm.getTime())) return "A_CONFERIR";
       const s = parsed.data;
       const civil = "dataEfetiva" in s ? s.dataEfetiva : s.retorno;
+      // PostgreSQL date não representa ano zero: não produzir estado divergente do banco.
+      if (civil.startsWith("0000-")) return "A_CONFERIR";
       let em: number;
       try { em = instanteDaGrade(civil, "00:00", s.fusoInstitucional).getTime(); } catch { return "A_CONFERIR"; }
       if (em <= ultimoImportado) return "A_CONFERIR";
