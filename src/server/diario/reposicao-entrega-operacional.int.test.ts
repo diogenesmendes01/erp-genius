@@ -95,7 +95,7 @@ beforeEach(async () => {
   await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
 });
 
-it("CT11 conserva prazo e entregas na retomada e pausa, e recusa trocar avaliador por mutação histórica", async () => {
+it("CT11 preserva prazo, autoria e entregas ao substituir avaliador após indisponibilidade e pausar matrícula", async () => {
   const reposicaoId = "repo-op-ct11";
   const propria = await prepararReposicao(reposicaoId, matriculaId, alunoId);
   const professorOriginalId = propria.professorDaReposicao;
@@ -164,6 +164,23 @@ it("CT11 conserva prazo e entregas na retomada e pausa, e recusa trocar avaliado
     professorId: professorOriginalId,
     fim: null,
   }]);
+
+  const correcaoAnterior = await prisma.solicitacaoCorrecaoEntregaReposicao.findUniqueOrThrow({ where: { id: correcao.ok ? correcao.dado!.id : "" } });
+  const entregaAnterior = await prisma.entregaReposicaoGravacao.findUniqueOrThrow({ where: { id: primeira.id } });
+  const prazoAntesTroca = (await consultarEntregaGravacaoPortalAluno(reposicaoId))?.prazoEtapaAte;
+  entrar(gestorId);
+  const troca = await substituirAvaliadorReposicaoOperacional({ reposicaoId, professorId,
+    motivo: "Professor original indisponível; outro professor acompanha somente esta pendência.", chaveIdempotencia: "ct11-substituicao-avaliador" });
+  expect(troca, JSON.stringify(troca)).toMatchObject({ ok: true });
+  expect(await prisma.solicitacaoCorrecaoEntregaReposicao.findUniqueOrThrow({ where: { id: correcaoAnterior.id } })).toEqual(correcaoAnterior);
+  expect(await prisma.entregaReposicaoGravacao.findUniqueOrThrow({ where: { id: primeira.id } })).toEqual(entregaAnterior);
+  expect((await consultarEntregaGravacaoPortalAluno(reposicaoId))?.prazoEtapaAte).toBe(prazoAntesTroca);
+  entrar(professorOriginalId);
+  const filaAntiga = await consultarFilaReposicoesDocente();
+  expect(JSON.stringify(filaAntiga)).not.toContain(reposicaoId);
+  entrar(professorId);
+  const filaNova = await consultarFilaReposicoesDocente();
+  expect(JSON.stringify(filaNova)).toContain(reposicaoId);
 
   await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "PAUSADA" } });
   await expect(registrarEntregaReposicaoPortalAluno({
