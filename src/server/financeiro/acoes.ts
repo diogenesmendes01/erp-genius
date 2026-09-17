@@ -116,6 +116,7 @@ export async function registrarRecebimentoDestinado(input: unknown): Promise<Res
       const r = await receberComDestinacoesTx(tx, { ...dados, autorId: autor.id, pagadorId: dados.pagadorId ?? null, comentario: dados.comentario ?? null, comprovanteUrl: dados.comprovanteUrl ?? null, comprovanteNome: dados.comprovanteNome ?? null, destinos: dados.destinos.map((d) => ({ ...d, cobrancaId: d.cobrancaId ?? undefined })) });
       return r.id;
     });
+    for (const cobrancaId of [...new Set(dados.destinos.flatMap((d) => d.cobrancaId ? [d.cobrancaId] : []))]) await reavaliarAcessoAposCommit(cobrancaId);
     revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
     return { recebimentoId: resultado };
   });

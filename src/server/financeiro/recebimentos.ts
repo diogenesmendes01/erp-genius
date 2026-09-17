@@ -41,8 +41,12 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   // O hash informado por fluxos legados identifica a fonte, mas não substitui
   // a identidade material do caixa (data, comprovantes, comentário e destinos).
   const hashDados = createHash("sha256").update(JSON.stringify({ titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null, autorId: input.autorId, informeId: input.informeId ?? null, valor: valorOriginal.toFixed(2), moeda: input.moeda, forma: input.forma, dataPagamento: input.dataPagamento.toISOString(), comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null, fonteHash: input.hashDados ?? null, destinos: destinos.map((d) => ({ ...d, valor: dinheiro(d.valor).toFixed(2) })) })).digest("hex");
+  await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${input.autorId} FOR SHARE`;
   const caixa = await tx.usuario.findUnique({ where: { id: input.autorId }, select: { ativo: true, papeis: true, permissoes: true } });
   if (!caixa?.ativo || !(caixa.papeis.includes("ADMINISTRADOR") || caixa.papeis.includes("FINANCEIRO") || caixa.permissoes.includes("pagamento.caixa"))) throw new ErroPermissao("Exige capacidade de caixa vigente.");
+  // Serializa também o replay: concorrentes da mesma matrícula relêem a chave
+  // somente depois do lock e não produzem dois fatos/eventos.
+  await bloquearMatriculas(tx, [input.titularMatriculaId]);
   const existente = await tx.recebimento.findUnique({ where: { chaveIdempotencia: input.chaveIdempotencia }, include: { destinacoes: { orderBy: { chaveIdempotencia: "asc" } } } });
   if (existente) {
     const iguais = existente.titularMatriculaId === input.titularMatriculaId && existente.pagadorId === (input.pagadorId ?? null) && existente.autorId === input.autorId && existente.moeda === input.moeda && existente.forma === input.forma && existente.informeId === (input.informeId ?? null) && existente.valor.equals(valorOriginal) && (!existente.hashDados || existente.hashDados === hashDados) && existente.destinacoes.length === destinos.length && existente.destinacoes.every((d, i) => d.tipo === destinos[i].tipo && d.cobrancaId === (destinos[i].cobrancaId ?? null) && d.valor.equals(dinheiro(destinos[i].valor)) && d.evidencia === destinos[i].evidencia && d.chaveIdempotencia === destinos[i].chaveIdempotencia);
@@ -50,9 +54,7 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     return existente;
   }
   if (!input.informeId && idsCobrancas.length && await tx.pagamentoInformado.count({ where: { cobrancaId: { in: idsCobrancas }, autorId: input.autorId, status: "A_CONFERIR" } })) throw new ErroPermissao("Seu informe aguarda conferência de outra pessoa.");
-  // Ordem global: matrícula, recebimento criado, cobranças por ID. O replay já
-  // retornou acima antes de condições que só valem para uma baixa nova.
-  await bloquearMatriculas(tx, [input.titularMatriculaId]);
+  // O replay já retornou acima antes de condições que só valem para uma baixa nova.
   const cobrancas = new Map<string, Awaited<ReturnType<typeof bloquearCobranca>>>();
   for (const id of idsCobrancas) cobrancas.set(id, await bloquearCobranca(tx, id));
   for (const cobranca of cobrancas.values()) {
@@ -69,6 +71,7 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     const criado = await tx.destinacaoRecebimento.create({ data: { recebimentoId: recebimento.id, cobrancaId: destino.cobrancaId ?? null, autorId: input.autorId, tipo: destino.tipo, valor, evidencia: destino.evidencia.trim(), chaveIdempotencia: destino.chaveIdempotencia } });
     if (destino.tipo === TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO) {
       await tx.creditoMatricula.create({ data: { matriculaId: input.titularMatriculaId, origemDestinacaoRecebimentoId: criado.id, valorInicial: valor, moeda: input.moeda } });
+      await registrarEvento(tx, { tipo: "RecebimentoCreditado", agregadoTipo: "Matricula", agregadoId: input.titularMatriculaId, autorId: input.autorId, payload: { recebimentoId: recebimento.id, destinacaoId: criado.id, valor: valor.toNumber(), moeda: input.moeda } });
       continue;
     }
     const cobranca = cobrancas.get(destino.cobrancaId!)!;
