@@ -315,7 +315,7 @@ model Recebimento {
   // `destinacoes`. Novos recebimentos não podem preencher este vínculo singular.
   destinacoes DestinacaoRecebimento[]
   propostasConciliacaoMigracao PropostaConciliacaoFinanceiraMigracao[]
-  conciliacaoMigracao ConciliacaoFinanceiraMigracao?
+  conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
   hashDados String?
   id String @id @default(cuid())
   chaveIdempotencia String @unique
@@ -352,6 +352,7 @@ model DestinacaoRecebimento {
   cobranca Cobranca? @relation("DestinacoesRecebimentoCobranca", fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   autorId String
   credito CreditoMatricula?
+  conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
   tipo TipoDestinacaoRecebimento
   valor Decimal @db.Decimal(12, 2)
   // Legado não tinha evidência por destinação. Não a inventar no backfill.
@@ -7228,8 +7229,10 @@ model ConciliacaoFinanceiraMigracao {
   financeiroOrigemId String
   propostaId String @unique
   proposta PropostaConciliacaoFinanceiraMigracao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  recebimentoId String? @unique
+  recebimentoId String?
   recebimento Recebimento? @relation(fields: [recebimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  destinacaoRecebimentoId String? @unique
+  destinacaoRecebimento DestinacaoRecebimento? @relation(fields: [destinacaoRecebimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   aplicadaPorId String
   aplicadaPor Usuario @relation("AplicadorConciliacaoFinanceiraMigracao", fields: [aplicadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   snapshot Json
