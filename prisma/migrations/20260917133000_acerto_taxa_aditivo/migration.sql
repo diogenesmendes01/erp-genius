@@ -77,7 +77,7 @@ ALTER TABLE "CreditoMatricula" DROP CONSTRAINT "credito_matricula_origem_unica_c
 ALTER TABLE "CreditoMatricula" ADD CONSTRAINT "credito_matricula_origem_unica_check" CHECK (num_nonnulls("origemLiberacaoId","origemAcertoId","origemPeriodoIntegralId","origemDestinacaoRecebimentoId","origemAcertoTaxaAditivoId") = 1);
 
 CREATE FUNCTION "dct03_acerto_taxa_guard"() RETURNS trigger LANGUAGE plpgsql AS $$
-DECLARE p "PropostaAcertoTaxaAditivo"%ROWTYPE; c "Cobranca"%ROWTYPE; d "DecisaoAcertoTaxaAditivo"%ROWTYPE; v "VersaoCondicoesAditivo"%ROWTYPE; u "Usuario"%ROWTYPE; credito_anterior NUMERIC; credito_total NUMERIC;
+DECLARE p "PropostaAcertoTaxaAditivo"%ROWTYPE; pa "PropostaAditivoContratual"%ROWTYPE; c "Cobranca"%ROWTYPE; d "DecisaoAcertoTaxaAditivo"%ROWTYPE; v "VersaoCondicoesAditivo"%ROWTYPE; u "Usuario"%ROWTYPE; credito_anterior NUMERIC; credito_total NUMERIC;
 BEGIN
   IF TG_TABLE_NAME = 'PropostaAcertoTaxaAditivo' THEN
     IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'Proposta de acerto de taxa é imutável'; END IF;
@@ -92,9 +92,11 @@ BEGIN
     SELECT * INTO u FROM "Usuario" WHERE id=NEW."preparadorId" FOR SHARE;
     SELECT * INTO c FROM "Cobranca" WHERE id=NEW."cobrancaId" FOR SHARE;
     SELECT * INTO v FROM "VersaoCondicoesAditivo" WHERE id=NEW."versaoCondicoesId" FOR SHARE;
+    SELECT * INTO pa FROM "PropostaAditivoContratual" WHERE id=NEW."propostaAditivoId" FOR SHARE;
     IF u.id IS NULL OR NOT u.ativo OR NOT ('FINANCEIRO'=ANY(u.papeis)) THEN RAISE EXCEPTION 'Proposta exige Financeiro ativo'; END IF;
     IF c.id IS NULL OR c."matriculaId" IS DISTINCT FROM NEW."matriculaId" OR c.tipo <> 'MATRICULA' THEN RAISE EXCEPTION 'Acerto exige cobrança real de taxa da mesma matrícula'; END IF;
     IF v.id IS NULL OR v."matriculaId" IS DISTINCT FROM NEW."matriculaId" OR v."propostaId" IS DISTINCT FROM NEW."propostaAditivoId" OR v."conferenciaFinalId" IS DISTINCT FROM NEW."conferenciaFinalId" OR NOT (v.condicoes ?| ARRAY['TAXA_VALOR','TAXA_VENCIMENTO']) THEN RAISE EXCEPTION 'A versão formalizada não contém alteração de taxa verificável'; END IF;
+    IF pa.id IS NULL OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(pa.snapshot->'entrada'->'alteracoes') a WHERE a->>'origem' IN ('TAXA_VALOR','TAXA_VENCIMENTO')) THEN RAISE EXCEPTION 'A taxa herdada de outra versão não pode gerar acerto neste aditivo'; END IF;
     IF (
       (v.condicoes ? 'TAXA_VALOR' AND (
         (v.condicoes->'TAXA_VALOR'->>'tipo') IS DISTINCT FROM 'DINHEIRO'
@@ -126,7 +128,8 @@ BEGIN
   SELECT * INTO d FROM "DecisaoAcertoTaxaAditivo" WHERE id=NEW."decisaoId" FOR SHARE;
   SELECT * INTO c FROM "Cobranca" WHERE id=NEW."cobrancaId" FOR UPDATE;
   SELECT * INTO u FROM "Usuario" WHERE id=NEW."executorId" FOR SHARE;
-  IF p.id IS NULL OR d.id IS NULL OR c.id IS NULL OR u.id IS NULL OR NOT u.ativo OR NOT ('ADMINISTRADOR'=ANY(u.papeis) OR ('FINANCEIRO'=ANY(u.papeis) AND 'financeiro.aplicar_acertos'=ANY(u.permissoes))) OR NEW."executorId" IS DISTINCT FROM d."decisorId" OR d."propostaId" IS DISTINCT FROM p.id OR NOT d.aprovada OR p.status <> 'APROVADA' OR c.id IS DISTINCT FROM p."cobrancaId" OR c.versao IS DISTINCT FROM NEW."versaoAnterior" OR c."valorNegociado" IS DISTINCT FROM NEW."valorAnterior" OR c.vencimento::date IS DISTINCT FROM NEW."vencimentoAnterior" OR NEW."valorNovo" IS DISTINCT FROM p."valorNovo" OR NEW."vencimentoNovo" IS DISTINCT FROM p."vencimentoNovo" OR NEW."creditoAnterior" IS DISTINCT FROM p."creditoAnterior" OR NEW."creditoNovo" IS DISTINCT FROM p."creditoNovo" OR c.tipo <> 'MATRICULA' THEN RAISE EXCEPTION 'Aplicação exige executor financeiro ativo e corresponde ao acerto aprovado e atual'; END IF;
+  SELECT * INTO v FROM "VersaoCondicoesAditivo" WHERE id=p."versaoCondicoesId" FOR SHARE;
+  IF p.id IS NULL OR d.id IS NULL OR c.id IS NULL OR v.id IS NULL OR u.id IS NULL OR NOT u.ativo OR NOT ('ADMINISTRADOR'=ANY(u.papeis) OR ('FINANCEIRO'=ANY(u.papeis) AND 'financeiro.aplicar_acertos'=ANY(u.permissoes))) OR NEW."executorId" IS DISTINCT FROM d."decisorId" OR d."propostaId" IS DISTINCT FROM p.id OR NOT d.aprovada OR p.status <> 'APROVADA' OR v."vigenciaInicio" > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') OR EXISTS (SELECT 1 FROM "VersaoCondicoesAditivo" posterior WHERE posterior."matriculaId"=v."matriculaId" AND posterior.versao>v.versao) OR c.id IS DISTINCT FROM p."cobrancaId" OR c.versao IS DISTINCT FROM NEW."versaoAnterior" OR c."valorNegociado" IS DISTINCT FROM NEW."valorAnterior" OR c.vencimento::date IS DISTINCT FROM NEW."vencimentoAnterior" OR NEW."valorNovo" IS DISTINCT FROM p."valorNovo" OR NEW."vencimentoNovo" IS DISTINCT FROM p."vencimentoNovo" OR NEW."creditoAnterior" IS DISTINCT FROM p."creditoAnterior" OR NEW."creditoNovo" IS DISTINCT FROM p."creditoNovo" OR c.tipo <> 'MATRICULA' THEN RAISE EXCEPTION 'Aplicação exige executor financeiro ativo, vigência atual e versão não obsoleta'; END IF;
   RETURN NEW;
 END $$;
 
