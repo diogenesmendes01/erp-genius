@@ -311,6 +311,8 @@ model PagamentoInformado {
 }
 
 model Recebimento {
+  // Compatibilidade de leitura até os consumidores FIN-04 passarem a consultar
+  // `destinacoes`. Novos recebimentos não podem preencher este vínculo singular.
   destinacoes DestinacaoRecebimento[]
   propostasConciliacaoMigracao PropostaConciliacaoFinanceiraMigracao[]
   conciliacaoMigracao ConciliacaoFinanceiraMigracao?
@@ -319,9 +321,10 @@ model Recebimento {
   chaveIdempotencia String @unique
   cobrancaId String?
   cobranca Cobranca? @relation(fields: [cobrancaId], references: [id], onDelete: Restrict)
-  titularMatriculaId String?
-  titularMatricula Matricula? @relation("TitularRecebimento", fields: [titularMatriculaId], references: [id], onDelete: Restrict)
+  titularMatriculaId String
+  titularMatricula Matricula @relation("TitularRecebimento", fields: [titularMatriculaId], references: [id], onDelete: Restrict)
   pagadorId String?
+  pagador PagadorPreparacaoMatricula? @relation("PagadorRecebimento", fields: [pagadorId], references: [id], onDelete: Restrict)
   informeId String? @unique
   informe PagamentoInformado? @relation(fields: [informeId], references: [id], onDelete: Restrict)
   autorId String
@@ -332,6 +335,8 @@ model Recebimento {
   criadoEm DateTime @default(now())
   @@index([dataPagamento])
   @@index([cobrancaId])
+  @@index([titularMatriculaId])
+  @@index([pagadorId])
 }
 
 enum TipoDestinacaoRecebimento {
@@ -349,7 +354,9 @@ model DestinacaoRecebimento {
   credito CreditoMatricula?
   tipo TipoDestinacaoRecebimento
   valor Decimal @db.Decimal(12, 2)
-  evidencia String
+  // Legado não tinha evidência por destinação. Não a inventar no backfill.
+  evidencia String?
+  origemLegada Boolean @default(false)
   chaveIdempotencia String
   criadaEm DateTime @default(now())
   @@unique([recebimentoId, chaveIdempotencia])
@@ -3333,6 +3340,7 @@ model DecisaoPrecoPreparacao {
 
 model PagadorPreparacaoMatricula {
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
+  recebimentos Recebimento[] @relation("PagadorRecebimento")
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
