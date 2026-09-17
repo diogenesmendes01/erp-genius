@@ -8,7 +8,7 @@ export const PrepararAgendaAditivoSchema = z.object({ matriculaId: z.string().tr
 export const EncontroAgendaAditivoSchema = z.object({
   encontroId: z.string().trim().min(1), professorAnteriorId: z.string().trim().min(1), professorAnteriorNome: z.string().trim().min(1), professorNovoId: z.string().trim().min(1), professorNovoNome: z.string().trim().min(1),
   inicioAnterior: instante, fimAnterior: instante, inicioNovo: instante, fimNovo: instante,
-  duracaoMinutos: z.number().int().positive().max(1440), fusoOrigem: FusoInstitucionalSchema,
+  duracaoMinutos: z.number().int().positive().max(1440), fusoAnterior: FusoInstitucionalSchema, fusoNovo: FusoInstitucionalSchema,
 }).strict().superRefine((e, ctx) => {
   if (Date.parse(e.fimAnterior) <= Date.parse(e.inicioAnterior)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "O horário original deve ter fim posterior ao início.", path: ["fimAnterior"] });
   if (Date.parse(e.fimNovo) - Date.parse(e.inicioNovo) !== e.duracaoMinutos * 60_000) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A duração nova não corresponde aos instantes informados.", path: ["fimNovo"] });
@@ -16,7 +16,10 @@ export const EncontroAgendaAditivoSchema = z.object({
 
 /** Fotografia interna: o servidor preenche preparadores, fonte, estado anterior e nomes docentes reconsultados. */
 export const PropostaAgendaAditivoSchema = z.object({
-  matriculaId: z.string().trim().min(1), preparadorId: z.string().trim().min(1), fonteContratualId: z.string().trim().min(1), reservaContratualId: z.string().trim().min(1).optional(),
+  matriculaId: z.string().trim().min(1), preparadorId: z.string().trim().min(1), fonteContratualId: z.string().trim().min(1), fonteContratualHash: z.string().regex(/^[a-f0-9]{64}$/), reservaContratualId: z.string().trim().min(1).optional(),
+  contexto: z.object({ calendarioId: z.string().min(1), calendarioVersao: z.number().int().positive(), fusoInstitucional: FusoInstitucionalSchema,
+    aditivos: z.array(z.object({ versaoId: z.string().min(1), propostaId: z.string().min(1), condicoesHash: z.string().regex(/^[a-f0-9]{64}$/), aplicada: z.boolean() })).max(1000),
+  }).strict(),
   encontros: z.array(EncontroAgendaAditivoSchema).min(1).max(1000),
 }).strict().superRefine((proposta, ctx) => {
   const ids = proposta.encontros.map(e => e.encontroId);
@@ -29,5 +32,5 @@ export function hashPropostaAgendaAditivo(proposta: PropostaAgendaAditivo) { ret
 export function textoAgendaAditivo(proposta: PropostaAgendaAditivo) {
   const d = fotografiaCanonicaAgendaAditivo(proposta);
   const f = (v: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(v));
-  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoOrigem)}–${f(e.fimAnterior, e.fusoOrigem)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoOrigem)}–${f(e.fimNovo, e.fusoOrigem)} (${e.fusoOrigem})`).join("; ");
+  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} → ${e.fusoNovo})`).join("; ");
 }
