@@ -10,11 +10,16 @@ describe("calcularCreditoAcertoTaxa", () => {
     expect(segunda.creditoTotalDevido.toFixed(2)).toBe("30.00");
   });
 
-  it("não devolve crédito novamente quando redução anterior é seguida de aumento", () => {
+  it("preserva o crédito emitido e projeta saldo líquido quando a taxa aumenta", () => {
     const resultado = calcularCreditoAcertoTaxa({ valorRecebido: "100", valorLiquidadoCredito: "0", valorNovo: "90", creditosTaxaJaOriginados: "20" });
     expect(resultado.creditoNovo.toFixed(2)).toBe("0.00");
-    expect(resultado.pendencia).toMatchObject({ codigo: "CONCILIAR_CREDITO_EXISTENTE" });
-    expect(resultado.pendencia?.valor.toFixed(2)).toBe("10.00");
+    expect(resultado.pendencia).toBeNull();
+    expect(resultado.saldoAposAcerto.toFixed(2)).toBe("10.00");
+  });
+  it.each([["90", "10.00"], ["120", "40.00"]])("mantém crédito 20 e saldo econômico %s para taxa %s", (valorNovo, saldo) => {
+    const resultado = calcularCreditoAcertoTaxa({ valorRecebido: "100", valorLiquidadoCredito: "0", valorNovo, creditosTaxaJaOriginados: "20" });
+    expect(resultado.creditoNovo.toFixed(2)).toBe("0.00");
+    expect(resultado.saldoAposAcerto.toFixed(2)).toBe(saldo);
   });
 
   it.each([
@@ -34,8 +39,8 @@ describe("calcularCreditoAcertoTaxa", () => {
     expect(segunda.creditoNovo.toFixed(2)).toBe("10.00");
   });
 
-  it("sinaliza a conciliação também se o crédito de taxa anterior veio de quitação por crédito", () => {
+  it("projeta a mesma liquidação líquida para crédito emitido após quitação por crédito", () => {
     const resultado = calcularCreditoAcertoTaxa({ valorRecebido: "0", valorLiquidadoCredito: "100", valorNovo: "90", creditosTaxaJaOriginados: "20" });
-    expect(resultado.pendencia?.valor.toFixed(2)).toBe("10.00");
+    expect(resultado.saldoAposAcerto.toFixed(2)).toBe("10.00");
   });
 });
