@@ -29,7 +29,7 @@ import { iniciarTentativaAditivoTx, registrarResultadoEnvioAditivoTx } from "./a
 import { preservarConclusaoAssinaturaAditivoTx } from "./aditivo-conclusao-tx";
 import { consultarConferenciaFinalAditivo, registrarConferenciaFinalAditivo } from "./aditivo-conferencia-final";
 import { consultarEfeitosAditivo } from "./aditivo-efeitos-consulta";
-import { aplicarCondicoesFormalizadasAditivo, formalizarEAplicarCondicoesAditivo, registrarCondicoesFormalizadasAditivo, consultarCondicoesAditivo } from "./aditivo-condicoes";
+import { aplicarCondicoesFormalizadasAditivo, formalizarEAplicarCondicoesAditivo, registrarCondicoesFormalizadasAditivo, consultarAplicacaoCondicoesAditivo, consultarCondicoesAditivo } from "./aditivo-condicoes";
 import { resolverHoraVigenteTx } from "./aditivo-hora-vigente";
 import { resolverMensalVigenteTx } from "./aditivo-mensal-vigente";
 import { GET as abrirConclusaoAditivo } from "@/app/api/matriculas/[id]/aditivos/[propostaId]/assinaturas/[conclusaoId]/[tipo]/route";
@@ -743,6 +743,8 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
     expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" })).toEqual(aplicacao);
     expect(await aplicarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, chaveIdempotencia: "aplicar-condicoes-divergente" })).toMatchObject({ ok: false });
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(1);
+    expect(await consultarAplicacaoCondicoesAditivo({ matriculaId: fixture.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { propostaId: alvo.propostaId, versao: 1, aplicacao: { id: aplicacao.dado?.id } } });
+    expect(await consultarAplicacaoCondicoesAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: null });
     expect(await prisma.$transaction(tx => resolverHoraVigenteTx(tx, { matriculaId: fixture.matriculaId, inicio: new Date("2026-10-02T15:00:00Z"), fim: new Date("2026-10-02T16:00:00Z"), valorHoraOriginal: "125.00", moedaOriginal: "CRC" }))).toMatchObject({ valorHora: modo === "PRODUCAO_HORA" ? "200" : "125.00", versaoAditivo: { id: v.id } });
     expect(await prisma.$transaction(tx => resolverHoraVigenteTx(tx, { matriculaId: "outra-matricula", inicio: new Date("2026-10-02T15:00:00Z"), fim: new Date("2026-10-02T16:00:00Z"), valorHoraOriginal: "125.00", moedaOriginal: "CRC" }))).toMatchObject({ valorHora: "125.00", versaoAditivo: null });
     await expect(prisma.versaoCondicoesAditivo.delete({ where: { id: v.id } })).rejects.toThrow("imutável");
