@@ -62,10 +62,19 @@ export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
   });
 }
 
-export async function consultarAcertoTaxaPorProposta(input: { matriculaId: string; propostaId: string }) {
- const c = await prisma.conclusaoAssinaturaAditivo.findFirst({ where: { processo: { propostaId: input.propostaId, proposta: { matriculaId: input.matriculaId } } }, orderBy: { concluidaEm: "desc" } });
- if (!c) return { ok: true as const, dado: { estado: "SEM_CONCLUSAO" as const, mensagem: "A assinatura do aditivo ainda não foi concluída." } };
- const estado = await prisma.$transaction(tx => carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: input.matriculaId, propostaId: input.propostaId, conclusaoId: c.id }));
- const resultado = await consultarAlvosAcertoTaxaAditivo({ matriculaId: input.matriculaId, propostaId: input.propostaId, conclusaoId: c.id, revisaoHash: estado.revisaoHash });
- return resultado.ok ? { ...resultado, dado: resultado.dado ? { ...resultado.dado, conclusaoId: c.id, revisaoHash: estado.revisaoHash } : resultado.dado } : resultado;
+export async function consultarAcertoTaxaPorProposta(input: unknown) {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO, Papel.ADMINISTRADOR);
+    const d = ConsultarAlvosAcertoTaxaAditivoSchema.pick({ matriculaId: true, propostaId: true }).parse(input);
+    const c = await prisma.conclusaoAssinaturaAditivo.findFirst({
+      where: { processo: { propostaId: d.propostaId, proposta: { matriculaId: d.matriculaId } } },
+      orderBy: { concluidaEm: "desc" },
+    });
+    if (!c) return { estado: "SEM_CONCLUSAO" as const, mensagem: "A assinatura do aditivo ainda não foi concluída." };
+    const estado = await prisma.$transaction(tx => carregarEstadoConferenciaFinalAditivoTx(tx, { ...d, conclusaoId: c.id }));
+    const resultado = await consultarAlvosAcertoTaxaAditivo({ ...d, conclusaoId: c.id, revisaoHash: estado.revisaoHash });
+    if (!resultado.ok) throw new ErroRegra(resultado.erro);
+    if (!resultado.dado) throw new ErroRegra("Prévia do acerto indisponível.");
+    return { ...resultado.dado, conclusaoId: c.id, revisaoHash: estado.revisaoHash };
+  });
 }
