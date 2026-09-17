@@ -442,6 +442,7 @@ model Usuario {
   processosAssinaturaAditivo ProcessoAssinaturaAditivo[]
   conferenciasFinaisAditivo ConferenciaFinalAditivo[]
   versoesCondicoesAditivo VersaoCondicoesAditivo[]
+  aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   aplicacoesSubstituicaoContratual AplicacaoSubstituicaoContratual[]
   intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[] @relation("PreparadorSubstituicaoContratual")
@@ -1655,6 +1656,7 @@ model Matricula {
   emissoesEntrada EmissaoCobrancasEntrada[]
   condicoesEntradaPreparacao CondicoesEntradaPreparacao[]
   versoesCondicoesAditivo VersaoCondicoesAditivo[]
+  aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   pagadoresPreparacao PagadorPreparacaoMatricula[]
   preparacaoComercial PreparacaoComercialMatricula?
   reservasVaga ReservaVagaMatricula[]
@@ -4126,6 +4128,7 @@ model PropostaAditivoContratual {
     originaisAditivo ArtefatoAditivoContratual[]
   processoAssinatura ProcessoAssinaturaAditivo?
   versaoCondicoes VersaoCondicoesAditivo?
+  aplicacaoCondicoes AplicacaoCondicoesAditivo?
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4303,12 +4306,33 @@ model VersaoCondicoesAditivo {
   anteriorId String? @unique
   anterior VersaoCondicoesAditivo? @relation("VersaoCondicoesAditivoAnterior", fields: [anteriorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   posterior VersaoCondicoesAditivo? @relation("VersaoCondicoesAditivoAnterior")
+  aplicacao AplicacaoCondicoesAditivo?
   condicoes Json
   condicoesHash String
   vigenciaInicio DateTime
   registradaEm DateTime @default(now())
 
   @@unique([matriculaId, versao])
+}
+
+model AplicacaoCondicoesAditivo {
+  id String @id @default(cuid())
+  versaoCondicoesId String @unique
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaId String @unique
+  proposta PropostaAditivoContratual @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  autorId String
+  autor Usuario @relation(fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  revisaoHash String
+  condicoesHash String
+  vigenciaInicio DateTime
+  chaveIdempotencia String
+  aplicadaEm DateTime @default(now())
+
+  @@unique([autorId, chaveIdempotencia])
+  @@index([matriculaId, vigenciaInicio])
 }
 
 model TentativaEnvioAditivo {
