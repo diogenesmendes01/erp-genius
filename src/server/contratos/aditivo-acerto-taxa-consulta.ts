@@ -88,7 +88,7 @@ export async function listarHistoricoAcertosTaxa(input: unknown) {
     const propostas = await prisma.propostaAcertoTaxaAditivo.findMany({
       where: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId },
       orderBy: [{ criadaEm: "desc" }, { id: "desc" }],
-      include: { preparador: { select: { nome: true } }, cobranca: { select: { codigo: true, moeda: true } }, decisao: { include: { decisor: { select: { nome: true } } } }, aplicacao: { include: { executor: { select: { nome: true } } } } },
+      include: { preparador: { select: { nome: true } }, cobranca: { select: { codigo: true, moeda: true } }, decisao: { include: { decisor: { select: { nome: true } } } }, aplicacao: { include: { executor: { select: { nome: true } } } }, invalidacao: { include: { resolvedor: { select: { nome: true } } } } },
     });
     return propostas.map(p => {
       const fotografia = p.fotografia as { cobranca?: { valorNegociado?: string; valorRecebido?: string | null; valorLiquidadoCredito?: string; vencimento?: string }; calculo?: { creditoAnterior?: string }; comissoes?: Array<{ id?: string; tipo?: string; status?: string; percentual?: string; valor?: string; valorBase?: string | null }> };
@@ -101,8 +101,10 @@ export async function listarHistoricoAcertosTaxa(input: unknown) {
       comissoes: (fotografia.comissoes ?? []).map(c => { const percentual = c.tipo === "PERCENTUAL" && c.status !== "PAGA" && c.status !== "ESTORNADA"; return { id: c.id ?? "", tipo: c.tipo === "VALOR_FIXO" ? "Fixa" : "Percentual", status: c.status ?? "Não informado", valorAntes: c.valor ?? null, valorDepois: percentual && c.percentual ? new Prisma.Decimal(p.valorNovo).mul(c.percentual).div(100).toFixed(2) : c.valor ?? null, baseAntes: c.valorBase ?? null, baseDepois: percentual ? p.valorNovo.toFixed(2) : c.valorBase ?? null, preservada: !percentual }; }),
       decisao: p.decisao && { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, autor: p.decisao.decisor.nome, data: p.decisao.decididaEm.toISOString() },
       aplicacao: p.aplicacao && { autor: p.aplicacao.executor.nome, data: p.aplicacao.aplicadaEm.toISOString(), valorAnterior: p.aplicacao.valorAnterior.toFixed(2) },
+      invalidacao: p.invalidacao && { autor: p.invalidacao.resolvedor.nome, motivo: p.invalidacao.motivo, data: p.invalidacao.criadaEm.toISOString() },
       podeDecidir: aprova && p.preparadorId !== usuario.id && p.status === "PENDENTE" && !p.decisao,
       podeAplicar: aprova && p.status === "APROVADA" && p.decisao?.decisorId === usuario.id && !p.aplicacao,
+      podeInvalidar: aprova && p.preparadorId !== usuario.id && p.status === "APROVADA" && !p.aplicacao && !p.invalidacao,
     }); });
   });
 }

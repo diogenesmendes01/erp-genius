@@ -22,7 +22,7 @@ import { iniciarTentativaAditivoTx, registrarResultadoEnvioAditivoTx } from "./a
 import { preservarConclusaoAssinaturaAditivoTx } from "./aditivo-conclusao-tx";
 import { consultarConferenciaFinalAditivo, registrarConferenciaFinalAditivo } from "./aditivo-conferencia-final";
 import { registrarCondicoesFormalizadasAditivo } from "./aditivo-condicoes";
-import { proporAcertoTaxaAditivo, decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo } from "./aditivo-acerto-taxa-acoes";
+import { proporAcertoTaxaAditivo, decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo, invalidarAcertoTaxaAditivo } from "./aditivo-acerto-taxa-acoes";
 import { receberComDestinacoesTx, receberTx } from "@/server/financeiro/recebimentos";
 import { proporUtilizacaoCredito } from "@/server/financeiro/uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
@@ -153,4 +153,20 @@ it("rejeita proposta DCT03 obsoleta sem alterar o financeiro e permite preparar 
   if (!atual.ok || !atual.dado) throw new Error(JSON.stringify(atual));
   expect(atual.dado.id).not.toBe(original.dado.id);
   expect(await prisma.propostaAcertoTaxaAditivo.count({ where: { status: "PENDENTE" } })).toBe(1);
+});
+it("invalida acerto aprovado obsoleto, preserva financeiro e permite repropor", async () => {
+  const vendedor = await criarUsuario(["VENDEDOR"]);
+  const comissao = await prisma.comissao.create({ data: { matriculaId: base.matriculaId, vendedorId: vendedor.id, tipo: "PERCENTUAL", percentual: 10, valor: 10, valorBase: 100, moeda: "CRC", status: "PENDENTE" } });
+  const proposta = await propor("dct03-invalidar-aprovada"); if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Acerto conferido antes da mudança", chaveIdempotencia: "dct03-invalidar-decisao" })).toMatchObject({ ok: true });
+  const cobrancaAntes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+  await prisma.comissao.update({ where: { id: comissao.id }, data: { status: "APROVADA" } });
+  expect(await invalidarAcertoTaxaAditivo({ propostaId: proposta.dado.id, motivo: "Comissão mudou depois da aprovação", evidencia: { conferencia: "Comissão atualizada" }, chaveIdempotencia: "dct03-invalidar" })).toMatchObject({ ok: true, dado: { invalidada: true } });
+  expect(await prisma.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: proposta.dado.id } })).toMatchObject({ status: "OBSOLETA" });
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).toEqual(cobrancaAntes);
+  expect(await prisma.creditoMatricula.count()).toBe(0); expect(await prisma.aplicacaoAcertoTaxaAditivo.count()).toBe(0);
+  expect(await prisma.evento.count({ where: { tipo: "AcertoTaxaAditivoInvalidado" } })).toBe(1);
+  authMock.mockResolvedValue({ user: { id: financeiro } });
+  expect(await propor("dct03-repropor-aprovada", "Nova fotografia após invalidação", { recibo: "DCT03-nova" })).toMatchObject({ ok: true });
 });
