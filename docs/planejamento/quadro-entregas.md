@@ -40,6 +40,8 @@ Revisão das próximas migrações: 211/Q87 (`13c04a1d`) e 212/taxa por aditivo 
 
 Build local em `03bc900c`: `next build` com `DATABASE_URL` resolvida pelo perfil descartável `integracao`, telemetria desativada, sessão 81424 finalizada com saída 0. Compilação, TypeScript e geração de 81/81 páginas concluídos. Não houve publicação nem envio externo. O build confirma a compilação do código integrado, sem antecipar aceite das migrações 211/212 ou dos fluxos ainda em desenvolvimento.
 
+Q69 — revisão complementar de acesso: cancelamento e conciliação agora verificam a capacidade vigente antes de devolver o resultado de uma repetição já registrada. O usuário que perdeu a capacidade, mas conserva o papel Financeiro, não recebe sucesso pela antiga autorização. Teste dirigido `compra-horas.int.test.ts -t 'reserva devolução aprovada'`: 1 aprovado, 27 fora do filtro, saída 0; verifica ambos os retornos recusados sem novos eventos ou alteração do estado financeiro. TypeScript não incremental, sessão 97252, saída 0. Sem alteração de schema.
+
 O objetivo solicitado é concluir a implementação local. Configuração de contas externas, envios reais, carga real e deploy não compõem o aceite local; adaptadores, estados de erro e testes simulados continuam obrigatórios. Esta fila registra lacunas confirmadas, sem substituir a conferência dos demais critérios da SPEC e sem gerar um percentual global.
 
 | Frente | Situação local | Evidência / próximo aceite |
