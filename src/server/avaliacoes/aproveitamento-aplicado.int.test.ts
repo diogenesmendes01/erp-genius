@@ -14,6 +14,7 @@ import { proporCorrecaoNota, revisarCorrecaoNota, decidirCorrecaoNota } from "./
 import { decidirEquivalenciaTransferencia } from "./equivalencia-decisao";
 import { executarEquivalenciaTransferencia } from "./equivalencia-execucao";
 import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } from "./equivalencia-proposta";
+import { confirmarFechamentoAcademico, revisarFechamentoAcademico } from "./fechamento";
 import { carregarFontesEquivalenciaTx } from "./fontes-equivalencia-tx";
 import { salvarLancamentoAvaliacao, oficializarLancamentoAvaliacao } from "./lancamentos";
 import { decidirPlanoRecuperacao } from "./recuperacao-decisao";
@@ -68,13 +69,13 @@ async function oficializarFala(alocacaoId: string, nota: string, chave: string) 
   return lancamento;
 }
 
-async function oficializarFinal(alocacaoId: string, nota: string, chave: string) {
+async function oficializarFinal(alocacaoId: string, nota: string, chave: string, notasPorHabilidade?: Partial<Record<(typeof HABILIDADES)[number], string>>) {
   entrar(professorId);
   const salvo = await salvarLancamentoAvaliacao({
     alocacaoId,
     codigoAvaliacao: "F1",
     realizadaEm: "2026-01-11T10:00:00.000Z",
-    notas: HABILIDADES.map(habilidade => ({ habilidade, nota, comentarioAluno: `Resultado oficial ${chave} ${habilidade}` })),
+    notas: HABILIDADES.map(habilidade => ({ habilidade, nota: notasPorHabilidade?.[habilidade] ?? nota, comentarioAluno: `Resultado oficial ${chave} ${habilidade}` })),
     submetida: true,
     versaoEsperada: 0,
     chaveIdempotencia: chave,
@@ -213,14 +214,14 @@ async function aplicarFontesCompletasInsuficientes() {
   return { intermediaria, final, ...executada.dado };
 }
 
-async function recuperarFalaNoDestino(alocacaoDestinoId: string, nota: string, versaoEsperada: number) {
+async function recuperarFalaNoDestino(alocacaoDestinoId: string, nota: string, versaoEsperada: number, habilidades: readonly (typeof HABILIDADES)[number][] = HABILIDADES) {
   entrar(professorId);
   const plano = await proporPlanoRecuperacao({
     alocacaoId: alocacaoDestinoId,
     versaoEsperada,
     motivo: "Plano aprovado para recuperar habilidades ainda abaixo do mínimo no destino",
     chaveIdempotencia: `aproveitamento-recuperacao-plano-${versaoEsperada}`,
-    atividades: HABILIDADES.map(habilidade => ({
+    atividades: habilidades.map(habilidade => ({
       habilidade,
       estrategia: "Atividade orientada com evidência individual de aprendizagem",
       avaliacaoProposta: "Avaliação individual registrada e conferida pelo professor",
@@ -276,6 +277,32 @@ async function recuperarFalaNoDestino(alocacaoDestinoId: string, nota: string, v
     motivo: "Gestão oficializa independentemente a nota de recuperação",
   }));
   return { planoId: plano.dado.id, realizacaoId: realizacao.dado.id, notaId: notaPersistida.id };
+}
+
+async function registrarPresencaConferida(alocacaoId: string, turmaId: string, chave: string) {
+  const encontro = await prisma.encontroAgenda.create({ data: {
+    turmaId,
+    professorId,
+    preparadorId: gestorId,
+    inicio: new Date("2026-01-12T10:00:00.000Z"),
+    fim: new Date("2026-01-12T11:00:00.000Z"),
+    fusoOrigem: "UTC",
+    status: "PREVISTO",
+    finalidade: "AULA",
+    motivo: "Aula conferida para o fechamento da jornada ACA/V01.",
+    chaveIdempotencia: chave,
+    entradaHash: `fixture-${chave}`,
+  } });
+  await prisma.aulaDiario.create({ data: {
+    encontroId: encontro.id,
+    turmaId,
+    professorId,
+    ocorridaEm: encontro.inicio,
+    conteudo: "Aula realizada com presença conferida para o fechamento.",
+    registros: { create: { alunoId, matriculaId, nomeAluno: "Aluna aproveitada", presente: true, participacao: "PRESENTE" } },
+  } });
+  await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { status: "MINISTRADO" } });
+  expect((await prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: alocacaoId } })).matriculaId).toBe(matriculaId);
 }
 
 beforeEach(async () => {
@@ -648,4 +675,119 @@ it("usa fontes aproveitadas na base de recuperação e conserva a melhor tentati
   expect(falaFinal?.memoria).toHaveLength(2);
   expect(aposPior.aproveitamento?.fontes.filter(fonte => fonte.habilidade === "FALA")).toHaveLength(2);
   expect(await prisma.registroAvaliacaoMatricula.count({ where: { alocacaoId: aplicada.alocacaoDestinoId } })).toBe(0);
+});
+
+it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isoladas duas matrículas da mesma aluna no portal", async () => {
+  const intermediaria = await oficializarFala(alocacaoOrigemId, "5", "aca-v01-origem-i1");
+  const final = await oficializarFinal(alocacaoOrigemId, "5", "aca-v01-origem-f1", {
+    COMPREENSAO_ORAL: "8",
+    LEITURA: "8",
+    ESCRITA: "8",
+  });
+  const recuperacao = await recuperarFalaNoDestino(alocacaoOrigemId, "8", 0, ["FALA"]);
+  await registrarPresencaConferida(alocacaoOrigemId, turmaOrigemId, "aca-v01-presenca-origem");
+
+  const fontesOrigem = await prisma.$transaction(tx => carregarFontesEquivalenciaTx(tx, {
+    matriculaId,
+    alocacaoId: alocacaoOrigemId,
+    turmaId: turmaOrigemId,
+    nivelId,
+    regraId,
+  }));
+  const fonteRecuperacao = fontesOrigem.find(fonte => fonte.tipoFonte === "RECUPERACAO" && fonte.notaRecuperacaoId === recuperacao.notaId);
+  if (!fonteRecuperacao) throw new Error("A recuperação oficial da origem não ficou disponível para equivalência.");
+
+  entrar(gestorId);
+  const base = {
+    matriculaId,
+    alocacaoOrigemId,
+    turmaDestinoId,
+    mapeamentos: [
+      { referenciaFonteId: fonteRecuperacao.referenciaId, codigoAvaliacaoDestino: "I1", habilidadeDestino: "FALA" as const },
+      ...HABILIDADES.map(habilidade => ({ referenciaFonteId: `${final.id}:${habilidade}`, codigoAvaliacaoDestino: "F1", habilidadeDestino: habilidade })),
+    ],
+  };
+  const revisaoEquivalencia = await revisarEquivalenciaTransferencia(base);
+  assertOk(revisaoEquivalencia);
+  const proposta = await proporEquivalenciaTransferencia({
+    ...base,
+    estadoHash: revisaoEquivalencia.dado.estadoHash,
+    versaoEsperada: revisaoEquivalencia.dado.versaoAtual,
+    motivo: "Recuperação oficial da origem aproveitada na transferência da jornada ACA/V01.",
+    chaveIdempotencia: "aca-v01-equivalencia",
+  });
+  assertOk(proposta);
+  entrar(aprovadorId);
+  const decisao = await decidirEquivalenciaTransferencia({
+    propostaId: proposta.dado.id,
+    estadoHash: revisaoEquivalencia.dado.estadoHash,
+    aprovar: true,
+    motivo: "Aprovador independente conferiu o aproveitamento da recuperação oficial.",
+  });
+  assertOk(decisao);
+  entrar(secretariaId);
+  const executada = await executarEquivalenciaTransferencia({
+    decisaoId: decisao.dado.id,
+    motivo: "Secretaria executou a transferência após a equivalência aprovada.",
+    horarioCompativel: true,
+  });
+  assertOk(executada);
+
+  const contrato = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+  const turmaIsolada = await prisma.turma.create({ data: {
+    nome: "Turma isolada ACA V01",
+    modalidadeId: (await prisma.turma.findUniqueOrThrow({ where: { id: turmaOrigemId } })).modalidadeId,
+    nivelId,
+    professorId,
+    dataInicio: new Date("2099-01-01T00:00:00.000Z"),
+    capacidade: 10,
+    vinculosDocentes: { create: { professorId, inicio } },
+  } });
+  await prisma.turma.update({ where: { id: turmaIsolada.id }, data: { dataInicio: inicio, status: "EM_ANDAMENTO" } });
+  const matriculaIsolada = await prisma.matricula.create({ data: {
+    alunoId,
+    produtoId: contrato.produtoId,
+    paisId: contrato.paisId,
+    moeda: "CRC",
+    status: "ATIVA",
+    ativadaEm: inicio,
+  } });
+  const alocacaoIsolada = await prisma.alocacaoTurma.create({ data: {
+    alunoId,
+    matriculaId: matriculaIsolada.id,
+    turmaId: turmaIsolada.id,
+    criadoEm: inicio,
+  } });
+  const notaIsolada = await oficializarFala(alocacaoIsolada.id, "4", "aca-v01-isolada-i1");
+
+  entrar(gestorId);
+  const revisaoFechamento = await revisarFechamentoAcademico({ alocacaoId: executada.dado.alocacaoDestinoId });
+  assertOk(revisaoFechamento);
+  expect(revisaoFechamento.dado.elegibilidade).toMatchObject({ podeFechar: true, pendencias: [] });
+  const fechamento = await confirmarFechamentoAcademico({
+    alocacaoId: executada.dado.alocacaoDestinoId,
+    estadoHash: revisaoFechamento.dado.estadoHash,
+    versaoEsperada: revisaoFechamento.dado.versaoAtual,
+    motivo: "Fechamento da matrícula transferida após recuperação oficial aproveitada.",
+    chaveIdempotencia: "aca-v01-fechamento-destino",
+  });
+  assertOk(fechamento);
+
+  const portal = await consultarResultadosPortalAluno({
+    sessaoId: "sessao-aca-v01",
+    contaId: "conta-aca-v01",
+    alunoId,
+    email: "aluna-aca-v01@portal.test",
+  });
+  const principal = portal.matriculas.find(item => item.matriculaId === matriculaId);
+  const isolada = portal.matriculas.find(item => item.matriculaId === matriculaIsolada.id);
+  expect(portal.matriculas).toHaveLength(2);
+  expect(principal?.alocacoes.find(item => item.alocacaoId === executada.dado.alocacaoDestinoId)?.consolidado?.habilidades
+    .find(item => item.habilidade === "FALA")).toMatchObject({ resultado: expect.anything(), pendencias: [] });
+  expect(isolada).toMatchObject({ matriculaId: matriculaIsolada.id, alocacoes: [expect.objectContaining({ alocacaoId: alocacaoIsolada.id })] });
+  expect(isolada?.alocacoes[0]?.avaliacoes).toEqual([expect.objectContaining({ codigo: "I1", notas: [expect.objectContaining({ habilidade: "FALA", nota: "4" })] })]);
+  expect(JSON.stringify(isolada)).not.toContain(intermediaria.id);
+  expect(JSON.stringify(isolada)).not.toContain(fonteRecuperacao.referenciaId);
+  expect(JSON.stringify(isolada)).not.toContain(fechamento.dado.id);
+  expect(notaIsolada.id).not.toBe(intermediaria.id);
 });
