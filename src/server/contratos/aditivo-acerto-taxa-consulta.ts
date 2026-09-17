@@ -36,7 +36,7 @@ export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
         orderBy: [{ vencimento: "asc" }, { id: "asc" }],
         select: { id: true, codigo: true, versao: true, status: true, moeda: true, valorOriginal: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, saldo: true, vencimento: true, recebimentos: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } }, utilizacoesCreditoPropostas: { select: { id: true } }, compensacoesCobertura: { select: { id: true } }, ajusteAcerto: { select: { id: true } }, suspensaPorItemPausaId: true, canceladaPorPausaId: true },
       });
-      const creditosPorCobranca = await tx.$queryRaw<Array<{ cobrancaId: string; total: Prisma.Decimal }>>(Prisma.sql`
+      const creditosPorCobranca = cobrancas.length === 0 ? [] : await tx.$queryRaw<Array<{ cobrancaId: string; total: Prisma.Decimal }>>(Prisma.sql`
         SELECT "cobrancaId", coalesce(sum(valor), 0)::numeric AS total
         FROM "OrigemCreditoAcertoTaxaAditivo"
         WHERE "cobrancaId" IN (${Prisma.join(cobrancas.map(c => c.id))})
