@@ -43,6 +43,7 @@ it("renderiza a conferência dos horários, escapa motivo/evidência e limita os
     ok: true,
     dado: {
       identificacao: { aluno: "Ana", matriculaCodigo: "M/1", turma: "Turma 1", nivel: "Nível 1" },
+      conferencia: { contextoVigente: true, reservaId: "reserva-1", codigoAvaliacao: "I1", professorAtual: { id: "professor-1", nome: "Prof. João" }, prazoVigente: "2026-09-20T18:00:00.000Z", fusoExibicao: "UTC" },
       atual,
       estadoHash: "a".repeat(64),
       podePropor: true,
@@ -86,6 +87,12 @@ it("renderiza a conferência dos horários, escapa motivo/evidência e limita os
   }));
 
   expect(html).toContain("Agenda atual");
+  expect(html).toContain("Conferência da reserva");
+  expect(html).toContain("reserva-1");
+  expect(html).toContain("I1");
+  expect(html).toContain("Prof. João");
+  expect(html).toContain("20/09/2026");
+  expect(html).toContain("(UTC)");
   expect(html).toContain("Horário anterior:");
   expect(html).toContain("Horário proposto:");
   expect(html).toContain("16/09/2026");
@@ -109,6 +116,7 @@ it("não mostra formulários quando a revisão não permite propor ou decidir", 
     ok: true,
     dado: {
       identificacao: { aluno: "Ana", matriculaCodigo: null, turma: "Turma 1", nivel: "Nível 1" },
+      conferencia: { contextoVigente: true, reservaId: "reserva-1", codigoAvaliacao: "I1", professorAtual: null, prazoVigente: null, fusoExibicao: "UTC" },
       atual,
       estadoHash: "a".repeat(64),
       podePropor: false,
@@ -127,6 +135,8 @@ it("não mostra formulários quando a revisão não permite propor ou decidir", 
     searchParams: Promise.resolve({}),
   }));
   expect(html).not.toContain("data-formulario=");
+  expect(html).toContain("Sem professor definido");
+  expect(html).toContain("Disponibilização sem prazo registrado");
   expect(html).toContain("Aguardando decisão independente.");
 });
 
@@ -140,8 +150,13 @@ it("mostra somente o erro quando a consulta não retorna dados", async () => {
 });
 
 it("mantém a rejeição e oculta aprovação quando o vínculo da proposta foi superado", async () => {
-  consulta.mockResolvedValue({ ok: true, dado: { identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" }, atual, estadoHash: "a".repeat(64), podePropor: false, proximoId: null, itens: [{ id: "stale", versao: 1, autorNome: "Secretaria", inicio: "2026-09-17T12:30:00.000Z", fim: "2026-09-17T13:30:00.000Z", fusoOrigem: "UTC", motivo: "Motivo válido", evidencia: "Evidência válida", snapshot: atual, entradaHash: "b".repeat(64), decisao: null, podeDecidir: true, podeAprovar: false, impedimentoAprovacao: "O vínculo de origem mudou; rejeite ou prepare nova proposta." }] } });
+  consulta.mockResolvedValue({ ok: true, dado: { identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" }, conferencia: { contextoVigente: false, reservaId: "reserva-historica", codigoAvaliacao: "I1", professorAtual: null, prazoVigente: null, fusoExibicao: "UTC" }, atual, estadoHash: "a".repeat(64), podePropor: false, proximoId: null, itens: [{ id: "stale", versao: 1, autorNome: "Secretaria", inicio: "2026-09-17T12:30:00.000Z", fim: "2026-09-17T13:30:00.000Z", fusoOrigem: "UTC", motivo: "Motivo válido", evidencia: "Evidência válida", snapshot: atual, entradaHash: "b".repeat(64), decisao: null, podeDecidir: true, podeAprovar: false, impedimentoAprovacao: "O vínculo de origem mudou; rejeite ou prepare nova proposta." }] } });
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ reservaId: "reserva" }), searchParams: Promise.resolve({}) }));
   expect(html).toContain("Rejeitar: O vínculo de origem mudou; rejeite ou prepare nova proposta.");
+  expect(html).toContain("Conferência histórica da reserva");
+  expect(html).toContain("não autorizam nova remarcação");
+  expect(html).not.toContain("Professor atual:");
+  expect(html).toContain("Agenda registrada");
+  expect(html).not.toContain("Agenda atual");
   expect(html).not.toContain("Aprovar e remarcar / Rejeitar");
 });
