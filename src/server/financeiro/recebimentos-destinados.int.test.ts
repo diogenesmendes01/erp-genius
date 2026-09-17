@@ -18,7 +18,6 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { registrarRecebimentoDestinado } from "./acoes";
-import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
