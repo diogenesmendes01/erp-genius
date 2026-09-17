@@ -29,22 +29,24 @@ function montar(estados: unknown[]) {
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); });
 
 it("exige seleção explícita e limpa destinos e pagador ao trocar de contrato", () => {
-  const c = montar(["mat-1", [{ cobrancaId: "c-jan", valor: "100", evidencia: "boleto" }], "0", "100", "pag-1", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, null, null]);
+  const c = montar(["mat-1", [{ cobrancaId: "c-jan", valor: "100", evidencia: "boleto" }], "0", "100", "pag-1", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "/api/files/contrato-1", "contrato-1.pdf", false, null, null, false]);
   const seletor = encontrar(c.arvore, (no) => no.type === "select" && no.props?.["aria-label"] === "Contrato");
   (seletor.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: "mat-2" } });
   expect(c.setters[0]).toHaveBeenCalledWith("mat-2");
   expect(c.setters[1]).toHaveBeenCalledWith([]);
   expect(c.setters[2]).toHaveBeenCalledWith("");
   expect(c.setters[4]).toHaveBeenCalledWith("");
+  expect(c.setters[9]).toHaveBeenCalledWith("");
+  expect(c.setters[10]).toHaveBeenCalledWith("");
 
-  const semSelecao = montar(["", [], "0", "100", "", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, null, null]);
+  const semSelecao = montar(["", [], "0", "100", "", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, null, null, false]);
   const botao = encontrar(semSelecao.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
   expect(botao.props!.disabled).toBe(true);
 });
 
 it("calcula totais em centavos e confirma múltipla destinação com crédito", async () => {
   mocks.registrar.mockResolvedValue({ ok: true });
-  const c = montar(["mat-1", [{ cobrancaId: "c-jan", valor: "0,10", evidencia: "Parcela janeiro" }], "0.20", "0.30", "pag-1", FormaPagamento.DINHEIRO, "2026-01-05", "Antecipação", "Observação", "", "", false, null, null]);
+  const c = montar(["mat-1", [{ cobrancaId: "c-jan", valor: "0,10", evidencia: "Parcela janeiro" }], "0.20", "0.30", "pag-1", FormaPagamento.DINHEIRO, "2026-01-05", "Antecipação", "Observação", "", "", false, null, null, false]);
   const botao = encontrar(c.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
   expect(botao.props!.disabled).toBe(false);
   await (botao.props!.onClick as () => Promise<void>)();
@@ -60,14 +62,30 @@ it("calcula totais em centavos e confirma múltipla destinação com crédito", 
 
 it("mantém a mesma chave ao repetir upload que falhou, sem permitir envio concorrente", async () => {
   mocks.registrar.mockRejectedValueOnce(new Error("upload indisponível")).mockResolvedValueOnce({ ok: true });
-  const c = montar(["mat-1", [], "100", "100", "", FormaPagamento.TRANSFERENCIA, "2026-01-05", "Comprovante bancário", "", "/api/files/comprovante", "comprovante.pdf", false, null, null]);
+  const c = montar(["mat-1", [], "100", "100", "", FormaPagamento.TRANSFERENCIA, "2026-01-05", "Comprovante bancário", "", "/api/files/comprovante", "comprovante.pdf", false, null, null, false]);
   const botao = encontrar(c.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
   await (botao.props!.onClick as () => Promise<void>)();
   await (botao.props!.onClick as () => Promise<void>)();
   expect(mocks.registrar).toHaveBeenCalledTimes(2);
   expect(mocks.registrar.mock.calls[0][0].chaveIdempotencia).toBe(mocks.registrar.mock.calls[1][0].chaveIdempotencia);
   expect(mocks.registrar.mock.calls[0][0]).toMatchObject({ comprovanteUrl: "/api/files/comprovante", comprovanteNome: "comprovante.pdf", destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 100 }] });
+  expect(c.setters[14]).toHaveBeenCalledWith(true);
   c.emEnvio.current = true;
   await (botao.props!.onClick as () => Promise<void>)();
   expect(mocks.registrar).toHaveBeenCalledTimes(2);
+});
+
+it("bloqueia edição de operação incerta ou concluída e fornece novo lançamento explícito", () => {
+  const incerta = montar(["mat-1", [], "100", "100", "", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, "Falha de rede", null, true]);
+  const fieldsetIncerto = encontrar(incerta.arvore, (no) => no.type === "fieldset");
+  expect(fieldsetIncerto.props!.disabled).toBe(true);
+  expect(encontrar(incerta.arvore, (no) => no.type === "button" && no.props?.children === "Tentar novamente").props!.disabled).toBe(false);
+
+  const concluida = montar(["mat-1", [], "100", "100", "", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, null, "Recebimento confirmado.", false]);
+  expect(encontrar(concluida.arvore, (no) => no.type === "fieldset").props!.disabled).toBe(true);
+  const novo = encontrar(concluida.arvore, (no) => no.type === "button" && no.props?.children === "Novo lançamento");
+  (novo.props!.onClick as () => void)();
+  expect(concluida.setters[0]).toHaveBeenCalledWith("");
+  expect(concluida.setters[9]).toHaveBeenCalledWith("");
+  expect(concluida.setters[13]).toHaveBeenCalledWith(null);
 });
