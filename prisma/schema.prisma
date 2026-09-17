@@ -7206,6 +7206,9 @@ model ResolucaoDivergenciaPresencaHistoricaMigracao {
   registroId String
   registro RegistroAulaAluno @relation(fields: [registroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   resultado ResultadoResolucaoDivergenciaPresencaHistoricaMigracao
+  correcaoId String?
+  correcaoVersao Int?
+  correcaoAprovacaoId String?
   evidencia Json
   chaveIdempotencia String @unique
   resolvedorId String
