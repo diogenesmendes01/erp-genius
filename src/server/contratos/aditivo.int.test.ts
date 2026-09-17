@@ -731,7 +731,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
   if (taxaSemConsumidor) {
-    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "taxa-sem-consumidor-q117" })).toMatchObject({ ok: false });
+    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "taxa-sem-consumidor-q117" })).toMatchObject({ ok: false, erro: "A condição TAXA_VALOR exige fluxo próprio antes da aplicação." });
     expect(await prisma.versaoCondicoesAditivo.count()).toBe(0);
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
     expect(await prisma.evento.count({ where: { tipo: { in: ["CondicoesAditivoFormalizadas", "CondicoesAditivoAplicadas"] } } })).toBe(0);
