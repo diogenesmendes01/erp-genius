@@ -500,7 +500,7 @@ async function ativarMatriculaTx(
   // matrícula, portanto esta leitura única não pode se intercalar com uma nova
   // versão antes da criação do cronograma.
   const versoesAditivo = await tx.versaoCondicoesAditivo.findMany({ where: { matriculaId }, select: {
-    id: true, versao: true, condicoes: true, condicoesHash: true, vigenciaInicio: true,
+    id: true, versao: true, condicoes: true, condicoesHash: true, vigenciaInicio: true, aplicacao: { select: { id: true } },
   } });
   const codsRestante: string[] = [];
   for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca"));
