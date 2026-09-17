@@ -51,3 +51,29 @@ describe("M01 entrada financeira — data civil", () => {
     expect(await prisma.$queryRaw<{ vencimento:string }[]>`SELECT vencimento::date::text AS vencimento FROM "Cobranca" WHERE id=${aplicada.dado.cobrancaId}`).toEqual([{ vencimento: "2025-02-10" }]);
   });
 });
+
+describe("M01 entrada financeira — guard SQL da aplicação", () => {
+  it.each([
+    ["valor", "126.00", "2025-02-10", "RESPONSAVEL"],
+    ["vencimento", "125.00", "2025-02-11", "RESPONSAVEL"],
+    ["pagador", "125.00", "2025-02-10", "EMPRESA"],
+  ])("rejeita aplicação com % divergente e reverte a transação", async (_caso, valor, vencimento, tipoPagador) => {
+    const f = await fixture(); entrar(preparadorId);
+    const proposta = await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 50));
+    if (!proposta.ok || !proposta.dado) throw new Error("proposta");
+    const propostaId = proposta.dado.id;
+    const antes = { cobrancas: await prisma.cobranca.count({ where: { matriculaId: f.matriculaId } }), pagadores: await prisma.pagadorPreparacaoMatricula.count({ where: { matriculaId: f.matriculaId } }) };
+    await expect(prisma.$transaction(async (tx) => {
+      const [p] = await tx.$queryRaw<{ origem:string; "financeiroOrigemId":string; "matriculaId":string; "preparadorId":string; "tipoCobranca":string; moeda:string }[]>`SELECT origem,"financeiroOrigemId","matriculaId","preparadorId","tipoCobranca",moeda FROM "PropostaEntradaFinanceiraHistoricaMigracao" WHERE id=${propostaId} FOR UPDATE`;
+      if (!p) throw new Error("proposta ausente");
+      const pagadorId = `pagador-negativo-${_caso}`, cobrancaId = `cobranca-negativa-${_caso}`;
+      await tx.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET status='APROVADA',"decisorId"=${decisorId},"chaveDecisao"=${`decisao-${_caso}`},"decisaoHash"='hash-negativo',"motivoDecisao"='Decisão de teste independente e documentada.',"decididoEm"=now() WHERE id=${propostaId}`;
+      await tx.$executeRaw`INSERT INTO "PagadorPreparacaoMatricula" (id,"matriculaId","preparadorId",versao,tipo,dados,motivo,"chaveIdempotencia","entradaHash") VALUES (${pagadorId},${p.matriculaId},${p.preparadorId},1,${tipoPagador},jsonb_build_object('nome','Responsável histórico','paisId',${f.paisId}),'Teste negativo SQL',${`chave-pagador-${_caso}`},'hash-negativo')`;
+      await tx.$executeRaw`INSERT INTO "Cobranca" (id,"matriculaId",tipo,"valorOriginal","valorNegociado",saldo,moeda,vencimento,status) VALUES (${cobrancaId},${p.matriculaId},${p.tipoCobranca}::"TipoCobranca",${valor}::numeric,${valor}::numeric,${valor}::numeric,${p.moeda},${vencimento}::date,'PENDENTE'::"StatusCobranca")`;
+      await tx.$executeRaw`INSERT INTO "AplicacaoEntradaFinanceiraHistoricaMigracao" (id,"propostaId",origem,"financeiroOrigemId","pagadorId","cobrancaId","aplicadaPorId",snapshot) VALUES (${`aplicacao-negativa-${_caso}`},${propostaId},${p.origem},${p.financeiroOrigemId},${pagadorId},${cobrancaId},${decisorId},'{}'::jsonb)`;
+    })).rejects.toThrow(/materializar exatamente/i);
+    expect(await prisma.cobranca.count({ where: { matriculaId: f.matriculaId } })).toBe(antes.cobrancas);
+    expect(await prisma.pagadorPreparacaoMatricula.count({ where: { matriculaId: f.matriculaId } })).toBe(antes.pagadores);
+    expect(await prisma.$queryRaw<{ total:number }[]>`SELECT count(*)::int AS total FROM "AplicacaoEntradaFinanceiraHistoricaMigracao" WHERE "propostaId"=${propostaId}`).toEqual([{ total: 0 }]);
+  });
+});
