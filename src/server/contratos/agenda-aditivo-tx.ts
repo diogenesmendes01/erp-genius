@@ -169,12 +169,12 @@ export async function aplicarAgendaAditivoTx(tx: Prisma.TransactionClient, aplic
   const propostaRevalidada = { ...conferencia.proposta, contexto: { ...conferencia.proposta.contexto, aditivos: conferencia.proposta.contexto.aditivos.filter(a => a.versaoId !== linha.versaoCondicoesId) } };
   if (conferencia.pendencias.length || hashPropostaAgendaAditivo(propostaRevalidada) !== linha.fotografiaHash) throw new ErroRegra("A agenda mudou desde a fotografia formalizada; faça nova conferência.");
   for (const encontro of fotografia.encontros) {
-    const alterados = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
-      UPDATE "EncontroAgenda" SET "professorId"=${encontro.professorNovoId},inicio=${new Date(encontro.inicioNovo)},fim=${new Date(encontro.fimNovo)},"fusoOrigem"=${encontro.fusoNovo}
-      WHERE id=${encontro.encontroId} AND "matriculaId"=${d.matriculaId} AND status='PREVISTO'::"StatusEncontroAgenda"
-        AND "professorId"=${encontro.professorAnteriorId} AND inicio=${new Date(encontro.inicioAnterior)} AND fim=${new Date(encontro.fimAnterior)} AND "fusoOrigem"=${encontro.fusoAnterior}
-      RETURNING id`);
-    if (!alterados[0]) throw new ErroRegra("Um encontro mudou desde a fotografia; a agenda não foi aplicada.");
+    const alterados = await tx.encontroAgenda.updateMany({
+      where: { id: encontro.encontroId, matriculaId: d.matriculaId, status: "PREVISTO", professorId: encontro.professorAnteriorId,
+        inicio: new Date(encontro.inicioAnterior), fim: new Date(encontro.fimAnterior), fusoOrigem: encontro.fusoAnterior },
+      data: { professorId: encontro.professorNovoId, inicio: new Date(encontro.inicioNovo), fim: new Date(encontro.fimNovo), fusoOrigem: encontro.fusoNovo },
+    });
+    if (alterados.count !== 1) throw new ErroRegra("Um encontro mudou desde a fotografia; a agenda não foi aplicada.");
   }
   const id = randomUUID();
   await tx.$executeRaw(Prisma.sql`
