@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 import { prisma } from "@/lib/prisma";
@@ -7,9 +7,10 @@ import { prepararAlteracaoQuantidadeAulasModalidade, decidirAlteracaoQuantidadeA
 import { carregarPreviaQuantidadeAulasTx } from "./modalidade-quantidade-tx";
 import { decidirGradeInicialTurma } from "./grade-decisao";
 
-let secretariaId: string, gerenteId: string, modalidadeId: string, nivelId: string, calendarioId: string;
+let secretariaId: string, gerenteId: string, modalidadeId: string, nivelId: string, calendarioId: string, produtoId: string, paisId: string;
+afterEach(() => vi.unstubAllEnvs());
 beforeEach(async () => {
- await truncarBanco(); const c = await seedCatalogoMinimo(); modalidadeId = c.modalidade.id;
+ await truncarBanco(); const c = await seedCatalogoMinimo(); modalidadeId = c.modalidade.id; produtoId = c.produto.id; paisId = c.pais.id;
  await prisma.modalidade.update({ where: { id: modalidadeId }, data: { aulasPorNivel: 2, horasAula: 1, frequencia: "1x/semana" } });
  nivelId = (await prisma.nivel.create({ data: { idiomaId: c.idioma.id, codigo: "A1", ordem: 1 } })).id;
  const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]); secretariaId = secretaria.id;
@@ -51,6 +52,9 @@ it("aprova aumento publicado e aplica modalidade e encontros no mesmo callback",
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(3);
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count()).toBe(1);
   expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(3);
+ const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "QuantidadeAulasModalidadeAplicada" }, orderBy: { criadoEm: "desc" } });
+ expect(evento.payload).toMatchObject({ propostaId: proposta.dado.id, encontros: expect.arrayContaining([expect.objectContaining({ turmaId: turma.id, encontroId: expect.any(String) })]) });
+ expect(await prisma.avisoAlteracaoAgenda.count({ where: { eventoId: evento.id } })).toBe(0);
 });
 
 it("usa a última grade aprovada, não uma proposta posterior ainda sem decisão, como meta vigente", async () => {
@@ -208,4 +212,61 @@ it("invalida a decisão se a turma conclui durante a revisão", async () => {
  expect(await prisma.aplicacaoQuantidadeAulasModalidade.count({ where: { propostaId: proposta.dado.id } })).toBe(0);
  expect((await prisma.modalidade.findUniqueOrThrow({ where: { id: modalidadeId } })).aulasPorNivel).toBe(2);
  expect(await prisma.encontroAgenda.count({ where: { turmaId: turma.id, status: "PREVISTO" } })).toBe(2);
+});
+
+it("reconfere pendência Q38 somente após habilitação e sem executar transporte", async () => {
+ vi.stubEnv("COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED", "false");
+ const { turma } = await turmaComGrade();
+ const aluno = await prisma.aluno.create({ data: { primeiroNome: "Avisado", paisId, email: "avisado@example.test", aceitaComunicacoes: true, whatsapp: false } });
+ const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId, paisId, moeda: "CRC", status: "ATIVA" } });
+ await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matricula.id, turmaId: turma.id, ativa: true } });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Nova aula para completar a meta", chaveIdempotencia: "q38-reconferencia" });
+ if (!proposta.ok || !proposta.dado) throw new Error("Proposta indisponível");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ const aplicada = await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação independente da nova aula" });
+ expect(aplicada.ok, aplicada.ok ? undefined : aplicada.erro).toBe(true);
+ const pendencia = await prisma.pendenciaAvisoAgenda.findFirstOrThrow({ where: { matriculaId: matricula.id, motivo: "CONFIGURACAO_INDISPONIVEL" } });
+ authMock.mockResolvedValue({ user: { id: secretariaId } });
+ const { reconferirPendenciaAvisoAgendaInterna } = await import("@/server/comunicacoes-agenda/pendencias");
+ const entrada = { pendenciaId: pendencia.id, motivo: "Canais de quantidade conferidos na operação" };
+ expect(await reconferirPendenciaAvisoAgendaInterna(entrada)).toMatchObject({ ok: true, dado: { resolvida: false } });
+ expect((await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendencia.id } })).situacao).toBe("PENDENTE");
+ vi.stubEnv("COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED", "true");
+ expect(await reconferirPendenciaAvisoAgendaInterna(entrada)).toMatchObject({ ok: true, dado: { resolvida: true } });
+ expect((await prisma.pendenciaAvisoAgenda.findUniqueOrThrow({ where: { id: pendencia.id } })).situacao).toBe("RESOLVIDA");
+  expect(await prisma.avisoAlteracaoAgenda.findMany({ where: { matriculaId: matricula.id } })).toEqual([expect.objectContaining({ canal: "EMAIL", situacao: "PREPARADO" })]);
+});
+
+it("cria aviso Q38 para vínculo histórico que cobre somente o horário anterior", async () => {
+ const { turma } = await turmaComGrade();
+ const aluno = await prisma.aluno.create({ data: { primeiroNome: "Histórico", paisId, email: "historico@example.test", aceitaComunicacoes: true, whatsapp: false } });
+ const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId, paisId, moeda: "CRC", status: "ATIVA" } });
+ await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matricula.id, turmaId: turma.id, ativa: false, encerradaEm: new Date("2099-01-04T12:00:00.000Z") } });
+ const encontro = await prisma.encontroAgenda.findFirstOrThrow({ where: { turmaId: turma.id }, orderBy: { inicio: "asc" } });
+ await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { inicio: new Date("2099-01-04T10:00:00.000Z"), fim: new Date("2099-01-04T11:00:00.000Z") } });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 3, versaoAnterior: 0, motivo: "Nova aula com horário anterior histórico", chaveIdempotencia: "q38-vinculo-anterior" });
+ if (!proposta.ok || !proposta.dado) throw new Error("proposta indisponível");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect(await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação com vínculo histórico" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+ expect(await prisma.avisoAlteracaoAgenda.findMany({ where: { matriculaId: matricula.id } })).toEqual([expect.objectContaining({ canal: "EMAIL", situacao: "PREPARADO" })]);
+});
+
+it("rejeita aviso cujo evento clone omite encontro material da quantidade", async () => {
+ const { turma } = await turmaComGrade();
+ const aluno = await prisma.aluno.create({ data: { primeiroNome: "Conjunto", paisId, email: "conjunto@example.test", aceitaComunicacoes: true, whatsapp: false } });
+ const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId, paisId, moeda: "CRC", status: "ATIVA" } });
+ const proposta = await prepararAlteracaoQuantidadeAulasModalidade({ modalidadeId, quantidadeNova: 4, versaoAnterior: 0, motivo: "Duas aulas novas para conferir o conjunto", chaveIdempotencia: "q38-conjunto-completo" });
+ if (!proposta.ok || !proposta.dado) throw new Error("proposta indisponível");
+ authMock.mockResolvedValue({ user: { id: gerenteId } });
+ expect(await decidirAlteracaoQuantidadeAulasModalidade({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação de conjunto completo" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+ const original = await prisma.evento.findFirstOrThrow({ where: { tipo: "QuantidadeAulasModalidadeAplicada" }, orderBy: { criadoEm: "desc" } });
+ const payload = original.payload as { encontros: { turmaId: string; encontroId: string }[] };
+ expect(payload.encontros).toHaveLength(2);
+ const [resultadoOriginal] = await prisma.$queryRaw<{ valido: boolean }[]>`SELECT quantidade_aviso_conjunto_completo(${original.id}) AS valido`;
+ expect(resultadoOriginal?.valido).toBe(true);
+ const clone = await prisma.evento.create({ data: { tipo: original.tipo, agregadoTipo: original.agregadoTipo, agregadoId: original.agregadoId, autorId: original.autorId, payload: { ...(original.payload as object), encontros: payload.encontros.slice(0, 1) } } });
+ const [resultadoClone] = await prisma.$queryRaw<{ valido: boolean }[]>`SELECT quantidade_aviso_conjunto_completo(${clone.id}) AS valido`;
+ expect(resultadoClone?.valido).toBe(false);
+ await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q38-clone-omitido", mudancaId: clone.id, eventoId: clone.id, matriculaId: matricula.id, alunoId: aluno.id, canal: "EMAIL", contatoHash: "f".repeat(64), chave: "q38-clone-omitido" } })).rejects.toThrow("Origem do aviso inválida");
+ void turma;
 });
