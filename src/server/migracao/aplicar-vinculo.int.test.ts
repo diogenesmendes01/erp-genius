@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, PrismaClient } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -75,7 +75,16 @@ it("aplica vínculo histórico ATIVA sem criar efeitos comerciais e repete a mes
   };
   const primeira = await aplicarVinculoMigracao(input);
   expect(primeira.ok, primeira.ok ? undefined : primeira.erro).toBe(true);
-  const segunda = await aplicarVinculoMigracao(input);
+  const processoNovo = new PrismaClient();
+  try {
+    expect(await processoNovo.aplicacaoVinculoMigracao.count()).toBe(1);
+    expect(await processoNovo.solicitacaoEnvioPortalAluno.count()).toBe(0);
+  } finally {
+    await processoNovo.$disconnect();
+  }
+  vi.resetModules();
+  const { aplicarVinculoMigracao: reaplicarAposReinicio } = await import("./aplicar-vinculo");
+  const segunda = await reaplicarAposReinicio(input);
   expect(segunda).toMatchObject({ ok: true, dado: { repetida: true } });
   if (!primeira.ok || !primeira.dado || !segunda.ok || !segunda.dado) throw new Error("Aplicação falhou.");
   expect(segunda.dado).toMatchObject({ id: primeira.dado.id, matriculaId: primeira.dado.matriculaId, alocacaoId: primeira.dado.alocacaoId });

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { PrismaClient } from "@prisma/client";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), fetch: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 import { prisma } from "@/lib/prisma";
@@ -48,6 +49,27 @@ it("incerteza do transporte permanece fora de novas rodadas automáticas", async
   expect(mocks.fetch).toHaveBeenCalledOnce();
   expect(await prisma.tokenPortalAluno.count()).toBe(1);
   expect((await prisma.solicitacaoEnvioPortalAluno.findUniqueOrThrow({ where: { id: solicitacaoId } })).situacao).toBe("INCERTO");
+});
+
+it("CT12 reinicia o worker após INCERTO sem reenviar a intenção durável", async () => {
+  mocks.fetch.mockRejectedValue(new Error("resultado externo perdido"));
+  expect(await processarEnviosPortalAluno({}, { ambiente })).toMatchObject({ incertos: 1 });
+  expect(mocks.fetch).toHaveBeenCalledOnce();
+
+  const processoNovo = new PrismaClient();
+  try {
+    expect((await processoNovo.solicitacaoEnvioPortalAluno.findUniqueOrThrow({ where: { id: solicitacaoId } })).situacao).toBe("INCERTO");
+    expect(await processoNovo.tokenPortalAluno.count()).toBe(1);
+  } finally {
+    await processoNovo.$disconnect();
+  }
+
+  vi.resetModules();
+  const { processarEnviosPortalAluno: processarAposReinicio } = await import("./processar-envios");
+  expect(await processarAposReinicio({}, { ambiente })).toMatchObject({ processados: 0, incertos: 0 });
+  expect(mocks.fetch).toHaveBeenCalledOnce();
+  expect((await prisma.solicitacaoEnvioPortalAluno.findUniqueOrThrow({ where: { id: solicitacaoId } })).situacao).toBe("INCERTO");
+  expect(await prisma.evento.count({ where: { tipo: "SolicitacaoEnvioPortalAlunoAceitaPeloProvedor" } })).toBe(0);
 });
 
 it("desligado preserva intenção preparada sem token nem transporte", async () => {
