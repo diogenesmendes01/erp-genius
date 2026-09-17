@@ -8,7 +8,7 @@ import { hashPropostaAgendaAditivo, PrepararAgendaAditivoSchema, PropostaAgendaA
 import { hashSubstituicao } from "./substituicao-estado";
 
 const RegistrarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
-const AplicarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), propostaAditivoId: z.string().trim().min(1), aplicacaoCondicoesId: z.string().trim().min(1), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
+const AplicarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), propostaAditivoId: z.string().trim().min(1), aplicacaoCondicoesId: z.string().trim().min(1), aplicacaoAgendaId: z.string().trim().min(1), eventoId: z.string().trim().min(1), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 import { carregarCadeiaAditivoTx } from "./aditivo-cadeia";
 
@@ -176,9 +176,8 @@ export async function aplicarAgendaAditivoTx(tx: Prisma.TransactionClient, aplic
     });
     if (alterados.count !== 1) throw new ErroRegra("Um encontro mudou desde a fotografia; a agenda não foi aplicada.");
   }
-  const id = randomUUID();
   await tx.$executeRaw(Prisma.sql`
-    INSERT INTO "AplicacaoAgendaAditivoParticular" (id,"propostaId","aplicacaoCondicoesId","matriculaId","aplicadorId","fotografiaHash","chaveIdempotencia")
-    VALUES (${id},${linha.id},${d.aplicacaoCondicoesId},${d.matriculaId},${aplicadorId},${linha.fotografiaHash},${d.chaveIdempotencia})`);
-  return { id, fotografiaHash: linha.fotografiaHash };
+    INSERT INTO "AplicacaoAgendaAditivoParticular" (id,"propostaId","aplicacaoCondicoesId","matriculaId","aplicadorId","eventoId","fotografiaHash","chaveIdempotencia")
+    VALUES (${d.aplicacaoAgendaId},${linha.id},${d.aplicacaoCondicoesId},${d.matriculaId},${aplicadorId},${d.eventoId},${linha.fotografiaHash},${d.chaveIdempotencia})`);
+  return { id: d.aplicacaoAgendaId, fotografiaHash: linha.fotografiaHash };
 }

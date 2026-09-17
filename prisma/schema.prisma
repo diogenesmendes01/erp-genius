@@ -2069,6 +2069,7 @@ model TentativaAvisoAlteracaoAgenda {
 model Evento {
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
   pendenciasAvisosAgenda PendenciaAvisoAgenda[]
+  aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("EventoAplicacaoAgendaAditivo")
   id           String   @id @default(cuid())
   tipo         String // LeadCriado, MatriculaAtivada, PagamentoRegistrado, AlunoPausado...
   agregadoTipo String // "Lead", "Matricula", "Aluno", "Cobranca"...
@@ -4355,6 +4356,8 @@ model AplicacaoAgendaAditivoParticular {
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   aplicadorId String
   aplicador Usuario @relation("AplicadorAgendaAditivo", fields: [aplicadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  eventoId String @unique
+  evento Evento @relation("EventoAplicacaoAgendaAditivo", fields: [eventoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   fotografiaHash String
   chaveIdempotencia String
   aplicadaEm DateTime @default(now())
