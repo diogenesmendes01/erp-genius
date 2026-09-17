@@ -63,8 +63,13 @@ export function PagamentoModal({
   const diff = saldo - Number(valor || 0);
   const exigeComprovante = FORMAS_EXIGEM_COMPROVANTE.includes(forma);
   const faltaComprovante = exigeComprovante && !comprovanteUrl;
+  const faltaEvidencia = !somenteInformar && comentario.trim().length < 5;
 
   async function salvar() {
+    if (faltaEvidencia) {
+      onErro("Descreva a evidência do recebimento e sua destinação nesta cobrança (mínimo de 5 caracteres).");
+      return;
+    }
     if (faltaComprovante) {
       onErro(`Anexe o comprovante para pagamentos via ${FORMA_PAGAMENTO_LABEL[forma]}.`);
       return;
@@ -132,10 +137,10 @@ export function PagamentoModal({
             </p>
           )}
         </div>
-        <label className="mb-1 block text-xs text-gray-600">Comentário</label>
+        <label className="mb-1 block text-xs text-gray-600">{somenteInformar ? "Comentário" : "Evidência do recebimento e destinação *"}</label>
         <input className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
         <div className="flex gap-2">
-          <button className={btnPri} disabled={salvando || faltaComprovante} onClick={salvar}>
+          <button className={btnPri} disabled={salvando || faltaComprovante || faltaEvidencia} onClick={salvar}>
             {salvando ? "Salvando…" : somenteInformar ? "Enviar para conferência" : "Registrar recebimento"}
           </button>
           <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
