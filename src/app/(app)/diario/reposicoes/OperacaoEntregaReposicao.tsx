@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   confirmarIndisponibilidadeOperacional,
@@ -8,6 +8,7 @@ import {
   prorrogarEtapaOperacional,
   publicarMaterialOperacional,
   retomarIndisponibilidadeOperacional,
+  substituirAvaliadorReposicaoOperacional,
 } from "@/server/diario/reposicao-entrega-operacional";
 import { descartarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposicao-operacoes-relatos";
 import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeReposicao";
@@ -21,6 +22,8 @@ export type OperacaoEntrega = {
   liberacao: { podeLiberar: boolean; expiraEm: string | null };
   indisponibilidade: { id: string; inicio: string; motivo: string } | null;
   relatosAbertos: Array<{ id: string; descricao: string; criadaEm: string }>;
+  avaliador: { professorId: string; nome: string; inicio: string; motivo: string } | null;
+  avaliadoresDisponiveis: Array<{ id: string; nome: string }>;
 };
 
 const data = (valor: string | null, fuso: string) => {
@@ -35,6 +38,7 @@ type Resultado = { ok: boolean; erro?: string };
 export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntrega }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
+  const chaveDesignacao = useRef(crypto.randomUUID());
   const router = useRouter();
   const executar = (acao: () => Promise<Resultado>) => iniciar(async () => {
     setErro("");
@@ -47,6 +51,13 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   return <section className="space-y-3 border-t pt-4" aria-label="Material e entregas da reposição gravada">
     <h3 className="font-medium">Material e entregas gravadas</h3>
     <p className="text-sm">O material usa uma revisão institucional registrada; alteração externa não substitui o conteúdo aprovado. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
+    <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => substituirAvaliadorReposicaoOperacional({ reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current })); }}>
+      <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
+      {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, operacao.fuso)}. As avaliações anteriores permanecem atribuídas ao autor original.</p>}
+      <label className="block">Professor avaliador<select name="professorId" required defaultValue="" className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
+      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+      <button disabled={ocupado} className="rounded border px-3 py-2">{operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
+    </form>
     {!operacao.material && <button type="button" disabled={ocupado} className="rounded border px-3 py-2" onClick={() => executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, usarGravacaoAulaOriginal: true }))}>Usar gravação da aula original e abrir prazo</button>}
     {!operacao.material ? <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, arquivoOficialId: String(dados.get("arquivoOficialId") ?? "") })); }}>
       <p className="font-medium">Publicar material</p>

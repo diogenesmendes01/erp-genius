@@ -20,11 +20,13 @@ import {
   publicarMaterialOperacional,
   prorrogarEtapaOperacional,
   retomarIndisponibilidadeOperacional,
+  substituirAvaliadorReposicaoOperacional,
 } from "./reposicao-entrega-operacional";
 import { descartarRelatoIndisponibilidadeEquipe, registrarRelatoIndisponibilidadeEquipe } from "./reposicao-operacoes-relatos";
 import { solicitarCorrecaoEntregaReposicao } from "./reposicao-gravacao";
 import { registrarEntregaReposicaoPortalAluno, relatarIndisponibilidadeMaterialPortalAluno } from "@/server/portal-aluno/entregas-reposicao";
 import { consultarEntregaGravacaoPortalAluno } from "@/server/portal-aluno/reposicoes";
+import { consultarFilaReposicoesDocente } from "./reposicao-consulta";
 
 const utc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -271,6 +273,52 @@ it("painel operacional recusa professor, comercial e gestão inativa", async () 
     entrar(ator);
     expect(await consultarOperacaoEntregaReposicao({ reposicaoId: "repo-op-papeis", matriculaId })).toMatchObject({ ok: false });
   }
+});
+
+it("Q40 designa e substitui avaliador sem reescrever autoria, acesso ou prazo", async () => {
+  await prepararReposicao("repo-op-q40", matriculaId, alunoId);
+  entrar(gestorId);
+  const primeira = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId, motivo: "Designação inicial para avaliar a reposição gravada", chaveIdempotencia: "q40-designacao-inicial-0001" });
+  expect(primeira).toMatchObject({ ok: true, dado: { professorId, professorAnteriorId: null } });
+  if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
+  expect(await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId, motivo: "Designação inicial para avaliar a reposição gravada", chaveIdempotencia: "q40-designacao-inicial-0001" })).toMatchObject({ ok: true, dado: { id: primeira.dado.id, repetida: true } });
+  const avaliadorNovoId = (await criarUsuario(["PROFESSOR"])).id;
+  const substituida = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId: avaliadorNovoId, motivo: "Professor anterior indisponível para concluir a avaliação", chaveIdempotencia: "q40-substituicao-0001" });
+  if (!substituida.ok) throw new Error(substituida.erro);
+  expect(substituida).toMatchObject({ ok: true, dado: { professorAnteriorId: professorId, professorId: avaliadorNovoId, repetida: false } });
+  const repetida = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId: avaliadorNovoId, motivo: "Professor anterior indisponível para concluir a avaliação", chaveIdempotencia: "q40-substituicao-0001" });
+  expect(repetida).toMatchObject({ ok: true, dado: { repetida: true } });
+  if (!substituida.ok || !substituida.dado) throw new Error(JSON.stringify(substituida));
+  const substituicaoDado = substituida.dado;
+  if (!substituicaoDado.designacaoAnteriorId || !substituicaoDado.professorAnteriorId) throw new Error("A substituição não preservou a designação anterior.");
+  const inicio = new Date(substituicaoDado.inicio);
+  const [fronteira] = await prisma.$queryRaw<Array<{ anteriorAntes: boolean; anteriorNoInicio: boolean; novoNoInicio: boolean }>>(Prisma.sql`
+    SELECT avaliador_reposicao_vigente('repo-op-q40',${professorId},${new Date(inicio.getTime() - 1)}::timestamptz AT TIME ZONE 'UTC') AS "anteriorAntes",
+      avaliador_reposicao_vigente('repo-op-q40',${professorId},${inicio}::timestamptz AT TIME ZONE 'UTC') AS "anteriorNoInicio",
+      avaliador_reposicao_vigente('repo-op-q40',${avaliadorNovoId},${inicio}::timestamptz AT TIME ZONE 'UTC') AS "novoNoInicio"
+  `);
+  expect(fronteira).toEqual({ anteriorAntes: true, anteriorNoInicio: false, novoNoInicio: true });
+  entrar(professorId);
+  const filaAnterior = await consultarFilaReposicoesDocente();
+  if (!filaAnterior.ok || !filaAnterior.dado) throw new Error(JSON.stringify(filaAnterior));
+  expect(filaAnterior.dado.itens.map((item) => item.id)).not.toContain("repo-op-q40");
+  entrar(avaliadorNovoId);
+  const filaNova = await consultarFilaReposicoesDocente();
+  if (!filaNova.ok || !filaNova.dado) throw new Error(JSON.stringify(filaNova));
+  expect(filaNova.dado.itens.map((item) => item.id)).toContain("repo-op-q40");
+  expect(await prisma.designacaoAvaliadorReposicaoIndividual.findUnique({ where: { id: substituicaoDado.designacaoAnteriorId } })).toMatchObject({ professorId, fim: null });
+  expect(await prisma.evento.findFirst({ where: { tipo: "AvaliadorReposicaoSubstituido", agregadoId: matriculaId, autorId: gestorId } })).toBeTruthy();
+  await expect(prisma.designacaoSubstituicaoAvaliadorReposicaoIndividual.create({ data: {
+    reposicaoId: "repo-op-q40", designacaoAnteriorId: substituicaoDado.designacaoNovaId, designacaoNovaId: substituicaoDado.designacaoAnteriorId,
+    designadorId: gestorId, motivo: "Tentativa inválida de retornar a cadeia para o professor anterior", chaveIdempotencia: "q40-ciclo-invalido-0001", entradaHash: "ciclo",
+  } })).rejects.toThrow(/ciclo|início válido/i);
+  expect(await prisma.designacaoSubstituicaoAvaliadorReposicaoIndividual.count({ where: { reposicaoId: "repo-op-q40" } })).toBe(1);
+  const avaliadorCId = (await criarUsuario(["PROFESSOR"])).id;
+  entrar(gestorId);
+  const terceira = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId: avaliadorCId, motivo: "Nova designação válida após a tentativa de ciclo rejeitada", chaveIdempotencia: "q40-substituicao-c-0001" });
+  if (!terceira.ok) throw new Error(terceira.erro);
+  expect(terceira).toMatchObject({ ok: true, dado: { professorAnteriorId: avaliadorNovoId, professorId: avaliadorCId } });
+  expect(await prisma.designacaoSubstituicaoAvaliadorReposicaoIndividual.count({ where: { reposicaoId: "repo-op-q40" } })).toBe(2);
 });
 
 it("confirmação operacional não aceita relato de material de outra reposição", async () => {

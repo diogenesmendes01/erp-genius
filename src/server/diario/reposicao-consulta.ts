@@ -273,10 +273,7 @@ export async function consultarFilaReposicoesDocente(input: z.input<typeof filtr
           WHERE c."reposicaoId" = r.id ORDER BY c.versao DESC, c.id DESC LIMIT 1
         ), false) = false
           AND (matricula.status = 'ATIVA' OR (matricula.status IN ('PAUSADA', 'ENCERRADA') AND entrega.id IS NOT NULL))
-          AND ((r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND EXISTS (
-              SELECT 1 FROM "DesignacaoAvaliadorReposicaoIndividual" designacao WHERE designacao."reposicaoId" = r.id AND designacao."professorId" = ${usuario.id}
-                AND designacao.inicio <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AND (designacao.fim IS NULL OR designacao.fim > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
-            )) OR (r.modalidade = 'PARTICULAR'::"ModalidadeReposicaoIndividual" AND particular.id IS NOT NULL))
+          AND ((r.modalidade = 'GRAVACAO'::"ModalidadeReposicaoIndividual" AND avaliador_reposicao_vigente(r.id, ${usuario.id}, CURRENT_TIMESTAMP AT TIME ZONE 'UTC')) OR (r.modalidade = 'PARTICULAR'::"ModalidadeReposicaoIndividual" AND particular.id IS NOT NULL))
           AND (${d.cursor ?? null}::text IS NULL OR (original.inicio, r.id) > (
             SELECT cursorOriginal.inicio, cursor.id FROM "ReposicaoIndividual" cursor
             JOIN "EncontroAgenda" cursorOriginal ON cursorOriginal.id = cursor."aulaOriginalId"

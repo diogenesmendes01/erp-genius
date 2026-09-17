@@ -117,14 +117,7 @@ export async function carregarReposicoesFrequenciaTx(
         AND entrega.atividade <> ''
         AND entrega."entregueEm" <= COALESCE(corr."validadaEm", conclusao."validadaEm")
         AND COALESCE(corr."validadaEm", conclusao."validadaEm") <= ${apuradaEm}
-        AND EXISTS (
-          SELECT 1
-          FROM "DesignacaoAvaliadorReposicaoIndividual" designacao
-          WHERE designacao."reposicaoId" = r.id
-            AND designacao."professorId" = avaliador.id
-            AND designacao.inicio <= COALESCE(corr."validadaEm", conclusao."validadaEm")
-            AND (designacao.fim IS NULL OR designacao.fim > COALESCE(corr."validadaEm", conclusao."validadaEm"))
-        )
+        AND avaliador_reposicao_vigente(r.id, avaliador.id, COALESCE(corr."validadaEm", conclusao."validadaEm"))
       )
       AND COALESCE(corr."realizadaEm", conclusao."realizadaEm", encontro."fim", corr."validadaEm", conclusao."validadaEm") >= original.fim
     ORDER BY r.id,

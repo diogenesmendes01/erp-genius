@@ -29,10 +29,8 @@ export async function solicitarCorrecaoEntregaReposicao(input: unknown) {
         WHERE r.id = ${entrada.reposicaoId} FOR UPDATE OF r, e
       `);
       const [designacao] = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-        SELECT d.id FROM "DesignacaoAvaliadorReposicaoIndividual" d
-        WHERE d."reposicaoId" = ${entrada.reposicaoId} AND d."professorId" = ${autor.id}
-          AND d.inicio <= ${instanteUtc(agora)} AND (d.fim IS NULL OR d.fim > ${instanteUtc(agora)})
-        FOR SHARE
+        SELECT ${entrada.reposicaoId} AS id
+        WHERE avaliador_reposicao_vigente(${entrada.reposicaoId}, ${autor.id}, ${instanteUtc(agora)})
       `);
       const [configuracao] = await tx.$queryRaw<Array<{ prazoRespostaCorrecaoReposicaoMinutos: number | null }>>(Prisma.sql`
         SELECT "prazoRespostaCorrecaoReposicaoMinutos" FROM "ConfiguracaoOperacional" WHERE id = 'escola' FOR SHARE
