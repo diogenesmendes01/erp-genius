@@ -48,7 +48,7 @@ export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
         versaoCondicoesId: versao.id,
         condicoesHash: versao.condicoesHash,
         cobrancas: cobrancas.map(c => {
-          const valorNovo = taxaValor ? new Prisma.Decimal(taxaValor.valor) : c.valorNegociado;
+          const valorNovo = taxaValor?.valor ? new Prisma.Decimal(taxaValor.valor) : c.valorNegociado;
           const memoria = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo, creditosTaxaJaOriginados: creditoAnterior.get(c.id) ?? 0 });
           return {
             id: c.id, codigo: c.codigo, versao: c.versao, status: c.status, moeda: c.moeda,
