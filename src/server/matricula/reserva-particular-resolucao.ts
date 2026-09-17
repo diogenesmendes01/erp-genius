@@ -24,7 +24,7 @@ async function contexto(tx: Prisma.TransactionClient, reservaId: string, tipo: s
   if (reserva.status !== "MANTIDA_PENDENCIA") throw new ErroRegra("A resolução exige reserva mantida por pendência.");
   const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: reserva.matriculaId }, select: { status: true, contratoOk: true, contratoDocumentoId: true, confirmacaoContratoEm: true,
     cobrancas: { orderBy: { id: "asc" }, select: { id: true, versao: true, status: true, valorRecebido: true,
-      informes: { orderBy: { id: "asc" }, select: { id: true, status: true, versao: true } }, recebimentos: { orderBy: { id: "asc" }, select: { id: true } } } } } });
+      informes: { orderBy: { id: "asc" }, select: { id: true, status: true, versao: true } }, destinacoesRecebimento: { orderBy: { id: "asc" }, select: { id: true, recebimentoId: true, valor: true } } } } } });
   const processos = await tx.processoAssinaturaContratual.findMany({ where: { matriculaId: reserva.matriculaId }, orderBy: { id: "asc" }, select: { id: true, estado: true, referenciaExterna: true } });
   const documentos = await tx.documento.findMany({ where: { matriculaId: reserva.matriculaId, categoria: "CONTRATO" }, orderBy: { id: "asc" }, select: { id: true, arquivado: true, url: true } });
   const agenda = tipo === "PRORROGAR" ? (await carregarAgendaParticularContratual(tx, reserva.matriculaId, reservaId)).snapshot : null;
