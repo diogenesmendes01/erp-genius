@@ -102,5 +102,20 @@ export async function receberTx(tx: Prisma.TransactionClient, input: {
   if (input.moeda && input.moeda !== cobranca.moeda) throw new ErroRegra("A moeda do informe difere da cobrança. Confira novamente o pagamento.");
   const evidencia = input.evidencia ?? input.comentario;
   if (!evidencia || evidencia.trim().length < 5) throw new ErroRegra("Informe a evidência da destinação do recebimento.");
-  return receberComDestinacoesTx(tx, { ...input, titularMatriculaId: cobranca.matriculaId, pagadorId: input.pagadorId ?? null, moeda: cobranca.moeda, destinos: [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: input.cobrancaId, valor: input.valorRecebido, evidencia, chaveIdempotencia: `cobranca:${input.cobrancaId}` }] });
+  await bloquearMatriculas(tx, [cobranca.matriculaId]);
+  const anterior = await tx.recebimento.findUnique({ where: { chaveIdempotencia: input.chaveIdempotencia }, include: { destinacoes: { orderBy: { chaveIdempotencia: "asc" } } } });
+  let destinos: DestinoRecebimento[];
+  if (anterior) {
+    if (anterior.destinacoes.some(d => d.tipo === TipoDestinacaoRecebimento.COBRANCA && d.cobrancaId !== input.cobrancaId) || (anterior.destinacoes.some(d => d.tipo === TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO) && !input.permitirExcedente)) throw new ErroRegra("Identificador de pagamento já usado para outra operação.");
+    // O saldo atual já reflete a primeira baixa; o replay conserva sua divisão.
+    destinos = anterior.destinacoes.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? undefined, valor: d.valor.toNumber(), evidencia, chaveIdempotencia: d.chaveIdempotencia }));
+  } else {
+    const atual = await bloquearCobranca(tx, input.cobrancaId);
+    const saldo = saldoAtual(atual.valorNegociado, atual.valorRecebido, atual.valorLiquidadoCredito);
+    const valor = dinheiro(input.valorRecebido);
+    if (valor.gt(saldo) && !input.permitirExcedente) throw new ErroRegra("Autorize o registro do excedente como crédito.");
+    destinos = [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: input.cobrancaId, valor: Prisma.Decimal.min(valor, saldo).toNumber(), evidencia, chaveIdempotencia: `cobranca:${input.cobrancaId}` }];
+    if (valor.gt(saldo)) destinos.push({ tipo: TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO, valor: valor.minus(saldo).toNumber(), evidencia, chaveIdempotencia: "credito-sem-destino" });
+  }
+  return receberComDestinacoesTx(tx, { ...input, titularMatriculaId: cobranca.matriculaId, pagadorId: input.pagadorId ?? null, moeda: cobranca.moeda, destinos });
 }

@@ -17,7 +17,7 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
-import { registrarRecebimentoDestinado } from "./acoes";
+import { registrarPagamento, registrarRecebimentoDestinado } from "./acoes";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
@@ -129,4 +129,18 @@ it("usa e reserva devolução do crédito antecipado sem criar outro recebimento
   expect(await prisma.recebimento.count()).toBe(1);
   expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } })).valorLiquidadoCredito.toFixed(2)).toBe("100.00");
   expect((await prisma.reservaDevolucaoCredito.findFirstOrThrow()).valor.toFixed(2)).toBe("50.00");
+});
+
+it("pagamento de cobrança reparte excedente autorizado e conserva a divisão no replay", async () => {
+  const pagamento = { chaveIdempotencia: "pagamento-excedente-compatibilidade", valorRecebido: 125, forma: "DINHEIRO" as const, dataPagamento: new Date("2026-09-17T12:00:00Z"), comentario: "Recebimento e excedente conferidos com o aluno", permitirExcedente: true };
+  expect(await registrarPagamento(c1, { ...pagamento, permitirExcedente: false })).toMatchObject({ ok: false });
+  expect(await prisma.recebimento.count()).toBe(0);
+  expect(await registrarPagamento(c1, pagamento)).toMatchObject({ ok: true });
+  expect(await registrarPagamento(c1, pagamento)).toMatchObject({ ok: true });
+  expect(await registrarPagamento(c2, pagamento)).toMatchObject({ ok: false });
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect((await prisma.recebimento.findFirstOrThrow()).valor.toFixed(2)).toBe("125.00");
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } })).valorRecebido?.toFixed(2)).toBe("100.00");
+  expect((await prisma.creditoMatricula.findFirstOrThrow()).valorInicial.toFixed(2)).toBe("25.00");
+  expect(await prisma.destinacaoRecebimento.count()).toBe(2);
 });
