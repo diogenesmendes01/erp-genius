@@ -9,6 +9,7 @@ type VersaoCondicoesMensal = {
   condicoes: Prisma.JsonValue;
   condicoesHash: string;
   vigenciaInicio: Date;
+  aplicacao: { id: string } | null;
 };
 
 type EntradaMensalVigente = {
@@ -79,6 +80,12 @@ function resumoFinanceiro(versao: VersaoCondicoesMensal): string {
   });
 }
 
+function exigirAplicacao(versao: VersaoCondicoesMensal) {
+  if (!versao.aplicacao) {
+    throw new ErroRegra("Condições formalizadas vigentes aguardam aplicação explícita.");
+  }
+}
+
 export function resolverMensalVigente(
   versoes: readonly VersaoCondicoesMensal[],
   inicioCobertura: Date,
@@ -104,9 +111,16 @@ export function resolverMensalVigente(
       (versao) =>
         versao.vigenciaInicio > inicioCobertura && versao.vigenciaInicio < fimExclusivo,
     )
-    .some((versao) => resumoFinanceiro(versao) !== resumoBase);
+    .filter((versao) => resumoFinanceiro(versao) !== resumoBase);
 
-  if (possuiMudancaFinanceiraNaCobertura) {
+  const mudancasPendentes = possuiMudancaFinanceiraNaCobertura.filter(
+    (versao) => !versao.aplicacao,
+  );
+  if (mudancasPendentes.length) {
+    throw new ErroRegra("Há condições formalizadas pendentes de aplicação durante a cobertura mensal.");
+  }
+
+  if (possuiMudancaFinanceiraNaCobertura.length) {
     throw new ErroRegra("Há mudança financeira durante a cobertura mensal.");
   }
 
@@ -119,6 +133,7 @@ export function resolverMensalVigente(
     };
   }
 
+  exigirAplicacao(efetiva);
   resumoFinanceiro(efetiva);
   const condicoes = condicoesObjeto(efetiva.condicoes);
 
@@ -174,6 +189,7 @@ export async function resolverMensalVigenteTx(
       condicoes: true,
       condicoesHash: true,
       vigenciaInicio: true,
+      aplicacao: { select: { id: true } },
     },
   });
 

@@ -11,12 +11,13 @@ const versao = (
   condicoes: Prisma.JsonObject,
   inicio = "2026-01-01T00:00:00.000Z",
   numero = 1,
-) => ({
+): { id: string; versao: number; condicoes: Prisma.JsonObject; condicoesHash: string; vigenciaInicio: Date; aplicacao: { id: string } | null } => ({
   id: `v${numero}`,
   versao: numero,
   condicoes,
   condicoesHash: hashSubstituicao(condicoes),
   vigenciaInicio: new Date(inicio),
+  aplicacao: { id: `a${numero}` },
 });
 
 const resolverBase = (versoes: ReturnType<typeof versao>[]) =>
@@ -44,6 +45,12 @@ describe("resolverMensalVigente", () => {
       valorNegociado: "90",
       versaoAditivo: null,
     });
+  });
+
+  it("não usa uma versão formalizada pendente nem volta ao preço anterior", () => {
+    expect(() =>
+      resolverBase([{ ...versao(dinheiroMensal()), aplicacao: null }]),
+    ).toThrow(/aplicação explícita/);
   });
 
   it("bloqueia mudança financeira no meio da cobertura", () => {
