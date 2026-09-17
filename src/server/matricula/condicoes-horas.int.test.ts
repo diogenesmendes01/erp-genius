@@ -436,7 +436,7 @@ it.each([["156.25", 0], ["100.00", 0], ["100.00", 156.25]] as const)("emite uma 
  }
 });
 
-it("emissão parcial e complementar cobram cada encontro uma vez e rejeitam decisão de aguardar", async () => {
+it("CT09: particular sem gravação, ocorrência conferida e fechamento parcial/complementar não duplicam encontros", async () => {
  const { d, e, professor } = await prepararPreviaFinanceira();
  const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
  const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
@@ -444,11 +444,13 @@ it("emissão parcial e complementar cobram cada encontro uma vez e rejeitam deci
  const { decidirFechamentoHoras } = await import("./fechamento-horas-decisao");
  const { emitirFechamentoHorasTx } = await import("./fechamento-horas-emissao-tx");
  const { registrarOcorrenciaParticular } = await import("./ocorrencia-particular");
+ expect(await prisma.aulaDiario.count()).toBe(0);
  const conferir = async (ocorrenciaId: string, chave: string) => {
   const p = await preverConferenciaOcorrenciaHoras({ ...d, ocorrenciaId }); if (!p.ok || !p.dado) throw new Error("Prévia ausente");
   expect(await conferirOcorrenciaHoras({ ...d, ocorrenciaId, estadoPrevia: p.dado.estadoPrevia, motivo: "Ocorrência conferida para fechamento", chaveIdempotencia: chave })).toMatchObject({ ok: true });
  };
  await conferir(d.ocorrenciaId, "parcial-primeiro");
+ expect(await prisma.conferenciaOcorrenciaHoras.count({ where: { encontroId: e.id } })).toBe(1);
  const novo = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: professor.id, preparadorId: adminId,
   inicio: new Date("2026-01-15T15:00:00Z"), fim: new Date("2026-01-15T16:00:00Z"), fusoOrigem: e.fusoOrigem, status: "PREVISTO", motivo: "Encontro aguardando conferência", chaveIdempotencia: "parcial-segundo", entradaHash: "fixture" } });
  const aprovador = await criarUsuario(["ADMINISTRADOR"]);
@@ -477,12 +479,16 @@ it("emissão parcial e complementar cobram cada encontro uma vez e rejeitam deci
  expect(await emitirFechamentoHoras({ alunoId: d.alunoId, matriculaId, decisaoId: parcial })).toMatchObject({ ok: false });
  const informe = await registrarOcorrenciaParticular({ encontroId: novo.id, tipo: "REALIZADA", versaoAnterior: 0, evidencia: "Aula realizada conforme agenda", chaveIdempotencia: "parcial-informe-segundo" });
  expect(informe.ok).toBe(true);
+ expect(await prisma.aulaDiario.count()).toBe(0);
  const o = await prisma.ocorrenciaParticular.findFirstOrThrow({ where: { encontroId: novo.id } });
  login(adminId); await conferir(o.id, "parcial-conferencia-segundo");
  const complementar = await prepararDecidir(2, "AGUARDAR");
  const segunda = await emitir(complementar);
  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: segunda.cobrancaId } })).valorNegociado.toFixed(2)).toBe("125.00");
  expect(await prisma.cobranca.count()).toBe(2); expect(await prisma.itemFechamentoHoras.count()).toBe(2);
+ expect(await prisma.conferenciaOcorrenciaHoras.count()).toBe(2);
+ const itensFaturados = await prisma.itemFechamentoHoras.findMany({ include: { conferencia: { select: { encontroId: true } } } });
+ expect(itensFaturados.map(item => item.conferencia.encontroId).sort()).toEqual([e.id, novo.id].sort());
  expect(await emitir(parcial)).toEqual(primeira); expect(await emitir(complementar)).toEqual(segunda);
  const { consultarFechamentosHoras } = await import("./fechamento-horas-consulta");
  const historico = await consultarFechamentosHoras({ alunoId: d.alunoId, matriculaId });
