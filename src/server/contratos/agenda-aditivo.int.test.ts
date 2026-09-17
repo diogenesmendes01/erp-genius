@@ -9,7 +9,7 @@ import { IdentidadeSignatarioSchema } from "./participantes-schema";
 import { hashPrevia } from "./previa-estado";
 import { z } from "zod";
 import { carregarConferenciaAgendaAditivoTx } from "./agenda-aditivo-tx";
-import { consultarConferenciaAgendaAditivo } from "./agenda-aditivo";
+import { consultarConferenciaAgendaAditivo, consultarOpcoesConferenciaAgendaAditivo, listarMatriculasConferenciaAgendaAditivo } from "./agenda-aditivo";
 import { carregarRevisaoAceite } from "./aceite-estado";
 import { confirmarAceiteOriginalTx } from "./aceite-tx";
 import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-horas-compradas";
@@ -53,6 +53,14 @@ it("autoriza secretaria, administração e gestão pedagógica pela consulta rea
   expect(await consultarConferenciaAgendaAditivo(entrada())).toMatchObject({ ok: true, dado: { somenteConsulta: true } });
   const vendedor = await criarUsuario(["VENDEDOR"]); authMock.mockResolvedValue({ user: { id: vendedor.id } });
   expect(await consultarConferenciaAgendaAditivo(entrada())).toMatchObject({ ok: false });
+});
+
+it("lista somente encontros elegíveis e matrículas particulares para os papéis da conferência", async () => {
+  expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { matricula: { id: base.matriculaId }, encontros: expect.arrayContaining([expect.objectContaining({ id: encontroId, professor: expect.any(String) })]), professores: expect.arrayContaining([expect.objectContaining({ id: expect.any(String), nome: expect.any(String) })]) } });
+  const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]); authMock.mockResolvedValue({ user: { id: gestor.id } });
+  expect(await listarMatriculasConferenciaAgendaAditivo({ alunoId: (await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } })).alunoId })).toMatchObject({ ok: true, dado: [{ id: base.matriculaId }] });
+  const vendedor = await criarUsuario(["VENDEDOR"]); authMock.mockResolvedValue({ user: { id: vendedor.id } });
+  expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: base.matriculaId })).toMatchObject({ ok: false });
 });
 
 it("expõe colisão entre novos horários selecionados sem excluir a matrícula inteira", async () => {

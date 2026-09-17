@@ -96,6 +96,8 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       <Link className="inline-block text-sm text-brand-700 hover:underline" href={`/alunos/${id}/movimentacoes`}>Pausa, retomada e encerramento por matrícula</Link>}
     {usuario.papeis.some((p) => ([Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] as Papel[]).includes(p)) &&
       <Link className="ml-4 inline-block text-sm text-brand-700 hover:underline" href={`/alunos/${id}/portal`}>Acesso ao portal de reposições</Link>}
+    {usuario.papeis.some((p) => ([Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO] as Papel[]).includes(p)) &&
+      <Link className="ml-4 inline-block text-sm text-brand-700 hover:underline" href={`/alunos/${id}/agenda-aditivo`}>Conferir agenda para aditivo</Link>}
     <FichaAluno
       aluno={ficha}
       paises={paises.map((p) => ({
