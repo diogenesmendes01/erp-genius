@@ -50,3 +50,11 @@ it("invalidação usa a action, preserva chave no replay e atualiza a tela", asy
   expect(c.mensagem).toHaveBeenCalledWith("Acerto invalidado; prepare uma nova proposta.");
   expect(m.refresh).toHaveBeenCalledTimes(1);
 });
+it("invalidação exige capacidade e bloqueia clique concorrente", async () => {
+  expect(mount(false, false, "Comissão mudou depois da aprovação", false).botoes).toHaveLength(0);
+  const c = mount(false, false, "Comissão mudou depois da aprovação", true); let resolver!: (r: { ok: true }) => void;
+  m.invalidar.mockReturnValueOnce(new Promise(r => { resolver = r; }));
+  const primeira = c.botoes[0].onClick(); await c.botoes[0].onClick();
+  expect(m.invalidar).toHaveBeenCalledTimes(1);
+  resolver({ ok: true }); await primeira;
+});
