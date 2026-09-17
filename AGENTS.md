@@ -10,5 +10,6 @@
 - DEV entrega banco/servidor/tela/testes/SPEC da funcionalidade. TESTER inspeciona o commit exato em seu worktree e banco, sem substituir a responsabilidade de testes do DEV.
 - Mudanças compartilhadas de permissões, contratos e schema exigem coordenação técnica. O integrador reserva IDs de migração; não reutilizar migração aplicada.
 - Testar o recorte durante o desenvolvimento. Regressão global após integração relevante, sem reinstalar dependências no meio da execução.
+- Teste e TypeScript só contam como aprovados após saída terminal com código 0. Preservar o `session_id` do executor e acompanhar a mesma sessão até terminar; silêncio no log não comprova sucesso. Não usar processo desacoplado para contornar o tempo de observação do executor. Informar filtros e testes ignorados; não chamar um recorte de suíte completa.
 - Commit por funcionalidade, com evidências e pendências no quadro único `docs/planejamento/quadro-entregas.md`. Nada de marcar concluído com partes obrigatórias ausentes ou homologação presumida.
 - Não enviar mensagens/e-mails reais nem ativar integrações externas nesta fase. Push e deploy são ações separadas.

@@ -225,6 +225,14 @@ Proposta técnica: manter aprovação, formalização e aplicação como fatos d
 
 Esse fluxo amplia a entrega documental: incluir modelos e geração de aditivos, aprovação, assinatura, conferência e aplicação das condições. Documento consolidado não foi selecionado como alternativa automática. Conteúdo real e parâmetros dos modelos serão fornecidos/validados nas etapas dependentes.
 
+#### Aplicação explícita — lacuna confirmada em 17/09/2026
+
+O código atual preserva `VersaoCondicoesAditivo` após os controles de formalização, mas os resolvedores mensais e por hora consomem essa versão sem um fato próprio de aplicação. A entrega precisa registrar aplicação imutável e idempotente, vinculada à versão, matrícula, proposta, autor e revisão conferida. Formalização e aplicação podem ocorrer na mesma transação após todos os requisitos; distinguir fatos não exige adicionar uma aprovação ou etapa manual não prevista em Q117. A interface deve identificar o efeito da ação e a vigência das condições.
+
+Para novos cálculos, versão formalizada vigente ainda pendente de aplicação exige conferência: não ignorá-la para cobrar silenciosamente pelas condições anteriores. Recebimentos, cobranças e conferências já registrados mantêm suas referências e valores, sem reprecificação retroativa. Versões preexistentes não recebem aplicação fictícia por migração; a regularização deve revalidar os fatos persistidos e registrar a aplicação real. A existência de formalização posterior não autoriza sobrescrever a cadeia contratual.
+
+Revalidar, sob os bloqueios do contrato/processo, proposta e base, alçadas aplicáveis, conclusão em produção, assinaturas completas, conferência final, hashes e vigência. Repetição idêntica conserva o mesmo fato; revisão divergente e concorrência não criam aplicação duplicada. Nenhuma aplicação cria matrícula, taxa ou acerto financeiro. Alterações de agenda continuam exigindo integração acadêmica própria aprovada; a recusa atual de `AGENDA` não pode ser removida apenas para admitir a nova aplicação. Esta seção identifica trabalho restante, sem declarar Q117 integralmente entregue.
+
 ## 7. Pendências para fechar a entrega documental
 
 **Expiração da reserva — Q123:** a matrícula continua em preparação, mas a solicitação de assinatura ainda aberta deve ser encerrada com resultado conferido. Nova reserva não reabre o processo externo anterior: revalidar dados, condições, documento e requisitos antes de liberar nova solicitação, sem duplicar taxa ou recebimentos. Encerramento incerto mantém a liberação pendente. Pagamento/assinatura concorrente exige conferência; preservar evidências, sem presumir ativação, vaga ou devolução.
