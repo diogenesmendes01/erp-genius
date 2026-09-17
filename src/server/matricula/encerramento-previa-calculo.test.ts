@@ -104,7 +104,7 @@ it("bloqueia dupla apuração da compra de horas e não publica total com reserv
   const { consolidarPreviaEncerramento } = await import("./encerramento-consolidacao");
   const { calcularSaldoHorasEncerramento } = await import("./encerramento-horas");
   const c = contexto();
-  c.cobrancas.push({ ...c.cobrancas[0], id: "horas", tipo: "HORA_PARTICULAR", valorRecebido: "300.00", valorNegociado: "300.00", recebimentos: [{ id: "r1", valor: "300.00", moeda: "BRL", dataPagamento: "2026-09-01T00:00:00Z" }] });
+  c.cobrancas.push({ ...c.cobrancas[0], id: "horas", tipo: "HORA_PARTICULAR", valorRecebido: "300.00", valorNegociado: "300.00", recebimentos: [{ id: "r1", recebimentoId: "caixa-r1", valor: "300.00", moeda: "BRL", dataPagamento: "2026-09-01T00:00:00Z" }] });
   const conferencia = { ...input(), outrasCobrancas: [{ cobrancaId: "horas", versao: 2, valorDevidoProposto: "300", motivo: "Preservar compra quitada", evidenciaContratual: "Condições da compra" }] };
   const mensal = calcularPreviaMensalConferida(c, "2026-09-15", conferencia);
   const horas = { pendencias: [], cobrancasCompras: ["horas"], origens: [], calculo: { ...calcularSaldoHorasEncerramento({ matriculaId: "m1", moeda: "BRL", compras: [] }), creditoApurado: "100.00" } };

@@ -18,6 +18,7 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import type { Resultado } from "@/server/_shared";
@@ -126,13 +127,13 @@ beforeEach(async () => {
   alunoId = c.pessoa.id; alocacaoId = c.alocacao.id; matriculaId = c.matricula!.id;
   const cobranca = await prisma.cobranca.create({ data: {
     matriculaId, tipo: "MENSALIDADE", status: "PENDENTE", moeda: "CRC", competencia: "2026-10",
-    valorOriginal: 123.45, valorNegociado: 123.45, valorRecebido: 23.4, saldo: 100.05,
+    valorOriginal: 123.45, valorNegociado: 123.45, valorRecebido: 0, saldo: 123.45,
     vencimento: new Date(Date.now() + 40 * DIA),
   } });
-  await prisma.recebimento.create({ data: {
-    cobrancaId: cobranca.id, valor: 23.4, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date(),
-    autorId: adm.id, chaveIdempotencia: "pagamento-academico-fixture",
-  } });
+  await prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: cobranca.id, valorRecebido: 23.4, forma: "TRANSFERENCIA", dataPagamento: new Date(),
+    autorId: adm.id, chaveIdempotencia: "pagamento-academico-fixture", evidencia: "Pagamento acadêmico conferido na fixture.",
+  }));
   await prisma.comissao.create({ data: {
     matriculaId, vendedorId: adm.id, percentual: 10, valor: 12.35, moeda: "CRC", status: "PAGA", pagaEm: new Date(),
   } });
