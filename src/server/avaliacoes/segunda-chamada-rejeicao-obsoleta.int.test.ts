@@ -285,8 +285,10 @@ it.each(["INICIAL", "REMARCACAO", "SUBSTITUICAO"] as const)(
     if (!historico.ok || !historico.dado) throw new Error(JSON.stringify(historico));
     expect(JSON.stringify(historico.dado)).not.toContain(matriculaAtual.matricula!.codigo);
     if (tipo === "REMARCACAO") {
-      expect(historico.dado).toMatchObject({ conferencia: { contextoVigente: false } });
-      expect(JSON.stringify(historico.dado.conferencia)).not.toContain(matriculaAtual.matricula!.codigo);
+      const remarcacao = await consultarRemarcacoesAgendaSegundaChamada({ reservaId: pendente.reservaId! });
+      if (!remarcacao.ok || !remarcacao.dado) throw new Error(JSON.stringify(remarcacao));
+      expect(remarcacao.dado).toMatchObject({ conferencia: { contextoVigente: false } });
+      expect(JSON.stringify(remarcacao.dado.conferencia)).not.toContain(matriculaAtual.matricula!.codigo);
     }
 
     entrar(gestor);
