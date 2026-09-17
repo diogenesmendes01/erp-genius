@@ -215,12 +215,16 @@ it("invalida acerto aprovado após outra versão assinada e aplica a reproposta 
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
   authMock.mockResolvedValue({ user: { id: aprovador } });
   expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Acerto aprovado antes do novo aditivo", chaveIdempotencia: "dct03-versao-posterior-decisao" })).toMatchObject({ ok: true });
+  const cobrancaAntes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+  const decisaoAntes = await prisma.decisaoAcertoTaxaAditivo.findUniqueOrThrow({ where: { propostaId: proposta.dado.id } });
   const posterior = await formalizarNovaVersaoTaxa("70");
   authMock.mockResolvedValue({ user: { id: aprovador } });
   const invalidada = await invalidarAcertoTaxaAditivo({ propostaId: proposta.dado.id, motivo: "Outro aditivo assinou nova taxa para a matrícula", evidencia: { conferencia: "versão posterior" }, chaveIdempotencia: "dct03-versao-posterior-invalidar" });
   if (!invalidada.ok) throw new Error(invalidada.erro);
   const invalidacao = await prisma.invalidacaoAcertoTaxaAditivo.findUniqueOrThrow({ where: { propostaId: proposta.dado.id } });
   expect(invalidacao.fotografiaAtual).toMatchObject({ versaoCondicoesId: posterior.versaoCondicoesId, revisaoHash: posterior.revisaoHash });
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).toEqual(cobrancaAntes);
+  expect(await prisma.decisaoAcertoTaxaAditivo.findUniqueOrThrow({ where: { propostaId: proposta.dado.id } })).toEqual(decisaoAntes);
   authMock.mockResolvedValue({ user: { id: financeiro } });
   const nova = await proporAcertoTaxaAditivo({ matriculaId: base.matriculaId, propostaAditivoId: posterior.propostaId, conclusaoId: posterior.conclusaoId, revisaoHash: posterior.revisaoHash, cobrancaId, motivo: "Acerto da última taxa formalizada", evidencia: { recibo: "DCT03-70" }, chaveIdempotencia: "dct03-versao-posterior-repropor" });
   if (!nova.ok || !nova.dado) throw new Error(JSON.stringify(nova));
