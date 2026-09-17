@@ -229,6 +229,28 @@ it("invalida acerto aprovado após outra versão assinada e aplica a reproposta 
   expect(await aplicarAcertoTaxaAditivo({ propostaId: nova.dado.id, chaveIdempotencia: "dct03-versao-posterior-aplicar" })).toMatchObject({ ok: true });
   expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorNegociado.toFixed(2)).toBe("70.00");
 });
+it("gera somente créditos incrementais nas reduções assinadas 100 para 80 e depois 70", async () => {
+  const primeira = await propor("dct03-reducoes-80");
+  if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: primeira.dado.id, aprovada: true, motivo: "Redução inicial conferida", chaveIdempotencia: "dct03-reducoes-80-decisao" })).toMatchObject({ ok: true });
+  const aplicada80 = await aplicarAcertoTaxaAditivo({ propostaId: primeira.dado.id, chaveIdempotencia: "dct03-reducoes-80-aplicar" });
+  expect(await aplicarAcertoTaxaAditivo({ propostaId: primeira.dado.id, chaveIdempotencia: "dct03-reducoes-80-aplicar" })).toEqual(aplicada80);
+  expect((await prisma.origemCreditoAcertoTaxaAditivo.findMany()).map(x => x.valor.toFixed(2))).toEqual(["20.00"]);
+  const posterior = await formalizarNovaVersaoTaxa("70");
+  authMock.mockResolvedValue({ user: { id: financeiro } });
+  const segunda = await proporAcertoTaxaAditivo({ matriculaId: base.matriculaId, propostaAditivoId: posterior.propostaId, conclusaoId: posterior.conclusaoId, revisaoHash: posterior.revisaoHash, cobrancaId, motivo: "Segunda redução formalizada", evidencia: { recibo: "DCT03-70" }, chaveIdempotencia: "dct03-reducoes-70" });
+  if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
+  const proposta70 = await prisma.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: segunda.dado.id } });
+  expect([proposta70.creditoAnterior.toFixed(2), proposta70.creditoNovo.toFixed(2)]).toEqual(["20.00", "10.00"]);
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: segunda.dado.id, aprovada: true, motivo: "Segunda redução conferida", chaveIdempotencia: "dct03-reducoes-70-decisao" })).toMatchObject({ ok: true });
+  const aplicada70 = await aplicarAcertoTaxaAditivo({ propostaId: segunda.dado.id, chaveIdempotencia: "dct03-reducoes-70-aplicar" });
+  expect(await aplicarAcertoTaxaAditivo({ propostaId: segunda.dado.id, chaveIdempotencia: "dct03-reducoes-70-aplicar" })).toEqual(aplicada70);
+  expect((await prisma.origemCreditoAcertoTaxaAditivo.findMany({ orderBy: { criadaEm: "asc" } })).map(x => x.valor.toFixed(2))).toEqual(["20.00", "10.00"]);
+  expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(2);
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorNegociado.toFixed(2)).toBe("70.00");
+});
 it("DCT03 recusa invalidação vigente ou pelo preparador e preserva replay sob permissão", async () => {
   const vendedor = await criarUsuario(["VENDEDOR"]);
   const comissao = await prisma.comissao.create({ data: { matriculaId: base.matriculaId, vendedorId: vendedor.id, tipo: "PERCENTUAL", percentual: 10, valor: 10, valorBase: 100, moeda: "CRC", status: "PENDENTE" } });
