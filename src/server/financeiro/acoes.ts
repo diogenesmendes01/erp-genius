@@ -75,7 +75,8 @@ export async function registrarPagamento(cobrancaId: string, input: PagamentoInp
       const vinculo = await tx.matricula.findUniqueOrThrow({ where: { id: cobranca.matriculaId }, select: { alunoId: true, leadId: true } });
       if (dados.comprovanteUrl) await exigirArquivoVinculavel(autor, dados.comprovanteUrl, { cobrancaId, alunoId: vinculo.alunoId, leadId: vinculo.leadId ?? undefined }, tx);
       if (financeiro) {
-        await receberTx(tx, { ...dados, cobrancaId, autorId: autor.id, hashDados, dataPagamento: dados.dataPagamento ?? new Date() });
+        const anterior = dados.dataPagamento ? null : await tx.recebimento.findUnique({ where: { chaveIdempotencia: dados.chaveIdempotencia }, select: { dataPagamento: true } });
+        await receberTx(tx, { ...dados, cobrancaId, autorId: autor.id, hashDados, dataPagamento: dados.dataPagamento ?? anterior?.dataPagamento ?? new Date() });
         return;
       }
       const anterior = await tx.pagamentoInformado.findUnique({ where: { chaveIdempotencia: dados.chaveIdempotencia } });

@@ -144,3 +144,13 @@ it("pagamento de cobrança reparte excedente autorizado e conserva a divisão no
   expect((await prisma.creditoMatricula.findFirstOrThrow()).valorInicial.toFixed(2)).toBe("25.00");
   expect(await prisma.destinacaoRecebimento.count()).toBe(2);
 });
+
+it("pagamento sem data explícita conserva a data original ao repetir", async () => {
+  const pagamento = { chaveIdempotencia: "pagamento-sem-data-repeticao", valorRecebido: 40, forma: "DINHEIRO" as const, comentario: "Recebimento confirmado para a cobrança" };
+  expect(await registrarPagamento(c1, pagamento)).toMatchObject({ ok: true });
+  const antes = await prisma.recebimento.findFirstOrThrow();
+  expect(await registrarPagamento(c1, pagamento)).toMatchObject({ ok: true });
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect((await prisma.recebimento.findFirstOrThrow()).dataPagamento).toEqual(antes.dataPagamento);
+  expect(await registrarPagamento(c1, { ...pagamento, dataPagamento: new Date("2001-01-01T00:00:00Z") })).toMatchObject({ ok: false });
+});
