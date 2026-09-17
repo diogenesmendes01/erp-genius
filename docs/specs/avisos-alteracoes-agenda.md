@@ -4,6 +4,14 @@ Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos g
 
 ## Escopo
 
+### Extensão Q38 — quantidade de aulas (em implementação)
+
+A aplicação aprovada de quantidade por modalidade deve registrar a origem `QuantidadeAulasModalidadeAplicada` e o conjunto completo dos encontros alterados, incluídos ou cancelados das turmas publicadas. A fotografia aprovada, a decisão independente e a agenda aplicada precisam corresponder à origem; o payload sozinho não comprova essa correspondência. Cada matrícula recebe somente seu subconjunto, considerando o vínculo histórico no horário anterior ou posterior. Turmas em rascunho não geram avisos de agenda publicada.
+
+O desenvolvimento ocorre no worktree DEV2 autorizado. O controle `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` permanece desligado por padrão: registrar pendência de configuração e impedir transporte externo. A reconferência não encerra essa pendência enquanto o controle estiver desligado. Habilitar o controle exige configuração e homologação operacional próprias; testes usam transportes simulados.
+
+Validação em 17/09/2026: cinco testes de transporte simulado aprovados. A integração identificou que o evento incluía encontros reaproveitados sem alteração; o produtor foi corrigido para incluir somente mudanças reais, sem relaxar a validação da fonte. Os doze cenários de integração passaram no DEV2 após essa correção. A migração 196 está aplicada no DEV2 e permanece imutável. Revisão independente identificou a necessidade de exigir também no SQL o conjunto completo dos encontros; corretivas 197/198 aplicadas somente no DEV2, incluindo autoria das adições. Esta extensão ainda não está integrada nem concluída.
+
 Uma remarcação aprovada, uma substituição docente aprovada ou um replanejamento global aprovado cria avisos por matrícula e canal disponível, dentro da mesma transação que aplica a mudança. Cada aviso referencia o evento aplicado e seus encontros; a chave por evento, matrícula e canal impede duplicação e chamadas repetidas reúnem itens da mesma origem.
 
 Para encontro particular, o encontro pertence diretamente à matrícula. Para encontro de turma regular, cada matrícula é avaliada no instante do encontro: a alocação precisa ter sido criada até aquele instante e não pode estar encerrada nele. Uma alocação encerrada exatamente no início já não recebe aviso. Matrícula sem esse vínculo não recebe item nem aviso.
