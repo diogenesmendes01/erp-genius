@@ -4,6 +4,7 @@ import { ErroPermissao, type UsuarioSessao } from "./sessao";
 
 export const CAPACIDADES_ADICIONAIS = {
   "financeiro.aprovar_acertos": "Aprovar acertos e compensações financeiras",
+  "financeiro.executar_devolucoes": "Executar devoluções financeiras aprovadas",
   "dados.exportar_alunos": "Exportar alunos (campos já autorizados)",
   "dados.exportar_leads": "Exportar leads (carteira autorizada)",
   "pagamento.caixa": "Registrar recebimento no caixa",

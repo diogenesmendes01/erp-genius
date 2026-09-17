@@ -45,7 +45,7 @@ export async function proporUtilizacaoCredito(input: z.input<typeof Entrada>) {
 
 export async function consultarPropostasUsoCredito(input: { alunoId: string; creditoId: string }) {
   return executarAcao(async () => {
-    const u = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const u = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
     const d = z.object({ alunoId: z.string().min(1), creditoId: z.string().min(1) }).strict().parse(input);
     return prisma.$transaction(async tx => {
       const usuario = await conferirAutor(tx, u.id);
@@ -53,9 +53,25 @@ export async function consultarPropostasUsoCredito(input: { alunoId: string; cre
       if (!credito) throw new ErroRegra("Crédito não encontrado para este aluno.");
       const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: credito.matriculaId, moeda: credito.moeda, status: { in: ["PENDENTE", "ATRASADO"] }, suspensaPorItemPausaId: null, canceladaPorPausaId: null }, orderBy: [{ vencimento: "asc" }, { id: "asc" }], select: { id: true, codigo: true, saldo: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, vencimento: true } });
       const propostas = await tx.propostaUsoCredito.findMany({ where: { creditoId: credito.id }, orderBy: { versao: "desc" }, select: { id: true, cobrancaId: true, preparadorId: true, valor: true, versao: true, concordancia: true, motivo: true, criadoEm: true, decisao: { select: { aprovada: true, motivo: true } } } });
-      return { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, valorCredito: (await saldoCreditoTx(tx, credito.id)).toFixed(2),
+      const devolucoes = await tx.propostaDevolucaoCredito.findMany({
+        where: { creditoId: credito.id }, orderBy: { versao: "desc" },
+        select: { id: true, preparadorId: true, valor: true, versao: true, pedidoAluno: true, evidenciaPedido: true, destino: true, criadaEm: true,
+          decisao: { select: { id: true, decisorId: true, aprovada: true, motivo: true,
+            reserva: { select: { id: true, valor: true, estado: true, executorId: true, referenciaExterna: true, evidenciaExecucao: true, chaveExecucao: true, executadaEm: true,
+              conciliacoes: { select: { confirmouSaida: true, evidencia: true, criadaEm: true } },
+              cancelamento: { select: { motivo: true, evidencia: true, criadaEm: true } },
+            } },
+          },
+          },
+        },
+      });
+      const reservasDevolucao = devolucoes.reduce((s, p) => p.decisao?.reserva ? s.plus(p.decisao.reserva.valor) : s, new Prisma.Decimal(0));
+      const devolvido = devolucoes.reduce((s, p) => p.decisao?.reserva?.estado === "CONFIRMADA" ? s.plus(p.decisao.reserva.valor) : s, new Prisma.Decimal(0));
+      return { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, valorCredito: (await saldoCreditoTx(tx, credito.id)).toFixed(2), reservaDevolucao: reservasDevolucao.toFixed(2), devolvido: devolvido.toFixed(2),
         cobrancas: cobrancas.map(c => ({ id: c.id, codigo: c.codigo, saldo: (c.saldo ?? Prisma.Decimal.max(0, c.valorNegociado.minus(c.valorRecebido ?? 0).minus(c.valorLiquidadoCredito))).toFixed(2), vencimento: c.vencimento.toISOString() })),
-        propostas: propostas.map(p => ({ id: p.id, cobrancaId: p.cobrancaId, versao: p.versao, concordancia: p.concordancia, motivo: p.motivo, decisao: p.decisao, podeDecidir: !p.decisao && p.preparadorId !== u.id && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")), valor: p.valor.toFixed(2), criadoEm: p.criadoEm.toISOString() })), aplicacaoDisponivel: true as const };
+        propostas: propostas.map(p => ({ id: p.id, cobrancaId: p.cobrancaId, versao: p.versao, concordancia: p.concordancia, motivo: p.motivo, decisao: p.decisao, podeDecidir: !p.decisao && p.preparadorId !== u.id && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")), valor: p.valor.toFixed(2), criadoEm: p.criadoEm.toISOString() })),
+        devolucoes: devolucoes.map(p => ({ id: p.id, versao: p.versao, valor: p.valor.toFixed(2), pedidoAluno: p.pedidoAluno, evidenciaPedido: p.evidenciaPedido, destino: p.destino, criadoEm: p.criadaEm.toISOString(), decisao: p.decisao && { ...p.decisao, reserva: p.decisao.reserva && { ...p.decisao.reserva, valor: p.decisao.reserva.valor.toFixed(2), executadaEm: p.decisao.reserva.executadaEm?.toISOString() ?? null, conciliacoes: p.decisao.reserva.conciliacoes.map(c => ({ ...c, criadaEm: c.criadaEm.toISOString() })), cancelamento: p.decisao.reserva.cancelamento && { ...p.decisao.reserva.cancelamento, criadaEm: p.decisao.reserva.cancelamento.criadaEm.toISOString() } } }, podeDecidir: !p.decisao && p.preparadorId !== u.id && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")), podeExecutar: usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.executar_devolucoes"), podeCancelar: !!p.decisao?.aprovada && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")) })),
+        aplicacaoDisponivel: true as const };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
 }

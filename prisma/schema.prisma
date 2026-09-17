@@ -4895,6 +4895,7 @@ model PropostaUsoCredito {
 model CreditoMatricula {
   propostasUso PropostaUsoCredito[]
   propostasDevolucao PropostaDevolucaoCredito[]
+  reservasDevolucao ReservaDevolucaoCredito[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
