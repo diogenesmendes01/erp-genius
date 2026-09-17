@@ -2560,7 +2560,7 @@ model CompraHorasAntecipadas {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  cobrancaId String
+  cobrancaId String @unique
   cobranca Cobranca @relation(fields: [cobrancaId, matriculaId], references: [id, matriculaId], onDelete: Restrict, onUpdate: Restrict)
   documentoId String
   documento Documento @relation(fields: [documentoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3457,7 +3457,6 @@ model DecisaoModeloContratual {
   aprovada Boolean
   motivo String
   criadaEm DateTime @default(now())
-  @@index([cobrancaId])
 }
 
 model PreviaDocumentoContratual {
@@ -7342,13 +7341,14 @@ model OrigemCreditoAcertoTaxaAditivo {
   aplicacao AplicacaoAcertoTaxaAditivo @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  cobrancaId String @unique
+  cobrancaId String
   cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   valor Decimal @db.Decimal(12, 2)
   moeda String
   fotografia Json
   credito CreditoMatricula?
   criadaEm DateTime @default(now())
+  @@index([cobrancaId])
 }
 
 // M01/195: entrada anterior à conciliação. Não referencia cobrança nem pagador
