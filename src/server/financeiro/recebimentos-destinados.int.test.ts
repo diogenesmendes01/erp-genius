@@ -18,6 +18,10 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { registrarRecebimentoDestinado } from "./acoes";
+import { podeLerArquivo } from "@/server/uploads/autorizacao";
+import { proporUtilizacaoCredito } from "./uso-credito-proposta";
+import { decidirUtilizacaoCredito } from "./uso-credito-decisao";
+import { proporDevolucaoCredito, decidirDevolucaoCredito } from "./devolucao-credito";
 
 let financeiroId = "", matriculaId = "", moeda = "CRC", c1 = "", c2 = "";
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -70,4 +74,34 @@ it("não aceita URL arbitrária quando o recebimento inteiro vira crédito", asy
   const r = await registrarRecebimentoDestinado({ ...entrada("q87-credito-url-0001"), comprovanteUrl: "/api/files/nao-autorizado", destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 150, evidencia: "Antecipação sem cobrança e com origem identificada.", chaveIdempotencia: "credito-sem-destino" }] });
   expect(r).toMatchObject({ ok: false });
   expect(await prisma.recebimento.count()).toBe(0);
+});
+
+it("aceita comprovante autorizado por matrícula em crédito puro e preserva um único fato no replay", async () => {
+  const url = "/api/files/q87-credito-comprovante.pdf";
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+  await prisma.registroUpload.create({ data: { url, nome: "q87-credito-comprovante.pdf", mime: "application/pdf", tamanho: 10, autorId: financeiroId, alunoId: matricula.alunoId, matriculaId, categoriaDocumento: "COMPROVANTE" } });
+  const dados = { ...entrada("q87-credito-transferencia-0001"), forma: "TRANSFERENCIA" as const, comprovanteUrl: url, comprovanteNome: "q87-credito-comprovante.pdf", destinos: [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: 150, evidencia: "Antecipação comprovada sem cobrança definida.", chaveIdempotencia: "credito-sem-destino" }] };
+  const [a, b] = await Promise.all([registrarRecebimentoDestinado(dados), registrarRecebimentoDestinado(dados)]);
+  expect(a.ok && b.ok).toBe(true);
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect(await prisma.evento.count({ where: { tipo: "RecebimentoCreditado", agregadoId: matriculaId } })).toBe(1);
+  expect(await podeLerArquivo({ id: financeiroId, papeis: [Papel.FINANCEIRO] }, ["q87-credito-comprovante.pdf"])).toBe(true);
+});
+
+it("usa e reserva devolução do crédito antecipado sem criar outro recebimento", async () => {
+  const criado = await registrarRecebimentoDestinado({ ...entrada("q87-credito-q68-q69-0001"), destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 150, evidencia: "Antecipação para uso ou devolução posterior.", chaveIdempotencia: "credito-sem-destino" }] });
+  if (!criado.ok) throw new Error(criado.erro);
+  const credito = await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId } });
+  const uso = await proporUtilizacaoCredito({ creditoId: credito.id, cobrancaId: c1, valor: "100.00", concordancia: "Titular autorizou o abatimento da primeira mensalidade.", motivo: "Aplicar antecipação disponível", chaveIdempotencia: "q87-uso-credito-0001" });
+  if (!uso.ok || !uso.dado) throw new Error(uso.ok ? "Uso ausente" : uso.erro);
+  const admin = (await criarUsuario([Papel.ADMINISTRADOR], "Aprovador Q87")).id; entrar(admin);
+  expect((await decidirUtilizacaoCredito({ propostaId: uso.dado.id, aprovar: true, motivo: "Crédito e cobrança conferidos por outra pessoa" })).ok).toBe(true);
+  entrar(financeiroId);
+  const devolucao = await proporDevolucaoCredito({ creditoId: credito.id, valor: "50.00", pedidoAluno: "Titular solicitou devolução do saldo remanescente", evidenciaPedido: "Protocolo de devolução do crédito antecipado", destino: "Conta bancária do titular conferida", motivo: "Devolver antecipação não utilizada", chaveIdempotencia: "q87-devolucao-credito-0001" });
+  if (!devolucao.ok || !devolucao.dado) throw new Error(devolucao.ok ? "Devolução ausente" : devolucao.erro);
+  entrar(admin);
+  expect((await decidirDevolucaoCredito({ propostaId: devolucao.dado.id, aprovar: true, motivo: "Saldo remanescente conferido" })).ok).toBe(true);
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } })).valorLiquidadoCredito.toFixed(2)).toBe("100.00");
+  expect((await prisma.reservaDevolucaoCredito.findFirstOrThrow()).valor.toFixed(2)).toBe("50.00");
 });
