@@ -389,6 +389,15 @@ it("guard SQL recusa proposta de devolução acima do saldo ou com proveniência
   await expect(prisma.propostaDevolucaoCredito.create({ data: { ...base, valor: 100, chaveIdempotencia: "sql-proveniencia-forjada", snapshot: { creditoId: credito.id, matriculaId: "matricula-forjada", moeda: "USD", saldoDisponivel: "200.00", valor: "100.00", destino: base.destino } } })).rejects.toThrow();
   expect(await prisma.propostaDevolucaoCredito.count()).toBe(0);
 });
+it("serializa aprovação concorrente de uso Q68 e devolução Q69 no mesmo crédito", async () => {
+  const { credito, entrada } = await creditoParaPropostaUso();
+  const uso = await proporUtilizacaoCredito({ ...entrada, valor: "150.00", chaveIdempotencia: "uso-concorrente-devolucao" }); if (!uso.ok || !uso.dado) throw new Error("Uso ausente");
+  const devolucao = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Pedido de devolução concorrente", evidenciaPedido: "Evidência de devolução concorrente", destino: "Destino conferido concorrente", motivo: "Conferir disputa pelo crédito", chaveIdempotencia: "devolucao-concorrente-uso" }); if (!devolucao.ok || !devolucao.dado) throw new Error("Devolução ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
+  const [a, b] = await Promise.all([decidirUtilizacaoCredito({ propostaId: uso.dado.id, aprovar: true, motivo: "Aprovação concorrente de uso" }), decidirDevolucaoCredito({ propostaId: devolucao.dado.id, aprovar: true, motivo: "Aprovação concorrente de devolução" })]);
+  expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
+  expect((await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)))).gte(0)).toBe(true);
+});
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
   const recebimentos = await prisma.recebimento.findMany();
