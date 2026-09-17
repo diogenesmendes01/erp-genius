@@ -1,6 +1,79 @@
 "use client";
+
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
-type C={id:string;codigo:string|null;moeda:string;valorOriginal:string;valorNegociado:string;valorRecebido:string|null;valorLiquidadoCredito:string;saldo:string|null;vencimento:string;valorNovo:string;vencimentoNovo:string;creditoNovo:string;saldoAposAcerto:string;pendencia:{tratamento:string;valor:string}|null};
-export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusaoId, revisaoHash, cobrancas }: {matriculaId:string;propostaAditivoId:string;conclusaoId:string;revisaoHash:string;cobrancas:C[]}) { const [cobrancaId,setCobrancaId]=useState(cobrancas[0]?.id??""); const [motivo,setMotivo]=useState("");const [evidencia,setEvidencia]=useState("");const [mensagem,setMensagem]=useState(""); const chave=useRef(crypto.randomUUID()); const atual=cobrancas.find(c=>c.id===cobrancaId);
- return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Acerto da taxa emitida</h2><label className="block">Cobrança real<select value={cobrancaId} onChange={e=>setCobrancaId(e.target.value)}><option value="">Selecione</option>{cobrancas.map(c=><option key={c.id} value={c.id}>{c.codigo??c.id} · {c.moeda} {c.valorNegociado}</option>)}</select></label>{atual&&<dl><dt>Original / negociado</dt><dd>{atual.valorOriginal} / {atual.valorNegociado}</dd><dt>Recebido / crédito liquidado / saldo</dt><dd>{atual.valorRecebido??"0.00"} / {atual.valorLiquidadoCredito} / {atual.saldo??"0.00"}</dd><dt>Novo valor e vencimento</dt><dd>{atual.valorNovo} · {atual.vencimentoNovo}; crédito incremental {atual.creditoNovo}</dd></dl>}{atual?.pendencia&&<p role="alert">{atual.pendencia.tratamento} Valor: {atual.pendencia.valor}.</p>}<label className="block">Motivo<textarea value={motivo} onChange={e=>setMotivo(e.target.value)} /></label><label className="block">Evidência<textarea value={evidencia} onChange={e=>setEvidencia(e.target.value)} /></label><button disabled={!cobrancaId||motivo.trim().length<5||evidencia.trim().length<1||Boolean(atual?.pendencia)} onClick={async()=>{const r=await proporAcertoTaxaAditivo({matriculaId,propostaAditivoId,conclusaoId,revisaoHash,cobrancaId,motivo,evidencia:{texto:evidencia},chaveIdempotencia:chave.current});setMensagem(r.ok?`Proposta ${r.dado?.id} registrada.`:r.erro)}}>Propor acerto</button>{mensagem&&<p role="status">{mensagem}</p>}</section>; }
+
+type CobrancaTaxa = {
+  id: string; codigo: string | null; moeda: string;
+  valorOriginal: string; valorNegociado: string; valorRecebido: string | null;
+  valorLiquidadoCredito: string; saldo: string | null; vencimento: string;
+  valorNovo: string; vencimentoNovo: string; creditoNovo: string;
+  saldoAposAcerto: string; pendencia: { tratamento: string; valor: string } | null;
+};
+
+export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusaoId, revisaoHash, cobrancas }: {
+  matriculaId: string; propostaAditivoId: string; conclusaoId: string;
+  revisaoHash: string; cobrancas: CobrancaTaxa[];
+}) {
+  const router = useRouter();
+  const [cobrancaId, setCobrancaId] = useState("");
+  const [motivo, setMotivo] = useState("");
+  const [evidencia, setEvidencia] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+  const emEnvio = useRef(false);
+  const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
+  const atual = cobrancas.find(c => c.id === cobrancaId);
+  const podeEnviar = Boolean(atual && !atual.pendencia && motivo.trim().length >= 5 && evidencia.trim().length >= 5);
+
+  async function propor() {
+    if (emEnvio.current || !podeEnviar) return;
+    const dados = { matriculaId, propostaAditivoId, conclusaoId, revisaoHash, cobrancaId,
+      motivo: motivo.trim(), evidencia: { texto: evidencia.trim() } };
+    const entrada = JSON.stringify(dados);
+    if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
+    emEnvio.current = true;
+    setOcupado(true);
+    setMensagem("");
+    try {
+      const resultado = await proporAcertoTaxaAditivo({ ...dados, chaveIdempotencia: tentativa.current.chave });
+      if (!resultado.ok) { setMensagem(resultado.erro); return; }
+      setMensagem("Proposta registrada. Aguarda conferência de outra pessoa autorizada.");
+      setCobrancaId(""); setMotivo(""); setEvidencia(""); tentativa.current = null;
+      router.refresh();
+    } catch {
+      setMensagem("Não foi possível confirmar o resultado. Tente novamente com os mesmos dados para conferir esta tentativa.");
+    } finally {
+      emEnvio.current = false;
+      setOcupado(false);
+    }
+  }
+
+  return <section className="space-y-3 rounded border p-4">
+    <h2 className="text-xl">Acerto da taxa emitida</h2>
+    <p>Selecione a cobrança e confira os efeitos do aditivo. A proposta não confirma pagamentos nem devolve dinheiro.</p>
+    {!cobrancas.length && <p role="status">Nenhuma cobrança de taxa disponível para conferência.</p>}
+    <fieldset disabled={ocupado} className="space-y-3">
+      <label className="block">Cobrança de taxa
+        <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
+          <option value="">Selecione a cobrança</option>
+          {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {c.moeda} {c.valorNegociado} · {c.vencimento.slice(0, 10)}</option>)}
+        </select>
+      </label>
+      {atual && <dl className="grid gap-2 rounded bg-gray-50 p-3 sm:grid-cols-2">
+        <div><dt>Valor original / negociado</dt><dd>{atual.moeda} {atual.valorOriginal} / {atual.valorNegociado}</dd></div>
+        <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.moeda} {atual.valorRecebido ?? "0.00"} / {atual.valorLiquidadoCredito}</dd></div>
+        <div><dt>Saldo atual / após acerto</dt><dd>{atual.moeda} {atual.saldo ?? "Não informado"} / {atual.saldoAposAcerto}</dd></div>
+        <div><dt>Valor após acerto</dt><dd>{atual.moeda} {atual.valorNovo}</dd></div>
+        <div><dt>Vencimento atual / proposto</dt><dd>{atual.vencimento.slice(0, 10)} / {atual.vencimentoNovo.slice(0, 10)}</dd></div>
+        <div><dt>Novo crédito apurado</dt><dd>{atual.moeda} {atual.creditoNovo}</dd></div>
+      </dl>}
+      {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {atual.moeda} {atual.pendencia.valor}.</p>}
+      <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
+      <label className="block">Evidência conferida<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
+      <button type="button" disabled={!podeEnviar || ocupado} onClick={propor}>{ocupado ? "Registrando proposta…" : "Propor acerto"}</button>
+    </fieldset>
+    {mensagem && <p role="status">{mensagem}</p>}
+  </section>;
+}
