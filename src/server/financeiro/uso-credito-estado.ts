@@ -4,7 +4,8 @@ import { saldoAtual } from "./regras";
 export async function saldoCreditoTx(tx: Prisma.TransactionClient, creditoId: string) {
   const credito = await tx.creditoMatricula.findUniqueOrThrow({ where: { id: creditoId } });
   const usos = await tx.propostaUsoCredito.aggregate({ where: { creditoId, decisao: { aprovada: true } }, _sum: { valor: true } });
-  return credito.valorInicial.minus(usos._sum.valor ?? 0);
+  const reservas = await tx.reservaDevolucaoCredito.aggregate({ where: { creditoId, estado: { not: "LIBERADA" } }, _sum: { valor: true } });
+  return credito.valorInicial.minus(usos._sum.valor ?? 0).minus(reservas._sum.valor ?? 0);
 }
 export async function estadoUsoCreditoTx(tx: Prisma.TransactionClient, creditoId: string, cobrancaId: string, valor: Prisma.Decimal) {
   const credito = await tx.creditoMatricula.findUniqueOrThrow({ where: { id: creditoId } });
