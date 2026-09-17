@@ -15,6 +15,8 @@ import { confirmarAceiteOriginalTx } from "./aceite-tx";
 import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-horas-compradas";
 import { criarAgendaParticularIsentaFixture } from "@/test/reposicao-agenda";
 import { proporCancelamentoParticular, decidirCancelamentoParticular } from "@/server/agenda/cancelamento-particular";
+import { prepararSubstituicaoDocente } from "@/server/agenda/substituicao";
+import { decidirSubstituicaoDocente } from "@/server/agenda/substituicao-decisao";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let encontroId: string;
@@ -146,4 +148,19 @@ it("identifica conflito docente com aula coletiva fora da matrícula", async () 
   await prisma.encontroAgenda.create({ data: { turmaId: turma.id, professorId: base.secretariaId, preparadorId: base.secretariaId, inicio: new Date("2099-10-12T15:30:00Z"), fim: new Date("2099-10-12T16:30:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula coletiva do professor", chaveIdempotencia: "q117-conflito-coletivo", entradaHash: "fixture" } });
   const r = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
   expect(r.pendencias).toContain(`Há conflito operacional no novo horário de ${encontroId}.`);
+});
+
+it("sinaliza substituição docente pendente sem aplicar e respeita sua rejeição", async () => {
+  const substituto = await criarUsuario(["PROFESSOR"]);
+  const pedido = await prepararSubstituicaoDocente({ encontrosIds: [encontroId], substitutoId: substituto.id, motivo: "Substituição em análise pedagógica", chaveIdempotencia: "q117-substituicao-pendente" });
+  expect(pedido.ok).toBe(true);
+  if (!pedido.ok || !pedido.dado) throw new Error("Proposta de substituição não criada.");
+  const antes = await prisma.evento.count();
+  const conferir = () => prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
+  expect((await conferir()).pendencias).toContain(`Há substituição docente aguardando decisão para o encontro ${encontroId}.`);
+  expect(await prisma.evento.count()).toBe(antes);
+  expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true } })).toEqual({ professorId: base.secretariaId });
+  authMock.mockResolvedValue({ user: { id: base.adminId } });
+  expect(await decidirSubstituicaoDocente({ propostaId: pedido.dado.id, aprovar: false, motivo: "Manter o docente atual neste encontro" })).toMatchObject({ ok: true });
+  expect((await conferir()).pendencias).not.toContain(`Há substituição docente aguardando decisão para o encontro ${encontroId}.`);
 });
