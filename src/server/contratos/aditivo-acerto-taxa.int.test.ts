@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TipoDestinacaoRecebimento } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -73,6 +73,7 @@ async function prepararFinanceiro(liquidacao: "DINHEIRO" | "CREDITO" | "MISTO" |
 }
 beforeEach(async () => { await truncarBanco(); await cadeiaTaxa(); await prepararFinanceiro(); });
 async function propor(chave = "dct03-propor", motivo = "Taxa paga maior que o aditivo assinado", evidencia = { recibo: "DCT03" }) { authMock.mockResolvedValue({ user: { id: financeiro } }); const { propostaId: propostaAditivoId, ...final } = alvo; return proporAcertoTaxaAditivo({ ...final, propostaAditivoId, cobrancaId, motivo, evidencia, chaveIdempotencia: chave }); }
+describe.sequential("DCT03", () => {
 it("DCT03 credita a diferença, exige outro financeiro e faz replay sem duplicar", async () => { authMock.mockResolvedValue({ user: { id: financeiro } }); const { propostaId: propostaAditivoId, ...final } = alvo, entrada = { ...final, propostaAditivoId, cobrancaId, motivo: "Taxa paga maior que o aditivo assinado", evidencia: { recibo: "DCT03" }, chaveIdempotencia: "dct03-propor" }; const proposta = await proporAcertoTaxaAditivo(entrada); if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta)); expect(await proporAcertoTaxaAditivo(entrada)).toEqual(proposta); expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Autoaprovação indevida", chaveIdempotencia: "dct03-auto" })).toMatchObject({ ok: false }); authMock.mockResolvedValue({ user: { id: aprovador } }); const decisao = await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Crédito conferido independentemente", chaveIdempotencia: "dct03-decidir" }); expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Crédito conferido independentemente", chaveIdempotencia: "dct03-decidir" })).toEqual(decisao); const aplicada = await aplicarAcertoTaxaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "dct03-aplicar" }); expect(await aplicarAcertoTaxaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "dct03-aplicar" })).toEqual(aplicada); expect((await prisma.origemCreditoAcertoTaxaAditivo.findFirstOrThrow()).valor.toFixed(2)).toBe("20.00"); expect(await prisma.creditoMatricula.count()).toBe(1); expect(await prisma.evento.count({ where: { tipo: { in: ["AcertoTaxaAditivoProposto", "AcertoTaxaAditivoAprovado", "AcertoTaxaAditivoAplicado"] } } })).toBe(3); });
 it.each([
  ["crédito Q68", "CREDITO", "0.00", "100.00"],
@@ -217,4 +218,5 @@ it("DCT03 SQL reproduz o hash canônico TS e recusa hash arbitrário ou forma ad
   } });
   expect(gravada.fotografiaAtualHash).toBe(hashSubstituicao(atual));
   await prisma.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });
+});
 });
