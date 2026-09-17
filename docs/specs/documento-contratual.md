@@ -245,6 +245,8 @@ Consulta operacional da agenda Q117 integrada até `230515d9`: `consultarConfere
 
 Complemento de 17/09/2026: pedidos de cancelamento particular sem decisão aparecem como pendência da conferência; rejeições já decididas não permanecem como impedimento. A consulta não decide o cancelamento nem altera o encontro. Principal: 12/12 integrações (incluindo conflito docente com aula coletiva) e TypeScript não incremental aprovados. A revalidação no futuro fluxo de aplicação continua necessária.
 
+A conferência também sinaliza pedidos de substituição docente ainda sem decisão para os encontros selecionados. Não aplica o substituto nem conserva a pendência após rejeição independente; o teste usa preparação e decisão reais e verifica a preservação do professor e dos eventos.
+
 ## 7. Pendências para fechar a entrega documental
 
 **Expiração da reserva — Q123:** a matrícula continua em preparação, mas a solicitação de assinatura ainda aberta deve ser encerrada com resultado conferido. Nova reserva não reabre o processo externo anterior: revalidar dados, condições, documento e requisitos antes de liberar nova solicitação, sem duplicar taxa ou recebimentos. Encerramento incerto mantém a liberação pendente. Pagamento/assinatura concorrente exige conferência; preservar evidências, sem presumir ativação, vaga ou devolução.

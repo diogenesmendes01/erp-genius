@@ -25,6 +25,8 @@ M01 não está completo: a conciliação ainda exige pagador e cobrança existen
 
 ## Histórico de verificações (estados anteriores)
 
+17/09/2026 — revisão independente da interface DEV 490c6b87 aprovada no worktree TESTER: SSR 1/1, integração 11/11 (sessão 27083, saída 0), TypeScript (sessão 65859, saída 0). Sem repetição da falha transitória de data da assinatura. Complemento no principal identifica substituição docente sem decisão na conferência Q117: teste dirigido aprovado (1 aprovado, 13 filtrados), usando proposta e rejeição reais, sem alterar professor ou eventos. Remarcação particular exige origem cancelada e não integra a seleção de encontros previstos deste fluxo.
+
 17/09/2026 — interface de conferência Q117 integrada em 878b8f07 (DEV 490c6b87). Entrada pela ficha do aluno, opções mínimas autorizadas e conferência somente leitura; preserva docente atual, resolve horário local sem escolha silenciosa em transições de fuso e bloqueia edição durante a consulta. Principal: integração sessão 49071, saída 0, 13/13; três arquivos unitários, 10/10; TypeScript sessão 68851, saída 0. TESTER no commit exato em validação; DEV complementa interação do formulário, pois SSR inicial não comprova submissão. Nenhuma proposta ou alteração de agenda é persistida.
 
 17/09/2026 — revisão da consulta Q117 encontrou cancelamentos particulares pendentes ausentes da conferência. A consulta agora sinaliza propostas sem decisão, preservando aula, proposta e eventos; a rejeição independente remove a pendência. Integração no principal: sessão 74593, saída 0, 12/12, incluindo conflito com aula coletiva do mesmo professor. A interface permanece em desenvolvimento no DEV2; a correção não aplica agenda nem conclui Q117.
