@@ -25,6 +25,8 @@ M01 não está completo: a conciliação ainda exige pagador e cobrança existen
 
 ## Histórico de verificações (estados anteriores)
 
+17/09/2026 — revisão da consulta Q117 encontrou cancelamentos particulares pendentes ausentes da conferência. A consulta agora sinaliza propostas sem decisão, preservando aula, proposta e eventos; a rejeição independente remove a pendência. Integração no principal: sessão 74593, saída 0, 12/12, incluindo conflito com aula coletiva do mesmo professor. A interface permanece em desenvolvimento no DEV2; a correção não aplica agenda nem conclui Q117.
+
 Complemento de preservação integrado em `5c0499cf` (DEV `6c138892`): comparação antes/depois de compra, minutos, reserva, intervalo, encontro e consumo. DEV 10/10; principal teste dirigido da reserva 1/1, 9 filtrados, saída 0. Nenhuma aplicação de agenda foi habilitada.
 
 17/09/2026 — consulta operacional Q117 integrada em `43dead30` / `230515d9` (DEV `afb390d8` / `36db2723`). Principal: integração sessão 75109 terminou saída 0, 10/10; schema 4/4; TypeScript não incremental sessão 2471 terminou saída 0. TESTER no checkpoint de código afb390d8: 3/3 integrações, 4/4 schema e TypeScript sessão 41250 saída 0. Negativos adicionais cobrem ator revogado, fonte SANDBOX desde criação, produção sem aceite, outro contrato do mesmo aluno, reposição individual com falta registrada e reserva de horas real. Consulta não cria proposta, reserva ou evento; persistência, interface, aprovação, aplicação e avisos permanecem pendentes. A pasta vazia da migração 201 foi removida após conferência e autorização da ferramenta, resolvendo P3015 sem criar/aplicar SQL. A escrita da migração permanece aguardando autorização específica.

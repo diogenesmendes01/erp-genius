@@ -14,6 +14,7 @@ import { carregarRevisaoAceite } from "./aceite-estado";
 import { confirmarAceiteOriginalTx } from "./aceite-tx";
 import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-horas-compradas";
 import { criarAgendaParticularIsentaFixture } from "@/test/reposicao-agenda";
+import { proporCancelamentoParticular, decidirCancelamentoParticular } from "@/server/agenda/cancelamento-particular";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let encontroId: string;
@@ -112,6 +113,29 @@ it("expõe reserva de horas legítima como pendência da alteração", async () 
 
 it("mantém encontro externo como conflito ao substituir somente os IDs selecionados", async () => {
   await prisma.encontroAgenda.create({ data: { matriculaId: base.matriculaId, professorId: base.secretariaId, preparadorId: base.secretariaId, inicio: new Date("2099-10-12T15:30:00Z"), fim: new Date("2099-10-12T16:30:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Outro compromisso", chaveIdempotencia: "q117-conflito", entradaHash: "fixture" } });
+  const r = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
+  expect(r.pendencias).toContain(`Há conflito operacional no novo horário de ${encontroId}.`);
+});
+
+it("expõe cancelamento pendente sem decidi-lo e retira a pendência após rejeição independente", async () => {
+  const pedido = await proporCancelamentoParticular({ encontroId, motivo: "Cancelamento solicitado pela escola", chaveIdempotencia: "q117-cancelamento-pendente", origem: "ESCOLA" });
+  expect(pedido.ok).toBe(true);
+  if (!pedido.ok) throw new Error(pedido.erro);
+  if (!pedido.dado) throw new Error("Proposta de cancelamento não retornada.");
+  const eventosAntes = await prisma.evento.count();
+  const conferir = () => prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
+  expect((await conferir()).pendencias).toContain(`Há cancelamento aguardando decisão para o encontro ${encontroId}.`);
+  expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { status: true } })).toEqual({ status: "PREVISTO" });
+  expect(await prisma.decisaoCancelamentoParticular.count({ where: { propostaId: pedido.dado.id } })).toBe(0);
+  expect(await prisma.evento.count()).toBe(eventosAntes);
+  authMock.mockResolvedValue({ user: { id: base.adminId } });
+  expect(await decidirCancelamentoParticular({ propostaId: pedido.dado.id, aprovar: false, motivo: "Cancelamento não será realizado" })).toMatchObject({ ok: true });
+  expect((await conferir()).pendencias).not.toContain(`Há cancelamento aguardando decisão para o encontro ${encontroId}.`);
+});
+
+it("identifica conflito docente com aula coletiva fora da matrícula", async () => {
+  const turma = await prisma.turma.findFirstOrThrow();
+  await prisma.encontroAgenda.create({ data: { turmaId: turma.id, professorId: base.secretariaId, preparadorId: base.secretariaId, inicio: new Date("2099-10-12T15:30:00Z"), fim: new Date("2099-10-12T16:30:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula coletiva do professor", chaveIdempotencia: "q117-conflito-coletivo", entradaHash: "fixture" } });
   const r = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
   expect(r.pendencias).toContain(`Há conflito operacional no novo horário de ${encontroId}.`);
 });
