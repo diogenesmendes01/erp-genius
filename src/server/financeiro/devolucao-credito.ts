@@ -58,11 +58,11 @@ export async function registrarExecucaoDevolucaoCredito(input: z.input<typeof Ex
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = Executar.parse(input);
     return prisma.$transaction(async tx => {
-      let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
+      let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
       await bloquearMatriculas(tx, [reserva.decisao.proposta.credito.matriculaId]); await tx.$queryRaw`SELECT id FROM "CreditoMatricula" WHERE id=${reserva.creditoId} FOR UPDATE`;
-      reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id); if (!podeExecutar(u)) throw new ErroPermissao("Exige capacidade específica para executar devolução.");
-      if (!["AGUARDANDO_EXECUCAO", "INCERTO"].includes(reserva.estado)) throw new ErroRegra("A devolução já possui resultado final.");
-      if (reserva.chaveExecucao && (reserva.executorId !== autor.id || reserva.chaveExecucao !== d.chaveIdempotencia)) throw new ErroRegra("Execução já registrada; concilie o resultado antes de repetir.");
+      reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id); if (!podeExecutar(u)) throw new ErroPermissao("Exige capacidade específica para executar devolução.");
+      if (reserva.chaveExecucao) { const resultadoOriginal = reserva.conciliacoes.length ? "INCERTO" : reserva.estado; if (reserva.executorId !== autor.id || reserva.chaveExecucao !== d.chaveIdempotencia || reserva.referenciaExterna !== d.referenciaExterna || reserva.evidenciaExecucao !== d.evidenciaExecucao || resultadoOriginal !== d.resultado) throw new ErroRegra("Execução já registrada com dados diferentes; consulte e concilie o resultado."); return { id: reserva.id, estado: reserva.estado }; }
+      if (reserva.estado !== "AGUARDANDO_EXECUCAO") throw new ErroRegra("A devolução não aceita nova execução.");
       const atualizado = await tx.reservaDevolucaoCredito.update({ where: { id: reserva.id }, data: { estado: d.resultado, executorId: autor.id, referenciaExterna: d.referenciaExterna, evidenciaExecucao: d.evidenciaExecucao, chaveExecucao: d.chaveIdempotencia, executadaEm: new Date() } });
       await registrarEvento(tx, { tipo: "DevolucaoCreditoExecutada", agregadoTipo: "Matricula", agregadoId: reserva.decisao.proposta.credito.matriculaId, autorId: autor.id, payload: { reservaId: atualizado.id, resultado: atualizado.estado, referenciaExterna: d.referenciaExterna } });
       return { id: atualizado.id, estado: atualizado.estado };
@@ -74,9 +74,10 @@ export async function conciliarDevolucaoCredito(input: z.input<typeof Conciliar>
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = Conciliar.parse(input);
     return prisma.$transaction(async tx => {
-      let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
+      let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
       await bloquearMatriculas(tx, [reserva.decisao.proposta.credito.matriculaId]); await tx.$queryRaw`SELECT id FROM "CreditoMatricula" WHERE id=${reserva.creditoId} FOR UPDATE`;
-      reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id);
+      reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id);
+      const anterior = reserva.conciliacoes[0]; if (anterior) { if (anterior.conciliadorId !== autor.id || anterior.confirmouSaida !== d.confirmouSaida || anterior.evidencia !== d.evidenciaConciliacao) throw new ErroRegra("Conciliação já registrada com dados diferentes."); return { id: reserva.id, estado: reserva.estado }; }
       if (!podeExecutar(u) || reserva.estado !== "INCERTO") throw new ErroRegra("A conciliação exige execução incerta e capacidade vigente.");
       await tx.conciliacaoDevolucaoCredito.create({ data: { reservaId: reserva.id, conciliadorId: autor.id, confirmouSaida: d.confirmouSaida, evidencia: d.evidenciaConciliacao } });
       const atualizado = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: reserva.id } });
