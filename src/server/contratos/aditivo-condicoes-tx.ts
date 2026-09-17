@@ -7,6 +7,7 @@ import { conferirAutor } from "./modelos-tx";
 import { hashSubstituicao } from "./substituicao-estado";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "./aditivo-valores";
 import { aplicarAgendaAditivoTx } from "./agenda-aditivo-tx";
+import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), propostaId: z.string().min(1), conclusaoId: z.string().min(1), revisaoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const EntradaAplicacao = Entrada.extend({ chaveIdempotencia: z.string().trim().min(1).max(200) }).strict();
@@ -103,7 +104,14 @@ export async function aplicarCondicoesFormalizadasAditivoTx(tx: Prisma.Transacti
   const participantes = processo?.artefato.conferencia;
   if (!processo || processo.propostaId !== d.propostaId || !participantes || participantes.propostaId !== d.propostaId || await tx.conferenciaParticipantesAditivo.count({ where: { propostaId: d.propostaId, versao: { gt: participantes.versao } } })) throw new ErroRegra("A conferência de participantes foi superada e exige nova conferência.");
   const aplicacao = await tx.aplicacaoCondicoesAditivo.create({ data: { versaoCondicoesId: versao.id, matriculaId: d.matriculaId, propostaId: d.propostaId, autorId, revisaoHash: d.revisaoHash, condicoesHash: versao.condicoesHash, vigenciaInicio: versao.vigenciaInicio, chaveIdempotencia: d.chaveIdempotencia } });
-  if (versao.propostaAgendaId) await aplicarAgendaAditivoTx(tx, autorId, { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, aplicacaoCondicoesId: aplicacao.id, chaveIdempotencia: `agenda-${hashSubstituicao({ propostaId: d.propostaId, chaveIdempotencia: d.chaveIdempotencia })}` });
-  await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash } });
+  const agendaAplicada = versao.propostaAgendaId ? await aplicarAgendaAditivoTx(tx, autorId, { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, aplicacaoCondicoesId: aplicacao.id, chaveIdempotencia: `agenda-${hashSubstituicao({ propostaId: d.propostaId, chaveIdempotencia: d.chaveIdempotencia })}` }) : null;
+  const evento = await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash, ...(agendaAplicada ? { propostaAgendaId: versao.propostaAgendaId, aplicacaoAgendaId: agendaAplicada.id } : {}) } });
+  if (agendaAplicada && versao.propostaAgendaId) {
+    const fotografia = await tx.propostaAgendaAditivoParticular.findUniqueOrThrow({ where: { id: versao.propostaAgendaId }, select: { fotografia: true } });
+    const encontros = PrepararAditivoContratualSchema.parse((versao.proposta.snapshot as { entrada: unknown }).entrada).alteracoes.find(a => a.origem === "AGENDA_PARTICULAR")?.valorEstruturado;
+    if (encontros?.tipo !== "AGENDA" || encontros.propostaAgendaId !== versao.propostaAgendaId) throw new ErroRegra("A aplicação não corresponde à fotografia de agenda.");
+    const agenda = z.object({ encontros: z.array(z.object({ encontroId: z.string() })) }).parse(fotografia.fotografia);
+    await criarAvisosAlteracaoAgendaTx(tx, { eventoId: evento.id, matriculaId: d.matriculaId, encontrosIds: agenda.encontros.map(e => e.encontroId) });
+  }
   return { id: aplicacao.id, versao: versao.versao, aplicadaEm: aplicacao.aplicadaEm };
 }
