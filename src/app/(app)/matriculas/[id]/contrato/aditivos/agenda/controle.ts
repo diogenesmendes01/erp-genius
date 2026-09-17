@@ -20,7 +20,3 @@ export function montarAlteracoesAgenda(selecionados: string[], valores: Record<s
     return { encontroId, professorNovoId: valor.professorNovoId, inicioNovo, fimNovo, duracaoMinutos: Math.round((Date.parse(fimNovo) - Date.parse(inicioNovo)) / 60_000), fusoOrigem: valor.fusoOrigem };
   });
 }
-
-export const deveDesabilitarControles = (pendente: boolean) => pendente;
-
-export const limparResultadoAoEditar = () => null;
