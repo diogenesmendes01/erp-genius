@@ -1,0 +1,84 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("@/server/_shared/sessao", async importOriginal => {
+  const original = await importOriginal<typeof import("@/server/_shared/sessao")>(); const { prisma } = await import("@/lib/prisma");
+  const sessao = async () => { const id = (await authMock())?.user?.id; const usuario = id && await prisma.usuario.findUnique({ where: { id } }); if (!usuario?.ativo) throw new original.ErroAutenticacao(); return usuario; };
+  return { ...original, exigirSessao: sessao, exigirSessaoComPapel: async (...papeis: Papel[]) => { const usuario = await sessao(); original.exigirPapel(usuario, ...papeis); return usuario; } };
+});
+
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { prepararLoteMigracao } from "./acoes";
+import { aplicarVinculoMigracao } from "./aplicar-vinculo";
+import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "./ensaio-vinculo";
+import { decidirEntradaFinanceiraHistoricaMigracao, proporEntradaFinanceiraHistoricaMigracao } from "./entrada-financeira-historica";
+
+const chave = (n: number) => `00000000-0000-4000-8000-${n.toString().padStart(12, "0")}`;
+let preparadorId = "", decisorId = "", adminId = "";
+const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
+
+async function fixture() {
+  const c = await seedCatalogoMinimo(); const nivel = await prisma.nivel.create({ data: { idiomaId: c.idioma.id, codigo: "A1", ordem: 1 } }); const turma = await prisma.turma.create({ data: { modalidadeId: c.modalidade.id, nivelId: nivel.id, codigo: "M01-195" } });
+  entrar(adminId);
+  const vinculo = await prepararLoteMigracao({ origem: "M01_195", chaveLote: `v-${Date.now()}-${Math.random()}`, linhas: [{ linhaOrigem: "v!2", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "a-195", nome: "Ana", email: "ana195@example.test", documento: "D195", pais: "CR", fuso: "America/Costa_Rica" }, turma: { id: "t-195", codigo: "M01-195" }, matricula: { id: "m-195", produtoOrigem: "p-195", situacao: "ATIVA", inicio: "2025-01-01", moeda: "CRC", pais: "CR" }, alocacao: { inicio: "2025-01-01" }, consentimentoOrigem: "fonte" }] });
+  if (!vinculo.ok || !vinculo.dado) throw new Error("vínculo"); const linhaV = await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { loteId: vinculo.dado.loteId } }); const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", paisId: c.pais.id } }); await prisma.mapaOrigemAlunoMigracao.create({ data: { origem: "M01_195", alunoOrigemId: "a-195", alunoId: aluno.id } });
+  await revisarCorrespondenciaProdutoMigracao({ origem: "M01_195", produtoOrigemId: "p-195", produtoId: c.produto.id, paisId: c.pais.id, moeda: "CRC", ativa: true }); await revisarCorrespondenciaTurmaMigracao({ origem: "M01_195", turmaOrigemId: "t-195", turmaId: turma.id, ativa: true }); await revisarCorrespondenciaStatusMatriculaMigracao({ origem: "M01_195", statusOrigem: "ATIVA", statusDestino: "ATIVA", ativa: true });
+  const ensaio = await ensaiarVinculoMigracao({ linhaId: linhaV.id }); if (!ensaio.ok) throw new Error("ensaio"); const salvo = await prisma.ensaioVinculoMigracao.findFirstOrThrow({ where: { linhaId: linhaV.id } }); const aplicado = await aplicarVinculoMigracao({ linhaId: linhaV.id, ensaioId: salvo.id, entradaHash: linhaV.entradaHash, contextoHash: salvo.contextoHash, fusoReferencia: "America/Costa_Rica", semanticaFim: "LIMITE_EXCLUSIVO", inicioAlocacao: "2025-01-01", fimAlocacao: null, diaVencimento: 10, mesesPlano: 1, evidenciaContrato: { r: "contrato" }, evidenciaPagamento: { r: "fonte" }, fatos: [{ tipo: "ATIVACAO", data: "2025-01-01", evidencia: { r: "fonte" } }] });
+  if (!aplicado.ok || !aplicado.dado) throw new Error("aplicação vínculo"); const fin = await prepararLoteMigracao({ origem: "M01_195", chaveLote: `f-${Date.now()}-${Math.random()}`, linhas: [{ linhaOrigem: "f!2", tipoEntrada: "FINANCEIRO_HISTORICO", aluno: { id: "a-195", nome: "Ana", email: "ana195@example.test", documento: "D195", pais: "CR", fuso: "America/Costa_Rica" }, matricula: { id: "m-195", situacao: "ATIVA", inicio: "2025-01-01", moeda: "CRC", pais: "CR" }, financeiro: { id: "f-195", tipo: "MENSALIDADE", valor: "125.00", moeda: "CRC", situacao: "PENDENTE" }, consentimentoOrigem: "fonte" }] });
+  if (!fin.ok || !fin.dado) throw new Error("financeiro"); return { linhaId: (await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { loteId: fin.dado.loteId } })).id, matriculaId: aplicado.dado.matriculaId, paisId: c.pais.id };
+}
+const entrada = (f: Awaited<ReturnType<typeof fixture>>, n: number) => ({ linhaId: f.linhaId, tipoCobranca: "MENSALIDADE", valor: "125.00", moeda: "CRC", vencimento: "2025-02-10", competencia: "2025-02", pagador: { tipo: "RESPONSAVEL", dados: { nome: "Responsável histórico", paisId: f.paisId } }, evidencia: { planilha: "f!2" }, chaveIdempotencia: chave(n) });
+
+beforeEach(async () => { await truncarBanco(); adminId=(await criarUsuario([Papel.ADMINISTRADOR], "Admin")).id; preparadorId=(await criarUsuario([Papel.FINANCEIRO], "Preparador")).id; decisorId=(await criarUsuario([Papel.FINANCEIRO], "Decisor")).id; });
+describe("M01 entrada financeira histórica", () => {
+  it("segrega autores e cria só pagador e obrigação pendente com replay", async () => { const f=await fixture(); entrar(preparadorId); const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 1)); expect(p.ok).toBe(true); if (!p.ok || !p.dado) throw new Error("proposta"); expect(await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 1))).toMatchObject({ ok:true, dado:{ id:p.dado.id, repetida:true } }); expect(await decidirEntradaFinanceiraHistoricaMigracao({ propostaId:p.dado.id, aprovada:true, motivo:"Separação financeira confirmada.", chaveIdempotencia:chave(2) })).toMatchObject({ ok:false }); entrar(decisorId); const a=await decidirEntradaFinanceiraHistoricaMigracao({ propostaId:p.dado.id, aprovada:true, motivo:"Separação financeira confirmada.", chaveIdempotencia:chave(2) }); expect(a.ok).toBe(true); expect(await decidirEntradaFinanceiraHistoricaMigracao({ propostaId:p.dado.id, aprovada:false, motivo:"Mesmo token com decisão oposta.", chaveIdempotencia:chave(2) })).toMatchObject({ ok:false, erro:expect.stringContaining("diferente") }); const [linha] = await prisma.$queryRaw<{status:string; recebido:number; saldo:string; competencia:string|null; tipo:string; dados:unknown; recebimentos:number}[]>`SELECT p.status, c."valorRecebido"::int AS recebido,c.saldo::text,c.competencia,pg.tipo,pg.dados,(SELECT count(*)::int FROM "Recebimento" r WHERE r."cobrancaId"=a."cobrancaId") AS recebimentos FROM "PropostaEntradaFinanceiraHistoricaMigracao" p JOIN "AplicacaoEntradaFinanceiraHistoricaMigracao" a ON a."propostaId"=p.id JOIN "Cobranca" c ON c.id=a."cobrancaId" JOIN "PagadorPreparacaoMatricula" pg ON pg.id=a."pagadorId" WHERE p.id=${p.dado.id}`; expect(linha).toMatchObject({ status:"APLICADA", recebido:null, saldo:"125.00", competencia:"2025-02", tipo:"RESPONSAVEL", recebimentos:0 }); });
+  it("bloqueia insert e mutações SQL que divergem da proposta", async () => { const f=await fixture(); entrar(preparadorId); const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 11)); if (!p.ok || !p.dado) throw new Error("proposta"); await expect(prisma.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET "motivoDecisao"='indevido' WHERE id=${p.dado.id}`).rejects.toThrow(); await expect(prisma.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET "dadosPagador"=NULL WHERE id=${p.dado.id}`).rejects.toThrow(); await expect(prisma.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET "dadosPagador"=jsonb_set("dadosPagador",'{dados,nome}','"alterado"') WHERE id=${p.dado.id}`).rejects.toThrow(); });
+  it("recusa mesma chave com pagador ou evidência internos diferentes", async () => { const f=await fixture(); entrar(preparadorId); expect((await proporEntradaFinanceiraHistoricaMigracao(entrada(f,21))).ok).toBe(true); await expect(proporEntradaFinanceiraHistoricaMigracao({...entrada(f,21),pagador:{tipo:"RESPONSAVEL",dados:{nome:"Outro",paisId:f.paisId}}})).resolves.toMatchObject({ok:false}); await expect(proporEntradaFinanceiraHistoricaMigracao({...entrada(f,21),evidencia:{planilha:"f!3"}})).resolves.toMatchObject({ok:false}); });
+  it("mantém vencimento e competência exatos na obrigação", async () => { const f=await fixture(); entrar(preparadorId); const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f,22)); if(!p.ok||!p.dado)throw new Error(); entrar(decisorId); await decidirEntradaFinanceiraHistoricaMigracao({propostaId:p.dado.id,aprovada:true,motivo:"Aprovação independente válida.",chaveIdempotencia:chave(23)}); const [c]=await prisma.$queryRaw<{v:string;competencia:string|null}[]>`SELECT c.vencimento::date::text v,c.competencia FROM "Cobranca" c JOIN "AplicacaoEntradaFinanceiraHistoricaMigracao" a ON a."cobrancaId"=c.id WHERE a."propostaId"=${p.dado.id}`; expect(c).toEqual({v:"2025-02-10",competencia:"2025-02"}); });
+  it("rejeita replay de decisão com mesmo token e motivo diferente",async()=>{const f=await fixture();entrar(preparadorId);const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f,31));if(!p.ok||!p.dado)throw new Error();entrar(decisorId);const d={propostaId:p.dado.id,aprovada:true,motivo:"Aprovação independente válida.",chaveIdempotencia:chave(32)};expect((await decidirEntradaFinanceiraHistoricaMigracao(d)).ok).toBe(true);expect(await decidirEntradaFinanceiraHistoricaMigracao({...d,motivo:"Motivo divergente para o mesmo token."})).toMatchObject({ok:false});});
+  it("concorrência da mesma proposta produz uma única obrigação",async()=>{const f=await fixture();entrar(preparadorId);const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f,33));if(!p.ok||!p.dado)throw new Error();entrar(decisorId);const d={propostaId:p.dado.id,aprovada:true,motivo:"Aprovação independente válida.",chaveIdempotencia:chave(34)};const rs=await Promise.all([decidirEntradaFinanceiraHistoricaMigracao(d),decidirEntradaFinanceiraHistoricaMigracao(d)]);expect(rs.filter(r=>r.ok)).toHaveLength(2);expect(await prisma.aplicacaoEntradaFinanceiraHistoricaMigracao.count({where:{propostaId:p.dado.id}})).toBe(1);});
+  it("SQL não confirma proposta aprovada sem a aplicação atômica",async()=>{const f=await fixture();entrar(preparadorId);const p=await proporEntradaFinanceiraHistoricaMigracao(entrada(f,35));if(!p.ok||!p.dado)throw new Error();const propostaId=p.dado.id;await expect(prisma.$transaction(tx=>tx.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET status='APROVADA',"decisorId"=${decisorId},"chaveDecisao"=${chave(36)},"decisaoHash"=${"a".repeat(64)},"motivoDecisao"='Aprovação SQL sem aplicação.',"decididoEm"=now() WHERE id=${propostaId}`)).rejects.toThrow();});
+});
+
+describe("M01 entrada financeira — data civil", () => {
+  it("preserva 2025-02-10 na proposta e na obrigação sob o fuso do banco", async () => {
+    const f = await fixture(); entrar(preparadorId);
+    const proposta = await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 41));
+    if (!proposta.ok || !proposta.dado) throw new Error("proposta");
+    expect(await prisma.$queryRaw<{ vencimento:string }[]>`SELECT vencimento::text AS vencimento FROM "PropostaEntradaFinanceiraHistoricaMigracao" WHERE id=${proposta.dado.id}`).toEqual([{ vencimento: "2025-02-10" }]);
+    entrar(decisorId);
+    const aplicada = await decidirEntradaFinanceiraHistoricaMigracao({ propostaId: proposta.dado.id, aprovada: true, motivo: "Data civil histórica conferida no documento.", chaveIdempotencia: chave(42) });
+    expect(aplicada.ok).toBe(true);
+    if (!aplicada.ok || !aplicada.dado) throw new Error("aplicação");
+    expect(await prisma.$queryRaw<{ vencimento:string }[]>`SELECT vencimento::date::text AS vencimento FROM "Cobranca" WHERE id=${aplicada.dado.cobrancaId}`).toEqual([{ vencimento: "2025-02-10" }]);
+  });
+});
+
+describe("M01 entrada financeira — guard SQL da aplicação", () => {
+  it.each([
+    ["valor", "126.00", "2025-02-10", "RESPONSAVEL"],
+    ["vencimento", "125.00", "2025-02-11", "RESPONSAVEL"],
+    ["pagador", "125.00", "2025-02-10", "EMPRESA"],
+  ])("rejeita aplicação com % divergente e reverte a transação", async (_caso, valor, vencimento, tipoPagador) => {
+    const f = await fixture(); entrar(preparadorId);
+    const proposta = await proporEntradaFinanceiraHistoricaMigracao(entrada(f, 50));
+    if (!proposta.ok || !proposta.dado) throw new Error("proposta");
+    const propostaId = proposta.dado.id;
+    const antes = { cobrancas: await prisma.cobranca.count({ where: { matriculaId: f.matriculaId } }), pagadores: await prisma.pagadorPreparacaoMatricula.count({ where: { matriculaId: f.matriculaId } }) };
+    await expect(prisma.$transaction(async (tx) => {
+      const [p] = await tx.$queryRaw<{ origem:string; "financeiroOrigemId":string; "matriculaId":string; "preparadorId":string; "tipoCobranca":string; moeda:string }[]>`SELECT origem,"financeiroOrigemId","matriculaId","preparadorId","tipoCobranca",moeda FROM "PropostaEntradaFinanceiraHistoricaMigracao" WHERE id=${propostaId} FOR UPDATE`;
+      if (!p) throw new Error("proposta ausente");
+      const pagadorId = `pagador-negativo-${_caso}`, cobrancaId = `cobranca-negativa-${_caso}`;
+      await tx.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET status='APROVADA',"decisorId"=${decisorId},"chaveDecisao"=${`decisao-${_caso}`},"decisaoHash"='hash-negativo',"motivoDecisao"='Decisão de teste independente e documentada.',"decididoEm"=now() WHERE id=${propostaId}`;
+      await tx.$executeRaw`INSERT INTO "PagadorPreparacaoMatricula" (id,"matriculaId","preparadorId",versao,tipo,dados,motivo,"chaveIdempotencia","entradaHash") VALUES (${pagadorId},${p.matriculaId},${p.preparadorId},1,${tipoPagador},jsonb_build_object('nome','Responsável histórico','paisId',${f.paisId}),'Teste negativo SQL',${`chave-pagador-${_caso}`},'hash-negativo')`;
+      await tx.$executeRaw`INSERT INTO "Cobranca" (id,"matriculaId",tipo,"valorOriginal","valorNegociado",saldo,moeda,vencimento,status) VALUES (${cobrancaId},${p.matriculaId},${p.tipoCobranca}::"TipoCobranca",${valor}::numeric,${valor}::numeric,${valor}::numeric,${p.moeda},${vencimento}::date,'PENDENTE'::"StatusCobranca")`;
+      await tx.$executeRaw`INSERT INTO "AplicacaoEntradaFinanceiraHistoricaMigracao" (id,"propostaId",origem,"financeiroOrigemId","pagadorId","cobrancaId","aplicadaPorId",snapshot) VALUES (${`aplicacao-negativa-${_caso}`},${propostaId},${p.origem},${p.financeiroOrigemId},${pagadorId},${cobrancaId},${decisorId},'{}'::jsonb)`;
+    })).rejects.toThrow(/materializar exatamente/i);
+    expect(await prisma.cobranca.count({ where: { matriculaId: f.matriculaId } })).toBe(antes.cobrancas);
+    expect(await prisma.pagadorPreparacaoMatricula.count({ where: { matriculaId: f.matriculaId } })).toBe(antes.pagadores);
+    expect(await prisma.$queryRaw<{ total:number }[]>`SELECT count(*)::int AS total FROM "AplicacaoEntradaFinanceiraHistoricaMigracao" WHERE "propostaId"=${propostaId}`).toEqual([{ total: 0 }]);
+  });
+});
