@@ -1,5 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { dinheiro } from "@/server/financeiro/regras";
+export function saldoLiquidoAcertoTaxa(valorNegociado: Prisma.Decimal.Value, valorRecebido: Prisma.Decimal.Value | null, valorLiquidadoCredito: Prisma.Decimal.Value, creditosTaxaEmitidos: Prisma.Decimal.Value) {
+  return Prisma.Decimal.max(0, dinheiro(valorNegociado).minus(valorRecebido ?? 0).minus(valorLiquidadoCredito).plus(creditosTaxaEmitidos));
+}
 
 /**
  * Crédito de taxa é cumulativo por cobrança: só a diferença ainda não
@@ -23,16 +26,16 @@ export function calcularCreditoAcertoTaxa(input: {
   // entre o total liquidado e a nova taxa vira CréditoMatricula.
   const totalLiquidado = recebido.plus(liquidado);
   const creditoTotalDevido = Prisma.Decimal.max(0, totalLiquidado.minus(novo));
-  const valorPendenteConciliacao = Prisma.Decimal.max(0, anterior.minus(creditoTotalDevido));
+  const creditoNovo = Prisma.Decimal.max(0, creditoTotalDevido.minus(anterior));
+  // Crédito já emitido continua sendo um direito do aluno, inclusive se já foi
+  // usado ou devolvido. Em aumento posterior ele deixa de ser abatido duas
+  // vezes da mesma cobrança: a projeção usa a liquidação líquida L - C.
+  const saldoAposAcerto = saldoLiquidoAcertoTaxa(novo, recebido, liquidado, anterior.plus(creditoNovo));
   return {
     creditoAnterior: anterior,
-    creditoNovo: Prisma.Decimal.max(0, creditoTotalDevido.minus(anterior)),
+    creditoNovo,
     creditoTotalDevido,
-    saldoAposAcerto: Prisma.Decimal.max(0, novo.minus(totalLiquidado)),
-    pendencia: valorPendenteConciliacao.gt(0) ? {
-      codigo: "CONCILIAR_CREDITO_EXISTENTE" as const,
-      valor: valorPendenteConciliacao,
-      tratamento: "O Financeiro deve conciliar o crédito de taxa já disponibilizado, com decisão independente, antes de repropor o aumento. Esta prévia não debita nem devolve valores automaticamente.",
-    } : null,
+    saldoAposAcerto,
+    pendencia: null as { codigo: "CONCILIAR_CREDITO_EXISTENTE"; valor: Prisma.Decimal; tratamento: string } | null,
   };
 }

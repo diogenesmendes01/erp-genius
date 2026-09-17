@@ -1,7 +1,8 @@
 import { Prisma, StatusCobranca, FormaPagamento, TipoDestinacaoRecebimento } from "@prisma/client";
 import { registrarEvento, ErroRegra, ErroPermissao } from "@/server/_shared";
-import { dinheiro, saldoAtual } from "./regras";
+import { dinheiro } from "./regras";
 import { createHash } from "node:crypto";
+import { saldoLiquidoAcertoTaxa } from "@/server/contratos/aditivo-acerto-taxa-calculo";
 
 export type DestinoRecebimento = { tipo: TipoDestinacaoRecebimento; cobrancaId?: string; valor: number; evidencia: string; chaveIdempotencia: string };
 
@@ -83,9 +84,11 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     }
     const cobranca = cobrancas.get(destino.cobrancaId!)!;
     const recebido = dinheiro(cobranca.valorRecebido ?? 0).plus(valor);
-    const excedente = Prisma.Decimal.max(0, recebido.plus(cobranca.valorLiquidadoCredito).minus(cobranca.valorNegociado));
+    const origens = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: cobranca.id }, _sum: { valor: true } });
+    const creditoEmitido = origens._sum.valor ?? 0;
+    const excedente = Prisma.Decimal.max(0, recebido.plus(cobranca.valorLiquidadoCredito).minus(cobranca.valorNegociado).minus(creditoEmitido));
     if (excedente.gt(0)) throw new ErroRegra("A destinação excede o saldo devido; registre somente o saldo como cobrança e o restante como crédito.");
-    const saldo = saldoAtual(cobranca.valorNegociado, recebido, cobranca.valorLiquidadoCredito);
+    const saldo = saldoLiquidoAcertoTaxa(cobranca.valorNegociado, recebido, cobranca.valorLiquidadoCredito, creditoEmitido);
     const quitada = saldo.isZero();
     await tx.cobranca.update({ where: { id: cobranca.id }, data: { valorRecebido: recebido, saldo, versao: { increment: 1 }, status: quitada ? StatusCobranca.PAGO : (cobranca.vencimento < new Date() ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE), pagoEm: quitada ? input.dataPagamento : null, formaPagamento: input.forma, comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null } });
     await registrarEvento(tx, { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: input.autorId, payload: { recebimentoId: recebimento.id, destinacaoId: criado.id, informeId: input.informeId ?? null, valorRecebido: valor.toNumber(), recebidoAcumulado: recebido.toNumber(), saldo: saldo.toNumber(), forma: input.forma, quitada, dataPagamento: input.dataPagamento.toISOString() } });
