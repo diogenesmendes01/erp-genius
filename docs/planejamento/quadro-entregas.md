@@ -23,6 +23,7 @@ Entrada financeira histórica M01 integrada e validada localmente: o Financeiro 
 | F07.6 — agendamento inicial de reposição particular | DEV 1 Terra | Implementado, integrado e validado localmente | 16/09/2026 | 37c9a22f/952dbceb; TESTER: 22 integrações, 15 controles/SSR e TypeScript; principal: 22 integrações e 2 controles/SSR. Sem homologação operacional presumida |
 | F07.6 — realização docente da reposição particular | DEV 1 Terra | Integrada e validada localmente | 16/09/2026 | 4c4e6470/17151ea8; DEV e TESTER: 50 integrações cada; principal: 3 controles/SSR. Sem homologação operacional presumida |
 | F07.6/Q19 — exceção pontual de agenda | DEV 1 Terra | Integrada e validada localmente | 16/09/2026 | dcf7f763/a3448cc2; TESTER: 12 integrações e 2 controles/SSR; principal: 28 integrações de agenda/permissões. Aprovação não cria agenda nem altera calendário |
+| ACA/V01 — recuperação, transferência, fechamento e portal | TESTER Terra | Cenário integrado validado localmente | 17/09/2026 | Commit deste worktree: recuperação oficial da origem, equivalência proposta/aprovada, execução pela Secretaria, fechamento e consulta do portal. Duas matrículas da mesma aluna permanecem isoladas. Integração dirigida 5/5 e TypeScript, ambos exit 0 no banco descartável TESTER; não equivale a homologação externa ou à conclusão integral de V01 |
 
 ## Histórico de verificações (estados anteriores)
 
