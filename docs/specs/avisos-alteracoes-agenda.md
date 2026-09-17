@@ -4,13 +4,13 @@ Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos g
 
 ## Escopo
 
-### Extensão Q38 — quantidade de aulas (em implementação)
+### Extensão Q38 — quantidade de aulas (integrada e validada localmente)
 
 A aplicação aprovada de quantidade por modalidade deve registrar a origem `QuantidadeAulasModalidadeAplicada` e o conjunto completo dos encontros alterados, incluídos ou cancelados das turmas publicadas. A fotografia aprovada, a decisão independente e a agenda aplicada precisam corresponder à origem; o payload sozinho não comprova essa correspondência. Cada matrícula recebe somente seu subconjunto, considerando o vínculo histórico no horário anterior ou posterior. Turmas em rascunho não geram avisos de agenda publicada.
 
-O desenvolvimento ocorre no worktree DEV2 autorizado. O controle `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` permanece desligado por padrão: registrar pendência de configuração e impedir transporte externo. A reconferência não encerra essa pendência enquanto o controle estiver desligado. Habilitar o controle exige configuração e homologação operacional próprias; testes usam transportes simulados.
+Integrada em `93d7bddf`, com migrações 196–198 aplicadas somente nos bancos descartáveis DEV2, TESTER e principal. O controle `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` permanece desligado por padrão: registrar pendência de configuração e impedir transporte externo. A reconferência não encerra essa pendência enquanto o controle estiver desligado. Habilitar o controle exige configuração e homologação operacional próprias; testes usam transportes simulados.
 
-Validação em 17/09/2026: cinco testes de transporte simulado aprovados. A integração identificou que o evento incluía encontros reaproveitados sem alteração; o produtor foi corrigido para incluir somente mudanças reais, sem relaxar a validação da fonte. Os doze cenários de integração passaram no DEV2 após essa correção. A migração 196 está aplicada no DEV2 e permanece imutável. Revisão independente identificou a necessidade de exigir também no SQL o conjunto completo dos encontros; corretivas 197/198 aplicadas somente no DEV2, incluindo autoria das adições. Esta extensão ainda não está integrada nem concluída.
+Validação em 17/09/2026: DEV2 aprovou 14 integrações e 17 unitários. TESTER independente no commit exato `93d7bddf` aprovou 19 integrações de quantidade/avisos/pendências e 23 unitários, incluindo prévias adversariais. Principal aprovou 39 integrações em cinco arquivos (quantidade, substituição, replanejamento, avisos e pendências), 17 unitários e TypeScript; TESTER também aprovou TypeScript. A correção preserva encontros inalterados fora do evento, reconhece vínculo no horário anterior ou posterior e confere conjunto completo e autoria das adições no SQL. Evento que omite um encontro material é recusado em teste real de banco. A implementação local está validada; operação externa e homologação com provedores permanecem pendentes, sem envio real.
 
 Uma remarcação aprovada, uma substituição docente aprovada ou um replanejamento global aprovado cria avisos por matrícula e canal disponível, dentro da mesma transação que aplica a mudança. Cada aviso referencia o evento aplicado e seus encontros; a chave por evento, matrícula e canal impede duplicação e chamadas repetidas reúnem itens da mesma origem.
 
