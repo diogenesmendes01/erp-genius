@@ -29,6 +29,7 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "./desistencia-preparacao";
 
@@ -168,17 +169,11 @@ describe("pedido de desistência durante a preparação", () => {
     });
     expect((await registrar(matriculaId, consulta.estadoHash, "informe")).ok).toBe(true);
 
-    await prisma.recebimento.create({
-      data: {
-        cobrancaId: cobranca.id,
-        autorId: financeiro.id,
-        chaveIdempotencia: "recebimento-desistencia-001",
-        valor: 100,
-        moeda: "CRC",
-        forma: FormaPagamento.TRANSFERENCIA,
-        dataPagamento: new Date("2026-10-11T12:00:00.000Z"),
-      },
-    });
+    await prisma.$transaction(tx => receberTx(tx, {
+      cobrancaId: cobranca.id, autorId: financeiro.id, chaveIdempotencia: "recebimento-desistencia-001",
+      valorRecebido: 100, forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date("2026-10-11T12:00:00.000Z"),
+      evidencia: "Recebimento conferido para a preparação da desistência.",
+    }));
     consulta = await conferir();
     expect(consulta.conferencia).toMatchObject({
       exigeAprovacaoAdministrativa: true,
