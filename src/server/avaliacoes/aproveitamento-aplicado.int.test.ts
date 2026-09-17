@@ -1,8 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authMock: vi.fn(), portalCookie: "" }));
+const { authMock } = mocks;
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: (nome: string) => nome === "portal_aluno_session" && mocks.portalCookie ? { value: mocks.portalCookie } : undefined, delete: vi.fn() }),
+}));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -25,6 +29,8 @@ import { registrarRealizacaoRecuperacao } from "./recuperacao-realizacao";
 import { reservarTentativaRecuperacao } from "./recuperacao-reserva";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "./regras-tx";
 import { consultarResultadosPortalAluno } from "@/server/portal-aluno/resultados";
+import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechamentos";
+import { criarSessaoPortalAlunoTx } from "@/server/portal-aluno/sessao";
 
 let professorId: string;
 let gestorId: string;
@@ -307,6 +313,7 @@ async function registrarPresencaConferida(alocacaoId: string, turmaId: string, c
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  mocks.portalCookie = "";
   await truncarBanco();
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
@@ -838,4 +845,34 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
   expect(JSON.stringify(isolada)).not.toContain(fonteRecuperacao.referenciaId);
   expect(JSON.stringify(isolada)).not.toContain(fechamento.dado.id);
   expect(notaIsolada.id).not.toBe(intermediaria.id);
+
+  const contaPortal = await prisma.contaPortalAluno.create({ data: {
+    alunoId,
+    emailVerificado: "aluna-aca-v01@portal.test",
+    emailVerificadoEm: new Date(),
+    senhaHash: "hash-servidor",
+    ativa: true,
+  } });
+  const sessaoPortal = await prisma.$transaction(tx => criarSessaoPortalAlunoTx(tx, {
+    contaId: contaPortal.id,
+    versaoConta: 1,
+    prazos: { sessaoMinutos: 60, conviteMinutos: 60, recuperacaoMinutos: 60, validacaoEmailMinutos: 60 },
+  }));
+  mocks.portalCookie = sessaoPortal.segredo;
+  const fechamentosPortal = await consultarFechamentosPortalAluno();
+  expect(fechamentosPortal).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      matriculaId,
+      nivelId,
+      estado: "CONFIRMADO_INSUFICIENTE",
+      versao: 1,
+      confirmadoEm: expect.any(String),
+      resumo: expect.objectContaining({
+        geral: { numerador: "119", denominador: "16" },
+        frequencia: expect.objectContaining({ base: 1, presencas: 1, percentual: { numerador: "100", denominador: "1" } }),
+      }),
+    }),
+    expect.objectContaining({ matriculaId: matriculaIsolada.id, nivelId, estado: "SEM_FECHAMENTO", versao: null, confirmadoEm: null, resumo: null }),
+  ]));
+  expect(fechamentosPortal).toHaveLength(2);
 });
