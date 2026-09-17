@@ -12,7 +12,7 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
         cobrancas: { orderBy: [{ vencimento: "asc" }, { id: "asc" }], include: {
           emissaoFechamentoHoras: { select: { id: true, decisaoId: true, memoria: true, itens: { orderBy: { id: "asc" }, select: { id: true, conferenciaId: true, valor: true } } } },
           utilizacoesCreditoPropostas: { where: { decisao: { aprovada: true } }, orderBy: { id: "asc" }, select: { id: true, creditoId: true, valor: true, decisao: { select: { id: true } }, credito: { select: { moeda: true, matriculaId: true } } } },
-          recebimentos: { orderBy: { id: "asc" }, select: { id: true, valor: true, moeda: true, dataPagamento: true } },
+          destinacoesRecebimento: { orderBy: { id: "asc" }, select: { id: true, valor: true, recebimento: { select: { id: true, moeda: true, dataPagamento: true } } } },
           informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
           aplicacoesPeriodoIntegral: {
             orderBy: { aplicadaEm: "asc" },
@@ -73,8 +73,8 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
         if (c.status === "CANCELADA" || c.suspensaPorItemPausaId || c.canceladaPorPausaId) conferencias.push("Conferir cancelamento/suspensão e cobertura antes de incluir no acerto.");
         if (c.valorOriginal.lt(c.valorNegociado)) conferencias.push("Valor negociado superior à referência; conferir base de cálculo.");
         const recebido = c.valorRecebido ?? new Prisma.Decimal(0);
-        const somaRecebimentos = c.recebimentos.reduce((total, r) => total.plus(r.valor), new Prisma.Decimal(0));
-        if (!somaRecebimentos.equals(recebido) || c.recebimentos.some((r) => r.moeda !== c.moeda || r.valor.lt(0))) conferencias.push("Recebimentos detalhados divergem do total da cobrança; concilie antes do acerto.");
+        const somaRecebimentos = c.destinacoesRecebimento.reduce((total, d) => total.plus(d.valor), new Prisma.Decimal(0));
+        if (!somaRecebimentos.equals(recebido) || c.destinacoesRecebimento.some((d) => d.recebimento.moeda !== c.moeda || d.valor.lt(0))) conferencias.push("Destinações detalhadas divergem do total da cobrança; concilie antes do acerto.");
         const credito = c.utilizacoesCreditoPropostas.reduce((total, u) => total.plus(u.valor), new Prisma.Decimal(0));
         if (!credito.equals(c.valorLiquidadoCredito) || c.utilizacoesCreditoPropostas.some(u => u.valor.lte(0) || u.credito.moeda !== c.moeda || u.credito.matriculaId !== m.id)) conferencias.push("Utilizações de crédito exigem conciliação.");
         const liquidado = recebido.plus(credito);
@@ -86,7 +86,7 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
           ...(c.emissaoFechamentoHoras ? { origemFaturamentoHoras: { emissaoId: c.emissaoFechamentoHoras.id, decisaoId: c.emissaoFechamentoHoras.decisaoId,
             memoria: c.emissaoFechamentoHoras.memoria, itens: c.emissaoFechamentoHoras.itens.map(i => ({ id: i.id, conferenciaId: i.conferenciaId, valor: i.valor.toFixed(2) })) } } : {}),
           ...(credito.gt(0) ? { valorLiquidadoCredito: credito.toFixed(2), utilizacoesCredito: c.utilizacoesCreditoPropostas.map(u => ({ propostaId: u.id, creditoId: u.creditoId, decisaoId: u.decisao!.id, valor: u.valor.toFixed(2) })) } : {}),
-          recebimentos: c.recebimentos.map((r) => ({ id: r.id, valor: r.valor.toFixed(2), moeda: r.moeda, dataPagamento: r.dataPagamento.toISOString() })),
+          recebimentos: c.destinacoesRecebimento.map((d) => ({ id: d.id, recebimentoId: d.recebimento.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda, dataPagamento: d.recebimento.dataPagamento.toISOString() })),
           conferencias,
         };
       });

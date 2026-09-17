@@ -23,6 +23,13 @@ export async function validarContextoArquivo(usuario: UsuarioArquivo, contexto: 
       throw new ErroRegra("Comprovante e cobrança precisam pertencer ao mesmo atendimento.");
     return { cobrancaId: contexto.cobrancaId, matriculaId: cobranca.matricula.id, alunoId: cobranca.matricula.alunoId, leadId: cobranca.matricula.leadId, categoriaDocumento: CategoriaDocumento.COMPROVANTE };
   }
+  if (contexto.matriculaId && contexto.categoriaDocumento === CategoriaDocumento.COMPROVANTE) {
+    if (!financeiro(usuario) || contexto.leadId) throw new ErroPermissao();
+    const matricula = await tx.matricula.findUnique({ where: { id: contexto.matriculaId }, select: { alunoId: true } });
+    if (!matricula || (contexto.alunoId && contexto.alunoId !== matricula.alunoId))
+      throw new ErroRegra("O comprovante precisa pertencer à matrícula indicada.");
+    return { matriculaId: contexto.matriculaId, alunoId: matricula.alunoId, leadId: null, cobrancaId: null, categoriaDocumento: CategoriaDocumento.COMPROVANTE };
+  }
   if (contexto.matriculaId) {
     if (!tem(usuario, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA) || contexto.leadId) throw new ErroPermissao();
     const matricula = await tx.matricula.findUnique({ where: { id: contexto.matriculaId }, select: { alunoId: true, secretariaAssumiuEm: true } });
@@ -121,6 +128,12 @@ export async function podeLerArquivo(usuario: UsuarioArquivo, segmentos: string[
     if (!tem(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) return false;
     if (documento.lead.matricula?.secretariaAssumiuEm && documento.categoria !== "PROPOSTA") return false;
     return !!await prisma.lead.findFirst({ where: { AND: [{ id: documento.leadId }, await escopoComercialAtual(sessao(usuario))] }, select: { id: true } });
+  }
+  // Antecipações podem ter prova vinculada ao contrato antes de existir cobrança.
+  // Esse alcance é exclusivamente financeiro: não libera os demais documentos.
+  if (registro?.matriculaId && registro.categoriaDocumento === CategoriaDocumento.COMPROVANTE) {
+    if (!financeiro(usuario)) return false;
+    return Boolean(await prisma.matricula.findUnique({ where: { id: registro.matriculaId }, select: { id: true } }));
   }
   const { escopoAtendimentos } = await import("@/server/whatsapp/escopo");
   const atendimento = await escopoAtendimentos(sessao(usuario));

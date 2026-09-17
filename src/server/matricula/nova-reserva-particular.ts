@@ -15,7 +15,7 @@ export async function revisarNovaReservaParticular(input: z.input<typeof NovaRes
       const { aluno, pagador, condicoes, cobrancas, agenda } = r.snapshot;
       return { revisaoHash: r.revisaoHash, aluno, pagador: { tipo: pagador.tipo, versao: pagador.versao, dados: z.object({ nome: z.string(), documento: z.string().nullable().optional(), email: z.string().nullable().optional(), telefoneE164: z.string().nullable().optional(), endereco: z.string().nullable().optional() }).parse(pagador.dados) },
         versaoCondicoes: condicoes.versao, plano: planejarCobrancasEntrada(condicoes.dados),
-        cobrancas: cobrancas.map(({ informes, recebimentos, ...c }) => ({ ...c, valorNegociado: c.valorNegociado.toString(), valorRecebido: c.valorRecebido?.toString() ?? null, saldo: c.saldo?.toString() ?? null, informesPendentes: informes.filter((i) => i.status === "A_CONFERIR").length, recebimentosRegistrados: recebimentos.length })),
+        cobrancas: cobrancas.map(({ informes, destinacoesRecebimento, ...c }) => ({ ...c, valorNegociado: c.valorNegociado.toString(), valorRecebido: c.valorRecebido?.toString() ?? null, saldo: c.saldo?.toString() ?? null, informesPendentes: informes.filter((i) => i.status === "A_CONFERIR").length, recebimentosRegistrados: new Set(destinacoesRecebimento.map(d => d.recebimentoId)).size })),
         agenda: { forma: agenda.formaAgenda, fuso: agenda.fusoOrigem, encontros: agenda.encontros.map((e) => ({ inicio: e.inicio, fim: e.fim })) },
       };
     }, { timeout: 20000 });

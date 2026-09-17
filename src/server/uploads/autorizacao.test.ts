@@ -111,3 +111,36 @@ describe("associação de uploads não permite reutilizar arquivo alheio", () =>
     expect(db.documento.findFirst).toHaveBeenCalledWith({ where: { leadId: "lead", url, arquivado: false, categoria: CategoriaDocumento.TESTE_NIVEL }, select: { id: true } });
   });
 });
+
+describe("comprovante de antecipação por contrato", () => {
+  it("Financeiro vincula prova ao contrato sem cobrança", async () => {
+    db.registroUpload.findUnique.mockResolvedValue(registro());
+    await exigirArquivoVinculavel(u(Papel.FINANCEIRO), url, { matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
+    expect(db.registroUpload.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { matriculaId: "matricula", alunoId: "aluno", leadId: null, cobrancaId: null, categoriaDocumento: CategoriaDocumento.COMPROVANTE } }));
+  });
+  it("não amplia o acesso financeiro a documentos administrativos", async () => {
+    await expect(exigirArquivoVinculavel(u(Papel.FINANCEIRO), url, { matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.CONTRATO })).rejects.toThrow();
+    expect(db.registroUpload.updateMany).not.toHaveBeenCalled();
+  });
+  it("não aceita comprovação de outro contrato do mesmo aluno", async () => {
+    db.registroUpload.findUnique.mockResolvedValue({ ...registro(), matriculaId: "outro-contrato", alunoId: "aluno", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
+    await expect(exigirArquivoVinculavel(u(Papel.FINANCEIRO), url, { matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE })).rejects.toThrow("outro objeto");
+  });
+  it.each([Papel.VENDEDOR, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO])("%s não associa nem consulta a prova", async papel => {
+    db.registroUpload.findUnique.mockResolvedValue({ ...registro(), matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
+    await expect(exigirArquivoVinculavel(u(papel), url, { matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE })).rejects.toThrow();
+    expect(await podeLerArquivo(u(papel), segmentos)).toBe(false);
+  });
+  it("a equipe financeira lê apenas prova com matrícula existente", async () => {
+    db.registroUpload.findUnique.mockResolvedValue({ ...registro(), matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
+    expect(await podeLerArquivo(u(Papel.FINANCEIRO), segmentos)).toBe(true);
+    db.matricula.findUnique.mockResolvedValue(null);
+    expect(await podeLerArquivo(u(Papel.FINANCEIRO), segmentos)).toBe(false);
+  });
+});
+
+it("comprovante por matrícula não recategoriza documento administrativo existente", async () => {
+  db.registroUpload.findUnique.mockResolvedValue({ ...registro(), matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
+  db.documento.findFirst.mockResolvedValue({ matriculaId: "matricula", leadId: null, categoria: CategoriaDocumento.CONTRATO });
+  expect(await podeLerArquivo(u(Papel.FINANCEIRO), segmentos)).toBe(false);
+});

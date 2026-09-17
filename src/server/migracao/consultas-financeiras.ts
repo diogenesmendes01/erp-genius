@@ -54,7 +54,7 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
       const recebida = aplicacoesOrigem.find(aplicacao => aplicacao.recebimentoId !== null);
       const cursores = await Promise.all([
         filtro.cursor ? tx.cobranca.findFirst({ where: { id: filtro.cursor, matriculaId: mapa.matriculaId }, select: { id: true } }) : true,
-        filtro.cursorRecebimentos ? tx.recebimento.findFirst({ where: { id: filtro.cursorRecebimentos, cobranca: { matriculaId: mapa.matriculaId } }, select: { id: true } }) : true,
+        filtro.cursorRecebimentos ? tx.recebimento.findFirst({ where: { id: filtro.cursorRecebimentos, titularMatriculaId: mapa.matriculaId }, select: { id: true } }) : true,
         filtro.cursorPagadores ? tx.pagadorPreparacaoMatricula.findFirst({ where: { id: filtro.cursorPagadores, matriculaId: mapa.matriculaId }, select: { id: true } }) : true,
         filtro.cursorPropostas ? tx.propostaConciliacaoFinanceiraMigracao.findFirst({ where: { id: filtro.cursorPropostas, linhaId: linha.id }, select: { id: true } }) : true,
       ]);
@@ -66,8 +66,8 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
       });
       const pagina = cobrancas.slice(0, porPagina);
       const recebimentos = await tx.recebimento.findMany({
-        where: { cobranca: { matriculaId: mapa.matriculaId } }, orderBy: { id: "asc" }, take: porPagina + 1, ...(filtro.cursorRecebimentos ? { cursor: { id: filtro.cursorRecebimentos }, skip: 1 } : {}),
-        select: { id: true, cobrancaId: true, valor: true, moeda: true, forma: true, dataPagamento: true, chaveIdempotencia: true, hashDados: true, autorId: true },
+        where: { titularMatriculaId: mapa.matriculaId }, orderBy: { id: "asc" }, take: porPagina + 1, ...(filtro.cursorRecebimentos ? { cursor: { id: filtro.cursorRecebimentos }, skip: 1 } : {}),
+        select: { id: true, cobrancaId: true, valor: true, moeda: true, forma: true, dataPagamento: true, chaveIdempotencia: true, hashDados: true, autorId: true, destinacoes: { where: { tipo: "COBRANCA" }, orderBy: { id: "asc" }, select: { id: true, cobrancaId: true, valor: true } } },
       });
       const pagadores = await tx.pagadorPreparacaoMatricula.findMany({
         where: { matriculaId: mapa.matriculaId }, orderBy: { versao: "desc" }, take: porPagina + 1, ...(filtro.cursorPagadores ? { cursor: { id: filtro.cursorPagadores }, skip: 1 } : {}),
@@ -90,7 +90,7 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
         pendenciaRegistrada: aplicacoesOrigem.some(aplicacao => aplicacao.recebimentoId === null),
         resolucao: recebida ? { recebimentoId: recebida.recebimentoId!, aplicadaEm: recebida.aplicadaEm.toISOString() } : null,
         cobrancas: pagina.map((cobranca) => ({ ...cobranca, valorNegociado: cobranca.valorNegociado.toString(), valorRecebido: decimal(cobranca.valorRecebido), saldo: decimal(cobranca.saldo), vencimento: cobranca.vencimento.toISOString() })),
-        recebimentos: recebimentos.slice(0, porPagina).map((recebimento) => ({ ...recebimento, valor: recebimento.valor.toString(), dataPagamento: recebimento.dataPagamento.toISOString() })),
+        recebimentos: recebimentos.slice(0, porPagina).map((recebimento) => ({ ...recebimento, destinacoes: recebimento.destinacoes.map(destino => ({ ...destino, valor: destino.valor.toString() })), valor: recebimento.valor.toString(), dataPagamento: recebimento.dataPagamento.toISOString() })),
         pagadores: pagadores.slice(0, porPagina).map((pagador) => ({ ...pagador, criadaEm: pagador.criadaEm.toISOString() })),
         propostas: propostas.slice(0, porPagina).map((proposta) => ({ ...proposta, podeDecidir: proposta.status === "PENDENTE" && proposta.preparadorId !== sessao.id, valor: decimal(proposta.valor), dataPagamento: data(proposta.dataPagamento), decididoEm: data(proposta.decididoEm), aplicadaEm: data(proposta.aplicadaEm), criadoEm: proposta.criadoEm.toISOString(), recebimentoExistente: proposta.recebimentoExistente ? { ...proposta.recebimentoExistente, dataPagamento: proposta.recebimentoExistente.dataPagamento.toISOString() } : null, aplicacao: proposta.aplicacao ? { ...proposta.aplicacao, aplicadaEm: proposta.aplicacao.aplicadaEm.toISOString() } : null })),
         proximoCursor: cobrancas.length > porPagina ? pagina.at(-1)!.id : null,

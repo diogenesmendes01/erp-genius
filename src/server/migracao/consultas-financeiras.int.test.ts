@@ -10,6 +10,7 @@ vi.mock("@/server/_shared/sessao", async original => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { prepararLoteMigracao } from "./acoes";
 import { aplicarVinculoMigracao } from "./aplicar-vinculo";
@@ -40,7 +41,7 @@ it("pagina coleções independentemente, valida cursores e calcula decisão por 
   const f = await base();
   for (let i = 0; i < 20; i++) await prisma.cobranca.create({ data: { matriculaId: f.m.id, tipo: TipoCobranca.MENSALIDADE, valorOriginal: i + 1, valorNegociado: i + 1, moeda: "CRC", vencimento: new Date("2025-02-10Z") } });
   const cobrancas = await prisma.cobranca.findMany({ where: { matriculaId: f.m.id }, orderBy: { id: "asc" } });
-  for (let i = 0; i < 21; i++) await prisma.recebimento.create({ data: { cobrancaId: cobrancas[i]!.id, autorId: financeiroB, chaveIdempotencia: `q-r-${i}`, valor: 1, moeda: "CRC", forma: "DINHEIRO", dataPagamento: new Date("2025-02-03T00:00:00Z") } });
+  for (let i = 0; i < 21; i++) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobrancas[i]!.id, autorId: financeiroB, chaveIdempotencia: `q-r-${i}`, valorRecebido: 1, forma: "DINHEIRO", dataPagamento: new Date("2025-02-03T00:00:00Z"), evidencia: "Recebimento histórico para paginação financeira." }));
   for (let i = 2; i <= 21; i++) await prisma.pagadorPreparacaoMatricula.create({ data: { matriculaId: f.m.id, preparadorId: financeiroA, versao: i, tipo: "ALUNO", dados: { alunoId: f.aluno.id, nome: "Ana", paisId: f.c.pais.id }, motivo: `Pagador histórico conferido na versão ${i}`, chaveIdempotencia: `p-q-${i}`, entradaHash: `p-q-${i}` } });
   entrar(financeiroA); let proposta = await proporConciliacaoFinanceiraMigracao({ linhaId: f.linha.id, matriculaId: f.m.id, cobrancaId: f.cobranca.id, pagadorId: f.pagador.id, modalidade: "PENDENCIA", evidencia: { r: "fonte" }, chaveIdempotencia: uuid(1) }); if (!proposta.ok || !proposta.dado) throw new Error("proposta");
   for (let i = 2; i <= 21; i++) { proposta = await proporConciliacaoFinanceiraMigracao({ linhaId: f.linha.id, matriculaId: f.m.id, cobrancaId: f.cobranca.id, pagadorId: f.pagador.id, modalidade: "PENDENCIA", evidencia: { r: "fonte" }, chaveIdempotencia: uuid(i) }); if (!proposta.ok || !proposta.dado) throw new Error("proposta paginada"); }

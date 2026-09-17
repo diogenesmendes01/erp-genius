@@ -15,7 +15,7 @@ export async function conferirVencimentoReservaTx(tx: Prisma.TransactionClient, 
   if (reserva.expiraEm > agora) return { reservaId, status: reserva.status, resultado: "PRAZO_VIGENTE" as const };
   const m = await tx.matricula.findUniqueOrThrow({ where: { id: reserva.matriculaId }, select: { status: true, contratoOk: true, confirmacaoContratoEm: true, contratoDocumentoId: true } });
   const informes = await tx.pagamentoInformado.findMany({ where: { cobranca: { matriculaId: reserva.matriculaId }, status: { in: ["A_CONFERIR", "CONFIRMADO"] } }, select: { id: true }, orderBy: { id: "asc" } });
-  const recebimentos = await tx.recebimento.findMany({ where: { cobranca: { matriculaId: reserva.matriculaId } }, select: { id: true }, orderBy: { id: "asc" } });
+  const recebimentos = await tx.recebimento.findMany({ where: { titularMatriculaId: reserva.matriculaId }, select: { id: true }, orderBy: { id: "asc" } });
   // Indicadores legados também impedem liberação, sem inventar um novo recebimento.
   const cobrancasComIndicacao = await tx.cobranca.findMany({ where: { matriculaId: reserva.matriculaId, OR: [{ valorRecebido: { gt: 0 } }, { pagoEm: { not: null } }, { status: "PAGO" }] }, select: { id: true }, orderBy: { id: "asc" } });
   const evidenciaContrato = m.contratoOk || !!m.confirmacaoContratoEm || !!m.contratoDocumentoId;
