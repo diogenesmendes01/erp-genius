@@ -25,3 +25,4 @@ prisma/migrations/20260917090000_entrada_financeira_historica/migration.sql -tex
 prisma/migrations/20260917110000_correcao_entrada_financeira_historica/migration.sql -text
 prisma/migrations/20260917120000_presenca_historica_migracao/migration.sql -text
 prisma/migrations/20260917123000_correcao_presenca_historica/migration.sql -text
+prisma/migrations/20260917125000_fotografia_presenca_historica/migration.sql -text
