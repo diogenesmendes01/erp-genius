@@ -109,7 +109,7 @@ BEGIN
       (NOT (v.condicoes ? 'TAXA_VENCIMENTO') AND c.vencimento::date IS DISTINCT FROM NEW."vencimentoNovo")
     ) THEN RAISE EXCEPTION 'Valor ou vencimento não corresponde às condições formalizadas'; END IF;
     SELECT coalesce(sum(o.valor),0) INTO credito_anterior FROM "OrigemCreditoAcertoTaxaAditivo" o WHERE o."cobrancaId"=c.id;
-    credito_total := greatest(0,coalesce(c."valorRecebido",0)-NEW."valorNovo");
+    credito_total := greatest(0,coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"-NEW."valorNovo");
     IF NEW."creditoAnterior" IS DISTINCT FROM credito_anterior OR credito_total < credito_anterior THEN RAISE EXCEPTION 'Aumento posterior exige conciliar crédito de taxa já originado'; END IF;
     IF NEW."creditoNovo" IS DISTINCT FROM credito_total-credito_anterior THEN RAISE EXCEPTION 'Crédito novo não corresponde ao excedente ainda não originado'; END IF;
     RETURN NEW;
@@ -126,7 +126,7 @@ BEGIN
   SELECT * INTO d FROM "DecisaoAcertoTaxaAditivo" WHERE id=NEW."decisaoId" FOR SHARE;
   SELECT * INTO c FROM "Cobranca" WHERE id=NEW."cobrancaId" FOR UPDATE;
   SELECT * INTO u FROM "Usuario" WHERE id=NEW."executorId" FOR SHARE;
-  IF p.id IS NULL OR d.id IS NULL OR c.id IS NULL OR u.id IS NULL OR NOT u.ativo OR NEW."executorId" IS DISTINCT FROM d."decisorId" OR d."propostaId" IS DISTINCT FROM p.id OR NOT d.aprovada OR p.status <> 'APROVADA' OR c.id IS DISTINCT FROM p."cobrancaId" OR c.versao IS DISTINCT FROM NEW."versaoAnterior" OR c."valorNegociado" IS DISTINCT FROM NEW."valorAnterior" OR c.vencimento::date IS DISTINCT FROM NEW."vencimentoAnterior" OR NEW."valorNovo" IS DISTINCT FROM p."valorNovo" OR NEW."vencimentoNovo" IS DISTINCT FROM p."vencimentoNovo" OR NEW."creditoAnterior" IS DISTINCT FROM p."creditoAnterior" OR NEW."creditoNovo" IS DISTINCT FROM p."creditoNovo" OR c.tipo <> 'MATRICULA' THEN RAISE EXCEPTION 'Aplicação não corresponde ao acerto aprovado e atual'; END IF;
+  IF p.id IS NULL OR d.id IS NULL OR c.id IS NULL OR u.id IS NULL OR NOT u.ativo OR NOT ('ADMINISTRADOR'=ANY(u.papeis) OR ('FINANCEIRO'=ANY(u.papeis) AND 'financeiro.aplicar_acertos'=ANY(u.permissoes))) OR NEW."executorId" IS DISTINCT FROM d."decisorId" OR d."propostaId" IS DISTINCT FROM p.id OR NOT d.aprovada OR p.status <> 'APROVADA' OR c.id IS DISTINCT FROM p."cobrancaId" OR c.versao IS DISTINCT FROM NEW."versaoAnterior" OR c."valorNegociado" IS DISTINCT FROM NEW."valorAnterior" OR c.vencimento::date IS DISTINCT FROM NEW."vencimentoAnterior" OR NEW."valorNovo" IS DISTINCT FROM p."valorNovo" OR NEW."vencimentoNovo" IS DISTINCT FROM p."vencimentoNovo" OR NEW."creditoAnterior" IS DISTINCT FROM p."creditoAnterior" OR NEW."creditoNovo" IS DISTINCT FROM p."creditoNovo" OR c.tipo <> 'MATRICULA' THEN RAISE EXCEPTION 'Aplicação exige executor financeiro ativo e corresponde ao acerto aprovado e atual'; END IF;
   RETURN NEW;
 END $$;
 
@@ -142,7 +142,7 @@ BEGIN
   SELECT * INTO p FROM "PropostaAcertoTaxaAditivo" WHERE id=a."propostaId" FOR SHARE;
   SELECT * INTO c FROM "Cobranca" WHERE id=a."cobrancaId" FOR SHARE;
   SELECT coalesce(sum(o.valor),0) INTO credito_anterior FROM "OrigemCreditoAcertoTaxaAditivo" o WHERE o."cobrancaId"=c.id;
-  esperado := greatest(0,coalesce(c."valorRecebido",0)-p."valorNovo")-credito_anterior;
+  esperado := greatest(0,coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"-p."valorNovo")-credito_anterior;
   IF a.id IS NULL OR p.id IS NULL OR c.id IS NULL OR NEW."matriculaId" IS DISTINCT FROM p."matriculaId" OR NEW."cobrancaId" IS DISTINCT FROM c.id OR NEW.moeda IS DISTINCT FROM c.moeda OR esperado <= 0 OR NEW.valor IS DISTINCT FROM esperado OR NEW.valor IS DISTINCT FROM p."creditoNovo" THEN RAISE EXCEPTION 'Crédito não corresponde ao excedente incremental do acerto de taxa aprovado'; END IF;
   RETURN NEW;
 END $$;
@@ -163,7 +163,7 @@ BEGIN
   SELECT * INTO a FROM "AplicacaoAcertoTaxaAditivo" WHERE id=NEW.id FOR SHARE;
   SELECT * INTO p FROM "PropostaAcertoTaxaAditivo" WHERE id=a."propostaId" FOR SHARE;
   SELECT * INTO c FROM "Cobranca" WHERE id=a."cobrancaId" FOR SHARE;
-  esperado_credito := greatest(0,coalesce(c."valorRecebido",0)-a."valorNovo");
+  esperado_credito := greatest(0,coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"-a."valorNovo");
   esperado_saldo := greatest(0,a."valorNovo"-coalesce(c."valorRecebido",0)-c."valorLiquidadoCredito");
   SELECT coalesce(sum(o.valor),0) INTO credito_total FROM "OrigemCreditoAcertoTaxaAditivo" o WHERE o."cobrancaId"=a."cobrancaId";
   IF p.status <> 'APLICADA' OR c."valorNegociado" IS DISTINCT FROM a."valorNovo" OR c.vencimento::date IS DISTINCT FROM a."vencimentoNovo" OR c.saldo IS DISTINCT FROM esperado_saldo OR credito_total IS DISTINCT FROM esperado_credito OR (a."creditoNovo">0 AND NOT EXISTS (SELECT 1 FROM "OrigemCreditoAcertoTaxaAditivo" o JOIN "CreditoMatricula" cr ON cr."origemAcertoTaxaAditivoId"=o.id WHERE o."aplicacaoId"=a.id AND o.valor=a."creditoNovo")) OR (a."creditoNovo"=0 AND EXISTS (SELECT 1 FROM "OrigemCreditoAcertoTaxaAditivo" o WHERE o."aplicacaoId"=a.id)) THEN RAISE EXCEPTION 'Aplicação de taxa não preserva o saldo ou crédito incremental aprovado'; END IF;
