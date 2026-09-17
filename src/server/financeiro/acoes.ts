@@ -113,8 +113,7 @@ export async function registrarRecebimentoDestinado(input: unknown): Promise<Res
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
     const dados = RecebimentoDestinadoSchema.parse(input);
     const resultado = await prisma.$transaction(async (tx) => {
-      const cobrancaComprovante = dados.destinos.find((destino) => destino.cobrancaId)?.cobrancaId;
-      if (dados.comprovanteUrl && cobrancaComprovante) await exigirArquivoVinculavel(autor, dados.comprovanteUrl, { cobrancaId: cobrancaComprovante }, tx);
+      if (dados.comprovanteUrl) await exigirArquivoVinculavel(autor, dados.comprovanteUrl, { matriculaId: dados.titularMatriculaId, categoriaDocumento: "COMPROVANTE" }, tx);
       const r = await receberComDestinacoesTx(tx, { ...dados, autorId: autor.id, pagadorId: dados.pagadorId ?? null, comentario: dados.comentario ?? null, comprovanteUrl: dados.comprovanteUrl ?? null, comprovanteNome: dados.comprovanteNome ?? null, destinos: dados.destinos.map((d) => ({ ...d, cobrancaId: d.cobrancaId ?? undefined })) });
       return r.id;
     });

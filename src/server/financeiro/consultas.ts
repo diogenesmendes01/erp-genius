@@ -152,26 +152,17 @@ export async function listarInformesPagamento(alunoId?: string) {
 /** Contextos operacionais para repartir um único fato de caixa FIN-04. */
 export async function listarContextosRecebimentoDestinado() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
-  const cobrancas = await prisma.cobranca.findMany({
-    where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
-    orderBy: [{ matricula: { aluno: { primeiroNome: "asc" } } }, { vencimento: "asc" }],
-    include: {
-      matricula: { include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true, dados: true } } } },
-    },
+  const matriculas = await prisma.matricula.findMany({
+    where: { status: { in: [StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
+    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" } } },
   });
-  const grupos = new Map<string, { matriculaId: string; aluno: string; moeda: string; cobrancas: { id: string; codigo: string | null; tipo: string; vencimento: string; saldo: number }[]; pagadores: { id: string; rotulo: string }[] }>();
-  for (const cobranca of cobrancas) {
+  return matriculas.map((matricula) => {
+    const cobrancas = matricula.cobrancas.flatMap((cobranca) => {
     const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito).toNumber();
-    if (saldo <= 0) continue;
-    const id = cobranca.matriculaId;
-    let grupo = grupos.get(id);
-    if (!grupo) {
-      grupo = { matriculaId: id, aluno: `${cobranca.matricula.aluno.primeiroNome} ${cobranca.matricula.aluno.sobrenome}`.trim(), moeda: cobranca.moeda, cobrancas: [], pagadores: cobranca.matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
-      grupos.set(id, grupo);
-    }
-    grupo.cobrancas.push({ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo });
-  }
-  return [...grupos.values()];
+    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
+    });
+    return { matriculaId: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
+  });
 }
 
 export async function configuracaoComissoes() {
