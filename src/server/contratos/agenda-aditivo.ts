@@ -4,13 +4,24 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 import { PrepararAgendaAditivoSchema } from "./agenda-aditivo-schema";
-import { carregarConferenciaAgendaAditivoTx } from "./agenda-aditivo-tx";
+import { carregarConferenciaAgendaAditivoTx, registrarPropostaAgendaAditivoTx } from "./agenda-aditivo-tx";
 
 /** Consulta de conferência: não persiste proposta, não reserva e não aplica agenda. */
 export async function consultarConferenciaAgendaAditivo(input: z.input<typeof PrepararAgendaAditivoSchema>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
     return prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, ator.id, input), { timeout: 30000 });
+  });
+}
+
+const RegistrarAgendaSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
+
+/** Gestão Pedagógica pode registrar a fotografia, mas não prepara nem aprova o
+ * aditivo contratual. A referência contratual é criada pelo fluxo próprio. */
+export async function registrarPropostaAgendaAditivo(input: z.input<typeof RegistrarAgendaSchema>) {
+  return executarAcao(async () => {
+    const ator = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO);
+    return prisma.$transaction(tx => registrarPropostaAgendaAditivoTx(tx, ator.id, input), { timeout: 30000 });
   });
 }
 
