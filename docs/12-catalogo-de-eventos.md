@@ -254,6 +254,8 @@ Incremento 242: `CorrecaoNotaAplicada` e `CorrecaoNotaRejeitada` identificam pro
 
 Incremento 251: eventos `AvaliacaoRascunhoRegistrado`/`AvaliacaoSubmetida` passam a identificar `realizadaPorId` e `regularizacao`. O autor do evento é o registrador; motivo/evidências da regularização permanecem na versão imutável da nota. Designação vigente passa a permitir lançamento no alcance das avaliações regulares descrito na SPEC, com conferência independente do registrador e do realizador.
 
+Q40: `AvaliadorReposicaoDesignado` registra a primeira atribuição de uma reposição gravada; `AvaliadorReposicaoSubstituido` registra designação anterior, nova designação, professores, motivo e instante da troca. Ambos usam o agregado `Matricula` e são gravados junto da alteração append-only. A substituição encerra somente o acesso efetivo futuro do avaliador anterior, sem mudar autoria, versões ou prazos existentes; a chave idempotente e o hash da entrada ficam no evento de designação inicial e no registro de substituição.
+
 
 ### Plano de recuperação — incremento 253
 

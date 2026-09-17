@@ -226,9 +226,9 @@ export async function concluirReposicaoIndividual(input: z.input<typeof conclusa
         `);
         if (!entrega || entrega.entregueEm > validadaEm) throw new ErroRegra("Entrega gravada não corresponde à matrícula ou é posterior à validação.");
         const designado = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
-          SELECT d.id FROM "DesignacaoAvaliadorReposicaoIndividual" d JOIN "Usuario" u ON u.id = d."professorId"
-          WHERE d."reposicaoId" = ${r.id} AND d."professorId" = ${autor.id} AND u.ativo = true
-            AND d.inicio <= ${instanteUtc(validadaEm)} AND (d.fim IS NULL OR d.fim > ${instanteUtc(validadaEm)}) LIMIT 1
+          SELECT ${r.id} AS id FROM "Usuario" u
+          WHERE u.id=${autor.id} AND u.ativo AND avaliador_reposicao_vigente(${r.id}, ${autor.id}, ${instanteUtc(validadaEm)})
+          LIMIT 1
         `);
         if (!designado[0]) throw new ErroPermissao("Sem designação vigente para validar esta gravação.");
         await tx.$executeRaw(Prisma.sql`

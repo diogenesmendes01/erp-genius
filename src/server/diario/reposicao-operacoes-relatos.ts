@@ -53,11 +53,8 @@ export async function registrarRelatoIndisponibilidadeEquipe(input: unknown) {
         if (!fresco.papeis.includes(Papel.PROFESSOR)) throw new ErroPermissao();
         const agora = new Date();
         const [designacao] = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-          SELECT designacao.id FROM "DesignacaoAvaliadorReposicaoIndividual" designacao
-          WHERE designacao."reposicaoId"=${entrada.reposicaoId} AND designacao."professorId"=${autor.id}
-            AND designacao.inicio<=${instanteUtc(agora)}
-            AND (designacao.fim IS NULL OR designacao.fim>${instanteUtc(agora)})
-          FOR SHARE
+          SELECT ${entrada.reposicaoId} AS id
+          WHERE avaliador_reposicao_vigente(${entrada.reposicaoId}, ${autor.id}, ${instanteUtc(agora)})
         `);
         if (!designacao) throw new ErroPermissao("O professor não possui designação vigente para este material.");
       }
