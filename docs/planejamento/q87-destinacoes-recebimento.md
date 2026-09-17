@@ -47,6 +47,4 @@ e/ou crédito sem destino, apresenta o total antes da confirmação, permite
 pagador, data, forma, comprovante e evidência por destino. O retry preserva a
 mesma chave idempotente enquanto o formulário estiver aberto.
 
-Pendências antes de aceitar Q87: revisão independente da UI, regressão dos
-consumidores restantes e cenários completos de uso Q68/devolução Q69. Este
-documento não declara Q87 concluída.
+Aceite local Q87 concluído: código, interface, uso Q68/devolução Q69 e preservação de reserva Q108 têm evidência independente no [quadro único](quadro-entregas.md). Integração52bdf51f e correções054385e9/0fa78a18/f17fc0f8; migrações211/214 no banco descartável principal. Regressão integrada ampliada segue registrada separadamente; aceite local não declara toda a SPEC nem operação externa concluídas.
