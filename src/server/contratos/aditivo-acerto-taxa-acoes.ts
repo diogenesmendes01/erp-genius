@@ -1,0 +1,91 @@
+"use server";
+import { Papel, Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { dinheiro } from "@/server/financeiro/regras";
+import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { prisma } from "@/lib/prisma";
+import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
+import { hashSubstituicao } from "./substituicao-estado";
+import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
+import { calcularCreditoAcertoTaxa } from "./aditivo-acerto-taxa-calculo";
+import { AplicarAcertoTaxaSchema, DecidirAcertoTaxaSchema, InvalidarAcertoTaxaSchema, ProporAcertoTaxaSchema } from "./aditivo-acerto-taxa-acoes-schema";
+
+async function financeiro(tx: Prisma.TransactionClient, id: string, aprovar = false) {
+  await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id=${id} FOR SHARE`;
+  const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true, permissoes: true } });
+  if (!u?.ativo || !u.papeis.some(p => p === Papel.ADMINISTRADOR || p === Papel.FINANCEIRO) || (aprovar && !u.papeis.includes(Papel.ADMINISTRADOR) && !u.permissoes.includes("financeiro.aprovar_acertos"))) throw new ErroPermissao("Exige Financeiro ativo e permissão vigente.");
+}
+async function bloquearProposta(tx: Prisma.TransactionClient, propostaId: string) {
+  const referencia = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: propostaId }, select: { matriculaId: true } });
+  await bloquearMatriculas(tx, [referencia.matriculaId]);
+  await tx.$queryRaw`SELECT id FROM "PropostaAcertoTaxaAditivo" WHERE id=${propostaId} FOR UPDATE`;
+}
+function foto(estado: { revisaoHash: string }, v: { id: string; condicoesHash: string }, c: { id: string; versao: number; moeda: string; valorNegociado: Prisma.Decimal; valorRecebido: Prisma.Decimal | null; valorLiquidadoCredito: Prisma.Decimal; vencimento: Date }, calc: ReturnType<typeof calcularCreditoAcertoTaxa>, comissoes: Array<{ id: string; tipo: string; status: string; percentual: Prisma.Decimal; valor: Prisma.Decimal; valorBase: Prisma.Decimal | null }>) {
+ return { revisaoHash: estado.revisaoHash, condicoesHash: v.condicoesHash, versaoCondicoesId: v.id, cobranca: { id: c.id, versao: c.versao, moeda: c.moeda, valorNegociado: c.valorNegociado.toFixed(2), valorRecebido: c.valorRecebido?.toFixed(2) ?? null, valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2), vencimento: c.vencimento.toISOString() }, calculo: { creditoAnterior: calc.creditoAnterior.toFixed(2), creditoNovo: calc.creditoNovo.toFixed(2) }, comissoes: comissoes.map(x => ({ id: x.id, tipo: x.tipo, status: x.status, percentual: x.percentual.toFixed(2), valor: x.valor.toFixed(2), valorBase: x.valorBase?.toFixed(2) ?? null })) };
+}
+async function revalidar(tx: Prisma.TransactionClient, p: { matriculaId: string; propostaAditivoId: string; conferenciaFinalId: string; versaoCondicoesId: string; cobrancaId: string; fotografiaHash: string; valorNovo: Prisma.Decimal; creditoAnterior: Prisma.Decimal; creditoNovo: Prisma.Decimal }) {
+ const final = await tx.conferenciaFinalAditivo.findUniqueOrThrow({ where: { id: p.conferenciaFinalId }, select: { conclusaoId: true } });
+ const estado = await carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: p.matriculaId, propostaId: p.propostaAditivoId, conclusaoId: final.conclusaoId });
+ const v = await tx.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: p.versaoCondicoesId }, select: { id: true, condicoesHash: true, conferenciaFinalId: true } });
+ await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${p.cobrancaId} FOR UPDATE`; const c = await tx.cobranca.findUniqueOrThrow({ where: { id: p.cobrancaId } });
+ if (v.conferenciaFinalId !== p.conferenciaFinalId || c.matriculaId !== p.matriculaId || c.tipo !== "MATRICULA") throw new ErroRegra("A fotografia não pertence mais ao aditivo e à taxa selecionados.");
+ const anteriores = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: c.id }, _sum: { valor: true } });
+ await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId"=${p.matriculaId} ORDER BY id FOR UPDATE`;
+ const calc = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo: p.valorNovo, creditosTaxaJaOriginados: anteriores._sum.valor ?? 0 }), comissoes = await tx.comissao.findMany({ where: { matriculaId: p.matriculaId }, orderBy: { id: "asc" } });
+ if (calc.pendencia || !calc.creditoAnterior.eq(p.creditoAnterior) || !calc.creditoNovo.eq(p.creditoNovo) || hashSubstituicao(foto(estado, v, c, calc, comissoes)) !== p.fotografiaHash) throw new ErroRegra("A fotografia do acerto ficou obsoleta; prepare novamente.");
+ return c;
+}
+
+export async function proporAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = ProporAcertoTaxaSchema.parse(input);
+ return prisma.$transaction(async tx => { await financeiro(tx, autor.id); await bloquearMatriculas(tx, [d.matriculaId]);
+  const estado = await carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: d.matriculaId, propostaId: d.propostaAditivoId, conclusaoId: d.conclusaoId });
+  if (estado.revisaoHash !== d.revisaoHash || estado.dados.ambiente !== "PRODUCAO") throw new ErroRegra("A conclusão em produção e sua revisão exata são obrigatórias.");
+  const v = await tx.versaoCondicoesAditivo.findFirst({ where: { matriculaId: d.matriculaId, propostaId: d.propostaAditivoId, conferenciaFinal: { conclusaoId: d.conclusaoId } }, orderBy: { versao: "desc" } });
+  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${d.cobrancaId} FOR UPDATE`; const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: d.matriculaId, tipo: "MATRICULA" } }); if (!v || !c) throw new ErroRegra("Selecione uma cobrança de taxa real da matrícula.");
+  const cond = v.condicoes as Record<string, any>, valor = cond.TAXA_VALOR?.valor ? new Prisma.Decimal(cond.TAXA_VALOR.valor) : c.valorNegociado, vencimento = cond.TAXA_VENCIMENTO?.data ? new Date(`${cond.TAXA_VENCIMENTO.data}T00:00:00.000Z`) : c.vencimento;
+  const anteriores = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: c.id }, _sum: { valor: true } }), calc = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo: valor, creditosTaxaJaOriginados: anteriores._sum.valor ?? 0 });
+  if (calc.pendencia) throw new ErroRegra(`${calc.pendencia.tratamento} Valor a conciliar: ${calc.pendencia.valor.toFixed(2)}.`); const comissoes = await tx.comissao.findMany({ where: { matriculaId: d.matriculaId }, orderBy: { id: "asc" } }), fotografia = foto(estado, v, c, calc, comissoes), fotografiaHash = hashSubstituicao(fotografia);
+  const repetida = await tx.propostaAcertoTaxaAditivo.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } }); if (repetida) { if (repetida.fotografiaHash !== fotografiaHash || repetida.motivo !== d.motivo || JSON.stringify(repetida.evidencia) !== JSON.stringify(d.evidencia)) throw new ErroRegra("A chave idempotente já foi usada com outra proposta."); return { id: repetida.id, status: repetida.status }; }
+  const p = await tx.propostaAcertoTaxaAditivo.create({ data: { id: randomUUID(), matriculaId: d.matriculaId, propostaAditivoId: d.propostaAditivoId, conferenciaFinalId: v.conferenciaFinalId, versaoCondicoesId: v.id, cobrancaId: c.id, preparadorId: autor.id, valorNovo: valor, vencimentoNovo: vencimento, creditoAnterior: calc.creditoAnterior, creditoNovo: calc.creditoNovo, evidencia: d.evidencia as Prisma.InputJsonValue, motivo: d.motivo, fotografia: fotografia as Prisma.InputJsonValue, fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } });
+  await registrarEvento(tx, { tipo: "AcertoTaxaAditivoProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { propostaId: p.id, cobrancaId: c.id, fotografiaHash } }); return { id: p.id, status: p.status };
+ });
+}); }
+
+export async function decidirAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = DecidirAcertoTaxaSchema.parse(input); return prisma.$transaction(async tx => { await financeiro(tx, autor.id, true); await bloquearProposta(tx, d.propostaId); const p = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: true } });
+  if (p.preparadorId === autor.id) throw new ErroRegra("A decisão exige outro Financeiro."); if (p.decisao) { if (p.decisao.decisorId !== autor.id || p.decisao.aprovada !== d.aprovada || p.decisao.motivo !== d.motivo || p.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("A proposta já recebeu outra decisão."); return { id: p.decisao.id, aprovada: p.decisao.aprovada }; } if (p.status !== "PENDENTE") throw new ErroRegra("A proposta não está pendente."); if (d.aprovada) await revalidar(tx, p);
+  const decisao = await tx.decisaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: p.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: d.aprovada ? "APROVADA" : "REJEITADA" } }); await registrarEvento(tx, { tipo: d.aprovada ? "AcertoTaxaAditivoAprovado" : "AcertoTaxaAditivoRejeitado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, decisaoId: decisao.id, fotografiaHash: p.fotografiaHash } }); return { id: decisao.id, aprovada: decisao.aprovada };
+ });
+}); }
+
+export async function invalidarAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = InvalidarAcertoTaxaSchema.parse(input);
+ return prisma.$transaction(async tx => { await financeiro(tx, autor.id, true); await bloquearProposta(tx, d.propostaId);
+  const p = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { aplicacao: true, invalidacao: true } });
+  if (p.preparadorId === autor.id) throw new ErroRegra("A invalidação exige outro Financeiro.");
+  if (p.invalidacao) { if (p.invalidacao.resolvedorId !== autor.id || p.invalidacao.motivo !== d.motivo || JSON.stringify(p.invalidacao.evidencia) !== JSON.stringify(d.evidencia) || p.invalidacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O acerto já recebeu outra invalidação."); return { id: p.invalidacao.id, invalidada: true }; }
+  if (p.status !== "APROVADA" || p.aplicacao) throw new ErroRegra("Somente acerto aprovado sem aplicação pode ser invalidado.");
+  const v = await tx.versaoCondicoesAditivo.findFirstOrThrow({ where: { matriculaId: p.matriculaId }, orderBy: [{ vigenciaInicio: "desc" }, { versao: "desc" }], select: { id: true, condicoesHash: true, conferenciaFinal: { select: { revisaoHash: true } } } });
+  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${p.cobrancaId} FOR UPDATE`; const c = await tx.cobranca.findUniqueOrThrow({ where: { id: p.cobrancaId } });
+  await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId"=${p.matriculaId} ORDER BY id FOR UPDATE`;
+  const anteriores = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: c.id }, _sum: { valor: true } }), calc = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo: p.valorNovo, creditosTaxaJaOriginados: anteriores._sum.valor ?? 0 }), comissoes = await tx.comissao.findMany({ where: { matriculaId: p.matriculaId }, orderBy: { id: "asc" } });
+  const atual = foto({ revisaoHash: v.conferenciaFinal.revisaoHash }, v, c, calc, comissoes), atualHash = hashSubstituicao(atual);
+  if (atualHash === p.fotografiaHash) throw new ErroRegra("A fotografia material do acerto ainda está vigente.");
+  const invalidacao = await tx.invalidacaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, resolvedorId: autor.id, motivo: d.motivo, evidencia: d.evidencia as Prisma.InputJsonValue, fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: atual as Prisma.InputJsonValue, fotografiaAtualHash: atualHash, chaveIdempotencia: d.chaveIdempotencia } });
+  await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });
+  await registrarEvento(tx, { tipo: "AcertoTaxaAditivoInvalidado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, invalidacaoId: invalidacao.id, fotografiaOriginalHash: p.fotografiaHash, fotografiaAtualHash: atualHash } });
+  return { id: invalidacao.id, invalidada: true };
+ });
+}); }
+
+export async function aplicarAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = AplicarAcertoTaxaSchema.parse(input); return prisma.$transaction(async tx => { await financeiro(tx, autor.id, true); await bloquearProposta(tx, d.propostaId); const p = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: true, aplicacao: true } });
+  if (p.aplicacao) { if (p.aplicacao.executorId !== autor.id) throw new ErroRegra("A proposta já recebeu outra aplicação."); return { id: p.aplicacao.id, aplicada: true }; } if (!p.decisao?.aprovada || p.decisao.decisorId !== autor.id || p.status !== "APROVADA") throw new ErroRegra("A aplicação exige decisão aprovada do executor independente."); const c = await revalidar(tx, p); await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${c.id} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId"=${p.matriculaId} ORDER BY id FOR UPDATE`; const comissoes = await tx.comissao.findMany({ where: { matriculaId: p.matriculaId } });
+  const app = await tx.aplicacaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, decisaoId: p.decisao.id, cobrancaId: c.id, executorId: autor.id, versaoAnterior: c.versao, valorAnterior: c.valorNegociado, valorNovo: p.valorNovo, vencimentoAnterior: c.vencimento, vencimentoNovo: p.vencimentoNovo, creditoAnterior: p.creditoAnterior, creditoNovo: p.creditoNovo, fotografia: p.fotografia as Prisma.InputJsonValue } }); const saldo = Prisma.Decimal.max(0, p.valorNovo.minus(c.valorRecebido ?? 0).minus(c.valorLiquidadoCredito)); await tx.cobranca.update({ where: { id: c.id }, data: { valorNegociado: p.valorNovo, vencimento: p.vencimentoNovo, saldo, status: saldo.isZero() ? "PAGO" : p.vencimentoNovo < new Date() ? "ATRASADO" : "PENDENTE", versao: { increment: 1 } } });
+  for (const comissao of comissoes) { if (comissao.tipo !== "PERCENTUAL" || !["PENDENTE", "APROVADA"].includes(comissao.status)) continue; const valor = dinheiro(p.valorNovo.mul(comissao.percentual).div(100)); await tx.comissao.update({ where: { id: comissao.id }, data: { valor, valorBase: p.valorNovo } }); await registrarEvento(tx, { tipo: "ComissaoRecalculada", agregadoTipo: "Comissao", agregadoId: comissao.id, autorId: autor.id, payload: { aplicacaoAcertoTaxaId: app.id, de: comissao.valor.toNumber(), para: valor.toNumber(), base: p.valorNovo.toNumber(), politicaId: comissao.politicaId } }); }
+  if (p.creditoNovo.gt(0)) { const origem = await tx.origemCreditoAcertoTaxaAditivo.create({ data: { id: randomUUID(), aplicacaoId: app.id, matriculaId: p.matriculaId, cobrancaId: c.id, valor: p.creditoNovo, moeda: c.moeda, fotografia: p.fotografia as Prisma.InputJsonValue } }); await tx.creditoMatricula.create({ data: { matriculaId: p.matriculaId, moeda: c.moeda, valorInicial: p.creditoNovo, origemAcertoTaxaAditivoId: origem.id } }); }
+  await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "APLICADA" } }); await registrarEvento(tx, { tipo: "AcertoTaxaAditivoAplicado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, aplicacaoId: app.id, cobrancaId: c.id, fotografiaHash: p.fotografiaHash } }); return { id: app.id, aplicada: true };
+ });
+}); }
