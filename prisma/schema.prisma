@@ -445,12 +445,15 @@ model Usuario {
     conferenciasAssinaturaAditivo ConferenciaAssinaturaAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
   propostasAditivo PropostaAditivoContratual[]
+  propostasAcertoTaxaAditivoPreparadas PropostaAcertoTaxaAditivo[] @relation("PreparadorAcertoTaxaAditivo")
+  decisoesAcertoTaxaAditivo DecisaoAcertoTaxaAditivo[] @relation("DecisorAcertoTaxaAditivo")
   decisoesAditivo DecisaoAditivoContratual[]
   decisoesAlcadaAditivo DecisaoAlcadaAditivo[]
   processosAssinaturaAditivo ProcessoAssinaturaAditivo[]
   conferenciasFinaisAditivo ConferenciaFinalAditivo[]
   versoesCondicoesAditivo VersaoCondicoesAditivo[]
   aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
+  aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("ExecutorAcertoTaxaAditivo")
   aplicacoesSubstituicaoContratual AplicacaoSubstituicaoContratual[]
   intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[] @relation("PreparadorSubstituicaoContratual")
@@ -1631,6 +1634,8 @@ model Matricula {
   efetivacaoDesistenciaPreparacao EfetivacaoPedidoDesistenciaPreparacao?
   propostasAditivo PropostaAditivoContratual[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
+  propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
+  origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
  beneficiosReposicaoParticular BeneficioReposicaoParticularMatricula[]
 
   reposicoesIndividuais ReposicaoIndividual[]
@@ -1764,6 +1769,9 @@ enum FormaPagamento {
 }
 
 model Cobranca {
+  propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
+  aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
+  origemCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo?
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   emissaoContinuidadeGerada EmissaoContinuidadeMensal[] @relation("CobrancaGeradaContinuidade")
   emissaoContinuidadeAnterior EmissaoContinuidadeMensal[] @relation("CobrancaAnteriorContinuidade")
@@ -4138,6 +4146,7 @@ model PropostaAditivoContratual {
   processoAssinatura ProcessoAssinaturaAditivo?
   versaoCondicoes VersaoCondicoesAditivo?
   aplicacaoCondicoes AplicacaoCondicoesAditivo?
+  propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4290,6 +4299,7 @@ model ConclusaoAssinaturaAditivo {
 
 model ConferenciaFinalAditivo {
   versaoCondicoes VersaoCondicoesAditivo?
+  propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
   id String @id @default(cuid())
   conclusaoId String @unique
   conclusao ConclusaoAssinaturaAditivo @relation(fields: [conclusaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4316,6 +4326,7 @@ model VersaoCondicoesAditivo {
   anterior VersaoCondicoesAditivo? @relation("VersaoCondicoesAditivoAnterior", fields: [anteriorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   posterior VersaoCondicoesAditivo? @relation("VersaoCondicoesAditivoAnterior")
   aplicacao AplicacaoCondicoesAditivo?
+  propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
   condicoes Json
   condicoesHash String
   vigenciaInicio DateTime
@@ -4856,6 +4867,8 @@ model CreditoMatricula {
   origemAcerto OrigemCreditoAcerto? @relation(fields: [origemAcertoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   origemPeriodoIntegralId String? @unique
   origemPeriodoIntegral AplicacaoPeriodoIntegral? @relation(fields: [origemPeriodoIntegralId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemAcertoTaxaAditivoId String? @unique
+  origemAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo? @relation(fields: [origemAcertoTaxaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   valorInicial Decimal @db.Decimal(12, 2)
   moeda String
   criadoEm DateTime @default(now())
@@ -7056,6 +7069,102 @@ model ConciliacaoFinanceiraMigracao {
   aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
   // Unicidade de aplicações com recebimento: índice parcial SQL da migração 194.
   @@index([origem, financeiroOrigemId], map: "ConciliacaoFinanceiraMigracao_origem_financeiro_idx")
+}
+
+enum StatusPropostaAcertoTaxaAditivo {
+  PENDENTE
+  APROVADA
+  REJEITADA
+  APLICADA
+  OBSOLETA
+}
+
+model PropostaAcertoTaxaAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaFinalId String
+  conferenciaFinal ConferenciaFinalAditivo @relation(fields: [conferenciaFinalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation("CobrancaPropostaAcertoTaxaAditivo", fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorAcertoTaxaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  status StatusPropostaAcertoTaxaAditivo @default(PENDENTE)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoNovo DateTime @db.Date
+  creditoAnterior Decimal @default(0) @db.Decimal(12, 2)
+  creditoNovo Decimal @default(0) @db.Decimal(12, 2)
+  evidencia Json
+  motivo String
+  fotografia Json
+  fotografiaHash String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoAcertoTaxaAditivo?
+  aplicacao AplicacaoAcertoTaxaAditivo?
+
+  @@unique([versaoCondicoesId, cobrancaId, fotografiaHash])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoAcertoTaxaAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAcertoTaxaAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorAcertoTaxaAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoAcertoTaxaAditivo?
+
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoAcertoTaxaAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAcertoTaxaAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String @unique
+  decisao DecisaoAcertoTaxaAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation("CobrancaAplicacaoAcertoTaxaAditivo", fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorAcertoTaxaAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoAnterior Int
+  valorAnterior Decimal @db.Decimal(12, 2)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoAnterior DateTime @db.Date
+  vencimentoNovo DateTime @db.Date
+  creditoAnterior Decimal @default(0) @db.Decimal(12, 2)
+  creditoNovo Decimal @default(0) @db.Decimal(12, 2)
+  fotografia Json
+  aplicadaEm DateTime @default(now())
+  origemCredito OrigemCreditoAcertoTaxaAditivo?
+
+  @@unique([cobrancaId, versaoAnterior])
+}
+
+model OrigemCreditoAcertoTaxaAditivo {
+  id String @id @default(cuid())
+  aplicacaoId String @unique
+  aplicacao AplicacaoAcertoTaxaAditivo @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String @unique
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  moeda String
+  fotografia Json
+  credito CreditoMatricula?
+  criadaEm DateTime @default(now())
 }
 
 // M01/195: entrada anterior à conciliação. Não referencia cobrança nem pagador
