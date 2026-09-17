@@ -347,6 +347,7 @@ it("reserva devolução aprovada, impede apagar e só libera por cancelamento ou
   expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "50.00", reservaDevolucao: "150.00", devolvido: "0.00" } });
   await expect(prisma.reservaDevolucaoCredito.delete({ where: { id: reserva.id } })).rejects.toThrow();
   await expect(prisma.reservaDevolucaoCredito.update({ where: { id: reserva.id }, data: { estado: "LIBERADA" } })).rejects.toThrow();
+  await expect(prisma.reservaDevolucaoCredito.update({ where: { id: reserva.id }, data: { estado: "CONFIRMADA", executorId: admin.id, chaveExecucao: "forja-sem-evidencia", referenciaExterna: "forja", executadaEm: new Date() } })).rejects.toThrow();
   expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Aluno retirou o pedido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
   expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Aluno retirou o pedido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
   expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Outro motivo inválido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: false });
@@ -372,6 +373,14 @@ it("serializa cancelamento e execução da mesma reserva", async () => {
   expect([cancelar.ok, executar.ok].filter(Boolean)).toHaveLength(1);
   const final = await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } }); expect(["LIBERADA", "INCERTO"]).toContain(final.estado);
   if (final.estado === "INCERTO") expect(await conciliarDevolucaoCredito({ reservaId: r.id, confirmouSaida: false, evidenciaConciliacao: "Extrato da corrida sem saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+});
+it("revalida executor revogado depois da aprovação e conserva a reserva", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const p = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Aluno pediu devolução revogável", evidenciaPedido: "Protocolo de devolução revogável", destino: "Conta conferida do titular", motivo: "Devolução para testar revogação", chaveIdempotencia: "devolucao-revogacao" }); if (!p.ok || !p.dado) throw new Error("Proposta ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } }); await decidirDevolucaoCredito({ propostaId: p.dado.id, aprovar: true, motivo: "Aprovação independente válida" });
+  const r = await prisma.reservaDevolucaoCredito.findFirstOrThrow(); await prisma.usuario.update({ where: { id: admin.id }, data: { ativo: false } });
+  expect(await registrarExecucaoDevolucaoCredito({ reservaId: r.id, resultado: "CONFIRMADA", referenciaExterna: "externa-revogada", evidenciaExecucao: "Comprovante não autorizado", chaveIdempotencia: "execucao-revogada" })).toMatchObject({ ok: false });
+  expect(await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } })).toMatchObject({ estado: "AGUARDANDO_EXECUCAO", executorId: null, evidenciaExecucao: null });
 });
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
