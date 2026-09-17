@@ -1,11 +1,11 @@
 import { Prisma } from "@prisma/client";
-import { ErroRegra } from "@/server/_shared";
 import { dinheiro } from "@/server/financeiro/regras";
 
 /**
  * Crédito de taxa é cumulativo por cobrança: só a diferença ainda não
- * originada pode virar novo crédito. Uma elevação posterior exige conciliar o
- * crédito já entregue antes de mudar a dívida.
+ * originada pode virar novo crédito. Uma elevação posterior fica pendente de
+ * conciliação aprovada do crédito já entregue; não cria cobrança nem retira
+ * crédito automaticamente.
  */
 export function calcularCreditoAcertoTaxa(input: {
   valorRecebido: Prisma.Decimal.Value | null;
@@ -17,14 +17,22 @@ export function calcularCreditoAcertoTaxa(input: {
   const liquidado = dinheiro(input.valorLiquidadoCredito);
   const novo = dinheiro(input.valorNovo);
   const anterior = dinheiro(input.creditosTaxaJaOriginados);
-  const creditoTotalDevido = Prisma.Decimal.max(0, recebido.minus(novo));
-  if (creditoTotalDevido.lt(anterior)) {
-    throw new ErroRegra("O aumento da taxa exige conciliar o crédito já originado antes de aplicar o aditivo.");
-  }
+  // A quitação por crédito é valor já entregue pelo aluno para esta cobrança.
+  // Reduzir a taxa depois dela precisa preservar a diferença ao aluno, tal como
+  // uma quitação em dinheiro. Não se cria uma nova utilização: só a diferença
+  // entre o total liquidado e a nova taxa vira CréditoMatricula.
+  const totalLiquidado = recebido.plus(liquidado);
+  const creditoTotalDevido = Prisma.Decimal.max(0, totalLiquidado.minus(novo));
+  const valorPendenteConciliacao = Prisma.Decimal.max(0, anterior.minus(creditoTotalDevido));
   return {
     creditoAnterior: anterior,
-    creditoNovo: creditoTotalDevido.minus(anterior),
+    creditoNovo: Prisma.Decimal.max(0, creditoTotalDevido.minus(anterior)),
     creditoTotalDevido,
-    saldoAposAcerto: Prisma.Decimal.max(0, novo.minus(recebido).minus(liquidado)),
+    saldoAposAcerto: Prisma.Decimal.max(0, novo.minus(totalLiquidado)),
+    pendencia: valorPendenteConciliacao.gt(0) ? {
+      codigo: "CONCILIAR_CREDITO_EXISTENTE" as const,
+      valor: valorPendenteConciliacao,
+      tratamento: "O Financeiro deve conciliar o crédito de taxa já disponibilizado, com decisão independente, antes de repropor o aumento. Esta prévia não debita nem devolve valores automaticamente.",
+    } : null,
   };
 }

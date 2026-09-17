@@ -37,6 +37,11 @@ export const MemoriaAcertoTaxaAditivoSchema = z.object({
     saldoAposAcerto: valor,
     creditoExcedente: valor,
     exigeCredito: z.boolean(),
+    pendencia: z.object({
+      codigo: z.literal("CONCILIAR_CREDITO_EXISTENTE"),
+      valor,
+      tratamento: z.string().min(1),
+    }).nullable(),
   }).strict(),
   cobranca: z.object({
     id,
