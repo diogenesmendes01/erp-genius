@@ -66,6 +66,13 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     if (!pagador || pagador.matriculaId !== input.titularMatriculaId) throw new ErroRegra("O pagador deve pertencer ao titular do recebimento.");
   }
   const recebimento = await tx.recebimento.create({ data: { chaveIdempotencia: input.chaveIdempotencia, cobrancaId: null, titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null, informeId: input.informeId ?? null, autorId: input.autorId, valor: valorOriginal, moeda: input.moeda, forma: input.forma, dataPagamento: input.dataPagamento, hashDados } });
+  await registrarEvento(tx, {
+    tipo: "RecebimentoRegistrado", agregadoTipo: "Recebimento", agregadoId: recebimento.id, autorId: input.autorId,
+    payload: { recebimentoId: recebimento.id, titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null,
+      valor: valorOriginal.toFixed(2), moeda: input.moeda, forma: input.forma, dataPagamento: input.dataPagamento.toISOString(),
+      comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null,
+      hashDados, destinos: destinos.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? null, valor: dinheiro(d.valor).toFixed(2), evidencia: d.evidencia.trim() })) },
+  });
   for (const destino of input.destinos) {
     const valor = dinheiro(destino.valor);
     const criado = await tx.destinacaoRecebimento.create({ data: { recebimentoId: recebimento.id, cobrancaId: destino.cobrancaId ?? null, autorId: input.autorId, tipo: destino.tipo, valor, evidencia: destino.evidencia.trim(), chaveIdempotencia: destino.chaveIdempotencia } });
