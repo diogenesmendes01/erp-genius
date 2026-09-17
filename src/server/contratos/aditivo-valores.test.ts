@@ -11,7 +11,7 @@ describe("validarValorAlteracaoAditivo", () => {
 
   it("exige o tipo do campo e uma referência de agenda", () => {
     expect(() => validarValorAlteracaoAditivo("TAXA_VALOR", { tipo: "TEXT", texto: "100" })).toThrow(/DINHEIRO/);
-    expect(validarValorAlteracaoAditivo("AGENDA_PARTICULAR", { tipo: "AGENDA", propostaAgendaId: "agenda-aprovada-1" })).toEqual({ tipo: "AGENDA", propostaAgendaId: "agenda-aprovada-1" });
+    expect(validarValorAlteracaoAditivo("AGENDA_PARTICULAR", { tipo: "AGENDA", propostaAgendaId: "agenda-aprovada-1", texto: "Agenda aprovada" })).toEqual({ tipo: "AGENDA", propostaAgendaId: "agenda-aprovada-1", texto: "Agenda aprovada" });
     expect(() => validarValorAlteracaoAditivo("AGENDA_PARTICULAR", { tipo: "AGENDA", propostaAgendaId: "a", encontros: [] })).toThrow();
   });
 
@@ -26,6 +26,6 @@ describe("validarValorAlteracaoAditivo", () => {
     expect(representarValorAlteracaoAditivo({ tipo: "DINHEIRO", valor: "1234567890", moeda: "CRC" })).toBe("1234567890.00 CRC");
     expect(representarValorAlteracaoAditivo({ tipo: "DINHEIRO", valor: "0.01", moeda: "USD" })).toBe("0.01 USD");
     expect(representarValorAlteracaoAditivo({ tipo: "REGIME", regime: "HORA_PARTICULAR" })).toBe("Particular por hora");
-    expect(() => representarValorAlteracaoAditivo({ tipo: "AGENDA", propostaAgendaId: "a1" })).toThrow(/integração própria/);
+    expect(representarValorAlteracaoAditivo({ tipo: "AGENDA", propostaAgendaId: "a1", texto: "Agenda aprovada" })).toBe("Agenda aprovada");
   });
 });

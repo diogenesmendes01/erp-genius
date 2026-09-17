@@ -12,7 +12,7 @@ const acompanharFuso = () => () => {};
 const fusoNavegador = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "fuso local do navegador";
 const fusoServidor = () => null;
 
-export function PrepararAditivo({ matriculaId, fonte, modelos }: { matriculaId: string; fonte: Fonte; modelos: Modelo[] }) {
+export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState(""), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
   const id = useId();
   const [modeloId, setModeloId] = useState(""), [valoresEstruturados, setValoresEstruturados] = useState<Partial<Record<OrigemCampo, unknown>>>({}); const modelo = modelos.find(m => m.id === modeloId);
@@ -23,7 +23,9 @@ export function PrepararAditivo({ matriculaId, fonte, modelos }: { matriculaId: 
     for (const c of fonte.campos) {
       if (dados.get(`alterar:${c.origem}`) !== "on") continue;
       const valorEstruturado = valoresEstruturados[c.origem];
-      if (c.origem !== "AGENDA_PARTICULAR" && valorEstruturado !== undefined) {
+      if (c.origem === "AGENDA_PARTICULAR" && agenda) {
+        alteracoes.push({ origem: c.origem, novo: agenda.texto, valorEstruturado: { tipo: "AGENDA", propostaAgendaId: agenda.id, texto: agenda.texto } });
+      } else if (c.origem !== "AGENDA_PARTICULAR" && valorEstruturado !== undefined) {
         try {
           const validado = validarValorAlteracaoAditivo(c.origem, valorEstruturado);
           alteracoes.push({ origem: c.origem, novo: representarValorAlteracaoAditivo(validado), valorEstruturado: validado });
@@ -44,7 +46,7 @@ export function PrepararAditivo({ matriculaId, fonte, modelos }: { matriculaId: 
   }}>
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
     <div className="block"><label htmlFor={`${id}-modelo`}>Modelo institucional aprovado</label><select id={`${id}-modelo`} className="mt-1 block w-full rounded border p-2" value={modeloId} onChange={e => setModeloId(e.target.value)} required disabled={pendente}><option value="">Selecione um modelo</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.codigo} · versão {m.versao} · {m.titulo}</option>)}</select></div>
-    <fieldset className="space-y-3"><legend className="font-medium">Condições do original que serão alteradas</legend>{fonte.campos.map(c => <div key={c.origem} className="rounded border p-3"><div><input id={`${id}-${c.origem}`} type="checkbox" name={`alterar:${c.origem}`} disabled={pendente} /> <label htmlFor={`${id}-${c.origem}`}>Alterar {c.rotulo}</label></div><p>Valor preservado: {c.anterior}</p>{c.origem === "AGENDA_PARTICULAR" ? <div className="block"><label htmlFor={`${id}-novo-${c.origem}`}>Nova descrição da agenda</label><input id={`${id}-novo-${c.origem}`} className="mt-1 block w-full rounded border p-2" name={`novo:${c.origem}`} maxLength={4000} disabled={pendente} /></div> : <div className="mt-2"><ValorEstruturadoCampo campo={c.origem} rotulo={`Novo valor para ${c.rotulo}`} disabled={pendente} onChange={valor => setValoresEstruturados(anteriores => ({ ...anteriores, [c.origem]: valor }))} /></div>}</div>)}</fieldset>
+    <fieldset className="space-y-3"><legend className="font-medium">Condições do original que serão alteradas</legend>{fonte.campos.map(c => <div key={c.origem} className="rounded border p-3"><div><input id={`${id}-${c.origem}`} type="checkbox" name={`alterar:${c.origem}`} defaultChecked={c.origem === "AGENDA_PARTICULAR" && !!agenda} disabled={pendente} /> <label htmlFor={`${id}-${c.origem}`}>Alterar {c.rotulo}</label></div><p>Valor preservado: {c.anterior}</p>{c.origem === "AGENDA_PARTICULAR" ? agenda ? <div className="mt-2"><p className="font-medium">Fotografia selecionada</p><p className="whitespace-pre-wrap">{agenda.texto}</p>{agenda.pendencias.length > 0 && <p role="alert">Esta fotografia tem pendências e não pode ser vinculada.</p>}</div> : <div className="block"><label htmlFor={`${id}-novo-${c.origem}`}>Nova descrição da agenda</label><input id={`${id}-novo-${c.origem}`} className="mt-1 block w-full rounded border p-2" name={`novo:${c.origem}`} maxLength={4000} disabled={pendente} /></div> : <div className="mt-2"><ValorEstruturadoCampo campo={c.origem} rotulo={`Novo valor para ${c.rotulo}`} disabled={pendente} onChange={valor => setValoresEstruturados(anteriores => ({ ...anteriores, [c.origem]: valor }))} /></div>}</div>)}</fieldset>
     <label className="block">Início da vigência<input className="mt-1 block rounded border p-2" type="datetime-local" name="vigencia" required disabled={pendente} /></label>
     <p role="status">{fuso ? `Informe a vigência no fuso ${fuso}. O instante correspondente será preservado no registro.` : "Identificando o fuso do navegador…"}</p>
     <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>

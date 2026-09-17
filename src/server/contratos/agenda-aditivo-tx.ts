@@ -1,9 +1,14 @@
 import { Prisma } from "@prisma/client";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { conferirDiasNaoLetivos } from "@/server/agenda/calendario-intervalo";
-import { PrepararAgendaAditivoSchema, PropostaAgendaAditivoSchema } from "./agenda-aditivo-schema";
+import { hashPropostaAgendaAditivo, PrepararAgendaAditivoSchema, PropostaAgendaAditivoSchema, textoAgendaAditivo } from "./agenda-aditivo-schema";
+import { hashSubstituicao } from "./substituicao-estado";
+
+const RegistrarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
+const AplicarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), propostaAditivoId: z.string().trim().min(1), aplicacaoCondicoesId: z.string().trim().min(1), aplicacaoAgendaId: z.string().trim().min(1), eventoId: z.string().trim().min(1), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 import { carregarCadeiaAditivoTx } from "./aditivo-cadeia";
 
@@ -100,8 +105,79 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
       inicioAnterior: anterior.inicio.toISOString(), fimAnterior: anterior.fim.toISOString(), inicioNovo: inicioNovo.toISOString(), fimNovo: fimNovo.toISOString(),
       duracaoMinutos: solicitado.duracaoMinutos, fusoAnterior: anterior.fusoOrigem, fusoNovo: solicitado.fusoOrigem });
   }
-  const proposta = PropostaAgendaAditivoSchema.parse({ matriculaId: matricula.id, preparadorId, fonteContratualId: fonte.id, fonteContratualHash: fonte.entradaHash,
-    contexto: { calendarioId: calendario.id, calendarioVersao: calendario.versao, fusoInstitucional: calendario.fusoInstitucional, aditivos: aditivos.map(a => ({ versaoId: a.id, propostaId: a.propostaId, condicoesHash: a.condicoesHash, aplicada: !!a.aplicacao })) }, encontros: fotografia });
+  const semTexto = { matriculaId: matricula.id, preparadorId, fonteContratualId: fonte.id, fonteContratualHash: fonte.entradaHash,
+    contexto: { calendarioId: calendario.id, calendarioVersao: calendario.versao, fusoInstitucional: calendario.fusoInstitucional, aditivos: aditivos.map(a => ({ versaoId: a.id, propostaId: a.propostaId, condicoesHash: a.condicoesHash, aplicada: !!a.aplicacao })) }, encontros: fotografia };
+  const proposta = PropostaAgendaAditivoSchema.parse({ ...semTexto, texto: textoAgendaAditivo({ ...semTexto, texto: "Agenda" }) });
   return { somenteConsulta: true as const, matricula: { id: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim() },
     fonte: { conclusaoId: fonte.id, conclusaoHash: fonte.entradaHash, concluidaEm: fonte.concluidaEm.toISOString() }, calendario: { id: calendario.id, versao: calendario.versao, fuso: calendario.fusoInstitucional }, proposta, pendencias };
+}
+
+/** Persiste somente a fotografia conferida. A proposta contratual posterior é
+ * quem a referencia e continua pertencendo ao preparador contratual. */
+export async function registrarPropostaAgendaAditivoTx(tx: Prisma.TransactionClient, preparadorId: string, input: unknown) {
+  const d = RegistrarAgendaAditivoSchema.parse(input);
+  const conferenciaEntrada = PrepararAgendaAditivoSchema.parse({ matriculaId: d.matriculaId, encontros: d.encontros });
+  const conferencia = await carregarConferenciaAgendaAditivoTx(tx, preparadorId, conferenciaEntrada);
+  if (conferencia.pendencias.length) throw new ErroRegra("Resolva as pendências da conferência antes de registrar a proposta de agenda.");
+  const fotografia = conferencia.proposta, fotografiaHash = hashPropostaAgendaAditivo(fotografia);
+  const entradaHash = hashSubstituicao({ preparadorId, entrada: conferenciaEntrada, fotografiaHash });
+  const existentes = await tx.$queryRaw<{ id: string; "fotografiaHash": string; "entradaHash": string }[]>(Prisma.sql`
+    SELECT id,"fotografiaHash","entradaHash" FROM "PropostaAgendaAditivoParticular"
+    WHERE "preparadorId"=${preparadorId} AND "chaveIdempotencia"=${d.chaveIdempotencia} FOR UPDATE`);
+  if (existentes[0]) {
+    const existente = existentes[0];
+    if (existente.fotografiaHash !== fotografiaHash || existente.entradaHash !== entradaHash) throw new ErroRegra("A chave idempotente já corresponde a outra proposta de agenda.");
+    return { id: existente.id, fotografiaHash, proposta: fotografia };
+  }
+  const id = randomUUID();
+  await tx.$executeRaw(Prisma.sql`
+    INSERT INTO "PropostaAgendaAditivoParticular"
+      (id,"matriculaId","conclusaoFonteId","preparadorId",fotografia,"fotografiaHash",pendencias,"chaveIdempotencia","entradaHash")
+    VALUES (${id},${fotografia.matriculaId},${fotografia.fonteContratualId},${preparadorId},${JSON.stringify(fotografia)}::jsonb,${fotografiaHash},'[]'::jsonb,${d.chaveIdempotencia},${entradaHash})`);
+  return { id, fotografiaHash, proposta: fotografia };
+}
+
+/** Aplica a fotografia dentro da mesma transação que já registrou a aplicação
+ * formalizada. Cada UPDATE condiciona o estado antes fotografado; se alguém
+ * mudou um encontro, nada é aplicado e a transação inteira é desfeita. */
+export async function aplicarAgendaAditivoTx(tx: Prisma.TransactionClient, aplicadorId: string, input: unknown) {
+  const d = AplicarAgendaAditivoSchema.parse(input);
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+  const linhas = await tx.$queryRaw<{ id: string; fotografia: Prisma.JsonValue; "fotografiaHash": string; "preparadorId": string; "aplicacaoId": string | null; "aplicadorId": string | null; "chaveAplicacao": string | null; "versaoCondicoesId": string; "versaoAgendaId": string | null }[]>(Prisma.sql`
+    SELECT agenda.id,agenda.fotografia,agenda."fotografiaHash",agenda."preparadorId",
+      aplicada.id AS "aplicacaoId",aplicada."aplicadorId",aplicada."chaveIdempotencia" AS "chaveAplicacao",
+      condicao."versaoCondicoesId",versao."propostaAgendaId" AS "versaoAgendaId"
+    FROM "PropostaAgendaAditivoParticular" agenda
+    JOIN "PropostaAditivoContratual" proposta ON proposta."propostaAgendaId"=agenda.id
+    JOIN "AplicacaoCondicoesAditivo" condicao ON condicao.id=${d.aplicacaoCondicoesId} AND condicao."propostaId"=proposta.id AND condicao."matriculaId"=agenda."matriculaId"
+    JOIN "VersaoCondicoesAditivo" versao ON versao.id=condicao."versaoCondicoesId"
+    LEFT JOIN "AplicacaoAgendaAditivoParticular" aplicada ON aplicada."propostaId"=agenda.id
+    WHERE agenda."matriculaId"=${d.matriculaId} AND proposta.id=${d.propostaAditivoId} FOR UPDATE OF agenda,proposta`);
+  const linha = linhas[0];
+  if (!linha) throw new ErroRegra("A proposta de agenda não corresponde ao aditivo informado.");
+  if (linha.aplicacaoId) {
+    if (linha.aplicadorId !== aplicadorId || linha.chaveAplicacao !== d.chaveIdempotencia) throw new ErroRegra("A agenda já recebeu outra aplicação.");
+    return { id: linha.aplicacaoId, fotografiaHash: linha.fotografiaHash };
+  }
+  const fotografia = PropostaAgendaAditivoSchema.parse(linha.fotografia);
+  if (hashPropostaAgendaAditivo(fotografia) !== linha.fotografiaHash) throw new ErroRegra("A fotografia de agenda diverge de sua integridade.");
+  if (linha.versaoAgendaId !== linha.id) throw new ErroRegra("A versão formalizada não referencia a fotografia de agenda.");
+  const conferencia = await carregarConferenciaAgendaAditivoTx(tx, fotografia.preparadorId, {
+    matriculaId: fotografia.matriculaId,
+    encontros: fotografia.encontros.map(e => ({ encontroId: e.encontroId, professorNovoId: e.professorNovoId, inicioNovo: e.inicioNovo, fimNovo: e.fimNovo, duracaoMinutos: e.duracaoMinutos, fusoOrigem: e.fusoNovo })),
+  });
+  const propostaRevalidada = { ...conferencia.proposta, contexto: { ...conferencia.proposta.contexto, aditivos: conferencia.proposta.contexto.aditivos.filter(a => a.versaoId !== linha.versaoCondicoesId) } };
+  if (conferencia.pendencias.length || hashPropostaAgendaAditivo(propostaRevalidada) !== linha.fotografiaHash) throw new ErroRegra("A agenda mudou desde a fotografia formalizada; faça nova conferência.");
+  for (const encontro of fotografia.encontros) {
+    const alterados = await tx.encontroAgenda.updateMany({
+      where: { id: encontro.encontroId, matriculaId: d.matriculaId, status: "PREVISTO", professorId: encontro.professorAnteriorId,
+        inicio: new Date(encontro.inicioAnterior), fim: new Date(encontro.fimAnterior), fusoOrigem: encontro.fusoAnterior },
+      data: { professorId: encontro.professorNovoId, inicio: new Date(encontro.inicioNovo), fim: new Date(encontro.fimNovo), fusoOrigem: encontro.fusoNovo },
+    });
+    if (alterados.count !== 1) throw new ErroRegra("Um encontro mudou desde a fotografia; a agenda não foi aplicada.");
+  }
+  await tx.$executeRaw(Prisma.sql`
+    INSERT INTO "AplicacaoAgendaAditivoParticular" (id,"propostaId","aplicacaoCondicoesId","matriculaId","aplicadorId","eventoId","fotografiaHash","chaveIdempotencia")
+    VALUES (${d.aplicacaoAgendaId},${linha.id},${d.aplicacaoCondicoesId},${d.matriculaId},${aplicadorId},${d.eventoId},${linha.fotografiaHash},${d.chaveIdempotencia})`);
+  return { id: d.aplicacaoAgendaId, fotografiaHash: linha.fotografiaHash };
 }

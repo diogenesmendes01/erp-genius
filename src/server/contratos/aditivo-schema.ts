@@ -26,7 +26,6 @@ export const PrepararAditivoContratualSchema = z.object({
     if (alteracao.valorEstruturado === undefined) continue;
     try {
       validarValorAlteracaoAditivo(alteracao.origem, alteracao.valorEstruturado);
-      if (alteracao.valorEstruturado.tipo === "AGENDA") throw new Error("A proposta de agenda estruturada ainda exige integração própria antes de constar no aditivo.");
       if (alteracao.novo !== representarValorAlteracaoAditivo(alteracao.valorEstruturado)) throw new Error("O novo valor precisa corresponder à representação canônica do valor estruturado.");
     } catch (erro) { ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["alteracoes", indice, "valorEstruturado"], message: erro instanceof Error ? erro.message : "Valor estruturado inválido." }); }
   }

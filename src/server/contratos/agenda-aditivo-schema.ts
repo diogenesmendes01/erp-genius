@@ -17,6 +17,7 @@ export const EncontroAgendaAditivoSchema = z.object({
 /** Fotografia interna: o servidor preenche preparadores, fonte, estado anterior e nomes docentes reconsultados. */
 export const PropostaAgendaAditivoSchema = z.object({
   matriculaId: z.string().trim().min(1), preparadorId: z.string().trim().min(1), fonteContratualId: z.string().trim().min(1), fonteContratualHash: z.string().regex(/^[a-f0-9]{64}$/), reservaContratualId: z.string().trim().min(1).optional(),
+  texto: z.string().trim().min(1).max(4000).default("Agenda"),
   contexto: z.object({ calendarioId: z.string().min(1), calendarioVersao: z.number().int().positive(), fusoInstitucional: FusoInstitucionalSchema,
     aditivos: z.array(z.object({ versaoId: z.string().min(1), propostaId: z.string().min(1), condicoesHash: z.string().regex(/^[a-f0-9]{64}$/), aplicada: z.boolean() })).max(1000),
   }).strict(),
@@ -27,10 +28,10 @@ export const PropostaAgendaAditivoSchema = z.object({
 });
 
 export type PropostaAgendaAditivo = z.infer<typeof PropostaAgendaAditivoSchema>;
-export function fotografiaCanonicaAgendaAditivo(proposta: PropostaAgendaAditivo) { const p = PropostaAgendaAditivoSchema.parse(proposta); return { ...p, encontros: p.encontros.map(e => ({ ...e, inicioAnterior: new Date(e.inicioAnterior).toISOString(), fimAnterior: new Date(e.fimAnterior).toISOString(), inicioNovo: new Date(e.inicioNovo).toISOString(), fimNovo: new Date(e.fimNovo).toISOString() })).sort((a, b) => a.encontroId < b.encontroId ? -1 : a.encontroId > b.encontroId ? 1 : 0) }; }
-export function hashPropostaAgendaAditivo(proposta: PropostaAgendaAditivo) { return hashSubstituicao(fotografiaCanonicaAgendaAditivo(proposta)); }
-export function textoAgendaAditivo(proposta: PropostaAgendaAditivo) {
+export function fotografiaCanonicaAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) { const p = PropostaAgendaAditivoSchema.parse(proposta); return { ...p, encontros: p.encontros.map(e => ({ ...e, inicioAnterior: new Date(e.inicioAnterior).toISOString(), fimAnterior: new Date(e.fimAnterior).toISOString(), inicioNovo: new Date(e.inicioNovo).toISOString(), fimNovo: new Date(e.fimNovo).toISOString() })).sort((a, b) => a.encontroId < b.encontroId ? -1 : a.encontroId > b.encontroId ? 1 : 0) }; }
+export function hashPropostaAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) { return hashSubstituicao(fotografiaCanonicaAgendaAditivo(proposta)); }
+export function textoAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) {
   const d = fotografiaCanonicaAgendaAditivo(proposta);
   const f = (v: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(v));
-  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} → ${e.fusoNovo})`).join("; ");
+  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} -> ${e.fusoNovo})`).join("; ");
 }

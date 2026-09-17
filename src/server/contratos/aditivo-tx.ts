@@ -24,6 +24,8 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
     return { id: anterior.id, versao: anterior.versao, propostaHash: anterior.entradaHash };
   }
   const contexto = await carregarBaseAditivoTx(tx, d);
+  const agenda = d.alteracoes.find(a => a.origem === "AGENDA_PARTICULAR")?.valorEstruturado;
+  const propostaAgendaId = agenda?.tipo === "AGENDA" ? agenda.propostaAgendaId : undefined;
   const ultima = await tx.propostaAditivoContratual.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { versao: true } });
   const versao = (ultima?.versao ?? 0) + 1;
   const snapshot = json({ ...contexto, versao, preparadaPorId: autorId, motivo: d.motivo, entrada: d });
@@ -31,7 +33,7 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
   const proposta = await tx.propostaAditivoContratual.create({ data: {
     matriculaId: d.matriculaId, conclusaoOriginalId: d.conclusaoOriginalId, modeloId: d.modeloId,
     versao, preparadaPorId: autorId, vigenciaInicio: new Date(contexto.vigenciaInicio), motivo: d.motivo,
-    baseHash: contexto.baseHash, alteracoesHash: contexto.alteracoesHash, snapshot, entradaHash, chaveIdempotencia: d.chaveIdempotencia,
+    baseHash: contexto.baseHash, alteracoesHash: contexto.alteracoesHash, snapshot, entradaHash, chaveIdempotencia: d.chaveIdempotencia, propostaAgendaId,
   } });
   await registrarEvento(tx, { tipo: "AditivoContratualProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId,
     payload: { propostaId: proposta.id, versao, propostaHash: entradaHash, motivo: d.motivo } });

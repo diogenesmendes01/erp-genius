@@ -3,7 +3,10 @@ const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
-import { carregarImpactosCorrecaoReposicaoTx } from "./impactos-reposicao-tx";
+import { carregarImpactosCorrecaoReposicaoTx, carregarImpactosFrequenciaAulaTx } from "./impactos-reposicao-tx";
+import { prepararLoteMigracao } from "@/server/migracao/acoes";
+import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
+import { aplicarVinculoMigracao } from "@/server/migracao/aplicar-vinculo";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { prepararRegraAvaliacaoTx, decidirRegraAvaliacaoTx } from "./regras-tx";
 import { proporCorrecaoConclusaoReposicao, decidirCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
@@ -164,7 +167,8 @@ it("usa início inclusivo e fim exclusivo ao localizar o vínculo da aula origin
 
 it("recusa vínculo inativo sem data de encerramento", async () => {
   await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: null } });
-  await expect(carregar()).rejects.toThrow("intervalo conferível");
+  // O seletor temporal já exclui o vínculo sem intervalo histórico conferível.
+  await expect(carregar()).rejects.toThrow("único vínculo histórico");
 });
 
 it("inclui a dependência aprovada ainda não executada", async () => {
@@ -172,4 +176,54 @@ it("inclui a dependência aprovada ainda não executada", async () => {
   const destino = await prisma.turma.create({ data: { modalidadeId: origem.modalidadeId, nivelId: origem.nivelId, professorId, dataInicio: new Date("2099-01-01T00:00:00Z") } });
   const pedido = await criarPedido(alocacaoId, destino.id);
   expect((await carregar()).impactos).toEqual([expect.objectContaining({ id: pedido.id, status: "APROVADA", turmaDestinoId: destino.id })]);
+});
+
+it("M01: vigência histórica seleciona fonte real, respeita fronteiras e recusa ambiguidade", async () => {
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
+  const produto = await prisma.produto.findFirstOrThrow();
+  const paisId = (await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).paisId;
+  const turmaA = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: (await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } })).nivelId, professorId, dataInicio: new Date("2026-01-01T00:00:00Z") } });
+  const turmaB = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: (await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } })).nivelId, professorId, dataInicio: new Date("2026-01-01T00:00:00Z") } });
+  const origem = "M01_TEMPORAL";
+  const lote = await prepararLoteMigracao({ origem, chaveLote: "m01-temporal-fontes", linhas: [
+    { linhaOrigem: "v!a", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "aluno-temporal", nome: "Ana temporal", email: "ana-temporal@example.test", documento: "TEMP-1", pais: "CR", fuso: "America/Costa_Rica" }, turma: { id: "turma-a", codigo: "A" }, matricula: { id: "mat-temporal", produtoOrigem: "produto-temporal", situacao: "ATIVA", inicio: "2025-01-01", moeda: "CRC", pais: "CR" }, alocacao: { inicio: "2025-01-01", fim: "2025-02-01" }, consentimentoOrigem: "fonte histórica A" },
+    { linhaOrigem: "v!b", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "aluno-temporal", nome: "Ana temporal", email: "ana-temporal@example.test", documento: "TEMP-1", pais: "CR", fuso: "America/Costa_Rica" }, turma: { id: "turma-b", codigo: "B" }, matricula: { id: "mat-temporal", produtoOrigem: "produto-temporal", situacao: "ATIVA", inicio: "2025-01-01", moeda: "CRC", pais: "CR" }, alocacao: { inicio: "2025-02-01" }, consentimentoOrigem: "fonte histórica B" },
+    { linhaOrigem: "v!c", tipoEntrada: "VINCULO_MATRICULA", aluno: { id: "aluno-temporal", nome: "Ana temporal", email: "ana-temporal@example.test", documento: "TEMP-1", pais: "CR", fuso: "America/Costa_Rica" }, turma: { id: "turma-a", codigo: "A" }, matricula: { id: "mat-temporal", produtoOrigem: "produto-temporal", situacao: "ATIVA", inicio: "2025-01-01", moeda: "CRC", pais: "CR" }, alocacao: { inicio: "2025-01-15", fim: "2025-02-15" }, consentimentoOrigem: "sobreposição histórica" },
+  ] });
+  if (!lote.ok || !lote.dado) throw new Error("Lote M01 ausente");
+  const linhas = await prisma.linhaPreparacaoMigracao.findMany({ where: { loteId: lote.dado.loteId }, orderBy: { linhaOrigem: "asc" } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", paisId } });
+  await prisma.mapaOrigemAlunoMigracao.create({ data: { origem, alunoOrigemId: "aluno-temporal", alunoId: aluno.id } });
+  await revisarCorrespondenciaProdutoMigracao({ origem, produtoOrigemId: "produto-temporal", produtoId: produto.id, paisId, moeda: "CRC", ativa: true });
+  await revisarCorrespondenciaStatusMatriculaMigracao({ origem, statusOrigem: "ATIVA", statusDestino: "ATIVA", ativa: true });
+  await revisarCorrespondenciaTurmaMigracao({ origem, turmaOrigemId: "turma-a", turmaId: turmaA.id, ativa: true });
+  await revisarCorrespondenciaTurmaMigracao({ origem, turmaOrigemId: "turma-b", turmaId: turmaB.id, ativa: true });
+  const ensaios = [];
+  for (const linha of linhas) ensaios.push(await ensaiarVinculoMigracao({ linhaId: linha.id }));
+  expect(ensaios.map(e => e.ok)).toEqual([true, true, true]);
+  const revisoes = await Promise.all(linhas.map(l => prisma.ensaioVinculoMigracao.findFirstOrThrow({ where: { linhaId: l.id }, orderBy: { criadoEm: "desc" } })));
+  const aplicar = async (indice: number, inicio: string, fim: string | null) => {
+    const r = await aplicarVinculoMigracao({ linhaId: linhas[indice]!.id, ensaioId: revisoes[indice]!.id, entradaHash: linhas[indice]!.entradaHash, contextoHash: revisoes[indice]!.contextoHash, fusoReferencia: "America/Costa_Rica", semanticaFim: "LIMITE_EXCLUSIVO", inicioAlocacao: inicio, fimAlocacao: fim, diaVencimento: 10, mesesPlano: 1, evidenciaContrato: { fonte: "contrato" }, evidenciaPagamento: { fonte: "pagamento" }, fatos: [{ tipo: "ATIVACAO", data: "2025-01-01", evidencia: { fonte: "situação" } }], ...(fim ? { complementoVigencia: { motivo: "Limite histórico conferido na fonte migrada.", evidencia: { fonte: "limite histórico" } } } : {}) });
+    if (!r.ok || !r.dado) throw new Error(r.ok ? "Aplicação M01 ausente" : r.erro); return r.dado;
+  };
+  // B é importada antes da A: a criação técnica não define a fonte histórica.
+  const b = await aplicar(1, "2025-02-01", null); const a = await aplicar(0, "2025-01-01", "2025-02-01");
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: a.matriculaId } });
+  const fonte = (inicio: string, turma = turmaA.id) => ({ matriculaId: m.id, alunoId: aluno.id, turmaId: turma, nivelId: turmaA.nivelId, inicio: new Date(inicio) });
+  // Q23: data dentro de A finita, embora criada tecnicamente depois de B.
+  await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2025-01-10T12:00:00Z")))).resolves.toMatchObject({ alocacaoFonteId: a.alocacaoId });
+  await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2025-02-01T06:00:00Z")))).rejects.toThrow("único vínculo histórico");
+  await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2024-12-31T23:59:59Z")))).rejects.toThrow("único vínculo histórico");
+  // Q54 usa o mesmo fato real de aula e deve selecionar B no período posterior, não a última importação técnica.
+  const encontro = await prisma.encontroAgenda.create({ data: { turmaId: turmaB.id, professorId, preparadorId: secretariaId, inicio: new Date("2025-02-10T12:00:00Z"), fim: new Date("2025-02-10T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", finalidade: "AULA", motivo: "Aula M01 posterior", chaveIdempotencia: "m01-q54", entradaHash: "fixture", diario: { create: { turmaId: turmaB.id, professorId, ocorridaEm: new Date("2025-02-10T12:00:00Z"), conteudo: "Histórico", registros: { create: { alunoId: aluno.id, matriculaId: m.id, nomeAluno: "Ana", presente: false, participacao: "FALTA" } } } } } });
+  await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { status: "MINISTRADO" } });
+  const repo = await prisma.reposicaoIndividual.create({ data: { aulaOriginalId: encontro.id, matriculaId: m.id, modalidade: "GRAVACAO", solicitanteId: secretariaId, motivo: "Q54 temporal", evidencia: "Evidência histórica", chaveIdempotencia: "m01-q54-repo", entradaHash: "fixture" } });
+  await expect(prisma.$transaction(tx => carregarImpactosCorrecaoReposicaoTx(tx, { reposicaoId: repo.id }))).resolves.toMatchObject({ alocacaoFonteId: b.alocacaoId });
+  const c = await aplicar(2, "2025-01-15", "2025-02-15");
+  expect(c.alocacaoId).toBeTruthy();
+  await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, fonte("2025-01-20T12:00:00Z")))).rejects.toThrow("único vínculo histórico");
+  const legado = await prisma.alocacaoTurma.create({ data: { alunoId: m.alunoId, matriculaId: m.id, turmaId, ativa: false, criadoEm: new Date("2025-01-11T00:00:00Z"), encerradaEm: new Date("2025-01-10T00:00:00Z") } });
+  const nivelLegadoId = (await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } })).nivelId;
+  await expect(prisma.$transaction(tx => carregarImpactosFrequenciaAulaTx(tx, { matriculaId: m.id, alunoId: m.alunoId, turmaId, nivelId: nivelLegadoId, inicio: new Date("2025-01-10T12:00:00Z") }))).rejects.toThrow("único vínculo histórico");
+  expect(legado.id).toBeTruthy();
 });

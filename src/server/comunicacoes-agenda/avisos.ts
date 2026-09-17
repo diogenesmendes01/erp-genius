@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "crypto";
 import { MotivoPendenciaAvisoAgenda, Prisma, SituacaoAvisoAlteracaoAgenda } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enviarEmailResend } from "@/server/email/resend";
 import { enfileirarAvisosAgendaWhatsApp } from "./whatsapp";
@@ -9,23 +10,42 @@ import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { validarFonteQuantidadeAulasTx } from "@/server/agenda/quantidade-fonte";
 import { envioQuantidadeAulasHabilitado } from "./quantidade-gate";
+import { PropostaAgendaAditivoSchema, hashPropostaAgendaAditivo } from "@/server/contratos/agenda-aditivo-schema";
+import { formatarIntervaloAvisoAgenda } from "./formato-horario";
 
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
 type Canal = "EMAIL" | "WHATSAPP";
 type AlocacaoAviso = { turmaId: string; criadoEm: Date; encerradaEm: Date | null; ativa: boolean; provenienciaVinculo: "MIGRACAO" | null; inicioVigencia: Date | null; fimVigencia: Date | null };
 export const alocacaoDaMatriculaCobreEncontro = (alocacao: AlocacaoAviso, turmaId: string | null, inicio: Date) => turmaId !== null && alocacao.turmaId === turmaId && alocacaoCobreAula(alocacao, inicio);
 
+const FonteAditivoAgendaSchema = z.object({ propostaId: z.string().min(1), aplicacaoId: z.string().min(1), propostaAgendaId: z.string().min(1), aplicacaoAgendaId: z.string().min(1), versao: z.number().int().positive(), condicoesHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+export async function validarFonteAditivoAgendaTx(tx: Prisma.TransactionClient | typeof prisma, entrada: { eventoId: string; matriculaId: string; encontrosIds: string[] }) {
+  const evento = await tx.evento.findFirst({ where: { id: entrada.eventoId, tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: entrada.matriculaId }, select: { autorId: true, payload: true } });
+  if (!evento?.autorId) return null;
+  const payload = FonteAditivoAgendaSchema.safeParse(evento.payload); if (!payload.success) return null;
+  const aplicacao = await tx.aplicacaoAgendaAditivoParticular.findFirst({ where: { id: payload.data.aplicacaoAgendaId, eventoId: entrada.eventoId, matriculaId: entrada.matriculaId, aplicadorId: evento.autorId, aplicacaoCondicoesId: payload.data.aplicacaoId, propostaId: payload.data.propostaAgendaId }, include: { proposta: { select: { fotografia: true, fotografiaHash: true } }, aplicacaoCondicoes: { select: { propostaId: true, matriculaId: true, condicoesHash: true, versaoCondicoes: { select: { versao: true, condicoesHash: true } } } } } });
+  if (!aplicacao || aplicacao.aplicacaoCondicoes.matriculaId !== entrada.matriculaId || aplicacao.aplicacaoCondicoes.propostaId !== payload.data.propostaId || aplicacao.aplicacaoCondicoes.condicoesHash !== payload.data.condicoesHash || aplicacao.aplicacaoCondicoes.versaoCondicoes.condicoesHash !== payload.data.condicoesHash || aplicacao.aplicacaoCondicoes.versaoCondicoes.versao !== payload.data.versao) return null;
+  const fotografia = PropostaAgendaAditivoSchema.safeParse(aplicacao.proposta.fotografia);
+  if (!fotografia.success || hashPropostaAgendaAditivo(fotografia.data) !== aplicacao.proposta.fotografiaHash || aplicacao.fotografiaHash !== aplicacao.proposta.fotografiaHash) return null;
+  const ids = [...new Set(entrada.encontrosIds)].sort(), fotografados = fotografia.data.encontros.slice().sort((a, b) => a.encontroId.localeCompare(b.encontroId));
+  if (ids.length !== entrada.encontrosIds.length || ids.length !== fotografados.length || ids.some((id, i) => id !== fotografados[i]?.encontroId)) return null;
+  const atuais = await tx.encontroAgenda.findMany({ where: { id: { in: ids }, matriculaId: entrada.matriculaId }, select: { id: true, professorId: true, inicio: true, fim: true, fusoOrigem: true } });
+  if (atuais.length !== fotografados.length) return null;
+  return atuais.every(atual => { const esperado = fotografados.find(f => f.encontroId === atual.id); return !!esperado && atual.professorId === esperado.professorNovoId && atual.inicio.getTime() === new Date(esperado.inicioNovo).getTime() && atual.fim.getTime() === new Date(esperado.fimNovo).getTime() && atual.fusoOrigem === esperado.fusoNovo; }) ? { id: aplicacao.id } : null;
+}
+
 /** Cria avisos para a matrícula afetada, na transação da alteração aplicada. */
 export async function criarAvisosAlteracaoAgendaTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; encontrosIds: string[] }) {
   const evento = await tx.evento.findUnique({ where: { id: entrada.eventoId }, select: { agregadoTipo: true, agregadoId: true, tipo: true, payload: true } });
   const remarcacao = evento?.agregadoTipo === "Matricula" && evento.agregadoId === entrada.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(evento.tipo);
   const substituicao = evento?.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "SubstituicaoDocenteDecidida" && (evento.payload as { aprovada?: unknown }).aprovada === true;
+  const aditivoAgenda = evento?.agregadoTipo === "Matricula" && evento.agregadoId === entrada.matriculaId && evento.tipo === "CondicoesAditivoAplicadas" ? await validarFonteAditivoAgendaTx(tx, entrada) : null;
   const quantidade = evento?.agregadoTipo === "Modalidade" && evento.tipo === "QuantidadeAulasModalidadeAplicada";
   const fonteQuantidade = quantidade ? await validarFonteQuantidadeAulasTx(tx, { eventoId: entrada.eventoId, encontrosIds: entrada.encontrosIds }) : null;
   const replanejamento = evento?.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "ReplanejamentoConjuntoAplicado"
     ? await validarFonteReplanejamentoConjuntoTx(tx, entrada)
     : null;
-  if (!remarcacao && !substituicao && !replanejamento && !fonteQuantidade) throw new Error("Evento aplicado incompatível com o aviso.");
+  if (!remarcacao && !substituicao && !aditivoAgenda && !replanejamento && !fonteQuantidade) throw new Error("Evento aplicado incompatível com o aviso.");
   const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { id: true, alunoId: true, autorizacoesComunicacaoAcademica: { where: { vigenteEm: { lte: new Date() }, revogadaEm: null }, select: { id: true, responsavelId: true, responsavel: { select: { telefoneE164: true, alunos: { where: { papel: "PEDAGOGICO" }, select: { alunoId: true } } } } } }, aluno: { select: { email: true, telefoneE164: true, whatsapp: true, aceitaComunicacoes: true } } } });
   if (!matricula) return [];
   const encontrosIds = [...new Set(entrada.encontrosIds)];
@@ -89,6 +109,9 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
     const contato = aviso.canal === "EMAIL" ? aviso.aluno.email?.trim().toLowerCase() : (aviso.aluno.whatsapp ? aviso.aluno.telefoneE164 : null);
     const fonteRemarcacao = aviso.evento?.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(aviso.evento?.tipo ?? "");
     const fonteSubstituicao = aviso.evento?.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "SubstituicaoDocenteDecidida" && (aviso.evento.payload as { aprovada?: unknown }).aprovada === true;
+    const fonteAditivoAgenda = aviso.evento?.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && aviso.evento.tipo === "CondicoesAditivoAplicadas" && aviso.matriculaId
+      ? await validarFonteAditivoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map(item => item.encontroId) })
+      : null;
     const fonteReplanejamento = aviso.evento?.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "ReplanejamentoConjuntoAplicado" && aviso.matriculaId
       ? await validarFonteReplanejamentoConjuntoTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map((item) => item.encontroId) })
       : null;
@@ -101,7 +124,7 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
     const pertenceAMatricula = (item: typeof aviso.itens[number]) => item.encontro.matriculaId === aviso.matriculaId || (fonteSubstituicao && !!item.encontro.turmaId && alocacoes.some((alocacao) =>
       alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, item.encontro.inicio),
     ));
-    const fonteValida = (fonteRemarcacao || fonteSubstituicao || fonteReplanejamento || fonteQuantidade) && aviso.matricula?.status === "ATIVA" && aviso.itens.length > 0 && (fonteReplanejamento ? true : aviso.itens.every((item) => fonteQuantidade ? !!item.encontro.turmaId && fonteQuantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) && alocacoes.some((alocacao) => [...(fonteQuantidade.instantes.get(item.encontroId) ?? []), item.encontro.inicio].some((inicio) => alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, inicio))) : pertenceAMatricula(item)));
+    const fonteValida = (fonteRemarcacao || fonteSubstituicao || !!fonteAditivoAgenda || fonteReplanejamento || fonteQuantidade) && aviso.matricula?.status === "ATIVA" && aviso.itens.length > 0 && (fonteReplanejamento ? true : aviso.itens.every((item) => fonteQuantidade ? !!item.encontro.turmaId && fonteQuantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) && alocacoes.some((alocacao) => [...(fonteQuantidade.instantes.get(item.encontroId) ?? []), item.encontro.inicio].some((inicio) => alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, inicio))) : pertenceAMatricula(item)));
     if (fonteQuantidade && !envioQuantidadeAulasHabilitado()) { await registrarPendenciaAvisoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, motivo: MotivoPendenciaAvisoAgenda.CONFIGURACAO_INDISPONIVEL }); return null; }
     if (!fonteValida || !aviso.aluno.aceitaComunicacoes || !contato || hashContato(contato) !== aviso.contatoHash) {
       await tx.avisoAlteracaoAgenda.update({ where: { id }, data: { situacao: "FALHOU", tentativas: { create: { id: randomUUID(), situacao: "FALHOU" } } } }); return null;
@@ -148,6 +171,8 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
   if (!aviso?.evento || aviso.canal !== entrada.canal || !aviso.matriculaId || !aviso.matricula || !aviso.aluno.aceitaComunicacoes || !destinatarioAtual || entrada.destinatario !== destinatarioAtual || hashContato(destinatarioAtual) !== aviso.contatoHash) return { situacao: "RECUSADO" as const };
   const payload = aviso.evento.payload as { aprovada?: unknown; encontroOriginalId?: string; encontroNovoId?: string; encontrosIds?: string[] };
   const fonteQuantidade = aviso.evento.agregadoTipo === "Modalidade" && aviso.evento.tipo === "QuantidadeAulasModalidadeAplicada" ? await prisma.$transaction(tx => validarFonteQuantidadeAulasTx(tx, { eventoId: aviso.eventoId!, encontrosIds: aviso.itens.map((item) => item.encontroId) })) : null;
+  const fonteAditivoAgenda = aviso.evento.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && aviso.evento.tipo === "CondicoesAditivoAplicadas"
+    ? await prisma.$transaction(tx => validarFonteAditivoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, encontrosIds: aviso.itens.map(item => item.encontroId) })) : null;
   if (fonteQuantidade && !envioQuantidadeAulasHabilitado()) return { situacao: "RECUSADO" as const };
   const fonteRemarcacao = aviso.evento.agregadoTipo === "Matricula" && aviso.evento.agregadoId === aviso.matriculaId && ["RemarcacaoParticularDecidida", "RemarcacaoAgendaReposicaoDecidida"].includes(aviso.evento.tipo) && payload.aprovada === true;
   const fonteSubstituicao = aviso.evento.agregadoTipo === "ConfiguracaoOperacional" && aviso.evento.agregadoId === "escola" && aviso.evento.tipo === "SubstituicaoDocenteDecidida" && payload.aprovada === true;
@@ -161,13 +186,13 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
     where: { matriculaId: aviso.matriculaId, turmaId: { in: turmasIds } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
   }) : [];
   const itemValido = (item: typeof aviso.itens[number]) => {
-    const noEvento = fonteSubstituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
+    const noEvento = fonteAditivoAgenda ? true : fonteSubstituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
     const pertenceAMatricula = item.encontro.matriculaId === aviso.matriculaId || (fonteSubstituicao && !!item.encontro.turmaId && alocacoes.some((alocacao) =>
       alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, item.encontro.inicio),
     ));
     return !!noEvento && pertenceAMatricula;
   };
-  if (!(fonteRemarcacao || fonteSubstituicao || fonteReplanejamento || fonteQuantidade) || (!fonteReplanejamento && !aviso.itens.every((item) => fonteQuantidade ? !!item.encontro.turmaId && fonteQuantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) && alocacoes.some((alocacao) => [...(fonteQuantidade.instantes.get(item.encontroId) ?? []), item.encontro.inicio].some((inicio) => alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, inicio))) : itemValido(item)))) return { situacao: "RECUSADO" as const };
+  if (!(fonteRemarcacao || fonteSubstituicao || fonteAditivoAgenda || fonteReplanejamento || fonteQuantidade) || (!fonteReplanejamento && !aviso.itens.every((item) => fonteQuantidade ? !!item.encontro.turmaId && fonteQuantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) && alocacoes.some((alocacao) => [...(fonteQuantidade.instantes.get(item.encontroId) ?? []), item.encontro.inicio].some((inicio) => alocacaoDaMatriculaCobreEncontro(alocacao, item.encontro.turmaId, inicio))) : itemValido(item)))) return { situacao: "RECUSADO" as const };
   const encontrosDoAviso = aviso.itens.map((item) => item.encontro);
   if (fonteReplanejamento) {
     const horarios = renderizarHorariosReplanejamento(fonteReplanejamento.horarios);
@@ -183,9 +208,15 @@ export async function entregarAvisoAlteracaoAgenda(entrada: { canal: Canal; dest
     return resultado.situacao === "ACEITO" ? { situacao: "ACEITO" as const, provedorId: resultado.provedorId } : { situacao: resultado.situacao };
   }
   if (fonteQuantidade) {
-    const horarios = encontrosDoAviso.map(e => `${e.inicio.toLocaleString("pt-BR", { timeZone: e.fusoOrigem })}–${e.fim.toLocaleTimeString("pt-BR", { timeZone: e.fusoOrigem })} (${e.fusoOrigem})`).join("; ");
+    const horarios = encontrosDoAviso.map(e => formatarIntervaloAvisoAgenda(e.inicio, e.fim, e.fusoOrigem)).join("; ");
     const acao = (aviso.evento.payload as { quantidadeAnterior?: number; quantidadeNova?: number }).quantidadeNova! > (aviso.evento.payload as { quantidadeAnterior?: number; quantidadeNova?: number }).quantidadeAnterior! ? "incluídas ou alteradas" : "removidas ou alteradas";
     const resultado = await enviarEmailResend({ destinatario: entrada.destinatario, assunto: "Alteração na quantidade de aulas", texto: `A quantidade de aulas da sua turma foi alterada. Aulas ${acao}: ${horarios}. Consulte a Secretaria em caso de dúvida.`, chaveIdempotencia: `agenda:${entrada.avisoId}` });
+    return resultado.situacao === "ACEITO" ? { situacao: "ACEITO" as const, provedorId: resultado.provedorId } : { situacao: resultado.situacao };
+  }
+  if (fonteAditivoAgenda) {
+    const horarios = encontrosDoAviso.map(e => `${e.inicio.toLocaleString("pt-BR", { timeZone: e.fusoOrigem })}–${e.fim.toLocaleTimeString("pt-BR", { timeZone: e.fusoOrigem })} (${e.fusoOrigem})`).join("; ");
+    if (entrada.canal !== "EMAIL") return { situacao: "RECUSADO" as const };
+    const resultado = await enviarEmailResend({ destinatario: entrada.destinatario, assunto: "Alteração na agenda", texto: `A agenda da matrícula ${aviso.matricula.codigo} foi alterada: ${horarios}. Consulte a Secretaria em caso de dúvida.`, chaveIdempotencia: `agenda:${entrada.avisoId}` });
     return resultado.situacao === "ACEITO" ? { situacao: "ACEITO" as const, provedorId: resultado.provedorId } : { situacao: resultado.situacao };
   }
   const linhas = encontrosDoAviso;

@@ -17,7 +17,7 @@ export const ValorAlteracaoAditivoSchema = z.discriminatedUnion("tipo", [
   z.object({ tipo: z.literal("MINUTOS"), minutos: z.number().int().positive().max(5_256_000) }).strict(),
   z.object({ tipo: z.literal("MOEDA"), moeda: MoedaSchema }).strict(),
   z.object({ tipo: z.literal("REGIME"), regime: z.enum(["MENSALIDADE", "HORA_PARTICULAR"]) }).strict(),
-  z.object({ tipo: z.literal("AGENDA"), propostaAgendaId: z.string().trim().min(1).max(100) }).strict(),
+  z.object({ tipo: z.literal("AGENDA"), propostaAgendaId: z.string().trim().min(1).max(100), texto: TextoSchema }).strict(),
 ]);
 export type ValorAlteracaoAditivo = z.infer<typeof ValorAlteracaoAditivoSchema>;
 
@@ -53,6 +53,6 @@ export function representarValorAlteracaoAditivo(valor: unknown): string {
       const [inteiro, fracao = ""] = d.valor.split(".");
       return `${inteiro}.${fracao.padEnd(2, "0")} ${d.moeda}`;
     }
-    case "AGENDA": throw new Error("A proposta de agenda estruturada ainda exige integração própria antes de constar no aditivo.");
+    case "AGENDA": return d.texto;
   }
 }
