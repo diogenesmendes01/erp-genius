@@ -21,5 +21,8 @@ prisma/migrations/20260917092000_fonte_quantidade_conjunto_completo/migration.sq
 prisma/migrations/20260917093000_fonte_quantidade_autoria_adicoes/migration.sql -text
 prisma/migrations/20260917094000_aplicacao_condicoes_aditivo/migration.sql -text
 prisma/migrations/20260917095000_compatibilidade_aplicacao_aditivo/migration.sql -text
+prisma/migrations/20260917090000_entrada_financeira_historica/migration.sql -text
+prisma/migrations/20260917110000_correcao_entrada_financeira_historica/migration.sql -text
 prisma/migrations/20260917100000_agenda_aditivo_particular/migration.sql -text
+prisma/migrations/20260917121000_avisos_agenda_aditivo/migration.sql -text
 prisma/migrations/20260917122000_correcao_fonte_agenda_aditivo/migration.sql -text

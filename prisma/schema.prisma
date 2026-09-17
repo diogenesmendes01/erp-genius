@@ -7097,3 +7097,62 @@ model ConciliacaoFinanceiraMigracao {
   // Unicidade de aplicações com recebimento: índice parcial SQL da migração 194.
   @@index([origem, financeiroOrigemId], map: "ConciliacaoFinanceiraMigracao_origem_financeiro_idx")
 }
+
+// M01/195: entrada anterior à conciliação. Não referencia cobrança nem pagador
+// porque ambos ainda não existem quando a fonte histórica é conferida.
+enum StatusPropostaEntradaFinanceiraHistoricaMigracao {
+  PENDENTE
+  APROVADA
+  REJEITADA
+  APLICADA
+}
+
+model PropostaEntradaFinanceiraHistoricaMigracao {
+  id String @id @default(cuid())
+  origem String
+  financeiroOrigemId String
+  versao Int
+  linhaId String
+  mapaMatriculaId String
+  matriculaId String
+  preparadorId String
+  decisorId String?
+  tipoCobranca TipoCobranca
+  valor Decimal @db.Decimal(12, 2)
+  moeda String
+  vencimento DateTime @db.Date
+  competencia String?
+  dadosPagador Json
+  evidencia Json
+  complemento Json?
+  entrada Json
+  snapshot Json
+  entradaHash String
+  estadoHash String
+  chaveIdempotencia String
+  chaveDecisao String?
+  decisaoHash String?
+  status StatusPropostaEntradaFinanceiraHistoricaMigracao @default(PENDENTE)
+  motivoDecisao String?
+  decididoEm DateTime? @db.Timestamptz(6)
+  aplicadaEm DateTime? @db.Timestamptz(6)
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([origem, financeiroOrigemId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@unique([decisorId, chaveDecisao])
+  @@index([linhaId, status])
+  @@index([matriculaId, criadoEm])
+}
+
+model AplicacaoEntradaFinanceiraHistoricaMigracao {
+  id String @id @default(cuid())
+  propostaId String @unique
+  origem String
+  financeiroOrigemId String
+  pagadorId String @unique
+  cobrancaId String @unique
+  aplicadaPorId String
+  snapshot Json
+  aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([origem, financeiroOrigemId])
+}
