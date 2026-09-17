@@ -1197,6 +1197,31 @@ async function proporRemarcacaoTeste(reservaId: string, chave: string) {
   return { acoes, entrada, proposta, persistida };
 }
 
+it("consulta de remarcação projeta reserva, avaliação, professor e prazo prorrogado", async () => {
+  const reserva = await reservarParaRemarcacao("conferencia-remarcacao");
+  const acoes = await import("./segunda-chamada-remarcacao");
+  entrar(gestor);
+  const antes = await acoes.consultarRemarcacoesAgendaSegundaChamada({ reservaId: reserva.reservaId });
+  if (!antes.ok || !antes.dado) throw new Error(JSON.stringify(antes));
+  expect(antes.dado.conferencia).toMatchObject({ reservaId: reserva.reservaId, codigoAvaliacao: "I1", professorAtual: { id: professor } });
+  expect(antes.dado.conferencia.prazoVigente).toEqual(expect.any(String));
+  const [disponibilizacao] = await prisma.$queryRaw<{ id: string }[]>`SELECT d.id FROM "DisponibilizacaoSegundaChamada" d JOIN "PropostaSegundaChamada" p ON p.id=d."propostaId" JOIN "ReservaSegundaChamada" r ON r."propostaId"=p.id WHERE r.id=${reserva.reservaId}`;
+  const novoPrazo = new Date(new Date(antes.dado.conferencia.prazoVigente!).getTime() + 86_400_000).toISOString();
+  const { proporProrrogacaoSegundaChamada, decidirProrrogacaoSegundaChamada } = await import("./segunda-chamada-prorrogacao");
+  entrar(professor);
+  const proposta = await proporProrrogacaoSegundaChamada({ disponibilizacaoId: disponibilizacao.id, prazoAnterior: antes.dado.conferencia.prazoVigente!, novoPrazo, versaoEsperada: 0, motivo: "Prorrogação para conferência administrativa", chaveIdempotencia: "conferencia-remarcacao-prazo" });
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  entrar(gestor);
+  const pendente = await acoes.consultarRemarcacoesAgendaSegundaChamada({ reservaId: reserva.reservaId });
+  expect(pendente).toMatchObject({ ok: true, dado: { conferencia: { prazoVigente: antes.dado.conferencia.prazoVigente } } });
+  const [persistida] = await prisma.$queryRaw<{ entradaHash: string }[]>`SELECT "entradaHash" AS "entradaHash" FROM "PropostaProrrogacaoSegundaChamada" WHERE id=${proposta.dado.id}`;
+  entrar(administrador);
+  expect(await decidirProrrogacaoSegundaChamada({ propostaId: proposta.dado.id, propostaHash: persistida.entradaHash, aprovada: true, motivo: "Prorrogação aprovada por outra pessoa" })).toMatchObject({ ok: true });
+  entrar(gestor);
+  const depois = await acoes.consultarRemarcacoesAgendaSegundaChamada({ reservaId: reserva.reservaId });
+  expect(depois).toMatchObject({ ok: true, dado: { conferencia: { prazoVigente: novoPrazo } } });
+});
+
 it("remarcação aplica agenda atomicamente sem duplicar oportunidade e conserva o encontro anterior", async () => {
   const reserva = await reservarParaRemarcacao("remarcacao-atomica");
   const secretaria = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id;
