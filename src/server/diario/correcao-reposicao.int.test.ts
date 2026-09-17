@@ -9,6 +9,7 @@ import { carregarFrequenciaVinculoTx } from "@/server/avaliacoes/frequencia-tx";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { concluirReposicaoIndividual, decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } from "./reposicao-individual";
 import { consultarCorrecoesConclusaoReposicao, listarReposicoesConcluidasDesignadas } from "./correcao-reposicao-consulta";
+import { substituirAvaliadorReposicaoOperacional } from "./reposicao-entrega-operacional";
 
 const inicio = new Date("2026-01-01T00:00:00.000Z");
 const entregaOriginalEm = new Date("2026-01-14T10:00:00.000Z");
@@ -158,6 +159,19 @@ it("aplica validação gravada corrigida e retirada aprovada somente depois de d
   expect(await prisma.registroAulaAluno.findFirstOrThrow({ where: { matriculaId, aula: { encontroId: fonte.aulaId } } })).toMatchObject({
     participacao: "FALTA", presente: false,
   });
+});
+
+it("Q54 revalida a correção pelo avaliador efetivo após substituição Q40", async () => {
+  const fonte = await criarFonteGravacao("q54-pos-substituicao");
+  const substitutoId = (await criarUsuario([Papel.PROFESSOR])).id;
+  entrar(gestorId);
+  assertOk(await substituirAvaliadorReposicaoOperacional({ reposicaoId: fonte.reposicaoId, professorId: substitutoId, motivo: "Substituição antes da nova correção da entrega", chaveIdempotencia: "q40-q54-pos-substituicao-0001" }));
+  const entrega = await criarEntregaNova(fonte.reposicaoId, 2, new Date());
+  const entrada = { reposicaoId: fonte.reposicaoId, conclusaoId: fonte.conclusaoId, versaoAnterior: 0, concluida: true, entregaId: entrega.id, validadaEm: new Date().toISOString(), evidencia: "Nova validação após substituição do avaliador.", motivo: "A entrega corrigida precisa ser reavaliada." };
+  entrar(professorId);
+  expect((await proporCorrecaoConclusaoReposicao(entrada)).ok).toBe(false);
+  entrar(substitutoId);
+  expect((await proporCorrecaoConclusaoReposicao(entrada)).ok).toBe(true);
 });
 
 it("recusa aprovação antiga de C1 depois de C2 e preserva a fonte até a decisão atual", async () => {

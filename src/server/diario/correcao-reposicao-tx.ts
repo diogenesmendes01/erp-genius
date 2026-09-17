@@ -12,10 +12,16 @@ export async function conferirAutorCorrecaoReposicaoTx(tx: Prisma.TransactionCli
   if (!autor?.ativo) throw new ErroPermissao("O acesso do responsável foi revogado.");
   if (autor.papeis.some(p => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_PEDAGOGICO)) return;
   if (somenteGestao || !autor.papeis.includes(Papel.PROFESSOR)) throw new ErroPermissao();
-  const agora = new Date();
-  if (!await tx.designacaoAvaliadorReposicaoIndividual.findFirst({ where: { reposicaoId, professorId: autorId, inicio: { lte: agora },
-    OR: [{ fim: null }, { fim: { gt: agora } }],
-  }, select: { id: true } })) throw new ErroPermissao("Somente o professor com designação vigente pode propor esta correção.");
+  const vigente = await tx.$queryRaw<Array<{ id: string }>>`
+    SELECT d.id FROM "DesignacaoAvaliadorReposicaoIndividual" d
+    LEFT JOIN "DesignacaoSubstituicaoAvaliadorReposicaoIndividual" s ON s."designacaoAnteriorId"=d.id
+    LEFT JOIN "DesignacaoAvaliadorReposicaoIndividual" sucessora ON sucessora.id=s."designacaoNovaId"
+    WHERE d."reposicaoId"=${reposicaoId} AND d."professorId"=${autorId}
+      AND d.inicio<=(transaction_timestamp() AT TIME ZONE 'UTC')::timestamp(3)
+      AND COALESCE(sucessora.inicio,d.fim,'infinity'::timestamp)>(transaction_timestamp() AT TIME ZONE 'UTC')::timestamp(3)
+    FOR SHARE OF d
+  `;
+  if (vigente.length !== 1) throw new ErroPermissao("Somente o professor com designação vigente pode propor esta correção.");
 }
 
 /** Chamador mantém o lock do calendário/reposição. A mesma prova é usada na
@@ -45,10 +51,17 @@ export async function conferirFonteCorrecaoReposicaoTx(tx: Prisma.TransactionCli
   const entrega = await tx.entregaReposicaoGravacao.findUnique({ where: { id: fonte.entregaId }, select: { reposicaoId: true, alunoId: true, entregueEm: true, resumo: true, atividade: true } });
   if (!entrega || entrega.reposicaoId !== r.id || entrega.alunoId !== r.matricula.alunoId || !entrega.resumo.trim() || !entrega.atividade.trim()
     || entrega.entregueEm > fonte.validadaEm || fonte.validadaEm > agora || fonte.validadaEm < r.aulaOriginal.fim) throw new ErroRegra("A entrega deve pertencer ao aluno e à reposição, com resumo e atividade anteriores à validação.");
-  const designacoes = await tx.designacaoAvaliadorReposicaoIndividual.findMany({ where: { reposicaoId, inicio: { lte: fonte.validadaEm },
-    OR: [{ fim: null }, { fim: { gt: fonte.validadaEm } }],
-  }, select: { professorId: true, professor: { select: { ativo: true, papeis: true } } }, orderBy: [{ inicio: "desc" }, { id: "desc" }], take: 2 });
-  if (designacoes.length !== 1 || !designacoes[0]!.professor.ativo || !designacoes[0]!.professor.papeis.includes(Papel.PROFESSOR)
+  const designacoes = await tx.$queryRaw<Array<{ professorId: string; ativo: boolean; papeis: Papel[] }>>`
+    SELECT d."professorId" AS "professorId",u.ativo,u.papeis
+    FROM "DesignacaoAvaliadorReposicaoIndividual" d
+    JOIN "Usuario" u ON u.id=d."professorId"
+    LEFT JOIN "DesignacaoSubstituicaoAvaliadorReposicaoIndividual" s ON s."designacaoAnteriorId"=d.id
+    LEFT JOIN "DesignacaoAvaliadorReposicaoIndividual" sucessora ON sucessora.id=s."designacaoNovaId"
+    WHERE d."reposicaoId"=${reposicaoId} AND d.inicio<=${fonte.validadaEm}::timestamptz AT TIME ZONE 'UTC'
+      AND COALESCE(sucessora.inicio,d.fim,'infinity'::timestamp)>${fonte.validadaEm}::timestamptz AT TIME ZONE 'UTC'
+    FOR SHARE OF d,u
+  `;
+  if (designacoes.length !== 1 || !designacoes[0]!.ativo || !designacoes[0]!.papeis.includes(Papel.PROFESSOR)
     || (avaliadorEsperado !== undefined && designacoes[0]!.professorId !== avaliadorEsperado)) throw new ErroRegra("Confira o avaliador designado ativo no instante da validação.");
   return { validadaPorId: designacoes[0]!.professorId };
 }

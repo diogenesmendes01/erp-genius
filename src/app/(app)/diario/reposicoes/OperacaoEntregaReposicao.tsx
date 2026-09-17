@@ -39,6 +39,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
   const chaveDesignacao = useRef(crypto.randomUUID());
+  const envioDesignacao = useRef(false);
   const router = useRouter();
   const executar = (acao: () => Promise<Resultado>) => iniciar(async () => {
     setErro("");
@@ -51,7 +52,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   return <section className="space-y-3 border-t pt-4" aria-label="Material e entregas da reposição gravada">
     <h3 className="font-medium">Material e entregas gravadas</h3>
     <p className="text-sm">O material usa uma revisão institucional registrada; alteração externa não substitui o conteúdo aprovado. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
-    <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => substituirAvaliadorReposicaoOperacional({ reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current })); }}>
+    <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); if (envioDesignacao.current) return; envioDesignacao.current = true; const dados = new FormData(evento.currentTarget); executar(async () => { try { return await substituirAvaliadorReposicaoOperacional({ reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current }); } finally { envioDesignacao.current = false; } }); }}>
       <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
       {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, operacao.fuso)}. As avaliações anteriores permanecem atribuídas ao autor original.</p>}
       <label className="block">Professor avaliador<select name="professorId" required defaultValue="" className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
