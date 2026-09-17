@@ -8,8 +8,8 @@ export function dinheiro(valor: Prisma.Decimal.Value): Prisma.Decimal {
   return n.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }
 
-export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Decimal.Value | null, liquidadoCredito: Prisma.Decimal.Value = 0) {
-  return Prisma.Decimal.max(0, dinheiro(negociado).minus(dinheiro(recebido ?? 0)).minus(dinheiro(liquidadoCredito)));
+export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Decimal.Value | null, liquidadoCredito: Prisma.Decimal.Value = 0, creditoOriginado: Prisma.Decimal.Value = 0) {
+  return Prisma.Decimal.max(0, dinheiro(negociado).minus(dinheiro(recebido ?? 0)).minus(dinheiro(liquidadoCredito)).plus(dinheiro(creditoOriginado)));
 }
 
 export function descontoAcumulado(referencia: Prisma.Decimal.Value, proposto: Prisma.Decimal.Value) {

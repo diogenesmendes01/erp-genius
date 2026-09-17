@@ -37,7 +37,7 @@ export async function kpisFinanceiro() {
   const [recebimentos, eventosLegados, abertas, comissoesAprovadas, novasMatriculas] = await Promise.all([
     prisma.recebimento.findMany({ where: { dataPagamento: { gte: ini, lte: agora } }, select: { valor: true, moeda: true } }),
     prisma.evento.findMany({ where: { tipo: "PagamentoRegistrado", criadoEm: { gte: ini, lte: agora } }, select: { agregadoId: true, payload: true } }),
-    prisma.cobranca.findMany({ where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, select: { valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, vencimento: true, moeda: true } }),
+    prisma.cobranca.findMany({ where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, select: { valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, vencimento: true, moeda: true, origensCreditoAcertoTaxaAditivo: { select: { valor: true } } } }),
     prisma.comissao.findMany({ where: { status: StatusComissao.APROVADA }, select: { valor: true, moeda: true } }),
     prisma.matricula.count({ where: { status: StatusMatricula.ATIVA, ativadaEm: { gte: ini } } }),
   ]);
@@ -50,7 +50,7 @@ export async function kpisFinanceiro() {
     ...recebimentos.map((r) => ({ moeda: r.moeda, valor: numero(r.valor) })),
     ...legados.filter((e) => porId.has(e.agregadoId)).map((e) => ({ moeda: porId.get(e.agregadoId)!, valor: (e.payload as { valorRecebido: number }).valorRecebido })),
   ]);
-  const valores = (atrasadas: boolean) => somarPorMoeda(abertas.filter((c) => (c.vencimento < agora) === atrasadas).map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito).toNumber() })));
+  const valores = (atrasadas: boolean) => somarPorMoeda(abertas.filter((c) => (c.vencimento < agora) === atrasadas).map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0))).toNumber() })));
   return { recebidoMes, emAtraso: valores(true), aReceber: valores(false),
     comissoesAPagar: somarPorMoeda(comissoesAprovadas.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) }))), novasMatriculas };
 }
@@ -154,11 +154,11 @@ export async function listarContextosRecebimentoDestinado() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const matriculas = await prisma.matricula.findMany({
     where: { status: { in: [StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
-    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" } } },
+    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } } } } },
   });
   return matriculas.map((matricula) => {
     const cobrancas = matricula.cobrancas.flatMap((cobranca) => {
-    const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito).toNumber();
+    const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, cobranca.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0))).toNumber();
     return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
     });
     return { matriculaId: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
