@@ -34,3 +34,4 @@ prisma/migrations/20260917122000_correcao_fonte_agenda_aditivo/migration.sql -te
 prisma/migrations/20260917124000_devolucao_credito/migration.sql -text
 prisma/migrations/20260917130000_validacao_proposta_devolucao/migration.sql -text
 prisma/migrations/20260917132000_destinacoes_recebimento/migration.sql -text
+prisma/migrations/20260917134000_resolucao_acerto_taxa/migration.sql -text

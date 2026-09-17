@@ -481,6 +481,7 @@ model Usuario {
   propostasAditivo PropostaAditivoContratual[]
   propostasAcertoTaxaAditivoPreparadas PropostaAcertoTaxaAditivo[] @relation("PreparadorAcertoTaxaAditivo")
   decisoesAcertoTaxaAditivo DecisaoAcertoTaxaAditivo[] @relation("DecisorAcertoTaxaAditivo")
+  invalidacoesAcertoTaxaAditivo InvalidacaoAcertoTaxaAditivo[] @relation("ResolvedorInvalidacaoAcertoTaxaAditivo")
   decisoesAditivo DecisaoAditivoContratual[]
   decisoesAlcadaAditivo DecisaoAlcadaAditivo[]
   processosAssinaturaAditivo ProcessoAssinaturaAditivo[]
@@ -7289,6 +7290,7 @@ model PropostaAcertoTaxaAditivo {
   criadaEm DateTime @default(now())
   decisao DecisaoAcertoTaxaAditivo?
   aplicacao AplicacaoAcertoTaxaAditivo?
+  invalidacao InvalidacaoAcertoTaxaAditivo?
 
   @@unique([versaoCondicoesId, cobrancaId, fotografiaHash])
   @@unique([preparadorId, chaveIdempotencia])
@@ -7349,6 +7351,21 @@ model OrigemCreditoAcertoTaxaAditivo {
   credito CreditoMatricula?
   criadaEm DateTime @default(now())
   @@index([cobrancaId])
+}
+
+model InvalidacaoAcertoTaxaAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAcertoTaxaAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  resolvedorId String
+  resolvedor Usuario @relation("ResolvedorInvalidacaoAcertoTaxaAditivo", fields: [resolvedorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  evidencia Json
+  fotografiaOriginalHash String
+  fotografiaAtual Json
+  fotografiaAtualHash String
+  chaveIdempotencia String @unique
+  criadaEm DateTime @default(now())
 }
 
 // M01/195: entrada anterior à conciliação. Não referencia cobrança nem pagador
