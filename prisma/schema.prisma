@@ -1815,7 +1815,7 @@ enum FormaPagamento {
 model Cobranca {
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
-  origemCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo?
+  origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
   destinacoesRecebimento DestinacaoRecebimento[] @relation("DestinacoesRecebimentoCobranca")
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   emissaoContinuidadeGerada EmissaoContinuidadeMensal[] @relation("CobrancaGeradaContinuidade")
@@ -2560,7 +2560,7 @@ model CompraHorasAntecipadas {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  cobrancaId String @unique
+  cobrancaId String
   cobranca Cobranca @relation(fields: [cobrancaId, matriculaId], references: [id, matriculaId], onDelete: Restrict, onUpdate: Restrict)
   documentoId String
   documento Documento @relation(fields: [documentoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3457,6 +3457,7 @@ model DecisaoModeloContratual {
   aprovada Boolean
   motivo String
   criadaEm DateTime @default(now())
+  @@index([cobrancaId])
 }
 
 model PreviaDocumentoContratual {

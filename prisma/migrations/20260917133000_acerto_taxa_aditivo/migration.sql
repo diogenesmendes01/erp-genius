@@ -63,12 +63,13 @@ CREATE TABLE "OrigemCreditoAcertoTaxaAditivo" (
   id TEXT PRIMARY KEY,
   "aplicacaoId" TEXT NOT NULL UNIQUE REFERENCES "AplicacaoAcertoTaxaAditivo"(id) ON DELETE RESTRICT,
   "matriculaId" TEXT NOT NULL REFERENCES "Matricula"(id) ON DELETE RESTRICT,
-  "cobrancaId" TEXT NOT NULL UNIQUE REFERENCES "Cobranca"(id) ON DELETE RESTRICT,
+  "cobrancaId" TEXT NOT NULL REFERENCES "Cobranca"(id) ON DELETE RESTRICT,
   valor DECIMAL(12,2) NOT NULL CHECK (valor > 0),
   moeda TEXT NOT NULL,
   fotografia JSONB NOT NULL,
   "criadaEm" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
 );
+CREATE INDEX "OrigemCreditoAcertoTaxaAditivo_cobrancaId_idx" ON "OrigemCreditoAcertoTaxaAditivo"("cobrancaId");
 
 -- Q211 já incluiu origemDestinacaoRecebimentoId. Esta quinta origem é aditiva;
 -- não modifica recebimento, destinação ou a projeção de saldos daquele fluxo.
