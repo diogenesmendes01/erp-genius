@@ -2,6 +2,8 @@
 
 Este documento define o comportamento requerido. A existência de um requisito aqui não comprova sua implementação. O objetivo integral permanece em andamento.
 
+O estado corrente e as evidências de aceite local estão no [quadro único de entregas](../planejamento/quadro-entregas.md). Notas numeradas de incrementos preservam o estado histórico da respectiva entrega e não substituem esse quadro.
+
 - [Detalhamento da remarcação de segunda chamada — implementação parcial](remarcacao-segunda-chamada.md).
 - [Substituição docente de segunda chamada agendada — implementação e limites](substituicao-segunda-chamada.md).
 - [Avisos de alterações da agenda — escopo, estados e validação](avisos-alteracoes-agenda.md).
@@ -377,7 +379,7 @@ A tela `/secretaria/envios-portal` integra consulta paginada e guard de Secretar
 
 ## M01 — preparação operacional de migração
 
-Estado corrente: a aplicação de vínculos históricos e a conferência inicial de regras foram integradas até `b254ba81`, com validação local registrada no quadro único. Os parágrafos de evidências abaixo conservam o estágio de cada incremento. Conciliação contra cobrança e pagador existentes integrada até `41556778`, com aprovação independente e pendência resolvível. Ainda faltam entrada operacional de pagador histórico, importação de obrigações ausentes e de outros históricos, além da carga real conferida; M01 não está concluído.
+Estado corrente: a aplicação de vínculos históricos e a conferência inicial de regras foram integradas até `b254ba81`, com validação local registrada no quadro único. Conciliação contra cobrança e pagador existentes integrada até `41556778`, com aprovação independente e pendência resolvível. A entrada operacional de pagador e obrigação histórica foi integrada em `142ab46f`, com aprovação independente, migrações 195/202 e validação local. Histórico de presenças está em implementação; demais históricos e carga real conferida permanecem pendentes. Os parágrafos de evidências abaixo conservam o estágio de cada incremento; M01 como conjunto não está concluído.
 
 ### Conciliação financeira — fonte e complementos
 
