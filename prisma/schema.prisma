@@ -445,6 +445,11 @@ model Usuario {
   aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   propostasAgendaAditivo PropostaAgendaAditivoParticular[] @relation("PreparadorAgendaAditivo")
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("AplicadorAgendaAditivo")
+  propostasDevolucaoCredito PropostaDevolucaoCredito[] @relation("PreparadorDevolucaoCredito")
+  decisoesDevolucaoCredito DecisaoDevolucaoCredito[] @relation("DecisorDevolucaoCredito")
+  execucoesDevolucaoCredito ReservaDevolucaoCredito[] @relation("ExecutorDevolucaoCredito")
+  conciliacoesDevolucaoCredito ConciliacaoDevolucaoCredito[] @relation("ConciliadorDevolucaoCredito")
+  cancelamentosDevolucaoCredito CancelamentoDevolucaoCredito[] @relation("CanceladorDevolucaoCredito")
   aplicacoesSubstituicaoContratual AplicacaoSubstituicaoContratual[]
   intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[] @relation("PreparadorSubstituicaoContratual")
@@ -4889,6 +4894,7 @@ model PropostaUsoCredito {
 
 model CreditoMatricula {
   propostasUso PropostaUsoCredito[]
+  propostasDevolucao PropostaDevolucaoCredito[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4902,6 +4908,90 @@ model CreditoMatricula {
   moeda String
   criadoEm DateTime @default(now())
   @@index([matriculaId])
+}
+
+enum EstadoReservaDevolucaoCredito {
+  AGUARDANDO_EXECUCAO
+  INCERTO
+  CONFIRMADA
+  LIBERADA
+}
+
+model PropostaDevolucaoCredito {
+  decisao DecisaoDevolucaoCredito?
+  id String @id @default(cuid())
+  creditoId String
+  credito CreditoMatricula @relation(fields: [creditoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorDevolucaoCredito", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  valor Decimal @db.Decimal(12, 2)
+  pedidoAluno String
+  evidenciaPedido String
+  destino String
+  snapshot Json
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  @@unique([creditoId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+}
+
+model DecisaoDevolucaoCredito {
+  reserva ReservaDevolucaoCredito?
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaDevolucaoCredito @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorDevolucaoCredito", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+model ReservaDevolucaoCredito {
+  conciliacoes ConciliacaoDevolucaoCredito[]
+  cancelamento CancelamentoDevolucaoCredito?
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoDevolucaoCredito @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creditoId String
+  credito CreditoMatricula @relation(fields: [creditoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  destino String
+  estado EstadoReservaDevolucaoCredito @default(AGUARDANDO_EXECUCAO)
+  executorId String?
+  executor Usuario? @relation("ExecutorDevolucaoCredito", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  referenciaExterna String?
+  evidenciaExecucao String?
+  chaveExecucao String?
+  criadaEm DateTime @default(now())
+  executadaEm DateTime?
+  @@unique([executorId, chaveExecucao])
+  @@index([creditoId, estado])
+}
+
+model ConciliacaoDevolucaoCredito {
+  id String @id @default(cuid())
+  reservaId String
+  reserva ReservaDevolucaoCredito @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conciliadorId String
+  conciliador Usuario @relation("ConciliadorDevolucaoCredito", fields: [conciliadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  confirmouSaida Boolean
+  evidencia String
+  criadaEm DateTime @default(now())
+  @@unique([reservaId])
+}
+
+model CancelamentoDevolucaoCredito {
+  id String @id @default(cuid())
+  reservaId String @unique
+  reserva ReservaDevolucaoCredito @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  canceladorId String
+  cancelador Usuario @relation("CanceladorDevolucaoCredito", fields: [canceladorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  evidencia String
+  criadaEm DateTime @default(now())
 }
 
 model PropostaLiberacaoHoras {
