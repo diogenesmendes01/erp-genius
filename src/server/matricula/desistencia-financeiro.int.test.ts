@@ -358,7 +358,7 @@ describe("acerto financeiro da desistência em preparação", () => {
   it.each(["paga", "documento"] as const)("mantém %s fora deste acerto simplificado", async (fonte) => {
     const cobranca = await criarCobranca();
     if (fonte === "paga") {
-      await prisma.cobranca.update({ where: { id: cobranca.id }, data: { status: "PAGO", valorRecebido: 90, saldo: 0, pagoEm: new Date("2099-10-10T12:00:00.000Z") } });
+      await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroAprovador.id, chaveIdempotencia: "desistencia-cobranca-paga", valorRecebido: 90, forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-10T12:00:00.000Z"), evidencia: "Cobrança quitada fora do acerto simplificado." }));
     } else {
       await prisma.documento.create({
         data: { matriculaId, categoria: "CONTRATO", nome: "Documento fora do acerto", url: "/api/files/contrato.pdf" },

@@ -120,7 +120,9 @@ describe("proposta de pausa com contratos imutáveis e decisão independente", (
     expect(await aplicarMovimentacaoContratual(pedido)).toMatchObject({ ok: true, dado: { status: "APLICADA" } });
     expect((await aplicarMovimentacaoContratual(pedido)).ok).toBe(true);
     expect(await prisma.movimentacaoAluno.count({ where: { matriculaId, tipo: "PAUSA" } })).toBe(1);
-    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: paga.id } })).toMatchObject({ status: quitada ? "PAGO" : "CANCELADA", suspensaPorItemPausaId: expect.any(String), pagoEm: quitada ? paga.pagoEm : null, saldo: quitada ? 0 : 60 });
+    const aposPausa = await prisma.cobranca.findUniqueOrThrow({ where: { id: paga.id } });
+    expect(aposPausa).toMatchObject({ status: quitada ? "PAGO" : "CANCELADA", suspensaPorItemPausaId: expect.any(String), pagoEm: quitada ? paga.pagoEm : null });
+    expect(aposPausa.saldo?.toFixed(2)).toBe(quitada ? "0.00" : "60.00");
     entrar(secId);
     const retorno = await solicitarRetomadaMatriculas(alunoId, { retorno: "2000-01-02", motivo: "Retorno solicitado e conferido", chaveIdempotencia: "retorno-publico-001",
       matriculas: [{ matriculaId, vencimentos: { opcao: "MANTER_VENCIMENTOS" } }] });
@@ -147,8 +149,11 @@ describe("proposta de pausa com contratos imutáveis e decisão independente", (
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: outraId } })).status).toBe("ATIVA");
     expect((await prisma.aluno.findUniqueOrThrow({ where: { id: alunoId } })).status).toBe("ATIVO");
     expect(await prisma.recebimento.findUniqueOrThrow({ where: { id: recebimento.id } })).toEqual(recebimento);
-    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: paga.id } })).toMatchObject({ status: quitada ? "PAGO" : "ATRASADO", saldo: paga.saldo, valorRecebido: paga.valorRecebido, pagoEm: paga.pagoEm,
+    const aposRetomada = await prisma.cobranca.findUniqueOrThrow({ where: { id: paga.id } });
+    expect(aposRetomada).toMatchObject({ status: quitada ? "PAGO" : "ATRASADO", pagoEm: quitada ? paga.pagoEm : null,
       coberturaInicio: new Date("2000-01-02"), coberturaFim: new Date("2000-01-31"), suspensaPorItemPausaId: null });
+    expect(aposRetomada.saldo?.toFixed(2)).toBe(quitada ? "0.00" : "60.00");
+    expect(aposRetomada.valorRecebido?.toFixed(2)).toBe(`${recebido}.00`);
     expect(await prisma.recebimento.count()).toBe(1);
   });
 
@@ -209,9 +214,8 @@ describe("proposta de pausa com contratos imutáveis e decisão independente", (
       coberturaInicio: new Date("2026-10-01"), coberturaFim: new Date("2026-10-31"),
     } });
     const id = await solicitar();
-    const recebida = await prisma.cobranca.update({ where: { id: cobranca.id }, data: {
-      valorRecebido: 100, saldo: 0, status: "PAGO", versao: { increment: 1 },
-    } });
+    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: finId, chaveIdempotencia: "pausa-pagamento-posterior", valorRecebido: 100, forma: "DINHEIRO", dataPagamento: new Date("2026-10-06T12:00:00Z"), evidencia: "Pagamento posterior à proposta de pausa." }));
+    const recebida = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
     entrar(finId);
     const resposta = await decidirPropostaPausaMatriculas(id, decisao);
     expect(resposta.ok).toBe(false);
