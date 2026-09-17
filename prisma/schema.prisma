@@ -311,13 +311,20 @@ model PagamentoInformado {
 }
 
 model Recebimento {
+  // Compatibilidade de leitura até os consumidores FIN-04 passarem a consultar
+  // `destinacoes`. Novos recebimentos não podem preencher este vínculo singular.
+  destinacoes DestinacaoRecebimento[]
   propostasConciliacaoMigracao PropostaConciliacaoFinanceiraMigracao[]
-  conciliacaoMigracao ConciliacaoFinanceiraMigracao?
+  conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
   hashDados String?
   id String @id @default(cuid())
   chaveIdempotencia String @unique
-  cobrancaId String
-  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict)
+  cobrancaId String?
+  cobranca Cobranca? @relation(fields: [cobrancaId], references: [id], onDelete: Restrict)
+  titularMatriculaId String
+  titularMatricula Matricula @relation("TitularRecebimento", fields: [titularMatriculaId], references: [id], onDelete: Restrict)
+  pagadorId String?
+  pagador PagadorPreparacaoMatricula? @relation("PagadorRecebimento", fields: [pagadorId], references: [id], onDelete: Restrict)
   informeId String? @unique
   informe PagamentoInformado? @relation(fields: [informeId], references: [id], onDelete: Restrict)
   autorId String
@@ -327,6 +334,33 @@ model Recebimento {
   dataPagamento DateTime
   criadoEm DateTime @default(now())
   @@index([dataPagamento])
+  @@index([cobrancaId])
+  @@index([titularMatriculaId])
+  @@index([pagadorId])
+}
+
+enum TipoDestinacaoRecebimento {
+  COBRANCA
+  CREDITO_SEM_DESTINO
+}
+
+model DestinacaoRecebimento {
+  id String @id @default(cuid())
+  recebimentoId String
+  recebimento Recebimento @relation(fields: [recebimentoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String?
+  cobranca Cobranca? @relation("DestinacoesRecebimentoCobranca", fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  autorId String
+  credito CreditoMatricula?
+  conciliacoesMigracao ConciliacaoFinanceiraMigracao[]
+  tipo TipoDestinacaoRecebimento
+  valor Decimal @db.Decimal(12, 2)
+  // Legado não tinha evidência por destinação. Não a inventar no backfill.
+  evidencia String?
+  origemLegada Boolean @default(false)
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  @@unique([recebimentoId, chaveIdempotencia])
   @@index([cobrancaId])
 }
 
@@ -454,6 +488,13 @@ model Usuario {
   versoesCondicoesAditivo VersaoCondicoesAditivo[]
   aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("ExecutorAcertoTaxaAditivo")
+  propostasAgendaAditivo PropostaAgendaAditivoParticular[] @relation("PreparadorAgendaAditivo")
+  aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("AplicadorAgendaAditivo")
+  propostasDevolucaoCredito PropostaDevolucaoCredito[] @relation("PreparadorDevolucaoCredito")
+  decisoesDevolucaoCredito DecisaoDevolucaoCredito[] @relation("DecisorDevolucaoCredito")
+  execucoesDevolucaoCredito ReservaDevolucaoCredito[] @relation("ExecutorDevolucaoCredito")
+  conciliacoesDevolucaoCredito ConciliacaoDevolucaoCredito[] @relation("ConciliadorDevolucaoCredito")
+  cancelamentosDevolucaoCredito CancelamentoDevolucaoCredito[] @relation("CanceladorDevolucaoCredito")
   aplicacoesSubstituicaoContratual AplicacaoSubstituicaoContratual[]
   intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[] @relation("PreparadorSubstituicaoContratual")
@@ -1621,6 +1662,7 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   aplicacoesVinculoMigracao AplicacaoVinculoMigracao[]
@@ -1633,6 +1675,8 @@ model Matricula {
   pedidosDesistenciaPreparacao PedidoDesistenciaPreparacao[]
   efetivacaoDesistenciaPreparacao EfetivacaoPedidoDesistenciaPreparacao?
   propostasAditivo PropostaAditivoContratual[]
+  propostasAgendaAditivo PropostaAgendaAditivoParticular[]
+  aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
   origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
@@ -1772,6 +1816,7 @@ model Cobranca {
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
   origemCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo?
+  destinacoesRecebimento DestinacaoRecebimento[] @relation("DestinacoesRecebimentoCobranca")
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   emissaoContinuidadeGerada EmissaoContinuidadeMensal[] @relation("CobrancaGeradaContinuidade")
   emissaoContinuidadeAnterior EmissaoContinuidadeMensal[] @relation("CobrancaAnteriorContinuidade")
@@ -2082,6 +2127,7 @@ model TentativaAvisoAlteracaoAgenda {
 model Evento {
   avisosAlteracaoAgenda AvisoAlteracaoAgenda[]
   pendenciasAvisosAgenda PendenciaAvisoAgenda[]
+  aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("EventoAplicacaoAgendaAditivo")
   id           String   @id @default(cuid())
   tipo         String // LeadCriado, MatriculaAtivada, PagamentoRegistrado, AlunoPausado...
   agregadoTipo String // "Lead", "Matricula", "Aluno", "Cobranca"...
@@ -3303,6 +3349,7 @@ model DecisaoPrecoPreparacao {
 
 model PagadorPreparacaoMatricula {
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
+  recebimentos Recebimento[] @relation("PagadorRecebimento")
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4123,6 +4170,7 @@ model NotaRecuperacao {
 }
 
 model ConclusaoAssinaturaContratual {
+  propostasAgendaAditivo PropostaAgendaAditivoParticular[]
   propostasAditivo PropostaAditivoContratual[]
   aceite AceiteOriginalContratual?
   id String @id @default(cuid())
@@ -4147,6 +4195,8 @@ model PropostaAditivoContratual {
   versaoCondicoes VersaoCondicoesAditivo?
   aplicacaoCondicoes AplicacaoCondicoesAditivo?
   propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
+  propostaAgendaId String? @unique
+  propostaAgenda PropostaAgendaAditivoParticular? @relation(fields: [propostaAgendaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4317,6 +4367,8 @@ model VersaoCondicoesAditivo {
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   propostaId String @unique
   proposta PropostaAditivoContratual @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAgendaId String? @unique
+  propostaAgenda PropostaAgendaAditivoParticular? @relation("AgendaAditivoFormalizada", fields: [propostaAgendaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   conferenciaFinalId String @unique
   conferenciaFinal ConferenciaFinalAditivo @relation(fields: [conferenciaFinalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   autorId String
@@ -4335,6 +4387,46 @@ model VersaoCondicoesAditivo {
   @@unique([matriculaId, versao])
 }
 
+model PropostaAgendaAditivoParticular {
+  id String @id @default(cuid())
+  propostaAditivo PropostaAditivoContratual?
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conclusaoFonteId String
+  conclusaoFonte ConclusaoAssinaturaContratual @relation(fields: [conclusaoFonteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorAgendaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografia Json
+  fotografiaHash String
+  pendencias Json
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  versaoCondicoes VersaoCondicoesAditivo? @relation("AgendaAditivoFormalizada")
+  aplicacao AplicacaoAgendaAditivoParticular?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model AplicacaoAgendaAditivoParticular {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAgendaAditivoParticular @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoCondicoesId String @unique
+  aplicacaoCondicoes AplicacaoCondicoesAditivo @relation(fields: [aplicacaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicadorId String
+  aplicador Usuario @relation("AplicadorAgendaAditivo", fields: [aplicadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  eventoId String @unique
+  evento Evento @relation("EventoAplicacaoAgendaAditivo", fields: [eventoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  aplicadaEm DateTime @default(now())
+  @@unique([aplicadorId, chaveIdempotencia])
+  @@index([matriculaId, aplicadaEm])
+}
+
 model AplicacaoCondicoesAditivo {
   id String @id @default(cuid())
   versaoCondicoesId String @unique
@@ -4343,6 +4435,7 @@ model AplicacaoCondicoesAditivo {
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   propostaId String @unique
   proposta PropostaAditivoContratual @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoAgendaParticular AplicacaoAgendaAditivoParticular?
   autorId String
   autor Usuario @relation(fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   revisaoHash String
@@ -4857,7 +4950,11 @@ model PropostaUsoCredito {
 }
 
 model CreditoMatricula {
+  origemDestinacaoRecebimentoId String? @unique
+  origemDestinacaoRecebimento DestinacaoRecebimento? @relation(fields: [origemDestinacaoRecebimentoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   propostasUso PropostaUsoCredito[]
+  propostasDevolucao PropostaDevolucaoCredito[]
+  reservasDevolucao ReservaDevolucaoCredito[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4873,6 +4970,90 @@ model CreditoMatricula {
   moeda String
   criadoEm DateTime @default(now())
   @@index([matriculaId])
+}
+
+enum EstadoReservaDevolucaoCredito {
+  AGUARDANDO_EXECUCAO
+  INCERTO
+  CONFIRMADA
+  LIBERADA
+}
+
+model PropostaDevolucaoCredito {
+  decisao DecisaoDevolucaoCredito?
+  id String @id @default(cuid())
+  creditoId String
+  credito CreditoMatricula @relation(fields: [creditoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorDevolucaoCredito", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  valor Decimal @db.Decimal(12, 2)
+  pedidoAluno String
+  evidenciaPedido String
+  destino String
+  snapshot Json
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  @@unique([creditoId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+}
+
+model DecisaoDevolucaoCredito {
+  reserva ReservaDevolucaoCredito?
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaDevolucaoCredito @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorDevolucaoCredito", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+model ReservaDevolucaoCredito {
+  conciliacoes ConciliacaoDevolucaoCredito[]
+  cancelamento CancelamentoDevolucaoCredito?
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoDevolucaoCredito @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  creditoId String
+  credito CreditoMatricula @relation(fields: [creditoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  destino String
+  estado EstadoReservaDevolucaoCredito @default(AGUARDANDO_EXECUCAO)
+  executorId String?
+  executor Usuario? @relation("ExecutorDevolucaoCredito", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  referenciaExterna String?
+  evidenciaExecucao String?
+  chaveExecucao String?
+  criadaEm DateTime @default(now())
+  executadaEm DateTime?
+  @@unique([executorId, chaveExecucao])
+  @@index([creditoId, estado])
+}
+
+model ConciliacaoDevolucaoCredito {
+  id String @id @default(cuid())
+  reservaId String
+  reserva ReservaDevolucaoCredito @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conciliadorId String
+  conciliador Usuario @relation("ConciliadorDevolucaoCredito", fields: [conciliadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  confirmouSaida Boolean
+  evidencia String
+  criadaEm DateTime @default(now())
+  @@unique([reservaId])
+}
+
+model CancelamentoDevolucaoCredito {
+  id String @id @default(cuid())
+  reservaId String @unique
+  reserva ReservaDevolucaoCredito @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  canceladorId String
+  cancelador Usuario @relation("CanceladorDevolucaoCredito", fields: [canceladorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  evidencia String
+  criadaEm DateTime @default(now())
 }
 
 model PropostaLiberacaoHoras {
@@ -7061,8 +7242,10 @@ model ConciliacaoFinanceiraMigracao {
   financeiroOrigemId String
   propostaId String @unique
   proposta PropostaConciliacaoFinanceiraMigracao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  recebimentoId String? @unique
+  recebimentoId String?
   recebimento Recebimento? @relation(fields: [recebimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  destinacaoRecebimentoId String? @unique
+  destinacaoRecebimento DestinacaoRecebimento? @relation(fields: [destinacaoRecebimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   aplicadaPorId String
   aplicadaPor Usuario @relation("AplicadorConciliacaoFinanceiraMigracao", fields: [aplicadaPorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   snapshot Json

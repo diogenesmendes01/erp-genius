@@ -32,6 +32,7 @@ import { referenciaDestinoCobranca, snapshotCobranca } from "@/server/whatsapp/e
 import { enfileirarCobrancaWhatsApp } from "@/server/whatsapp/acoes";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { rodarControleAcessoAulas } from "./acesso-aulas";
 
 const HORA = 3600_000;
 let sec: Awaited<ReturnType<typeof criarUsuario>>, fin: typeof sec, adm: typeof sec;
@@ -65,7 +66,7 @@ beforeEach(async () => {
   canal = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
   contexto = await seedCobranca({ vencimento: diasDepois(new Date(), 7) });
 });
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe("prazo de conferência do informe", () => {
   it("fila usa a turma do contrato cobrado e não a de outra contratação do aluno", async () => {
@@ -130,6 +131,71 @@ describe("prazo de conferência do informe", () => {
 });
 
 describe("régua e despachante revalidam a conferência", () => {
+  it("CT08: comprovante pausa só sua cobrança por 48h; o prazo retoma a régua sem baixa e não libera aulas D+30", async () => {
+    const agora = new Date("2026-09-10T12:00:00.000Z");
+    vi.useFakeTimers();
+    vi.setSystemTime(agora);
+    const vencimentoVencido = new Date("2026-08-01T12:00:00.000Z");
+    const primeira = await prisma.cobranca.update({
+      where: { id: contexto.cobranca.id },
+      data: { vencimento: vencimentoVencido, status: "ATRASADO", saldo: 85_000, valorRecebido: null },
+    });
+    const produtoId = (await prisma.matricula.findUniqueOrThrow({ where: { id: contexto.matricula.id } })).produtoId;
+    const segundoContexto = await seedCobranca({ telefoneAluno: "+50688887778", vencimento: vencimentoVencido }, { pais: contexto.pais, produto: { id: produtoId } });
+    const segunda = await prisma.cobranca.update({
+      where: { id: segundoContexto.cobranca.id },
+      data: { status: "ATRASADO", saldo: 85_000, valorRecebido: null },
+    });
+    await prisma.matricula.updateMany({ where: { id: { in: [contexto.matricula.id, segundoContexto.matricula.id] } }, data: { status: "ATIVA" } });
+    const contatoPrimeira = await prisma.contatoWhatsApp.create({ data: { telefoneE164: contexto.aluno.telefoneE164!, alunoId: contexto.aluno.id } });
+    const contatoSegunda = await prisma.contatoWhatsApp.create({ data: { telefoneE164: segundoContexto.aluno.telefoneE164!, alunoId: segundoContexto.aluno.id } });
+    const enfileirar = async (cobrancaId: string, contatoId: string) => {
+      const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+      const snapshot = await snapshotCobranca(cobrancaId);
+      if (!snapshot?.destino) throw new Error("Destino ausente na fixture.");
+      await prisma.$transaction((tx) => enfileirarIntencaoCobranca(tx, {
+        cobrancaId, passo: "D+15", numeroId: canal.numero.id, contatoId, origem: "CRON", autorId: null,
+        referenciaCalendario: { versao: cobranca.versao, vencimento: cobranca.vencimento.toISOString(), cicloRegua: cobranca.cicloRegua },
+        referenciaDestino: referenciaDestinoCobranca(snapshot.destino), corpoRenderizado: "Cobrança final autorizada", variaveis: [],
+        templateId: canal.templates.get("firme")!, politicaId: canal.politica.id,
+      }));
+      return prisma.intencaoMensagem.findFirstOrThrow({ where: { cobrancaId } });
+    };
+    const [intencaoPrimeira, intencaoSegunda] = await Promise.all([enfileirar(primeira.id, contatoPrimeira.id), enfileirar(segunda.id, contatoSegunda.id)]);
+
+    entrar(adm.id);
+    expect((await salvarConfiguracaoOperacional({ exigirPrimeiraMensalidade: false, prazoConferenciaHoras: 48 })).ok).toBe(true);
+    entrar(sec.id);
+    const registro = await registrarPagamento(primeira.id, dadosInforme("ct08"));
+    expect(registro.ok, JSON.stringify(registro)).toBe(true);
+    const informe = await prisma.pagamentoInformado.findUniqueOrThrow({ where: { chaveIdempotencia: dadosInforme("ct08").chaveIdempotencia } });
+    expect(informe).toMatchObject({ status: "A_CONFERIR", cobrancaId: primeira.id });
+    expect(informe.suspenderLembretesAte).toEqual(new Date(agora.getTime() + 48 * HORA));
+
+    expect((await rodarControleAcessoAulas(agora)).bloqueadas).toBe(1);
+    await expect(prisma.matricula.findMany({ where: { id: { in: [contexto.matricula.id, segundoContexto.matricula.id] } }, orderBy: { id: "asc" } })).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: contexto.matricula.id, acessoBloqueado: true, acessoBloqueioAutomatico: true }),
+      expect.objectContaining({ id: segundoContexto.matricula.id, acessoBloqueado: true, acessoBloqueioAutomatico: true }),
+    ]));
+
+    const duranteConferencia = await despacharFila(agora);
+    expect(duranteConferencia).toMatchObject({ adiadas: 1, despachadas: 1 });
+    expect(enviarMock).toHaveBeenCalledTimes(1);
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoPrimeira.id } })).toMatchObject({ status: "ADIADA", motivoFalha: "comprovante_em_conferencia", despacharAposEm: informe.suspenderLembretesAte });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoSegunda.id } })).toMatchObject({ status: "DESPACHADA" });
+
+    const retomada = await despacharFila(informe.suspenderLembretesAte!);
+    expect(retomada).toMatchObject({ despachadas: 1, adiadas: 0 });
+    expect(enviarMock).toHaveBeenCalledTimes(2);
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoPrimeira.id } })).toMatchObject({ status: "DESPACHADA" });
+    expect(await prisma.pagamentoInformado.findUniqueOrThrow({ where: { id: informe.id } })).toMatchObject({ status: "A_CONFERIR" });
+    const cobrancaSemBaixa = await prisma.cobranca.findUniqueOrThrow({ where: { id: primeira.id } });
+    expect(cobrancaSemBaixa).toMatchObject({ status: "ATRASADO", valorRecebido: null });
+    expect(Number(cobrancaSemBaixa.saldo)).toBe(85_000);
+    expect(await prisma.recebimento.count({ where: { cobrancaId: primeira.id } })).toBe(0);
+    expect(await prisma.matricula.findUniqueOrThrow({ where: { id: contexto.matricula.id } })).toMatchObject({ acessoBloqueado: true, acessoBloqueioAutomatico: true });
+  });
+
   it("intenção anterior ao informe é adiada até o prazo; rejeição libera o próximo despacho imediatamente", async () => {
     const intencao = await prepararIntencao();
     const informe = await informar("ja-enfileirada");

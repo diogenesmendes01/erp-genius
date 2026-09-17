@@ -24,6 +24,7 @@ import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
 import { decidirCalendarioEscolar } from "@/server/agenda/calendario-decisao";
 import { proporUtilizacaoCredito, consultarPropostasUsoCredito } from "@/server/financeiro/uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
+import { cancelarDevolucaoCredito, conciliarDevolucaoCredito, decidirDevolucaoCredito, proporDevolucaoCredito, registrarExecucaoDevolucaoCredito } from "@/server/financeiro/devolucao-credito";
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { pagamentoConfirmado } from "@/server/financeiro/regras";
 import { kpisFinanceiro } from "@/server/financeiro/consultas";
@@ -336,6 +337,67 @@ async function creditoParaPropostaUso() {
   const cobranca = await prisma.cobranca.create({ data: { matriculaId: input.matriculaId, tipo: "HORA_PARTICULAR", valorOriginal: 300, valorNegociado: 300, valorRecebido: 0, saldo: 300, moeda: "CRC", status: "PENDENTE", vencimento: new Date("2099-11-01") } });
   return { credito, cobranca, entrada: { creditoId: credito.id, cobrancaId: cobranca.id, valor: "150.00", concordancia: "Aluno autorizou propor abatimento nesta cobrança", motivo: "Proposta de destinação do crédito disponível", chaveIdempotencia: "utilizacao-credito-proposta" } };
 }
+it("reserva devolução aprovada, impede apagar e só libera por cancelamento ou conciliação evidenciada", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const proposta = await proporDevolucaoCredito({ creditoId: credito.id, valor: "150.00", pedidoAluno: "Aluno pediu devolução do crédito", evidenciaPedido: "Protocolo do pedido do aluno", destino: "Conta bancária conferida do titular", motivo: "Devolver saldo não utilizado", chaveIdempotencia: "devolucao-proposta-um" });
+  expect(proposta.ok, proposta.ok ? undefined : proposta.erro).toBe(true); if (!proposta.ok || !proposta.dado) throw new Error("Proposta ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
+  expect(await decidirDevolucaoCredito({ propostaId: proposta.dado.id, aprovar: true, motivo: "Aprovação independente conferida" })).toMatchObject({ ok: true, dado: { aprovada: true } });
+  const reserva = await prisma.reservaDevolucaoCredito.findFirstOrThrow(); expect(reserva.estado).toBe("AGUARDANDO_EXECUCAO"); expect((await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)))).toFixed(2)).toBe("50.00");
+  expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "50.00", reservaDevolucao: "150.00", devolvido: "0.00" } });
+  await expect(prisma.reservaDevolucaoCredito.delete({ where: { id: reserva.id } })).rejects.toThrow();
+  await expect(prisma.reservaDevolucaoCredito.update({ where: { id: reserva.id }, data: { estado: "LIBERADA" } })).rejects.toThrow();
+  await expect(prisma.reservaDevolucaoCredito.update({ where: { id: reserva.id }, data: { estado: "CONFIRMADA", executorId: admin.id, chaveExecucao: "forja-sem-evidencia", referenciaExterna: "forja", executadaEm: new Date() } })).rejects.toThrow();
+  expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Aluno retirou o pedido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+  expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Aluno retirou o pedido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+  expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Outro motivo inválido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: false });
+  expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00" } });
+  expect((await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)))).toFixed(2)).toBe("200.00");
+  authMock.mockResolvedValue({ user: { id: usuarioId } });
+  const segunda = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Aluno confirmou nova devolução", evidenciaPedido: "Protocolo novo do pedido aluno", destino: "Conta bancária conferida do titular", motivo: "Devolver saldo restante", chaveIdempotencia: "devolucao-proposta-dois" }); if (!segunda.ok || !segunda.dado) throw new Error("Segunda proposta ausente");
+  authMock.mockResolvedValue({ user: { id: admin.id } }); await decidirDevolucaoCredito({ propostaId: segunda.dado.id, aprovar: true, motivo: "Aprovação independente renovada" });
+  const incerta = await prisma.reservaDevolucaoCredito.findFirstOrThrow({ where: { estado: "AGUARDANDO_EXECUCAO" } });
+  expect(await registrarExecucaoDevolucaoCredito({ reservaId: incerta.id, resultado: "INCERTO", referenciaExterna: "manual-externo-1", evidenciaExecucao: "Comprovante manual pendente", chaveIdempotencia: "execucao-manual-um" })).toMatchObject({ ok: true, dado: { estado: "INCERTO" } });
+  expect(await registrarExecucaoDevolucaoCredito({ reservaId: incerta.id, resultado: "INCERTO", referenciaExterna: "manual-externo-1", evidenciaExecucao: "Comprovante manual pendente", chaveIdempotencia: "execucao-manual-um" })).toMatchObject({ ok: true, dado: { estado: "INCERTO" } });
+  expect(await registrarExecucaoDevolucaoCredito({ reservaId: incerta.id, resultado: "CONFIRMADA", referenciaExterna: "manual-externo-1", evidenciaExecucao: "Comprovante manual pendente", chaveIdempotencia: "execucao-manual-um" })).toMatchObject({ ok: false });
+  await expect(prisma.reservaDevolucaoCredito.update({ where: { id: incerta.id }, data: { estado: "LIBERADA" } })).rejects.toThrow();
+  expect(await conciliarDevolucaoCredito({ reservaId: incerta.id, confirmouSaida: false, evidenciaConciliacao: "Extrato confirma que não houve saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+  expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00" } });
+});
+it("serializa cancelamento e execução da mesma reserva", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const p = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Aluno pediu devolução concorrente", evidenciaPedido: "Protocolo concorrente do aluno", destino: "Conta conferida do titular", motivo: "Devolução concorrente", chaveIdempotencia: "devolucao-corrida" }); if (!p.ok || !p.dado) throw new Error("Proposta ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } }); await decidirDevolucaoCredito({ propostaId: p.dado.id, aprovar: true, motivo: "Aprovação concorrente independente" });
+  const r = await prisma.reservaDevolucaoCredito.findFirstOrThrow();
+  const [cancelar, executar] = await Promise.all([cancelarDevolucaoCredito({ reservaId: r.id, motivo: "Cancelar antes da saída", evidenciaCancelamento: "Evidência do cancelamento" }), registrarExecucaoDevolucaoCredito({ reservaId: r.id, resultado: "INCERTO", referenciaExterna: "corrida-manual", evidenciaExecucao: "Comprovante da tentativa manual", chaveIdempotencia: "execucao-corrida" })]);
+  expect([cancelar.ok, executar.ok].filter(Boolean)).toHaveLength(1);
+  const final = await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } }); expect(["LIBERADA", "INCERTO"]).toContain(final.estado);
+  if (final.estado === "INCERTO") expect(await conciliarDevolucaoCredito({ reservaId: r.id, confirmouSaida: false, evidenciaConciliacao: "Extrato da corrida sem saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+});
+it("revalida executor revogado depois da aprovação e conserva a reserva", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const p = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Aluno pediu devolução revogável", evidenciaPedido: "Protocolo de devolução revogável", destino: "Conta conferida do titular", motivo: "Devolução para testar revogação", chaveIdempotencia: "devolucao-revogacao" }); if (!p.ok || !p.dado) throw new Error("Proposta ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } }); await decidirDevolucaoCredito({ propostaId: p.dado.id, aprovar: true, motivo: "Aprovação independente válida" });
+  const r = await prisma.reservaDevolucaoCredito.findFirstOrThrow(); await prisma.usuario.update({ where: { id: admin.id }, data: { ativo: false } });
+  expect(await registrarExecucaoDevolucaoCredito({ reservaId: r.id, resultado: "CONFIRMADA", referenciaExterna: "externa-revogada", evidenciaExecucao: "Comprovante não autorizado", chaveIdempotencia: "execucao-revogada" })).toMatchObject({ ok: false });
+  expect(await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } })).toMatchObject({ estado: "AGUARDANDO_EXECUCAO", executorId: null, evidenciaExecucao: null });
+});
+it("guard SQL recusa proposta de devolução acima do saldo ou com proveniência forjada", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const base = { creditoId: credito.id, preparadorId: usuarioId, versao: 1, pedidoAluno: "Pedido direto de devolução", evidenciaPedido: "Evidência direta de devolução", destino: "Destino direto conferido", chaveIdempotencia: "sql-direto-devolucao", entradaHash: "hash-direto" };
+  await expect(prisma.propostaDevolucaoCredito.create({ data: { ...base, valor: 201, snapshot: { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, saldoDisponivel: "200.00", valor: "201.00", destino: base.destino } } })).rejects.toThrow();
+  await expect(prisma.propostaDevolucaoCredito.create({ data: { ...base, valor: 100, chaveIdempotencia: "sql-proveniencia-forjada", snapshot: { creditoId: credito.id, matriculaId: "matricula-forjada", moeda: "USD", saldoDisponivel: "200.00", valor: "100.00", destino: base.destino } } })).rejects.toThrow();
+  expect(await prisma.propostaDevolucaoCredito.count()).toBe(0);
+});
+it("serializa aprovação concorrente de uso Q68 e devolução Q69 no mesmo crédito", async () => {
+  const { credito, entrada } = await creditoParaPropostaUso();
+  const uso = await proporUtilizacaoCredito({ ...entrada, valor: "150.00", chaveIdempotencia: "uso-concorrente-devolucao" }); if (!uso.ok || !uso.dado) throw new Error("Uso ausente");
+  const devolucao = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Pedido de devolução concorrente", evidenciaPedido: "Evidência de devolução concorrente", destino: "Destino conferido concorrente", motivo: "Conferir disputa pelo crédito", chaveIdempotencia: "devolucao-concorrente-uso" }); if (!devolucao.ok || !devolucao.dado) throw new Error("Devolução ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
+  const [a, b] = await Promise.all([decidirUtilizacaoCredito({ propostaId: uso.dado.id, aprovar: true, motivo: "Aprovação concorrente de uso" }), decidirDevolucaoCredito({ propostaId: devolucao.dado.id, aprovar: true, motivo: "Aprovação concorrente de devolução" })]);
+  expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
+  expect((await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)))).gte(0)).toBe(true);
+});
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
   const recebimentos = await prisma.recebimento.findMany();
