@@ -12,6 +12,10 @@ function periodo(inicio: string, fim: string, fuso: string) {
   }).format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
   return `${formatar(inicio)} até ${formatar(fim)} (${fuso})`;
 }
+function instante(valor: string, fuso: string) {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso })
+    .format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
+}
 function Agenda({ valor }: { valor: unknown }) {
   const r = agendaSchema.safeParse(valor);
   if (!r.success || !r.data.encontro) return <p>Agenda indisponível para conferência.</p>;
@@ -40,7 +44,15 @@ export default async function Page({
     <h1 className="text-2xl font-medium">Remarcar segunda chamada</h1>
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
     <p>A aprovação independente aplica o novo horário após conferir prazo e disponibilidade. Mantém o professor e a mesma oportunidade reservada.</p>
-    <h2 className="font-medium">Agenda atual</h2>
+    <h2 className="font-medium">{d.conferencia.contextoVigente ? "Conferência da reserva" : "Conferência histórica da reserva"}</h2>
+    {!d.conferencia.contextoVigente && <p role="status">O vínculo atual mudou; estes dados pertencem à reserva histórica e não autorizam nova remarcação.</p>}
+    <dl className="grid gap-1">
+      <div><dt className="inline font-medium">Reserva: </dt><dd className="inline">{d.conferencia.reservaId}</dd></div>
+      <div><dt className="inline font-medium">Avaliação: </dt><dd className="inline">{d.conferencia.codigoAvaliacao}</dd></div>
+      <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Professor atual: " : "Professor registrado na agenda: "}</dt><dd className="inline">{d.conferencia.professorAtual?.nome ?? "Sem professor definido"}</dd></div>
+      <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Prazo vigente: " : "Prazo registrado: "}</dt><dd className="inline">{d.conferencia.prazoVigente ? `${instante(d.conferencia.prazoVigente, d.conferencia.fusoExibicao)} (${d.conferencia.fusoExibicao})` : "Disponibilização sem prazo registrado"}</dd></div>
+    </dl>
+    <h2 className="font-medium">{d.conferencia.contextoVigente ? "Agenda atual" : "Agenda registrada"}</h2>
     <Agenda valor={d.atual} />
     {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoHash} />}
     <h2 className="font-medium">Propostas e decisões</h2>
