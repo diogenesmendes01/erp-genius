@@ -25,8 +25,6 @@ Entrada financeira histórica M01 integrada e validada localmente: o Financeiro 
 | F07.6/Q19 — exceção pontual de agenda | DEV 1 Terra | Integrada e validada localmente | 16/09/2026 | dcf7f763/a3448cc2; TESTER: 12 integrações e 2 controles/SSR; principal: 28 integrações de agenda/permissões. Aprovação não cria agenda nem altera calendário |
 | ACA/V01 — recuperação, transferência, fechamento e portal | TESTER Terra | Cenário integrado validado localmente | 17/09/2026 | Commit deste worktree: recuperação oficial da origem, equivalência proposta/aprovada, execução pela Secretaria, fechamento e consulta do portal. Duas matrículas da mesma aluna permanecem isoladas. Integração dirigida 5/5 e TypeScript, ambos exit 0 no banco descartável TESTER; não equivale a homologação externa ou à conclusão integral de V01 |
 
-## Histórico de verificações (estados anteriores)
-
 ### Fila residual para aceite local — revisão de 17/09/2026
 
 O objetivo solicitado é concluir a implementação local. Configuração de contas externas, envios reais, carga real e deploy não compõem o aceite local; adaptadores, estados de erro e testes simulados continuam obrigatórios. Esta fila registra lacunas confirmadas, sem substituir a conferência dos demais critérios da SPEC e sem gerar um percentual global.
@@ -39,6 +37,10 @@ O objetivo solicitado é concluir a implementação local. Configuração de con
 | P02/Q89/Q98 — permuta | Pendente de implementação após B02 | Nenhum fluxo de acordo/serviço/compensação encontrado em `src` ou no schema. Exige evidência pedagógica, fórmula do acordo, aplicação parcial e aprovação financeira independente sem dinheiro fictício |
 | DCT03 — demais alterações operacionais | Conferência e implementação residual pendentes | `aditivo-efeitos.ts` mantém tipos financeiros/regime como dependentes de fluxo próprio. Confirmar consumidores e UI antes de aceitar cada tipo; PDF assinado sozinho não comprova aplicação |
 | V01 — cenários integrados e regressão final | Pendente após integração das frentes | Conferir CT-01–CT-12 e demais critérios por domínio; executar regressão apropriada, build e fluxos locais. Auditoria 609 é histórica e não comprova o estado corrente |
+
+17/09/2026 — ambiente DEV2: identificada divergência de checksum da migração 204 no banco descartável `erp_genius_test_dev_gravacoes`. A versão aplicada previamente não estava preservada nos commits disponíveis; origem dessa aplicação não confirmada. O integrador reconstruiu exclusivamente esse banco, conferindo host `localhost`, porta `54329` e nome exato pelo perfil, com `migrate reset --force --skip-seed`. Cadeia revisada e Prisma Client concluídos na sessão 99146, saída 0. A base 204 passa a ser o commit `c332eaf8`, SHA256 `4849EB9D4F42DEC4358985FE5D68332019032BA530B4C80CF88584A828758A9A`, imutável após essa aplicação. Não houve alteração manual de checksums, dados reais ou outro banco. Testes Q117/Q38 novamente liberados para DEV2; entrega ainda não aceita.
+
+## Histórico de verificações (estados anteriores)
 
 17/09/2026 — continuação local com dois DEVs Terra: migração 195 revisada até o checkpoint DEV `944df249` e aplicada somente em `dev-email`, com geração do Prisma Client e saída terminal 0. Hash SHA-256 aplicado: `D0C17EA5E68C1EAA7DAE1C55177D2E46C0930EB95F71A4A6FBBEAA9014BD125F`; SQL aplicado é imutável. A primeira integração do DEV encontrou divergência no guard da aplicação e reverteu a transação; entrega ainda não aprovada nem integrada. Corretiva 202 reservada (`20260917110000_correcao_entrada_financeira_historica`), dependente de diagnóstico, sem aplicação. Migração 201 de agenda permanece em revisão, sem aplicação: conferir vínculo com a formalização existente, aplicação conjunta obrigatória e revalidação sem invalidar a própria versão de aditivo. Schemas Prisma dos dois DEVs validados com saída 0. Nenhum envio real ou deploy.
 
