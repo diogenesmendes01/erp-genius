@@ -69,6 +69,7 @@ export default async function FinanceiroPage() {
     <>
     {podeOperarCobranca && <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1">
       <Link className="underline" href="/financeiro/desistencias">Conferir desistências de matrículas</Link>
+      <Link className="underline" href="/financeiro/recebimentos">Registrar recebimento com destinações</Link>
       <Link className="underline" href="/financeiro/migracao">Conferir conciliação da migração</Link>
       <Link className="underline" href="/financeiro/continuidade">Acompanhar continuidade mensal</Link>
     </div>}

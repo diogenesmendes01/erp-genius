@@ -1,6 +1,6 @@
 # Q87 — migração de recebimentos para destinações
 
-O recorte de banco está preparado na migração 211, ainda não aplicada. Um
+O recorte de banco está aplicado no perfil descartável pela migração 211. Um
 `Recebimento` passa a ser o fato de caixa original, com titular obrigatório,
 pagador quando houver evidência e moeda/data/forma/autoria preservadas. A
 baixa de uma `Cobranca` é dada por `DestinacaoRecebimento`; o crédito sem
@@ -41,7 +41,12 @@ crédito sem origem e acumulado de cobrança que não corresponda às suas
 destinações. O autor do fato ou da destinação deve estar ativo e ser
 Financeiro/Administração ou ter `pagamento.caixa` vigente.
 
-Pendências antes de aceitar Q87: aplicar 211 pelo integrador, gerar Prisma,
-migrar ações e telas, e executar cenários de dois períodos, crédito sem
-destino, repetição/concorrência, legado, uso Q68 e devolução Q69. Este
+A rota `/financeiro/recebimentos` atende a operação manual: seleciona um
+contrato e sua moeda, reparte o valor entre cobranças abertas daquele contrato
+e/ou crédito sem destino, apresenta o total antes da confirmação, permite
+pagador, data, forma, comprovante e evidência por destino. O retry preserva a
+mesma chave idempotente enquanto o formulário estiver aberto.
+
+Pendências antes de aceitar Q87: revisão independente da UI, regressão dos
+consumidores restantes e cenários completos de uso Q68/devolução Q69. Este
 documento não declara Q87 concluída.
