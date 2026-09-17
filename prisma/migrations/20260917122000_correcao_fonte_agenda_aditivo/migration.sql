@@ -1,7 +1,5 @@
 -- Q117/Q38: uma aplicação de agenda aponta para o único evento que a publicou.
 -- Eventos com o mesmo payload não são fonte material da aplicação.
-BEGIN;
-
 ALTER TABLE "AplicacaoAgendaAditivoParticular" ADD COLUMN "eventoId" TEXT;
 
 -- Migração de fatos já aplicados: não escolhe arbitrariamente um clone.
@@ -104,5 +102,3 @@ END $$;
 CREATE CONSTRAINT TRIGGER exigir_evento_aplicacao_agenda_aditivo_205
 AFTER INSERT ON "AplicacaoAgendaAditivoParticular" DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION exigir_evento_aplicacao_agenda_aditivo_205();
-
-COMMIT;
