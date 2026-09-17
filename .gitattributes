@@ -22,3 +22,4 @@ prisma/migrations/20260917093000_fonte_quantidade_autoria_adicoes/migration.sql 
 prisma/migrations/20260917094000_aplicacao_condicoes_aditivo/migration.sql -text
 prisma/migrations/20260917095000_compatibilidade_aplicacao_aditivo/migration.sql -text
 prisma/migrations/20260917100000_agenda_aditivo_particular/migration.sql -text
+prisma/migrations/20260917122000_correcao_fonte_agenda_aditivo/migration.sql -text
