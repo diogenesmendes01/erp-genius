@@ -91,13 +91,14 @@ export async function listarHistoricoAcertosTaxa(input: unknown) {
       include: { preparador: { select: { nome: true } }, cobranca: { select: { codigo: true, moeda: true } }, decisao: { include: { decisor: { select: { nome: true } } } }, aplicacao: { include: { executor: { select: { nome: true } } } } },
     });
     return propostas.map(p => {
-      const fotografia = p.fotografia as { cobranca?: { valorNegociado?: string; valorRecebido?: string | null; valorLiquidadoCredito?: string; vencimento?: string }; calculo?: { creditoAnterior?: string } };
+      const fotografia = p.fotografia as { cobranca?: { valorNegociado?: string; valorRecebido?: string | null; valorLiquidadoCredito?: string; vencimento?: string }; calculo?: { creditoAnterior?: string }; comissoes?: Array<{ id?: string; tipo?: string; status?: string; percentual?: string; valor?: string; valorBase?: string | null }> };
       return ({
       id: p.id, status: p.status, codigo: p.cobranca.codigo ?? p.cobrancaId, moeda: p.cobranca.moeda,
       preparador: p.preparador.nome, criadaEm: p.criadaEm.toISOString(), motivo: p.motivo,
       evidencia: typeof p.evidencia === "object" && p.evidencia !== null && !Array.isArray(p.evidencia) && typeof p.evidencia.texto === "string" ? p.evidencia.texto : "Evidência estruturada preservada no registro do acerto.",
       anterior: { valor: fotografia.cobranca?.valorNegociado ?? null, recebido: fotografia.cobranca?.valorRecebido ?? null, creditoLiquidado: fotografia.cobranca?.valorLiquidadoCredito ?? null, vencimento: fotografia.cobranca?.vencimento?.slice(0, 10) ?? null, creditoOriginado: fotografia.calculo?.creditoAnterior ?? null },
       valorNovo: p.valorNovo.toFixed(2), vencimentoNovo: p.vencimentoNovo.toISOString().slice(0, 10), creditoNovo: p.creditoNovo.toFixed(2),
+      comissoes: (fotografia.comissoes ?? []).map(c => { const percentual = c.tipo === "PERCENTUAL" && c.status !== "PAGA" && c.status !== "ESTORNADA"; return { id: c.id ?? "", tipo: c.tipo === "VALOR_FIXO" ? "Fixa" : "Percentual", status: c.status ?? "Não informado", valorAntes: c.valor ?? null, valorDepois: percentual && c.percentual ? new Prisma.Decimal(p.valorNovo).mul(c.percentual).div(100).toFixed(2) : c.valor ?? null, baseAntes: c.valorBase ?? null, baseDepois: percentual ? p.valorNovo.toFixed(2) : c.valorBase ?? null, preservada: !percentual }; }),
       decisao: p.decisao && { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, autor: p.decisao.decisor.nome, data: p.decisao.decididaEm.toISOString() },
       aplicacao: p.aplicacao && { autor: p.aplicacao.executor.nome, data: p.aplicacao.aplicadaEm.toISOString(), valorAnterior: p.aplicacao.valorAnterior.toFixed(2) },
       podeDecidir: aprova && p.preparadorId !== usuario.id && p.status === "PENDENTE" && !p.decisao,
