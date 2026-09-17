@@ -164,7 +164,8 @@ it("usa início inclusivo e fim exclusivo ao localizar o vínculo da aula origin
 
 it("recusa vínculo inativo sem data de encerramento", async () => {
   await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: null } });
-  await expect(carregar()).rejects.toThrow("intervalo conferível");
+  // O seletor temporal já exclui o vínculo sem intervalo histórico conferível.
+  await expect(carregar()).rejects.toThrow("único vínculo histórico");
 });
 
 it("inclui a dependência aprovada ainda não executada", async () => {
