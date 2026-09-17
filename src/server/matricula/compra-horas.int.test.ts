@@ -382,6 +382,13 @@ it("revalida executor revogado depois da aprovação e conserva a reserva", asyn
   expect(await registrarExecucaoDevolucaoCredito({ reservaId: r.id, resultado: "CONFIRMADA", referenciaExterna: "externa-revogada", evidenciaExecucao: "Comprovante não autorizado", chaveIdempotencia: "execucao-revogada" })).toMatchObject({ ok: false });
   expect(await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } })).toMatchObject({ estado: "AGUARDANDO_EXECUCAO", executorId: null, evidenciaExecucao: null });
 });
+it("guard SQL recusa proposta de devolução acima do saldo ou com proveniência forjada", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const base = { creditoId: credito.id, preparadorId: usuarioId, versao: 1, pedidoAluno: "Pedido direto de devolução", evidenciaPedido: "Evidência direta de devolução", destino: "Destino direto conferido", chaveIdempotencia: "sql-direto-devolucao", entradaHash: "hash-direto" };
+  await expect(prisma.propostaDevolucaoCredito.create({ data: { ...base, valor: 201, snapshot: { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, saldoDisponivel: "200.00", valor: "201.00", destino: base.destino } } })).rejects.toThrow();
+  await expect(prisma.propostaDevolucaoCredito.create({ data: { ...base, valor: 100, chaveIdempotencia: "sql-proveniencia-forjada", snapshot: { creditoId: credito.id, matriculaId: "matricula-forjada", moeda: "USD", saldoDisponivel: "200.00", valor: "100.00", destino: base.destino } } })).rejects.toThrow();
+  expect(await prisma.propostaDevolucaoCredito.count()).toBe(0);
+});
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
   const recebimentos = await prisma.recebimento.findMany();
