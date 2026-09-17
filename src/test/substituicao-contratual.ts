@@ -62,11 +62,12 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
     titulo: "Contrato {{nome}}", finalidade: "CONTRATO", regimes: [opcoes.porHora ? "HORA_PARTICULAR" : "MENSALIDADE"], aplicacao: "Modelo para contratação", campos: [{ chave: "nome", descricao: "Nome do aluno", origem: "ALUNO_NOME" }, ...(opcoes.porHora ? [{ chave: "hora", descricao: "Preço por hora", origem: "HORA_VALOR" as const }, { chave: "agenda", descricao: "Agenda", origem: "AGENDA_PARTICULAR" as const }] : []), ...(opcoes.camposFinanceiros ? [
       { chave: "moeda", descricao: "Moeda", origem: "MOEDA" as const },
       { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" as const },
+      { chave: "vencimento_taxa", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" as const },
       { chave: "mensalidade", descricao: "Mensalidade", origem: "MENSALIDADE_VALOR" as const },
       { chave: "inicio", descricao: "Início", origem: "COBERTURA_INICIO" as const },
       { chave: "fim", descricao: "Fim", origem: "COBERTURA_FIM" as const },
     ] : [])],
-    secoes: [{ titulo: "Identificação", texto: "Aluno: {{nome}}." }, ...(opcoes.porHora ? [{ titulo: "Particulares", texto: "Hora: {{hora}}. Agenda: {{agenda}}." }] : []), ...(opcoes.camposFinanceiros ? [{ titulo: "Condições financeiras", texto: "Moeda {{moeda}}. Taxa {{taxa}}. Mensalidade {{mensalidade}}. Cobertura {{inicio}} até {{fim}}." }] : [])], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }],
+    secoes: [{ titulo: "Identificação", texto: "Aluno: {{nome}}." }, ...(opcoes.porHora ? [{ titulo: "Particulares", texto: "Hora: {{hora}}. Agenda: {{agenda}}." }] : []), ...(opcoes.camposFinanceiros ? [{ titulo: "Condições financeiras", texto: "Moeda {{moeda}}. Taxa {{taxa}} em {{vencimento_taxa}}. Mensalidade {{mensalidade}}. Cobertura {{inicio}} até {{fim}}." }] : [])], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }],
   } }));
   const modelo = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: modeloCriado.id } });
   entrar(admin.id);
