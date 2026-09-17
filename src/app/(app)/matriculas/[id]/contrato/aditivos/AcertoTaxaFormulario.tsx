@@ -1,0 +1,5 @@
+"use client";
+import { useState } from "react";
+import { aplicarAcertoTaxaAditivo, decidirAcertoTaxaAditivo, proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
+export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusaoId, revisaoHash, cobrancaId }: { matriculaId:string; propostaAditivoId:string; conclusaoId:string; revisaoHash:string; cobrancaId:string }) { const [mensagem,setMensagem]=useState(""); const chave=crypto.randomUUID(); return <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Acerto da taxa emitida</h2><p>Escolha explícita da cobrança real. Pagamentos e comissões são preservados; crédito exige aprovação independente.</p><button onClick={async()=>{const r=await proporAcertoTaxaAditivo({matriculaId,propostaAditivoId,conclusaoId,revisaoHash,cobrancaId,motivo:"Acerto da taxa formalizada.",evidencia:{origem:"tela"},chaveIdempotencia:chave});setMensagem(r.ok?`Proposta ${r.dado?.id}`:r.erro)}}>Propor acerto</button>{mensagem&&<p role="status">{mensagem}</p>}</section>; }
+export { decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo };
