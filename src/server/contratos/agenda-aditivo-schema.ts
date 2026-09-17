@@ -33,5 +33,5 @@ export function hashPropostaAgendaAditivo(proposta: z.input<typeof PropostaAgend
 export function textoAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) {
   const d = fotografiaCanonicaAgendaAditivo(proposta);
   const f = (v: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(v));
-  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} → ${e.fusoNovo})`).join("; ");
+  return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} -> ${e.fusoNovo})`).join("; ");
 }
