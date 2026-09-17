@@ -526,6 +526,7 @@ model Usuario {
   decisoesCorrecaoReposicao DecisaoCorrecaoConclusaoReposicao[] @relation("DecisorCorrecaoConclusaoReposicao")
   atribuicoesReposicao DesignacaoAvaliadorReposicaoIndividual[] @relation("AvaliadorReposicaoDesignado")
   designacoesReposicaoPreparadas DesignacaoAvaliadorReposicaoIndividual[] @relation("DesignadorAvaliadorReposicao")
+  substituicoesAvaliadorReposicao DesignacaoSubstituicaoAvaliadorReposicaoIndividual[] @relation("DesignadorSubstituicaoAvaliadorReposicao")
   materiaisReposicaoPublicados MaterialReposicaoGravacao[] @relation("MaterialReposicaoPublicado")
   propostasRegularizacaoFonteGravacao PropostaRegularizacaoFonteGravacao[] @relation("PreparadorRegularizacaoFonteGravacao")
   decisoesRegularizacaoFonteGravacao DecisaoRegularizacaoFonteGravacao[] @relation("DecisorRegularizacaoFonteGravacao")
@@ -5641,6 +5642,7 @@ model ReposicaoIndividual {
   decisao DecisaoReposicaoIndividual?
   conclusoes ConclusaoReposicaoIndividual[]
   designacoes DesignacaoAvaliadorReposicaoIndividual[]
+  substituicoesAvaliador DesignacaoSubstituicaoAvaliadorReposicaoIndividual[]
   @@unique([solicitanteId, chaveIdempotencia])
   @@index([matriculaId, aulaOriginalId])
 }
@@ -5760,7 +5762,29 @@ model DesignacaoAvaliadorReposicaoIndividual {
   fim DateTime?
   motivo String
   criadaEm DateTime @default(now())
+  substituicoesComoAnterior DesignacaoSubstituicaoAvaliadorReposicaoIndividual[] @relation("DesignacaoAnteriorSubstituicaoReposicao")
+  substituicoesComoNova DesignacaoSubstituicaoAvaliadorReposicaoIndividual[] @relation("DesignacaoNovaSubstituicaoReposicao")
   @@index([reposicaoId, professorId, inicio])
+}
+
+// Q40: a linha de designação permanece imutável. Esta substituição define o
+// fim efetivo da anterior e a nova vigente, sem reescrever autoria histórica.
+model DesignacaoSubstituicaoAvaliadorReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "dasari_reposicao_fkey")
+  designacaoAnteriorId String @unique(map: "dasari_anterior_key")
+  designacaoAnterior DesignacaoAvaliadorReposicaoIndividual @relation("DesignacaoAnteriorSubstituicaoReposicao", fields: [designacaoAnteriorId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "dasari_anterior_fkey")
+  designacaoNovaId String @unique(map: "dasari_nova_key")
+  designacaoNova DesignacaoAvaliadorReposicaoIndividual @relation("DesignacaoNovaSubstituicaoReposicao", fields: [designacaoNovaId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "dasari_nova_fkey")
+  designadorId String
+  designador Usuario @relation("DesignadorSubstituicaoAvaliadorReposicao", fields: [designadorId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "dasari_designador_fkey")
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  @@unique([reposicaoId, chaveIdempotencia], map: "dasari_reposicao_chave_key")
+  @@index([reposicaoId, criadaEm], map: "dasari_reposicao_criada_idx")
 }
 
 enum FinalidadeTokenPortalAluno {
