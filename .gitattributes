@@ -11,3 +11,6 @@ prisma/migrations/20260916200000_conferencia_regra_historica/migration.sql -text
 prisma/migrations/20260916202000_contexto_trigger_conferencia_historica/migration.sql -text
 prisma/migrations/20260916201000_intervalo_segunda_migrado/migration.sql -text
 prisma/migrations/20260916203000_utc_conferencia_regra_historica/migration.sql -text
+prisma/migrations/20260917091000_fonte_quantidade_avisos/migration.sql -text
+prisma/migrations/20260917092000_fonte_quantidade_conjunto_completo/migration.sql -text
+prisma/migrations/20260917093000_fonte_quantidade_autoria_adicoes/migration.sql -text
