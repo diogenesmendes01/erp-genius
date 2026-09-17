@@ -36,8 +36,8 @@ export function RecebimentoDestinadoForm({ contextos }: { contextos: Contexto[] 
     if (!data) return setErro("Informe a data do pagamento.");
     if (exigeComprovante && !comprovanteUrl) return setErro(`Anexe o comprovante para ${FORMA_PAGAMENTO_LABEL[forma]}.`);
     const destinos = [
-      ...linhas.map((linha) => ({ tipo: "COBRANCA" as const, cobrancaId: linha.cobrancaId, valor: Number(linha.valor), evidencia: linha.evidencia, chaveIdempotencia: `cobranca:${linha.cobrancaId}` })),
-      ...(Number(credito) > 0 ? [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: Number(credito), evidencia: evidenciaCredito, chaveIdempotencia: "credito-sem-destino" }] : []),
+      ...linhas.map((linha) => ({ tipo: "COBRANCA" as const, cobrancaId: linha.cobrancaId, valor: centavos(linha.valor)! / 100, evidencia: linha.evidencia, chaveIdempotencia: `cobranca:${linha.cobrancaId}` })),
+      ...((centavos(credito) ?? 0) > 0 ? [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: centavos(credito)! / 100, evidencia: evidenciaCredito, chaveIdempotencia: "credito-sem-destino" }] : []),
     ];
     emEnvio.current = true; setOcupado(true);
     try { const r = await registrarRecebimentoDestinado({ titularMatriculaId: contexto.matriculaId, pagadorId: pagadorId || null, chaveIdempotencia: chave.current, valorRecebido: total, moeda: contexto.moeda, forma, dataPagamento: new Date(`${data}T12:00:00`).toISOString(), comentario: comentario || null, comprovanteUrl: comprovanteUrl || null, comprovanteNome: comprovanteNome || null, destinos }); if (!r.ok) { setErro(r.erro ?? "Não foi possível registrar o recebimento."); emEnvio.current = false; } else setSucesso("Recebimento confirmado. Atualize a página para iniciar outro lançamento."); } catch { setErro("Não foi possível confirmar o recebimento. Tente novamente com a mesma operação."); emEnvio.current = false; } finally { setOcupado(false); }

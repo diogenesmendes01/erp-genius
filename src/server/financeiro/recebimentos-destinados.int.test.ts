@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { registrarRecebimentoDestinado } from "./acoes";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
+import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "./uso-credito-decisao";
 import { proporDevolucaoCredito, decidirDevolucaoCredito } from "./devolucao-credito";
@@ -84,7 +85,11 @@ it("aceita comprovante autorizado por matrícula em crédito puro e preserva um 
   const [a, b] = await Promise.all([registrarRecebimentoDestinado(dados), registrarRecebimentoDestinado(dados)]);
   expect(a.ok && b.ok).toBe(true);
   expect(await prisma.recebimento.count()).toBe(1);
-  expect(await prisma.evento.count({ where: { tipo: "RecebimentoCreditado", agregadoId: matriculaId } })).toBe(1);
+  const recebimento = await prisma.recebimento.findFirstOrThrow({ where: { chaveIdempotencia: dados.chaveIdempotencia } });
+  const eventos = await prisma.evento.findMany({ where: { tipo: "RecebimentoRegistrado", agregadoTipo: "Recebimento", agregadoId: recebimento.id } });
+  expect(eventos).toHaveLength(1);
+  expect(eventos[0].payload).toMatchObject({ recebimentoId: recebimento.id, titularMatriculaId: matriculaId, comprovanteUrl: url, comprovanteNome: "q87-credito-comprovante.pdf" });
+  expect(await consultarHistoricoRecebimentos({ matriculaId })).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ id: recebimento.id, comprovante: { url, nome: "q87-credito-comprovante.pdf" }, evidenciaCaixaRegistrada: true })] } });
   expect(await podeLerArquivo({ id: financeiroId, papeis: [Papel.FINANCEIRO] }, ["q87-credito-comprovante.pdf"])).toBe(true);
 });
 
