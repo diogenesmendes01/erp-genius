@@ -36,7 +36,7 @@ export async function carregarFinanceiroDesistenciaTx(
 
   const cobrancas = await tx.cobranca.findMany({ where: { matriculaId }, orderBy: { id: "asc" } });
   const creditos = await tx.creditoMatricula.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, select: {
-    id: true, origemLiberacaoId: true, origemAcertoId: true, origemPeriodoIntegralId: true,
+    id: true, origemLiberacaoId: true, origemAcertoId: true, origemPeriodoIntegralId: true, origemDestinacaoRecebimentoId: true,
     valorInicial: true, moeda: true, criadoEm: true,
   } });
   const cobrancaIds = cobrancas.map((c) => c.id);
@@ -44,8 +44,8 @@ export async function carregarFinanceiroDesistenciaTx(
     tx.pagamentoInformado.findMany({ where: { cobrancaId: { in: cobrancaIds } }, orderBy: { id: "asc" }, select: {
       id: true, cobrancaId: true, status: true, valor: true, moeda: true, dataPagamento: true, versao: true,
     } }),
-    tx.recebimento.findMany({ where: { cobrancaId: { in: cobrancaIds } }, orderBy: { id: "asc" }, select: {
-      id: true, cobrancaId: true, valor: true, moeda: true, dataPagamento: true,
+    tx.destinacaoRecebimento.findMany({ where: { cobrancaId: { in: cobrancaIds } }, orderBy: { id: "asc" }, select: {
+      id: true, cobrancaId: true, valor: true, recebimento: { select: { id: true, moeda: true, dataPagamento: true } },
     } }),
     tx.propostaUsoCredito.findMany({ where: { cobrancaId: { in: cobrancaIds } }, orderBy: { id: "asc" }, select: {
       id: true, cobrancaId: true, creditoId: true, valor: true, versao: true,
@@ -115,7 +115,7 @@ export async function carregarFinanceiroDesistenciaTx(
       moeda: i.moeda, dataPagamento: i.dataPagamento.toISOString(),
     })),
     recebimentos: recebimentosRegistrados.filter((r) => r.cobrancaId === c.id).map((r) => ({
-      id: r.id, valor: r.valor.toFixed(2), moeda: r.moeda, dataPagamento: r.dataPagamento.toISOString(),
+      id: r.id, recebimentoId: r.recebimento.id, valor: r.valor.toFixed(2), moeda: r.recebimento.moeda, dataPagamento: r.recebimento.dataPagamento.toISOString(),
     })),
     utilizacoesCredito: usos.filter((u) => u.cobrancaId === c.id).map((u) => ({
       id: u.id, creditoId: u.creditoId, versao: u.versao, valor: u.valor.toFixed(2),

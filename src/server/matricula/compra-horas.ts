@@ -59,21 +59,21 @@ export async function registrarCompraHorasAntecipadas(input: z.input<typeof Entr
       const doc = await tx.documento.findFirst({ where: { id: m.contratoDocumentoId, categoria: "CONTRATO", arquivado: false, OR: [{ matriculaId: m.id }, ...(m.leadId ? [{ leadId: m.leadId }] : [])] } });
       if (!doc) throw new ErroRegra("Documento contratual indisponível ou de outra matrícula.");
       await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${d.cobrancaId} FOR UPDATE`;
-      const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: m.id }, include: { recebimentos: { orderBy: { id: "asc" } }, informes: { where: { status: "A_CONFERIR" } }, comprasHoras: true } });
+      const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: m.id }, include: { destinacoesRecebimento: { orderBy: { id: "asc" }, include: { recebimento: { select: { id: true, moeda: true, dataPagamento: true } } } }, informes: { where: { status: "A_CONFERIR" } }, comprasHoras: true } });
       if (!c || c.tipo !== "HORA_PARTICULAR" || c.versao !== d.versaoCobranca || c.moeda !== m.moeda || c.comprasHoras.length) throw new ErroRegra("Cobrança incompatível, desatualizada ou já vinculada a uma compra.");
       const preparacao = await conferirCompraPreparadaTx(tx, m, c, d.minutosComprados);
       // Preço de referência inferior ao negociado não é desconto negativo. Preservar ambos na memória.
       const valorOriginal = preparacao ? Prisma.Decimal.max(c.valorOriginal, c.valorNegociado) : c.valorOriginal;
-      const total = c.recebimentos.reduce((s, r) => s.plus(r.valor), new Prisma.Decimal(0));
+      const total = c.destinacoesRecebimento.reduce((s, d) => s.plus(d.valor), new Prisma.Decimal(0));
       const utilizacoes = await tx.propostaUsoCredito.findMany({ where: { cobrancaId: c.id, decisao: { aprovada: true } }, orderBy: { id: "asc" },
         select: { id: true, creditoId: true, valor: true, credito: { select: { matriculaId: true, moeda: true } }, decisao: { select: { id: true } } } });
       const credito = utilizacoes.reduce((s, u) => s.plus(u.valor), new Prisma.Decimal(0));
       const liquidado = total.plus(credito);
-      if (c.status !== "PAGO" || c.informes.length || c.suspensaPorItemPausaId || c.canceladaPorPausaId || !new Prisma.Decimal(c.valorRecebido ?? 0).equals(total) || !credito.equals(c.valorLiquidadoCredito) || !liquidado.equals(c.valorNegociado) || valorOriginal.lt(c.valorNegociado) || c.valorNegociado.lte(0) || (c.saldo !== null && !c.saldo.isZero()) || c.recebimentos.some((r) => r.moeda !== c.moeda || r.valor.lte(0)) || utilizacoes.some(u => u.credito.moeda !== c.moeda || u.credito.matriculaId !== m.id || u.valor.lte(0))) throw new ErroRegra("Concilie a quitação integral, os recebimentos e os créditos aprovados desta compra.");
+      if (c.status !== "PAGO" || c.informes.length || c.suspensaPorItemPausaId || c.canceladaPorPausaId || !new Prisma.Decimal(c.valorRecebido ?? 0).equals(total) || !credito.equals(c.valorLiquidadoCredito) || !liquidado.equals(c.valorNegociado) || valorOriginal.lt(c.valorNegociado) || c.valorNegociado.lte(0) || (c.saldo !== null && !c.saldo.isZero()) || c.destinacoesRecebimento.some((d) => d.recebimento.moeda !== c.moeda || d.valor.lte(0)) || utilizacoes.some(u => u.credito.moeda !== c.moeda || u.credito.matriculaId !== m.id || u.valor.lte(0))) throw new ErroRegra("Concilie a quitação integral, as destinações e os créditos aprovados desta compra.");
       const compra = await tx.compraHorasAntecipadas.create({ data: { matriculaId: m.id, cobrancaId: c.id, documentoId: doc.id, registradorId: autor.id,
         minutosComprados: d.minutosComprados, valorOriginal, descontoOriginal: valorOriginal.minus(c.valorNegociado), valorPagoAlocado: liquidado, moeda: c.moeda,
         evidenciaCondicoes: d.evidenciaCondicoes, chaveIdempotencia: d.chaveIdempotencia, entradaHash: hash,
-        snapshot: { ...(preparacao ? { preparacao, valorReferenciaCobranca: c.valorOriginal.toString() } : {}), cobrancaVersao: c.versao, documento: { id: doc.id, url: doc.url }, recebimentos: c.recebimentos.map((r) => ({ id: r.id, valor: r.valor.toFixed(2), moeda: r.moeda, dataPagamento: r.dataPagamento.toISOString() })),
+        snapshot: { ...(preparacao ? { preparacao, valorReferenciaCobranca: c.valorOriginal.toString() } : {}), cobrancaVersao: c.versao, documento: { id: doc.id, url: doc.url }, recebimentos: c.destinacoesRecebimento.map((d) => ({ id: d.id, recebimentoId: d.recebimento.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda, dataPagamento: d.recebimento.dataPagamento.toISOString() })),
           liquidacao: { valorEmDinheiro: total.toFixed(2), valorEmCredito: credito.toFixed(2), valorTotal: liquidado.toFixed(2), utilizacoes: utilizacoes.map(u => ({ propostaId: u.id, decisaoId: u.decisao!.id, creditoId: u.creditoId, valor: u.valor.toFixed(2) })) } } } });
       await registrarEvento(tx, { tipo: "CompraHorasAntecipadasRegistrada", agregadoTipo: "Matricula", agregadoId: m.id, autorId: autor.id, payload: { compraId: compra.id, cobrancaId: c.id, minutosComprados: d.minutosComprados } });
       return { id: compra.id };

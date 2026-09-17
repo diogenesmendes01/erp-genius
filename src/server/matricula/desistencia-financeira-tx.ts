@@ -18,13 +18,13 @@ export async function conferirCancelamentoFinanceiroDesistenciaTx(tx: Prisma.Tra
   const ultimo = await tx.pedidoDesistenciaPreparacao.findFirst({ where: { matriculaId: pedido.matriculaId }, orderBy: { versao: "desc" }, select: { id: true } });
   if (ultimo?.id !== pedido.id) throw new ErroRegra("Há pedido de desistência mais recente.");
   const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: pedido.matriculaId }, orderBy: { id: "asc" }, include: {
-    itemEmissaoEntrada: true, recebimentos: { select: { id: true } }, informes: { select: { status: true } }, utilizacoesCreditoPropostas: { select: { id: true } },
+    itemEmissaoEntrada: true, destinacoesRecebimento: { select: { id: true } }, informes: { select: { status: true } }, utilizacoesCreditoPropostas: { select: { id: true } },
     compensacoesCobertura: { select: { id: true } }, ajusteAcerto: true, emissaoFechamentoHoras: true, comprasHoras: { select: { id: true } },
   } });
   if (!cobrancas.length) throw new ErroRegra("Não há cobranças emitidas para conferir.");
   const fotografia = cobrancas.map((c) => ({ id: c.id, versao: c.versao, status: c.status, valorOriginal: c.valorOriginal.toFixed(2), valorNegociado: c.valorNegociado.toFixed(2), saldoAnterior: c.saldo?.toFixed(2) ?? null, moeda: c.moeda, vencimento: c.vencimento.toISOString(), coberturaInicio: c.coberturaInicio?.toISOString() ?? null, coberturaFim: c.coberturaFim?.toISOString() ?? null, canceladaPorPausaId: c.canceladaPorPausaId, suspensaPorItemPausaId: c.suspensaPorItemPausaId, informes: c.informes.map(i => i.status).sort(), itemEmissaoId: c.itemEmissaoEntrada?.id ?? null }));
   for (const c of cobrancas) {
-    const semMovimento = (c.valorRecebido === null || c.valorRecebido.isZero()) && c.valorLiquidadoCredito.isZero() && !c.pagoEm && !c.recebimentos.length && !c.informes.some(i => i.status !== "REJEITADO") && !c.utilizacoesCreditoPropostas.length && !c.compensacoesCobertura.length && !c.ajusteAcerto && !c.emissaoFechamentoHoras && !c.comprasHoras.length && !c.canceladaPorPausaId && !c.suspensaPorItemPausaId && !c.acertoMultaDecisaoId && !c.canceladaPorDesistenciaId && c.valorOriginal.gte(0) && c.valorNegociado.gte(0);
+    const semMovimento = (c.valorRecebido === null || c.valorRecebido.isZero()) && c.valorLiquidadoCredito.isZero() && !c.pagoEm && !c.destinacoesRecebimento.length && !c.informes.some(i => i.status !== "REJEITADO") && !c.utilizacoesCreditoPropostas.length && !c.compensacoesCobertura.length && !c.ajusteAcerto && !c.emissaoFechamentoHoras && !c.comprasHoras.length && !c.canceladaPorPausaId && !c.suspensaPorItemPausaId && !c.acertoMultaDecisaoId && !c.canceladaPorDesistenciaId && c.valorOriginal.gte(0) && c.valorNegociado.gte(0);
     const statusPermitido = ["PENDENTE", "ATRASADO", "CANCELADA"].includes(c.status);
     const saldoInteiro = c.saldo !== null && c.saldo.equals(c.valorNegociado);
     if (!semMovimento || !statusPermitido || !saldoInteiro) throw new ErroRegra("Há cobrança que exige acerto financeiro específico.");
