@@ -52,7 +52,7 @@ export async function carregarImpactosFrequenciaAulaTx(tx: Prisma.TransactionCli
   const aula = fonte;
   const turmaId = fonte.turmaId;
   const nivelId = fonte.nivelId;
-  const vinculos=await tx.$queryRaw<{id:string;ativa:boolean;criadoEm:Date;encerradaEm:Date|null;provenienciaVinculo:"MIGRACAO"|null;inicioVigencia:Date|null;fimVigencia:Date|null}[]>(Prisma.sql`SELECT id,ativa,"criadoEm","encerradaEm","provenienciaVinculo","inicioVigencia","fimVigencia" FROM "AlocacaoTurma" al WHERE al."matriculaId"=${reposicao.matriculaId} AND al."alunoId"=${reposicao.matricula.alunoId} AND al."turmaId"=${turmaId} AND alocacao_cobre_instante(al, ${aula.inicio} AT TIME ZONE 'UTC') ORDER BY id ASC`);
+  const vinculos=await tx.$queryRaw<{id:string;ativa:boolean;criadoEm:Date;encerradaEm:Date|null;provenienciaVinculo:"MIGRACAO"|null;inicioVigencia:Date|null;fimVigencia:Date|null}[]>(Prisma.sql`SELECT id,ativa,"criadoEm","encerradaEm","provenienciaVinculo","inicioVigencia","fimVigencia" FROM "AlocacaoTurma" al WHERE al."matriculaId"=${reposicao.matriculaId} AND al."alunoId"=${reposicao.matricula.alunoId} AND al."turmaId"=${turmaId} AND alocacao_cobre_instante(al, ${aula.inicio}::timestamptz) ORDER BY id ASC`);
   if (vinculos.length !== 1) {
     throw new ErroRegra("A aula original não pertence a um único vínculo histórico conferido da matrícula.");
   }

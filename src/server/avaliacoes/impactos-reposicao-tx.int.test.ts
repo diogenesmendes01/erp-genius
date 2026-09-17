@@ -152,6 +152,16 @@ it("seleciona mesma matrícula/nível após troca sem equivalência e exclui out
   expect(encaminhado.dado.situacao).toBe("PENDENTE_REVISAO");
   expect(await prisma.movimentacaoAluno.findMany({ orderBy: { id: "asc" } })).toEqual(movimentosAntes);
 });
+it("preserva a fonte da aula ao variar o fuso da sessão SQL", async () => {
+  const selecionar = (fuso: string) => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe(`SET LOCAL TIME ZONE '${fuso}'`);
+    return carregarImpactosCorrecaoReposicaoTx(tx, { reposicaoId });
+  });
+  const [utc, saoPaulo, costaRica] = await Promise.all([selecionar("UTC"), selecionar("America/Sao_Paulo"), selecionar("America/Costa_Rica")]);
+  expect(utc).toMatchObject({ alocacaoFonteId: alocacaoId, matriculaId });
+  expect(saoPaulo).toMatchObject({ alocacaoFonteId: alocacaoId, matriculaId });
+  expect(costaRica).toMatchObject({ alocacaoFonteId: alocacaoId, matriculaId });
+});
 it("recusa vínculo histórico ambíguo ou encerrado sem limite", async () => {
   await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: new Date("2026-01-20T00:00:00Z") } });
   await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId, ativa: false, criadoEm: new Date("2026-01-05T00:00:00Z"), encerradaEm: new Date("2026-01-19T00:00:00Z") } });
