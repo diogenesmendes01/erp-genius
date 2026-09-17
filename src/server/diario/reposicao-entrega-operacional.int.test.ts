@@ -4,9 +4,11 @@ import { Prisma } from "@prisma/client";
 const { authMock, preflightMock } = vi.hoisted(() => ({ authMock: vi.fn(), preflightMock: vi.fn() }));
 const { tokenPublicacaoMock } = vi.hoisted(() => ({ tokenPublicacaoMock: vi.fn() }));
 const driveConfigurado = vi.hoisted(() => ({ id: "drive-escola" }));
+const sessaoPortal = vi.hoisted(() => ({ atual: { sessaoId: "sessao-op", contaId: "", alunoId: "", email: "aluno-op@example.test" } }));
 vi.mock("@/server/gravacoes/credenciais", () => ({ obterDriveOrganizacaoId: () => driveConfigurado.id, obterTokenDrive: vi.fn() }));
 vi.mock("@/server/gravacoes/credenciais-publicacao", () => ({ obterTokenPublicacaoDrive: tokenPublicacaoMock }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("@/server/portal-aluno/sessao", () => ({ exigirSessaoPortalAluno: async () => sessaoPortal.atual }));
 vi.mock("@/server/gravacoes/drive-revisao", () => ({ fixarRevisaoDriveOrganizacional: preflightMock, consultarRevisaoDriveFixada: preflightMock }));
 
 import { prisma } from "@/lib/prisma";
@@ -20,6 +22,9 @@ import {
   retomarIndisponibilidadeOperacional,
 } from "./reposicao-entrega-operacional";
 import { descartarRelatoIndisponibilidadeEquipe, registrarRelatoIndisponibilidadeEquipe } from "./reposicao-operacoes-relatos";
+import { solicitarCorrecaoEntregaReposicao } from "./reposicao-gravacao";
+import { registrarEntregaReposicaoPortalAluno, relatarIndisponibilidadeMaterialPortalAluno } from "@/server/portal-aluno/entregas-reposicao";
+import { consultarEntregaGravacaoPortalAluno } from "@/server/portal-aluno/reposicoes";
 
 const utc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -60,7 +65,7 @@ async function prepararReposicao(id: string, donoMatriculaId: string, donoAlunoI
     INSERT INTO "DisponibilizacaoEntregaReposicao" (id,"reposicaoId","materialId","disponibilizadaEm","prazoBaseMinutos","prazoInicialAte","publicadaPorId")
     VALUES (${`disp-op-${id}`},${id},${materialId},${utc(new Date("2026-09-01T10:00:00.000Z"))},120,${utc(new Date(Date.now()+3_600_000))},${secretariaId})
   `);
-  return { materialId, arquivoOficialId };
+  return { materialId, arquivoOficialId, professorDaReposicao };
 }
 
 beforeEach(async () => {
@@ -83,8 +88,112 @@ beforeEach(async () => {
   outraMatriculaId = (await prisma.matricula.create({ data: { alunoId: outroAlunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } })).id;
   contaId = (await prisma.contaPortalAluno.create({ data: { alunoId, ativa: true } })).id;
   outraContaId = (await prisma.contaPortalAluno.create({ data: { alunoId: outroAlunoId, ativa: true } })).id;
+  sessaoPortal.atual = { sessaoId: "sessao-op", contaId, alunoId, email: "aluno-op@example.test" };
   ordemNivel = 0;
   await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
+});
+
+it("CT11 conserva prazo e entregas na retomada e pausa, e recusa trocar avaliador por mutação histórica", async () => {
+  const reposicaoId = "repo-op-ct11";
+  const propria = await prepararReposicao(reposicaoId, matriculaId, alunoId);
+  const professorOriginalId = propria.professorDaReposicao;
+  if (!professorOriginalId) throw new Error("Fixture CT11 sem professor da reposição publicada.");
+  const disponibilidade = await prisma.disponibilizacaoEntregaReposicao.findUniqueOrThrow({ where: { reposicaoId } });
+
+  const relato = await relatarIndisponibilidadeMaterialPortalAluno({
+    reposicaoId,
+    descricao: "A gravação oficial deixou de reproduzir para o aluno autenticado.",
+  });
+  entrar(gestorId);
+  const confirmada = await confirmarIndisponibilidadeOperacional({
+    reposicaoId,
+    relatoId: relato.id,
+    motivo: "A gestão confirmou a indisponibilidade do material publicado.",
+  });
+  if (!confirmada.ok || !confirmada.dado) throw new Error(JSON.stringify(confirmada));
+  await expect(registrarEntregaReposicaoPortalAluno({
+    reposicaoId,
+    resumo: "Resumo enquanto o vídeo está indisponível.",
+    atividade: "Atividade que não pode ser enviada durante a pausa.",
+    evidencia: "Tentativa bloqueada durante indisponibilidade confirmada.",
+  })).rejects.toThrow(/indisponível/i);
+
+  await new Promise<void>((resolve) => setTimeout(resolve, 40));
+  const retomada = await retomarIndisponibilidadeOperacional({
+    reposicaoId,
+    indisponibilidadeId: confirmada.dado.id,
+    motivo: "A fonte oficial voltou a funcionar após conferência técnica.",
+  });
+  expect(retomada, JSON.stringify(retomada)).toMatchObject({ ok: true });
+  const pausa = await prisma.indisponibilidadeMaterialReposicao.findUniqueOrThrow({ where: { id: confirmada.dado.id } });
+  expect(pausa.fim).toBeInstanceOf(Date);
+  const detalheAposRetomada = await consultarEntregaGravacaoPortalAluno(reposicaoId);
+  expect(detalheAposRetomada?.prazoEtapaAte).toBe(new Date(
+    disponibilidade.prazoInicialAte.getTime() + pausa.fim!.getTime() - pausa.inicio.getTime(),
+  ).toISOString());
+
+  const primeira = await registrarEntregaReposicaoPortalAluno({
+    reposicaoId,
+    resumo: "Resumo enviado após a retomada do material oficial.",
+    atividade: "Atividade inicial preservada para avaliação docente.",
+    evidencia: "Entrega do aluno autenticado após a retomada.",
+  });
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: {
+    reposicaoId,
+    professorId: professorOriginalId,
+    designadorId: gestorId,
+    inicio: new Date(Date.now() - 60_000),
+    motivo: "Professor originalmente responsável pela avaliação da gravação.",
+  } });
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { prazoRespostaCorrecaoReposicaoMinutos: 60 } });
+  entrar(professorOriginalId);
+  const correcao = await solicitarCorrecaoEntregaReposicao({
+    reposicaoId,
+    entregaId: primeira.id,
+    comentario: "Aprimore a atividade mantendo a entrega original no histórico.",
+  });
+  expect(correcao, JSON.stringify(correcao)).toMatchObject({ ok: true });
+
+  await expect(prisma.designacaoAvaliadorReposicaoIndividual.updateMany({
+    where: { reposicaoId, professorId: professorOriginalId, fim: null },
+    data: { fim: new Date() },
+  })).rejects.toThrow(/históricas/i);
+  expect(await prisma.designacaoAvaliadorReposicaoIndividual.findMany({ where: { reposicaoId } })).toMatchObject([{
+    professorId: professorOriginalId,
+    fim: null,
+  }]);
+
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "PAUSADA" } });
+  await expect(registrarEntregaReposicaoPortalAluno({
+    reposicaoId,
+    resumo: "Resumo corrigido sem autorização específica.",
+    atividade: "Atividade corrigida bloqueada pela pausa contratual.",
+    evidencia: "Tentativa sem liberação individual.",
+  })).rejects.toThrow(/pausada|liberação/i);
+  expect(await prisma.entregaReposicaoGravacao.count({ where: { reposicaoId } })).toBe(1);
+
+  entrar(gestorId);
+  const liberacao = await liberarEntregaOperacional({
+    reposicaoId,
+    expiraEm: new Date(Date.now() + 3_600_000).toISOString(),
+    motivo: "Autorizar somente a resposta pendente durante a pausa da matrícula.",
+  });
+  expect(liberacao, JSON.stringify(liberacao)).toMatchObject({ ok: true });
+  const segunda = await registrarEntregaReposicaoPortalAluno({
+    reposicaoId,
+    resumo: "Resumo corrigido dentro da liberação específica vigente.",
+    atividade: "Atividade corrigida enviada pela mesma conta do aluno.",
+    evidencia: "Resposta autorizada para a pendência identificada.",
+  });
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).toMatchObject({ status: "PAUSADA" });
+  expect(await prisma.conclusaoReposicaoIndividual.count({ where: { reposicaoId } })).toBe(0);
+  expect(await prisma.entregaReposicaoGravacao.findMany({ where: { reposicaoId }, orderBy: { versao: "asc" } })).toMatchObject([
+    { id: primeira.id, alunoId, contaPortalAlunoId: contaId, versao: 1 },
+    { id: segunda.id, alunoId, contaPortalAlunoId: contaId, versao: 2, solicitacaoCorrecaoId: correcao.ok ? correcao.dado?.id : undefined },
+  ]);
+  expect(await prisma.solicitacaoCorrecaoEntregaReposicao.findUniqueOrThrow({ where: { id: correcao.ok ? correcao.dado!.id : "" } })).toMatchObject({
+    entregaId: primeira.id, solicitadaPorId: professorOriginalId,
+  });
 });
 
 it("publicação pelo painel exige prazo configurado e preserva o início da primeira entrega ao repetir", async () => {
