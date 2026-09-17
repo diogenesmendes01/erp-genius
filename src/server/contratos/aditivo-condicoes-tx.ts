@@ -6,6 +6,7 @@ import { PrepararAditivoContratualSchema } from "./aditivo-schema";
 import { conferirAutor } from "./modelos-tx";
 import { hashSubstituicao } from "./substituicao-estado";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "./aditivo-valores";
+import { aplicarAgendaAditivoTx } from "./agenda-aditivo-tx";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), propostaId: z.string().min(1), conclusaoId: z.string().min(1), revisaoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const EntradaAplicacao = Entrada.extend({ chaveIdempotencia: z.string().trim().min(1).max(200) }).strict();
@@ -59,7 +60,6 @@ export async function registrarCondicoesFormalizadasAditivoTx(tx: Prisma.Transac
   for (const a of entrada.alteracoes) {
     if (!a.valorEstruturado) throw new ErroRegra("Toda alteração precisa de valor estruturado antes da formalização.");
     const valor = validarValorAlteracaoAditivo(a.origem, a.valorEstruturado);
-    if (valor.tipo === "AGENDA") throw new ErroRegra("A agenda ainda exige integração própria.");
     if (a.novo !== representarValorAlteracaoAditivo(valor)) throw new ErroRegra("Texto da alteração diverge do valor estruturado.");
     alteradas[a.origem] = valor;
   }
@@ -72,7 +72,9 @@ export async function registrarCondicoesFormalizadasAditivoTx(tx: Prisma.Transac
     return { id: existente.id, versao: existente.versao };
   }
   if (anterior && estado.dados.vigenciaInicio <= anterior.vigenciaInicio.toISOString()) throw new ErroRegra("A vigência precisa ser posterior à versão formalizada anterior.");
-  const versao = await tx.versaoCondicoesAditivo.create({ data: { matriculaId: d.matriculaId, propostaId: d.propostaId, conferenciaFinalId: final.id, autorId, versao: (anterior?.versao ?? 0) + 1, anteriorId: anterior?.id, condicoes, condicoesHash, vigenciaInicio: new Date(estado.dados.vigenciaInicio) } });
+  const agenda = entrada.alteracoes.find(a => a.origem === "AGENDA_PARTICULAR")?.valorEstruturado;
+  const propostaAgendaId = agenda?.tipo === "AGENDA" ? agenda.propostaAgendaId : undefined;
+  const versao = await tx.versaoCondicoesAditivo.create({ data: { matriculaId: d.matriculaId, propostaId: d.propostaId, propostaAgendaId, conferenciaFinalId: final.id, autorId, versao: (anterior?.versao ?? 0) + 1, anteriorId: anterior?.id, condicoes, condicoesHash, vigenciaInicio: new Date(estado.dados.vigenciaInicio) } });
   await registrarEvento(tx, { tipo: "CondicoesAditivoFormalizadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, condicoesHash } });
   return { id: versao.id, versao: versao.versao };
 }
@@ -101,6 +103,7 @@ export async function aplicarCondicoesFormalizadasAditivoTx(tx: Prisma.Transacti
   const participantes = processo?.artefato.conferencia;
   if (!processo || processo.propostaId !== d.propostaId || !participantes || participantes.propostaId !== d.propostaId || await tx.conferenciaParticipantesAditivo.count({ where: { propostaId: d.propostaId, versao: { gt: participantes.versao } } })) throw new ErroRegra("A conferência de participantes foi superada e exige nova conferência.");
   const aplicacao = await tx.aplicacaoCondicoesAditivo.create({ data: { versaoCondicoesId: versao.id, matriculaId: d.matriculaId, propostaId: d.propostaId, autorId, revisaoHash: d.revisaoHash, condicoesHash: versao.condicoesHash, vigenciaInicio: versao.vigenciaInicio, chaveIdempotencia: d.chaveIdempotencia } });
+  if (versao.propostaAgendaId) await aplicarAgendaAditivoTx(tx, autorId, { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, aplicacaoCondicoesId: aplicacao.id, chaveIdempotencia: `agenda-${hashSubstituicao({ propostaId: d.propostaId, chaveIdempotencia: d.chaveIdempotencia })}` });
   await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash } });
   return { id: aplicacao.id, versao: versao.versao, aplicadaEm: aplicacao.aplicadaEm };
 }
