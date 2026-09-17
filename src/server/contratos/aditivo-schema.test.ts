@@ -14,7 +14,7 @@ describe("PrepararAditivoContratualSchema", () => {
     expect(() => PrepararAditivoContratualSchema.parse({ ...base, alteracoes: [{ origem: "TAXA_VALOR", novo: "R$ 12,50", valorEstruturado: { tipo: "DINHEIRO", valor: "12.5", moeda: "BRL" } }] })).toThrow(/representação canônica/);
   });
 
-  it("não aceita agenda tipada enquanto a referência não está integrada", () => {
-    expect(() => PrepararAditivoContratualSchema.parse({ ...base, alteracoes: [{ origem: "AGENDA_PARTICULAR", novo: "Agenda", valorEstruturado: { tipo: "AGENDA", propostaAgendaId: "p1" } }] })).toThrow(/integração própria/);
+  it("aceita agenda tipada somente com referência e texto da fotografia", () => {
+    expect(PrepararAditivoContratualSchema.parse({ ...base, alteracoes: [{ origem: "AGENDA_PARTICULAR", novo: "Agenda aprovada", valorEstruturado: { tipo: "AGENDA", propostaAgendaId: "p1", texto: "Agenda aprovada" } }] }).alteracoes[0]?.valorEstruturado).toMatchObject({ tipo: "AGENDA", propostaAgendaId: "p1" });
   });
 });

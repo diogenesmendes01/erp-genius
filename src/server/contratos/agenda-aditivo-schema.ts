@@ -17,6 +17,7 @@ export const EncontroAgendaAditivoSchema = z.object({
 /** Fotografia interna: o servidor preenche preparadores, fonte, estado anterior e nomes docentes reconsultados. */
 export const PropostaAgendaAditivoSchema = z.object({
   matriculaId: z.string().trim().min(1), preparadorId: z.string().trim().min(1), fonteContratualId: z.string().trim().min(1), fonteContratualHash: z.string().regex(/^[a-f0-9]{64}$/), reservaContratualId: z.string().trim().min(1).optional(),
+  texto: z.string().trim().min(1).max(4000).default("Agenda"),
   contexto: z.object({ calendarioId: z.string().min(1), calendarioVersao: z.number().int().positive(), fusoInstitucional: FusoInstitucionalSchema,
     aditivos: z.array(z.object({ versaoId: z.string().min(1), propostaId: z.string().min(1), condicoesHash: z.string().regex(/^[a-f0-9]{64}$/), aplicada: z.boolean() })).max(1000),
   }).strict(),
