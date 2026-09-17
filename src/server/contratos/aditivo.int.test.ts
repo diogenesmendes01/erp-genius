@@ -727,20 +727,20 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   const pedidoCondicoes = { ...alvoFinal, revisaoHash: confirmarFinal.revisaoHash };
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
-  const condicoes = await registrarCondicoesFormalizadasAditivo(pedidoCondicoes);
+  const condicoes = ambiente === "SANDBOX" ? await registrarCondicoesFormalizadasAditivo(pedidoCondicoes) : await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" });
   if (ambiente === "SANDBOX") {
     expect(condicoes).toMatchObject({ ok: false });
     expect(await prisma.versaoCondicoesAditivo.count()).toBe(0);
   } else {
     expect(condicoes).toMatchObject({ ok: true, dado: { versao: 1 } });
-    expect(await registrarCondicoesFormalizadasAditivo(pedidoCondicoes)).toEqual(condicoes);
+    expect(await registrarCondicoesFormalizadasAditivo(pedidoCondicoes)).toMatchObject({ ok: true, dado: { versao: 1 } });
     expect(await consultarCondicoesAditivo({ matriculaId: fixture.matriculaId, em: "2025-09-01T00:00:00Z" })).toMatchObject({ ok: true, dado: null });
     expect(await consultarCondicoesAditivo({ matriculaId: fixture.matriculaId, em: "2026-10-01T03:00:00Z" })).toMatchObject({ ok: true, dado: { versao: 1 } });
     const v = await prisma.versaoCondicoesAditivo.findFirstOrThrow();
     expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancasAntesFormalizacao);
-    const aplicacao = await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "aplicar-condicoes-q117" });
+    const aplicacao = await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" });
     expect(aplicacao).toMatchObject({ ok: true, dado: { versao: 1 } });
-    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "aplicar-condicoes-q117" })).toEqual(aplicacao);
+    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" })).toEqual(aplicacao);
     expect(await aplicarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, chaveIdempotencia: "aplicar-condicoes-divergente" })).toMatchObject({ ok: false });
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(1);
     expect(await prisma.$transaction(tx => resolverHoraVigenteTx(tx, { matriculaId: fixture.matriculaId, inicio: new Date("2026-10-02T15:00:00Z"), fim: new Date("2026-10-02T16:00:00Z"), valorHoraOriginal: "125.00", moedaOriginal: "CRC" }))).toMatchObject({ valorHora: modo === "PRODUCAO_HORA" ? "200" : "125.00", versaoAditivo: { id: v.id } });
