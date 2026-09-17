@@ -363,6 +363,16 @@ it("reserva devolução aprovada, impede apagar e só libera por cancelamento ou
   expect(await conciliarDevolucaoCredito({ reservaId: incerta.id, confirmouSaida: false, evidenciaConciliacao: "Extrato confirma que não houve saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
   expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00" } });
 });
+it("serializa cancelamento e execução da mesma reserva", async () => {
+  const { credito } = await creditoParaPropostaUso();
+  const p = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Aluno pediu devolução concorrente", evidenciaPedido: "Protocolo concorrente do aluno", destino: "Conta conferida do titular", motivo: "Devolução concorrente", chaveIdempotencia: "devolucao-corrida" }); if (!p.ok || !p.dado) throw new Error("Proposta ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } }); await decidirDevolucaoCredito({ propostaId: p.dado.id, aprovar: true, motivo: "Aprovação concorrente independente" });
+  const r = await prisma.reservaDevolucaoCredito.findFirstOrThrow();
+  const [cancelar, executar] = await Promise.all([cancelarDevolucaoCredito({ reservaId: r.id, motivo: "Cancelar antes da saída", evidenciaCancelamento: "Evidência do cancelamento" }), registrarExecucaoDevolucaoCredito({ reservaId: r.id, resultado: "INCERTO", referenciaExterna: "corrida-manual", evidenciaExecucao: "Comprovante da tentativa manual", chaveIdempotencia: "execucao-corrida" })]);
+  expect([cancelar.ok, executar.ok].filter(Boolean)).toHaveLength(1);
+  const final = await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: r.id } }); expect(["LIBERADA", "INCERTO"]).toContain(final.estado);
+  if (final.estado === "INCERTO") expect(await conciliarDevolucaoCredito({ reservaId: r.id, confirmouSaida: false, evidenciaConciliacao: "Extrato da corrida sem saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+});
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
   const recebimentos = await prisma.recebimento.findMany();
