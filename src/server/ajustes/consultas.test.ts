@@ -35,9 +35,15 @@ describe("projeção financeira operacional — política 36", () => {
     expect(findFirst).not.toHaveBeenCalled();
   });
   it("KPIs individuais usam saldo após pagamento parcial", async () => {
-    findFirst.mockResolvedValue({ id: "aluno", pais: { nome: "BR" }, responsaveis: [], matriculas: [{ id: "m", comissoes: [], ajustes: [], acessoBloqueado: false, cobrancas: [{ id: "c", status: StatusCobranca.PENDENTE, vencimento: new Date("2030-01-01"), valorNegociado: 100, valorRecebido: 40, moeda: "BRL", pagoEm: null }] }] });
+    findFirst.mockResolvedValue({ id: "aluno", pais: { nome: "BR" }, responsaveis: [], matriculas: [{ id: "m", comissoes: [], ajustes: [], acessoBloqueado: false, cobrancas: [{ id: "c", status: StatusCobranca.PENDENTE, vencimento: new Date("2030-01-01"), valorNegociado: 100, valorRecebido: 40, origensCreditoAcertoTaxaAditivo: [], moeda: "BRL", pagoEm: null }] }] });
     const f = await obterFichaFinanceira("aluno");
     expect(f?.emAberto).toEqual([{ moeda: "BRL", valor: 60 }]);
+  });
+  it("não oculta o saldo de taxa cujo pagamento também originou crédito", async () => {
+    findFirst.mockResolvedValue({ id: "aluno", pais: { nome: "BR" }, responsaveis: [], matriculas: [{ id: "m", comissoes: [], ajustes: [], acessoBloqueado: false, cobrancas: [{ id: "c", status: StatusCobranca.PENDENTE, vencimento: new Date("2099-01-01"), valorNegociado: 90, valorRecebido: 100, valorLiquidadoCredito: 0, origensCreditoAcertoTaxaAditivo: [{ valor: 20 }], moeda: "BRL", pagoEm: null }] }] });
+    const ficha = await obterFichaFinanceira("aluno");
+    expect(ficha?.emAberto).toEqual([{ moeda: "BRL", valor: 10 }]);
+    expect(findFirst.mock.calls[0][0].select.matriculas.include.cobrancas.include.origensCreditoAcertoTaxaAditivo).toEqual({ select: { valor: true } });
   });
   it("aluno inexistente não devolve estrutura com dados de outro", async () => {
     findFirst.mockResolvedValue(null);
