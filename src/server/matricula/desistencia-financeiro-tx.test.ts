@@ -16,6 +16,7 @@ describe("carregarFinanceiroDesistenciaTx", () => {
       creditoMatricula: { findMany: creditoFindMany },
       pagamentoInformado: { findMany: vazio },
       recebimento: { findMany: vazio },
+      destinacaoRecebimento: { findMany: vazio },
       propostaUsoCredito: { findMany: vazio },
       compensacaoCoberturaMatricula: { findMany: vazio },
       itemEmissaoEntrada: { findMany: vazio },

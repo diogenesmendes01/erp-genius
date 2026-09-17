@@ -6,12 +6,13 @@ const m = vi.hoisted(() => ({
   txConcluida: false,
   $queryRaw: vi.fn(),
   reavaliarAcesso: vi.fn(),
-  usuario: { findUniqueOrThrow: vi.fn() },
+  usuario: { findUniqueOrThrow: vi.fn(), findUnique: vi.fn() },
   configuracaoOperacional: { findUnique: vi.fn() },
-  matricula: { findUniqueOrThrow: vi.fn() },
+  matricula: { findUniqueOrThrow: vi.fn(), findMany: vi.fn() },
   cobranca: { findUnique: vi.fn(), update: vi.fn() },
   pagamentoInformado: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn() },
   recebimento: { findUnique: vi.fn(), create: vi.fn() },
+  destinacaoRecebimento: { create: vi.fn() },
   comissao: { findMany: vi.fn(), update: vi.fn() },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -37,6 +38,9 @@ beforeEach(() => {
   m.txConcluida = false;
   m.$queryRaw.mockResolvedValue([]);
   m.usuario.findUniqueOrThrow.mockResolvedValue({ permissoes: [] });
+  m.usuario.findUnique.mockImplementation(async () => ({ ativo: true, papeis: m.papeis, permissoes: [] }));
+  m.matricula.findMany.mockResolvedValue([{ id: "matricula", leadId: null }]);
+  m.destinacaoRecebimento.create.mockResolvedValue({ id: "destinacao" });
   m.configuracaoOperacional.findUnique.mockResolvedValue(null);
   m.matricula.findUniqueOrThrow.mockResolvedValue({ alunoId: "aluno", leadId: null });
   m.cobranca.findUnique.mockResolvedValue({ id: "cobranca", matriculaId: "matricula", status: "PENDENTE", moeda: "BRL", valorNegociado: new Prisma.Decimal(100), valorRecebido: null, valorLiquidadoCredito: new Prisma.Decimal(0), vencimento: new Date("2030-01-01") });
@@ -69,7 +73,7 @@ describe("pagamentos e conferência pela ação pública", () => {
   it.each([Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO])("%s recebe sucesso financeiro se o recálculo falhar após o commit", async (papel) => {
     m.papeis = [papel];
     const { log, estadoCommit } = falharRecalculoAposCommit();
-    const r = await registrarPagamento("cobranca", { chaveIdempotencia: "pagamento-unitario-poscommit", valorRecebido: 40, forma: "DINHEIRO" });
+    const r = await registrarPagamento("cobranca", { chaveIdempotencia: "pagamento-unitario-poscommit", valorRecebido: 40, forma: "DINHEIRO", comentario: "Recebimento conferido para a cobrança" });
     const informado = papel === Papel.SECRETARIA_ACADEMICA;
     expect(r).toEqual({ ok: true, dado: { informado } });
     expect(m.pagamentoInformado.create).toHaveBeenCalledTimes(informado ? 1 : 0);
