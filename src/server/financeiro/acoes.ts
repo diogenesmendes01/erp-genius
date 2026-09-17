@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, StatusComissao } from "@prisma/client";
+import { Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
@@ -26,7 +26,7 @@ import {
 } from "./schema";
 import { exigirCapacidade } from "@/server/_shared/capacidades";
 import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
-import { bloquearCobranca, receberTx, hashDadosPagamento } from "./recebimentos";
+import { bloquearCobranca, receberTx, receberComDestinacoesTx, hashDadosPagamento } from "./recebimentos";
 import { exigirConferenciaIndependente, dinheiro } from "./regras";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
@@ -41,6 +41,12 @@ const RegistroCobrancaWhatsAppSchema = z.object({
   modelo: z.enum(MODELOS_WHATSAPP),
   passo: z.enum(PASSOS_POLITICA).nullable(),
   cicloRegua: z.number().int().nonnegative(),
+}).strict();
+const RecebimentoDestinadoSchema = z.object({
+  titularMatriculaId: z.string().min(1), pagadorId: z.string().min(1).nullable().optional(), chaveIdempotencia: z.string().min(16).max(120),
+  valorRecebido: z.coerce.number().positive().finite(), moeda: z.string().regex(/^[A-Z]{3}$/), forma: z.nativeEnum(FormaPagamento), dataPagamento: z.coerce.date(),
+  comentario: z.string().trim().max(2000).nullable().optional(), comprovanteUrl: z.string().trim().nullable().optional(), comprovanteNome: z.string().trim().nullable().optional(),
+  destinos: z.array(z.object({ tipo: z.enum(["COBRANCA", "CREDITO_SEM_DESTINO"]), cobrancaId: z.string().min(1).nullable().optional(), valor: z.coerce.number().positive().finite(), evidencia: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(1).max(120) }).strict()).min(1),
 }).strict();
 // Fonte de câmbio pública: grátis, sem chave, base USD. `rates[X]` = unidades por 1 USD,
 // que é EXATAMENTE o nosso `unidadesPorUsd` (pivô USD) — grava direto, sem conversão.
@@ -98,6 +104,20 @@ export async function registrarPagamento(cobrancaId: string, input: PagamentoInp
     await reavaliarAcessoAposCommit(cobrancaId);
     revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
     return { informado: !financeiro };
+  });
+}
+
+/** FIN-04: um fato de caixa pode liquidar várias cobranças e/ou gerar crédito. */
+export async function registrarRecebimentoDestinado(input: unknown): Promise<Resultado<{ recebimentoId: string }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const dados = RecebimentoDestinadoSchema.parse(input);
+    const resultado = await prisma.$transaction(async (tx) => {
+      const r = await receberComDestinacoesTx(tx, { ...dados, autorId: autor.id, pagadorId: dados.pagadorId ?? null, comentario: dados.comentario ?? null, comprovanteUrl: dados.comprovanteUrl ?? null, comprovanteNome: dados.comprovanteNome ?? null, destinos: dados.destinos.map((d) => ({ ...d, cobrancaId: d.cobrancaId ?? undefined })) });
+      return r.id;
+    });
+    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    return { recebimentoId: resultado };
   });
 }
 
