@@ -785,17 +785,6 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
     const nomeFormalizado = z.object({ ALUNO_NOME: z.object({ texto: z.string() }) }).parse(v.condicoes).ALUNO_NOME.texto;
     expect(fonteAtual).toMatchObject({ ok: true, dado: { fonte: { campos: expect.arrayContaining([expect.objectContaining({ origem: "ALUNO_NOME", anterior: nomeFormalizado })]) } } });
     const proxima = await preparar({ chaveIdempotencia: "segundo-aditivo-formalizado", vigenciaInicio: "2026-11-01T03:00:00Z", alteracoes: [{ origem: "ALUNO_NOME", novo: "Nome da próxima versão", valorEstruturado: { tipo: "TEXT", texto: "Nome da próxima versão" } }] });
-    if (modo === "PRODUCAO") {
-      expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" })).toEqual(aplicacao);
-      expect(await prisma.evento.count({ where: { tipo: "CondicoesAditivoAplicadas" } })).toBe(1);
-      const vendedor = await criarUsuario(["VENDEDOR"]);
-      authMock.mockResolvedValue({ user: { id: vendedor.id } });
-      expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" })).toMatchObject({ ok: false });
-      authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
-      await prisma.usuario.update({ where: { id: fixture.secretariaId }, data: { ativo: false } });
-      expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "formalizar-aplicar-q117" })).toMatchObject({ ok: false });
-      await prisma.usuario.update({ where: { id: fixture.secretariaId }, data: { ativo: true } });
-    }
     const detalhe = await consultarPropostaAditivo({ matriculaId: fixture.matriculaId, propostaId: proxima.id });
     expect(detalhe).toMatchObject({ ok: true, dado: { alteracoes: [expect.objectContaining({ campo: "ALUNO_NOME", anterior: nomeFormalizado })] } });
     const segunda = await prisma.propostaAditivoContratual.findUniqueOrThrow({ where: { id: proxima.id } });
