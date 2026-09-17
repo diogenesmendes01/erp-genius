@@ -14,7 +14,8 @@ function mount(podeDecidir = true, podeAplicar = false, motivo = "Evidência con
   vi.clearAllMocks(); let chave = 0; vi.stubGlobal("crypto", { randomUUID: () => `tentativa-${++chave}` });
   const mensagem = vi.fn(); m.state.mockReturnValueOnce([motivo, vi.fn()]).mockReturnValueOnce([false, vi.fn()]).mockReturnValueOnce(["", mensagem]);
   m.ref.mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
-  return { mensagem, botoes: buttons(DecisaoTaxa({ propostaId: "p", podeDecidir, podeAplicar, podeInvalidar })) };
+  const elemento = DecisaoTaxa({ propostaId: "p", podeDecidir, podeAplicar, podeInvalidar });
+  return { mensagem, elemento, botoes: buttons(elemento) };
 }
 afterEach(() => vi.unstubAllGlobals());
 it("não oferece operações sem permissão", () => { expect(mount(false, false).botoes).toHaveLength(0); });
@@ -57,4 +58,19 @@ it("invalidação exige capacidade e bloqueia clique concorrente", async () => {
   const primeira = c.botoes[0].onClick(); await c.botoes[0].onClick();
   expect(m.invalidar).toHaveBeenCalledTimes(1);
   resolver({ ok: true }); await primeira;
+});
+
+it("oferece campo de motivo quando só a invalidação está disponível", () => {
+  const c = mount(false, false, "", true);
+  function localizar(node: unknown): Array<{ onChange: (e: { target: { value: string } }) => void }> {
+    if (Array.isArray(node)) return node.flatMap(localizar);
+    if (!node || typeof node !== "object") return [];
+    const n = node as { type?: string; props?: { children?: unknown; onChange?: (e: { target: { value: string } }) => void } };
+    return n.type === "textarea" && n.props?.onChange ? [{ onChange: n.props.onChange }] : localizar(n.props?.children);
+  }
+  const campos = localizar(c.elemento);
+  expect(campos).toHaveLength(1);
+  const alterarMotivo = m.state.mock.results[0].value[1];
+  campos[0].onChange({ target: { value: "Fotografia alterada" } });
+  expect(alterarMotivo).toHaveBeenCalledWith("Fotografia alterada");
 });
