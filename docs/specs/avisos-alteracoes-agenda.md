@@ -4,6 +4,14 @@ Estado: e-mail, WhatsApp, autorizações, tela paginada de pendências, avisos g
 
 ## Escopo
 
+### Extensão Q38 — quantidade de aulas (integrada e validada localmente)
+
+A aplicação aprovada de quantidade por modalidade deve registrar a origem `QuantidadeAulasModalidadeAplicada` e o conjunto completo dos encontros alterados, incluídos ou cancelados das turmas publicadas. A fotografia aprovada, a decisão independente e a agenda aplicada precisam corresponder à origem; o payload sozinho não comprova essa correspondência. Cada matrícula recebe somente seu subconjunto, considerando o vínculo histórico no horário anterior ou posterior. Turmas em rascunho não geram avisos de agenda publicada.
+
+Integrada em `93d7bddf`, com migrações 196–198 aplicadas somente nos bancos descartáveis DEV2, TESTER e principal. O controle `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` permanece desligado por padrão: registrar pendência de configuração e impedir transporte externo. A reconferência não encerra essa pendência enquanto o controle estiver desligado. Habilitar o controle exige configuração e homologação operacional próprias; testes usam transportes simulados.
+
+Validação em 17/09/2026: DEV2 aprovou 14 integrações e 17 unitários. TESTER independente no commit exato `93d7bddf` aprovou 19 integrações de quantidade/avisos/pendências e 23 unitários, incluindo prévias adversariais. Principal aprovou 39 integrações em cinco arquivos (quantidade, substituição, replanejamento, avisos e pendências), 17 unitários e TypeScript; TESTER também aprovou TypeScript. A correção preserva encontros inalterados fora do evento, reconhece vínculo no horário anterior ou posterior e confere conjunto completo e autoria das adições no SQL. Evento que omite um encontro material é recusado em teste real de banco. A implementação local está validada; operação externa e homologação com provedores permanecem pendentes, sem envio real.
+
 Uma remarcação aprovada, uma substituição docente aprovada ou um replanejamento global aprovado cria avisos por matrícula e canal disponível, dentro da mesma transação que aplica a mudança. Cada aviso referencia o evento aplicado e seus encontros; a chave por evento, matrícula e canal impede duplicação e chamadas repetidas reúnem itens da mesma origem.
 
 Para encontro particular, o encontro pertence diretamente à matrícula. Para encontro de turma regular, cada matrícula é avaliada no instante do encontro: a alocação precisa ter sido criada até aquele instante e não pode estar encerrada nele. Uma alocação encerrada exatamente no início já não recebe aviso. Matrícula sem esse vínculo não recebe item nem aviso.

@@ -16,3 +16,8 @@ prisma/migrations/20260916204000_conciliacao_financeira_migracao/migration.sql -
 
 prisma/migrations/20260916205000_fonte_conciliacao_financeira_migracao/migration.sql -text
 prisma/migrations/20260916206000_resolucao_pendencia_financeira_migracao/migration.sql -text
+prisma/migrations/20260917091000_fonte_quantidade_avisos/migration.sql -text
+prisma/migrations/20260917092000_fonte_quantidade_conjunto_completo/migration.sql -text
+prisma/migrations/20260917093000_fonte_quantidade_autoria_adicoes/migration.sql -text
+prisma/migrations/20260917094000_aplicacao_condicoes_aditivo/migration.sql -text
+prisma/migrations/20260917095000_compatibilidade_aplicacao_aditivo/migration.sql -text

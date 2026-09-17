@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { executarAcao, exigirSessaoComPapel, type Resultado } from "@/server/_shared";
 import { validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
+import { validarFonteQuantidadeAulasTx } from "@/server/agenda/quantidade-fonte";
+import { envioQuantidadeAulasHabilitado } from "./quantidade-gate";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 
 export const motivosPendenciaAvisoAgenda = [
@@ -57,6 +59,18 @@ function encontrosDoEvento(payload: unknown) {
  * encontros de outra turma ao ser reconferida.
  */
 async function encontrosElegiveisDaFonteTx(tx: Prisma.TransactionClient, entrada: { eventoId: string; matriculaId: string; evento: { tipo: string; agregadoTipo: string; agregadoId: string; payload: unknown } }) {
+  if (entrada.evento.tipo === "QuantidadeAulasModalidadeAplicada") {
+    const fonte = await validarFonteQuantidadeAulasTx(tx, { eventoId: entrada.eventoId });
+    if (!fonte) return null;
+    const alocacoes = await tx.alocacaoTurma.findMany({
+      where: { matriculaId: entrada.matriculaId, turmaId: { in: [...fonte.porTurma.keys()] } },
+      select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true },
+    });
+    const elegiveis = fonte.encontros.filter(encontro => alocacoes.some(alocacao =>
+      alocacao.turmaId === encontro.turmaId && (fonte.instantes.get(encontro.encontroId) ?? []).some(instante => alocacaoCobreAula(alocacao, instante))
+    )).map(encontro => encontro.encontroId);
+    return elegiveis.length ? elegiveis : null;
+  }
   const payload = entrada.evento.payload as { aprovada?: unknown; encontrosIds?: unknown; horarios?: unknown };
   const idsDaFonte = encontrosDoEvento(payload);
   if (!idsDaFonte.length || payload.aprovada !== true) return null;
@@ -102,6 +116,7 @@ export async function reconferirPendenciaAvisoAgendaInterna(input: unknown): Pro
       if (pendencia.situacao === "RESOLVIDA") return pendencia.resolvidaPorId === autor.id && pendencia.observacaoResolucao === entrada.motivo ? { resolvida: true, explicacao: "Pendência já encerrada por esta reconferência." } : { resolvida: false, explicacao: "Pendência já foi encerrada com outra evidência." };
       const matricula = await tx.matricula.findUnique({ where: { id: pendencia.matriculaId }, select: { status: true } });
       if (matricula?.status !== "ATIVA") return { resolvida: false, explicacao: "A matrícula não está ativa para reconferir o aviso." };
+      if (pendencia.evento.tipo === "QuantidadeAulasModalidadeAplicada" && !envioQuantidadeAulasHabilitado()) return { resolvida: false, explicacao: "Os canais externos de alteração de quantidade continuam desabilitados." };
       const encontrosDaMatricula = await encontrosElegiveisDaFonteTx(tx, { eventoId: pendencia.eventoId, matriculaId: pendencia.matriculaId, evento: pendencia.evento });
       if (!encontrosDaMatricula?.length) return { resolvida: false, explicacao: "A origem aplicada não possui encontros reconferíveis." };
       const encontrosIds = encontrosDaMatricula;

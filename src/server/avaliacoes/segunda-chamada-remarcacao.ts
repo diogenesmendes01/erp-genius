@@ -562,9 +562,23 @@ export async function consultarRemarcacoesAgendaSegundaChamada(input: z.input<ty
         LIMIT 21
       `);
       const pagina = propostas.slice(0, 20);
+      const professorAtual = estado.encontro?.professorId
+        ? await tx.usuario.findUnique({ where: { id: estado.encontro.professorId }, select: { id: true, nome: true } })
+        : null;
+      const prazoVigente = reserva.disponibilizacaoId
+        ? await prazoSegundaChamadaVigente(tx, reserva.disponibilizacaoId)
+        : null;
       return {
         reservaId: d.reservaId,
         identificacao: await identificarMatriculaAvaliacao(tx, reserva.matriculaId, reserva.turmaId),
+        conferencia: {
+          contextoVigente,
+          reservaId: reserva.reservaId,
+          codigoAvaliacao: reserva.codigoAvaliacao,
+          professorAtual: professorAtual ? { id: professorAtual.id, nome: professorAtual.nome } : null,
+          prazoVigente: prazoVigente?.toISOString() ?? null,
+          fusoExibicao: estado.encontro?.fusoOrigem ?? "UTC",
+        },
         atual: estado,
         contextoVigente,
         estadoHash: hash(estado),
