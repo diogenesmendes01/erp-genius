@@ -51,6 +51,39 @@ async function cadeiaTaxa(vencimentoTaxa?: string) {
  const revisao = await consultarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id }); if (!revisao.ok || !revisao.dado?.revisao) throw new Error(JSON.stringify(revisao)); const final = await registrarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash, documentoConferido: true, evidenciasConferidas: true, motivo: "Conclusão conferida para o acerto" }); if (!final.ok) throw new Error(JSON.stringify(final));
  const cond = await registrarCondicoesFormalizadasAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }); if (!cond.ok) throw new Error(JSON.stringify(cond)); alvo = { matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }; cobrancaId = (await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MATRICULA" } })).id;
 }
+async function formalizarNovaVersaoTaxa(valor: string) {
+ const original = await prisma.conclusaoAssinaturaContratual.findFirstOrThrow({ where: { processo: { matriculaId: base.matriculaId } } });
+ const anterior = await prisma.versaoCondicoesAditivo.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, include: { proposta: true } });
+ const modelo = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: anterior.proposta.modeloId } });
+ const proposta = await prisma.$transaction(tx => prepararAditivoContratualTx(tx, base.secretariaId, { matriculaId: base.matriculaId, conclusaoOriginalId: original.id, conclusaoHashEsperado: original.entradaHash, modeloId: anterior.proposta.modeloId, modeloHashEsperado: modelo.conteudoHash, vigenciaInicio: "2026-09-02T00:00:00-03:00", alteracoes: [{ origem: "TAXA_VALOR", novo: `${Number(valor).toFixed(2)} CRC`, valorEstruturado: { tipo: "DINHEIRO", valor, moeda: "CRC" } }], motivo: "Nova redução formalizada após acerto aprovado", chaveIdempotencia: "dct03-segundo-aditivo" }));
+ await prisma.$transaction(tx => decidirAditivoContratualTx(tx, base.adminId, { propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, aprovada: true, motivo: "Segundo aditivo aprovado" }));
+ authMock.mockResolvedValue({ user: { id: base.adminId } });
+ for (const alcada of ["FINANCEIRA", "COMERCIAL"] as const) await decidirAlcadaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Alçada do segundo aditivo aprovada" });
+ authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+ const aluno = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId }, include: { aluno: true } });
+ const participantes = await prisma.$transaction(tx => conferirParticipantesAditivoTx(tx, base.secretariaId, { propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, versaoEsperada: 0, maioridade: null, participantes: [{ papel: "ALUNO", identidade: { nome: `${aluno.aluno.primeiroNome} ${aluno.aluno.sobrenome}`, email: aluno.aluno.email!, documento: aluno.aluno.documento! } }], identificacoesConferidas: true, motivo: "Participantes do segundo aditivo conferidos", chaveIdempotencia: "dct03-segundo-participantes" }));
+ const artefato = await preservarOriginalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conferenciaId: participantes.id, conferenciaHash: participantes.revisaoHash, conteudoConferido: true, motivo: "Original do segundo aditivo conferido" });
+ if (!artefato.ok || !artefato.dado) throw new Error(JSON.stringify(artefato));
+ const revisaoAssinatura = await consultarAssinaturaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, artefatoId: artefato.dado.id });
+ if (!revisaoAssinatura.ok || !revisaoAssinatura.dado?.revisao) throw new Error(JSON.stringify(revisaoAssinatura));
+ const conferencia = await registrarConferenciaAssinaturaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, artefatoId: artefato.dado.id, revisaoHash: revisaoAssinatura.dado.revisao.hash, dadosConferidos: true, motivo: "Assinatura do segundo aditivo conferida", chaveIdempotencia: "dct03-segundo-assinatura" });
+ if (!conferencia.ok || !conferencia.dado) throw new Error(JSON.stringify(conferencia));
+ const processo = await prepararProcessoAssinaturaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, artefatoId: artefato.dado.id, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente: "PRODUCAO" });
+ if (!processo.ok || !processo.dado) throw new Error(JSON.stringify(processo));
+ const tentativa = await prisma.$transaction(tx => iniciarTentativaAditivoTx(tx, base.secretariaId, { processoId: processo.dado!.id }));
+ await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: processo.dado!.id, tentativaId: tentativa.tentativaId, chave: "dct03-segundo-envio", resultado: "REGISTRADO", referenciaExterna: "dct03-segundo-assinado", evidenciaHash: "b".repeat(64) }));
+ const assinado = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: artefato.dado.id }, include: { conferencia: true } });
+ const assinaturas = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(assinado.conferencia.snapshot).participantes;
+ const agora = new Date().toISOString();
+ const fim = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processo.dado!.id, referenciaExterna: "dct03-segundo-assinado", originalHash: assinado.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-segundo-aditivo"), evidencias: Buffer.from("evidencia-segundo-aditivo"), assinaturas: assinaturas.map(x => ({ papel: x.papel, identidadeHash: hashPrevia(x.identidade), referenciaAssinatura: "dct03-segundo", assinadaEm: agora })) }));
+ const revisao = await consultarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id });
+ if (!revisao.ok || !revisao.dado?.revisao) throw new Error(JSON.stringify(revisao));
+ const final = await registrarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash, documentoConferido: true, evidenciasConferidas: true, motivo: "Segundo aditivo final conferido" });
+ if (!final.ok) throw new Error(JSON.stringify(final));
+ const cond = await registrarCondicoesFormalizadasAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash });
+ if (!cond.ok) throw new Error(JSON.stringify(cond));
+ return { propostaId: proposta.id, conclusaoId: fim.id, versaoCondicoesId: cond.dado!.id, revisaoHash: revisao.dado.revisao.hash };
+}
 async function prepararFinanceiro(liquidacao: "DINHEIRO" | "CREDITO" | "MISTO" | "SEM_PAGAMENTO" = "DINHEIRO") {
  financeiro = (await criarUsuario(["FINANCEIRO"])).id;
  aprovador = (await criarUsuario(["FINANCEIRO"])).id;
@@ -176,6 +209,25 @@ it("invalida acerto aprovado obsoleto, preserva financeiro e permite repropor", 
   expect(await prisma.evento.count({ where: { tipo: "AcertoTaxaAditivoInvalidado" } })).toBe(1);
   authMock.mockResolvedValue({ user: { id: financeiro } });
   expect(await propor("dct03-repropor-aprovada", "Nova fotografia após invalidação", { recibo: "DCT03-nova" })).toMatchObject({ ok: true });
+});
+it("invalida acerto aprovado após outra versão assinada e aplica a reproposta vigente", async () => {
+  const proposta = await propor("dct03-versao-posterior");
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Acerto aprovado antes do novo aditivo", chaveIdempotencia: "dct03-versao-posterior-decisao" })).toMatchObject({ ok: true });
+  const posterior = await formalizarNovaVersaoTaxa("70");
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  const invalidada = await invalidarAcertoTaxaAditivo({ propostaId: proposta.dado.id, motivo: "Outro aditivo assinou nova taxa para a matrícula", evidencia: { conferencia: "versão posterior" }, chaveIdempotencia: "dct03-versao-posterior-invalidar" });
+  if (!invalidada.ok) throw new Error(invalidada.erro);
+  const invalidacao = await prisma.invalidacaoAcertoTaxaAditivo.findUniqueOrThrow({ where: { propostaId: proposta.dado.id } });
+  expect(invalidacao.fotografiaAtual).toMatchObject({ versaoCondicoesId: posterior.versaoCondicoesId, revisaoHash: posterior.revisaoHash });
+  authMock.mockResolvedValue({ user: { id: financeiro } });
+  const nova = await proporAcertoTaxaAditivo({ matriculaId: base.matriculaId, propostaAditivoId: posterior.propostaId, conclusaoId: posterior.conclusaoId, revisaoHash: posterior.revisaoHash, cobrancaId, motivo: "Acerto da última taxa formalizada", evidencia: { recibo: "DCT03-70" }, chaveIdempotencia: "dct03-versao-posterior-repropor" });
+  if (!nova.ok || !nova.dado) throw new Error(JSON.stringify(nova));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: nova.dado.id, aprovada: true, motivo: "Reproposta da última versão conferida", chaveIdempotencia: "dct03-versao-posterior-redecidir" })).toMatchObject({ ok: true });
+  expect(await aplicarAcertoTaxaAditivo({ propostaId: nova.dado.id, chaveIdempotencia: "dct03-versao-posterior-aplicar" })).toMatchObject({ ok: true });
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorNegociado.toFixed(2)).toBe("70.00");
 });
 it("DCT03 recusa invalidação vigente ou pelo preparador e preserva replay sob permissão", async () => {
   const vendedor = await criarUsuario(["VENDEDOR"]);
