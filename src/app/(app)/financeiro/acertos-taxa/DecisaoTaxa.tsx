@@ -20,7 +20,7 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
         : operacao === "invalidar" ? await invalidarAcertoTaxaAditivo({ propostaId, motivo: motivo.trim(), evidencia: { conferencia: motivo.trim() }, chaveIdempotencia: tentativa.current.chave })
         : await decidirAcertoTaxaAditivo({ propostaId, aprovada: operacao === "aprovar", motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave });
       if (!r.ok) { setMensagem(r.erro); return; }
-      setMensagem(operacao === "aplicar" ? "Acerto aplicado." : "Decisão registrada.");
+      setMensagem(operacao === "aplicar" ? "Acerto aplicado." : operacao === "invalidar" ? "Acerto invalidado; prepare uma nova proposta." : "Decisão registrada.");
       tentativa.current = null; router.refresh();
     } catch { setMensagem("Não foi possível confirmar o resultado. Tente novamente para conferir a mesma operação."); }
     finally { enviando.current = false; setOcupado(false); }

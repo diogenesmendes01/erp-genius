@@ -1,8 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
-const m = vi.hoisted(() => ({ decidir: vi.fn(), aplicar: vi.fn(), refresh: vi.fn(), state: vi.fn(), ref: vi.fn() }));
+const m = vi.hoisted(() => ({ decidir: vi.fn(), aplicar: vi.fn(), invalidar: vi.fn(), refresh: vi.fn(), state: vi.fn(), ref: vi.fn() }));
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(), useState: m.state, useRef: m.ref }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
-vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ decidirAcertoTaxaAditivo: m.decidir, aplicarAcertoTaxaAditivo: m.aplicar }));
+vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ decidirAcertoTaxaAditivo: m.decidir, aplicarAcertoTaxaAditivo: m.aplicar, invalidarAcertoTaxaAditivo: m.invalidar }));
 import { DecisaoTaxa } from "./DecisaoTaxa";
 function buttons(node: unknown): Array<{ onClick: () => Promise<void>; children: string }> {
   if (Array.isArray(node)) return node.flatMap(buttons);
@@ -10,11 +10,11 @@ function buttons(node: unknown): Array<{ onClick: () => Promise<void>; children:
   const n = node as { type?: string; props: { children?: unknown } };
   return n.type === "button" ? [n.props as { onClick: () => Promise<void>; children: string }] : buttons(n.props?.children);
 }
-function mount(podeDecidir = true, podeAplicar = false, motivo = "Evidência conferida") {
+function mount(podeDecidir = true, podeAplicar = false, motivo = "Evidência conferida", podeInvalidar = false) {
   vi.clearAllMocks(); let chave = 0; vi.stubGlobal("crypto", { randomUUID: () => `tentativa-${++chave}` });
   const mensagem = vi.fn(); m.state.mockReturnValueOnce([motivo, vi.fn()]).mockReturnValueOnce([false, vi.fn()]).mockReturnValueOnce(["", mensagem]);
   m.ref.mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
-  return { mensagem, botoes: buttons(DecisaoTaxa({ propostaId: "p", podeDecidir, podeAplicar })) };
+  return { mensagem, botoes: buttons(DecisaoTaxa({ propostaId: "p", podeDecidir, podeAplicar, podeInvalidar })) };
 }
 afterEach(() => vi.unstubAllGlobals());
 it("não oferece operações sem permissão", () => { expect(mount(false, false).botoes).toHaveLength(0); });
@@ -38,4 +38,15 @@ it("aplicação incerta permite conferir a mesma tentativa", async () => {
   expect(c.mensagem).toHaveBeenCalledWith(expect.stringContaining("Não foi possível confirmar")); expect(m.refresh).not.toHaveBeenCalled();
   m.aplicar.mockResolvedValueOnce({ ok: true }); await c.botoes[0].onClick();
   expect(m.aplicar.mock.calls[0][0]).toEqual(m.aplicar.mock.calls[1][0]); expect(m.refresh).toHaveBeenCalledTimes(1);
+});
+it("invalidação usa a action, preserva chave no replay e atualiza a tela", async () => {
+  const c = mount(false, false, "Comissão mudou depois da aprovação", true);
+  m.invalidar.mockResolvedValueOnce({ ok: false, erro: "Revisão necessária" });
+  await c.botoes[0].onClick();
+  m.invalidar.mockResolvedValueOnce({ ok: true });
+  await c.botoes[0].onClick();
+  expect(m.invalidar.mock.calls[0][0]).toEqual(m.invalidar.mock.calls[1][0]);
+  expect(m.invalidar.mock.calls[0][0]).toMatchObject({ propostaId: "p", motivo: "Comissão mudou depois da aprovação", evidencia: { conferencia: "Comissão mudou depois da aprovação" } });
+  expect(c.mensagem).toHaveBeenCalledWith("Acerto invalidado; prepare uma nova proposta.");
+  expect(m.refresh).toHaveBeenCalledTimes(1);
 });
