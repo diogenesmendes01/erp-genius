@@ -29,6 +29,7 @@ import { iniciarTentativaAditivoTx, registrarResultadoEnvioAditivoTx } from "./a
 import { preservarConclusaoAssinaturaAditivoTx } from "./aditivo-conclusao-tx";
 import { consultarConferenciaFinalAditivo, registrarConferenciaFinalAditivo } from "./aditivo-conferencia-final";
 import { formalizarEAplicarCondicoesAditivo } from "./aditivo-condicoes";
+import { criarAvisosAlteracaoAgendaTx, validarFonteAditivoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let encontroId: string;
@@ -276,7 +277,13 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   expect(await prisma.aplicacaoAgendaAditivoParticular.count({ where: { propostaId: agenda.id } })).toBe(1);
   const eventoAplicado = await prisma.evento.findFirstOrThrow({ where: { tipo: "CondicoesAditivoAplicadas", agregadoId: base.matriculaId }, orderBy: { criadoEm: "desc" } });
   expect(eventoAplicado.payload).toMatchObject({ propostaAgendaId: agenda.id, aplicacaoAgendaId: expect.any(String), versao: 1 });
+  expect(await prisma.aplicacaoAgendaAditivoParticular.findUniqueOrThrow({ where: { propostaId: agenda.id }, select: { eventoId: true } })).toEqual({ eventoId: eventoAplicado.id });
   const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } });
+  const cloneExato = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: eventoAplicado.payload } });
+  await expect(prisma.aplicacaoAgendaAditivoParticular.update({ where: { propostaId: agenda.id }, data: { eventoId: cloneExato.id } })).rejects.toThrow("Aplicação de agenda do aditivo é imutável");
+  await expect(prisma.$transaction(tx => criarAvisosAlteracaoAgendaTx(tx, { eventoId: cloneExato.id, matriculaId: base.matriculaId, encontrosIds: [encontroId] }))).rejects.toThrow("Evento aplicado incompatível com o aviso.");
+  await expect(prisma.$transaction(tx => validarFonteAditivoAgendaTx(tx, { eventoId: cloneExato.id, matriculaId: base.matriculaId, encontrosIds: [encontroId] }))).resolves.toBeNull();
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-clone-exato", mudancaId: cloneExato.id, eventoId: cloneExato.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "c".repeat(64), chave: "q117-aviso-clone-exato" } })).rejects.toThrow("Origem do aviso inválida");
   const forjado = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: { ...(eventoAplicado.payload as object), versao: 99, condicoesHash: "f".repeat(64) } } });
   await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-forjado", mudancaId: forjado.id, eventoId: forjado.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "a".repeat(64), chave: "q117-aviso-forjado" } })).rejects.toThrow("Origem do aviso inválida");
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual({ professorId: base.secretariaId, inicio: new Date("2099-10-12T15:00:00.000Z"), fim: new Date("2099-10-12T16:00:00.000Z"), fusoOrigem: "UTC" });

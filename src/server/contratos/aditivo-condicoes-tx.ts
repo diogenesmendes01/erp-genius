@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
@@ -104,8 +105,14 @@ export async function aplicarCondicoesFormalizadasAditivoTx(tx: Prisma.Transacti
   const participantes = processo?.artefato.conferencia;
   if (!processo || processo.propostaId !== d.propostaId || !participantes || participantes.propostaId !== d.propostaId || await tx.conferenciaParticipantesAditivo.count({ where: { propostaId: d.propostaId, versao: { gt: participantes.versao } } })) throw new ErroRegra("A conferência de participantes foi superada e exige nova conferência.");
   const aplicacao = await tx.aplicacaoCondicoesAditivo.create({ data: { versaoCondicoesId: versao.id, matriculaId: d.matriculaId, propostaId: d.propostaId, autorId, revisaoHash: d.revisaoHash, condicoesHash: versao.condicoesHash, vigenciaInicio: versao.vigenciaInicio, chaveIdempotencia: d.chaveIdempotencia } });
-  const agendaAplicada = versao.propostaAgendaId ? await aplicarAgendaAditivoTx(tx, autorId, { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, aplicacaoCondicoesId: aplicacao.id, chaveIdempotencia: `agenda-${hashSubstituicao({ propostaId: d.propostaId, chaveIdempotencia: d.chaveIdempotencia })}` }) : null;
-  const evento = await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash, ...(agendaAplicada ? { propostaAgendaId: versao.propostaAgendaId, aplicacaoAgendaId: agendaAplicada.id } : {}) } });
+  const aplicacaoAgendaId = versao.propostaAgendaId ? randomUUID() : null;
+  const eventoId = aplicacaoAgendaId ? randomUUID() : null;
+  // O evento é criado antes da aplicação de agenda para que a própria aplicação
+  // grave a referência canônica. O rollback comum remove ambos se a agenda falhar.
+  const evento = eventoId && aplicacaoAgendaId
+    ? await tx.evento.create({ data: { id: eventoId, tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash, propostaAgendaId: versao.propostaAgendaId, aplicacaoAgendaId } } })
+    : await registrarEvento(tx, { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId, payload: { propostaId: d.propostaId, versao: versao.versao, aplicacaoId: aplicacao.id, condicoesHash: versao.condicoesHash } });
+  const agendaAplicada = aplicacaoAgendaId && eventoId ? await aplicarAgendaAditivoTx(tx, autorId, { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, aplicacaoCondicoesId: aplicacao.id, aplicacaoAgendaId, eventoId, chaveIdempotencia: `agenda-${hashSubstituicao({ propostaId: d.propostaId, chaveIdempotencia: d.chaveIdempotencia })}` }) : null;
   if (agendaAplicada && versao.propostaAgendaId) {
     const fotografia = await tx.propostaAgendaAditivoParticular.findUniqueOrThrow({ where: { id: versao.propostaAgendaId }, select: { fotografia: true } });
     const encontros = PrepararAditivoContratualSchema.parse((versao.proposta.snapshot as { entrada: unknown }).entrada).alteracoes.find(a => a.origem === "AGENDA_PARTICULAR")?.valorEstruturado;
