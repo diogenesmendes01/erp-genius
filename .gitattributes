@@ -24,3 +24,4 @@ prisma/migrations/20260917095000_compatibilidade_aplicacao_aditivo/migration.sql
 prisma/migrations/20260917090000_entrada_financeira_historica/migration.sql -text
 prisma/migrations/20260917110000_correcao_entrada_financeira_historica/migration.sql -text
 prisma/migrations/20260917100000_agenda_aditivo_particular/migration.sql -text
+prisma/migrations/20260917121000_avisos_agenda_aditivo/migration.sql -text

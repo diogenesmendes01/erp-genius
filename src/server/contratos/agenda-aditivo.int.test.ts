@@ -9,7 +9,7 @@ import { IdentidadeSignatarioSchema } from "./participantes-schema";
 import { hashPrevia } from "./previa-estado";
 import { z } from "zod";
 import { carregarConferenciaAgendaAditivoTx, registrarPropostaAgendaAditivoTx } from "./agenda-aditivo-tx";
-import { consultarConferenciaAgendaAditivo, consultarOpcoesConferenciaAgendaAditivo, listarMatriculasConferenciaAgendaAditivo } from "./agenda-aditivo";
+import { consultarConferenciaAgendaAditivo, consultarOpcoesConferenciaAgendaAditivo, consultarPropostaAgendaAditivo, listarMatriculasConferenciaAgendaAditivo } from "./agenda-aditivo";
 import { carregarRevisaoAceite } from "./aceite-estado";
 import { confirmarAceiteOriginalTx } from "./aceite-tx";
 import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-horas-compradas";
@@ -70,6 +70,17 @@ it("persiste a fotografia idempotente sem alterar encontro e permite gestão ped
   expect(repetida.id).toBe(primeira.id);
   expect(await prisma.propostaAgendaAditivoParticular.findUniqueOrThrow({ where: { id: primeira.id }, select: { matriculaId: true, conclusaoFonteId: true, preparadorId: true, fotografiaHash: true, pendencias: true } })).toMatchObject({ matriculaId: base.matriculaId, preparadorId: gestor.id, fotografiaHash: primeira.fotografiaHash, pendencias: [] });
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual(antes);
+});
+
+it("permite selecionar a fotografia íntegra na preparação contratual sem ampliar essa preparação à gestão", async () => {
+  const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  const proposta = await prisma.$transaction(tx => registrarPropostaAgendaAditivoTx(tx, gestor.id, { ...entrada(), chaveIdempotencia: "q117-selecao-fotografia" }));
+  authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+  expect(await consultarPropostaAgendaAditivo({ matriculaId: base.matriculaId, propostaAgendaId: proposta.id })).toMatchObject({ ok: true, dado: { id: proposta.id, texto: proposta.proposta.texto, encontros: [{ encontroId }], pendencias: [] } });
+  expect(await consultarPropostaAgendaAditivo({ matriculaId: "outra-matricula", propostaAgendaId: proposta.id })).toMatchObject({ ok: false });
+  const vendedor = await criarUsuario(["VENDEDOR"]);
+  authMock.mockResolvedValue({ user: { id: vendedor.id } });
+  expect(await consultarPropostaAgendaAditivo({ matriculaId: base.matriculaId, propostaAgendaId: proposta.id })).toMatchObject({ ok: false });
 });
 
 it("autoriza secretaria, administração e gestão pedagógica pela consulta real", async () => {
@@ -263,5 +274,10 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   expect(await prisma.versaoCondicoesAditivo.findUniqueOrThrow({ where: { propostaId: proposta.id } })).toMatchObject({ propostaAgendaId: agenda.id, versao: 1 });
   expect(await prisma.aplicacaoCondicoesAditivo.count({ where: { propostaId: proposta.id } })).toBe(1);
   expect(await prisma.aplicacaoAgendaAditivoParticular.count({ where: { propostaId: agenda.id } })).toBe(1);
+  const eventoAplicado = await prisma.evento.findFirstOrThrow({ where: { tipo: "CondicoesAditivoAplicadas", agregadoId: base.matriculaId }, orderBy: { criadoEm: "desc" } });
+  expect(eventoAplicado.payload).toMatchObject({ propostaAgendaId: agenda.id, aplicacaoAgendaId: expect.any(String), versao: 1 });
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } });
+  const forjado = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: { ...(eventoAplicado.payload as object), versao: 99, condicoesHash: "f".repeat(64) } } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-forjado", mudancaId: forjado.id, eventoId: forjado.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "a".repeat(64), chave: "q117-aviso-forjado" } })).rejects.toThrow("Origem do aviso inválida");
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual({ professorId: base.secretariaId, inicio: new Date("2099-10-12T15:00:00.000Z"), fim: new Date("2099-10-12T16:00:00.000Z"), fusoOrigem: "UTC" });
 });

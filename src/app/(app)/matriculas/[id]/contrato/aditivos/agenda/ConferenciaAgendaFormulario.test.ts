@@ -1,9 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ consultar: vi.fn(), useState: vi.fn(), useTransition: vi.fn() }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), registrar: vi.fn(), useState: vi.fn(), useTransition: vi.fn() }));
 vi.mock("react", async importOriginal => ({ ...(await importOriginal<typeof import("react")>()), useState: mocks.useState, useTransition: mocks.useTransition }));
-vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarConferenciaAgendaAditivo: mocks.consultar }));
-import { ConferenciaAgendaFormulario } from "./ConferenciaAgendaFormulario";
+vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarConferenciaAgendaAditivo: mocks.consultar, registrarPropostaAgendaAditivo: mocks.registrar }));
+import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
 
 type No = { props?: Record<string, unknown> };
 const encontrar = (no: unknown, tipo: string): No | undefined => {
@@ -42,4 +42,30 @@ it("não chama o servidor quando o horário DST é inválido", () => {
   (componente.form.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} });
   expect(mocks.consultar).not.toHaveBeenCalled();
   expect(componente.setMensagem).toHaveBeenCalledWith("Informe datas, horários e fuso válidos.");
+});
+
+it("registra a fotografia conferida e mantém o vínculo contratual em etapa separada", async () => {
+  const setMensagem = vi.fn(), setId = vi.fn();
+  mocks.useState.mockReset().mockReturnValueOnce(["", setMensagem]).mockReturnValueOnce([null, setId]).mockReturnValueOnce(["chave-q117", vi.fn()]);
+  mocks.useTransition.mockReset().mockReturnValue([false, (callback: () => void) => callback()]);
+  mocks.registrar.mockResolvedValue({ ok: true, dado: { id: "foto-q117" } });
+  const resultado = { proposta: { encontros: [{ encontroId: "e", professorAnteriorId: "anterior", professorNovoId: "novo", professorAnteriorNome: "Anterior", professorNovoNome: "Novo", inicioAnterior: "2099-10-10T10:00:00.000Z", fimAnterior: "2099-10-10T11:00:00.000Z", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", fusoAnterior: "UTC", fusoNovo: "UTC", duracaoMinutos: 60 }] }, pendencias: [] };
+  const arvore = RegistrarFotografia({ matriculaId: "m", resultado });
+  const botao = encontrar(arvore, "button")!.props!;
+  await (botao.onClick as () => void)(); await Promise.resolve();
+  expect(mocks.registrar).toHaveBeenCalledWith({ matriculaId: "m", chaveIdempotencia: "chave-q117", encontros: [{ encontroId: "e", professorNovoId: "novo", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", duracaoMinutos: 60, fusoOrigem: "UTC" }] });
+  expect(setId).toHaveBeenCalledWith("foto-q117");
+});
+
+it("preserva a chave ao falhar para que a repetição consulte a mesma tentativa", async () => {
+  const setMensagem = vi.fn();
+  mocks.useState.mockReset().mockReturnValueOnce(["", setMensagem]).mockReturnValueOnce([null, vi.fn()]).mockReturnValueOnce(["chave-q117", vi.fn()]);
+  mocks.useTransition.mockReset().mockReturnValue([true, (callback: () => void) => callback()]);
+  mocks.registrar.mockRejectedValue(new Error("rede"));
+  const resultado = { proposta: { encontros: [{ encontroId: "e", professorAnteriorId: "anterior", professorNovoId: "novo", professorAnteriorNome: "Anterior", professorNovoNome: "Novo", inicioAnterior: "2099-10-10T10:00:00.000Z", fimAnterior: "2099-10-10T11:00:00.000Z", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", fusoAnterior: "UTC", fusoNovo: "UTC", duracaoMinutos: 60 }] }, pendencias: [] };
+  const botao = encontrar(RegistrarFotografia({ matriculaId: "m", resultado }), "button")!.props!;
+  expect(botao.disabled).toBe(true);
+  await (botao.onClick as () => void)(); await Promise.resolve();
+  expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ chaveIdempotencia: "chave-q117" }));
+  expect(setMensagem).toHaveBeenCalledWith("Não foi possível confirmar o registro. Repita sem editar para consultar a mesma tentativa.");
 });
