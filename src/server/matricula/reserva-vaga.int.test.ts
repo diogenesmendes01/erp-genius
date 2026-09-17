@@ -20,7 +20,8 @@ import { ConferirParticipantesSchema } from "@/server/contratos/participantes-sc
 import { prepararExcecaoAdmissao, decidirExcecaoAdmissao, consultarExcecoesAdmissao } from "./excecao-admissao";
 import { conferirContinuidadeReserva } from "./excecao-admissao-estado";
 import { consultarConferenciaAssinatura, registrarConferenciaAssinatura } from "@/server/contratos/assinatura-conferencia";
-import { receberTx } from "@/server/financeiro/recebimentos";
+import { receberTx, receberComDestinacoesTx } from "@/server/financeiro/recebimentos";
+import { TipoDestinacaoRecebimento } from "@prisma/client";
 import { GET as baixarPdfPrevia } from "@/app/api/matriculas/[id]/previas/[previaId]/pdf/route";
 import { GET as baixarPdfOriginal } from "@/app/api/matriculas/[id]/originais/[artefatoId]/pdf/route";
 import { preservarOriginalContratual, consultarOriginaisContratuais } from "@/server/contratos/originais";
@@ -145,6 +146,22 @@ it("protege reserva vencida com comprovante em conferência e não desfaz a pend
   await prisma.pagamentoInformado.update({ where: { id: informe.id }, data: { status: "REJEITADO" } });
   expect(await prisma.$transaction((tx) => conferirVencimentoReservaTx(tx, r.id))).toMatchObject({ status: "MANTIDA_PENDENCIA", resultado: "SEM_TRANSICAO" });
   expect(await prisma.evento.count({ where: { tipo: "ReservaMantidaPorPendencia" } })).toBe(1);
+});
+it("mantém a vaga vencida em pendência quando há antecipação real sem cobrança", async () => {
+  const reserva = await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
+  const caixa = await criarUsuario(["FINANCEIRO"]);
+  const recebimento = await prisma.$transaction(tx => receberComDestinacoesTx(tx, {
+    titularMatriculaId: matriculas[0], autorId: caixa.id, pagadorId: null, chaveIdempotencia: "reserva-credito-puro-q87",
+    valorRecebido: 100, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2099-09-10T12:00:00Z"),
+    comentario: "Antecipação registrada antes da assinatura.",
+    destinos: [{ tipo: TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO, valor: 100, evidencia: "Antecipação sem cobrança para a matrícula reservada.", chaveIdempotencia: "credito-sem-destino" }],
+  }));
+  await prisma.$executeRaw`UPDATE "ReservaVagaMatricula" SET "expiraEm" = "criadaEm" + interval '1 millisecond' WHERE id = ${reserva.id}`;
+  expect(await prisma.$transaction(tx => conferirVencimentoReservaTx(tx, reserva.id, caixa.id))).toMatchObject({ status: "MANTIDA_PENDENCIA", resultado: "PENDENCIA_REGISTRADA" });
+  expect(await prisma.reservaVagaMatricula.findUniqueOrThrow({ where: { id: reserva.id } })).toMatchObject({ status: "MANTIDA_PENDENCIA" });
+  expect(await prisma.destinacaoRecebimento.findFirstOrThrow({ where: { recebimentoId: recebimento.id } })).toMatchObject({ cobrancaId: null, tipo: "CREDITO_SEM_DESTINO", autorId: caixa.id });
+  expect(await prisma.evento.findFirstOrThrow({ where: { tipo: "ReservaMantidaPorPendencia", agregadoId: matriculas[0] } })).toMatchObject({ payload: expect.objectContaining({ recebimentosIds: [recebimento.id] }) });
+  await expect(prisma.$transaction(tx => reservarVagaMatriculaTx(tx, dados(1)))).rejects.toThrow("SEM_VAGA");
 });
 it("não usa pagamento de outro contrato nem presume ausência de assinatura externa", async () => {
   const r = await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
