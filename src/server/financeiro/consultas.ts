@@ -149,6 +149,22 @@ export async function listarInformesPagamento(alunoId?: string) {
   })));
 }
 
+/** Contextos operacionais para repartir um único fato de caixa FIN-04. */
+export async function listarContextosRecebimentoDestinado() {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
+  const matriculas = await prisma.matricula.findMany({
+    where: { status: { in: [StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
+    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" } } },
+  });
+  return matriculas.map((matricula) => {
+    const cobrancas = matricula.cobrancas.flatMap((cobranca) => {
+    const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito).toNumber();
+    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
+    });
+    return { matriculaId: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
+  });
+}
+
 export async function configuracaoComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
   const atual = await prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } });

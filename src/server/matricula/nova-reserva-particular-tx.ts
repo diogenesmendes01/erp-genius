@@ -20,7 +20,7 @@ export async function revisarNovaReservaParticularTx(tx: Prisma.TransactionClien
   const m = await tx.matricula.findUnique({ where: { id: d.matriculaId }, include: { preparacaoComercial: true,
     aluno: { select: { id: true, primeiroNome: true, sobrenome: true, documento: true, documentoValido: true, email: true, telefoneE164: true, rua: true, numero: true, cidade: true, regiao: true, cep: true, paisResidencia: true } },
     cobrancas: { orderBy: { id: "asc" }, select: { id: true, tipo: true, moeda: true, versao: true, valorNegociado: true, valorRecebido: true, saldo: true, status: true, vencimento: true,
-      informes: { orderBy: { id: "asc" }, select: { id: true, status: true, versao: true } }, recebimentos: { orderBy: { id: "asc" }, select: { id: true } } } },
+      informes: { orderBy: { id: "asc" }, select: { id: true, status: true, versao: true } }, destinacoesRecebimento: { orderBy: { id: "asc" }, select: { id: true, recebimentoId: true, valor: true } } } },
     pagadoresPreparacao: { orderBy: { versao: "desc" }, take: 1 }, condicoesEntradaPreparacao: { orderBy: { versao: "desc" }, take: 1 } } });
   const inicialId = m?.preparacaoComercial?.reservaParticularId;
   if (!m || !inicialId || !m.secretariaAssumiuEm || !["RASCUNHO", "AGUARDANDO"].includes(m.status) || await resolverReservaParticularAtual(tx, inicialId) !== d.anteriorId) throw new ErroRegra("Confira a reserva atual da preparação assumida pela Secretaria.");

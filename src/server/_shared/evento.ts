@@ -13,6 +13,7 @@ export type AgregadoTipo =
   | "CoberturaCarteira"
   | "AtendimentoWhatsApp"
   | "PagamentoInformado"
+  | "Recebimento"
   | "SolicitacaoCorrecaoCadastro"
   | "AulaDiario"
   | "EncontroAgenda"

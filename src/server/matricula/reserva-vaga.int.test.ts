@@ -148,7 +148,9 @@ it("protege reserva vencida com comprovante em conferência e não desfaz a pend
 });
 it("não usa pagamento de outro contrato nem presume ausência de assinatura externa", async () => {
   const r = await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
-  await prisma.cobranca.create({ data: { matriculaId: matriculas[1], tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, valorRecebido: 100, status: "PAGO", moeda: "CRC", vencimento: new Date() } });
+  const outraCobranca = await prisma.cobranca.create({ data: { matriculaId: matriculas[1], tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, saldo: 100, status: "PENDENTE", moeda: "CRC", vencimento: new Date() } });
+  const caixa = await criarUsuario(["FINANCEIRO"]);
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: outraCobranca.id, autorId: caixa.id, valorRecebido: 100, forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Recebimento exclusivo do outro contrato", chaveIdempotencia: "reserva-outro-contrato" }));
   await prisma.$executeRaw`UPDATE "ReservaVagaMatricula" SET "expiraEm" = "criadaEm" + interval '1 millisecond'`;
   expect(await prisma.$transaction((tx) => conferirVencimentoReservaTx(tx, r.id))).toMatchObject({ status: "ATIVA", resultado: "CONFERIR_ASSINATURA_EXTERNA" });
   expect(await prisma.evento.count({ where: { tipo: "ReservaMantidaPorPendencia" } })).toBe(0);
@@ -910,7 +912,7 @@ it.each([
     await prisma.pagamentoInformado.create({ data: { cobrancaId: taxaAssinatura.id, autorId, chaveIdempotencia: "informe-taxa-assinatura", valor: taxaAssinatura.valorNegociado, moeda: taxaAssinatura.moeda, forma: "TRANSFERENCIA", dataPagamento: new Date() } });
     expect(await consultarConferenciaAssinatura(alvoAssinatura)).toMatchObject({ ok: true, dado: { revisao: null, pendencia: expect.stringContaining("Financeiro") } });
     const financeiro = await criarUsuario(["FINANCEIRO"]);
-    await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: taxaAssinatura.id, chaveIdempotencia: "receber-taxa-assinatura", autorId: financeiro.id, valorRecebido: taxaAssinatura.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date() }));
+    await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: taxaAssinatura.id, chaveIdempotencia: "receber-taxa-assinatura", autorId: financeiro.id, valorRecebido: taxaAssinatura.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Comprovante conferido para reserva e contratação" }));
   }
   const assinatura = await consultarConferenciaAssinatura(alvoAssinatura);
   if (!assinatura.ok || !assinatura.dado?.revisao) throw new Error(JSON.stringify(assinatura));
@@ -1067,7 +1069,7 @@ it.each([
     expect(await concluirMatricula(alvoAceite.matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("pagamentos exigidos") });
     for (const cobranca of await prisma.cobranca.findMany({ where: { matriculaId: alvoAceite.matriculaId } })) {
       const restante = cobranca.valorNegociado.minus(cobranca.valorRecebido ?? 0);
-      if (restante.gt(0)) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroAtivacao.id, valorRecebido: restante.toNumber(), forma: "TRANSFERENCIA", chaveIdempotencia: `pagar-ativacao-${cobranca.id}`, dataPagamento: new Date() }));
+      if (restante.gt(0)) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroAtivacao.id, valorRecebido: restante.toNumber(), forma: "TRANSFERENCIA", chaveIdempotencia: `pagar-ativacao-${cobranca.id}`, dataPagamento: new Date(), evidencia: "Comprovante conferido para reserva e contratação" }));
     }
     expect(await concluirMatricula(alvoAceite.matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("política de comissão") });
     await prisma.politicaComissao.create({ data: { paisId: base.paisId, produtoId: base.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: base.moeda, vigenteEm: new Date("2020-01-01"), criadaPorId: admin.id } });
@@ -1468,11 +1470,11 @@ it.each([
     expect(await concluirMatricula(r.matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("pagamentos exigidos") });
     const financeiro = await criarUsuario(["FINANCEIRO"]);
     const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, tipo: "MATRICULA" } });
-    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: financeiro.id, chaveIdempotencia: "taxa-particular", valorRecebido: taxa.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date() }));
+    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: financeiro.id, chaveIdempotencia: "taxa-particular", valorRecebido: taxa.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Comprovante conferido para reserva e contratação" }));
     if (exigirPagamentoAulas) {
       expect(await concluirMatricula(r.matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("pagamentos exigidos") });
       const aulas = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, tipo: { not: "MATRICULA" } } });
-      await prisma.$transaction(tx => receberTx(tx, { cobrancaId: aulas.id, autorId: financeiro.id, chaveIdempotencia: "aulas-particular", valorRecebido: aulas.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date() }));
+      await prisma.$transaction(tx => receberTx(tx, { cobrancaId: aulas.id, autorId: financeiro.id, chaveIdempotencia: "aulas-particular", valorRecebido: aulas.valorNegociado.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Comprovante conferido para reserva e contratação" }));
     }
     const adminComissao = await criarUsuario(["ADMINISTRADOR"]);
     await prisma.politicaComissao.create({ data: { paisId: base.paisId, produtoId: base.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: base.moeda, vigenteEm: new Date("2020-01-01"), criadaPorId: adminComissao.id } });
@@ -1505,7 +1507,7 @@ it.each([
     if (regime === "HORA_PARTICULAR" && exigirPagamentoAulas) {
       authMock.mockResolvedValue({ user: { id: financeiro.id } });
       const antecipacao = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, tipo: "HORA_PARTICULAR" } });
-      const recebimentosAntes = await prisma.recebimento.findMany({ where: { cobrancaId: antecipacao.id }, orderBy: { id: "asc" } });
+      const recebimentosAntes = await prisma.recebimento.findMany({ where: { destinacoes: { some: { cobrancaId: antecipacao.id } } }, orderBy: { id: "asc" } });
       const compra = { alunoId: base.alunoId, matriculaId: r.matriculaId, cobrancaId: antecipacao.id, versaoCobranca: antecipacao.versao, minutosComprados: 75, evidenciaCondicoes: "Adiantamento aceito e recebido conferido", chaveIdempotencia: "compra-preparada" };
       expect(await registrarCompraHorasAntecipadas({ ...compra, minutosComprados: 750 })).toMatchObject({ ok: false, erro: expect.stringContaining("adiantamento contratado") });
       expect(await prisma.compraHorasAntecipadas.count()).toBe(0);
@@ -1517,7 +1519,7 @@ it.each([
       expect(preservada.valorPagoAlocado.equals(antecipacao.valorNegociado)).toBe(true);
       expect(preservada.descontoOriginal.isZero()).toBe(true);
       expect(preservada.snapshot).toMatchObject({ preparacao: { preparacaoId: r.id, minutosContratados: 75 }, valorReferenciaCobranca: antecipacao.valorOriginal.toString() });
-      expect(await prisma.recebimento.findMany({ where: { cobrancaId: antecipacao.id }, orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
+      expect(await prisma.recebimento.findMany({ where: { destinacoes: { some: { cobrancaId: antecipacao.id } } }, orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
       authMock.mockResolvedValue({ user: { id: autorId } });
     }
     await prisma.produtoPais.update({ where: { id: oferta.id }, data: { formaAgenda } });
@@ -1525,7 +1527,11 @@ it.each([
     return;
   }
   if (regime === "MENSALIDADE") {
-    if (formaAgenda === "PARTICULAR_GRADE_FIXA") await prisma.cobranca.updateMany({ where: { matriculaId: r.matriculaId }, data: { valorRecebido: 1 } });
+    if (formaAgenda === "PARTICULAR_GRADE_FIXA") {
+      const caixa = await criarUsuario(["FINANCEIRO"]);
+      const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, saldo: { gte: 1 }, status: { in: ["PENDENTE", "ATRASADO"] } } });
+      await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: caixa.id, valorRecebido: 1, forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Pagamento parcial preserva reserva particular", chaveIdempotencia: "reserva-particular-parcial" }));
+    }
     else await prisma.documento.create({ data: { matriculaId: r.matriculaId, categoria: "CONTRATO", nome: "Contrato em conferência", url: "/api/files/contrato-teste.pdf" } });
   }
   if (regime === "HORA_PARTICULAR" && formaAgenda === "PARTICULAR_GRADE_FIXA") {
@@ -1675,7 +1681,7 @@ it.each([
   const financeiroEntrada = await criarUsuario(["FINANCEIRO"]);
   const taxaEntrada = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: r.matriculaId, tipo: "MATRICULA" } });
   const restanteEntrada = taxaEntrada.valorNegociado.minus(taxaEntrada.valorRecebido ?? 0);
-  if (restanteEntrada.gt(0)) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxaEntrada.id, chaveIdempotencia: "receber-particular-entrada", autorId: financeiroEntrada.id, valorRecebido: restanteEntrada.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date() }));
+  if (restanteEntrada.gt(0)) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxaEntrada.id, chaveIdempotencia: "receber-particular-entrada", autorId: financeiroEntrada.id, valorRecebido: restanteEntrada.toNumber(), forma: "TRANSFERENCIA", dataPagamento: new Date(), evidencia: "Comprovante conferido para reserva e contratação" }));
   authMock.mockResolvedValue({ user: { id: financeiroEntrada.id } });
   expect(await consultarPagamentosEntradaParticular(r.matriculaId)).toMatchObject({ ok: true, dado: { pagamentosExigidosConfirmados: true } });
   expect((await prisma.matricula.findUniqueOrThrow({ where: { id: r.matriculaId } })).status).not.toBe("ATIVA");

@@ -22,13 +22,13 @@ export async function conferirCoberturaInicial(input: z.input<typeof Entrada>) {
       await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${dados.matriculaId} ORDER BY id FOR UPDATE`;
       const atual = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
       if (!atual?.ativo || !atual.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR)) throw new ErroPermissao();
-      const m = await tx.matricula.findUnique({ where: { id: dados.matriculaId }, include: { cobrancas: { where: { tipo: "MENSALIDADE" }, include: { recebimentos: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } } } } } });
+      const m = await tx.matricula.findUnique({ where: { id: dados.matriculaId }, include: { cobrancas: { where: { tipo: "MENSALIDADE" }, include: { destinacoesRecebimento: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } } } } } });
       if (!m || !m.secretariaAssumiuEm || !["AGUARDANDO", "RASCUNHO"].includes(m.status)) throw new ErroRegra("Assuma a matrícula em preparação antes de conferir a cobertura.");
       if (m.contratoOk || m.confirmacaoContratoEm) throw new ErroRegra("Condições já aceitas exigem alteração contratual autorizada.");
       if (m.cobrancas.length !== 1) throw new ErroRegra("Confira o cronograma antes de alterar a cobertura inicial.");
       const c = m.cobrancas[0];
       if (c.id !== dados.cobrancaId || c.versao !== dados.versaoEsperada) throw new ErroRegra("A mensalidade mudou desde a consulta. Atualize a tela e confira novamente.");
-      if (!["PENDENTE", "ATRASADO"].includes(c.status) || c.recebimentos.length || c.informes.length || Number(c.valorRecebido ?? 0) !== 0) throw new ErroRegra("Mensalidade com pagamento ou comprovante exige conferência financeira antes de alterar suas condições.");
+      if (!["PENDENTE", "ATRASADO"].includes(c.status) || c.destinacoesRecebimento.length || c.informes.length || Number(c.valorRecebido ?? 0) !== 0) throw new ErroRegra("Mensalidade com pagamento ou comprovante exige conferência financeira antes de alterar suas condições.");
       const periodo = periodoMensalNaData(dados.cobertura.referencia === "MES_CIVIL" ? { referencia: "MES_CIVIL" } : { referencia: "CICLO_MATRICULA", dataReferencia: dados.cobertura.inicio }, dados.cobertura.inicio);
       const inicio = new Date(`${periodo.inicio}T00:00:00Z`), fim = new Date(`${periodo.fim}T00:00:00Z`);
       const fuso = await carregarFusoInstitucionalTx(tx);
