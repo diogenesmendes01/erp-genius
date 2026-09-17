@@ -4,7 +4,7 @@ import { hashSubstituicao } from "./substituicao-estado";
 import { Prisma } from "@prisma/client";
 
 const hora = (valor = "200", moeda = "CRC") => ({ HORA_VALOR: { tipo: "DINHEIRO", valor, moeda } });
-const versao = (condicoes: Prisma.JsonObject, inicio = "2026-01-01T00:00:00Z", n = 1) => ({ id: `v${n}`, versao: n, condicoes, condicoesHash: hashSubstituicao(condicoes), vigenciaInicio: new Date(inicio) });
+const versao = (condicoes: Prisma.JsonObject, inicio = "2026-01-01T00:00:00Z", n = 1): { id: string; versao: number; condicoes: Prisma.JsonObject; condicoesHash: string; vigenciaInicio: Date; aplicacao: { id: string } | null } => ({ id: `v${n}`, versao: n, condicoes, condicoesHash: hashSubstituicao(condicoes), vigenciaInicio: new Date(inicio), aplicacao: { id: `a${n}` } });
 const inicio = new Date("2026-01-10T15:00:00Z"), fim = new Date("2026-01-10T16:00:00Z");
 const resolver = (v: ReturnType<typeof versao>[]) => resolverHoraVigente(v, inicio, fim, "125.00", "CRC");
 describe("preço por hora formalizado", () => {
@@ -13,6 +13,7 @@ describe("preço por hora formalizado", () => {
     expect(resolver([versao(hora(), fim.toISOString())])).toMatchObject({ valorHora: "125.00", versaoAditivo: null });
   });
   it("bloqueia o primeiro aditivo financeiro durante o encontro", () => expect(() => resolver([versao(hora(), "2026-01-10T15:30:00Z")])).toThrow(/durante/));
+  it("recusa versão vigente pendente sem recuar ao preço anterior", () => expect(() => resolver([{ ...versao(hora()), aplicacao: null }])).toThrow(/aplicação explícita/));
   it("mudança cadastral com preço herdado não interrompe o encontro", () => expect(resolver([versao(hora()), versao({ ...hora(), ALUNO_NOME: { tipo: "TEXT", texto: "Nome corrigido" } }, "2026-01-10T15:30:00Z", 2)])).toMatchObject({ valorHora: "200" }));
   it("não interrompe por ordem diferente das chaves financeiras equivalentes", () => {
     const primeiro = { REGIME: { tipo: "REGIME" as const, regime: "HORA_PARTICULAR" as const }, ...hora(), MOEDA: { tipo: "MOEDA" as const, moeda: "CRC" } };

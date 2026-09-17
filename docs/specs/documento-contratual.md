@@ -233,6 +233,8 @@ Para novos cálculos, versão formalizada vigente ainda pendente de aplicação 
 
 Revalidar, sob os bloqueios do contrato/processo, proposta e base, alçadas aplicáveis, conclusão em produção, assinaturas completas, conferência final, hashes e vigência. Repetição idêntica conserva o mesmo fato; revisão divergente e concorrência não criam aplicação duplicada. Nenhuma aplicação cria matrícula, taxa ou acerto financeiro. Alterações de agenda continuam exigindo integração acadêmica própria aprovada; a recusa atual de `AGENDA` não pode ser removida apenas para admitir a nova aplicação. Esta seção identifica trabalho restante, sem declarar Q117 integralmente entregue.
 
+Implementação Q117: a aplicação ficou registrada como fato imutável e idempotente, vinculado à versão formalizada, proposta, matrícula, autor e revisão final. Novos cálculos mensal e por hora exigem a aplicação da versão efetiva; fatos financeiros anteriores continuam preservados. Valores cuja operação ainda exige fluxo próprio, inclusive moeda, regime, cobertura, vencimentos, taxa e adiantamento, permanecem explicitamente pendentes e não recebem aplicação operacional. Agenda continua fora deste recorte.
+
 ## 7. Pendências para fechar a entrega documental
 
 **Expiração da reserva — Q123:** a matrícula continua em preparação, mas a solicitação de assinatura ainda aberta deve ser encerrada com resultado conferido. Nova reserva não reabre o processo externo anterior: revalidar dados, condições, documento e requisitos antes de liberar nova solicitação, sem duplicar taxa ou recebimentos. Encerramento incerto mantém a liberação pendente. Pagamento/assinatura concorrente exige conferência; preservar evidências, sem presumir ativação, vaga ou devolução.
