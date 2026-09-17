@@ -28,9 +28,9 @@ export const PropostaAgendaAditivoSchema = z.object({
 });
 
 export type PropostaAgendaAditivo = z.infer<typeof PropostaAgendaAditivoSchema>;
-export function fotografiaCanonicaAgendaAditivo(proposta: PropostaAgendaAditivo) { const p = PropostaAgendaAditivoSchema.parse(proposta); return { ...p, encontros: p.encontros.map(e => ({ ...e, inicioAnterior: new Date(e.inicioAnterior).toISOString(), fimAnterior: new Date(e.fimAnterior).toISOString(), inicioNovo: new Date(e.inicioNovo).toISOString(), fimNovo: new Date(e.fimNovo).toISOString() })).sort((a, b) => a.encontroId < b.encontroId ? -1 : a.encontroId > b.encontroId ? 1 : 0) }; }
-export function hashPropostaAgendaAditivo(proposta: PropostaAgendaAditivo) { return hashSubstituicao(fotografiaCanonicaAgendaAditivo(proposta)); }
-export function textoAgendaAditivo(proposta: PropostaAgendaAditivo) {
+export function fotografiaCanonicaAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) { const p = PropostaAgendaAditivoSchema.parse(proposta); return { ...p, encontros: p.encontros.map(e => ({ ...e, inicioAnterior: new Date(e.inicioAnterior).toISOString(), fimAnterior: new Date(e.fimAnterior).toISOString(), inicioNovo: new Date(e.inicioNovo).toISOString(), fimNovo: new Date(e.fimNovo).toISOString() })).sort((a, b) => a.encontroId < b.encontroId ? -1 : a.encontroId > b.encontroId ? 1 : 0) }; }
+export function hashPropostaAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) { return hashSubstituicao(fotografiaCanonicaAgendaAditivo(proposta)); }
+export function textoAgendaAditivo(proposta: z.input<typeof PropostaAgendaAditivoSchema>) {
   const d = fotografiaCanonicaAgendaAditivo(proposta);
   const f = (v: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(v));
   return d.encontros.map(e => `${e.professorAnteriorNome}: ${f(e.inicioAnterior, e.fusoAnterior)}–${f(e.fimAnterior, e.fusoAnterior)} para ${e.professorNovoNome}: ${f(e.inicioNovo, e.fusoNovo)}–${f(e.fimNovo, e.fusoNovo)} (${e.fusoAnterior} → ${e.fusoNovo})`).join("; ");

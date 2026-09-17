@@ -14,7 +14,7 @@ export async function consultarConferenciaAgendaAditivo(input: z.input<typeof Pr
   });
 }
 
-const RegistrarAgendaSchema = PrepararAgendaAditivoSchema.extend({ chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
+const RegistrarAgendaSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 
 /** Gestão Pedagógica pode registrar a fotografia, mas não prepara nem aprova o
  * aditivo contratual. A referência contratual é criada pelo fluxo próprio. */

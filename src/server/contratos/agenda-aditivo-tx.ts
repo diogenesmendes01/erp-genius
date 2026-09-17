@@ -1,12 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
+import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { conferirDiasNaoLetivos } from "@/server/agenda/calendario-intervalo";
 import { hashPropostaAgendaAditivo, PrepararAgendaAditivoSchema, PropostaAgendaAditivoSchema, textoAgendaAditivo } from "./agenda-aditivo-schema";
 import { hashSubstituicao } from "./substituicao-estado";
 
-const RegistrarAgendaAditivoSchema = PrepararAgendaAditivoSchema.extend({ chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
+const RegistrarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), encontros: z.array(z.unknown()), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 const AplicarAgendaAditivoSchema = z.object({ matriculaId: z.string().trim().min(1), propostaAditivoId: z.string().trim().min(1), aplicacaoCondicoesId: z.string().trim().min(1), chaveIdempotencia: z.string().trim().min(8).max(200) }).strict();
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 import { carregarCadeiaAditivoTx } from "./aditivo-cadeia";
@@ -115,10 +116,11 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
  * quem a referencia e continua pertencendo ao preparador contratual. */
 export async function registrarPropostaAgendaAditivoTx(tx: Prisma.TransactionClient, preparadorId: string, input: unknown) {
   const d = RegistrarAgendaAditivoSchema.parse(input);
-  const conferencia = await carregarConferenciaAgendaAditivoTx(tx, preparadorId, d);
+  const conferenciaEntrada = PrepararAgendaAditivoSchema.parse({ matriculaId: d.matriculaId, encontros: d.encontros });
+  const conferencia = await carregarConferenciaAgendaAditivoTx(tx, preparadorId, conferenciaEntrada);
   if (conferencia.pendencias.length) throw new ErroRegra("Resolva as pendências da conferência antes de registrar a proposta de agenda.");
   const fotografia = conferencia.proposta, fotografiaHash = hashPropostaAgendaAditivo(fotografia);
-  const entradaHash = hashSubstituicao({ preparadorId, entrada: d, fotografiaHash });
+  const entradaHash = hashSubstituicao({ preparadorId, entrada: conferenciaEntrada, fotografiaHash });
   const existentes = await tx.$queryRaw<{ id: string; "fotografiaHash": string; "entradaHash": string }[]>(Prisma.sql`
     SELECT id,"fotografiaHash","entradaHash" FROM "PropostaAgendaAditivoParticular"
     WHERE "preparadorId"=${preparadorId} AND "chaveIdempotencia"=${d.chaveIdempotencia} FOR UPDATE`);

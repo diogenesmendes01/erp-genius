@@ -8,7 +8,7 @@ import { preservarConclusaoAssinaturaTx } from "./conclusao-assinatura-tx";
 import { IdentidadeSignatarioSchema } from "./participantes-schema";
 import { hashPrevia } from "./previa-estado";
 import { z } from "zod";
-import { carregarConferenciaAgendaAditivoTx } from "./agenda-aditivo-tx";
+import { carregarConferenciaAgendaAditivoTx, registrarPropostaAgendaAditivoTx } from "./agenda-aditivo-tx";
 import { consultarConferenciaAgendaAditivo, consultarOpcoesConferenciaAgendaAditivo, listarMatriculasConferenciaAgendaAditivo } from "./agenda-aditivo";
 import { carregarRevisaoAceite } from "./aceite-estado";
 import { confirmarAceiteOriginalTx } from "./aceite-tx";
@@ -47,6 +47,17 @@ it("fotografa contrato assinado e encontros particulares sem reservar ou aplicar
   const r = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
   expect(r).toMatchObject({ somenteConsulta: true, proposta: { preparadorId: base.secretariaId, fonteContratualHash: expect.stringMatching(/^[a-f0-9]{64}$/), encontros: [{ encontroId, professorAnteriorId: base.secretariaId, professorNovoId: base.secretariaId }] } });
   expect(r.pendencias).toEqual([]); expect(await Promise.all([prisma.encontroAgenda.count(), prisma.reservaAgendaParticular.count(), prisma.evento.count()])).toEqual(antes);
+});
+
+it("persiste a fotografia idempotente sem alterar encontro e permite gestão pedagógica prepará-la", async () => {
+  const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  const antes = await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } });
+  const comando = { ...entrada(), chaveIdempotencia: "q117-fotografia-persistida" };
+  const primeira = await prisma.$transaction(tx => registrarPropostaAgendaAditivoTx(tx, gestor.id, comando));
+  const repetida = await prisma.$transaction(tx => registrarPropostaAgendaAditivoTx(tx, gestor.id, comando));
+  expect(repetida.id).toBe(primeira.id);
+  expect(await prisma.propostaAgendaAditivoParticular.findUniqueOrThrow({ where: { id: primeira.id }, select: { matriculaId: true, conclusaoFonteId: true, preparadorId: true, fotografiaHash: true, pendencias: true } })).toMatchObject({ matriculaId: base.matriculaId, preparadorId: gestor.id, fotografiaHash: primeira.fotografiaHash, pendencias: [] });
+  expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual(antes);
 });
 
 it("autoriza secretaria, administração e gestão pedagógica pela consulta real", async () => {
