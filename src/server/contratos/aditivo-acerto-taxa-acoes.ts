@@ -66,13 +66,11 @@ export async function invalidarAcertoTaxaAditivo(input: unknown) { return execut
   if (p.preparadorId === autor.id) throw new ErroRegra("A invalidação exige outro Financeiro.");
   if (p.invalidacao) { if (p.invalidacao.resolvedorId !== autor.id || p.invalidacao.motivo !== d.motivo || JSON.stringify(p.invalidacao.evidencia) !== JSON.stringify(d.evidencia) || p.invalidacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O acerto já recebeu outra invalidação."); return { id: p.invalidacao.id, invalidada: true }; }
   if (p.status !== "APROVADA" || p.aplicacao) throw new ErroRegra("Somente acerto aprovado sem aplicação pode ser invalidado.");
-  const final = await tx.conferenciaFinalAditivo.findUniqueOrThrow({ where: { id: p.conferenciaFinalId }, select: { conclusaoId: true } });
-  const estado = await carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: p.matriculaId, propostaId: p.propostaAditivoId, conclusaoId: final.conclusaoId });
-  const v = await tx.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: p.versaoCondicoesId }, select: { id: true, condicoesHash: true, conferenciaFinalId: true } });
+  const v = await tx.versaoCondicoesAditivo.findFirstOrThrow({ where: { matriculaId: p.matriculaId }, orderBy: [{ vigenciaInicio: "desc" }, { versao: "desc" }], select: { id: true, condicoesHash: true, conferenciaFinal: { select: { revisaoHash: true } } } });
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${p.cobrancaId} FOR UPDATE`; const c = await tx.cobranca.findUniqueOrThrow({ where: { id: p.cobrancaId } });
   await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId"=${p.matriculaId} ORDER BY id FOR UPDATE`;
   const anteriores = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: c.id }, _sum: { valor: true } }), calc = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo: p.valorNovo, creditosTaxaJaOriginados: anteriores._sum.valor ?? 0 }), comissoes = await tx.comissao.findMany({ where: { matriculaId: p.matriculaId }, orderBy: { id: "asc" } });
-  const atual = foto(estado, v, c, calc, comissoes), atualHash = hashSubstituicao(atual);
+  const atual = foto({ revisaoHash: v.conferenciaFinal.revisaoHash }, v, c, calc, comissoes), atualHash = hashSubstituicao(atual);
   if (atualHash === p.fotografiaHash) throw new ErroRegra("A fotografia material do acerto ainda está vigente.");
   const invalidacao = await tx.invalidacaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, resolvedorId: autor.id, motivo: d.motivo, evidencia: d.evidencia as Prisma.InputJsonValue, fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: atual as Prisma.InputJsonValue, fotografiaAtualHash: atualHash, chaveIdempotencia: d.chaveIdempotencia } });
   await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });

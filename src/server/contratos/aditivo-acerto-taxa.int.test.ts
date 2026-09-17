@@ -26,6 +26,7 @@ import { proporAcertoTaxaAditivo, decidirAcertoTaxaAditivo, aplicarAcertoTaxaAdi
 import { receberComDestinacoesTx, receberTx } from "@/server/financeiro/recebimentos";
 import { proporUtilizacaoCredito } from "@/server/financeiro/uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
+import { hashSubstituicao } from "./substituicao-estado";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
 async function cadeiaTaxa(vencimentoTaxa?: string) {
@@ -190,4 +191,30 @@ it("DCT03 recusa invalidação vigente ou pelo preparador e preserva replay sob 
   const primeira = await invalidarAcertoTaxaAditivo(entrada); expect(primeira).toMatchObject({ ok: true }); expect(await invalidarAcertoTaxaAditivo(entrada)).toEqual(primeira);
   await prisma.usuario.update({ where: { id: aprovador }, data: { permissoes: [] } });
   expect(await invalidarAcertoTaxaAditivo(entrada)).toMatchObject({ ok: false });
+});
+it("DCT03 SQL reproduz o hash canônico TS e recusa hash arbitrário ou forma adulterada", async () => {
+  const vendedor = await criarUsuario(["VENDEDOR"]);
+  const comissao = await prisma.comissao.create({ data: { matriculaId: base.matriculaId, vendedorId: vendedor.id, tipo: "PERCENTUAL", percentual: 10, valor: 10, valorBase: 100, moeda: "CRC", status: "PENDENTE" } });
+  const proposta = await propor("dct03-sql-canonica");
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Aprovação para validar fotografia SQL", chaveIdempotencia: "dct03-sql-canonica-decisao" })).toMatchObject({ ok: true });
+  await prisma.comissao.update({ where: { id: comissao.id }, data: { status: "APROVADA" } });
+  const p = await prisma.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: proposta.dado.id } });
+  const atual = structuredClone(p.fotografia) as any;
+  atual.comissoes = atual.comissoes.map((x: any) => x.id === comissao.id ? { ...x, status: "APROVADA" } : x);
+  await expect(prisma.invalidacaoAcertoTaxaAditivo.create({ data: {
+    propostaId: p.id, resolvedorId: aprovador, motivo: "Hash arbitrário não pode registrar uma mudança real", evidencia: { teste: "hash" },
+    fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: atual, fotografiaAtualHash: "a".repeat(64), chaveIdempotencia: "dct03-hash-arbitrario",
+  } })).rejects.toThrow();
+  await expect(prisma.invalidacaoAcertoTaxaAditivo.create({ data: {
+    propostaId: p.id, resolvedorId: aprovador, motivo: "Campo extra não pode registrar uma mudança real", evidencia: { teste: "shape" },
+    fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: { ...atual, forjado: true }, fotografiaAtualHash: hashSubstituicao({ ...atual, forjado: true }), chaveIdempotencia: "dct03-shape-adulterado",
+  } })).rejects.toThrow();
+  const gravada = await prisma.invalidacaoAcertoTaxaAditivo.create({ data: {
+    propostaId: p.id, resolvedorId: aprovador, motivo: "A fotografia canônica TS registra a mudança material exata", evidencia: { teste: "canonico" },
+    fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: atual, fotografiaAtualHash: hashSubstituicao(atual), chaveIdempotencia: "dct03-canonica",
+  } });
+  expect(gravada.fotografiaAtualHash).toBe(hashSubstituicao(atual));
+  await prisma.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });
 });
