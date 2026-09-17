@@ -40,6 +40,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   const [erro, setErro] = useState("");
   const chaveDesignacao = useRef(crypto.randomUUID());
   const envioDesignacao = useRef(false);
+  const tentativaDesignacao = useRef<{ reposicaoId: string; professorId: string; motivo: string; chaveIdempotencia: string } | null>(null);
   const router = useRouter();
   const executar = (acao: () => Promise<Resultado>) => iniciar(async () => {
     setErro("");
@@ -52,12 +53,12 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
   return <section className="space-y-3 border-t pt-4" aria-label="Material e entregas da reposição gravada">
     <h3 className="font-medium">Material e entregas gravadas</h3>
     <p className="text-sm">O material usa uma revisão institucional registrada; alteração externa não substitui o conteúdo aprovado. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
-    <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); if (envioDesignacao.current) return; envioDesignacao.current = true; const dados = new FormData(evento.currentTarget); executar(async () => { try { return await substituirAvaliadorReposicaoOperacional({ reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current }); } finally { envioDesignacao.current = false; } }); }}>
+    <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); if (envioDesignacao.current) return; envioDesignacao.current = true; const dados = new FormData(evento.currentTarget); const entrada = tentativaDesignacao.current ?? { reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current }; tentativaDesignacao.current = entrada; executar(async () => { try { const resultado = await substituirAvaliadorReposicaoOperacional(entrada); if (resultado.ok) { tentativaDesignacao.current = null; chaveDesignacao.current = crypto.randomUUID(); } return resultado; } finally { envioDesignacao.current = false; } }); }}>
       <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
       {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, operacao.fuso)}. As avaliações anteriores permanecem atribuídas ao autor original.</p>}
-      <label className="block">Professor avaliador<select name="professorId" required defaultValue="" className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
-      <button disabled={ocupado} className="rounded border px-3 py-2">{operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
+      <label className="block">Professor avaliador<select name="professorId" required defaultValue="" disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
+      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2" /></label>
+      <button disabled={ocupado} className="rounded border px-3 py-2">{tentativaDesignacao.current ? "Repetir substituição" : operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
     </form>
     {!operacao.material && <button type="button" disabled={ocupado} className="rounded border px-3 py-2" onClick={() => executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, usarGravacaoAulaOriginal: true }))}>Usar gravação da aula original e abrir prazo</button>}
     {!operacao.material ? <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, arquivoOficialId: String(dados.get("arquivoOficialId") ?? "") })); }}>
