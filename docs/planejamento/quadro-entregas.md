@@ -60,8 +60,8 @@ Esta auditoria identifica testes existentes, sem declarar que um teste isolado c
 | CT-05 — conflito em mudança global | `agenda/replanejamento-conjunto-adversarial.int.test.ts`; verificar conjunto sem aplicação parcial na rodada final |
 | CT-06 — datas e fusos | Cobertura, calendário e fuso têm testes dirigidos; Q117 inclui meia-noite e sessão SQL com outro fuso. Falta reunir evidências do vencimento/cobertura sem confundi-los com agenda |
 | CT-07 — reservas e dinheiro concorrentes | Benefícios e uso de crédito têm cobertura; devolução Q69 está em implementação e falta comprovar concorrência entre uso e devolução |
-| CT-08 — comprovante e lembretes | TESTER implementa cenário composto a partir de `cobrancas/conferencia.int.test.ts` e `acesso-aulas.int.test.ts` |
-| CT-09 — apuração sem gravação | Ocorrência e fechamento parcial têm testes separados; falta cenário integrado que mantenha pendência de material sem bloquear cobrança válida nem duplicar complemento |
+| CT-08 — comprovante e lembretes | Cenário composto integrado em `05425e1c`: prazo de 48h, duas cobranças, retomada específica sem baixa e bloqueio D+30 preservado. TESTER e principal: 9/9 integrações, principal sessão 18551 saída 0; TESTER TypeScript aprovado |
+| CT-09 — apuração sem gravação | TESTER implementa cenário integrado que mantenha pendência de material sem bloquear cobrança válida nem duplicar complemento |
 | CT-10 — encerramento e acerto | Cálculos, multa, compensação e decisões têm cobertura; falta percurso composto com memória dos recebimentos e data efetiva |
 | CT-11 — indisponibilidade e avaliação | Cobertura distribuída em avaliações e segunda chamada; reunir cenário de material indisponível, substituição e pausa preservando autoria e prazo |
 | CT-12 — falha e repetição | Envio Resend, processamento do portal e conciliação M01 têm testes; falta evidência transversal de reinício/reenvio e repetição de migração sem duplicação |
