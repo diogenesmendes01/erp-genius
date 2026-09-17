@@ -39,3 +39,4 @@ prisma/migrations/20260917135000_autoria_destinacao_recebimento/migration.sql -t
 prisma/migrations/20260917134000_resolucao_acerto_taxa/migration.sql -text
 prisma/migrations/20260917141000_estado_pendente_acerto_taxa/migration.sql -text
 prisma/migrations/20260917142000_integridade_invalidacao_taxa/migration.sql -text
+prisma/migrations/20260917140000_substituicao_avaliador_reposicao/migration.sql -text
