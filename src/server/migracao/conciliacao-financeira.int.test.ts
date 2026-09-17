@@ -18,6 +18,7 @@ vi.mock("@/server/_shared/sessao", async importOriginal => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { prepararLoteMigracao } from "./acoes";
 import { aplicarVinculoMigracao } from "./aplicar-vinculo";
@@ -135,22 +136,22 @@ describe("M01 conciliação financeira de migração", () => {
     if (!aplicada.ok || !aplicada.dado?.recebimentoId) throw new Error("Baixa ausente.");
     const recebimento = await prisma.recebimento.findUniqueOrThrow({ where: { id: aplicada.dado.recebimentoId } });
     expect(recebimento).toMatchObject({
-      cobrancaId: f.cobranca.id, autorId: decisorId, moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA,
+      cobrancaId: null, titularMatriculaId: f.matricula.id, autorId: decisorId, moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA,
       dataPagamento: new Date(dataHistorica),
     });
+    const destinacao = await prisma.destinacaoRecebimento.findFirstOrThrow({ where: { recebimentoId: recebimento.id } });
+    expect(destinacao).toMatchObject({ cobrancaId: f.cobranca.id });
+    expect(destinacao.valor.toFixed(2)).toBe("85000.00");
     expect(recebimento.valor.toFixed(2)).toBe("85000.00");
     expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: f.cobranca.id } })).comprovanteUrl).toBe("/fontes/recibo-42.pdf");
   });
 
   it("vincula um recebimento ERP já existente sem criar outro", async () => {
     const f = await fixture();
-    const existente = await prisma.recebimento.create({ data: {
-      cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recebimento-erp-existente", valor: 85000,
-      moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), hashDados: "fonte-erp-42",
-    } });
+    const existente = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recebimento-erp-existente", valorRecebido: 85000, forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), hashDados: "fonte-erp-42", evidencia: "Recibo ERP histórico conferido na migração." }));
     const propostaId = await propor(f, "VINCULAR_RECEBIMENTO", 20, existente.id);
     expect(await decidir(propostaId, true, 21)).toMatchObject({ ok: true, dado: { recebimentoId: existente.id } });
-    expect(await prisma.recebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
+    expect(await prisma.destinacaoRecebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
     expect(await prisma.conciliacaoFinanceiraMigracao.findFirstOrThrow({ where: { propostaId } })).toMatchObject({ recebimentoId: existente.id, aplicadaPorId: decisorId });
   });
 
@@ -158,7 +159,7 @@ describe("M01 conciliação financeira de migração", () => {
     const f = await fixture();
     const propostaId = await propor(f, "PENDENCIA", 30);
     expect(await decidir(propostaId, true, 31)).toMatchObject({ ok: true, dado: { recebimentoId: null } });
-    expect(await prisma.recebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(0);
+    expect(await prisma.destinacaoRecebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(0);
     expect(await prisma.conciliacaoFinanceiraMigracao.findFirstOrThrow({ where: { propostaId } })).toMatchObject({ recebimentoId: null });
   });
 
@@ -174,7 +175,7 @@ describe("M01 conciliação financeira de migração", () => {
     expect(aplicada.ok, aplicada.ok ? undefined : aplicada.erro).toBe(true);
     if (!aplicada.ok || !aplicada.dado?.recebimentoId) throw new Error("Resolução monetária ausente.");
     expect(await decidir(baixaId, true, 36)).toMatchObject({ ok: true, dado: { id: baixaId, repetida: true } });
-    expect(await prisma.recebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
+    expect(await prisma.destinacaoRecebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
     expect(await prisma.conciliacaoFinanceiraMigracao.findMany({ where: { origem: "PLANILHA", financeiroOrigemId: "financeiro-legado-42" }, orderBy: { aplicadaEm: "asc" } })).toMatchObject([
       { propostaId: pendenciaId, recebimentoId: null }, { propostaId: baixaId, recebimentoId: aplicada.dado.recebimentoId },
     ]);
@@ -184,7 +185,7 @@ describe("M01 conciliação financeira de migração", () => {
     entrar(preparadorId);
     expect(await proporConciliacaoFinanceiraMigracao(entrada(f, "BAIXAR", 37))).toMatchObject({ ok: false });
     expect(await proporConciliacaoFinanceiraMigracao(entrada(f, "PENDENCIA", 38))).toMatchObject({ ok: false });
-    expect(await prisma.recebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
+    expect(await prisma.destinacaoRecebimento.count({ where: { cobrancaId: f.cobranca.id } })).toBe(1);
     expect(await prisma.conciliacaoFinanceiraMigracao.count({ where: { origem: "PLANILHA", financeiroOrigemId: "financeiro-legado-42", recebimentoId: { not: null } } })).toBe(1);
   });
 
@@ -239,10 +240,7 @@ describe("M01 conciliação financeira de migração", () => {
 
   it("permite nova revisão após rejeição usando o mesmo recibo ERP", async () => {
     const f = await fixture();
-    const existente = await prisma.recebimento.create({ data: {
-      cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-revisavel", valor: 85000,
-      moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), hashDados: "recibo-revisavel-hash",
-    } });
+    const existente = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-revisavel", valorRecebido: 85000, forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), hashDados: "recibo-revisavel-hash", evidencia: "Recibo ERP revisável conferido na migração." }));
     const rejeitadaId = await propor(f, "VINCULAR_RECEBIMENTO", 70, existente.id);
     expect(await decidir(rejeitadaId, false, 71)).toMatchObject({ ok: true, dado: { rejeitada: true } });
     const revisadaId = await propor(f, "VINCULAR_RECEBIMENTO", 72, existente.id);
@@ -272,7 +270,7 @@ describe("M01 conciliação financeira de migração", () => {
     const propostaId = await propor(f, "PENDENCIA", 90);
     const outraMatricula = await prisma.matricula.create({ data: { alunoId: f.aluno.id, produtoId: f.catalogo.produto.id, paisId: f.catalogo.pais.id, moeda: "CRC" } });
     const outraCobranca = await prisma.cobranca.create({ data: { matriculaId: outraMatricula.id, tipo: TipoCobranca.MENSALIDADE, valorOriginal: 85000, valorNegociado: 85000, moeda: "CRC", vencimento: f.cobranca.vencimento } });
-    const reciboEstrangeiro = await prisma.recebimento.create({ data: { cobrancaId: outraCobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-outro-contrato", valor: 85000, moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica) } });
+    const reciboEstrangeiro = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: outraCobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-outro-contrato", valorRecebido: 85000, forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), evidencia: "Recibo de outro contrato para teste adversarial." }));
     const forjada = entrada(f, "VINCULAR_RECEBIMENTO", 91, reciboEstrangeiro.id);
     await expect(prisma.$executeRaw`
       INSERT INTO "PropostaConciliacaoFinanceiraMigracao" (
@@ -281,7 +279,7 @@ describe("M01 conciliação financeira de migração", () => {
       ) SELECT ${"forjada-recibo-outro-contrato"},origem,"financeiroOrigemId",2,"linhaId","matriculaId","cobrancaId","pagadorId","preparadorId",
         'VINCULAR_RECEBIMENTO'::"ModalidadeConciliacaoFinanceiraMigracao",85000,'CRC',${new Date(dataHistorica)},'TRANSFERENCIA'::"FormaPagamento",${reciboEstrangeiro.id},evidencia,${JSON.stringify(forjada.complemento)}::jsonb,${JSON.stringify(forjada)}::jsonb,snapshot,"entradaHash","estadoHash",${chave(91)}
       FROM "PropostaConciliacaoFinanceiraMigracao" WHERE id=${propostaId}
-    `).rejects.toThrow(/Recebimento existente não corresponde/);
+    `).rejects.toThrow(/Recebimento existente não corresponde|destinação não correspondem/);
     expect(await prisma.propostaConciliacaoFinanceiraMigracao.count()).toBe(1);
     expect(await prisma.conciliacaoFinanceiraMigracao.count()).toBe(0);
   });
@@ -289,7 +287,7 @@ describe("M01 conciliação financeira de migração", () => {
   it("rejeita no SQL o instante divergente quando a sessão usa America/Sao_Paulo", async () => {
     const f = await fixture();
     const propostaId = await propor(f, "PENDENCIA", 100);
-    const recibo = await prisma.recebimento.create({ data: { cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-utc-sao-paulo", valor: 85000, moeda: "CRC", forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica) } });
+    const recibo = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: f.cobranca.id, autorId: decisorId, chaveIdempotencia: "recibo-utc-sao-paulo", valorRecebido: 85000, forma: FormaPagamento.TRANSFERENCIA, dataPagamento: new Date(dataHistorica), evidencia: "Recibo UTC preservado para teste de fuso." }));
     const forjada = entrada(f, "VINCULAR_RECEBIMENTO", 101, recibo.id);
     forjada.dataPagamento = "2025-02-03T14:15:16.000-03:00";
     forjada.complemento!.itens = forjada.complemento!.itens.map(item => item.campo === "dataPagamento" ? { ...item, valorProposto: forjada.dataPagamento! } : item);
@@ -303,7 +301,7 @@ describe("M01 conciliação financeira de migração", () => {
           'VINCULAR_RECEBIMENTO'::"ModalidadeConciliacaoFinanceiraMigracao",85000,'CRC',${new Date("2025-02-03T14:15:16.000-03:00")},'TRANSFERENCIA'::"FormaPagamento",${recibo.id},evidencia,${JSON.stringify(forjada.complemento)}::jsonb,${JSON.stringify(forjada)}::jsonb,snapshot,"entradaHash","estadoHash",${chave(101)}
         FROM "PropostaConciliacaoFinanceiraMigracao" WHERE id=${propostaId}
       `;
-    })).rejects.toThrow(/Recebimento existente não corresponde/);
+    })).rejects.toThrow(/Recebimento existente não corresponde|destinação não correspondem/);
     expect(await prisma.propostaConciliacaoFinanceiraMigracao.count()).toBe(1);
     expect(await prisma.conciliacaoFinanceiraMigracao.count()).toBe(0);
   });

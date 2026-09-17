@@ -27,6 +27,7 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { reservarVagaMatriculaTx } from "./reserva-vaga-tx";
 import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "./desistencia-preparacao";
@@ -342,17 +343,12 @@ describe("acerto financeiro da desistência em preparação", () => {
     if (mudanca === "nova cobrança") {
       await criarCobranca(matriculaId);
     } else {
-      await prisma.recebimento.create({
-        data: {
-          cobrancaId: cobranca.id,
-          autorId: financeiroAprovador.id,
-          chaveIdempotencia: "recebimento-financeiro-posterior",
-          valor: 10,
-          moeda: "CRC",
-          forma: "TRANSFERENCIA",
-          dataPagamento: new Date("2099-10-10T12:00:00.000Z"),
-        },
-      });
+      await prisma.$transaction(tx => receberTx(tx, {
+        cobrancaId: cobranca.id, autorId: financeiroAprovador.id,
+        chaveIdempotencia: "recebimento-financeiro-posterior", valorRecebido: 10,
+        forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-10T12:00:00.000Z"),
+        evidencia: "Recebimento posterior à decisão de desistência.",
+      }));
     }
     expect((await efetivar(pedido.id, pedido.estadoHash, decisao.dado.id)).ok).toBe(false);
     expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).toMatchObject({ status: "AGUARDANDO" });
@@ -389,7 +385,7 @@ describe("acerto financeiro da desistência em preparação", () => {
     await expect(prisma.cobranca.update({ where: { id: original.id }, data: { saldo: 0 } })).rejects.toThrow(/preservada|desistência/i);
     await expect(prisma.cobranca.delete({ where: { id: original.id } })).rejects.toThrow(/preservada|desistência/i);
     await expect(prisma.recebimento.create({ data: {
-      cobrancaId: original.id, autorId: financeiroAprovador.id, chaveIdempotencia: "baixa-depois-desistencia",
+      cobrancaId: original.id, titularMatriculaId: matriculaId, autorId: financeiroAprovador.id, chaveIdempotencia: "baixa-depois-desistencia",
       valor: 90, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-20T12:00:00.000Z"),
     } })).rejects.toThrow(/desistência/i);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: original.id } })).toEqual(preservada);

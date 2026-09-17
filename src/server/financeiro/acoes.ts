@@ -135,6 +135,11 @@ export async function conferirPagamento(informeId: string, input: { versao: numb
       if (informe.status === (dados.confirmar ? "CONFIRMADO" : "REJEITADO") && informe.conferenteId === autor.id) return informe.cobrancaId;
       if (informe.status !== "A_CONFERIR" || informe.versao !== dados.versao) throw new ErroRegra("O informe já mudou ou foi conferido; atualize a tela.");
       if (dados.confirmar) {
+        const evidenciaInforme = informe.comprovanteUrl
+          ? `informe:${informe.id}; comprovante:${informe.comprovanteUrl}; autor:${informe.autorId}; data:${informe.dataPagamento.toISOString()}`
+          : informe.comprovanteNome
+            ? `informe:${informe.id}; comprovante:${informe.comprovanteNome}; autor:${informe.autorId}; data:${informe.dataPagamento.toISOString()}`
+            : `informe:${informe.id}; autor:${informe.autorId}; data:${informe.dataPagamento.toISOString()}; protocolo:${informe.chaveIdempotencia}`;
         await receberTx(tx, {
           cobrancaId: informe.cobrancaId, chaveIdempotencia: `informe:${informe.id}:${informe.versao}`,
           informeId: informe.id, autorId: autor.id, valorRecebido: numero(informe.valor), forma: informe.forma,
@@ -142,6 +147,7 @@ export async function conferirPagamento(informeId: string, input: { versao: numb
           comprovanteNome: informe.comprovanteNome, comentario: informe.comentario,
           permitirExcedente: informe.permitirExcedente,
           moeda: informe.moeda,
+          evidencia: evidenciaInforme,
         });
       }
       await tx.pagamentoInformado.update({ where: { id: informe.id }, data: {

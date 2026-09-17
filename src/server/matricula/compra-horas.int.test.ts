@@ -36,8 +36,8 @@ beforeEach(async () => {
   const m = await prisma.matricula.create({ data: { alunoId: a.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA" } });
   const doc = await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "Contrato fictício", url: "/api/files/horas.pdf" } });
   await prisma.matricula.update({ where: { id: m.id }, data: { contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: u.id } });
-  const c = await prisma.cobranca.create({ data: { matriculaId: m.id, tipo: "HORA_PARTICULAR", moeda: "CRC", valorOriginal: 360, valorNegociado: 300, valorRecebido: 300, saldo: 0, status: "PAGO", vencimento: new Date("2026-09-01") } });
-  await prisma.recebimento.create({ data: { cobrancaId: c.id, chaveIdempotencia: "pagamento-horas", autorId: u.id, valor: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-01") } });
+  const c = await prisma.cobranca.create({ data: { matriculaId: m.id, tipo: "HORA_PARTICULAR", moeda: "CRC", valorOriginal: 360, valorNegociado: 300, valorRecebido: 0, saldo: 300, status: "PENDENTE", vencimento: new Date("2026-09-01") } });
+  await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: c.id, chaveIdempotencia: "pagamento-horas", autorId: u.id, valorRecebido: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-01"), evidencia: "Comprovante de compra de horas" }));
   input = { alunoId: a.id, matriculaId: m.id, cobrancaId: c.id, versaoCobranca: c.versao, minutosComprados: 180, evidenciaCondicoes: "Compra contratada conferida", chaveIdempotencia: "compra-horas-teste" };
 });
 it("registra uma compra idempotente sem duplicar recebimento e preserva valores originais", async () => {

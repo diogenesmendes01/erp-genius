@@ -4,7 +4,7 @@ type Contexto = Parameters<typeof conferirOutrasCobrancasEncerramento>[0];
 function contexto(): Contexto {
   return { matriculaId: "m1", alunoId: "a1", moeda: "BRL", status: "ATIVA", pendencias: [], condicoes: null, ajustes: [], compensacoes: [], regularizacoesPeriodoIntegral: [],
     cobrancas: [{ id: "taxa", versao: 1, tipo: "MATRICULA", status: "PAGO", moeda: "BRL", vencimento: "2026-09-01T00:00:00Z", saldo: "0.00", coberturaInicio: null, coberturaFim: null,
-      valorOriginal: "100.00", valorNegociado: "100.00", valorRecebido: "100.00", conferencias: [], recebimentos: [{ id: "r1", valor: "100.00", moeda: "BRL", dataPagamento: "2026-09-01T00:00:00Z" }] }] };
+      valorOriginal: "100.00", valorNegociado: "100.00", valorRecebido: "100.00", conferencias: [], recebimentos: [{ id: "r1", recebimentoId: "caixa-r1", valor: "100.00", moeda: "BRL", dataPagamento: "2026-09-01T00:00:00Z" }] }] };
 }
 const proposta = () => [{ cobrancaId: "taxa", versao: 1, valorDevidoProposto: "40.00", motivo: "Acerto da taxa conforme contrato", evidenciaContratual: "Cláusula contratual conferida" }];
 it("preserva recebimento e apura crédito sem executar devolução", () => {
