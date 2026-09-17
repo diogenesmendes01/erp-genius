@@ -341,3 +341,7 @@ Agregado: matrícula de origem. Registra proposta, decisão, crédito, cobrança
 ### Incremento 299 — AcertoEncerramentoDecidido
 
 Agregado Aluno; identifica pedido, rascunho, decisão e aprovação/rejeição. A decisão pertence aos contratos selecionados do pedido e não comprova encerramento, recebimento, emissão de crédito ou devolução. Emitido junto da decisão independente, sem duplicação na repetição idempotente.
+
+### RecebimentoRegistrado (Q87)
+
+Agregado `Recebimento`, na mesma transação do fato de caixa e das destinações. Preserva titular, pagador, valor/moeda, data/forma, hash material, referência do comprovante privado, comentário e destinações. O replay retorna o fato existente antes de emitir outro evento. A consulta financeira associa a prova somente quando ID do recebimento, matrícula e hash coincidem; ausência no legado não autoriza presumir prova.
