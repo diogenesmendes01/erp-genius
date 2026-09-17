@@ -42,7 +42,7 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
         where: { origem_matriculaOrigemId: { origem: linha.lote.origem, matriculaOrigemId: linha.matriculaOrigemId } },
         select: {
           matriculaId: true, entradaHash: true,
-          matricula: { select: { codigo: true, status: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } },
+          matricula: { select: { codigo: true, status: true, moeda: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } },
         },
       });
       if (!mapa) return { linha: { ...linha, mapa: null }, cobrancas: [], recebimentos: [], pagadores: [], propostas: [], proximoCursor: null, proximoCursorRecebimentos: null, proximoCursorPagadores: null, proximoCursorPropostas: null, podeDecidir: false };
@@ -86,7 +86,7 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
         },
       });
       return {
-        linha: { ...linha, mapa: { matriculaId: mapa.matriculaId, entradaHash: mapa.entradaHash, codigo: mapa.matricula.codigo, status: mapa.matricula.status, aluno: `${mapa.matricula.aluno.primeiroNome} ${mapa.matricula.aluno.sobrenome}` } },
+        linha: { ...linha, mapa: { matriculaId: mapa.matriculaId, entradaHash: mapa.entradaHash, codigo: mapa.matricula.codigo, status: mapa.matricula.status, moeda: mapa.matricula.moeda, aluno: `${mapa.matricula.aluno.primeiroNome} ${mapa.matricula.aluno.sobrenome}` } },
         pendenciaRegistrada: aplicacoesOrigem.some(aplicacao => aplicacao.recebimentoId === null),
         resolucao: recebida ? { recebimentoId: recebida.recebimentoId!, aplicadaEm: recebida.aplicadaEm.toISOString() } : null,
         cobrancas: pagina.map((cobranca) => ({ ...cobranca, valorNegociado: cobranca.valorNegociado.toString(), valorRecebido: decimal(cobranca.valorRecebido), saldo: decimal(cobranca.saldo), vencimento: cobranca.vencimento.toISOString() })),
