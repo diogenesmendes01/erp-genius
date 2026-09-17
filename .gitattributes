@@ -30,3 +30,4 @@ prisma/migrations/20260917120000_presenca_historica_migracao/migration.sql -text
 prisma/migrations/20260917123000_correcao_presenca_historica/migration.sql -text
 prisma/migrations/20260917125000_fotografia_presenca_historica/migration.sql -text
 prisma/migrations/20260917124000_devolucao_credito/migration.sql -text
+prisma/migrations/20260917130000_validacao_proposta_devolucao/migration.sql -text
