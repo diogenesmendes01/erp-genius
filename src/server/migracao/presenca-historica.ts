@@ -15,7 +15,7 @@ type Proposta = { id:string; status:"PENDENTE"|"APROVADA"|"REJEITADA"|"APLICADA"
 
 async function preparadorFresco(tx: Prisma.TransactionClient, id: string) {
   const [u] = await tx.$queryRaw<{ativo:boolean;papeis:Papel[]}[]>(Prisma.sql`SELECT ativo,papeis FROM "Usuario" WHERE id=${id} FOR SHARE`);
-  if (!u?.ativo || !u.papeis.includes(Papel.SECRETARIA_ACADEMICA)) throw new ErroPermissao("A proposta exige Secretaria Acadêmica ativa.");
+  if (!u?.ativo || !u.papeis.some(p=>p===Papel.SECRETARIA_ACADEMICA||p===Papel.GERENTE_PEDAGOGICO||p===Papel.ADMINISTRADOR)) throw new ErroPermissao("A proposta exige contexto acadêmico ativo.");
 }
 async function decisorFresco(tx: Prisma.TransactionClient, id: string) {
   const [u] = await tx.$queryRaw<{ativo:boolean;papeis:Papel[]}[]>(Prisma.sql`SELECT ativo,papeis FROM "Usuario" WHERE id=${id} FOR SHARE`);
@@ -24,7 +24,7 @@ async function decisorFresco(tx: Prisma.TransactionClient, id: string) {
 
 export async function proporPresencaHistoricaMigracao(input: unknown) {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
+    const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA,Papel.GERENTE_PEDAGOGICO,Papel.ADMINISTRADOR);
     const d = PropostaPresencaHistoricaMigracaoSchema.parse(input);
     return prisma.$transaction(async (tx) => {
       await preparadorFresco(tx, autor.id);
@@ -87,5 +87,19 @@ export async function listarAulasElegiveisPresencaHistoricaMigracao(linhaId:stri
 
 /** Após a correção Q23, apenas vincula a comprovação ao mesmo registro existente. */
 export async function resolverDivergenciaPresencaHistoricaMigracao(input:unknown) {
-  return executarAcao(async()=>{const autor=await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO,Papel.ADMINISTRADOR),d=ResolucaoDivergenciaPresencaHistoricaMigracaoSchema.parse(input);return prisma.$transaction(async tx=>{await decisorFresco(tx,autor.id);await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`m01-presenca-resolucao:${d.chaveIdempotencia}`},0))`;const [anterior]=await tx.$queryRaw<{id:string}[]>(Prisma.sql`SELECT id FROM "ResolucaoDivergenciaPresencaHistoricaMigracao" WHERE "chaveIdempotencia"=${d.chaveIdempotencia} FOR SHARE`);if(anterior)return{id:anterior.id,repetida:true};const [fonte]=await tx.$queryRaw<{registroExistenteId:string;matriculaId:string;participacao:"PRESENTE"|"FALTA";encontroId:string|null}[]>(Prisma.sql`SELECT a."registroExistenteId",p."matriculaId",p.participacao,di."encontroId" FROM "AplicacaoPresencaHistoricaMigracao" a JOIN "PropostaPresencaHistoricaMigracao" p ON p.id=a."propostaId" JOIN "AulaDiario" di ON di.id=p."aulaId" WHERE a.id=${d.aplicacaoId} AND a.resultado='DIVERGENCIA' FOR UPDATE`);if(!fonte?.registroExistenteId)throw new ErroRegra("Divergência de presença não encontrada.");let correcaoId:string|null=null,correcaoVersao:number|null=null,correcaoAprovacaoId:string|null=null;if(d.resultado==='RECONCILIADA'){if(!fonte.encontroId)throw new ErroRegra("A resolução RECONCILIADA exige uma correção Q23 publicada para esta aula.");const correcao=(await carregarCorrecoesAulaEfetivasTx(tx,[fonte.encontroId])).get(fonte.encontroId),registro=correcao?.snapshot.registros.find(r=>r.registroId===fonte.registroExistenteId);if(!correcao||!registro||registro.participacao!==fonte.participacao||registro.presente!==(fonte.participacao==='PRESENTE'))throw new ErroRegra("A resolução RECONCILIADA exige que Q23 corrija o mesmo registro para a participação proposta.");correcaoId=correcao.propostaId;correcaoVersao=correcao.versao;correcaoAprovacaoId=correcao.aprovacaoId;}const id=randomUUID();await tx.$executeRaw`INSERT INTO "ResolucaoDivergenciaPresencaHistoricaMigracao" (id,"aplicacaoId","registroId",resultado,evidencia,"chaveIdempotencia","resolvedorId","correcaoId","correcaoVersao","correcaoAprovacaoId") VALUES (${id},${d.aplicacaoId},${fonte.registroExistenteId},${d.resultado}::"ResultadoResolucaoDivergenciaPresencaHistoricaMigracao",${json(d.evidencia)},${d.chaveIdempotencia},${autor.id},${correcaoId},${correcaoVersao},${correcaoAprovacaoId})`;await registrarEvento(tx,{tipo:"ResolucaoDivergenciaPresencaHistoricaMigracao",agregadoTipo:"Matricula",agregadoId:fonte.matriculaId,autorId:autor.id,payload:{resolucaoId:id,aplicacaoId:d.aplicacaoId,resultado:d.resultado,correcaoId,correcaoVersao,correcaoAprovacaoId}});return{id,repetida:false};});});
+  return executarAcao(async()=>{
+    const autor=await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO,Papel.ADMINISTRADOR),d=ResolucaoDivergenciaPresencaHistoricaMigracaoSchema.parse(input);
+    return prisma.$transaction(async tx=>{
+      await decisorFresco(tx,autor.id);
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`m01-presenca-resolucao:${d.chaveIdempotencia}`},0))`;
+      const [anterior]=await tx.$queryRaw<{id:string;aplicacaoId:string;resultado:"RECONCILIADA"|"MANTIDA";evidencia:Prisma.JsonValue;resolvedorId:string}[]>(Prisma.sql`SELECT id,"aplicacaoId",resultado,evidencia,"resolvedorId" FROM "ResolucaoDivergenciaPresencaHistoricaMigracao" WHERE "chaveIdempotencia"=${d.chaveIdempotencia} FOR SHARE`);
+      if(anterior){if(anterior.aplicacaoId!==d.aplicacaoId||anterior.resultado!==d.resultado||anterior.resolvedorId!==autor.id||hash(anterior.evidencia)!==hash(d.evidencia))throw new ErroRegra("A chave idempotente já representa outra resolução.");return{id:anterior.id,repetida:true};}
+      const [fonte]=await tx.$queryRaw<{registroExistenteId:string;matriculaId:string;participacao:"PRESENTE"|"FALTA";encontroId:string|null}[]>(Prisma.sql`SELECT a."registroExistenteId",p."matriculaId",p.participacao,di."encontroId" FROM "AplicacaoPresencaHistoricaMigracao" a JOIN "PropostaPresencaHistoricaMigracao" p ON p.id=a."propostaId" JOIN "AulaDiario" di ON di.id=p."aulaId" WHERE a.id=${d.aplicacaoId} AND a.resultado='DIVERGENCIA' FOR UPDATE`);
+      if(!fonte?.registroExistenteId)throw new ErroRegra("Divergência de presença não encontrada.");
+      let correcaoId:string|null=null,correcaoVersao:number|null=null,correcaoAprovacaoId:string|null=null;
+      if(d.resultado==='RECONCILIADA'){if(!fonte.encontroId)throw new ErroRegra("A resolução RECONCILIADA exige uma correção Q23 publicada para esta aula.");const correcao=(await carregarCorrecoesAulaEfetivasTx(tx,[fonte.encontroId])).get(fonte.encontroId),registro=correcao?.snapshot.registros.find(r=>r.registroId===fonte.registroExistenteId);if(!correcao||!registro||registro.participacao!==fonte.participacao||registro.presente!==(fonte.participacao==='PRESENTE'))throw new ErroRegra("A resolução RECONCILIADA exige que Q23 corrija o mesmo registro para a participação proposta.");correcaoId=correcao.propostaId;correcaoVersao=correcao.versao;correcaoAprovacaoId=correcao.aprovacaoId;}
+      const id=randomUUID();await tx.$executeRaw`INSERT INTO "ResolucaoDivergenciaPresencaHistoricaMigracao" (id,"aplicacaoId","registroId",resultado,evidencia,"chaveIdempotencia","resolvedorId","correcaoId","correcaoVersao","correcaoAprovacaoId") VALUES (${id},${d.aplicacaoId},${fonte.registroExistenteId},${d.resultado}::"ResultadoResolucaoDivergenciaPresencaHistoricaMigracao",${json(d.evidencia)},${d.chaveIdempotencia},${autor.id},${correcaoId},${correcaoVersao},${correcaoAprovacaoId})`;
+      await registrarEvento(tx,{tipo:"ResolucaoDivergenciaPresencaHistoricaMigracao",agregadoTipo:"Matricula",agregadoId:fonte.matriculaId,autorId:autor.id,payload:{resolucaoId:id,aplicacaoId:d.aplicacaoId,resultado:d.resultado,correcaoId,correcaoVersao,correcaoAprovacaoId}});return{id,repetida:false};
+    });
+  });
 }
