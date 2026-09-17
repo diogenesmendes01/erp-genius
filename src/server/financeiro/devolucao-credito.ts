@@ -79,6 +79,7 @@ export async function conciliarDevolucaoCredito(input: z.input<typeof Conciliar>
       let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
       await bloquearMatriculas(tx, [reserva.decisao.proposta.credito.matriculaId]); await tx.$queryRaw`SELECT id FROM "CreditoMatricula" WHERE id=${reserva.creditoId} FOR UPDATE`;
       reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { conciliacoes: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id);
+      if (!podeExecutar(u)) throw new ErroPermissao("Exige capacidade específica para conciliar devolução.");
       const anterior = reserva.conciliacoes[0]; if (anterior) { if (anterior.conciliadorId !== autor.id || anterior.confirmouSaida !== d.confirmouSaida || anterior.evidencia !== d.evidenciaConciliacao) throw new ErroRegra("Conciliação já registrada com dados diferentes."); return { id: reserva.id, estado: reserva.estado }; }
       if (!podeExecutar(u) || reserva.estado !== "INCERTO") throw new ErroRegra("A conciliação exige execução incerta e capacidade vigente.");
       await tx.conciliacaoDevolucaoCredito.create({ data: { reservaId: reserva.id, conciliadorId: autor.id, confirmouSaida: d.confirmouSaida, evidencia: d.evidenciaConciliacao } });
@@ -95,6 +96,7 @@ export async function cancelarDevolucaoCredito(input: z.input<typeof Cancelar>) 
       let reserva = await tx.reservaDevolucaoCredito.findUnique({ where: { id: d.reservaId }, include: { cancelamento: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); if (!reserva) throw new ErroRegra("Reserva não encontrada.");
       await bloquearMatriculas(tx, [reserva.decisao.proposta.credito.matriculaId]); await tx.$queryRaw`SELECT id FROM "CreditoMatricula" WHERE id=${reserva.creditoId} FOR UPDATE`;
       reserva = await tx.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: d.reservaId }, include: { cancelamento: true, decisao: { include: { proposta: { include: { credito: { select: { matriculaId: true } } } } } } } }); const u = await usuarioTx(tx, autor.id);
+      if (!podeAprovar(u)) throw new ErroPermissao("Exige permissão de aprovação financeira.");
       if (reserva.cancelamento) { if (reserva.cancelamento.canceladorId !== autor.id || reserva.cancelamento.motivo !== d.motivo || reserva.cancelamento.evidencia !== d.evidenciaCancelamento) throw new ErroRegra("Cancelamento já registrado com dados diferentes."); return { id: reserva.id, estado: reserva.estado }; }
       if (!podeAprovar(u) || reserva.estado !== "AGUARDANDO_EXECUCAO") throw new ErroRegra("O cancelamento exige reserva aguardando e capacidade de aprovação.");
       await tx.cancelamentoDevolucaoCredito.create({ data: { reservaId: reserva.id, canceladorId: autor.id, motivo: d.motivo, evidencia: d.evidenciaCancelamento } });

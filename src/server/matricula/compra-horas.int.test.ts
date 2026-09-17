@@ -362,6 +362,13 @@ it("reserva devolução aprovada, impede apagar e só libera por cancelamento ou
   expect(await registrarExecucaoDevolucaoCredito({ reservaId: incerta.id, resultado: "CONFIRMADA", referenciaExterna: "manual-externo-1", evidenciaExecucao: "Comprovante manual pendente", chaveIdempotencia: "execucao-manual-um" })).toMatchObject({ ok: false });
   await expect(prisma.reservaDevolucaoCredito.update({ where: { id: incerta.id }, data: { estado: "LIBERADA" } })).rejects.toThrow();
   expect(await conciliarDevolucaoCredito({ reservaId: incerta.id, confirmouSaida: false, evidenciaConciliacao: "Extrato confirma que não houve saída" })).toMatchObject({ ok: true, dado: { estado: "LIBERADA" } });
+  const eventosAntesRevogacao = await prisma.evento.count();
+  await prisma.usuario.update({ where: { id: admin.id }, data: { papeis: ["FINANCEIRO"], permissoes: [] } });
+  expect(await conciliarDevolucaoCredito({ reservaId: incerta.id, confirmouSaida: false, evidenciaConciliacao: "Extrato confirma que não houve saída" })).toMatchObject({ ok: false });
+  expect(await cancelarDevolucaoCredito({ reservaId: reserva.id, motivo: "Aluno retirou o pedido", evidenciaCancelamento: "Registro de retirada pelo aluno" })).toMatchObject({ ok: false });
+  expect(await prisma.evento.count()).toBe(eventosAntesRevogacao);
+  expect((await prisma.reservaDevolucaoCredito.findUniqueOrThrow({ where: { id: incerta.id } })).estado).toBe("LIBERADA");
+
   expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00" } });
 });
 it("serializa cancelamento e execução da mesma reserva", async () => {
