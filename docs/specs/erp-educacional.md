@@ -2,6 +2,8 @@
 
 Este documento define o comportamento requerido. A existência de um requisito aqui não comprova sua implementação. O objetivo integral permanece em andamento.
 
+O estado corrente e as evidências de aceite local estão no [quadro único de entregas](../planejamento/quadro-entregas.md). Notas numeradas de incrementos preservam o estado histórico da respectiva entrega e não substituem esse quadro.
+
 - [Detalhamento da remarcação de segunda chamada — implementação parcial](remarcacao-segunda-chamada.md).
 - [Substituição docente de segunda chamada agendada — implementação e limites](substituicao-segunda-chamada.md).
 - [Avisos de alterações da agenda — escopo, estados e validação](avisos-alteracoes-agenda.md).
@@ -377,7 +379,7 @@ A tela `/secretaria/envios-portal` integra consulta paginada e guard de Secretar
 
 ## M01 — preparação operacional de migração
 
-Estado corrente: a aplicação de vínculos históricos e a conferência inicial de regras foram integradas até `b254ba81`, com validação local registrada no quadro único. Os parágrafos de evidências abaixo conservam o estágio de cada incremento. Conciliação contra cobrança e pagador existentes integrada até `41556778`, com aprovação independente e pendência resolvível. Ainda faltam entrada operacional de pagador histórico, importação de obrigações ausentes e de outros históricos, além da carga real conferida; M01 não está concluído.
+Estado corrente: a aplicação de vínculos históricos e a conferência inicial de regras foram integradas até `b254ba81`, com validação local registrada no quadro único. Conciliação contra cobrança e pagador existentes integrada até `41556778`, com aprovação independente e pendência resolvível. A entrada operacional de pagador e obrigação histórica foi integrada em `142ab46f`, com aprovação independente, migrações 195/202 e validação local. Histórico de presenças está em implementação; demais históricos e carga real conferida permanecem pendentes. Os parágrafos de evidências abaixo conservam o estágio de cada incremento; M01 como conjunto não está concluído.
 
 ### Conciliação financeira — fonte e complementos
 
@@ -429,3 +431,5 @@ M01 — conciliação financeira local em desenvolvimento (16/09/2026): linha fi
 
 
 M01 — integração financeira em 17/09/2026: `6a3b04d2`/`41556778`, migrações 192–194 aplicadas apenas em bancos descartáveis. Revisão independente de `cd37904b` corrigiu a identificação do pagador na tela. TESTER: 18 integrações e 13 testes de interface confirmados; principal: 18 integrações e 28 testes de interface/fotografia. Build DEV1 aprovado. A aplicação é restrita a cobrança e pagador existentes: a criação direta desses pré-requisitos nos fixtures não prova o fluxo de entrada histórica. A entrega seguinte deve permitir preparar, aprovar e importar pagador e obrigação históricos sem depender do cadastro comercial ou fabricar recebimentos.
+
+M01 — entrada financeira histórica proposta em 17/09/2026: a migration 195 (`20260917090000_entrada_financeira_historica`) acrescenta proposta e aplicação próprias, vinculadas à linha imutável, origem, mapa M01 e matrícula. A proposta não exige FK de cobrança ou pagador ainda inexistentes. Financeiro/Admin prepara com fotografia, hash, evidência e chave idempotente; Financeiro/Admin diferente decide com contexto relido. A aplicação idempotente cria a versão do pagador e uma obrigação pendente com saldo integral, preservando origem e snapshot. Ela não cria recebimento, quitação, crédito, compensação, envio ou operação externa. Implementação integrada e validada localmente com as migrações 195 e 202 em bancos descartáveis. O vencimento conserva a data civil informada na proposta, cobrança e tela. O aprovador consulta valor, moeda, vencimento, competência, pagador e evidência; a tela trata envio em andamento, falha e repetição. Validação principal: 29 integrações em 3 arquivos (entrada, conciliação e consultas financeiras), 8 testes de schema/interface/callbacks e TypeScript, todos com saída terminal 0. Inclui concorrência, decisão repetida com conteúdo divergente, aprovação sem aplicação e rejeição de destinos financeiros divergentes. A entrada de pagador/obrigação deixa de depender de criação direta em fixtures; outros históricos de M01 e migração de dados reais conservam suas pendências.

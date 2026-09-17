@@ -288,5 +288,12 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-clone-exato", mudancaId: cloneExato.id, eventoId: cloneExato.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "c".repeat(64), chave: "q117-aviso-clone-exato" } })).rejects.toThrow("Origem do aviso inválida");
   const forjado = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: { ...(eventoAplicado.payload as object), versao: 99, condicoesHash: "f".repeat(64) } } });
   await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-forjado", mudancaId: forjado.id, eventoId: forjado.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "a".repeat(64), chave: "q117-aviso-forjado" } })).rejects.toThrow("Origem do aviso inválida");
+  await prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SET LOCAL TIME ZONE 'America/Sao_Paulo'");
+    const aviso = await tx.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-fuso", mudancaId: eventoAplicado.id, eventoId: eventoAplicado.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "WHATSAPP", contatoHash: "b".repeat(64), chave: "q117-aviso-fuso", destinatarioAlunoId: matricula.alunoId } });
+    await tx.itemAvisoAlteracaoAgenda.create({ data: { id: "q117-item-fuso", avisoId: aviso.id, encontroId } });
+  });
+  const cloneFiel = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: eventoAplicado.payload as object } });
+  await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-clone-fiel", mudancaId: cloneFiel.id, eventoId: cloneFiel.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "c".repeat(64), chave: "q117-aviso-clone-fiel" } })).rejects.toThrow("Origem do aviso inválida");
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual({ professorId: base.secretariaId, inicio: new Date("2099-10-12T15:00:00.000Z"), fim: new Date("2099-10-12T16:00:00.000Z"), fusoOrigem: "UTC" });
 });

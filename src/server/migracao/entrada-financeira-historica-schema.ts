@@ -1,0 +1,7 @@
+import { TipoCobranca } from "@prisma/client";
+import { z } from "zod";
+
+const evidencia = z.record(z.string().trim().min(1), z.union([z.string().trim().min(1), z.number().finite(), z.boolean()])).refine((v) => Object.keys(v).length > 0, "Informe evidência verificável.");
+export const PagadorEntradaFinanceiraHistoricaSchema = z.object({ tipo: z.enum(["ALUNO", "RESPONSAVEL", "EMPRESA"]), dados: z.object({ nome: z.string().trim().min(1).max(200), paisId: z.string().min(1), documento: z.string().trim().max(100).optional(), email: z.string().trim().email().max(254).optional(), telefoneE164: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(), endereco: z.string().trim().max(1000).optional() }).strict() }).strict();
+export const EntradaFinanceiraHistoricaSchema = z.object({ linhaId: z.string().min(1), tipoCobranca: z.nativeEnum(TipoCobranca), valor: z.string().regex(/^\d+(\.\d{1,2})?$/), moeda: z.string().regex(/^[A-Z]{3}$/), vencimento: z.string().date(), competencia: z.string().regex(/^\d{4}-\d{2}$/).optional(), pagador: PagadorEntradaFinanceiraHistoricaSchema, evidencia, complemento: z.record(z.string().trim().min(1), z.string().trim().min(1)).optional(), chaveIdempotencia: z.string().uuid() }).strict();
+export const DecisaoEntradaFinanceiraHistoricaSchema = z.object({ propostaId: z.string().min(1), aprovada: z.boolean(), motivo: z.string().trim().min(10).max(1000), chaveIdempotencia: z.string().uuid() }).strict();
