@@ -43,6 +43,15 @@ describe("conferência financeira renderizada", () => {
     expect(html).toContain('value="PENDENCIA" disabled=""');
     expect(html).toContain("Registrar proposta");
   });
+  it("distingue pagadores do mesmo tipo pela identidade e versão", () => {
+    const pagadores = [
+      { id: "pagador-1", versao: 1, tipo: "RESPONSAVEL", dados: { nome: "Ana Lima" }, motivo: "conferido", criadaEm: "2026-09-16T12:00:00Z", preparador: { nome: "Secretaria" } },
+      { id: "pagador-2", versao: 2, tipo: "RESPONSAVEL", dados: { nome: "João Lima" }, motivo: "conferido", criadaEm: "2026-09-16T12:00:00Z", preparador: { nome: "Secretaria" } },
+    ];
+    const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: { ...base, pagadores } }));
+    expect(html).toContain("Ana Lima · versão 1 · RESPONSAVEL");
+    expect(html).toContain("João Lima · versão 2 · RESPONSAVEL");
+  });
   it("impede preparar sem vínculo contratual", () => {
     const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: { ...base, linha: { ...base.linha, mapa: null } } }));
     expect(html).toContain("ainda não possui vínculo M01");
