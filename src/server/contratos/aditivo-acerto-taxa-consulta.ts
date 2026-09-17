@@ -61,3 +61,11 @@ export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
     }, { isolationLevel: "RepeatableRead" });
   });
 }
+
+export async function consultarAcertoTaxaPorProposta(input: { matriculaId: string; propostaId: string }) {
+ const c = await prisma.conclusaoAssinaturaAditivo.findFirst({ where: { processo: { propostaId: input.propostaId, proposta: { matriculaId: input.matriculaId } } }, orderBy: { concluidaEm: "desc" } });
+ if (!c) return { ok: true as const, dado: { estado: "SEM_CONCLUSAO" as const, mensagem: "A assinatura do aditivo ainda não foi concluída." } };
+ const estado = await prisma.$transaction(tx => carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: input.matriculaId, propostaId: input.propostaId, conclusaoId: c.id }));
+ const resultado = await consultarAlvosAcertoTaxaAditivo({ matriculaId: input.matriculaId, propostaId: input.propostaId, conclusaoId: c.id, revisaoHash: estado.revisaoHash });
+ return resultado.ok ? { ...resultado, dado: resultado.dado ? { ...resultado.dado, conclusaoId: c.id, revisaoHash: estado.revisaoHash } : resultado.dado } : resultado;
+}
