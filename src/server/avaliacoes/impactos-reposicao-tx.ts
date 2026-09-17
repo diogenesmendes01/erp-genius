@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import type { ImpactoMudancaProgressao } from "./impactos-progressao-tx";
 
@@ -16,8 +16,8 @@ export type ImpactosCorrecaoReposicao = {
  * cadeia de aplicações de equivalência como atalho.
  *
  * O vínculo da aula original é resolvido pelo mesmo intervalo semiaberto da
- * apuração de frequência: [criadoEm, encerradaEm), aplicado ao início da
- * aula. Um histórico ambíguo ou sem limite não é inferido como fonte.
+ * apuração de frequência. Para vínculos M01, a data técnica de criação é a
+ * importação atual; a fonte é a vigência histórica semiaberta registrada.
  */
 export async function carregarImpactosCorrecaoReposicaoTx(
   tx: Prisma.TransactionClient,
@@ -52,23 +52,15 @@ export async function carregarImpactosFrequenciaAulaTx(tx: Prisma.TransactionCli
   const aula = fonte;
   const turmaId = fonte.turmaId;
   const nivelId = fonte.nivelId;
-  const vinculos = await tx.alocacaoTurma.findMany({
-    where: {
-      matriculaId: reposicao.matriculaId,
-      alunoId: reposicao.matricula.alunoId,
-      turmaId,
-      criadoEm: { lte: aula.inicio },
-      OR: [{ encerradaEm: null }, { encerradaEm: { gt: aula.inicio } }],
-    },
-    orderBy: { id: "asc" },
-    select: { id: true, ativa: true, criadoEm: true, encerradaEm: true },
-  });
+  const vinculos=await tx.$queryRaw<{id:string;ativa:boolean;criadoEm:Date;encerradaEm:Date|null;provenienciaVinculo:"MIGRACAO"|null;inicioVigencia:Date|null;fimVigencia:Date|null}[]>(Prisma.sql`SELECT id,ativa,"criadoEm","encerradaEm","provenienciaVinculo","inicioVigencia","fimVigencia" FROM "AlocacaoTurma" al WHERE al."matriculaId"=${reposicao.matriculaId} AND al."alunoId"=${reposicao.matricula.alunoId} AND al."turmaId"=${turmaId} AND alocacao_cobre_instante(al, ${aula.inicio} AT TIME ZONE 'UTC') ORDER BY id ASC`);
   if (vinculos.length !== 1) {
     throw new ErroRegra("A aula original não pertence a um único vínculo histórico conferido da matrícula.");
   }
   const vinculo = vinculos[0]!;
-  if ((!vinculo.ativa && !vinculo.encerradaEm)
-    || (vinculo.encerradaEm && vinculo.encerradaEm <= vinculo.criadoEm)) {
+  const inicioVigente=vinculo.provenienciaVinculo==="MIGRACAO"?vinculo.inicioVigencia:vinculo.criadoEm;
+  const fimVigente=vinculo.provenienciaVinculo==="MIGRACAO"?(vinculo.fimVigencia??vinculo.encerradaEm):vinculo.encerradaEm;
+  if (!inicioVigente || (!vinculo.ativa && !fimVigente)
+    || (fimVigente && fimVigente <= inicioVigente)) {
     throw new ErroRegra("O vínculo histórico da aula original não possui intervalo conferível.");
   }
 
