@@ -26,8 +26,8 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
     finally { enviando.current = false; setOcupado(false); }
   }
   return <div className="space-y-2"><fieldset disabled={ocupado} className="space-y-2">
-    {podeDecidir && <><label className="block">Motivo da decisão<textarea className="block w-full rounded border p-2" value={motivo} onChange={e => setMotivo(e.target.value)} minLength={5} maxLength={2000} /></label>
-      <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("aprovar")} className="rounded border px-3 py-2">Aprovar acerto</button>{" "}
+    {(podeDecidir || podeInvalidar) && <label className="block">{podeInvalidar ? "Motivo da invalidação" : "Motivo da decisão"}<textarea className="block w-full rounded border p-2" value={motivo} onChange={e => setMotivo(e.target.value)} minLength={5} maxLength={2000} /></label>}
+    {podeDecidir && <><button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("aprovar")} className="rounded border px-3 py-2">Aprovar acerto</button>{" "}
       <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("rejeitar")} className="rounded border px-3 py-2">Rejeitar acerto</button></>}
     {podeAplicar && <button type="button" onClick={() => enviar("aplicar")} className="rounded border px-3 py-2">Aplicar acerto aprovado</button>}
     {podeInvalidar && <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("invalidar")} className="rounded border px-3 py-2">Conferir e invalidar para repropor</button>}
