@@ -38,6 +38,8 @@ Checkpoint de revisão após `24049fa3`: regressão unitária completa com 1.481
 
 Revisão das próximas migrações: 211/Q87 (`13c04a1d`) e 212/taxa por aditivo (`e74608af`) permanecem não aplicadas. Q87 precisa preservar também os bloqueios de destinação para cobranças em desistência ou regularização de período sem oferta. A 212 precisa permitir aditivos sucessivos da mesma taxa, validar permissões e correspondência integral entre proposta/decisão/aplicação e oferecer tratamento aprovado para valores já liquidados. Os DEVs seguem nesses ajustes antes da integração; schema validado não equivale ao fluxo implementado.
 
+Build local em `03bc900c`: `next build` com `DATABASE_URL` resolvida pelo perfil descartável `integracao`, telemetria desativada, sessão 81424 finalizada com saída 0. Compilação, TypeScript e geração de 81/81 páginas concluídos. Não houve publicação nem envio externo. O build confirma a compilação do código integrado, sem antecipar aceite das migrações 211/212 ou dos fluxos ainda em desenvolvimento.
+
 O objetivo solicitado é concluir a implementação local. Configuração de contas externas, envios reais, carga real e deploy não compõem o aceite local; adaptadores, estados de erro e testes simulados continuam obrigatórios. Esta fila registra lacunas confirmadas, sem substituir a conferência dos demais critérios da SPEC e sem gerar um percentual global.
 
 | Frente | Situação local | Evidência / próximo aceite |
