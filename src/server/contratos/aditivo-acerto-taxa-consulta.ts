@@ -53,7 +53,7 @@ export async function consultarAlvosAcertoTaxaAditivo(input: unknown) {
           return {
             id: c.id, codigo: c.codigo, versao: c.versao, status: c.status, moeda: c.moeda,
             valorOriginal: c.valorOriginal.toFixed(2), valorNegociado: c.valorNegociado.toFixed(2), valorRecebido: c.valorRecebido?.toFixed(2) ?? null, valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2), saldo: c.saldo?.toFixed(2) ?? null, vencimento: c.vencimento.toISOString().slice(0, 10),
-            valorNovo: valorNovo.toFixed(2), vencimentoNovo: taxaVencimento ? taxaVencimento.data : c.vencimento.toISOString().slice(0, 10), creditoAnterior: memoria.creditoAnterior.toFixed(2), creditoNovo: memoria.creditoNovo.toFixed(2), creditoTotalDevido: memoria.creditoTotalDevido.toFixed(2), saldoAposAcerto: memoria.saldoAposAcerto.toFixed(2), pendencia: memoria.pendencia && { codigo: memoria.pendencia.codigo, valor: memoria.pendencia.valor.toFixed(2), tratamento: memoria.pendencia.tratamento },
+            valorNovo: valorNovo.toFixed(2), vencimentoNovo: taxaVencimento?.data ?? c.vencimento.toISOString().slice(0, 10), creditoAnterior: memoria.creditoAnterior.toFixed(2), creditoNovo: memoria.creditoNovo.toFixed(2), creditoTotalDevido: memoria.creditoTotalDevido.toFixed(2), saldoAposAcerto: memoria.saldoAposAcerto.toFixed(2), pendencia: memoria.pendencia && { codigo: memoria.pendencia.codigo, valor: memoria.pendencia.valor.toFixed(2), tratamento: memoria.pendencia.tratamento },
             movimento: { recebimentos: c.recebimentos.length, informesAtivos: c.informes.length, usosCredito: c.utilizacoesCreditoPropostas.length, compensacoes: c.compensacoesCobertura.length, ajusteAcertoId: c.ajusteAcerto?.id ?? null, suspensaPorPausaId: c.suspensaPorItemPausaId, canceladaPorPausaId: c.canceladaPorPausaId },
           };
         }),
@@ -76,5 +76,45 @@ export async function consultarAcertoTaxaPorProposta(input: unknown) {
     if (!resultado.ok) throw new ErroRegra(resultado.erro);
     if (!resultado.dado) throw new ErroRegra("Prévia do acerto indisponível.");
     return { ...resultado.dado, conclusaoId: c.id, revisaoHash: estado.revisaoHash };
+  });
+}
+
+export async function listarHistoricoAcertosTaxa(input: unknown) {
+  return executarAcao(async () => {
+    const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const d = ConsultarAlvosAcertoTaxaAditivoSchema.pick({ matriculaId: true, propostaId: true }).parse(input);
+    const atual = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, permissoes: true } });
+    const aprova = Boolean(atual?.ativo && (atual.papeis.includes(Papel.ADMINISTRADOR) || (atual.papeis.includes(Papel.FINANCEIRO) && atual.permissoes.includes("financeiro.aprovar_acertos"))));
+    const propostas = await prisma.propostaAcertoTaxaAditivo.findMany({
+      where: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId },
+      orderBy: [{ criadaEm: "desc" }, { id: "desc" }],
+      include: { preparador: { select: { nome: true } }, cobranca: { select: { codigo: true, moeda: true } }, decisao: { include: { decisor: { select: { nome: true } } } }, aplicacao: { include: { executor: { select: { nome: true } } } } },
+    });
+    return propostas.map(p => {
+      const fotografia = p.fotografia as { cobranca?: { valorNegociado?: string; valorRecebido?: string | null; valorLiquidadoCredito?: string; vencimento?: string }; calculo?: { creditoAnterior?: string } };
+      return ({
+      id: p.id, status: p.status, codigo: p.cobranca.codigo ?? p.cobrancaId, moeda: p.cobranca.moeda,
+      preparador: p.preparador.nome, criadaEm: p.criadaEm.toISOString(), motivo: p.motivo,
+      evidencia: typeof p.evidencia === "object" && p.evidencia !== null && !Array.isArray(p.evidencia) && typeof p.evidencia.texto === "string" ? p.evidencia.texto : "Evidência estruturada preservada no registro do acerto.",
+      anterior: { valor: fotografia.cobranca?.valorNegociado ?? null, recebido: fotografia.cobranca?.valorRecebido ?? null, creditoLiquidado: fotografia.cobranca?.valorLiquidadoCredito ?? null, vencimento: fotografia.cobranca?.vencimento?.slice(0, 10) ?? null, creditoOriginado: fotografia.calculo?.creditoAnterior ?? null },
+      valorNovo: p.valorNovo.toFixed(2), vencimentoNovo: p.vencimentoNovo.toISOString().slice(0, 10), creditoNovo: p.creditoNovo.toFixed(2),
+      decisao: p.decisao && { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, autor: p.decisao.decisor.nome, data: p.decisao.decididaEm.toISOString() },
+      aplicacao: p.aplicacao && { autor: p.aplicacao.executor.nome, data: p.aplicacao.aplicadaEm.toISOString(), valorAnterior: p.aplicacao.valorAnterior.toFixed(2) },
+      podeDecidir: aprova && p.preparadorId !== usuario.id && p.status === "PENDENTE" && !p.decisao,
+      podeAplicar: aprova && p.status === "APROVADA" && p.decisao?.decisorId === usuario.id && !p.aplicacao,
+    }); });
+  });
+}
+
+export async function listarAditivosParaAcertoTaxa(pagina = 1) {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.FINANCEIRO);
+    if (!Number.isInteger(pagina) || pagina < 1 || pagina > 100000) throw new ErroRegra("Página inválida.");
+    const versoes = await prisma.versaoCondicoesAditivo.findMany({
+      where: { OR: [{ condicoes: { path: ["TAXA_VALOR"], not: Prisma.AnyNull } }, { condicoes: { path: ["TAXA_VENCIMENTO"], not: Prisma.AnyNull } }] },
+      orderBy: [{ registradaEm: "desc" }, { id: "desc" }], skip: (pagina - 1) * 30, take: 31,
+      select: { matriculaId: true, propostaId: true, versao: true, registradaEm: true },
+    });
+    return { itens: versoes.slice(0, 30), temProxima: versoes.length > 30 };
   });
 }
