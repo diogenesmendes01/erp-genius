@@ -8,7 +8,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { hashSubstituicao } from "./substituicao-estado";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { calcularCreditoAcertoTaxa } from "./aditivo-acerto-taxa-calculo";
-import { AplicarAcertoTaxaSchema, DecidirAcertoTaxaSchema, ProporAcertoTaxaSchema } from "./aditivo-acerto-taxa-acoes-schema";
+import { AplicarAcertoTaxaSchema, DecidirAcertoTaxaSchema, InvalidarAcertoTaxaSchema, ProporAcertoTaxaSchema } from "./aditivo-acerto-taxa-acoes-schema";
 
 async function financeiro(tx: Prisma.TransactionClient, id: string, aprovar = false) {
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id=${id} FOR SHARE`;
@@ -37,7 +37,7 @@ async function revalidar(tx: Prisma.TransactionClient, p: { matriculaId: string;
 }
 
 export async function proporAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
- const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = ProporAcertoTaxaSchema.parse(input);
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = ProporAcertoTaxaSchema.parse(input);
  return prisma.$transaction(async tx => { await financeiro(tx, autor.id); await bloquearMatriculas(tx, [d.matriculaId]);
   const estado = await carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: d.matriculaId, propostaId: d.propostaAditivoId, conclusaoId: d.conclusaoId });
   if (estado.revisaoHash !== d.revisaoHash || estado.dados.ambiente !== "PRODUCAO") throw new ErroRegra("A conclusão em produção e sua revisão exata são obrigatórias.");
@@ -56,6 +56,28 @@ export async function decidirAcertoTaxaAditivo(input: unknown) { return executar
  const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = DecidirAcertoTaxaSchema.parse(input); return prisma.$transaction(async tx => { await financeiro(tx, autor.id, true); await bloquearProposta(tx, d.propostaId); const p = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: true } });
   if (p.preparadorId === autor.id) throw new ErroRegra("A decisão exige outro Financeiro."); if (p.decisao) { if (p.decisao.decisorId !== autor.id || p.decisao.aprovada !== d.aprovada || p.decisao.motivo !== d.motivo || p.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("A proposta já recebeu outra decisão."); return { id: p.decisao.id, aprovada: p.decisao.aprovada }; } if (p.status !== "PENDENTE") throw new ErroRegra("A proposta não está pendente."); if (d.aprovada) await revalidar(tx, p);
   const decisao = await tx.decisaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: p.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: d.aprovada ? "APROVADA" : "REJEITADA" } }); await registrarEvento(tx, { tipo: d.aprovada ? "AcertoTaxaAditivoAprovado" : "AcertoTaxaAditivoRejeitado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, decisaoId: decisao.id, fotografiaHash: p.fotografiaHash } }); return { id: decisao.id, aprovada: decisao.aprovada };
+ });
+}); }
+
+export async function invalidarAcertoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+ const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = InvalidarAcertoTaxaSchema.parse(input);
+ return prisma.$transaction(async tx => { await financeiro(tx, autor.id, true); await bloquearProposta(tx, d.propostaId);
+  const p = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { aplicacao: true, invalidacao: true } });
+  if (p.preparadorId === autor.id) throw new ErroRegra("A invalidação exige outro Financeiro.");
+  if (p.invalidacao) { if (p.invalidacao.resolvedorId !== autor.id || p.invalidacao.motivo !== d.motivo || JSON.stringify(p.invalidacao.evidencia) !== JSON.stringify(d.evidencia) || p.invalidacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O acerto já recebeu outra invalidação."); return { id: p.invalidacao.id, invalidada: true }; }
+  if (p.status !== "APROVADA" || p.aplicacao) throw new ErroRegra("Somente acerto aprovado sem aplicação pode ser invalidado.");
+  const final = await tx.conferenciaFinalAditivo.findUniqueOrThrow({ where: { id: p.conferenciaFinalId }, select: { conclusaoId: true } });
+  const estado = await carregarEstadoConferenciaFinalAditivoTx(tx, { matriculaId: p.matriculaId, propostaId: p.propostaAditivoId, conclusaoId: final.conclusaoId });
+  const v = await tx.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: p.versaoCondicoesId }, select: { id: true, condicoesHash: true, conferenciaFinalId: true } });
+  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${p.cobrancaId} FOR UPDATE`; const c = await tx.cobranca.findUniqueOrThrow({ where: { id: p.cobrancaId } });
+  await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId"=${p.matriculaId} ORDER BY id FOR UPDATE`;
+  const anteriores = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: c.id }, _sum: { valor: true } }), calc = calcularCreditoAcertoTaxa({ valorRecebido: c.valorRecebido, valorLiquidadoCredito: c.valorLiquidadoCredito, valorNovo: p.valorNovo, creditosTaxaJaOriginados: anteriores._sum.valor ?? 0 }), comissoes = await tx.comissao.findMany({ where: { matriculaId: p.matriculaId }, orderBy: { id: "asc" } });
+  const atual = foto(estado, v, c, calc, comissoes), atualHash = hashSubstituicao(atual);
+  if (atualHash === p.fotografiaHash) throw new ErroRegra("A fotografia material do acerto ainda está vigente.");
+  const invalidacao = await tx.invalidacaoAcertoTaxaAditivo.create({ data: { id: randomUUID(), propostaId: p.id, resolvedorId: autor.id, motivo: d.motivo, evidencia: d.evidencia as Prisma.InputJsonValue, fotografiaOriginalHash: p.fotografiaHash, fotografiaAtual: atual as Prisma.InputJsonValue, fotografiaAtualHash: atualHash, chaveIdempotencia: d.chaveIdempotencia } });
+  await tx.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });
+  await registrarEvento(tx, { tipo: "AcertoTaxaAditivoInvalidado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id, payload: { propostaId: p.id, invalidacaoId: invalidacao.id, fotografiaOriginalHash: p.fotografiaHash, fotografiaAtualHash: atualHash } });
+  return { id: invalidacao.id, invalidada: true };
  });
 }); }
 
