@@ -198,6 +198,7 @@ model VinculoDocente {
 }
 
 model AulaDiario {
+  propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   encontroId String? @unique
   encontro EncontroAgenda? @relation(fields: [encontroId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   propostasCorrecaoAula PropostaCorrecaoAula[] @relation("DiarioPropostaCorrecaoAula")
@@ -221,6 +222,9 @@ enum ParticipacaoAula {
 }
 
 model RegistroAulaAluno {
+  resolucoesPresencaHistoricaMigracao ResolucaoDivergenciaPresencaHistoricaMigracao[]
+  aplicacoesPresencaHistoricaMigracao AplicacaoPresencaHistoricaMigracao[] @relation("RegistroCriadoPresencaHistoricaMigracao")
+  divergenciasPresencaHistoricaMigracao AplicacaoPresencaHistoricaMigracao[] @relation("RegistroExistentePresencaHistoricaMigracao")
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: NoAction, map: "registro_aula_contrato_fkey")
   participacao ParticipacaoAula?
@@ -420,6 +424,10 @@ enum Papel {
 }
 
 model Usuario {
+  resolucoesPresencaHistoricaMigracao ResolucaoDivergenciaPresencaHistoricaMigracao[] @relation("ResolvedorPresencaHistoricaMigracao")
+  propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("PreparadorPresencaHistoricaMigracao")
+  decisoesPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("DecisorPresencaHistoricaMigracao")
+  aplicacoesPresencaHistoricaMigracao AplicacaoPresencaHistoricaMigracao[] @relation("AplicadorPresencaHistoricaMigracao")
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] @relation("PreparadorConciliacaoFinanceiraMigracao")
   decisoesConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[] @relation("DecisorConciliacaoFinanceiraMigracao")
   aplicacoesConciliacaoFinanceira ConciliacaoFinanceiraMigracao[] @relation("AplicadorConciliacaoFinanceiraMigracao")
@@ -1617,6 +1625,7 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   aplicacoesVinculoMigracao AplicacaoVinculoMigracao[]
   fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[]
@@ -6781,6 +6790,7 @@ model LotePreparacaoMigracao {
 }
 
 model LinhaPreparacaoMigracao {
+  propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
   aplicacoesVinculoMigracao AplicacaoVinculoMigracao[]
   fatosSituacaoMigracao FatoSituacaoMatriculaMigracao[]
@@ -6985,6 +6995,7 @@ enum TipoFatoSituacaoMatriculaMigracao {
 }
 
 model MapaOrigemMatriculaMigracao {
+  propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   id String @id @default(cuid())
   origem String
   matriculaOrigemId String
@@ -7246,4 +7257,103 @@ model AplicacaoEntradaFinanceiraHistoricaMigracao {
   snapshot Json
   aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
   @@unique([origem, financeiroOrigemId])
+}
+
+// M01/203: presença migrada somente aponta uma aula histórica já existente.
+// Ela nunca cria diário, encontro, nota ou altera registro docente prévio.
+enum StatusPropostaPresencaHistoricaMigracao {
+  PENDENTE
+  APROVADA
+  REJEITADA
+  APLICADA
+  PENDENCIA_CORRECAO
+}
+
+enum ResultadoAplicacaoPresencaHistoricaMigracao {
+  NOVO_REGISTRO
+  VINCULO_EXISTENTE
+  DIVERGENCIA
+}
+
+enum ResultadoResolucaoDivergenciaPresencaHistoricaMigracao {
+  RECONCILIADA
+  MANTIDA
+}
+
+model PropostaPresencaHistoricaMigracao {
+  id String @id @default(cuid())
+  origem String
+  presencaOrigemId String
+  versao Int
+  linhaId String
+  linha LinhaPreparacaoMigracao @relation(fields: [linhaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  mapaMatriculaId String
+  mapaMatricula MapaOrigemMatriculaMigracao @relation(fields: [mapaMatriculaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  aulaId String
+  aula AulaDiario @relation(fields: [aulaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  participacao ParticipacaoAula
+  evidencia Json
+  entrada Json
+  snapshot Json
+  entradaHash String
+  estadoHash String
+  chaveIdempotencia String
+  preparadorId String
+  preparador Usuario @relation("PreparadorPresencaHistoricaMigracao", fields: [preparadorId], references: [id], onDelete: Restrict)
+  decisorId String?
+  decisor Usuario? @relation("DecisorPresencaHistoricaMigracao", fields: [decisorId], references: [id], onDelete: Restrict)
+  chaveDecisao String?
+  decisaoHash String?
+  motivoDecisao String?
+  status StatusPropostaPresencaHistoricaMigracao @default(PENDENTE)
+  decididoEm DateTime? @db.Timestamptz(6)
+  aplicadaEm DateTime? @db.Timestamptz(6)
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
+  aplicacao AplicacaoPresencaHistoricaMigracao?
+  @@unique([origem, presencaOrigemId, versao])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@unique([decisorId, chaveDecisao])
+  @@index([linhaId, status])
+  @@index([matriculaId, criadoEm])
+  @@index([aulaId, status])
+}
+
+model AplicacaoPresencaHistoricaMigracao {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaPresencaHistoricaMigracao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  origem String
+  presencaOrigemId String
+  resultado ResultadoAplicacaoPresencaHistoricaMigracao
+  registroId String?
+  registro RegistroAulaAluno? @relation("RegistroCriadoPresencaHistoricaMigracao", fields: [registroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  registroExistenteId String?
+  registroExistente RegistroAulaAluno? @relation("RegistroExistentePresencaHistoricaMigracao", fields: [registroExistenteId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  aplicadaPorId String
+  aplicadaPor Usuario @relation("AplicadorPresencaHistoricaMigracao", fields: [aplicadaPorId], references: [id], onDelete: Restrict)
+  snapshot Json
+  aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
+  resolucao ResolucaoDivergenciaPresencaHistoricaMigracao?
+  @@unique([origem, presencaOrigemId])
+  @@index([registroId])
+  @@index([registroExistenteId])
+}
+
+model ResolucaoDivergenciaPresencaHistoricaMigracao {
+  id String @id @default(cuid())
+  aplicacaoId String @unique
+  aplicacao AplicacaoPresencaHistoricaMigracao @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  registroId String
+  registro RegistroAulaAluno @relation(fields: [registroId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  resultado ResultadoResolucaoDivergenciaPresencaHistoricaMigracao
+  correcaoId String?
+  correcaoVersao Int?
+  correcaoAprovacaoId String?
+  evidencia Json
+  chaveIdempotencia String @unique
+  resolvedorId String
+  resolvedor Usuario @relation("ResolvedorPresencaHistoricaMigracao", fields: [resolvedorId], references: [id], onDelete: Restrict)
+  criadoEm DateTime @default(now()) @db.Timestamptz(6)
 }

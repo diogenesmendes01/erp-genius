@@ -47,8 +47,8 @@ export async function carregarImpactosCorrecaoAulaTx(
   const comparacao = compararCorrecaoAula(proposta.snapshotAnterior, proposta.snapshotNovo, contexto.reposicoes);
   const simulacoes = [];
   for (const fonte of progressao) {
-    const ultimo = await tx.alocacaoTurma.findFirst({ where: { matriculaId: fonte.matriculaId, turma: { nivelId: fonte.nivelId } },
-      orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, turma: { select: { regraAvaliacao: true } } } });
+    const ultimo = await tx.alocacaoTurma.findFirst({ where: { id: fonte.alocacaoFonteId, matriculaId: fonte.matriculaId, turma: { nivelId: fonte.nivelId } },
+      select: { id: true, turma: { select: { regraAvaliacao: true } } } });
     const regra = ultimo?.turma.regraAvaliacao;
     if (!regra) {
       simulacoes.push({ matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, regraId: null, pendencia: "Confira a regra do vínculo mais recente antes de simular a frequência.", antes: null, depois: null });
