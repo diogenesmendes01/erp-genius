@@ -18,7 +18,9 @@ export default function setup() {
       timeout: 120_000,
     });
   } catch (e) {
-    const detalhe = e instanceof Error && "stderr" in e ? String((e as { stderr: unknown }).stderr) : String(e);
+    const detalhe = e instanceof Error && "stderr" in e
+      ? ["stdout" in e ? String(e.stdout ?? "") : "", String(e.stderr ?? "")].filter(Boolean).join("\n") || e.message
+      : String(e);
     throw new Error(
       `O banco de TESTE não está pronto para esta suíte. O integrador deve conferir o perfil, ` +
         `a disponibilidade do banco e aplicar explicitamente as migrações aprovadas. ` +
