@@ -7080,6 +7080,7 @@ model PropostaEntradaFinanceiraHistoricaMigracao {
   estadoHash String
   chaveIdempotencia String
   chaveDecisao String?
+  decisaoHash String?
   status StatusPropostaEntradaFinanceiraHistoricaMigracao @default(PENDENTE)
   motivoDecisao String?
   decididoEm DateTime? @db.Timestamptz(6)
