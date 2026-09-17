@@ -46,6 +46,25 @@ Próximo aceite B02/Q69, após concluir uma das duas implementações atuais: pe
 
 ## Histórico de verificações (estados anteriores)
 
+### Rastreabilidade dos cenários transversais — auditoria de 17/09/2026
+
+Esta auditoria identifica testes existentes, sem declarar que um teste isolado comprova todo o cenário. A conclusão integral exige conferir o percurso composto e a evidência terminal correspondente.
+
+| Critério da SPEC central | Evidência localizada / trabalho restante |
+|---|---|
+| CT-01 — contratos independentes | `pausa-proposta.int.test.ts` e `portal-aluno/resultados.int.test.ts`; percurso acadêmico composto validado em `aproveitamento-aplicado.int.test.ts`. Ainda conferir o percurso financeiro completo pausa/encerramento de somente um contrato |
+| CT-02 — alteração coletiva atômica | `pausa-proposta.int.test.ts`: alteração de contexto impede aplicação parcial. Incorporar essa evidência à rodada integrada final |
+| CT-03 — troca de identificadores | Negativos em alocação, encerramento e exportações; falta consolidar evidência de leitura, mutação e arquivo no mesmo escopo |
+| CT-04 — chamada histórica e responsável pontual | `diario/regularizacao-designacao.int.test.ts` e avaliações; M01 histórico em complementação. Não inferir autoria ou elegibilidade pelo vínculo atual |
+| CT-05 — conflito em mudança global | `agenda/replanejamento-conjunto-adversarial.int.test.ts`; verificar conjunto sem aplicação parcial na rodada final |
+| CT-06 — datas e fusos | Cobertura, calendário e fuso têm testes dirigidos; Q117 inclui meia-noite e sessão SQL com outro fuso. Falta reunir evidências do vencimento/cobertura sem confundi-los com agenda |
+| CT-07 — reservas e dinheiro concorrentes | Benefícios e uso de crédito têm cobertura; devolução Q69 está em implementação e falta comprovar concorrência entre uso e devolução |
+| CT-08 — comprovante e lembretes | TESTER implementa cenário composto a partir de `cobrancas/conferencia.int.test.ts` e `acesso-aulas.int.test.ts` |
+| CT-09 — apuração sem gravação | Ocorrência e fechamento parcial têm testes separados; falta cenário integrado que mantenha pendência de material sem bloquear cobrança válida nem duplicar complemento |
+| CT-10 — encerramento e acerto | Cálculos, multa, compensação e decisões têm cobertura; falta percurso composto com memória dos recebimentos e data efetiva |
+| CT-11 — indisponibilidade e avaliação | Cobertura distribuída em avaliações e segunda chamada; reunir cenário de material indisponível, substituição e pausa preservando autoria e prazo |
+| CT-12 — falha e repetição | Envio Resend, processamento do portal e conciliação M01 têm testes; falta evidência transversal de reinício/reenvio e repetição de migração sem duplicação |
+
 17/09/2026 — continuação local com dois DEVs Terra: migração 195 revisada até o checkpoint DEV `944df249` e aplicada somente em `dev-email`, com geração do Prisma Client e saída terminal 0. Hash SHA-256 aplicado: `D0C17EA5E68C1EAA7DAE1C55177D2E46C0930EB95F71A4A6FBBEAA9014BD125F`; SQL aplicado é imutável. A primeira integração do DEV encontrou divergência no guard da aplicação e reverteu a transação; entrega ainda não aprovada nem integrada. Corretiva 202 reservada (`20260917110000_correcao_entrada_financeira_historica`), dependente de diagnóstico, sem aplicação. Migração 201 de agenda permanece em revisão, sem aplicação: conferir vínculo com a formalização existente, aplicação conjunta obrigatória e revalidação sem invalidar a própria versão de aditivo. Schemas Prisma dos dois DEVs validados com saída 0. Nenhum envio real ou deploy.
 
 17/09/2026 — complemento do formulário Q117 revisado: a versão inicial 1c08fced não foi aceita como prova de interação; sua correção 86c9ea09 exercita callbacks do componente real, com hooks/FormData simulados. Principal: dois testes de callbacks e um SSR aprovados (3/3), verificando docente atual no select, payload UTC na action, horário DST inválido sem chamada, limpeza do resultado e fieldset desabilitado. Não equivale a ensaio em navegador. A correção b78d9bb6 de substituição docente pendente também recebeu revisão independente sem achado.
