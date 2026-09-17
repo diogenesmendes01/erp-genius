@@ -27,3 +27,4 @@ prisma/migrations/20260917100000_agenda_aditivo_particular/migration.sql -text
 prisma/migrations/20260917121000_avisos_agenda_aditivo/migration.sql -text
 prisma/migrations/20260917122000_correcao_fonte_agenda_aditivo/migration.sql -text
 prisma/migrations/20260917120000_presenca_historica_migracao/migration.sql -text
+prisma/migrations/20260917123000_correcao_presenca_historica/migration.sql -text
