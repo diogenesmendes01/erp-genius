@@ -13,11 +13,11 @@ import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/aviso
 const Entrada = z.object({ matriculaId: z.string().min(1), propostaId: z.string().min(1), conclusaoId: z.string().min(1), revisaoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const EntradaAplicacao = Entrada.extend({ chaveIdempotencia: z.string().trim().min(1).max(200) }).strict();
 const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.JsonObject;
-const financeirosSemConsumidor = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
+const condicoesSemConsumidor = new Set(["ALUNO_NOME", "ALUNO_DOCUMENTO", "ALUNO_EMAIL", "ALUNO_ENDERECO", "PAGADOR_NOME", "PAGADOR_DOCUMENTO", "PAGADOR_EMAIL", "PAGADOR_ENDERECO", "TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
 
 function exigirConsumidorAplicavel(condicoes: Prisma.JsonValue) {
   const campos = Object.keys(z.record(z.unknown()).parse(condicoes));
-  const pendente = campos.find((campo) => financeirosSemConsumidor.has(campo));
+  const pendente = campos.find((campo) => condicoesSemConsumidor.has(campo));
   if (pendente) throw new ErroRegra(`A condição ${pendente} exige fluxo próprio antes da aplicação.`);
 }
 

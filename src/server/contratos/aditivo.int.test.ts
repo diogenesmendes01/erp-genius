@@ -196,7 +196,7 @@ async function verificarPrecoContinuidadeMensal(versaoId: string, testarEmissao 
   await prisma.politicaComissao.create({ data: { paisId: matricula.paisId, produtoId: matricula.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: "CRC", vigenteEm: new Date("2020-01-01"), criadaPorId: fixture.adminId } });
   const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: matricula.id, tipo: "MATRICULA" } });
   const { registrarPagamento } = await import("@/server/financeiro/acoes");
-  expect(await registrarPagamento(taxa.id, { chaveIdempotencia: "taxa-continuidade-ativacao", valorRecebido: taxa.valorNegociado.toNumber(), forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(taxa.id, { chaveIdempotencia: "taxa-continuidade-ativacao", valorRecebido: taxa.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Recebimento da taxa conferido para ativação contratual" })).toMatchObject({ ok: true });
   const { concluirMatricula } = await import("@/server/matricula/acoes");
   const ativacao = await concluirMatricula(matricula.id);
   if (!ativacao.ok) throw new Error(JSON.stringify(ativacao));
@@ -730,8 +730,9 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   const pedidoCondicoes = { ...alvoFinal, revisaoHash: confirmarFinal.revisaoHash };
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
-  if (taxaSemConsumidor) {
-    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "taxa-sem-consumidor-q117" })).toMatchObject({ ok: false, erro: "A condição TAXA_VALOR exige fluxo próprio antes da aplicação." });
+  if (taxaSemConsumidor || modo === "PRODUCAO") {
+    const campo = taxaSemConsumidor ? "TAXA_VALOR" : "ALUNO_NOME";
+    expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "condicao-sem-consumidor-q117" })).toMatchObject({ ok: false, erro: `A condição ${campo} exige fluxo próprio antes da aplicação.` });
     expect(await prisma.versaoCondicoesAditivo.count()).toBe(0);
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
     expect(await prisma.evento.count({ where: { tipo: { in: ["CondicoesAditivoFormalizadas", "CondicoesAditivoAplicadas"] } } })).toBe(0);
