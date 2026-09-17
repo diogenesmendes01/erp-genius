@@ -527,6 +527,10 @@ model Usuario {
   atribuicoesReposicao DesignacaoAvaliadorReposicaoIndividual[] @relation("AvaliadorReposicaoDesignado")
   designacoesReposicaoPreparadas DesignacaoAvaliadorReposicaoIndividual[] @relation("DesignadorAvaliadorReposicao")
   substituicoesAvaliadorReposicao DesignacaoSubstituicaoAvaliadorReposicaoIndividual[] @relation("DesignadorSubstituicaoAvaliadorReposicao")
+  acordosPermutaPreparados AcordoPermutaServico[] @relation("PreparadorAcordoPermuta")
+  confirmacoesPermutaPedagogicas ConfirmacaoServicoPermuta[] @relation("ConfirmadorPermuta")
+  propostasCompensacaoPermuta PropostaCompensacaoPermuta[] @relation("PreparadorCompensacaoPermuta")
+  decisoesCompensacaoPermuta DecisaoCompensacaoPermuta[] @relation("DecisorCompensacaoPermuta")
   materiaisReposicaoPublicados MaterialReposicaoGravacao[] @relation("MaterialReposicaoPublicado")
   propostasRegularizacaoFonteGravacao PropostaRegularizacaoFonteGravacao[] @relation("PreparadorRegularizacaoFonteGravacao")
   decisoesRegularizacaoFonteGravacao DecisaoRegularizacaoFonteGravacao[] @relation("DecisorRegularizacaoFonteGravacao")
@@ -1699,6 +1703,7 @@ model Matricula {
   ocorrenciasParticulares OcorrenciaParticular[]
   encerramento RegistroEncerramentoMatricula?
   creditosMonetarios CreditoMatricula[]
+  acordosPermuta AcordoPermutaServico[]
   origensCreditoAcerto OrigemCreditoAcerto[]
   aceiteOriginal AceiteOriginalContratual?
   planosRecuperacao PropostaPlanoRecuperacao[]
@@ -1836,6 +1841,8 @@ model Cobranca {
   itemEmissaoEntrada ItemEmissaoEntrada?
   comprasHoras CompraHorasAntecipadas[]
   compensacoesCobertura CompensacaoCoberturaMatricula[]
+  elegibilidadesPermuta AcordoPermutaCobranca[]
+  destinosPropostaPermuta DestinoPropostaCompensacaoPermuta[]
   @@unique([id, matriculaId], map: "cobranca_id_matricula_key")
   suspensaPorItemPausaId String?
   suspensaPorItemPausa ItemPropostaPausa? @relation("SuspensaoPausaMatricula", fields: [suspensaPorItemPausaId, matriculaId], references: [id, matriculaId], onDelete: Restrict, onUpdate: Restrict)
@@ -4916,6 +4923,108 @@ model DecisaoRegraAvaliacao {
 enum DestinoHorasCanceladas {
   REMARCACAO
   CREDITO
+}
+
+enum UnidadePermutaServico {
+  HORA
+  AULA
+  UNIDADE
+}
+
+// P02/Q89/Q98: acordo e comprovação não são recebimento, crédito ou isenção.
+// A aplicação financeira fica em ledger próprio para não alterar o caixa.
+model AcordoPermutaServico {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorAcordoPermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  vigenciaInicio DateTime @db.Date
+  vigenciaFim DateTime @db.Date
+  moeda String
+  unidade UnidadePermutaServico
+  quantidadePactuada Decimal @db.Decimal(12, 2)
+  valorPorUnidade Decimal @db.Decimal(12, 2)
+  valorTotalPactuado Decimal @db.Decimal(12, 2)
+  contrapartida String
+  formulaDescricao String
+  chaveIdempotencia String
+  entradaHash String
+  criadoEm DateTime @default(now())
+  cobrancasElegiveis AcordoPermutaCobranca[]
+  confirmacoes ConfirmacaoServicoPermuta[]
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, vigenciaInicio, vigenciaFim])
+}
+
+model AcordoPermutaCobranca {
+  id String @id @default(cuid())
+  acordoId String
+  acordo AcordoPermutaServico @relation(fields: [acordoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valorMaximo Decimal @db.Decimal(12, 2)
+  @@unique([acordoId, cobrancaId])
+  @@index([cobrancaId])
+}
+
+model ConfirmacaoServicoPermuta {
+  id String @id @default(cuid())
+  acordoId String
+  acordo AcordoPermutaServico @relation(fields: [acordoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  confirmadorId String
+  confirmador Usuario @relation("ConfirmadorPermuta", fields: [confirmadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  periodoInicio DateTime @db.Date
+  periodoFim DateTime @db.Date
+  quantidadeComprovada Decimal @db.Decimal(12, 2)
+  referenciaServico String
+  evidencia String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  propostas PropostaCompensacaoPermuta[]
+  @@unique([confirmadorId, chaveIdempotencia])
+  @@unique([acordoId, referenciaServico])
+  @@index([acordoId, periodoInicio, periodoFim])
+}
+
+model PropostaCompensacaoPermuta {
+  id String @id @default(cuid())
+  confirmacaoId String
+  confirmacao ConfirmacaoServicoPermuta @relation(fields: [confirmacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorCompensacaoPermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  snapshot Json
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoCompensacaoPermuta?
+  destinos DestinoPropostaCompensacaoPermuta[]
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([confirmacaoId])
+}
+
+model DestinoPropostaCompensacaoPermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaCompensacaoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  @@unique([propostaId, cobrancaId])
+  @@index([cobrancaId])
+}
+
+model DecisaoCompensacaoPermuta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaCompensacaoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorCompensacaoPermuta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
 }
 
 model DecisaoUsoCredito {
