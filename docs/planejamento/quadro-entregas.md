@@ -34,6 +34,10 @@ Entrada financeira histórica M01 integrada e validada localmente: o Financeiro 
 
 ### Fila residual para aceite local — revisão de 17/09/2026
 
+Checkpoint de revisão após `24049fa3`: regressão unitária completa com 1.481/1.481 testes, zero falhas e zero pendentes, após a correção de mocks `e9789aeb`; relatório local `node_modules/.cache/regressao-unitaria-1da79db0-corrigida.json`, execução terminal com saída 0. A regressão integrada independente em `eccdd9b2` continua em execução na sessão 95634, confirmada pelo TESTER; ainda sem resultado terminal. Esses números não comprovam conclusão das funcionalidades pendentes.
+
+Revisão das próximas migrações: 211/Q87 (`13c04a1d`) e 212/taxa por aditivo (`e74608af`) permanecem não aplicadas. Q87 precisa preservar também os bloqueios de destinação para cobranças em desistência ou regularização de período sem oferta. A 212 precisa permitir aditivos sucessivos da mesma taxa, validar permissões e correspondência integral entre proposta/decisão/aplicação e oferecer tratamento aprovado para valores já liquidados. Os DEVs seguem nesses ajustes antes da integração; schema validado não equivale ao fluxo implementado.
+
 O objetivo solicitado é concluir a implementação local. Configuração de contas externas, envios reais, carga real e deploy não compõem o aceite local; adaptadores, estados de erro e testes simulados continuam obrigatórios. Esta fila registra lacunas confirmadas, sem substituir a conferência dos demais critérios da SPEC e sem gerar um percentual global.
 
 | Frente | Situação local | Evidência / próximo aceite |
