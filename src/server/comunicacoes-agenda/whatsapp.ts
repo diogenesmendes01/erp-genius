@@ -10,6 +10,8 @@ import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { validarFonteQuantidadeAulasTx } from "@/server/agenda/quantidade-fonte";
 import { envioQuantidadeAulasHabilitado } from "./quantidade-gate";
+import { validarFonteAditivoAgendaTx } from "./avisos";
+import { formatarIntervaloAvisoAgenda } from "./formato-horario";
 
 const VARIAVEIS_AGENDA = /\{(nome|horarios)\}/g;
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
@@ -58,6 +60,7 @@ function horariosDoAviso(aviso: { evento: { tipo: string; payload: unknown } | n
     const acao = dados.quantidadeNova && dados.quantidadeAnterior && dados.quantidadeNova > dados.quantidadeAnterior ? "incluídas ou alteradas" : "removidas ou alteradas";
     return `Aulas ${acao}: ${aviso.itens.map(({ encontro }) => `${encontro.inicio.toLocaleString("pt-BR", { timeZone: encontro.fusoOrigem })}–${encontro.fim.toLocaleTimeString("pt-BR", { timeZone: encontro.fusoOrigem })} (${encontro.fusoOrigem})`).join("; ")}`;
   }
+  if (aviso.evento?.tipo === "CondicoesAditivoAplicadas") return aviso.itens.map(({ encontro }) => formatarIntervaloAvisoAgenda(encontro.inicio, encontro.fim, encontro.fusoOrigem)).join("; ");
   const anterior = horario(payload.encontroOriginalId), novo = horario(payload.encontroNovoId);
   return anterior && novo ? `de ${anterior} para ${novo}` : null;
 }
@@ -71,12 +74,14 @@ async function fonteAvisoValida(db: Prisma.TransactionClient | typeof prisma, av
   const replanejamento = !!evento && evento.agregadoTipo === "ConfiguracaoOperacional" && evento.agregadoId === "escola" && evento.tipo === "ReplanejamentoConjuntoAplicado" && aviso.matriculaId
     ? await validarFonteReplanejamentoConjuntoTx(db, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map((item) => item.encontroId) })
     : null;
-  if (!(remarcacao || substituicao || replanejamento || quantidade) || !aviso.matriculaId || !aviso.itens.length || (quantidade && !envioQuantidadeAulasHabilitado())) return false;
+  const aditivoAgenda = !!evento && evento.agregadoTipo === "Matricula" && evento.agregadoId === aviso.matriculaId && evento.tipo === "CondicoesAditivoAplicadas" && aviso.matriculaId
+    ? await validarFonteAditivoAgendaTx(db, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId, encontrosIds: aviso.itens.map(item => item.encontroId) }) : null;
+  if (!(remarcacao || substituicao || aditivoAgenda || replanejamento || quantidade) || !aviso.matriculaId || !aviso.itens.length || (quantidade && !envioQuantidadeAulasHabilitado())) return false;
   if (replanejamento) return replanejamento;
   const turmas = aviso.itens.flatMap((i) => i.encontro.turmaId ? [i.encontro.turmaId] : []);
   const alocacoes = (substituicao || quantidade) && turmas.length ? await db.alocacaoTurma.findMany({ where: { matriculaId: aviso.matriculaId, turmaId: { in: turmas } }, select: { turmaId: true, criadoEm: true, encerradaEm: true, ativa: true, provenienciaVinculo: true, inicioVigencia: true, fimVigencia: true } }) : [];
   return aviso.itens.every((item) => {
-    const noEvento = quantidade ? !!item.encontro.turmaId && quantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) : substituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
+    const noEvento = aditivoAgenda ? true : quantidade ? !!item.encontro.turmaId && quantidade.porTurma.get(item.encontro.turmaId)?.has(item.encontroId) : substituicao ? payload.encontrosIds?.includes(item.encontroId) : [payload.encontroOriginalId, payload.encontroNovoId].includes(item.encontroId);
     const pertence = item.encontro.matriculaId === aviso.matriculaId || (substituicao && !!item.encontro.turmaId && alocacoes.some((a) => a.turmaId === item.encontro.turmaId && alocacaoCobreAula(a, item.encontro.inicio)));
     return !!noEvento && (quantidade ? !!item.encontro.turmaId && alocacoes.some((a) => a.turmaId === item.encontro.turmaId && [...(quantidade.instantes.get(item.encontroId) ?? []), item.encontro.inicio].some((inicio) => alocacaoCobreAula(a, inicio))) : pertence);
   });
