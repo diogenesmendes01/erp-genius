@@ -52,6 +52,8 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
     id: true, professorId: true, inicio: true, fim: true, fusoOrigem: true, status: true, turmaId: true, finalidade: true, reposicaoIndividualId: true,
     agendaReposicaoIndividual: { select: { id: true } }, diario: { select: { id: true } }, ocorrenciasParticulares: { select: { id: true } }, conferenciaOcorrenciaHoras: { select: { id: true } },
     reservasHoras: { select: { id: true, consumo: { select: { id: true } } } }, professor: { select: { id: true, nome: true } },
+    cancelamentosParticulares: { where: { decisao: null }, select: { id: true } },
+    propostasSubstituicao: { where: { proposta: { decisao: null } }, select: { id: true } },
   } });
   if (encontros.length !== ids.length) throw new ErroRegra("Há encontro fora da matrícula informada.");
   const porId = new Map(encontros.map(e => [e.id, e]));
@@ -70,6 +72,8 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
     if (anterior.finalidade !== "AULA" || anterior.turmaId || anterior.reposicaoIndividualId || anterior.agendaReposicaoIndividual || anterior.status !== "PREVISTO" || anterior.inicio <= agora || !anterior.professorId || !anterior.professor) {
       throw new ErroRegra("A alteração exige encontro particular previsto, futuro e com professor definido.");
     }
+    if (anterior.cancelamentosParticulares.length) pendencias.push(`Há cancelamento aguardando decisão para o encontro ${anterior.id}.`);
+    if (anterior.propostasSubstituicao.length) pendencias.push(`Há substituição docente aguardando decisão para o encontro ${anterior.id}.`);
     if (anterior.diario) pendencias.push(`Há diário vinculado ao encontro ${anterior.id}.`);
     if (anterior.ocorrenciasParticulares.length) pendencias.push(`Há ocorrência particular vinculada ao encontro ${anterior.id}.`);
     if (anterior.conferenciaOcorrenciaHoras) pendencias.push(`Há conferência de ocorrência vinculada ao encontro ${anterior.id}.`);
