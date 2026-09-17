@@ -156,8 +156,6 @@ export async function substituirAvaliadorReposicaoOperacional(input: unknown) {
       const professor = await tx.usuario.findFirst({ where: { id: d.professorId, ativo: true, papeis: { has: Papel.PROFESSOR } }, select: { id: true } });
       if (!professor) throw new ErroRegra("O professor substituto precisa estar ativo.");
       if (vigentes.length === 0) {
-        const designacoesExistentes = await tx.designacaoAvaliadorReposicaoIndividual.count({ where: { reposicaoId: d.reposicaoId } });
-        if (designacoesExistentes > 0) throw new ErroRegra("A reposição não possui um avaliador vigente para substituir.");
         const inicial = await tx.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: d.reposicaoId, professorId: professor.id, designadorId: autor.id, inicio: agora.agora, motivo: d.motivo, criadaEm: agora.agora } });
         await registrarEvento(tx, { tipo: "AvaliadorReposicaoDesignado", agregadoTipo: "Matricula", agregadoId: contexto.matriculaId, autorId: autor.id, payload: { reposicaoId: d.reposicaoId, designacaoId: inicial.id, professorId: professor.id, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia, entradaHash, inicio: agora.agora.toISOString() } });
         return { id: inicial.id, designacaoAnteriorId: null, designacaoNovaId: inicial.id, professorAnteriorId: null, professorId: professor.id, inicio: agora.agora.toISOString(), repetida: false };

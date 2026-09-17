@@ -313,12 +313,24 @@ it("Q40 designa e substitui avaliador sem reescrever autoria, acesso ou prazo", 
     designadorId: gestorId, motivo: "Tentativa inválida de retornar a cadeia para o professor anterior", chaveIdempotencia: "q40-ciclo-invalido-0001", entradaHash: "ciclo",
   } })).rejects.toThrow(/ciclo|início válido/i);
   expect(await prisma.designacaoSubstituicaoAvaliadorReposicaoIndividual.count({ where: { reposicaoId: "repo-op-q40" } })).toBe(1);
-  const avaliadorCId = (await criarUsuario(["PROFESSOR"])).id;
   entrar(gestorId);
-  const terceira = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId: avaliadorCId, motivo: "Nova designação válida após a tentativa de ciclo rejeitada", chaveIdempotencia: "q40-substituicao-c-0001" });
+  const terceira = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40", professorId, motivo: "Professor A volta em nova designação após a tentativa de ciclo rejeitada", chaveIdempotencia: "q40-substituicao-retorno-a-0001" });
   if (!terceira.ok) throw new Error(terceira.erro);
-  expect(terceira).toMatchObject({ ok: true, dado: { professorAnteriorId: avaliadorNovoId, professorId: avaliadorCId } });
+  expect(terceira).toMatchObject({ ok: true, dado: { professorAnteriorId: avaliadorNovoId, professorId } });
   expect(await prisma.designacaoSubstituicaoAvaliadorReposicaoIndividual.count({ where: { reposicaoId: "repo-op-q40" } })).toBe(2);
+});
+
+it("Q40 designa novo avaliador após fim histórico sem reabrir a designação anterior", async () => {
+  await prepararReposicao("repo-op-q40-fim", matriculaId, alunoId);
+  const anteriorId = (await criarUsuario(["PROFESSOR"])).id;
+  const novoId = (await criarUsuario(["PROFESSOR"])).id;
+  const inicioAnterior = new Date(Date.now() - 120_000);
+  const fimAnterior = new Date(Date.now() - 60_000);
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: "repo-op-q40-fim", professorId: anteriorId, designadorId: gestorId, inicio: inicioAnterior, fim: fimAnterior, motivo: "Designação encerrada antes da continuidade", criadaEm: inicioAnterior } });
+  entrar(gestorId);
+  const resultado = await substituirAvaliadorReposicaoOperacional({ reposicaoId: "repo-op-q40-fim", professorId: novoId, motivo: "Continuidade após o fim da designação anterior", chaveIdempotencia: "q40-fim-historico-0001" });
+  expect(resultado).toMatchObject({ ok: true, dado: { professorAnteriorId: null, professorId: novoId } });
+  expect(await prisma.designacaoAvaliadorReposicaoIndividual.findFirst({ where: { reposicaoId: "repo-op-q40-fim", professorId: anteriorId } })).toMatchObject({ fim: fimAnterior });
 });
 
 it("confirmação operacional não aceita relato de material de outra reposição", async () => {
