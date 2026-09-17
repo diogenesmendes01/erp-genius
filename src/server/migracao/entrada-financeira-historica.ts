@@ -59,10 +59,10 @@ export async function decidirEntradaFinanceiraHistoricaMigracao(input: unknown) 
       const [vigente] = await tx.$queryRaw<{id:string}[]>(Prisma.sql`SELECT m.id FROM "MapaOrigemMatriculaMigracao" m JOIN "LinhaPreparacaoMigracao" l ON l.id=${p.linhaId} JOIN "LotePreparacaoMigracao" lo ON lo.id=l."loteId" WHERE m.id=${p.mapaMatriculaId} AND m."matriculaId"=${p.matriculaId} AND m.origem=lo.origem AND m."matriculaOrigemId"=l."matriculaOrigemId" AND ${json(p.snapshot)}->'linha' IS NOT DISTINCT FROM jsonb_build_object('id',l.id,'origem',lo.origem,'financeiroOrigemId',l."financeiroOrigemId",'matriculaOrigemId',l."matriculaOrigemId",'entradaHash',l."entradaHash",'dadosOrigem',l."dadosOrigem") AND ${json(p.snapshot)}->'mapa' IS NOT DISTINCT FROM jsonb_build_object('id',m.id,'matriculaId',m."matriculaId") FOR SHARE`);
       if (!vigente) throw new ErroRegra("A fotografia da origem ou mapa M01 mudou; crie uma nova proposta.");
       const dadosPagador = PagadorEntradaFinanceiraHistoricaSchema.parse(p.dadosPagador); await tx.$executeRaw`SELECT id FROM "Matricula" WHERE id=${p.matriculaId} FOR UPDATE`; const [ultimo] = await tx.$queryRaw<{versao:number}[]>(Prisma.sql`SELECT versao FROM "PagadorPreparacaoMatricula" WHERE "matriculaId"=${p.matriculaId} ORDER BY versao DESC LIMIT 1 FOR UPDATE`);
-      const pagadorId=randomUUID(), cobrancaId=randomUUID(), aplicacaoId=randomUUID();
+      const pagadorId=randomUUID(), cobrancaId=randomUUID(), aplicacaoId=randomUUID(), vencimentoHistorico=p.vencimento.toISOString().slice(0, 10);
       await tx.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET status='APROVADA',"decisorId"=${autor.id},"chaveDecisao"=${d.chaveIdempotencia},"decisaoHash"=${decisaoHash},"motivoDecisao"=${d.motivo},"decididoEm"=now() WHERE id=${p.id}`;
       await tx.$executeRaw`INSERT INTO "PagadorPreparacaoMatricula" (id,"matriculaId","preparadorId",versao,tipo,dados,motivo,"chaveIdempotencia","entradaHash") VALUES (${pagadorId},${p.matriculaId},${p.preparadorId},${(ultimo?.versao ?? 0)+1},${dadosPagador.tipo},${json(dadosPagador.dados)},${"Pagador histórico M01 aprovado: " + p.id},${"m01-entrada-pagador:" + p.id},${p.entradaHash})`;
-      await tx.$executeRaw`INSERT INTO "Cobranca" (id,"matriculaId",tipo,competencia,"valorOriginal","valorNegociado",saldo,moeda,vencimento,status,comentario) VALUES (${cobrancaId},${p.matriculaId},${p.tipoCobranca}::"TipoCobranca",${p.competencia ?? null},${p.valor}::numeric,${p.valor}::numeric,${p.valor}::numeric,${p.moeda},${p.vencimento},'PENDENTE'::"StatusCobranca",${"Obrigação histórica M01; sem recebimento, quitação ou crédito. Proposta " + p.id})`;
+      await tx.$executeRaw`INSERT INTO "Cobranca" (id,"matriculaId",tipo,competencia,"valorOriginal","valorNegociado",saldo,moeda,vencimento,status,comentario) VALUES (${cobrancaId},${p.matriculaId},${p.tipoCobranca}::"TipoCobranca",${p.competencia ?? null},${p.valor}::numeric,${p.valor}::numeric,${p.valor}::numeric,${p.moeda},${vencimentoHistorico}::date,'PENDENTE'::"StatusCobranca",${"Obrigação histórica M01; sem recebimento, quitação ou crédito. Proposta " + p.id})`;
       await tx.$executeRaw`INSERT INTO "AplicacaoEntradaFinanceiraHistoricaMigracao" (id,"propostaId",origem,"financeiroOrigemId","pagadorId","cobrancaId","aplicadaPorId",snapshot) VALUES (${aplicacaoId},${p.id},${p.origem},${p.financeiroOrigemId},${pagadorId},${cobrancaId},${autor.id},${json({ propostaId:p.id, pagadorId, cobrancaId, semRecebimento:true })})`;
       await tx.$executeRaw`UPDATE "PropostaEntradaFinanceiraHistoricaMigracao" SET status='APLICADA',"aplicadaEm"=now() WHERE id=${p.id}`;
       await registrarEvento(tx, { tipo: "EntradaFinanceiraHistoricaMigracaoAplicada", agregadoTipo: "Cobranca", agregadoId: cobrancaId, autorId: autor.id, payload: { propostaId:p.id, origem:p.origem, financeiroOrigemId:p.financeiroOrigemId, pagadorId, cobrancaId, semRecebimento:true } });
@@ -80,7 +80,7 @@ export async function consultarEntradasFinanceirasHistoricasMigracao(linhaId: st
         SELECT p.id,p.versao,p.status,p."preparadorId",u.nome AS "preparadorNome",d.nome AS "decisorNome",p."motivoDecisao",p."criadoEm",p."aplicadaEm",p.valor,p.moeda,p.vencimento,p.competencia,p."tipoCobranca",p."dadosPagador",p.evidencia,p.complemento,a."cobrancaId",a."pagadorId"
         FROM "PropostaEntradaFinanceiraHistoricaMigracao" p JOIN "Usuario" u ON u.id=p."preparadorId" LEFT JOIN "Usuario" d ON d.id=p."decisorId" LEFT JOIN "AplicacaoEntradaFinanceiraHistoricaMigracao" a ON a."propostaId"=p.id
         WHERE p."linhaId"=${linhaId} ORDER BY p.versao DESC`);
-      return itens.map((p) => ({ ...p, valor:p.valor.toString(), criadoEm:p.criadoEm.toISOString(), aplicadaEm:p.aplicadaEm?.toISOString() ?? null, podeDecidir:p.status === "PENDENTE" && p.preparadorId !== autor.id }));
+      return itens.map((p) => ({ ...p, valor:p.valor.toString(), vencimento:p.vencimento.toISOString(), criadoEm:p.criadoEm.toISOString(), aplicadaEm:p.aplicadaEm?.toISOString() ?? null, podeDecidir:p.status === "PENDENTE" && p.preparadorId !== autor.id }));
     });
   });
 }
@@ -88,6 +88,6 @@ export async function consultarEntradasFinanceirasHistoricasMigracao(linhaId: st
 export async function listarPaisesEntradaFinanceiraHistoricaMigracao() {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
-    return prisma.$transaction(async (tx) => { await financeiroFresco(tx, autor.id); return tx.pais.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true, codigoISO: true } }); });
+    return prisma.$transaction(async (tx) => { await financeiroFresco(tx, autor.id); const paises = await tx.pais.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true, codigoISO: true } }); return paises.map((pais) => ({ id: pais.id, nome: pais.nome, codigo: pais.codigoISO })); });
   });
 }
