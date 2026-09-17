@@ -103,8 +103,11 @@ it("expõe reserva de horas legítima como pendência da alteração", async () 
   const compra = await prisma.compraHorasAntecipadas.create({ data: { matriculaId: base.matriculaId, cobrancaId: cobranca.id, documentoId: documento.id, registradorId: base.secretariaId, minutosComprados: 60, valorOriginal: 125, descontoOriginal: 0, valorPagoAlocado: 125, moeda: matricula.moeda, evidenciaCondicoes: "Compra contratual conferida", snapshot: { fixture: "q117" }, chaveIdempotencia: "q117-compra-horas", entradaHash: "fixture" } });
   await prisma.usuario.update({ where: { id: base.secretariaId }, data: { papeis: ["SECRETARIA_ACADEMICA", "PROFESSOR", "FINANCEIRO"] } });
   expect(await reservarHorasCompradasParaEncontro({ compraId: compra.id, encontroId, motivo: "Reserva paga e conferida para o encontro", chaveIdempotencia: "q117-reserva-horas" })).toMatchObject({ ok: true });
+  const fotografiaReserva = () => prisma.compraHorasAntecipadas.findUniqueOrThrow({ where: { id: compra.id }, select: { id: true, minutosComprados: true, reservas: { select: { id: true, minutos: true, inicio: true, fim: true, encontro: { select: { id: true, status: true } }, consumo: { select: { id: true } } } } } });
+  const antes = await fotografiaReserva();
   const r = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, base.secretariaId, entrada()));
   expect(r.pendencias).toContain(`Há reserva de horas vinculada ao encontro ${encontroId}.`);
+  expect(await fotografiaReserva()).toEqual(antes);
 });
 
 it("mantém encontro externo como conflito ao substituir somente os IDs selecionados", async () => {
