@@ -18,6 +18,7 @@ vi.mock("@/server/_shared", async (importOriginal) => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { registrarRecebimentoDestinado } from "./acoes";
+import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
@@ -62,6 +63,20 @@ it("divide um fato de caixa em dois períodos e crédito explícito, sem duplica
   expect(credito.valorInicial.toFixed(2)).toBe("20.00");
 });
 
+it("a guarda SQL recusa uma destinação de outro financeiro e faz rollback sem alterar o fato de caixa", async () => {
+  const segundoFinanceiroId = (await criarUsuario([Papel.FINANCEIRO], "Outro caixa Q87")).id;
+  const criado = await registrarRecebimentoDestinado(entrada("q87-autoria-destinacao-0001"));
+  if (!criado.ok || !criado.dado) throw new Error(criado.ok ? "Recebimento ausente" : criado.erro);
+  const recebimentoId = criado.dado.recebimentoId;
+  const antes = await prisma.destinacaoRecebimento.count({ where: { recebimentoId } });
+
+  await expect(prisma.$transaction(async tx => {
+    await tx.$executeRaw`INSERT INTO "DestinacaoRecebimento" ("recebimentoId", "autorId", tipo, valor, evidencia, "chaveIdempotencia") VALUES (${recebimentoId}, ${segundoFinanceiroId}, 'CREDITO_SEM_DESTINO', 1, 'Tentativa de outro caixa materializar a destinação.', 'q87-destinacao-de-outro-autor')`;
+  })).rejects.toThrow("A destinação deve preservar a autoria do recebimento original.");
+
+  expect(await prisma.destinacaoRecebimento.count({ where: { recebimentoId } })).toBe(antes);
+});
+
 it("recusa cobrança de outro contrato ou moeda antes de criar caixa", async () => {
   const original = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
   const outra = await prisma.matricula.create({ data: { alunoId: original.alunoId, produtoId: original.produtoId, paisId: original.paisId, moeda: "USD" } });
@@ -91,6 +106,12 @@ it("aceita comprovante autorizado por matrícula em crédito puro e preserva um 
   expect(eventos[0].payload).toMatchObject({ recebimentoId: recebimento.id, titularMatriculaId: matriculaId, comprovanteUrl: url, comprovanteNome: "q87-credito-comprovante.pdf" });
   expect(await consultarHistoricoRecebimentos({ matriculaId })).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ id: recebimento.id, comprovante: { url, nome: "q87-credito-comprovante.pdf" }, evidenciaCaixaRegistrada: true })] } });
   expect(await podeLerArquivo({ id: financeiroId, papeis: [Papel.FINANCEIRO] }, ["q87-credito-comprovante.pdf"])).toBe(true);
+  const historico = await consultarHistoricoRecebimentos({ matriculaId });
+  expect(historico).toMatchObject({ ok: true, dado: { itens: [{
+    matriculaId,
+    comprovante: { url, nome: "q87-credito-comprovante.pdf" },
+    destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: "150.00", evidencia: "Antecipação comprovada sem cobrança definida." }],
+  }] } });
 });
 
 it("usa e reserva devolução do crédito antecipado sem criar outro recebimento", async () => {
