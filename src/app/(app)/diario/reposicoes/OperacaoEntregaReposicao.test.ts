@@ -17,7 +17,7 @@ const operacao: OperacaoEntrega = { reposicaoId: "repo", matriculaStatus: "ATIVA
 function preparar() {
   mocks.useState.mockReturnValue(["", vi.fn()]);
   mocks.useTransition.mockReturnValue([false, (callback: () => void) => callback()]);
-  mocks.useRef.mockReturnValueOnce({ current: "q40-chave-estável" }).mockReturnValueOnce({ current: false });
+  mocks.useRef.mockReturnValueOnce({ current: "q40-chave-estável" }).mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
   vi.stubGlobal("crypto", { randomUUID: () => "q40-chave-estável" });
 }
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
@@ -47,4 +47,21 @@ it("ignora submissão concorrente enquanto a substituição está pendente", asy
   expect(mocks.substituir).toHaveBeenCalledTimes(1);
   concluir?.({ ok: true }); await Promise.resolve(); await Promise.resolve();
   expect(mocks.refresh).toHaveBeenCalledTimes(1);
+});
+
+it("renova a chave após sucesso e congela a entrada para retry após erro", async () => {
+  preparar();
+  const uuid = vi.fn().mockReturnValue("q40-chave-nova"); vi.stubGlobal("crypto", { randomUUID: uuid });
+  let professor = "prof-b";
+  vi.stubGlobal("FormData", class { get(nome: string) { return ({ professorId: professor, motivo: "Troca de avaliador da reposição gravada" } as Record<string, string>)[nome] ?? null; } });
+  mocks.substituir.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, erro: "Resultado incerto; repita a mesma operação." }).mockResolvedValueOnce({ ok: true });
+  const formulario = todos(OperacaoEntregaReposicao({ operacao }), "form")[0].props!;
+  await (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
+  professor = "prof-a";
+  await (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
+  professor = "prof-b";
+  await (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
+  expect(mocks.substituir).toHaveBeenNthCalledWith(1, expect.objectContaining({ professorId: "prof-b", chaveIdempotencia: "q40-chave-estável" }));
+  expect(mocks.substituir).toHaveBeenNthCalledWith(2, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
+  expect(mocks.substituir).toHaveBeenNthCalledWith(3, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
 });
