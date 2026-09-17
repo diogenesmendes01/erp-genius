@@ -20,7 +20,7 @@ export async function conferirVencimentoParticularTx(tx: Prisma.TransactionClien
     preparacaoComercial: { select: { reservaParticularId: true } },
   } });
   const informes = await tx.pagamentoInformado.findMany({ where: { cobranca: { matriculaId: reserva.matriculaId }, status: { in: ["A_CONFERIR", "CONFIRMADO"] } }, select: { id: true }, orderBy: { id: "asc" } });
-  const recebimentos = await tx.recebimento.findMany({ where: { cobranca: { matriculaId: reserva.matriculaId } }, select: { id: true }, orderBy: { id: "asc" } });
+  const recebimentos = await tx.recebimento.findMany({ where: { titularMatriculaId: reserva.matriculaId }, select: { id: true }, orderBy: { id: "asc" } });
   const indicacoes = await tx.cobranca.findMany({ where: { matriculaId: reserva.matriculaId, OR: [{ valorRecebido: { gt: 0 } }, { pagoEm: { not: null } }, { status: "PAGO" }] }, select: { id: true }, orderBy: { id: "asc" } });
   // Mesmo um processo cancelado exige conciliação: cancelamento não prova ausência
   // de assinaturas parciais, nem substitui o tratamento dos documentos/valores.
