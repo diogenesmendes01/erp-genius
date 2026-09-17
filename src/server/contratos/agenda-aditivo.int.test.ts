@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import { Prisma } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 import { prisma } from "@/lib/prisma";
@@ -279,7 +280,8 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   expect(eventoAplicado.payload).toMatchObject({ propostaAgendaId: agenda.id, aplicacaoAgendaId: expect.any(String), versao: 1 });
   expect(await prisma.aplicacaoAgendaAditivoParticular.findUniqueOrThrow({ where: { propostaId: agenda.id }, select: { eventoId: true } })).toEqual({ eventoId: eventoAplicado.id });
   const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } });
-  const cloneExato = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: eventoAplicado.payload } });
+  if (eventoAplicado.payload === null) throw new Error("Evento canônico sem payload");
+  const cloneExato = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: eventoAplicado.payload as Prisma.InputJsonValue } });
   await expect(prisma.aplicacaoAgendaAditivoParticular.update({ where: { propostaId: agenda.id }, data: { eventoId: cloneExato.id } })).rejects.toThrow("Aplicação de agenda do aditivo é imutável");
   await expect(prisma.$transaction(tx => criarAvisosAlteracaoAgendaTx(tx, { eventoId: cloneExato.id, matriculaId: base.matriculaId, encontrosIds: [encontroId] }))).rejects.toThrow("Evento aplicado incompatível com o aviso.");
   await expect(prisma.$transaction(tx => validarFonteAditivoAgendaTx(tx, { eventoId: cloneExato.id, matriculaId: base.matriculaId, encontrosIds: [encontroId] }))).resolves.toBeNull();
