@@ -65,3 +65,9 @@ it("recusa cobrança de outro contrato ou moeda antes de criar caixa", async () 
   expect(r).toMatchObject({ ok: false });
   expect(await prisma.recebimento.count()).toBe(0);
 });
+
+it("não aceita URL arbitrária quando o recebimento inteiro vira crédito", async () => {
+  const r = await registrarRecebimentoDestinado({ ...entrada("q87-credito-url-0001"), comprovanteUrl: "/api/files/nao-autorizado", destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 150, evidencia: "Antecipação sem cobrança e com origem identificada.", chaveIdempotencia: "credito-sem-destino" }] });
+  expect(r).toMatchObject({ ok: false });
+  expect(await prisma.recebimento.count()).toBe(0);
+});

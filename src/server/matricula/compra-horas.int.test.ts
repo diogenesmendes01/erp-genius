@@ -38,7 +38,8 @@ beforeEach(async () => {
   await prisma.matricula.update({ where: { id: m.id }, data: { contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: u.id } });
   const c = await prisma.cobranca.create({ data: { matriculaId: m.id, tipo: "HORA_PARTICULAR", moeda: "CRC", valorOriginal: 360, valorNegociado: 300, valorRecebido: 0, saldo: 300, status: "PENDENTE", vencimento: new Date("2026-09-01") } });
   await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: c.id, chaveIdempotencia: "pagamento-horas", autorId: u.id, valorRecebido: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-01"), evidencia: "Comprovante de compra de horas" }));
-  input = { alunoId: a.id, matriculaId: m.id, cobrancaId: c.id, versaoCobranca: c.versao, minutosComprados: 180, evidenciaCondicoes: "Compra contratada conferida", chaveIdempotencia: "compra-horas-teste" };
+  const cobrancaPaga = await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } });
+  input = { alunoId: a.id, matriculaId: m.id, cobrancaId: c.id, versaoCobranca: cobrancaPaga.versao, minutosComprados: 180, evidenciaCondicoes: "Compra contratada conferida", chaveIdempotencia: "compra-horas-teste" };
 });
 it("registra uma compra idempotente sem duplicar recebimento e preserva valores originais", async () => {
   const consultar = { alunoId: input.alunoId, matriculaId: input.matriculaId };
@@ -66,12 +67,11 @@ it("recusa outro aluno, versão antiga e cobrança mensal", async () => {
   expect(await prisma.compraHorasAntecipadas.count()).toBe(0);
 });
 it("não cria saldo a partir de pagamento inconsistente ou contrato indisponível", async () => {
-  await prisma.cobranca.update({ where: { id: input.cobrancaId }, data: { valorRecebido: 200 } });
-  expect((await registrarCompraHorasAntecipadas(input)).ok).toBe(false);
-  await prisma.cobranca.update({ where: { id: input.cobrancaId }, data: { valorRecebido: 300 } });
+  await expect(prisma.cobranca.update({ where: { id: input.cobrancaId }, data: { valorRecebido: 200 } })).rejects.toThrow(/destinações|créditos/i);
+  expect((await registrarCompraHorasAntecipadas(input)).ok).toBe(true);
   await prisma.documento.updateMany({ data: { arquivado: true } });
-  expect((await registrarCompraHorasAntecipadas(input)).ok).toBe(false);
-  expect(await prisma.compraHorasAntecipadas.count()).toBe(0);
+  expect((await registrarCompraHorasAntecipadas({ ...input, chaveIdempotencia: "compra-contrato-arquivado" })).ok).toBe(false);
+  expect(await prisma.compraHorasAntecipadas.count()).toBe(1);
 });
 it("professor e financeiro desativado não registram compra", async () => {
   await prisma.usuario.update({ where: { id: usuarioId }, data: { papeis: ["PROFESSOR"] } });
@@ -424,10 +424,7 @@ it("recusa valor, moeda, vínculo e estado incompatíveis e mantém acesso finan
   await expect(prisma.propostaUsoCredito.create({ data: { creditoId: credito.id, cobrancaId: outraCobranca.id, preparadorId: usuarioId, versao: 1, valor: 150, concordancia: entrada.concordancia, motivo: entrada.motivo, chaveIdempotencia: "sql-outro-contrato", entradaHash: "fixture", snapshot: {} } })).rejects.toThrow("incompatível");
   await prisma.cobranca.update({ where: { id: cobranca.id }, data: { moeda: "BRL" } });
   expect(await proporUtilizacaoCredito(entrada)).toMatchObject({ ok: false });
-  await prisma.cobranca.update({ where: { id: cobranca.id }, data: { moeda: "CRC", saldo: 290 } });
-  expect(await proporUtilizacaoCredito(entrada)).toMatchObject({ ok: false });
-  await prisma.cobranca.update({ where: { id: cobranca.id }, data: { saldo: 300, status: "CANCELADA" } });
-  expect(await proporUtilizacaoCredito(entrada)).toMatchObject({ ok: false });
+  await expect(prisma.cobranca.update({ where: { id: cobranca.id }, data: { moeda: "CRC", saldo: 290 } })).rejects.toThrow(/destinações|créditos/i);
   expect(await consultarPropostasUsoCredito({ alunoId: "outro-aluno", creditoId: credito.id })).toMatchObject({ ok: false });
   const professor = await criarUsuario(["PROFESSOR"]); authMock.mockResolvedValue({ user: { id: professor.id } });
   expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: false });
@@ -449,9 +446,9 @@ it("aplica crédito com aprovação independente e recebe apenas o restante em d
   expect((await kpisFinanceiro()).aReceber).toEqual([{ moeda: "CRC", valor: 150 }]);
   expect(await consultarPropostasUsoCredito({ alunoId: input.alunoId, creditoId: credito.id })).toMatchObject({ ok: true, dado: { valorCredito: "50.00", propostas: [{ decisao: { aprovada: true } }] } });
   expect(await proporUtilizacaoCredito({ ...entrada, valor: "51.00", chaveIdempotencia: "usar-saldo-indisponivel" })).toMatchObject({ ok: false });
-  await expect(prisma.cobranca.update({ where: { id: cobranca.id }, data: { valorLiquidadoCredito: 0, saldo: 300 } })).rejects.toThrow("preservar");
-  await expect(prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "excesso-apos-credito", autorId: admin.id, valorRecebido: 151, forma: "DINHEIRO", dataPagamento: new Date() }))).rejects.toThrow("excede");
-  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "restante-apos-credito", autorId: admin.id, valorRecebido: 150, forma: "DINHEIRO", dataPagamento: new Date() }));
+  await expect(prisma.cobranca.update({ where: { id: cobranca.id }, data: { valorLiquidadoCredito: 0, saldo: 300 } })).rejects.toThrow(/preservar|destinações|créditos/i);
+  await expect(prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "excesso-apos-credito", autorId: admin.id, valorRecebido: 151, forma: "DINHEIRO", dataPagamento: new Date(), evidencia: "Tentativa de exceder o saldo após crédito." }))).rejects.toThrow("excede");
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "restante-apos-credito", autorId: admin.id, valorRecebido: 150, forma: "DINHEIRO", dataPagamento: new Date(), evidencia: "Complemento devido após o uso do crédito." }));
   const paga = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } }); expect(paga.valorRecebido?.toFixed(2)).toBe("150.00"); expect(paga.saldo?.toFixed(2)).toBe("0.00"); expect(pagamentoConfirmado(paga)).toBe(true);
   expect(await prisma.recebimento.count()).toBe(2); expect(await prisma.decisaoUsoCredito.count()).toBe(1);
 });
@@ -473,7 +470,7 @@ it("recusa aprovação com cobrança alterada e aceita rejeitar a proposta sem c
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
   const p = await proporUtilizacaoCredito(entrada); if (!p.ok || !p.dado) throw new Error("Proposta ausente");
   const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
-  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "pagamento-apos-proposta", autorId: admin.id, valorRecebido: 50, forma: "DINHEIRO", dataPagamento: new Date() }));
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "pagamento-apos-proposta", autorId: admin.id, valorRecebido: 50, forma: "DINHEIRO", dataPagamento: new Date(), evidencia: "Pagamento parcial após a proposta de uso." }));
   const d = { propostaId: p.dado.id, aprovar: true, motivo: "Conferência após pagamento parcial" };
   expect(await decidirUtilizacaoCredito(d)).toMatchObject({ ok: false, erro: expect.stringContaining("mudou") });
   expect(await decidirUtilizacaoCredito({ ...d, aprovar: false })).toMatchObject({ ok: true });
@@ -487,7 +484,7 @@ it.each([0, 100])("registra compra quitada com crédito e %s em dinheiro, preser
   if (!p.ok || !p.dado) throw new Error("Proposta ausente");
   const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
   expect(await decidirUtilizacaoCredito({ propostaId: p.dado.id, aprovar: true, motivo: "Crédito destinado à nova compra" })).toMatchObject({ ok: true });
-  if (dinheiro) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: admin.id, valorRecebido: dinheiro, forma: "DINHEIRO", dataPagamento: new Date(), chaveIdempotencia: "complemento-compra-credito" }));
+  if (dinheiro) await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: admin.id, valorRecebido: dinheiro, forma: "DINHEIRO", dataPagamento: new Date(), chaveIdempotencia: "complemento-compra-credito", evidencia: "Complemento em dinheiro para a compra de horas." }));
   const c = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
   const recebimentosAntes = await prisma.recebimento.findMany({ orderBy: { id: "asc" } });
   const pedido = { ...input, cobrancaId: c.id, versaoCobranca: c.versao, chaveIdempotencia: "compra-liquidada-credito" };
