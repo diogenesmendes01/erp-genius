@@ -8,7 +8,7 @@ export const hashPausa = (v: unknown) => createHash("sha256").update(JSON.string
 export async function estadoHashPausa(tx: Prisma.TransactionClient, ids: string[]) {
   // O conteúdo financeiro participa da conferência, mas não da projeção da Secretaria.
   return hashPausa(await tx.matricula.findMany({ where: { id: { in: ids } }, orderBy: { id: "asc" }, include: {
-    cobrancas: { orderBy: { id: "asc" }, include: { recebimentos: { orderBy: { id: "asc" } }, informes: { orderBy: { id: "asc" } } } },
+    cobrancas: { orderBy: { id: "asc" }, include: { destinacoesRecebimento: { orderBy: { id: "asc" }, include: { recebimento: true } }, informes: { orderBy: { id: "asc" } } } },
     alocacoes: { orderBy: { id: "asc" } },
   } }));
 }
