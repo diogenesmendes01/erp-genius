@@ -25,7 +25,9 @@ export async function fotografiaConciliacaoFinanceiraTx(tx: Prisma.TransactionCl
   if(!pagador||pagador.matriculaId!==ids.matriculaId) throw new ErroRegra("O pagador não pertence ao contrato explícito.");
   await tx.$queryRaw`SELECT id FROM "PagadorPreparacaoMatricula" WHERE id=${ids.pagadorId} FOR SHARE`;
   if(ids.recebimentoId)await tx.$queryRaw`SELECT id FROM "Recebimento" WHERE id=${ids.recebimentoId} FOR SHARE`;
-  const recebimento=ids.recebimentoId ? await tx.recebimento.findUnique({where:{id:ids.recebimentoId},select:{id:true,cobrancaId:true,valor:true,moeda:true,forma:true,dataPagamento:true,hashDados:true,chaveIdempotencia:true,autorId:true}}):null;
+  // A fotografia nova vincula a parcela material, nunca o valor bruto do fato
+  // de caixa. Fotografias pré-Q87 continuam com cobrancaId no recebimento.
+  const recebimento=ids.recebimentoId ? await tx.recebimento.findUnique({where:{id:ids.recebimentoId},select:{id:true,cobrancaId:true,titularMatriculaId:true,pagadorId:true,valor:true,moeda:true,forma:true,dataPagamento:true,hashDados:true,chaveIdempotencia:true,autorId:true,destinacoes:{where:{cobrancaId:ids.cobrancaId},select:{id:true,cobrancaId:true,tipo:true,valor:true,evidencia:true,chaveIdempotencia:true}}}}):null;
   if(ids.recebimentoId&&!recebimento)throw new ErroRegra("Recebimento ERP não encontrado.");
   if(ids.recebimentoId)await tx.$queryRaw`SELECT id FROM "Recebimento" WHERE id=${ids.recebimentoId} FOR SHARE`;
   const foto=canonizarFotografiaFinanceira({linha,mapa,cobranca,pagador,recebimento});

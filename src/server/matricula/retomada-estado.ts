@@ -19,7 +19,7 @@ export async function carregarPreviaRetomadaTx(tx: Prisma.TransactionClient, alu
         itensPropostaPausa: { where: { proposta: { status: "APLICADA" } }, select: { id: true, proposta: { select: { id: true, dataEfetiva: true, aplicadaEm: true } } } },
         cobrancas: { where: { tipo: "MENSALIDADE" }, orderBy: { id: "asc" }, select: {
           id: true, status: true, coberturaInicio: true, coberturaFim: true, vencimento: true, suspensaPorItemPausaId: true,
-          valorRecebido: true, valorLiquidadoCredito: true, saldo: true, valorNegociado: true, recebimentos: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
+          valorRecebido: true, valorLiquidadoCredito: true, saldo: true, valorNegociado: true, destinacoesRecebimento: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
         } },
       } });
       if (matriculas.length !== ids.length) throw new ErroRegra("A titularidade mudou durante a conferência.");
@@ -40,7 +40,7 @@ export async function carregarPreviaRetomadaTx(tx: Prisma.TransactionClient, alu
         }
         for (const c of suspensas) {
           const recebimentoConferido = ["PAGO", "CANCELADA"].includes(c.status) && recebimentoPreservavel(c);
-          if (c.informes.length || (!recebimentoConferido && (c.status !== "CANCELADA" || c.valorRecebido?.greaterThan(0) || c.recebimentos.length)))
+          if (c.informes.length || (!recebimentoConferido && (c.status !== "CANCELADA" || c.valorRecebido?.greaterThan(0) || c.destinacoesRecebimento.length)))
             pendencias.push(`SUSPENSAO_A_CONFERIR:${c.id}`);
         }
         let periodos: ReturnType<typeof prepararCoberturasRetomada> = [];

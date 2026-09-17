@@ -11,7 +11,7 @@ const Entrada = z.object({ matriculaId: z.string().min(1), cobrancaId: z.string(
 export async function carregarPeriodoIntegralTx(tx: Prisma.TransactionClient, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const c = await tx.cobranca.findFirst({ where: { id: d.cobrancaId, matriculaId: d.matriculaId }, include: {
-    matricula: true, recebimentos: { orderBy: { id: "asc" } },
+    matricula: true, destinacoesRecebimento: { orderBy: { id: "asc" }, include: { recebimento: true } },
     informes: { where: { status: "A_CONFERIR" }, select: { id: true } }, ajusteAcerto: { select: { id: true } },
   } });
   if (!c || c.tipo !== "MENSALIDADE" || c.status === "CANCELADA" || !c.coberturaInicio || !c.coberturaFim || c.suspensaPorItemPausaId || c.canceladaPorPausaId || c.ajusteAcerto) {
@@ -47,7 +47,7 @@ export async function carregarPeriodoIntegralTx(tx: Prisma.TransactionClient, in
     valorOriginal: c.valorOriginal.toFixed(2), valorNegociado: c.valorNegociado.toFixed(2),
     valorRecebido: (c.valorRecebido ?? new Prisma.Decimal(0)).toFixed(2), valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2),
     saldoRegistrado: c.saldo?.toFixed(2) ?? null,
-    recebimentos: c.recebimentos.map(r => ({ id: r.id, valor: r.valor.toFixed(2), moeda: r.moeda })),
+    recebimentos: c.destinacoesRecebimento.map(d => ({ id: d.id, recebimentoId: d.recebimento.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda })),
     cobertura: { inicio: c.coberturaInicio.toISOString().slice(0, 10), fim: c.coberturaFim.toISOString().slice(0, 10) },
     diasConfirmados: apuracao.diasConfirmados,
   });
@@ -55,7 +55,7 @@ export async function carregarPeriodoIntegralTx(tx: Prisma.TransactionClient, in
     matriculaId: m.id, cobrancaId: c.id, cobrancaVersao: c.versao, documentoId: documento.id,
     statusMatricula: m.status, contratoConfirmadoEm: m.confirmacaoContratoEm.toISOString(), contratoConfirmadoPorId: m.confirmacaoContratoPorId,
     statusCobranca: c.status, vencimento: c.vencimento.toISOString(), memoria,
-    recebimentos: c.recebimentos.map(r => ({ id: r.id, valor: r.valor.toFixed(2), moeda: r.moeda, dataPagamento: r.dataPagamento.toISOString() })),
+    recebimentos: c.destinacoesRecebimento.map(d => ({ id: d.id, recebimentoId: d.recebimento.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda, dataPagamento: d.recebimento.dataPagamento.toISOString() })),
     fontes: fontes.filter(f => (f.propostasTermino[0]?.fim ?? f.fim ?? c.coberturaFim!) >= c.coberturaInicio!).map(f => ({
       relatoId: f.id, confirmacaoId: f.confirmacao!.id, inicio: f.inicio.toISOString().slice(0, 10),
       fim: (f.propostasTermino[0]?.fim ?? f.fim)?.toISOString().slice(0, 10) ?? null,
