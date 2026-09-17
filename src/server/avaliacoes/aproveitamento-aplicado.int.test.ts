@@ -764,6 +764,13 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
   const revisaoFechamento = await revisarFechamentoAcademico({ alocacaoId: executada.dado.alocacaoDestinoId });
   assertOk(revisaoFechamento);
   expect(revisaoFechamento.dado.elegibilidade).toMatchObject({ podeFechar: true, pendencias: [] });
+  expect(revisaoFechamento.dado.snapshot.frequencia).toMatchObject({
+    base: 1,
+    presencas: 1,
+    faltas: 0,
+    percentual: { numerador: "100", denominador: "1" },
+    atendeMinimo: true,
+  });
   const fechamento = await confirmarFechamentoAcademico({
     alocacaoId: executada.dado.alocacaoDestinoId,
     estadoHash: revisaoFechamento.dado.estadoHash,
@@ -772,6 +779,27 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
     chaveIdempotencia: "aca-v01-fechamento-destino",
   });
   assertOk(fechamento);
+  expect(fechamento.dado).toMatchObject({ versao: 1, resultadoSuficiente: false });
+  expect(await prisma.fechamentoAcademico.findUniqueOrThrow({ where: { id: fechamento.dado.id } })).toMatchObject({
+    matriculaId,
+    nivelId,
+    alocacaoReferenciaId: executada.dado.alocacaoDestinoId,
+    resultadoSuficiente: false,
+  });
+
+  const consolidadoDestino = await prisma.$transaction(tx => carregarConsolidadoAvaliacoesTx(
+    tx,
+    professorId,
+    executada.dado.alocacaoDestinoId,
+    "ACOMPANHAMENTO",
+  ));
+  expect(consolidadoDestino.resultado.habilidades.find(item => item.habilidade === "FALA")).toMatchObject({
+    resultado: { numerador: "23", denominador: "4" },
+    memoria: [
+      expect.objectContaining({ avaliacaoId: "I1", nota: "8", pendencia: null }),
+      expect.objectContaining({ avaliacaoId: "F1", nota: "5", pendencia: null }),
+    ],
+  });
 
   const portal = await consultarResultadosPortalAluno({
     sessaoId: "sessao-aca-v01",
@@ -782,8 +810,28 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
   const principal = portal.matriculas.find(item => item.matriculaId === matriculaId);
   const isolada = portal.matriculas.find(item => item.matriculaId === matriculaIsolada.id);
   expect(portal.matriculas).toHaveLength(2);
-  expect(principal?.alocacoes.find(item => item.alocacaoId === executada.dado.alocacaoDestinoId)?.consolidado?.habilidades
-    .find(item => item.habilidade === "FALA")).toMatchObject({ resultado: expect.anything(), pendencias: [] });
+  expect(principal?.alocacoes.find(item => item.alocacaoId === alocacaoOrigemId)?.frequencia).toMatchObject({
+    base: 1,
+    presencas: 1,
+    faltas: 0,
+    percentual: { numerador: "100", denominador: "1" },
+    atendeMinimo: null,
+    pendencias: 1,
+  });
+  const destinoPortal = principal?.alocacoes.find(item => item.alocacaoId === executada.dado.alocacaoDestinoId);
+  expect(destinoPortal).toMatchObject({
+    situacao: "PARCIAL_NAO_FINAL",
+    resultadoFinal: null,
+    avaliacoes: [],
+    recuperacoes: [],
+    frequencia: { base: 0, presencas: 0, faltas: 0, percentual: null, atendeMinimo: null, pendencias: 1 },
+    consolidado: { completa: true, geral: { numerador: "119", denominador: "16" }, atendeGeral: true, atendeRequisitosNotas: false, recuperacoesPendentes: false },
+  });
+  expect(destinoPortal?.consolidado?.habilidades.find(item => item.habilidade === "FALA")).toMatchObject({
+    resultado: { numerador: "23", denominador: "4" },
+    atendeMinimo: false,
+    pendencias: [],
+  });
   expect(isolada).toMatchObject({ matriculaId: matriculaIsolada.id, alocacoes: [expect.objectContaining({ alocacaoId: alocacaoIsolada.id })] });
   expect(isolada?.alocacoes[0]?.avaliacoes).toEqual([expect.objectContaining({ codigo: "I1", notas: [expect.objectContaining({ habilidade: "FALA", nota: "4" })] })]);
   expect(JSON.stringify(isolada)).not.toContain(intermediaria.id);
