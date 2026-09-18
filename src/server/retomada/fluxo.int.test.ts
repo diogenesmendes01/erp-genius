@@ -444,13 +444,14 @@ describe("proposta não se aplica sobre um calendário diferente", () => {
     expect((await aluno()).status).toBe("PAUSADO");
   });
 
-  it("não normaliza saldo parcial divergente ao propor retomada", async () => {
+  it("banco impede saldo parcial divergente antes da proposta de retomada", async () => {
     await pausar();
-    await prisma.cobranca.update({ where: { id: parcelas.parcial.id }, data: { saldo: 200 } });
-    const contexto = sucesso(await listarContextoRetomada(alunoId));
-    expect(contexto.impedimento).toMatch(/saldo|concilia/i);
-    expect((await solicitarRetomada(alunoId, manter)).ok).toBe(false);
-    expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: parcelas.parcial.id } })).saldo!.toFixed(2)).toBe("200.00");
+    const antes = await calendario();
+    const caixa = await recebimentos();
+    await expect(prisma.cobranca.update({ where: { id: parcelas.parcial.id }, data: { saldo: 200 } })).rejects.toThrow("Cobrança deve refletir");
+    expect(await calendario()).toEqual(antes);
+    expect(await recebimentos()).toEqual(caixa);
+    expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: parcelas.parcial.id } })).saldo!.toFixed(2)).toBe("150.00");
     expect(await prisma.propostaRetomada.count()).toBe(0);
   });
 
