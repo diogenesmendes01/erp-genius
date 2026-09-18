@@ -72,3 +72,28 @@ it("Q170 conserva conjunto da origem herdada e exige nova prova para alteração
  const c=v(2,{TAXA_VALOR:{...preco,valor:"400"},MENSALIDADE_VALOR:preco},a.condicoes as object);
  expect(()=>conferirAplicacaoDireta([a,c],c.id)).toThrow("fluxo próprio");
 });
+
+it("Q168 exige prova própria completa para os dois limites da cobertura", () => {
+ const a=v(1,{COBERTURA_INICIO:data,COBERTURA_FIM:data,MENSALIDADE_VALOR:preco},{},"geral");
+ expect(()=>conferirAplicacaoDireta([a],a.id)).toThrow("fluxo próprio");
+ const completo={...a,conjuntoCoberturaCompletoId:"cobertura-v1"};
+ const campos=projetarAplicacoesPorCampo([completo]);
+ expect(campos.COBERTURA_INICIO.aplicacaoId).toBe("cobertura-v1");
+ expect(campos.COBERTURA_FIM.aplicacaoId).toBe("cobertura-v1");
+ expect(()=>conferirAplicacaoDireta([completo],a.id)).not.toThrow();
+});
+
+it("Q168 conserva a prova da origem e não a reutiliza em nova alteração explícita", () => {
+ const a={...v(1,{COBERTURA_INICIO:data,COBERTURA_FIM:data}),conjuntoCoberturaCompletoId:"cobertura-v1"};
+ const b=v(2,{MENSALIDADE_VALOR:preco},a.condicoes as object);
+ expect(()=>conferirAplicacaoDireta([a,b],b.id)).not.toThrow();
+ expect(projetarAplicacoesPorCampo([a,b]).COBERTURA_FIM).toMatchObject({origemVersaoId:"v1",aplicacaoId:"cobertura-v1"});
+ const reafirmada=v(2,{COBERTURA_INICIO:data,COBERTURA_FIM:data,MENSALIDADE_VALOR:preco},a.condicoes as object);
+ expect(()=>conferirAplicacaoDireta([a,reafirmada],reafirmada.id)).toThrow("fluxo próprio");
+});
+
+it("a prova de cobertura não libera taxa pendente", () => {
+ const a={...v(1,{COBERTURA_INICIO:data,COBERTURA_FIM:data,TAXA_VALOR:preco,MENSALIDADE_VALOR:preco}),conjuntoCoberturaCompletoId:"cobertura-v1"};
+ expect(projetarAplicacoesPorCampo([a]).TAXA_VALOR.aplicacaoId).toBeNull();
+ expect(()=>conferirAplicacaoDireta([a],a.id)).toThrow("fluxo próprio");
+});
