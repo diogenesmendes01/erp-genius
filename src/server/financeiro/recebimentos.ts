@@ -118,7 +118,8 @@ export async function receberTx(tx: Prisma.TransactionClient, input: {
     const saldo = saldoLiquidoAcertoTaxa(atual.valorNegociado, atual.valorRecebido, atual.valorLiquidadoCredito, origensTaxa._sum.valor ?? 0, atual.valorCompensadoPermuta);
     const valor = dinheiro(input.valorRecebido);
     if (valor.gt(saldo) && !input.permitirExcedente) throw new ErroRegra("Autorize o registro do excedente como crédito.");
-    destinos = [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: input.cobrancaId, valor: Prisma.Decimal.min(valor, saldo).toNumber(), evidencia, chaveIdempotencia: `cobranca:${input.cobrancaId}` }];
+    const valorNaCobranca = Prisma.Decimal.min(valor, saldo);
+    destinos = valorNaCobranca.gt(0) ? [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: input.cobrancaId, valor: valorNaCobranca.toNumber(), evidencia, chaveIdempotencia: `cobranca:${input.cobrancaId}` }] : [];
     if (valor.gt(saldo)) destinos.push({ tipo: TipoDestinacaoRecebimento.CREDITO_SEM_DESTINO, valor: valor.minus(saldo).toNumber(), evidencia, chaveIdempotencia: "credito-sem-destino" });
   }
   return receberComDestinacoesTx(tx, { ...input, titularMatriculaId: cobranca.matriculaId, pagadorId: input.pagadorId ?? null, moeda: cobranca.moeda, destinos });

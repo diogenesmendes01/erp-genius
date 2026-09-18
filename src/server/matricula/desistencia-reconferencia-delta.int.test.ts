@@ -215,6 +215,47 @@ it("aplica Q165 base, reconhece crédito externo posterior no delta e efetiva pe
 
 
 
+it("destina pagamento posterior à cobrança já quitada como crédito sem duplicá-lo no delta", async () => {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  const receber = (chave: string, valor: number) => prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: cobranca.id, autorId: financeiroPreparador.id, chaveIdempotencia: chave, valorRecebido: valor,
+    forma: "TRANSFERENCIA", dataPagamento: new Date("2099-12-10T12:00:00.000Z"),
+    evidencia: "Recebimento preservado para conferir excedente incremental.", permitirExcedente: true,
+  }));
+  await receber("pagamento-inicial-credito-delta", 100);
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  const creditosBase = await prisma.creditoMatricula.findMany({ where: { matriculaId: base.matriculaId } });
+  expect(creditosBase.map(c => c.valorInicial.toFixed(2))).toEqual(["50.00"]);
+  await receber("pagamento-posterior-credito-delta", 20);
+  const proposta = await prepararDelta(aplicacaoBase.id, "preparo-pagamento-credito-delta");
+  const decisao = await aprovarDelta(proposta.id, "decisao-pagamento-credito-delta");
+  entrar(financeiroAprovador.id);
+  const entrada = { decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicar-pagamento-credito-delta" };
+  const [primeira, repetida] = await Promise.all([
+    aplicarReconferenciaDeltaDesistencia(entrada), aplicarReconferenciaDeltaDesistencia(entrada),
+  ]);
+  const aplicada = dado(primeira);
+  expect(dado(repetida).id).toBe(aplicada.id);
+  const creditos = await prisma.creditoMatricula.findMany({ where: { matriculaId: base.matriculaId } });
+  expect(creditos).toHaveLength(2);
+  expect(creditos.find(c => c.id === creditosBase[0].id)?.valorInicial.toFixed(2)).toBe("50.00");
+  expect(creditos.filter(c => c.origemDestinacaoRecebimentoId).map(c => c.valorInicial.toFixed(2))).toEqual(["20.00"]);
+  expect(creditos.filter(c => c.origemReconferenciaDeltaDesistenciaId)).toHaveLength(0);
+  expect(await prisma.recebimento.count()).toBe(2);
+  const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  expect(atual.valorNegociado.toFixed(2)).toBe("50.00");
+  expect(atual.valorRecebido?.toFixed(2)).toBe("100.00");
+  const memoriaBase = (await prisma.aplicacaoAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: aplicacaoBase.id } })).memoria;
+  const fontes = await prisma.$transaction(tx => carregarFontesReconferenciaDeltaTx(tx, base.matriculaId, memoriaBase));
+  const registro = await prisma.aplicacaoReconferenciaDeltaDesistencia.findUniqueOrThrow({ where: { id: aplicada.id } });
+  expect(registro.fotografiaPosterior).toEqual(fontes.fotografia);
+  expect(registro.fotografiaPosteriorHash).toBe(hashSubstituicao(fontes.fotografia));
+  entrar(financeiroPreparador.id);
+  expect(await prepararReconferenciaDeltaDesistencia({ aplicacaoBaseId: aplicacaoBase.id,
+    motivo: "Não duplicar crédito sem novo fato financeiro.", chaveIdempotencia: "sem-novo-pagamento-credito-delta" })).toMatchObject({ ok: false });
+});
+
 it("persiste pendência por informe posterior e não cria decisões", async () => {
   const pedido = await registrarPedido();
   const aplicacaoBase = await aplicarBase(pedido);
