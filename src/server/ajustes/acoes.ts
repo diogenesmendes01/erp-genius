@@ -45,6 +45,9 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     const valor = dinheiro(alvo.valorPara);
     if (cobranca.valorLiquidadoCredito.gt(0) && valor.lt(dinheiro(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito))) throw new ErroRegra("O ajuste exige revisar as utilizações de crédito e o valor já liquidado.");
     const creditoTaxa = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: cobranca.id }, _sum: { valor: true } });
+    const permuta = dinheiro(cobranca.valorCompensadoPermuta ?? 0);
+    const liquidadoPreservado = dinheiro(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito).plus(permuta).minus(creditoTaxa._sum.valor ?? 0);
+    if (permuta.gt(0) && valor.lt(liquidadoPreservado)) throw new ErroRegra("O ajuste produziria excedente de serviço já compensado. Confira o acordo de permuta antes de alterar a cobrança.");
     const saldo = saldoAtual(valor, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, creditoTaxa._sum.valor ?? 0, cobranca.valorCompensadoPermuta);
     const vencimento = alvo.novoVencimento ? new Date(alvo.novoVencimento) : cobranca.vencimento;
     await tx.cobranca.update({ where: { id: cobranca.id }, data: {

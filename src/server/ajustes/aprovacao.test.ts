@@ -123,3 +123,15 @@ it("preserva compensação de serviço ao recalcular um ajuste de mensalidade", 
   expect(atualizacao).not.toHaveProperty("valorLiquidadoCredito");
   expect(atualizacao).not.toHaveProperty("valorCompensadoPermuta");
 });
+
+it("não apaga excedente de serviço compensado por meio de desconto genérico", async () => {
+  const usuario = await m.usuario.findUnique();
+  m.usuario.findUnique.mockResolvedValue({ ...usuario, limiteDescontoMensalidadePct: new Prisma.Decimal(50) });
+  const cobranca = await m.cobranca.findUnique();
+  m.cobranca.findUnique.mockResolvedValue({ ...cobranca, tipo: "MENSALIDADE", valorCompensadoPermuta: new Prisma.Decimal(70) });
+  const resultado = await decidirAprovacao("pedido", { aprovar: true });
+  expect(resultado).toMatchObject({ ok: false, erro: expect.stringContaining("excedente de serviço") });
+  expect(m.cobranca.update).not.toHaveBeenCalled();
+  expect(m.ajusteFinanceiro.create).not.toHaveBeenCalled();
+  expect(m.aprovacao.update).not.toHaveBeenCalled();
+});
