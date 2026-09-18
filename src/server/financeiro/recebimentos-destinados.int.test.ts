@@ -24,6 +24,7 @@ import { listarContextosRecebimentoDestinado } from "./consultas";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "./uso-credito-decisao";
 import { proporDevolucaoCredito, decidirDevolucaoCredito } from "./devolucao-credito";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 let financeiroId = "", matriculaId = "", moeda = "CRC", c1 = "", c2 = "";
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -82,6 +83,17 @@ it("oferece matrícula AGUARDANDO como preparação e registra antecipação pú
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId }, select: { status: true } })).toEqual({ status: StatusMatricula.AGUARDANDO });
   expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } })).saldo?.toFixed(2)).toBe("100.00");
   expect((await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId } })).valorInicial.toFixed(2)).toBe("125.00");
+});
+
+it("projeta o vencimento civil da emissão inicial pela memória imutável e encaminha legado para conferência", async () => {
+  await prisma.cobranca.update({ where: { id: c2 }, data: { vencimento: instanteDaGrade("2099-11-01", "12:00", "America/Costa_Rica") } });
+  const condicoes = await prisma.condicoesEntradaPreparacao.create({ data: { matriculaId, preparadorId: financeiroId, versao: 1, dados: { origem: "fixture" }, motivo: "Condições preservadas na fixture de vencimento civil.", chaveIdempotencia: "q87-vencimento-condicoes", entradaHash: "v".repeat(64) } });
+  const emissao = await prisma.emissaoCobrancasEntrada.create({ data: { matriculaId, condicoesId: condicoes.id, executorId: financeiroId, etapa: "CONFERENCIA_SECRETARIA", memoria: { fusoInstitucional: "America/Costa_Rica", cobrancas: [{ id: c2, tipo: "MENSALIDADE", valor: "80", moeda, vencimento: "2099-11-01", cobertura: null, minutos: null }] } } });
+  await prisma.itemEmissaoEntrada.create({ data: { matriculaId, emissaoId: emissao.id, cobrancaId: c2 } });
+
+  const contexto = (await listarContextosRecebimentoDestinado()).find((item) => item.matriculaId === matriculaId);
+  expect(contexto?.cobrancas.find((c) => c.id === c2)?.vencimento).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-11-01", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" });
+  expect(contexto?.cobrancas.find((c) => c.id === c1)?.vencimento).toMatchObject({ estado: "A_CONFERIR" });
 });
 
 it("a guarda SQL recusa uma destinação de outro financeiro e faz rollback sem alterar o fato de caixa", async () => {

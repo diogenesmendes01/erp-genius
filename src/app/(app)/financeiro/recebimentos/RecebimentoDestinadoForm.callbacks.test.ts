@@ -9,8 +9,8 @@ import { RecebimentoDestinadoForm } from "./RecebimentoDestinadoForm";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 const contextos = [
-  { matriculaId: "mat-1", identificacaoMatricula: "MAT-001", status: "ATIVA", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: "2026-01-05T00:00:00.000Z", saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
-  { matriculaId: "mat-2", identificacaoMatricula: "MAT-002", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: "2026-02-05T00:00:00.000Z", saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
+  { matriculaId: "mat-1", identificacaoMatricula: "MAT-001", status: "ATIVA", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: { estado: "CONFIRMADO" as const, dataCivil: "2026-01-05", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" as const }, saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
+  { matriculaId: "mat-2", identificacaoMatricula: "MAT-002", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: { estado: "A_CONFERIR" as const, motivo: "Origem legada sem fuso." }, saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
 ];
 function nos(no: unknown): No[] { if (Array.isArray(no)) return no.flatMap(nos); if (!no || typeof no !== "object") return []; const atual = no as No; return [atual, ...nos(atual.props?.children)]; }
 function textos(no: unknown): string[] { if (typeof no === "string") return [no]; if (Array.isArray(no)) return no.flatMap(textos); if (!no || typeof no !== "object") return []; return textos((no as No).props?.children); }
@@ -43,6 +43,22 @@ it("exige seleção explícita e limpa destinos e pagador ao trocar de contrato"
   const semSelecao = montar(["", [], "0", "100", "", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "", "", false, null, null, false]);
   const botao = encontrar(semSelecao.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
   expect(botao.props!.disabled).toBe(true);
+});
+
+it("renderiza a data civil confirmada mesmo no fuso oriental e sinaliza legado a conferir", () => {
+  const anterior = process.env.TZ;
+  process.env.TZ = "Pacific/Kiritimati";
+  try {
+    const noFusoOriental = [{ ...contextos[0], cobrancas: [{ ...contextos[0].cobrancas[0], vencimento: { estado: "CONFIRMADO" as const, dataCivil: "2099-02-28", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" as const } }] }];
+    const confirmado = montar(["mat-1", [], "", "", "", FormaPagamento.DINHEIRO, "", "", "", "", "", false, null, null, false], noFusoOriental);
+    expect(textos(confirmado.arvore).join(" ")).toContain("vence 28/02/2099 · referência America/Costa_Rica");
+
+    const legado = montar(["mat-2", [], "", "", "", FormaPagamento.DINHEIRO, "", "", "", "", "", false, null, null, false]);
+    expect(textos(legado.arvore).join(" ")).toContain("Vencimento a conferir: Origem legada sem fuso.");
+  } finally {
+    if (anterior === undefined) delete process.env.TZ;
+    else process.env.TZ = anterior;
+  }
 });
 
 it("calcula totais em centavos e confirma múltipla destinação com crédito", async () => {
