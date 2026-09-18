@@ -4,7 +4,9 @@ import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
-import { executarAcao, ErroPermissao, ErroRegra, exigirSessaoComPapel } from "@/server/_shared";
+import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
+import { executarAcao, ErroPermissao, exigirSessaoComPapel } from "@/server/_shared";
+import { carregarFontesReconferenciaDeltaTx } from "./desistencia-reconferencia-delta-fontes";
 
 const entrada = z.object({ matriculaId: z.string().trim().min(1).max(100) }).strict();
 type ItemMemoria = { cobrancaId: string; moeda: string; ajusteDevido: string; ajusteSaldo: string; creditoDelta: string; reducaoCredito: string };
@@ -49,8 +51,8 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
       if (efetivacao) return { podePreparar: false, aplicacoesBase: [], impedimento: "A desistência já foi efetivada." };
       const bases = await tx.aplicacaoAcertoDesistenciaContratual.findMany({
         where: { decisao: { proposta: { pedido: { matriculaId } } } }, orderBy: { criadaEm: "desc" }, take: 20,
-        select: { id: true, criadaEm: true, reconferenciasDelta: { orderBy: [{ versao: "desc" }, { criadaEm: "desc" }], take: 20,
-          select: { id: true, versao: true, estado: true, fotografiaHash: true, preparadorId: true, criadaEm: true, preparador: { select: { nome: true } }, memoriaDelta: true,
+        select: { id: true, criadaEm: true, memoria: true, reconferenciasDelta: { orderBy: [{ versao: "desc" }, { criadaEm: "desc" }], take: 20,
+          select: { id: true, versao: true, estado: true, fotografiaHash: true, aplicacaoDeltaAnteriorId: true, preparadorId: true, criadaEm: true, preparador: { select: { nome: true } }, memoriaDelta: true,
             decisaoFinanceira: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } } } },
             decisaoAdministrativa: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } } } },
             aplicacao: { select: { id: true, criadaEm: true } },
@@ -61,10 +63,18 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
       const podeAprovarFinanceiro = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       return {
         podePreparar: true, impedimento: null,
-        aplicacoesBase: bases.map(base => {
+        aplicacoesBase: await Promise.all(bases.map(async base => {
           const propostaVigente = base.reconferenciasDelta[0] ?? null;
+          const [fontesAtuais, ultimaAplicacao] = await Promise.all([
+            carregarFontesReconferenciaDeltaTx(tx, matriculaId, base.memoria),
+            tx.aplicacaoReconferenciaDeltaDesistencia.findFirst({ where: { aplicacaoBaseId: base.id }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], select: { id: true } }),
+          ]);
+          const fontesMudaram = !!propostaVigente && (
+            hashSubstituicao(fontesAtuais.fotografia) !== propostaVigente.fotografiaHash
+            || (ultimaAplicacao?.id ?? null) !== propostaVigente.aplicacaoDeltaAnteriorId
+          );
           const rejeitada = propostaVigente?.decisaoFinanceira?.aprovada === false || propostaVigente?.decisaoAdministrativa?.aprovada === false;
-          const podePreparar = !propostaVigente || !!propostaVigente.aplicacao || rejeitada;
+          const podePreparar = !propostaVigente || rejeitada || fontesMudaram;
           const preparoBloqueadoPor = !podePreparar && propostaVigente
             ? propostaVigente.estado === "PENDENCIA_FINANCEIRA"
               ? orientacaoPendencia(memoriaPublica(propostaVigente.memoriaDelta).pendencia)
@@ -73,7 +83,7 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
           return { id: base.id, criadaEmISO: base.criadaEm.toISOString(), podePreparar, preparoBloqueadoPor, propostas: base.reconferenciasDelta.map(proposta => {
           const memoria = memoriaPublica(proposta.memoriaDelta);
           const decisaoFinanceira = proposta.decisaoFinanceira, decisaoAdministrativa = proposta.decisaoAdministrativa;
-          const vigente = proposta.id === propostaVigente?.id;
+          const vigente = proposta.id === propostaVigente?.id && !fontesMudaram;
           return { id: proposta.id, versao: proposta.versao, estado: proposta.estado, fotografiaHash: proposta.fotografiaHash, criadaEmISO: proposta.criadaEm.toISOString(), preparadorNome: proposta.preparador.nome,
             tipo: memoria.tipo, pendencia: memoria.pendencia, itens: memoria.itens, creditosExternos: memoria.creditosExternos,
             podeDecidirFinanceiro: vigente && !decisaoFinanceira && podeAprovarFinanceiro && proposta.preparadorId !== sessao.id && proposta.estado === "PENDENTE",
@@ -84,7 +94,7 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
             aplicacao: proposta.aplicacao && { id: proposta.aplicacao.id, criadaEmISO: proposta.aplicacao.criadaEm.toISOString() },
           };
         }) };
-        }),
+        })),
       };
     });
   });
