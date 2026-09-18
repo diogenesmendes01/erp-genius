@@ -163,7 +163,8 @@ export async function listarContextosRecebimentoDestinado() {
     const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, cobranca.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), cobranca.valorCompensadoPermuta).toNumber();
     return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
     });
-    return { matriculaId: matricula.id, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
+    const identificacaoMatricula = matricula.codigo?.trim() || `ID ${matricula.id}`;
+    return { matriculaId: matricula.id, identificacaoMatricula, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
   });
 }
 

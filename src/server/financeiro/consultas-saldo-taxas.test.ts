@@ -8,12 +8,17 @@ const D = (valor: number) => new Prisma.Decimal(valor);
 const taxa = (valor: number, credito: number) => ({ id: `taxa-${valor}`, codigo: "TAXA", tipo: "MATRICULA", moeda: "BRL", valorNegociado: D(valor), valorRecebido: D(100), valorLiquidadoCredito: D(0), vencimento: new Date("2099-01-01T00:00:00Z"), origensCreditoAcertoTaxaAditivo: [{ valor: D(credito) }] });
 beforeEach(() => { vi.resetAllMocks(); m.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"] }); });
 it("oferece o saldo econômico da taxa após crédito sem contar o mesmo pagamento duas vezes", async () => {
-  m.matriculas.mockResolvedValue([{ id: "mat", status: "AGUARDANDO", moeda: "BRL", aluno: { primeiroNome: "Aluno", sobrenome: "Teste" }, pagadoresPreparacao: [], cobrancas: [taxa(90, 20), taxa(120, 20), taxa(80, 20)] }]);
+  m.matriculas.mockResolvedValue([{ id: "mat", codigo: "MAT-001", status: "AGUARDANDO", moeda: "BRL", aluno: { primeiroNome: "Aluno", sobrenome: "Teste" }, pagadoresPreparacao: [], cobrancas: [taxa(90, 20), taxa(120, 20), taxa(80, 20)] }]);
   const [contexto] = await listarContextosRecebimentoDestinado();
   expect(contexto.cobrancas.map(c => ({ id: c.id, saldo: c.saldo }))).toEqual([{ id: "taxa-90", saldo: 10 }, { id: "taxa-120", saldo: 40 }]);
   expect(contexto.status).toBe("AGUARDANDO");
+  expect(contexto.identificacaoMatricula).toBe("MAT-001");
   expect(m.matriculas.mock.calls[0][0].where).toEqual({ status: { in: ["AGUARDANDO", "ATIVA", "PAUSADA"] } });
   expect(m.matriculas.mock.calls[0][0].include.cobrancas.include).toEqual({ origensCreditoAcertoTaxaAditivo: { select: { valor: true } } });
+});
+it("mantém uma identificação estável para matrícula legada sem código", async () => {
+  m.matriculas.mockResolvedValue([{ id: "mat-legado", codigo: null, status: "ATIVA", moeda: "BRL", aluno: { primeiroNome: "Aluno", sobrenome: "Teste" }, pagadoresPreparacao: [], cobrancas: [] }]);
+  await expect(listarContextosRecebimentoDestinado()).resolves.toMatchObject([{ matriculaId: "mat-legado", identificacaoMatricula: "ID mat-legado" }]);
 });
 it("separa saldo a receber do caixa original no painel financeiro", async () => {
   m.recebimentos.mockResolvedValue([{ moeda: "BRL", valor: D(100) }]); m.eventos.mockResolvedValue([]); m.comissoes.mockResolvedValue([]); m.contar.mockResolvedValue(0);
