@@ -9,10 +9,11 @@ import { RecebimentoDestinadoForm } from "./RecebimentoDestinadoForm";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 const contextos = [
-  { matriculaId: "mat-1", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: "2026-01-05T00:00:00.000Z", saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
-  { matriculaId: "mat-2", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: "2026-02-05T00:00:00.000Z", saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
+  { matriculaId: "mat-1", status: "ATIVA", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: "2026-01-05T00:00:00.000Z", saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
+  { matriculaId: "mat-2", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: "2026-02-05T00:00:00.000Z", saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
 ];
 function nos(no: unknown): No[] { if (Array.isArray(no)) return no.flatMap(nos); if (!no || typeof no !== "object") return []; const atual = no as No; return [atual, ...nos(atual.props?.children)]; }
+function textos(no: unknown): string[] { if (typeof no === "string") return [no]; if (Array.isArray(no)) return no.flatMap(textos); if (!no || typeof no !== "object") return []; return textos((no as No).props?.children); }
 function encontrar(no: unknown, predicado: (no: No) => boolean) { const encontrado = nos(no).find(predicado); if (!encontrado) throw new Error("Elemento não encontrado"); return encontrado; }
 function montar(estados: unknown[]) {
   const setters = estados.map(() => vi.fn());
@@ -58,6 +59,23 @@ it("calcula totais em centavos e confirma múltipla destinação com crédito", 
       { tipo: "CREDITO_SEM_DESTINO", valor: 0.2, evidencia: "Antecipação", chaveIdempotencia: "credito-sem-destino" },
     ],
   }));
+});
+
+it("identifica matrícula em preparação e permite antecipação sem cobrança", async () => {
+  mocks.registrar.mockResolvedValue({ ok: true });
+  const emPreparacao = [{ ...contextos[0], matriculaId: "mat-preparacao", status: "AGUARDANDO", cobrancas: [] }];
+  const setters = [vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn()];
+  mocks.useState.mockReset();
+  ["mat-preparacao", [], "125", "125", "", FormaPagamento.DINHEIRO, "2026-09-18", "Acordo de antecipação", "", "", "", false, null, null, false].forEach((valor, indice) => mocks.useState.mockReturnValueOnce([valor, setters[indice]]));
+  mocks.useMemo.mockImplementation((calcular: () => unknown) => calcular());
+  const chave = { current: "00000000-0000-4000-8000-000000000087" };
+  mocks.useRef.mockReset().mockReturnValueOnce(chave).mockReturnValueOnce({ current: false });
+  const arvore = RecebimentoDestinadoForm({ contextos: emPreparacao });
+  expect(textos(arvore).join(" ")).toContain("em preparação");
+  expect(textos(arvore).join(" ")).toContain("O recebimento não ativa o contrato.");
+  const botao = encontrar(arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
+  await (botao.props!.onClick as () => Promise<void>)();
+  expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ titularMatriculaId: "mat-preparacao", valorRecebido: 125, destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 125, evidencia: "Acordo de antecipação", chaveIdempotencia: "credito-sem-destino" }] }));
 });
 
 it("mantém a mesma chave ao repetir upload que falhou, sem permitir envio concorrente", async () => {

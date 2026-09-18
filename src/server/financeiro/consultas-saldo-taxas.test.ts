@@ -8,9 +8,11 @@ const D = (valor: number) => new Prisma.Decimal(valor);
 const taxa = (valor: number, credito: number) => ({ id: `taxa-${valor}`, codigo: "TAXA", tipo: "MATRICULA", moeda: "BRL", valorNegociado: D(valor), valorRecebido: D(100), valorLiquidadoCredito: D(0), vencimento: new Date("2099-01-01T00:00:00Z"), origensCreditoAcertoTaxaAditivo: [{ valor: D(credito) }] });
 beforeEach(() => { vi.resetAllMocks(); m.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"] }); });
 it("oferece o saldo econômico da taxa após crédito sem contar o mesmo pagamento duas vezes", async () => {
-  m.matriculas.mockResolvedValue([{ id: "mat", moeda: "BRL", aluno: { primeiroNome: "Aluno", sobrenome: "Teste" }, pagadoresPreparacao: [], cobrancas: [taxa(90, 20), taxa(120, 20), taxa(80, 20)] }]);
+  m.matriculas.mockResolvedValue([{ id: "mat", status: "AGUARDANDO", moeda: "BRL", aluno: { primeiroNome: "Aluno", sobrenome: "Teste" }, pagadoresPreparacao: [], cobrancas: [taxa(90, 20), taxa(120, 20), taxa(80, 20)] }]);
   const [contexto] = await listarContextosRecebimentoDestinado();
   expect(contexto.cobrancas.map(c => ({ id: c.id, saldo: c.saldo }))).toEqual([{ id: "taxa-90", saldo: 10 }, { id: "taxa-120", saldo: 40 }]);
+  expect(contexto.status).toBe("AGUARDANDO");
+  expect(m.matriculas.mock.calls[0][0].where).toEqual({ status: { in: ["AGUARDANDO", "ATIVA", "PAUSADA"] } });
   expect(m.matriculas.mock.calls[0][0].include.cobrancas.include).toEqual({ origensCreditoAcertoTaxaAditivo: { select: { valor: true } } });
 });
 it("separa saldo a receber do caixa original no painel financeiro", async () => {

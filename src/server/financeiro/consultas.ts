@@ -153,7 +153,9 @@ export async function listarInformesPagamento(alunoId?: string) {
 export async function listarContextosRecebimentoDestinado() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   const matriculas = await prisma.matricula.findMany({
-    where: { status: { in: [StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
+    // A antecipação documentada pode ocorrer antes da ativação. Rascunhos e
+    // matrículas encerradas/canceladas continuam fora do caixa operacional.
+    where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
     include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } } } } },
   });
   return matriculas.map((matricula) => {
@@ -161,7 +163,7 @@ export async function listarContextosRecebimentoDestinado() {
     const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, cobranca.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), cobranca.valorCompensadoPermuta).toNumber();
     return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
     });
-    return { matriculaId: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
+    return { matriculaId: matricula.id, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
   });
 }
 
