@@ -65,3 +65,4 @@ prisma/migrations/20260917155000_reconciliacao_acesso_vencimento/migration.sql -
 
 prisma/migrations/20260917156000_aplicacao_campos_aditivo/migration.sql -text
 prisma/migrations/20260918100000_correcao_gravacao_docente/migration.sql -text
+prisma/migrations/20260918110000_revisao_financeira_correcao_aula/migration.sql -text
