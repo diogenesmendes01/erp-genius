@@ -52,6 +52,12 @@ async function avisosPreparados() {
 
 beforeEach(async () => {
   await truncarBanco();
+  // Estes cenários verificam identidade, despacho e resultado do provedor simulado.
+  // A janela explícita evita depender do horário/dia em que a suíte é executada.
+  await prisma.politicaRegua.create({ data: {
+    nome: "Janela dos testes de avisos", janelaInicio: 0, janelaFim: 24,
+    diasSemana: [0, 1, 2, 3, 4, 5, 6],
+  } });
   catalogo = await seedCatalogoMinimo();
   secretariaId = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
