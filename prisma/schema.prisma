@@ -458,6 +458,8 @@ enum Papel {
 }
 
 model Usuario {
+  vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
+  vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   resolucoesPresencaHistoricaMigracao ResolucaoDivergenciaPresencaHistoricaMigracao[] @relation("ResolvedorPresencaHistoricaMigracao")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("PreparadorPresencaHistoricaMigracao")
   decisoesPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("DecisorPresencaHistoricaMigracao")
@@ -1668,6 +1670,7 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  propostasVencimentoAditivo PropostaVencimentoAditivo[]
   recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
@@ -1820,6 +1823,7 @@ enum FormaPagamento {
 }
 
 model Cobranca {
+  propostasVencimentoAditivo PropostaVencimentoAditivo[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
   origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
@@ -4200,6 +4204,7 @@ model ConclusaoAssinaturaContratual {
 }
 
 model PropostaAditivoContratual {
+  propostasVencimento PropostaVencimentoAditivo[]
     conferenciasParticipantes ConferenciaParticipantesAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
   processoAssinatura ProcessoAssinaturaAditivo?
@@ -4373,6 +4378,7 @@ model ConferenciaFinalAditivo {
 }
 
 model VersaoCondicoesAditivo {
+  propostasVencimento PropostaVencimentoAditivo[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -7675,4 +7681,47 @@ model AplicacaoCompensacaoPermuta {
   aplicadaEm DateTime @default(now())
   @@index([cobrancaId])
   @@index([decisaoId])
+}
+
+
+// 225: proposta e decisão; aplicação financeira será registrada separadamente.
+model PropostaVencimentoAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorVencimentoAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  fuso String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoVencimentoAditivo?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoVencimentoAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaVencimentoAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorVencimentoAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  @@unique([decisorId, chaveIdempotencia])
 }
