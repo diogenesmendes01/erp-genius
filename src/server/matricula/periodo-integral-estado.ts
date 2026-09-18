@@ -47,7 +47,7 @@ export async function carregarPeriodoIntegralTx(tx: Prisma.TransactionClient, in
     valorOriginal: c.valorOriginal.toFixed(2), valorNegociado: c.valorNegociado.toFixed(2),
     valorRecebido: (c.valorRecebido ?? new Prisma.Decimal(0)).toFixed(2), valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2),
     saldoRegistrado: c.saldo?.toFixed(2) ?? null,
-    recebimentos: c.destinacoesRecebimento.map(d => ({ id: d.id, recebimentoId: d.recebimento.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda })),
+    recebimentos: c.destinacoesRecebimento.map(d => ({ id: d.id, valor: d.valor.toFixed(2), moeda: d.recebimento.moeda })),
     cobertura: { inicio: c.coberturaInicio.toISOString().slice(0, 10), fim: c.coberturaFim.toISOString().slice(0, 10) },
     diasConfirmados: apuracao.diasConfirmados,
   });
