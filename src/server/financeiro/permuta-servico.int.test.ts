@@ -69,7 +69,7 @@ it("registra acordo, comprovação, proposta e decisão independente com compens
   entrar(financeiro);
   await prisma.cobranca.update({ where: { id: cobranca }, data: { valorNegociado: 50, saldo: 50 } });
   const acimaDoSaldo = await proporCompensacaoPermuta({ confirmacaoId: confirmacao.dado.id, destinos: [{ cobrancaId: cobranca, valor: "100.00" }], chaveIdempotencia: "p02-acima-saldo" });
-  expect(acimaDoSaldo).toMatchObject({ ok: false });
+  expect(acimaDoSaldo).toMatchObject({ ok: false, podeRevisar: true });
   expect(await prisma.propostaCompensacaoPermuta.count()).toBe(0);
   await prisma.cobranca.update({ where: { id: cobranca }, data: { valorNegociado: 100, saldo: 100 } });
   const propostaEntrada = { confirmacaoId: confirmacao.dado!.id, destinos: [{ cobrancaId: cobranca, valor: "100.00" }], chaveIdempotencia: "p02-proposta-0001" };
