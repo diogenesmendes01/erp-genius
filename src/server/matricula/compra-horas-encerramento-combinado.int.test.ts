@@ -285,6 +285,12 @@ it("Q97 encerra compra antecipada com quitação mista, consumo parcial e replay
   const decisao = await decidirAcertoEncerramento({ alunoId, rascunhoId: rascunho.dado.id, aprovar: true, motivo: "Saldo restante de horas e origens financeiras conferidos." });
   if (!decisao.ok || !decisao.dado) throw new Error(decisao.ok ? "Decisão ausente" : decisao.erro);
 
+  const recebimentosAntes = await prisma.recebimento.findMany({ orderBy: { id: "asc" } });
+  const destinacoesAntes = await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } });
+  const usosAntes = await prisma.propostaUsoCredito.findMany({ orderBy: { id: "asc" } });
+  const decisoesUsoAntes = await prisma.decisaoUsoCredito.findMany({ orderBy: { id: "asc" } });
+  const compraAntes = await prisma.compraHorasAntecipadas.findUniqueOrThrow({ where: { id: compra.dado.id } });
+
   entrar(financeiroId);
   vi.useFakeTimers({ toFake: ["Date"] });
   try {
@@ -318,5 +324,11 @@ it("Q97 encerra compra antecipada com quitação mista, consumo parcial e replay
   expect(preservada.saldo?.toFixed(2)).toBe("0.00");
   expect(await prisma.destinacaoRecebimento.count({ where: { cobrancaId: cobrancaCompra.id, tipo: "COBRANCA", valor: "150.00" } })).toBe(1);
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).toMatchObject({ status: "ENCERRADA" });
-  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: outroContrato.id } })).toMatchObject({ status: "ATIVA" });
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: outroContrato.id } })).toEqual(outroContrato);
+  expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
+  expect(await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } })).toEqual(destinacoesAntes);
+  expect(await prisma.propostaUsoCredito.findMany({ orderBy: { id: "asc" } })).toEqual(usosAntes);
+  expect(await prisma.decisaoUsoCredito.findMany({ orderBy: { id: "asc" } })).toEqual(decisoesUsoAntes);
+  expect(await prisma.compraHorasAntecipadas.findUniqueOrThrow({ where: { id: compra.dado.id } })).toEqual(compraAntes);
+  expect(await prisma.creditoMatricula.findUniqueOrThrow({ where: { id: creditoAnterior.id } })).toEqual(creditoAnterior);
 });
