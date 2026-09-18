@@ -467,6 +467,33 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(conjunto.status).toBe("PENDENTE");
   });
 
+  it("exige aplicar as duas taxas afetadas antes de completar e bloqueia transição SQL artificial", async () => {
+    const original = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+    const segunda = await prisma.cobranca.create({ data: { matriculaId: base.matriculaId, tipo: "MATRICULA", moeda: original.moeda, valorOriginal: 35, valorNegociado: 35, saldo: 35, vencimento: new Date("2026-09-16T12:00:00.000Z") } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const preparado = await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "A primeira taxa exige acerto individual." },
+      { cobrancaId: segunda.id, decisao: "AFETADA", justificativa: "A segunda taxa exige acerto individual." },
+    ], chaveIdempotencia: "q170-duas-afetadas" });
+    if (!preparado.ok || !preparado.dado) throw new Error(JSON.stringify(preparado));
+    const conjuntoId = preparado.dado.id;
+    await expect(prisma.conjuntoImpactosTaxaAditivo.update({ where: { id: conjuntoId }, data: { status: "APROVADO" } })).rejects.toThrow();
+    const primeira = await propor("q170-duas-afetadas-1", "Primeira taxa afetada.", { recibo: "Q170-1" });
+    const segundaProposta = await propor("q170-duas-afetadas-2", "Segunda taxa afetada.", { recibo: "Q170-2" }, segunda.id);
+    if (!primeira.ok || !primeira.dado || !segundaProposta.ok || !segundaProposta.dado) throw new Error("Propostas Q170 indisponíveis");
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    for (const [propostaId, chave] of [[primeira.dado.id, "1"], [segundaProposta.dado.id, "2"]] as const) expect(await decidirAcertoTaxaAditivo({ propostaId, aprovada: true, motivo: "Acerto individual aprovado independentemente.", chaveIdempotencia: `q170-duas-afetadas-aprovar-${chave}` })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: primeira.dado.id })).toMatchObject({ ok: true });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId: segunda.id, propostaAcertoId: segundaProposta.dado.id })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "As duas taxas e vínculos foram conferidos.", chaveIdempotencia: "q170-duas-afetadas-aprovar" })).toMatchObject({ ok: true });
+    expect(await aplicarAcertoTaxaAditivo({ propostaId: primeira.dado.id, chaveIdempotencia: "q170-duas-afetadas-aplicar-1" })).toMatchObject({ ok: true });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
+    expect(await aplicarAcertoTaxaAditivo({ propostaId: segundaProposta.dado.id, chaveIdempotencia: "q170-duas-afetadas-aplicar-2" })).toMatchObject({ ok: true });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
+  });
+
   it("recusa replay com entrada alterada e vínculo de acerto de outra taxa", async () => {
     const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-replay");
     authMock.mockResolvedValue({ user: { id: financeiro } });
