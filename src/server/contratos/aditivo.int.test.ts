@@ -797,6 +797,15 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
     semCadeia.base.aditivosAnterioresIds = [];
     await expect(prisma.propostaAditivoContratual.create({ data: { ...segunda, id: "segunda-proposta-cadeia-ausente", chaveIdempotencia: "cadeia-ausente-sql", snapshot: semCadeia } })).rejects.toThrow("Cadeia");
     await expect(decidir(proxima)).resolves.toHaveProperty("id");
+    const segundaConferencia = await prisma.$transaction(tx => conferirParticipantesAditivoTx(tx, fixture.secretariaId, {
+      propostaId: proxima.id, propostaHashEsperado: proxima.propostaHash, versaoEsperada: 0, maioridade: null,
+      participantes: [{ papel: "ALUNO", identidade: { nome: "Nome da próxima versão", email: alunoAntesConclusao.email!, documento: alunoAntesConclusao.documento! } }],
+      identificacoesConferidas: true, motivo: "Conferência da segunda identidade contratual", chaveIdempotencia: "conferencia-segunda-versao",
+    }));
+    expect(segundaConferencia).toHaveProperty("id");
+    expect(await prisma.aluno.findUniqueOrThrow({ where: { id: m.alunoId } })).toEqual(alunoAntesConclusao);
+    // Proposta e conferência novas não antecipam uma aplicação ainda inexistente.
+    expect(await prisma.$transaction(tx => consultarCadastroContratualVigenteTx(tx, fixture.matriculaId, new Date("2026-12-01T00:00:00Z")))).toMatchObject({ versao: 1, campos: { ALUNO_NOME: nomeFormalizado } });
     }
   }
   await prisma.aluno.update({ where: { id: m.alunoId }, data: { documento: "documento-alterado-apos-conferencia" } });
