@@ -135,4 +135,83 @@ describe("D09: revalidação depois da geração e antes da resposta", () => {
     duranteGeracao(() => prisma.coberturaCarteira.update({ where: { id: cobertura.id }, data: { revogadaEm: new Date() } }));
     expect((await exportar()).status).toBe(403);
   });
+
+  it("transferir aluno durante a geração invalida o XLSX e preserva o histórico fora do novo escopo docente", async () => {
+    const cat = await seedCatalogoMinimo();
+    const professor = await criarUsuario([Papel.PROFESSOR]);
+    await prisma.usuario.update({ where: { id: professor.id }, data: { permissoes: ["dados.exportar_alunos"] } });
+    const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "CT03", ordem: 3 } });
+    const turmaOrigem = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: professor.id } });
+    const turmaDestino = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id } });
+    await prisma.vinculoDocente.create({ data: { turmaId: turmaOrigem.id, professorId: professor.id, inicio: new Date(Date.now() - 60_000) } });
+    const aluno = await prisma.aluno.create({ data: { codigo: "CT03-ALUNO", primeiroNome: "Aluno transferido", paisId: cat.pais.id } });
+    const origem = await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: turmaOrigem.id } });
+    entrar(professor.id);
+
+    duranteGeracao(async () => {
+      await prisma.alocacaoTurma.update({ where: { id: origem.id }, data: { ativa: false, encerradaEm: new Date() } });
+      await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: turmaDestino.id } });
+    });
+    const interrompida = await exportar("alunos");
+    expect(interrompida.status).toBe(403);
+    expect(await interrompida.json()).toMatchObject({ erro: expect.stringContaining("acesso aos registros mudou") });
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
+    expect(await prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: origem.id } })).toMatchObject({ ativa: false, turmaId: turmaOrigem.id, encerradaEm: expect.any(Date) });
+    expect(await prisma.alocacaoTurma.findFirstOrThrow({ where: { alunoId: aluno.id, ativa: true } })).toMatchObject({ turmaId: turmaDestino.id });
+
+    vi.restoreAllMocks();
+    const posterior = await exportar("alunos");
+    expect(posterior.status).toBe(200);
+    expect(await linhas(posterior)).toEqual([["Código", "Nome", "Situação", "País", "Turma"]]);
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(1);
+  });
+
+  it("não entrega o rótulo de turma perdido quando o aluno ainda permanece visível por outro contrato", async () => {
+    const cat = await seedCatalogoMinimo();
+    const professor = await criarUsuario([Papel.PROFESSOR]);
+    await prisma.usuario.update({ where: { id: professor.id }, data: { permissoes: ["dados.exportar_alunos"] } });
+    const [nivelA, nivelB, nivelC] = await Promise.all(["CT03-A", "CT03-B", "CT03-C"].map((codigo, ordem) => prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo, ordem: ordem + 10 } })));
+    const [turmaA, turmaB, turmaC] = await Promise.all([
+      prisma.turma.create({ data: { nivelId: nivelA.id, modalidadeId: cat.modalidade.id, professorId: professor.id } }),
+      prisma.turma.create({ data: { nivelId: nivelB.id, modalidadeId: cat.modalidade.id, professorId: professor.id } }),
+      prisma.turma.create({ data: { nivelId: nivelC.id, modalidadeId: cat.modalidade.id } }),
+    ]);
+    await prisma.vinculoDocente.createMany({ data: [{ turmaId: turmaA.id, professorId: professor.id, inicio: new Date(Date.now() - 60_000) }, { turmaId: turmaB.id, professorId: professor.id, inicio: new Date(Date.now() - 60_000) }] });
+    const aluno = await prisma.aluno.create({ data: { codigo: "CT03-DUPLO", primeiroNome: "Aluno com contratos", paisId: cat.pais.id } });
+    const [matriculaA, matriculaB] = await Promise.all([0, 1].map(() => prisma.matricula.create({ data: { alunoId: aluno.id, paisId: cat.pais.id, produtoId: cat.produto.id, moeda: "CRC" } })));
+    const origem = await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matriculaA.id, turmaId: turmaA.id } });
+    await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matriculaB.id, turmaId: turmaB.id } });
+    entrar(professor.id);
+
+    duranteGeracao(async () => {
+      await prisma.alocacaoTurma.update({ where: { id: origem.id }, data: { ativa: false, encerradaEm: new Date() } });
+      await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matriculaA.id, turmaId: turmaC.id } });
+    });
+    const interrompida = await exportar("alunos");
+    expect(interrompida.status).toBe(403);
+    expect(await interrompida.json()).toMatchObject({ erro: expect.stringContaining("acesso aos registros mudou") });
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
+  });
+
+  it("revogar visão ampla para professor retém o XLSX que ainda contém turma fora da atribuição", async () => {
+    const cat = await seedCatalogoMinimo();
+    const operador = await criarUsuario([Papel.SECRETARIA_ACADEMICA, Papel.PROFESSOR]);
+    await prisma.usuario.update({ where: { id: operador.id }, data: { permissoes: ["dados.exportar_alunos"] } });
+    const [nivelAmplo, nivelDocente] = await Promise.all(["CT03-AMPLO", "CT03-DOCENTE"].map((codigo, ordem) => prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo, ordem: ordem + 20 } })));
+    const [turmaAmpla, turmaDocente] = await Promise.all([
+      prisma.turma.create({ data: { nivelId: nivelAmplo.id, modalidadeId: cat.modalidade.id } }),
+      prisma.turma.create({ data: { nivelId: nivelDocente.id, modalidadeId: cat.modalidade.id, professorId: operador.id } }),
+    ]);
+    await prisma.vinculoDocente.create({ data: { turmaId: turmaDocente.id, professorId: operador.id, inicio: new Date(Date.now() - 60_000) } });
+    const aluno = await prisma.aluno.create({ data: { codigo: "CT03-PAPEL", primeiroNome: "Aluno visível após revogação", paisId: cat.pais.id } });
+    const [matriculaAmpla, matriculaDocente] = await Promise.all([0, 1].map(() => prisma.matricula.create({ data: { alunoId: aluno.id, paisId: cat.pais.id, produtoId: cat.produto.id, moeda: "CRC" } })));
+    await prisma.alocacaoTurma.createMany({ data: [{ alunoId: aluno.id, matriculaId: matriculaAmpla.id, turmaId: turmaAmpla.id }, { alunoId: aluno.id, matriculaId: matriculaDocente.id, turmaId: turmaDocente.id }] });
+    entrar(operador.id);
+
+    duranteGeracao(() => prisma.usuario.update({ where: { id: operador.id }, data: { papeis: [Papel.PROFESSOR] } }));
+    const interrompida = await exportar("alunos");
+    expect(interrompida.status).toBe(403);
+    expect(await interrompida.json()).toMatchObject({ erro: expect.stringContaining("acesso aos registros mudou") });
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
+  });
 });

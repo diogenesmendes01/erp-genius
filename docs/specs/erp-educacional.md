@@ -261,7 +261,7 @@ Além dos critérios por corpo, os cenários transversais seguintes são obrigat
 |---|---|
 | CT-01 | Mesmo aluno com inglês mensal e particular por hora: criar vínculos independentes; pausar/encerrar só um preserva o outro e isola conteúdo. |
 | CT-02 | Seleção coletiva com um contrato sem autorização ou versão alterada: não aplicar parte; mostrar necessidade de revisão no escopo permitido. |
-| CT-03 | Trocar matrícula/aluno/encontro no pedido direto: servidor rejeita associação incoerente; não ampliar leitura, mutação, arquivo ou exportação. |
+| CT-03 | Trocar matrícula/aluno/encontro no pedido direto: servidor rejeita associação incoerente; não ampliar leitura, mutação, arquivo ou exportação. A exportação revalida o escopo atual antes da resposta: transferência durante a geração retém XLSX e auditoria, e nova exportação respeita somente a alocação vigente. |
 | CT-04 | Professor saiu, aluno mudou e chamada é antiga: lista histórica correta; autoria preservada; regularizador tem acesso pontual. |
 | CT-05 | Mudança global com uma turma conflitante: proposta não aplica parcialmente; após revisão válida, histórico passado permanece intacto. |
 | CT-06 | Dia 31 em mês curto, aula cruzando meia-noite e fusos diferentes: cobertura, vencimento, calendário e apresentação permanecem distintos e corretos. |
