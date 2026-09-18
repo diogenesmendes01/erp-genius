@@ -5,9 +5,14 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { acessoEfetivoBloqueado, cobrancaGeraRestricaoAutomatica, DIAS_RESTRICAO_AUTOMATICA } from "./acesso-aulas-regras";
 
 /** Trava matrícula antes de cobranças; não chamar mantendo locks de recebimento. */
-export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.TransactionClient, matriculaId: string, agora: Date) {
+export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.TransactionClient, matriculaId: string, agora: Date, opcoes: { naoAguardarCobrancas?: boolean } = {}) {
   await bloquearMatriculas(tx, [matriculaId]);
-  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE`;
+  if (opcoes.naoAguardarCobrancas) {
+    // Consumidores repetíveis cedem a uma baixa concorrente sem formar ciclo de locks.
+    await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE NOWAIT`;
+  } else {
+    await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE`;
+  }
   const matricula = await tx.matricula.findUnique({ where: { id: matriculaId }, select: {
     id: true, status: true, acessoBloqueado: true, bloqueadoEm: true, acessoBloqueioManual: true, acessoBloqueioAutomatico: true,
     cobrancas: { select: {

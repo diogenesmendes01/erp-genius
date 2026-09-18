@@ -809,9 +809,22 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     } finally { reavaliacao.mockRestore(); }
     const tarefa = await prisma.reconciliacaoAcessoVencimento.findFirstOrThrow();
     expect(tarefa).toMatchObject({ concluidaEm: null, tentativas: 1, erro: expect.stringContaining("nova tentativa pendente") });
-    const { rodarReconciliacaoAcessoVencimento } = await import("./vencimento-acesso");
+    const { rodarReconciliacaoAcessoVencimento, reconciliarAcessoVencimento } = await import("./vencimento-acesso");
+    let liberar!: () => void, sinalizar!: () => void;
+    const travada = new Promise<void>(resolve => { sinalizar = resolve; });
+    const liberacao = new Promise<void>(resolve => { liberar = resolve; });
+    const concorrente = prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ${salvo.cobrancaId} FOR UPDATE`;
+      sinalizar();
+      await liberacao;
+    }, { timeout: 10000 });
+    try {
+      await Promise.race([travada, concorrente]);
+      expect(await reconciliarAcessoVencimento(tarefa.aplicacaoId)).toBe("pendente");
+      expect(await prisma.reconciliacaoAcessoVencimento.findUniqueOrThrow({ where: { aplicacaoId: tarefa.aplicacaoId } })).toMatchObject({ concluidaEm: null, tentativas: 2 });
+    } finally { liberar(); await concorrente; }
     expect(await rodarReconciliacaoAcessoVencimento()).toEqual({ concluidos: 1, pendentes: 0, inalterados: 0 });
-    expect(await prisma.reconciliacaoAcessoVencimento.findUniqueOrThrow({ where: { aplicacaoId: tarefa.aplicacaoId } })).toMatchObject({ concluidaEm: expect.any(Date), tentativas: 2, erro: null });
+    expect(await prisma.reconciliacaoAcessoVencimento.findUniqueOrThrow({ where: { aplicacaoId: tarefa.aplicacaoId } })).toMatchObject({ concluidaEm: expect.any(Date), tentativas: 3, erro: null });
     expect(await rodarReconciliacaoAcessoVencimento()).toEqual({ concluidos: 0, pendentes: 0, inalterados: 0 });
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: antes.status === "PAGO" ? "PAGO" : "PENDENTE" });
