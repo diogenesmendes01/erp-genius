@@ -334,7 +334,8 @@ beforeEach(async (contexto) => {
   await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined });
   const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } } } });
   const snapshot = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
-  const agora = new Date().toISOString();
+  const envio = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id }, orderBy: { numero: "desc" } });
+  const agora = envio.iniciadaEm.toISOString();
   const c = await prisma.$transaction(tx => preservarConclusaoAssinaturaTx(tx, { processoId: processo.id, referenciaExterna: fixture.referenciaExternaFonte,
     originalHash: processo.artefato.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-assinatura de teste Q117"), evidencias: Buffer.from("evidências simuladas Q117"),
     assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(snapshot.participantes[0].identidade), referenciaAssinatura: "assinatura-q117", assinadaEm: agora }] }));
@@ -653,7 +654,8 @@ async function concluirAditivoMensal(entradaAditivo: Partial<z.input<typeof Prep
   await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: processo.dado!.id, tentativaId: tentativa.tentativaId, chave: `${chave}-envio`, resultado: "REGISTRADO", referenciaExterna: `${chave}-externo`, evidenciaHash: "a".repeat(64) }));
   const artefato = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: original.dado.id }, include: { conferencia: true } });
   const participantes = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(artefato.conferencia.snapshot).participantes;
-  const agora = new Date().toISOString();
+  const envio = await prisma.tentativaEnvioAditivo.findUniqueOrThrow({ where: { id: tentativa.tentativaId } });
+  const agora = envio.iniciadaEm.toISOString();
   const conclusao = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processo.dado!.id, referenciaExterna: `${chave}-externo`, originalHash: artefato.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from(`%PDF-${chave}`), evidencias: Buffer.from(`evidencias-${chave}`), assinaturas: participantes.map(p => ({ papel: p.papel, identidadeHash: hashPrevia(p.identidade), referenciaAssinatura: `${chave}-assinatura`, assinadaEm: agora })) }), { timeout: 30_000 });
   const finalAlvo = { matriculaId: fixture.matriculaId, propostaId: proposta.id, conclusaoId: conclusao.id };
   const revisaoFinal = await consultarConferenciaFinalAditivo(finalAlvo);
@@ -662,6 +664,64 @@ async function concluirAditivoMensal(entradaAditivo: Partial<z.input<typeof Prep
   if (!final.ok || !final.dado) throw new Error(JSON.stringify(final));
   return { proposta, finalAlvo, revisaoHash: revisaoFinal.dado.revisao.hash };
 }
+
+async function aplicarPrimeiroVencimentoCadeia(versaoCondicoesId: string, revisaoHash: string, chave: string) {
+  const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo } = await import("./vencimento-aditivo");
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const proposta = await proporVencimentoAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId, revisaoHash, motivo: "Aplicar vencimento próprio antes de aplicar condições herdadas", evidencia: "Cobrança e conclusão documentais conferidas", chaveIdempotencia: `${chave}-proposta` });
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirVencimentoAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Vencimento decidido por administração independente", chaveIdempotencia: `${chave}-decisao` })).toMatchObject({ ok: true });
+  expect(await aplicarVencimentoAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: `${chave}-aplicacao` })).toMatchObject({ ok: true });
+}
+
+async function tentarAplicacaoDiretaCadeia(versaoCondicoesId: string, propostaId: string, revisaoHash: string, chave: string) {
+  const versao = await prisma.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: versaoCondicoesId } });
+  return prisma.aplicacaoCondicoesAditivo.create({ data: {
+    versaoCondicoesId, matriculaId: fixture.matriculaId, propostaId, autorId: fixture.secretariaId,
+    revisaoHash, condicoesHash: versao.condicoesHash, vigenciaInicio: versao.vigenciaInicio,
+    chaveIdempotencia: chave,
+  } });
+}
+
+it("PRODUCAO_MENSAL_VENCIMENTO: SQL231 recusa aplicação direta mista antes do acerto próprio", async () => {
+  const misto = await concluirAditivoMensal({
+    vigenciaInicio: "2026-09-01T00:00:00Z", chaveIdempotencia: "sql231-misto",
+    alteracoes: [
+      { origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } },
+      { origem: "MENSALIDADE_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } },
+    ],
+  }, "sql231-misto");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const formalizada = await registrarCondicoesFormalizadasAditivo({ ...misto.finalAlvo, revisaoHash: misto.revisaoHash });
+  if (!formalizada.ok || !formalizada.dado) throw new Error(JSON.stringify(formalizada));
+  const cobrancasAntes = await prisma.cobranca.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } });
+  await expect(tentarAplicacaoDiretaCadeia(formalizada.dado.id, misto.proposta.id, misto.revisaoHash, "sql231-misto-direta")).rejects.toThrow("Vencimento exige aplicação própria");
+  expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
+  expect(await prisma.cobranca.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } })).toEqual(cobrancasAntes);
+  await aplicarPrimeiroVencimentoCadeia(formalizada.dado.id, misto.revisaoHash, "sql231-misto-vencimento");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await aplicarCondicoesFormalizadasAditivo({ ...misto.finalAlvo, revisaoHash: misto.revisaoHash, chaveIdempotencia: "sql231-misto-geral" })).toMatchObject({ ok: true });
+});
+
+it("PRODUCAO_MENSAL_VENCIMENTO: reasserção idêntica de vencimento é recusada antes de herdar prova antiga", async () => {
+  const v1 = await concluirAditivoMensal({
+    vigenciaInicio: "2026-09-01T00:00:00Z", chaveIdempotencia: "sql231-reiteracao-v1",
+    alteracoes: [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } }],
+  }, "sql231-reiteracao-v1");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const condicoesV1 = await registrarCondicoesFormalizadasAditivo({ ...v1.finalAlvo, revisaoHash: v1.revisaoHash });
+  if (!condicoesV1.ok || !condicoesV1.dado) throw new Error(JSON.stringify(condicoesV1));
+  await aplicarPrimeiroVencimentoCadeia(condicoesV1.dado.id, v1.revisaoHash, "sql231-reiteracao-v1");
+  await expect(concluirAditivoMensal({
+    vigenciaInicio: "2026-10-01T00:00:00Z", chaveIdempotencia: "sql231-reiteracao-v2",
+    alteracoes: [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } }],
+  }, "sql231-reiteracao-v2")).rejects.toThrow("mudança efetiva");
+  expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
+  expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
+  expect(await prisma.versaoCondicoesAditivo.count()).toBe(1);
+});
 
 it("PRODUCAO_MENSAL_VENCIMENTO: v2 de preço herda o vencimento v1 aplicado e exige sua própria aplicação", async () => {
   const v1 = await concluirAditivoMensal({
@@ -774,7 +834,8 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
   await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId, tentativaId: tentativa.tentativaId, chave: "envio-conclusao-aditivo", resultado: "REGISTRADO", referenciaExterna: "aditivo-a-concluir", evidenciaHash: "a".repeat(64) }));
   const original = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: alvo.artefatoId }, include: { conferencia: true } });
   const pessoas = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(original.conferencia.snapshot).participantes;
-  const agora = new Date().toISOString();
+  const envio = await prisma.tentativaEnvioAditivo.findUniqueOrThrow({ where: { id: tentativa.tentativaId } });
+  const agora = envio.iniciadaEm.toISOString();
   const entradaConclusao = { processoId, referenciaExterna: "aditivo-a-concluir", originalHash: original.pdfHash, concluidaEm: agora,
     pdfAssinado: Buffer.from("%PDF-documento assinado simulado do aditivo"), evidencias: Buffer.from("Evidências simuladas do aditivo"),
     assinaturas: pessoas.map(p => ({ papel: p.papel, identidadeHash: hashPrevia(p.identidade), referenciaAssinatura: "assinatura-do-aditivo", assinadaEm: agora })) };
