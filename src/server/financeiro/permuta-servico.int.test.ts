@@ -191,3 +191,17 @@ it("compensa serviço parcial e recebe apenas o saldo restante sem criar crédit
   const aplicacao = await prisma.aplicacaoCompensacaoPermuta.findFirstOrThrow();
   await expect(prisma.aplicacaoCompensacaoPermuta.delete({ where: { id: aplicacao.id } })).rejects.toThrow();
 });
+
+it("pagina acordos antigos sem sobreposição e recusa páginas inválidas", async () => {
+  entrar(financeiro);
+  for (let i = 0; i < 51; i++) {
+    const resultado = await prepararAcordoPermuta({ matriculaId: matricula, vigenciaInicio: "2099-09-01", vigenciaFim: "2099-12-31", moeda: "CRC", unidade: "HORA", quantidadePactuada: "1", valorPorUnidade: "50", contrapartida: "Serviço documentado por acordo", formulaDescricao: "Quantidade comprovada multiplicada pelo valor unitário", cobrancas: [{ cobrancaId: cobranca, valorMaximo: "50" }], chaveIdempotencia: `pagina-acordo-${i}` });
+    expect(resultado.ok).toBe(true);
+  }
+  const primeira = await consultarPermutas(1), segunda = await consultarPermutas(2);
+  if (!primeira.ok || !segunda.ok) throw new Error("Consulta recusada");
+  expect(primeira.dado).toHaveLength(50);
+  expect(segunda.dado).toHaveLength(1);
+  expect(new Set([...(primeira.dado ?? []), ...(segunda.dado ?? [])].map(a => a.id)).size).toBe(51);
+  for (const pagina of [0, -1, 1.5, Number.NaN]) expect(await consultarPermutas(pagina)).toMatchObject({ ok: false });
+});

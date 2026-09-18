@@ -94,9 +94,10 @@ if (d.aprovar) {
 const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: d.aprovar } }); return { id: decisao.id, efetivada: d.aprovar, repetida: false }; });
 if (resultado.efetivada) await reavaliarAcessoAposPermuta(resultado.id);
 return resultado; }); }
-export async function consultarPermutas() {
+export async function consultarPermutas(pagina = 1) {
     return executarPermuta(async () => {
         const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
+        const paginaValidada = z.number().int().min(1).max(100000).parse(pagina);
         return prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM "Usuario" WHERE id=${sessao.id} FOR SHARE`;
             const usuario = await tx.usuario.findUniqueOrThrow({
@@ -106,7 +107,7 @@ export async function consultarPermutas() {
             if (!usuario.ativo || (!podeFinanceiro && !usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO)))
                 throw new ErroPermissao();
             const acordos = await tx.acordoPermutaServico.findMany({
-                orderBy: { criadoEm: "desc" }, take: 50,
+                orderBy: [{ criadoEm: "desc" }, { id: "desc" }], take: 50, skip: (paginaValidada - 1) * 50,
                 include: {
                     matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true } } } },
                     cobrancasElegiveis: { where: podeFinanceiro ? {} : { id: { in: [] } }, include: { cobranca: { select: { codigo: true, saldo: true } } } },
