@@ -8,7 +8,7 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/desistencia-financeiro-consulta", () => ({ consultarCancelamentoFinanceiroDesistencia: mocks.consultar }));
 vi.mock("@/server/matricula/desistencia-acerto-consulta", () => ({ consultarAcertoDesistenciaContratual: mocks.acerto }));
 vi.mock("./AcertoContratualFormularios", () => ({
-  PrepararAcertoContratualFormulario: () => createElement("div", { "data-acerto": "preparar" }),
+  PrepararAcertoContratualFormulario: ({ reapresentacao }: { reapresentacao?: { id: string; versao: number; aprovada: boolean } | null }) => createElement("div", { "data-acerto": "preparar", "data-reapresentacao": reapresentacao?.id, "data-versao-reapresentada": reapresentacao?.versao }),
   DecidirAcertoContratualFormulario: () => createElement("div", { "data-acerto": "decidir" }),
   AplicarAcertoContratualFormulario: () => createElement("div", { "data-acerto": "aplicar" }),
 }));
@@ -62,6 +62,20 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain('/alunos/aluno/creditos/credito-q165');
     expect(html).toContain("efetivação pendente");
     expect(html).not.toContain("data-acerto=");
+  });
+  it("entrega à preparação a última versão decidida para reapresentação", async () => {
+    mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
+    mocks.acerto.mockResolvedValue({ ok: true, dado: {
+      matricula: { id: "contrato", alunoId: "aluno" }, pedido: { id: "pedido" }, condicoes: { id: "condicoes" },
+      podePreparar: true, impedimento: null, propostas: [],
+      reapresentacao: { id: "proposta-rejeitada", versao: 2, aprovada: false },
+    } });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "contrato" }) }));
+
+    expect(html).toContain('data-acerto="preparar"');
+    expect(html).toContain('data-reapresentacao="proposta-rejeitada"');
+    expect(html).toContain('data-versao-reapresentada="2"');
   });
   it("exige Financeiro/Administração e mostra valores somente na conferência financeira", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });

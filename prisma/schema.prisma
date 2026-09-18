@@ -7454,6 +7454,11 @@ model PropostaAcertoDesistenciaContratual {
   id String @id @default(cuid())
   pedidoId String
   pedido PedidoDesistenciaPreparacao @relation(fields: [pedidoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  anteriorId String?
+  anterior PropostaAcertoDesistenciaContratual? @relation("ReapresentacaoAcertoDesistenciaContratual", fields: [anteriorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  reapresentacoes PropostaAcertoDesistenciaContratual[] @relation("ReapresentacaoAcertoDesistenciaContratual")
+  versao Int
+  motivoReapresentacao String?
   condicoesId String
   condicoes CondicoesEncerramentoMatricula @relation(fields: [condicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   preparadorId String
@@ -7466,8 +7471,9 @@ model PropostaAcertoDesistenciaContratual {
   criadaEm DateTime @default(now())
   decisao DecisaoAcertoDesistenciaContratual?
   @@unique([preparadorId, chaveIdempotencia])
-  @@unique([pedidoId, condicoesId, fotografiaHash])
+  @@unique([pedidoId, versao])
   @@index([pedidoId])
+  @@index([anteriorId])
   @@index([condicoesId, criadaEm])
 }
 model DecisaoAcertoDesistenciaContratual {

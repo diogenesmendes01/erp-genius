@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 export function conferirPedidoReplayAcertoDesistencia(
-  anterior: { pedidoId: string; condicoesId: string; memoria: unknown },
-  esperado: { pedidoId: string; condicoesId: string; motivo: string },
+  anterior: { pedidoId: string; condicoesId: string; anteriorId: string | null; motivoReapresentacao: string | null; memoria: unknown },
+  esperado: { pedidoId: string; condicoesId: string; motivo: string; anteriorId?: string; motivoReapresentacao?: string },
 ) {
   const memoria = z.object({ motivo: z.string() }).passthrough().parse(anterior.memoria);
-  if (anterior.pedidoId !== esperado.pedidoId || anterior.condicoesId !== esperado.condicoesId || memoria.motivo !== esperado.motivo) {
+  if (anterior.pedidoId !== esperado.pedidoId || anterior.condicoesId !== esperado.condicoesId || memoria.motivo !== esperado.motivo
+    || (anterior.anteriorId ?? null) !== (esperado.anteriorId ?? null) || (anterior.motivoReapresentacao ?? null) !== (esperado.motivoReapresentacao ?? null)) {
     throw new ErroRegra("Chave já utilizada com outro acerto de desistência.");
   }
 }

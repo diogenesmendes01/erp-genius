@@ -54,6 +54,9 @@ function proposta(
     id,
     pedidoId: "pedido-atual",
     condicoesId: "condicoes-atual",
+    anteriorId: null,
+    versao: indice + 1,
+    motivoReapresentacao: null,
     fotografiaHash: "f".repeat(64),
     criadaEm: new Date(2026, 8, 18, 12, 0, indice),
     preparadorId: "preparador",
@@ -214,5 +217,20 @@ describe("consultarAcertoDesistenciaContratual", () => {
     expect(dado.temMaisPropostas).toBe(true);
     expect(dado.propostas).toHaveLength(20);
     expect(dado.propostas.map((item: { id: string }) => item.id)).not.toContain("proposta-20");
+  });
+
+  it("oferece reapresentação apenas a partir da última proposta já decidida", async () => {
+    configurar({
+      propostas: [
+        proposta("rejeitada-atual", 2, { ...decisaoAprovada(), aprovada: false }),
+        proposta("aprovada-anterior", 1, decisaoAprovada()),
+      ],
+    });
+
+    const dado = resultadoDado(await consultarAcertoDesistenciaContratual({ matriculaId }));
+
+    expect(dado.podePreparar).toBe(true);
+    expect(dado.reapresentacao).toMatchObject({ id: "rejeitada-atual", versao: 3, aprovada: false });
+    expect(dado.propostas[1]).toMatchObject({ podeDecidir: false, podeAplicar: false });
   });
 });

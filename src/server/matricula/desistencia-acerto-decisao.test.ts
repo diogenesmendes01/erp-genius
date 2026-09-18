@@ -5,7 +5,7 @@ const h = vi.hoisted(() => ({ ator: "fin", proposta: null as any, foto: {} as an
   matricula: { findUniqueOrThrow: vi.fn() }, efetivacaoPedidoDesistenciaPreparacao: { findFirst: vi.fn() },
   condicoesEncerramentoMatricula: { findFirst: vi.fn(), findUniqueOrThrow: vi.fn(), count: vi.fn() }, cobranca: { findMany: vi.fn() },
   origemCreditoAcertoTaxaAditivo: { findMany: vi.fn() }, origemCreditoAcertoDesistenciaContratual: { findMany: vi.fn() },
-  propostaAcertoDesistenciaContratual: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), create: vi.fn() },
+  propostaAcertoDesistenciaContratual: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   decisaoAcertoDesistenciaContratual: { create: vi.fn() },
   aplicacaoAcertoDesistenciaContratual: { findFirst: vi.fn() },
 } }));
@@ -37,6 +37,7 @@ beforeEach(() => {
   h.tx.origemCreditoAcertoTaxaAditivo.findMany.mockResolvedValue([{ cobrancaId: "taxa", valor: new Prisma.Decimal(20) }]);
   h.tx.origemCreditoAcertoDesistenciaContratual.findMany.mockResolvedValue([]);
   h.tx.propostaAcertoDesistenciaContratual.findUnique.mockResolvedValue(null);
+  h.tx.propostaAcertoDesistenciaContratual.findFirst.mockImplementation(async () => h.proposta);
   h.tx.propostaAcertoDesistenciaContratual.create.mockImplementation(async ({ data }) => (h.proposta = { ...data, id: "proposta", pedido: { matriculaId: "m" }, decisao: null }));
   h.tx.propostaAcertoDesistenciaContratual.findUniqueOrThrow.mockImplementation(async () => h.proposta);
   h.tx.decisaoAcertoDesistenciaContratual.create.mockImplementation(async ({ data }) => (h.proposta.decisao = { ...data, id: "decisao" }));
