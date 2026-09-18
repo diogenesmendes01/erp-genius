@@ -13,16 +13,55 @@ const texto = z.string().trim().min(5).max(4_000);
 const Entrada = z.object({ alvo: z.enum(["PUBLICACAO_AULA", "MATERIAL_REPOSICAO"]), alvoId: z.string().min(1), arquivoOficialId: id, motivo: texto, chaveIdempotencia: z.string().trim().min(8).max(100) }).strict();
 const Decisao = z.object({ propostaId: z.string().min(1), aprovar: z.boolean(), motivo: texto }).strict();
 
-async function exigirGestaoFresca(tx: Prisma.TransactionClient, usuarioId: string) {
+const alvoPublicacao = "PUBLICACAO_AULA" as const;
+type Alvo = typeof alvoPublicacao | "MATERIAL_REPOSICAO";
+
+async function exigirPreparadorFresco(tx: Prisma.TransactionClient, usuarioId: string, alvo: Alvo, alvoId: string) {
+  // A correção da aula ordena calendário, encontro e usuário. A proposta de
+  // fonte segue a mesma ordem quando um professor é o preparador.
+  if (alvo === alvoPublicacao) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+    await tx.$queryRaw`SELECT e.id FROM "PublicacaoGravacaoAula" p JOIN "EncontroAgenda" e ON e.id = p."encontroId" WHERE p.id = ${alvoId} FOR UPDATE OF e`;
+  }
+  await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${usuarioId} FOR SHARE`;
   const usuario = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { ativo: true, papeis: true } });
-  if (!usuario?.ativo || !usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR)) throw new ErroPermissao();
+  const gestao = !!usuario?.ativo && usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR);
+  if (alvo === "MATERIAL_REPOSICAO") {
+    if (!gestao || !await tx.materialReposicaoGravacao.findUnique({ where: { id: alvoId }, select: { id: true } })) throw new ErroPermissao();
+    return;
+  }
+  // A gestão mantém o percurso legado: só confirma que a publicação existe.
+  // As provas de aula corrigível pertencem exclusivamente ao preparo docente.
+  if (gestao) {
+    if (!await tx.publicacaoGravacaoAula.findUnique({ where: { id: alvoId }, select: { id: true } })) {
+      throw new ErroRegra("Fonte de gravação não encontrada.");
+    }
+    return;
+  }
+  const publicacao = await tx.publicacaoGravacaoAula.findUnique({ where: { id: alvoId }, select: {
+    id: true,
+    encontro: { select: { professorId: true, turmaId: true, matriculaId: true, inicio: true,
+      finalidade: true, status: true, fim: true, diario: { select: { professorId: true, turmaId: true, ocorridaEm: true } },
+      turma: { select: { professorId: true, vinculosDocentes: { where: { professorId: usuarioId, fim: null }, select: { inicio: true } } } },
+    } },
+  } });
+  if (!publicacao) throw new ErroRegra("Fonte de gravação não encontrada.");
+  const encontro = publicacao.encontro;
+  const agora = new Date();
+  const professorVigente = !!usuario?.ativo && usuario.papeis.includes(Papel.PROFESSOR)
+    && encontro.professorId === usuarioId && encontro.finalidade === "AULA" && encontro.status === "MINISTRADO"
+    && encontro.fim <= agora && !!encontro.diario && encontro.diario.professorId === encontro.professorId
+    && encontro.diario.turmaId === encontro.turmaId && encontro.diario.ocorridaEm.getTime() === encontro.inicio.getTime()
+    && (encontro.turmaId
+      ? encontro.turma?.professorId === usuarioId && encontro.turma.vinculosDocentes.some(v => v.inicio <= encontro.inicio && v.inicio <= agora)
+      : !!encontro.matriculaId);
+  if (!professorVigente) throw new ErroPermissao("Somente a gestão ou o professor ainda vinculado à aula pode propor a correção da gravação.");
 }
 
-async function alvoExisteTx(tx: Prisma.TransactionClient, alvo: "PUBLICACAO_AULA" | "MATERIAL_REPOSICAO", alvoId: string) {
-  const existente = alvo === "PUBLICACAO_AULA"
-    ? await tx.publicacaoGravacaoAula.findUnique({ where: { id: alvoId }, select: { id: true } })
-    : await tx.materialReposicaoGravacao.findUnique({ where: { id: alvoId }, select: { id: true } });
-  if (!existente) throw new ErroRegra("Fonte de gravação não encontrada.");
+async function exigirGestaoFresca(tx: Prisma.TransactionClient, usuarioId: string) {
+  await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${usuarioId} FOR SHARE`;
+  const usuario = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { ativo: true, papeis: true } });
+  if (!usuario?.ativo || !usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 function mesmaEntrada(proposta: { alvo: string; publicacaoAulaId: string | null; materialReposicaoId: string | null; arquivoOficialId: string; motivo: string }, dados: z.infer<typeof Entrada>) {
   return proposta.alvo === dados.alvo && (dados.alvo === "PUBLICACAO_AULA" ? proposta.publicacaoAulaId === dados.alvoId : proposta.materialReposicaoId === dados.alvoId) && proposta.arquivoOficialId === dados.arquivoOficialId && proposta.motivo === dados.motivo;
@@ -31,10 +70,10 @@ function mesmaEntrada(proposta: { alvo: string; publicacaoAulaId: string | null;
 /** Prepara uma fonte fixa; a decisão independente é quem a torna reproduzível. */
 export async function proporRegularizacaoFonteGravacao(input: unknown) {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
+    const autor = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
     const dados = Entrada.parse(input);
     const anterior = await prisma.$transaction(async (tx) => {
-      await exigirGestaoFresca(tx, autor.id); await alvoExisteTx(tx, dados.alvo, dados.alvoId);
+      await exigirPreparadorFresco(tx, autor.id, dados.alvo, dados.alvoId);
       return tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia } } });
     });
     if (anterior) {
@@ -43,8 +82,7 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
     }
     const fixa = await fixarRevisaoDriveOrganizacional({ fileId: dados.arquivoOficialId, driveIdOrganizacao: obterDriveOrganizacaoId(), token: obterTokenPublicacaoDrive });
     return prisma.$transaction(async (tx) => {
-      await exigirGestaoFresca(tx, autor.id);
-      await alvoExisteTx(tx, dados.alvo, dados.alvoId);
+      await exigirPreparadorFresco(tx, autor.id, dados.alvo, dados.alvoId);
       const anterior = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia } } });
       if (anterior) {
         if (!mesmaEntrada(anterior, dados)) throw new ErroRegra("A chave já identifica outra regularização de gravação.");
