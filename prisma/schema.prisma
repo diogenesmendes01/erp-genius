@@ -682,6 +682,8 @@ model Usuario {
   propostasCorrecaoAula PropostaCorrecaoAula[] @relation("AutorPropostaCorrecaoAula")
   rejeicoesCorrecaoAula RejeicaoCorrecaoAula[] @relation("DecisorRejeicaoCorrecaoAula")
   aprovacoesCorrecaoAula AprovacaoCorrecaoAula[] @relation("DecisorAprovacaoCorrecaoAula")
+  propostasRevisaoFinanceiraCorrecaoAula PropostaRevisaoFinanceiraCorrecaoAula[] @relation("PreparadorRevisaoFinanceiraCorrecaoAula")
+  decisoesRevisaoFinanceiraCorrecaoAula DecisaoRevisaoFinanceiraCorrecaoAula[] @relation("DecisorRevisaoFinanceiraCorrecaoAula")
   encontrosAgendaDocente EncontroAgenda[] @relation("DocenteEncontroAgenda")
   encontrosAgendaPreparados EncontroAgenda[] @relation("PreparadorEncontroAgenda")
   comprasHorasRegistradas CompraHorasAntecipadas[]
@@ -3109,6 +3111,7 @@ model PropostaCorrecaoAula {
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
   rejeicao RejeicaoCorrecaoAula?
   aprovacao AprovacaoCorrecaoAula?
+  revisoesFinanceiras PropostaRevisaoFinanceiraCorrecaoAula[]
 
   @@unique([encontroId, versao], map: "PropostaCorrecaoAula_encontro_versao_key")
   @@unique([autorId, chaveIdempotencia], map: "PropostaCorrecaoAula_autor_chave_key")
@@ -3139,8 +3142,49 @@ model AprovacaoCorrecaoAula {
   propostaHash String
   impactosHash String
   impactos Json
+  revisaoFinanceiraDecisaoId String? @unique
+  revisaoFinanceiraDecisao DecisaoRevisaoFinanceiraCorrecaoAula? @relation("AprovacaoCorrecaoAulaRevisaoFinanceira", fields: [revisaoFinanceiraDecisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
   casosRevisaoProgressao CasoRevisaoProgressao[] @relation("AprovacaoCorrecaoAulaCasoRevisaoProgressao")
+}
+
+// Q23/INV07: revisão limitada ao caso já conferido. Não recalcula ou aplica
+// qualquer valor; decisões financeiras ficam separadas da publicação pedagógica.
+model PropostaRevisaoFinanceiraCorrecaoAula {
+  id String @id @default(cuid())
+  propostaCorrecaoAulaId String
+  propostaCorrecaoAula PropostaCorrecaoAula @relation(fields: [propostaCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  versaoCorrecaoAula Int
+  tipo String
+  preparadorId String
+  preparador Usuario @relation("PreparadorRevisaoFinanceiraCorrecaoAula", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaHash String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+  decisao DecisaoRevisaoFinanceiraCorrecaoAula?
+
+  @@unique([propostaCorrecaoAulaId, versao], map: "PropostaRevFinCorrecaoAula_proposta_versao_key")
+  @@unique([preparadorId, chaveIdempotencia], map: "PropostaRevFinCorrecaoAula_preparador_chave_key")
+  @@index([propostaCorrecaoAulaId, criadaEm], map: "PropostaRevFinCorrecaoAula_proposta_criada_idx")
+}
+
+model DecisaoRevisaoFinanceiraCorrecaoAula {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaRevisaoFinanceiraCorrecaoAula @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorRevisaoFinanceiraCorrecaoAula", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  propostaHash String
+  fotografiaHash String
+  criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+  aprovacaoCorrecaoAula AprovacaoCorrecaoAula? @relation("AprovacaoCorrecaoAulaRevisaoFinanceira")
 }
 
 model DecisaoExcecaoGravacao {
