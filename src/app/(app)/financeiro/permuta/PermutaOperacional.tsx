@@ -11,7 +11,7 @@ import {
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
-type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; efetivada?: boolean; motivo: string } | null };
+type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; efetivada?: boolean; motivo: string; aplicacoes?: { id: string; cobrancaId: string; valor: string; aplicadaEm: string }[] } | null };
 type Confirmacao = {
   id: string;
   periodoInicio: string;
@@ -135,6 +135,13 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
         </Acao>}
         {confirmacao.propostas.map(proposta => <div key={proposta.id} className="rounded border p-2">
           <p>Proposta de {proposta.valor}: {proposta.decisao ? (proposta.decisao.aprovada ? (proposta.decisao.efetivada ? "compensação aplicada" : "aprovada, aguardando conferência de aplicação") : "rejeitada") : "aguarda decisão independente"}</p>
+          {proposta.decisao && <p className="text-sm">Motivo da decisão: {proposta.decisao.motivo}</p>}
+          {!!proposta.decisao?.aplicacoes?.length && <details>
+            <summary>Compensações aplicadas</summary>
+            <ul>{proposta.decisao.aplicacoes.map(aplicacao => <li key={aplicacao.id}>
+              {acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {acordo.moeda} {aplicacao.valor} · {new Date(aplicacao.aplicadaEm).toLocaleString("pt-BR", { timeZone: "UTC" })} (UTC) · serviço compensado
+            </li>)}</ul>
+          </details>}
           {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
             <label>Decisão <select name="aprovar"><option value="sim">Aprovar e compensar</option><option value="nao">Rejeitar</option></select></label><label>Motivo <input required name="motivo" /></label>
           </Acao>}

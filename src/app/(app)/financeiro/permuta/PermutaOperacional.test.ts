@@ -148,3 +148,13 @@ it("permite corrigir entrada rejeitada com confirmação de que não foi aplicad
   expect(mocks.preparar.mock.calls[1][0].matriculaId).toBe("matricula-corrigida");
   expect(mocks.preparar.mock.calls[1][0].chaveIdempotencia).not.toBe(mocks.preparar.mock.calls[0][0].chaveIdempotencia);
 });
+
+it("mostra compensação aplicada com cobrança, valor e evidência da decisão", () => {
+  preparar();
+  const conjunto = [{ ...acordos[0], confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-09-18T12:00:00Z" }] } }] }] }];
+  const arvore = PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: true });
+  expect(todos(arvore, "details")).toHaveLength(1);
+  expect(JSON.stringify(todos(arvore, "li"))).toContain("100.00");
+  expect(JSON.stringify(todos(arvore, "li"))).toContain("C-1");
+  expect(todos(arvore, "form")).toHaveLength(2);
+});
