@@ -4,7 +4,7 @@ import { useOperacao } from "./useOperacao";
 import { Pendencias } from "./Pendencias";
 import { preverPausaMatriculas } from "@/server/matricula/pausa-previa";
 import { solicitarPausaMatriculas } from "@/server/matricula/pausa-proposta";
-import { identificacaoContrato, idsAposSelecaoMatricula } from "./identificacaoContrato";
+import { identificacaoContrato } from "./identificacaoContrato";
 
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverPausaMatriculas>>, { ok: true }>["dado"]>;
 export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; identificacao: string; produto: { nome: string } }[]; hoje: string | null }) {
@@ -46,7 +46,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
     {!hoje && <p className="text-amber-700">O fuso institucional precisa ser configurado para conferir as datas da escola.</p>}
     {contratos.length === 0 ? <p>Nenhum contrato ativo disponível para seleção.</p> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos ativos</legend>
-      {contratos.map((m) => <label key={m.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(); setIds((atual) => idsAposSelecaoMatricula(atual, m.id, e.target.checked)); }} />{m.identificacao} · {m.produto.nome}</label>)}
+      {contratos.map((m) => <label key={m.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(); setIds((atual) => e.target.checked ? [...atual, m.id] : atual.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.produto.nome}</label>)}
       <label className="block text-sm">Data efetiva proposta<input type="date" className="ml-2 rounded border p-2" required value={data} onChange={(e) => { alterar(); setData(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<textarea className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
       <button type="button" className="rounded border px-3 py-2 text-sm disabled:opacity-50" disabled={!ids.length || !data || motivo.trim().length < 5} onClick={conferir}>Conferir impactos</button>
