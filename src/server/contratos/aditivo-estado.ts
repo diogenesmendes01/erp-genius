@@ -73,6 +73,7 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
   if (cadeia.ultimaVigencia && new Date(vigenciaInicio) <= cadeia.ultimaVigencia) throw new ErroRegra("A vigência precisa suceder os aditivos formalizados anteriores.");
   const documento = preencherTextoAditivo(modelo.conteudo, {
     contratoOriginal: { documentoId: a.id, pdfHash: a.pdfHash }, aditivosAnteriores: cadeia.referencias, vigenciaInicio, alteracoes,
+    ...(d.cicloCoberturaFutura ? { cicloCoberturaFutura: d.cicloCoberturaFutura } : {}),
   }, fontes);
   const condicoes = await tx.condicoesEntradaPreparacao.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
   const pagador = await tx.pagadorPreparacaoMatricula.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
@@ -81,5 +82,6 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
     modeloId: modelo.id, modeloHash: modelo.conteudoHash, publicacaoId: modelo.decisao.id,
     modeloCodigo: modelo.codigo, modeloVersao: modelo.versao, condicoes, pagador, aditivosAnterioresIds: cadeia.ids, fontes };
   return { matriculaId: d.matriculaId, conclusaoOriginalId: c.id, modeloId: modelo.id, vigenciaInicio,
+    ...(d.cicloCoberturaFutura ? { cicloCoberturaFutura: d.cicloCoberturaFutura } : {}),
     base, baseHash: hashSubstituicao(base), alteracoes, alteracoesHash: hashSubstituicao(alteracoes), documento };
 }
