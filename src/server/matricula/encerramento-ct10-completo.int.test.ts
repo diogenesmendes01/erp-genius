@@ -65,6 +65,7 @@ beforeEach(async () => {
 });
 
 it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e dias compensados sem tocar o outro", async () => {
+  // Contrato e condições são fixtures sintéticas já conferidas; emissão e assinatura não pertencem a este cenário de acerto.
   const documento = await prisma.documento.create({
     data: { matriculaId: matriculaAId, nome: "Contrato CT10 completo", categoria: "CONTRATO", url: "/api/files/ct10-completo.pdf" },
   });
@@ -125,10 +126,27 @@ it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e di
       vencimento: new Date("2099-09-05T00:00:00Z"),
     },
   });
+  entrar(financeiroId);
+  const creditoBOrigem = await registrarRecebimentoDestinado({
+    titularMatriculaId: matriculaBId,
+    chaveIdempotencia: "ct10-completo-credito-b-001",
+    valorRecebido: 25,
+    moeda: "CRC",
+    forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2099-09-09T12:00:00Z"),
+    comentario: "Crédito próprio do contrato B que o acerto de A não pode alterar.",
+    destinos: [{
+      tipo: "CREDITO_SEM_DESTINO",
+      valor: 25,
+      evidencia: "Antecipação do contrato B preservada fora do acerto selecionado.",
+      chaveIdempotencia: "ct10-completo-credito-b-destino-001",
+    }],
+  });
+  expect(creditoBOrigem.ok, creditoBOrigem.ok ? undefined : creditoBOrigem.erro).toBe(true);
   const matriculaBAntes = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaBId } });
   const cobrancaBAntes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaB.id } });
+  const creditoBAntes = await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId: matriculaBId } });
 
-  entrar(financeiroId);
   const caixa = await registrarRecebimentoDestinado({
     titularMatriculaId: matriculaAId,
     chaveIdempotencia: "ct10-completo-caixa-001",
@@ -273,6 +291,12 @@ it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e di
   expect(decisao.ok, decisao.ok ? undefined : decisao.erro).toBe(true);
   if (!decisao.ok || !decisao.dado) throw new Error(decisao.ok ? "Decisão ausente" : decisao.erro);
 
+  const recebimentosAntes = await prisma.recebimento.findMany({ orderBy: { id: "asc" } });
+  const destinacoesAntes = await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } });
+  const creditosAntes = await prisma.creditoMatricula.findMany({ orderBy: { id: "asc" } });
+  const propostaUsoAntes = await prisma.propostaUsoCredito.findUniqueOrThrow({ where: { id: uso.dado.id } });
+  const decisaoUsoAntes = await prisma.decisaoUsoCredito.findFirstOrThrow({ where: { propostaId: uso.dado.id } });
+
   entrar(financeiroId);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2099-09-15T12:00:00Z"));
@@ -286,27 +310,18 @@ it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e di
   }
 
   const mensalidadeFinal = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
-  expect(mensalidadeFinal).toMatchObject({
-    valorOriginal: expect.anything(),
-    valorNegociado: expect.anything(),
-    valorRecebido: expect.anything(),
-    valorLiquidadoCredito: expect.anything(),
-    saldo: expect.anything(),
-  });
   expect(mensalidadeFinal.valorOriginal.toFixed(2)).toBe("500.00");
   expect(mensalidadeFinal.valorNegociado.toFixed(2)).toBe("186.67");
   expect(mensalidadeFinal.valorRecebido?.toFixed(2)).toBe("80.00");
   expect(mensalidadeFinal.valorLiquidadoCredito.toFixed(2)).toBe("50.00");
   expect(mensalidadeFinal.saldo?.toFixed(2)).toBe("56.67");
-  expect(await prisma.recebimento.count()).toBe(2);
-  expect(await prisma.decisaoUsoCredito.count({ where: { propostaId: uso.dado.id, aprovada: true } })).toBe(1);
-  expect(await prisma.creditoMatricula.count()).toBe(1);
-  expect(await prisma.cobranca.findFirstOrThrow({ where: { acertoMultaDecisaoId: decisao.dado.id } })).toMatchObject({
-    matriculaId: matriculaAId,
-    tipo: "MULTA_ENCERRAMENTO",
-    valorNegociado: expect.anything(),
-  });
+  expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
+  expect(await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } })).toEqual(destinacoesAntes);
+  expect(await prisma.creditoMatricula.findMany({ orderBy: { id: "asc" } })).toEqual(creditosAntes);
+  expect(await prisma.propostaUsoCredito.findUniqueOrThrow({ where: { id: uso.dado.id } })).toEqual(propostaUsoAntes);
+  expect(await prisma.decisaoUsoCredito.findFirstOrThrow({ where: { propostaId: uso.dado.id } })).toEqual(decisaoUsoAntes);
   const multa = await prisma.cobranca.findFirstOrThrow({ where: { acertoMultaDecisaoId: decisao.dado.id } });
+  expect(multa).toMatchObject({ matriculaId: matriculaAId, tipo: "MULTA_ENCERRAMENTO" });
   expect(multa.valorNegociado.toFixed(2)).toBe("80.00");
   const destinos = await prisma.destinacaoDiaAcerto.findMany({
     where: { decisaoId: decisao.dado.id },
@@ -320,4 +335,5 @@ it("CT10 completo: encerra um contrato com desconto, multa, caixa, crédito e di
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaAId } })).toMatchObject({ status: "ENCERRADA" });
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaBId } })).toEqual(matriculaBAntes);
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaB.id } })).toEqual(cobrancaBAntes);
+  expect(await prisma.creditoMatricula.findFirstOrThrow({ where: { id: creditoBAntes.id } })).toEqual(creditoBAntes);
 });
