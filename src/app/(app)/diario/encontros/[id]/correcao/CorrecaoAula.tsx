@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { aprovarCorrecaoAula, consultarHistoricoCorrecaoAula, proporCorrecaoAula, rejeitarCorrecaoAula, revisarImpactosCorrecaoAula } from "@/server/diario/correcao-aula";
+import { CorrecaoFonteGravacao } from "./CorrecaoFonteGravacao";
 
 type RespostaHistorico = Awaited<ReturnType<typeof consultarHistoricoCorrecaoAula>>;
 type DadosRevisao = NonNullable<Extract<RespostaHistorico, { ok: true }> ["dado"]>;
@@ -334,6 +335,8 @@ export function CorrecaoAula({ encontroId, dados: dadosIniciais, podeConferirImp
       <p className="whitespace-pre-wrap rounded border bg-white p-3 text-sm">{dados.snapshot.conteudo}</p>
       <ul className="space-y-1 text-sm">{dados.snapshot.registros.map((registro) => <li key={registro.registroId}><span className="font-medium">{registro.nomeAluno}</span>: {rotuloParticipacao[registro.participacao]}{registro.observacao ? ` · ${registro.observacao}` : ""}</li>)}</ul>
     </section>
+
+    <CorrecaoFonteGravacao publicacaoId={dados.snapshot.gravacao?.tipo === "OFICIAL" ? dados.snapshot.gravacao.publicacaoId : null} podePropor={dados.podePropor} />
 
     {dados.podePropor ? <form className="space-y-4 rounded border bg-[var(--surface)] p-4" onSubmit={(evento) => { evento.preventDefault(); enviarProposta(); }}>
       <h2 className="text-lg font-medium">Alteração proposta</h2>
