@@ -87,7 +87,7 @@ export async function vincularImpactoTaxaAditivo(input: unknown) { return execut
     if (linha.propostaAcertoId === d.propostaAcertoId) return { id: linha.id, vinculada: true };
     if (linha.decisao !== "AFETADA" || linha.propostaAcertoId) throw new ErroRegra("Somente taxa afetada sem vínculo pode receber acerto.");
     const proposta = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaAcertoId } });
-    if (proposta.matriculaId !== conjunto.matriculaId || proposta.propostaAditivoId !== conjunto.propostaAditivoId || proposta.versaoCondicoesId !== conjunto.versaoCondicoesId || proposta.cobrancaId !== linha.cobrancaId) throw new ErroRegra("O acerto não corresponde à taxa e versão deste conjunto.");
+    if (proposta.matriculaId !== conjunto.matriculaId || proposta.propostaAditivoId !== conjunto.propostaAditivoId || proposta.versaoCondicoesId !== conjunto.versaoCondicoesId || proposta.cobrancaId !== linha.cobrancaId || !["PENDENTE", "APROVADA", "APLICADA"].includes(proposta.status)) throw new ErroRegra("O acerto precisa estar vigente e corresponder à taxa e versão deste conjunto.");
     await tx.impactoTaxaAditivo.update({ where: { id: linha.id }, data: { propostaAcertoId: proposta.id } });
     await registrarEvento(tx, { tipo: "ImpactoTaxaAditivoVinculado", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, cobrancaId: linha.cobrancaId, propostaAcertoId: proposta.id } });
     return { id: linha.id, vinculada: true };
