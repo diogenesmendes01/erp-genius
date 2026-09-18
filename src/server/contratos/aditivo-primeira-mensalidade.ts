@@ -11,12 +11,12 @@ export async function consultarAlvoPrimeiraMensalidadeTx(tx: Prisma.TransactionC
     select: { cobranca: { select: { id: true, matriculaId: true, versao: true, status: true, vencimento: true } } },
   });
   const base = { vencimentoProposto: alteracao.data };
-  if (itens.length !== 1) return { ...base, cobranca: null, pendencia: itens.length
+  if (itens.length !== 1) return { ...base, podePreparar: false, cobranca: null, pendencia: itens.length
     ? "A emissão identifica mais de uma primeira mensalidade. Confira a origem antes do acerto."
     : "A primeira mensalidade ainda não possui origem de emissão identificada. Confira a emissão ou a migração antes do acerto." };
   const c = itens[0].cobranca;
   if (c.matriculaId !== matriculaId) throw new ErroRegra("A primeira mensalidade pertence a outro contrato.");
-  return { ...base, cobranca: { id: c.id, versao: c.versao, vencimentoAtual: c.vencimento },
+  return { ...base, podePreparar: c.status !== "CANCELADA", cobranca: { id: c.id, versao: c.versao, vencimentoAtual: c.vencimento },
     pendencia: c.status === "CANCELADA" ? "A primeira mensalidade está cancelada e exige conferência financeira."
       : "O vencimento exige proposta de acerto e aprovação financeira independente antes da aplicação." };
 }

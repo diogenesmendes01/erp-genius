@@ -23,7 +23,7 @@ export default async function Pagina({ params, searchParams }: {
  <p>Matrícula {matriculaId} · versão contratual {d.versao}</p>
  <p>Vigência aprovada: {new Date(d.vigenciaInicio).toISOString().replace("T", " ").slice(0,19)} UTC. A aplicação fica disponível a partir desse momento.</p>
  <p>Novo vencimento contratado: {d.alvo.vencimentoProposto}. {d.alvo.pendencia}</p>
- {d.alvo.cobranca && <VencimentoFormulario modo="preparar" matriculaId={matriculaId} versaoCondicoesId={versao.id} revisaoHash={d.revisaoHash} />}
+ {d.alvo.podePreparar && <VencimentoFormulario modo="preparar" matriculaId={matriculaId} versaoCondicoesId={versao.id} revisaoHash={d.revisaoHash} />}
  <h2 className="text-xl">Histórico e decisões</h2>
  {!d.propostas.length && <p>Nenhuma proposta de acerto registrada.</p>}
  {d.propostas.map(p => <section key={p.id} className="space-y-2 rounded border p-4">
