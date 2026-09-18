@@ -56,6 +56,9 @@ export async function proporVencimentoAditivo(input: unknown) {
         SELECT f AS fotografia, encode(sha256(convert_to(f::text,'UTF8')),'hex') AS hash
         FROM (SELECT fotografia_vencimento_aditivo_225(${v.id},${c.id},${fuso},${vencimentoNovo}::timestamp) AS f) fonte`;
       if (!foto?.fotografia) throw new ErroRegra("Fotografia do acerto indisponível.");
+      // Prisma transporta JSON pelo JavaScript: calcular o hash após essa normalização.
+      const [normalizada] = await tx.$queryRaw<Array<{ hash: string }>>`SELECT encode(sha256(convert_to(${JSON.stringify(foto.fotografia)}::jsonb::text,'UTF8')),'hex') AS hash`;
+      foto.hash = normalizada.hash;
       const p = await tx.propostaVencimentoAditivo.create({ data: { matriculaId: d.matriculaId, propostaAditivoId: v.propostaId, versaoCondicoesId: v.id, cobrancaId: c.id, preparadorId: autor.id, versaoCobranca: c.versao, vencimentoAnterior: c.vencimento, vencimentoNovo, fuso, fotografia: foto.fotografia as Prisma.InputJsonValue, fotografiaHash: foto.hash, motivo: d.motivo, evidencia: d.evidencia, chaveIdempotencia: d.chaveIdempotencia } });
       await registrarEvento(tx, { tipo: "VencimentoAditivoProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { propostaId: p.id, cobrancaId: c.id, fotografiaHash: foto.hash } });
       return { id: p.id };
