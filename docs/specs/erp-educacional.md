@@ -495,6 +495,15 @@ Decisão aprovada: definir no próprio aditivo se a correção de cobertura pres
 
 Opção C aprovada: somente regra estruturada no contrato. Se faltarem condições suficientes, o acerto aguarda complementação e conferência. Financeiro prepara e outra pessoa autorizada aprova; não aplicar automaticamente proporcional de matrícula ativa, nem apuração manual livre. Preservar recebimentos e distinguir crédito apurado de devolução executada. Implementação pendente.
 
+Critérios técnicos de aceite da integração:
+
+- A primeira aplicação do acerto é única por pedido, inclusive quando propostas distintas foram preparadas antes da aplicação. Repetir a mesma operação confirmada retorna seu resultado, sem novos valores ou créditos.
+- A efetivação da desistência confere as fontes financeiras atuais, além da aprovação administrativa e das evidências de encerramento das solicitações de assinatura. Uma movimentação posterior à aplicação não pode passar despercebida.
+- Recebimento ou comprovante posterior permanece registrado. Havendo impacto novo, a equipe deve conseguir preparar uma reconferência vinculada ao acerto aplicado, com aprovação independente e efeitos somente sobre a diferença comprovada. Não reaplicar o acerto original, duplicar crédito ou presumir devolução. Se as condições estruturadas não bastarem, exigir complementação.
+- Um bloqueio sem caminho operacional para resolver essa pendência não atende ao fluxo completo. A reconferência deve preservar os demais contratos do aluno e revalidar a fotografia antes de liberar a efetivação.
+
+Estado local: base em integração, ainda sem aceite completo. A correção da conferência financeira, a resolução de pendências posteriores e a interface operacional precisam de testes integrados e revisão independente antes da conclusão.
+
 ### Q167 — Destinação negociada do excedente de permuta
 
 Opção C aprovada em18/09/2026: quando um acerto reduzir uma obrigação já compensada por serviços, negociar a destinação do excedente em cada caso. Registrar concordância das partes e proposta específica; Financeiro prepara e outra pessoa autorizada aprova antes da aplicação. Preservar a contrapartida e sua origem em permuta. Não converter automaticamente em crédito em dinheiro, devolver ou duplicar compensação. Sem concordância/proposta aprovada, o tratamento do excedente permanece pendente. Implementação parcial: calculador de fontes separa a redução total do excedente originado em serviços, exige distribuição explícita quando ambígua e preserva cobrança, moeda, versão e aplicação de permuta. Testes dirigidos 11/11 e TypeScript aprovados no integrador. Ainda faltam carregamento das fontes reais, proposta/concordância, decisão, aplicação e interface; destinos executáveis aguardam Q171. Este cálculo não libera crédito, devolução ou acerto.
