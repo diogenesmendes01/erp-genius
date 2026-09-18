@@ -485,6 +485,8 @@ model Usuario {
   propostasAcertoTaxaAditivoPreparadas PropostaAcertoTaxaAditivo[] @relation("PreparadorAcertoTaxaAditivo")
   decisoesAcertoTaxaAditivo DecisaoAcertoTaxaAditivo[] @relation("DecisorAcertoTaxaAditivo")
   invalidacoesAcertoTaxaAditivo InvalidacaoAcertoTaxaAditivo[] @relation("ResolvedorInvalidacaoAcertoTaxaAditivo")
+  conjuntosImpactosTaxaAditivoPreparados ConjuntoImpactosTaxaAditivo[] @relation("PreparadorConjuntoImpactosTaxaAditivo")
+  decisoesConjuntosImpactosTaxaAditivo DecisaoConjuntoImpactosTaxaAditivo[] @relation("DecisorConjuntoImpactosTaxaAditivo")
   decisoesAditivo DecisaoAditivoContratual[]
   decisoesAlcadaAditivo DecisaoAlcadaAditivo[]
   processosAssinaturaAditivo ProcessoAssinaturaAditivo[]
@@ -1689,6 +1691,8 @@ model Matricula {
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
+  conjuntosImpactosTaxaAditivo ConjuntoImpactosTaxaAditivo[]
+  impactosTaxaAditivo ImpactoTaxaAditivo[]
   origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
  beneficiosReposicaoParticular BeneficioReposicaoParticularMatricula[]
 
@@ -1826,6 +1830,7 @@ enum FormaPagamento {
 model Cobranca {
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
+  impactosTaxaAditivo ImpactoTaxaAditivo[]
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
   origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
   destinacoesRecebimento DestinacaoRecebimento[] @relation("DestinacoesRecebimentoCobranca")
@@ -4212,6 +4217,7 @@ model PropostaAditivoContratual {
   versaoCondicoes VersaoCondicoesAditivo?
   aplicacaoCondicoes AplicacaoCondicoesAditivo?
   propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
+  conjuntosImpactosTaxa ConjuntoImpactosTaxaAditivo[]
   propostaAgendaId String? @unique
   propostaAgenda PropostaAgendaAditivoParticular? @relation(fields: [propostaAgendaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   id String @id @default(cuid())
@@ -4367,6 +4373,7 @@ model ConclusaoAssinaturaAditivo {
 model ConferenciaFinalAditivo {
   versaoCondicoes VersaoCondicoesAditivo?
   propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
+  conjuntosImpactosTaxa ConjuntoImpactosTaxaAditivo[]
   id String @id @default(cuid())
   conclusaoId String @unique
   conclusao ConclusaoAssinaturaAditivo @relation(fields: [conclusaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4397,6 +4404,7 @@ model VersaoCondicoesAditivo {
   posterior VersaoCondicoesAditivo? @relation("VersaoCondicoesAditivoAnterior")
   aplicacao AplicacaoCondicoesAditivo?
   propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
+  conjuntosImpactosTaxa ConjuntoImpactosTaxaAditivo[]
   condicoes Json
   condicoesHash String
   vigenciaInicio DateTime
@@ -7407,6 +7415,77 @@ enum StatusPropostaAcertoTaxaAditivo {
   OBSOLETA
 }
 
+enum StatusConjuntoImpactosTaxaAditivo {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  COMPLETO
+  OBSOLETO
+}
+
+enum DecisaoImpactoTaxaAditivo {
+  AFETADA
+  PRESERVADA
+}
+
+model ConjuntoImpactosTaxaAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaFinalId String
+  conferenciaFinal ConferenciaFinalAditivo @relation(fields: [conferenciaFinalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorConjuntoImpactosTaxaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  status StatusConjuntoImpactosTaxaAditivo @default(PENDENTE)
+  fotografia Json
+  fotografiaHash String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoConjuntoImpactosTaxaAditivo?
+  impactos ImpactoTaxaAditivo[]
+
+  @@unique([propostaAditivoId, fotografiaHash])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoConjuntoImpactosTaxaAditivo {
+  id String @id @default(cuid())
+  conjuntoId String @unique
+  conjunto ConjuntoImpactosTaxaAditivo @relation(fields: [conjuntoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorConjuntoImpactosTaxaAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model ImpactoTaxaAditivo {
+  id String @id @default(cuid())
+  conjuntoId String
+  conjunto ConjuntoImpactosTaxaAditivo @relation(fields: [conjuntoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisao DecisaoImpactoTaxaAditivo
+  justificativa String
+  fotografia Json
+  fotografiaHash String
+  propostaAcertoId String? @unique
+  propostaAcerto PropostaAcertoTaxaAditivo? @relation(fields: [propostaAcertoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(now())
+
+  @@unique([conjuntoId, cobrancaId])
+  @@index([cobrancaId])
+}
+
 model PropostaAcertoTaxaAditivo {
   id String @id @default(cuid())
   matriculaId String
@@ -7435,6 +7514,7 @@ model PropostaAcertoTaxaAditivo {
   decisao DecisaoAcertoTaxaAditivo?
   aplicacao AplicacaoAcertoTaxaAditivo?
   invalidacao InvalidacaoAcertoTaxaAditivo?
+  impactoConjunto ImpactoTaxaAditivo?
 
   @@unique([versaoCondicoesId, cobrancaId, fotografiaHash])
   @@unique([preparadorId, chaveIdempotencia])
