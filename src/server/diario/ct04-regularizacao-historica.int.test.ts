@@ -5,22 +5,6 @@ const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/server/_shared", async (original) => {
-  const real = await original<typeof import("@/server/_shared")>();
-  return {
-    ...real,
-    exigirSessaoComPapel: async (...papeis: Papel[]) => {
-      const sessao = await authMock();
-      const usuario = await prisma.usuario.findUniqueOrThrow({
-        where: { id: sessao.user.id },
-        select: { id: true, nome: true, papeis: true, ativo: true },
-      });
-      if (!usuario.ativo) throw new real.ErroPermissao();
-      real.exigirPapel(usuario, ...papeis);
-      return usuario;
-    },
-  };
-});
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -36,6 +20,7 @@ let turmaOrigemId: string;
 let alunoId: string;
 let professorOriginalId: string;
 let professorDesignadoId: string;
+let professorTitularAtualId: string;
 let gestaoId: string;
 
 beforeEach(async () => {
@@ -43,6 +28,7 @@ beforeEach(async () => {
   const catalogo = await seedCatalogoMinimo();
   professorOriginalId = (await criarUsuario([Papel.PROFESSOR], "Professor original CT04")).id;
   professorDesignadoId = (await criarUsuario([Papel.PROFESSOR], "Professor designado CT04")).id;
+  professorTitularAtualId = (await criarUsuario([Papel.PROFESSOR], "Professor titular atual CT04")).id;
   const professorDestinoId = (await criarUsuario([Papel.PROFESSOR], "Professor destino CT04")).id;
   gestaoId = (await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão CT04")).id;
   const secretariaId = (await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria CT04")).id;
@@ -85,6 +71,9 @@ beforeEach(async () => {
   await prisma.$transaction(async (tx) => {
     await tx.alocacaoTurma.update({ where: { id: origem.id }, data: { ativa: false, encerradaEm: transferenciaEm } });
     await tx.alocacaoTurma.create({ data: { alunoId, matriculaId: matricula.id, turmaId: turmaDestino.id, criadoEm: transferenciaEm } });
+    await tx.vinculoDocente.updateMany({ where: { turmaId: turmaOrigem.id, fim: null }, data: { fim: transferenciaEm } });
+    await tx.vinculoDocente.create({ data: { turmaId: turmaOrigem.id, professorId: professorTitularAtualId, inicio: transferenciaEm } });
+    await tx.turma.update({ where: { id: turmaOrigem.id }, data: { professorId: professorTitularAtualId } });
   });
   await prisma.usuario.update({ where: { id: professorOriginalId }, data: { ativo: false } });
 });
@@ -139,6 +128,12 @@ it("CT04 regulariza a primeira chamada histórica após transferência sem reabr
   const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "AulaDiarioRegistrada", autorId: professorDesignadoId } });
   expect(evento.agregadoId).toBe(turmaOrigemId);
   expect(evento.payload).toMatchObject({ aulaId: salvo.dado.id, atorId: professorDesignadoId, designacaoId: primeiraDesignacao.dado.id });
+  expect(await prisma.turma.findUniqueOrThrow({ where: { id: turmaOrigemId } })).toMatchObject({ professorId: professorTitularAtualId });
+  const vinculos = await prisma.vinculoDocente.findMany({ where: { turmaId: turmaOrigemId }, orderBy: { inicio: "asc" } });
+  expect(vinculos).toEqual([
+    expect.objectContaining({ professorId: professorOriginalId, inicio: new Date("2026-01-01T00:00:00.000Z"), fim: new Date("2026-01-11T10:00:00.000Z") }),
+    expect.objectContaining({ professorId: professorTitularAtualId, inicio: new Date("2026-01-11T10:00:00.000Z"), fim: null }),
+  ]);
   expect(await prisma.alocacaoTurma.findFirstOrThrow({ where: { alunoId, turmaId: turmaOrigemId } })).toMatchObject({ ativa: false, encerradaEm: new Date("2026-01-11T10:00:00.000Z") });
   const alocacaoDestino = await prisma.alocacaoTurma.findFirstOrThrow({ where: { alunoId, ativa: true } });
   expect(alocacaoDestino.turmaId).not.toBe(turmaOrigemId);
