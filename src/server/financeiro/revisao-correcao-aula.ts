@@ -85,13 +85,30 @@ export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
     return prisma.$transaction(async tx => {
       await exigirFinanceiroTx(tx, usuario.id);
       const revisoesBrutas = await tx.propostaRevisaoFinanceiraCorrecaoAula.findMany({ where: { propostaCorrecaoAula: { encontro: { matriculaId: d.matriculaId } } }, orderBy: [{ propostaCorrecaoAula: { versao: "desc" } }, { versao: "desc" }],
-        select: { id: true, versao: true, tipo: true, motivo: true, criadaEm: true, propostaCorrecaoAulaId: true, fotografia: true, preparador: { select: { id: true, nome: true } }, decisao: { select: { id: true, aprovada: true, motivo: true, criadaEm: true, decisor: { select: { id: true, nome: true } } } }, propostaCorrecaoAula: { select: { versao: true, entradaHash: true, autorId: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } } } });
+        select: { id: true, versao: true, tipo: true, motivo: true, criadaEm: true, propostaCorrecaoAulaId: true, fotografia: true, fotografiaHash: true, preparador: { select: { id: true, nome: true, ativo: true, papeis: true } }, decisao: { select: { id: true, aprovada: true, motivo: true, criadaEm: true, decisor: { select: { id: true, nome: true, ativo: true, papeis: true } } } }, propostaCorrecaoAula: { select: { versao: true, entradaHash: true, autorId: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } } } });
       const revisoes = revisoesBrutas.map(revisao => { const foto = revisao.fotografia as Record<string, unknown>; return { ...revisao, podeDecidir: !revisao.decisao && revisao.preparador.id !== usuario.id && revisao.propostaCorrecaoAula.autorId !== usuario.id, fotografia: { fundamento: foto.fundamento, ocorrencia: foto.ocorrencia, conferencia: foto.conferencia, cobranca: foto.cobranca, informesPagamento: foto.informesPagamento, recebimentos: foto.recebimentos, destinacoes: foto.destinacoes } }; });
       const brutas = await tx.propostaCorrecaoAula.findMany({ where: { encontro: { matriculaId: d.matriculaId }, rejeicao: null, aprovacao: null }, orderBy: { versao: "desc" }, distinct: ["encontroId"], select: { id: true, encontroId: true, versao: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } });
       // The SQL projection is the eligibility authority. Do not expose a Q23
       // motive merely because it belongs to this enrolment.
-      const candidatas = [] as typeof brutas;
-      for (const candidata of brutas) if (await fotoAtualTx(tx, candidata.id)) candidatas.push(candidata);
+      const candidatas: Array<(typeof brutas)[number] & { podePreparar: boolean; preparoBloqueadoPor: string | null }> = [];
+      const temAlcadaFinanceira = (ator: { ativo: boolean; papeis: Papel[] }) => ator.ativo && ator.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR);
+      for (const candidata of brutas) {
+        const foto = await fotoAtualTx(tx, candidata.id);
+        if (!foto) continue;
+        const ultima = revisoesBrutas.find(r => r.propostaCorrecaoAulaId === candidata.id);
+        if (!ultima) {
+          candidatas.push({ ...candidata, podePreparar: true, preparoBloqueadoPor: null });
+          continue;
+        }
+        const fotografiaAtual = ultima.fotografiaHash === foto.fotografiaHash;
+        const preparadorAtual = temAlcadaFinanceira(ultima.preparador);
+        const decisorAtual = !ultima.decisao || temAlcadaFinanceira(ultima.decisao.decisor);
+        const podePreparar = ultima.decisao?.aprovada === false || !fotografiaAtual || !preparadorAtual || !decisorAtual;
+        const preparoBloqueadoPor = podePreparar ? null
+          : ultima.decisao ? "A revisão aprovada permanece vigente e aguarda publicação pedagógica."
+            : "A revisão financeira vigente aguarda decisão independente.";
+        candidatas.push({ ...candidata, podePreparar, preparoBloqueadoPor });
+      }
       return { usuarioId: usuario.id, revisoes, candidatas };
     });
   });

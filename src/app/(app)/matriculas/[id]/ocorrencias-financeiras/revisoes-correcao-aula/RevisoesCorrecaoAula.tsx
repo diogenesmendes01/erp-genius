@@ -25,7 +25,9 @@ export function RevisoesCorrecaoAula({ matriculaId, dados }: { matriculaId: stri
   return <section className="space-y-4">
     {dados.candidatas.map(p => <article key={p.id} className="rounded border p-4 space-y-2">
       <h2 className="font-medium">Proposta Q23 v{p.versao} · {data(p.encontro.inicio, p.encontro.fusoOrigem)}</h2>
-      <form onSubmit={e => { e.preventDefault(); preparar(p.id, e.currentTarget); }} className="space-y-2"><label className="block">Justificativa financeira sem alteração de valores<textarea name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border p-2">Preparar revisão Q92</button></form>
+      {p.podePreparar
+        ? <form onSubmit={e => { e.preventDefault(); preparar(p.id, e.currentTarget); }} className="space-y-2"><label className="block">Justificativa financeira sem alteração de valores<textarea name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border p-2">Preparar revisão Q92</button></form>
+        : <p>{p.preparoBloqueadoPor}</p>}
     </article>)}
     {!dados.candidatas.length && <p>Nenhuma proposta Q23 pendente nesta matrícula.</p>}
     <h2 className="text-xl">Histórico imutável</h2>
