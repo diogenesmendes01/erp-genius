@@ -282,6 +282,10 @@ Uma entrega fica pronta para implementação quando seu corpo, requisitos refere
 
 Uma entrega somente fica concluída quando há implementação, migração aplicável, testes apropriados executados com evidência, regressões pertinentes e atualização da situação do projeto. Integração real exige evidência no serviço e ambiente corretos. Caixa de aceite em documento não substitui resultado.
 
+### Evidência de integração — CT-06 (18/09/2026)
+
+`src/server/matricula/ct06-datas-fusos.int.test.ts` exercita as ações públicas de preparação, pagador, condições e conferência/emissão. Com cobertura de ciclo iniciada em 31/01/2099, a mensalidade é emitida uma única vez para 31/01–27/02 e vence em 28/02 às 12:00 de `America/Costa_Rica` (`18:00Z`). A consulta pública do docente mantém a aula `America/Sao_Paulo` iniciada às 23:30 de 31/01, exibida como 02:30Z em 01/02, sem mutar agenda, calendário ou cobertura financeira.
+
 ## 13. Sequência e governança
 
 Começar pela [base da matrícula](matricula-como-unidade-operacional.md) de B01, com calendário inicial F07.1 independente quando possível. Em seguida, B02 e agenda/aprovações; depois diário, cobertura/acertos e permuta; reposições e particulares; portal/comunicação. M01 e V01 acompanham os marcos, sem esperar o final para validar vínculos e dinheiro.
