@@ -8,7 +8,7 @@ vi.mock("@/server/contratos/vencimento-aditivo", () => ({ consultarVencimentosAd
 vi.mock("./Formulario", () => ({ VencimentoFormulario: ({ modo }: { modo: string }) => createElement("span", { "data-acao": modo }, modo) }));
 import Page from "./page";
 const entrada = () => ({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }), searchParams: Promise.resolve({ pagina: "2" }) });
-const dado = () => ({ versao: 2, revisaoHash: "hash", pagina: 2, temProxima: true,
+const dado = () => ({ versao: 2, vigenciaInicio: "2026-09-01T00:00:00Z", revisaoHash: "hash", pagina: 2, temProxima: true,
  alvo: { vencimentoProposto: "2026-11-15", pendencia: "Conferir antes de aplicar", cobranca: { id: "c1" } },
  propostas: [{ id: "acerto1", estado: "APROVADA", fuso: "America/Sao_Paulo", vencimentoAnterior: "2026-10-15T12:00:00Z", vencimentoNovo: "2026-11-15T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
 });
