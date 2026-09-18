@@ -578,12 +578,13 @@ it("rota de PDF exige sessão, papel e matrícula exata e não formaliza o aditi
   expect((await abrir()).status).toBe(401);
 });
 
-async function prepararConferencia(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" = false) {
+async function prepararConferencia(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" | "MISTO" = false) {
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId }, include: { aluno: true } });
   const porHora = (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR";
   const identidade = { nome: estruturado && !porHora && !mensalidade ? "Nome atualizado no aditivo" : [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" "), email: cadastroCompleto ? "contratual@example.test" : m.aluno.email!, documento: cadastroCompleto ? "DOC-CONTRATUAL" : m.aluno.documento! };
   const proposta = await preparar({ ...((porHora || vencimento) ? { vigenciaInicio: vencimento === "FUTURO" ? "2099-09-01T00:00:00Z" : "2026-09-01T00:00:00Z" } : {}), alteracoes: porHora
     ? [{ origem: "HORA_VALOR", novo: "200.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "200", moeda: "CRC" } }]
+    : vencimento === "MISTO" ? [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } }, { origem: "MENSALIDADE_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } }]
     : vencimento ? [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } }]
     : taxa
       ? [{ origem: "TAXA_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } }]
@@ -596,7 +597,7 @@ async function prepararConferencia(estruturado = false, mensalidade = false, tax
     motivo: "Identificação conferida especificamente para o aditivo", chaveIdempotencia: "conferencia-aditivo-primeira" };
   return { proposta, dados };
 }
-async function prepararOriginalAditivo(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" = false) {
+async function prepararOriginalAditivo(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" | "MISTO" = false) {
   const { proposta, dados } = await prepararConferencia(estruturado, mensalidade, taxa, cadastroCompleto, vencimento); await decidir(proposta);
   if (mensalidade || taxa || (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR") {
     authMock.mockResolvedValue({ user: { id: fixture.adminId } });
@@ -607,7 +608,7 @@ async function prepararOriginalAditivo(estruturado = false, mensalidade = false,
   return { proposta, dados, conferencia, entradaOriginal: { matriculaId: fixture.matriculaId, propostaId: proposta.id, conferenciaId: conferencia.id,
     conferenciaHash: conferencia.revisaoHash, motivo: "Texto e participantes conferidos para preservar original", conteudoConferido: true as const } };
 }
-async function prepararRevisaoOriginal(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" = false) {
+async function prepararRevisaoOriginal(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento: boolean | "FUTURO" | "MISTO" = false) {
   const base = await prepararOriginalAditivo(estruturado, mensalidade, taxa, cadastroCompleto, vencimento), original = await preservarOriginalAditivo(base.entradaOriginal);
   if (!original.ok || !original.dado) throw new Error("Original não gerado");
   const alvo = { matriculaId: fixture.matriculaId, propostaId: base.proposta.id, artefatoId: original.dado.id };
@@ -669,7 +670,7 @@ it("nova tentativa do aditivo exige confirmação de não criação e recusa ret
   expect(await prisma.observacaoEnvioAditivo.count()).toBe(1);
 });
 
-it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162", "PRODUCAO_MENSAL_VENCIMENTO", "PRODUCAO_MENSAL_VENCIMENTO_PAGO", "PRODUCAO_MENSAL_VENCIMENTO_FUTURO"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
+it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162", "PRODUCAO_MENSAL_VENCIMENTO", "PRODUCAO_MENSAL_VENCIMENTO_PAGO", "PRODUCAO_MENSAL_VENCIMENTO_FUTURO", "PRODUCAO_MENSAL_VENCIMENTO_MISTO"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
   const ambiente = modo === "SANDBOX" ? "SANDBOX" : "PRODUCAO";
   const taxaSemConsumidor = modo === "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR";
   if (modo === "PRODUCAO_MENSAL_VENCIMENTO_PAGO") {
@@ -682,7 +683,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
       comentario: "Mensalidade quitada antes da alteração contratual do vencimento",
     }));
   }
-  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO", modo === "PRODUCAO_MENSAL_VENCIMENTO_FUTURO" ? "FUTURO" : modo.startsWith("PRODUCAO_MENSAL_VENCIMENTO"));
+  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO", modo === "PRODUCAO_MENSAL_VENCIMENTO_FUTURO" ? "FUTURO" : modo === "PRODUCAO_MENSAL_VENCIMENTO_MISTO" ? "MISTO" : modo.startsWith("PRODUCAO_MENSAL_VENCIMENTO"));
   const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
   if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
   const processo = await prepararProcessoAssinaturaAditivo({ ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente });
@@ -832,7 +833,14 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: antes.status === "PAGO" ? "PAGO" : "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
-    expect(await prisma.$transaction(tx => resolverMensalVigenteTx(tx, proximoPreco))).toMatchObject({ valorNegociado: "300", versaoAditivo: { id: formalizada.dado.id } });
+    if (modo === "PRODUCAO_MENSAL_VENCIMENTO_MISTO") {
+      await expect(prisma.$transaction(tx => resolverMensalVigenteTx(tx, proximoPreco))).rejects.toThrow("aplicação explícita");
+      authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+      const aplicarDiretas = await aplicarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, chaveIdempotencia: "diretas-apos-vencimento" });
+      expect(aplicarDiretas,JSON.stringify(aplicarDiretas)).toMatchObject({ ok: true });
+      authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+    }
+    expect(await prisma.$transaction(tx => resolverMensalVigenteTx(tx, proximoPreco))).toMatchObject({ valorNegociado: modo === "PRODUCAO_MENSAL_VENCIMENTO_MISTO" ? "500" : "300", versaoAditivo: { id: formalizada.dado.id } });
     expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
     expect(await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } })).toEqual(destinacoesAntes);
     expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false, podeRevisar: true });
@@ -843,7 +851,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await consultarVencimentosAditivo({ ...consultaVencimento, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
     authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
     const efeitosAplicados = await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: alvo.propostaId });
-    expect(efeitosAplicados).toMatchObject({ ok: true, dado: { aplicado: false, primeiraMensalidade: {
+    expect(efeitosAplicados).toMatchObject({ ok: true, dado: { aplicado: modo === "PRODUCAO_MENSAL_VENCIMENTO_MISTO", primeiraMensalidade: {
       aplicacao: { id: aplicada.ok ? aplicada.dado?.id : undefined, vencimentoNovo: salvo.vencimentoNovo },
       pendencia: expect.stringContaining("acerto de vencimento aplicado"),
     } } });

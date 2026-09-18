@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { projetarAplicacoesPorCampo, type VersaoAplicacaoCampos } from "./aditivo-aplicacao-campos";
+import { projetarAplicacoesPorCampo, conferirAplicacaoDireta, type VersaoAplicacaoCampos } from "./aditivo-aplicacao-campos";
 import { hashSubstituicao } from "./substituicao-estado";
 const data = { tipo: "DATA", data: "2026-11-15" };
 const preco = { tipo: "DINHEIRO", valor: "300", moeda: "BRL" };
@@ -41,4 +41,16 @@ it("nova aplicação direta não valida alteração pendente de outra proposta",
  const r=projetarAplicacoesPorCampo([a,v(2,{ ALUNO_NOME:{tipo:"TEXT",texto:"Nome"} },a.condicoes as object,"aplicacao-v2")]);
  expect(r.MENSALIDADE_VALOR.aplicacaoId).toBeNull();
  expect(r.ALUNO_NOME.aplicacaoId).toBe("aplicacao-v2");
+});
+
+it("permite aplicação direta depois do acerto próprio, inclusive com valor na mesma proposta", () => {
+ const a=v(1,{ PRIMEIRA_MENSALIDADE_VENCIMENTO:data,MENSALIDADE_VALOR:preco },{},null,"acerto");
+ expect(()=>conferirAplicacaoDireta([a],a.id)).not.toThrow();
+ expect(()=>conferirAplicacaoDireta([{...a,aplicacaoVencimentoId:null}],a.id)).toThrow("fluxo próprio");
+});
+it("herança aplicada permite nova aplicação direta; herança pendente bloqueia", () => {
+ const a=v(1,{ PRIMEIRA_MENSALIDADE_VENCIMENTO:data },{},null,"acerto");
+ const b=v(2,{MENSALIDADE_VALOR:preco},a.condicoes as object);
+ expect(()=>conferirAplicacaoDireta([a,b],b.id)).not.toThrow();
+ expect(()=>conferirAplicacaoDireta([{...a,aplicacaoVencimentoId:null},b],b.id)).toThrow();
 });

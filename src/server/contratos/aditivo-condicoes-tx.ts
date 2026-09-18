@@ -1,3 +1,5 @@
+import { conferirAplicacaoDireta } from "./aditivo-aplicacao-campos";
+import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -13,14 +15,6 @@ import { criarAvisosAlteracaoAgendaTx } from "@/server/comunicacoes-agenda/aviso
 const Entrada = z.object({ matriculaId: z.string().min(1), propostaId: z.string().min(1), conclusaoId: z.string().min(1), revisaoHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const EntradaAplicacao = Entrada.extend({ chaveIdempotencia: z.string().trim().min(1).max(200) }).strict();
 const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.JsonObject;
-const condicoesSemConsumidor = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
-
-function exigirConsumidorAplicavel(condicoes: Prisma.JsonValue) {
-  const campos = Object.keys(z.record(z.unknown()).parse(condicoes));
-  const pendente = campos.find((campo) => condicoesSemConsumidor.has(campo));
-  if (pendente) throw new ErroRegra(`A condição ${pendente} exige fluxo próprio antes da aplicação.`);
-}
-
 async function exigirMoedaERegimeAplicaveis(tx: Prisma.TransactionClient, matriculaId: string, condicoes: Prisma.JsonValue) {
   const matricula = await tx.matricula.findUnique({ where: { id: matriculaId }, select: { moeda: true, preparacaoComercial: { select: { regime: true } } } });
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
@@ -94,7 +88,7 @@ export async function aplicarCondicoesFormalizadasAditivoTx(tx: Prisma.Transacti
   if (existente) { if (!igual(existente)) throw new ErroRegra("A versão já recebeu outra aplicação."); return { id: existente.id, versao: versao.versao, aplicadaEm: existente.aplicadaEm }; }
   const { estado, final } = await bloquearERevalidar(tx, autorId, d);
   if (versao.conferenciaFinalId !== final.id || versao.vigenciaInicio.getTime() !== new Date(estado.dados.vigenciaInicio).getTime()) throw new ErroRegra("A versão formalizada não corresponde à conferência atual.");
-  exigirConsumidorAplicavel(versao.condicoes);
+  conferirAplicacaoDireta(await carregarAplicacoesCamposTx(tx, d.matriculaId), versao.id);
   await exigirMoedaERegimeAplicaveis(tx, d.matriculaId, versao.condicoes);
   const pelaChave = await tx.aplicacaoCondicoesAditivo.findUnique({ where: { autorId_chaveIdempotencia: { autorId, chaveIdempotencia: d.chaveIdempotencia } } });
   if (pelaChave) throw new ErroRegra("A chave idempotente já corresponde a outra aplicação.");

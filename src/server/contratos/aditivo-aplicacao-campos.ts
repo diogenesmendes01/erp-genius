@@ -38,3 +38,14 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
   }
   return Object.fromEntries(campos);
 }
+
+/** Campos diretos desta proposta serão aplicados agora; toda herança exige prova. */
+export function conferirAplicacaoDireta(cadeia: readonly VersaoAplicacaoCampos[], versaoId: string) {
+ const atual = cadeia.find(v => v.id === versaoId);
+ if (!atual || cadeia.some(v => v.versao > atual.versao)) throw new ErroRegra("Aplique a última cadeia formalizada de condições.");
+ const estados = projetarAplicacoesPorCampo(cadeia);
+ for (const [campo, estado] of Object.entries(estados)) {
+   if (!estado.aplicacaoId && (proprios.has(campo) || estado.origemVersaoId !== versaoId)) throw new ErroRegra(`A condição ${campo} exige fluxo próprio antes da aplicação.`);
+ }
+ if (!atual.alteracoes.some(a => !proprios.has(a.origem))) throw new ErroRegra("A proposta contém somente condições com aplicação própria.");
+}
