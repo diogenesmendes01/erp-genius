@@ -8095,7 +8095,7 @@ model OrigemCreditoReconferenciaDeltaDesistencia {
   cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   valor Decimal @db.Decimal(12, 2)
   moeda String
-  criadoEm DateTime @default(now())
+  criadoEm DateTime @default(now()) @map("criadaEm")
   credito CreditoMatricula?
   @@unique([aplicacaoId, cobrancaId])
   @@index([cobrancaId])
