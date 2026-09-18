@@ -290,7 +290,7 @@ Uma entrega somente fica concluída quando há implementação, migração aplic
 
 ### Evidência de integração — CT-06 (18/09/2026)
 
-`src/server/matricula/ct06-datas-fusos.int.test.ts` exercita as ações públicas de preparação, pagador, condições e conferência/emissão. Com cobertura de ciclo iniciada em 31/01/2099, a mensalidade é emitida uma única vez para 31/01–27/02 e vence em 28/02 às 12:00 de `America/Costa_Rica` (`18:00Z`). A consulta pública do docente mantém a aula `America/Sao_Paulo` iniciada às 23:30 de 31/01, exibida como 02:30Z em 01/02, sem mutar agenda, calendário ou cobertura financeira.
+`src/server/matricula/ct06-datas-fusos.int.test.ts` exercita as ações públicas de preparação, pagador, condições e conferência/emissão. Com cobertura de ciclo iniciada em 31/01/2099, a mensalidade inicial é emitida uma única vez para 31/01–27/02 e vence em 28/02 às 12:00 de `America/Costa_Rica` (`18:00Z`). Após contrato formal, aceite, baixas exigidas, ativação e aprovação das condições, a rota pública de continuidade emite 28/02–30/03 e depois 31/03–29/04: aplica dia contratado 31 ao último dia de fevereiro e volta ao dia 31 em março, sem duplicar a emissão repetida nem sobrepor coberturas. A consulta pública do docente mantém a aula `America/Sao_Paulo` iniciada às 23:30 de 31/01, exibida localmente como 31/01 23:30 embora seu instante UTC seja 02:30Z em 01/02, sem mutar agenda, calendário ou cobertura financeira.
 
 ## 13. Sequência e governança
 
