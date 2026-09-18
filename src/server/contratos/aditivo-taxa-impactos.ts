@@ -115,8 +115,13 @@ export async function completarImpactosTaxaAditivo(input: unknown) { return exec
 }); }
 
 export async function consultarImpactosTaxaAditivo(propostaId: string) { return executarAcao(async () => {
-  await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA);
-  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: { impactos: { include: { cobranca: { select: { codigo: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } });
+  const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA);
+  const atual = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, permissoes: true } });
+  const financeiro = Boolean(atual?.ativo && atual.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR));
+  const aprova = Boolean(financeiro && (atual?.papeis.includes(Papel.ADMINISTRADOR) || atual?.permissoes.includes("financeiro.aprovar_acertos")));
+  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: { decisao: { select: { aprovada: true, decisorId: true, decididaEm: true } }, impactos: { include: { cobranca: { select: { id: true, codigo: true, moeda: true, valorNegociado: true, vencimento: true, status: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } });
   if (!conjunto) return null;
-  return { id: conjunto.id, status: conjunto.status, aplicado: conjunto.status === "COMPLETO", impactos: conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, codigo: i.cobranca.codigo, decisao: i.decisao, justificativa: i.justificativa, aplicado: Boolean(i.propostaAcerto?.aplicacao) })) };
+  const impactos = conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, cobranca: { id: i.cobranca.id, codigo: i.cobranca.codigo, moeda: i.cobranca.moeda, valorNegociado: i.cobranca.valorNegociado.toFixed(2), vencimento: i.cobranca.vencimento.toISOString().slice(0, 10), status: i.cobranca.status }, decisao: i.decisao, justificativa: i.justificativa, propostaAcertoId: i.propostaAcertoId, acertoStatus: i.propostaAcerto?.status ?? null, aplicado: Boolean(i.propostaAcerto?.aplicacao) }));
+  const afetadas = impactos.filter(i => i.decisao === "AFETADA");
+  return { id: conjunto.id, status: conjunto.status, aplicado: conjunto.status === "COMPLETO", decisao: conjunto.decisao && { aprovada: conjunto.decisao.aprovada, decisorId: conjunto.decisao.decisorId, decididaEm: conjunto.decisao.decididaEm.toISOString() }, podeVincular: financeiro && conjunto.status === "PENDENTE", podeDecidir: aprova && conjunto.preparadorId !== usuario.id && conjunto.status === "PENDENTE" && !conjunto.decisao, podeConcluir: aprova && conjunto.status === "APROVADO" && conjunto.decisao?.aprovada === true, pendencias: { afetadasSemVinculo: afetadas.filter(i => !i.propostaAcertoId).length, afetadasSemAplicacao: afetadas.filter(i => !i.aplicado).length }, impactos };
 }); }
