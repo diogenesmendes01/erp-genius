@@ -69,3 +69,4 @@ prisma/migrations/20260918110000_revisao_financeira_correcao_aula/migration.sql 
 prisma/migrations/20260918120000_consumo_horas_ocorrencia/migration.sql -text
 prisma/migrations/20260918130000_integridade_revisao_financeira/migration.sql -text
 prisma/migrations/20260918140000_troca_fonte_reposicao/migration.sql -text
+prisma/migrations/20260918150000_revisao_correcao_consumo_horas/migration.sql -text
