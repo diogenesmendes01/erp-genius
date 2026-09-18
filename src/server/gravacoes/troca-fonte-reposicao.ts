@@ -35,6 +35,7 @@ type Contexto = {
   disponibilizacaoId: string | null;
   fonteMaterialAnterior: Fonte;
   fontePublicacao: Fonte;
+  jaAdotaPublicacaoAtual: boolean;
 };
 
 function canonizar(valor: unknown): string {
@@ -93,12 +94,11 @@ async function carregarContextoTx(tx: Prisma.TransactionClient, reposicaoId: str
     tx.fonteRevisaoGravacao.findFirst({ where: { publicacaoAulaId: material.publicacaoAulaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true, arquivoOficialId: true, driveOrganizacaoId: true, driveRevisionId: true, driveRevisionMd5: true, driveRevisionSize: true, mimeType: true, origemPublicacaoId: true } }),
   ]);
   if (!fonteMaterialAnterior || !fontePublicacao) throw new ErroRegra("A troca exige revisões fixas tanto do material quanto da publicação.");
-  if (fonteMaterialAnterior.origemPublicacaoId === fontePublicacao.id) throw new ErroRegra("O material já adota a revisão publicada atual; uma nova fonte exige outra publicação corrigida.");
   return {
     materialId: material.id, reposicaoId: material.reposicaoId, matriculaId: material.reposicao.matriculaId,
     aulaOriginalId: material.reposicao.aulaOriginalId, publicacaoAulaId: material.publicacaoAulaId,
     materialDisponivel: material.disponivel, disponibilizacaoId: material.disponibilizacao?.id ?? null,
-    fonteMaterialAnterior, fontePublicacao,
+    fonteMaterialAnterior, fontePublicacao, jaAdotaPublicacaoAtual: fonteMaterialAnterior.origemPublicacaoId === fontePublicacao.id,
   };
 }
 
@@ -118,6 +118,7 @@ export async function proporTrocaFonteReposicaoGravacao(input: unknown) {
         return { id: existente.id };
       }
       const contexto = await carregarContextoTx(tx, dados.reposicaoId);
+      if (contexto.jaAdotaPublicacaoAtual) throw new ErroRegra("O material já adota a revisão publicada atual; uma nova fonte exige outra publicação corrigida.");
       const foto = fotografia(contexto);
       const proposta = await tx.propostaTrocaFonteReposicaoGravacao.create({ data: {
         materialReposicaoId: contexto.materialId, fontePublicacaoId: contexto.fontePublicacao.id,
@@ -158,16 +159,22 @@ export async function decidirTrocaFonteReposicaoGravacao(input: unknown) {
         || proposta.fontePublicacao.driveRevisionMd5 !== preflight.fontePublicacao.driveRevisionMd5
         || proposta.fontePublicacao.driveRevisionSize !== preflight.fontePublicacao.driveRevisionSize
         || proposta.fontePublicacao.mimeType !== preflight.fontePublicacao.mimeType) throw new ErroRegra("A proposta mudou durante a conferência.");
+      if (!dados.aprovar) {
+        const decisao = await tx.decisaoTrocaFonteReposicaoGravacao.create({ data: {
+          propostaId: proposta.id, decisorId: decisor.id, aprovada: false, motivo: dados.motivo,
+        } });
+        return { id: decisao.id, aprovada: false as const };
+      }
       const contexto = await carregarContextoTx(tx, proposta.materialReposicao.reposicaoId);
       const fotoAtual = fotografia(contexto);
-      if (contexto.fontePublicacao.id !== proposta.fontePublicacaoId
+      if (contexto.jaAdotaPublicacaoAtual
+        || contexto.fontePublicacao.id !== proposta.fontePublicacaoId
         || contexto.fonteMaterialAnterior.id !== proposta.fonteMaterialAnteriorId
         || contexto.fonteMaterialAnterior.versao !== proposta.versaoMaterialEsperada
         || hashFotografia(fotoAtual) !== proposta.fotografiaHash) throw new ErroRegra("As fontes ou o material mudaram desde a proposta; prepare uma nova troca.");
       const decisao = await tx.decisaoTrocaFonteReposicaoGravacao.create({ data: {
-        propostaId: proposta.id, decisorId: decisor.id, aprovada: dados.aprovar, motivo: dados.motivo,
+        propostaId: proposta.id, decisorId: decisor.id, aprovada: true, motivo: dados.motivo,
       } });
-      if (!dados.aprovar) return { id: decisao.id, aprovada: false as const };
       const fonte = await tx.fonteRevisaoGravacao.create({ data: {
         alvo: "MATERIAL_REPOSICAO", materialReposicaoId: contexto.materialId, versao: contexto.fonteMaterialAnterior.versao + 1,
         propostaTrocaReposicaoId: proposta.id, origemPublicacaoId: contexto.fontePublicacao.id,
@@ -178,7 +185,10 @@ export async function decidirTrocaFonteReposicaoGravacao(input: unknown) {
       await registrarEvento(tx, { tipo: "FonteReposicaoAdotada", agregadoTipo: "Matricula", agregadoId: contexto.matriculaId, autorId: decisor.id,
         payload: { propostaId: proposta.id, decisaoId: decisao.id, materialId: contexto.materialId, fonteAnteriorId: contexto.fonteMaterialAnterior.id, fontePublicacaoId: contexto.fontePublicacao.id, fonteMaterialId: fonte.id, versao: fonte.versao } });
       return { id: decisao.id, aprovada: true as const, fonteId: fonte.id };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    // A aplicação toma locks no usuário, publicação e material no SQL. Em
+    // Read Committed, a declaração da fonte relê a cabeça após esperar uma
+    // publicação concorrente, sem conservar um snapshot anterior ao lock.
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   });
 }
 
@@ -203,6 +213,7 @@ export async function consultarTrocaFonteReposicaoGravacao(input: unknown) {
         fonteMaterialAtual: { id: contexto.fonteMaterialAnterior.id, versao: contexto.fonteMaterialAnterior.versao, revisao: contexto.fonteMaterialAnterior.driveRevisionId },
         fontePublicacaoAtual: { id: contexto.fontePublicacao.id, versao: contexto.fontePublicacao.versao, revisao: contexto.fontePublicacao.driveRevisionId },
         materialDisponivel: contexto.materialDisponivel, disponibilizacaoId: contexto.disponibilizacaoId,
+        jaAdotaPublicacaoAtual: contexto.jaAdotaPublicacaoAtual,
       },
       propostas: propostas.map((proposta) => ({ ...proposta, podeDecidir: !proposta.decisao && proposta.preparadorId !== autor.id })),
     };
