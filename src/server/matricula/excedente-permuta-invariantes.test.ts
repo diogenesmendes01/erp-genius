@@ -112,6 +112,7 @@ describe("invariantes do excedente de permuta", () => {
     );
 
     expect(resultado.status).toBe("DISTRIBUICAO_EXPLICITA");
+    if (!("distribuicao" in resultado)) throw new Error("Distribuição explícita ausente");
     expect(centavos(resultado.reducaoNecessaria)).toBe(7);
     expect(centavos(resultado.totalPermuta)).toBe(7);
     expect(resultado.distribuicao).toEqual([
@@ -121,7 +122,7 @@ describe("invariantes do excedente de permuta", () => {
       { origemId: "permuta-b", tipo: "PERMUTA", valor: "0.02" },
     ]);
 
-    const porId = new Map(origens.map((item) => [item.id, centavos(item.valor)]));
+    const porId = new Map(origens.map((item) => [item.id, centavos(String(item.valor))]));
     for (const item of resultado.distribuicao) {
       expect(centavos(item.valor)).toBeLessThanOrEqual(porId.get(item.origemId) ?? -1);
     }
@@ -144,6 +145,7 @@ describe("invariantes do excedente de permuta", () => {
     );
 
     expect(resultado.status).toBe("SEM_EXCEDENTE_SERVICO");
+    if (!("distribuicao" in resultado)) throw new Error("Distribuição explícita ausente");
     expect(resultado.excedentesServico).toEqual([]);
     expect(resultado.distribuicao).toEqual([
       { origemId: "caixa", tipo: "CAIXA", valor: "0.03" },
