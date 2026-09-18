@@ -124,13 +124,12 @@ export async function obsoletarImpactosTaxaAditivo(input: unknown) { return exec
     await bloquearMatriculas(tx, [referencia.matriculaId]);
     const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { impactos: { include: { propostaAcerto: { select: { status: true } } } } } });
     if (conjunto.status === "OBSOLETO") {
-      const evento = await tx.evento.findFirst({ where: { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId }, orderBy: { criadoEm: "desc" } });
+      const evento = await tx.evento.findFirst({ where: { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { path: ["conjuntoId"], equals: conjunto.id } }, orderBy: { criadoEm: "desc" } });
       const payload = evento?.payload as { conjuntoId?: string; motivo?: string; chaveIdempotencia?: string } | null;
       if (payload?.conjuntoId !== conjunto.id || payload.motivo !== d.motivo || payload.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O conjunto já foi marcado obsoleto por outra operação.");
       return { id: conjunto.id, obsoleto: true };
     }
-    const acertoInviavel = conjunto.impactos.some(i => i.decisao === "AFETADA" && ["REJEITADA", "OBSOLETA"].includes(i.propostaAcerto?.status ?? ""));
-    if (conjunto.status !== "APROVADO" && !(conjunto.status === "PENDENTE" && acertoInviavel)) throw new ErroRegra("Somente conjunto aprovado divergente ou pendente com acerto inviável pode ser marcado obsoleto.");
+    if (conjunto.status !== "APROVADO" && conjunto.status !== "PENDENTE") throw new ErroRegra("Somente conjunto pendente ou aprovado pode ser marcado obsoleto.");
     await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: conjunto.id }, data: { status: "OBSOLETO" } });
     await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: conjunto.propostaAditivoId, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia } });
     return { id: conjunto.id, obsoleto: true };
