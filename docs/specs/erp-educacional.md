@@ -490,3 +490,7 @@ Decisão aprovada: Financeiro identifica explicitamente todas as cobranças de t
 ### Q169 — Referência dos períodos futuros após aditivo de cobertura
 
 Decisão aprovada: definir no próprio aditivo se a correção de cobertura preserva ou muda a referência dos períodos seguintes. A proposta registra o ciclo futuro e todos os impactos, sujeitos à aprovação independente. Cobranças já emitidas não são reescritas automaticamente: sobreposições e intervalos sem cobertura precisam ser resolvidos no acerto. Não inferir a política pela nova data final nem aplicar uma reancoragem silenciosa. A decisão complementa Q168; implementação do fluxo completo de cobertura e seus consumidores permanece pendente.
+
+### Q165 — Acerto de desistência antes da ativação
+
+Opção C aprovada: somente regra estruturada no contrato. Se faltarem condições suficientes, o acerto aguarda complementação e conferência. Financeiro prepara e outra pessoa autorizada aprova; não aplicar automaticamente proporcional de matrícula ativa, nem apuração manual livre. Preservar recebimentos e distinguir crédito apurado de devolução executada. Implementação pendente.
