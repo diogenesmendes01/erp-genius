@@ -47,6 +47,9 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
     <h2 className="font-medium">{codigo} · Condições de encerramento</h2>
     <p className="text-sm">Transcreva as condições do contrato confirmado ou do original enviado. A aprovação por outra pessoa da Administração confere estas regras; o acerto financeiro e o encerramento exigem seus próprios procedimentos.</p>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
+    {!documentoId && fontesOriginaisEnviados.length > 0 && <nav aria-label="Originais disponíveis para conferência" className="flex flex-wrap gap-3 text-sm">
+      {fontesOriginaisEnviados.map((fonte, indice) => <a key={fonte.processoAssinaturaId} className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(matriculaId)}/originais/${encodeURIComponent(fonte.artefatoContratualId)}/pdf`}>Consultar original enviado {indice + 1}</a>)}
+    </nav>}
     {versoes.map((v) => {
       const resultado = RegrasEncerramentoSchema.safeParse(v.regras);
       const r = resultado.success ? resultado.data : null;
@@ -54,6 +57,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
       return <article key={v.id} className="space-y-2 rounded bg-gray-50 p-3 text-sm">
         <h3>Versão {v.versao} · {v.status === "PENDENTE" ? "Aguardando aprovação" : v.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</h3>
         <p>Preparada por {v.preparador.nome}. Motivo: {v.motivo}</p>
+        {v.artefatoContratual && <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(matriculaId)}/originais/${encodeURIComponent(v.artefatoContratual.id)}/pdf`}>Consultar original desta versão</a>}
         {v.documento ? <a href={v.documento.url} target="_blank" rel="noopener noreferrer" className="underline">Contrato confirmado: {v.documento.nome}</a> : v.artefatoContratual && v.processoAssinatura ? <p>{v.processoAssinatura.estado === "ENVIADO" && v.processoAssinatura.envioConfirmado && !v.processoAssinatura.conclusaoRegistrada ? "Original conferido com envio externo confirmado; fonte vigente para a conferência." : v.processoAssinatura.estado === "CANCELADO" && v.status === "APROVADA" ? "Original enviado foi cancelado; a versão aprovada permanece como evidência do acerto." : v.processoAssinatura.estado === "CANCELADO" ? "Original enviado foi cancelado; esta proposta não pode receber nova aprovação." : "Original enviado sem vigência para nova aprovação."}</p> : <p role="alert">Fonte contratual indisponível.</p>}
         {r ? <div className="space-y-1">
           <p>Dia do encerramento: {r.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"} da cobertura.</p>
