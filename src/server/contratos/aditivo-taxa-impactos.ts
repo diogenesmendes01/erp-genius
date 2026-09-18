@@ -61,6 +61,8 @@ export async function prepararImpactosTaxaAditivo(input: unknown) { return execu
       if (anterior.matriculaId !== d.matriculaId || anterior.propostaAditivoId !== d.propostaId || entrada.revisaoHash !== d.revisaoHash || JSON.stringify(preservada) !== JSON.stringify(recebida)) throw new ErroRegra("Chave já usada com outro conjunto.");
       return { id: anterior.id, status: anterior.status };
     }
+    const ativo = await tx.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: d.propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } }, select: { id: true, status: true } });
+    if (ativo) throw new ErroRegra(`Já existe conjunto ${ativo.status.toLowerCase()} para esta proposta; conclua ou recupere o fluxo existente.`);
     const conjunto = await tx.conjuntoImpactosTaxaAditivo.create({ data: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, conferenciaFinalId: versao.conferenciaFinalId, versaoCondicoesId: versao.id, preparadorId: autor.id, fotografia, fotografiaHash, chaveIdempotencia: d.chaveIdempotencia, impactos: { create: linhas.map(l => ({ cobrancaId: l.cobrancaId, decisao: l.decisao, justificativa: l.justificativa, fotografia: l.fotografia, fotografiaHash: l.fotografiaHash })) } } });
     await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoPreparados", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: d.propostaId, fotografiaHash } });
     return { id: conjunto.id, status: conjunto.status };
@@ -120,9 +122,15 @@ export async function obsoletarImpactosTaxaAditivo(input: unknown) { return exec
     await exigirFinanceiro(tx, autor.id);
     const referencia = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { matriculaId: true } });
     await bloquearMatriculas(tx, [referencia.matriculaId]);
-    const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { id: true, matriculaId: true, propostaAditivoId: true, status: true } });
-    if (conjunto.status === "OBSOLETO") return { id: conjunto.id, obsoleto: true };
-    if (conjunto.status !== "APROVADO") throw new ErroRegra("Somente conjunto aprovado com fotografia divergente pode ser marcado obsoleto.");
+    const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { impactos: { include: { propostaAcerto: { select: { status: true } } } } } });
+    if (conjunto.status === "OBSOLETO") {
+      const evento = await tx.evento.findFirst({ where: { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId }, orderBy: { criadoEm: "desc" } });
+      const payload = evento?.payload as { conjuntoId?: string; motivo?: string; chaveIdempotencia?: string } | null;
+      if (payload?.conjuntoId !== conjunto.id || payload.motivo !== d.motivo || payload.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O conjunto já foi marcado obsoleto por outra operação.");
+      return { id: conjunto.id, obsoleto: true };
+    }
+    const acertoInviavel = conjunto.impactos.some(i => i.decisao === "AFETADA" && ["REJEITADA", "OBSOLETA"].includes(i.propostaAcerto?.status ?? ""));
+    if (conjunto.status !== "APROVADO" && !(conjunto.status === "PENDENTE" && acertoInviavel)) throw new ErroRegra("Somente conjunto aprovado divergente ou pendente com acerto inviável pode ser marcado obsoleto.");
     await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: conjunto.id }, data: { status: "OBSOLETO" } });
     await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: conjunto.propostaAditivoId, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia } });
     return { id: conjunto.id, obsoleto: true };
@@ -134,7 +142,8 @@ export async function consultarImpactosTaxaAditivo(propostaId: string) { return 
   const atual = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, permissoes: true } });
   const financeiro = Boolean(atual?.ativo && atual.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR));
   const aprova = Boolean(financeiro && (atual?.papeis.includes(Papel.ADMINISTRADOR) || atual?.permissoes.includes("financeiro.aprovar_acertos")));
-  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: { decisao: { select: { aprovada: true, decisorId: true, decididaEm: true } }, impactos: { include: { cobranca: { select: { id: true, codigo: true, moeda: true, valorNegociado: true, vencimento: true, status: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } });
+  const incluir = { decisao: { select: { aprovada: true, decisorId: true, decididaEm: true } }, impactos: { include: { cobranca: { select: { id: true, codigo: true, moeda: true, valorNegociado: true, vencimento: true, status: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } as const;
+  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } }, orderBy: { criadaEm: "desc" }, include: incluir }) ?? await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: incluir });
   if (!conjunto) return null;
   const impactos = conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, cobranca: { id: i.cobranca.id, codigo: i.cobranca.codigo, moeda: i.cobranca.moeda, valorNegociado: i.cobranca.valorNegociado.toFixed(2), vencimento: i.cobranca.vencimento.toISOString().slice(0, 10), status: i.cobranca.status }, decisao: i.decisao, justificativa: i.justificativa, propostaAcertoId: i.propostaAcertoId, acertoStatus: i.propostaAcerto?.status ?? null, aplicado: Boolean(i.propostaAcerto?.aplicacao) }));
   const afetadas = impactos.filter(i => i.decisao === "AFETADA");

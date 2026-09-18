@@ -516,9 +516,11 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await aplicarAcertoTaxaAditivo({ propostaId: acerto.dado.id, chaveIdempotencia: "q170-preservada-acerto-aplicar" })).toMatchObject({ ok: true });
     expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true });
     expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Conjunto completo conferido antes da alteração posterior.", chaveIdempotencia: "q170-preservada-aprovar" })).toMatchObject({ ok: true });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Não há divergência material nesta fotografia.", chaveIdempotencia: "q170-obsoletar-integro" })).toMatchObject({ ok: false });
     await prisma.cobranca.update({ where: { id: preservadaId }, data: { valorNegociado: 36, saldo: 36, versao: { increment: 1 } } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
     expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Cobrança preservada mudou depois da aprovação.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Outro motivo não pode alterar o replay auditável.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: false });
     expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Cobrança preservada mudou depois da aprovação.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
     expect(await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "OBSOLETO" });
   });
