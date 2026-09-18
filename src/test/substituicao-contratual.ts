@@ -21,7 +21,7 @@ function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
 
 /** Fluxo contratual real no banco descartável. Apenas sessão e resultado do
  * transporte são simulados; prévia, PDF, emissão e revisões usam os serviços. */
-export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; semSubstituicao?: boolean; valorServicoMensal?: string } = {}) {
+export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; semSubstituicao?: boolean; valorServicoMensal?: string } = {}) {
   const ambiente = opcoes.ambiente ?? "SANDBOX";
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const admin = await criarUsuario(["ADMINISTRADOR"]);
@@ -29,7 +29,7 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   const vendedor = await criarUsuario(["VENDEDOR"]);
   const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
   entrar(secretaria.id);
-  await prisma.configuracaoOperacional.create({ data: { prazoReservaMinutos: 60, fusoInstitucional: "UTC" } });
+  await prisma.configuracaoOperacional.create({ data: { prazoReservaMinutos: 60, fusoInstitucional: "UTC", exigirPrimeiraMensalidade: opcoes.primeiraMensalidadeExigida ?? false } });
   const c = await seedCatalogoMinimo();
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const nivel = await prisma.nivel.create({ data: { idiomaId: c.produto.idiomaId, codigo: "Q116", ordem: 1 } });
@@ -64,10 +64,11 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
       { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" as const },
       { chave: "vencimento_taxa", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" as const },
       { chave: "mensalidade", descricao: "Mensalidade", origem: "MENSALIDADE_VALOR" as const },
+      { chave: "vencimento_mensal", descricao: "Primeiro vencimento", origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO" as const },
       { chave: "inicio", descricao: "Início", origem: "COBERTURA_INICIO" as const },
       { chave: "fim", descricao: "Fim", origem: "COBERTURA_FIM" as const },
     ] : [])],
-    secoes: [{ titulo: "Identificação", texto: "Aluno: {{nome}}." }, ...(opcoes.camposCadastrais ? [{ titulo: "Cadastro contratual", texto: "{{aluno_documento}} {{aluno_email}} {{aluno_endereco}} {{pagador_nome}} {{pagador_documento}} {{pagador_email}} {{pagador_endereco}}" }] : []), ...(opcoes.porHora ? [{ titulo: "Particulares", texto: "Hora: {{hora}}. Agenda: {{agenda}}." }] : []), ...(opcoes.camposFinanceiros ? [{ titulo: "Condições financeiras", texto: "Moeda {{moeda}}. Taxa {{taxa}} em {{vencimento_taxa}}. Mensalidade {{mensalidade}}. Cobertura {{inicio}} até {{fim}}." }] : [])], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }],
+    secoes: [{ titulo: "Identificação", texto: "Aluno: {{nome}}." }, ...(opcoes.camposCadastrais ? [{ titulo: "Cadastro contratual", texto: "{{aluno_documento}} {{aluno_email}} {{aluno_endereco}} {{pagador_nome}} {{pagador_documento}} {{pagador_email}} {{pagador_endereco}}" }] : []), ...(opcoes.porHora ? [{ titulo: "Particulares", texto: "Hora: {{hora}}. Agenda: {{agenda}}." }] : []), ...(opcoes.camposFinanceiros ? [{ titulo: "Condições financeiras", texto: "Moeda {{moeda}}. Taxa {{taxa}} em {{vencimento_taxa}}. Mensalidade {{mensalidade}} em {{vencimento_mensal}}. Cobertura {{inicio}} até {{fim}}." }] : [])], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }],
   } }));
   const modelo = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: modeloCriado.id } });
   entrar(admin.id);

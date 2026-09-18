@@ -330,7 +330,7 @@ it("financeira estruturada: revisão dos efeitos usa a matrícula exata e não a
 });
 
 beforeEach(async (contexto) => {
-  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined });
+  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined });
   const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } } } });
   const snapshot = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
   const agora = new Date().toISOString();
@@ -578,12 +578,13 @@ it("rota de PDF exige sessão, papel e matrícula exata e não formaliza o aditi
   expect((await abrir()).status).toBe(401);
 });
 
-async function prepararConferencia(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false) {
+async function prepararConferencia(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento = false) {
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId }, include: { aluno: true } });
   const porHora = (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR";
   const identidade = { nome: estruturado && !porHora && !mensalidade ? "Nome atualizado no aditivo" : [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" "), email: cadastroCompleto ? "contratual@example.test" : m.aluno.email!, documento: cadastroCompleto ? "DOC-CONTRATUAL" : m.aluno.documento! };
   const proposta = await preparar({ ...(porHora ? { vigenciaInicio: "2026-09-01T00:00:00Z" } : {}), alteracoes: porHora
     ? [{ origem: "HORA_VALOR", novo: "200.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "200", moeda: "CRC" } }]
+    : vencimento ? [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-15", valorEstruturado: { tipo: "DATA", data: "2099-10-15" } }]
     : taxa
       ? [{ origem: "TAXA_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } }]
       : mensalidade
@@ -595,8 +596,8 @@ async function prepararConferencia(estruturado = false, mensalidade = false, tax
     motivo: "Identificação conferida especificamente para o aditivo", chaveIdempotencia: "conferencia-aditivo-primeira" };
   return { proposta, dados };
 }
-async function prepararOriginalAditivo(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false) {
-  const { proposta, dados } = await prepararConferencia(estruturado, mensalidade, taxa, cadastroCompleto); await decidir(proposta);
+async function prepararOriginalAditivo(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento = false) {
+  const { proposta, dados } = await prepararConferencia(estruturado, mensalidade, taxa, cadastroCompleto, vencimento); await decidir(proposta);
   if (mensalidade || taxa || (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR") {
     authMock.mockResolvedValue({ user: { id: fixture.adminId } });
     for (const alcada of ["FINANCEIRA", "COMERCIAL"] as const) expect(await decidirAlcadaAditivo({ matriculaId: fixture.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Preço por hora aprovado independentemente" })).toMatchObject({ ok: true });
@@ -606,8 +607,8 @@ async function prepararOriginalAditivo(estruturado = false, mensalidade = false,
   return { proposta, dados, conferencia, entradaOriginal: { matriculaId: fixture.matriculaId, propostaId: proposta.id, conferenciaId: conferencia.id,
     conferenciaHash: conferencia.revisaoHash, motivo: "Texto e participantes conferidos para preservar original", conteudoConferido: true as const } };
 }
-async function prepararRevisaoOriginal(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false) {
-  const base = await prepararOriginalAditivo(estruturado, mensalidade, taxa, cadastroCompleto), original = await preservarOriginalAditivo(base.entradaOriginal);
+async function prepararRevisaoOriginal(estruturado = false, mensalidade = false, taxa = false, cadastroCompleto = false, vencimento = false) {
+  const base = await prepararOriginalAditivo(estruturado, mensalidade, taxa, cadastroCompleto, vencimento), original = await preservarOriginalAditivo(base.entradaOriginal);
   if (!original.ok || !original.dado) throw new Error("Original não gerado");
   const alvo = { matriculaId: fixture.matriculaId, propostaId: base.proposta.id, artefatoId: original.dado.id };
   const revisao = await consultarAssinaturaAditivo(alvo);
@@ -668,10 +669,10 @@ it("nova tentativa do aditivo exige confirmação de não criação e recusa ret
   expect(await prisma.observacaoEnvioAditivo.count()).toBe(1);
 });
 
-it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
+it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162", "PRODUCAO_MENSAL_VENCIMENTO"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
   const ambiente = modo === "SANDBOX" ? "SANDBOX" : "PRODUCAO";
   const taxaSemConsumidor = modo === "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR";
-  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO");
+  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO", modo === "PRODUCAO_MENSAL_VENCIMENTO");
   const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
   if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
   const processo = await prepararProcessoAssinaturaAditivo({ ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente });
@@ -730,6 +731,32 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const pagadoresAntesFormalizacao = await prisma.pagadorPreparacaoMatricula.findMany({ orderBy: { id: "asc" } });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
+  if (modo === "PRODUCAO_MENSAL_VENCIMENTO") {
+    const formalizada = await registrarCondicoesFormalizadasAditivo(pedidoCondicoes);
+    if (!formalizada.ok || !formalizada.dado) throw new Error(JSON.stringify(formalizada));
+    const { proporVencimentoAditivo, decidirVencimentoAditivo } = await import("./vencimento-aditivo");
+    const financeiro = await criarUsuario(["FINANCEIRO"]);
+    const pedido = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id, revisaoHash: confirmarFinal.revisaoHash, motivo: "Novo vencimento contratado", evidencia: "Aditivo assinado e cobrança original conferidos", chaveIdempotencia: "vencimento-primeiro" };
+    expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false });
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const proposta = await proporVencimentoAditivo(pedido);
+    if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+    expect(await proporVencimentoAditivo(pedido)).toEqual(proposta);
+    expect(await proporVencimentoAditivo({ ...pedido, evidencia: "Evidência alterada sob a mesma chave" })).toMatchObject({ ok: false });
+    const salvo = await prisma.propostaVencimentoAditivo.findUniqueOrThrow({ where: { id: proposta.dado.id } });
+    expect(salvo.vencimentoNovo).toEqual(new Date("2099-10-15T12:00:00Z"));
+    await expect(prisma.propostaVencimentoAditivo.update({ where: { id: salvo.id }, data: { motivo: "Tentativa de alterar" } })).rejects.toThrow("imutáveis");
+    await expect(prisma.propostaVencimentoAditivo.create({ data: { ...salvo, id: "vencimento-hash-adulterado", fotografia: salvo.fotografia as any, fotografiaHash: "0".repeat(64), chaveIdempotencia: "vencimento-hash-adulterado" } })).rejects.toThrow("Fotografia");
+    const decisao = { propostaId: salvo.id, aprovada: true, motivo: "Conferência financeira independente", chaveIdempotencia: "vencimento-decisao" };
+    expect(await decidirVencimentoAditivo(decisao)).toMatchObject({ ok: false });
+    authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+    const aprovada = await decidirVencimentoAditivo(decisao);
+    if (!aprovada.ok) throw new Error(JSON.stringify(aprovada));
+    expect(await decidirVencimentoAditivo(decisao)).toEqual(aprovada);
+    expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancasAntesFormalizacao);
+    expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
+    return;
+  }
   if (taxaSemConsumidor) {
     const campo = "TAXA_VALOR";
     expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "condicao-sem-consumidor-q117" })).toMatchObject({ ok: false, erro: `A condição ${campo} exige fluxo próprio antes da aplicação.` });
