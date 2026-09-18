@@ -7447,7 +7447,7 @@ model ConjuntoImpactosTaxaAditivo {
   decisao DecisaoConjuntoImpactosTaxaAditivo?
   impactos ImpactoTaxaAditivo[]
 
-  @@unique([propostaAditivoId, fotografiaHash])
+  @@index([propostaAditivoId, fotografiaHash])
   @@unique([preparadorId, chaveIdempotencia])
   @@index([matriculaId, criadaEm])
 }
