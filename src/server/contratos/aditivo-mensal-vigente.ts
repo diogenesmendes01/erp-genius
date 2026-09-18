@@ -13,6 +13,7 @@ type VersaoCondicoesMensal = {
   vigenciaInicio: Date;
   aplicacao: { id: string } | null;
   aplicacoesPorCampo?: ReturnType<typeof projetarAplicacoesPorCampo>;
+  conjuntoCoberturaCompletoId?: string | null;
 };
 
 type EntradaMensalVigente = {
@@ -68,9 +69,13 @@ function resumoFinanceiro(versao: VersaoCondicoesMensal): string {
   }
 
   const condicoes = condicoesObjeto(versao.condicoes);
+  const alteraCobertura = "COBERTURA_INICIO" in condicoes || "COBERTURA_FIM" in condicoes;
+  const coberturaCompleta = alteraCobertura && !!versao.conjuntoCoberturaCompletoId &&
+    ["COBERTURA_INICIO", "COBERTURA_FIM"].every((campo) =>
+      !(campo in condicoes) || versao.aplicacoesPorCampo?.[campo]?.aplicacaoId === versao.conjuntoCoberturaCompletoId,
+    );
   if (
-    "COBERTURA_INICIO" in condicoes ||
-    "COBERTURA_FIM" in condicoes ||
+    (alteraCobertura && !coberturaCompleta) ||
     ("PRIMEIRA_MENSALIDADE_VENCIMENTO" in condicoes && !versao.aplicacoesPorCampo?.PRIMEIRA_MENSALIDADE_VENCIMENTO?.aplicacaoId)
   ) {
     throw new ErroRegra("Alterações de cobertura ou vencimento exigem fluxo próprio.");

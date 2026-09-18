@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planejarContinuidadeMensal, planejarContinuidadeMensalAposRetomada, planejarContinuidadeMensalAposRecomposicao } from "./continuidade-mensal";
+import { planejarContinuidadeMensal, planejarContinuidadeMensalAposRetomada, planejarContinuidadeMensalAposRetomadaComRegra, planejarContinuidadeMensalAposRecomposicao } from "./continuidade-mensal";
 import type { EntradaPlanejarContinuidadeMensal } from "./continuidade-mensal-schema";
 import { executarAcao } from "@/server/_shared";
 
@@ -53,6 +53,14 @@ describe("planejarContinuidadeMensal", () => {
       cobertura: { inicio: "2026-02-01", fim: "2026-02-28", dias: 28 },
       valorNegociado: "250.00", vencimento: "2026-02-10",
     });
+  });
+
+  it("mantém a âncora vigente quando a retomada sucede uma recomposição", () => {
+    const dados = entrada();
+    dados.ultimaCobertura = { inicio: "2026-03-18", fim: "2026-04-17" };
+    expect(planejarContinuidadeMensalAposRetomadaComRegra(dados, {
+      referencia: "CICLO_MATRICULA", dataReferencia: "2026-03-18",
+    }).cobertura).toEqual({ inicio: "2026-04-18", fim: "2026-05-17", dias: 30 });
   });
 
   it("continua o ciclo com âncora 31 após a cobertura parcial aprovada no retorno", () => {

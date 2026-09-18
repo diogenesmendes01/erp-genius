@@ -6,12 +6,14 @@ import { ErroRegra } from "@/server/_shared";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { selecionarCondicaoContinuidadeVigente } from "./continuidade-condicao-vigente";
-import { planejarContinuidadeMensal, planejarContinuidadeMensalAposRetomada, planejarContinuidadeMensalAposRecomposicao } from "./continuidade-mensal";
+import { planejarContinuidadeMensal, planejarContinuidadeMensalAposRetomada, planejarContinuidadeMensalAposRetomadaComRegra, planejarContinuidadeMensalAposRecomposicao, planejarContinuidadeMensalAposAditivo } from "./continuidade-mensal";
 import { carregarReferenciaRetomadaAplicadaTx } from "./continuidade-retomada-tx";
 import { resolverPrecoContinuidadeMensalTx } from "./continuidade-preco-tx";
 import { conferirIndisponibilidadeOfertaTx } from "./indisponibilidade-oferta-estado";
 import { carregarReferenciaRecomposicaoAplicadaTx, conferirCompensacaoProgramadaContinuidadeTx, conferirOrigensConcorrentesAposRecomposicaoTx } from "./continuidade-recomposicao-tx";
 import { carregarUltimaCoberturaContinuidadeTx } from "./continuidade-cadeia-tx";
+import { carregarReferenciaAditivoCoberturaAplicadaTx } from "./continuidade-aditivo-cobertura-tx";
+import { selecionarFonteContinuidade } from "./continuidade-precedencia";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), agora: z.date() }).strict();
 const civil = (data: Date) => data.toISOString().slice(0, 10);
@@ -41,6 +43,7 @@ export async function carregarContinuidadeMensalTx(tx: Prisma.TransactionClient,
   const fuso = await carregarFusoInstitucionalTx(tx);
   if (!fuso) throw new ErroRegra("Configure o fuso institucional antes de planejar a continuidade.");
   const base = { ...regras, ultimaCobertura: { inicio: civil(ultima.coberturaInicio), fim: civil(ultima.coberturaFim) }, ultimoVencimento: dataCivilInstitucional(ultima.vencimento, fuso), dataPlanejamento: dataCivilInstitucional(d.agora, fuso) };
+  const aditivo = await carregarReferenciaAditivoCoberturaAplicadaTx(tx, { matriculaId: m.id, inicioCobertura: inicioSeguinte, regraContratada: regras.regraCobertura });
   const recomposicao = await carregarReferenciaRecomposicaoAplicadaTx(tx, m.id);
   const retomada = await carregarReferenciaRetomadaAplicadaTx(tx, {
     matriculaId: m.id, cobrancaId: ultima.id, inicio: ultima.coberturaInicio, fim: ultima.coberturaFim,
@@ -48,7 +51,7 @@ export async function carregarContinuidadeMensalTx(tx: Prisma.TransactionClient,
   const periodoIntegral = await tx.aplicacaoPeriodoIntegral.findFirst({
     where: { matriculaId: m.id, cobrancaId: ultima.id }, select: { id: true },
   });
-  if (recomposicao && (retomada || periodoIntegral)) {
+  if (recomposicao && periodoIntegral) {
     throw new ErroRegra("A cobertura possui origens aplicadas concorrentes; confira a cadeia antes de planejar a continuidade.");
   }
   const referenciaPlanejamentoRecomposicao = recomposicao && {
@@ -57,9 +60,26 @@ export async function carregarContinuidadeMensalTx(tx: Prisma.TransactionClient,
     cobrancaId: recomposicao.cobrancaId,
     dataReferencia: recomposicao.dataReferencia,
   };
-  const planejar = referenciaPlanejamentoRecomposicao
-    ? (dados: typeof base) => planejarContinuidadeMensalAposRecomposicao(dados, referenciaPlanejamentoRecomposicao)
-    : retomada ? planejarContinuidadeMensalAposRetomada : planejarContinuidadeMensal;
+  const eventos = [
+    ...(aditivo?.historico.map(item => ({ tipo: "ADITIVO" as const, aplicadaEm: item.aplicadaEm, politica: item.politica, referencia: item.referencia })) ?? []),
+    ...(referenciaPlanejamentoRecomposicao ? [{ tipo: "RECOMPOSICAO" as const, aplicadaEm: recomposicao!.aplicadaEm, regra: { referencia: "CICLO_MATRICULA" as const, dataReferencia: referenciaPlanejamentoRecomposicao.dataReferencia } }] : []),
+    ...(retomada ? [{ tipo: "RETOMADA" as const, aplicadaEm: retomada.aplicadaEm }] : []),
+  ].sort((a, b) => a.aplicadaEm.localeCompare(b.aplicadaEm));
+  const fonte = selecionarFonteContinuidade(eventos);
+  let regraVigente = regras.regraCobertura;
+  for (const evento of eventos) {
+    if (evento.tipo === "RECOMPOSICAO") regraVigente = evento.regra;
+    if (evento.tipo === "ADITIVO" && evento.politica.escolha === "MUDAR_REFERENCIA") regraVigente = evento.politica.referencia === "MES_CIVIL" ? { referencia: "MES_CIVIL" } : { referencia: "CICLO_MATRICULA", dataReferencia: evento.politica.dataReferencia };
+  }
+  const referenciaAditivoVigente = aditivo && { ...aditivo.referencia, regraAplicada: regraVigente };
+  const planejar = fonte === "ADITIVO"
+    ? (dados: typeof base) => planejarContinuidadeMensalAposAditivo(dados, referenciaAditivoVigente!)
+    : fonte === "RECOMPOSICAO"
+      ? (dados: typeof base) => planejarContinuidadeMensalAposRecomposicao(dados, referenciaPlanejamentoRecomposicao!)
+      : fonte === "RETOMADA" ? (eventos.length
+        ? (dados: typeof base) => planejarContinuidadeMensalAposRetomadaComRegra(dados, regraVigente)
+        : planejarContinuidadeMensalAposRetomada)
+        : planejarContinuidadeMensal;
   const cobertura = planejar(base).cobertura;
   await conferirCompensacaoProgramadaContinuidadeTx(tx, {
     matriculaId: m.id,
@@ -80,7 +100,7 @@ export async function carregarContinuidadeMensalTx(tx: Prisma.TransactionClient,
     ? { estado: "CONFIRMADA_PELA_GESTAO" as const, memoria: { aprovacao: confirmacaoGestao.aprovacao } }
     : comprovacaoAgenda;
   return { matriculaId: m.id, fusoInstitucional: fuso, plano, memoriaPreco, oferta, comprovacaoOferta,
-    condicoes: { id: condicoes.id, versao: condicoes.versao, documentoId: condicoes.documentoId }, documentoId: documento.id, ultimaCobrancaId: ultima.id, referenciaRecomposicao: recomposicao,
+    condicoes: { id: condicoes.id, versao: condicoes.versao, documentoId: condicoes.documentoId }, documentoId: documento.id, ultimaCobrancaId: ultima.id, referenciaRecomposicao: recomposicao, referenciaAditivo: aditivo, referenciaRetomada: retomada,
     disponivel: false as const, podeEmitir: false as const,
     motivo: oferta.estado === "INDISPONIVEL" ? "Há falta de oferta confirmada para este período. A prévia não autoriza emitir mensalidade."
       : oferta.estado === "PENDENTE_CONFERENCIA" ? "Há relato de falta de oferta aguardando conferência para este período."

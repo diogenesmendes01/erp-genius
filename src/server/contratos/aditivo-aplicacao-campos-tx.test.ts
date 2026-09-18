@@ -17,7 +17,7 @@ function contexto(inicio = "2027-02-01", fim = "2027-02-28") {
   const impacto = {
     id: "i", classificacao: "AFETADA", coberturaInicioAnterior: new Date("2027-01-01"),
     coberturaFimAnterior: new Date("2027-01-31"), coberturaInicioNova: new Date(inicio),
-    coberturaFimNova: new Date(fim), aplicacao: { id: "ap", fotografiaHash: "foto" },
+    coberturaFimNova: new Date(fim), aplicacao: { id: "ap", fotografiaHash: "foto", aplicadaEm: new Date("2027-01-01") },
   };
   const versao = {
     id: "v", versao: 1, propostaId: "p", proposta: { snapshot, entradaHash: hashSubstituicao(snapshot), matriculaId: "m" },
@@ -25,7 +25,7 @@ function contexto(inicio = "2027-02-01", fim = "2027-02-28") {
     conjuntosImpactosCobertura: [{
       id: "conjunto", propostaAditivoId: "p", preparadorId: "fin1", hashFormalizado: hashSubstituicao(snapshot),
       fotografiaHash: "foto", cicloFuturo: ciclo,
-      decisao: { aprovada: true, decisorId: "fin2", fotografiaHash: "foto" }, impactos: [impacto],
+      decisao: { id: "dec", aprovada: true, decisorId: "fin2", fotografiaHash: "foto" }, impactos: [impacto],
     }],
   };
   const tx = { versaoCondicoesAditivo: { findMany: vi.fn().mockResolvedValue([versao]) } } as unknown as Prisma.TransactionClient;
