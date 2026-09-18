@@ -103,3 +103,11 @@ A tela financeira mostra as propostas, motivos das decisões, diferenças por co
 Na aplicação e na efetivação, revalidar fotografia, cadeia, origens, saldos, reservas de devolução e alçadas atuais. A Secretaria continua usando o identificador da aplicação base; o servidor verifica o último delta aplicável sem abrir valores financeiros para ela. Repetir a mesma aplicação retorna o fato existente, sem novos créditos ou reconhecimentos. A migração253 também exige reconhecimento completo dos créditos externos em escrita direta no banco.
 
 Evidência local: nove integrações reais de reconferência, incluindo consulta após fato novo, omissão de reconhecimento SQL, reserva posterior, revogação de alçada e replay; quatorze testes de consulta/interface e TypeScript aprovados no integrador em3686960. Homologação interativa e revisão independente em andamento. Cancelamento externo autenticado continua dependendo de Q155; destinação negociada da permuta segue Q167/Q171. Este recorte não conclui todo o fluxo Q121.
+
+### Fotografia posterior da reconferência — correção255
+
+Cada nova aplicação conserva também a fotografia financeira completa depois de seus efeitos, com hash canônico. A comparação para preparar outra reconferência usa essa fotografia posterior; ausência de fato novo bloqueia repetição, sem incrementar a versão de cobrança quando valores e status permanecem iguais. A perda da alçada de um aprovador permite nova análise independente, sem reutilizar a autorização inválida.
+
+O banco exige que a fotografia posterior corresponda às fontes reais e seja preenchida na mesma transação da aplicação. Não se completa retrospectivamente uma aplicação antiga com saldos atuais. Aplicações legadas sem fotografia posterior conservam o histórico e seguem conferência explícita quando houver divergência. Repetir a aplicação já registrada continua idempotente.
+
+Validação local no integrador896c5564:36/36 integrações de acerto, delta e efetivação;20/20 testes de consulta e página; TypeScript com saída0. Não comprova ramos de atualização material de cobrança/criação de crédito delta que a fixture não percorreu, nem substitui a homologação visual posterior à correção ou a integração externa de assinatura.
