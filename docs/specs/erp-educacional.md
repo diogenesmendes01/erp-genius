@@ -494,3 +494,7 @@ Decisão aprovada: definir no próprio aditivo se a correção de cobertura pres
 ### Q165 — Acerto de desistência antes da ativação
 
 Opção C aprovada: somente regra estruturada no contrato. Se faltarem condições suficientes, o acerto aguarda complementação e conferência. Financeiro prepara e outra pessoa autorizada aprova; não aplicar automaticamente proporcional de matrícula ativa, nem apuração manual livre. Preservar recebimentos e distinguir crédito apurado de devolução executada. Implementação pendente.
+
+### Q167 — Destinação negociada do excedente de permuta
+
+Opção C aprovada em18/09/2026: quando um acerto reduzir uma obrigação já compensada por serviços, negociar a destinação do excedente em cada caso. Registrar concordância das partes e proposta específica; Financeiro prepara e outra pessoa autorizada aprova antes da aplicação. Preservar a contrapartida e sua origem em permuta. Não converter automaticamente em crédito em dinheiro, devolver ou duplicar compensação. Sem concordância/proposta aprovada, o tratamento do excedente permanece pendente. Implementação pendente.
