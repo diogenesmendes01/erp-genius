@@ -464,3 +464,7 @@ DCT03/primeiro vencimento — implementação local em 18/09/2026: alvo identifi
 Interface financeira ligada ao aditivo apresenta datas/fuso, vigência, preparação, decisão, aplicação e histórico paginado. Consulta exige Financeiro/Administração e matrícula/versão exatas. Tentativas incertas preservam entrada/chave; rejeições conhecidas permitem corrigir; sucesso bloqueia nova submissão no mesmo formulário.
 
 Evidências:42/42 integrações do arquivo de aditivos antes da guarda229; após229,3/3 cenários dirigidos (aberta, paga e futura),40 fora do filtro. Quatro testes SSR e três de callbacks, além de TypeScript, aprovados. Regressão unitária atual:1579/1579,256 arquivos,zero ignorados. Revisão independente do recorte em andamento; revisão visual e comprovação específica do efeito de acesso ainda pendentes. Outros efeitos de DCT03 (cobertura, adiantamento, moeda/regime) continuam abertos; estes resultados não significam100% da SPEC.
+
+#### DCT03 — Evidência complementar de consulta do vencimento (18/09/2026)
+
+A consulta de efeitos identifica o acerto de vencimento aplicado à proposta e matrícula consultadas, mostra a referência histórica e orienta a conferência da cobrança atual. Essa referência não declara aplicadas as demais condições do aditivo. A preparação financeira não é oferecida quando a primeira mensalidade está cancelada ou sua origem é ausente/ambígua. Validação: nove testes direcionados de alvo/SSR, três integrações dirigidas de vencimento (40 fora do filtro) e TypeScript com saída 0. Regressão global e validação visual continuam pendentes.
