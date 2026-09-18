@@ -75,6 +75,9 @@ export async function decidirImpactosTaxaAditivo(input: unknown) { return execut
       if (c.impactos.some(i => i.decisao === "AFETADA" && !i.propostaAcertoId)) {
         throw new ErroRegra("Vincule o acerto de cada taxa afetada antes de aprovar o conjunto.");
       }
+      if (c.impactos.some(i => i.decisao === "AFETADA" && !["PENDENTE", "APROVADA", "APLICADA"].includes(i.propostaAcerto?.status ?? ""))) {
+        throw new ErroRegra("Há acerto vinculado que não está vigente para aprovação.");
+      }
       await revalidarFotografiaConjunto(tx, c);
     } const decisao = await tx.decisaoConjuntoImpactosTaxaAditivo.create({ data: { conjuntoId: c.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: c.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: c.id }, data: { status: d.aprovada ? "APROVADO" : "REJEITADO" } }); await registrarEvento(tx, { tipo: d.aprovada ? "ImpactosTaxaAditivoAprovados" : "ImpactosTaxaAditivoRejeitados", agregadoTipo: "Matricula", agregadoId: c.matriculaId, autorId: autor.id, payload: { conjuntoId: c.id, decisaoId: decisao.id, fotografiaHash: c.fotografiaHash } }); return { id: decisao.id, aprovada: decisao.aprovada }; });
 }); }
