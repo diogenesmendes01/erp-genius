@@ -88,6 +88,7 @@ export async function carregarFinanceiroDesistenciaTx(
     valorNegociado: c.valorNegociado.toFixed(2),
     valorRecebido: c.valorRecebido?.toFixed(2) ?? null,
     valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2),
+    ...(c.valorCompensadoPermuta.gt(0) ? { valorCompensadoPermuta: c.valorCompensadoPermuta.toFixed(2) } : {}),
     saldo: c.saldo?.toFixed(2) ?? null,
     pagoEm: c.pagoEm?.toISOString() ?? null,
     fontes: {
@@ -132,11 +133,11 @@ export async function carregarFinanceiroDesistenciaTx(
 
   const informesAConferir = informes.filter((i) => i.status === "A_CONFERIR").length;
   const recebimentos = recebimentosRegistrados.length;
-  const cobrancasComLiquidacao = cobrancas.filter((c) => c.valorLiquidadoCredito.gt(0)).length;
+  const cobrancasComLiquidacao = cobrancas.filter((c) => (c.valorLiquidadoCredito.gt(0) || c.valorCompensadoPermuta.gt(0))).length;
   const haAvancoFormal = cobrancas.some((c) =>
     informes.some((i) => i.cobrancaId === c.id && (i.status === "A_CONFERIR" || i.status === "CONFIRMADO")) ||
     recebimentosRegistrados.some((r) => r.cobrancaId === c.id) || c.status === "PAGO" || c.pagoEm !== null ||
-    (c.valorRecebido?.gt(0) ?? false) || c.valorLiquidadoCredito.gt(0),
+    (c.valorRecebido?.gt(0) ?? false) || (c.valorLiquidadoCredito.gt(0) || c.valorCompensadoPermuta.gt(0)),
   );
 
   return {
