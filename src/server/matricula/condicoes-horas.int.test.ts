@@ -234,14 +234,23 @@ it("Q23 torna a revisão obsoleta por informe posterior e só publica a reconfer
   login(professor.id); const atual = await revisarCorrecaoAula({ encontroId: e.id }); if (!atual.ok || !atual.dado) throw new Error("Q23 ausente");
   const q23 = await proporCorrecaoAula({ encontroId: e.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Chamada corrigida após conferência.", evidencia: "Evidência pedagógica da presença.", chaveIdempotencia: "q23-informe-proposta", alteracao: { conteudo: atual.dado.snapshot.conteudo, registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: "FALTA" as const, observacao: r.observacao ?? "" })) } });
   if (!q23.ok || !q23.dado) throw new Error("Proposta Q23 ausente");
-  const fin1 = await criarUsuario(["FINANCEIRO"]), fin2 = await criarUsuario(["FINANCEIRO"]), fin3 = await criarUsuario(["FINANCEIRO"]), gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  const fin1 = await criarUsuario(["FINANCEIRO"]), fin2 = await criarUsuario(["FINANCEIRO"]), fin3 = await criarUsuario(["FINANCEIRO"]), gestor = await criarUsuario(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
   const { proporRevisaoFinanceiraCorrecaoAula, decidirRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
   login(fin1.id); const primeira = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: q23.dado.id, motivo: "Q92 preserva a cobrança emitida e os minutos.", chaveIdempotencia: "q23-informe-revisao-1" }); if (!primeira.ok || !primeira.dado) throw new Error("Primeira revisão ausente");
   login(fin2.id); const decisao1 = await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: primeira.dado.id, aprovada: true, motivo: "Conferência independente antes do novo informe." }); if (!decisao1.ok || !decisao1.dado) throw new Error("Primeira decisão ausente");
   login(gestor.id); const impactos1 = await revisarImpactosCorrecaoAula({ propostaId: q23.dado.id }); if (!impactos1.ok || !impactos1.dado) throw new Error("Impactos iniciais ausentes");
   const { registrarPagamento } = await import("@/server/financeiro/acoes");
-  login(secretariaId); expect(await registrarPagamento(emissao.cobrancaId, { chaveIdempotencia: "q23-informe-pagamento-0001", valorRecebido: 20, forma: "DINHEIRO", dataPagamento: new Date("2026-01-12T15:00:00Z"), comentario: "Informe posterior para reconferência." })).toMatchObject({ ok: true, dado: { informado: true } });
-  login(gestor.id); expect(await aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos1.dado.propostaHash, impactosHash: impactos1.dado.impactosHash, motivo: "Não publicar com fotografia financeira antiga.", revisaoFinanceiraDecisaoId: decisao1.dado.id })).toMatchObject({ ok: false });
+  let liberarCobranca: () => void = () => undefined; let bloqueioPronto: () => void = () => undefined;
+  const bloqueio = prisma.$transaction(async tx => { await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${emissao.cobrancaId} FOR UPDATE`; bloqueioPronto(); await new Promise<void>(resolve => { liberarCobranca = resolve; }); });
+  await new Promise<void>(resolve => { bloqueioPronto = resolve; });
+  // Both real actions now queue on the same source row. Payment starts first;
+  // after release, publication must re-read its photograph rather than pass P1.
+  login(gestor.id); const pagamentoConcorrente = registrarPagamento(emissao.cobrancaId, { chaveIdempotencia: "q23-informe-pagamento-0001", valorRecebido: 20, forma: "DINHEIRO", dataPagamento: new Date("2026-01-12T15:00:00Z"), comentario: "Informe posterior para reconferência." });
+  await Promise.resolve(); await Promise.resolve();
+  const publicacaoConcorrente = aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos1.dado.propostaHash, impactosHash: impactos1.dado.impactosHash, motivo: "Não publicar com fotografia financeira antiga.", revisaoFinanceiraDecisaoId: decisao1.dado.id });
+  await Promise.resolve(); await Promise.resolve(); liberarCobranca(); await bloqueio;
+  expect(await pagamentoConcorrente).toMatchObject({ ok: true, dado: { informado: true } });
+  expect(await publicacaoConcorrente).toMatchObject({ ok: false });
   login(fin1.id); const segunda = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: q23.dado.id, motivo: "Informe posterior exige fotografia financeira nova.", chaveIdempotencia: "q23-informe-revisao-2" });
   expect(segunda).toMatchObject({ ok: true, dado: { versao: 2 } });
   if (!segunda.ok || !segunda.dado) throw new Error("Segunda revisão ausente");
