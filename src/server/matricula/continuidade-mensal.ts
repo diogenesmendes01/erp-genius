@@ -7,6 +7,7 @@ import {
   PlanejarContinuidadeMensalSchema,
   ReferenciaRecomposicaoContinuidadeSchema,
   ReferenciaAditivoCoberturaContinuidadeSchema,
+  RegraCoberturaContinuidadeSchema,
   type EntradaPlanejarContinuidadeMensal,
 } from "./continuidade-mensal-schema";
 
@@ -43,6 +44,13 @@ export function planejarContinuidadeMensal(input: EntradaPlanejarContinuidadeMen
 export function planejarContinuidadeMensalAposRetomada(input: EntradaPlanejarContinuidadeMensal) {
   return calcularContinuidadeMensal(input, { retomadaAplicada: true });
 }
+/** Uma retomada posterior conserva a referência já aplicada pela cadeia. */
+export function planejarContinuidadeMensalAposRetomadaComRegra(input: EntradaPlanejarContinuidadeMensal, regraAplicada: unknown) {
+  return calcularContinuidadeMensal(input, {
+    retomadaAplicada: true,
+    regraAplicada: RegraCoberturaContinuidadeSchema.parse(regraAplicada),
+  });
+}
 /** Q162: uma Q70 aplicada desloca o ciclo, sem reescrever a regra contratual. */
 export function planejarContinuidadeMensalAposRecomposicao(input: EntradaPlanejarContinuidadeMensal, referencia: unknown) {
   const memoria = ReferenciaRecomposicaoContinuidadeSchema.parse(referencia);
@@ -61,12 +69,13 @@ export function planejarContinuidadeMensalAposAditivo(input: EntradaPlanejarCont
 
 function calcularContinuidadeMensal(input: EntradaPlanejarContinuidadeMensal, opcoes: {
   retomadaAplicada: boolean;
+  regraAplicada?: RegraCobertura;
   regraRecomposicao?: Extract<RegraCobertura, { referencia: "CICLO_MATRICULA" }>;
   memoriaRecomposicao?: z.infer<typeof ReferenciaRecomposicaoContinuidadeSchema>;
   memoriaAditivo?: z.infer<typeof ReferenciaAditivoCoberturaContinuidadeSchema>;
 }) {
   const dados = PlanejarContinuidadeMensalSchema.parse(input);
-  const regra = opcoes.memoriaAditivo?.regraAplicada ?? opcoes.regraRecomposicao ?? dados.regraCobertura;
+  const regra = opcoes.memoriaAditivo?.regraAplicada ?? opcoes.regraAplicada ?? opcoes.regraRecomposicao ?? dados.regraCobertura;
   const primeiraAposRecomposicao = Boolean(
     opcoes.regraRecomposicao && proximoDiaCivil(dados.ultimaCobertura.fim) === opcoes.regraRecomposicao.dataReferencia,
   );

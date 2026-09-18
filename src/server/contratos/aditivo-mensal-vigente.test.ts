@@ -21,7 +21,7 @@ const versao = (
   aplicacao: { id: `a${numero}` },
 });
 
-const resolverBase = (versoes: ReturnType<typeof versao>[]) =>
+const resolverBase = (versoes: Parameters<typeof resolverMensalVigente>[0]) =>
   resolverMensalVigente(
     versoes,
     new Date("2026-01-10T00:00:00.000Z"),
@@ -128,6 +128,20 @@ describe("resolverMensalVigente", () => {
         versao({ COBERTURA_INICIO: { tipo: "DATA", data: "2026-01-01" } }),
       ]),
     ).toThrow(/fluxo próprio/);
+  });
+
+  it("aceita cobertura somente quando a prova Q168 integral é a origem dos dois limites", () => {
+    const condicoes = {
+      COBERTURA_INICIO: { tipo: "DATA", data: "2026-01-01" },
+      COBERTURA_FIM: { tipo: "DATA", data: "2026-01-31" },
+    };
+    const base = { ...versao(condicoes), aplicacao: null, conjuntoCoberturaCompletoId: "q168" };
+    const aplicacoesPorCampo = {
+      COBERTURA_INICIO: { origemVersaoId: "v1", aplicacaoId: "q168", valorHash: hashSubstituicao(condicoes.COBERTURA_INICIO) },
+      COBERTURA_FIM: { origemVersaoId: "v1", aplicacaoId: "q168", valorHash: hashSubstituicao(condicoes.COBERTURA_FIM) },
+    };
+    expect(resolverBase([{ ...base, aplicacoesPorCampo }])).toMatchObject({ valorNegociado: "90", versaoAditivo: { id: "v1" } });
+    expect(() => resolverBase([{ ...base, aplicacoesPorCampo: { ...aplicacoesPorCampo, COBERTURA_FIM: { ...aplicacoesPorCampo.COBERTURA_FIM, aplicacaoId: "outra" } } }])).toThrow(/fluxo próprio/);
   });
 });
 

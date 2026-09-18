@@ -21,8 +21,8 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
         where: { status: "COMPLETO", matriculaId },
         select: {
           id: true, propostaAditivoId: true, preparadorId: true, hashFormalizado: true, fotografiaHash: true, cicloFuturo: true,
-          decisao: { select: { aprovada: true, decisorId: true, fotografiaHash: true } },
-          impactos: { select: { id: true, classificacao: true, coberturaInicioAnterior: true, coberturaFimAnterior: true, coberturaInicioNova: true, coberturaFimNova: true, aplicacao: { select: { id: true, fotografiaHash: true } } } },
+          decisao: { select: { id: true, aprovada: true, decisorId: true, fotografiaHash: true } },
+          impactos: { select: { id: true, classificacao: true, coberturaInicioAnterior: true, coberturaFimAnterior: true, coberturaInicioNova: true, coberturaFimNova: true, aplicacao: { select: { id: true, fotografiaHash: true, aplicadaEm: true } } } },
         },
       },
       propostaId: true,
@@ -60,6 +60,12 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
         },
       })), extrairLimitesCoberturaFormalizada(v.proposta.snapshot, v.proposta.entradaHash));
     }
-    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), conjuntoCoberturaCompletoId: coberturas[0]?.id ?? null, conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
+    const coberturaCompleta = coberturas[0];
+    const aplicacoesAfetadas = coberturaCompleta?.impactos.filter(i => i.classificacao === "AFETADA").map(i => i.aplicacao!);
+    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), conjuntoCoberturaCompletoId: coberturaCompleta?.id ?? null,
+      conjuntoCoberturaCompleto: coberturaCompleta && coberturaCompleta.decisao && aplicacoesAfetadas?.length
+        ? { id: coberturaCompleta.id, decisaoId: coberturaCompleta.decisao.id, politica: coberturaCompleta.cicloFuturo, aplicadaEm: new Date(Math.max(...aplicacoesAfetadas.map(a => a.aplicadaEm.getTime()))).toISOString() }
+        : null,
+      conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
   });
 }

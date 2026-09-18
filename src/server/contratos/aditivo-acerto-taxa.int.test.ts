@@ -38,11 +38,13 @@ import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpa
 import { consultarImpactosCoberturaAditivo, consultarPreparoCoberturaAditivo } from "./aditivo-cobertura-consulta";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
+type CoberturaAditivo = { inicioNovo: string; fimNovo: string; ciclo: { escolha: "PRESERVAR_REFERENCIA" } | { escolha: "MUDAR_REFERENCIA"; referencia: "MES_CIVIL" | "CICLO_MATRICULA"; dataReferencia?: string } };
 async function proximaMensalidade() {
   const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" }, orderBy: { vencimento: "asc" }, select: { valorOriginal: true, valorNegociado: true, moeda: true } });
   return { valorOriginal: cobranca.valorOriginal.toFixed(2), valorNegociado: cobranca.valorNegociado.toFixed(2), moeda: cobranca.moeda };
 }
-async function cadeiaTaxa(vencimentoTaxa?: string, cobertura = false) {
+async function cadeiaTaxa(vencimentoTaxa?: string, cobertura = false, coberturaAditivo?: CoberturaAditivo) {
+ const coberturaFormalizada = coberturaAditivo ?? { inicioNovo: "2026-11-01", fimNovo: "2026-11-30", ciclo: { escolha: "PRESERVAR_REFERENCIA" as const } };
  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, ambiente: "PRODUCAO", semSubstituicao: true });
  const fonte = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } } });
  const pessoas = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(fonte.artefato.conferencia.snapshot).participantes;
@@ -51,7 +53,7 @@ async function cadeiaTaxa(vencimentoTaxa?: string, cobertura = false) {
  const modelo = await prisma.$transaction(tx => prepararModeloTx(tx, base.secretariaId, { codigo: "DCT03", versaoEsperada: 0, chaveIdempotencia: "dct03-modelo", motivo: "Modelo de acerto de taxa", conteudo: { titulo: "Aditivo", finalidade: "ADITIVO", regimes: ["MENSALIDADE"], aplicacao: "Teste DCT03", campos: [{ chave: "nome", descricao: "Aluno", origem: "ALUNO_NOME" }, { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" }, { chave: "vencimento", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" }, ...(cobertura ? [{ chave: "inicio", descricao: "Início da cobertura", origem: "COBERTURA_INICIO" as const }, { chave: "fim", descricao: "Fim da cobertura", origem: "COBERTURA_FIM" as const }] : []), { chave: "original", descricao: "Original", origem: "ADITIVO_CONTRATO_ORIGINAL" }, { chave: "anteriores", descricao: "Anteriores", origem: "ADITIVO_ANTERIORES" }, { chave: "alteracoes", descricao: "Alterações", origem: "ADITIVO_ALTERACOES" }, { chave: "vigencia", descricao: "Vigência", origem: "ADITIVO_VIGENCIA" }], secoes: [{ titulo: "Dados", texto: "{{nome}} {{taxa}} {{vencimento}} {{original}} {{anteriores}} {{alteracoes}} {{vigencia}}" }], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }] } }));
  const modeloGravado = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: modelo.id } }); authMock.mockResolvedValue({ user: { id: base.adminId } }); await decidirModeloContratual({ modeloId: modelo.id, conteudoHash: modeloGravado.conteudoHash, aprovada: true, motivo: "Modelo aprovado independentemente" }); authMock.mockResolvedValue({ user: { id: base.secretariaId } });
  const fonteAssinada = await prisma.conclusaoAssinaturaContratual.findUniqueOrThrow({ where: { id: conclusao.id } });
- const proposta = await prisma.$transaction(tx => prepararAditivoContratualTx(tx, base.secretariaId, { matriculaId: base.matriculaId, conclusaoOriginalId: conclusao.id, conclusaoHashEsperado: fonteAssinada.entradaHash, modeloId: modelo.id, modeloHashEsperado: modeloGravado.conteudoHash, vigenciaInicio: "2026-09-01T00:00:00-03:00", alteracoes: cobertura ? [{ origem: "COBERTURA_INICIO", novo: "2026-11-01", valorEstruturado: { tipo: "DATA", data: "2026-11-01" } }, { origem: "COBERTURA_FIM", novo: "2026-11-30", valorEstruturado: { tipo: "DATA", data: "2026-11-30" } }] : [{ origem: "TAXA_VALOR", novo: "80.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "80", moeda: "CRC" } }, ...(vencimentoTaxa ? [{ origem: "TAXA_VENCIMENTO" as const, novo: vencimentoTaxa, valorEstruturado: { tipo: "DATA" as const, data: vencimentoTaxa } }] : [])], ...(cobertura ? { cicloCoberturaFutura: { escolha: "PRESERVAR_REFERENCIA" as const } } : {}), motivo: cobertura ? "Corrigir cobertura formalizada para o acerto" : "Reduzir taxa paga para acerto", chaveIdempotencia: "dct03-proposta" }));
+ const proposta = await prisma.$transaction(tx => prepararAditivoContratualTx(tx, base.secretariaId, { matriculaId: base.matriculaId, conclusaoOriginalId: conclusao.id, conclusaoHashEsperado: fonteAssinada.entradaHash, modeloId: modelo.id, modeloHashEsperado: modeloGravado.conteudoHash, vigenciaInicio: "2026-09-01T00:00:00-03:00", alteracoes: cobertura ? [{ origem: "COBERTURA_INICIO", novo: coberturaFormalizada.inicioNovo, valorEstruturado: { tipo: "DATA", data: coberturaFormalizada.inicioNovo } }, { origem: "COBERTURA_FIM", novo: coberturaFormalizada.fimNovo, valorEstruturado: { tipo: "DATA", data: coberturaFormalizada.fimNovo } }] : [{ origem: "TAXA_VALOR", novo: "80.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "80", moeda: "CRC" } }, ...(vencimentoTaxa ? [{ origem: "TAXA_VENCIMENTO" as const, novo: vencimentoTaxa, valorEstruturado: { tipo: "DATA" as const, data: vencimentoTaxa } }] : [])], ...(cobertura ? { cicloCoberturaFutura: coberturaFormalizada.ciclo } : {}), motivo: cobertura ? "Corrigir cobertura formalizada para o acerto" : "Reduzir taxa paga para acerto", chaveIdempotencia: "dct03-proposta" }));
  await prisma.$transaction(tx => decidirAditivoContratualTx(tx, base.adminId, { propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, aprovada: true, motivo: "Aditivo aprovado independentemente" }));
  authMock.mockResolvedValue({ user: { id: base.adminId } }); for (const alcada of ["FINANCEIRA", "COMERCIAL"] as const) await decidirAlcadaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Alçada aprovada independentemente" });
  authMock.mockResolvedValue({ user: { id: base.secretariaId } }); const aluno = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId }, include: { aluno: true } }), identidade = { nome: `${aluno.aluno.primeiroNome} ${aluno.aluno.sobrenome}`, email: aluno.aluno.email!, documento: aluno.aluno.documento! };
@@ -931,5 +933,81 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     })).rejects.toThrow("classificar exatamente");
     expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
     expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
+
+  it.each([
+    {
+      nome: "PRESERVAR mantém mês civil após a cobertura corrigida",
+      aditivo: { inicioNovo: "2099-11-01", fimNovo: "2099-11-30", ciclo: { escolha: "PRESERVAR_REFERENCIA" as const } },
+      proxima: { inicio: "2099-12-01", fim: "2099-12-31" },
+    },
+    {
+      nome: "MUDAR ancora o próximo ciclo na referência assinada",
+      aditivo: { inicioNovo: "2099-10-02", fimNovo: "2099-11-15", ciclo: { escolha: "MUDAR_REFERENCIA" as const, referencia: "CICLO_MATRICULA" as const, dataReferencia: "2099-11-16" } },
+      proxima: { inicio: "2099-11-16", fim: "2099-12-15" },
+    },
+  ])("emite continuidade real após Q168: $nome", async ({ aditivo, proxima }) => {
+    await truncarBanco();
+    await cadeiaTaxa(undefined, true, aditivo);
+
+    const { consultarAceiteOriginal, confirmarAceiteOriginal } = await import("./aceite");
+    authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+    const conclusaoOriginal = await prisma.conclusaoAssinaturaContratual.findFirstOrThrow({ where: { processo: { matriculaId: base.matriculaId } } });
+    const aceiteRevisao = await consultarAceiteOriginal({ matriculaId: base.matriculaId, conclusaoId: conclusaoOriginal.id });
+    if (!aceiteRevisao.ok || !aceiteRevisao.dado?.revisao) throw new Error(JSON.stringify(aceiteRevisao));
+    authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+    const aceite = await confirmarAceiteOriginal({ matriculaId: base.matriculaId, conclusaoId: conclusaoOriginal.id, revisaoHash: aceiteRevisao.dado.revisao.hash, evidenciasConferidas: true, motivo: "Contrato confirmado para a emissão da continuidade.", chaveIdempotencia: "q168-emissao-aceite" });
+    if (!aceite.ok || !aceite.dado) throw new Error(JSON.stringify(aceite));
+    financeiro = (await criarUsuario(["FINANCEIRO"])).id;
+    aprovador = (await criarUsuario(["FINANCEIRO"])).id;
+    await prisma.usuario.update({ where: { id: aprovador }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+    const { prepararCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensal } = await import("@/server/matricula/condicoes-continuidade-mensal");
+    authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+    const condicoes = await prepararCondicoesContinuidadeMensal({ matriculaId: base.matriculaId, documentoId: aceite.dado.documentoId, motivo: "Condições da continuidade conferidas para o aditivo aplicado.", regras: {
+      continuidadeContratada: { contratada: true, clausula: "Continuidade mensal prevista no contrato confirmado.", evidenciaId: aceite.dado.documentoId },
+      regraCobertura: { referencia: "MES_CIVIL" }, referenciaVencimento: "MES_COBERTURA", diaVencimento: 5, antecedenciaDias: 10,
+      valorOriginal: "85000", valorNegociado: "999999", moeda: "CRC", vigenteDesde: "2099-10-01", ajusteVencimento: "MANTER_DATA",
+    } });
+    if (!condicoes.ok || !condicoes.dado) throw new Error(JSON.stringify(condicoes));
+    authMock.mockResolvedValue({ user: { id: base.adminId } });
+    expect(await decidirCondicoesContinuidadeMensal({ id: condicoes.dado.id, aprovar: true, motivo: "Condições de continuidade decididas independentemente." })).toMatchObject({ ok: true });
+    const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MATRICULA" } });
+    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, chaveIdempotencia: "q168-emissao-ativacao", autorId: financeiro, valorRecebido: taxa.valorNegociado.toNumber(), forma: "DINHEIRO", dataPagamento: new Date("2099-09-01T00:00:00.000Z"), evidencia: "Taxa recebida antes da ativação da matrícula." }));
+    const matriculaParaAtivar = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId }, select: { paisId: true, produtoId: true } });
+    await prisma.politicaComissao.create({ data: { paisId: matriculaParaAtivar.paisId, produtoId: matriculaParaAtivar.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: "CRC", vigenteEm: new Date("2020-01-01T00:00:00.000Z"), criadaPorId: base.adminId } });
+    const { concluirMatricula } = await import("@/server/matricula/acoes");
+    const ativacao = await concluirMatricula(base.matriculaId);
+    if (!ativacao.ok) throw new Error(JSON.stringify(ativacao));
+    const ancoraOriginal = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" }, orderBy: { coberturaInicio: "asc" } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-emissao-conjunto", ancoraOriginal.id, false, { inicio: aditivo.inicioNovo, fim: aditivo.fimNovo });
+    await aprovarConjunto(conjuntoId, "q168-emissao-aprovar");
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q168-emissao-aplicar" })).toMatchObject({ ok: true, dado: { completo: true } });
+
+    const { proporDisponibilidadeOferta, decidirDisponibilidadeOferta } = await import("@/server/matricula/disponibilidade-oferta");
+    const { emitirContinuidadeMensalTx } = await import("@/server/matricula/continuidade-emissao-tx");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2099-11-30T12:00:00.000Z"));
+      authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+      const oferta = await proporDisponibilidadeOferta({ matriculaId: base.matriculaId, inicio: proxima.inicio, fim: proxima.fim, motivo: "Oferta conferida para toda a próxima cobertura.", evidenciaTexto: "A gestão confirmou a oferta para o período completo.", chaveIdempotencia: `q168-emissao-oferta-${proxima.inicio}` });
+      if (!oferta.ok || !oferta.dado) throw new Error(JSON.stringify(oferta));
+      authMock.mockResolvedValue({ user: { id: base.adminId } });
+      expect(await decidirDisponibilidadeOferta({ propostaId: oferta.dado.id, aprovada: true, motivo: "Oferta aprovada independentemente para emissão.", evidenciaTexto: "A confirmação cobre todos os dias da próxima mensalidade." })).toMatchObject({ ok: true });
+      const ancoraAplicada = await prisma.cobranca.findUniqueOrThrow({ where: { id: ancoraOriginal.id } });
+      expect(ancoraAplicada).toMatchObject({ coberturaInicio: new Date(`${aditivo.inicioNovo}T00:00:00.000Z`), coberturaFim: new Date(`${aditivo.fimNovo}T00:00:00.000Z`) });
+      const emitir = () => prisma.$transaction(tx => emitirContinuidadeMensalTx(tx, { matriculaId: base.matriculaId, ultimaCobrancaIdEsperada: ancoraOriginal.id }));
+      const primeira = await emitir();
+      const replay = await emitir();
+      expect([primeira.repetida, replay.repetida].sort()).toEqual([false, true]);
+      expect(primeira.cobrancaId).toBe(replay.cobrancaId);
+      const emitida = await prisma.cobranca.findUniqueOrThrow({ where: { id: primeira.cobrancaId } });
+      expect(emitida).toMatchObject({ coberturaInicio: new Date(`${proxima.inicio}T00:00:00.000Z`), coberturaFim: new Date(`${proxima.fim}T00:00:00.000Z`) });
+      expect(await prisma.cobranca.count({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" } })).toBe(2);
+      expect(await prisma.emissaoContinuidadeMensal.count({ where: { matriculaId: base.matriculaId } })).toBe(1);
+      const registro = await prisma.emissaoContinuidadeMensal.findUniqueOrThrow({ where: { cobrancaId: emitida.id } });
+      expect(registro.snapshot).toMatchObject({ plano: { memoriaCobertura: { origemAditivo: { conjuntoId }, regraAplicada: aditivo.ciclo.escolha === "PRESERVAR_REFERENCIA" ? { referencia: "MES_CIVIL" } : { referencia: "CICLO_MATRICULA", dataReferencia: "2099-11-16" } } } });
+    } finally { vi.useRealTimers(); }
   });
 });
