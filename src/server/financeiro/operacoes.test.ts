@@ -5,6 +5,7 @@ const m = vi.hoisted(() => ({
   papeis: ["SECRETARIA_ACADEMICA"] as string[],
   txConcluida: false,
   $queryRaw: vi.fn(),
+  origemCreditoAcertoTaxaAditivo: { aggregate: vi.fn() },
   reavaliarAcesso: vi.fn(),
   usuario: { findUniqueOrThrow: vi.fn(), findUnique: vi.fn() },
   configuracaoOperacional: { findUnique: vi.fn() },
@@ -37,13 +38,14 @@ beforeEach(() => {
   vi.resetAllMocks(); m.papeis = [Papel.SECRETARIA_ACADEMICA];
   m.txConcluida = false;
   m.$queryRaw.mockResolvedValue([]);
+  m.origemCreditoAcertoTaxaAditivo.aggregate.mockResolvedValue({ _sum: { valor: null } });
   m.usuario.findUniqueOrThrow.mockResolvedValue({ permissoes: [] });
   m.usuario.findUnique.mockImplementation(async () => ({ ativo: true, papeis: m.papeis, permissoes: [] }));
   m.matricula.findMany.mockResolvedValue([{ id: "matricula", leadId: null }]);
   m.destinacaoRecebimento.create.mockResolvedValue({ id: "destinacao" });
   m.configuracaoOperacional.findUnique.mockResolvedValue(null);
   m.matricula.findUniqueOrThrow.mockResolvedValue({ alunoId: "aluno", leadId: null });
-  m.cobranca.findUnique.mockResolvedValue({ id: "cobranca", matriculaId: "matricula", status: "PENDENTE", moeda: "BRL", valorNegociado: new Prisma.Decimal(100), valorRecebido: null, valorLiquidadoCredito: new Prisma.Decimal(0), vencimento: new Date("2030-01-01") });
+  m.cobranca.findUnique.mockResolvedValue({ id: "cobranca", matriculaId: "matricula", status: "PENDENTE", moeda: "BRL", valorNegociado: new Prisma.Decimal(100), valorRecebido: null, valorLiquidadoCredito: new Prisma.Decimal(0), valorCompensadoPermuta: new Prisma.Decimal(0), vencimento: new Date("2030-01-01") });
   m.pagamentoInformado.create.mockResolvedValue({ id: "informe", versao: 1 });
   m.pagamentoInformado.findMany.mockResolvedValue([]);
   m.recebimento.create.mockResolvedValue({ id: "recebimento" });
