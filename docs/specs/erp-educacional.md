@@ -472,3 +472,7 @@ A consulta de efeitos identifica o acerto de vencimento aplicado à proposta e m
 #### DCT03 — Recuperação de acesso após acerto de vencimento
 
 A aplicação financeira registra uma pendência durável de reavaliação de acesso na mesma transação. O processamento ocorre após o commit, com recuperação pela rotina autenticada e sem repetir a alteração financeira. Falhas deixam a tarefa pendente; o histórico financeiro distingue aplicação confirmada e atualização de acesso concluída/pendente, com número de tentativas. A conclusão da tarefa só é registrada na transação que reavaliou o acesso. Evidência local: migração230, testes dirigidos de falha/recuperação e consulta; revisão concorrente independente ainda pendente.
+
+### Q168 — Correção contratual de cobertura iniciada ou paga
+
+Decisão do usuário em 18/09/2026: permitir corrigir, por aditivo, o período de cobertura de mensalidade inclusive já iniciado ou pago. Exigir justificativa, evidências e acerto financeiro independente de todos os impactos: Financeiro prepara e outra pessoa autorizada aprova antes de aplicar. Preservar recebimentos, cobertura original e histórico; assinatura isolada não modifica a cobrança. Esta decisão não define mudança da referência dos próximos períodos, que permanece pendente de definição específica. Implementação do consumidor de cobertura ainda pendente.
