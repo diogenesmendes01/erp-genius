@@ -55,13 +55,13 @@ export async function proporVencimentoAditivo(input: unknown) {
       const vencimentoNovo = instanteDaGrade(alvo.vencimentoProposto, "12:00", fuso);
       const [foto] = await tx.$queryRaw<Array<{ fotografia: Prisma.JsonValue; hash: string }>>`
         SELECT f AS fotografia, encode(sha256(convert_to(f::text,'UTF8')),'hex') AS hash
-        FROM (SELECT fotografia_vencimento_aditivo_225(${v.id},${c.id},${fuso},${vencimentoNovo}::timestamp) AS f) fonte`;
+        FROM (SELECT fotografia_vencimento_aditivo_225(${v.id},${c.id},${fuso},(${vencimentoNovo}::timestamptz AT TIME ZONE 'UTC')) AS f) fonte`;
       if (!foto?.fotografia) throw new ErroRegra("Fotografia do acerto indisponível.");
       // Fotografia e hash usam o mesmo JSONB no INSERT, sem nova conversão numérica pelo ORM.
       const [p] = await tx.$queryRaw<Array<{ id: string; fotografiaHash: string }>>`
         WITH foto AS (SELECT ${JSON.stringify(foto.fotografia)}::jsonb AS dados)
         INSERT INTO "PropostaVencimentoAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","cobrancaId","preparadorId","versaoCobranca","vencimentoAnterior","vencimentoNovo",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia")
-        SELECT ${randomUUID()},${d.matriculaId},${v.propostaId},${v.id},${c.id},${autor.id},${c.versao},${c.vencimento},${vencimentoNovo},${fuso},foto.dados,encode(sha256(convert_to(foto.dados::text,'UTF8')),'hex'),${d.motivo},${d.evidencia},${d.chaveIdempotencia}
+        SELECT ${randomUUID()},${d.matriculaId},${v.propostaId},${v.id},${c.id},${autor.id},${c.versao},(${c.vencimento}::timestamptz AT TIME ZONE 'UTC'),(${vencimentoNovo}::timestamptz AT TIME ZONE 'UTC'),${fuso},foto.dados,encode(sha256(convert_to(foto.dados::text,'UTF8')),'hex'),${d.motivo},${d.evidencia},${d.chaveIdempotencia}
         FROM foto RETURNING id,"fotografiaHash"`;
       await registrarEvento(tx, { tipo: "VencimentoAditivoProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { propostaId: p.id, cobrancaId: c.id, fotografiaHash: p.fotografiaHash } });
       return { id: p.id };
