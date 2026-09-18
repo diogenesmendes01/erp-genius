@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { hashSubstituicao } from "./substituicao-estado";
+import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
 import { resolverMensalVigente } from "./aditivo-mensal-vigente";
 
 const dinheiroMensal = (valor = "80", moeda = "BRL"): Prisma.JsonObject => ({
@@ -128,4 +129,18 @@ describe("resolverMensalVigente", () => {
       ]),
     ).toThrow(/fluxo próprio/);
   });
+});
+
+it("reconhece vencimento aplicado sem criar aplicação geral nem mudar o preço", () => {
+ const condicoes = { PRIMEIRA_MENSALIDADE_VENCIMENTO: { tipo: "DATA", data: "2026-02-15" } };
+ const base = { ...versao(condicoes), aplicacao: null };
+ const prova = projetarAplicacoesPorCampo([{ ...base, anteriorId: null, alteracoes: [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", valorEstruturado: condicoes.PRIMEIRA_MENSALIDADE_VENCIMENTO }], aplicacaoGeralId: null, aplicacaoVencimentoId: "vencimento-aplicado" }]);
+ expect(resolverMensalVigente([{...base,aplicacoesPorCampo:prova}], new Date("2026-02-01"),new Date("2026-02-28"),"100","90","BRL")).toMatchObject({ valorNegociado:"90",versaoAditivo:{id:"v1"} });
+ expect(()=>resolverMensalVigente([{...base,aplicacoesPorCampo:{}}],new Date("2026-02-01"),new Date("2026-02-28"),"100","90","BRL")).toThrow();
+});
+it("acerto aplicado não dispensa preço pendente na mesma versão", () => {
+ const condicoes = {...dinheiroMensal(), PRIMEIRA_MENSALIDADE_VENCIMENTO:{tipo:"DATA",data:"2026-02-15"}};
+ const base={...versao(condicoes),aplicacao:null};
+ const prova=projetarAplicacoesPorCampo([{...base,anteriorId:null,alteracoes:Object.entries(condicoes).map(([origem,valorEstruturado])=>({origem,valorEstruturado})),aplicacaoGeralId:null,aplicacaoVencimentoId:"acerto"}]);
+ expect(()=>resolverMensalVigente([{...base,aplicacoesPorCampo:prova}],new Date("2026-02-01"),new Date("2026-02-28"),"100","90","BRL")).toThrow("aplicação explícita");
 });

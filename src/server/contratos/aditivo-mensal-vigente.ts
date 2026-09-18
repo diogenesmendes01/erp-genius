@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
+import { PrepararAditivoContratualSchema } from "./aditivo-schema";
 import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { validarValorAlteracaoAditivo } from "./aditivo-valores";
@@ -10,6 +13,7 @@ type VersaoCondicoesMensal = {
   condicoesHash: string;
   vigenciaInicio: Date;
   aplicacao: { id: string } | null;
+  aplicacoesPorCampo?: ReturnType<typeof projetarAplicacoesPorCampo>;
 };
 
 type EntradaMensalVigente = {
@@ -68,7 +72,7 @@ function resumoFinanceiro(versao: VersaoCondicoesMensal): string {
   if (
     "COBERTURA_INICIO" in condicoes ||
     "COBERTURA_FIM" in condicoes ||
-    "PRIMEIRA_MENSALIDADE_VENCIMENTO" in condicoes
+    ("PRIMEIRA_MENSALIDADE_VENCIMENTO" in condicoes && !versao.aplicacoesPorCampo?.PRIMEIRA_MENSALIDADE_VENCIMENTO?.aplicacaoId)
   ) {
     throw new ErroRegra("Alterações de cobertura ou vencimento exigem fluxo próprio.");
   }
@@ -80,8 +84,16 @@ function resumoFinanceiro(versao: VersaoCondicoesMensal): string {
   });
 }
 
+function possuiAplicacaoCompleta(versao: VersaoCondicoesMensal) {
+  if (!versao.aplicacoesPorCampo) return !!versao.aplicacao;
+  return Object.entries(condicoesObjeto(versao.condicoes)).every(([campo, valor]) => {
+    const prova = versao.aplicacoesPorCampo?.[campo];
+    return !!prova?.aplicacaoId && prova.valorHash === hashSubstituicao(valor as Prisma.JsonValue);
+  });
+}
+
 function exigirAplicacao(versao: VersaoCondicoesMensal) {
-  if (!versao.aplicacao) {
+  if (!possuiAplicacaoCompleta(versao)) {
     throw new ErroRegra("Condições formalizadas vigentes aguardam aplicação explícita.");
   }
 }
@@ -114,7 +126,7 @@ export function resolverMensalVigente(
     .filter((versao) => resumoFinanceiro(versao) !== resumoBase);
 
   const mudancasPendentes = possuiMudancaFinanceiraNaCobertura.filter(
-    (versao) => !versao.aplicacao,
+    (versao) => !possuiAplicacaoCompleta(versao),
   );
   if (mudancasPendentes.length) {
     throw new ErroRegra("Há condições formalizadas pendentes de aplicação durante a cobertura mensal.");
@@ -185,6 +197,9 @@ export async function resolverMensalVigenteTx(
     },
     select: {
       id: true,
+      anteriorId: true,
+      proposta: { select: { snapshot: true, entradaHash: true, matriculaId: true } },
+      propostasVencimento: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
       versao: true,
       condicoes: true,
       condicoesHash: true,
@@ -193,8 +208,15 @@ export async function resolverMensalVigenteTx(
     },
   });
 
+  const cadeia = versoes.sort((a,b) => a.versao-b.versao).map(v => {
+    if (v.proposta.matriculaId !== input.matriculaId || hashSubstituicao(v.proposta.snapshot) !== v.proposta.entradaHash) throw new ErroRegra("Proposta contratual divergente da cadeia.");
+    const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(v.proposta.snapshot).entrada;
+    if (entrada.matriculaId !== input.matriculaId) throw new ErroRegra("Proposta pertence a outro contrato.");
+    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
+  });
+  const comprovadas = cadeia.map((v,i) => ({ ...v, aplicacoesPorCampo: projetarAplicacoesPorCampo(cadeia.slice(0,i+1)) }));
   return resolverMensalVigente(
-    versoes,
+    comprovadas,
     input.inicioCobertura,
     input.fimCobertura,
     input.valorOriginal,
