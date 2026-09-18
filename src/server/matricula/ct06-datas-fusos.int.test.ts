@@ -32,7 +32,10 @@ import { concluirMatricula } from "./acoes";
 describe("CT-06: cobertura, vencimento e agenda preservam seus fusos próprios", () => {
   let secretariaId: string, administradorId: string, professorId: string, alunoId: string, produtoId: string, paisId: string, turmaId: string, encontroId: string, calendarioId: string, gradeId: string;
 
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
 
   beforeEach(async () => {
     await truncarBanco();
