@@ -47,7 +47,7 @@ export default async function Operacao({ params, searchParams }: { params: Promi
           ? `Autorização específica vigente até ${horario(i.autorizacaoEspecialAte)}. Prazo do plano, atribuição docente e condições da agenda continuam obrigatórios.`
           : "Sem autorização específica vigente para uma nova realização nesta situação contratual. Avaliações anteriores podem ser registradas quando o histórico comprovar a permissão na data informada."}</p>}
         {i.realizacao ? <><p>Realizada em {horario(i.realizacao.realizadaEm)}; tentativa consumida.</p><Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacao.id)}`}>Nota e conferência desta realização</Link></> : <p>{reserva.cancelamento ? "Reserva liberada, sem realização." : "Aguardando realização; nota ainda não registrada."}</p>}
-        {i.podeRegistrarRealizacao && <Realizar itemReservaId={i.id} />}
+        {i.podeRegistrarRealizacao && <Realizar itemReservaId={i.id} somenteHistorica={!i.podeRegistrarAgora} />}
         {d.podeGerirDesignacoes && !i.realizacao && !reserva.cancelamento && !i.agenda && <PreviaAgenda itemReservaId={i.id} />}
         {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}/agenda`}>Preparar e revisar propostas de horário</Link>}
         {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}/designacao`}>Gerenciar avaliador desta tentativa</Link>}

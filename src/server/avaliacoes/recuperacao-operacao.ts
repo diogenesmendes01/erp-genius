@@ -72,6 +72,9 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
           }
         }
       }
+      const podeRegistrarBase = (item: { realizacao: unknown; agenda: { status: string; mesmoAvaliador: boolean; inicio: string } | null }, reserva: { cancelamento: unknown }) =>
+        docente && !reserva.cancelamento && !item.realizacao
+        && (!item.agenda || (item.agenda.status === "PREVISTO" && item.agenda.mesmoAvaliador && Date.parse(item.agenda.inicio) <= Date.now()));
       return { propostaId: p.id, versao: p.versao, aprovadaEm: p.decisao.criadaEm.toISOString(), alocacaoId: p.alocacaoId, propostaHash: gestao ? p.entradaHash : null,
         situacaoContratual, consultadaEm: consultadaEm.toISOString(),
         identificacao: await identificarMatriculaAvaliacao(tx, p.matriculaId, p.alocacao.turmaId), fontesMudaram, vinculoValido, saldo,
@@ -82,8 +85,22 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
         disponibilizacao: p.disponibilizacao ? { inicio: p.disponibilizacao.disponibilizadaEm.toISOString(), prazoOriginal: p.disponibilizacao.prazoAte.toISOString(), prazoVigente: prazoAte!.toISOString(), condicoes: p.disponibilizacao.condicoes, evidenciaComunicacao: p.disponibilizacao.evidenciaComunicacao } : null,
         proximoId: reservas.length > 20 ? reservas[19].id : null,
         reservas: reservas.slice(0, 20).map(r => ({ ...r, criadaEm: r.criadaEm.toISOString(), podeCancelarPelaEscola: gestao && !r.cancelamento && !reservasAgendadas.has(r.id) && r.itens.some(i => !i.realizacao),
-          itens: r.itens.map(i => { const agenda = agendasDaPagina.get(i.id) ?? null; return { ...i, agenda, autorizacaoEspecialAte: autorizacoes.get(i.id) ?? null, realizacao: i.realizacao ? { ...i.realizacao, realizadaEm: i.realizacao.realizadaEm.toISOString() } : null,
-            podeRegistrarRealizacao: docente && !r.cancelamento && !i.realizacao && (!agenda || (agenda.status === "PREVISTO" && agenda.mesmoAvaliador && Date.parse(agenda.inicio) <= Date.now())) }; }) })) };
+          itens: r.itens.map(i => {
+            const agenda = agendasDaPagina.get(i.id) ?? null;
+            const realizacao = i.realizacao ? { ...i.realizacao, realizadaEm: i.realizacao.realizadaEm.toISOString() } : null;
+            const podeRegistrarHistorica = podeRegistrarBase({ realizacao, agenda }, r);
+            const autorizacaoEspecialAte = autorizacoes.get(i.id) ?? null;
+            return {
+              ...i, agenda, autorizacaoEspecialAte, realizacao,
+              // Q151: o formulário continua disponível para regularizar fato
+              // anterior à pausa/encerramento. Uma realização nova, porém,
+              // só é oferecida quando a situação atual está ativa ou há a
+              // autorização pontual desta tentativa.
+              podeRegistrarHistorica,
+              podeRegistrarAgora: podeRegistrarHistorica && (situacaoContratual === "ATIVA" || autorizacaoEspecialAte !== null),
+              podeRegistrarRealizacao: podeRegistrarHistorica,
+            };
+          }) })) };
     });
   });
 }
