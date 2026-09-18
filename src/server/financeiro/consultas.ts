@@ -4,6 +4,7 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, numeroOuNull, semDecimais } from "@/server/_shared/decimal";
 import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 import { saldoAtual } from "./regras";
+import { referenciaVencimentoCivil } from "./vencimento-civil";
 
 function inicioDoMes() {
   const d = new Date();
@@ -156,12 +157,12 @@ export async function listarContextosRecebimentoDestinado() {
     // A antecipação documentada pode ocorrer antes da ativação. Rascunhos e
     // matrículas encerradas/canceladas continuam fora do caixa operacional.
     where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
-    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } } } } },
+    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } }, itemEmissaoEntrada: { select: { emissao: { select: { memoria: true } } } }, emissaoContinuidadeGerada: { select: { snapshot: true } }, emissaoFechamentoHoras: { select: { memoria: true } } } } },
   });
   return matriculas.map((matricula) => {
     const cobrancas = matricula.cobrancas.flatMap((cobranca) => {
     const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, cobranca.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), cobranca.valorCompensadoPermuta).toNumber();
-    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: cobranca.vencimento.toISOString(), saldo }] : [];
+    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: referenciaVencimentoCivil(cobranca), saldo }] : [];
     });
     const identificacaoMatricula = matricula.codigo?.trim() || `ID ${matricula.id}`;
     return { matriculaId: matricula.id, identificacaoMatricula, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
