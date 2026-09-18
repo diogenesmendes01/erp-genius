@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ ator: "aprovador", tx: {
+  $executeRaw: vi.fn(),
   usuario: { findUnique: vi.fn() },
+  decisaoAdministrativaDesistencia: { findUnique: vi.fn() },
   decisaoAcertoDesistenciaContratual: { findUnique: vi.fn() },
   aplicacaoAcertoDesistenciaContratual: { findUnique: vi.fn(), create: vi.fn() },
   cobranca: { findMany: vi.fn(), update: vi.fn() },
@@ -56,5 +58,48 @@ describe("Q165 aplicação: replay mantém autorização vigente", () => {
     h.tx.aplicacaoAcertoDesistenciaContratual.findUnique.mockResolvedValue({ id: "outra", decisaoId: "outra-decisao" });
     expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({ ok: false });
     expect(h.tx.cobranca.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("Q165 aplicação nova exige decisão administrativa independente", () => {
+  beforeEach(() => {
+    h.tx.decisaoAcertoDesistenciaContratual.findUnique.mockResolvedValue({
+      id: "decisao", aprovada: true, decisorId: "aprovador", aplicacao: null,
+      proposta: { pedidoId: "pedido", estadoHash: "estado", condicoesHash: "condicoes", fotografiaHash: "fotografia",
+        pedido: { matriculaId: "matricula", registradorId: "secretaria" }, memoria: { itens: [] } },
+    });
+    h.tx.aplicacaoAcertoDesistenciaContratual.findUnique.mockResolvedValue(null);
+    h.tx.decisaoAdministrativaDesistencia.findUnique.mockResolvedValue({ aprovada: true, estadoHash: "estado", decisorId: "administrador" });
+    h.tx.usuario.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => where.id === "administrador"
+      ? { ativo: true, papeis: ["ADMINISTRADOR"] }
+      : { ativo: true, papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
+    h.tx.cobranca.findMany.mockResolvedValue([]);
+    h.tx.aplicacaoAcertoDesistenciaContratual.create.mockResolvedValue({ id: "nova-aplicacao" });
+  });
+
+  it("permite materializar após as duas decisões válidas", async () => {
+    expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({ ok: true, dado: { id: "nova-aplicacao" } });
+    expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).toHaveBeenCalledOnce();
+    expect(h.tx.$executeRaw).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    null,
+    { aprovada: false, estadoHash: "estado", decisorId: "administrador" },
+    { aprovada: true, estadoHash: "outro-estado", decisorId: "administrador" },
+    { aprovada: true, estadoHash: "estado", decisorId: "secretaria" },
+  ])("bloqueia decisão ausente, rejeitada, obsoleta ou própria: %j", async administrativa => {
+    h.tx.decisaoAdministrativaDesistencia.findUnique.mockResolvedValue(administrativa);
+    const resultado = await aplicarAcertoDesistenciaContratual(entrada);
+    expect(resultado).toMatchObject({ ok: false, erro: expect.stringContaining("decisão administrativa") });
+    expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).not.toHaveBeenCalled();
+    expect(h.tx.cobranca.findMany).not.toHaveBeenCalled();
+  });
+
+  it.each([{ ativo: false, papeis: ["ADMINISTRADOR"] }, { ativo: true, papeis: ["FINANCEIRO"] }])("revalida a alçada atual de quem aprovou administrativamente: %j", async administrador => {
+    h.tx.usuario.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => where.id === "administrador"
+      ? administrador : { ativo: true, papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
+    expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({ ok: false, erro: expect.stringContaining("decisão administrativa") });
+    expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).not.toHaveBeenCalled();
   });
 });
