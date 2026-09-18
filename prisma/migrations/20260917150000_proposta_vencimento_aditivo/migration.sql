@@ -23,9 +23,19 @@ CREATE TABLE "DecisaoVencimentoAditivo" (
  "decididaEm" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
  UNIQUE ("decisorId","chaveIdempotencia")
 );
+-- Fotografia canônica pelo banco: inclui a cobrança completa, sem criar recebimentos.
+CREATE FUNCTION fotografia_vencimento_aditivo_225(versao_id TEXT, cobranca_id TEXT, fuso TEXT, vencimento_novo TIMESTAMP)
+RETURNS JSONB LANGUAGE SQL STABLE AS $$
+ SELECT jsonb_build_object('versaoCondicoesId',v.id,'condicoesHash',v."condicoesHash",
+ 'conferenciaFinalId',v."conferenciaFinalId",'cobrancaId',c.id,'versaoCobranca',c.versao,
+ 'cobranca',to_jsonb(c),'fuso',fuso,'vencimentoNovo',vencimento_novo)
+ FROM "VersaoCondicoesAditivo" v JOIN "Cobranca" c ON c."matriculaId"=v."matriculaId"
+ WHERE v.id=versao_id AND c.id=cobranca_id;
+$$;
 CREATE FUNCTION conferir_fonte_vencimento_aditivo_225(p "PropostaVencimentoAditivo") RETURNS VOID LANGUAGE plpgsql AS $$
-DECLARE c "Cobranca"%ROWTYPE; v "VersaoCondicoesAditivo"%ROWTYPE; quantidade INTEGER; data_nova TEXT;
+DECLARE c "Cobranca"%ROWTYPE; v "VersaoCondicoesAditivo"%ROWTYPE; quantidade INTEGER; data_nova TEXT; foto JSONB;
 BEGIN
+ PERFORM pg_advisory_xact_lock(hashtextextended('calendario-escola',0));
  PERFORM id FROM "Matricula" WHERE id=p."matriculaId" FOR UPDATE;
  SELECT * INTO c FROM "Cobranca" WHERE id=p."cobrancaId" FOR UPDATE;
  SELECT * INTO v FROM "VersaoCondicoesAditivo" WHERE id=p."versaoCondicoesId";
@@ -39,14 +49,23 @@ BEGIN
  THEN RAISE EXCEPTION 'Primeira mensalidade exige origem de emissão inequívoca'; END IF;
  IF EXISTS (SELECT 1 FROM "VersaoCondicoesAditivo" WHERE "matriculaId"=p."matriculaId" AND versao>v.versao)
  THEN RAISE EXCEPTION 'Versão contratual superada'; END IF;
+ IF NOT EXISTS (SELECT 1 FROM "PropostaAditivoContratual" pa, jsonb_array_elements(pa.snapshot->'entrada'->'alteracoes') a
+ WHERE pa.id=p."propostaAditivoId" AND a->>'origem'='PRIMEIRA_MENSALIDADE_VENCIMENTO')
+ THEN RAISE EXCEPTION 'Condição herdada não autoriza novo acerto'; END IF;
+ IF NOT EXISTS (SELECT 1 FROM "ConferenciaFinalAditivo" f JOIN "ConclusaoAssinaturaAditivo" ca ON ca.id=f."conclusaoId"
+ JOIN "ProcessoAssinaturaAditivo" pr ON pr.id=ca."processoId"
+ WHERE f.id=v."conferenciaFinalId" AND pr."propostaId"=p."propostaAditivoId" AND pr.ambiente='PRODUCAO')
+ THEN RAISE EXCEPTION 'Acerto exige aditivo assinado e conferido'; END IF;
+ IF EXISTS (SELECT 1 FROM "PropostaAditivoContratual" posterior JOIN "PropostaAditivoContratual" origem ON origem.id=p."propostaAditivoId"
+ WHERE posterior."matriculaId"=p."matriculaId" AND posterior.versao>origem.versao)
+ THEN RAISE EXCEPTION 'Proposta contratual superada'; END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name=p.fuso) THEN RAISE EXCEPTION 'Fuso inválido'; END IF;
  data_nova := v.condicoes->'PRIMEIRA_MENSALIDADE_VENCIMENTO'->>'data';
  IF v.condicoes->'PRIMEIRA_MENSALIDADE_VENCIMENTO'->>'tipo' IS DISTINCT FROM 'DATA' OR data_nova IS NULL
  OR to_char(p."vencimentoNovo" AT TIME ZONE 'UTC' AT TIME ZONE p.fuso,'YYYY-MM-DD') IS DISTINCT FROM data_nova
  THEN RAISE EXCEPTION 'Vencimento diverge da condição contratual formalizada'; END IF;
- IF p.fotografia->>'condicoesHash' IS DISTINCT FROM v."condicoesHash"
- OR p.fotografia->>'cobrancaId' IS DISTINCT FROM c.id
- OR p.fotografia->>'versaoCobranca' IS DISTINCT FROM c.versao::TEXT
+ foto := fotografia_vencimento_aditivo_225(v.id,c.id,p.fuso,p."vencimentoNovo");
+ IF p.fotografia IS DISTINCT FROM foto OR p."fotografiaHash" IS DISTINCT FROM encode(sha256(convert_to(foto::TEXT,'UTF8')),'hex')
  THEN RAISE EXCEPTION 'Fotografia financeira incompatível'; END IF;
 END;
 $$;
@@ -54,6 +73,7 @@ CREATE FUNCTION guardar_vencimento_aditivo_225() RETURNS TRIGGER LANGUAGE plpgsq
 DECLARE u "Usuario"%ROWTYPE; p "PropostaVencimentoAditivo"%ROWTYPE;
 BEGIN
  IF TG_OP<>'INSERT' THEN RAISE EXCEPTION 'Proposta e decisão de vencimento são imutáveis'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('calendario-escola',0));
  IF TG_TABLE_NAME='PropostaVencimentoAditivo' THEN
   SELECT * INTO u FROM "Usuario" WHERE id=NEW."preparadorId" FOR SHARE;
   IF u.id IS NULL OR NOT u.ativo OR NOT (u.papeis && ARRAY['FINANCEIRO','ADMINISTRADOR']::"Papel"[]) THEN RAISE EXCEPTION 'Preparação exige Financeiro ativo'; END IF;
