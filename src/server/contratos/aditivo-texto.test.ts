@@ -18,6 +18,15 @@ function base() { return {
 }; }
 
 describe("projeção documental do aditivo Q117", () => {
+  it("inclui a escolha Q169 e sua referência no corpo destinado à assinatura", () => {
+    const preservar = preencherTextoAditivo(modelo(), { ...base(), cicloCoberturaFutura: { escolha: "PRESERVAR_REFERENCIA" } }, {}).secoes[0].texto;
+    expect(preservar).toContain("preservar a referência contratual vigente");
+    const mudar = preencherTextoAditivo(modelo(), { ...base(), cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2026-11-03" } }, {}).secoes[0].texto;
+    expect(mudar).toContain("ciclo mensal da matrícula, com data de referência 2026-11-03");
+    expect(mudar).toContain("acerto financeiro aprovado");
+    expect(() => preencherTextoAditivo(modelo(), { ...base(), cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2026-02-30" } }, {})).toThrow("data civil existente");
+    expect(preencherTextoAditivo(modelo(), base(), {}).secoes[0].texto).not.toContain("Ciclo dos períodos seguintes");
+  });
   it("preserva referências, valores e instante de vigência sem aplicar efeitos", () => {
     const documento = preencherTextoAditivo(modelo(), base(), { ADITIVO_ALTERACOES: "injeção de outra fonte" });
     expect(documento.finalidade).toBe("ADITIVO");

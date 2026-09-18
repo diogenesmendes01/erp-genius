@@ -3,6 +3,7 @@ import { ErroRegra } from "@/server/_shared/sessao";
 import { OrigemCampo, ROTULOS_ORIGEM } from "./campos";
 import { ConteudoModeloSchema } from "./modelo-schema";
 import { preencherModelo } from "./preencher-modelo";
+import { CicloCoberturaFuturoAditivoSchema } from "./aditivo-schema";
 
 const texto = z.string().trim().min(1).max(4000);
 const referencia = z.object({
@@ -16,6 +17,7 @@ export const BaseTextoAditivoSchema = z.object({
   contratoOriginal: referencia,
   aditivosAnteriores: z.array(referencia).max(1000),
   vigenciaInicio: z.string().datetime({ offset: true }),
+  cicloCoberturaFutura: CicloCoberturaFuturoAditivoSchema.optional(),
   alteracoes: z.array(z.object({
     campo: z.string().trim().min(1).max(100),
     rotulo: texto,
@@ -52,6 +54,11 @@ export function preencherTextoAditivo(conteudo: unknown, basePreservada: unknown
     ADITIVO_ANTERIORES: base.aditivosAnteriores.length
       ? base.aditivosAnteriores.map(descreverReferencia).join("\n") : "Nenhum aditivo anterior vinculado.",
     ADITIVO_VIGENCIA: new Date(base.vigenciaInicio).toISOString(),
-    ADITIVO_ALTERACOES: base.alteracoes.map(a => `${a.rotulo}\nCondição anterior: ${a.anterior}\nNova condição: ${a.novo}`).join("\n\n"),
+    ADITIVO_ALTERACOES: [
+      ...base.alteracoes.map(a => `${a.rotulo}\nCondição anterior: ${a.anterior}\nNova condição: ${a.novo}`),
+      ...(base.cicloCoberturaFutura ? [base.cicloCoberturaFutura.escolha === "PRESERVAR_REFERENCIA"
+        ? "Ciclo dos períodos seguintes: preservar a referência contratual vigente. Os impactos em cobranças já emitidas exigem acerto financeiro aprovado."
+        : `Ciclo dos períodos seguintes: alterar a referência para ${base.cicloCoberturaFutura.referencia === "MES_CIVIL" ? "mês civil" : "ciclo mensal da matrícula"}, com data de referência ${base.cicloCoberturaFutura.dataReferencia}. Os impactos em cobranças já emitidas exigem acerto financeiro aprovado.`] : []),
+    ].join("\n\n"),
   });
 }

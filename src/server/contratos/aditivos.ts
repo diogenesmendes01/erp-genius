@@ -86,7 +86,7 @@ export async function consultarPropostaAditivo(input: { matriculaId: string; pro
       const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: ator.id }, select: { ativo: true, papeis: true } });
       return { id: p.id, conclusaoOriginalId: p.conclusaoOriginalId, versao: p.versao, vigenciaInicio: p.vigenciaInicio, motivo: p.motivo, criadaEm: p.criadaEm,
         preparadaPor: p.preparadaPor.nome, propostaHash: p.entradaHash, ambiente: s.base.ambiente, artefatoOriginalId: s.base.artefatoOriginalId,
-        modeloCodigo: s.base.modeloCodigo, modeloVersao: s.base.modeloVersao, alteracoes: s.alteracoes, documento: s.documento,
+        modeloCodigo: s.base.modeloCodigo, modeloVersao: s.base.modeloVersao, cicloCoberturaFutura: s.cicloCoberturaFutura ?? null, alteracoes: s.alteracoes, documento: s.documento,
         impactos: classificarAlteracoesAditivo(s.alteracoes),
         decisao: p.decisao, superada, podeDecidir: !p.decisao && usuario.ativo && usuario.papeis.includes(Papel.ADMINISTRADOR) && p.preparadaPorId !== ator.id };
     }, { isolationLevel: "RepeatableRead" });

@@ -18,3 +18,17 @@ describe("PrepararAditivoContratualSchema", () => {
     expect(PrepararAditivoContratualSchema.parse({ ...base, alteracoes: [{ origem: "AGENDA_PARTICULAR", novo: "Agenda aprovada", valorEstruturado: { tipo: "AGENDA", propostaAgendaId: "p1", texto: "Agenda aprovada" } }] }).alteracoes[0]?.valorEstruturado).toMatchObject({ tipo: "AGENDA", propostaAgendaId: "p1" });
   });
 });
+
+describe("ciclo futuro de cobertura", () => {
+  const alteracoesCobertura = [
+    { origem: "COBERTURA_INICIO", novo: "2027-02-01", valorEstruturado: { tipo: "DATA", data: "2027-02-01" } },
+    { origem: "COBERTURA_FIM", novo: "2027-02-28", valorEstruturado: { tipo: "DATA", data: "2027-02-28" } },
+  ];
+  it("vincula a escolha formalizada à alteração dos dois extremos", () => {
+    expect(PrepararAditivoContratualSchema.parse({ ...base, alteracoes: alteracoesCobertura, cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2027-03-01" } }).cicloCoberturaFutura).toMatchObject({ escolha: "MUDAR_REFERENCIA" });
+    expect(() => PrepararAditivoContratualSchema.parse({ ...base, alteracoes: alteracoesCobertura })).toThrow(/referências dos ciclos futuros/);
+  });
+  it("não aceita a política futura fora de uma correção de cobertura", () => {
+    expect(() => PrepararAditivoContratualSchema.parse({ ...base, alteracoes: [{ origem: "ALUNO_NOME", novo: "Ana" }], cicloCoberturaFutura: { escolha: "PRESERVAR_REFERENCIA" } })).toThrow(/só integra aditivo/);
+  });
+});
