@@ -41,6 +41,10 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
       const versaoFormalizada = await tx.versaoCondicoesAditivo.findUnique({ where: { propostaId: d.propostaId }, select: { id: true, versao: true } });
       const provas = versaoFormalizada ? projetarAplicacoesPorCampo((await carregarAplicacoesCamposTx(tx, d.matriculaId)).filter(v => v.versao <= versaoFormalizada.versao)) : {};
       const aplicacoesCampos = entrada.alteracoes.map(a => ({ campo: a.origem, aplicada: !!provas[a.origem]?.aplicacaoId }));
+      // Acertos de taxa comprovam somente as cobranças selecionadas; não liberam
+      // a condição contratual enquanto o conjunto de impactos não estiver conferido.
+      const acertosTaxaAplicados = entrada.alteracoes.some(a => a.origem === "TAXA_VALOR" || a.origem === "TAXA_VENCIMENTO")
+        ? await tx.aplicacaoAcertoTaxaAditivo.count({ where: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } }) : 0;
       const cobrancasExistentes = await tx.cobranca.count({ where: { matriculaId: d.matriculaId } });
       const aplicacao = await tx.aplicacaoCondicoesAditivo.findFirst({
         where: { matriculaId: d.matriculaId, propostaId: d.propostaId },
@@ -51,7 +55,7 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         throw new ErroRegra("A aplicação preservada exige conferência de integridade.");
       }
       return { ...planejarEfeitosAditivo(entrada.alteracoes, { cobrancaEmitida: cobrancasExistentes > 0 }), vigenciaInicio: p.vigenciaInicio,
-        aplicacoesCampos,
+        aplicacoesCampos, acertosTaxaAplicados,
         primeiraMensalidade: primeiraMensalidade ? { ...primeiraMensalidade, aplicacao: aplicacaoVencimento,
           pendencia: aplicacaoVencimento ? "Este aditivo possui acerto de vencimento aplicado. Consulte o histórico financeiro para conferir a cobrança atual." : primeiraMensalidade.pendencia } : null,
         aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };

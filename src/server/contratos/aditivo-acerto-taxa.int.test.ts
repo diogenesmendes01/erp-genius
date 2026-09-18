@@ -1,3 +1,4 @@
+import { consultarEfeitosAditivo } from "./aditivo-efeitos-consulta";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TipoDestinacaoRecebimento } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -384,4 +385,18 @@ it("DCT03 SQL reproduz o hash canônico TS e recusa hash arbitrário ou forma ad
   expect(gravada.fotografiaAtualHash).toBe(hashSubstituicao(atual));
   await prisma.propostaAcertoTaxaAditivo.update({ where: { id: p.id }, data: { status: "OBSOLETA" } });
 });
+});
+
+it("acerto da taxa selecionada aparece sem declarar a condição global aplicada", async () => {
+  authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+  expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { acertosTaxaAplicados: 0 } });
+  authMock.mockResolvedValue({ user: { id: financeiro } });
+  const proposta = await propor("taxa-escopo-proposta", "Conferência do acerto específico", { recibo: "escopo" });
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: aprovador } });
+  expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Acerto específico conferido", chaveIdempotencia: "taxa-escopo-decisao" })).toMatchObject({ ok: true });
+  expect(await aplicarAcertoTaxaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "taxa-escopo-aplicar" })).toMatchObject({ ok: true });
+  authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+  expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { acertosTaxaAplicados: 1, aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: false }] } });
+  expect(await consultarEfeitosAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: false });
 });
