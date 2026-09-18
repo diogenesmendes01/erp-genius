@@ -220,7 +220,7 @@ it("rollback após preparação desfaz aplicação, cancelamento local e novo pr
 
 it("banco impede cancelamento solto e aplicação sem criação do destino no commit", async () => {
   const d = await confirmacaoParaAplicar();
-  await expect(prisma.processoAssinaturaContratual.update({ where: { id: base.processoId }, data: { estado: "CANCELADO" } })).rejects.toThrow("aplicação comprovada");
+  await expect(prisma.processoAssinaturaContratual.update({ where: { id: base.processoId }, data: { estado: "CANCELADO" } })).rejects.toThrow(/aplicação de substituição ou desistência Q165 comprovada/);
   await expect(prisma.$transaction(tx => tx.aplicacaoSubstituicaoContratual.create({ data: { ...d.substituicao, processoSubstitutoId: "destino-nao-criado", executorId: base.secretariaId } }))).rejects.toThrow();
   expect(await prisma.aplicacaoSubstituicaoContratual.count()).toBe(0);
   await expect(prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...d, artefatoId: base.artefatoFonteId }))).rejects.toThrow("não corresponde");

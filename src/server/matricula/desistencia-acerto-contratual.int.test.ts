@@ -26,13 +26,14 @@ import { hashPrevia } from "@/server/contratos/previa-estado";
 import { carregarRevisaoAceite } from "@/server/contratos/aceite-estado";
 import { confirmarAceiteOriginalTx } from "@/server/contratos/aceite-tx";
 import { prepararSubstituicaoContratualTx, decidirSubstituicaoContratualTx } from "@/server/contratos/substituicao-tx";
-import { iniciarCancelamentoAssinaturaTx, registrarObservacaoCancelamentoTx, iniciarCancelamentoAssinaturaDesistenciaTx, registrarObservacaoCancelamentoDesistenciaTx } from "@/server/contratos/cancelamento-assinatura-tx";
+import { iniciarCancelamentoAssinaturaTx, registrarObservacaoCancelamentoTx } from "@/server/contratos/cancelamento-assinatura-tx";
 import { prepararProcessoEnvioTx, iniciarTentativaAssinaturaTx, registrarResultadoEnvioTx } from "@/server/contratos/envio-tx";
 import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "./condicoes-encerramento";
 import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "./desistencia-preparacao";
 import { decidirDesistenciaAdministrativa } from "./desistencia-administrativa";
 import { prepararAcertoDesistenciaContratual, decidirAcertoDesistenciaContratual } from "./desistencia-acerto-contratual";
 import { aplicarAcertoDesistenciaContratual } from "./desistencia-acerto-aplicacao";
+import { iniciarCancelamentoAssinaturaDesistencia, registrarObservacaoCancelamentoAssinaturaDesistencia } from "./desistencia-cancelamento-assinatura";
 import { efetivarPedidoDesistenciaPreparacao } from "./desistencia-efetivacao";
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { registrarPagamento, registrarRecebimentoDestinado } from "@/server/financeiro/acoes";
@@ -233,11 +234,17 @@ it("bloqueia a efetivação Q165 enquanto houver solicitação de assinatura abe
     aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria tentou efetivar com solicitação externa ainda aberta." });
   expect(efetivacao).toMatchObject({ ok: false });
   expect(await prisma.efetivacaoPedidoDesistenciaPreparacao.count({ where: { pedidoId: pedido.id } })).toBe(0);
+  expect(await iniciarCancelamentoAssinaturaDesistencia({ pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash })).toMatchObject({ ok: false });
+  expect(await prisma.intencaoCancelamentoAssinatura.count({ where: { processoId: base.processoId } })).toBe(0);
   entrar(base.secretariaId);
-  const intencao = await prisma.$transaction(tx => iniciarCancelamentoAssinaturaDesistenciaTx(tx, base.secretariaId, { pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash }));
-  await prisma.$transaction(tx => registrarObservacaoCancelamentoDesistenciaTx(tx, { intencaoId: intencao.id, pedidoId: pedido.id, processoId: base.processoId, chave: "cancelamento-desistencia-q165", resultado: "CONFIRMADO", referenciaExterna: base.referenciaExternaFonte, evidenciaHash: "d".repeat(64) }));
+  const intencao = dado(await iniciarCancelamentoAssinaturaDesistencia({ pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash }));
+  expect(dado(await iniciarCancelamentoAssinaturaDesistencia({ pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash }))).toMatchObject({ id: intencao.id, nova: false });
+  const observacao = dado(await registrarObservacaoCancelamentoAssinaturaDesistencia({ intencaoId: intencao.id, pedidoId: pedido.id, processoId: base.processoId, chave: "cancelamento-desistencia-q165", resultado: "CONFIRMADO", referenciaExterna: base.referenciaExternaFonte, evidenciaHash: "d".repeat(64) }));
+  expect(observacao).toMatchObject({ cancelamentoConfirmado: true });
+  expect(dado(await registrarObservacaoCancelamentoAssinaturaDesistencia({ intencaoId: intencao.id, pedidoId: pedido.id, processoId: base.processoId, chave: "cancelamento-desistencia-q165", resultado: "CONFIRMADO", referenciaExterna: base.referenciaExternaFonte, evidenciaHash: "d".repeat(64) }))).toMatchObject({ id: observacao.id, cancelamentoConfirmado: true });
   const efetivada = await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
     aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria efetivou após o cancelamento externo comprovado." });
+  expect(efetivada.ok, efetivada.ok ? undefined : efetivada.erro).toBe(true);
   expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
 });
 
