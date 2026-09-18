@@ -1,3 +1,4 @@
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 const { authMock, enviarMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarMock: vi.fn() }));
@@ -185,7 +186,7 @@ describe("W01–W07: intenção velha nunca chama o driver", () => {
       referenciaCalendario: { versao: cobranca.versao, vencimento: cobranca.vencimento.toISOString(), cicloRegua: cobranca.cicloRegua },
       referenciaDestino: referenciaDestinoCobranca(snapshot.destino),
       corpoRenderizado: "Saldo antigo", variaveis: [] }));
-    await prisma.cobranca.update({ where: { id: cobranca.id }, data: tipo === "total" ? { status: "PAGO", valorRecebido: 85000, saldo: 0 } : { valorRecebido: 5000, saldo: 80000 } });
+    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: fin.id, valorRecebido: tipo === "total" ? 85000 : 5000, forma: "DINHEIRO", dataPagamento: new Date(), comentario: "Pagamento registrado após preparação da mensagem", chaveIdempotencia: `pagamento-whatsapp-${tipo}` }));
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("CANCELADA");
   });
