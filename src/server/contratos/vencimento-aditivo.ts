@@ -7,7 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAuten
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { consultarAlvoPrimeiraMensalidadeTx } from "./aditivo-primeira-mensalidade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
-import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
+import { reconciliarAcessoVencimento } from "./vencimento-acesso";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
 // O callback só retorna após a transação terminar. Falhas desconhecidas preservam a tentativa.
@@ -130,16 +130,7 @@ export async function aplicarVencimentoAditivo(input: unknown) {
       return { id: aplicacao.id, aplicada: true };
     }, { timeout: 30000 });
   });
-  if (resultado.ok && resultado.dado) {
-    try {
-      const aplicacao = await prisma.aplicacaoVencimentoAditivo.findUniqueOrThrow({
-        where: { id: resultado.dado.id }, select: { decisao: { select: { proposta: { select: { cobrancaId: true } } } } },
-      });
-      await reavaliarAcessoAutomaticoDaCobranca(aplicacao.decisao.proposta.cobrancaId);
-    } catch {
-      console.error("[aditivo] Vencimento aplicado; reavaliação de acesso pendente pelo cron institucional.");
-    }
-  }
+  if (resultado.ok && resultado.dado) await reconciliarAcessoVencimento(resultado.dado.id);
   return resultado;
 }
 
@@ -158,7 +149,7 @@ export async function consultarVencimentosAditivo(input: unknown) {
       const linhas = await tx.propostaVencimentoAditivo.findMany({
         where: { matriculaId: d.matriculaId, versaoCondicoesId: versao.id },
         orderBy: [{ criadaEm: "desc" }, { id: "desc" }], skip: (d.pagina - 1) * 50, take: 51,
-        include: { decisao: { include: { aplicacao: true } } },
+        include: { decisao: { include: { aplicacao: { include: { reconciliacaoAcesso: true } } } } },
       });
       return {
         matriculaId: d.matriculaId, versaoCondicoesId: versao.id, versao: versao.versao,
@@ -174,6 +165,11 @@ export async function consultarVencimentosAditivo(input: unknown) {
           podeSolicitarAplicacao: versao.vigenciaInicio <= new Date() && !!p.decisao?.aprovada && !p.decisao.aplicacao && aprova && p.decisao.decisorId === autor.id,
           decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, decididaEm: p.decisao.decididaEm.toISOString() } : null,
           aplicadaEm: p.decisao?.aplicacao?.aplicadaEm.toISOString() ?? null,
+          reconciliacaoAcesso: p.decisao?.aplicacao?.reconciliacaoAcesso ? {
+            concluida: !!p.decisao.aplicacao.reconciliacaoAcesso.concluidaEm,
+            tentativas: p.decisao.aplicacao.reconciliacaoAcesso.tentativas,
+            erro: p.decisao.aplicacao.reconciliacaoAcesso.erro,
+          } : null,
         })),
       };
     });

@@ -32,6 +32,7 @@ export default async function Pagina({ params, searchParams }: {
  {p.decisao && <p>Decisão: {p.decisao.motivo}</p>}
  {p.podeDecidir && <VencimentoFormulario modo="decidir" propostaId={p.id} />}
  {p.podeSolicitarAplicacao && <VencimentoFormulario modo="aplicar" propostaId={p.id} />}
+ {p.reconciliacaoAcesso && <p role="status">Atualização de acesso: {p.reconciliacaoAcesso.concluida ? "concluída" : "pendente de processamento"}. Tentativas: {p.reconciliacaoAcesso.tentativas}. {p.reconciliacaoAcesso.erro}</p>}
  {p.aplicadaEm && <p>Aplicado em {data(p.aplicadaEm,p.fuso)}.</p>}
  </section>)}
  <nav className="flex gap-4">{d.pagina>1 && <Link href={`?pagina=${d.pagina-1}`}>Anterior</Link>}{d.temProxima && <Link href={`?pagina=${d.pagina+1}`}>Próxima</Link>}</nav>

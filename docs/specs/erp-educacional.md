@@ -468,3 +468,7 @@ Evidências:42/42 integrações do arquivo de aditivos antes da guarda229; após
 #### DCT03 — Evidência complementar de consulta do vencimento (18/09/2026)
 
 A consulta de efeitos identifica o acerto de vencimento aplicado à proposta e matrícula consultadas, mostra a referência histórica e orienta a conferência da cobrança atual. Essa referência não declara aplicadas as demais condições do aditivo. A preparação financeira não é oferecida quando a primeira mensalidade está cancelada ou sua origem é ausente/ambígua. Validação: nove testes direcionados de alvo/SSR, três integrações dirigidas de vencimento (40 fora do filtro) e TypeScript com saída 0. Regressão global e validação visual continuam pendentes.
+
+#### DCT03 — Recuperação de acesso após acerto de vencimento
+
+A aplicação financeira registra uma pendência durável de reavaliação de acesso na mesma transação. O processamento ocorre após o commit, com recuperação pela rotina autenticada e sem repetir a alteração financeira. Falhas deixam a tarefa pendente; o histórico financeiro distingue aplicação confirmada e atualização de acesso concluída/pendente, com número de tentativas. A conclusão da tarefa só é registrada na transação que reavaliou o acesso. Evidência local: migração230, testes dirigidos de falha/recuperação e consulta; revisão concorrente independente ainda pendente.

@@ -7730,6 +7730,7 @@ model DecisaoVencimentoAditivo {
 
 model AplicacaoVencimentoAditivo {
   id String @id @default(cuid())
+  reconciliacaoAcesso ReconciliacaoAcessoVencimento?
   decisaoId String @unique
   decisao DecisaoVencimentoAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   executorId String
@@ -7742,4 +7743,15 @@ model AplicacaoVencimentoAditivo {
   vencimentoNovo DateTime
   aplicadaEm DateTime @default(now())
   @@unique([executorId, chaveIdempotencia])
+}
+
+model ReconciliacaoAcessoVencimento {
+  aplicacaoId String @id
+  aplicacao AplicacaoVencimentoAditivo @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(now())
+  ultimaTentativaEm DateTime?
+  tentativas Int @default(0)
+  concluidaEm DateTime?
+  erro String?
+  @@index([concluidaEm, ultimaTentativaEm])
 }

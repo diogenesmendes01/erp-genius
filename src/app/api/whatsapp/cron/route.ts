@@ -1,3 +1,4 @@
+import { rodarReconciliacaoAcessoVencimento } from "@/server/contratos/vencimento-acesso";
 import { iniciarTurmasDaAgenda } from "@/server/agenda/inicio-turmas";
 import { rodarVencimentoParticulares } from "@/server/matricula/reserva-particular-cron";
 import { NextResponse } from "next/server";
@@ -36,6 +37,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Controle acadêmico executa mesmo com WhatsApp desligado, sem gerar mensagens.
   const reservasParticulares = await seguro("reservas_particulares", () => rodarVencimentoParticulares());
   const inicioTurmas = await seguro("inicio_turmas", () => iniciarTurmasDaAgenda(agora));
+  const acessoVencimentos = await seguro("acesso_vencimentos", () => rodarReconciliacaoAcessoVencimento());
   const acessoAulas = await seguro("acesso_aulas", () => rodarControleAcessoAulas(agora));
   // Cobrança: enfileira + drena (o rodarCronRegua já chama o despachante no fim).
   const cobranca = await seguro("cobranca", () => rodarCronRegua(agora));
@@ -46,5 +48,5 @@ export async function POST(req: Request): Promise<NextResponse> {
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
-  return NextResponse.json({ reservasParticulares, inicioTurmas, acessoAulas, cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
+  return NextResponse.json({ reservasParticulares, inicioTurmas, acessoVencimentos, acessoAulas, cobranca, comercial: { leadNovo, preExperimental, noShow }, despacho });
 }

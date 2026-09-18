@@ -799,8 +799,20 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(0);
     await expect(prisma.aplicacaoVencimentoAditivo.create({ data: { ...aplicacaoDireta, executorId: financeiro.id } })).rejects.toThrow("aprovador");
-    const aplicada = await aplicarVencimentoAditivo(aplicar);
-    expect(aplicada, JSON.stringify(aplicada)).toMatchObject({ ok: true });
+    const acessoModulo = await import("@/server/cobrancas/acesso-aulas");
+    const reavaliacao = vi.spyOn(acessoModulo, "reavaliarAcessoAutomaticoMatriculaTx").mockRejectedValueOnce(new Error("Falha simulada de acesso"));
+    let aplicada;
+    try {
+      aplicada = await aplicarVencimentoAditivo(aplicar);
+      expect(aplicada, JSON.stringify(aplicada)).toMatchObject({ ok: true });
+      expect(reavaliacao).toHaveBeenCalledTimes(1);
+    } finally { reavaliacao.mockRestore(); }
+    const tarefa = await prisma.reconciliacaoAcessoVencimento.findFirstOrThrow();
+    expect(tarefa).toMatchObject({ concluidaEm: null, tentativas: 1, erro: expect.stringContaining("nova tentativa pendente") });
+    const { rodarReconciliacaoAcessoVencimento } = await import("./vencimento-acesso");
+    expect(await rodarReconciliacaoAcessoVencimento()).toEqual({ concluidos: 1, pendentes: 0, inalterados: 0 });
+    expect(await prisma.reconciliacaoAcessoVencimento.findUniqueOrThrow({ where: { aplicacaoId: tarefa.aplicacaoId } })).toMatchObject({ concluidaEm: expect.any(Date), tentativas: 2, erro: null });
+    expect(await rodarReconciliacaoAcessoVencimento()).toEqual({ concluidos: 0, pendentes: 0, inalterados: 0 });
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: antes.status === "PAGO" ? "PAGO" : "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);

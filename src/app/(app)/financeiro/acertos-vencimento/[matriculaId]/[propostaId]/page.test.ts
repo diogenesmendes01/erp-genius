@@ -45,3 +45,11 @@ it("não oferece preparação quando a cobrança identificada exige conferência
  expect(html).not.toContain('data-acao="preparar"');
  expect(html).toContain(d.alvo.pendencia);
 });
+
+it("mostra pendência de acesso sem esconder aplicação financeira confirmada", async () => {
+ const d = dado(); Object.assign(d.propostas[0], { estado: "APLICADA", podeSolicitarAplicacao: false, aplicadaEm: "2026-09-18T12:00:00Z", reconciliacaoAcesso: { concluida: false, tentativas: 1, erro: "Nova tentativa pendente" } });
+ mocks.consulta.mockResolvedValue({ ok: true, dado: d });
+ const html = renderToStaticMarkup(await Page(entrada()));
+ expect(html).toContain("Aplicado em"); expect(html).toContain("pendente de processamento");
+ expect(html).toContain("Nova tentativa pendente"); expect(html).not.toContain('data-acao="aplicar"');
+});

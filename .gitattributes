@@ -60,3 +60,5 @@ prisma/migrations/20260917152000_periodo_integral_destinacoes/migration.sql -tex
 prisma/migrations/20260917153000_aplicacao_vencimento_aditivo/migration.sql -text
 
 prisma/migrations/20260917154000_vigencia_aplicacao_vencimento/migration.sql -text
+
+prisma/migrations/20260917155000_reconciliacao_acesso_vencimento/migration.sql -text
