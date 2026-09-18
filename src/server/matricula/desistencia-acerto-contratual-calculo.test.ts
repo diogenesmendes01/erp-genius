@@ -3,6 +3,20 @@ import { calcularObrigacaoDesistenciaContratual } from "./desistencia-acerto-con
 
 const base = { diaEncerramento: "EXCLUIR", metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Conforme contrato", multa: { tipo: "SEM_PREVISAO", motivo: "Sem multa" } };
 describe("Q165 cálculo contratual da desistência", () => {
+  it("apura somente o excedente ainda não convertido em crédito", () => {
+    const regras = { ...base, acertoDesistenciaPreparacao: { tipo: "VALOR_FIXO", valor: "50", clausulaId: "7.6", condicoesAplicacao: { momento: "ANTES_ATIVACAO", unidade: "POR_COBRANCA", alcance: { tipo: "TODAS_COBRANCAS_MATRICULA" } } } };
+    const cobranca = { id: "taxa", tipo: "MATRICULA", valorNegociado: 100, valorRecebido: 80, valorLiquidadoCredito: 20, valorCreditoJaApurado: 30 };
+    const r = calcularObrigacaoDesistenciaContratual(regras, cobranca);
+    expect([r.creditoApurado.toFixed(2), r.creditoAnterior.toFixed(2), r.liquidacaoLiquida.toFixed(2)]).toEqual(["20.00", "30.00", "70.00"]);
+    const repetido = calcularObrigacaoDesistenciaContratual(regras, { ...cobranca, valorCreditoJaApurado: 50 });
+    expect(repetido.creditoApurado.toFixed(2)).toBe("0.00");
+    expect(cobranca.valorRecebido).toBe(80);
+    const saldo = calcularObrigacaoDesistenciaContratual(regras, { ...cobranca, valorCreditoJaApurado: 70 });
+    expect([saldo.saldoDevido.toFixed(2), saldo.creditoApurado.toFixed(2)]).toEqual(["20.00", "0.00"]);
+    for (const valorCreditoJaApurado of [-1, 101]) {
+      expect(() => calcularObrigacaoDesistenciaContratual(regras, { ...cobranca, valorCreditoJaApurado })).toThrow("créditos já apurados");
+    }
+  });
   it("recusa versão contratual sem fórmula estruturada", () => expect(() => calcularObrigacaoDesistenciaContratual(base, { id: "taxa", tipo: "MATRICULA", valorNegociado: 100, valorRecebido: 100, valorLiquidadoCredito: 0 })).toThrow("regra estruturada"));
   it("apura saldo ou crédito somente pela fórmula contratada", () => {
     const regras = { ...base, acertoDesistenciaPreparacao: { tipo: "PERCENTUAL_VALOR_NEGOCIADO" as const, percentual: "25", clausulaId: "7.2", condicoesAplicacao: { momento: "ANTES_ATIVACAO" as const, unidade: "POR_COBRANCA" as const, alcance: { tipo: "TODAS_COBRANCAS_MATRICULA" as const } } } };
