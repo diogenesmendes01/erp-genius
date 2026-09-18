@@ -35,6 +35,8 @@ import { decidirDevolucaoCredito, proporDevolucaoCredito, registrarExecucaoDevol
 import { hashSubstituicao } from "./substituicao-estado";
 import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, obsoletarImpactosTaxaAditivo, prepararImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "./aditivo-taxa-impactos";
 
+import { consultarImpactosCoberturaAditivo, consultarPreparoCoberturaAditivo } from "./aditivo-cobertura-consulta";
+
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
 async function proximaMensalidade() {
   const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" }, orderBy: { vencimento: "asc" }, select: { valorOriginal: true, valorNegociado: true, moeda: true } });
@@ -689,6 +691,16 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     authMock.mockResolvedValue({ user: { id: financeiro } });
     expect(await decidirImpactosCoberturaAditivo({ conjuntoId, aprovada: true, motivo: "O próprio preparador não pode aprovar o conjunto.", chaveIdempotencia: "q168-autoaprovar" })).toMatchObject({ ok: false });
     expect(await prisma.decisaoConjuntoImpactosCoberturaAditivo.count({ where: { conjuntoId } })).toBe(0);
+  });
+
+  it("permite Secretaria consultar sem liberar preparação ou operações", async () => {
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const consulta = { matriculaId: alvo.matriculaId, propostaId: alvo.propostaId };
+    const preparo = await consultarPreparoCoberturaAditivo(consulta); if (!preparo.ok) throw new Error(preparo.erro);
+    expect(preparo).toMatchObject({ ok: true, dado: { estado: "PRONTA" } });
+    authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+    expect(await consultarPreparoCoberturaAditivo(consulta)).toMatchObject({ ok: true, dado: { estado: "SEM_ALCADA" } });
+    expect(await consultarImpactosCoberturaAditivo(consulta)).toMatchObject({ ok: true, dado: null });
   });
 
   it("recusa obsolescer conjunto APROVADO cuja fotografia continua íntegra", async () => {
