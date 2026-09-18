@@ -5,7 +5,7 @@ import { Pendencias } from "./Pendencias";
 import { preverRetomadaMatriculas } from "@/server/matricula/retomada-previa";
 import { solicitarRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
 import type { PreviaRetomadaMatriculasInput } from "@/server/matricula/retomada-schema";
-import { identificacaoContrato, idsAposSelecaoMatricula } from "./identificacaoContrato";
+import { identificacaoContrato } from "./identificacaoContrato";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -55,7 +55,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
     <h2 className="text-lg font-medium">Nova proposta de retomada</h2>
     {contratos.length === 0 ? <p>Nenhum contrato pausado disponível.</p> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos pausados</legend>
-      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => idsAposSelecaoMatricula(v, m.id, e.target.checked)); }} />{m.identificacao} · {m.nome}</label>)}
+      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
       <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<textarea className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
       <button type="button" className={campo} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
