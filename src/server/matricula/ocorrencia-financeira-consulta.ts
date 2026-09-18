@@ -19,7 +19,8 @@ export async function consultarOcorrenciasFinanceiras(input: { matriculaId: stri
         select: { id: true, inicio: true, fim: true, status: true, fusoOrigem: true,
           ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true, versao: true, tipo: true, evidencia: true, comunicadoEm: true, autor: { select: { nome: true } } } },
           conferenciaOcorrenciaHoras: { select: { id: true, valor: true, moeda: true, minutos: true, desfecho: true, motivo: true, conferidaEm: true,
-            conferente: { select: { nome: true } }, ocorrenciaId: true, condicoesId: true, snapshot: true } } } });
+            conferente: { select: { nome: true } }, ocorrenciaId: true, condicoesId: true, snapshot: true,
+            consumoAntecipacao: { select: { id: true, reservaId: true, motivo: true, reserva: { select: { compraId: true, minutos: true } } } } } } } });
       const condicoes = await tx.condicoesHorasMatricula.findMany({ where: { matriculaId: m.id, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true, regras: true, documentoId: true } });
       const pagina = encontrados.slice(0, 30);
       return { matricula: m, proximoCursor: encontrados.length > 30 ? pagina[29].id : null,
