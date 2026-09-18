@@ -689,7 +689,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   await expect(preservar({ ...entradaConclusao, assinaturas: [{ ...entradaConclusao.assinaturas[0], identidadeHash: "0".repeat(64) }] })).rejects.toThrow();
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
   const alunoAntesConclusao = await prisma.aluno.findUniqueOrThrow({ where: { id: m.alunoId } });
-  await prisma.aluno.update({ where: { id: m.alunoId }, data: { sobrenome: "Alteração posterior ao envio" } });
+  await prisma.aluno.update({ where: { id: m.alunoId }, data: { documento: "documento-alterado-apos-envio" } });
   const c = await preservar();
   expect(await preservar()).toEqual(c);
   await expect(preservar({ ...entradaConclusao, evidencias: Buffer.from("Outra evidência") })).rejects.toThrow();
@@ -712,7 +712,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
   const alvoFinal = { matriculaId: fixture.matriculaId, propostaId: alvo.propostaId, conclusaoId: c.id };
   expect(await consultarConferenciaFinalAditivo(alvoFinal)).toMatchObject({ ok: true, dado: { revisao: null } });
-  await prisma.aluno.update({ where: { id: m.alunoId }, data: { sobrenome: alunoAntesConclusao.sobrenome } });
+  await prisma.aluno.update({ where: { id: m.alunoId }, data: { documento: alunoAntesConclusao.documento } });
   const revisaoFinal = await consultarConferenciaFinalAditivo(alvoFinal);
   if (!revisaoFinal.ok || !revisaoFinal.dado?.revisao) throw new Error("Revisão final indisponível");
   const confirmarFinal = { ...alvoFinal, revisaoHash: revisaoFinal.dado.revisao.hash, documentoConferido: true as const, evidenciasConferidas: true as const, motivo: "Documento e evidências finais conferidos" };
@@ -795,7 +795,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
     await expect(decidir(proxima)).resolves.toHaveProperty("id");
     }
   }
-  await prisma.aluno.update({ where: { id: m.alunoId }, data: { sobrenome: "Alterado após conferência final" } });
+  await prisma.aluno.update({ where: { id: m.alunoId }, data: { documento: "documento-alterado-apos-conferencia" } });
   expect(await consultarConferenciaFinalAditivo(alvoFinal)).toMatchObject({ ok: true, dado: { revisao: null, historico: { id: final.dado.id } } });
   expect(await consultarConferenciaFinalAditivo({ ...alvoFinal, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
   await prisma.usuario.update({ where: { id: fixture.secretariaId }, data: { ativo: false } });
