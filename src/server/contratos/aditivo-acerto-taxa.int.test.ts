@@ -29,12 +29,14 @@ import { proporUtilizacaoCredito } from "@/server/financeiro/uso-credito-propost
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
 import { decidirDevolucaoCredito, proporDevolucaoCredito, registrarExecucaoDevolucaoCredito } from "@/server/financeiro/devolucao-credito";
 import { hashSubstituicao } from "./substituicao-estado";
+import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, prepararImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "./aditivo-taxa-impactos";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
 async function cadeiaTaxa(vencimentoTaxa?: string) {
  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, ambiente: "PRODUCAO", semSubstituicao: true });
  const fonte = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } } });
- const pessoas = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(fonte.artefato.conferencia.snapshot).participantes, agora = new Date().toISOString();
+ const pessoas = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(fonte.artefato.conferencia.snapshot).participantes;
+ const envioFonte = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: fonte.id }, orderBy: { numero: "desc" } }), agora = envioFonte.iniciadaEm.toISOString();
  const conclusao = await prisma.$transaction(tx => preservarConclusaoAssinaturaTx(tx, { processoId: fonte.id, referenciaExterna: base.referenciaExternaFonte, originalHash: fonte.artefato.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-assinado"), evidencias: Buffer.from("evidencia"), assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(pessoas[0].identidade), referenciaAssinatura: "fonte", assinadaEm: agora }] }));
  const modelo = await prisma.$transaction(tx => prepararModeloTx(tx, base.secretariaId, { codigo: "DCT03", versaoEsperada: 0, chaveIdempotencia: "dct03-modelo", motivo: "Modelo de acerto de taxa", conteudo: { titulo: "Aditivo", finalidade: "ADITIVO", regimes: ["MENSALIDADE"], aplicacao: "Teste DCT03", campos: [{ chave: "nome", descricao: "Aluno", origem: "ALUNO_NOME" }, { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" }, { chave: "vencimento", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" }, { chave: "original", descricao: "Original", origem: "ADITIVO_CONTRATO_ORIGINAL" }, { chave: "anteriores", descricao: "Anteriores", origem: "ADITIVO_ANTERIORES" }, { chave: "alteracoes", descricao: "Alterações", origem: "ADITIVO_ALTERACOES" }, { chave: "vigencia", descricao: "Vigência", origem: "ADITIVO_VIGENCIA" }], secoes: [{ titulo: "Dados", texto: "{{nome}} {{taxa}} {{vencimento}} {{original}} {{anteriores}} {{alteracoes}} {{vigencia}}" }], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }] } }));
  const modeloGravado = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: modelo.id } }); authMock.mockResolvedValue({ user: { id: base.adminId } }); await decidirModeloContratual({ modeloId: modelo.id, conteudoHash: modeloGravado.conteudoHash, aprovada: true, motivo: "Modelo aprovado independentemente" }); authMock.mockResolvedValue({ user: { id: base.secretariaId } });
@@ -49,7 +51,8 @@ async function cadeiaTaxa(vencimentoTaxa?: string) {
  const conferencia = await registrarConferenciaAssinaturaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, artefatoId: original.dado.id, revisaoHash: assinatura.dado.revisao.hash, dadosConferidos: true, motivo: "Assinatura conferida para o aditivo", chaveIdempotencia: "dct03-assinatura" }); if (!conferencia.ok || !conferencia.dado) throw new Error(JSON.stringify(conferencia));
  const processo = await prepararProcessoAssinaturaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, artefatoId: original.dado.id, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente: "PRODUCAO" }); if (!processo.ok || !processo.dado) throw new Error(JSON.stringify(processo));
  const tentativa = await prisma.$transaction(tx => iniciarTentativaAditivoTx(tx, base.secretariaId, { processoId: processo.dado!.id })); await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: processo.dado!.id, tentativaId: tentativa.tentativaId, chave: "dct03-envio", resultado: "REGISTRADO", referenciaExterna: "dct03-assinado", evidenciaHash: "a".repeat(64) }));
- const artefato = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: original.dado.id }, include: { conferencia: true } }), ass = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(artefato.conferencia.snapshot).participantes, agoraFim = new Date().toISOString(), fim = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processo.dado!.id, referenciaExterna: "dct03-assinado", originalHash: artefato.pdfHash, concluidaEm: agoraFim, pdfAssinado: Buffer.from("%PDF-assinado-aditivo"), evidencias: Buffer.from("evidencia-aditivo"), assinaturas: ass.map(x => ({ papel: x.papel, identidadeHash: hashPrevia(x.identidade), referenciaAssinatura: "dct03", assinadaEm: agoraFim })) }));
+ const artefato = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: original.dado.id }, include: { conferencia: true } }), ass = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(artefato.conferencia.snapshot).participantes;
+ const envioAditivo = await prisma.tentativaEnvioAditivo.findFirstOrThrow({ where: { processoId: processo.dado!.id }, orderBy: { numero: "desc" } }), agoraFim = envioAditivo.iniciadaEm.toISOString(), fim = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processo.dado!.id, referenciaExterna: "dct03-assinado", originalHash: artefato.pdfHash, concluidaEm: agoraFim, pdfAssinado: Buffer.from("%PDF-assinado-aditivo"), evidencias: Buffer.from("evidencia-aditivo"), assinaturas: ass.map(x => ({ papel: x.papel, identidadeHash: hashPrevia(x.identidade), referenciaAssinatura: "dct03", assinadaEm: agoraFim })) }));
  const revisao = await consultarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id }); if (!revisao.ok || !revisao.dado?.revisao) throw new Error(JSON.stringify(revisao)); const final = await registrarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash, documentoConferido: true, evidenciasConferidas: true, motivo: "Conclusão conferida para o acerto" }); if (!final.ok) throw new Error(JSON.stringify(final));
  const cond = await registrarCondicoesFormalizadasAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }); if (!cond.ok) throw new Error(JSON.stringify(cond)); alvo = { matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id, revisaoHash: revisao.dado.revisao.hash }; cobrancaId = (await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MATRICULA" } })).id;
 }
@@ -76,7 +79,7 @@ async function formalizarNovaVersaoTaxa(valor: string, vigenciaInicio = "2026-09
  await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: processo.dado!.id, tentativaId: tentativa.tentativaId, chave: `dct03-taxa-${valor}-envio`, resultado: "REGISTRADO", referenciaExterna: `dct03-taxa-${valor}-assinado`, evidenciaHash: "b".repeat(64) }));
  const assinado = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: artefato.dado.id }, include: { conferencia: true } });
  const assinaturas = z.object({ participantes: z.array(z.object({ papel: z.literal("ALUNO"), identidade: IdentidadeSignatarioSchema })) }).parse(assinado.conferencia.snapshot).participantes;
- const agora = new Date().toISOString();
+ const envioAditivo = await prisma.tentativaEnvioAditivo.findFirstOrThrow({ where: { processoId: processo.dado!.id }, orderBy: { numero: "desc" } }), agora = envioAditivo.iniciadaEm.toISOString();
  const fim = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processo.dado!.id, referenciaExterna: `dct03-taxa-${valor}-assinado`, originalHash: assinado.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-nova-taxa"), evidencias: Buffer.from("evidencia-nova-taxa"), assinaturas: assinaturas.map(x => ({ papel: x.papel, identidadeHash: hashPrevia(x.identidade), referenciaAssinatura: `dct03-taxa-${valor}`, assinadaEm: agora })) }));
  const revisao = await consultarConferenciaFinalAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: fim.id });
  if (!revisao.ok || !revisao.dado?.revisao) throw new Error(JSON.stringify(revisao));
@@ -399,4 +402,63 @@ it("acerto da taxa selecionada aparece sem declarar a condição global aplicada
   authMock.mockResolvedValue({ user: { id: base.secretariaId } });
   expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { acertosTaxaAplicados: 1, aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: false }] } });
   expect(await consultarEfeitosAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: false });
+});
+
+describe.sequential("Q170 impactos de todas as taxas", () => {
+  async function prepararDuasTaxas(chave: string) {
+    const original = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+    const preservada = await prisma.cobranca.create({ data: { matriculaId: base.matriculaId, tipo: "MATRICULA", moeda: original.moeda, valorOriginal: 35, valorNegociado: 35, saldo: 35, vencimento: new Date("2026-09-15T12:00:00.000Z") } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const conjunto = await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "Taxa original alterada pelo aditivo assinado." },
+      { cobrancaId: preservada.id, decisao: "PRESERVADA", justificativa: "Cobrança adicional permanece fora do escopo do aditivo." },
+    ], chaveIdempotencia: chave });
+    if (!conjunto.ok || !conjunto.dado) throw new Error(JSON.stringify(conjunto));
+    return { conjuntoId: conjunto.dado.id, preservadaId: preservada.id };
+  }
+
+  it("prepara todas as duas taxas, exige aprovação independente, vincula e só conclui após aplicar o acerto afetado", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-duas-taxas");
+    expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { id: conjuntoId, status: "PENDENTE", impactos: expect.arrayContaining([
+      expect.objectContaining({ cobrancaId, decisao: "AFETADA", justificativa: expect.stringContaining("original") }),
+      expect.objectContaining({ cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: expect.stringContaining("permanece") }),
+    ]) } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "O preparador não pode aprovar o próprio conjunto.", chaveIdempotencia: "q170-autoaprovar" })).toMatchObject({ ok: false });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const acerto = await propor("q170-acerto", "Acerto individual da taxa afetada.", { recibo: "Q170" });
+    if (!acerto.ok || !acerto.dado) throw new Error(JSON.stringify(acerto));
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: acerto.dado.id, aprovada: true, motivo: "Acerto individual aprovado por outro Financeiro.", chaveIdempotencia: "q170-acerto-aprovar" })).toMatchObject({ ok: true });
+    expect(await aplicarAcertoTaxaAditivo({ propostaId: acerto.dado.id, chaveIdempotencia: "q170-acerto-aplicar" })).toMatchObject({ ok: true });
+    const creditosAntes = await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true, dado: { vinculada: true } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Financeiro independente conferiu todas as taxas.", chaveIdempotencia: "q170-aprovar" })).toMatchObject({ ok: true, dado: { aprovada: true } });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
+    expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
+    expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { status: "COMPLETO", aplicado: true, impactos: expect.arrayContaining([expect.objectContaining({ cobrancaId, aplicado: true }), expect.objectContaining({ cobrancaId: preservadaId, aplicado: false })]) } });
+  });
+
+  it("recusa replay com entrada alterada e vínculo de acerto de outra taxa", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-replay");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "Taxa original alterada pelo aditivo assinado." },
+      { cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: "Justificativa alterada para tentar replay inválido." },
+    ], chaveIdempotencia: "q170-replay" })).toMatchObject({ ok: false });
+    const acerto = await propor("q170-acerto-escopo", "Acerto existente pertence à primeira taxa.", { recibo: "Q170-escopo" });
+    if (!acerto.ok || !acerto.dado) throw new Error(JSON.stringify(acerto));
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId: preservadaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: false });
+  });
+
+  it("recusa concluir se a cobrança preservada mudou depois da aprovação", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-preservada-mutada");
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Conjunto completo conferido antes da alteração posterior.", chaveIdempotencia: "q170-preservada-aprovar" })).toMatchObject({ ok: true });
+    await prisma.cobranca.update({ where: { id: preservadaId }, data: { valorNegociado: 36, saldo: 36, versao: { increment: 1 } } });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
+    expect(await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
 });
