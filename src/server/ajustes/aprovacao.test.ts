@@ -4,6 +4,7 @@ import { Papel, Prisma } from "@prisma/client";
 const m = vi.hoisted(() => ({
   papeis: ["GERENTE_COMERCIAL"] as string[],
   $queryRaw: vi.fn(),
+  origemCreditoAcertoTaxaAditivo: { aggregate: vi.fn() },
   usuario: { findUnique: vi.fn(), findMany: vi.fn() },
   matricula: { findFirst: vi.fn(), findMany: vi.fn(), findUniqueOrThrow: vi.fn() },
   cobranca: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
@@ -28,13 +29,14 @@ import { escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
 beforeEach(() => {
   vi.resetAllMocks(); m.papeis = [Papel.GERENTE_COMERCIAL];
   m.$queryRaw.mockResolvedValue([]);
+  m.origemCreditoAcertoTaxaAditivo.aggregate.mockResolvedValue({ _sum: { valor: null } });
   m.usuario.findUnique.mockResolvedValue({ ativo: true, limiteDescontoTaxaPct: new Prisma.Decimal(50), limiteDescontoMensalidadePct: new Prisma.Decimal(20), alcadaAlteradaEm: null });
   m.usuario.findMany.mockResolvedValue([{ id: "vendedor-equipe" }]);
   m.matricula.findFirst.mockResolvedValue({ id: "matricula" });
   m.matricula.findMany.mockResolvedValue([{ id: "matricula", leadId: "lead" }]);
   m.matricula.findUniqueOrThrow.mockResolvedValue({ id: "matricula", paisId: "pais", produto: { modalidadeId: "modalidade" }, comissoes: [] });
   m.cobranca.findMany.mockResolvedValue([{ matriculaId: "matricula" }]);
-  m.cobranca.findUnique.mockResolvedValue({ id: "cobranca", matriculaId: "matricula", tipo: "MATRICULA", versao: 1, status: "PENDENTE", valorOriginal: new Prisma.Decimal(100), valorNegociado: new Prisma.Decimal(100), valorRecebido: null, valorLiquidadoCredito: new Prisma.Decimal(0), moeda: "BRL", vencimento: new Date("2030-01-01") });
+  m.cobranca.findUnique.mockResolvedValue({ id: "cobranca", matriculaId: "matricula", tipo: "MATRICULA", versao: 1, status: "PENDENTE", valorOriginal: new Prisma.Decimal(100), valorNegociado: new Prisma.Decimal(100), valorRecebido: null, valorLiquidadoCredito: new Prisma.Decimal(0), valorCompensadoPermuta: new Prisma.Decimal(0), moeda: "BRL", vencimento: new Date("2030-01-01") });
   m.aprovacao.findUnique.mockResolvedValue({ id: "pedido", solicitanteId: "vendedor-equipe", status: "PENDENTE", tipo: "DESCONTO", alvoTipo: "Cobranca", alvoId: "cobranca", criadoEm: new Date("2026-01-01"), payload: {
     alunoId: "aluno", alunoNome: "Aluna", moeda: "BRL", valorDe: 100, valorPara: 50, descontoValor: 50, tipo: "DESCONTO", exigeDirecao: false,
     alvos: [{ id: "cobranca", versao: 1, valorDe: 100, valorPara: 50, referencia: 100, novoVencimento: null }],
@@ -107,4 +109,17 @@ it("aprova ajuste compatível mantendo dinheiro e crédito separados no saldo", 
   expect(dados.saldo.toFixed(2)).toBe("20.00");
   expect(dados).not.toHaveProperty("valorRecebido");
   expect(dados).not.toHaveProperty("valorLiquidadoCredito");
+});
+
+it("preserva compensação de serviço ao recalcular um ajuste de mensalidade", async () => {
+  const usuario = await m.usuario.findUnique();
+  m.usuario.findUnique.mockResolvedValue({ ...usuario, limiteDescontoMensalidadePct: new Prisma.Decimal(50) });
+  const cobranca = await m.cobranca.findUnique();
+  m.cobranca.findUnique.mockResolvedValue({ ...cobranca, tipo: "MENSALIDADE", valorCompensadoPermuta: new Prisma.Decimal(30) });
+  expect((await decidirAprovacao("pedido", { aprovar: true })).ok).toBe(true);
+  const atualizacao = m.cobranca.update.mock.calls[0][0].data;
+  expect(atualizacao.saldo.toFixed(2)).toBe("20.00");
+  expect(atualizacao).not.toHaveProperty("valorRecebido");
+  expect(atualizacao).not.toHaveProperty("valorLiquidadoCredito");
+  expect(atualizacao).not.toHaveProperty("valorCompensadoPermuta");
 });
