@@ -50,5 +50,7 @@ describe("carregarFinanceiroDesistenciaTx", () => {
     });
     expect(resultado.resumo).not.toHaveProperty("valorInicial");
     expect(resultado.resumo).not.toHaveProperty("moeda");
+    expect(snapshot.creditos[0]).not.toHaveProperty("origemReconferenciaDeltaDesistenciaId");
+    expect(snapshot.creditos[0]).not.toHaveProperty("origemAcertoTaxaAditivoId");
   });
 });
