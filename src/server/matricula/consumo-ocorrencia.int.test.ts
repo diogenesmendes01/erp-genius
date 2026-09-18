@@ -40,7 +40,7 @@ beforeEach(async () => {
   await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: "q92-recebimento-original", autorId: financeiroId, valorRecebido: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-10T12:00:00Z"), evidencia: "Recebimento original da compra antecipada" }));
 });
 
-async function prepararReserva(tipo: "FALTA_ALUNO" | "CANCELAMENTO_ALUNO", chave: string) {
+async function prepararReserva(tipo: "FALTA_ALUNO" | "CANCELAMENTO_ALUNO" | "CANCELAMENTO_ESCOLA", chave: string, antecedente = false) {
   login(financeiroId);
   const cobranca = await prisma.cobranca.create({ data: { matriculaId, tipo: "HORA_PARTICULAR", moeda: "CRC", valorOriginal: 360, valorNegociado: 300, valorRecebido: 0, saldo: 300, status: "PENDENTE", vencimento: new Date("2026-09-10T00:00:00Z") } });
   await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: `q92-recebimento-${chave}`, autorId: financeiroId, valorRecebido: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-10T12:00:00Z"), evidencia: "Recebimento original da compra antecipada" }));
@@ -54,20 +54,37 @@ async function prepararReserva(tipo: "FALTA_ALUNO" | "CANCELAMENTO_ALUNO", chave
   const encontro = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: professor.id, preparadorId: adminId, inicio, fim, fusoOrigem: "UTC", status: "PREVISTO", motivo: "Encontro reservado para ocorrência", chaveIdempotencia: `q92-encontro-${chave}`, entradaHash: "fixture" } });
   const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado.id, encontroId: encontro.id, motivo: "Reserva da compra quitada", chaveIdempotencia: `q92-reserva-${chave}` });
   if (!reserva.ok || !reserva.dado) throw new Error("Reserva ausente");
-  if (tipo === "CANCELAMENTO_ALUNO") {
-    login(professor.id); const proposta = await proporCancelamentoParticular({ encontroId: encontro.id, origem: "ALUNO", motivo: "Aluno pediu cancelamento", chaveIdempotencia: `q92-cancelamento-${chave}` });
+  if (tipo.startsWith("CANCELAMENTO")) {
+    login(professor.id); const proposta = await proporCancelamentoParticular({ encontroId: encontro.id, origem: tipo === "CANCELAMENTO_ALUNO" ? "ALUNO" : "ESCOLA", motivo: "Cancelamento proposto com origem registrada", chaveIdempotencia: `q92-cancelamento-${chave}` });
     if (!proposta.ok || !proposta.dado) throw new Error("Cancelamento ausente");
     login(adminId); expect(await decidirCancelamentoParticular({ propostaId: proposta.dado.id, aprovar: true, motivo: "Cancelamento aprovado" })).toMatchObject({ ok: true });
   }
-  return { tipo, compraId: compra.dado.id, encontro, reservaId: reserva.dado.id, professor };
+  return { tipo, antecedente, compraId: compra.dado.id, encontro, reservaId: reserva.dado.id, professor };
 }
 
 async function registrarOcorrenciaDaReserva(c: Awaited<ReturnType<typeof prepararReserva>>) {
   login(c.professor.id); const ocorrencia = await registrarOcorrenciaParticular({ encontroId: c.encontro.id, versaoAnterior: 0, tipo: c.tipo,
-    ...(c.tipo === "CANCELAMENTO_ALUNO" ? { comunicadoEm: new Date(c.encontro.inicio.getTime() - 60 * 60_000).toISOString() } : {}), evidencia: "Ocorrência contratual registrada", chaveIdempotencia: `q92-ocorrencia-${c.reservaId}` });
+    ...(c.tipo.startsWith("CANCELAMENTO") ? { comunicadoEm: new Date(c.encontro.inicio.getTime() - (c.antecedente ? 2 * 60 : 60) * 60_000).toISOString() } : {}), evidencia: "Ocorrência contratual registrada", chaveIdempotencia: `q92-ocorrencia-${c.reservaId}` });
   if (!ocorrencia.ok || !ocorrencia.dado) throw new Error("Ocorrência ausente");
   login(financeiroId); const condicoes = await prisma.condicoesHorasMatricula.findFirstOrThrow({ where: { matriculaId, status: "APROVADA" } });
   return { ...c, entrada: { alunoId, matriculaId, ocorrenciaId: ocorrencia.dado.id, condicoesId: condicoes.id } };
+}
+
+async function reservarOutraMatricula(chave: string) {
+  const original = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+  const outra = await prisma.matricula.create({ data: { alunoId, paisId: original.paisId, produtoId: original.produtoId, moeda: "CRC", status: "ATIVA" } });
+  const documento = await prisma.documento.create({ data: { matriculaId: outra.id, categoria: "CONTRATO", nome: "Contrato isolado", url: "/api/files/contrato-isolado.pdf" } });
+  await prisma.matricula.update({ where: { id: outra.id }, data: { contratoOk: true, contratoDocumentoId: documento.id, confirmacaoContratoPorId: secretariaId, confirmacaoContratoEm: new Date("2026-09-01T12:00:00Z") } });
+  const cobranca = await prisma.cobranca.create({ data: { matriculaId: outra.id, tipo: "HORA_PARTICULAR", moeda: "CRC", valorOriginal: 360, valorNegociado: 300, valorRecebido: 0, saldo: 300, status: "PENDENTE", vencimento: new Date("2026-09-10T00:00:00Z") } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, chaveIdempotencia: `q92-outra-recebimento-${chave}`, autorId: financeiroId, valorRecebido: 300, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-10T12:00:00Z"), evidencia: "Recebimento de outro contrato" }));
+  login(financeiroId); const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  const compra = await registrarCompraHorasAntecipadas({ alunoId, matriculaId: outra.id, cobrancaId: cobranca.id, versaoCobranca: atual.versao, minutosComprados: 180, evidenciaCondicoes: "Compra isolada para teste de vínculo", chaveIdempotencia: `q92-outra-compra-${chave}` });
+  if (!compra.ok || !compra.dado) throw new Error(compra.ok ? "Compra isolada ausente" : compra.erro);
+  const professor = await criarUsuario(["PROFESSOR"]), inicio = new Date(Date.now() + 20_000), fim = new Date(inicio.getTime() + 60_000);
+  const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: outra.id, professorId: professor.id, preparadorId: adminId, inicio, fim, fusoOrigem: "UTC", status: "PREVISTO", motivo: "Outro contrato reservado", chaveIdempotencia: `q92-outra-encontro-${chave}`, entradaHash: "fixture" } });
+  const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado.id, encontroId: encontro.id, motivo: "Reserva de outro contrato", chaveIdempotencia: `q92-outra-reserva-${chave}` });
+  if (!reserva.ok || !reserva.dado) throw new Error(reserva.ok ? "Reserva isolada ausente" : reserva.erro);
+  return { matriculaId: outra.id, reservaId: reserva.dado.id };
 }
 
 it("consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita SQL", async () => {
@@ -110,6 +127,11 @@ it("consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita
   expect(await prisma.ocorrenciaParticular.count({ where: { encontroId: sql.encontro.id } })).toBe(1);
   expect(await prisma.consumoHorasCompradas.findUniqueOrThrow({ where: { reservaId: sql.reservaId } })).toMatchObject({ id: consumoAntes.id, conferenciaOcorrenciaId: confirmada.dado.id });
   await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: sql.reservaId, autorId: financeiroId, motivo: "Tentativa sem fonte válida" } })).rejects.toThrow(/exatamente diário ou conferência/);
+  await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: sql.reservaId, conferenciaOcorrenciaId: confirmada.dado.id, autorId: financeiroId, estadoDiario: "a".repeat(64), motivo: "Tentativa com as duas fontes" } })).rejects.toThrow(/exatamente diário ou conferência/);
+  const conferenciaFalta = await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: falta.encontro.id } });
+  const outra = await reservarOutraMatricula("vinculo-cruzado");
+  await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: outra.reservaId, conferenciaOcorrenciaId: conferenciaFalta.id, autorId: financeiroId, motivo: "Tentativa de usar conferência de outra matrícula" } })).rejects.toThrow(/reserva, compra e agenda compatíveis|conferência cobrável da reserva vigente/);
+  expect(await prisma.consumoHorasCompradas.count({ where: { reservaId: outra.reservaId } })).toBe(0);
   const apuracao = await prisma.$transaction(tx => carregarApuracaoHorasTx(tx, { alunoId, matriculaId, periodo: { referencia: "q92-setembro", inicio: "2026-09-01T00:00:00Z", fimExclusivo: "2026-10-01T00:00:00Z" }, vencimento: "2026-10-10", escolha: "AGUARDAR" }));
   expect(apuracao).toMatchObject({ estado: "SEM_ITENS_A_FATURAR", totalApurado: "0.00", preservados: expect.arrayContaining(consumos.map(({ c, consumo }) => ({ encontroId: c.encontro.id, destinacao: { tipo: "ANTECIPACAO_CONFERIDA", registroId: consumo.id } }))) });
   const encerramento = await prisma.$transaction(tx => carregarHorasEncerramentoTx(tx, alunoId, matriculaId));
@@ -118,3 +140,22 @@ it("consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita
     expect(encerramento.origens.find(origem => origem.compraId === c.compraId)).toMatchObject({ consumos: [{ id: consumo.id, minutos: 1, motivo: desfecho === "FALTA_COBRAVEL" ? "FALTA_COBRAVEL" : "CANCELAMENTO_TARDIO_COBRAVEL" }] });
   }
 }, 120_000);
+
+it("não consome reserva em cancelamento no prazo ou da escola", async () => {
+  const noPrazo = await prepararReserva("CANCELAMENTO_ALUNO", "no-prazo", true);
+  const escola = await prepararReserva("CANCELAMENTO_ESCOLA", "escola", true);
+  const [ocorrenciaNoPrazo, ocorrenciaEscola] = [await registrarOcorrenciaDaReserva(noPrazo), await registrarOcorrenciaDaReserva(escola)];
+  const antes = { cobrancas: await prisma.cobranca.findMany(), recebimentos: await prisma.recebimento.findMany() };
+  for (const [c, desfecho, chave] of [[ocorrenciaNoPrazo, "CANCELAMENTO_NO_PRAZO", "no-prazo"], [ocorrenciaEscola, "CANCELAMENTO_ESCOLA", "escola"]] as const) {
+    const previa = await preverConferenciaOcorrenciaHoras(c.entrada);
+    if (!previa.ok || !previa.dado) throw new Error(previa.ok ? "Prévia sem resultado" : previa.erro);
+    expect(previa.dado).toMatchObject({ classificacao: { desfecho }, pendencias: [expect.stringMatching(/reserva antecipada só é consumida/)] });
+    expect(previa.dado.reservaAntecipada).toBeUndefined();
+    const resultado = await conferirOcorrenciaHoras({ ...c.entrada, estadoPrevia: previa.dado.estadoPrevia, motivo: "Cancelamento não consome antecipação", chaveIdempotencia: `q92-bloqueio-${chave}` });
+    expect(resultado).toMatchObject({ ok: false });
+    expect(await prisma.conferenciaOcorrenciaHoras.count({ where: { encontroId: c.encontro.id } })).toBe(0);
+    expect(await prisma.consumoHorasCompradas.count({ where: { reservaId: c.reservaId } })).toBe(0);
+  }
+  expect(await prisma.cobranca.findMany()).toEqual(antes.cobrancas);
+  expect(await prisma.recebimento.findMany()).toEqual(antes.recebimentos);
+});
