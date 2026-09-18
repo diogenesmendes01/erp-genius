@@ -1,4 +1,5 @@
 "use server";
+import { consultarCadastroContratualVigenteTx } from "./cadastro-contratual";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -54,7 +55,8 @@ export async function consultarAditivosContratuais(input: { matriculaId: string;
       const propostas = await tx.propostaAditivoContratual.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ versao: "desc" }],
         skip: (d.pagina - 1) * 20, take: 21, select: { id: true, versao: true, motivo: true, criadaEm: true,
           preparadaPor: { select: { nome: true } }, decisao: { select: { aprovada: true, decisor: { select: { nome: true } } } } } });
-      return { matricula: { id: m.id, codigo: m.codigo, aluno: [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" ") },
+      const cadastroContratual = await consultarCadastroContratualVigenteTx(tx, m.id, new Date());
+      return { cadastroContratual, matricula: { id: m.id, codigo: m.codigo, aluno: [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" ") },
         fonte: fonte ? { conclusaoId: fonte.id, conclusaoHash: fonte.entradaHash, artefatoId: fonte.processo.artefato.id, ambiente: fonte.processo.ambiente,
           campos: origens.map(origem => { const estruturado = condicoes[origem]; let anterior = campos.find(c => c.origem === origem)!.valor;
             if (estruturado !== undefined) anterior = representarValorAlteracaoAditivo(validarValorAlteracaoAditivo(origem, estruturado));

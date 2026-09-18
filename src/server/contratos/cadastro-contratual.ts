@@ -10,6 +10,18 @@ type Versao = {
   aplicacao: { id: string; condicoesHash: string } | null;
 };
 
+/** Uso interno após autorização do contrato pelo chamador. */
+export async function consultarCadastroContratualVigenteTx(tx: Prisma.TransactionClient, matriculaId: string, em: Date) {
+  if (!matriculaId || !Number.isFinite(em.getTime())) throw new ErroRegra("Referência inválida para o cadastro contratual.");
+  const versao = await tx.versaoCondicoesAditivo.findFirst({
+    where: { matriculaId, vigenciaInicio: { lte: em }, aplicacao: { isNot: null } },
+    orderBy: [{ vigenciaInicio: "desc" }, { versao: "desc" }],
+    select: { matriculaId: true, versao: true, vigenciaInicio: true, condicoes: true, condicoesHash: true,
+      aplicacao: { select: { id: true, condicoesHash: true } } },
+  });
+  return versao ? projetarCadastroContratual(matriculaId, versao, em) : null;
+}
+
 /** Projeção contratual: nunca altera Aluno, identidade do portal ou outro contrato. */
 export function projetarCadastroContratual(matriculaId: string, versao: Versao, em: Date) {
   if (versao.matriculaId !== matriculaId || !Number.isFinite(em.getTime()) || !Number.isFinite(versao.vigenciaInicio.getTime())) {
