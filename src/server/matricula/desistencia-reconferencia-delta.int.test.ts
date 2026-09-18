@@ -35,6 +35,7 @@ import { decidirDesistenciaAdministrativa } from "./desistencia-administrativa";
 import { prepararAcertoDesistenciaContratual, decidirAcertoDesistenciaContratual } from "./desistencia-acerto-contratual";
 import { aplicarAcertoDesistenciaContratual } from "./desistencia-acerto-aplicacao";
 import { efetivarPedidoDesistenciaPreparacao } from "./desistencia-efetivacao";
+import { consultarReconferenciaDeltaDesistencia } from "./desistencia-reconferencia-delta-consulta";
 import {
   aplicarReconferenciaDeltaDesistencia,
   decidirAdministrativamenteReconferenciaDeltaDesistencia,
@@ -205,6 +206,9 @@ it("persiste pendência por informe posterior e não cria decisões", async () =
   })).toMatchObject({ ok: true, dado: { informado: true } });
   const proposta = await prepararDelta(aplicacaoBase.id, "preparo-pendencia-delta-q249");
   expect(proposta.estado).toBe("PENDENCIA_FINANCEIRA");
+  expect(await consultarReconferenciaDeltaDesistencia({ matriculaId: base.matriculaId })).toMatchObject({
+    ok: true, dado: { aplicacoesBase: [{ podePreparar: false, propostas: [{ podeAplicar: false }] }] },
+  });
   const persistida = await prisma.propostaReconferenciaDeltaDesistencia.findUniqueOrThrow({ where: { id: proposta.id } });
   entrar(financeiroAprovador.id);
   expect(await decidirReconferenciaDeltaDesistencia({ propostaId: proposta.id, fotografiaHash: persistida.fotografiaHash,
@@ -231,6 +235,10 @@ it("rejeita aplicação depois de crédito externo posterior à aprovação", as
   }));
   const proposta = await prepararDelta(aplicacaoBase.id, "preparo-obsoleta-delta-q249");
   const decisao = await aprovarDelta(proposta.id, "decisao-obsoleta-delta-q249");
+  entrar(financeiroAprovador.id);
+  expect(await consultarReconferenciaDeltaDesistencia({ matriculaId: base.matriculaId })).toMatchObject({
+    ok: true, dado: { aplicacoesBase: [{ podePreparar: false, propostas: [{ podeAplicar: true }] }] },
+  });
   entrar(financeiroPreparador.id);
   dado(await registrarRecebimentoDestinado({ titularMatriculaId: base.matriculaId, pagadorId: null,
     chaveIdempotencia: "credito-obsoleto-segundo-q249", valorRecebido: 5, moeda: "BRL", forma: FormaPagamento.DINHEIRO,
@@ -239,6 +247,9 @@ it("rejeita aplicação depois de crédito externo posterior à aprovação", as
   }));
   entrar(financeiroAprovador.id);
   expect(await aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicacao-obsoleta-delta-q249" })).toMatchObject({ ok: false });
+  expect(await consultarReconferenciaDeltaDesistencia({ matriculaId: base.matriculaId })).toMatchObject({
+    ok: true, dado: { aplicacoesBase: [{ podePreparar: true, propostas: [{ podeAplicar: false }] }] },
+  });
   expect(await prisma.aplicacaoReconferenciaDeltaDesistencia.count({ where: { propostaId: proposta.id } })).toBe(0);
 });
 
