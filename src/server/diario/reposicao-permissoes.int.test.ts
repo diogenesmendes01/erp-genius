@@ -38,7 +38,7 @@ it.each(["PAUSADA", "ENCERRADA"] as const)("docente mantém avaliação de entre
   const outroProfessor = await criarUsuario(["PROFESSOR"]);
   entrar(outroProfessor.id);
   expect(await consultarFilaReposicoesDocente()).toMatchObject({ ok: true, dado: { itens: [] } });
-  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: "entrega-historica", professorId: outroProfessor.id, designadorId: gestorId, inicio: new Date("2026-01-11T00:00:00Z"), fim: new Date("2026-02-01T00:00:00Z"), motivo: "Designação histórica já encerrada" } });
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: "entrega-historica", professorId: outroProfessor.id, designadorId: gestorId, inicio: new Date("2026-01-10T12:00:00Z"), fim: new Date("2026-01-11T00:00:00Z"), motivo: "Designação histórica encerrada antes do avaliador vigente" } });
   entrar(outroProfessor.id);
   expect(await consultarFilaReposicoesDocente()).toMatchObject({ ok: true, dado: { itens: [] } });
   entrar(professorId);
