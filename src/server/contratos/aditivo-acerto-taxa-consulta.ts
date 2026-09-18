@@ -93,7 +93,7 @@ export async function listarHistoricoAcertosTaxa(input: unknown) {
     return propostas.map(p => {
       const fotografia = p.fotografia as { cobranca?: { valorNegociado?: string; valorRecebido?: string | null; valorLiquidadoCredito?: string; vencimento?: string }; calculo?: { creditoAnterior?: string }; comissoes?: Array<{ id?: string; tipo?: string; status?: string; percentual?: string; valor?: string; valorBase?: string | null }> };
       return ({
-      id: p.id, status: p.status, codigo: p.cobranca.codigo ?? p.cobrancaId, moeda: p.cobranca.moeda,
+      id: p.id, cobrancaId: p.cobrancaId, status: p.status, codigo: p.cobranca.codigo ?? p.cobrancaId, moeda: p.cobranca.moeda,
       preparador: p.preparador.nome, criadaEm: p.criadaEm.toISOString(), motivo: p.motivo,
       evidencia: typeof p.evidencia === "object" && p.evidencia !== null && !Array.isArray(p.evidencia) && typeof p.evidencia.texto === "string" ? p.evidencia.texto : "Evidência estruturada preservada no registro do acerto.",
       anterior: { valor: fotografia.cobranca?.valorNegociado ?? null, recebido: fotografia.cobranca?.valorRecebido ?? null, creditoLiquidado: fotografia.cobranca?.valorLiquidadoCredito ?? null, vencimento: fotografia.cobranca?.vencimento?.slice(0, 10) ?? null, creditoOriginado: fotografia.calculo?.creditoAnterior ?? null },

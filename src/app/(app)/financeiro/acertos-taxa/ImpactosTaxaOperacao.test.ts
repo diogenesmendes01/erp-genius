@@ -16,7 +16,7 @@ function montar(status: string, motivo = "") {
   vi.clearAllMocks();
   m.state.mockReturnValueOnce([motivo, vi.fn()]).mockReturnValueOnce([{}, vi.fn()]).mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce([false, vi.fn()]);
   m.ref.mockReturnValue({ current: null });
-  return ImpactosTaxaOperacao({ conjunto: { id: "conjunto", status, impactos: [{ cobrancaId: "c1", codigo: "T-1", decisao: "AFETADA", justificativa: "Taxa atingida pelo aditivo.", aplicado: false }, { cobrancaId: "c2", codigo: "T-2", decisao: "PRESERVADA", justificativa: "Cobrança fora do escopo.", aplicado: false }] }, acertos: [{ id: "acerto", codigo: "T-1", status: "APLICADA" }] });
+  return ImpactosTaxaOperacao({ conjunto: { id: "conjunto", status, podeVincular: status === "PENDENTE", podeDecidir: status === "PENDENTE", podeConcluir: status === "APROVADO", pendencias: { afetadasSemVinculo: 0, afetadasSemAplicacao: 0 }, impactos: [{ cobrancaId: "c1", cobranca: { id: "c1", codigo: "T-1", moeda: "CRC", valorNegociado: "100.00", vencimento: "2026-09-01", status: "PENDENTE" }, decisao: "AFETADA", justificativa: "Taxa atingida pelo aditivo.", propostaAcertoId: null, acertoStatus: null, aplicado: false }, { cobrancaId: "c2", cobranca: { id: "c2", codigo: "T-2", moeda: "CRC", valorNegociado: "50.00", vencimento: "2026-09-01", status: "PENDENTE" }, decisao: "PRESERVADA", justificativa: "Cobrança fora do escopo.", propostaAcertoId: null, acertoStatus: null, aplicado: false }] }, acertos: [{ id: "acerto", cobrancaId: "c1", codigo: "T-1", moeda: "CRC", valorNovo: "80.00", vencimentoNovo: "2026-09-05", status: "APLICADA" }] });
 }
 it("explica que o conjunto deve ser preparado antes de oferecer operações", () => {
   vi.clearAllMocks();
@@ -28,7 +28,7 @@ it("explica que o conjunto deve ser preparado antes de oferecer operações", ()
 it("não libera aprovação sem motivo e oferece vínculo somente para a taxa afetada", () => {
   const elemento = montar("PENDENTE");
   const b = botoes(elemento);
-  expect(b.map(x => x.props.children)).toContain("Vincular");
+  expect(b.map(x => x.props.children)).toContain("Vincular acerto");
   expect(b.find(x => x.props.children === "Aprovar conjunto")?.props.disabled).toBe(true);
   expect(JSON.stringify(elemento)).toContain("Cobrança fora do escopo");
 });
