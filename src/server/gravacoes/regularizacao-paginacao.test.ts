@@ -7,6 +7,7 @@ const pagina = (itens: Item[], args: { cursor?: { id: string }; skip?: number; t
   return itens.slice(inicio, inicio + (args.take ?? itens.length));
 };
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (fn: (tx: unknown) => unknown) => fn({
+  $queryRaw: vi.fn().mockResolvedValue([{ id: "admin" }]),
   usuario: { findUnique: vi.fn().mockResolvedValue({ ativo: true, papeis: ["ADMINISTRADOR"] }) },
   publicacaoGravacaoAula: { findMany: (args: never) => Promise.resolve(pagina(estado.publicacoes, args)) },
   materialReposicaoGravacao: { findMany: (args: never) => Promise.resolve(pagina(estado.materiais, args)) },
