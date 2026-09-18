@@ -660,6 +660,74 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     expect(await prepararImpactosCoberturaAditivo({ ...alvo, linhas: [{ cobrancaId: mensalidade.id, classificacao: "AFETADA", coberturaInicioNova: "2027-02-01", coberturaFimNova: "2027-02-28", justificativa: "Efeito deliberadamente fora da cobertura formalizada." }], motivo: "Conferência de aderência ao aditivo assinado.", evidencia: "Documento assinado confrontado com a mensalidade.", chaveIdempotencia: "q168-limite-assinado-divergente" })).toMatchObject({ ok: false, erro: expect.stringMatching(/formaliz|assinado|cobertura/i) });
   });
 
+  const dataCivil = (data: Date | null) => data?.toISOString().slice(0, 10) ?? null;
+
+  async function clonarConjuntoPorSql(conjuntoPaiId: string, chaveIdempotencia: string, adicional?: { cobrancaId: string; coberturaInicioAnterior: Date; coberturaFimAnterior: Date; coberturaInicioNova: Date; coberturaFimNova: Date }) {
+    const pai = await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoPaiId }, include: { impactos: { orderBy: { id: "asc" } } } });
+    const linhas = [...pai.impactos.map(impacto => ({ cobrancaId: impacto.cobrancaId, classificacao: impacto.classificacao, coberturaInicioAnterior: impacto.coberturaInicioAnterior!, coberturaFimAnterior: impacto.coberturaFimAnterior!, coberturaInicioNova: impacto.coberturaInicioNova, coberturaFimNova: impacto.coberturaFimNova, justificativa: impacto.justificativa, versaoCobranca: impacto.versaoCobranca })), ...(adicional ? [{ ...adicional, classificacao: "AFETADA" as const, justificativa: "Impacto SQL adicional para validar o intervalo completo.", versaoCobranca: 1 }] : [])];
+    const cobrancas = await prisma.cobranca.findMany({ where: { id: { in: linhas.map(linha => linha.cobrancaId) } } });
+    const fotografia = {
+      revisaoHash: (pai.fotografia as any).revisaoHash,
+      versaoCondicoesId: pai.versaoCondicoesId,
+      condicoesHash: (pai.fotografia as any).condicoesHash,
+      politica: pai.cicloFuturo,
+      cobrancas: linhas.map(linha => {
+        const cobranca = cobrancas.find(atual => atual.id === linha.cobrancaId);
+        if (!cobranca) throw new Error("Cobrança da fotografia SQL indisponível");
+        const fotografiaCobranca = { cobranca: { id: cobranca.id, versao: cobranca.versao, coberturaInicio: dataCivil(cobranca.coberturaInicio), coberturaFim: dataCivil(cobranca.coberturaFim), status: cobranca.status, valorRecebido: cobranca.valorRecebido?.toFixed(2) ?? null } };
+        return { id: linha.cobrancaId, classificacao: linha.classificacao, justificativa: linha.justificativa, coberturaInicioNova: dataCivil(linha.coberturaInicioNova), coberturaFimNova: dataCivil(linha.coberturaFimNova), fotografia: fotografiaCobranca, fotografiaHash: hashSubstituicao(fotografiaCobranca) };
+      }),
+      motivo: pai.motivo,
+      evidencia: pai.evidencia,
+    };
+    const fotografiaHash = hashSubstituicao(fotografia);
+    return prisma.$transaction(async tx => {
+      const clone = await tx.conjuntoImpactosCoberturaAditivo.create({ data: {
+        matriculaId: pai.matriculaId, propostaAditivoId: pai.propostaAditivoId, conferenciaFinalId: pai.conferenciaFinalId, versaoCondicoesId: pai.versaoCondicoesId,
+        preparadorId: pai.preparadorId, escolhaCiclo: pai.escolhaCiclo, cicloFuturo: pai.cicloFuturo, hashFormalizado: pai.hashFormalizado,
+        fotografia, fotografiaHash, motivo: pai.motivo, evidencia: pai.evidencia, chaveIdempotencia,
+      } });
+      for (const [indice, linha] of linhas.entries()) {
+        await tx.$executeRaw`
+          INSERT INTO "ImpactoCoberturaAditivo" ("id", "conjuntoId", "cobrancaId", "classificacao", "coberturaInicioAnterior", "coberturaFimAnterior", "coberturaInicioNova", "coberturaFimNova", "justificativa", "versaoCobranca")
+          VALUES (${`q240-sql-${clone.id}-${indice}`}, ${clone.id}, ${linha.cobrancaId}, ${linha.classificacao}::"ClassificacaoImpactoCoberturaAditivo", ${dataCivil(linha.coberturaInicioAnterior)}::date, ${dataCivil(linha.coberturaFimAnterior)}::date, ${dataCivil(linha.coberturaInicioNova)}::date, ${dataCivil(linha.coberturaFimNova)}::date, ${linha.justificativa}, ${linha.versaoCobranca})
+        `;
+      }
+      return { clone, fotografia, fotografiaHash, linhas };
+    });
+  }
+
+  async function obsoletarParaClone(conjuntoId: string, chaveIdempotencia: string) {
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId, motivo: "Conjunto original obsoleto para validar a cópia SQL independente.", chaveIdempotencia })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+  }
+
+  it("SQL aceita cópia íntegra com afetada outubro→novembro e preservada dezembro", async () => {
+    const pai = await prepararConjuntoCobertura("q240-sql-positivo-pai", undefined, true);
+    if (!pai.preservadaId) throw new Error("Mensalidade preservada indisponível");
+    await obsoletarParaClone(pai.conjuntoId, "q240-sql-positivo-obsoleto");
+    const copiado = await clonarConjuntoPorSql(pai.conjuntoId, "q240-sql-positivo-clone");
+    expect(copiado.clone.id).not.toBe(pai.conjuntoId);
+    expect(copiado.fotografiaHash).toBe(hashSubstituicao(copiado.fotografia));
+    expect(copiado.linhas.map(linha => linha.cobrancaId).sort()).toEqual([pai.mensalidadeId, pai.preservadaId].sort());
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: copiado.clone.id }, include: { impactos: true } })).toMatchObject({ status: "PENDENTE", impactos: [expect.objectContaining({ cobrancaId: pai.mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: new Date("2026-11-01T00:00:00.000Z"), coberturaFimNova: new Date("2026-11-30T00:00:00.000Z") }), expect.objectContaining({ cobrancaId: pai.preservadaId, classificacao: "PRESERVADA" })] });
+  });
+
+  it("SQL rejeita no commit a cópia completa cuja nova afetada sobrepõe a preservada", async () => {
+    const pai = await prepararConjuntoCobertura("q240-sql-conflito-pai", undefined, true);
+    if (!pai.preservadaId) throw new Error("Mensalidade preservada indisponível");
+    await obsoletarParaClone(pai.conjuntoId, "q240-sql-conflito-obsoleto");
+    const adicional = await prisma.cobranca.create({ data: {
+      matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
+      vencimento: new Date("2027-01-01T00:00:00Z"), coberturaInicio: new Date("2027-01-01T00:00:00Z"), coberturaFim: new Date("2027-01-31T00:00:00Z"),
+    } });
+    await expect(clonarConjuntoPorSql(pai.conjuntoId, "q240-sql-conflito-clone", {
+      cobrancaId: adicional.id, coberturaInicioAnterior: adicional.coberturaInicio!, coberturaFimAnterior: adicional.coberturaFim!,
+      coberturaInicioNova: new Date("2026-12-01T00:00:00Z"), coberturaFimNova: new Date("2026-12-31T00:00:00Z"),
+    })).rejects.toThrow("Sobreposição de intervalos de cobertura no conjunto");
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.count({ where: { chaveIdempotencia: "q240-sql-conflito-clone" } })).toBe(0);
+  });
+
   it("recusa lacuna nova entre afetada e preservada, mas não exige preencher lacuna histórica externa", async () => {
     authMock.mockResolvedValue({ user: { id: financeiro } });
     const mensalidade = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z") } });
