@@ -42,6 +42,22 @@ async function administrador(tx: Prisma.TransactionClient, usuarioId: string) {
   if (!usuario?.ativo || !usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 
+async function decisoesDaAplicacaoVigentes(tx: Prisma.TransactionClient, aplicacaoId: string) {
+  const aplicacao = await tx.aplicacaoReconferenciaDeltaDesistencia.findUnique({ where: { id: aplicacaoId }, include: {
+    decisaoFinanceira: { include: { decisor: { select: { ativo: true, papeis: true, permissoes: true } } } },
+    proposta: { include: { decisaoAdministrativa: { include: { decisor: { select: { ativo: true, papeis: true } } } } } },
+  } });
+  const financeira = aplicacao?.decisaoFinanceira;
+  const administrativa = aplicacao?.proposta.decisaoAdministrativa;
+  return Boolean(financeira?.aprovada && administrativa?.aprovada
+    && financeira.decisorId !== aplicacao?.proposta.preparadorId
+    && administrativa.decisorId !== aplicacao?.proposta.preparadorId
+    && financeira.decisor.ativo
+    && (financeira.decisor.papeis.includes(Papel.ADMINISTRADOR)
+      || (financeira.decisor.papeis.includes(Papel.FINANCEIRO) && financeira.decisor.permissoes.includes("financeiro.aprovar_acertos")))
+    && administrativa.decisor.ativo && administrativa.decisor.papeis.includes(Papel.ADMINISTRADOR));
+}
+
 /** Prepara somente a diferença contra a última aplicação da cadeia Q165. */
 export async function prepararReconferenciaDeltaDesistencia(input: z.input<typeof prepararSchema>): Promise<Resultado<{ id: string; estado: EstadoReconferenciaDeltaDesistencia }>> {
   return executarAcao(async () => {
@@ -62,7 +78,19 @@ export async function prepararReconferenciaDeltaDesistencia(input: z.input<typeo
       const anterior = await tx.aplicacaoReconferenciaDeltaDesistencia.findFirst({ where: { aplicacaoBaseId: base.id }, orderBy: ordemDelta });
       const fontes = await carregarFontesReconferenciaDeltaTx(tx, pedido.matriculaId, base.memoria);
       const fotografiaHash = hashSubstituicao(fontes.fotografia);
-      const fotografiaAnteriorHash = anterior?.fotografiaHash ?? base.fotografiaHash;
+      // Cada aplicação criada a partir de Q165.255 deixa uma leitura posterior
+      // imutável. Ela é a única âncora segura para saber se houve fato novo.
+      // Aplicações antigas não a possuem: uma nova proposta pode reancorar a
+      // cadeia quando houver fonte nova ou quando a alçada anterior perdeu
+      // validade. Ela nunca reescreve a aplicação histórica a partir do saldo
+      // presente.
+      const fotografiaBaseAnterior = anterior?.fotografiaPosteriorHash ?? anterior?.fotografiaHash;
+      const revisaoAutorizacao = Boolean(anterior && fotografiaHash === fotografiaBaseAnterior
+        && !(await decisoesDaAplicacaoVigentes(tx, anterior.id)));
+      if (anterior && fotografiaHash === fotografiaBaseAnterior && !revisaoAutorizacao) {
+        throw new ErroRegra("Nenhum fato financeiro novo ocorreu desde a última reconferência delta.");
+      }
+      const fotografiaAnteriorHash = anterior?.fotografiaPosteriorHash ?? anterior?.fotografiaHash ?? base.fotografiaHash;
       const calculo = calcularReconferenciaDelta(fontes.fatos, fontes.obrigacoes, fotografiaAnteriorHash, fotografiaHash);
       const estado = calculo.tipo === "PENDENCIA" ? EstadoReconferenciaDeltaDesistencia.PENDENCIA_FINANCEIRA : EstadoReconferenciaDeltaDesistencia.PENDENTE;
       const proposta = await tx.propostaReconferenciaDeltaDesistencia.create({ data: {
@@ -70,7 +98,7 @@ export async function prepararReconferenciaDeltaDesistencia(input: z.input<typeo
         pedidoId: pedido.id, condicoesId: base.decisao.proposta.condicoesId, preparadorId: ator.id,
         estadoHash: base.decisao.proposta.estadoHash, condicoesHash: base.condicoesHash,
         fotografiaAnteriorHash, fotografiaHash, fotografia: fontes.fotografia as Prisma.InputJsonObject,
-        memoriaDelta: { motivo: dados.motivo, tipo: calculo.tipo, ...(calculo.tipo === "PENDENCIA" ? { pendencia: calculo.motivo } : {}), itens: calculo.itens, creditosExternos: fontes.creditosExternos, creditosDoAcerto: fontes.creditosDoAcerto } as Prisma.InputJsonObject,
+        memoriaDelta: { motivo: dados.motivo, tipo: calculo.tipo, ...(revisaoAutorizacao ? { revisaoAutorizacao: true } : {}), ...(calculo.tipo === "PENDENCIA" ? { pendencia: calculo.motivo } : {}), itens: calculo.itens, creditosExternos: fontes.creditosExternos, creditosDoAcerto: fontes.creditosDoAcerto } as Prisma.InputJsonObject,
         estado, chaveIdempotencia: dados.chaveIdempotencia,
       } });
       await registrarEvento(tx, { tipo: "ReconferenciaDeltaDesistenciaPreparada", agregadoTipo: "Matricula", agregadoId: pedido.matriculaId, autorId: ator.id, payload: { propostaId: proposta.id, aplicacaoBaseId: base.id, fotografiaHash } });
@@ -154,7 +182,16 @@ export async function aplicarReconferenciaDeltaDesistencia(input: z.input<typeof
         const cobranca = cobrancas.find(x => x.id === item.cobrancaId);
         if (!cobranca || cobranca.moeda !== item.moeda) throw new ErroRegra("Cobrança delta divergente.");
         const saldo = new Prisma.Decimal(item.saldoAlvo);
-        await tx.cobranca.update({ where: { id: cobranca.id }, data: { valorNegociado: new Prisma.Decimal(item.devidoAlvo), saldo, status: saldo.isZero() ? StatusCobranca.PAGO : cobranca.status, versao: { increment: 1 } } });
+        const valorNegociado = new Prisma.Decimal(item.devidoAlvo);
+        const status = saldo.isZero() ? StatusCobranca.PAGO : cobranca.status;
+        const semAlteracao = cobranca.valorNegociado.equals(valorNegociado)
+          && (cobranca.saldo?.equals(saldo) ?? false)
+          && cobranca.status === status;
+        if (!semAlteracao) {
+          await tx.cobranca.update({ where: { id: cobranca.id }, data: {
+            valorNegociado, saldo, status, versao: { increment: 1 },
+          } });
+        }
         const novoCredito = new Prisma.Decimal(item.creditoDelta);
         if (novoCredito.gt(0)) {
           const origem = await tx.origemCreditoReconferenciaDeltaDesistencia.create({ data: { aplicacaoId: aplicacao.id, matriculaId, cobrancaId: cobranca.id, valor: novoCredito, moeda: item.moeda } });
@@ -168,6 +205,12 @@ export async function aplicarReconferenciaDeltaDesistencia(input: z.input<typeof
       for (const credito of fontes.creditosExternos.filter(credito => !jaReconhecidos.has(credito.id) && new Prisma.Decimal(credito.saldoDisponivel).gt(0))) {
         await tx.reconhecimentoCreditoReconferenciaDeltaDesistencia.create({ data: { aplicacaoId: aplicacao.id, creditoId: credito.id, valor: new Prisma.Decimal(credito.saldoDisponivel) } });
       }
+      const fontesPosteriores = await carregarFontesReconferenciaDeltaTx(tx, matriculaId, proposta.aplicacaoBase.memoria);
+      const fotografiaPosteriorHash = hashSubstituicao(fontesPosteriores.fotografia);
+      await tx.aplicacaoReconferenciaDeltaDesistencia.update({ where: { id: aplicacao.id }, data: {
+        fotografiaPosteriorHash,
+        fotografiaPosterior: fontesPosteriores.fotografia as Prisma.InputJsonObject,
+      } });
       await tx.propostaReconferenciaDeltaDesistencia.update({ where: { id: proposta.id }, data: { estado: EstadoReconferenciaDeltaDesistencia.APLICADA } });
       await registrarEvento(tx, { tipo: "ReconferenciaDeltaDesistenciaAplicada", agregadoTipo: "Matricula", agregadoId: matriculaId, autorId: ator.id, payload: { aplicacaoId: aplicacao.id, propostaId: proposta.id } });
       await tx.$executeRaw`SET CONSTRAINTS ALL IMMEDIATE`;
