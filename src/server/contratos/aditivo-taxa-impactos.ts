@@ -31,7 +31,13 @@ export async function prepararImpactosTaxaAditivo(input: unknown) { return execu
     const fotografia = { revisaoHash: d.revisaoHash, condicoesHash: versao.condicoesHash, versaoCondicoesId: versao.id, cobrancas: linhas.map(l => ({ id: l.cobrancaId, decisao: l.decisao, justificativa: l.justificativa, fotografiaHash: l.fotografiaHash })) };
     const fotografiaHash = hashSubstituicao(fotografia);
     const anterior = await tx.conjuntoImpactosTaxaAditivo.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } });
-    if (anterior) { if (anterior.fotografiaHash !== fotografiaHash) throw new ErroRegra("Chave já usada com outro conjunto."); return { id: anterior.id, status: anterior.status }; }
+    if (anterior) {
+      const entrada = anterior.fotografia as { revisaoHash?: string; cobrancas?: Array<{ id: string; decisao: string; justificativa: string }> };
+      const recebida = [...d.linhas].sort((a, b) => a.cobrancaId.localeCompare(b.cobrancaId));
+      const preservada = [...(entrada.cobrancas ?? [])].map(l => ({ cobrancaId: l.id, decisao: l.decisao, justificativa: l.justificativa })).sort((a, b) => a.cobrancaId.localeCompare(b.cobrancaId));
+      if (anterior.matriculaId !== d.matriculaId || anterior.propostaAditivoId !== d.propostaId || entrada.revisaoHash !== d.revisaoHash || JSON.stringify(preservada) !== JSON.stringify(recebida)) throw new ErroRegra("Chave já usada com outro conjunto.");
+      return { id: anterior.id, status: anterior.status };
+    }
     const conjunto = await tx.conjuntoImpactosTaxaAditivo.create({ data: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, conferenciaFinalId: versao.conferenciaFinalId, versaoCondicoesId: versao.id, preparadorId: autor.id, fotografia, fotografiaHash, chaveIdempotencia: d.chaveIdempotencia, impactos: { create: linhas.map(l => ({ cobrancaId: l.cobrancaId, decisao: l.decisao, justificativa: l.justificativa, fotografia: l.fotografia, fotografiaHash: l.fotografiaHash })) } } });
     await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoPreparados", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: d.propostaId, fotografiaHash } });
     return { id: conjunto.id, status: conjunto.status };
@@ -48,10 +54,13 @@ export async function vincularImpactoTaxaAditivo(input: unknown) { return execut
   return prisma.$transaction(async tx => {
     await exigirFinanceiro(tx, autor.id); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
     const linha = await tx.impactoTaxaAditivo.findUniqueOrThrow({ where: { conjuntoId_cobrancaId: { conjuntoId: d.conjuntoId, cobrancaId: d.cobrancaId } } });
+    if (linha.propostaAcertoId === d.propostaAcertoId) return { id: linha.id, vinculada: true };
     if (linha.decisao !== "AFETADA" || linha.propostaAcertoId) throw new ErroRegra("Somente taxa afetada sem vínculo pode receber acerto.");
     const proposta = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaAcertoId } });
     if (proposta.matriculaId !== conjunto.matriculaId || proposta.propostaAditivoId !== conjunto.propostaAditivoId || proposta.versaoCondicoesId !== conjunto.versaoCondicoesId || proposta.cobrancaId !== linha.cobrancaId) throw new ErroRegra("O acerto não corresponde à taxa e versão deste conjunto.");
-    return tx.impactoTaxaAditivo.update({ where: { id: linha.id }, data: { propostaAcertoId: proposta.id } });
+    await tx.impactoTaxaAditivo.update({ where: { id: linha.id }, data: { propostaAcertoId: proposta.id } });
+    await registrarEvento(tx, { tipo: "ImpactoTaxaAditivoVinculado", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, cobrancaId: linha.cobrancaId, propostaAcertoId: proposta.id } });
+    return { id: linha.id, vinculada: true };
   });
 }); }
 
