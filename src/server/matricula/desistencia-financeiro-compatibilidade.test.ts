@@ -4,14 +4,15 @@ import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
 import { carregarFinanceiroDesistenciaTx } from "./desistencia-financeiro-tx";
 
 describe("compatibilidade da fotografia financeira Q121", () => {
-  it("preserva a fotografia e o hash anteriores quando novas origens estão vazias", async () => {
+  it.each([null, "origem-taxa-anterior"])("preserva a fotografia anterior com origem de taxa %s", async (origemTaxa) => {
+    const origemAcertoId = origemTaxa ? null : "acerto";
     const credito = {
-      id: "credito", origemLiberacaoId: null, origemAcertoId: "acerto",
+      id: "credito", origemLiberacaoId: null, origemAcertoId,
       origemPeriodoIntegralId: null, origemDestinacaoRecebimentoId: null,
       origemAcertoDesistenciaContratualId: null,
       valorInicial: new Prisma.Decimal("37.50"), moeda: "BRL",
       criadoEm: new Date("2026-09-16T12:00:00.000Z"),
-      origemAcertoTaxaAditivoId: null, origemReconferenciaDeltaDesistenciaId: null,
+      origemAcertoTaxaAditivoId: origemTaxa, origemReconferenciaDeltaDesistenciaId: null,
     };
     const vazio = { findMany: vi.fn().mockResolvedValue([]) };
     const tx = {
@@ -28,7 +29,7 @@ describe("compatibilidade da fotografia financeira Q121", () => {
     // Formato persistido antes da reconferência249. Acrescentar um null
     // invalidaria decisões antigas apesar de nenhum fato financeiro mudar.
     const anterior = { matriculaId: "matricula", cobrancas: [], creditos: [{
-      id: "credito", origemLiberacaoId: null, origemAcertoId: "acerto",
+      id: "credito", origemLiberacaoId: null, origemAcertoId,
       origemPeriodoIntegralId: null, origemDestinacaoRecebimentoId: null,
       origemAcertoDesistenciaContratualId: null, valorInicial: "37.50", moeda: "BRL",
       criadoEm: "2026-09-16T12:00:00.000Z",
