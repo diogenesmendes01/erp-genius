@@ -5,7 +5,7 @@ type Grupo = "CADASTRAL" | "FINANCEIRO" | "CONTRATUAL" | "ACADEMICO";
 type Tipo = "TEXT" | "EMAIL" | "DINHEIRO" | "DATA" | "MINUTOS" | "MOEDA" | "REGIME" | "AGENDA";
 type Regra = { grupo: Grupo; tipo: Tipo; pendencias: readonly string[] };
 
-const cadastro = "Esta alteração ainda não atualiza o cadastro. Confira e registre a mudança pelo fluxo próprio.";
+const cadastro = "Após assinatura, conferência e aplicação, esta alteração compõe a versão cadastral deste contrato, na vigência aprovada. O cadastro geral e a conta de acesso permanecem separados.";
 const financeiro = "Esta alteração ainda não cria cobrança. Estruture o impacto financeiro, registre-o e obtenha as aprovações próprias.";
 const ordemGrupos: readonly Grupo[] = ["ACADEMICO", "CADASTRAL", "FINANCEIRO", "CONTRATUAL"];
 const regras: Record<Exclude<OrigemCampo, `ADITIVO_${string}`>, Regra> = {

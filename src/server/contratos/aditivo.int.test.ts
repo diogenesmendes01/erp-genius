@@ -727,8 +727,8 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
   const pedidoCondicoes = { ...alvoFinal, revisaoHash: confirmarFinal.revisaoHash };
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
-  if (taxaSemConsumidor || modo === "PRODUCAO") {
-    const campo = taxaSemConsumidor ? "TAXA_VALOR" : "ALUNO_NOME";
+  if (taxaSemConsumidor) {
+    const campo = "TAXA_VALOR";
     expect(await formalizarEAplicarCondicoesAditivo({ ...pedidoCondicoes, chaveIdempotencia: "condicao-sem-consumidor-q117" })).toMatchObject({ ok: false, erro: `A condição ${campo} exige fluxo próprio antes da aplicação.` });
     expect(await prisma.versaoCondicoesAditivo.count()).toBe(0);
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
@@ -778,6 +778,8 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
         moedaOriginal: "CRC",
       }))).toMatchObject({ valorNegociado: "999999.00", versaoAditivo: null });
     } else {
+    expect(await prisma.aluno.findUniqueOrThrow({ where: { id: m.alunoId } })).toEqual(alunoAntesConclusao);
+    expect(await consultarAplicacaoCondicoesAditivo({ matriculaId: fixture.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { cadastroContratual: { matriculaId: fixture.matriculaId, versao: 1, campos: { ALUNO_NOME: "Nome atualizado no aditivo" } } } });
     const fonteAtual = await consultarAditivosContratuais({ matriculaId: fixture.matriculaId });
     const nomeFormalizado = z.object({ ALUNO_NOME: z.object({ texto: z.string() }) }).parse(v.condicoes).ALUNO_NOME.texto;
     expect(fonteAtual).toMatchObject({ ok: true, dado: { fonte: { campos: expect.arrayContaining([expect.objectContaining({ origem: "ALUNO_NOME", anterior: nomeFormalizado })]) } } });
