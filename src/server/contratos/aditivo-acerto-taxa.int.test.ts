@@ -662,9 +662,9 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
 
   const dataCivil = (data: Date | null) => data?.toISOString().slice(0, 10) ?? null;
 
-  async function clonarConjuntoPorSql(conjuntoPaiId: string, chaveIdempotencia: string, adicional?: { cobrancaId: string; coberturaInicioAnterior: Date; coberturaFimAnterior: Date; coberturaInicioNova: Date; coberturaFimNova: Date }) {
+  async function clonarConjuntoPorSql(conjuntoPaiId: string, chaveIdempotencia: string, adicional?: { cobrancaId: string; coberturaInicioAnterior: Date; coberturaFimAnterior: Date; coberturaInicioNova: Date; coberturaFimNova: Date }, novoIntervalo?: { cobrancaId: string; coberturaInicioNova: Date; coberturaFimNova: Date }) {
     const pai = await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoPaiId }, include: { impactos: { orderBy: { id: "asc" } } } });
-    const linhas = [...pai.impactos.map(impacto => ({ cobrancaId: impacto.cobrancaId, classificacao: impacto.classificacao, coberturaInicioAnterior: impacto.coberturaInicioAnterior!, coberturaFimAnterior: impacto.coberturaFimAnterior!, coberturaInicioNova: impacto.coberturaInicioNova, coberturaFimNova: impacto.coberturaFimNova, justificativa: impacto.justificativa, versaoCobranca: impacto.versaoCobranca })), ...(adicional ? [{ ...adicional, classificacao: "AFETADA" as const, justificativa: "Impacto SQL adicional para validar o intervalo completo.", versaoCobranca: 1 }] : [])];
+    const linhas = [...pai.impactos.map(impacto => ({ cobrancaId: impacto.cobrancaId, classificacao: impacto.classificacao, coberturaInicioAnterior: impacto.coberturaInicioAnterior!, coberturaFimAnterior: impacto.coberturaFimAnterior!, coberturaInicioNova: novoIntervalo?.cobrancaId === impacto.cobrancaId ? novoIntervalo.coberturaInicioNova : impacto.coberturaInicioNova, coberturaFimNova: novoIntervalo?.cobrancaId === impacto.cobrancaId ? novoIntervalo.coberturaFimNova : impacto.coberturaFimNova, justificativa: impacto.justificativa, versaoCobranca: impacto.versaoCobranca })), ...(adicional ? [{ ...adicional, classificacao: "AFETADA" as const, justificativa: "Impacto SQL adicional para validar o intervalo completo.", versaoCobranca: 1 }] : [])];
     const cobrancas = await prisma.cobranca.findMany({ where: { id: { in: linhas.map(linha => linha.cobrancaId) } } });
     const fotografia = {
       revisaoHash: (pai.fotografia as any).revisaoHash,
@@ -710,7 +710,18 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     expect(copiado.clone.id).not.toBe(pai.conjuntoId);
     expect(copiado.fotografiaHash).toBe(hashSubstituicao(copiado.fotografia));
     expect(copiado.linhas.map(linha => linha.cobrancaId).sort()).toEqual([pai.mensalidadeId, pai.preservadaId].sort());
-    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: copiado.clone.id }, include: { impactos: true } })).toMatchObject({ status: "PENDENTE", impactos: [expect.objectContaining({ cobrancaId: pai.mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: new Date("2026-11-01T00:00:00.000Z"), coberturaFimNova: new Date("2026-11-30T00:00:00.000Z") }), expect.objectContaining({ cobrancaId: pai.preservadaId, classificacao: "PRESERVADA" })] });
+    const gravado = await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: copiado.clone.id }, include: { impactos: true } });
+    expect(gravado).toMatchObject({ status: "PENDENTE" });
+    expect(gravado.impactos).toEqual(expect.arrayContaining([expect.objectContaining({ cobrancaId: pai.mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: new Date("2026-11-01T00:00:00.000Z"), coberturaFimNova: new Date("2026-11-30T00:00:00.000Z") }), expect.objectContaining({ cobrancaId: pai.preservadaId, classificacao: "PRESERVADA" })]));
+  });
+
+  it("SQL rejeita no commit cópia completa com intervalo diferente do aditivo assinado", async () => {
+    const pai = await prepararConjuntoCobertura("q240-sql-assinado-pai");
+    await obsoletarParaClone(pai.conjuntoId, "q240-sql-assinado-obsoleto");
+    await expect(clonarConjuntoPorSql(pai.conjuntoId, "q240-sql-assinado-clone", undefined, {
+      cobrancaId: pai.mensalidadeId, coberturaInicioNova: new Date("2027-02-01T00:00:00Z"), coberturaFimNova: new Date("2027-02-28T00:00:00Z"),
+    })).rejects.toThrow("Conjunto não aplica o intervalo formalizado no aditivo assinado");
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.count({ where: { chaveIdempotencia: "q240-sql-assinado-clone" } })).toBe(0);
   });
 
   it("SQL rejeita no commit a cópia completa cuja nova afetada sobrepõe a preservada", async () => {
