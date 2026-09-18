@@ -23,6 +23,7 @@ vi.mock("@/server/_shared", async importOriginal => {
   };
 });
 
+import { receberTx } from "./recebimentos";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import {
@@ -50,7 +51,7 @@ beforeEach(async () => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-it("registra acordo, comprovação, proposta e decisão independente sem quitar a mensalidade", async () => {
+it("registra acordo, comprovação, proposta e decisão independente com compensação sem criar recebimento", async () => {
   entrar(financeiro);
   const acordoEntrada = { matriculaId: matricula, vigenciaInicio: "2099-09-01", vigenciaFim: "2099-12-31", moeda: "CRC", unidade: "HORA" as const, quantidadePactuada: "2.00", valorPorUnidade: "50.00", contrapartida: "Aulas de reforço devidamente comprovadas", formulaDescricao: "2 horas de reforço × CRC 50,00", cobrancas: [{ cobrancaId: cobranca, valorMaximo: "100.00" }], chaveIdempotencia: "p02-acordo-0001" };
   const acordo = await prepararAcordoPermuta(acordoEntrada);
@@ -86,11 +87,13 @@ it("registra acordo, comprovação, proposta e decisão independente sem quitar 
   await prisma.cobranca.update({ where: { id: cobranca }, data: { valorNegociado: 100, saldo: 100 } });
   const decisao = await decidirCompensacaoPermuta({ propostaId: proposta.dado!.id, aprovar: true, motivo: "Serviço, fórmula e destino conferidos por aprovador independente" });
   if (!decisao.ok || !decisao.dado) throw new Error("Operação falhou");
-  expect(decisao).toMatchObject({ ok: true, dado: { efetivada: false, repetida: false } });
-  expect(await decidirCompensacaoPermuta({ propostaId: proposta.dado!.id, aprovar: true, motivo: "Serviço, fórmula e destino conferidos por aprovador independente" })).toMatchObject({ ok: true, dado: { efetivada: false, repetida: true } });
+  expect(decisao).toMatchObject({ ok: true, dado: { efetivada: true, repetida: false } });
+  expect(await decidirCompensacaoPermuta({ propostaId: proposta.dado!.id, aprovar: true, motivo: "Serviço, fórmula e destino conferidos por aprovador independente" })).toMatchObject({ ok: true, dado: { efetivada: true, repetida: true } });
 
   const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca } });
-  expect(atual.saldo?.toFixed(2)).toBe("100.00");
+  expect(atual.saldo?.toFixed(2)).toBe("0.00");
+  expect(atual.valorCompensadoPermuta.toFixed(2)).toBe("100.00");
+  expect(await prisma.aplicacaoCompensacaoPermuta.count()).toBe(1);
   expect(atual.valorLiquidadoCredito.toFixed(2)).toBe("0.00");
   expect(await prisma.recebimento.count()).toBe(0);
   entrar(pedagogico);
@@ -137,4 +140,33 @@ it("lista apenas mensalidades disponíveis e bloqueia consulta pedagógica finan
   expect(resultado.dado).toHaveLength(1);
   entrar(pedagogico);
   expect(await listarCobrancasParaPermuta()).toMatchObject({ ok: false });
+});
+
+it("compensa serviço parcial e recebe apenas o saldo restante sem criar crédito fictício", async () => {
+  entrar(financeiro);
+  const acordo = await prepararAcordoPermuta({ matriculaId: matricula, vigenciaInicio: "2099-09-01", vigenciaFim: "2099-12-31", moeda: "CRC", unidade: "HORA", quantidadePactuada: "2", valorPorUnidade: "50", contrapartida: "Aulas prestadas à escola", formulaDescricao: "Horas comprovadas multiplicadas por cinquenta", cobrancas: [{ cobrancaId: cobranca, valorMaximo: "100" }], chaveIdempotencia: "parcial-acordo" });
+  if (!acordo.ok || !acordo.dado) throw new Error("Acordo ausente");
+  entrar(pedagogico);
+  const confirmacao = await confirmarServicoPermuta({ acordoId: acordo.dado.id, periodoInicio: "2099-09-01", periodoFim: "2099-09-30", quantidadeComprovada: "1", referenciaServico: "PARCIAL-1", evidencia: "Uma hora comprovada no diário", chaveIdempotencia: "parcial-servico" });
+  if (!confirmacao.ok || !confirmacao.dado) throw new Error("Confirmação ausente");
+  entrar(financeiro);
+  const proposta = await proporCompensacaoPermuta({ confirmacaoId: confirmacao.dado.id, destinos: [{ cobrancaId: cobranca, valor: "50" }], chaveIdempotencia: "parcial-proposta" });
+  if (!proposta.ok || !proposta.dado) throw new Error("Proposta ausente");
+  entrar(aprovador);
+  expect(await decidirCompensacaoPermuta({ propostaId: proposta.dado.id, aprovar: true, motivo: "Serviço parcial conferido" })).toMatchObject({ ok: true, dado: { efetivada: true } });
+  const parcial = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca } });
+  expect(parcial.saldo?.toFixed(2)).toBe("50.00");
+  expect(parcial.valorRecebido).toBeNull();
+  expect(await prisma.recebimento.count()).toBe(0);
+  const receber = () => prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca, chaveIdempotencia: "caixa-apos-permuta", autorId: financeiro, valorRecebido: 50, forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-18T12:00:00Z"), evidencia: "Recebimento do saldo remanescente" }));
+  await receber(); await receber();
+  const final = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca } });
+  expect(final.saldo?.toFixed(2)).toBe("0.00");
+  expect(final.valorRecebido?.toFixed(2)).toBe("50.00");
+  expect(final.valorCompensadoPermuta.toFixed(2)).toBe("50.00");
+  expect(final.valorLiquidadoCredito.toFixed(2)).toBe("0.00");
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+  const aplicacao = await prisma.aplicacaoCompensacaoPermuta.findFirstOrThrow();
+  await expect(prisma.aplicacaoCompensacaoPermuta.delete({ where: { id: aplicacao.id } })).rejects.toThrow();
 });

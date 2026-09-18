@@ -11,7 +11,7 @@ import {
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
-type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; motivo: string } | null };
+type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; efetivada?: boolean; motivo: string } | null };
 type Confirmacao = {
   id: string;
   periodoInicio: string;
@@ -70,7 +70,7 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
           setErro(resultado.erro ?? "Não foi possível concluir. Repita a mesma operação.");
           return;
         }
-        setSucesso("Registrado. A compensação financeira continua pendente de efetivação.");
+        setSucesso("Operação registrada. Confira o estado atualizado abaixo.");
         tentativa.current = null;
         operacao.current = null;
         formulario.reset();
@@ -105,7 +105,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
   const elegiveis = opcoes.filter(c => c.matriculaId === matriculaSelecionada);
   const matriculas = [...new Map(opcoes.map(c => [c.matriculaId, c])).values()];
   return <div className="space-y-4">
-    <p role="status" className="rounded border p-3">Esta etapa registra acordo, comprovação, proposta e decisão. Mesmo aprovada, a compensação ainda não foi efetivada e nenhuma mensalidade foi quitada.</p>
+    <p role="status" className="rounded border p-3">A compensação aprovada abate as mensalidades selecionadas com registro do serviço prestado. Não é um recebimento em dinheiro.</p>
     {podeFinanceiro && <Acao legenda="Preparar acordo de permuta" onSubmit={async formulario => prepararAcordoPermuta({
       matriculaId: campo(formulario, "matriculaId"), vigenciaInicio: campo(formulario, "vigenciaInicio"), vigenciaFim: campo(formulario, "vigenciaFim"), moeda: campo(formulario, "moeda"),
       unidade: campo(formulario, "unidade"), quantidadePactuada: campo(formulario, "quantidadePactuada"), valorPorUnidade: campo(formulario, "valorPorUnidade"), contrapartida: campo(formulario, "contrapartida"), formulaDescricao: campo(formulario, "formulaDescricao"),
@@ -129,9 +129,9 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
           {acordo.cobrancas.map(c => <label key={c.id} className="block">{c.codigo} · saldo {c.saldo ?? "—"} · limite {c.valorMaximo}<input name={`destino:${c.id}`} inputMode="decimal" aria-label={`Valor para ${c.codigo}`} /></label>)}
         </Acao>}
         {confirmacao.propostas.map(proposta => <div key={proposta.id} className="rounded border p-2">
-          <p>Proposta de {proposta.valor}: {proposta.decisao ? (proposta.decisao.aprovada ? "aprovada, não efetivada" : "rejeitada") : "aguarda decisão independente"}</p>
+          <p>Proposta de {proposta.valor}: {proposta.decisao ? (proposta.decisao.aprovada ? (proposta.decisao.efetivada ? "compensação aplicada" : "aprovada, aguardando conferência de aplicação") : "rejeitada") : "aguarda decisão independente"}</p>
           {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
-            <label>Decisão <select name="aprovar"><option value="sim">Aprovar sem efetivar</option><option value="nao">Rejeitar</option></select></label><label>Motivo <input required name="motivo" /></label>
+            <label>Decisão <select name="aprovar"><option value="sim">Aprovar e compensar</option><option value="nao">Rejeitar</option></select></label><label>Motivo <input required name="motivo" /></label>
           </Acao>}
         </div>)}
       </section>)}

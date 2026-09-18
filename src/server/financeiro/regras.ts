@@ -8,8 +8,8 @@ export function dinheiro(valor: Prisma.Decimal.Value): Prisma.Decimal {
   return n.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }
 
-export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Decimal.Value | null, liquidadoCredito: Prisma.Decimal.Value = 0, creditoOriginado: Prisma.Decimal.Value = 0) {
-  return Prisma.Decimal.max(0, dinheiro(negociado).minus(dinheiro(recebido ?? 0)).minus(dinheiro(liquidadoCredito)).plus(dinheiro(creditoOriginado)));
+export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Decimal.Value | null, liquidadoCredito: Prisma.Decimal.Value = 0, creditoOriginado: Prisma.Decimal.Value = 0, compensadoPermuta: Prisma.Decimal.Value = 0) {
+  return Prisma.Decimal.max(0, dinheiro(negociado).minus(dinheiro(recebido ?? 0)).minus(dinheiro(liquidadoCredito)).plus(dinheiro(creditoOriginado)).minus(dinheiro(compensadoPermuta)));
 }
 
 export function descontoAcumulado(referencia: Prisma.Decimal.Value, proposto: Prisma.Decimal.Value) {
@@ -41,10 +41,11 @@ export function pagamentoConfirmado(cobranca: {
   status: StatusCobranca; valorNegociado: Prisma.Decimal.Value;
   valorRecebido: Prisma.Decimal.Value | null; pagoEm: Date | null;
   valorLiquidadoCredito?: Prisma.Decimal.Value;
+  valorCompensadoPermuta?: Prisma.Decimal.Value;
 }) {
   return cobranca.status === StatusCobranca.PAGO && cobranca.pagoEm !== null &&
-    (cobranca.valorRecebido !== null || dinheiro(cobranca.valorLiquidadoCredito ?? 0).gt(0)) &&
-    saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito ?? 0).isZero();
+    (cobranca.valorRecebido !== null || dinheiro(cobranca.valorLiquidadoCredito ?? 0).gt(0) || dinheiro(cobranca.valorCompensadoPermuta ?? 0).gt(0)) &&
+    saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito ?? 0, 0, cobranca.valorCompensadoPermuta ?? 0).isZero();
 }
 
 export function calcularPoliticaComissao(regra: {

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { dinheiro } from "@/server/financeiro/regras";
-export function saldoLiquidoAcertoTaxa(valorNegociado: Prisma.Decimal.Value, valorRecebido: Prisma.Decimal.Value | null, valorLiquidadoCredito: Prisma.Decimal.Value, creditosTaxaEmitidos: Prisma.Decimal.Value) {
-  return Prisma.Decimal.max(0, dinheiro(valorNegociado).minus(valorRecebido ?? 0).minus(valorLiquidadoCredito).plus(creditosTaxaEmitidos));
+export function saldoLiquidoAcertoTaxa(valorNegociado: Prisma.Decimal.Value, valorRecebido: Prisma.Decimal.Value | null, valorLiquidadoCredito: Prisma.Decimal.Value, creditosTaxaEmitidos: Prisma.Decimal.Value, compensadoPermuta: Prisma.Decimal.Value = 0) {
+  return Prisma.Decimal.max(0, dinheiro(valorNegociado).minus(valorRecebido ?? 0).minus(valorLiquidadoCredito).plus(creditosTaxaEmitidos).minus(dinheiro(compensadoPermuta)));
 }
 
 /**
