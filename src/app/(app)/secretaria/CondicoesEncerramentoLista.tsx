@@ -10,6 +10,7 @@ export async function CondicoesEncerramentoLista({ ids, autorId, administrador }
     select: {
       id: true, codigo: true, status: true, ativadaEm: true, contratoOk: true, confirmacaoContratoEm: true, contratoDocumentoId: true,
       processosAssinatura: { where: { estado: "ENVIADO", referenciaExterna: { not: null }, conclusao: null }, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, artefatoId: true } },
+      cobrancas: { orderBy: [{ vencimento: "asc" }, { id: "asc" }], select: { id: true, codigo: true, tipo: true } },
       condicoesEncerramento: { orderBy: { versao: "desc" }, select: {
         id: true, versao: true, status: true, regras: true, motivo: true, motivoDecisao: true, preparadorId: true,
         documento: { select: { nome: true, url: true } }, artefatoContratual: { select: { id: true } }, processoAssinatura: { select: { id: true, estado: true, referenciaExterna: true, conclusao: { select: { id: true } } } }, preparador: { select: { nome: true } }, decisor: { select: { nome: true } },
@@ -17,5 +18,5 @@ export async function CondicoesEncerramentoLista({ ids, autorId, administrador }
     },
     orderBy: { criadoEm: "desc" },
   });
-  return <div className="space-y-4">{matriculas.map((m) => <CondicoesEncerramento key={m.id} matriculaId={m.id} codigo={m.codigo ?? m.id} documentoId={m.contratoOk && m.confirmacaoContratoEm ? m.contratoDocumentoId : null} autorId={autorId} administrador={administrador} fontesOriginaisEnviados={!m.ativadaEm && ["RASCUNHO", "AGUARDANDO"].includes(m.status) ? m.processosAssinatura.map((processo) => ({ processoAssinaturaId: processo.id, artefatoContratualId: processo.artefatoId })) : []} versoes={m.condicoesEncerramento.map((versao) => ({ ...versao, processoAssinatura: versao.processoAssinatura && { id: versao.processoAssinatura.id, estado: versao.processoAssinatura.estado, envioConfirmado: !!versao.processoAssinatura.referenciaExterna, conclusaoRegistrada: !!versao.processoAssinatura.conclusao } }))} />)}</div>;
+  return <div className="space-y-4">{matriculas.map((m) => <CondicoesEncerramento key={m.id} matriculaId={m.id} codigo={m.codigo ?? m.id} documentoId={m.contratoOk && m.confirmacaoContratoEm ? m.contratoDocumentoId : null} autorId={autorId} administrador={administrador} cobrancas={m.cobrancas} fontesOriginaisEnviados={!m.ativadaEm && ["RASCUNHO", "AGUARDANDO"].includes(m.status) ? m.processosAssinatura.map((processo) => ({ processoAssinaturaId: processo.id, artefatoContratualId: processo.artefatoId })) : []} versoes={m.condicoesEncerramento.map((versao) => ({ ...versao, processoAssinatura: versao.processoAssinatura && { id: versao.processoAssinatura.id, estado: versao.processoAssinatura.estado, envioConfirmado: !!versao.processoAssinatura.referenciaExterna, conclusaoRegistrada: !!versao.processoAssinatura.conclusao } }))} />)}</div>;
 }
