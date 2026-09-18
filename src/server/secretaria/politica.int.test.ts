@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { CategoriaDocumento, Papel } from "@prisma/client";
+import { receberTx } from "@/server/financeiro/recebimentos";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -84,11 +85,17 @@ describe("D05: assunção e solicitação de correção", () => {
     expect(await conferirCoberturaInicial({ ...dados, primeiroVencimento: "2028-03-01" })).toMatchObject({ ok: false, erro: expect.stringContaining("mudou desde a consulta") });
     expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).vencimento).toEqual(depois.vencimento);
     dados.versaoEsperada = depois.versao;
-    await prisma.cobranca.update({ where: { id: c.id }, data: { valorRecebido: 10 } });
-    expect((await conferirCoberturaInicial({ ...dados, cobertura: { ...dados.cobertura, inicio: "2028-02-01" } })).ok).toBe(false);
-    await prisma.cobranca.update({ where: { id: c.id }, data: { valorRecebido: null } });
     await prisma.matricula.update({ where: { id: matricula.id }, data: { contratoOk: true } });
     expect((await conferirCoberturaInicial(dados)).ok).toBe(false);
+    await prisma.matricula.update({ where: { id: matricula.id }, data: { contratoOk: false } });
+    const financeiro = await criarUsuario([Papel.FINANCEIRO]);
+    await prisma.$transaction(tx => receberTx(tx, {
+      cobrancaId: c.id, autorId: financeiro.id, valorRecebido: 10, forma: "DINHEIRO",
+      dataPagamento: new Date("2028-02-01T12:00:00Z"), chaveIdempotencia: "cobertura-com-pagamento",
+      comentario: "Recebimento parcial destinado à primeira mensalidade",
+    }));
+    dados.versaoEsperada = (await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).versao;
+    expect((await conferirCoberturaInicial({ ...dados, cobertura: { ...dados.cobertura, inicio: "2028-02-01" } })).ok).toBe(false);
     expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).coberturaInicio).toEqual(depois.coberturaInicio);
   });
   it("somente secretaria assume; repetição mantém autoria, dono comercial e comissão", async () => {

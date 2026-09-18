@@ -113,8 +113,13 @@ it("SQL recusa prorrogação de correção ligada a outra reposição e autor de
     reposicaoId: "repo-190-prazo-b", alunoId: outroAlunoId, contaPortalAlunoId: outraContaId, versao: 1,
     resumo: "Resumo entregue pelo aluno B", atividade: "Atividade entregue pelo aluno B", evidencia: "Evidência de entrega", entregueEm: new Date(),
   } });
+  const professorCorretor = await criarUsuario(["PROFESSOR"]);
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: {
+    reposicaoId: "repo-190-prazo-b", professorId: professorCorretor.id, designadorId: gestorId,
+    inicio: new Date(Date.now() - 60_000), motivo: "Professor designado para avaliar a correção da entrega",
+  } });
   const correcaoOutra = await prisma.solicitacaoCorrecaoEntregaReposicao.create({ data: {
-    reposicaoId: "repo-190-prazo-b", entregaId: entregaOutra.id, solicitadaPorId: gestorId,
+    reposicaoId: "repo-190-prazo-b", entregaId: entregaOutra.id, solicitadaPorId: professorCorretor.id,
     comentario: "Corrigir o exercício indicado", prazoBaseMinutos: 60, prazoAte: new Date(Date.now() + 3_600_000),
   } });
   await expect(prisma.$executeRaw(Prisma.sql`
