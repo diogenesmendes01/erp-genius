@@ -113,3 +113,24 @@ it("banco rejeita aprovação de permuta após redução do saldo da mensalidade
   expect(await prisma.decisaoCompensacaoPermuta.count()).toBe(0);
   await expect(prisma.decisaoCompensacaoPermuta.create({ data: { propostaId: proposta.id, decisorId: aprovadorId, aprovada: false, motivo: "Rejeitada para nova conferência" } })).resolves.toMatchObject({ aprovada: false });
 });
+
+it("serializa aprovações de acordos distintos que disputam a mesma mensalidade", async () => {
+  const propostas: string[] = [];
+  for (let i = 0; i < 2; i++) {
+    const acordo = await criarAcordo();
+    await prisma.acordoPermutaCobranca.create({ data: { acordoId: acordo.id, cobrancaId: mensalidadeId, valorMaximo: 100 } });
+    const confirmacao = await confirmar(acordo.id);
+    const proposta = await propor(confirmacao.id);
+    await prisma.destinoPropostaCompensacaoPermuta.create({ data: { propostaId: proposta.id, cobrancaId: mensalidadeId, valor: 50 } });
+    propostas.push(proposta.id);
+  }
+  const decisoes = await Promise.allSettled(propostas.map(propostaId => prisma.decisaoCompensacaoPermuta.create({ data: { propostaId, decisorId: aprovadorId, aprovada: true, motivo: "Conferência concorrente independente" } })));
+  expect(decisoes.filter(r => r.status === "fulfilled")).toHaveLength(1);
+  expect(decisoes.filter(r => r.status === "rejected")).toHaveLength(1);
+  expect(await prisma.decisaoCompensacaoPermuta.count()).toBe(1);
+  expect(await prisma.aplicacaoCompensacaoPermuta.count()).toBe(1);
+  const mensalidade = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidadeId } });
+  expect(mensalidade.saldo?.toFixed(2)).toBe("50.00");
+  expect(mensalidade.valorCompensadoPermuta.toFixed(2)).toBe("50.00");
+  expect(await prisma.recebimento.count()).toBe(0);
+});

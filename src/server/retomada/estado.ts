@@ -23,7 +23,7 @@ export async function carregarEstadoRetomada(tx: Pick<Prisma.TransactionClient, 
     id: true, codigo: true, leadId: true, status: true, moeda: true, mesesPlano: true, diaVencimento: true,
     cobrancas: { orderBy: { id: "asc" }, select: {
       id: true, codigo: true, matriculaId: true, versao: true, cicloRegua: true, tipo: true, status: true, valorOriginal: true,
-      valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, saldo: true, moeda: true, vencimento: true, competencia: true, pagoEm: true, canceladaPorPausaId: true,
+      valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true, saldo: true, moeda: true, vencimento: true, competencia: true, pagoEm: true, canceladaPorPausaId: true,
     } },
   } });
   const trilha = pausa ? await tx.evento.findFirst({ where: {

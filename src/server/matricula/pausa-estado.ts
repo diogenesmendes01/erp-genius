@@ -21,7 +21,7 @@ export async function carregarPreviaPausaTx(tx: Prisma.TransactionClient, alunoI
     alocacoes: { where: { ativa: true }, select: { id: true, turmaId: true }, orderBy: { id: "asc" } },
     cobrancas: { where: { tipo: "MENSALIDADE", status: { not: "CANCELADA" } }, orderBy: { id: "asc" }, select: {
       id: true, codigo: true, versao: true, coberturaInicio: true, coberturaFim: true, vencimento: true,
-      valorRecebido: true, valorLiquidadoCredito: true, valorNegociado: true, saldo: true, status: true, informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
+      valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true, valorNegociado: true, saldo: true, status: true, informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
     } },
   } });
   if (contratos.length !== ids.length) throw new ErroRegra("A titularidade mudou durante a conferência.");
