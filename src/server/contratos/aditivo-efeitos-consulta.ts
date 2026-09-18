@@ -1,5 +1,7 @@
 "use server";
 
+import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
+import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
 import { consultarAlvoPrimeiraMensalidadeTx } from "./aditivo-primeira-mensalidade";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
@@ -36,6 +38,9 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }],
         select: { id: true, aplicadaEm: true, vencimentoNovo: true },
       }) : null;
+      const versaoFormalizada = await tx.versaoCondicoesAditivo.findUnique({ where: { propostaId: d.propostaId }, select: { id: true, versao: true } });
+      const provas = versaoFormalizada ? projetarAplicacoesPorCampo((await carregarAplicacoesCamposTx(tx, d.matriculaId)).filter(v => v.versao <= versaoFormalizada.versao)) : {};
+      const aplicacoesCampos = entrada.alteracoes.map(a => ({ campo: a.origem, aplicada: !!provas[a.origem]?.aplicacaoId }));
       const cobrancasExistentes = await tx.cobranca.count({ where: { matriculaId: d.matriculaId } });
       const aplicacao = await tx.aplicacaoCondicoesAditivo.findFirst({
         where: { matriculaId: d.matriculaId, propostaId: d.propostaId },
@@ -46,6 +51,7 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         throw new ErroRegra("A aplicação preservada exige conferência de integridade.");
       }
       return { ...planejarEfeitosAditivo(entrada.alteracoes, { cobrancaEmitida: cobrancasExistentes > 0 }), vigenciaInicio: p.vigenciaInicio,
+        aplicacoesCampos,
         primeiraMensalidade: primeiraMensalidade ? { ...primeiraMensalidade, aplicacao: aplicacaoVencimento,
           pendencia: aplicacaoVencimento ? "Este aditivo possui acerto de vencimento aplicado. Consulte o histórico financeiro para conferir a cobrança atual." : primeiraMensalidade.pendencia } : null,
         aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };
