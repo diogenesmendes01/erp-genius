@@ -601,7 +601,7 @@ async function prepararOriginalAditivo(estruturado = false, mensalidade = false,
   const { proposta, dados } = await prepararConferencia(estruturado, mensalidade, taxa, cadastroCompleto, vencimento); await decidir(proposta);
   if (mensalidade || taxa || (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR") {
     authMock.mockResolvedValue({ user: { id: fixture.adminId } });
-    for (const alcada of (vencimento ? ["FINANCEIRA"] as const : ["FINANCEIRA", "COMERCIAL"] as const)) expect(await decidirAlcadaAditivo({ matriculaId: fixture.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Preço por hora aprovado independentemente" })).toMatchObject({ ok: true });
+    for (const alcada of (vencimento && vencimento !== "MISTO" ? ["FINANCEIRA"] as const : ["FINANCEIRA", "COMERCIAL"] as const)) expect(await decidirAlcadaAditivo({ matriculaId: fixture.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Preço por hora aprovado independentemente" })).toMatchObject({ ok: true });
   }
   authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
   const conferencia = await prisma.$transaction(tx => conferirParticipantesAditivoTx(tx, fixture.secretariaId, dados), { timeout: 20000 });
