@@ -2,8 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
 import { Papel } from "@prisma/client";
 
-const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+const { authMock, ordenarAlunosMock } = vi.hoisted(() => ({ authMock: vi.fn(), ordenarAlunosMock: vi.fn((alunos: unknown) => alunos) }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("@/server/alunos/consultas", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/server/alunos/consultas")>();
+  return { ...original, listarAlunos: async (...args: Parameters<typeof original.listarAlunos>) => ordenarAlunosMock(await original.listarAlunos(...args)) };
+});
 vi.mock("@/server/_shared/sessao", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/server/_shared/sessao")>();
   const sessao = async () => {
@@ -45,6 +49,8 @@ function duranteGeracao(operacao: () => Promise<unknown>) {
 
 beforeEach(async () => {
   await truncarBanco();
+  ordenarAlunosMock.mockReset();
+  ordenarAlunosMock.mockImplementation((alunos: unknown) => alunos);
   [ven, outro] = await Promise.all([criarUsuario([Papel.VENDEDOR]), criarUsuario([Papel.VENDEDOR])]);
   lead = await prisma.lead.create({ data: { codigo: "L-000001", nome: "Carteira autorizada", vendedorDonoId: ven.id, telefoneE164: "+5511999999999", orcamento: "Informação privada", valorPrevisto: 98765 } });
   await prisma.lead.create({ data: { codigo: "L-000002", nome: "Carteira alheia", vendedorDonoId: outro.id } });
@@ -213,5 +219,24 @@ describe("D09: revalidação depois da geração e antes da resposta", () => {
     expect(interrompida.status).toBe(403);
     expect(await interrompida.json()).toMatchObject({ erro: expect.stringContaining("acesso aos registros mudou") });
     expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
+  });
+
+  it("não rejeita a mesma projeção de alunos homônimos quando a leitura posterior muda somente de ordem", async () => {
+    const cat = await seedCatalogoMinimo();
+    const professor = await criarUsuario([Papel.PROFESSOR]);
+    await prisma.usuario.update({ where: { id: professor.id }, data: { permissoes: ["dados.exportar_alunos"] } });
+    const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "CT03-ORDEM", ordem: 30 } });
+    const turma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: professor.id } });
+    await prisma.vinculoDocente.create({ data: { turmaId: turma.id, professorId: professor.id, inicio: new Date(Date.now() - 60_000) } });
+    const alunos = await Promise.all([0, 1].map(() => prisma.aluno.create({ data: { primeiroNome: "Aluno", sobrenome: "Homônimo", paisId: cat.pais.id } })));
+    await prisma.alocacaoTurma.createMany({ data: alunos.map((aluno) => ({ alunoId: aluno.id, turmaId: turma.id })) });
+    entrar(professor.id);
+    let leituras = 0;
+    ordenarAlunosMock.mockImplementation((dados: unknown) => ++leituras === 2 && Array.isArray(dados) ? [...dados].reverse() : dados);
+
+    const resposta = await exportar("alunos");
+    expect(resposta.status).toBe(200);
+    expect(await linhas(resposta)).toHaveLength(3);
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(1);
   });
 });
