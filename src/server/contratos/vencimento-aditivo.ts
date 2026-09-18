@@ -1,4 +1,5 @@
 "use server";
+import { randomUUID } from "node:crypto";
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -56,11 +57,13 @@ export async function proporVencimentoAditivo(input: unknown) {
         SELECT f AS fotografia, encode(sha256(convert_to(f::text,'UTF8')),'hex') AS hash
         FROM (SELECT fotografia_vencimento_aditivo_225(${v.id},${c.id},${fuso},${vencimentoNovo}::timestamp) AS f) fonte`;
       if (!foto?.fotografia) throw new ErroRegra("Fotografia do acerto indisponível.");
-      // Prisma transporta JSON pelo JavaScript: calcular o hash após essa normalização.
-      const [normalizada] = await tx.$queryRaw<Array<{ hash: string }>>`SELECT encode(sha256(convert_to(${JSON.stringify(foto.fotografia)}::jsonb::text,'UTF8')),'hex') AS hash`;
-      foto.hash = normalizada.hash;
-      const p = await tx.propostaVencimentoAditivo.create({ data: { matriculaId: d.matriculaId, propostaAditivoId: v.propostaId, versaoCondicoesId: v.id, cobrancaId: c.id, preparadorId: autor.id, versaoCobranca: c.versao, vencimentoAnterior: c.vencimento, vencimentoNovo, fuso, fotografia: foto.fotografia as Prisma.InputJsonValue, fotografiaHash: foto.hash, motivo: d.motivo, evidencia: d.evidencia, chaveIdempotencia: d.chaveIdempotencia } });
-      await registrarEvento(tx, { tipo: "VencimentoAditivoProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { propostaId: p.id, cobrancaId: c.id, fotografiaHash: foto.hash } });
+      // Fotografia e hash usam o mesmo JSONB no INSERT, sem nova conversão numérica pelo ORM.
+      const [p] = await tx.$queryRaw<Array<{ id: string; fotografiaHash: string }>>`
+        WITH foto AS (SELECT ${JSON.stringify(foto.fotografia)}::jsonb AS dados)
+        INSERT INTO "PropostaVencimentoAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","cobrancaId","preparadorId","versaoCobranca","vencimentoAnterior","vencimentoNovo",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia")
+        SELECT ${randomUUID()},${d.matriculaId},${v.propostaId},${v.id},${c.id},${autor.id},${c.versao},${c.vencimento},${vencimentoNovo},${fuso},foto.dados,encode(sha256(convert_to(foto.dados::text,'UTF8')),'hex'),${d.motivo},${d.evidencia},${d.chaveIdempotencia}
+        FROM foto RETURNING id,"fotografiaHash"`;
+      await registrarEvento(tx, { tipo: "VencimentoAditivoProposto", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { propostaId: p.id, cobrancaId: c.id, fotografiaHash: p.fotografiaHash } });
       return { id: p.id };
     }, { timeout: 30000 });
   });
