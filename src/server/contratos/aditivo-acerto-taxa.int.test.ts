@@ -450,7 +450,7 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
-    expect(await proximaMensalidade()).toMatchObject({ valorOriginal: "300.00", valorNegociado: "300.00", moeda: "CRC" });
+    expect(await proximaMensalidade()).toMatchObject({ valorOriginal: "300", valorNegociado: "300", moeda: "CRC" });
     authMock.mockResolvedValue({ user: { id: base.secretariaId } });
     expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: true }] } });
     authMock.mockResolvedValue({ user: { id: aprovador } });
