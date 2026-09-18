@@ -228,6 +228,12 @@ it("destina pagamento posterior à cobrança já quitada como crédito sem dupli
   const creditosBase = await prisma.creditoMatricula.findMany({ where: { matriculaId: base.matriculaId } });
   expect(creditosBase.map(c => c.valorInicial.toFixed(2))).toEqual(["50.00"]);
   await receber("pagamento-posterior-credito-delta", 20);
+  const recebimentoPosterior = await prisma.recebimento.findUniqueOrThrow({
+    where: { chaveIdempotencia: "pagamento-posterior-credito-delta" }, include: { destinacoes: true },
+  });
+  expect(recebimentoPosterior.destinacoes).toHaveLength(1);
+  expect(recebimentoPosterior.destinacoes[0]).toMatchObject({ tipo: "CREDITO_SEM_DESTINO", cobrancaId: null });
+  expect(recebimentoPosterior.destinacoes[0].valor.toFixed(2)).toBe("20.00");
   const proposta = await prepararDelta(aplicacaoBase.id, "preparo-pagamento-credito-delta");
   const decisao = await aprovarDelta(proposta.id, "decisao-pagamento-credito-delta");
   entrar(financeiroAprovador.id);
