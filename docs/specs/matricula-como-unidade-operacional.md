@@ -1194,3 +1194,9 @@ O contexto da retomada global consulta a mesma regra de impedimento das ações.
 Rejeitar continua sendo uma decisão distinta de retomar: não altera situação, parcelas ou recebimentos. O teste cria uma proposta antiga, adiciona outro contrato, verifica impedimento no contexto/lista, recusa aprovação direta e permite rejeição independente, preservando o aluno, calendário, recebimentos e outro contrato.
 
 Validação: 37 integrações de retomada aprovadas, lint e build com TypeScript/52 páginas aprovados. Relatório docs/validacao-retomada-357-2026-09-14.json. Após o build, somente o texto do aviso de rejeição foi ajustado para não afirmar que o aluno necessariamente continua pausado. Sem migration, produção, envio externo ou homologação visual. Última regressão integral permanece 354; demais funcionalidades da SPEC seguem incompletas.
+
+## Evidência atual de encerramento combinado — 18/09/2026
+
+CT10 mensal completo validado por ações públicas em515aae54/2205c34a: desconto, proporcional, multa separada, caixa, uso aprovado de crédito e dias compensados no mesmo encerramento, com preservação integral das origens e de outro contrato. Integração dedicada1/1 no TESTER e no integrador.
+
+Q97 combinado validado em7500a092/4ddc2a5: compra antecipada quitada com dinheiro e crédito, consumo parcial, encerramento e replay concorrente preservam fontes e convertem apenas os saldos restantes nas condições originais. Integração1/1 e TypeScript aprovados. Esta evidência supera a antiga pendência de coexistência com antecipação nos incrementos343–345; não mistura compensação de cobertura mensal com compra de horas nem conclui a destinação da permutaQ167. Detalhes e limites no quadro único.
