@@ -693,14 +693,35 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     expect(await prisma.decisaoConjuntoImpactosCoberturaAditivo.count({ where: { conjuntoId } })).toBe(0);
   });
 
-  it("permite Secretaria consultar sem liberar preparação ou operações", async () => {
+  it("consulta apresenta política assinada, motivo, evidência e limites para revisão", async () => {
+    const { mensalidadeId } = await prepararConjuntoCobertura("q168-consulta-revisao");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const consulta = await consultarImpactosCoberturaAditivo({ matriculaId: alvo.matriculaId, propostaId: alvo.propostaId });
+    expect(consulta).toMatchObject({ ok: true, dado: {
+      politica: { escolha: "PRESERVAR_REFERENCIA" },
+      motivo: "Conjunto de cobertura preparado para conferência independente.",
+      evidencia: "Conferência documental e financeira registrada.",
+      impactos: [expect.objectContaining({ cobrancaId: mensalidadeId, coberturaInicioAnterior: "2026-10-01", coberturaFimAnterior: "2026-10-31", coberturaInicioNova: "2026-11-01", coberturaFimNova: "2026-11-30" })],
+    } });
+  });
+
+  it("recusa Secretaria na consulta financeira de cobertura", async () => {
     authMock.mockResolvedValue({ user: { id: financeiro } });
     const consulta = { matriculaId: alvo.matriculaId, propostaId: alvo.propostaId };
     const preparo = await consultarPreparoCoberturaAditivo(consulta); if (!preparo.ok) throw new Error(preparo.erro);
     expect(preparo).toMatchObject({ ok: true, dado: { estado: "PRONTA" } });
     authMock.mockResolvedValue({ user: { id: base.secretariaId } });
-    expect(await consultarPreparoCoberturaAditivo(consulta)).toMatchObject({ ok: true, dado: { estado: "SEM_ALCADA" } });
-    expect(await consultarImpactosCoberturaAditivo(consulta)).toMatchObject({ ok: true, dado: null });
+    expect(await consultarPreparoCoberturaAditivo(consulta)).toMatchObject({ ok: false });
+    expect(await consultarImpactosCoberturaAditivo(consulta)).toMatchObject({ ok: false });
+  });
+
+  it("recusa sessão financeira revogada antes de consultar cobertura", async () => {
+    const consulta = { matriculaId: alvo.matriculaId, propostaId: alvo.propostaId };
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await consultarPreparoCoberturaAditivo(consulta)).toMatchObject({ ok: true, dado: { estado: "PRONTA" } });
+    await prisma.usuario.update({ where: { id: financeiro }, data: { ativo: false } });
+    expect(await consultarPreparoCoberturaAditivo(consulta)).toMatchObject({ ok: false });
+    expect(await consultarImpactosCoberturaAditivo(consulta)).toMatchObject({ ok: false });
   });
 
   it("recusa obsolescer conjunto APROVADO cuja fotografia continua íntegra", async () => {
