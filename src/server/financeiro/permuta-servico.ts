@@ -63,3 +63,24 @@ export async function consultarPermutas() {
     });
   });
 }
+
+export async function listarCobrancasParaPermuta() {
+  return executarAcao(async () => {
+    const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    return prisma.$transaction(async tx => {
+      await financeiro(tx, usuario.id);
+      const cobrancas = await tx.cobranca.findMany({
+        where: { tipo: "MENSALIDADE", status: { in: ["PENDENTE", "ATRASADO"] }, saldo: { gt: 0 } },
+        orderBy: [{ matriculaId: "asc" }, { vencimento: "asc" }],
+        select: { id: true, codigo: true, matriculaId: true, moeda: true, saldo: true, vencimento: true,
+          matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } },
+      });
+      return cobrancas.map(c => ({
+        id: c.id, codigo: c.codigo ?? "Mensalidade", matriculaId: c.matriculaId,
+        matricula: c.matricula.codigo ?? c.matriculaId,
+        aluno: `${c.matricula.aluno.primeiroNome} ${c.matricula.aluno.sobrenome}`.trim(),
+        moeda: c.moeda, saldo: c.saldo!.toFixed(2), vencimento: c.vencimento.toISOString().slice(0, 10),
+      }));
+    });
+  });
+}
