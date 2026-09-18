@@ -49,8 +49,12 @@ export async function consultarOperacaoEntregaReposicao(input: unknown) {
     const d = consulta.parse(input);
     return prisma.$transaction(async (tx) => {
       const contexto = await contextoGestaoTx(tx, d.reposicaoId, d.matriculaId);
-      const [fonte] = await tx.$queryRaw<Array<{ fuso: string; materialPublicadoEm: Date | null; disponivel: boolean | null; prazoInicialAte: Date | null; pausaId: string | null; pausaInicio: Date | null; pausaMotivo: string | null; liberadaAte: Date | null }>>(Prisma.sql`
-        SELECT (SELECT "fusoInstitucional" FROM "ConfiguracaoOperacional" WHERE id='escola') AS fuso, material."publicadoEm" AS "materialPublicadoEm", material.disponivel, disponibilidade."prazoInicialAte" AS "prazoInicialAte",
+      const [fonte] = await tx.$queryRaw<Array<{ fuso: string; materialPublicadoEm: Date | null; disponivel: boolean | null; fonteTrocaElegivel: boolean; prazoInicialAte: Date | null; pausaId: string | null; pausaInicio: Date | null; pausaMotivo: string | null; liberadaAte: Date | null }>>(Prisma.sql`
+        SELECT (SELECT "fusoInstitucional" FROM "ConfiguracaoOperacional" WHERE id='escola') AS fuso, material."publicadoEm" AS "materialPublicadoEm", material.disponivel,
+          (material."publicacaoAulaId" IS NOT NULL
+            AND EXISTS (SELECT 1 FROM "FonteRevisaoGravacao" fonte_material WHERE fonte_material."materialReposicaoId"=material.id)
+            AND EXISTS (SELECT 1 FROM "FonteRevisaoGravacao" fonte_publicacao WHERE fonte_publicacao."publicacaoAulaId"=material."publicacaoAulaId")) AS "fonteTrocaElegivel",
+          disponibilidade."prazoInicialAte" AS "prazoInicialAte",
           pausa.id AS "pausaId", pausa.inicio AS "pausaInicio", pausa.motivo AS "pausaMotivo", liberacao."expiraEm" AS "liberadaAte"
         FROM "ReposicaoIndividual" r
         LEFT JOIN "MaterialReposicaoGravacao" material ON material."reposicaoId"=r.id
@@ -103,7 +107,7 @@ export async function consultarOperacaoEntregaReposicao(input: unknown) {
         reposicaoId: contexto.reposicaoId,
         matriculaStatus: contexto.statusMatricula,
         fuso: fonte?.fuso ?? "America/Sao_Paulo",
-        material: fonte?.materialPublicadoEm ? { publicadoEm: fonte.materialPublicadoEm.toISOString(), disponivel: !!fonte.disponivel } : null,
+        material: fonte?.materialPublicadoEm ? { publicadoEm: fonte.materialPublicadoEm.toISOString(), disponivel: !!fonte.disponivel, fonteTrocaElegivel: !!fonte.fonteTrocaElegivel } : null,
         etapa: { correcaoId: correcao?.id ?? null, prazoAte: prazoEtapa?.toISOString() ?? null, prazoInicialAte: prazoInicial?.toISOString() ?? null },
         liberacao: { podeLiberar: ["PAUSADA", "ENCERRADA"].includes(contexto.statusMatricula) && contexto.contaAtiva, expiraEm: fonte?.liberadaAte?.toISOString() ?? null },
         indisponibilidade: fonte?.pausaId ? { id: fonte.pausaId, inicio: fonte.pausaInicio!.toISOString(), motivo: fonte.pausaMotivo ?? "Indisponibilidade confirmada." } : null,

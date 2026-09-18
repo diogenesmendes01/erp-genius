@@ -18,7 +18,7 @@ export type OperacaoEntrega = {
   reposicaoId: string;
   matriculaStatus: string;
   fuso: string;
-  material: { publicadoEm: string; disponivel: boolean } | null;
+  material: { publicadoEm: string; disponivel: boolean; fonteTrocaElegivel: boolean } | null;
   etapa: { correcaoId: string | null; prazoAte: string | null; prazoInicialAte: string | null };
   liberacao: { podeLiberar: boolean; expiraEm: string | null };
   indisponibilidade: { id: string; inicio: string; motivo: string } | null;
@@ -67,7 +67,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
       <label className="block">ID oficial do arquivo no Drive<input name="arquivoOficialId" required minLength={3} maxLength={500} autoComplete="off" className="block w-full rounded border p-2" /></label>
       <p className="text-sm text-gray-600">Informe somente o identificador institucional do arquivo, nunca URL pública.</p>
       <button disabled={ocupado} className="rounded border px-3 py-2">Publicar e abrir prazo</button>
-    </form> : <><p role="status">Material publicado em {data(operacao.material.publicadoEm, operacao.fuso)} ({operacao.fuso}). Situação: {operacao.material.disponivel ? "disponível" : "indisponível"}.</p><Link href={`/diario/reposicoes/${encodeURIComponent(operacao.reposicaoId)}/troca-fonte`} className="inline-block text-sm text-brand-700 underline">Conferir e adotar a publicação corrigida da aula original</Link></>}
+    </form> : <><p role="status">Material publicado em {data(operacao.material.publicadoEm, operacao.fuso)} ({operacao.fuso}). Situação: {operacao.material.disponivel ? "disponível" : "indisponível"}.</p>{operacao.material.fonteTrocaElegivel && <Link href={`/diario/reposicoes/${encodeURIComponent(operacao.reposicaoId)}/troca-fonte`} className="inline-block text-sm text-brand-700 underline">Conferir e adotar a publicação corrigida da aula original</Link>}</>}
     <p role="status">{operacao.etapa.correcaoId ? "Etapa atual: correção solicitada." : "Etapa atual: primeira entrega."} Prazo vigente: {data(operacao.etapa.prazoAte, operacao.fuso)} ({operacao.fuso}).</p>
     {operacao.material && operacao.etapa.prazoAte && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => prorrogarEtapaOperacional({ reposicaoId: operacao.reposicaoId, solicitacaoCorrecaoId: operacao.etapa.correcaoId, prazoAnterior: operacao.etapa.prazoAte, novoPrazo: new Date(String(dados.get("novoPrazo") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Prorrogar etapa vigente</p>

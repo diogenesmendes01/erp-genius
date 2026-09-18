@@ -26,6 +26,7 @@ type Contexto = {
   fontePublicacaoAtual: { versao: number; revisao: string };
   materialDisponivel: boolean;
   disponibilizacaoId: string | null;
+  jaAdotaPublicacaoAtual: boolean;
 };
 
 type Resultado = { ok: boolean; erro?: string };
@@ -65,8 +66,8 @@ export function TrocaFonteReposicao({ contexto, propostas }: { contexto: Context
     <form className="space-y-3 rounded border bg-white p-4" onSubmit={propor}>
       <h2 className="font-medium">Propor adoção da publicação corrigida</h2>
       <p className="text-sm text-gray-700">A fonte publicada acima será fotografada pelo servidor. Esta tela não aceita identificador de arquivo, revisão ou URL.</p>
-      <label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-      <button disabled={ocupado} className="rounded border px-3 py-2">Preparar para decisão independente</button>
+      {contexto.jaAdotaPublicacaoAtual ? <p role="status">O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
+      <button disabled={ocupado} className="rounded border px-3 py-2">Preparar para decisão independente</button></>}
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
       <h2 className="font-medium">Histórico antes e depois</h2>

@@ -21,7 +21,7 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { autorizarReproducaoGravacaoTx } from "./autorizacao";
-import { decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao } from "./troca-fonte-reposicao";
+import { consultarTrocaFonteReposicaoGravacao, decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao } from "./troca-fonte-reposicao";
 
 let catalogo: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
 let preparadorId: string;
@@ -68,7 +68,10 @@ async function criarCenario(chave: string) {
   } });
   await prisma.disponibilizacaoEntregaReposicao.create({ data: { reposicaoId: reposicao.id, materialId: material.id, disponibilizadaEm: new Date("2026-02-11T10:00:00Z"), prazoBaseMinutos: 120, prazoInicialAte: new Date("2026-02-11T12:00:00Z"), publicadaPorId: preparadorId } });
   const conta = await prisma.contaPortalAluno.create({ data: { alunoId: aluno.id, ativa: true } });
-  return { alunoId: aluno.id, matriculaId: matricula.id, contaId: conta.id, reposicaoId: reposicao.id, materialId: material.id, publicacaoId: publicacao.id, fontePublicacaoOriginal, fonteMaterialOriginal };
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: { reposicaoId: reposicao.id, professorId, designadorId: preparadorId, inicio: new Date("2026-02-11T10:00:00Z"), motivo: "Professor preservado para avaliar a entrega." } });
+  const entrega = await prisma.entregaReposicaoGravacao.create({ data: { reposicaoId: reposicao.id, alunoId: aluno.id, contaPortalAlunoId: conta.id, versao: 1, resumo: "Resumo original da entrega.", atividade: "Atividade original entregue.", evidencia: "Evidência preservada.", entregueEm: new Date("2026-02-11T11:00:00Z") } });
+  const conclusao = await prisma.conclusaoReposicaoIndividual.create({ data: { reposicaoId: reposicao.id, versao: 1, concluida: true, entregaId: entrega.id, validadaEm: new Date("2026-02-11T11:30:00Z"), validadaPorId: professorId, concluidaPorId: professorId, evidencia: "Avaliação docente preservada." } });
+  return { alunoId: aluno.id, matriculaId: matricula.id, contaId: conta.id, reposicaoId: reposicao.id, materialId: material.id, publicacaoId: publicacao.id, entregaId: entrega.id, conclusaoId: conclusao.id, fontePublicacaoOriginal, fonteMaterialOriginal };
 }
 
 async function corrigirPublicacao(publicacaoId: string, chave: string) {
@@ -111,7 +114,14 @@ it("Q23/Q57 aprova a nova fonte MATERIAL sem alterar material, disponibilizaçã
   expect(fontes).toMatchObject([{ versao: 1, driveRevisionId: "aula-r1-principal" }, { versao: 2, origemPublicacaoId: publicaCorrigida.id, driveRevisionId: "aula-r2-principal" }]);
   expect(await prisma.materialReposicaoGravacao.findUniqueOrThrow({ where: { id: cenario.materialId } })).toMatchObject({ disponivel: true, arquivoOficialId: `arquivo-aula-principal` });
   expect(await prisma.disponibilizacaoEntregaReposicao.count({ where: { materialId: cenario.materialId } })).toBe(1);
+  expect(await prisma.entregaReposicaoGravacao.findUniqueOrThrow({ where: { id: cenario.entregaId } })).toMatchObject({ versao: 1, resumo: "Resumo original da entrega.", atividade: "Atividade original entregue." });
+  expect(await prisma.conclusaoReposicaoIndividual.findUniqueOrThrow({ where: { id: cenario.conclusaoId } })).toMatchObject({ versao: 1, concluida: true, evidencia: "Avaliação docente preservada." });
   await expect(autorizarReproducaoGravacaoTx(prisma, { sessaoId: "s", contaId: cenario.contaId, alunoId: cenario.alunoId, email: "aluno@test" }, cenario.reposicaoId)).resolves.toMatchObject({ revisionId: "aula-r2-principal", size: "120" });
+  entrar(decisorId);
+  await expect(consultarTrocaFonteReposicaoGravacao({ reposicaoId: cenario.reposicaoId })).resolves.toMatchObject({
+    contexto: { jaAdotaPublicacaoAtual: true, fonteMaterialAtual: { versao: 2 }, fontePublicacaoAtual: { versao: 2 } },
+    propostas: [expect.objectContaining({ decisao: expect.objectContaining({ aprovada: true }), fonteMaterial: expect.objectContaining({ versao: 2 }) })],
+  });
   entrar(preparadorId);
   expect(await proporTrocaFonteReposicaoGravacao(entrada(cenario.reposicaoId))).toMatchObject({ ok: true, dado: { id: proposta.dado.id } });
 });
@@ -133,6 +143,14 @@ it("recusa autoaprovação, indisponibilidade inicial ou posterior e retirada de
   entrar(decisorId);
   await expect(decidirTrocaFonteReposicaoGravacao({ propostaId: propostaIndisponivelDepois.dado.id, aprovar: true, motivo: "Material indisponível não pode receber nova fonte." })).resolves.toMatchObject({ ok: false });
   await prisma.materialReposicaoGravacao.update({ where: { id: cenario.materialId }, data: { disponivel: true } });
+  entrar(preparadorId);
+  const propostaPreparadorRevogado = await proporTrocaFonteReposicaoGravacao(entrada(cenario.reposicaoId, "troca-preparador-revogado"));
+  expect(propostaPreparadorRevogado.ok).toBe(true);
+  if (!propostaPreparadorRevogado.ok || !propostaPreparadorRevogado.dado) throw new Error("proposta ausente");
+  await prisma.usuario.update({ where: { id: preparadorId }, data: { ativo: false } });
+  entrar(decisorId);
+  await expect(decidirTrocaFonteReposicaoGravacao({ propostaId: propostaPreparadorRevogado.dado.id, aprovar: false, motivo: "Preparador revogado não deixa decisão institucional válida." })).resolves.toMatchObject({ ok: false });
+  await prisma.usuario.update({ where: { id: preparadorId }, data: { ativo: true } });
   entrar(preparadorId);
   const proposta = await proporTrocaFonteReposicaoGravacao(entrada(cenario.reposicaoId, "troca-revogada"));
   expect(proposta.ok).toBe(true);
@@ -165,6 +183,44 @@ it("a foto obsoleta por nova publicação e as chamadas concorrentes não criam 
   const resultados = await Promise.all(["um", "dois"].map((sufixo) => decidirTrocaFonteReposicaoGravacao({ propostaId: propostaNova.dado!.id, aprovar: true, motivo: `Decisão concorrente ${sufixo} da nova fonte.` })));
   expect(resultados.filter((resultado) => resultado.ok).length).toBe(1);
   expect(await prisma.fonteRevisaoGravacao.count({ where: { materialReposicaoId: cenario.materialId } })).toBe(2);
+});
+
+it("serializa a nova publicação concorrente contra a adoção MATERIAL pela âncora e não aplica fotografia vencida", async () => {
+  const cenario = await criarCenario("barreira");
+  await corrigirPublicacao(cenario.publicacaoId, "barreira");
+  const propostaTroca = await proporTrocaFonteReposicaoGravacao(entrada(cenario.reposicaoId, "troca-barreira"));
+  expect(propostaTroca.ok).toBe(true);
+  if (!propostaTroca.ok || !propostaTroca.dado) throw new Error("proposta ausente");
+  const propostaR3 = await prisma.propostaRegularizacaoFonteGravacao.create({ data: {
+    alvo: "PUBLICACAO_AULA", publicacaoAulaId: cenario.publicacaoId, versaoEsperada: 2, arquivoOficialId: "arquivo-r3-barreira",
+    driveOrganizacaoId: "drive-escola", driveRevisionId: "aula-r3-barreira", driveRevisionMd5: "c".repeat(32), driveRevisionSize: 130n, mimeType: "video/mp4",
+    motivo: "A publicação concorrente mantém a âncora bloqueada até concluir.", preparadorId, chaveIdempotencia: "correcao-r3-barreira",
+  } });
+  await prisma.decisaoRegularizacaoFonteGravacao.create({ data: { propostaId: propostaR3.id, decisorId, aprovada: true, motivo: "Outra gestão aprova a revisão concorrente." } });
+  let liberarInsercao!: () => void;
+  const inserida = new Promise<void>((resolve) => { liberarInsercao = resolve; });
+  const origemConcorrente = prisma.$transaction(async (tx) => {
+    await tx.fonteRevisaoGravacao.create({ data: {
+      alvo: "PUBLICACAO_AULA", publicacaoAulaId: cenario.publicacaoId, versao: 3, propostaId: propostaR3.id, arquivoOficialId: "arquivo-r3-barreira",
+      driveOrganizacaoId: "drive-escola", driveRevisionId: "aula-r3-barreira", driveRevisionMd5: "c".repeat(32), driveRevisionSize: 130n, mimeType: "video/mp4",
+    } });
+    liberarInsercao();
+    await tx.$executeRaw`SELECT pg_sleep(1.2)`;
+  });
+  await inserida;
+  entrar(administradorId);
+  const adocao = decidirTrocaFonteReposicaoGravacao({ propostaId: propostaTroca.dado.id, aprovar: true, motivo: "Adoção disputa a âncora da publicação corrigida." });
+  let bloqueada = false;
+  for (let tentativa = 0; tentativa < 20 && !bloqueada; tentativa += 1) {
+    const [estado] = await prisma.$queryRaw<Array<{ bloqueada: boolean }>>`SELECT EXISTS (SELECT 1 FROM pg_stat_activity atividade WHERE atividade.query LIKE '%FonteRevisaoGravacao%' AND cardinality(pg_blocking_pids(atividade.pid)) > 0) AS bloqueada`;
+    bloqueada = !!estado?.bloqueada;
+    if (!bloqueada) await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  expect(bloqueada).toBe(true);
+  await origemConcorrente;
+  await expect(adocao).resolves.toMatchObject({ ok: false });
+  expect(await prisma.fonteRevisaoGravacao.count({ where: { materialReposicaoId: cenario.materialId } })).toBe(1);
+  expect(await prisma.fonteRevisaoGravacao.findFirstOrThrow({ where: { publicacaoAulaId: cenario.publicacaoId }, orderBy: { versao: "desc" } })).toMatchObject({ versao: 3 });
 });
 
 it("SQL recusa origem cruzada, duas fontes de proposta e aplicação com aprovador revogado", async () => {
