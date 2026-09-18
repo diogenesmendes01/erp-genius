@@ -480,3 +480,7 @@ Decisão do usuário em 18/09/2026: permitir corrigir, por aditivo, o período d
 #### DCT03 — Condições mistas e continuidade mensal
 
 Aplicações são reconhecidas por campo e última alteração explícita da cadeia documental. Um vencimento aplicado não prova alteração de preço nem cobertura. O resolvedor mensal reconhece o fato próprio do vencimento e exige prova para as demais condições; reafirmar um valor em nova proposta exige nova aplicação. Migração231 permite aplicar condições diretas após o acerto dos campos próprios, mantendo aprovação comercial/financeira e assinatura. Cenário integrado misto preço+vencimento aprovado localmente no TESTER; cadeias posteriores, demais consumidores e regressão global continuam em validação.
+
+### Q170 — Conjunto de impactos da taxa em aditivo
+
+Decisão aprovada: Financeiro identifica explicitamente todas as cobranças de taxa afetadas e justifica as demais; outra pessoa autorizada aprova o conjunto. Preservar cobrança, recebimentos e histórico, e revalidar versões antes da aplicação. A condição contratual só fica aplicada quando todos os ajustes aprovados estiverem concluídos. Uma aplicação isolada comprova apenas a cobrança selecionada; assinatura e aprovação documental não alteram valores sozinhas. Implementação do conjunto e sua prova de completude pendentes.
