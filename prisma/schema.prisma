@@ -8030,6 +8030,8 @@ model AplicacaoReconferenciaDeltaDesistencia {
   executor Usuario @relation("ExecutorReconferenciaDeltaDesistencia", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   fotografiaHash String
   fotografia Json
+  fotografiaPosteriorHash String?
+  fotografiaPosterior Json?
   memoriaDelta Json
   chaveIdempotencia String
   criadaEm DateTime @default(now())
