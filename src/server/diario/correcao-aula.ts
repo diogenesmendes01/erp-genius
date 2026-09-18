@@ -66,7 +66,7 @@ export async function rejeitarCorrecaoAula(input: { propostaId: string; proposta
 }
 
 /** Publica a projeção conferida, sem reescrever o diário ou seus registros originais. */
-export async function aprovarCorrecaoAula(input: { propostaId: string; propostaHash: string; impactosHash: string; motivo: string; confirmarPreservacaoReposicoes?: boolean }) {
+export async function aprovarCorrecaoAula(input: { propostaId: string; propostaHash: string; impactosHash: string; motivo: string; confirmarPreservacaoReposicoes?: boolean; revisaoFinanceiraDecisaoId?: string }) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const d = z.object({
@@ -75,6 +75,7 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
       impactosHash: z.string().regex(/^[a-f0-9]{64}$/),
       motivo: z.string().trim().min(5).max(3000),
       confirmarPreservacaoReposicoes: z.boolean().default(false),
+      revisaoFinanceiraDecisaoId: z.string().min(1).optional(),
     }).strict().parse(input);
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
@@ -88,6 +89,7 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
         const preservacao = z.object({ preservacaoReposicoesConcluidas: z.array(z.string()).optional(), continuidadeReposicoesAutorizadas: z.array(z.string()).optional() }).passthrough().parse(proposta.aprovacao.impactos);
         if (proposta.aprovacao.decisorId !== usuario.id || proposta.aprovacao.propostaHash !== d.propostaHash
           || proposta.aprovacao.impactosHash !== d.impactosHash || proposta.aprovacao.motivo !== d.motivo
+          || proposta.aprovacao.revisaoFinanceiraDecisaoId !== (d.revisaoFinanceiraDecisaoId ?? null)
           || !!(preservacao.preservacaoReposicoesConcluidas?.length || preservacao.continuidadeReposicoesAutorizadas?.length) !== d.confirmarPreservacaoReposicoes) {
           throw new ErroRegra("A proposta já possui uma aprovação registrada.");
         }
@@ -101,9 +103,8 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
       if (impactos.propostaHash !== d.propostaHash || impactos.impactosHash !== d.impactosHash) {
         throw new ErroRegra("Os impactos ou a proposta mudaram. Refaça a conferência antes de publicar.");
       }
-      if (impactos.financeiro.exigeConferenciaFinanceira) {
-        throw new ErroRegra("A correção possui dependências financeiras e exige conferência financeira antes da publicação.");
-      }
+      if (impactos.financeiro.exigeConferenciaFinanceira && !d.revisaoFinanceiraDecisaoId) throw new ErroRegra("A correção possui dependências financeiras e exige revisão financeira aprovada antes da publicação.");
+      if (!impactos.financeiro.exigeConferenciaFinanceira && d.revisaoFinanceiraDecisaoId) throw new ErroRegra("A correção atual não possui dependência financeira para vincular à revisão.");
       const afetadas = [...new Set(impactos.comparacao.registros.flatMap(registro => registro.reposicoesParaConferencia.map(r => r.id)))].sort();
       if (afetadas.some(id => !impactos.reposicoesPreservaveisIds.includes(id) && !impactos.reposicoesContinuaveisIds.includes(id))) {
         throw new ErroRegra("A correção altera participação com reposições pendentes de conferência. A publicação depende da resolução dessas dependências.");
@@ -120,12 +121,13 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
         motivo: d.motivo,
         propostaHash: d.propostaHash,
         impactosHash,
+        revisaoFinanceiraDecisaoId: d.revisaoFinanceiraDecisaoId,
         impactos: { ...snapshotImpactos, ...(preservadas.length ? { preservacaoReposicoesConcluidas: preservadas } : {}),
           ...(continuadas.length ? { continuidadeReposicoesAutorizadas: continuadas } : {}) },
       } });
       await registrarEvento(tx, { tipo: "CorrecaoAulaAprovada", agregadoTipo: "EncontroAgenda", agregadoId: proposta.encontroId,
         autorId: usuario.id, payload: { propostaId: proposta.id, aprovacaoId: aprovacao.id, versao: proposta.versao,
-          propostaHash: d.propostaHash, impactosHash, preservacaoReposicoesConcluidas: preservadas, continuidadeReposicoesAutorizadas: continuadas } });
+          propostaHash: d.propostaHash, impactosHash, revisaoFinanceiraDecisaoId: d.revisaoFinanceiraDecisaoId ?? null, preservacaoReposicoesConcluidas: preservadas, continuidadeReposicoesAutorizadas: continuadas } });
       return { id: aprovacao.id, propostaId: proposta.id };
     });
   });

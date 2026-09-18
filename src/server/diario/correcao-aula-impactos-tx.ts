@@ -77,9 +77,11 @@ export async function carregarImpactosCorrecaoAulaTx(
     simulacoes.push({ matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, regraId: regra.id, pendencia: null, antes, depois, fechamento });
   }
   const dependenciasFinanceiras = await carregarDependenciasFinanceirasAulaTx(tx, proposta.encontroId, matriculas);
+  const ultimaRevisaoFinanceira = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { decisao: { select: { id: true, aprovada: true } } } });
   const financeiro = { ...dependenciasFinanceiras,
     possuiDependenciasFinanceiras: dependenciasFinanceiras.exigeConferenciaFinanceira,
     exigeConferenciaFinanceira: dependenciasFinanceiras.exigeConferenciaFinanceira && comparacao.registros.some(r => r.participacaoAlterada),
+    revisaoFinanceira: ultimaRevisaoFinanceira?.decisao?.aprovada ? { decisaoAprovadaId: ultimaRevisaoFinanceira.decisao.id } : null,
   };
   // Preservar uma conclusão exige sua prova efetiva, não apenas a flag do histórico.
   const reposicoesPreservaveisIds: string[] = [];

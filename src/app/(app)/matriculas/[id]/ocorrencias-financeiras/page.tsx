@@ -16,6 +16,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <p>Confira os informes e a versão contratual antes de registrar a apuração. Conferência não é cobrança emitida nem pagamento.</p>
     <Link href={`/matriculas/${id}/condicoes-horas`} className="underline">Condições contratuais por hora</Link>
     <p><Link href={`/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`} className="underline">Histórico de fechamentos por hora</Link></p>
+    <p><Link href={`/matriculas/${id}/ocorrencias-financeiras/revisoes-correcao-aula`} className="underline">Revisões financeiras de correções Q23</Link></p>
     {!d.encontros.length && <p>Nenhum encontro particular nesta página.</p>}
     {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} />)}
     {d.proximoCursor && <Link href={`/matriculas/${id}/ocorrencias-financeiras?cursor=${encodeURIComponent(d.proximoCursor)}`} className="underline">Próximos encontros</Link>}
