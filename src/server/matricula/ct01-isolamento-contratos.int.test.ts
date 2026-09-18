@@ -165,6 +165,7 @@ it("CT01 pausa somente A e preserva B por hora, suas fontes e seu vídeo", async
   const cobrancaB = await criarCobrancaLiquidada(horaBId, TipoCobranca.HORA_PARTICULAR, "b-pausa");
   await criarVideoReposicao("repo-a-pausa", mensalAId);
   await criarVideoReposicao("repo-b-pausa", horaBId);
+  await expect(autorizarReproducaoGravacao("repo-a-pausa")).resolves.toMatchObject({ matriculaId: mensalAId });
   await expect(autorizarReproducaoGravacao("repo-b-pausa")).resolves.toMatchObject({ matriculaId: horaBId });
   const antesB = await fotografiaB(cobrancaB.id);
 
@@ -207,6 +208,7 @@ it("CT01 encerra somente A por ações públicas e preserva B por hora, suas fon
   const documento = await prisma.documento.create({ data: { matriculaId: mensalAId, nome: "Contrato mensal A CT01", categoria: "CONTRATO", url: "/api/files/ct01-a.pdf" } });
   await prisma.matricula.update({ where: { id: mensalAId }, data: { contratoOk: true, contratoDocumentoId: documento.id, confirmacaoContratoPorId: secretariaId, confirmacaoContratoEm: new Date("2099-09-01T09:00:00.000Z") } });
   const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: { matriculaId: mensalAId, documentoId: documento.id, preparadorId: secretariaId, decisorId: adminId, status: "APROVADA", decididaEm: new Date("2099-09-01T10:00:00.000Z"), versao: 1, motivo: "Condições do contrato A conferidas.", motivoDecisao: "Aprovação independente das condições de A.", regras: { diaEncerramento: "INCLUIR", metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Sem desconto adicional.", multa: { tipo: "SEM_PREVISAO", motivo: "Contrato sem multa." } } } });
+  await expect(autorizarReproducaoGravacao("repo-a-encerramento")).resolves.toMatchObject({ matriculaId: mensalAId });
   await expect(autorizarReproducaoGravacao("repo-b-encerramento")).resolves.toMatchObject({ matriculaId: horaBId });
   const antesB = await fotografiaB(cobrancaB.id);
 
