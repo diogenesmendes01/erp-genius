@@ -4,7 +4,7 @@ import { RegrasEncerramentoSchema } from "./condicoes-encerramento-schema";
 
 /** Calcula somente a obrigação final prevista na versão contratual aprovada.
  * Recebimentos são entrada do cálculo e permanecem imutáveis. */
-export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, cobranca: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number; valorRecebido: Prisma.Decimal | string | number | null; valorLiquidadoCredito: Prisma.Decimal | string | number; valorCompensadoPermuta?: Prisma.Decimal | string | number }, cobrancasDaContratacao: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number }[] = [cobranca]) {
+export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, cobranca: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number; valorRecebido: Prisma.Decimal | string | number | null; valorLiquidadoCredito: Prisma.Decimal | string | number; valorCompensadoPermuta?: Prisma.Decimal | string | number; valorCreditoJaApurado?: Prisma.Decimal | string | number }, cobrancasDaContratacao: { id: string; tipo: string; valorNegociado: Prisma.Decimal | string | number }[] = [cobranca]) {
   const regra = RegrasEncerramentoSchema.parse(regrasEntrada).acertoDesistenciaPreparacao;
   if (!regra) throw new ErroRegra("O contrato confirmado não traz regra estruturada para o acerto da desistência; complemente e confira as condições.");
   const condicoes = regra.condicoesAplicacao;
@@ -20,7 +20,14 @@ export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, c
     if (new Set(idsFontes).size !== idsFontes.length || idsContrato.length !== idsFontes.length || idsContrato.some((id, i) => id !== idsFontes[i]) || !fonteDaCobranca || fonteDaCobranca.tipo !== cobranca.tipo || !new Prisma.Decimal(fonteDaCobranca.valorNegociado).eq(cobranca.valorNegociado)) throw new ErroRegra("O conjunto de cobranças da contratação diverge do alcance contratual aprovado.");
   }
   const contratado = new Prisma.Decimal(cobranca.valorNegociado);
-  const recebido = new Prisma.Decimal(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito);
+  const liquidadoOriginal = new Prisma.Decimal(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito);
+  // Excedentes anteriormente convertidos em crédito continuam registrados e
+  // não podem ser novamente destinados no acerto desta mesma cobrança.
+  const creditoAnterior = new Prisma.Decimal(cobranca.valorCreditoJaApurado ?? 0);
+  if (!creditoAnterior.isFinite() || creditoAnterior.lt(0) || creditoAnterior.gt(liquidadoOriginal)) {
+    throw new ErroRegra("Confira os créditos já apurados e a liquidação original da cobrança.");
+  }
+  const recebido = liquidadoOriginal.minus(creditoAnterior);
   const totalContratacao = cobrancasDaContratacao.reduce((s, x) => s.plus(x.valorNegociado), new Prisma.Decimal(0));
   const base = condicoes.unidade === "POR_COBRANCA" ? contratado : totalContratacao;
   const totalDevido = (regra.tipo === "VALOR_FIXO" ? new Prisma.Decimal(regra.valor) : base.mul(regra.percentual).div(100)).toDecimalPlaces(2);
@@ -33,5 +40,5 @@ export function calcularObrigacaoDesistenciaContratual(regrasEntrada: unknown, c
   })();
   const saldoDevido = Prisma.Decimal.max(devido.minus(recebido), 0);
   const creditoApurado = Prisma.Decimal.max(recebido.minus(devido), 0);
-  return { devido: devido.toDecimalPlaces(2), saldoDevido: saldoDevido.toDecimalPlaces(2), creditoApurado: creditoApurado.toDecimalPlaces(2), clausulaId: regra.clausulaId, condicoesAplicacao: regra.condicoesAplicacao };
+  return { devido: devido.toDecimalPlaces(2), saldoDevido: saldoDevido.toDecimalPlaces(2), creditoApurado: creditoApurado.toDecimalPlaces(2), creditoAnterior: creditoAnterior.toDecimalPlaces(2), liquidacaoLiquida: recebido.toDecimalPlaces(2), clausulaId: regra.clausulaId, condicoesAplicacao: regra.condicoesAplicacao };
 }
