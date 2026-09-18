@@ -669,10 +669,20 @@ it("nova tentativa do aditivo exige confirmação de não criação e recusa ret
   expect(await prisma.observacaoEnvioAditivo.count()).toBe(1);
 });
 
-it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162", "PRODUCAO_MENSAL_VENCIMENTO"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
+it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR", "PRODUCAO_MENSAL_EMISSAO", "PRODUCAO_MENSAL_Q162", "PRODUCAO_MENSAL_VENCIMENTO", "PRODUCAO_MENSAL_VENCIMENTO_PAGO"] as const)("preserva a conclusão assinada do aditivo sem herdar assinaturas: %s", async modo => {
   const ambiente = modo === "SANDBOX" ? "SANDBOX" : "PRODUCAO";
   const taxaSemConsumidor = modo === "PRODUCAO_MENSAL_TAXA_SEM_CONSUMIDOR";
-  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO", modo === "PRODUCAO_MENSAL_VENCIMENTO");
+  if (modo === "PRODUCAO_MENSAL_VENCIMENTO_PAGO") {
+    const financeiro = await criarUsuario(["FINANCEIRO"]);
+    const primeira = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE" } });
+    const { receberTx } = await import("@/server/financeiro/recebimentos");
+    await prisma.$transaction(tx => receberTx(tx, {
+      cobrancaId: primeira.id, autorId: financeiro.id, chaveIdempotencia: "mensalidade-paga-antes-aditivo",
+      valorRecebido: primeira.valorNegociado.toNumber(), forma: "DINHEIRO", dataPagamento: new Date(),
+      comentario: "Mensalidade quitada antes da alteração contratual do vencimento",
+    }));
+  }
+  const { confirmar, alvo } = await prepararRevisaoOriginal(true, modo.startsWith("PRODUCAO_MENSAL"), taxaSemConsumidor, modo === "PRODUCAO_CADASTRO", modo.startsWith("PRODUCAO_MENSAL_VENCIMENTO"));
   const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
   if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
   const processo = await prepararProcessoAssinaturaAditivo({ ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente });
@@ -731,7 +741,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
   expect(await registrarCondicoesFormalizadasAditivo({ ...pedidoCondicoes, revisaoHash: "0".repeat(64) })).toMatchObject({ ok: false });
   const pagadoresAntesFormalizacao = await prisma.pagadorPreparacaoMatricula.findMany({ orderBy: { id: "asc" } });
   const cobrancasAntesFormalizacao = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
-  if (modo === "PRODUCAO_MENSAL_VENCIMENTO") {
+  if (modo.startsWith("PRODUCAO_MENSAL_VENCIMENTO")) {
     const formalizada = await registrarCondicoesFormalizadasAditivo(pedidoCondicoes);
     if (!formalizada.ok || !formalizada.dado) throw new Error(JSON.stringify(formalizada));
     const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo, consultarVencimentosAditivo } = await import("./vencimento-aditivo");
@@ -762,6 +772,12 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await aplicarVencimentoAditivo(aplicar)).toMatchObject({ ok: false });
     authMock.mockResolvedValue({ user: { id: fixture.adminId } });
     const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } });
+    const recebimentosAntes = await prisma.recebimento.findMany({ orderBy: { id: "asc" } });
+    const destinacoesAntes = await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } });
+    if (modo === "PRODUCAO_MENSAL_VENCIMENTO_PAGO") {
+      expect(antes.status).toBe("PAGO");
+      expect(recebimentosAntes.length).toBeGreaterThan(0);
+    }
     const decisaoSalva = await prisma.decisaoVencimentoAditivo.findUniqueOrThrow({ where: { propostaId: salvo.id } });
     const aplicacaoDireta = {
       decisaoId: decisaoSalva.id, executorId: fixture.adminId, chaveIdempotencia: "sql-vencimento-obsoleto",
@@ -778,8 +794,10 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     const aplicada = await aplicarVencimentoAditivo(aplicar);
     expect(aplicada, JSON.stringify(aplicada)).toMatchObject({ ok: true });
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
-    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: "PENDENTE" });
+    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: antes.status === "PAGO" ? "PAGO" : "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
+    expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
+    expect(await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } })).toEqual(destinacoesAntes);
     expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false, podeRevisar: true });
     await expect(prisma.aplicacaoVencimentoAditivo.deleteMany()).rejects.toThrow("imutável");
     const historico = await consultarVencimentosAditivo(consultaVencimento);
