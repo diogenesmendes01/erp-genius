@@ -476,3 +476,7 @@ A aplicação financeira registra uma pendência durável de reavaliação de ac
 ### Q168 — Correção contratual de cobertura iniciada ou paga
 
 Decisão do usuário em 18/09/2026: permitir corrigir, por aditivo, o período de cobertura de mensalidade inclusive já iniciado ou pago. Exigir justificativa, evidências e acerto financeiro independente de todos os impactos: Financeiro prepara e outra pessoa autorizada aprova antes de aplicar. Preservar recebimentos, cobertura original e histórico; assinatura isolada não modifica a cobrança. Esta decisão não define mudança da referência dos próximos períodos, que permanece pendente de definição específica. Implementação do consumidor de cobertura ainda pendente.
+
+#### DCT03 — Condições mistas e continuidade mensal
+
+Aplicações são reconhecidas por campo e última alteração explícita da cadeia documental. Um vencimento aplicado não prova alteração de preço nem cobertura. O resolvedor mensal reconhece o fato próprio do vencimento e exige prova para as demais condições; reafirmar um valor em nova proposta exige nova aplicação. Migração231 permite aplicar condições diretas após o acerto dos campos próprios, mantendo aprovação comercial/financeira e assinatura. Cenário integrado misto preço+vencimento aprovado localmente no TESTER; cadeias posteriores, demais consumidores e regressão global continuam em validação.
