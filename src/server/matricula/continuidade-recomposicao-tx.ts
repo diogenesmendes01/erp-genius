@@ -54,7 +54,7 @@ const diaSeguinte = (data: string) => {
  * ela alterou; nÃ£o hÃ¡ fallback para uma aplicaÃ§Ã£o mais antiga ou legado.
  */
 export async function carregarReferenciaRecomposicaoAplicadaTx(
-  tx: Pick<Prisma.TransactionClient, "aplicacaoRecomposicaoCobertura" | "cobranca">,
+  tx: Pick<Prisma.TransactionClient, "aplicacaoRecomposicaoCobertura" | "aplicacaoCoberturaAditivo" | "cobranca">,
   matriculaId: string,
 ): Promise<ReferenciaRecomposicaoAplicada | null> {
   const aplicacao = await tx.aplicacaoRecomposicaoCobertura.findFirst({
@@ -85,7 +85,7 @@ export async function carregarReferenciaRecomposicaoAplicadaTx(
       status: { not: "CANCELADA" },
       id: { in: alterados.map((periodo) => periodo.cobrancaId) },
     },
-    select: { id: true, coberturaInicio: true, coberturaFim: true },
+    select: { id: true, coberturaInicio: true, coberturaFim: true, versao: true },
   });
   if (atuais.length !== alterados.length) {
     throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o nÃ£o corresponde mais Ã s cobranÃ§as desta matrÃ­cula.");
@@ -95,7 +95,48 @@ export async function carregarReferenciaRecomposicaoAplicadaTx(
     const atual = porId.get(periodo.cobrancaId);
     if (!atual || !atual.coberturaInicio || !atual.coberturaFim ||
       civil(atual.coberturaInicio) !== periodo.cobertura.inicio || civil(atual.coberturaFim) !== periodo.cobertura.fim) {
-      throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o foi alterada por outra origem; confira a continuidade antes de prosseguir.");
+      const coberturaInicioAtual = atual?.coberturaInicio;
+      const coberturaFimAtual = atual?.coberturaFim;
+      const versaoAtual = atual?.versao;
+      if (!coberturaInicioAtual || !coberturaFimAtual || versaoAtual === undefined) {
+        throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o foi alterada por outra origem; confira a continuidade antes de prosseguir.");
+      }
+      // A sucessão Q168 pode conter mais de uma aplicação válida. Cada elo
+      // precisa partir do intervalo e da versão deixados pelo anterior; uma
+      // aplicação isolada não pode encobrir lacuna ou alteração manual.
+      const posteriores = await tx.aplicacaoCoberturaAditivo.findMany({
+        where: {
+          cobrancaId: periodo.cobrancaId,
+          aplicadaEm: { gt: aplicacao.aplicadaEm },
+          impacto: { conjunto: { matriculaId, status: "COMPLETO" } },
+        },
+        orderBy: [{ aplicadaEm: "asc" }, { id: "asc" }],
+        select: {
+          coberturaInicioAnterior: true, coberturaFimAnterior: true,
+          coberturaInicioNova: true, coberturaFimNova: true,
+          versaoCobrancaAntes: true, versaoCobrancaDepois: true,
+        },
+      });
+      let inicioEsperado = new Date(`${periodo.cobertura.inicio}T00:00:00.000Z`);
+      let fimEsperado = new Date(`${periodo.cobertura.fim}T00:00:00.000Z`);
+      let versaoEsperada: number | null = null;
+      for (const posterior of posteriores) {
+        if (
+          posterior.coberturaInicioAnterior.getTime() !== inicioEsperado.getTime() ||
+          posterior.coberturaFimAnterior.getTime() !== fimEsperado.getTime() ||
+          posterior.versaoCobrancaDepois !== posterior.versaoCobrancaAntes + 1 ||
+          (versaoEsperada !== null && posterior.versaoCobrancaAntes !== versaoEsperada)
+        ) throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o foi alterada por outra origem; confira a continuidade antes de prosseguir.");
+        inicioEsperado = posterior.coberturaInicioNova;
+        fimEsperado = posterior.coberturaFimNova;
+        versaoEsperada = posterior.versaoCobrancaDepois;
+      }
+      if (
+        !posteriores.length ||
+        inicioEsperado.getTime() !== coberturaInicioAtual.getTime() ||
+        fimEsperado.getTime() !== coberturaFimAtual.getTime() ||
+        versaoEsperada !== versaoAtual
+      ) throw new ErroRegra("A Ãºltima recomposiÃ§Ã£o foi alterada por outra origem; confira a continuidade antes de prosseguir.");
     }
   }
 
