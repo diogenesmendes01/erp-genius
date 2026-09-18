@@ -9,13 +9,13 @@ import { RecebimentoDestinadoForm } from "./RecebimentoDestinadoForm";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 const contextos = [
-  { matriculaId: "mat-1", status: "ATIVA", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: "2026-01-05T00:00:00.000Z", saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
-  { matriculaId: "mat-2", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: "2026-02-05T00:00:00.000Z", saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
+  { matriculaId: "mat-1", identificacaoMatricula: "MAT-001", status: "ATIVA", aluno: "Ana", moeda: "CRC", cobrancas: [{ id: "c-jan", codigo: "JAN", tipo: "MENSALIDADE", vencimento: "2026-01-05T00:00:00.000Z", saldo: 100 }], pagadores: [{ id: "pag-1", rotulo: "Responsável" }] },
+  { matriculaId: "mat-2", identificacaoMatricula: "MAT-002", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: "2026-02-05T00:00:00.000Z", saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
 ];
 function nos(no: unknown): No[] { if (Array.isArray(no)) return no.flatMap(nos); if (!no || typeof no !== "object") return []; const atual = no as No; return [atual, ...nos(atual.props?.children)]; }
 function textos(no: unknown): string[] { if (typeof no === "string") return [no]; if (Array.isArray(no)) return no.flatMap(textos); if (!no || typeof no !== "object") return []; return textos((no as No).props?.children); }
 function encontrar(no: unknown, predicado: (no: No) => boolean) { const encontrado = nos(no).find(predicado); if (!encontrado) throw new Error("Elemento não encontrado"); return encontrado; }
-function montar(estados: unknown[]) {
+function montar(estados: unknown[], contextosEntrada = contextos) {
   const setters = estados.map(() => vi.fn());
   mocks.useState.mockReset();
   estados.forEach((valor, indice) => mocks.useState.mockReturnValueOnce([valor, setters[indice]]));
@@ -23,7 +23,7 @@ function montar(estados: unknown[]) {
   const chave = { current: "00000000-0000-4000-8000-000000000087" };
   const emEnvio = { current: false };
   mocks.useRef.mockReset().mockReturnValueOnce(chave).mockReturnValueOnce(emEnvio);
-  const arvore = RecebimentoDestinadoForm({ contextos });
+  const arvore = RecebimentoDestinadoForm({ contextos: contextosEntrada });
   return { arvore, setters, chave, emEnvio };
 }
 
@@ -59,6 +59,20 @@ it("calcula totais em centavos e confirma múltipla destinação com crédito", 
       { tipo: "CREDITO_SEM_DESTINO", valor: 0.2, evidencia: "Antecipação", chaveIdempotencia: "credito-sem-destino" },
     ],
   }));
+});
+
+it("distingue dois contratos do mesmo aluno e moeda e envia o ID selecionado", async () => {
+  mocks.registrar.mockResolvedValue({ ok: true });
+  const mesmoAluno = [
+    { ...contextos[0], matriculaId: "mat-ana-1", identificacaoMatricula: "MAT-101", cobrancas: [] },
+    { ...contextos[0], matriculaId: "mat-ana-2", identificacaoMatricula: "ID legado-ana-2", cobrancas: [] },
+  ];
+  const c = montar(["mat-ana-2", [], "75", "75", "", FormaPagamento.DINHEIRO, "2026-09-18", "Antecipação para o segundo contrato", "", "", "", false, null, null, false], mesmoAluno);
+  expect(textos(c.arvore).join(" ")).toContain("MAT-101");
+  expect(textos(c.arvore).join(" ")).toContain("ID legado-ana-2");
+  const botao = encontrar(c.arvore, (no) => no.type === "button" && no.props?.children === "Confirmar recebimento");
+  await (botao.props!.onClick as () => Promise<void>)();
+  expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ titularMatriculaId: "mat-ana-2", moeda: "CRC", destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 75, evidencia: "Antecipação para o segundo contrato", chaveIdempotencia: "credito-sem-destino" }] }));
 });
 
 it("identifica matrícula em preparação e permite antecipação sem cobrança", async () => {

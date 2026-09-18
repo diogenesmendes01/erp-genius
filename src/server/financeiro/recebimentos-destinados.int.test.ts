@@ -65,7 +65,7 @@ it("divide um fato de caixa em dois períodos e crédito explícito, sem duplica
 
 it("oferece matrícula AGUARDANDO como preparação e registra antecipação pública sem ativá-la", async () => {
   const antes = await listarContextosRecebimentoDestinado();
-  expect(antes).toContainEqual(expect.objectContaining({ matriculaId, status: StatusMatricula.AGUARDANDO, cobrancas: expect.arrayContaining([expect.objectContaining({ id: c1 })]) }));
+  expect(antes).toContainEqual(expect.objectContaining({ matriculaId, identificacaoMatricula: `ID ${matriculaId}`, status: StatusMatricula.AGUARDANDO, cobrancas: expect.arrayContaining([expect.objectContaining({ id: c1 })]) }));
 
   const antecipacao = {
     ...entrada("q87-aguardando-antecipacao-0001"),
