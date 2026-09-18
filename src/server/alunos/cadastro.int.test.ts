@@ -1,3 +1,4 @@
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -31,10 +32,13 @@ async function cenario(papeis: Papel[]) {
       produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA",
       cobrancas: { create: {
         tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 85000, valorNegociado: 85000,
-        saldo: 84000, valorRecebido: 1000, vencimento: new Date(Date.now() + 7 * 86_400_000),
+        saldo: 85000, vencimento: new Date(Date.now() + 7 * 86_400_000),
       } },
     } },
   } });
+  const financeiro = await criarUsuario([Papel.FINANCEIRO]);
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matricula: { alunoId: aluno.id } } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiro.id, valorRecebido: 1000, forma: "DINHEIRO", dataPagamento: new Date(), comentario: "Pagamento parcial da mensalidade do cenário cadastral", chaveIdempotencia: "parcial-cadastro" }));
   como(operador);
   const entrada = { primeiroNome: "Ana", sobrenome: "Corrigido", paisId: cat.pais.id, documento: "123456789", telefone: "88889999", motivo: "Correção solicitada pelo responsável" };
   return { cat, operador, aluno, entrada };

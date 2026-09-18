@@ -1,3 +1,4 @@
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { randomUUID } from "node:crypto";
@@ -32,9 +33,10 @@ async function cenario(dias = 29) {
   const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, paisId: cat.pais.id, produtoId: cat.produto.id, moeda: "CRC", status: "ATIVA" } });
   const cobranca = await prisma.cobranca.create({ data: {
     matriculaId: matricula.id, tipo: "MENSALIDADE", status: "ATRASADO", moeda: "CRC",
-    valorOriginal: 100, valorNegociado: 100, valorRecebido: 60, saldo: 40, vencimento: new Date(Date.now() - dias * DIA),
+    valorOriginal: 100, valorNegociado: 100, saldo: 100, vencimento: new Date(Date.now() - dias * DIA),
   } });
-  return { financeiro, secretaria, admin, acumulado, professor, aluno, matricula, cobranca };
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiro.id, valorRecebido: 60, forma: "DINHEIRO", dataPagamento: new Date(), comentario: "Recebimento parcial destinado à mensalidade", chaveIdempotencia: `parcial-${cobranca.id}` }));
+  return { financeiro, secretaria, admin, acumulado, professor, aluno, matricula, cobranca: await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } }) };
 }
 
 async function solicitar(c: Awaited<ReturnType<typeof cenario>>, bloquear = true) {
