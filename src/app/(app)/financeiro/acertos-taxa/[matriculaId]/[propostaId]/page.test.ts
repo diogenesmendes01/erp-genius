@@ -25,3 +25,21 @@ it("mantém o preparo e a reconstrução na rota do Financeiro, com consulta da 
   expect(html).toContain("Preparar conjunto");
   expect(html).not.toContain('href="/matriculas/');
 });
+
+it.each(["PENDENTE", "APROVADO", "COMPLETO"])("não oferece novo conjunto quando existe um %s", async status => {
+  m.guard.mockResolvedValue({ id: "financeiro", papeis: [Papel.FINANCEIRO] });
+  m.previa.mockResolvedValue({ ok: true, dado: { estado: "PRONTA_PARA_SELECAO", cobrancas: [] } });
+  m.historico.mockResolvedValue({ ok: true, dado: [] });
+  m.impactos.mockResolvedValue({ ok: true, dado: { status } });
+  const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }) }));
+  expect(html).not.toContain("Preparar conjunto");
+});
+it("não confunde falha da consulta com ausência de conjunto", async () => {
+  m.guard.mockResolvedValue({ id: "financeiro", papeis: [Papel.FINANCEIRO] });
+  m.previa.mockResolvedValue({ ok: true, dado: { estado: "PRONTA_PARA_SELECAO", cobrancas: [] } });
+  m.historico.mockResolvedValue({ ok: true, dado: [] });
+  m.impactos.mockResolvedValue({ ok: false, erro: "Consulta indisponível temporariamente." });
+  const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }) }));
+  expect(html).toContain("Consulta indisponível temporariamente.");
+  expect(html).not.toContain("Preparar conjunto");
+});
