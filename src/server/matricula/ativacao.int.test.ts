@@ -100,12 +100,12 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     expect(aceite.ok, aceite.ok ? undefined : aceite.erro).toBe(true);
     const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId, tipo: "MATRICULA" } });
     expect((await registrarPagamento(taxa.id, { chaveIdempotencia: "ativacao-integracao-taxa", valorRecebido: TAXA, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO", dataPagamento: "2026-06-01" })).ok).toBe(true);
-    await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE + 1, versao: { increment: 1 } } });
+    await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE + 1, saldo: MENSALIDADE + 1, versao: { increment: 1 } } });
     expect(await concluirMatricula(matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("diferem do aceite") });
     expect(await prisma.cobranca.count({ where: { matriculaId, tipo: "MENSALIDADE" } })).toBe(1);
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe("AGUARDANDO");
     // Desfaz apenas a alteração artificial do teste; o aceite original continua preservado.
-    await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE, versao: { increment: 1 } } });
+    await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE, saldo: MENSALIDADE, versao: { increment: 1 } } });
     expect((await concluirMatricula(matriculaId)).ok).toBe(true);
 
     // A configuração padrão exige contrato aceito + taxa; a primeira permanece aberta.
