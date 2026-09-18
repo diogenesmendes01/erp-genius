@@ -13,6 +13,7 @@ Entrada financeira histórica M01 integrada e validada localmente: o Financeiro 
 | Entrega | Responsável | Estado | Início | Aceite/commit |
 |---|---|---|---|---|
 | M01 — conferência inicial de regra histórica | DEV 1 Terra | Integrada e validada localmente | 16/09/2026 | Integrada até b254ba81, migrações 188/190/191 aplicadas no banco descartável; aprovação independente e revisão explícita da versão. Evidências do conjunto M01 abaixo; não equivale à carga real homologada |
+| M01 — navegação para regra histórica mapeada | DEV 2 Terra | Implementação local validada | 18/09/2026 | O detalhe do vínculo migrado aponta somente para a turma canônica da correspondência vigente; não aplica vínculo/regra nem altera as permissões da conferência. SSR dirigido 1/1 e TypeScript concluíram com saída 0; não representa conclusão de M01. |
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
 | VIDEO — publicação e reprodução de revisão fixa | DEV 2 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Integrações 99741ba/1db9be3; homologação externa pendente |
 | Revisão independente EMAIL/VIDEO | TESTER Terra | Rodadas locais aprovadas | 16/09/2026 | Evidências abaixo; integração global e provedores reais não presumidos |
