@@ -92,14 +92,14 @@ export async function listarPendenciasAdministrativasDesistencia(
             SELECT 1 FROM "Cobranca" c
             WHERE c."matriculaId" = m.id AND (
               c.status = 'PAGO' OR c."pagoEm" IS NOT NULL
-              OR COALESCE(c."valorRecebido", 0) > 0 OR c."valorLiquidadoCredito" > 0
+              OR COALESCE(c."valorRecebido", 0) > 0 OR c."valorLiquidadoCredito" > 0 OR c."valorCompensadoPermuta" > 0
               OR EXISTS (SELECT 1 FROM "PagamentoInformado" i WHERE i."cobrancaId" = c.id AND i.status IN ('A_CONFERIR', 'CONFIRMADO'))
               OR EXISTS (SELECT 1 FROM "Recebimento" r WHERE r."cobrancaId" = c.id)
             )
           )
           OR jsonb_path_exists(ultimo."snapshotJson", '$.matricula ? (@.contratoOk == true || @.confirmacaoContratoEm != null)')
           OR jsonb_path_exists(ultimo."snapshotJson", '$.processos[*] ? (@.conclusao != null)')
-          OR jsonb_path_exists(ultimo."snapshotJson", '$.financeiro.cobrancas[*] ? (@.status == "PAGO" || @.pagoEm != null || (@.valorRecebido != null && @.valorRecebido != "0.00") || @.valorLiquidadoCredito != "0.00" || @.informes[*].status == "A_CONFERIR" || @.informes[*].status == "CONFIRMADO" || @.recebimentos[*].id != null)')
+          OR jsonb_path_exists(ultimo."snapshotJson", '$.financeiro.cobrancas[*] ? (@.status == "PAGO" || @.pagoEm != null || (@.valorRecebido != null && @.valorRecebido != "0.00") || @.valorLiquidadoCredito != "0.00" || (@.valorCompensadoPermuta != null && @.valorCompensadoPermuta != "0.00") || @.informes[*].status == "A_CONFERIR" || @.informes[*].status == "CONFIRMADO" || @.recebimentos[*].id != null)')
         )
       ORDER BY m.id ASC
       LIMIT 21
