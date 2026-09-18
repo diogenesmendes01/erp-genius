@@ -165,6 +165,34 @@ it("persiste conferência concorrente uma vez, revalida a prévia e protege info
   expect(await conferirOcorrenciaHoras(entrada)).toMatchObject({ ok: false });
 });
 
+it("Q23 particular exige proposta FIN, decisão independente e só então publicação sem alterar valor", async () => {
+  const { d, e, professor } = await prepararPreviaFinanceira();
+  const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
+  const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
+  const previa = await preverConferenciaOcorrenciaHoras(d); if (!previa.ok || !previa.dado) throw new Error("Prévia ausente");
+  expect(await conferirOcorrenciaHoras({ ...d, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência Q92 da particular", chaveIdempotencia: "q23-fin-conferencia" })).toMatchObject({ ok: true });
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+  await prisma.aulaDiario.create({ data: { encontroId: e.id, professorId: professor.id, ocorridaEm: e.inicio, conteudo: "Aula particular conferida.", registros: { create: { alunoId: m.alunoId, matriculaId, nomeAluno: "Condições por hora", presente: true, participacao: "PRESENTE" } } } });
+  await prisma.encontroAgenda.update({ where: { id: e.id }, data: { status: "MINISTRADO" } });
+  const { revisarCorrecaoAula, proporCorrecaoAula, revisarImpactosCorrecaoAula, aprovarCorrecaoAula } = await import("@/server/diario/correcao-aula");
+  login(professor.id); const atual = await revisarCorrecaoAula({ encontroId: e.id }); if (!atual.ok || !atual.dado) throw new Error("Q23 ausente");
+  const q23 = await proporCorrecaoAula({ encontroId: e.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Chamada corrigida após conferência.", evidencia: "Evidência pedagógica da presença.", chaveIdempotencia: "q23-fin-proposta", alteracao: { conteudo: atual.dado.snapshot.conteudo, registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: "FALTA" as const, observacao: r.observacao ?? "" })) } }); if (!q23.ok || !q23.dado) throw new Error("Proposta Q23 ausente");
+  const fin1 = await criarUsuario(["FINANCEIRO"]), fin2 = await criarUsuario(["FINANCEIRO"]), gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  const { proporRevisaoFinanceiraCorrecaoAula, decidirRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
+  login(fin1.id); const r = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: q23.dado.id, motivo: "Q92 preserva minutos e valor da conferência.", chaveIdempotencia: "q23-fin-revisao" }); if (!r.ok || !r.dado) throw new Error("Revisão ausente");
+  expect(await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: r.dado.id, aprovada: true, motivo: "Autoaprovação indevida." })).toMatchObject({ ok: false });
+  const diagnostico = await prisma.$queryRaw<{ atores: boolean; preparadorId: string; autorId: string; papeis: string[] }[]>`SELECT q23_revisao_financeira_atores_validos_257(${r.dado.id}, ${fin2.id}) AS atores, r."preparadorId", p."autorId", u.papeis FROM "PropostaRevisaoFinanceiraCorrecaoAula" r JOIN "PropostaCorrecaoAula" p ON p.id=r."propostaCorrecaoAulaId" JOIN "Usuario" u ON u.id=${fin2.id} WHERE r.id=${r.dado.id}`;
+  expect(diagnostico).toEqual([{ atores: true, preparadorId: fin1.id, autorId: professor.id, papeis: ["FINANCEIRO"] }]);
+  login(fin2.id); const dec = await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: r.dado.id, aprovada: true, motivo: "Outra pessoa confirmou equivalência Q92." }); if (!dec.ok || !dec.dado) throw new Error("Decisão ausente");
+  login(gestor.id); const impactos = await revisarImpactosCorrecaoAula({ propostaId: q23.dado.id }); if (!impactos.ok || !impactos.dado) throw new Error("Impactos ausentes");
+  await prisma.usuario.update({ where: { id: fin1.id }, data: { ativo: false } });
+  expect(await aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos.dado.propostaHash, impactosHash: impactos.dado.impactosHash, motivo: "Gestão não publica com alçada financeira revogada.", revisaoFinanceiraDecisaoId: dec.dado.id })).toMatchObject({ ok: false });
+  await prisma.usuario.update({ where: { id: fin1.id }, data: { ativo: true } });
+  expect(await aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos.dado.propostaHash, impactosHash: impactos.dado.impactosHash, motivo: "Gestão publica após decisão financeira.", revisaoFinanceiraDecisaoId: dec.dado.id })).toMatchObject({ ok: true });
+  expect((await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: e.id } })).valor.toFixed(2)).toBe("156.25");
+  expect(await prisma.cobranca.count()).toBe(0); expect(await prisma.recebimento.count()).toBe(0);
+});
+
 it("fechamento lê conferências e inclui encontros pendentes, sem transformar informe em cobrança", async () => {
   const { d, e } = await prepararPreviaFinanceira();
   const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
