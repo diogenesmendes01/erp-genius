@@ -18,6 +18,7 @@ function txReferencia(resultado: ReturnType<typeof aplicacao> | null, cobrancas:
   return {
     aplicacaoRecomposicaoCobertura: { findFirst: vi.fn().mockResolvedValue(resultado) },
     cobranca: { findMany: vi.fn().mockResolvedValue(cobrancas) },
+    aplicacaoCoberturaAditivo: { findMany: vi.fn().mockResolvedValue([]) },
   };
 }
 
