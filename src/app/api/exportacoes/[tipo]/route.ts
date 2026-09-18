@@ -12,10 +12,12 @@ export const dynamic = "force-dynamic";
 
 /** Inclui o vínculo de turma que compõe cada linha, não somente a identidade do aluno. */
 function assinaturaDaProjecaoAlunos(alunos: Awaited<ReturnType<typeof listarAlunos>>) {
-  return JSON.stringify(alunos.map(({ id, codigo, nome, status, pais, turmas }) => ({
-    id, codigo, nome, status, pais,
-    turmas: turmas.map(({ id: turmaId, label }) => ({ id: turmaId, label })),
-  })));
+  return JSON.stringify([...alunos]
+    .map(({ id, codigo, nome, status, pais, turmas }) => ({
+      id, codigo, nome, status, pais,
+      turmas: turmas.map(({ id: turmaId, label }) => ({ id: turmaId, label })).sort((a, b) => a.id.localeCompare(b.id)),
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id)));
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ tipo: string }> }) {
