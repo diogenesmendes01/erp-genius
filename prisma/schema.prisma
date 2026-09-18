@@ -5336,10 +5336,12 @@ model ConsumoHorasCompradas {
   id String @id @default(cuid())
   reservaId String @unique
   reserva ReservaHorasCompradas @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaOcorrenciaId String? @unique
+  conferenciaOcorrencia ConferenciaOcorrenciaHoras? @relation("ConsumoAntecipacaoOcorrencia", fields: [conferenciaOcorrenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   autorId String
   autor Usuario @relation(fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   motivo String
-  estadoDiario String
+  estadoDiario String?
   criadoEm DateTime @default(now())
 }
 
@@ -5573,6 +5575,7 @@ model AplicacaoPeriodoIntegral {
 
 model ConferenciaOcorrenciaHoras {
  itemFaturado ItemFechamentoHoras?
+ consumoAntecipacao ConsumoHorasCompradas? @relation("ConsumoAntecipacaoOcorrencia")
  id String @id @default(cuid())
  encontroId String @unique
  encontro EncontroAgenda @relation(fields: [encontroId], references: [id], onDelete: Restrict, onUpdate: NoAction)
