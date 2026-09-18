@@ -55,6 +55,70 @@ async function criarPublicacao(professor: string, chave: string, horario = { ini
   return { publicacaoId: publicacao.id, encontroId: encontro.id, matriculaId: matricula.id };
 }
 
+async function criarPublicacaoParticular(professor: string, chave: string) {
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: `Aluno particular ${chave}`, paisId: catalogo.pais.id } });
+  const matricula = await prisma.matricula.create({ data: {
+    alunoId: aluno.id,
+    produtoId: catalogo.produto.id,
+    paisId: catalogo.pais.id,
+    moeda: "CRC",
+    status: "ATIVA",
+  } });
+  const inicio = new Date("2026-01-12T10:00:00Z");
+  const encontro = await prisma.encontroAgenda.create({ data: {
+    matriculaId: matricula.id,
+    professorId: professor,
+    preparadorId: gestorId,
+    finalidade: "AULA",
+    status: "PREVISTO",
+    inicio,
+    fim: new Date("2026-01-12T11:00:00Z"),
+    fusoOrigem: "UTC",
+    motivo: "Aula particular concluída com gravação oficial.",
+    chaveIdempotencia: `encontro-particular-${chave}`,
+    entradaHash: "e".repeat(64),
+    diario: { create: {
+      professorId: professor,
+      ocorridaEm: inicio,
+      conteudo: "Conteúdo da aula particular.",
+      registros: { create: {
+        alunoId: aluno.id,
+        matriculaId: matricula.id,
+        nomeAluno: aluno.primeiroNome,
+        presente: true,
+        participacao: "PRESENTE",
+      } },
+    } },
+  } });
+  const diario = await prisma.aulaDiario.findUniqueOrThrow({ where: { encontroId: encontro.id }, select: { id: true } });
+  const publicacao = await prisma.publicacaoGravacaoAula.create({ data: {
+    encontroId: encontro.id,
+    publicadorId: professor,
+    arquivoOficialId: `arquivo-original-particular-${chave}`,
+    driveOrganizacaoId: "drive-escola",
+    driveRevisionId: `revisao-original-particular-${chave}`,
+    driveRevisionMd5: "a".repeat(32),
+    driveRevisionSize: 10n,
+    mimeType: "video/mp4",
+    chaveIdempotencia: `publicacao-particular-${chave}`,
+    entradaHash: "f".repeat(64),
+    snapshot: { encontroId: encontro.id, diarioId: diario.id },
+  } });
+  await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { status: "MINISTRADO" } });
+  await prisma.fonteRevisaoGravacao.create({ data: {
+    alvo: "PUBLICACAO_AULA",
+    publicacaoAulaId: publicacao.id,
+    versao: 1,
+    arquivoOficialId: `arquivo-original-particular-${chave}`,
+    driveOrganizacaoId: "drive-escola",
+    driveRevisionId: `revisao-original-particular-${chave}`,
+    driveRevisionMd5: "a".repeat(32),
+    driveRevisionSize: 10n,
+    mimeType: "video/mp4",
+  } });
+  return { publicacaoId: publicacao.id, encontroId: encontro.id, matriculaId: matricula.id };
+}
+
 beforeEach(async () => {
   await truncarBanco();
   catalogo = await seedCatalogoMinimo();
@@ -103,6 +167,39 @@ it("Q23 docente vigente prepara fonte da própria aula e gestão independente fi
     { versao: 1, arquivoOficialId: "arquivo-original-principal" }, { versao: 2, propostaId: proposta.dado.id, arquivoOficialId: fonteFixa.fileId, driveRevisionId: fonteFixa.revisionId },
   ]);
   expect(await prisma.decisaoRegularizacaoFonteGravacao.findFirstOrThrow({ where: { propostaId: proposta.dado.id } })).toMatchObject({ decisorId: administradorId, aprovada: true });
+});
+
+it("Q23 docente regulariza publicação particular e não decide a própria proposta mesmo acumulando gestão", async () => {
+  const particular = await criarPublicacaoParticular(professorId, "aprovada");
+  const proposta = await proporRegularizacaoFonteGravacao(entrada(particular.publicacaoId, "q23-particular-aprovada"));
+
+  expect(proposta, proposta.ok ? undefined : proposta.erro).toMatchObject({ ok: true });
+  if (!proposta.ok || !proposta.dado) throw new Error(proposta.ok ? "Proposta ausente" : proposta.erro);
+
+  entrar(gestorId);
+  await expect(decidirRegularizacaoFonteGravacao({
+    propostaId: proposta.dado.id,
+    aprovar: true,
+    motivo: "Gestão conferiu de forma independente a revisão particular fixada.",
+  })).resolves.toMatchObject({ ok: true, dado: { aprovada: true } });
+  expect(await prisma.fonteRevisaoGravacao.findMany({
+    where: { publicacaoAulaId: particular.publicacaoId },
+    orderBy: { versao: "asc" },
+  })).toMatchObject([{ versao: 1 }, { versao: 2, propostaId: proposta.dado.id }]);
+
+  await prisma.usuario.update({ where: { id: professorId }, data: { papeis: [Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO] } });
+  entrar(professorId);
+  const propria = await proporRegularizacaoFonteGravacao(entrada(particular.publicacaoId, "q23-particular-propria"));
+  expect(propria, propria.ok ? undefined : propria.erro).toMatchObject({ ok: true });
+  if (!propria.ok || !propria.dado) throw new Error(propria.ok ? "Proposta ausente" : propria.erro);
+
+  await expect(decidirRegularizacaoFonteGravacao({
+    propostaId: propria.dado.id,
+    aprovar: true,
+    motivo: "O preparador com dupla função não pode aprovar esta proposta.",
+  })).resolves.toMatchObject({ ok: false });
+  expect(await prisma.decisaoRegularizacaoFonteGravacao.count({ where: { propostaId: propria.dado.id } })).toBe(0);
+  expect(await prisma.fonteRevisaoGravacao.count({ where: { publicacaoAulaId: particular.publicacaoId } })).toBe(2);
 });
 
 it("recusa ex-professor, outra aula e material; revogação durante I/O não persiste proposta", async () => {
