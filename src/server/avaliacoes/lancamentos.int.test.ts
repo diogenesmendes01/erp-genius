@@ -2,6 +2,23 @@ import { beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+// Ações concorrentes usam sessão local determinística, mas mantêm os papéis
+// atuais do banco e todas as verificações transacionais reais do domínio.
+vi.mock("@/server/_shared", async importOriginal => {
+  const original = await importOriginal<typeof import("@/server/_shared")>();
+  const sessao = async () => {
+    const id = (await authMock())?.user?.id;
+    const usuario = id ? await prisma.usuario.findUnique({ where: { id } }) : null;
+    if (!usuario?.ativo) throw new original.ErroAutenticacao();
+    return { id: usuario.id, nome: usuario.nome, papeis: usuario.papeis };
+  };
+  return { ...original, exigirSessao: sessao, exigirSessaoComPapel: async (...papeis: Parameters<typeof original.exigirSessaoComPapel>) => {
+    const usuario = await sessao();
+    original.exigirPapel(usuario, ...papeis);
+    return usuario;
+  } };
+});
+
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
