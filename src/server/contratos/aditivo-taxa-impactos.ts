@@ -90,7 +90,15 @@ export async function vincularImpactoTaxaAditivo(input: unknown) { return execut
 export async function completarImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = CompletarImpactosTaxaAditivoSchema.parse(input);
   return prisma.$transaction(async tx => {
-    await exigirFinanceiro(tx, autor.id, true); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { decisao: true, impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
+    await exigirFinanceiro(tx, autor.id, true);
+    const referencia = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({
+      where: { id: d.conjuntoId }, select: { matriculaId: true },
+    });
+    await bloquearMatriculas(tx, [referencia.matriculaId]);
+    const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({
+      where: { id: d.conjuntoId },
+      include: { decisao: true, impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } },
+    });
     if (conjunto.status === "COMPLETO") return { id: conjunto.id, completo: true };
     if (conjunto.status !== "APROVADO" || !conjunto.decisao?.aprovada || conjunto.decisao.fotografiaHash !== conjunto.fotografiaHash) throw new ErroRegra("O conjunto precisa estar aprovado com sua fotografia vigente antes da conclusão.");
     await revalidarFotografiaConjunto(tx, conjunto);
