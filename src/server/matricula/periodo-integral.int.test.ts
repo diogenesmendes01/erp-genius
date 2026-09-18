@@ -31,7 +31,7 @@ beforeEach(async () => {
 });
 
 it("reconcilia pagamento parcial e prepara decisão sem disponibilizar crédito antecipadamente", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-integral-parcial", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-integral-parcial", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const estado = await prisma.$transaction(tx => carregarPeriodoIntegralTx(tx, { matriculaId, cobrancaId, escolha: "CREDITO" }));
   expect(estado.snapshot.memoria).toMatchObject({ saldoADesobrigar: "200.00", creditoAConstituir: "100.00" });
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
@@ -58,7 +58,7 @@ it("reconcilia pagamento parcial e prepara decisão sem disponibilizar crédito 
 it("mudança financeira após proposta impede aprovação e permite rejeição", async () => {
   const p = await proporRegularizacaoPeriodoIntegral(dados());
   if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-altera-snapshot", valorRecebido: 50, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-altera-snapshot", valorRecebido: 50, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   authMock.mockResolvedValue({ user: { id: adminId } });
   expect(await decidir(p.dado.id)).toMatchObject({ ok: false });
   expect(await decidir(p.dado.id, false)).toMatchObject({ ok: true });
@@ -113,7 +113,7 @@ async function aprovarCredito() {
 }
 
 it("aplica crédito real uma vez, retira saldo não pago e conserva recebimentos", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-aplicacao-100", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-aplicacao-100", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
   const recebimentos = await prisma.recebimento.findMany();
   const { decisaoId } = await aprovarCredito();
@@ -132,7 +132,7 @@ it("aplica crédito real uma vez, retira saldo não pago e conserva recebimentos
   const contexto = await prisma.$transaction(tx => carregarContextoEncerramentoTx(tx, { alunoId: m.alunoId, matriculaId }));
   expect(contexto.cobrancas).toEqual([]);
   expect(contexto.regularizacoesPeriodoIntegral).toHaveLength(1);
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-apos-regularizacao", valorRecebido: 1, forma: "DINHEIRO" })).toMatchObject({ ok: false });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-apos-regularizacao", valorRecebido: 1, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: false });
   await expect(prisma.cobranca.update({ where: { id: cobrancaId }, data: { valorNegociado: 300, saldo: 200, status: "PENDENTE" } })).rejects.toThrow();
   await expect(prisma.aplicacaoPeriodoIntegral.deleteMany()).rejects.toThrow();
   const consulta = await consultarRegularizacoesPeriodoIntegral({ matriculaId, cobrancaId });
@@ -161,7 +161,7 @@ it("reprograma a mesma mensalidade preservando valores/vencimento e aceita pagam
   const contexto = await prisma.$transaction(tx => carregarContextoEncerramentoTx(tx, { alunoId: m.alunoId, matriculaId }));
   expect(contexto.cobrancas).toMatchObject([{ id: cobrancaId, coberturaInicio: "2026-10-01", coberturaFim: "2026-10-31" }]);
   authMock.mockResolvedValue({ user: { id: autorId } });
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-cobertura-reprogramada", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-cobertura-reprogramada", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
 });
 
 it("desobriga período não pago sem criar crédito de valor zero", async () => {
@@ -174,7 +174,7 @@ it("desobriga período não pago sem criar crédito de valor zero", async () => 
 
 it("não executa decisão cuja cobrança mudou após aprovação nem aceita executor docente", async () => {
   const { decisaoId } = await aprovarCredito();
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-apos-aprovar", valorRecebido: 50, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-apos-aprovar", valorRecebido: 50, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   expect(await aplicarRegularizacaoPeriodoIntegral({ decisaoId })).toMatchObject({ ok: false });
   authMock.mockResolvedValue({ user: { id: (await criarUsuario(["PROFESSOR"])).id } });
   expect(await aplicarRegularizacaoPeriodoIntegral({ decisaoId })).toMatchObject({ ok: false });
@@ -182,7 +182,7 @@ it("não executa decisão cuja cobrança mudou após aprovação nem aceita exec
 });
 
 it("devolve liquidação prévia com crédito sem restaurar o saldo da origem já utilizada", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "credito-origem-pagamento", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "credito-origem-pagamento", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const { decisaoId } = await aprovarCredito();
   expect(await aplicarRegularizacaoPeriodoIntegral({ decisaoId })).toMatchObject({ ok: true });
   const creditoAnterior = await prisma.creditoMatricula.findFirstOrThrow();
@@ -192,7 +192,7 @@ it("devolve liquidação prévia com crédito sem restaurar o saldo da origem j�
   authMock.mockResolvedValue({ user: { id: adminId } });
   expect(await decidirUtilizacaoCredito({ propostaId: uso.dado.id, aprovar: true, motivo: "Uso conferido por outra pessoa" })).toMatchObject({ ok: true });
   authMock.mockResolvedValue({ user: { id: autorId } });
-  expect(await registrarPagamento(destino.id, { chaveIdempotencia: "pagamento-destino-parcial", valorRecebido: 50, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(destino.id, { chaveIdempotencia: "pagamento-destino-parcial", valorRecebido: 50, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   await seedRelatoOfertaConfirmado(matriculaId, "2026-10-01", "2026-10-31");
   const p = await proporRegularizacaoPeriodoIntegral({ ...dados(), cobrancaId: destino.id, chaveIdempotencia: "regularizacao-periodo-destino" });
   if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
@@ -208,7 +208,7 @@ it("devolve liquidação prévia com crédito sem restaurar o saldo da origem j�
 });
 
 it("reverte toda a aplicação se a origem de crédito não for criada na mesma transação", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-transacao-atomica", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-transacao-atomica", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const { propostaId, decisaoId } = await aprovarCredito();
   const p = await prisma.propostaPeriodoIntegral.findUniqueOrThrow({ where: { id: propostaId } });
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
@@ -218,7 +218,7 @@ it("reverte toda a aplicação se a origem de crédito não for criada na mesma 
 });
 
 it("duas execuções simultâneas retornam a mesma aplicação e um único crédito", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-concorrencia", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-concorrencia", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const { decisaoId } = await aprovarCredito();
   // Evita corrida do import dinâmico NextAuth no runner; autorização transacional e locks continuam reais.
   const autenticacao = vi.spyOn(sessao, "exigirSessaoComPapel").mockResolvedValue({ id: autorId, nome: "Financeiro sintético", papeis: ["FINANCEIRO"] });
@@ -232,7 +232,7 @@ it("duas execuções simultâneas retornam a mesma aplicação e um único créd
 
 it("reconfere aprovação obsoleta em nova versão, exigindo outra aprovação e preservando a anterior", async () => {
   const primeira = await aprovarCredito();
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-entre-versoes", valorRecebido: 50, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-entre-versoes", valorRecebido: 50, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const segunda = await proporRegularizacaoPeriodoIntegral({ ...dados(), chaveIdempotencia: "reconferencia-versao-dois", motivo: "Reconferir pagamento registrado após aprovação" });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
   expect(segunda.dado).toMatchObject({ versao: 2, memoria: { creditoAConstituir: "50.00" } });
@@ -264,7 +264,7 @@ it("reconfere cobertura futura que ficou sobreposta sem modificar a cobrança de
 });
 
 it("regulariza novas indisponibilidades da mesma mensalidade reprogramada, até crédito final", async () => {
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-cobertura-sucessiva", valorRecebido: 100, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-cobertura-sucessiva", valorRecebido: 100, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const recebimentos = await prisma.recebimento.findMany();
   const decisoes: string[] = [];
   for (const [indice, coberturaFutura] of [{ inicio: "2026-10-01", fim: "2026-10-31" }, { inicio: "2026-11-01", fim: "2026-11-30" }].entries()) {
@@ -294,7 +294,7 @@ it("regulariza novas indisponibilidades da mesma mensalidade reprogramada, até 
 
 it("rejeitar reconferência não restaura autorização antiga e permite outra proposta conferida", async () => {
   const primeira = await aprovarCredito();
-  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-reconferencia-rejeitada", valorRecebido: 50, forma: "DINHEIRO" })).toMatchObject({ ok: true });
+  expect(await registrarPagamento(cobrancaId, { chaveIdempotencia: "pagamento-reconferencia-rejeitada", valorRecebido: 50, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" })).toMatchObject({ ok: true });
   const p = await proporRegularizacaoPeriodoIntegral({ ...dados(), chaveIdempotencia: "reconferencia-que-sera-rejeitada" });
   if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
   authMock.mockResolvedValue({ user: { id: adminId } });

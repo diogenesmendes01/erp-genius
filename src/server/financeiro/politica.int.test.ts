@@ -30,7 +30,7 @@ let sec: Awaited<ReturnType<typeof criarUsuario>>, fin: typeof sec, ven: typeof 
 let cat: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
 let matriculaId: string, cobrancaId: string, alunoId: string;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
-const pagamento = (chave: string, valor = 40) => ({ chaveIdempotencia: `pagamento-teste-${chave}`, valorRecebido: valor, forma: "DINHEIRO" as const });
+const pagamento = (chave: string, valor = 40) => ({ chaveIdempotencia: `pagamento-teste-${chave}`, valorRecebido: valor, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO" as const });
 async function contratoAceito() {
   const documento = await prisma.documento.create({ data: { matriculaId, categoria: "CONTRATO", nome: "Contrato aceito", url: "/api/files/contrato-financeiro.pdf" } });
   await prisma.matricula.update({ where: { id: matriculaId }, data: { contratoOk: true, contratoDocumentoId: documento.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: sec.id } });

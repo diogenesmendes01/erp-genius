@@ -99,7 +99,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     const aceite = await confirmarContratoMatricula(matriculaId, documento.id, [{ id: primeiraAntes.id, versao: primeiraAntes.versao }]);
     expect(aceite.ok, aceite.ok ? undefined : aceite.erro).toBe(true);
     const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId, tipo: "MATRICULA" } });
-    expect((await registrarPagamento(taxa.id, { chaveIdempotencia: "ativacao-integracao-taxa", valorRecebido: TAXA, forma: "DINHEIRO", dataPagamento: "2026-06-01" })).ok).toBe(true);
+    expect((await registrarPagamento(taxa.id, { chaveIdempotencia: "ativacao-integracao-taxa", valorRecebido: TAXA, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO", dataPagamento: "2026-06-01" })).ok).toBe(true);
     await prisma.cobranca.update({ where: { id: primeiraAntes.id }, data: { valorNegociado: MENSALIDADE + 1, versao: { increment: 1 } } });
     expect(await concluirMatricula(matriculaId)).toMatchObject({ ok: false, erro: expect.stringContaining("diferem do aceite") });
     expect(await prisma.cobranca.count({ where: { matriculaId, tipo: "MENSALIDADE" } })).toBe(1);
@@ -166,7 +166,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     authMock.mockResolvedValue({ user: { id: admin.id } });
     const r = await criarEAtivarMatricula({
       matricula: inputMatricula(undefined, catalogo),
-      ativacao: { valorRecebido: TAXA, forma: "DINHEIRO", dataPagamento: "2026-06-01" },
+      ativacao: { valorRecebido: TAXA, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO", dataPagamento: "2026-06-01" },
     });
 
     expect(r.ok).toBe(false);
@@ -179,7 +179,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     const r = await criarEAtivarMatricula({
       matricula: inputMatricula(undefined, catalogo),
-      ativacao: { valorRecebido: TAXA, forma: "DINHEIRO", dataPagamento: "2026-06-01" },
+      ativacao: { valorRecebido: TAXA, comentario: "Recebimento e destinação conferidos no cenário", forma: "DINHEIRO", dataPagamento: "2026-06-01" },
     });
     expect(r.ok).toBe(false);
   });
