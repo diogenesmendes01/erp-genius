@@ -747,6 +747,9 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo, consultarVencimentosAditivo } = await import("./vencimento-aditivo");
     const consultaVencimento = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id };
     expect(await consultarVencimentosAditivo(consultaVencimento)).toMatchObject({ ok: false });
+    const { resolverMensalVigenteTx } = await import("./aditivo-mensal-vigente");
+    const proximoPreco = { matriculaId: fixture.matriculaId, inicioCobertura: new Date("2099-11-01"), fimCobertura: new Date("2099-11-30"), valorOriginal: "300", valorNegociadoOriginal: "300", moedaOriginal: "CRC" };
+    await expect(prisma.$transaction(tx => resolverMensalVigenteTx(tx, proximoPreco))).rejects.toThrow("fluxo próprio");
     const financeiro = await criarUsuario(["FINANCEIRO"]);
     const pedido = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id, revisaoHash: confirmarFinal.revisaoHash, motivo: "Novo vencimento contratado", evidencia: "Aditivo assinado e cobrança original conferidos", chaveIdempotencia: "vencimento-primeiro" };
     expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false, podeRevisar: true });
@@ -829,6 +832,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: antes.status === "PAGO" ? "PAGO" : "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
+    expect(await prisma.$transaction(tx => resolverMensalVigenteTx(tx, proximoPreco))).toMatchObject({ valorNegociado: "300", versaoAditivo: { id: formalizada.dado.id } });
     expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
     expect(await prisma.destinacaoRecebimento.findMany({ orderBy: { id: "asc" } })).toEqual(destinacoesAntes);
     expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false, podeRevisar: true });
