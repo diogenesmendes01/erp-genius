@@ -1692,7 +1692,6 @@ model Matricula {
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
   conjuntosImpactosTaxaAditivo ConjuntoImpactosTaxaAditivo[]
-  impactosTaxaAditivo ImpactoTaxaAditivo[]
   origensCreditoAcertoTaxaAditivo OrigemCreditoAcertoTaxaAditivo[]
  beneficiosReposicaoParticular BeneficioReposicaoParticularMatricula[]
 
@@ -7478,7 +7477,7 @@ model ImpactoTaxaAditivo {
   justificativa String
   fotografia Json
   fotografiaHash String
-  propostaAcertoId String? @unique
+  propostaAcertoId String?
   propostaAcerto PropostaAcertoTaxaAditivo? @relation(fields: [propostaAcertoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   criadaEm DateTime @default(now())
 
@@ -7514,7 +7513,7 @@ model PropostaAcertoTaxaAditivo {
   decisao DecisaoAcertoTaxaAditivo?
   aplicacao AplicacaoAcertoTaxaAditivo?
   invalidacao InvalidacaoAcertoTaxaAditivo?
-  impactoConjunto ImpactoTaxaAditivo?
+  impactosConjuntos ImpactoTaxaAditivo[]
 
   @@unique([versaoCondicoesId, cobrancaId, fotografiaHash])
   @@unique([preparadorId, chaveIdempotencia])
