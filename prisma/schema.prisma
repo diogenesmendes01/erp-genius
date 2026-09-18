@@ -461,6 +461,9 @@ model Usuario {
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
+  conjuntosCoberturaAditivoPreparados ConjuntoImpactosCoberturaAditivo[] @relation("PreparadorConjuntoCoberturaAditivo")
+  decisoesConjuntosCoberturaAditivo DecisaoConjuntoImpactosCoberturaAditivo[] @relation("DecisorConjuntoCoberturaAditivo")
+  aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("ExecutorCoberturaAditivo")
   resolucoesPresencaHistoricaMigracao ResolucaoDivergenciaPresencaHistoricaMigracao[] @relation("ResolvedorPresencaHistoricaMigracao")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("PreparadorPresencaHistoricaMigracao")
   decisoesPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("DecisorPresencaHistoricaMigracao")
@@ -1673,6 +1676,7 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  conjuntosImpactosCoberturaAditivo ConjuntoImpactosCoberturaAditivo[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
   recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
@@ -1828,6 +1832,8 @@ enum FormaPagamento {
 
 model Cobranca {
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
+  impactosCoberturaAditivo ImpactoCoberturaAditivo[]
+  aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("CobrancaAplicacaoCoberturaAditivo")
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
   impactosTaxaAditivo ImpactoTaxaAditivo[]
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("CobrancaAplicacaoAcertoTaxaAditivo")
@@ -4209,6 +4215,7 @@ model ConclusaoAssinaturaContratual {
 }
 
 model PropostaAditivoContratual {
+  conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
     conferenciasParticipantes ConferenciaParticipantesAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
@@ -4370,6 +4377,7 @@ model ConclusaoAssinaturaAditivo {
 }
 
 model ConferenciaFinalAditivo {
+  conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   versaoCondicoes VersaoCondicoesAditivo?
   propostasAcertoTaxa PropostaAcertoTaxaAditivo[]
   conjuntosImpactosTaxa ConjuntoImpactosTaxaAditivo[]
@@ -4385,6 +4393,7 @@ model ConferenciaFinalAditivo {
 }
 
 model VersaoCondicoesAditivo {
+  conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
   id String @id @default(cuid())
   matriculaId String
@@ -7833,4 +7842,107 @@ model ReconciliacaoAcessoVencimento {
   concluidaEm DateTime?
   erro String?
   @@index([concluidaEm, ultimaTentativaEm])
+}
+
+enum EscolhaCicloCoberturaAditivo {
+  PRESERVAR_REFERENCIA
+  MUDAR_REFERENCIA
+}
+
+enum ClassificacaoImpactoCoberturaAditivo {
+  AFETADA
+  PRESERVADA
+}
+
+enum StatusConjuntoImpactosCoberturaAditivo {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  COMPLETO
+  OBSOLETO
+}
+
+/// Q168/Q169: o conjunto registra todas as mensalidades existentes avaliadas
+/// pela proposta assinada e a escolha contratual para os ciclos futuros.
+model ConjuntoImpactosCoberturaAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaFinalId String
+  conferenciaFinal ConferenciaFinalAditivo @relation(fields: [conferenciaFinalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorConjuntoCoberturaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  escolhaCiclo EscolhaCicloCoberturaAditivo
+  cicloFuturo Json
+  hashFormalizado String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  status StatusConjuntoImpactosCoberturaAditivo @default(PENDENTE)
+  criadaEm DateTime @default(now())
+  decisao DecisaoConjuntoImpactosCoberturaAditivo?
+  impactos ImpactoCoberturaAditivo[]
+
+  @@index([propostaAditivoId, fotografiaHash])
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoConjuntoImpactosCoberturaAditivo {
+  id String @id @default(cuid())
+  conjuntoId String @unique
+  conjunto ConjuntoImpactosCoberturaAditivo @relation(fields: [conjuntoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorConjuntoCoberturaAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model ImpactoCoberturaAditivo {
+  id String @id @default(cuid())
+  conjuntoId String
+  conjunto ConjuntoImpactosCoberturaAditivo @relation(fields: [conjuntoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  classificacao ClassificacaoImpactoCoberturaAditivo
+  coberturaInicioAnterior DateTime? @db.Date
+  coberturaFimAnterior DateTime? @db.Date
+  coberturaInicioNova DateTime? @db.Date
+  coberturaFimNova DateTime? @db.Date
+  justificativa String
+  versaoCobranca Int
+  aplicacao AplicacaoCoberturaAditivo?
+  @@unique([conjuntoId, cobrancaId])
+  @@index([cobrancaId])
+}
+
+model AplicacaoCoberturaAditivo {
+  id String @id @default(cuid())
+  impactoId String @unique
+  impacto ImpactoCoberturaAditivo @relation(fields: [impactoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation("CobrancaAplicacaoCoberturaAditivo", fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorCoberturaAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  versaoCobrancaAntes Int
+  versaoCobrancaDepois Int
+  coberturaInicioAnterior DateTime @db.Date
+  coberturaFimAnterior DateTime @db.Date
+  coberturaInicioNova DateTime @db.Date
+  coberturaFimNova DateTime @db.Date
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
+  @@index([cobrancaId])
 }
