@@ -626,7 +626,7 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     await prepararFinanceiro();
   });
 
-  async function prepararConjuntoCobertura(chaveIdempotencia: string, cobrancaId?: string, incluirPreservada = false) {
+  async function prepararConjuntoCobertura(chaveIdempotencia: string, cobrancaId?: string, incluirPreservada = false, nova = { inicio: "2026-11-01", fim: "2026-11-30" }) {
     const mensalidadeId = cobrancaId ?? (await prisma.cobranca.create({ data: {
       matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
       vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z"),
@@ -638,7 +638,7 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     authMock.mockResolvedValue({ user: { id: financeiro } });
     const preparado = await prepararImpactosCoberturaAditivo({
       ...alvo,
-      linhas: [{ cobrancaId: mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: "2026-11-01", coberturaFimNova: "2026-11-30", justificativa: "Cobertura mensal corrigida conforme o aditivo assinado." }, ...(preservadaId ? [{ cobrancaId: preservadaId, classificacao: "PRESERVADA" as const, justificativa: "Mensalidade posterior preservada na fotografia completa." }] : [])],
+      linhas: [{ cobrancaId: mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: nova.inicio, coberturaFimNova: nova.fim, justificativa: "Cobertura mensal corrigida conforme o aditivo assinado." }, ...(preservadaId ? [{ cobrancaId: preservadaId, classificacao: "PRESERVADA" as const, justificativa: "Mensalidade posterior preservada na fotografia completa." }] : [])],
       motivo: "Conjunto de cobertura preparado para conferência independente.",
       evidencia: "Conferência documental e financeira registrada.",
       chaveIdempotencia,
@@ -646,6 +646,26 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     if (!preparado.ok || !preparado.dado) throw new Error(JSON.stringify(preparado));
     return { conjuntoId: preparado.dado.id, mensalidadeId, preservadaId };
   }
+
+  it("recusa novo intervalo que sobrepõe mensalidade preservada", async () => {
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const mensalidade = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z") } });
+    const preservada = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-11-01T00:00:00Z"), coberturaInicio: new Date("2026-11-01T00:00:00Z"), coberturaFim: new Date("2026-11-30T00:00:00Z") } });
+    expect(await prepararImpactosCoberturaAditivo({ ...alvo, linhas: [{ cobrancaId: mensalidade.id, classificacao: "AFETADA", coberturaInicioNova: "2026-11-01", coberturaFimNova: "2026-11-30", justificativa: "Novo intervalo coincide com a mensalidade preservada." }, { cobrancaId: preservada.id, classificacao: "PRESERVADA", justificativa: "Mensalidade posterior permanece inalterada." }], motivo: "Conferência de sobreposição das mensalidades emitidas.", evidencia: "Planilha de cobertura contratual conferida.", chaveIdempotencia: "q169-sobreposicao-acao" })).toMatchObject({ ok: false, erro: expect.stringMatching(/sobrepos|intervalo/i) });
+  });
+
+  it("recusa efeito cuja cobertura não decorre dos limites formalizados", async () => {
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const mensalidade = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z") } });
+    expect(await prepararImpactosCoberturaAditivo({ ...alvo, linhas: [{ cobrancaId: mensalidade.id, classificacao: "AFETADA", coberturaInicioNova: "2027-02-01", coberturaFimNova: "2027-02-28", justificativa: "Efeito deliberadamente fora da cobertura formalizada." }], motivo: "Conferência de aderência ao aditivo assinado.", evidencia: "Documento assinado confrontado com a mensalidade.", chaveIdempotencia: "q168-limite-assinado-divergente" })).toMatchObject({ ok: false, erro: expect.stringMatching(/formaliz|assinado|cobertura/i) });
+  });
+
+  it("recusa lacuna nova entre afetada e preservada, mas não exige preencher lacuna histórica externa", async () => {
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const mensalidade = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z") } });
+    const preservada = await prisma.cobranca.create({ data: { matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC", vencimento: new Date("2026-11-01T00:00:00Z"), coberturaInicio: new Date("2026-11-01T00:00:00Z"), coberturaFim: new Date("2026-11-30T00:00:00Z") } });
+    expect(await prepararImpactosCoberturaAditivo({ ...alvo, linhas: [{ cobrancaId: mensalidade.id, classificacao: "AFETADA", coberturaInicioNova: "2026-10-01", coberturaFimNova: "2026-10-15", justificativa: "Redução que cria lacuna antes da mensalidade preservada." }, { cobrancaId: preservada.id, classificacao: "PRESERVADA", justificativa: "Mensalidade posterior permanece inalterada." }], motivo: "Conferência de continuidade das mensalidades emitidas.", evidencia: "Planilha de cobertura contratual conferida.", chaveIdempotencia: "q169-lacuna-nova-acao" })).toMatchObject({ ok: false, erro: expect.stringMatching(/lacuna|intervalo/i) });
+  });
 
   async function aprovarConjunto(conjuntoId: string, chaveIdempotencia: string) {
     authMock.mockResolvedValue({ user: { id: aprovador } });
