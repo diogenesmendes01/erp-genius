@@ -56,7 +56,15 @@ export async function destinatarioAtualDoAtendimento(a: {
       return !!autorizacao;
     }
     if (contato.alunoId !== a.alunoId || a.autorizacaoComunicacaoAcademicaId) return false;
-    return !!await db.matricula.findFirst({ where: { id: a.matriculaId, alunoId: a.alunoId }, select: { id: true } });
+    const matricula = await db.matricula.findFirst({
+      where: { id: a.matriculaId, alunoId: a.alunoId },
+      select: { aluno: { select: { telefoneE164: true, whatsapp: true } } },
+    });
+    // O histórico continua no contato original, mas uma nova mensagem direta só
+    // pode seguir para o telefone que o aluno mantém como WhatsApp atual.
+    return !!matricula?.aluno.whatsapp
+      && !!matricula.aluno.telefoneE164
+      && matricula.aluno.telefoneE164 === contato.telefoneE164;
   }
   if (a.alunoId) {
     const aluno = await db.aluno.findUnique({ where: { id: a.alunoId }, select: { telefoneE164: true,
