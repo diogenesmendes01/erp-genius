@@ -36,7 +36,7 @@ type Acordo = {
   confirmacoes: Confirmacao[];
 };
 
-type Resultado = { ok: boolean; erro?: string };
+type Resultado = { ok: boolean; erro?: string; podeRevisar?: boolean };
 const novaChave = () => crypto.randomUUID();
 
 function Mensagem({ mensagem }: { mensagem: string | null }) {
@@ -67,6 +67,11 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
       try {
         const resultado = await operacao.current!(Object.assign(formulario, { __dadosPermuta: dados }));
         if (!resultado.ok) {
+          if (resultado.podeRevisar) {
+            tentativa.current = null;
+            operacao.current = null;
+            chave.current = novaChave();
+          }
           setErro(resultado.erro ?? "Não foi possível concluir. Repita a mesma operação.");
           return;
         }

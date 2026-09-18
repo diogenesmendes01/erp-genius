@@ -1,7 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-
-
 const mocks = vi.hoisted(() => ({
 
   preparar: vi.fn(), confirmar: vi.fn(), propor: vi.fn(), decidir: vi.fn(),
@@ -28,8 +26,6 @@ vi.mock("@/server/financeiro/permuta-servico", () => ({
 
 import { PermutaOperacional } from "./PermutaOperacional";
 
-
-
 type No = { type?: unknown; props?: Record<string, unknown> };
 
 function todos(no: unknown, tipo: string): No[] {
@@ -49,8 +45,6 @@ function todos(no: unknown, tipo: string): No[] {
 }
 
 const acordos = [{ id: "acordo", matriculaId: "matricula", matricula: "M-1", moeda: "BRL", unidade: "HORA", quantidadePactuada: "2.00", valorPorUnidade: "50.00", valorTotalPactuado: "100.00", contrapartida: "Serviço pedagógico comprovado", formulaDescricao: "2 horas x 50", cobrancas: [{ id: "cobranca", codigo: "C-1", saldo: "100.00", valorMaximo: "100.00" }], confirmacoes: [{ id: "confirmacao", periodoInicio: "2026-09-01", periodoFim: "2026-09-30", quantidadeComprovada: "2.00", referenciaServico: "SET-1", evidencia: "registro de serviço", propostas: [{ id: "proposta", valor: "100.00", destinos: [{ cobrancaId: "cobranca", valor: "100.00" }], decisao: null }] }] }];
-
-
 
 function preparar() {
 
@@ -80,8 +74,6 @@ async function enviar(formulario: No) {
 
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
-
-
 it("mantém chave e entrada para retry quando o acordo falha", async () => {
 
   preparar();
@@ -101,8 +93,6 @@ it("mantém chave e entrada para retry quando o acordo falha", async () => {
   expect(mocks.preparar).toHaveBeenNthCalledWith(2, expect.objectContaining({ chaveIdempotencia: "chave-nova", matriculaId: "matricula" }));
 
 });
-
-
 
 it("submete confirmação, proposta e decisão com os destinos explícitos", async () => {
 
@@ -124,8 +114,6 @@ it("submete confirmação, proposta e decisão com os destinos explícitos", asy
 
 });
 
-
-
 it("restringe formulários de acordo com as capacidades", () => {
 
   preparar();
@@ -136,7 +124,6 @@ it("restringe formulários de acordo com as capacidades", () => {
 
 });
 
-
 it("distribui a proposta entre várias cobranças e omite as não selecionadas", async () => {
   preparar();
   dados({ "destino:cobranca": "40", "destino:segunda": "60" });
@@ -145,4 +132,19 @@ it("distribui a proposta entre várias cobranças e omite as não selecionadas",
   const formularios = todos(PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: false }), "form");
   await enviar(formularios[1]);
   expect(mocks.propor).toHaveBeenCalledWith(expect.objectContaining({ destinos: [{ cobrancaId: "cobranca", valor: "40" }, { cobrancaId: "segunda", valor: "60" }] }));
+});
+
+it("permite corrigir entrada rejeitada com confirmação de que não foi aplicada", async () => {
+  preparar();
+  let chave = 0;
+  vi.stubGlobal("crypto", { randomUUID: () => `chave-${++chave}` });
+  dados({ matriculaId: "matricula-invalida" });
+  mocks.preparar.mockResolvedValueOnce({ ok: false, erro: "Dados inválidos", podeRevisar: true }).mockResolvedValueOnce({ ok: true });
+  const formulario = todos(PermutaOperacional({ acordos, podeFinanceiro: true, podePedagogico: false, podeAprovar: false }), "form")[0];
+  await enviar(formulario);
+  dados({ matriculaId: "matricula-corrigida" });
+  await enviar(formulario);
+  expect(mocks.preparar.mock.calls[0][0].matriculaId).toBe("matricula-invalida");
+  expect(mocks.preparar.mock.calls[1][0].matriculaId).toBe("matricula-corrigida");
+  expect(mocks.preparar.mock.calls[1][0].chaveIdempotencia).not.toBe(mocks.preparar.mock.calls[0][0].chaveIdempotencia);
 });

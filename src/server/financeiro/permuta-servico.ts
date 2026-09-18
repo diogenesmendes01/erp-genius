@@ -3,7 +3,21 @@ import { createHash } from "node:crypto";
 import { Papel, Prisma, UnidadePermutaServico } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
+import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAutenticacao, registrarEvento } from "@/server/_shared";
+// As mutações desta unidade concluem dentro da transação. Somente rejeições
+// conhecidas permitem revisar a entrada; falhas de transporte/banco são incertas.
+async function executarPermuta<T>(acao: () => Promise<T>) {
+  let podeRevisar = false;
+  const resultado = await executarAcao(async () => {
+    try { return await acao(); }
+    catch (erro) {
+      podeRevisar = erro instanceof z.ZodError || erro instanceof ErroRegra || erro instanceof ErroPermissao || erro instanceof ErroAutenticacao;
+      throw erro;
+    }
+  });
+  return resultado.ok ? resultado : { ...resultado, podeRevisar };
+}
+
 const texto = z.string().trim().min(5).max(2000), id = z.string().trim().min(1).max(100), valor = z.string().regex(/^\d{1,10}(?:\.\d{1,2})?$/);
 const hash = (x: unknown) => createHash("sha256").update(JSON.stringify(x)).digest("hex");
 async function financeiro(tx: Prisma.TransactionClient, usuarioId: string, aprovar = false) {
@@ -13,19 +27,19 @@ async function financeiro(tx: Prisma.TransactionClient, usuarioId: string, aprov
         throw new ErroPermissao();
     return u;
 }
-export async function prepararAcordoPermuta(input: unknown) { return executarAcao(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ matriculaId: id, vigenciaInicio: z.string().date(), vigenciaFim: z.string().date(), moeda: z.string().trim().min(3).max(10), unidade: z.nativeEnum(UnidadePermutaServico), quantidadePactuada: valor, valorPorUnidade: valor, contrapartida: texto, formulaDescricao: texto, cobrancas: z.array(z.object({ cobrancaId: id, valorMaximo: valor }).strict()).min(1), chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input); const total = new Prisma.Decimal(d.quantidadePactuada).mul(d.valorPorUnidade).toFixed(2), entradaHash = hash(d); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id); const anterior = await tx.acordoPermutaServico.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: u.id, chaveIdempotencia: d.chaveIdempotencia } } }); if (anterior) {
+export async function prepararAcordoPermuta(input: unknown) { return executarPermuta(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ matriculaId: id, vigenciaInicio: z.string().date(), vigenciaFim: z.string().date(), moeda: z.string().trim().min(3).max(10), unidade: z.nativeEnum(UnidadePermutaServico), quantidadePactuada: valor, valorPorUnidade: valor, contrapartida: texto, formulaDescricao: texto, cobrancas: z.array(z.object({ cobrancaId: id, valorMaximo: valor }).strict()).min(1), chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input); const total = new Prisma.Decimal(d.quantidadePactuada).mul(d.valorPorUnidade).toFixed(2), entradaHash = hash(d); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id); const anterior = await tx.acordoPermutaServico.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: u.id, chaveIdempotencia: d.chaveIdempotencia } } }); if (anterior) {
     if (anterior.entradaHash !== entradaHash)
         throw new ErroRegra("Chave já usada para outro acordo.");
     return { id: anterior.id, repetido: true };
 } const a = await tx.acordoPermutaServico.create({ data: { matriculaId: d.matriculaId, preparadorId: u.id, vigenciaInicio: new Date(d.vigenciaInicio), vigenciaFim: new Date(d.vigenciaFim), moeda: d.moeda, unidade: d.unidade, quantidadePactuada: d.quantidadePactuada, valorPorUnidade: d.valorPorUnidade, valorTotalPactuado: total, contrapartida: d.contrapartida, formulaDescricao: d.formulaDescricao, chaveIdempotencia: d.chaveIdempotencia, entradaHash, cobrancasElegiveis: { create: d.cobrancas.map(c => ({ cobrancaId: c.cobrancaId, valorMaximo: c.valorMaximo })) } } }); await registrarEvento(tx, { tipo: "AcordoPermutaPreparado", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: u.id, payload: { acordoId: a.id, moeda: d.moeda, valorTotalPactuado: total } }); return { id: a.id, repetido: false }; }); }); }
-export async function confirmarServicoPermuta(input: unknown) { return executarAcao(async () => { const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO); const d = z.object({ acordoId: id, periodoInicio: z.string().date(), periodoFim: z.string().date(), quantidadeComprovada: valor, referenciaServico: z.string().trim().min(3).max(200), evidencia: texto, chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input); const entradaHash = hash(d); return prisma.$transaction(async (tx) => { await tx.$queryRaw `SELECT id FROM "Usuario" WHERE id=${u.id} FOR SHARE`; const atual = await tx.usuario.findUnique({ where: { id: u.id }, select: { ativo: true, papeis: true } }); if (!atual?.ativo || !atual.papeis.some(p => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR))
+export async function confirmarServicoPermuta(input: unknown) { return executarPermuta(async () => { const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO); const d = z.object({ acordoId: id, periodoInicio: z.string().date(), periodoFim: z.string().date(), quantidadeComprovada: valor, referenciaServico: z.string().trim().min(3).max(200), evidencia: texto, chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input); const entradaHash = hash(d); return prisma.$transaction(async (tx) => { await tx.$queryRaw `SELECT id FROM "Usuario" WHERE id=${u.id} FOR SHARE`; const atual = await tx.usuario.findUnique({ where: { id: u.id }, select: { ativo: true, papeis: true } }); if (!atual?.ativo || !atual.papeis.some(p => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR))
     throw new ErroPermissao(); const anterior = await tx.confirmacaoServicoPermuta.findUnique({ where: { confirmadorId_chaveIdempotencia: { confirmadorId: u.id, chaveIdempotencia: d.chaveIdempotencia } } }); if (anterior) {
     if (anterior.entradaHash !== entradaHash)
         throw new ErroRegra("Chave já usada para outra confirmação.");
     return { id: anterior.id, repetido: true };
 } const a = await tx.acordoPermutaServico.findUniqueOrThrow({ where: { id: d.acordoId } }); const c = await tx.confirmacaoServicoPermuta.create({ data: { acordoId: a.id, confirmadorId: u.id, periodoInicio: new Date(d.periodoInicio), periodoFim: new Date(d.periodoFim), quantidadeComprovada: d.quantidadeComprovada, referenciaServico: d.referenciaServico, evidencia: d.evidencia, chaveIdempotencia: d.chaveIdempotencia, entradaHash } }); await registrarEvento(tx, { tipo: "ServicoPermutaConfirmado", agregadoTipo: "Matricula", agregadoId: a.matriculaId, autorId: u.id, payload: { acordoId: a.id, confirmacaoId: c.id, referenciaServico: d.referenciaServico } }); return { id: c.id, repetido: false }; }); }); }
 export async function proporCompensacaoPermuta(input: unknown) {
-    return executarAcao(async () => {
+    return executarPermuta(async () => {
         const u = await exigirSessaoComPapel(Papel.FINANCEIRO);
         const d = z.object({ confirmacaoId: id, destinos: z.array(z.object({ cobrancaId: id, valor }).strict()).min(1), chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input);
         const total = d.destinos.reduce((s, x) => s.plus(x.valor), new Prisma.Decimal(0));
@@ -59,7 +73,7 @@ export async function proporCompensacaoPermuta(input: unknown) {
         });
     });
 }
-export async function decidirCompensacaoPermuta(input: unknown) { return executarAcao(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacoes: true } }, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
+export async function decidirCompensacaoPermuta(input: unknown) { return executarPermuta(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacoes: true } }, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
     if (p.decisao.decisorId !== u.id || p.decisao.aprovada !== d.aprovar || p.decisao.motivo !== d.motivo)
         throw new ErroRegra("A proposta já possui decisão.");
     return { id: p.decisao.id, efetivada: p.decisao.aplicacoes.length > 0, repetida: true };
@@ -78,7 +92,7 @@ if (d.aprovar) {
 }
 const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: d.aprovar } }); return { id: decisao.id, efetivada: d.aprovar, repetida: false }; }); }); }
 export async function consultarPermutas() {
-    return executarAcao(async () => {
+    return executarPermuta(async () => {
         const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
         return prisma.$transaction(async (tx) => {
             await tx.$queryRaw `SELECT id FROM "Usuario" WHERE id=${sessao.id} FOR SHARE`;
@@ -125,7 +139,7 @@ export async function consultarPermutas() {
     });
 }
 export async function listarCobrancasParaPermuta() {
-    return executarAcao(async () => {
+    return executarPermuta(async () => {
         const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
         return prisma.$transaction(async (tx) => {
             await financeiro(tx, usuario.id);
