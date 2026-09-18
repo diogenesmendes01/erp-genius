@@ -44,21 +44,82 @@ CREATE TABLE "ImpactoTaxaAditivo" (
   CONSTRAINT "ImpactoTaxaAditivo_propostaAcertoId_fkey" FOREIGN KEY ("propostaAcertoId") REFERENCES "PropostaAcertoTaxaAditivo"("id") ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 CREATE UNIQUE INDEX "ImpactoTaxaAditivo_conjuntoId_cobrancaId_key" ON "ImpactoTaxaAditivo"("conjuntoId", "cobrancaId");
-CREATE UNIQUE INDEX "ImpactoTaxaAditivo_propostaAcertoId_key" ON "ImpactoTaxaAditivo"("propostaAcertoId");
+CREATE INDEX "ImpactoTaxaAditivo_propostaAcertoId_idx" ON "ImpactoTaxaAditivo"("propostaAcertoId");
 CREATE INDEX "ImpactoTaxaAditivo_cobrancaId_idx" ON "ImpactoTaxaAditivo"("cobrancaId");
 
-CREATE FUNCTION proteger_conjunto_impactos_taxa_232() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION conferir_linhas_conjunto_impactos_taxa_232(conjunto_id TEXT) RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE conjunto "ConjuntoImpactosTaxaAditivo"%ROWTYPE; total_taxas integer; total_linhas integer;
 BEGIN
-  IF TG_OP <> 'INSERT' THEN RAISE EXCEPTION 'Impactos de taxa preservados são imutáveis'; END IF;
-  SELECT * INTO conjunto FROM "ConjuntoImpactosTaxaAditivo" WHERE id=NEW."conjuntoId" FOR SHARE;
-  IF conjunto.id IS NULL OR conjunto.status <> 'PENDENTE' THEN RAISE EXCEPTION 'O conjunto de impactos não aceita novas linhas'; END IF;
-  IF length(btrim(NEW.justificativa)) < 5 THEN RAISE EXCEPTION 'Toda cobrança preservada ou afetada exige justificativa'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM "Cobranca" c WHERE c.id=NEW."cobrancaId" AND c."matriculaId"=conjunto."matriculaId" AND c.tipo='MATRICULA') THEN RAISE EXCEPTION 'A linha não pertence a uma taxa existente da matrícula'; END IF;
+  SELECT * INTO conjunto FROM "ConjuntoImpactosTaxaAditivo" WHERE id=conjunto_id FOR SHARE;
+  IF conjunto.id IS NULL THEN RAISE EXCEPTION 'Conjunto de impactos indisponível'; END IF;
   SELECT count(*) INTO total_taxas FROM "Cobranca" WHERE "matriculaId"=conjunto."matriculaId" AND tipo='MATRICULA';
-  SELECT count(*) + 1 INTO total_linhas FROM "ImpactoTaxaAditivo" WHERE "conjuntoId"=conjunto.id;
-  IF total_linhas > total_taxas THEN RAISE EXCEPTION 'O conjunto contém taxa fora da fotografia'; END IF;
+  SELECT count(*) INTO total_linhas FROM "ImpactoTaxaAditivo" WHERE "conjuntoId"=conjunto.id;
+  IF total_linhas <> total_taxas THEN RAISE EXCEPTION 'O conjunto deve declarar todas as taxas existentes da matrícula'; END IF;
+END;
+$$;
+
+CREATE FUNCTION conferir_conjunto_impactos_taxa_232(conjunto_id TEXT) RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE conjunto "ConjuntoImpactosTaxaAditivo"%ROWTYPE; faltam_afetadas integer;
+BEGIN
+  PERFORM conferir_linhas_conjunto_impactos_taxa_232(conjunto_id);
+  SELECT * INTO conjunto FROM "ConjuntoImpactosTaxaAditivo" WHERE id=conjunto_id FOR SHARE;
+  SELECT count(*) INTO faltam_afetadas FROM "ImpactoTaxaAditivo" i
+    LEFT JOIN "PropostaAcertoTaxaAditivo" p ON p.id=i."propostaAcertoId"
+    WHERE i."conjuntoId"=conjunto.id AND i.decisao='AFETADA'
+      AND (p.id IS NULL OR p."matriculaId"<>conjunto."matriculaId" OR p."propostaAditivoId"<>conjunto."propostaAditivoId" OR p.status<>'APLICADA');
+  IF faltam_afetadas <> 0 THEN RAISE EXCEPTION 'Toda taxa afetada exige acerto aprovado e aplicado no conjunto'; END IF;
+END;
+$$;
+
+CREATE FUNCTION proteger_conjunto_impactos_taxa_232() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE total_taxas integer; u "Usuario"%ROWTYPE;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status <> 'PENDENTE' THEN RAISE EXCEPTION 'Conjunto de impactos inicia pendente'; END IF;
+    SELECT * INTO u FROM "Usuario" WHERE id=NEW."preparadorId" FOR SHARE;
+    IF u.id IS NULL OR NOT u.ativo OR NOT (u.papeis && ARRAY['FINANCEIRO','ADMINISTRADOR']::"Papel"[]) THEN RAISE EXCEPTION 'Conjunto exige Financeiro ativo'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM "VersaoCondicoesAditivo" v WHERE v.id=NEW."versaoCondicoesId" AND v."matriculaId"=NEW."matriculaId" AND v."propostaId"=NEW."propostaAditivoId" AND v."conferenciaFinalId"=NEW."conferenciaFinalId") THEN RAISE EXCEPTION 'Conjunto não corresponde à versão formalizada'; END IF;
+    IF jsonb_typeof(NEW.fotografia->'cobrancas') <> 'array' THEN RAISE EXCEPTION 'Fotografia do conjunto exige a lista fechada de taxas'; END IF;
+    IF EXISTS (SELECT 1 FROM "Cobranca" c WHERE c."matriculaId"=NEW."matriculaId" AND c.tipo='MATRICULA' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(NEW.fotografia->'cobrancas') f WHERE f->>'id'=c.id)) OR EXISTS (SELECT 1 FROM jsonb_array_elements(NEW.fotografia->'cobrancas') f WHERE NOT EXISTS (SELECT 1 FROM "Cobranca" c WHERE c.id=f->>'id' AND c."matriculaId"=NEW."matriculaId" AND c.tipo='MATRICULA')) THEN RAISE EXCEPTION 'Fotografia do conjunto diverge das taxas existentes'; END IF;
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'Conjunto de impactos é imutável'; END IF;
+  IF NEW."matriculaId" IS DISTINCT FROM OLD."matriculaId" OR NEW."propostaAditivoId" IS DISTINCT FROM OLD."propostaAditivoId" OR NEW."conferenciaFinalId" IS DISTINCT FROM OLD."conferenciaFinalId" OR NEW."versaoCondicoesId" IS DISTINCT FROM OLD."versaoCondicoesId" OR NEW."preparadorId" IS DISTINCT FROM OLD."preparadorId" OR NEW.fotografia IS DISTINCT FROM OLD.fotografia OR NEW."fotografiaHash" IS DISTINCT FROM OLD."fotografiaHash" OR NEW."chaveIdempotencia" IS DISTINCT FROM OLD."chaveIdempotencia" THEN RAISE EXCEPTION 'Fotografia do conjunto é imutável'; END IF;
+  IF OLD.status='PENDENTE' AND NEW.status='APROVADO' THEN PERFORM conferir_linhas_conjunto_impactos_taxa_232(NEW.id); RETURN NEW; END IF;
+  IF OLD.status='PENDENTE' AND NEW.status IN ('REJEITADO','OBSOLETO') THEN RETURN NEW; END IF;
+  IF OLD.status='APROVADO' AND NEW.status='COMPLETO' THEN PERFORM conferir_conjunto_impactos_taxa_232(NEW.id); RETURN NEW; END IF;
+  RAISE EXCEPTION 'Transição de estado do conjunto inválida';
+END;
+$$;
+
+CREATE FUNCTION proteger_decisao_conjunto_impactos_taxa_232() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE conjunto "ConjuntoImpactosTaxaAditivo"%ROWTYPE; u "Usuario"%ROWTYPE;
+BEGIN
+  IF TG_OP <> 'INSERT' THEN RAISE EXCEPTION 'Decisão de conjunto é imutável'; END IF;
+  SELECT * INTO conjunto FROM "ConjuntoImpactosTaxaAditivo" WHERE id=NEW."conjuntoId" FOR UPDATE;
+  SELECT * INTO u FROM "Usuario" WHERE id=NEW."decisorId" FOR SHARE;
+  IF conjunto.id IS NULL OR conjunto.status<>'PENDENTE' OR NEW."fotografiaHash"<>conjunto."fotografiaHash" THEN RAISE EXCEPTION 'Decisão não corresponde ao conjunto pendente'; END IF;
+  IF NEW."decisorId"=conjunto."preparadorId" THEN RAISE EXCEPTION 'Conjunto exige outro Financeiro para decisão'; END IF;
+  IF u.id IS NULL OR NOT u.ativo OR NOT (u.papeis && ARRAY['ADMINISTRADOR']::"Papel"[] OR (u.papeis && ARRAY['FINANCEIRO']::"Papel"[] AND u.permissoes @> ARRAY['financeiro.aprovar_acertos'])) THEN RAISE EXCEPTION 'Decisão exige Financeiro autorizado'; END IF;
   RETURN NEW;
 END;
 $$;
-CREATE TRIGGER "ImpactoTaxaAditivo_proteger" BEFORE INSERT OR UPDATE OR DELETE ON "ImpactoTaxaAditivo" FOR EACH ROW EXECUTE FUNCTION proteger_conjunto_impactos_taxa_232();
+
+CREATE FUNCTION proteger_linha_impacto_taxa_232() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE conjunto "ConjuntoImpactosTaxaAditivo"%ROWTYPE; p "PropostaAcertoTaxaAditivo"%ROWTYPE;
+BEGIN
+  IF TG_OP='DELETE' THEN RAISE EXCEPTION 'Impactos de taxa preservados são imutáveis'; END IF;
+  SELECT * INTO conjunto FROM "ConjuntoImpactosTaxaAditivo" WHERE id=COALESCE(NEW."conjuntoId",OLD."conjuntoId") FOR SHARE;
+  IF conjunto.id IS NULL OR conjunto.status<>'PENDENTE' THEN RAISE EXCEPTION 'O conjunto não aceita alterar suas linhas'; END IF;
+  IF TG_OP='UPDATE' THEN
+    IF NEW."conjuntoId" IS DISTINCT FROM OLD."conjuntoId" OR NEW."cobrancaId" IS DISTINCT FROM OLD."cobrancaId" OR NEW.decisao IS DISTINCT FROM OLD.decisao OR NEW.justificativa IS DISTINCT FROM OLD.justificativa OR NEW.fotografia IS DISTINCT FROM OLD.fotografia OR NEW."fotografiaHash" IS DISTINCT FROM OLD."fotografiaHash" OR OLD."propostaAcertoId" IS NOT NULL OR NEW."propostaAcertoId" IS NULL THEN RAISE EXCEPTION 'A linha preservada só pode vincular um acerto uma vez'; END IF;
+  END IF;
+  IF length(btrim(NEW.justificativa)) < 5 THEN RAISE EXCEPTION 'Toda taxa exige justificativa'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM "Cobranca" c WHERE c.id=NEW."cobrancaId" AND c."matriculaId"=conjunto."matriculaId" AND c.tipo='MATRICULA') OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(conjunto.fotografia->'cobrancas') f WHERE f->>'id'=NEW."cobrancaId") THEN RAISE EXCEPTION 'Linha fora da fotografia fechada das taxas'; END IF;
+  IF NEW."propostaAcertoId" IS NOT NULL THEN SELECT * INTO p FROM "PropostaAcertoTaxaAditivo" WHERE id=NEW."propostaAcertoId" FOR SHARE; IF p.id IS NULL OR p."matriculaId"<>conjunto."matriculaId" OR p."propostaAditivoId"<>conjunto."propostaAditivoId" OR p."versaoCondicoesId"<>conjunto."versaoCondicoesId" OR p."cobrancaId"<>NEW."cobrancaId" THEN RAISE EXCEPTION 'Acerto não pertence ao impacto de taxa'; END IF; END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER "ConjuntoImpactosTaxaAditivo_proteger" BEFORE INSERT OR UPDATE OR DELETE ON "ConjuntoImpactosTaxaAditivo" FOR EACH ROW EXECUTE FUNCTION proteger_conjunto_impactos_taxa_232();
+CREATE TRIGGER "DecisaoConjuntoImpactosTaxaAditivo_proteger" BEFORE INSERT OR UPDATE OR DELETE ON "DecisaoConjuntoImpactosTaxaAditivo" FOR EACH ROW EXECUTE FUNCTION proteger_decisao_conjunto_impactos_taxa_232();
+CREATE TRIGGER "ImpactoTaxaAditivo_proteger" BEFORE INSERT OR UPDATE OR DELETE ON "ImpactoTaxaAditivo" FOR EACH ROW EXECUTE FUNCTION proteger_linha_impacto_taxa_232();
