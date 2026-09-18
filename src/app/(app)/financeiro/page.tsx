@@ -69,6 +69,7 @@ export default async function FinanceiroPage() {
     <>
     {podeOperarCobranca && <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1">
       <Link className="underline" href="/financeiro/acertos-taxa">Conferir acertos de taxa por aditivo</Link>
+      <Link className="underline" href="/financeiro/acertos-cobertura">Conferir correções de cobertura por aditivo</Link>
       <Link className="underline" href="/financeiro/desistencias">Conferir desistências de matrículas</Link>
       <Link className="underline" href="/financeiro/recebimentos">Registrar recebimento com destinações</Link>
       <Link className="underline" href="/financeiro/migracao">Conferir conciliação da migração</Link>
