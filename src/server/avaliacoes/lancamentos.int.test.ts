@@ -1176,6 +1176,13 @@ it("realiza somente a recuperação autorizada após pausa contratual efetivamen
     autorizacaoEspecialId: autorizacao.dado.id,
   } })).rejects.toThrow(/Autorização especial/);
   expect(await realizar(escrita.id)).toMatchObject({ ok: false });
+  entrar(gestor);
+  const prazoVencido = new Date(Date.now() + 1000);
+  const vencida = await autorizarRealizacaoEspecialRecuperacao({ itemReservaId: escrita.id, prazoAte: prazoVencido.toISOString(), motivo: "Autorização de escrita que expira antes do lançamento", chaveIdempotencia: "escrita-pausa-vencida" });
+  if (!vencida.ok || !vencida.dado) throw new Error(JSON.stringify(vencida));
+  await aguardarInstanteRegistrado(prazoVencido);
+  entrar(professor);
+  expect(await realizar(escrita.id)).toMatchObject({ ok: false });
   const realizada = await realizar(fala.id);
   if (!realizada.ok || !realizada.dado) throw new Error(JSON.stringify(realizada));
   expect(await prisma.realizacaoRecuperacao.findUniqueOrThrow({ where: { id: realizada.dado.id } })).toMatchObject({ autorizacaoEspecialId: autorizacao.dado.id });
