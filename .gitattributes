@@ -48,3 +48,5 @@ prisma/migrations/20260917146000_correcao_guard_permuta/migration.sql -text
 prisma/migrations/20260917147000_fotografia_saldo_permuta/migration.sql -text
 
 prisma/migrations/20260917148000_aplicacao_compensacao_permuta/migration.sql -text
+
+prisma/migrations/20260917149000_identidade_contratual_aditivo/migration.sql -text

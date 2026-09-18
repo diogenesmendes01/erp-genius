@@ -1,3 +1,5 @@
+import { identidadeCadastralAditivo } from "./identidade-cadastral-aditivo";
+import { PrepararAditivoContratualSchema } from "./aditivo-schema";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
@@ -25,9 +27,15 @@ export async function carregarContextoParticipantesAditivoTx(tx: Prisma.Transact
   if (!base.base.pagador) throw new ErroRegra("Confira o pagador desta contratação.");
   const pagador = await tx.pagadorPreparacaoMatricula.findUniqueOrThrow({ where: { id: base.base.pagador.id } });
   const tipoPagador = z.enum(["ALUNO", "RESPONSAVEL", "EMPRESA"]).parse(pagador.tipo);
-  const identidadeAluno = { nome: [aluno.primeiroNome, aluno.sobrenome].filter(Boolean).join(" "), documento: aluno.documento, email: aluno.email };
-  const dadosPagador = z.object({ nome: z.string().nullable().optional(), documento: z.string().nullable().optional(), email: z.string().nullable().optional() }).parse(pagador.dados);
-  const identificacoes: Record<string, string | null | undefined> = { ALUNO_NOME: identidadeAluno.nome, ALUNO_DOCUMENTO: aluno.documento, ALUNO_EMAIL: aluno.email, PAGADOR_NOME: dadosPagador.nome, PAGADOR_DOCUMENTO: dadosPagador.documento, PAGADOR_EMAIL: dadosPagador.email };
-  for (const alteracao of base.alteracoes) if (alteracao.campo in identificacoes && alteracao.novo !== identificacoes[alteracao.campo]?.trim()) throw new ErroRegra("A identificação atual não corresponde à alteração aprovada. Confira o cadastro e a proposta antes de identificar os signatários.");
+  const identidadeAlunoBase = { nome: [aluno.primeiroNome, aluno.sobrenome].filter(Boolean).join(" "), documento: aluno.documento, email: aluno.email };
+  const dadosPagadorBase = z.object({ nome: z.string().nullable().optional(), documento: z.string().nullable().optional(), email: z.string().nullable().optional() }).parse(pagador.dados);
+  const anterior = await tx.versaoCondicoesAditivo.findFirst({
+    where: { matriculaId: proposta.matriculaId, proposta: { versao: { lt: proposta.versao } }, aplicacao: { isNot: null } },
+    orderBy: { versao: "desc" }, select: { condicoes: true, condicoesHash: true },
+  });
+  if (anterior && hashSubstituicao(anterior.condicoes) !== anterior.condicoesHash) throw new ErroRegra("Cadastro contratual anterior exige conferência de integridade.");
+  const alteracoes = PrepararAditivoContratualSchema.parse(snapshot.entrada).alteracoes;
+  const identidadeAluno = identidadeCadastralAditivo(identidadeAlunoBase, "ALUNO", anterior?.condicoes ?? null, alteracoes);
+  const dadosPagador = identidadeCadastralAditivo(dadosPagadorBase, "PAGADOR", anterior?.condicoes ?? null, alteracoes);
   return { proposta, snapshot, base, matricula, tipoPagador, identidadeAluno, dadosPagador, conteudo: ConteudoModeloSchema.parse(proposta.modelo.conteudo) };
 }

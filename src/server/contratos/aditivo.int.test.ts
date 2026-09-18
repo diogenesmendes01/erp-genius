@@ -580,10 +580,7 @@ it("rota de PDF exige sessão, papel e matrícula exata e não formaliza o aditi
 async function prepararConferencia(estruturado = false, mensalidade = false, taxa = false) {
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId }, include: { aluno: true } });
   const porHora = (await prisma.preparacaoComercialMatricula.findUniqueOrThrow({ where: { matriculaId: fixture.matriculaId } })).regime === "HORA_PARTICULAR";
-  if (estruturado && !porHora && !mensalidade) {
-    m.aluno = await prisma.aluno.update({ where: { id: m.alunoId }, data: { primeiroNome: "Nome atualizado no aditivo" } });
-  }
-  const identidade = { nome: [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" "), email: m.aluno.email!, documento: m.aluno.documento! };
+  const identidade = { nome: estruturado && !porHora && !mensalidade ? "Nome atualizado no aditivo" : [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" "), email: m.aluno.email!, documento: m.aluno.documento! };
   const proposta = await preparar({ ...(porHora ? { vigenciaInicio: "2026-09-01T00:00:00Z" } : {}), alteracoes: porHora
     ? [{ origem: "HORA_VALOR", novo: "200.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "200", moeda: "CRC" } }]
     : taxa
@@ -1085,4 +1082,14 @@ it("modelo de menor exige representantes, ordena cliente antes da escola e confe
   await prisma.documento.update({ where: { id: doc.id }, data: { arquivado: true } });
   await expect(prisma.conferenciaParticipantesAditivo.create({ data: { ...registro, id: "conferencia-documento-arquivado", versao: 2,
     snapshot: JSON.parse(JSON.stringify(registro.snapshot)), chaveIdempotencia: "conferencia-documento-arquivado" } })).rejects.toThrow("Evidência indisponível");
+});
+
+it("confere nome contratual proposto sem mudar o aluno compartilhado", async () => {
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId }, include: { aluno: true } });
+  const antes = m.aluno;
+  const { proposta, dados } = await prepararConferencia(true);
+  await decidir(proposta);
+  const c = await prisma.$transaction(tx => conferirParticipantesAditivoTx(tx, fixture.secretariaId, dados));
+  expect(await prisma.aluno.findUnique({ where: { id: m.alunoId } })).toEqual(antes);
+  expect(await prisma.conferenciaParticipantesAditivo.findUnique({ where: { id: c.id } })).toMatchObject({ snapshot: { participantes: [{ identidade: { nome: "Nome atualizado no aditivo" } }] } });
 });
