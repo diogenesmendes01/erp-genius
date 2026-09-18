@@ -1,3 +1,4 @@
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { beforeEach, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -146,7 +147,10 @@ it("recusa reposição individual já vinculada a encontro", async () => {
 it("expõe reserva de horas legítima como pendência da alteração", async () => {
   const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } });
   const documento = await prisma.documento.findFirstOrThrow({ where: { matriculaId: base.matriculaId, categoria: "CONTRATO", arquivado: false } });
-  const cobranca = await prisma.cobranca.create({ data: { matriculaId: base.matriculaId, tipo: "HORA_PARTICULAR", moeda: matricula.moeda, valorOriginal: 125, valorNegociado: 125, valorRecebido: 125, saldo: 0, status: "PAGO", vencimento: new Date("2099-09-01") } });
+  const cobranca = await prisma.cobranca.create({ data: { matriculaId: base.matriculaId, tipo: "HORA_PARTICULAR", moeda: matricula.moeda, valorOriginal: 125, valorNegociado: 125, saldo: 125, status: "PENDENTE", vencimento: new Date("2099-09-01") } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: base.adminId,
+    chaveIdempotencia: "q117-recebimento-horas", valorRecebido: 125, forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2026-09-01T12:00:00Z"), evidencia: "Pagamento confirmado da compra de horas Q117" }));
   const compra = await prisma.compraHorasAntecipadas.create({ data: { matriculaId: base.matriculaId, cobrancaId: cobranca.id, documentoId: documento.id, registradorId: base.secretariaId, minutosComprados: 60, valorOriginal: 125, descontoOriginal: 0, valorPagoAlocado: 125, moeda: matricula.moeda, evidenciaCondicoes: "Compra contratual conferida", snapshot: { fixture: "q117" }, chaveIdempotencia: "q117-compra-horas", entradaHash: "fixture" } });
   await prisma.usuario.update({ where: { id: base.secretariaId }, data: { papeis: ["SECRETARIA_ACADEMICA", "PROFESSOR", "FINANCEIRO"] } });
   expect(await reservarHorasCompradasParaEncontro({ compraId: compra.id, encontroId, motivo: "Reserva paga e conferida para o encontro", chaveIdempotencia: "q117-reserva-horas" })).toMatchObject({ ok: true });
