@@ -6,6 +6,7 @@ import {
   DataCivilContinuidadeSchema,
   PlanejarContinuidadeMensalSchema,
   ReferenciaRecomposicaoContinuidadeSchema,
+  ReferenciaAditivoCoberturaContinuidadeSchema,
   type EntradaPlanejarContinuidadeMensal,
 } from "./continuidade-mensal-schema";
 
@@ -52,26 +53,36 @@ export function planejarContinuidadeMensalAposRecomposicao(input: EntradaPlaneja
   });
 }
 
+/** Q169: o chamador confere a prova do conjunto aplicado e resolve a regra vigente. */
+export function planejarContinuidadeMensalAposAditivo(input: EntradaPlanejarContinuidadeMensal, referencia: unknown) {
+  const memoria = ReferenciaAditivoCoberturaContinuidadeSchema.parse(referencia);
+  return calcularContinuidadeMensal(input, { retomadaAplicada: false, memoriaAditivo: memoria });
+}
+
 function calcularContinuidadeMensal(input: EntradaPlanejarContinuidadeMensal, opcoes: {
   retomadaAplicada: boolean;
   regraRecomposicao?: Extract<RegraCobertura, { referencia: "CICLO_MATRICULA" }>;
   memoriaRecomposicao?: z.infer<typeof ReferenciaRecomposicaoContinuidadeSchema>;
+  memoriaAditivo?: z.infer<typeof ReferenciaAditivoCoberturaContinuidadeSchema>;
 }) {
   const dados = PlanejarContinuidadeMensalSchema.parse(input);
-  const regra = opcoes.regraRecomposicao ?? dados.regraCobertura;
+  const regra = opcoes.memoriaAditivo?.regraAplicada ?? opcoes.regraRecomposicao ?? dados.regraCobertura;
   const primeiraAposRecomposicao = Boolean(
     opcoes.regraRecomposicao && proximoDiaCivil(dados.ultimaCobertura.fim) === opcoes.regraRecomposicao.dataReferencia,
   );
   if (opcoes.regraRecomposicao && !primeiraAposRecomposicao && dados.ultimaCobertura.fim < opcoes.regraRecomposicao.dataReferencia) {
     throw new ErroRegra("A última cobertura é anterior à âncora aplicada da recomposição; confira a cadeia.");
   }
-  if (!primeiraAposRecomposicao) {
+  if (!primeiraAposRecomposicao && !opcoes.memoriaAditivo) {
     const coberturaAtual = periodoMensalNaData(regra, dados.ultimaCobertura.inicio);
     if ((!opcoes.retomadaAplicada && coberturaAtual.inicio !== dados.ultimaCobertura.inicio) || coberturaAtual.fim !== dados.ultimaCobertura.fim) {
       throw new ErroRegra("A última cobertura não corresponde a um período completo da referência contratual.");
     }
   }
   const proximaCobertura = periodoMensalNaData(regra, primeiraAposRecomposicao ? opcoes.regraRecomposicao!.dataReferencia : proximoDiaCivil(dados.ultimaCobertura.fim));
+  if (proximaCobertura.inicio !== proximoDiaCivil(dados.ultimaCobertura.fim)) {
+    throw new ErroRegra("A referência futura não começa após a cobertura anterior; resolva sobreposição ou intervalo no acerto.");
+  }
   if (proximaCobertura.inicio < dados.vigenteDesde) throw new ErroRegra("A continuidade contratada ainda não está vigente para a próxima cobertura.");
   const vencimentoCalculado = vencimentoDaCobertura(proximaCobertura.inicio, dados.referenciaVencimento, dados.diaVencimento);
   let memoriaVencimento: ReturnType<typeof ajustarVencimentoDiaUtil>;
@@ -83,6 +94,7 @@ function calcularContinuidadeMensal(input: EntradaPlanejarContinuidadeMensal, op
     cobertura: proximaCobertura, vencimento, emissaoEm, memoriaVencimento,
     valorOriginal: dados.valorOriginal, valorNegociado: dados.valorNegociado, moeda: dados.moeda,
     ...(opcoes.memoriaRecomposicao ? { memoriaCobertura: { regraContratada: dados.regraCobertura, regraAplicada: regra, origemRecomposicao: opcoes.memoriaRecomposicao } } : {}),
+    ...(opcoes.memoriaAditivo ? { memoriaCobertura: { regraContratada: dados.regraCobertura, regraAplicada: regra, origemAditivo: opcoes.memoriaAditivo } } : {}),
     status: dados.dataPlanejamento < emissaoEm ? ("AGUARDAR_EMISSAO" as const) : ("PRONTA_PARA_EMISSAO" as const),
   };
 }
