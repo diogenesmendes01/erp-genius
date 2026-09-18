@@ -163,8 +163,13 @@ it("correção tem prazo próprio mesmo após expirar a primeira entrega", async
     entregueEm: new Date(Date.now() - 60_000),
   } });
   const prazo = new Date(Date.now() + 3_600_000);
+  const professorCorretor = await criarUsuario(["PROFESSOR"]);
+  await prisma.designacaoAvaliadorReposicaoIndividual.create({ data: {
+    reposicaoId: "repo-correcao", professorId: professorCorretor.id, designadorId: gestorId,
+    inicio: new Date(Date.now() - 60_000), motivo: "Professor designado para avaliar a correção da entrega",
+  } });
   const correcao = await prisma.solicitacaoCorrecaoEntregaReposicao.create({ data: {
-    reposicaoId: "repo-correcao", entregaId: primeira.id, solicitadaPorId: gestorId,
+    reposicaoId: "repo-correcao", entregaId: primeira.id, solicitadaPorId: professorCorretor.id,
     comentario: "Revisar as respostas indicadas", prazoBaseMinutos: 60, prazoAte: prazo,
   } });
   const resposta = await registrarEntregaReposicaoPortalAluno({ reposicaoId: "repo-correcao", resumo: "Resumo revisado", atividade: "Atividade corrigida", evidencia: "Resposta à correção" });
