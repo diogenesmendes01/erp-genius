@@ -1,5 +1,7 @@
 # Q151 — autorização específica para recuperação
 
+Atualização 18/09: as projeções da operação e da fila docente distinguem realização nova de regularização histórica. Em matrícula pausada ou encerrada, somente a realização nova é oferecida com autorização específica vigente da própria tentativa; o formulário histórico permanece para registrar fato anterior com data, autoria e evidência conferidas pelo servidor. Não altera os guards autoritativos, limites ou estados contratuais. Teste de integração e SSR dirigidos aprovados; demais cenários Q151 continuam pendentes.
+
 Atualização 552: histórico de autorizações de realização paginado e restrito à tentativa; testes direcionados, lint e build aprovados. Q163 aguarda decisão sobre a passagem de pausa para encerramento. [Evidências e limites](../planejamento/validacao-incremento-552.md).
 
 Atualização 551: interface de disponibilização conectada à autorização especial, inclusive para plano aprovado antes da pausa. Quatro integrações, lint e build aprovados; validação interativa e demais casos Q151 pendentes. [Evidências e limites](../planejamento/validacao-incremento-551.md).

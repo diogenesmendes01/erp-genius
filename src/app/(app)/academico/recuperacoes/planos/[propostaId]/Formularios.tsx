@@ -44,9 +44,11 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
     <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
-export function Realizar({ itemReservaId, professoresHistoricos = [] }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[] }) {
+export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHistorica = false }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[]; somenteHistorica?: boolean }) {
   const [realizadaPorId, setRealizadaPorId] = useState("");
-  return <Formulario titulo="Registrar realização" executar={d => realizarRecuperacaoLocal({ itemReservaId, realizadaPorId: realizadaPorId || undefined, motivoRegularizacao: realizadaPorId ? campo(d, "motivoRegularizacao") : undefined, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), evidencia: campo(d, "evidencia") })}><Horario />
+  return <Formulario titulo={somenteHistorica ? "Registrar realização histórica" : "Registrar realização"} executar={d => realizarRecuperacaoLocal({ itemReservaId, realizadaPorId: realizadaPorId || undefined, motivoRegularizacao: realizadaPorId ? campo(d, "motivoRegularizacao") : undefined, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), evidencia: campo(d, "evidencia") })}>
+    {somenteHistorica && <p role="status">Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente.</p>}
+    <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} />
     {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<select value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2"><option value="">Eu realizei</option>{professoresHistoricos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>}
     {realizadaPorId && <label className="block">Motivo da regularização<textarea name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}
     <label className="block">Evidência da avaliação realizada<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>

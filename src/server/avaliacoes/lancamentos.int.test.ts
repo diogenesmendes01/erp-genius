@@ -1145,6 +1145,12 @@ it("realiza somente a recuperação autorizada após pausa contratual efetivamen
   entrar(professor);
   const realizar = async (itemReservaId: string) => registrarRealizacaoRecuperacao({ itemReservaId, realizadaEm: (await instanteAtualConferido()).toISOString(), evidencia: "Avaliação realizada na pendência autorizada" });
   expect(await realizar(fala.id)).toMatchObject({ ok: false });
+  const semAutorizacao = await consultarOperacaoRecuperacao({ propostaId: p.id });
+  if (!semAutorizacao.ok || !semAutorizacao.dado) throw new Error(JSON.stringify(semAutorizacao));
+  expect(semAutorizacao.dado.reservas.flatMap(r => r.itens)).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: fala.id, podeRegistrarHistorica: true, podeRegistrarAgora: false }),
+    expect.objectContaining({ id: escrita.id, podeRegistrarHistorica: true, podeRegistrarAgora: false }),
+  ]));
   await expect(prisma.realizacaoRecuperacao.create({ data: {
     itemReservaId: fala.id, professorId: professor, registradaPorId: professor,
     realizadaEm: await instanteAtualConferido(), evidencia: "Tentativa direta durante pausa sem autorização",
@@ -1157,12 +1163,12 @@ it("realiza somente a recuperação autorizada após pausa contratual efetivamen
   if (!operacao.ok || !operacao.dado) throw new Error(JSON.stringify(operacao));
   expect(operacao.dado).toMatchObject({ situacaoContratual: "PAUSADA", podeReservar: false });
   const itensVisiveis = operacao.dado.reservas.flatMap(r => r.itens);
-  expect(itensVisiveis.find(i => i.id === fala.id)?.autorizacaoEspecialAte).toEqual(expect.any(String));
-  expect(itensVisiveis.find(i => i.id === escrita.id)?.autorizacaoEspecialAte).toBeNull();
+  expect(itensVisiveis.find(i => i.id === fala.id)).toMatchObject({ autorizacaoEspecialAte: expect.any(String), podeRegistrarHistorica: true, podeRegistrarAgora: true });
+  expect(itensVisiveis.find(i => i.id === escrita.id)).toMatchObject({ autorizacaoEspecialAte: null, podeRegistrarHistorica: true, podeRegistrarAgora: false });
   await prisma.usuario.update({ where: { id: gestor }, data: { ativo: false } });
   const revogada = await consultarOperacaoRecuperacao({ propostaId: p.id });
   if (!revogada.ok || !revogada.dado) throw new Error(JSON.stringify(revogada));
-  expect(revogada.dado.reservas.flatMap(r => r.itens).find(i => i.id === fala.id)?.autorizacaoEspecialAte).toBeNull();
+  expect(revogada.dado.reservas.flatMap(r => r.itens).find(i => i.id === fala.id)).toMatchObject({ autorizacaoEspecialAte: null, podeRegistrarHistorica: true, podeRegistrarAgora: false });
   await prisma.usuario.update({ where: { id: gestor }, data: { ativo: true } });
   await expect(prisma.realizacaoRecuperacao.create({ data: {
     itemReservaId: escrita.id, professorId: professor, registradaPorId: professor,

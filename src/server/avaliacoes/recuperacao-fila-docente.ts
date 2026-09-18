@@ -9,6 +9,8 @@ import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 import { prazoRecuperacaoVigente } from "./recuperacao-prazo";
 import { nomeCompleto } from "@/lib/nome";
 import { agendasRecuperacaoAutorizadasTx } from "./recuperacao-agenda-consulta-tx";
+import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
+import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autorizacao-tx";
 
 export async function listarTentativasRecuperacaoDesignadas(input: { depoisId?: string; modo?: "pendentes" | "historico" } = {}) {
   return executarAcao(async () => {
@@ -56,8 +58,16 @@ export async function consultarTentativaRecuperacaoDesignada(itemReservaId: stri
         { id: { in: (await tx.vinculoDocente.findMany({ where: { turmaId: a.turmaId }, select: { professorId: true } })).map(v => v.professorId) } },
         { designacoesRecuperacaoRecebidas: { some: { itemReservaId: id } } },
       ] }, select: { id: true, nome: true }, orderBy: [{ nome: "asc" }, { id: "asc" }] });
+      const agora = new Date();
+      const situacaoContratual = (await carregarSituacoesNaAula(tx, [a.matriculaId], agora)).get(a.matriculaId) ?? "A_CONFERIR";
+      const autorizacao = (situacaoContratual === "PAUSADA" || situacaoContratual === "ENCERRADA")
+        ? await carregarAutorizacaoEspecialRecuperacaoTx(tx, item.id, agora)
+        : null;
+      const podeRegistrarHistorica = !item.realizacao && (!agenda || (agenda.status === "PREVISTO" && agenda.mesmoAvaliador && Date.parse(agenda.inicio) <= Date.now()));
       return { professoresHistoricos: historicos, itemReservaId: item.id, identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), atividade, agenda,
-        podeRegistrarRealizacao: !item.realizacao && (!agenda || (agenda.status === "PREVISTO" && agenda.mesmoAvaliador && Date.parse(agenda.inicio) <= Date.now())),
+        situacaoContratual, autorizacaoEspecialAte: autorizacao?.prazoAte.toISOString() ?? null,
+        podeRegistrarHistorica, podeRegistrarAgora: podeRegistrarHistorica && (situacaoContratual === "ATIVA" || !!autorizacao),
+        podeRegistrarRealizacao: podeRegistrarHistorica,
         reservadaEm: item.reserva.criadaEm.toISOString(), disponibilizadaEm: plano.disponibilizacao.disponibilizadaEm.toISOString(), prazoVigente: (await prazoRecuperacaoVigente(tx, plano.disponibilizacao.id)).toISOString(),
         realizacao: item.realizacao ? { id: item.realizacao.id, realizadaEm: item.realizacao.realizadaEm.toISOString(), professor: item.realizacao.professor.nome } : null };
     });
