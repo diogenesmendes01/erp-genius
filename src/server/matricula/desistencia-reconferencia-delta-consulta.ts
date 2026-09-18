@@ -38,6 +38,15 @@ function orientacaoPendencia(pendencia: string | null) {
   return "Regularize a pendência financeira indicada antes de preparar nova reconferência.";
 }
 
+function aprovacaoFinanceiraVigente(decisao: { aprovada: boolean; decisor: { ativo: boolean; papeis: Papel[]; permissoes: string[] } } | null) {
+  return !!decisao?.aprovada && decisao.decisor.ativo && (decisao.decisor.papeis.includes(Papel.ADMINISTRADOR)
+    || (decisao.decisor.papeis.includes(Papel.FINANCEIRO) && decisao.decisor.permissoes.includes("financeiro.aprovar_acertos")));
+}
+
+function aprovacaoAdministrativaVigente(decisao: { aprovada: boolean; decisor: { ativo: boolean; papeis: Papel[] } } | null) {
+  return !!decisao?.aprovada && decisao.decisor.ativo && decisao.decisor.papeis.includes(Papel.ADMINISTRADOR);
+}
+
 /** Consulta financeira da cadeia delta; não expõe fotografia nem chaves. */
 export async function consultarReconferenciaDeltaDesistencia(input: z.input<typeof entrada>) {
   return executarAcao(async () => {
@@ -53,8 +62,8 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
         where: { decisao: { proposta: { pedido: { matriculaId } } } }, orderBy: { criadaEm: "desc" }, take: 20,
         select: { id: true, criadaEm: true, memoria: true, reconferenciasDelta: { orderBy: [{ versao: "desc" }, { criadaEm: "desc" }], take: 20,
           select: { id: true, versao: true, estado: true, fotografiaHash: true, aplicacaoDeltaAnteriorId: true, preparadorId: true, criadaEm: true, preparador: { select: { nome: true } }, memoriaDelta: true,
-            decisaoFinanceira: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } } } },
-            decisaoAdministrativa: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } } } },
+            decisaoFinanceira: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true, ativo: true, papeis: true, permissoes: true } } } },
+            decisaoAdministrativa: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true, ativo: true, papeis: true, permissoes: true } } } },
             aplicacao: { select: { id: true, criadaEm: true } },
           },
         } },
@@ -67,23 +76,42 @@ export async function consultarReconferenciaDeltaDesistencia(input: z.input<type
           const propostaVigente = base.reconferenciasDelta[0] ?? null;
           const [fontesAtuais, ultimaAplicacao] = await Promise.all([
             carregarFontesReconferenciaDeltaTx(tx, matriculaId, base.memoria),
-            tx.aplicacaoReconferenciaDeltaDesistencia.findFirst({ where: { aplicacaoBaseId: base.id }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], select: { id: true } }),
+            tx.aplicacaoReconferenciaDeltaDesistencia.findFirst({ where: { aplicacaoBaseId: base.id }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], select: { id: true, fotografiaPosteriorHash: true } }),
           ]);
+          const fotografiaAtualHash = hashSubstituicao(fontesAtuais.fotografia);
+          const aplicacaoVigente = propostaVigente?.aplicacao ?? null;
+          const reconferenciaLegadaSemFotografiaPosterior = !!aplicacaoVigente
+            && ultimaAplicacao?.id === aplicacaoVigente.id
+            && !ultimaAplicacao.fotografiaPosteriorHash;
           const fontesMudaram = !!propostaVigente && (
-            hashSubstituicao(fontesAtuais.fotografia) !== propostaVigente.fotografiaHash
-            || (ultimaAplicacao?.id ?? null) !== propostaVigente.aplicacaoDeltaAnteriorId
+            reconferenciaLegadaSemFotografiaPosterior
+              ? fotografiaAtualHash !== propostaVigente.fotografiaHash
+              : aplicacaoVigente
+              ? ultimaAplicacao?.id !== aplicacaoVigente.id || fotografiaAtualHash !== ultimaAplicacao.fotografiaPosteriorHash
+              : fotografiaAtualHash !== propostaVigente.fotografiaHash || (ultimaAplicacao?.id ?? null) !== propostaVigente.aplicacaoDeltaAnteriorId
           );
           const rejeitada = propostaVigente?.decisaoFinanceira?.aprovada === false || propostaVigente?.decisaoAdministrativa?.aprovada === false;
-          const podePreparar = !propostaVigente || rejeitada || fontesMudaram;
+          const autorizacaoObsoleta = !!propostaVigente && (
+            !!propostaVigente.decisaoFinanceira?.aprovada && !aprovacaoFinanceiraVigente(propostaVigente.decisaoFinanceira)
+            || !!propostaVigente.decisaoAdministrativa?.aprovada && !aprovacaoAdministrativaVigente(propostaVigente.decisaoAdministrativa)
+          );
+          const podePreparar = !propostaVigente || rejeitada || fontesMudaram || autorizacaoObsoleta;
           const preparoBloqueadoPor = !podePreparar && propostaVigente
-            ? propostaVigente.estado === "PENDENCIA_FINANCEIRA"
+            ? reconferenciaLegadaSemFotografiaPosterior
+              ? "A aplicação legada não possui fotografia posterior. A fotografia atual ainda coincide com a anterior; não prepare nova reconferência."
+              : propostaVigente.estado === "APLICADA"
+                ? "A última reconferência já foi aplicada à fotografia atual. Aguarde um fato financeiro posterior."
+                : propostaVigente.estado === "PENDENCIA_FINANCEIRA"
               ? orientacaoPendencia(memoriaPublica(propostaVigente.memoriaDelta).pendencia)
               : "Há uma reconferência vigente aguardando decisão ou aplicação. Não prepare outra versão para a mesma fotografia."
             : null;
-          return { id: base.id, criadaEmISO: base.criadaEm.toISOString(), podePreparar, preparoBloqueadoPor, propostas: base.reconferenciasDelta.map(proposta => {
+          const orientacaoPreparacao = autorizacaoObsoleta
+            ? "Uma aprovação anterior perdeu a alçada atual. Prepare nova reconferência para novas decisões independentes; nenhuma aprovação antiga volta a valer automaticamente."
+            : null;
+          return { id: base.id, criadaEmISO: base.criadaEm.toISOString(), podePreparar, preparoBloqueadoPor, orientacaoPreparacao, propostas: base.reconferenciasDelta.map(proposta => {
           const memoria = memoriaPublica(proposta.memoriaDelta);
           const decisaoFinanceira = proposta.decisaoFinanceira, decisaoAdministrativa = proposta.decisaoAdministrativa;
-          const vigente = proposta.id === propostaVigente?.id && !fontesMudaram;
+          const vigente = proposta.id === propostaVigente?.id && !fontesMudaram && !autorizacaoObsoleta;
           return { id: proposta.id, versao: proposta.versao, estado: proposta.estado, fotografiaHash: proposta.fotografiaHash, criadaEmISO: proposta.criadaEm.toISOString(), preparadorNome: proposta.preparador.nome,
             tipo: memoria.tipo, pendencia: memoria.pendencia, itens: memoria.itens, creditosExternos: memoria.creditosExternos,
             podeDecidirFinanceiro: vigente && !decisaoFinanceira && podeAprovarFinanceiro && proposta.preparadorId !== sessao.id && proposta.estado === "PENDENTE",

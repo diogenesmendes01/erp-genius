@@ -68,6 +68,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         const delta = deltaResultado.dado;
         return <>{delta.impedimento && <p role="status">{delta.impedimento}</p>}{delta.aplicacoesBase.map(base => <article key={base.id} className="space-y-3 rounded border p-4">
           <h3 className="font-medium">Aplicação Q165 de {new Date(base.criadaEmISO).toLocaleString("pt-BR")}</h3>
+          {base.orientacaoPreparacao && <p role="status">{base.orientacaoPreparacao}</p>}
           {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
           {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}
           {!base.propostas.length && <p>Nenhuma reconferência registrada.</p>}

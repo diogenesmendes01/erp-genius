@@ -147,6 +147,23 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).not.toContain('data-delta="preparar"');
   });
 
+  it("orienta nova preparação quando a aprovação anterior perdeu alçada", async () => {
+    mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
+    mocks.delta.mockResolvedValue({ ok: true, dado: {
+      podePreparar: true, impedimento: null, aplicacoesBase: [{
+        id: "base", criadaEmISO: "2026-09-18T12:00:00Z", podePreparar: true, preparoBloqueadoPor: null,
+        orientacaoPreparacao: "Uma aprovação anterior perdeu a alçada atual. Prepare nova reconferência para novas decisões independentes; nenhuma aprovação antiga volta a valer automaticamente.",
+        propostas: [],
+      }],
+    } });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+
+    expect(html).toContain("perdeu a alçada atual");
+    expect(html).toContain("nenhuma aprovação antiga volta a valer automaticamente");
+    expect(html).toContain('data-delta="preparar"');
+  });
+
   it("mostra o erro sem montar valores ou formulários", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
     mocks.consultar.mockResolvedValue({ ok: false, erro: "Matrícula fora do escopo financeiro." });
