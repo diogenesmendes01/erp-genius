@@ -10,6 +10,7 @@ const h = vi.hoisted(() => {
     exigirSessaoComPapel: vi.fn(),
     bloquearMatriculas: vi.fn(),
     tx: {
+      $queryRaw: vi.fn(),
       usuario: { findUnique: vi.fn() },
       matricula: { findUnique: vi.fn() },
       pedidoDesistenciaPreparacao: { findFirst: vi.fn() },
@@ -107,6 +108,7 @@ function configurar({
     versao: 2,
   });
   h.tx.condicoesEncerramentoMatricula.count.mockResolvedValue(0);
+  h.tx.$queryRaw.mockResolvedValue([{ valida: true }]);
   h.tx.efetivacaoPedidoDesistenciaPreparacao.findUnique.mockResolvedValue(null);
   h.tx.aplicacaoAcertoDesistenciaContratual.findFirst.mockResolvedValue(aplicacao);
   h.tx.propostaAcertoDesistenciaContratual.findMany.mockResolvedValue(propostas);
@@ -127,6 +129,21 @@ describe("consultarAcertoDesistenciaContratual", () => {
     const dado = resultadoDado(await consultarAcertoDesistenciaContratual({ matriculaId }));
     expect(dado.impedimento).toBeNull();
     expect(dado.propostas[0].podeAplicar).toBe(true);
+  });
+
+  it("aceita a fonte pré-assinatura validada sem exigir documento aceito na consulta", async () => {
+    configurar();
+    const dado = resultadoDado(await consultarAcertoDesistenciaContratual({ matriculaId }));
+    expect(h.tx.condicoesEncerramentoMatricula.findFirst.mock.calls[0][0].where).not.toHaveProperty("documento");
+    expect(dado.podePreparar).toBe(true);
+  });
+
+  it("bloqueia preparo e aplicação quando a fonte contratual não é mais válida", async () => {
+    configurar();
+    h.tx.$queryRaw.mockResolvedValue([{ valida: false }]);
+    const dado = resultadoDado(await consultarAcertoDesistenciaContratual({ matriculaId }));
+    expect(dado.podePreparar).toBe(false);
+    expect(dado.propostas[0].podeAplicar).toBe(false);
   });
 
   it("não expõe decisões nem aplicação a uma alçada financeira revogada", async () => {
