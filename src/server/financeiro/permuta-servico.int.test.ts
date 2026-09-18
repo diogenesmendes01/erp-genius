@@ -24,6 +24,11 @@ vi.mock("@/server/_shared", async importOriginal => {
 });
 
 import { receberTx } from "./recebimentos";
+import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
+import { carregarFinanceiroDesistenciaTx } from "@/server/matricula/desistencia-financeiro-tx";
+import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "@/server/matricula/desistencia-preparacao";
+import { listarPendenciasAdministrativasDesistencia } from "@/server/matricula/desistencia-administrativa-fila";
+
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import {
@@ -52,6 +57,10 @@ beforeEach(async () => {
 afterEach(() => vi.restoreAllMocks());
 
 it("registra acordo, comprovação, proposta e decisão independente com compensação sem criar recebimento", async () => {
+  await prisma.matricula.update({ where: { id: matricula }, data: { status: "ATIVA" } });
+  await prisma.cobranca.update({ where: { id: cobranca }, data: { vencimento: new Date("2020-01-01T00:00:00Z") } });
+  await reavaliarAcessoAutomaticoDaCobranca(cobranca);
+  expect(await prisma.matricula.findUnique({ where: { id: matricula } })).toMatchObject({ acessoBloqueioAutomatico: true });
   entrar(financeiro);
   const acordoEntrada = { matriculaId: matricula, vigenciaInicio: "2099-09-01", vigenciaFim: "2099-12-31", moeda: "CRC", unidade: "HORA" as const, quantidadePactuada: "2.00", valorPorUnidade: "50.00", contrapartida: "Aulas de reforço devidamente comprovadas", formulaDescricao: "2 horas de reforço × CRC 50,00", cobrancas: [{ cobrancaId: cobranca, valorMaximo: "100.00" }], chaveIdempotencia: "p02-acordo-0001" };
   const acordo = await prepararAcordoPermuta(acordoEntrada);
@@ -92,6 +101,7 @@ it("registra acordo, comprovação, proposta e decisão independente com compens
 
   const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca } });
   expect(atual.saldo?.toFixed(2)).toBe("0.00");
+  expect(await prisma.matricula.findUnique({ where: { id: matricula } })).toMatchObject({ acessoBloqueioAutomatico: false, acessoBloqueado: false });
   expect(atual.valorCompensadoPermuta.toFixed(2)).toBe("100.00");
   expect(await prisma.aplicacaoCompensacaoPermuta.count()).toBe(1);
   expect(atual.valorLiquidadoCredito.toFixed(2)).toBe("0.00");
@@ -158,6 +168,17 @@ it("compensa serviço parcial e recebe apenas o saldo restante sem criar crédit
   expect(parcial.saldo?.toFixed(2)).toBe("50.00");
   expect(parcial.valorRecebido).toBeNull();
   expect(await prisma.recebimento.count()).toBe(0);
+  const resumo = await prisma.$transaction(tx => carregarFinanceiroDesistenciaTx(tx, matricula));
+  expect(resumo.resumo).toMatchObject({ haAvancoFormal: true, cobrancasComLiquidacao: 1, recebimentos: 0 });
+  const secretaria = await criarUsuario([Papel.SECRETARIA_ACADEMICA]);
+  entrar(secretaria.id);
+  const conferencia = await consultarDesistenciaPreparacao({ matriculaId: matricula });
+  if (!conferencia.ok || !conferencia.dado) throw new Error(JSON.stringify(conferencia));
+  const pedido = await registrarPedidoDesistenciaPreparacao({ matriculaId: matricula, estadoHash: conferencia.dado.estadoHash,
+    motivo: "Aluno solicita desistência após serviço compensado", evidenciaPedido: "Pedido documentado no atendimento da Secretaria", chaveIdempotencia: "desistencia-permuta-parcial" });
+  if (!pedido.ok || !pedido.dado) throw new Error(JSON.stringify(pedido));
+  const fila = await listarPendenciasAdministrativasDesistencia();
+  expect(fila).toMatchObject({ ok: true, dado: { itens: [{ pedido: { id: pedido.dado.id }, podeDecidir: false }] } });
   const receber = () => prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca, chaveIdempotencia: "caixa-apos-permuta", autorId: financeiro, valorRecebido: 50, forma: "TRANSFERENCIA", dataPagamento: new Date("2026-09-18T12:00:00Z"), evidencia: "Recebimento do saldo remanescente" }));
   await receber(); await receber();
   const final = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca } });
