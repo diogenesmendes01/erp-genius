@@ -31,8 +31,10 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
       const temRevisaoPosterior = condicoes && await tx.condicoesEncerramentoMatricula.count({ where: { matriculaId, versao: { gt: condicoes.versao } } }) > 0;
       const fontes = condicoes ? await tx.$queryRaw<Array<{ valida: boolean }>>`SELECT q165_fonte_condicoes_valida(${condicoes.id}, true) AS valida` : [];
       const fonteValida = fontes[0]?.valida === true;
-      const propostas = await tx.propostaAcertoDesistenciaContratual.findMany({ where: { pedido: { matriculaId } }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], take: 21,
-        select: { id: true, pedidoId: true, condicoesId: true, fotografiaHash: true, criadaEm: true, preparadorId: true, preparador: { select: { nome: true } }, memoria: true,
+      // A cadeia e sua versão pertencem ao pedido atual; versões de pedidos
+      // anteriores são evidência histórica, nunca candidatas a nova decisão.
+      const propostas = await tx.propostaAcertoDesistenciaContratual.findMany({ where: { pedidoId: pedido?.id ?? "__pedido_indisponivel__" }, orderBy: { versao: "desc" }, take: 21,
+        select: { id: true, pedidoId: true, condicoesId: true, anteriorId: true, versao: true, motivoReapresentacao: true, fotografiaHash: true, criadaEm: true, preparadorId: true, preparador: { select: { nome: true } }, memoria: true,
           decisao: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } }, aplicacao: { select: {
             id: true, criadaEm: true, origensCredito: { select: { credito: { select: { id: true } } } },
           } } } } },
@@ -40,14 +42,18 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
       const podeAprovar = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       const temAplicacao = !!aplicacaoExistente;
       const impedimento = efetivacao ? "A desistência já foi efetivada." : temAplicacao ? "O acerto já foi aplicado; aguarde a efetivação da Secretaria." : !pedido ? "A Secretaria deve registrar o pedido de desistência." : !condicoes || temRevisaoPosterior || !fonteValida ? "É necessária uma versão contratual estruturada, aprovada e vigente." : null;
-      return { matricula, pedido, condicoes, impedimento, podePreparar: !impedimento, temMaisPropostas: propostas.length > 20,
+      const ultima = propostas[0];
+      const podeReapresentar = !!ultima?.decisao && !ultima.decisao.aplicacao;
+      return { matricula, pedido, condicoes, impedimento, podePreparar: !impedimento && (!ultima || podeReapresentar),
+        reapresentacao: !impedimento && podeReapresentar ? { id: ultima.id, versao: ultima.versao, aprovada: ultima.decisao!.aprovada } : null,
+        temMaisPropostas: propostas.length > 20,
         propostas: propostas.slice(0, 20).map(p => {
           const itens = (p.memoria as { itens?: Array<{ cobrancaId: string; moeda: string; devido: string; saldoDevido: string; creditoApurado: string; creditoJaApurado: string }> }).itens ?? [];
           const decisao = p.decisao;
-          return { id: p.id, pedidoId: p.pedidoId, condicoesId: p.condicoesId, fotografiaHash: p.fotografiaHash, criadaEmISO: p.criadaEm.toISOString(), preparadorNome: p.preparador.nome,
-            itens, podeDecidir: !impedimento && !decisao && podeAprovar && p.preparadorId !== sessao.id && p.pedidoId === pedido?.id && p.condicoesId === condicoes?.id,
+          return { id: p.id, pedidoId: p.pedidoId, condicoesId: p.condicoesId, anteriorId: p.anteriorId, versao: p.versao, motivoReapresentacao: p.motivoReapresentacao, fotografiaHash: p.fotografiaHash, criadaEmISO: p.criadaEm.toISOString(), preparadorNome: p.preparador.nome,
+            itens, podeDecidir: !impedimento && p.id === ultima?.id && !decisao && podeAprovar && p.preparadorId !== sessao.id && p.pedidoId === pedido?.id && p.condicoesId === condicoes?.id,
             podeAplicar: !impedimento && !!decisao?.aprovada && !decisao.aplicacao && podeAprovar && decisao.decisorId === sessao.id
-              && p.pedidoId === pedido?.id && p.condicoesId === condicoes?.id && pedido?.decisaoAdministrativa?.aprovada === true
+              && p.id === ultima?.id && p.pedidoId === pedido?.id && p.condicoesId === condicoes?.id && pedido?.decisaoAdministrativa?.aprovada === true
               && pedido.decisaoAdministrativa.estadoHash === pedido.estadoHash,
             decisao: !decisao ? null : { id: decisao.id, aprovada: decisao.aprovada, motivo: decisao.motivo, decisorNome: decisao.decisor.nome,
               aplicacao: decisao.aplicacao ? { id: decisao.aplicacao.id, criadaEmISO: decisao.aplicacao.criadaEm.toISOString(),

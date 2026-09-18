@@ -42,10 +42,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         const acerto = acertoResultado.dado;
         return <>
           {acerto.impedimento && <p role="status">{acerto.impedimento}</p>}
-          {acerto.podePreparar && acerto.pedido && acerto.condicoes && <PrepararAcertoContratualFormulario pedidoId={acerto.pedido.id} condicoesId={acerto.condicoes.id} />}
+          {acerto.podePreparar && acerto.pedido && acerto.condicoes && <PrepararAcertoContratualFormulario pedidoId={acerto.pedido.id} condicoesId={acerto.condicoes.id} reapresentacao={acerto.reapresentacao} />}
           {!acerto.propostas.length && <p>Nenhuma memória contratual preparada.</p>}
           {acerto.propostas.map(proposta => <article key={proposta.id} className="space-y-3 rounded border p-4">
-            <h3 className="font-medium">Memória de {proposta.preparadorNome} · {new Date(proposta.criadaEmISO).toLocaleString("pt-BR")}</h3>
+            <h3 className="font-medium">Memória versão {proposta.versao} de {proposta.preparadorNome} · {new Date(proposta.criadaEmISO).toLocaleString("pt-BR")}</h3>
+            {proposta.anteriorId && <p>Reapresentada da versão anterior: {proposta.motivoReapresentacao}</p>}
             <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Devido</th><th>Saldo</th><th>Crédito</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{item.moeda} {item.devido}</td><td>{item.moeda} {item.saldoDevido}</td><td>{item.moeda} {item.creditoApurado}</td></tr>)}</tbody></table>
             {!proposta.decisao && proposta.podeDecidir && <DecidirAcertoContratualFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} />}
             {proposta.decisao && <p>{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisorNome}: {proposta.decisao.motivo}</p>}

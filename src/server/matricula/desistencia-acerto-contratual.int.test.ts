@@ -119,9 +119,9 @@ async function registrarPedido() {
   return prisma.pedidoDesistenciaPreparacao.findUniqueOrThrow({ where: { id: pedido.id } });
 }
 
-async function preparar(pedidoId: string, chave = "preparo-q165") {
+async function preparar(pedidoId: string, chave = "preparo-q165", reapresentacao?: { anteriorId: string; motivoReapresentacao: string }) {
   entrar(financeiroPreparador.id);
-  return prepararAcertoDesistenciaContratual({ pedidoId, condicoesId, motivo: "Acerto conforme a cláusula contratual aceita.", chaveIdempotencia: chave });
+  return prepararAcertoDesistenciaContratual({ pedidoId, condicoesId, motivo: "Acerto conforme a cláusula contratual aceita.", ...reapresentacao, chaveIdempotencia: chave });
 }
 async function aprovar(propostaId: string, fotografiaHash: string, chave = "decisao-q165") {
   entrar(financeiroAprovador.id);
@@ -302,4 +302,56 @@ it("recusa aprovação depois de alteração da fotografia financeira", async ()
   await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroPreparador.id, chaveIdempotencia: "pagamento-foto-mutada-q165", valorRecebido: 10,
     forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-11T12:00:00.000Z"), evidencia: "Pagamento posterior à fotografia do acerto." }));
   expect((await aprovar(proposta.id, fotografiaHash, "decisao-foto-mutada-q165")).ok).toBe(false);
+});
+
+it("reapresenta uma proposta aprovada que ficou obsoleta, sem ressuscitar a aplicação anterior", async () => {
+  const pedido = await registrarPedido();
+  const primeira = dado(await preparar(pedido.id, "preparo-obsoleta-q165"));
+  const primeiraPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: primeira.id } });
+  const decisaoPrimeira = dado(await aprovar(primeira.id, primeiraPersistida.fotografiaHash, "decisao-obsoleta-q165"));
+
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  await prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: cobranca.id, autorId: financeiroPreparador.id, chaveIdempotencia: "pagamento-depois-aprovacao-q165", valorRecebido: 10,
+    forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-20T12:00:00.000Z"), evidencia: "Recebimento comprovado depois da aprovação financeira.",
+  }));
+
+  const segunda = dado(await preparar(pedido.id, "reapresentar-obsoleta-q165", {
+    anteriorId: primeira.id, motivoReapresentacao: "Recebimento comprovado alterou a fotografia após a aprovação inicial.",
+  }));
+  const segundaPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: segunda.id } });
+  expect(segundaPersistida).toMatchObject({ anteriorId: primeira.id, versao: primeiraPersistida.versao + 1 });
+  expect(segundaPersistida.fotografiaHash).not.toBe(primeiraPersistida.fotografiaHash);
+  expect(segundaPersistida.motivoReapresentacao).toContain("Recebimento comprovado");
+
+  dado(await aprovar(segunda.id, segundaPersistida.fotografiaHash, "decisao-reapresentada-q165"));
+  // O recebimento também tornou a decisão Q121 do pedido obsoleta. A nova
+  // memória é decidível, mas não pode reutilizar aquela decisão administrativa.
+  expect((await aprovarAdministracao(pedido, "proposta reapresentada")).ok).toBe(false);
+  expect(await aplicarAcertoDesistenciaContratual({ decisaoId: decisaoPrimeira.id, chaveIdempotencia: "aplicar-obsoleta-q165" })).toMatchObject({ ok: false });
+  expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({ where: { decisao: { proposta: { pedidoId: pedido.id } } } })).toBe(0);
+});
+
+it("encadeia reapresentação após rejeição com a mesma fotografia e bloqueia a antecessora", async () => {
+  const pedido = await registrarPedido();
+  const primeira = dado(await preparar(pedido.id, "preparo-rejeitado-q165"));
+  const primeiraPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: primeira.id } });
+  entrar(financeiroAprovador.id);
+  expect(await decidirAcertoDesistenciaContratual({
+    propostaId: primeira.id, fotografiaHash: primeiraPersistida.fotografiaHash, aprovada: false,
+    motivo: "A justificativa precisa detalhar a conferência financeira.", chaveIdempotencia: "rejeitar-primeira-q165",
+  })).toMatchObject({ ok: true, dado: { aprovada: false } });
+
+  const segunda = dado(await preparar(pedido.id, "reapresentar-rejeitado-q165", {
+    anteriorId: primeira.id, motivoReapresentacao: "Justificativa ampliada após a rejeição financeira independente.",
+  }));
+  const segundaPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: segunda.id } });
+  expect(segundaPersistida).toMatchObject({ anteriorId: primeira.id, versao: primeiraPersistida.versao + 1 });
+  expect(segundaPersistida.fotografiaHash).toBe(primeiraPersistida.fotografiaHash);
+
+  entrar(financeiroAprovador.id);
+  expect(await decidirAcertoDesistenciaContratual({
+    propostaId: primeira.id, fotografiaHash: primeiraPersistida.fotografiaHash, aprovada: true,
+    motivo: "Tentativa de alterar decisão imutável da versão anterior.", chaveIdempotencia: "decidir-antecessora-q165",
+  })).toMatchObject({ ok: false });
 });
