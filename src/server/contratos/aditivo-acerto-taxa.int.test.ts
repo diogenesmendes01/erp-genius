@@ -1,4 +1,6 @@
 import { aplicarImpactosCoberturaAditivo, decidirImpactosCoberturaAditivo, obsoletarImpactosCoberturaAditivo, prepararImpactosCoberturaAditivo } from "./aditivo-cobertura";
+import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
+import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
 import { resolverMensalVigenteTx } from "./aditivo-mensal-vigente";
 import { consultarEfeitosAditivo } from "./aditivo-efeitos-consulta";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -692,8 +694,14 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
   it("recusa obsolescência do conjunto COMPLETO com aplicação real", async () => {
     const { conjuntoId } = await prepararConjuntoCobertura("q168-aplicado");
     await aprovarConjunto(conjuntoId, "q168-aplicado-aprovar");
+    const antes = await prisma.$transaction(tx => carregarAplicacoesCamposTx(tx, alvo.matriculaId));
+    expect(projetarAplicacoesPorCampo(antes).COBERTURA_INICIO.aplicacaoId).toBeNull();
     authMock.mockResolvedValue({ user: { id: aprovador } });
     expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q168-aplicado-executar" })).toMatchObject({ ok: true, dado: { completo: true } });
+    const depois = await prisma.$transaction(tx => carregarAplicacoesCamposTx(tx, alvo.matriculaId));
+    const campos = projetarAplicacoesPorCampo(depois);
+    expect(campos.COBERTURA_INICIO.aplicacaoId).toBe(conjuntoId);
+    expect(campos.COBERTURA_FIM.aplicacaoId).toBe(conjuntoId);
     expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(1);
     expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId, motivo: "Conjunto aplicado não pode ser tornado obsoleto.", chaveIdempotencia: "q168-aplicado-obsoleto" })).toMatchObject({ ok: false });
     await expect(prisma.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "OBSOLETO" } })).rejects.toThrow("Transição");

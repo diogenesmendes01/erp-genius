@@ -15,6 +15,14 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
       proposta: { select: { snapshot: true, entradaHash: true, matriculaId: true } },
       propostasVencimento: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
       conjuntosImpactosTaxa: { where: { status: "COMPLETO", matriculaId, decisao: { aprovada: true } }, select: { id: true, propostaAditivoId: true }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }] },
+      conjuntosImpactosCobertura: {
+        where: { status: "COMPLETO", matriculaId },
+        select: {
+          id: true, propostaAditivoId: true, preparadorId: true, hashFormalizado: true, fotografiaHash: true, cicloFuturo: true,
+          decisao: { select: { aprovada: true, decisorId: true, fotografiaHash: true } },
+          impactos: { select: { classificacao: true, aplicacao: { select: { id: true, fotografiaHash: true } } } },
+        },
+      },
       propostaId: true,
       versao: true,
       condicoes: true,
@@ -28,6 +36,14 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
     if (v.proposta.matriculaId !== matriculaId || hashSubstituicao(v.proposta.snapshot) !== v.proposta.entradaHash) throw new ErroRegra("Proposta contratual divergente da cadeia.");
     const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(v.proposta.snapshot).entrada;
     if (entrada.matriculaId !== matriculaId) throw new ErroRegra("Proposta pertence a outro contrato.");
-    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
+    const coberturas = v.conjuntosImpactosCobertura;
+    if (coberturas.length > 1 || coberturas.some(c =>
+      c.propostaAditivoId !== v.propostaId || c.hashFormalizado !== v.proposta.entradaHash ||
+      !c.decisao?.aprovada || c.decisao.decisorId === c.preparadorId || c.decisao.fotografiaHash !== c.fotografiaHash ||
+      !entrada.cicloCoberturaFutura || hashSubstituicao(c.cicloFuturo) !== hashSubstituicao(entrada.cicloCoberturaFutura) ||
+      !c.impactos.some(i => i.classificacao === "AFETADA") ||
+      c.impactos.some(i => i.classificacao === "AFETADA" ? !i.aplicacao || i.aplicacao.fotografiaHash !== c.fotografiaHash : !!i.aplicacao)
+    )) throw new ErroRegra("Prova de aplicação da cobertura divergente da versão contratual.");
+    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), conjuntoCoberturaCompletoId: coberturas[0]?.id ?? null, conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
   });
 }
