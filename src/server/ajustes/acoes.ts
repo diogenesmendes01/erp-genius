@@ -44,7 +44,8 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: cobranca.matriculaId }, include: { produto: { select: { modalidadeId: true } }, comissoes: true } });
     const valor = dinheiro(alvo.valorPara);
     if (cobranca.valorLiquidadoCredito.gt(0) && valor.lt(dinheiro(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito))) throw new ErroRegra("O ajuste exige revisar as utilizações de crédito e o valor já liquidado.");
-    const saldo = saldoAtual(valor, cobranca.valorRecebido, cobranca.valorLiquidadoCredito);
+    const creditoTaxa = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: cobranca.id }, _sum: { valor: true } });
+    const saldo = saldoAtual(valor, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, creditoTaxa._sum.valor ?? 0, cobranca.valorCompensadoPermuta);
     const vencimento = alvo.novoVencimento ? new Date(alvo.novoVencimento) : cobranca.vencimento;
     await tx.cobranca.update({ where: { id: cobranca.id }, data: {
       valorNegociado: valor, saldo, versao: { increment: 1 }, vencimento,

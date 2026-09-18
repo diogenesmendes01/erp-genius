@@ -1837,12 +1837,14 @@ model Cobranca {
   @@unique([acertoMultaDecisaoId, matriculaId])
   ajusteAcerto AjusteCobrancaAcerto?
   valorLiquidadoCredito Decimal @default(0) @db.Decimal(12, 2)
+  valorCompensadoPermuta Decimal @default(0) @db.Decimal(12, 2)
   utilizacoesCreditoPropostas PropostaUsoCredito[]
   itemEmissaoEntrada ItemEmissaoEntrada?
   comprasHoras CompraHorasAntecipadas[]
   compensacoesCobertura CompensacaoCoberturaMatricula[]
   elegibilidadesPermuta AcordoPermutaCobranca[]
   destinosPropostaPermuta DestinoPropostaCompensacaoPermuta[]
+  aplicacoesPermuta AplicacaoCompensacaoPermuta[]
   @@unique([id, matriculaId], map: "cobranca_id_matricula_key")
   suspensaPorItemPausaId String?
   suspensaPorItemPausa ItemPropostaPausa? @relation("SuspensaoPausaMatricula", fields: [suspensaPorItemPausaId, matriculaId], references: [id, matriculaId], onDelete: Restrict, onUpdate: Restrict)
@@ -5006,6 +5008,7 @@ model PropostaCompensacaoPermuta {
 }
 
 model DestinoPropostaCompensacaoPermuta {
+  aplicacao AplicacaoCompensacaoPermuta?
   id String @id @default(cuid())
   propostaId String
   proposta PropostaCompensacaoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -5017,6 +5020,7 @@ model DestinoPropostaCompensacaoPermuta {
 }
 
 model DecisaoCompensacaoPermuta {
+  aplicacoes AplicacaoCompensacaoPermuta[]
   id String @id @default(cuid())
   propostaId String @unique
   proposta PropostaCompensacaoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -7657,4 +7661,18 @@ model ResolucaoDivergenciaPresencaHistoricaMigracao {
   resolvedorId String
   resolvedor Usuario @relation("ResolvedorPresencaHistoricaMigracao", fields: [resolvedorId], references: [id], onDelete: Restrict)
   criadoEm DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model AplicacaoCompensacaoPermuta {
+  id String @id @default(cuid())
+  destinoId String @unique
+  destino DestinoPropostaCompensacaoPermuta @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String
+  decisao DecisaoCompensacaoPermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  aplicadaEm DateTime @default(now())
+  @@index([cobrancaId])
+  @@index([decisaoId])
 }

@@ -59,10 +59,10 @@ export async function proporCompensacaoPermuta(input: unknown) {
         });
     });
 }
-export async function decidirCompensacaoPermuta(input: unknown) { return executarAcao(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: true, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
+export async function decidirCompensacaoPermuta(input: unknown) { return executarAcao(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacoes: true } }, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
     if (p.decisao.decisorId !== u.id || p.decisao.aprovada !== d.aprovar || p.decisao.motivo !== d.motivo)
         throw new ErroRegra("A proposta já possui decisão.");
-    return { id: p.decisao.id, efetivada: false, repetida: true };
+    return { id: p.decisao.id, efetivada: p.decisao.aplicacoes.length > 0, repetida: true };
 }
 if (d.aprovar) {
   const fotografia = z.object({ destinos: z.array(z.object({ cobrancaId: id, versao: z.number().int(), saldo: valor, valor })).min(1) }).safeParse(p.snapshot);
@@ -76,7 +76,7 @@ if (d.aprovar) {
   }
   if (await tx.pagamentoInformado.count({ where: { cobrancaId: { in: ids }, status: "A_CONFERIR" } })) throw new ErroRegra("Confira os comprovantes antes de aprovar a compensação.");
 }
-const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: false } }); return { id: decisao.id, efetivada: false, repetida: false }; }); }); }
+const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: d.aprovar } }); return { id: decisao.id, efetivada: d.aprovar, repetida: false }; }); }); }
 export async function consultarPermutas() {
     return executarAcao(async () => {
         const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
@@ -93,7 +93,7 @@ export async function consultarPermutas() {
                 include: {
                     matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true } } } },
                     cobrancasElegiveis: { where: podeFinanceiro ? {} : { id: { in: [] } }, include: { cobranca: { select: { codigo: true, saldo: true } } } },
-                    confirmacoes: { orderBy: { criadaEm: "desc" }, include: { propostas: { where: podeFinanceiro ? {} : { id: { in: [] } }, include: { decisao: true, destinos: true } } } },
+                    confirmacoes: { orderBy: { criadaEm: "desc" }, include: { propostas: { where: podeFinanceiro ? {} : { id: { in: [] } }, include: { decisao: { include: { aplicacoes: true } }, destinos: true } } } },
                 },
             });
             return acordos.map(a => ({
@@ -117,7 +117,7 @@ export async function consultarPermutas() {
                     propostas: podeFinanceiro ? c.propostas.map(p => ({
                         id: p.id, valor: p.valor.toFixed(2),
                         destinos: p.destinos.map(d => ({ cobrancaId: d.cobrancaId, valor: d.valor.toFixed(2) })),
-                        decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo } : null,
+                        decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, efetivada: p.decisao.aplicacoes.length > 0 } : null,
                     })) : [],
                 })),
             }));
