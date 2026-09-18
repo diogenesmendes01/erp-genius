@@ -812,6 +812,13 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(historico).toMatchObject({ ok: true, dado: { temProxima: false, propostas: [{ id: salvo.id, estado: "APLICADA", podeDecidir: false, podeSolicitarAplicacao: false }] } });
     expect(JSON.stringify(historico)).not.toMatch(/fotografia|chaveIdempotencia|preparadorId/);
     expect(await consultarVencimentosAditivo({ ...consultaVencimento, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
+    authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+    const efeitosAplicados = await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: alvo.propostaId });
+    expect(efeitosAplicados).toMatchObject({ ok: true, dado: { aplicado: false, primeiraMensalidade: {
+      aplicacao: { id: aplicada.ok ? aplicada.dado?.id : undefined, vencimentoNovo: salvo.vencimentoNovo },
+      pendencia: expect.stringContaining("acerto de vencimento aplicado"),
+    } } });
+    expect(await consultarEfeitosAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: false });
     return;
   }
   if (taxaSemConsumidor) {

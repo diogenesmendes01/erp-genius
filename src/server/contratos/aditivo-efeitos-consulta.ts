@@ -31,6 +31,11 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
       const alteracaoVencimento = entrada.alteracoes.find(a => a.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO");
       const primeiraMensalidade = alteracaoVencimento?.valorEstruturado
         ? await consultarAlvoPrimeiraMensalidadeTx(tx, d.matriculaId, alteracaoVencimento.valorEstruturado) : null;
+      const aplicacaoVencimento = primeiraMensalidade ? await tx.aplicacaoVencimentoAditivo.findFirst({
+        where: { decisao: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } },
+        orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }],
+        select: { id: true, aplicadaEm: true, vencimentoNovo: true },
+      }) : null;
       const cobrancasExistentes = await tx.cobranca.count({ where: { matriculaId: d.matriculaId } });
       const aplicacao = await tx.aplicacaoCondicoesAditivo.findFirst({
         where: { matriculaId: d.matriculaId, propostaId: d.propostaId },
@@ -41,7 +46,9 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         throw new ErroRegra("A aplicação preservada exige conferência de integridade.");
       }
       return { ...planejarEfeitosAditivo(entrada.alteracoes, { cobrancaEmitida: cobrancasExistentes > 0 }), vigenciaInicio: p.vigenciaInicio,
-        primeiraMensalidade, aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };
+        primeiraMensalidade: primeiraMensalidade ? { ...primeiraMensalidade, aplicacao: aplicacaoVencimento,
+          pendencia: aplicacaoVencimento ? "Este aditivo possui acerto de vencimento aplicado. Consulte o histórico financeiro para conferir a cobrança atual." : primeiraMensalidade.pendencia } : null,
+        aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };
     }, { isolationLevel: "RepeatableRead" });
   });
 }
