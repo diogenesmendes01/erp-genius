@@ -44,6 +44,13 @@ export const ReferenciaRecomposicaoContinuidadeSchema = z.object({
   aplicadaEm: z.string().datetime().optional(),
 }).strict();
 
+export const ReferenciaAditivoCoberturaContinuidadeSchema = z.object({
+  conjuntoId: z.string().trim().min(1),
+  versaoCondicoesId: z.string().trim().min(1),
+  decisaoId: z.string().trim().min(1),
+  regraAplicada: RegraCoberturaContinuidadeSchema,
+}).strict();
+
 /** Entrada de planejamento. Não cria nem autoriza a emissão de cobrança. */
 export const PlanejarContinuidadeMensalSchema = RegrasContinuidadeMensalSchema.extend({
   ultimaCobertura: PeriodoCoberturaSchema,
