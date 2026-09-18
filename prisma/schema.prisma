@@ -2567,8 +2567,12 @@ model CondicoesEncerramentoMatricula {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
-  documentoId String
-  documento Documento @relation(fields: [documentoId], references: [id], onDelete: Restrict)
+  documentoId String?
+  documento Documento? @relation(fields: [documentoId], references: [id], onDelete: Restrict)
+  artefatoContratualId String?
+  artefatoContratual ArtefatoContratual? @relation("ArtefatoCondicoesEncerramento", fields: [artefatoContratualId], references: [id], onDelete: Restrict)
+  processoAssinaturaId String?
+  processoAssinatura ProcessoAssinaturaContratual? @relation("ProcessoCondicoesEncerramento", fields: [processoAssinaturaId], references: [id], onDelete: Restrict)
   versao Int
   regras Json
   motivo String
@@ -2584,6 +2588,8 @@ model CondicoesEncerramentoMatricula {
 
   @@unique([matriculaId, versao])
   @@index([matriculaId, status])
+  @@index([artefatoContratualId])
+  @@index([processoAssinaturaId])
 }
 
 model CompraHorasAntecipadas {
@@ -2714,6 +2720,7 @@ model PedidoDesistenciaPreparacao {
   decisaoAdministrativa DecisaoAdministrativaDesistencia?
   propostasFinanceiras PropostaFinanceiraDesistencia[]
   propostasAcertoContratual PropostaAcertoDesistenciaContratual[]
+  intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[] @relation("PedidoCancelamentoAssinatura")
 
   @@unique([registradorId, chaveIdempotencia])
   @@unique([matriculaId, versao])
@@ -2733,6 +2740,7 @@ model DecisaoAdministrativaDesistencia {
   motivo String
   estadoHash String
   decididaEm DateTime @default(now())
+  intencoesCancelamentoAssinatura IntencaoCancelamentoAssinatura[] @relation("DecisaoAdministrativaCancelamentoAssinatura")
 
   @@index([decisorId, decididaEm])
 }
@@ -3538,6 +3546,7 @@ model ArtefatoContratual {
   substituicoesComoDestino PropostaSubstituicaoContratual[] @relation("ArtefatoDestinoSubstituicao")
   processosAssinatura ProcessoAssinaturaContratual[]
   conferenciasAssinatura ConferenciaAssinaturaContratual[]
+  condicoesEncerramento CondicoesEncerramentoMatricula[] @relation("ArtefatoCondicoesEncerramento")
   id String @id @default(cuid())
   previaId String
   previa PreviaDocumentoContratual @relation(fields: [previaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3616,6 +3625,7 @@ model ProcessoAssinaturaContratual {
   intencaoCancelamento IntencaoCancelamentoAssinatura?
   propostasSubstituicao PropostaSubstituicaoContratual[]
   conclusao ConclusaoAssinaturaContratual?
+  condicoesEncerramento CondicoesEncerramentoMatricula[] @relation("ProcessoCondicoesEncerramento")
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3685,16 +3695,22 @@ model IntencaoCancelamentoAssinatura {
   id String @id @default(cuid())
   processoId String @unique
   processo ProcessoAssinaturaContratual @relation(fields: [processoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  propostaId String @unique
-  proposta PropostaSubstituicaoContratual @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  decisaoId String @unique
-  decisao DecisaoSubstituicaoContratual @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaId String? @unique
+  proposta PropostaSubstituicaoContratual? @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String? @unique
+  decisao DecisaoSubstituicaoContratual? @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  pedidoDesistenciaId String?
+  pedidoDesistencia PedidoDesistenciaPreparacao? @relation("PedidoCancelamentoAssinatura", fields: [pedidoDesistenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoAdministrativaDesistenciaId String?
+  decisaoAdministrativaDesistencia DecisaoAdministrativaDesistencia? @relation("DecisaoAdministrativaCancelamentoAssinatura", fields: [decisaoAdministrativaDesistenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   executorId String
   executor Usuario @relation(fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   propostaHash String
   referenciaExterna String
   criadaEm DateTime @default(now())
   observacoes ObservacaoCancelamentoAssinatura[]
+  @@index([pedidoDesistenciaId])
+  @@index([decisaoAdministrativaDesistenciaId])
 }
 
 model ObservacaoCancelamentoAssinatura {

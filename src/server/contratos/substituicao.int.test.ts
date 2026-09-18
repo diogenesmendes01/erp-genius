@@ -225,7 +225,7 @@ it("banco impede cancelamento solto e aplicação sem criação do destino no co
   expect(await prisma.aplicacaoSubstituicaoContratual.count()).toBe(0);
   await expect(prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...d, artefatoId: base.artefatoFonteId }))).rejects.toThrow("não corresponde");
   const intencao = await prisma.intencaoCancelamentoAssinatura.findUniqueOrThrow({ where: { id: d.substituicao.intencaoId } });
-  const incerta = await prisma.$transaction(tx => registrarObservacaoCancelamentoTx(tx, observacao(intencao.id, intencao.propostaId, "INCERTO", "outro-retorno-incerto")));
+  const incerta = await prisma.$transaction(tx => registrarObservacaoCancelamentoTx(tx, observacao(intencao.id, intencao.propostaId!, "INCERTO", "outro-retorno-incerto")));
   await expect(prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...d, substituicao: { ...d.substituicao, observacaoId: incerta.id } }))).rejects.toThrow("ainda não foi confirmado");
 });
 

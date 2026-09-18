@@ -26,7 +26,7 @@ import { hashPrevia } from "@/server/contratos/previa-estado";
 import { carregarRevisaoAceite } from "@/server/contratos/aceite-estado";
 import { confirmarAceiteOriginalTx } from "@/server/contratos/aceite-tx";
 import { prepararSubstituicaoContratualTx, decidirSubstituicaoContratualTx } from "@/server/contratos/substituicao-tx";
-import { iniciarCancelamentoAssinaturaTx, registrarObservacaoCancelamentoTx } from "@/server/contratos/cancelamento-assinatura-tx";
+import { iniciarCancelamentoAssinaturaTx, registrarObservacaoCancelamentoTx, iniciarCancelamentoAssinaturaDesistenciaTx, registrarObservacaoCancelamentoDesistenciaTx } from "@/server/contratos/cancelamento-assinatura-tx";
 import { prepararProcessoEnvioTx, iniciarTentativaAssinaturaTx, registrarResultadoEnvioTx } from "@/server/contratos/envio-tx";
 import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "./condicoes-encerramento";
 import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "./desistencia-preparacao";
@@ -153,14 +153,14 @@ beforeEach(async (contexto) => {
   const contratoSubstituido = contexto.task.name.includes("assinatura cancelada comprovada");
   const assinaturaAberta = contexto.task.name.includes("solicitação de assinatura aberta");
   base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semSubstituicao: !contratoSubstituido && !assinaturaAberta, ambiente: "PRODUCAO" });
-  if (contratoSubstituido) await substituirEConfirmarContrato(); else if (assinaturaAberta) await substituirEConfirmarContrato(true); else await confirmarContratoReal();
+  if (contratoSubstituido) await substituirEConfirmarContrato(); else if (!assinaturaAberta) await confirmarContratoReal();
   [financeiroPreparador, financeiroAprovador] = await Promise.all([
     criarUsuario([Papel.FINANCEIRO], "Financeiro preparador Q165"), criarUsuario([Papel.FINANCEIRO], "Financeiro aprovador Q165"),
   ]);
   await prisma.usuario.update({ where: { id: financeiroAprovador.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
   entrar(base.secretariaId);
   const preparado = dado(await prepararCondicoesEncerramento({ matriculaId: base.matriculaId,
-    documentoId: (await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } })).contratoDocumentoId!, regras,
+    ...(assinaturaAberta ? { artefatoContratualId: base.artefatoFonteId, processoAssinaturaId: base.processoId } : { documentoId: (await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } })).contratoDocumentoId! }), regras,
     motivo: "Condições estruturadas para a desistência antes da ativação." }));
   entrar(base.adminId);
   expect((await decidirCondicoesEncerramento({ id: preparado.id, aprovar: true, motivo: "Condições estruturadas conferidas independentemente." })).ok).toBe(true);
@@ -207,12 +207,8 @@ it("bloqueia a efetivação Q165 sem decisão administrativa independente", asyn
     forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-12T12:00:00.000Z"), evidencia: "Pagamento identificado antes do acerto contratual.", permitirExcedente: true }));
   const pedido = await registrarPedido();
   const decisao = await prepararEDecidir(pedido, "sem-admin-q165");
-  const aplicacao = await aplicarDecisao(decisao.id, "sem-admin-q165");
-  entrar(base.secretariaId);
-  const efetivacao = await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
-    aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria tentou efetivar sem a decisão administrativa exigida." });
-  expect(efetivacao).toMatchObject({ ok: false });
-  expect(await prisma.efetivacaoPedidoDesistenciaPreparacao.count({ where: { pedidoId: pedido.id } })).toBe(0);
+  expect(await aplicarAcertoDesistenciaContratual({ decisaoId: decisao.id, chaveIdempotencia: "aplicacao-sem-admin-q165" })).toMatchObject({ ok: false });
+  expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({ where: { decisaoId: decisao.id } })).toBe(0);
 });
 
 it("não aceita a aprovação administrativa da destinação antes do plano Q165", async () => {
@@ -237,6 +233,12 @@ it("bloqueia a efetivação Q165 enquanto houver solicitação de assinatura abe
     aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria tentou efetivar com solicitação externa ainda aberta." });
   expect(efetivacao).toMatchObject({ ok: false });
   expect(await prisma.efetivacaoPedidoDesistenciaPreparacao.count({ where: { pedidoId: pedido.id } })).toBe(0);
+  entrar(base.secretariaId);
+  const intencao = await prisma.$transaction(tx => iniciarCancelamentoAssinaturaDesistenciaTx(tx, base.secretariaId, { pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash }));
+  await prisma.$transaction(tx => registrarObservacaoCancelamentoDesistenciaTx(tx, { intencaoId: intencao.id, pedidoId: pedido.id, processoId: base.processoId, chave: "cancelamento-desistencia-q165", resultado: "CONFIRMADO", referenciaExterna: base.referenciaExternaFonte, evidenciaHash: "d".repeat(64) }));
+  const efetivada = await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
+    aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria efetivou após o cancelamento externo comprovado." });
+  expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
 });
 
 it("preserva pagamento informado posterior e bloqueia a efetivação até nova conferência", async () => {

@@ -20,6 +20,9 @@ export async function aplicarSubstituicaoContratualTx(tx: Prisma.TransactionClie
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id=${executorId} FOR SHARE`;
   await conferirAutor(tx, executorId);
   const p = i.proposta;
+  if (!p || !i.propostaId || !i.decisaoId || i.pedidoDesistenciaId || i.decisaoAdministrativaDesistenciaId) {
+    throw new ErroRegra("Esta intenção de cancelamento pertence à desistência e não pode gerar substituto.");
+  }
   if (d.matriculaId !== p.matriculaId || d.artefatoId !== p.artefatoSubstitutoId || d.conferenciaId !== p.conferenciaSubstitutoId || d.fornecedor !== i.processo.fornecedor || d.ambiente !== i.processo.ambiente
     || d.propostaHash !== i.propostaHash || d.propostaHash !== p.entradaHash || hashSubstituicao(p.snapshot) !== p.entradaHash) throw new ErroRegra("O substituto não corresponde à aprovação e ao destino conferidos.");
   if (i.aplicacao) {

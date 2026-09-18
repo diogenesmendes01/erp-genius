@@ -74,7 +74,7 @@ export async function conferirEfetivacaoDesistenciaAcertoContratualTx(
     where: { id: pedidoId },
     select: {
       id: true, matriculaId: true, versao: true, estadoHash: true, registradorId: true,
-      decisaoAdministrativa: { select: { aprovada: true, estadoHash: true, decisorId: true } },
+      decisaoAdministrativa: { select: { id: true, aprovada: true, estadoHash: true, decisorId: true } },
     },
   });
   if (!pedido || pedido.estadoHash !== estadoHashInformado) {
@@ -93,7 +93,7 @@ export async function conferirEfetivacaoDesistenciaAcertoContratualTx(
         id: true, estado: true, referenciaExterna: true,
         conclusao: { select: { id: true } },
         intencaoCancelamento: { select: {
-          processoId: true, referenciaExterna: true, propostaHash: true,
+          processoId: true, referenciaExterna: true, propostaHash: true, pedidoDesistenciaId: true, decisaoAdministrativaDesistenciaId: true,
           proposta: { select: { id: true, processoFonteId: true, matriculaId: true, preparadaPorId: true, entradaHash: true } },
           decisao: { select: { propostaId: true, aprovada: true, decisorId: true, propostaHash: true } },
           aplicacao: { select: { observacaoId: true, propostaHash: true } },
@@ -112,14 +112,19 @@ export async function conferirEfetivacaoDesistenciaAcertoContratualTx(
     if (processo.conclusao) return false;
     const intencao = processo.intencaoCancelamento;
     const observacao = intencao?.aplicacao && intencao.observacoes.find((item) => item.id === intencao.aplicacao?.observacaoId);
-    const cancelamentoComprovado = processo.estado === "CANCELADO" && !!intencao &&
+    const cancelamentoSubstituicao = processo.estado === "CANCELADO" && !!intencao && !intencao.pedidoDesistenciaId &&
       intencao.processoId === processo.id && intencao.referenciaExterna === processo.referenciaExterna &&
-      intencao.proposta.processoFonteId === processo.id && intencao.proposta.matriculaId === pedido.matriculaId &&
-      intencao.propostaHash === intencao.proposta.entradaHash && intencao.decisao.propostaId === intencao.proposta.id &&
+      !!intencao.proposta && intencao.proposta.processoFonteId === processo.id && intencao.proposta.matriculaId === pedido.matriculaId &&
+      intencao.propostaHash === intencao.proposta.entradaHash && !!intencao.decisao && intencao.decisao.propostaId === intencao.proposta.id &&
       intencao.decisao.aprovada && intencao.decisao.decisorId !== intencao.proposta.preparadaPorId &&
-      intencao.decisao.propostaHash === intencao.proposta.entradaHash &&
-      intencao.aplicacao?.propostaHash === intencao.propostaHash && observacao?.resultado === "CONFIRMADO" &&
+      intencao.decisao.propostaHash === intencao.proposta.entradaHash && intencao.aplicacao?.propostaHash === intencao.propostaHash && observacao?.resultado === "CONFIRMADO" &&
       observacao.referenciaExterna === intencao.referenciaExterna;
+    const cancelamentoDesistencia = processo.estado === "CANCELADO" && !!intencao &&
+      intencao.processoId === processo.id && intencao.pedidoDesistenciaId === pedido.id &&
+      intencao.decisaoAdministrativaDesistenciaId === pedido.decisaoAdministrativa?.id && intencao.propostaHash === pedido.estadoHash &&
+      intencao.referenciaExterna === processo.referenciaExterna && observacao?.resultado === "CONFIRMADO" &&
+      observacao.referenciaExterna === intencao.referenciaExterna;
+    const cancelamentoComprovado = cancelamentoSubstituicao || cancelamentoDesistencia;
     return !cancelamentoComprovado;
   });
   if (assinaturasPendentes.length) {
