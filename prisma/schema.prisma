@@ -411,6 +411,10 @@ model AtendimentoWhatsApp {
   aluno Aluno? @relation(fields: [alunoId], references: [id], onDelete: Restrict)
   matriculaId String?
   matricula Matricula? @relation(fields: [matriculaId, alunoId], references: [id, alunoId], onDelete: Restrict, onUpdate: Restrict)
+  // Referência da pessoa destinatária para atendimento PEDAGOGICO. Não usar
+  // responsavelId: ele continua sendo o usuário operador do atendimento.
+  autorizacaoComunicacaoAcademicaId String?
+  autorizacaoComunicacaoAcademica AutorizacaoComunicacaoAcademica? @relation("AutorizacaoAtendimentoPedagogico", fields: [autorizacaoComunicacaoAcademicaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   turmaId String?
   turma Turma? @relation(fields: [turmaId], references: [id], onDelete: Restrict)
   criadoEm DateTime @default(now())
@@ -426,6 +430,7 @@ model AtendimentoWhatsApp {
   @@index([leadId])
   @@index([alunoId])
   @@index([matriculaId])
+  @@index([autorizacaoComunicacaoAcademicaId])
 }
 
 model ParticipanteAtendimentoWhatsApp {
@@ -2116,6 +2121,7 @@ model AutorizacaoComunicacaoAcademica {
  motivoRevogacao String?
   revogadaPor Usuario? @relation("RevogadorComunicacaoAcademica", fields:[revogadaPorId], references:[id])
  avisosAgenda AvisoAlteracaoAgenda[]
+ atendimentosPedagogicos AtendimentoWhatsApp[] @relation("AutorizacaoAtendimentoPedagogico")
  @@index([matriculaId, responsavelId, vigenteEm])
 }
 
