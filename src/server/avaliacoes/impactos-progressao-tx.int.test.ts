@@ -124,7 +124,14 @@ async function prepararEquivalenciaSemAplicar(alocacaoOrigemId: string) {
 }
 
 async function fecharC(alocacaoCId: string, extra?: { alunoId: string; matriculaId: string }) {
-  const inicioEncontro = new Date();
+  // A aula precisa pertencer inequivocamente ao vínculo C. Usar o instante
+  // persistido pela equivalência evita depender do desvio entre o relógio do
+  // Node e o PostgreSQL que gravou a alocação.
+  const alocacaoC = await prisma.alocacaoTurma.findUniqueOrThrow({
+    where: { id: alocacaoCId },
+    select: { criadoEm: true },
+  });
+  const inicioEncontro = new Date(alocacaoC.criadoEm.getTime() + 1);
   const encontro = await prisma.encontroAgenda.create({ data: {
     turmaId: turmaCId, professorId, preparadorId: gestorId,
     inicio: inicioEncontro, fim: new Date(inicioEncontro.getTime() + 1),
@@ -296,6 +303,11 @@ beforeEach(async () => {
 it("não executa aprovação antiga com revisão pendente mesmo após restaurar a presença", async () => {
   const b = await aplicarEquivalencia(alocacaoAId, turmaBId, "q23-pendente-a-b");
   const c = await aplicarEquivalencia(b, turmaCId, "q23-pendente-b-c");
+  const [alocacaoB, alocacaoC] = await Promise.all([
+    prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: b }, select: { encerradaEm: true } }),
+    prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: c }, select: { criadoEm: true } }),
+  ]);
+  expect(alocacaoB.encerradaEm).toEqual(alocacaoC.criadoEm);
   await prisma.turma.update({ where: { id: turmaCId }, data: { status: "EM_ANDAMENTO", dataInicio: inicio } });
   await fecharC(c);
   const solicitacaoId = await aprovarProgressao(c);
