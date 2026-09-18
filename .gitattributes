@@ -44,3 +44,5 @@ prisma/migrations/20260917144000_permuta_servico/migration.sql -text
 
 prisma/migrations/20260917143000_saldo_liquido_acerto_taxa/migration.sql -text
 prisma/migrations/20260917146000_correcao_guard_permuta/migration.sql -text
+
+prisma/migrations/20260917147000_fotografia_saldo_permuta/migration.sql -text
