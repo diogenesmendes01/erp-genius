@@ -208,9 +208,10 @@ describe("matrícula e comissão configurável", () => {
   });
   it("a conclusão exige contrato real e preserva primeira mensalidade já paga", async () => {
     const pagoEm = new Date("2026-08-15");
-    await prisma.cobranca.update({ where: { id: cobrancaId }, data: { status: "PAGO", valorRecebido: 100, saldo: 0, pagoEm } });
+    entrar(fin.id);
+    expect((await registrarPagamento(cobrancaId, { ...pagamento("taxa-previamente-paga", 100), dataPagamento: pagoEm })).ok).toBe(true);
     const mensalidade = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId, tipo: "MENSALIDADE" } });
-    await prisma.cobranca.update({ where: { id: mensalidade.id }, data: { status: "PAGO", valorRecebido: 200, saldo: 0, pagoEm } });
+    expect((await registrarPagamento(mensalidade.id, { ...pagamento("mensalidade-previamente-paga", 200), dataPagamento: pagoEm })).ok).toBe(true);
     entrar(sec.id);
     expect((await concluirMatricula(matriculaId)).ok).toBe(false);
     const contrato = await contratoAceito();
@@ -220,7 +221,7 @@ describe("matrícula e comissão configurável", () => {
     expect(depois.status).toBe("PAGO"); expect(Number(depois.valorRecebido)).toBe(200); expect(depois.pagoEm).toEqual(pagoEm);
     expect(depois.vencimento).toEqual(mensalidade.vencimento);
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).contratoDocumentoId).toBe(contrato.id);
-    expect(await prisma.recebimento.count()).toBe(0);
+    expect(await prisma.recebimento.count()).toBe(2);
   });
   it("informe a conferir não ativa; confirmação independente libera a conclusão", async () => {
     await contratoAceito(); entrar(sec.id);
@@ -245,7 +246,7 @@ describe("matrícula e comissão configurável", () => {
   it("ativação com novo recebimento considera a taxa parcialmente confirmada", async () => {
     await contratoAceito(); entrar(fin.id);
     expect((await registrarPagamento(cobrancaId, pagamento("taxa-parcial", 40))).ok).toBe(true);
-    expect((await ativarMatricula(matriculaId, { valorRecebido: 60, forma: "DINHEIRO", dataPagamento: new Date() })).ok).toBe(true);
+    expect((await ativarMatricula(matriculaId, { valorRecebido: 60, forma: "DINHEIRO", dataPagamento: new Date(), comentario: "Recebimento complementar destinado à taxa" })).ok).toBe(true);
     expect(Number((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorRecebido)).toBe(100);
     expect(await prisma.recebimento.count()).toBe(2);
   });
