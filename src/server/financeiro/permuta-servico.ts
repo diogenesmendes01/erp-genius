@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { Papel, Prisma, UnidadePermutaServico } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { reavaliarAcessoAposPermuta } from "./permuta-acesso";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAutenticacao, registrarEvento } from "@/server/_shared";
 // As mutações desta unidade concluem dentro da transação. Somente rejeições
 // conhecidas permitem revisar a entrada; falhas de transporte/banco são incertas.
@@ -73,7 +74,7 @@ export async function proporCompensacaoPermuta(input: unknown) {
         });
     });
 }
-export async function decidirCompensacaoPermuta(input: unknown) { return executarPermuta(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); return prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacoes: true } }, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
+export async function decidirCompensacaoPermuta(input: unknown) { return executarPermuta(async () => { const u = await exigirSessaoComPapel(Papel.FINANCEIRO); const d = z.object({ propostaId: id, aprovar: z.boolean(), motivo: texto }).strict().parse(input); const resultado = await prisma.$transaction(async (tx) => { await financeiro(tx, u.id, true); const p = await tx.propostaCompensacaoPermuta.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacoes: true } }, confirmacao: { include: { acordo: true } } } }); if (p.decisao) {
     if (p.decisao.decisorId !== u.id || p.decisao.aprovada !== d.aprovar || p.decisao.motivo !== d.motivo)
         throw new ErroRegra("A proposta já possui decisão.");
     return { id: p.decisao.id, efetivada: p.decisao.aplicacoes.length > 0, repetida: true };
@@ -90,7 +91,9 @@ if (d.aprovar) {
   }
   if (await tx.pagamentoInformado.count({ where: { cobrancaId: { in: ids }, status: "A_CONFERIR" } })) throw new ErroRegra("Confira os comprovantes antes de aprovar a compensação.");
 }
-const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: d.aprovar } }); return { id: decisao.id, efetivada: d.aprovar, repetida: false }; }); }); }
+const decisao = await tx.decisaoCompensacaoPermuta.create({ data: { propostaId: p.id, decisorId: u.id, aprovada: d.aprovar, motivo: d.motivo } }); await registrarEvento(tx, { tipo: "CompensacaoPermutaDecidida", agregadoTipo: "Matricula", agregadoId: p.confirmacao.acordo.matriculaId, autorId: u.id, payload: { propostaId: p.id, decisaoId: decisao.id, aprovada: d.aprovar, efetivada: d.aprovar } }); return { id: decisao.id, efetivada: d.aprovar, repetida: false }; });
+if (resultado.efetivada) await reavaliarAcessoAposPermuta(resultado.id);
+return resultado; }); }
 export async function consultarPermutas() {
     return executarPermuta(async () => {
         const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
