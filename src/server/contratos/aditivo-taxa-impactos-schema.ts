@@ -17,3 +17,5 @@ export const DecidirImpactosTaxaAditivoSchema = z.object({ conjuntoId: id, aprov
 export const VincularImpactoTaxaAditivoSchema = z.object({ conjuntoId: id, cobrancaId: id, propostaAcertoId: id }).strict();
 export const CompletarImpactosTaxaAditivoSchema = z.object({ conjuntoId: id }).strict();
 export const ObsoletarImpactosTaxaAditivoSchema = z.object({ conjuntoId: id, motivo: justificativa, chaveIdempotencia: chave }).strict();
+
+export const ConsultarImpactosTaxaAditivoSchema = z.object({ matriculaId: id, propostaId: id }).strict();
