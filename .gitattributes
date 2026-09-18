@@ -64,3 +64,4 @@ prisma/migrations/20260917154000_vigencia_aplicacao_vencimento/migration.sql -te
 prisma/migrations/20260917155000_reconciliacao_acesso_vencimento/migration.sql -text
 
 prisma/migrations/20260917156000_aplicacao_campos_aditivo/migration.sql -text
+prisma/migrations/20260918100000_correcao_gravacao_docente/migration.sql -text
