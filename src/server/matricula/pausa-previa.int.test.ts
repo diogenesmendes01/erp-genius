@@ -5,6 +5,7 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { preverPausaMatriculas } from "./pausa-previa";
+import { receberTx } from "@/server/financeiro/recebimentos";
 let alunoId: string, matriculaId: string, outraId: string;
 beforeEach(async () => {
   await truncarBanco();
@@ -19,9 +20,18 @@ beforeEach(async () => {
 });
 const entrada = () => ({ matriculaIds: [matriculaId], dataEfetiva: "2026-09-15" });
 async function cobrar(id: string, inicio: string | null, fim: string | null, vencimento: string, recebido = 0) {
-  return prisma.cobranca.create({ data: { matriculaId: id, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100,
-    saldo: 100 - recebido, valorRecebido: recebido, moeda: "CRC", vencimento: new Date(vencimento),
+  const cobranca = await prisma.cobranca.create({ data: { matriculaId: id, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100,
+    saldo: 100, moeda: "CRC", vencimento: new Date(vencimento),
     coberturaInicio: inicio ? new Date(inicio) : null, coberturaFim: fim ? new Date(fim) : null } });
+  if (recebido > 0) {
+    const financeiro = await criarUsuario([Papel.FINANCEIRO]);
+    await prisma.$transaction(tx => receberTx(tx, {
+      cobrancaId: cobranca.id, autorId: financeiro.id,
+      valorRecebido: recebido, forma: "DINHEIRO", dataPagamento: new Date(vencimento),
+      comentario: "Recebimento parcial conferido para prévia de pausa", chaveIdempotencia: `pausa-${cobranca.id}`,
+    }));
+  }
+  return prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
 }
 describe("prévia de pausa por seleção explícita de contratos", () => {
   it("usa cobertura, preserva estado e não inclui o outro contrato", async () => {
@@ -45,15 +55,16 @@ describe("prévia de pausa por seleção explícita de contratos", () => {
       expect((await preverPausaMatriculas(alunoId, { ...entrada(), matriculaIds: ids })).ok).toBe(false);
     expect((await preverPausaMatriculas("outro-aluno", entrada())).ok).toBe(false);
   });
-  it("aponta cobertura ausente, sobreposição e saldo inconsistente sem ajustá-los", async () => {
+  it("aponta cobertura ausente e sobreposição, preserva recebimento conciliado e recusa saldo inconsistente", async () => {
     await cobrar(matriculaId, null, null, "2026-09-01");
     const parcial = await cobrar(matriculaId, "2026-10-01", "2026-10-31", "2026-09-01", 20);
-    await prisma.cobranca.update({ where: { id: parcial.id }, data: { saldo: 90 } });
+    await expect(prisma.cobranca.update({ where: { id: parcial.id }, data: { saldo: 90 } })).rejects.toThrow();
+    expect(Number((await prisma.cobranca.findUniqueOrThrow({ where: { id: parcial.id } })).saldo)).toBe(80);
     await cobrar(matriculaId, "2026-10-15", "2026-11-15", "2026-10-15");
     const r = await preverPausaMatriculas(alunoId, entrada());
     if (!r.ok) throw new Error(r.erro);
     expect(r.dado!.matriculas[0].pendencias.map((p) => p.split(":")[0]).sort()).toEqual([
-      "COBERTURA_A_CONFERIR", "COBERTURA_SOBREPOSTA", "RECEBIMENTO_FUTURO_A_CONFERIR",
+      "COBERTURA_A_CONFERIR", "COBERTURA_SOBREPOSTA",
     ]);
   });
   it("não permite consulta por vendedor ou professor", async () => {
