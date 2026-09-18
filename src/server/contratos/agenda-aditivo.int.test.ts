@@ -44,7 +44,8 @@ async function prepararBase(ambiente: "SANDBOX" | "PRODUCAO" = "PRODUCAO", confi
 async function assinarFonte() {
   const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } } });
   const participantes = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
-  const agora = new Date().toISOString();
+  const envio = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id }, orderBy: { numero: "desc" } });
+  const agora = envio.iniciadaEm.toISOString();
   return prisma.$transaction(tx => preservarConclusaoAssinaturaTx(tx, { processoId: processo.id, referenciaExterna: base.referenciaExternaFonte, originalHash: processo.artefato.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-assinado"), evidencias: Buffer.from("evidencia"), assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(participantes.participantes[0].identidade), referenciaAssinatura: "assinatura-q117", assinadaEm: agora }] }));
 }
 const entrada = () => ({ matriculaId: base.matriculaId, encontros: [{ encontroId, professorNovoId: base.secretariaId, inicioNovo: "2099-10-12T15:00:00Z", fimNovo: "2099-10-12T16:00:00Z", duracaoMinutos: 60, fusoOrigem: "UTC" }] });
@@ -252,7 +253,8 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   const tentativa = await prisma.$transaction(tx => iniciarTentativaAditivoTx(tx, base.secretariaId, { processoId: processoAditivoId }));
   await prisma.$transaction(tx => registrarResultadoEnvioAditivoTx(tx, { processoId: processoAditivoId, tentativaId: tentativa.tentativaId, chave: "q117-integral-envio", resultado: "REGISTRADO", referenciaExterna: "q117-assinado", evidenciaHash: "a".repeat(64) }));
   const artefato = await prisma.artefatoAditivoContratual.findUniqueOrThrow({ where: { id: original.dado.id }, include: { conferencia: true } });
-  const assinadoEm = new Date().toISOString();
+  const envioAditivo = await prisma.tentativaEnvioAditivo.findUniqueOrThrow({ where: { id: tentativa.tentativaId } });
+  const assinadoEm = envioAditivo.iniciadaEm.toISOString();
   const conclusao = await prisma.$transaction(tx => preservarConclusaoAssinaturaAditivoTx(tx, { processoId: processoAditivoId, referenciaExterna: "q117-assinado", originalHash: artefato.pdfHash, concluidaEm: assinadoEm, pdfAssinado: Buffer.from("%PDF-Q117-agenda-assinado"), evidencias: Buffer.from("evidências simuladas Q117 agenda"), assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(pessoa.identidade), referenciaAssinatura: "q117-agenda-aluno", assinadaEm: assinadoEm }] }));
 
   const finalAlvo = { matriculaId: base.matriculaId, propostaId: proposta.id, conclusaoId: conclusao.id };
