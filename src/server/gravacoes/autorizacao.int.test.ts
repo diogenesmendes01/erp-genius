@@ -245,13 +245,13 @@ it("SQL recusa preparador sem gestão e fonte derivada divergente mesmo após de
   };
   await expect(prisma.propostaRegularizacaoFonteGravacao.create({ data: {
     ...dados, preparadorId: professor.id, chaveIdempotencia: "professor-sem-gestao-147",
-  } })).rejects.toThrow(/Preparador sem papel de gestão ativo/i);
+  } })).rejects.toThrow(/Material exige preparador de gestão ativo/i);
 
   const inativo = await criarUsuario(["GERENTE_PEDAGOGICO"], "Gestor inativo");
   await prisma.usuario.update({ where: { id: inativo.id }, data: { ativo: false } });
   await expect(prisma.propostaRegularizacaoFonteGravacao.create({ data: {
     ...dados, preparadorId: inativo.id, chaveIdempotencia: "gestor-inativo-147",
-  } })).rejects.toThrow(/Preparador sem papel de gestão ativo/i);
+  } })).rejects.toThrow(/Material exige preparador de gestão ativo/i);
 
   const proposta = await prisma.propostaRegularizacaoFonteGravacao.create({ data: {
     ...dados, preparadorId: gestorId, chaveIdempotencia: "material-derivado-diverge-147",
