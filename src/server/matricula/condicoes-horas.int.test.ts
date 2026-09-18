@@ -240,17 +240,46 @@ it("Q23 torna a revisão obsoleta por informe posterior e só publica a reconfer
   login(fin2.id); const decisao1 = await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: primeira.dado.id, aprovada: true, motivo: "Conferência independente antes do novo informe." }); if (!decisao1.ok || !decisao1.dado) throw new Error("Primeira decisão ausente");
   login(gestor.id); const impactos1 = await revisarImpactosCorrecaoAula({ propostaId: q23.dado.id }); if (!impactos1.ok || !impactos1.dado) throw new Error("Impactos iniciais ausentes");
   const { registrarPagamento } = await import("@/server/financeiro/acoes");
-  let liberarCobranca: () => void = () => undefined; let bloqueioPronto: () => void = () => undefined;
-  const bloqueio = prisma.$transaction(async tx => { await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${emissao.cobrancaId} FOR UPDATE`; bloqueioPronto(); await new Promise<void>(resolve => { liberarCobranca = resolve; }); });
-  await new Promise<void>(resolve => { bloqueioPronto = resolve; });
-  // Both real actions now queue on the same source row. Payment starts first;
-  // after release, publication must re-read its photograph rather than pass P1.
-  login(gestor.id); const pagamentoConcorrente = registrarPagamento(emissao.cobrancaId, { chaveIdempotencia: "q23-informe-pagamento-0001", valorRecebido: 20, forma: "DINHEIRO", dataPagamento: new Date("2026-01-12T15:00:00Z"), comentario: "Informe posterior para reconferência." });
-  await Promise.resolve(); await Promise.resolve();
-  const publicacaoConcorrente = aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos1.dado.propostaHash, impactosHash: impactos1.dado.impactosHash, motivo: "Não publicar com fotografia financeira antiga.", revisaoFinanceiraDecisaoId: decisao1.dado.id });
-  await Promise.resolve(); await Promise.resolve(); liberarCobranca(); await bloqueio;
-  expect(await pagamentoConcorrente).toMatchObject({ ok: true, dado: { informado: true } });
-  expect(await publicacaoConcorrente).toMatchObject({ ok: false });
+  let liberarCobranca: () => void = () => undefined; let sinalizarBloqueio: (pid: number) => void = () => undefined;
+  const pidBloqueador = new Promise<number>(resolve => { sinalizarBloqueio = resolve; });
+  const bloqueio = prisma.$transaction(async tx => {
+    const [{ pid }] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid()::integer pid`;
+    await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${emissao.cobrancaId} FOR UPDATE`;
+    sinalizarBloqueio(pid);
+    await new Promise<void>(resolve => { liberarCobranca = resolve; });
+  });
+  const aguardarAcoesNaCobranca = async (quantidade: number) => {
+    const bloqueador = await pidBloqueador;
+    for (let tentativa = 0; tentativa < 100; tentativa++) {
+      const aguardando = await prisma.$queryRaw<{ pid: number }[]>`SELECT pid::integer pid FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND ${bloqueador}=ANY(pg_blocking_pids(pid))`;
+      if (aguardando.length >= quantidade) return aguardando.map(a => a.pid).sort((a, b) => a - b);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error(`As ${quantidade} ações não chegaram ao bloqueio da cobrança.`);
+  };
+  const aguardarPublicacaoNaCadeia = async (pidPagamento: number) => {
+    const bloqueador = await pidBloqueador;
+    for (let tentativa = 0; tentativa < 100; tentativa++) {
+      const aguardando = await prisma.$queryRaw<{ pid: number }[]>`SELECT pid::integer pid FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND pid<>${pidPagamento} AND (${bloqueador}=ANY(pg_blocking_pids(pid)) OR ${pidPagamento}=ANY(pg_blocking_pids(pid)))`;
+      if (aguardando.length) return aguardando[0]!.pid;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error("A publicação não entrou na cadeia de bloqueio da cobrança.");
+  };
+  let pagamentoConcorrente: ReturnType<typeof registrarPagamento> | undefined;
+  let publicacaoConcorrente: ReturnType<typeof aprovarCorrecaoAula> | undefined;
+  try {
+    // A barreira usa apenas um lock de teste. As duas mutações são ações reais
+    // e só liberamos a fonte depois de observá-las bloqueadas pelo mesmo PID.
+    login(gestor.id); pagamentoConcorrente = registrarPagamento(emissao.cobrancaId, { chaveIdempotencia: "q23-informe-pagamento-0001", valorRecebido: 20, forma: "DINHEIRO", dataPagamento: new Date("2026-01-12T15:00:00Z"), comentario: "Informe posterior para reconferência." });
+    const [pidPagamento] = await aguardarAcoesNaCobranca(1);
+    publicacaoConcorrente = aprovarCorrecaoAula({ propostaId: q23.dado.id, propostaHash: impactos1.dado.propostaHash, impactosHash: impactos1.dado.impactosHash, motivo: "Não publicar com fotografia financeira antiga.", revisaoFinanceiraDecisaoId: decisao1.dado.id });
+    await aguardarPublicacaoNaCadeia(pidPagamento!);
+  } finally {
+    liberarCobranca(); await bloqueio;
+  }
+  expect(await pagamentoConcorrente!).toMatchObject({ ok: true, dado: { informado: true } });
+  expect(await publicacaoConcorrente!).toMatchObject({ ok: false });
   login(fin1.id); const segunda = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: q23.dado.id, motivo: "Informe posterior exige fotografia financeira nova.", chaveIdempotencia: "q23-informe-revisao-2" });
   expect(segunda).toMatchObject({ ok: true, dado: { versao: 2 } });
   if (!segunda.ok || !segunda.dado) throw new Error("Segunda revisão ausente");
