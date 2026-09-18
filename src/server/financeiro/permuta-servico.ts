@@ -131,7 +131,7 @@ export async function consultarPermutas() {
                     propostas: podeFinanceiro ? c.propostas.map(p => ({
                         id: p.id, valor: p.valor.toFixed(2),
                         destinos: p.destinos.map(d => ({ cobrancaId: d.cobrancaId, valor: d.valor.toFixed(2) })),
-                        decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, efetivada: p.decisao.aplicacoes.length > 0 } : null,
+                        decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, efetivada: p.decisao.aplicacoes.length > 0, decididaEm: p.decisao.decididaEm.toISOString(), aplicacoes: p.decisao.aplicacoes.map(a => ({ id: a.id, cobrancaId: a.cobrancaId, valor: a.valor.toFixed(2), aplicadaEm: a.aplicadaEm.toISOString() })) } : null,
                     })) : [],
                 })),
             }));
