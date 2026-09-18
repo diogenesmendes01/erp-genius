@@ -31,6 +31,7 @@ export interface LeadNaThread {
 }
 export interface ThreadConversa {
   conversaId: string; finalidade: string; matricula: { id: string; codigo: string | null } | null; podeEnviar: boolean; podeVincular: boolean; podeReautorizar: boolean;
+  pendenciaDestinatario: string | null;
   numero: { id: string; rotulo: string; driver: string; finalidade: string; sessao: string; ativo: boolean };
   contato: { id: string; nome: string; telefone: string; optOutEm: string | null;
     alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
@@ -64,7 +65,9 @@ export async function listarConversas(usuario: UsuarioSessao): Promise<ConversaR
     return { id: a.id, numeroId: a.conversa.numeroId, numeroRotulo: pedag ? "Canal institucional" : a.conversa.numero.rotulo,
       finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contatoId,
       contatoNome: nome, contatoTelefone: pedag ? "" : a.conversa.contato.telefoneE164,
-      optOut: !!a.conversa.contato.optOutEm, vinculo: a.finalidade === "FINANCEIRO" ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Financeiro legado · matrícula não identificada") : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
+      optOut: !!a.conversa.contato.optOutEm, vinculo: a.finalidade === "FINANCEIRO" ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Financeiro legado · matrícula não identificada")
+        : pedag ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Pedagógico legado · matrícula não identificada")
+          : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
       naoLidas: a.naoLidas, ultimaMensagemEm: a.ultimaMensagemEm?.toISOString() ?? null,
       preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null };
   }).sort((a, b) => Number(b.naoLidas > 0) - Number(a.naoLidas > 0));
@@ -92,10 +95,12 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const politica = financeiro ? await carregarPoliticaRegua() : null;
   const silencioAte = a.ultimoInboundEm && politica ? new Date(a.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000) : null;
   const silencio = !!silencioAte && agora < silencioAte.getTime() && (!a.inboundTratadoEm || a.inboundTratadoEm < a.ultimoInboundEm!);
-  return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro ? a.matricula : null,
-    podeEnviar: !!await atendimentoVisivel(usuario, a.id, true),
+  const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
+  return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro || pedag ? a.matricula : null,
+    podeEnviar,
     podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
+    pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
     numero: { id: c.numeroId, rotulo: pedag ? "Canal institucional" : c.numero.rotulo, driver: c.numero.driver,
       finalidade: a.finalidade, sessao: c.numero.sessao, ativo: c.numero.ativo },
     contato: { id: c.contatoId, nome, telefone: pedag ? "" : c.contato.telefoneE164,

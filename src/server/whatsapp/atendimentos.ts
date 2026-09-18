@@ -7,6 +7,7 @@ import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
   leadId?: string | null; alunoId?: string | null; matriculaId?: string | null; turmaId?: string | null; responsavelId?: string | null;
+  autorizacaoComunicacaoAcademicaId?: string | null;
 }) {
   if (dados.finalidade === "FINANCEIRO") {
     if (!dados.matriculaId || !dados.alunoId) throw new Error("Atendimento financeiro exige matrícula e aluno.");
@@ -21,11 +22,13 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
     create: { numeroId: dados.numeroId, contatoId: dados.contatoId }, update: {},
   });
   const contextoChave = [dados.finalidade, dados.leadId ?? "", dados.alunoId ?? "", dados.turmaId ?? "",
-    ...(dados.matriculaId ? [dados.matriculaId] : [])].join(":");
+    ...(dados.matriculaId ? [dados.matriculaId] : []),
+    ...(dados.finalidade === "PEDAGOGICO" && dados.alunoId ? [dados.autorizacaoComunicacaoAcademicaId ?? "ALUNO"] : [])].join(":");
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId: conversa.id, contextoChave } },
     create: { conversaId: conversa.id, contextoChave, finalidade: dados.finalidade,
-      leadId: dados.leadId, alunoId: dados.alunoId, matriculaId: dados.matriculaId, turmaId: dados.turmaId, responsavelId: dados.responsavelId },
+      leadId: dados.leadId, alunoId: dados.alunoId, matriculaId: dados.matriculaId, turmaId: dados.turmaId, responsavelId: dados.responsavelId,
+      autorizacaoComunicacaoAcademicaId: dados.autorizacaoComunicacaoAcademicaId },
     update: {}, // nunca reabre vínculo encerrado nem muda o proprietário por visita/telefone
   });
 }
@@ -42,11 +45,12 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
 
 /** Não adivinha o assunto quando há mais de um atendimento aberto. O item fica na triagem. */
 export async function atendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
-  const abertos = await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, select: { id: true, finalidade: true, matriculaId: true }, take: 2 });
+  const abertos = await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, include: { conversa: { include: { contato: true } } }, take: 2 });
   if (abertos.length === 1) {
     const aberto = abertos[0];
     // Atendimento financeiro legado continua consultável, mas não recebe inbound automático sem contrato explícito.
-    if (aberto.finalidade === "FINANCEIRO" && !aberto.matriculaId) return null;
+    if ((aberto.finalidade === "FINANCEIRO" && !aberto.matriculaId)
+      || !await destinatarioAtualDoAtendimento(aberto, tx)) return null;
     return aberto.id;
   }
   if (abertos.length > 1) return null;

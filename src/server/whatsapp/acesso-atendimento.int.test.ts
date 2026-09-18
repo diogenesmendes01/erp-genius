@@ -94,10 +94,10 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
     await prisma.vinculoDocente.create({ data: { turmaId: t.id, professorId: pro.id, inicio: new Date(Date.now() - 1000) } });
     const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna", paisId: catalogo.pais.id, telefoneE164: "+50680001111", email: "privado@example.test" } });
     const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC" } });
-    await prisma.alocacaoTurma.create({ data: { turmaId: t.id, alunoId: aluno.id } });
+    await prisma.alocacaoTurma.create({ data: { turmaId: t.id, alunoId: aluno.id, matriculaId: matricula.id } });
     const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id, nomeExibicao: aluno.telefoneE164 } });
-    const pedagogico = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aluno.id, turmaId: t.id }));
+    const pedagogico = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aluno.id, turmaId: t.id, matriculaId: matricula.id }));
     const financeiro = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: matricula.id }));
     return { pro, outro, t, aluno, matricula, numero, contato, pedagogico, financeiro };
   }
@@ -122,7 +122,7 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
     expect((await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.t.id}` })).ok).toBe(false);
     expect((await listarOpcoesAtendimento()).destinos).toHaveLength(0);
     authMock.mockResolvedValue({ user: { id: c.pro.id } });
-    const aberta = await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.t.id}` });
+    const aberta = await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.t.id}:${c.matricula.id}:ALUNO` });
     expect(aberta.ok).toBe(true);
     const r = await enviarTextoInbox({ conversaId: c.pedagogico.id, texto: "A tarefa está no material institucional." });
     expect(r.ok && r.dado?.status).toBe("DESPACHADA");

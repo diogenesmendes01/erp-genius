@@ -10,6 +10,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes }: { opcoes: Opco
   const [numero, setNumero] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const destinoSelecionado = opcoes.destinos.find((item) => item.chave === destino);
   return <div className="space-y-3">
     <form className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-3" onSubmit={async (e) => {
       e.preventDefault(); setErro(null); setOcupado(true);
@@ -19,9 +20,9 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes }: { opcoes: Opco
       } finally { setOcupado(false); }
     }}>
       <label className="grid gap-1 text-sm">Finalidade e destinatário
-        <select required value={destino} onChange={(e) => setDestino(e.target.value)} className="max-w-sm rounded border p-2">
+        <select required value={destino} onChange={(e) => setDestino(e.target.value)} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="max-w-sm rounded border p-2">
           <option value="">Selecione o atendimento</option>
-          {opcoes.destinos.map((d) => <option key={d.chave} value={d.chave}>{d.nome}</option>)}
+          {opcoes.destinos.map((d) => <option key={d.chave} value={d.chave} disabled={d.disponivel === false}>{d.nome}{d.disponivel === false ? " · indisponível" : ""}</option>)}
         </select>
       </label>
       <label className="grid gap-1 text-sm">Canal da escola
@@ -32,6 +33,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes }: { opcoes: Opco
       </label>
       <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-600 px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
       {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
+      {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
     {revisoes && <details className="rounded-lg border border-gray-200 p-3">

@@ -9,6 +9,7 @@ import { ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, 
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { garantirContato } from "./identidade";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
+import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 import { snapshotCobranca } from "./elegibilidade";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
@@ -16,6 +17,9 @@ import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from 
 export interface OpcaoAtendimento {
   chave: string; nome: string; finalidade: FinalidadeAtendimentoWhatsApp;
   alunoId?: string; leadId?: string; turmaId?: string; matriculaId?: string;
+  autorizacaoComunicacaoAcademicaId?: string;
+  disponivel?: boolean;
+  impedimento?: string | null;
 }
 export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string }[] }
 
@@ -38,11 +42,36 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   if (amplo || u.papeis.includes(Papel.PROFESSOR)) {
     const turmasDocente = u.papeis.includes(Papel.PROFESSOR) ? new Set((await prisma.turma.findMany({ where: escopoTurmasDocente(u.id), select: { id: true } })).map((t) => t.id)) : new Set<string>();
     const alunos = await prisma.aluno.findMany({ where: amplo ? {} : { alocacoes: { some: { ativa: true, turmaId: { in: [...turmasDocente] } } } }, take: 200,
-      select: { id: true, primeiroNome: true, sobrenome: true, alocacoes: { where: { ativa: true, ...(amplo ? {} : { turmaId: { in: [...turmasDocente] } }) }, select: { turmaId: true } } } });
+      select: {
+        id: true, primeiroNome: true, sobrenome: true, telefoneE164: true,
+        responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true } },
+        alocacoes: {
+          where: { ativa: true, ...(amplo ? {} : { turmaId: { in: [...turmasDocente] } }) },
+          select: { turmaId: true, matriculaId: true, matricula: { select: {
+            codigo: true,
+            autorizacoesComunicacaoAcademica: { where: { vigenteEm: { lte: new Date() }, revogadaEm: null }, select: { id: true, responsavelId: true, responsavel: { select: { nome: true, telefoneE164: true, alunos: { where: { papel: "PEDAGOGICO" }, select: { alunoId: true } } } } } },
+          } } },
+        },
+      } });
     for (const a of alunos) {
       if (academico) for (const turma of a.alocacoes) {
         if (!temPapel(u, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA) && !turmasDocente.has(turma.turmaId)) continue;
-        destinos.push({ chave: `PEDAGOGICO:${a.id}:${turma.turmaId}`, nome: `Pedagógico · ${nomeCompleto(a)}`, finalidade: "PEDAGOGICO", alunoId: a.id, turmaId: turma.turmaId });
+        const contrato = turma.matricula?.codigo ?? turma.matriculaId ?? "matrícula sem código";
+        const base = { finalidade: "PEDAGOGICO" as const, alunoId: a.id, turmaId: turma.turmaId, matriculaId: turma.matriculaId ?? undefined };
+        if (!turma.matriculaId) {
+          destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:LEGADO`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato pendente de conferência`, disponivel: false, impedimento: "O vínculo histórico não identifica uma matrícula para este atendimento." });
+        } else {
+          destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:ALUNO`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · aluno`, disponivel: !!a.telefoneE164, impedimento: a.telefoneE164 ? null : "O aluno não possui telefone para atendimento pedagógico direto." });
+          const autorizados = turma.matricula?.autorizacoesComunicacaoAcademica.filter((autorizacao) => autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === a.id) && !!autorizacao.responsavel.telefoneE164) ?? [];
+          if (a.responsaveis.length && !autorizados.length) {
+            destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:PENDENTE`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · responsável sem autorização vigente`, disponivel: false, impedimento: "Registre ou confira a autorização pedagógica do responsável nesta matrícula." });
+          }
+          for (const autorizacao of autorizados) destinos.push({ ...base,
+            chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:AUT:${autorizacao.id}`,
+            nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · ${autorizacao.responsavel.nome}`,
+            autorizacaoComunicacaoAcademicaId: autorizacao.id, disponivel: true, impedimento: null,
+        });
+        }
       }
       if (temPapel(u, Papel.SECRETARIA_ACADEMICA)) destinos.push({ chave: `SECRETARIA:${a.id}`, nome: `Secretaria · ${nomeCompleto(a)}`, finalidade: "SECRETARIA", alunoId: a.id });
     }
@@ -76,7 +105,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     const dados = AbrirSchema.parse(input);
     const opcoes = await listarOpcoesAtendimento();
     const destino = opcoes.destinos.find((d) => d.chave === dados.destinoChave);
-    if (!destino || !opcoes.numeros.some((n) => n.id === dados.numeroId)) throw new ErroRegra("Destinatário ou canal fora do seu escopo atual.");
+    if (!destino || destino.disponivel === false || !opcoes.numeros.some((n) => n.id === dados.numeroId)) throw new ErroRegra(destino?.impedimento ?? "Destinatário ou canal fora do seu escopo atual.");
     let telefone: string | null = null;
     let nome = "Contato institucional";
     let responsavelId: string | null = null;
@@ -98,14 +127,28 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
         telefone = financeiro.telefoneE164;
         nome = financeiro.nome;
         responsavelId = financeiro.responsavelId;
+      } else if (destino.finalidade === "PEDAGOGICO") {
+        if (!destino.matriculaId) throw new ErroRegra("Atendimento pedagógico exige matrícula explícita.");
+        const a = await prisma.aluno.findUnique({ where: { id: destino.alunoId }, include: { responsaveis: { where: { papel: "PEDAGOGICO" }, include: { responsavel: true } } } });
+        if (!a || !await prisma.matricula.findFirst({ where: { id: destino.matriculaId, alunoId: destino.alunoId }, select: { id: true } })) throw new ErroRegra("Matrícula pedagógica não corresponde ao aluno selecionado.");
+        if (destino.autorizacaoComunicacaoAcademicaId) {
+          const autorizacao = await prisma.autorizacaoComunicacaoAcademica.findFirst({ where: { id: destino.autorizacaoComunicacaoAcademicaId, matriculaId: destino.matriculaId, vigenteEm: { lte: new Date() }, revogadaEm: null,
+            responsavel: { telefoneE164: { not: null }, alunos: { some: { alunoId: a.id, papel: "PEDAGOGICO" } } } }, include: { responsavel: true } });
+          if (!autorizacao?.responsavel.telefoneE164) throw new ErroRegra("A autorização pedagógica não está vigente para este responsável.");
+          telefone = autorizacao.responsavel.telefoneE164; nome = autorizacao.responsavel.nome; responsavelId = autorizacao.responsavelId;
+        } else {
+          if (!a.telefoneE164) throw new ErroRegra("O aluno não possui telefone; não há atendimento pedagógico direto disponível.");
+          telefone = a.telefoneE164; nome = nomeCompleto(a);
+        }
+        matriculaId = destino.matriculaId;
       } else {
         const a = await prisma.aluno.findUnique({ where: { id: destino.alunoId }, include: { responsaveis: { include: { responsavel: true } } } });
         if (!a) throw new ErroRegra("Aluno não encontrado.");
-        const papeis = ["PEDAGOGICO"];
-        const vinculos = a.responsaveis.filter((r) => papeis.includes(r.papel));
-        const resp = vinculos.find((r) => r.responsavel.telefoneE164);
-        telefone = vinculos.length ? resp?.responsavel.telefoneE164 ?? null : a.telefoneE164;
-        nome = resp?.responsavel.nome ?? nomeCompleto(a); responsavelId = resp?.responsavelId ?? null;
+        const vinculos = a.responsaveis.filter((vinculo) => vinculo.papel === "PEDAGOGICO");
+        const responsavel = vinculos.find((vinculo) => !!vinculo.responsavel.telefoneE164);
+        telefone = vinculos.length ? responsavel?.responsavel.telefoneE164 ?? null : a.telefoneE164;
+        nome = responsavel?.responsavel.nome ?? nomeCompleto(a);
+        responsavelId = responsavel?.responsavelId ?? null;
       }
     }
     if (!telefone) throw new ErroRegra("A secretaria precisa cadastrar um destinatário válido para essa finalidade.");
@@ -113,7 +156,8 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
       const contato = await garantirContato(tx, { telefoneE164: telefone!, nomeExibicao: nome, responsavelId,
         leadId: destino.leadId, alunoId: destino.finalidade === "FINANCEIRO" ? contatoAlunoId : responsavelId ? null : destino.alunoId });
       const a = await garantirAtendimento(tx, { numeroId: dados.numeroId, contatoId: contato.id, finalidade: destino.finalidade,
-        leadId: destino.leadId, alunoId: alunoAtendimentoId, turmaId: destino.turmaId, matriculaId, responsavelId: u.id });
+        leadId: destino.leadId, alunoId: alunoAtendimentoId, turmaId: destino.turmaId, matriculaId, responsavelId: u.id,
+        autorizacaoComunicacaoAcademicaId: destino.autorizacaoComunicacaoAcademicaId });
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado; solicite revisão à gestão antes de reabri-lo.");
       await registrarEvento(tx, { tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id,
         autorId: u.id, payload: { finalidade: a.finalidade, leadId: a.leadId, alunoId: a.alunoId, turmaId: a.turmaId, matriculaId: a.matriculaId } });
@@ -157,11 +201,14 @@ export async function classificarMensagemWhatsApp(input: { mensagemId: string; a
     await prisma.$transaction(async (tx) => {
       const [m, a] = await Promise.all([
         tx.mensagemWhatsApp.findUnique({ where: { id: dados.mensagemId } }),
-        tx.atendimentoWhatsApp.findUnique({ where: { id: dados.atendimentoId } }),
+        tx.atendimentoWhatsApp.findUnique({ where: { id: dados.atendimentoId }, include: { conversa: { include: { contato: true } } } }),
       ]);
       if (!m || !a || m.conversaId !== a.conversaId || m.atendimentoId) throw new ErroRegra("Mensagem ausente, já classificada ou de outro contato/canal.");
       if (a.finalidade === "FINANCEIRO" && (!a.matriculaId || a.encerradoEm)) {
         throw new ErroRegra("Atendimento financeiro sem matrícula atual ou encerrado não recebe nova classificação.");
+      }
+      if (a.finalidade === "PEDAGOGICO" && !await destinatarioAtualDoAtendimento(a, tx)) {
+        throw new ErroRegra("Atendimento pedagógico sem autorização vigente não recebe nova classificação.");
       }
       const r = await tx.mensagemWhatsApp.updateMany({ where: { id: m.id, atendimentoId: null }, data: { atendimentoId: a.id } });
       if (r.count !== 1) throw new ErroRegra("Mensagem já classificada por outra pessoa.");

@@ -133,8 +133,8 @@ export async function despacharFila(
     }
     const conferirAte = it.cobrancaId ? await suspensaoPorConferencia(it.cobrancaId, agora) : null;
     if (conferirAte) {
-      await adiar(it.id, conferirAte, "comprovante_em_conferencia");
-      r.adiadas += 1;
+      if (await adiar(it.id, conferirAte, "comprovante_em_conferencia")) r.adiadas += 1;
+      else r.canceladas += 1;
       continue;
     }
     // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
@@ -230,8 +230,8 @@ export async function despacharFila(
     if (it.origem === "CRON" && !reativa && inboundSilenciador && inboundNaoTratado) {
       const limite = new Date(inboundSilenciador.getTime() + politica.silencioPosInboundHoras * 3600_000);
       if (agora < limite) {
-        await adiar(it.id, limite, "silencio_pos_inbound");
-        r.adiadas += 1;
+        if (await adiar(it.id, limite, "silencio_pos_inbound")) r.adiadas += 1;
+        else r.canceladas += 1;
         continue;
       }
     }
@@ -296,8 +296,8 @@ export async function despacharFila(
         },
       });
       if (enviadasHoje >= politica.tetoPorContatoDia) {
-        await adiar(it.id, new Date(agora.getTime() + 24 * 3600_000), "teto_contato_dia");
-        r.adiadas += 1;
+        if (await adiar(it.id, new Date(agora.getTime() + 24 * 3600_000), "teto_contato_dia")) r.adiadas += 1;
+        else r.canceladas += 1;
         continue;
       }
     }
@@ -309,8 +309,8 @@ export async function despacharFila(
       const hora = horaLocal(agora, fuso);
       const dia = diaSemanaLocal(agora, fuso);
       if (hora < politica.janelaInicio || hora >= politica.janelaFim || !politica.diasSemana.includes(dia)) {
-        await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela"); // re-checa a cada hora
-        r.adiadas += 1;
+        if (await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela")) r.adiadas += 1;
+        else r.canceladas += 1; // re-checa a cada hora
         continue;
       }
     }
@@ -351,18 +351,25 @@ export async function despacharFila(
     //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
     //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
     let claimCount = 0;
-    await prisma.$transaction(confirmarTransacao(async (tx) => {
-      const claim = await tx.intencaoMensagem.updateMany({
-        where: { id: it.id, status: it.status },
-        data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
-      });
-      if (claim.count !== 1) return;
-      if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
-        await tx.intencaoMensagem.update({ where: { id: it.id }, data: { status: it.status, despacharAposEm: it.despacharAposEm } });
-        return;
-      }
-      claimCount = 1;
-    }));
+    try {
+      await prisma.$transaction(confirmarTransacao(async (tx) => {
+        const claim = await tx.intencaoMensagem.updateMany({
+          where: { id: it.id, status: it.status },
+          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+        });
+        if (claim.count !== 1) return;
+        if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
+          await tx.intencaoMensagem.update({ where: { id: it.id }, data: { status: it.status, despacharAposEm: it.despacharAposEm } });
+          return;
+        }
+        claimCount = 1;
+      }));
+    } catch (erro) {
+      if (!erroGuardaPedagogica(erro)) throw erro;
+      await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
+      r.canceladas += 1;
+      continue;
+    }
     if (claimCount === 0) continue; // outro worker levou — não conta em nada
 
     // A autorização do momento do enfileiramento não vale para sempre. Releitura após
@@ -373,10 +380,8 @@ export async function despacharFila(
     const invalidaAgora = atual ? await motivoIntencaoInvalida(atual, agora) : "intencao_ausente";
     const conferirAgora = atual?.cobrancaId ? await suspensaoPorConferencia(atual.cobrancaId, agora) : null;
     if (!invalidaAgora && conferirAgora) {
-      await prisma.intencaoMensagem.updateMany({ where: { id: it.id, status: "ENVIANDO" }, data: {
-        status: "ADIADA", motivoFalha: "comprovante_em_conferencia", despacharAposEm: conferirAgora,
-      } });
-      r.adiadas += 1;
+      if (await adiarClaim(it.id, conferirAgora)) r.adiadas += 1;
+      else r.canceladas += 1;
       continue;
     }
     if (invalidaAgora || !atual) {
@@ -591,11 +596,38 @@ async function marcar(id: string, status: "CANCELADA" | "FALHOU", motivo: string
   });
 }
 
-async function adiar(id: string, ate: Date, motivo: string): Promise<void> {
-  await prisma.intencaoMensagem.updateMany({
-    where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
-    data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
-  });
+function erroGuardaPedagogica(erro: unknown): boolean {
+  return erro instanceof Error && /Inten..o pedag.gica|Atendimento pedag.gico/i.test(erro.message);
+}
+
+/** Retorna falso quando a revalidação SQL cancelou o novo envio sem I/O. */
+async function adiar(id: string, ate: Date, motivo: string): Promise<boolean> {
+  try {
+    await prisma.intencaoMensagem.updateMany({
+      where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
+      data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
+    });
+    return true;
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await marcar(id, "CANCELADA", "autorizacao_academica_revogada");
+    return false;
+  }
+}
+
+async function adiarClaim(id: string, ate: Date): Promise<boolean> {
+  try {
+    await prisma.intencaoMensagem.updateMany({ where: { id, status: "ENVIANDO" }, data: {
+      status: "ADIADA", motivoFalha: "comprovante_em_conferencia", despacharAposEm: ate,
+    } });
+    return true;
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await prisma.intencaoMensagem.updateMany({ where: { id, status: "ENVIANDO" }, data: {
+      status: "CANCELADA", motivoFalha: "autorizacao_academica_revogada", despacharAposEm: null,
+    } });
+    return false;
+  }
 }
 
 /** Falha pós-claim: transita exclusivamente de ENVIANDO (o claim é deste worker). */
