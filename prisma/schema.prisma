@@ -733,6 +733,8 @@ model Usuario {
   email             String    @unique
   senhaHash         String
   ativo             Boolean   @default(true)
+  // Preferência pessoal para exibir instantes; não altera calendário, cobrança ou envio.
+  fusoExibicao      String?
   papeis            Papel[] // multi-papel. V2: migrar p/ tabela UsuarioPapel (permissões granulares / por país)
   limiteDescontoPct Decimal?  @db.Decimal(5, 2) // legado; alçadas explícitas abaixo
   limiteDescontoTaxaPct Decimal? @db.Decimal(5, 2)
@@ -6045,6 +6047,8 @@ model ContaPortalAluno {
   emailVerificado    String?
   emailVerificadoEm  DateTime?
   senhaHash          String?
+  // Preferência do próprio acesso do portal para exibir instantes; null preserva origem.
+  fusoExibicao       String?
   versaoSessao       Int @default(1)
   ativa              Boolean @default(true)
   criadaEm           DateTime @default(now())
