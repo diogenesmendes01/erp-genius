@@ -278,6 +278,12 @@ Além dos critérios por corpo, os cenários transversais seguintes são obrigat
 
 Em ambos os percursos, a fotografia de B — estado, cobrança, recebimentos, destinações e créditos — permanece idêntica. A autorização real de reprodução recusa somente o material de A após pausa ou encerramento e mantém o material de B autorizado. O teste usa material e credencial de Drive fictícios, sem chamar provedor externo. Ele comprova isolamento entre esses dois contratos; não substitui os demais cenários transversais ou homologação de provedores.
 
+#### Evidência executada — CT-04 (18/09/2026)
+
+`src/server/diario/ct04-regularizacao-historica.int.test.ts` parte de um encontro anterior à transferência do aluno. Após encerrar a alocação de origem e registrar a alocação de destino, o professor original inativo não consegue consultar nem gravar a chamada. Gestão designa um segundo professor pela ação pública; repetir a mesma chave conserva uma única designação. O designado consulta a lista histórica com o aluno e registra a primeira chamada pela ação pública, mas não recebe acesso a outro encontro.
+
+O diário resultante mantém o professor original como autor, enquanto o evento registra o ator designado e a designação usada. A alocação de origem segue encerrada e a de destino permanece ativa. A evidência cobre regularização pontual de uma chamada histórica, sem reabrir acesso atual do docente anterior ou alterar a transferência.
+
 Uma entrega fica pronta para implementação quando seu corpo, requisitos referenciados, contratos de dados/ações, estados, permissões, tratamento de legado, dependências e testes têm correspondência explícita. Questão técnica resolvível com as decisões existentes não exige nova rodada de negócio; mudança de comportamento requer refinamento próprio.
 
 Uma entrega somente fica concluída quando há implementação, migração aplicável, testes apropriados executados com evidência, regressões pertinentes e atualização da situação do projeto. Integração real exige evidência no serviço e ambiente corretos. Caixa de aceite em documento não substitui resultado.
