@@ -7,6 +7,7 @@ import { Pendencias } from "./Pendencias";
 import { listarPropostasMovimentacao, obterDetalhesMovimentacao } from "@/server/matricula/movimentacoes-consultas";
 import { decidirPropostaPausaMatriculas } from "@/server/matricula/pausa-proposta";
 import { decidirRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
+import { identificacaoContrato } from "./identificacaoContrato";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -95,7 +96,7 @@ export function MovimentacoesPainel({ alunoId }: { alunoId: string }) {
       <h2 className="font-medium">{status[p.status]} · {data(p.criadoEm)}</h2>
       <p className="text-sm">Solicitante: {p.solicitante.nome}</p>
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
-      <p className="text-sm">Contratos: {p.matriculas.map((m) => m.codigo ?? "Sem código").join(", ")}</p>
+      <p className="text-sm">Contratos: {p.matriculas.map((m) => identificacaoContrato(m.codigo, m.id)).join(", ")}</p>
       {p.decisor && <p className="text-sm">Decisão de {p.decisor.nome}: {p.motivoDecisao}</p>}
       <button className={botao} disabled={ocupado} onClick={() => abrir(p.id)}>Conferir impactos</button>
     </article>)}
@@ -107,7 +108,7 @@ export function MovimentacoesPainel({ alunoId }: { alunoId: string }) {
       {impactos && <>
         <p>Data proposta: {data("dataEfetiva" in impactos ? impactos.dataEfetiva : impactos.retorno)} · Fuso: {impactos.fusoInstitucional ?? "A conferir"}</p>
         {impactos.matriculas.map((m) => <div key={m.matriculaId} className="space-y-2 border-t pt-3">
-          <h3 className="font-medium">Contrato {m.codigo ?? "sem código"}</h3>
+          <h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
           <Pendencias itens={m.pendencias} />
           {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-gray-50 p-3 text-sm">
             {"cobertura" in p ? <><p>Cobertura anterior: {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)}</p><p>Cobertura proposta: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)}</p><p>Vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p></> : <><p>{p.codigo ?? "Mensalidade"}: {efeito[p.efeito]}</p><p>Cobertura: {p.inicio && p.fim ? `${data(p.inicio)} a ${data(p.fim)}` : "A conferir"}</p><p>Vencimento: {data(p.vencimento)}</p></>}
