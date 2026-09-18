@@ -1,5 +1,6 @@
 "use server";
 import { conferirIntervalosCoberturaAditivo } from "./aditivo-cobertura-intervalos";
+import { z } from "zod";
 import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
@@ -38,6 +39,24 @@ export async function prepararImpactosCoberturaAditivo(input: unknown) { return 
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR); const d = PrepararImpactosCoberturaAditivoSchema.parse(input);
   return prisma.$transaction(async tx => {
     await exigirFinanceiro(tx, autor.id); await bloquearMatriculas(tx, [d.matriculaId]);
+    const anterior = await tx.conjuntoImpactosCoberturaAditivo.findUnique({
+      where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } },
+      include: { conferenciaFinal: { select: { conclusaoId: true } } },
+    });
+    if (anterior) {
+      const salva = z.object({ revisaoHash: z.string(), motivo: z.string(), evidencia: z.string(), cobrancas: z.array(z.object({
+        id: z.string(), classificacao: z.string(), justificativa: z.string(), coberturaInicioNova: z.string().nullable(), coberturaFimNova: z.string().nullable(),
+      })) }).parse(anterior.fotografia);
+      const solicitadas = d.linhas.map(l => ({ id: l.cobrancaId, classificacao: l.classificacao, justificativa: l.justificativa,
+        coberturaInicioNova: l.coberturaInicioNova ?? null, coberturaFimNova: l.coberturaFimNova ?? null,
+      })).sort((a, b) => a.id.localeCompare(b.id));
+      if (anterior.matriculaId !== d.matriculaId || anterior.propostaAditivoId !== d.propostaId || anterior.conferenciaFinal.conclusaoId !== d.conclusaoId ||
+        salva.revisaoHash !== d.revisaoHash || salva.motivo !== d.motivo || salva.evidencia !== d.evidencia ||
+        hashSubstituicao(salva.cobrancas.sort((a, b) => a.id.localeCompare(b.id))) !== hashSubstituicao(solicitadas)) {
+        throw new ErroRegra("Chave já usada com outro conjunto de cobertura.");
+      }
+      return { id: anterior.id, status: anterior.status };
+    }
     const formal = await carregarFormalizacao(tx, d.matriculaId, d.propostaId, d.conclusaoId, d.revisaoHash);
     const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: d.matriculaId, tipo: "MENSALIDADE" }, orderBy: [{ coberturaInicio: "asc" }, { id: "asc" }] });
     if (cobrancas.length !== d.linhas.length || new Set(d.linhas.map(l => l.cobrancaId)).size !== cobrancas.length || cobrancas.some(c => !d.linhas.some(l => l.cobrancaId === c.id))) throw new ErroRegra("Classifique todas as mensalidades existentes, inclusive as preservadas.");
@@ -50,8 +69,6 @@ export async function prepararImpactosCoberturaAditivo(input: unknown) { return 
     const fotografia = { revisaoHash: d.revisaoHash, versaoCondicoesId: formal.id, condicoesHash: formal.condicoesHash, politica: formal.politica, cobrancas: linhas.map(l => ({ id: l.cobrancaId, classificacao: l.classificacao, justificativa: l.justificativa, coberturaInicioNova: l.coberturaInicioNova ?? null, coberturaFimNova: l.coberturaFimNova ?? null, fotografia: l.fotografia, fotografiaHash: hashSubstituicao(l.fotografia) })), motivo: d.motivo, evidencia: d.evidencia };
     const fotografiaHash = hashSubstituicao(fotografia);
     const db = tx;
-    const anterior = await db.conjuntoImpactosCoberturaAditivo.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } });
-    if (anterior) { if (anterior.matriculaId !== d.matriculaId || anterior.propostaAditivoId !== d.propostaId || anterior.fotografiaHash !== fotografiaHash) throw new ErroRegra("Chave já usada com outro conjunto de cobertura."); return { id: anterior.id, status: anterior.status }; }
     const ativo = await db.conjuntoImpactosCoberturaAditivo.findFirst({ where: { propostaAditivoId: d.propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } } });
     if (ativo) throw new ErroRegra("Já existe conjunto ativo para esta proposta.");
     const conjunto = await db.conjuntoImpactosCoberturaAditivo.create({ data: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, conferenciaFinalId: formal.conferenciaFinalId, versaoCondicoesId: formal.id, preparadorId: autor.id, escolhaCiclo: formal.politica.escolha, cicloFuturo: formal.politica, hashFormalizado: formal.proposta.entradaHash, fotografia, fotografiaHash, motivo: d.motivo, evidencia: d.evidencia, chaveIdempotencia: d.chaveIdempotencia, impactos: { create: linhas.map(l => ({ cobrancaId: l.cobrancaId, classificacao: l.classificacao, coberturaInicioAnterior: l.c.coberturaInicio, coberturaFimAnterior: l.c.coberturaFim, coberturaInicioNova: l.classificacao === "AFETADA" ? new Date(`${l.coberturaInicioNova}T00:00:00.000Z`) : null, coberturaFimNova: l.classificacao === "AFETADA" ? new Date(`${l.coberturaFimNova}T00:00:00.000Z`) : null, justificativa: l.justificativa, versaoCobranca: l.c.versao })) } } });
