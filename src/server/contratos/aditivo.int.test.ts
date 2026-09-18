@@ -1,3 +1,4 @@
+import { PrepararAditivoContratualSchema } from "./aditivo-schema";
 import { consultarCadastroContratualVigenteTx } from "./cadastro-contratual";
 import { beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -618,7 +619,7 @@ async function prepararRevisaoOriginal(estruturado = false, mensalidade = false,
     motivo: "Original e signatários revisados antes da assinatura", chaveIdempotencia: "conferencia-original-aditivo" } };
 }
 
-async function concluirAditivoMensal(entradaAditivo: Parameters<typeof preparar>[0], chave: string) {
+async function concluirAditivoMensal(entradaAditivo: Partial<z.input<typeof PrepararAditivoContratualSchema>>, chave: string) {
   const proposta = await preparar(entradaAditivo);
   await decidir(proposta);
   authMock.mockResolvedValue({ user: { id: fixture.adminId } });
