@@ -55,7 +55,23 @@ BEGIN
   SELECT count(*) INTO total_taxas FROM "Cobranca" WHERE "matriculaId"=conjunto."matriculaId" AND tipo='MATRICULA';
   SELECT count(*) INTO total_linhas FROM "ImpactoTaxaAditivo" WHERE "conjuntoId"=conjunto.id;
   IF total_linhas <> total_taxas THEN RAISE EXCEPTION 'O conjunto deve declarar todas as taxas existentes da matrícula'; END IF;
-  IF EXISTS (SELECT 1 FROM "ImpactoTaxaAditivo" i JOIN "Cobranca" c ON c.id=i."cobrancaId" LEFT JOIN "PropostaAcertoTaxaAditivo" p ON p.id=i."propostaAcertoId" WHERE i."conjuntoId"=conjunto.id AND (i.fotografia->'cobranca'->>'versao' IS DISTINCT FROM c.versao::text OR i.fotografia->'cobranca'->>'valorNegociado' IS DISTINCT FROM c."valorNegociado"::text OR i.fotografia->'cobranca'->>'vencimento' IS DISTINCT FROM c.vencimento::text) AND (p.id IS NULL OR p.status<>'APLICADA')) THEN RAISE EXCEPTION 'A fotografia de taxa mudou e exige reconstrução do conjunto'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM "ImpactoTaxaAditivo" i
+    JOIN "Cobranca" c ON c.id=i."cobrancaId"
+    LEFT JOIN "PropostaAcertoTaxaAditivo" p ON p.id=i."propostaAcertoId"
+    LEFT JOIN "AplicacaoAcertoTaxaAditivo" a ON a."propostaId"=p.id
+    WHERE i."conjuntoId"=conjunto.id
+      AND (
+        i.fotografia->'cobranca'->>'versao' IS DISTINCT FROM c.versao::text
+        OR (i.fotografia->'cobranca'->>'valorNegociado')::numeric IS DISTINCT FROM c."valorNegociado"::numeric
+        OR i.fotografia->'cobranca'->>'vencimento' IS DISTINCT FROM to_char(c.vencimento AT TIME ZONE 'UTC','YYYY-MM-DD')
+      )
+      AND NOT (
+        p.status='APLICADA' AND a.id IS NOT NULL AND c.versao=a."versaoAnterior"+1
+        AND c."valorNegociado"::numeric=a."valorNovo"::numeric
+        AND to_char(c.vencimento AT TIME ZONE 'UTC','YYYY-MM-DD')=to_char(a."vencimentoNovo" AT TIME ZONE 'UTC','YYYY-MM-DD')
+      )
+  ) THEN RAISE EXCEPTION 'A fotografia de taxa mudou e exige reconstrução do conjunto'; END IF;
 END;
 $$;
 
