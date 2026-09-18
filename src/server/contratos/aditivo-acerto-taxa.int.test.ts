@@ -111,7 +111,7 @@ async function prepararFinanceiro(liquidacao: "DINHEIRO" | "CREDITO" | "MISTO" |
  authMock.mockResolvedValue({ user: { id: financeiro } });
 }
 beforeEach(async () => { await truncarBanco(); await cadeiaTaxa(); await prepararFinanceiro(); });
-async function propor(chave = "dct03-propor", motivo = "Taxa paga maior que o aditivo assinado", evidencia = { recibo: "DCT03" }) { authMock.mockResolvedValue({ user: { id: financeiro } }); const { propostaId: propostaAditivoId, ...final } = alvo; return proporAcertoTaxaAditivo({ ...final, propostaAditivoId, cobrancaId, motivo, evidencia, chaveIdempotencia: chave }); }
+async function propor(chave = "dct03-propor", motivo = "Taxa paga maior que o aditivo assinado", evidencia = { recibo: "DCT03" }, cobrancaAlvo = cobrancaId) { authMock.mockResolvedValue({ user: { id: financeiro } }); const { propostaId: propostaAditivoId, ...final } = alvo; return proporAcertoTaxaAditivo({ ...final, propostaAditivoId, cobrancaId: cobrancaAlvo, motivo, evidencia, chaveIdempotencia: chave }); }
 describe.sequential("DCT03", () => {
 it("DCT03 credita a diferença, exige outro financeiro e faz replay sem duplicar", async () => { authMock.mockResolvedValue({ user: { id: financeiro } }); const { propostaId: propostaAditivoId, ...final } = alvo, entrada = { ...final, propostaAditivoId, cobrancaId, motivo: "Taxa paga maior que o aditivo assinado", evidencia: { recibo: "DCT03" }, chaveIdempotencia: "dct03-propor" }; const proposta = await proporAcertoTaxaAditivo(entrada); if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta)); expect(await proporAcertoTaxaAditivo(entrada)).toEqual(proposta); expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Autoaprovação indevida", chaveIdempotencia: "dct03-auto" })).toMatchObject({ ok: false }); authMock.mockResolvedValue({ user: { id: aprovador } }); const decisao = await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Crédito conferido independentemente", chaveIdempotencia: "dct03-decidir" }); expect(await decidirAcertoTaxaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Crédito conferido independentemente", chaveIdempotencia: "dct03-decidir" })).toEqual(decisao); const aplicada = await aplicarAcertoTaxaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "dct03-aplicar" }); expect(await aplicarAcertoTaxaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "dct03-aplicar" })).toEqual(aplicada); expect((await prisma.origemCreditoAcertoTaxaAditivo.findFirstOrThrow()).valor.toFixed(2)).toBe("20.00"); expect(await prisma.creditoMatricula.count()).toBe(1); expect(await prisma.evento.count({ where: { tipo: { in: ["AcertoTaxaAditivoProposto", "AcertoTaxaAditivoAprovado", "AcertoTaxaAditivoAplicado"] } } })).toBe(3); });
 it.each([
@@ -481,7 +481,13 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
 
   it("recusa concluir se a cobrança preservada mudou depois da aprovação", async () => {
     const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-preservada-mutada");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const acerto = await propor("q170-preservada-acerto", "Acerto aplicado antes da conferência global.", { recibo: "Q170-preservada" });
+    if (!acerto.ok || !acerto.dado) throw new Error(JSON.stringify(acerto));
     authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: acerto.dado.id, aprovada: true, motivo: "Acerto individual aprovado antes do conjunto.", chaveIdempotencia: "q170-preservada-acerto-aprovar" })).toMatchObject({ ok: true });
+    expect(await aplicarAcertoTaxaAditivo({ propostaId: acerto.dado.id, chaveIdempotencia: "q170-preservada-acerto-aplicar" })).toMatchObject({ ok: true });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true });
     expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Conjunto completo conferido antes da alteração posterior.", chaveIdempotencia: "q170-preservada-aprovar" })).toMatchObject({ ok: true });
     await prisma.cobranca.update({ where: { id: preservadaId }, data: { valorNegociado: 36, saldo: 36, versao: { increment: 1 } } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
