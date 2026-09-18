@@ -92,7 +92,7 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
     const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "A1", ordem: 1 } });
     const t = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: catalogo.modalidade.id, professorId: pro.id } });
     await prisma.vinculoDocente.create({ data: { turmaId: t.id, professorId: pro.id, inicio: new Date(Date.now() - 1000) } });
-    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna", paisId: catalogo.pais.id, telefoneE164: "+50680001111", email: "privado@example.test" } });
+    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna", paisId: catalogo.pais.id, telefoneE164: "+50680001111", whatsapp: true, email: "privado@example.test" } });
     const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC" } });
     await prisma.alocacaoTurma.create({ data: { turmaId: t.id, alunoId: aluno.id, matriculaId: matricula.id } });
     const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
