@@ -33,6 +33,10 @@ import { hashSubstituicao } from "./substituicao-estado";
 import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, obsoletarImpactosTaxaAditivo, prepararImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "./aditivo-taxa-impactos";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
+async function proximaMensalidade() {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" }, orderBy: { vencimento: "asc" }, select: { valorOriginal: true, valorNegociado: true, moeda: true } });
+  return { valorOriginal: cobranca.valorOriginal.toFixed(2), valorNegociado: cobranca.valorNegociado.toFixed(2), moeda: cobranca.moeda };
+}
 async function cadeiaTaxa(vencimentoTaxa?: string) {
  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, ambiente: "PRODUCAO", semSubstituicao: true });
  const fonte = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } } });
@@ -419,6 +423,7 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
   }
 
   it("prepara todas as duas taxas, exige aprovação independente, vincula e só conclui após aplicar o acerto afetado", async () => {
+    await prisma.cobranca.create({ data: { matriculaId: base.matriculaId, tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 300, valorNegociado: 300, saldo: 300, vencimento: new Date("2026-10-15T12:00:00.000Z") } });
     const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-duas-taxas");
     expect(await consultarImpactosTaxaAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: null });
     expect(await consultarImpactosTaxaAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { id: conjuntoId, status: "PENDENTE", impactos: expect.arrayContaining([
@@ -445,7 +450,7 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
-    expect(await proximaMensalidade()).toMatchObject({ valorOriginal: "300", valorNegociado: "300", moeda: "CRC" });
+    expect(await proximaMensalidade()).toMatchObject({ valorOriginal: "300.00", valorNegociado: "300.00", moeda: "CRC" });
     authMock.mockResolvedValue({ user: { id: base.secretariaId } });
     expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: true }] } });
     authMock.mockResolvedValue({ user: { id: aprovador } });
@@ -552,5 +557,57 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await decidirImpactosTaxaAditivo({ conjuntoId: novo.dado.id, aprovada: true, motivo: "Novo conjunto conferido independentemente.", chaveIdempotencia: "q170-repreparo-aprovar" })).toMatchObject({ ok: true });
     expect(await completarImpactosTaxaAditivo({ conjuntoId: novo.dado.id })).toMatchObject({ ok: true });
     expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
+  });
+
+  it("recusa o vínculo de acerto rejeitado também pela proteção SQL", async () => {
+    const { conjuntoId } = await prepararDuasTaxas("q170-acerto-vigente");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const rejeitado = await propor("q170-acerto-rejeitado", "Acerto que será rejeitado antes do vínculo.", { recibo: "Q170-rejeitado" });
+    if (!rejeitado.ok || !rejeitado.dado) throw new Error(JSON.stringify(rejeitado));
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: rejeitado.dado.id, aprovada: false, motivo: "Acerto rejeitado antes do vínculo.", chaveIdempotencia: "q170-acerto-rejeitado-decisao" })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: rejeitado.dado.id })).toMatchObject({ ok: false, erro: expect.stringContaining("vigente") });
+    await expect(prisma.impactoTaxaAditivo.updateMany({ where: { conjuntoId, cobrancaId }, data: { propostaAcertoId: rejeitado.dado.id } })).rejects.toThrow("vigente");
+
+  });
+
+  it("revalida acerto rejeitado antes da aprovação e permite repreparo", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-acerto-revalidar");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const paraRecusar = await propor("q170-acerto-revalidar", "Acerto pendente que perde vigência antes da aprovação do conjunto.", { recibo: "Q170-revalidar" });
+    if (!paraRecusar.ok || !paraRecusar.dado) throw new Error(JSON.stringify(paraRecusar));
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: paraRecusar.dado.id })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: paraRecusar.dado.id, aprovada: false, motivo: "Acerto recusado antes da aprovação do conjunto.", chaveIdempotencia: "q170-acerto-revalidar-rejeitar" })).toMatchObject({ ok: true });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Não aprovar conjunto com acerto rejeitado.", chaveIdempotencia: "q170-acerto-revalidar-conjunto" })).toMatchObject({ ok: false, erro: expect.stringContaining("vigente") });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Acerto pendente foi rejeitado e exige novo preparo.", chaveIdempotencia: "q170-acerto-revalidar-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const reconstruido = await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "Taxa original alterada pelo aditivo assinado." },
+      { cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: "Cobrança adicional permanece fora do escopo do aditivo." },
+    ], chaveIdempotencia: "q170-acerto-revalidar-repreparo" });
+    expect(reconstruido).toMatchObject({ ok: true, dado: { status: "PENDENTE" } });
+  });
+
+  it("obsoleta conjunto aprovado quando o acerto é rejeitado depois e permite repreparo", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-acerto-rejeicao-posterior");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const pendenteAprovado = await propor("q170-acerto-rejeicao-posterior", "Acerto pendente aceito pelo conjunto antes da rejeição.", { recibo: "Q170-rejeicao-posterior" });
+    if (!pendenteAprovado.ok || !pendenteAprovado.dado) throw new Error(JSON.stringify(pendenteAprovado));
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: pendenteAprovado.dado.id })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Conjunto aprovado com acerto ainda pendente.", chaveIdempotencia: "q170-acerto-rejeicao-posterior-conjunto" })).toMatchObject({ ok: true });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: pendenteAprovado.dado.id, aprovada: false, motivo: "Acerto rejeitado depois da aprovação do conjunto.", chaveIdempotencia: "q170-acerto-rejeicao-posterior-rejeitar" })).toMatchObject({ ok: true });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Acerto vinculado foi rejeitado após a aprovação.", chaveIdempotencia: "q170-acerto-rejeicao-posterior-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Acerto vinculado foi rejeitado após a aprovação.", chaveIdempotencia: "q170-acerto-rejeicao-posterior-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+
+    const novo = await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "Taxa original alterada pelo aditivo assinado." },
+      { cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: "Cobrança adicional permanece fora do escopo do aditivo." },
+    ], chaveIdempotencia: "q170-acerto-rejeicao-posterior-repreparo" });
+    expect(novo).toMatchObject({ ok: true, dado: { status: "PENDENTE" } });
   });
 });
