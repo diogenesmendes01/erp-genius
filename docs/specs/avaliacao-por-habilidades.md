@@ -1,3 +1,5 @@
+> Estado de implementação em 18/09/2026: consultar a [fila corrente do quadro único](../planejamento/quadro-entregas.md#fila-corrente-de-implementação-local--18092026). Os blocos de atualização por incremento abaixo são registros históricos; suas pendências podem ter sido superadas por entregas posteriores. Os requisitos desta SPEC continuam obrigatórios.
+
 Atualização 561: gestão de designações de segunda chamada disponível pela interface, com vigência, busca, histórico paginado e proteção SQL do histórico. 14 integrações, lint e build aprovados; ensaio interativo pendente. [Evidências e limites](../planejamento/validacao-incremento-561.md).
 
 Atualização 560: designação de segunda chamada expirada não restaura autorização anterior; novas datas de criação gravadas em UTC. 13 integrações, lint e tipos aprovados. Histórico legado exige conferência. [Evidências e limites](../planejamento/validacao-incremento-560.md).

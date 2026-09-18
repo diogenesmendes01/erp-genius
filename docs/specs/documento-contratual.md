@@ -1,3 +1,5 @@
+> Estado de implementação em 18/09/2026: consultar a [fila corrente do quadro único](../planejamento/quadro-entregas.md#fila-corrente-de-implementação-local--18092026). Os blocos de atualização por incremento abaixo são registros históricos; suas pendências podem ter sido superadas por entregas posteriores. Os requisitos desta SPEC continuam obrigatórios.
+
 Atualização 527: retomada exige histórico correspondente e confere a restrição antes de retornar sucesso. Suíte unitária completa com 1.078 aprovações após correção de mocks; 27 integrações, lint e build aprovados. Q161 e emissão recorrente continuam pendentes. [Evidências e limites](../planejamento/validacao-incremento-527.md).
 
 Atualização 526: banco preserva fonte, seleção e eventos da retomada; valida transições e papéis da decisão. 27 integrações de pausa/retomada, uma regressão mensal e lint aprovados. Migrações somente no banco de teste; emissão recorrente e Q161 continuam pendentes. [Evidências e limites](../planejamento/validacao-incremento-526.md).

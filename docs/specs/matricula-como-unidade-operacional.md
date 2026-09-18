@@ -1,3 +1,5 @@
+> Estado de implementação em 18/09/2026: consultar a [fila corrente do quadro único](../planejamento/quadro-entregas.md#fila-corrente-de-implementação-local--18092026). Os blocos de atualização por incremento abaixo são registros históricos; suas pendências podem ter sido superadas por entregas posteriores. Os requisitos desta SPEC continuam obrigatórios.
+
 # SPEC-ERP-002 — Matrícula como unidade operacional
 
 **Versão:** 1.80 — 14/09/2026. **Estado:** ativação de preparação em turma e particular integrada; B01 ainda não concluído. [Incremento, testes e limites](../planejamento/implementacao-b01.md). Base B01, consumida por B02, F07.2–F07.7, P01/P02, N01, M01 e V01.
