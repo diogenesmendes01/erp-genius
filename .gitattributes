@@ -54,3 +54,5 @@ prisma/migrations/20260917149000_identidade_contratual_aditivo/migration.sql -te
 prisma/migrations/20260917150000_proposta_vencimento_aditivo/migration.sql -text
 
 prisma/migrations/20260917151000_hash_fotografia_vencimento/migration.sql -text
+
+prisma/migrations/20260917152000_periodo_integral_destinacoes/migration.sql -text
