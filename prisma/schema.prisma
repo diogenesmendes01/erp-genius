@@ -542,6 +542,8 @@ model Usuario {
   materiaisReposicaoPublicados MaterialReposicaoGravacao[] @relation("MaterialReposicaoPublicado")
   propostasRegularizacaoFonteGravacao PropostaRegularizacaoFonteGravacao[] @relation("PreparadorRegularizacaoFonteGravacao")
   decisoesRegularizacaoFonteGravacao DecisaoRegularizacaoFonteGravacao[] @relation("DecisorRegularizacaoFonteGravacao")
+  propostasTrocaFonteReposicaoGravacao PropostaTrocaFonteReposicaoGravacao[] @relation("PreparadorTrocaFonteReposicao")
+  decisoesTrocaFonteReposicaoGravacao DecisaoTrocaFonteReposicaoGravacao[] @relation("DecisorTrocaFonteReposicao")
   disponibilizacoesEntregaReposicaoPublicadas DisponibilizacaoEntregaReposicao[] @relation("DisponibilizacaoEntregaPublicada")
   relatosMaterialReposicaoEquipe RelatoIndisponibilidadeMaterialReposicao[] @relation("RelatoMaterialEquipe")
   indisponibilidadesMaterialReposicaoConfirmadas IndisponibilidadeMaterialReposicao[] @relation("IndisponibilidadeMaterialConfirmada")
@@ -5678,6 +5680,7 @@ model MaterialReposicaoGravacao {
   indisponibilidades IndisponibilidadeMaterialReposicao[]
   fontesRevisao FonteRevisaoGravacao[] @relation("FonteMaterialReposicaoGravacao")
   propostasRegularizacaoFonte PropostaRegularizacaoFonteGravacao[] @relation("PropostaRegularizacaoMaterialReposicao")
+  propostasTrocaFonte PropostaTrocaFonteReposicaoGravacao[] @relation("PropostaTrocaFonteMaterialReposicao")
 }
 
 model DisponibilizacaoEntregaReposicao {
@@ -6968,12 +6971,20 @@ model FonteRevisaoGravacao {
   mimeType String
   propostaId String? @unique
   proposta PropostaRegularizacaoFonteGravacao? @relation("FonteDaPropostaRegularizacao", fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaTrocaReposicaoId String? @unique
+  propostaTrocaReposicao PropostaTrocaFonteReposicaoGravacao? @relation("FonteDaPropostaTrocaReposicao", fields: [propostaTrocaReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemPublicacaoId String?
+  origemPublicacao FonteRevisaoGravacao? @relation("FonteMaterialOrigemPublicacao", fields: [origemPublicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fontesMateriaisDerivadas FonteRevisaoGravacao[] @relation("FonteMaterialOrigemPublicacao")
+  propostasComoFontePublicacao PropostaTrocaFonteReposicaoGravacao[] @relation("PropostaTrocaFontePublicacao")
+  propostasComoFonteMaterialAnterior PropostaTrocaFonteReposicaoGravacao[] @relation("PropostaTrocaFonteMaterialAnterior")
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
 
   @@unique([publicacaoAulaId, versao], map: "FonteRevisaoGravacao_publicacao_versao_key")
   @@unique([materialReposicaoId, versao], map: "FonteRevisaoGravacao_material_versao_key")
   @@index([publicacaoAulaId, versao], map: "FonteRevisaoGravacao_publicacao_versao_idx")
   @@index([materialReposicaoId, versao], map: "FonteRevisaoGravacao_material_versao_idx")
+  @@index([origemPublicacaoId], map: "FonteRevisaoGravacao_origem_publicacao_idx")
 }
 
 model PropostaRegularizacaoFonteGravacao {
@@ -7009,6 +7020,44 @@ model DecisaoRegularizacaoFonteGravacao {
   proposta PropostaRegularizacaoFonteGravacao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   decisorId String
   decisor Usuario @relation("DecisorRegularizacaoFonteGravacao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+}
+
+/// Proposta contextual: adota a revisão já publicada da aula original como uma
+/// nova versão imutável do material da reposição. Não altera a publicação nem o
+/// material, suas entregas, avaliações ou prazos.
+model PropostaTrocaFonteReposicaoGravacao {
+  id String @id @default(cuid())
+  materialReposicaoId String
+  materialReposicao MaterialReposicaoGravacao @relation("PropostaTrocaFonteMaterialReposicao", fields: [materialReposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fontePublicacaoId String
+  fontePublicacao FonteRevisaoGravacao @relation("PropostaTrocaFontePublicacao", fields: [fontePublicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fonteMaterialAnteriorId String
+  fonteMaterialAnterior FonteRevisaoGravacao @relation("PropostaTrocaFonteMaterialAnterior", fields: [fonteMaterialAnteriorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoMaterialEsperada Int
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  preparadorId String
+  preparador Usuario @relation("PreparadorTrocaFonteReposicao", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  chaveIdempotencia String
+  criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
+  decisao DecisaoTrocaFonteReposicaoGravacao?
+  fonteMaterial FonteRevisaoGravacao? @relation("FonteDaPropostaTrocaReposicao")
+
+  @@unique([preparadorId, chaveIdempotencia], map: "PropostaTrocaFonteReposicaoGravacao_preparador_chave_key")
+  @@index([materialReposicaoId, criadaEm], map: "PropostaTrocaFonteReposicaoGravacao_material_idx")
+  @@index([fontePublicacaoId], map: "PropostaTrocaFonteReposicaoGravacao_publicacao_idx")
+}
+
+model DecisaoTrocaFonteReposicaoGravacao {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaTrocaFonteReposicaoGravacao @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorTrocaFonteReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   aprovada Boolean
   motivo String
   decididaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
