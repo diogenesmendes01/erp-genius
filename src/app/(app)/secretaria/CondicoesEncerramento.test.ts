@@ -22,6 +22,7 @@ const comum = {
   codigo: "MAT-246",
   autorId: "secretaria-1",
   administrador: true,
+  cobrancas: [{ id: "cobranca-1", codigo: "MEN-001", tipo: "MENSALIDADE" }],
 };
 const renderizar = (props: Parameters<typeof CondicoesEncerramento>[0]) => renderToStaticMarkup(createElement(CondicoesEncerramento, props));
 
@@ -46,13 +47,12 @@ describe("Condições de encerramento", () => {
     expect(html).not.toContain("Confirme o contrato antes");
   });
 
-  it("mantém fonte cancelada apenas como histórico e não oferece aprovação", () => {
+  it("preserva o acerto já aprovado após cancelamento da fonte", () => {
     const html = renderizar({ ...comum, documentoId: null, fontesOriginaisEnviados: [], versoes: [
-      { id: "versao-cancelada", versao: 2, status: "PENDENTE", regras, motivo: "Condição do original enviado.", motivoDecisao: null, preparadorId: "outra-secretaria", documento: null, artefatoContratual: { id: "artefato-1" }, processoAssinatura: { id: "processo-cancelado", estado: "CANCELADO", envioConfirmado: true, conclusaoRegistrada: false }, preparador: { nome: "Secretaria" }, decisor: null },
+      { id: "versao-cancelada", versao: 2, status: "APROVADA", regras: { ...regras, acertoDesistenciaPreparacao: { tipo: "VALOR_FIXO", valor: "80", clausulaId: "7.2", condicoesAplicacao: { momento: "ANTES_ATIVACAO", unidade: "POR_COBRANCA", alcance: { tipo: "COBRANCAS_IDENTIFICADAS", cobrancaIds: ["cobranca-1"] } } } }, motivo: "Condição do original enviado.", motivoDecisao: "Conferência independente.", preparadorId: "outra-secretaria", documento: null, artefatoContratual: { id: "artefato-1" }, processoAssinatura: { id: "processo-cancelado", estado: "CANCELADO", envioConfirmado: true, conclusaoRegistrada: false }, preparador: { nome: "Secretaria" }, decisor: { nome: "Administração" } },
     ] });
 
-    expect(html).toContain("Original enviado foi cancelado; esta versão permanece como histórico e requer nova conferência.");
-    expect(html).toContain('value="aprovar" disabled=""');
-    expect(html).toContain("Aprovar regras conferidas");
+    expect(html).toContain("Original enviado foi cancelado; a versão aprovada permanece como evidência do acerto.");
+    expect(html).toContain("Acerto Q165 antes da ativação: 80 fixo; cláusula 7.2; alcance cobranças: MEN-001 (MENSALIDADE).");
   });
 });
