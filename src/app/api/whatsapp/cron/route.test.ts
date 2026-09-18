@@ -6,6 +6,7 @@ vi.mock("@/server/cobrancas/acesso-aulas", () => ({ rodarControleAcessoAulas: m.
 vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: m.outras }));
 vi.mock("@/server/whatsapp/cron-comercial", () => ({ rodarLeadNovoSemResposta: m.outras, rodarNoShow: m.outras, rodarPreExperimental: m.outras }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: m.outras }));
+vi.mock("@/server/contratos/vencimento-acesso", () => ({ rodarReconciliacaoAcessoVencimento: m.outras }));
 import { POST } from "./route";
 beforeEach(() => { vi.resetAllMocks(); m.reservas.mockResolvedValue({ avaliadas: 0 }); m.outras.mockResolvedValue({}); });
 afterEach(() => vi.unstubAllEnvs());
