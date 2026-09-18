@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { FormaPagamento, Papel } from "@prisma/client";
+import { FormaPagamento, Papel, TipoAjuste, Vigencia } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -47,6 +47,7 @@ import { carregarFontesReconferenciaDeltaTx } from "./desistencia-reconferencia-
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { registrarPagamento, registrarRecebimentoDestinado } from "@/server/financeiro/acoes";
 import { proporDevolucaoCredito, decidirDevolucaoCredito } from "@/server/financeiro/devolucao-credito";
+import { ajustarCobranca, decidirAprovacao } from "@/server/ajustes/acoes";
 import { z } from "zod";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
@@ -260,6 +261,52 @@ it("destina pagamento posterior à cobrança já quitada como crédito sem dupli
   entrar(financeiroPreparador.id);
   expect(await prepararReconferenciaDeltaDesistencia({ aplicacaoBaseId: aplicacaoBase.id,
     motivo: "Não duplicar crédito sem novo fato financeiro.", chaveIdempotencia: "sem-novo-pagamento-credito-delta" })).toMatchObject({ ok: false });
+});
+
+it("reconcilia ajuste financeiro posterior à base e emite apenas o crédito delta devido", async () => {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  entrar(financeiroPreparador.id);
+  const ajuste = dado(await ajustarCobranca({ cobrancaId: cobranca.id, tipo: TipoAjuste.ALTERACAO_VALOR,
+    valorPara: 70, vigencia: Vigencia.ESTA_COBRANCA, motivo: "Ajuste financeiro posterior que será reconciliado com a obrigação contratual." }));
+  expect(ajuste.aprovacao).toBe(true);
+  const aprovacaoAjuste = await prisma.aprovacao.findFirstOrThrow({ where: { alvoId: cobranca.id, solicitanteId: financeiroPreparador.id, status: "PENDENTE" } });
+  entrar(base.adminId);
+  expect(await decidirAprovacao(aprovacaoAjuste.id, { aprovar: true, motivo: "Administração aprovou o ajuste posterior de forma independente." })).toMatchObject({ ok: true });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroPreparador.id,
+    chaveIdempotencia: "recebimento-ajuste-material-delta", valorRecebido: 70, forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2099-12-10T12:00:00.000Z"), evidencia: "Recebimento real posterior, antes da reconferência da obrigação." }));
+  const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  expect(antes.valorNegociado.toFixed(2)).toBe("70.00");
+  const proposta = await prepararDelta(aplicacaoBase.id, "preparo-ajuste-material-delta");
+  const decisao = await aprovarDelta(proposta.id, "decisao-ajuste-material-delta");
+  entrar(financeiroAprovador.id);
+  const entrada = { decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicar-ajuste-material-delta" };
+  const aplicada = dado(await aplicarReconferenciaDeltaDesistencia(entrada));
+  expect(dado(await aplicarReconferenciaDeltaDesistencia(entrada)).id).toBe(aplicada.id);
+  const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  expect(depois.valorNegociado.toFixed(2)).toBe("50.00");
+  expect(depois.valorRecebido?.toFixed(2)).toBe("70.00");
+  expect(depois.versao).toBe(antes.versao + 1);
+  const creditos = await prisma.creditoMatricula.findMany({ where: { matriculaId: base.matriculaId } });
+  expect(creditos).toHaveLength(1);
+  expect(creditos[0].origemReconferenciaDeltaDesistenciaId).not.toBeNull();
+  expect(creditos[0].valorInicial.toFixed(2)).toBe("20.00");
+  const recebido = await prisma.recebimento.findUniqueOrThrow({ where: { chaveIdempotencia: "recebimento-ajuste-material-delta" }, include: { destinacoes: true } });
+  expect(recebido.valor.toFixed(2)).toBe("70.00");
+  expect(recebido.destinacoes).toHaveLength(1);
+  expect(recebido.destinacoes[0]).toMatchObject({ tipo: "COBRANCA", cobrancaId: cobranca.id });
+  expect(recebido.destinacoes[0].valor.toFixed(2)).toBe("70.00");
+  const memoriaBase = (await prisma.aplicacaoAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: aplicacaoBase.id } })).memoria;
+  const fontes = await prisma.$transaction(tx => carregarFontesReconferenciaDeltaTx(tx, base.matriculaId, memoriaBase));
+  const registro = await prisma.aplicacaoReconferenciaDeltaDesistencia.findUniqueOrThrow({ where: { id: aplicada.id } });
+  expect(registro.fotografiaPosterior).toEqual(fontes.fotografia);
+  expect(registro.fotografiaPosteriorHash).toBe(hashSubstituicao(fontes.fotografia));
+  entrar(base.secretariaId);
+  const efetivacao = dado(await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
+    aplicacaoAcertoDesistenciaContratualId: aplicacaoBase.id, motivo: "Secretaria efetiva após crédito delta e cobertura financeira conferidos." }));
+  expect(efetivacao.status).toBe("CANCELADA");
 });
 
 it("persiste pendência por informe posterior e não cria decisões", async () => {
