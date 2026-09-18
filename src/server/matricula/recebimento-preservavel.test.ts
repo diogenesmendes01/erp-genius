@@ -18,3 +18,11 @@ describe("liquidação preservável na pausa e retomada", () => {
     expect(recebimentoPreservavel({ status: "PAGO", valorNegociado: d(100), valorRecebido: d(100), saldo: null })).toBe(false);
   });
 });
+
+it("preserva compensação por serviço sem presumir recebimento em dinheiro", () => {
+  const parcial = { status: "PENDENTE", valorNegociado: d(100), valorRecebido: null, valorCompensadoPermuta: d(60), saldo: d(40) };
+  expect(recebimentoPreservavel(parcial)).toBe(true);
+  expect(recebimentoPreservavel({ ...parcial, saldo: d(100) })).toBe(false);
+  expect(recebimentoPreservavel({ ...parcial, status: "PAGO", valorCompensadoPermuta: d(100), saldo: d(0) })).toBe(true);
+  expect(recebimentoPreservavel({ ...parcial, valorCompensadoPermuta: d(-60) })).toBe(false);
+});
