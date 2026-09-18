@@ -1,6 +1,7 @@
 import { beforeEach, expect, it } from "vitest";
 import { CategoriaDocumento, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { prepararContratacaoTx } from "./preparacao-comercial-tx";
 
@@ -66,10 +67,19 @@ async function criarLedgerDireto(status: StatusCobranca, recebido: number | null
   const fonte = await prepararFonte();
   const nova = await prisma.cobranca.create({ data: {
     matriculaId: fonte.matricula.id, tipo: TipoCobranca.MENSALIDADE, moeda: "CRC", valorOriginal: 100, valorNegociado: 100,
-    saldo, status, valorRecebido: recebido, pagoEm, vencimento: new Date("2026-11-05T00:00:00.000Z"),
+    saldo: recebido ? 100 : saldo, status: recebido ? StatusCobranca.PENDENTE : status,
+    vencimento: new Date("2026-11-05T00:00:00.000Z"),
     coberturaInicio: new Date("2026-11-01T00:00:00.000Z"), coberturaFim: new Date("2026-11-30T00:00:00.000Z"),
   } });
-  return { ...fonte, nova };
+  if (recebido) {
+    const financeiro = await criarUsuario(["FINANCEIRO"]);
+    await prisma.$transaction(tx => receberTx(tx, {
+      cobrancaId: nova.id, autorId: financeiro.id, chaveIdempotencia: `continuidade-${nova.id}`,
+      valorRecebido: recebido, forma: "DINHEIRO", dataPagamento: pagoEm!,
+      comentario: "Recebimento conferido antes da tentativa de emissão",
+    }));
+  }
+  return { ...fonte, nova: await prisma.cobranca.findUniqueOrThrow({ where: { id: nova.id } }) };
 }
 
 beforeEach(async () => { await truncarBanco(); });
