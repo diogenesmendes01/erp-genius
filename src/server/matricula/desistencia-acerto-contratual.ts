@@ -107,12 +107,12 @@ export async function prepararAcertoDesistenciaContratual(input: unknown) {
       if (ultima && (ultima.id !== entrada.anteriorId || !ultima.decisao)) {
         throw new ErroRegra("Somente a última proposta já decidida deste pedido pode ser reapresentada.");
       }
+      if (ultima?.decisao?.aprovada) {
+        throw new ErroRegra("A memória aprovada pertence ao pedido anterior. A Secretaria deve registrar novo pedido após a mudança e o Financeiro preparar nova memória.");
+      }
 
       const { fotografia, credito: creditoJaApurado } = await fotografiaQ165(tx, pedido.matriculaId);
       const condicoesHash = hashSubstituicao(condicoes.regras);
-      if (ultima?.decisao?.aprovada && ultima.fotografiaHash === hashSubstituicao(fotografia) && ultima.condicoesHash === condicoesHash) {
-        throw new ErroRegra("A proposta aprovada ainda corresponde à fotografia e à condição contratual atuais.");
-      }
       const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: pedido.matriculaId }, orderBy: { id: "asc" } });
       const itens = cobrancas.map(cobranca => {
         const resultado = calcularObrigacaoDesistenciaContratual(condicoes.regras, { ...cobranca, valorCreditoJaApurado: creditoJaApurado.get(cobranca.id) ?? new Prisma.Decimal(0) }, cobrancas);

@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { FormaPagamento, Papel } from "@prisma/client";
+import { FormaPagamento, Papel, Prisma } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -111,11 +111,11 @@ async function substituirEConfirmarContrato(manterSubstitutoAberto = false) {
   await confirmarContratoDoProcesso(substituto.id, referencia, "aceite-substituto-q165");
 }
 
-async function registrarPedido() {
+async function registrarPedido(chave = "pedido-q165") {
   entrar(base.secretariaId);
   const consulta = dado(await consultarDesistenciaPreparacao({ matriculaId: base.matriculaId }));
   const pedido = dado(await registrarPedidoDesistenciaPreparacao({ matriculaId: base.matriculaId, estadoHash: consulta.estadoHash,
-    motivo: "Pessoa desistiu após aceitar o contrato, antes da ativação.", evidenciaPedido: "Atendimento e aceite contratual conferidos para o fluxo financeiro.", chaveIdempotencia: "pedido-q165" }));
+    motivo: "Pessoa desistiu após aceitar o contrato, antes da ativação.", evidenciaPedido: "Atendimento e aceite contratual conferidos para o fluxo financeiro.", chaveIdempotencia: chave }));
   return prisma.pedidoDesistenciaPreparacao.findUniqueOrThrow({ where: { id: pedido.id } });
 }
 
@@ -285,6 +285,47 @@ it("não permite novo Q165 do mesmo pedido depois de uma aplicação", async () 
   expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({ where: { decisao: { proposta: { pedidoId: pedido.id } } } })).toBe(1);
 });
 
+it("bloqueia nova aplicação na matrícula por Node e inserção direta", async () => {
+  const { pedido } = await prepararAplicacaoSemPagamento("primeira-aplicacao-matricula-q165");
+  const novoPedido = await registrarPedido("pedido-depois-aplicacao-q165");
+  expect(novoPedido.id).not.toBe(pedido.id);
+  const proposta = dado(await preparar(novoPedido.id, "preparo-depois-aplicacao-q165"));
+  const propostaPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: proposta.id } });
+  const decisao = dado(await aprovar(proposta.id, propostaPersistida.fotografiaHash, "decisao-depois-aplicacao-q165"));
+  expect((await aprovarAdministracao(novoPedido, "segunda aplicação bloqueada")).ok).toBe(true);
+
+  entrar(financeiroAprovador.id);
+  expect(await aplicarAcertoDesistenciaContratual({
+    decisaoId: decisao.id, chaveIdempotencia: "node-segunda-aplicacao-matricula-q165",
+  })).toMatchObject({ ok: false, erro: expect.stringContaining("já possui aplicação Q165") });
+  await expect(prisma.aplicacaoAcertoDesistenciaContratual.create({ data: {
+    decisaoId: decisao.id, executorId: financeiroAprovador.id,
+    memoria: propostaPersistida.memoria as Prisma.InputJsonValue,
+    condicoesHash: propostaPersistida.condicoesHash, fotografiaHash: propostaPersistida.fotografiaHash,
+    chaveIdempotencia: "sql-segunda-aplicacao-matricula-q165",
+  } })).rejects.toThrow("já possui aplicação Q165");
+  expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({
+    where: { decisao: { proposta: { pedido: { matriculaId: base.matriculaId } } } },
+  })).toBe(1);
+});
+
+it("serializa aplicações concorrentes da mesma decisão", async () => {
+  const pedido = await registrarPedido("pedido-concorrencia-aplicacao-q165");
+  const decisao = await prepararEDecidir(pedido, "concorrencia-aplicacao-q165");
+  expect((await aprovarAdministracao(pedido, "concorrência aplicação")).ok).toBe(true);
+  entrar(financeiroAprovador.id);
+
+  const resultados = await Promise.all([
+    aplicarAcertoDesistenciaContratual({ decisaoId: decisao.id, chaveIdempotencia: "concorrencia-aplicacao-q165-a" }),
+    aplicarAcertoDesistenciaContratual({ decisaoId: decisao.id, chaveIdempotencia: "concorrencia-aplicacao-q165-b" }),
+  ]);
+  expect(resultados.filter(resultado => resultado.ok)).toHaveLength(1);
+  expect(resultados.filter(resultado => !resultado.ok)).toHaveLength(1);
+  expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({
+    where: { decisao: { proposta: { pedido: { matriculaId: base.matriculaId } } } },
+  })).toBe(1);
+});
+
 it("exige decisor independente da preparação", async () => {
   const pedido = await registrarPedido();
   const proposta = dado(await preparar(pedido.id));
@@ -304,7 +345,7 @@ it("recusa aprovação depois de alteração da fotografia financeira", async ()
   expect((await aprovar(proposta.id, fotografiaHash, "decisao-foto-mutada-q165")).ok).toBe(false);
 });
 
-it("reapresenta uma proposta aprovada que ficou obsoleta, sem ressuscitar a aplicação anterior", async () => {
+it("encaminha fato posterior à proposta aprovada para novo pedido, Q121 e aplicação independentes", async () => {
   const pedido = await registrarPedido();
   const primeira = dado(await preparar(pedido.id, "preparo-obsoleta-q165"));
   const primeiraPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: primeira.id } });
@@ -316,20 +357,31 @@ it("reapresenta uma proposta aprovada que ficou obsoleta, sem ressuscitar a apli
     forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-20T12:00:00.000Z"), evidencia: "Recebimento comprovado depois da aprovação financeira.",
   }));
 
-  const segunda = dado(await preparar(pedido.id, "reapresentar-obsoleta-q165", {
+  expect(await preparar(pedido.id, "reapresentar-obsoleta-q165", {
     anteriorId: primeira.id, motivoReapresentacao: "Recebimento comprovado alterou a fotografia após a aprovação inicial.",
-  }));
-  const segundaPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: segunda.id } });
-  expect(segundaPersistida).toMatchObject({ anteriorId: primeira.id, versao: primeiraPersistida.versao + 1 });
-  expect(segundaPersistida.fotografiaHash).not.toBe(primeiraPersistida.fotografiaHash);
-  expect(segundaPersistida.motivoReapresentacao).toContain("Recebimento comprovado");
+  })).toMatchObject({ ok: false, erro: expect.stringContaining("novo pedido") });
+  expect(await prisma.propostaAcertoDesistenciaContratual.count({ where: { pedidoId: pedido.id } })).toBe(1);
 
-  dado(await aprovar(segunda.id, segundaPersistida.fotografiaHash, "decisao-reapresentada-q165"));
-  // O recebimento também tornou a decisão Q121 do pedido obsoleta. A nova
-  // memória é decidível, mas não pode reutilizar aquela decisão administrativa.
-  expect((await aprovarAdministracao(pedido, "proposta reapresentada")).ok).toBe(false);
+  const novoPedido = await registrarPedido("pedido-fato-posterior-q165");
+  expect(novoPedido.id).not.toBe(pedido.id);
+  const segunda = dado(await preparar(novoPedido.id, "preparo-novo-pedido-q165"));
+  const segundaPersistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: segunda.id } });
+  expect(segundaPersistida).toMatchObject({ anteriorId: null, versao: 1 });
+  expect(segundaPersistida.fotografiaHash).not.toBe(primeiraPersistida.fotografiaHash);
+
+  const decisaoSegunda = dado(await aprovar(segunda.id, segundaPersistida.fotografiaHash, "decisao-novo-pedido-q165"));
+  expect((await aprovarAdministracao(novoPedido, "novo pedido após fato financeiro")).ok).toBe(true);
+  await expect(prisma.aplicacaoAcertoDesistenciaContratual.create({ data: {
+    decisaoId: decisaoPrimeira.id, executorId: financeiroAprovador.id,
+    memoria: primeiraPersistida.memoria as Prisma.InputJsonValue,
+    condicoesHash: primeiraPersistida.condicoesHash, fotografiaHash: primeiraPersistida.fotografiaHash,
+    chaveIdempotencia: "sql-aplicar-pedido-obsoleto-q165",
+  } })).rejects.toThrow();
+  entrar(financeiroAprovador.id);
   expect(await aplicarAcertoDesistenciaContratual({ decisaoId: decisaoPrimeira.id, chaveIdempotencia: "aplicar-obsoleta-q165" })).toMatchObject({ ok: false });
+  expect((await aplicarDecisao(decisaoSegunda.id, "novo-pedido-q165")).id).toBeTruthy();
   expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({ where: { decisao: { proposta: { pedidoId: pedido.id } } } })).toBe(0);
+  expect(await prisma.aplicacaoAcertoDesistenciaContratual.count({ where: { decisao: { proposta: { pedidoId: novoPedido.id } } } })).toBe(1);
 });
 
 it("encadeia reapresentação após rejeição com a mesma fotografia e bloqueia a antecessora", async () => {

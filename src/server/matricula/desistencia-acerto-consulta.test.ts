@@ -40,6 +40,8 @@ vi.mock("@/server/_shared", () => ({
 vi.mock("@/server/financeiro/recebimentos", () => ({
   bloquearMatriculas: h.bloquearMatriculas,
 }));
+vi.mock("@/server/contratos/substituicao-estado", () => ({ hashSubstituicao: () => "f".repeat(64) }));
+vi.mock("./desistencia-acerto-contratual", () => ({ fotografiaQ165: async () => ({ fotografia: {} }) }));
 
 import { consultarAcertoDesistenciaContratual } from "./desistencia-acerto-consulta";
 
@@ -135,7 +137,7 @@ describe("consultarAcertoDesistenciaContratual", () => {
   });
 
   it("aceita a fonte pré-assinatura validada sem exigir documento aceito na consulta", async () => {
-    configurar();
+    configurar({ propostas: [] });
     const dado = resultadoDado(await consultarAcertoDesistenciaContratual({ matriculaId }));
     expect(h.tx.condicoesEncerramentoMatricula.findFirst.mock.calls[0][0].where).not.toHaveProperty("documento");
     expect(dado.podePreparar).toBe(true);
