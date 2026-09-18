@@ -35,3 +35,13 @@ No incremento 460, o hash passou a incorporar o inventário operacional de agend
 No incremento 459, a decisão da reposição passou a integrar o hash da conferência. Pedido rejeitado sem conclusão deixa de bloquear e sua decisão permanece no snapshot da publicação. Decisão nova exige outra conferência; não há rejeição automática nem reversão de autorização. Pedidos autorizados ou concluídos afetados ainda exigem tratamento próprio.
 
 A persistência impede aprovação pelo autor e cria os casos de revisão de progressão atomicamente, com conferência dos impactos reais (208). A execução de mudança acadêmica com casos pendentes fica bloqueada (209). A ação pública e a interface usam a conferência atual e registram a aprovação com seu evento (458). Ainda precisam integrar o tratamento completo de dependências financeiras e reposições existentes. Os testes públicos não comprovam esses fluxos ainda bloqueados nem substituem validação visual.
+
+## Reserva antecipada já consumida — revisão sem alteração de valores
+
+O incremento 261/262 permite a revisão financeira Q23 somente quando a reserva de aula particular já foi consumida e a fonte histórica é verificável. A foto financeira fixa reserva, consumo, compra antecipada, cobrança, informes, recebimentos, destinações e condições contratuais. A decisão financeira é independente e a gestão ainda publica a correção pedagógica.
+
+Há dois percursos sem delta: realização diária original de PRESENTE para FALTA, desde que as condições históricas aprovadas comprovem a falta cobrável; e ocorrência Q92 conferida como FALTA_COBRAVEL, de FALTA para PRESENTE.
+
+A revisão preserva compra, reserva, consumo, cobrança, recebimentos, crédito, permuta e conferência. Não libera reserva, não cria crédito, não altera valores e não reclassifica IMPEDIDO, cancelamentos ou reserva pendente. Uma mudança de informe, recebimento, destinação, cobrança, condições aplicáveis, diário, ocorrência ou alçada invalida a fotografia e exige nova revisão; nenhuma decisão antiga volta a valer.
+
+A migration 263 ancora a matrícula durante a materialização da foto. Isso serializa novas condições contratuais com a foto Q23: uma condição aplicável posterior torna a decisão anterior obsoleta antes da publicação. A mensagem de ação para uma recusa que venha diretamente de trigger ainda é genérica; o guard SQL mantém a recusa e a ausência de efeitos.

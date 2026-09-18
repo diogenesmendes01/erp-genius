@@ -1,4 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({ preparar: vi.fn(), decidir: vi.fn(), refresh: vi.fn(), useState: vi.fn(), useRef: vi.fn(), useTransition: vi.fn() }));
 vi.mock("react", async original => ({ ...(await original<typeof import("react")>()), useState: mocks.useState, useRef: mocks.useRef, useTransition: mocks.useTransition }));
@@ -33,4 +35,48 @@ it("gera nova chave depois de preparar com sucesso, sem reaproveitar o replay an
   expect(mocks.preparar).toHaveBeenNthCalledWith(1, { propostaCorrecaoAulaId: "q23", motivo: "Reconferência financeira necessária.", chaveIdempotencia: "chave-primeira" });
   expect(mocks.preparar).toHaveBeenNthCalledWith(2, { propostaCorrecaoAulaId: "q23", motivo: "Reconferência financeira necessária.", chaveIdempotencia: "chave-segunda" });
   expect(mocks.refresh).toHaveBeenCalledTimes(2);
+});
+
+it("apresenta a fonte consumida, o preço preservado e as condições para a decisão financeira", () => {
+  mocks.useTransition.mockReturnValue([false, vi.fn()]);
+  mocks.useState.mockReturnValue(["", vi.fn()]);
+  mocks.useRef.mockReturnValue({ current: new Map() });
+  const html = renderToStaticMarkup(createElement(RevisoesCorrecaoAula, { matriculaId: "matricula", dados: {
+    usuarioId: "outro-financeiro", candidatas: [], revisoes: [{
+      id: "revisao", versao: 2, tipo: "SEM_ALTERACAO_VALORES", motivo: "Conferência da reserva consumida.", criadaEm: new Date(),
+      propostaCorrecaoAulaId: "q23", fotografiaHash: "a".repeat(64), preparador: { id: "fin", nome: "Preparador" },
+      decisao: null, podeDecidir: true,
+      propostaCorrecaoAula: { versao: 3, autorId: "professor", entradaHash: "b".repeat(64), encontro: { id: "encontro", inicio: new Date("2026-09-18T12:00:00Z"), fim: new Date("2026-09-18T12:01:00Z"), fusoOrigem: "UTC" } },
+      fotografia: {
+        fundamento: { participacaoAnterior: "PRESENTE", participacaoProposta: "FALTA", minutosEquivalentes: 1, valorPreservado: 1.67, moeda: "CRC", politica: "Q92_RESERVA_CONSUMIDA_SEM_DELTA", fonte: "DIARIO_REALIZADO" },
+        ocorrencia: null, conferencia: null,
+        reservaConsumida: { id: "reserva", consumoId: "consumo", minutos: 1, fonte: "DIARIO_REALIZADO", conferenciaOcorrenciaId: null },
+        compraAntecipada: { id: "compra", cobrancaId: "cobranca", minutosComprados: 180, valorPagoAlocado: 300, moeda: "CRC" },
+        condicoes: { id: "condicoes", versao: 1, documentoId: "contrato", regras: {} },
+        cobranca: { id: "cobranca", status: "PAGO", valorNegociado: 300, valorRecebido: 300, saldo: 0, moeda: "CRC", valorLiquidadoCredito: 0, valorCompensadoPermuta: 0 },
+        informesPagamento: [], recebimentos: [{ id: "recebimento", valor: 300, moeda: "CRC" }], destinacoes: [{ id: "destino", tipo: "COBRANCA", valor: 300 }],
+      },
+    }],
+  } as never }));
+  expect(html).toContain("Reserva consumida reserva");
+  expect(html).toContain("valor preservado 1.67 CRC");
+  expect(html).toContain("Condições contratuais v1");
+  expect(html).toContain("Aprovar sem alteração de valores");
+});
+
+it("não oferece aprovação quando a fotografia histórica é incompatível, mas mantém a rejeição", () => {
+  mocks.useTransition.mockReturnValue([false, vi.fn()]);
+  mocks.useState.mockReturnValue(["", vi.fn()]);
+  mocks.useRef.mockReturnValue({ current: new Map() });
+  const html = renderToStaticMarkup(createElement(RevisoesCorrecaoAula, { matriculaId: "matricula", dados: {
+    usuarioId: "outro-financeiro", candidatas: [], revisoes: [{
+      id: "revisao-invalida", versao: 1, tipo: "SEM_ALTERACAO_VALORES", motivo: "Memória antiga.", criadaEm: new Date(),
+      propostaCorrecaoAulaId: "q23", fotografiaHash: "a".repeat(64), fotografia: {}, preparador: { id: "fin", nome: "Preparador" },
+      decisao: null, podeDecidir: true,
+      propostaCorrecaoAula: { versao: 1, autorId: "professor", entradaHash: "b".repeat(64), encontro: { id: "encontro", inicio: new Date("2026-09-18T12:00:00Z"), fim: new Date("2026-09-18T12:01:00Z"), fusoOrigem: "UTC" } },
+    }],
+  } as never }));
+  expect(html).toContain("Fotografia histórica indisponível");
+  expect(html).toContain("Rejeitar revisão incompleta");
+  expect(html).not.toContain("Aprovar sem alteração de valores");
 });

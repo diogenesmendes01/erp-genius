@@ -11,6 +11,7 @@ const texto = z.string().trim().min(5).max(3000);
 const hash = (valor: unknown) => createHash("sha256").update(JSON.stringify(valor)).digest("hex");
 
 type FotoSql = { fotografia: Prisma.JsonValue; fotografiaHash: string };
+const temAlcadaFinanceira = (ator: { ativo?: boolean; papeis: Papel[] }) => ator.ativo !== false && ator.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR);
 
 async function exigirFinanceiroTx(tx: Prisma.TransactionClient, usuarioId: string) {
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id=${usuarioId} FOR SHARE`;
@@ -40,7 +41,7 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
       const proposta = await tx.propostaCorrecaoAula.findUnique({ where: { id: d.propostaCorrecaoAulaId }, select: { id: true, encontroId: true, versao: true, entradaHash: true, encontro: { select: { matriculaId: true } } } });
       if (!proposta?.encontro.matriculaId) throw new ErroRegra("A revisão financeira exige aula particular identificada.");
       const foto = await fotoAtualTx(tx, proposta.id);
-      if (!foto) throw new ErroRegra("A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");
+      if (!foto) throw new ErroRegra("A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas não consumidas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");
       const ultima = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { versao: true } });
       const revisao = await tx.propostaRevisaoFinanceiraCorrecaoAula.create({ data: {
         propostaCorrecaoAulaId: proposta.id, versao: (ultima?.versao ?? 0) + 1, versaoCorrecaoAula: proposta.versao,
@@ -86,12 +87,21 @@ export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
       await exigirFinanceiroTx(tx, usuario.id);
       const revisoesBrutas = await tx.propostaRevisaoFinanceiraCorrecaoAula.findMany({ where: { propostaCorrecaoAula: { encontro: { matriculaId: d.matriculaId } } }, orderBy: [{ propostaCorrecaoAula: { versao: "desc" } }, { versao: "desc" }],
         select: { id: true, versao: true, tipo: true, motivo: true, criadaEm: true, propostaCorrecaoAulaId: true, fotografia: true, fotografiaHash: true, preparador: { select: { id: true, nome: true, ativo: true, papeis: true } }, decisao: { select: { id: true, aprovada: true, motivo: true, criadaEm: true, decisor: { select: { id: true, nome: true, ativo: true, papeis: true } } } }, propostaCorrecaoAula: { select: { versao: true, entradaHash: true, autorId: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } } } });
-      const revisoes = revisoesBrutas.map(revisao => { const foto = revisao.fotografia as Record<string, unknown>; return { ...revisao, podeDecidir: !revisao.decisao && revisao.preparador.id !== usuario.id && revisao.propostaCorrecaoAula.autorId !== usuario.id, fotografia: { fundamento: foto.fundamento, ocorrencia: foto.ocorrencia, conferencia: foto.conferencia, cobranca: foto.cobranca, informesPagamento: foto.informesPagamento, recebimentos: foto.recebimentos, destinacoes: foto.destinacoes } }; });
+      const revisoes = revisoesBrutas.map(revisao => {
+        const foto = revisao.fotografia as Record<string, unknown>;
+        // Financeiro vê somente a memória financeira já imutável. Diário,
+        // conteúdo e chamadas continuam restritos ao fluxo pedagógico Q23.
+        return { ...revisao,
+          podeDecidir: temAlcadaFinanceira(usuario) && !revisao.decisao && revisao.preparador.id !== usuario.id && revisao.propostaCorrecaoAula.autorId !== usuario.id,
+          fotografia: { fundamento: foto.fundamento, ocorrencia: foto.ocorrencia, conferencia: foto.conferencia, reservaConsumida: foto.reservaConsumida,
+            compraAntecipada: foto.compraAntecipada, condicoes: foto.condicoes, cobranca: foto.cobranca, informesPagamento: foto.informesPagamento,
+            recebimentos: foto.recebimentos, destinacoes: foto.destinacoes },
+        };
+      });
       const brutas = await tx.propostaCorrecaoAula.findMany({ where: { encontro: { matriculaId: d.matriculaId }, rejeicao: null, aprovacao: null }, orderBy: { versao: "desc" }, distinct: ["encontroId"], select: { id: true, encontroId: true, versao: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } });
       // The SQL projection is the eligibility authority. Do not expose a Q23
       // motive merely because it belongs to this enrolment.
       const candidatas: Array<(typeof brutas)[number] & { podePreparar: boolean; preparoBloqueadoPor: string | null }> = [];
-      const temAlcadaFinanceira = (ator: { ativo: boolean; papeis: Papel[] }) => ator.ativo && ator.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR);
       for (const candidata of brutas) {
         const foto = await fotoAtualTx(tx, candidata.id);
         if (!foto) continue;
