@@ -51,6 +51,16 @@ export async function consultarPropostasUsoCredito(input: { alunoId: string; cre
       const usuario = await conferirAutor(tx, u.id);
       const credito = await tx.creditoMatricula.findFirst({ where: { id: d.creditoId, matricula: { alunoId: d.alunoId } } });
       if (!credito) throw new ErroRegra("Crédito não encontrado para este aluno.");
+      const origemDesistencia = credito.origemAcertoDesistenciaContratualId
+        ? await tx.origemCreditoAcertoDesistenciaContratual.findUniqueOrThrow({
+          where: { id: credito.origemAcertoDesistenciaContratualId },
+          select: { id: true, matriculaId: true, cobrancaId: true, valor: true, moeda: true, criadaEm: true,
+            aplicacao: { select: { id: true, decisao: { select: { id: true, proposta: { select: { id: true, pedidoId: true } } } } } },
+          },
+        }) : null;
+      if (origemDesistencia && (origemDesistencia.matriculaId !== credito.matriculaId || origemDesistencia.moeda !== credito.moeda || !origemDesistencia.valor.eq(credito.valorInicial))) {
+        throw new ErroRegra("A origem do crédito diverge da matrícula ou do valor registrado.");
+      }
       const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: credito.matriculaId, moeda: credito.moeda, status: { in: ["PENDENTE", "ATRASADO"] }, suspensaPorItemPausaId: null, canceladaPorPausaId: null }, orderBy: [{ vencimento: "asc" }, { id: "asc" }], select: { id: true, codigo: true, saldo: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true, vencimento: true } });
       const propostas = await tx.propostaUsoCredito.findMany({ where: { creditoId: credito.id }, orderBy: { versao: "desc" }, select: { id: true, cobrancaId: true, preparadorId: true, valor: true, versao: true, concordancia: true, motivo: true, criadoEm: true, decisao: { select: { aprovada: true, motivo: true } } } });
       const devolucoes = await tx.propostaDevolucaoCredito.findMany({
@@ -68,6 +78,12 @@ export async function consultarPropostasUsoCredito(input: { alunoId: string; cre
       const reservasDevolucao = devolucoes.reduce((s, p) => p.decisao?.reserva && ["AGUARDANDO_EXECUCAO", "INCERTO"].includes(p.decisao.reserva.estado) ? s.plus(p.decisao.reserva.valor) : s, new Prisma.Decimal(0));
       const devolvido = devolucoes.reduce((s, p) => p.decisao?.reserva?.estado === "CONFIRMADA" ? s.plus(p.decisao.reserva.valor) : s, new Prisma.Decimal(0));
       return { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, valorCredito: (await saldoCreditoTx(tx, credito.id)).toFixed(2), reservaDevolucao: reservasDevolucao.toFixed(2), devolvido: devolvido.toFixed(2),
+        origemDesistencia: origemDesistencia ? {
+          id: origemDesistencia.id, cobrancaId: origemDesistencia.cobrancaId,
+          valorOriginal: origemDesistencia.valor.toFixed(2), criadaEm: origemDesistencia.criadaEm.toISOString(),
+          aplicacaoId: origemDesistencia.aplicacao.id, decisaoId: origemDesistencia.aplicacao.decisao.id,
+          propostaId: origemDesistencia.aplicacao.decisao.proposta.id, pedidoId: origemDesistencia.aplicacao.decisao.proposta.pedidoId,
+        } : null,
         cobrancas: cobrancas.map(c => ({ id: c.id, codigo: c.codigo, saldo: (c.saldo ?? Prisma.Decimal.max(0, c.valorNegociado.minus(c.valorRecebido ?? 0).minus(c.valorLiquidadoCredito).minus(c.valorCompensadoPermuta))).toFixed(2), vencimento: c.vencimento.toISOString() })),
         propostas: propostas.map(p => ({ id: p.id, cobrancaId: p.cobrancaId, versao: p.versao, concordancia: p.concordancia, motivo: p.motivo, decisao: p.decisao, podeDecidir: !p.decisao && p.preparadorId !== u.id && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")), valor: p.valor.toFixed(2), criadoEm: p.criadoEm.toISOString() })),
         devolucoes: devolucoes.map(p => ({ id: p.id, versao: p.versao, valor: p.valor.toFixed(2), pedidoAluno: p.pedidoAluno, evidenciaPedido: p.evidenciaPedido, destino: p.destino, criadoEm: p.criadaEm.toISOString(), decisao: p.decisao && { ...p.decisao, reserva: p.decisao.reserva && { ...p.decisao.reserva, valor: p.decisao.reserva.valor.toFixed(2), executadaEm: p.decisao.reserva.executadaEm?.toISOString() ?? null, conciliacoes: p.decisao.reserva.conciliacoes.map(c => ({ ...c, criadaEm: c.criadaEm.toISOString() })), cancelamento: p.decisao.reserva.cancelamento && { ...p.decisao.reserva.cancelamento, criadaEm: p.decisao.reserva.cancelamento.criadaEm.toISOString() } } }, podeDecidir: !p.decisao && p.preparadorId !== u.id && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")), podeExecutar: p.decisao?.reserva?.estado === "AGUARDANDO_EXECUCAO" && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.executar_devolucoes")), podeConciliar: p.decisao?.reserva?.estado === "INCERTO" && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.executar_devolucoes")), podeCancelar: p.decisao?.reserva?.estado === "AGUARDANDO_EXECUCAO" && (usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos")) })),

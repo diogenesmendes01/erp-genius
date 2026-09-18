@@ -499,6 +499,7 @@ Critérios técnicos de aceite da integração:
 
 - A primeira aplicação do acerto é única por pedido, inclusive quando propostas distintas foram preparadas antes da aplicação. Repetir a mesma operação confirmada retorna seu resultado, sem novos valores ou créditos.
 - A efetivação da desistência confere as fontes financeiras atuais, além da aprovação administrativa e das evidências de encerramento das solicitações de assinatura. Uma movimentação posterior à aplicação não pode passar despercebida.
+- Cobrir também taxa paga antes da assinatura, permitida por Q105: as condições estruturadas precisam ter vínculo e conferência válidos na contratação em preparação, mas o acerto não pode exigir aceite concluído como pré-requisito universal. Preservar a ausência de aceite; solicitação de assinatura ainda aberta ou incerta impede a efetivação até seu encerramento comprovado. Não simular assinatura para liberar o acerto.
 - Recebimento ou comprovante posterior permanece registrado. Havendo impacto novo, a equipe deve conseguir preparar uma reconferência vinculada ao acerto aplicado, com aprovação independente e efeitos somente sobre a diferença comprovada. Não reaplicar o acerto original, duplicar crédito ou presumir devolução. Se as condições estruturadas não bastarem, exigir complementação.
 - Um bloqueio sem caminho operacional para resolver essa pendência não atende ao fluxo completo. A reconferência deve preservar os demais contratos do aluno e revalidar a fotografia antes de liberar a efetivação.
 

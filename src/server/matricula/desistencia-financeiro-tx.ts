@@ -14,7 +14,7 @@ export async function carregarFinanceiroDesistenciaTx(
   tx: Prisma.TransactionClient,
   matriculaId: string,
 ): Promise<{
-  snapshot: Prisma.InputJsonObject;
+  snapshot: Prisma.JsonObject;
   resumo: {
     quantidadeCobrancas: number;
     quantidadeCreditos: number;
@@ -37,6 +37,7 @@ export async function carregarFinanceiroDesistenciaTx(
   const cobrancas = await tx.cobranca.findMany({ where: { matriculaId }, orderBy: { id: "asc" } });
   const creditos = await tx.creditoMatricula.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, select: {
     id: true, origemLiberacaoId: true, origemAcertoId: true, origemPeriodoIntegralId: true, origemDestinacaoRecebimentoId: true,
+    origemAcertoDesistenciaContratualId: true,
     valorInicial: true, moeda: true, criadoEm: true,
   } });
   const cobrancaIds = cobrancas.map((c) => c.id);

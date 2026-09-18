@@ -1,17 +1,31 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), acerto: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/desistencia-financeiro-consulta", () => ({ consultarCancelamentoFinanceiroDesistencia: mocks.consultar }));
+vi.mock("@/server/matricula/desistencia-acerto-consulta", () => ({ consultarAcertoDesistenciaContratual: mocks.acerto }));
+vi.mock("./AcertoContratualFormularios", () => ({
+  PrepararAcertoContratualFormulario: () => createElement("div", { "data-acerto": "preparar" }),
+  DecidirAcertoContratualFormulario: () => createElement("div", { "data-acerto": "decidir" }),
+  AplicarAcertoContratualFormulario: () => createElement("div", { "data-acerto": "aplicar" }),
+}));
 vi.mock("./Formularios", () => ({
   PropostaFormulario: ({ pedidoId }: { pedidoId: string; estadoHash: string }) => createElement("div", { "data-formulario": "proposta", "data-pedido": pedidoId }, "Proposta"),
   DecisaoFormulario: ({ propostaId, podeAprovar }: { propostaId: string; propostaHash: string; podeAprovar: boolean }) => createElement("div", { "data-formulario": "decisao", "data-proposta": propostaId, "data-aprovar": String(podeAprovar) }, "Decisão"),
 }));
 
 import Page from "./page";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.acerto.mockResolvedValue({ ok: true, dado: {
+    matricula: { id: "m", alunoId: "aluno" }, propostas: [], podePreparar: false,
+    impedimento: "Regra contratual aguardando conferência.", pedido: null, condicoes: null,
+  } });
+});
 
 const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: {
   matricula: { codigo: "MAT-595" },
@@ -24,6 +38,31 @@ const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, da
 } });
 
 describe("DesistenciaFinanceiraPage", () => {
+  it("mostra falha da consulta contratual sem oferecer preparo ou aplicação", async () => {
+    mocks.consultar.mockResolvedValue(resposta());
+    mocks.acerto.mockResolvedValue({ ok: false, erro: "Acesso contratual indisponível." });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+    expect(html).toContain("Acesso contratual indisponível.");
+    expect(html).not.toContain("data-acerto=");
+  });
+
+  it("apresenta crédito aplicado e sua origem sem permitir nova aplicação", async () => {
+    mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
+    mocks.acerto.mockResolvedValue({ ok: true, dado: {
+      matricula: { id: "contrato", alunoId: "aluno" }, pedido: null, condicoes: null,
+      podePreparar: false, impedimento: "Acerto aplicado; efetivação pendente.",
+      propostas: [{ id: "proposta", preparadorNome: "Financeiro A", criadaEmISO: "2026-09-18T12:00:00Z",
+        itens: [{ cobrancaId: "taxa", moeda: "BRL", devido: "50.00", saldoDevido: "0.00", creditoApurado: "50.00" }],
+        podeDecidir: false, podeAplicar: false,
+        decisao: { aprovada: true, decisorNome: "Financeiro B", motivo: "Conferido", aplicacao: { criadaEmISO: "2026-09-18T13:00:00Z", creditos: ["credito-q165"] } },
+      }],
+    } });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "contrato" }) }));
+    expect(html).toContain("BRL 50.00");
+    expect(html).toContain('/alunos/aluno/creditos/credito-q165');
+    expect(html).toContain("efetivação pendente");
+    expect(html).not.toContain("data-acerto=");
+  });
   it("exige Financeiro/Administração e mostra valores somente na conferência financeira", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
     mocks.consultar.mockResolvedValue(resposta());
