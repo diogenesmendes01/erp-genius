@@ -739,7 +739,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await consultarVencimentosAditivo(consultaVencimento)).toMatchObject({ ok: false });
     const financeiro = await criarUsuario(["FINANCEIRO"]);
     const pedido = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id, revisaoHash: confirmarFinal.revisaoHash, motivo: "Novo vencimento contratado", evidencia: "Aditivo assinado e cobrança original conferidos", chaveIdempotencia: "vencimento-primeiro" };
-    expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false });
+    expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false, podeRevisar: true });
     authMock.mockResolvedValue({ user: { id: financeiro.id } });
     const proposta = await proporVencimentoAditivo(pedido);
     if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
@@ -780,7 +780,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
-    expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false });
+    expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false, podeRevisar: true });
     await expect(prisma.aplicacaoVencimentoAditivo.deleteMany()).rejects.toThrow("imutável");
     const historico = await consultarVencimentosAditivo(consultaVencimento);
     expect(historico).toMatchObject({ ok: true, dado: { temProxima: false, propostas: [{ id: salvo.id, estado: "APLICADA", podeDecidir: false, podeSolicitarAplicacao: false }] } });
