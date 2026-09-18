@@ -3,6 +3,8 @@ import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { hashSubstituicao } from "./substituicao-estado";
 import { PrepararAditivoContratualSchema } from "./aditivo-schema";
+import { conferirIntervalosCoberturaAditivo } from "./aditivo-cobertura-intervalos";
+import { extrairLimitesCoberturaFormalizada } from "./aditivo-cobertura-politica";
 export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, matriculaId: string, fimExclusivo?: Date) {
   const versoes = await tx.versaoCondicoesAditivo.findMany({
     where: {
@@ -20,7 +22,7 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
         select: {
           id: true, propostaAditivoId: true, preparadorId: true, hashFormalizado: true, fotografiaHash: true, cicloFuturo: true,
           decisao: { select: { aprovada: true, decisorId: true, fotografiaHash: true } },
-          impactos: { select: { classificacao: true, aplicacao: { select: { id: true, fotografiaHash: true } } } },
+          impactos: { select: { id: true, classificacao: true, coberturaInicioAnterior: true, coberturaFimAnterior: true, coberturaInicioNova: true, coberturaFimNova: true, aplicacao: { select: { id: true, fotografiaHash: true } } } },
         },
       },
       propostaId: true,
@@ -44,6 +46,20 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
       !c.impactos.some(i => i.classificacao === "AFETADA") ||
       c.impactos.some(i => i.classificacao === "AFETADA" ? !i.aplicacao || i.aplicacao.fotografiaHash !== c.fotografiaHash : !!i.aplicacao)
     )) throw new ErroRegra("Prova de aplicação da cobertura divergente da versão contratual.");
+    for (const conjunto of coberturas) {
+      conferirIntervalosCoberturaAditivo(conjunto.impactos.map(impacto => ({
+        id: impacto.id,
+        afetada: impacto.classificacao === "AFETADA",
+        anterior: {
+          inicio: impacto.coberturaInicioAnterior?.toISOString().slice(0, 10) ?? null,
+          fim: impacto.coberturaFimAnterior?.toISOString().slice(0, 10) ?? null,
+        },
+        nova: {
+          inicio: impacto.coberturaInicioNova?.toISOString().slice(0, 10) ?? null,
+          fim: impacto.coberturaFimNova?.toISOString().slice(0, 10) ?? null,
+        },
+      })), extrairLimitesCoberturaFormalizada(v.proposta.snapshot, v.proposta.entradaHash));
+    }
     return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), conjuntoCoberturaCompletoId: coberturas[0]?.id ?? null, conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
   });
 }
