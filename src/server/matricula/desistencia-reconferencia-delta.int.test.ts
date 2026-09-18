@@ -1,0 +1,240 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { FormaPagamento, Papel } from "@prisma/client";
+
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/server/_shared", async (importOriginal) => {
+  const atual = await importOriginal<typeof import("@/server/_shared")>();
+  const sessao = async () => {
+    const autenticacao = await authMock();
+    const usuario = await prisma.usuario.findUniqueOrThrow({ where: { id: autenticacao.user.id } });
+    if (!usuario.ativo) throw new atual.ErroAutenticacao();
+    return usuario;
+  };
+  return {
+    ...atual,
+    exigirSessao: sessao,
+    exigirSessaoComPapel: async (...papeis: Papel[]) => {
+      const usuario = await sessao(); atual.exigirPapel(usuario, ...papeis); return usuario;
+    },
+  };
+});
+
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { prepararFixtureSubstituicaoContratual } from "@/test/substituicao-contratual";
+import { preservarConclusaoAssinaturaTx } from "@/server/contratos/conclusao-assinatura-tx";
+import { IdentidadeSignatarioSchema } from "@/server/contratos/participantes-schema";
+import { hashPrevia } from "@/server/contratos/previa-estado";
+import { carregarRevisaoAceite } from "@/server/contratos/aceite-estado";
+import { confirmarAceiteOriginalTx } from "@/server/contratos/aceite-tx";
+import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "./condicoes-encerramento";
+import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } from "./desistencia-preparacao";
+import { decidirDesistenciaAdministrativa } from "./desistencia-administrativa";
+import { prepararAcertoDesistenciaContratual, decidirAcertoDesistenciaContratual } from "./desistencia-acerto-contratual";
+import { aplicarAcertoDesistenciaContratual } from "./desistencia-acerto-aplicacao";
+import { efetivarPedidoDesistenciaPreparacao } from "./desistencia-efetivacao";
+import {
+  aplicarReconferenciaDeltaDesistencia,
+  decidirAdministrativamenteReconferenciaDeltaDesistencia,
+  decidirReconferenciaDeltaDesistencia,
+  prepararReconferenciaDeltaDesistencia,
+} from "./desistencia-reconferencia-delta";
+import { receberTx } from "@/server/financeiro/recebimentos";
+import { registrarPagamento, registrarRecebimentoDestinado } from "@/server/financeiro/acoes";
+import { z } from "zod";
+
+let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
+let financeiroPreparador: Awaited<ReturnType<typeof criarUsuario>>;
+let financeiroAprovador: typeof financeiroPreparador;
+let condicoesId: string;
+const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
+const regras = {
+  diaEncerramento: "EXCLUIR" as const, metodoDesconto: "ANTES_DO_PROPORCIONAL" as const,
+  condicoesDescontos: "Condições de desistência transcritas do contrato aceito.",
+  multa: { tipo: "SEM_PREVISAO" as const, motivo: "A regra específica substitui a multa genérica." },
+  acertoDesistenciaPreparacao: { tipo: "VALOR_FIXO" as const, valor: "50.00", clausulaId: "7.6",
+    condicoesAplicacao: { momento: "ANTES_ATIVACAO" as const, unidade: "POR_COBRANCA" as const,
+      alcance: { tipo: "TODAS_COBRANCAS_MATRICULA" as const } } },
+};
+function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
+  if (!r.ok || r.dado === undefined) throw new Error(r.erro ?? "Resultado ausente.");
+  return r.dado;
+}
+async function confirmarContratoReal() {
+  const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({
+    where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } },
+  });
+  const participantes = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
+  const envio = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id }, orderBy: { numero: "desc" } });
+  const conclusao = await prisma.$transaction(tx => preservarConclusaoAssinaturaTx(tx, {
+    processoId: processo.id, referenciaExterna: base.referenciaExternaFonte, originalHash: processo.artefato.pdfHash,
+    concluidaEm: envio.iniciadaEm.toISOString(), pdfAssinado: Buffer.from("%PDF-assinado"), evidencias: Buffer.from("evidencia"),
+    assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(participantes.participantes[0].identidade), referenciaAssinatura: "assinatura-q249", assinadaEm: envio.iniciadaEm.toISOString() }],
+  }));
+  const revisao = await prisma.$transaction(tx => carregarRevisaoAceite(tx, base.matriculaId, conclusao.id));
+  await prisma.$transaction(tx => confirmarAceiteOriginalTx(tx, base.secretariaId, {
+    matriculaId: base.matriculaId, conclusaoId: conclusao.id, revisaoHash: revisao.revisaoHash,
+    evidenciasConferidas: true, motivo: "Aceite original conferido para a reconferência financeira.", chaveIdempotencia: "aceite-q249",
+  }));
+}
+async function registrarPedido() {
+  entrar(base.secretariaId);
+  const consulta = dado(await consultarDesistenciaPreparacao({ matriculaId: base.matriculaId }));
+  const pedido = dado(await registrarPedidoDesistenciaPreparacao({
+    matriculaId: base.matriculaId, estadoHash: consulta.estadoHash,
+    motivo: "Pessoa desistiu após aceitar o contrato, antes da ativação.",
+    evidenciaPedido: "Atendimento e aceite contratual conferidos para o fluxo financeiro.", chaveIdempotencia: "pedido-q249",
+  }));
+  return prisma.pedidoDesistenciaPreparacao.findUniqueOrThrow({ where: { id: pedido.id } });
+}
+async function aplicarBase(pedido: { id: string; estadoHash: string }) {
+  entrar(financeiroPreparador.id);
+  const proposta = dado(await prepararAcertoDesistenciaContratual({
+    pedidoId: pedido.id, condicoesId, motivo: "Acerto conforme a cláusula contratual aceita.", chaveIdempotencia: "preparo-base-q249",
+  }));
+  const persistida = await prisma.propostaAcertoDesistenciaContratual.findUniqueOrThrow({ where: { id: proposta.id } });
+  entrar(financeiroAprovador.id);
+  const decisao = dado(await decidirAcertoDesistenciaContratual({
+    propostaId: proposta.id, fotografiaHash: persistida.fotografiaHash, aprovada: true,
+    motivo: "Memória e fotografia conferidas por pessoa independente.", chaveIdempotencia: "decisao-base-q249",
+  }));
+  entrar(base.adminId);
+  dado(await decidirDesistenciaAdministrativa({ pedidoId: pedido.id, estadoHash: pedido.estadoHash, aprovada: true,
+    motivo: "Administração conferiu independentemente a desistência contratual Q249." }));
+  entrar(financeiroAprovador.id);
+  return dado(await aplicarAcertoDesistenciaContratual({ decisaoId: decisao.id, chaveIdempotencia: "aplicacao-base-q249" }));
+}
+async function prepararDelta(aplicacaoBaseId: string, chave = "preparo-delta-q249") {
+  entrar(financeiroPreparador.id);
+  return dado(await prepararReconferenciaDeltaDesistencia({
+    aplicacaoBaseId, motivo: "Reconferência posterior de fato financeiro auditável.", chaveIdempotencia: chave,
+  }));
+}
+async function aprovarDelta(propostaId: string, chave = "decisao-delta-q249") {
+  const proposta = await prisma.propostaReconferenciaDeltaDesistencia.findUniqueOrThrow({ where: { id: propostaId } });
+  entrar(financeiroAprovador.id);
+  const decisaoFinanceira = dado(await decidirReconferenciaDeltaDesistencia({ propostaId, fotografiaHash: proposta.fotografiaHash,
+    aprovada: true, motivo: "Financeiro conferiu a fotografia posterior independentemente.", chaveIdempotencia: chave }));
+  entrar(base.adminId);
+  dado(await decidirAdministrativamenteReconferenciaDeltaDesistencia({ propostaId, fotografiaHash: proposta.fotografiaHash,
+    aprovada: true, motivo: "Administração conferiu a reconferência independentemente.", chaveIdempotencia: `admin-${chave}` }));
+  return decisaoFinanceira;
+}
+
+beforeEach(async () => {
+  await truncarBanco();
+  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semSubstituicao: true, ambiente: "PRODUCAO" });
+  await confirmarContratoReal();
+  [financeiroPreparador, financeiroAprovador] = await Promise.all([
+    criarUsuario([Papel.FINANCEIRO], "Financeiro preparador Q249"), criarUsuario([Papel.FINANCEIRO], "Financeiro aprovador Q249"),
+  ]);
+  await prisma.usuario.update({ where: { id: financeiroAprovador.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  entrar(base.secretariaId);
+  const preparado = dado(await prepararCondicoesEncerramento({ matriculaId: base.matriculaId,
+    documentoId: (await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } })).contratoDocumentoId!, regras,
+    motivo: "Condições estruturadas para a desistência antes da ativação." }));
+  entrar(base.adminId);
+  expect((await decidirCondicoesEncerramento({ id: preparado.id, aprovar: true, motivo: "Condições estruturadas conferidas independentemente." })).ok).toBe(true);
+  condicoesId = preparado.id;
+});
+
+it("aplica Q165 base, reconhece crédito externo posterior no delta e efetiva pela última aplicação", async () => {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  await prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: cobranca.id, autorId: financeiroPreparador.id, chaveIdempotencia: "pagamento-base-q249", valorRecebido: 100,
+    forma: "TRANSFERENCIA", dataPagamento: new Date("2099-11-10T12:00:00.000Z"), evidencia: "Pagamento identificado antes da aplicação base.", permitirExcedente: true,
+  }));
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  entrar(financeiroPreparador.id);
+  dado(await registrarRecebimentoDestinado({ titularMatriculaId: base.matriculaId, pagadorId: null,
+    chaveIdempotencia: "credito-externo-posterior-q249", valorRecebido: 10, moeda: "BRL", forma: FormaPagamento.DINHEIRO,
+    dataPagamento: new Date("2099-11-11T12:00:00.000Z"), comentario: "Crédito externo recebido depois da aplicação base.", comprovanteUrl: null, comprovanteNome: null,
+    destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 10, evidencia: "Excedente posterior com lastro de recebimento.", chaveIdempotencia: "destino-externo-q249" }],
+  }));
+  const proposta = await prepararDelta(aplicacaoBase.id);
+  expect(proposta.estado).toBe("PENDENTE");
+  const decisao = await aprovarDelta(proposta.id);
+  entrar(financeiroAprovador.id);
+  const aplicacaoDelta = dado(await aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicacao-delta-q249" }));
+  const reconhecimento = await prisma.reconhecimentoCreditoReconferenciaDeltaDesistencia.findFirstOrThrow({ where: { aplicacaoId: aplicacaoDelta.id } });
+  expect(reconhecimento.valor.toFixed(2)).toBe("10.00");
+  const repetida = await prepararDelta(aplicacaoBase.id, "preparo-delta-repetida-q249");
+  expect(repetida.estado).toBe("PENDENTE");
+  const decisaoRepetida = await aprovarDelta(repetida.id, "decisao-delta-repetida-q249");
+  entrar(financeiroAprovador.id);
+  dado(await aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId: decisaoRepetida.id, chaveIdempotencia: "aplicacao-delta-repetida-q249" }));
+  expect(await prisma.reconhecimentoCreditoReconferenciaDeltaDesistencia.count()).toBe(1);
+  entrar(base.secretariaId);
+  const efetivacao = dado(await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
+    aplicacaoAcertoDesistenciaContratualId: aplicacaoBase.id, motivo: "Secretaria efetivou após a reconferência financeira delta." }));
+  expect(efetivacao.status).toBe("CANCELADA");
+});
+
+
+
+
+it("persiste pendência por informe posterior e não cria decisões", async () => {
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  entrar(base.secretariaId);
+  expect(await registrarPagamento(cobranca.id, {
+    chaveIdempotencia: "informe-pendente-delta-q249", valorRecebido: 10, forma: FormaPagamento.DINHEIRO,
+    dataPagamento: new Date("2099-11-12T12:00:00.000Z"), comentario: "Informe financeiro pendente após aplicação base.",
+  })).toMatchObject({ ok: true, dado: { informado: true } });
+  const proposta = await prepararDelta(aplicacaoBase.id, "preparo-pendencia-delta-q249");
+  expect(proposta.estado).toBe("PENDENCIA_FINANCEIRA");
+  const persistida = await prisma.propostaReconferenciaDeltaDesistencia.findUniqueOrThrow({ where: { id: proposta.id } });
+  entrar(financeiroAprovador.id);
+  expect(await decidirReconferenciaDeltaDesistencia({ propostaId: proposta.id, fotografiaHash: persistida.fotografiaHash,
+    aprovada: true, motivo: "Tentativa financeira diante de informe ainda pendente.", chaveIdempotencia: "decisao-pendencia-fin-q249" })).toMatchObject({ ok: false });
+  entrar(base.adminId);
+  expect(await decidirAdministrativamenteReconferenciaDeltaDesistencia({ propostaId: proposta.id, fotografiaHash: persistida.fotografiaHash,
+    aprovada: true, motivo: "Tentativa administrativa diante de informe ainda pendente.", chaveIdempotencia: "decisao-pendencia-admin-q249" })).toMatchObject({ ok: false });
+  expect(await prisma.decisaoReconferenciaDeltaDesistencia.count({ where: { propostaId: proposta.id } })).toBe(0);
+  expect(await prisma.decisaoAdministrativaReconferenciaDeltaDesistencia.count({ where: { propostaId: proposta.id } })).toBe(0);
+});
+
+it("rejeita aplicação depois de crédito externo posterior à aprovação", async () => {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroPreparador.id,
+    chaveIdempotencia: "pagamento-base-obsoleta-q249", valorRecebido: 100, forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2099-11-13T12:00:00.000Z"), evidencia: "Pagamento antes da aplicação base da fotografia obsoleta.", permitirExcedente: true }));
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  entrar(financeiroPreparador.id);
+  dado(await registrarRecebimentoDestinado({ titularMatriculaId: base.matriculaId, pagadorId: null,
+    chaveIdempotencia: "credito-obsoleto-primeiro-q249", valorRecebido: 10, moeda: "BRL", forma: FormaPagamento.DINHEIRO,
+    dataPagamento: new Date("2099-11-14T12:00:00.000Z"), comentario: "Crédito externo da fotografia aprovada.", comprovanteUrl: null, comprovanteNome: null,
+    destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 10, evidencia: "Recebimento externo com origem de destinação auditável.", chaveIdempotencia: "destino-obsoleto-primeiro-q249" }],
+  }));
+  const proposta = await prepararDelta(aplicacaoBase.id, "preparo-obsoleta-delta-q249");
+  const decisao = await aprovarDelta(proposta.id, "decisao-obsoleta-delta-q249");
+  entrar(financeiroPreparador.id);
+  dado(await registrarRecebimentoDestinado({ titularMatriculaId: base.matriculaId, pagadorId: null,
+    chaveIdempotencia: "credito-obsoleto-segundo-q249", valorRecebido: 5, moeda: "BRL", forma: FormaPagamento.DINHEIRO,
+    dataPagamento: new Date("2099-11-15T12:00:00.000Z"), comentario: "Crédito externo posterior à aprovação.", comprovanteUrl: null, comprovanteNome: null,
+    destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 5, evidencia: "Recebimento posterior com origem de destinação auditável.", chaveIdempotencia: "destino-obsoleto-segundo-q249" }],
+  }));
+  entrar(financeiroAprovador.id);
+  expect(await aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicacao-obsoleta-delta-q249" })).toMatchObject({ ok: false });
+  expect(await prisma.aplicacaoReconferenciaDeltaDesistencia.count({ where: { propostaId: proposta.id } })).toBe(0);
+});
+
+it("permite replay idêntico e bloqueia replay com motivo ou alçada alterados", async () => {
+  const pedido = await registrarPedido();
+  const aplicacaoBase = await aplicarBase(pedido);
+  const primeira = await prepararDelta(aplicacaoBase.id, "preparo-replay-delta-q249");
+  expect(await prepararReconferenciaDeltaDesistencia({ aplicacaoBaseId: aplicacaoBase.id,
+    motivo: "Reconferência posterior de fato financeiro auditável.", chaveIdempotencia: "preparo-replay-delta-q249" })).toMatchObject({ ok: true, dado: { id: primeira.id } });
+  expect(await prepararReconferenciaDeltaDesistencia({ aplicacaoBaseId: aplicacaoBase.id,
+    motivo: "Outro motivo não pode reutilizar a mesma chave de preparo.", chaveIdempotencia: "preparo-replay-delta-q249" })).toMatchObject({ ok: false });
+  const decisao = await aprovarDelta(primeira.id, "decisao-replay-delta-q249");
+  await prisma.usuario.update({ where: { id: financeiroAprovador.id }, data: { permissoes: [] } });
+  entrar(financeiroAprovador.id);
+  expect(await aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId: decisao.id, chaveIdempotencia: "aplicacao-replay-delta-q249" })).toMatchObject({ ok: false });
+  expect(await prisma.aplicacaoReconferenciaDeltaDesistencia.count({ where: { propostaId: primeira.id } })).toBe(0);
+});

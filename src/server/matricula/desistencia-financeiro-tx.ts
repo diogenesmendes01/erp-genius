@@ -37,7 +37,8 @@ export async function carregarFinanceiroDesistenciaTx(
   const cobrancas = await tx.cobranca.findMany({ where: { matriculaId }, orderBy: { id: "asc" } });
   const creditos = await tx.creditoMatricula.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, select: {
     id: true, origemLiberacaoId: true, origemAcertoId: true, origemPeriodoIntegralId: true, origemDestinacaoRecebimentoId: true,
-    origemAcertoDesistenciaContratualId: true,
+    origemAcertoTaxaAditivoId: true, origemAcertoDesistenciaContratualId: true,
+    origemReconferenciaDeltaDesistenciaId: true,
     valorInicial: true, moeda: true, criadoEm: true,
   } });
   const cobrancaIds = cobrancas.map((c) => c.id);
@@ -142,8 +143,10 @@ export async function carregarFinanceiroDesistenciaTx(
   );
 
   return {
-    snapshot: { matriculaId, cobrancas: serializadas, creditos: creditos.map(c => ({
-      ...c, valorInicial: c.valorInicial.toFixed(2), criadoEm: c.criadoEm.toISOString(),
+    snapshot: { matriculaId, cobrancas: serializadas, creditos: creditos.map(({ origemAcertoTaxaAditivoId: _origemTaxa, origemReconferenciaDeltaDesistenciaId, ...credito }) => ({
+      ...credito,
+      ...(origemReconferenciaDeltaDesistenciaId ? { origemReconferenciaDeltaDesistenciaId } : {}),
+      valorInicial: credito.valorInicial.toFixed(2), criadoEm: credito.criadoEm.toISOString(),
     })) },
     resumo: {
       quantidadeCobrancas: cobrancas.length,
@@ -158,3 +161,4 @@ export async function carregarFinanceiroDesistenciaTx(
     },
   };
 }
+
