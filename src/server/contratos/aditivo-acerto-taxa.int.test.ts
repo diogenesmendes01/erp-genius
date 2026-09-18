@@ -1,3 +1,4 @@
+import { aplicarImpactosCoberturaAditivo, decidirImpactosCoberturaAditivo, obsoletarImpactosCoberturaAditivo, prepararImpactosCoberturaAditivo } from "./aditivo-cobertura";
 import { resolverMensalVigenteTx } from "./aditivo-mensal-vigente";
 import { consultarEfeitosAditivo } from "./aditivo-efeitos-consulta";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -37,16 +38,16 @@ async function proximaMensalidade() {
   const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId, tipo: "MENSALIDADE" }, orderBy: { vencimento: "asc" }, select: { valorOriginal: true, valorNegociado: true, moeda: true } });
   return { valorOriginal: cobranca.valorOriginal.toFixed(2), valorNegociado: cobranca.valorNegociado.toFixed(2), moeda: cobranca.moeda };
 }
-async function cadeiaTaxa(vencimentoTaxa?: string) {
+async function cadeiaTaxa(vencimentoTaxa?: string, cobertura = false) {
  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, ambiente: "PRODUCAO", semSubstituicao: true });
  const fonte = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId }, include: { artefato: { include: { conferencia: true } } } });
  const pessoas = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(fonte.artefato.conferencia.snapshot).participantes;
  const envioFonte = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: fonte.id }, orderBy: { numero: "desc" } }), agora = envioFonte.iniciadaEm.toISOString();
  const conclusao = await prisma.$transaction(tx => preservarConclusaoAssinaturaTx(tx, { processoId: fonte.id, referenciaExterna: base.referenciaExternaFonte, originalHash: fonte.artefato.pdfHash, concluidaEm: agora, pdfAssinado: Buffer.from("%PDF-assinado"), evidencias: Buffer.from("evidencia"), assinaturas: [{ papel: "ALUNO", identidadeHash: hashPrevia(pessoas[0].identidade), referenciaAssinatura: "fonte", assinadaEm: agora }] }));
- const modelo = await prisma.$transaction(tx => prepararModeloTx(tx, base.secretariaId, { codigo: "DCT03", versaoEsperada: 0, chaveIdempotencia: "dct03-modelo", motivo: "Modelo de acerto de taxa", conteudo: { titulo: "Aditivo", finalidade: "ADITIVO", regimes: ["MENSALIDADE"], aplicacao: "Teste DCT03", campos: [{ chave: "nome", descricao: "Aluno", origem: "ALUNO_NOME" }, { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" }, { chave: "vencimento", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" }, { chave: "original", descricao: "Original", origem: "ADITIVO_CONTRATO_ORIGINAL" }, { chave: "anteriores", descricao: "Anteriores", origem: "ADITIVO_ANTERIORES" }, { chave: "alteracoes", descricao: "Alterações", origem: "ADITIVO_ALTERACOES" }, { chave: "vigencia", descricao: "Vigência", origem: "ADITIVO_VIGENCIA" }], secoes: [{ titulo: "Dados", texto: "{{nome}} {{taxa}} {{vencimento}} {{original}} {{anteriores}} {{alteracoes}} {{vigencia}}" }], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }] } }));
+ const modelo = await prisma.$transaction(tx => prepararModeloTx(tx, base.secretariaId, { codigo: "DCT03", versaoEsperada: 0, chaveIdempotencia: "dct03-modelo", motivo: "Modelo de acerto de taxa", conteudo: { titulo: "Aditivo", finalidade: "ADITIVO", regimes: ["MENSALIDADE"], aplicacao: "Teste DCT03", campos: [{ chave: "nome", descricao: "Aluno", origem: "ALUNO_NOME" }, { chave: "taxa", descricao: "Taxa", origem: "TAXA_VALOR" }, { chave: "vencimento", descricao: "Vencimento da taxa", origem: "TAXA_VENCIMENTO" }, ...(cobertura ? [{ chave: "inicio", descricao: "Início da cobertura", origem: "COBERTURA_INICIO" as const }, { chave: "fim", descricao: "Fim da cobertura", origem: "COBERTURA_FIM" as const }] : []), { chave: "original", descricao: "Original", origem: "ADITIVO_CONTRATO_ORIGINAL" }, { chave: "anteriores", descricao: "Anteriores", origem: "ADITIVO_ANTERIORES" }, { chave: "alteracoes", descricao: "Alterações", origem: "ADITIVO_ALTERACOES" }, { chave: "vigencia", descricao: "Vigência", origem: "ADITIVO_VIGENCIA" }], secoes: [{ titulo: "Dados", texto: "{{nome}} {{taxa}} {{vencimento}} {{original}} {{anteriores}} {{alteracoes}} {{vigencia}}" }], assinaturas: [{ papel: "ALUNO", condicao: "SEMPRE" }] } }));
  const modeloGravado = await prisma.versaoModeloContratual.findUniqueOrThrow({ where: { id: modelo.id } }); authMock.mockResolvedValue({ user: { id: base.adminId } }); await decidirModeloContratual({ modeloId: modelo.id, conteudoHash: modeloGravado.conteudoHash, aprovada: true, motivo: "Modelo aprovado independentemente" }); authMock.mockResolvedValue({ user: { id: base.secretariaId } });
  const fonteAssinada = await prisma.conclusaoAssinaturaContratual.findUniqueOrThrow({ where: { id: conclusao.id } });
- const proposta = await prisma.$transaction(tx => prepararAditivoContratualTx(tx, base.secretariaId, { matriculaId: base.matriculaId, conclusaoOriginalId: conclusao.id, conclusaoHashEsperado: fonteAssinada.entradaHash, modeloId: modelo.id, modeloHashEsperado: modeloGravado.conteudoHash, vigenciaInicio: "2026-09-01T00:00:00-03:00", alteracoes: [{ origem: "TAXA_VALOR", novo: "80.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "80", moeda: "CRC" } }, ...(vencimentoTaxa ? [{ origem: "TAXA_VENCIMENTO" as const, novo: vencimentoTaxa, valorEstruturado: { tipo: "DATA" as const, data: vencimentoTaxa } }] : [])], motivo: "Reduzir taxa paga para acerto", chaveIdempotencia: "dct03-proposta" }));
+ const proposta = await prisma.$transaction(tx => prepararAditivoContratualTx(tx, base.secretariaId, { matriculaId: base.matriculaId, conclusaoOriginalId: conclusao.id, conclusaoHashEsperado: fonteAssinada.entradaHash, modeloId: modelo.id, modeloHashEsperado: modeloGravado.conteudoHash, vigenciaInicio: "2026-09-01T00:00:00-03:00", alteracoes: cobertura ? [{ origem: "COBERTURA_INICIO", novo: "2026-11-01", valorEstruturado: { tipo: "DATA", data: "2026-11-01" } }, { origem: "COBERTURA_FIM", novo: "2026-11-30", valorEstruturado: { tipo: "DATA", data: "2026-11-30" } }] : [{ origem: "TAXA_VALOR", novo: "80.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "80", moeda: "CRC" } }, ...(vencimentoTaxa ? [{ origem: "TAXA_VENCIMENTO" as const, novo: vencimentoTaxa, valorEstruturado: { tipo: "DATA" as const, data: vencimentoTaxa } }] : [])], ...(cobertura ? { cicloCoberturaFutura: { escolha: "PRESERVAR_REFERENCIA" as const } } : {}), motivo: cobertura ? "Corrigir cobertura formalizada para o acerto" : "Reduzir taxa paga para acerto", chaveIdempotencia: "dct03-proposta" }));
  await prisma.$transaction(tx => decidirAditivoContratualTx(tx, base.adminId, { propostaId: proposta.id, propostaHashEsperado: proposta.propostaHash, aprovada: true, motivo: "Aditivo aprovado independentemente" }));
  authMock.mockResolvedValue({ user: { id: base.adminId } }); for (const alcada of ["FINANCEIRA", "COMERCIAL"] as const) await decidirAlcadaAditivo({ matriculaId: base.matriculaId, propostaId: proposta.id, propostaHash: proposta.propostaHash, alcada, aprovada: true, motivo: "Alçada aprovada independentemente" });
  authMock.mockResolvedValue({ user: { id: base.secretariaId } }); const aluno = await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId }, include: { aluno: true } }), identidade = { nome: `${aluno.aluno.primeiroNome} ${aluno.aluno.sobrenome}`, email: aluno.aluno.email!, documento: aluno.aluno.documento! };
@@ -609,5 +610,149 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
       { cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: "Cobrança adicional permanece fora do escopo do aditivo." },
     ], chaveIdempotencia: "q170-acerto-rejeicao-posterior-repreparo" });
     expect(novo).toMatchObject({ ok: true, dado: { status: "PENDENTE" } });
+  });
+});
+
+// Q168/Q169: usa a mesma cadeia documental real de DCT03, mas com a política de
+// cobertura assinada. Nenhuma prova de decisão ou aplicação é inserida à mão.
+describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
+  beforeEach(async () => {
+    await truncarBanco();
+    await cadeiaTaxa(undefined, true);
+    await prepararFinanceiro();
+  });
+
+  async function prepararConjuntoCobertura(chaveIdempotencia: string, cobrancaId?: string, incluirPreservada = false) {
+    const mensalidadeId = cobrancaId ?? (await prisma.cobranca.create({ data: {
+      matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
+      vencimento: new Date("2026-10-01T00:00:00Z"), coberturaInicio: new Date("2026-10-01T00:00:00Z"), coberturaFim: new Date("2026-10-31T00:00:00Z"),
+    } })).id;
+    const preservadaId = incluirPreservada ? (await prisma.cobranca.create({ data: {
+      matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
+      vencimento: new Date("2026-11-01T00:00:00Z"), coberturaInicio: new Date("2026-11-01T00:00:00Z"), coberturaFim: new Date("2026-11-30T00:00:00Z"),
+    } })).id : undefined;
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const preparado = await prepararImpactosCoberturaAditivo({
+      ...alvo,
+      linhas: [{ cobrancaId: mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: "2026-11-01", coberturaFimNova: "2026-11-30", justificativa: "Cobertura mensal corrigida conforme o aditivo assinado." }, ...(preservadaId ? [{ cobrancaId: preservadaId, classificacao: "PRESERVADA" as const, justificativa: "Mensalidade posterior preservada na fotografia completa." }] : [])],
+      motivo: "Conjunto de cobertura preparado para conferência independente.",
+      evidencia: "Conferência documental e financeira registrada.",
+      chaveIdempotencia,
+    });
+    if (!preparado.ok || !preparado.dado) throw new Error(JSON.stringify(preparado));
+    return { conjuntoId: preparado.dado.id, mensalidadeId, preservadaId };
+  }
+
+  async function aprovarConjunto(conjuntoId: string, chaveIdempotencia: string) {
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosCoberturaAditivo({ conjuntoId, aprovada: true, motivo: "Financeiro independente conferiu a fotografia completa.", chaveIdempotencia })).toMatchObject({ ok: true, dado: { aprovada: true } });
+  }
+
+  it("permite pendente → obsoleto → nova preparação e preserva replay por conjunto", async () => {
+    const primeiro = await prepararConjuntoCobertura("q168-pendente-inicial");
+    const motivo = "Fotografia pendente precisa ser refeita antes da aprovação.";
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: primeiro.conjuntoId, motivo, chaveIdempotencia: "q168-pendente-obsoleto" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    const segundo = await prepararConjuntoCobertura("q168-pendente-novo", primeiro.mensalidadeId);
+    expect(segundo.conjuntoId).not.toBe(primeiro.conjuntoId);
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: segundo.conjuntoId, motivo: "Segundo conjunto pendente também exige reconstrução.", chaveIdempotencia: "q168-segundo-obsoleto" })).toMatchObject({ ok: true });
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: primeiro.conjuntoId, motivo, chaveIdempotencia: "q168-pendente-obsoleto" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: primeiro.conjuntoId, motivo: "Motivo diferente não pode alterar o replay auditável.", chaveIdempotencia: "q168-pendente-obsoleto" })).toMatchObject({ ok: false });
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: primeiro.conjuntoId, motivo, chaveIdempotencia: "q168-chave-diversa" })).toMatchObject({ ok: false });
+  });
+
+  it("recusa autoaprovação", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-autoaprovacao");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await decidirImpactosCoberturaAditivo({ conjuntoId, aprovada: true, motivo: "O próprio preparador não pode aprovar o conjunto.", chaveIdempotencia: "q168-autoaprovar" })).toMatchObject({ ok: false });
+    expect(await prisma.decisaoConjuntoImpactosCoberturaAditivo.count({ where: { conjuntoId } })).toBe(0);
+  });
+
+  it("recusa obsolescer conjunto APROVADO cuja fotografia continua íntegra", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-aprovado-integro");
+    await aprovarConjunto(conjuntoId, "q168-aprovado-integro-aprovar");
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId, motivo: "Não há mudança material na fotografia aprovada.", chaveIdempotencia: "q168-integro-obsoleto" })).toMatchObject({ ok: false, erro: expect.stringContaining("íntegro") });
+    await expect(prisma.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "OBSOLETO" } })).rejects.toThrow("Transição");
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
+
+  it("recusa transição SQL para COMPLETO sem aplicações afetadas", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q169-completo-sem-provas");
+    await aprovarConjunto(conjuntoId, "q169-completo-sem-provas-aprovar");
+    await expect(prisma.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "COMPLETO" } })).rejects.toThrow("todas e somente aplicações afetadas");
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
+
+  it("permite obsolescer APROVADO após alteração material fotografada", async () => {
+    const { conjuntoId, mensalidadeId } = await prepararConjuntoCobertura("q168-aprovado-divergente");
+    await aprovarConjunto(conjuntoId, "q168-aprovado-divergente-aprovar");
+    await prisma.cobranca.update({ where: { id: mensalidadeId }, data: { coberturaFim: new Date("2026-10-30T00:00:00Z"), versao: { increment: 1 } } });
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId, motivo: "Cobertura fotografada mudou após a aprovação independente.", chaveIdempotencia: "q168-divergente-obsoleto" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+  });
+
+  it("recusa obsolescência do conjunto COMPLETO com aplicação real", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-aplicado");
+    await aprovarConjunto(conjuntoId, "q168-aplicado-aprovar");
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q168-aplicado-executar" })).toMatchObject({ ok: true, dado: { completo: true } });
+    expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(1);
+    expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId, motivo: "Conjunto aplicado não pode ser tornado obsoleto.", chaveIdempotencia: "q168-aplicado-obsoleto" })).toMatchObject({ ok: false });
+    await expect(prisma.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "OBSOLETO" } })).rejects.toThrow("Transição");
+  });
+
+  it("recusa aplicação se a mensalidade PRESERVADA mudou depois da aprovação", async () => {
+    const { conjuntoId, preservadaId } = await prepararConjuntoCobertura("q169-preservada-mutada", undefined, true);
+    if (!preservadaId) throw new Error("Mensalidade preservada indisponível");
+    await aprovarConjunto(conjuntoId, "q169-preservada-mutada-aprovar");
+    await prisma.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-11-29T00:00:00Z"), versao: { increment: 1 } } });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q169-preservada-mutada-aplicar" })).toMatchObject({ ok: false });
+    expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
+
+  it("o gatilho diferido desfaz aplicação comprovada se PRESERVADA muda antes de completar", async () => {
+    const { conjuntoId, mensalidadeId, preservadaId } = await prepararConjuntoCobertura("q169-deferred-preservada", undefined, true);
+    if (!preservadaId) throw new Error("Mensalidade preservada indisponível");
+    await aprovarConjunto(conjuntoId, "q169-deferred-preservada-aprovar");
+    await expect(prisma.$transaction(async tx => {
+      const conjunto = await tx.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId }, include: { impactos: true } });
+      const impacto = conjunto.impactos.find(item => item.cobrancaId === mensalidadeId);
+      if (!impacto?.coberturaInicioAnterior || !impacto.coberturaFimAnterior || !impacto.coberturaInicioNova || !impacto.coberturaFimNova) throw new Error("Impacto afetado incompleto");
+      await tx.cobranca.update({ where: { id: mensalidadeId }, data: { coberturaInicio: impacto.coberturaInicioNova, coberturaFim: impacto.coberturaFimNova, versao: { increment: 1 } } });
+      await tx.aplicacaoCoberturaAditivo.create({ data: {
+        impactoId: impacto.id, cobrancaId: mensalidadeId, executorId: aprovador, fotografiaHash: conjunto.fotografiaHash,
+        chaveIdempotencia: "q169-deferred-preservada-prova", versaoCobrancaAntes: impacto.versaoCobranca, versaoCobrancaDepois: impacto.versaoCobranca + 1,
+        coberturaInicioAnterior: impacto.coberturaInicioAnterior, coberturaFimAnterior: impacto.coberturaFimAnterior,
+        coberturaInicioNova: impacto.coberturaInicioNova, coberturaFimNova: impacto.coberturaFimNova,
+      } });
+      await tx.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-11-29T00:00:00Z"), versao: { increment: 1 } } });
+      await tx.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "COMPLETO" } });
+    })).rejects.toThrow("Conjunto completo sem efeitos comprovados");
+    expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+  });
+
+  it("o gatilho diferido exige a lista exata se nova mensalidade nasce após COMPLETO", async () => {
+    const { conjuntoId, mensalidadeId } = await prepararConjuntoCobertura("q169-deferred-lista");
+    await aprovarConjunto(conjuntoId, "q169-deferred-lista-aprovar");
+    await expect(prisma.$transaction(async tx => {
+      const conjunto = await tx.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId }, include: { impactos: true } });
+      const impacto = conjunto.impactos.find(item => item.cobrancaId === mensalidadeId);
+      if (!impacto?.coberturaInicioAnterior || !impacto.coberturaFimAnterior || !impacto.coberturaInicioNova || !impacto.coberturaFimNova) throw new Error("Impacto afetado incompleto");
+      await tx.cobranca.update({ where: { id: mensalidadeId }, data: { coberturaInicio: impacto.coberturaInicioNova, coberturaFim: impacto.coberturaFimNova, versao: { increment: 1 } } });
+      await tx.aplicacaoCoberturaAditivo.create({ data: {
+        impactoId: impacto.id, cobrancaId: mensalidadeId, executorId: aprovador, fotografiaHash: conjunto.fotografiaHash,
+        chaveIdempotencia: "q169-deferred-lista-prova", versaoCobrancaAntes: impacto.versaoCobranca, versaoCobrancaDepois: impacto.versaoCobranca + 1,
+        coberturaInicioAnterior: impacto.coberturaInicioAnterior, coberturaFimAnterior: impacto.coberturaFimAnterior,
+        coberturaInicioNova: impacto.coberturaInicioNova, coberturaFimNova: impacto.coberturaFimNova,
+      } });
+      await tx.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "COMPLETO" } });
+      await tx.cobranca.create({ data: {
+        matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
+        vencimento: new Date("2026-12-01T00:00:00Z"), coberturaInicio: new Date("2026-12-01T00:00:00Z"), coberturaFim: new Date("2026-12-31T00:00:00Z"),
+      } });
+    })).rejects.toThrow("classificar exatamente");
+    expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
   });
 });
