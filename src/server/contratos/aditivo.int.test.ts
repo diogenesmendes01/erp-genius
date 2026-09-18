@@ -734,7 +734,7 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
   if (modo === "PRODUCAO_MENSAL_VENCIMENTO") {
     const formalizada = await registrarCondicoesFormalizadasAditivo(pedidoCondicoes);
     if (!formalizada.ok || !formalizada.dado) throw new Error(JSON.stringify(formalizada));
-    const { proporVencimentoAditivo, decidirVencimentoAditivo } = await import("./vencimento-aditivo");
+    const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo } = await import("./vencimento-aditivo");
     const financeiro = await criarUsuario(["FINANCEIRO"]);
     const pedido = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id, revisaoHash: confirmarFinal.revisaoHash, motivo: "Novo vencimento contratado", evidencia: "Aditivo assinado e cobrança original conferidos", chaveIdempotencia: "vencimento-primeiro" };
     expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false });
@@ -755,6 +755,16 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await decidirVencimentoAditivo(decisao)).toEqual(aprovada);
     expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancasAntesFormalizacao);
     expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(0);
+    const aplicar = { propostaId: salvo.id, chaveIdempotencia: "aplicar-vencimento-primeiro" };
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    expect(await aplicarVencimentoAditivo(aplicar)).toMatchObject({ ok: false });
+    authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+    const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } });
+    const aplicada = await aplicarVencimentoAditivo(aplicar);
+    expect(aplicada, JSON.stringify(aplicada)).toMatchObject({ ok: true });
+    expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
+    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: "PENDENTE" });
+    expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
     return;
   }
   if (taxaSemConsumidor) {

@@ -1,4 +1,4 @@
--- 228: execução auditável do vencimento aprovado; revisar guardas antes de aplicar.
+-- 228: execução auditável e atômica do vencimento aprovado.
 CREATE TABLE "AplicacaoVencimentoAditivo" (
  id TEXT PRIMARY KEY,
  "decisaoId" TEXT NOT NULL UNIQUE REFERENCES "DecisaoVencimentoAditivo"(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
@@ -30,7 +30,27 @@ BEGIN
  OR NEW."versaoCobrancaAntes" IS DISTINCT FROM p."versaoCobranca"
  OR NEW."vencimentoAnterior" IS DISTINCT FROM p."vencimentoAnterior" OR NEW."vencimentoNovo" IS DISTINCT FROM p."vencimentoNovo"
  THEN RAISE EXCEPTION 'Aplicação diverge da proposta aprovada'; END IF;
+ IF EXISTS (SELECT 1 FROM "Cobranca" c WHERE c.id=p."cobrancaId" AND (c."suspensaPorItemPausaId" IS NOT NULL OR c."canceladaPorPausaId" IS NOT NULL))
+ OR EXISTS (SELECT 1 FROM "AjusteCobrancaAcerto" a WHERE a."cobrancaId"=p."cobrancaId")
+ THEN RAISE EXCEPTION 'Cobrança em pausa ou acerto exige conferência específica'; END IF;
+ NEW."aplicadaEm" := CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
  RETURN NEW;
 END $$;
 CREATE TRIGGER guardar_aplicacao_vencimento_228 BEFORE INSERT OR UPDATE OR DELETE ON "AplicacaoVencimentoAditivo"
  FOR EACH ROW EXECUTE FUNCTION guardar_aplicacao_vencimento_228();
+
+CREATE FUNCTION efetivar_vencimento_aditivo_228() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE p "PropostaVencimentoAditivo"%ROWTYPE;
+BEGIN
+ SELECT p0.* INTO p FROM "PropostaVencimentoAditivo" p0
+ JOIN "DecisaoVencimentoAditivo" d ON d."propostaId"=p0.id WHERE d.id=NEW."decisaoId";
+ UPDATE "Cobranca" SET vencimento=NEW."vencimentoNovo", versao=NEW."versaoCobrancaDepois",
+ status=CASE WHEN status='PAGO' THEN status
+   WHEN (NEW."vencimentoNovo" AT TIME ZONE 'UTC' AT TIME ZONE p.fuso)::date < (CURRENT_TIMESTAMP AT TIME ZONE p.fuso)::date
+   THEN 'ATRASADO'::"StatusCobranca" ELSE 'PENDENTE'::"StatusCobranca" END
+ WHERE id=p."cobrancaId" AND versao=NEW."versaoCobrancaAntes";
+ IF NOT FOUND THEN RAISE EXCEPTION 'Cobrança mudou antes da aplicação do vencimento'; END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER efetivar_vencimento_aditivo_228 AFTER INSERT ON "AplicacaoVencimentoAditivo"
+ FOR EACH ROW EXECUTE FUNCTION efetivar_vencimento_aditivo_228();
