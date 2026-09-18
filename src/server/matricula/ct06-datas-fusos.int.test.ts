@@ -15,7 +15,7 @@ import { conferirEEmitirEntrada, consultarRevisaoEmissao } from "@/server/secret
 import { consultarEncontrosDocente } from "@/server/agenda/encontros-docente";
 
 describe("CT-06: cobertura, vencimento e agenda preservam seus fusos próprios", () => {
-  let secretariaId: string, professorId: string, alunoId: string, produtoId: string, paisId: string, turmaId: string, encontroId: string;
+  let secretariaId: string, professorId: string, alunoId: string, produtoId: string, paisId: string, turmaId: string, encontroId: string, calendarioId: string;
 
   beforeEach(async () => {
     await truncarBanco();
@@ -34,6 +34,7 @@ describe("CT-06: cobertura, vencimento e agenda preservam seus fusos próprios",
     await prisma.janelaAdmissaoTurma.create({ data: { turmaId, preparadorId: secretariaId, versao: 1, limiteEntrada: new Date("2100-01-01T00:00:00Z"), fusoAdmissao: "America/Costa_Rica", motivo: "Janela futura para CT-06", chaveIdempotencia: "ct06-janela", entradaHash: "ct06" } }).then((janela) =>
       prisma.decisaoJanelaAdmissao.create({ data: { propostaId: janela.id, decisorId: gestor.id, aprovada: true, motivo: "Janela aprovada para CT-06" } }));
     const calendario = await prisma.versaoCalendarioEscolar.create({ data: { versao: 1, preparadorId: secretariaId, fusoInstitucional: "America/Costa_Rica", periodos: [], motivo: "Calendário CT-06", chaveIdempotencia: "ct06-calendario", entradaHash: "ct06" } });
+    calendarioId = calendario.id;
     await prisma.decisaoCalendarioEscolar.create({ data: { calendarioId: calendario.id, decisorId: gestor.id, aprovada: true, motivo: "Calendário aprovado para CT-06" } });
     const grade = await prisma.propostaGradeTurma.create({ data: { turmaId, calendarioId: calendario.id, preparadorId: secretariaId, versao: 1, fusoOrigem: "America/Sao_Paulo", motivo: "Grade CT-06", chaveIdempotencia: "ct06-grade", entradaHash: "ct06", snapshot: {} } });
     await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: gestor.id, aprovada: true, motivo: "Grade aprovada para CT-06" } });
@@ -74,6 +75,7 @@ describe("CT-06: cobertura, vencimento e agenda preservam seus fusos próprios",
     expect(cobrancas.filter((c) => c.coberturaInicio && c.coberturaFim)).toHaveLength(1);
     expect(await prisma.emissaoCobrancasEntrada.count({ where: { matriculaId } })).toBe(1);
     expect(await prisma.itemEmissaoEntrada.count({ where: { matriculaId } })).toBe(2);
+    expect(await prisma.versaoCalendarioEscolar.findUniqueOrThrow({ where: { id: calendarioId }, include: { decisao: true } })).toMatchObject({ fusoInstitucional: "America/Costa_Rica", decisao: { aprovada: true } });
 
     authMock.mockResolvedValue({ user: { id: professorId } });
     const agenda = await consultarEncontrosDocente({ encontroId });
