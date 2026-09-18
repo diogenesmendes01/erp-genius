@@ -42,3 +42,35 @@ export async function decidirImpactosTaxaAditivo(input: unknown) { return execut
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = DecidirImpactosTaxaAditivoSchema.parse(input);
   return prisma.$transaction(async tx => { await exigirFinanceiro(tx, autor.id, true); const c = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { decisao: true } }); await bloquearMatriculas(tx, [c.matriculaId]); if (c.preparadorId === autor.id) throw new ErroRegra("A decisão exige outro Financeiro."); if (c.decisao) return { id: c.decisao.id, aprovada: c.decisao.aprovada }; const decisao = await tx.decisaoConjuntoImpactosTaxaAditivo.create({ data: { conjuntoId: c.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: c.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: c.id }, data: { status: d.aprovada ? "APROVADO" : "REJEITADO" } }); return { id: decisao.id, aprovada: decisao.aprovada }; });
 }); }
+
+export async function vincularImpactoTaxaAditivo(input: unknown) { return executarAcao(async () => {
+  const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = VincularImpactoTaxaAditivoSchema.parse(input);
+  return prisma.$transaction(async tx => {
+    await exigirFinanceiro(tx, autor.id); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
+    const linha = await tx.impactoTaxaAditivo.findUniqueOrThrow({ where: { conjuntoId_cobrancaId: { conjuntoId: d.conjuntoId, cobrancaId: d.cobrancaId } } });
+    if (linha.decisao !== "AFETADA" || linha.propostaAcertoId) throw new ErroRegra("Somente taxa afetada sem vínculo pode receber acerto.");
+    const proposta = await tx.propostaAcertoTaxaAditivo.findUniqueOrThrow({ where: { id: d.propostaAcertoId } });
+    if (proposta.matriculaId !== conjunto.matriculaId || proposta.propostaAditivoId !== conjunto.propostaAditivoId || proposta.versaoCondicoesId !== conjunto.versaoCondicoesId || proposta.cobrancaId !== linha.cobrancaId) throw new ErroRegra("O acerto não corresponde à taxa e versão deste conjunto.");
+    return tx.impactoTaxaAditivo.update({ where: { id: linha.id }, data: { propostaAcertoId: proposta.id } });
+  });
+}); }
+
+export async function completarImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
+  const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = CompletarImpactosTaxaAditivoSchema.parse(input);
+  return prisma.$transaction(async tx => {
+    await exigirFinanceiro(tx, autor.id, true); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
+    if (conjunto.status === "COMPLETO") return { id: conjunto.id, completo: true };
+    if (conjunto.status !== "APROVADO") throw new ErroRegra("O conjunto precisa estar aprovado antes da conclusão.");
+    if (conjunto.impactos.some(i => i.decisao === "AFETADA" && !i.propostaAcerto?.aplicacao)) throw new ErroRegra("Há taxas afetadas sem acerto aplicado.");
+    await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: conjunto.id }, data: { status: "COMPLETO" } });
+    await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoCompletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: conjunto.propostaAditivoId, versaoCondicoesId: conjunto.versaoCondicoesId, fotografiaHash: conjunto.fotografiaHash } });
+    return { id: conjunto.id, completo: true };
+  });
+}); }
+
+export async function consultarImpactosTaxaAditivo(propostaId: string) { return executarAcao(async () => {
+  await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA);
+  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: { impactos: { include: { cobranca: { select: { codigo: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } });
+  if (!conjunto) return null;
+  return { id: conjunto.id, status: conjunto.status, aplicado: conjunto.status === "COMPLETO", impactos: conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, codigo: i.cobranca.codigo, decisao: i.decisao, justificativa: i.justificativa, aplicado: Boolean(i.propostaAcerto?.aplicacao) })) };
+}); }
