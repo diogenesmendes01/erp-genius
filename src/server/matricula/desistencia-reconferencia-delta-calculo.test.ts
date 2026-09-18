@@ -11,6 +11,32 @@ const obrigacoes = { taxa: { devido: "100.00", moeda: "CRC" } };
 const calcular = (alteracoes: Partial<FatoDelta> = {}) => calcularReconferenciaDelta([{ ...fonte, ...alteracoes }], obrigacoes, anterior, atual);
 
 describe("reconferência financeira incremental", () => {
+  it("conserva a obrigação e não duplica crédito em reconferências sucessivas", () => {
+    const centavos = (n: number) => (n / 100).toFixed(2);
+    for (const devido of [0, 1, 999, 10000]) {
+      for (const pagoAntes of [0, 1, 7500, 15000]) {
+        for (const adicional of [0, 1, 5000]) {
+          const pagoDepois = pagoAntes + adicional;
+          const creditoAntes = Math.max(pagoAntes - devido, 0);
+          const resultado = calcularReconferenciaDelta([{
+            ...fonte, devidoAtual: centavos(devido),
+            saldoAtual: centavos(Math.max(devido - pagoAntes, 0)),
+            liquidado: centavos(pagoDepois), creditoJaApurado: centavos(creditoAntes),
+          }], { taxa: { devido: centavos(devido), moeda: "CRC" } }, anterior, atual);
+          expect(resultado.tipo).toBe("APLICAR");
+          const item = resultado.itens[0];
+          expect(item.saldoAlvo).toBe(centavos(Math.max(devido - pagoDepois, 0)));
+          expect(item.creditoDelta).toBe(centavos(Math.max(pagoDepois - devido, 0) - creditoAntes));
+          const repeticao = calcularReconferenciaDelta([{
+            ...fonte, devidoAtual: item.devidoAlvo, saldoAtual: item.saldoAlvo,
+            liquidado: centavos(pagoDepois), creditoJaApurado: centavos(Math.max(pagoDepois - devido, 0)),
+          }], { taxa: { devido: centavos(devido), moeda: "CRC" } }, atual, atual);
+          expect(repeticao.tipo).toBe("SEM_EFEITO");
+          expect(repeticao.itens[0].creditoDelta).toBe("0.00");
+        }
+      }
+    }
+  });
   it("credita apenas o recebimento adicional sem reabrir dívida pelo crédito anterior", () => {
     expect(calcular({ liquidado: "175.00" })).toMatchObject({ tipo: "APLICAR", itens: [{
       moeda: "CRC", devidoAlvo: "100.00", saldoAlvo: "0.00", ajusteDevido: "0.00", ajusteSaldo: "0.00", creditoDelta: "25.00",
