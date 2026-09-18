@@ -4,11 +4,16 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCancelamentoFinanceiroDesistencia } from "@/server/matricula/desistencia-financeiro-consulta";
 import { PropostaFormulario, DecisaoFormulario } from "./Formularios";
+import { consultarAcertoDesistenciaContratual } from "@/server/matricula/desistencia-acerto-consulta";
+import { AplicarAcertoContratualFormulario, DecidirAcertoContratualFormulario, PrepararAcertoContratualFormulario } from "./AcertoContratualFormularios";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { id } = await params;
-  const resultado = await consultarCancelamentoFinanceiroDesistencia({ matriculaId: id });
+  const [resultado, acertoResultado] = await Promise.all([
+    consultarCancelamentoFinanceiroDesistencia({ matriculaId: id }),
+    consultarAcertoDesistenciaContratual({ matriculaId: id }),
+  ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
   return <section className="space-y-5">
@@ -30,5 +35,27 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {p.podeDecidir && <DecisaoFormulario propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}
     </article>)}
     {d.propostas.length === 20 && <p>São exibidas as vinte propostas mais recentes.</p>}
+    <section className="space-y-4 border-t pt-5">
+      <h2 className="text-xl font-medium">Acerto contratual antes da efetivação</h2>
+      <p>Use a regra da versão contratual vigente para preparar a memória. Depois da aprovação financeira independente, a Administração decide a desistência; só então o Financeiro aplica os valores e a Secretaria efetiva.</p>
+      {!acertoResultado.ok || !acertoResultado.dado ? <p role="alert">{acertoResultado.ok ? "Consulta do acerto indisponível." : acertoResultado.erro}</p> : (() => {
+        const acerto = acertoResultado.dado;
+        return <>
+          {acerto.impedimento && <p role="status">{acerto.impedimento}</p>}
+          {acerto.podePreparar && acerto.pedido && acerto.condicoes && <PrepararAcertoContratualFormulario pedidoId={acerto.pedido.id} condicoesId={acerto.condicoes.id} />}
+          {!acerto.propostas.length && <p>Nenhuma memória contratual preparada.</p>}
+          {acerto.propostas.map(proposta => <article key={proposta.id} className="space-y-3 rounded border p-4">
+            <h3 className="font-medium">Memória de {proposta.preparadorNome} · {new Date(proposta.criadaEmISO).toLocaleString("pt-BR")}</h3>
+            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Devido</th><th>Saldo</th><th>Crédito</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{item.moeda} {item.devido}</td><td>{item.moeda} {item.saldoDevido}</td><td>{item.moeda} {item.creditoApurado}</td></tr>)}</tbody></table>
+            {!proposta.decisao && proposta.podeDecidir && <DecidirAcertoContratualFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} />}
+            {proposta.decisao && <p>{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisorNome}: {proposta.decisao.motivo}</p>}
+            {proposta.decisao?.aprovada && !proposta.decisao.aplicacao && !proposta.podeAplicar && <p role="status">A aplicação aguarda decisão administrativa aprovada para este pedido e a alçada da pessoa que aprovou a memória.</p>}
+            {proposta.podeAplicar && proposta.decisao && <AplicarAcertoContratualFormulario decisaoId={proposta.decisao.id} />}
+            {proposta.decisao?.aplicacao && <div><p>Acerto aplicado em {new Date(proposta.decisao.aplicacao.criadaEmISO).toLocaleString("pt-BR")}. A Secretaria pode efetivar a desistência.</p>{proposta.decisao.aplicacao.creditos.length > 0 && <p>Créditos gerados: {proposta.decisao.aplicacao.creditos.map((creditoId, indice) => <span key={creditoId}>{indice > 0 && ", "}<Link className="underline" href={`/alunos/${acerto.matricula.alunoId}/creditos/${creditoId}`}>consultar crédito</Link></span>)}</p>}</div>}
+          </article>)}
+          {acerto.temMaisPropostas && <p>São exibidas as vinte memórias contratuais mais recentes. Existem propostas anteriores preservadas no histórico.</p>}
+        </>;
+      })()}
+    </section>
   </section>;
 }

@@ -6,12 +6,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento, type Resultado } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
-import { conferirEfetivacaoDesistenciaPreparacaoTx } from "./desistencia-efetivacao-tx";
+import { conferirEfetivacaoDesistenciaAcertoContratualTx, conferirEfetivacaoDesistenciaPreparacaoTx } from "./desistencia-efetivacao-tx";
 
 const entradaSchema = z.object({
   pedidoId: z.string().trim().min(1).max(100),
   estadoHash: z.string().regex(/^[a-f0-9]{64}$/),
   decisaoFinanceiraId: z.string().trim().min(1).max(100).optional(),
+  aplicacaoAcertoDesistenciaContratualId: z.string().trim().min(1).max(100).optional(),
   motivo: z.string().trim().min(10).max(3000),
 }).strict();
 
@@ -47,16 +48,38 @@ export async function efetivarPedidoDesistenciaPreparacao(input: z.input<typeof 
         return { id: existente.id, matriculaId: existente.matriculaId, status: "CANCELADA" as const };
       }
       let decisaoFinanceiraValida = false;
+      let aplicacaoContratualValida = false;
       if (dados.decisaoFinanceiraId) {
         const decisao = await tx.decisaoFinanceiraDesistencia.findUnique({ where: { id: dados.decisaoFinanceiraId }, include: { proposta: true } });
         if (!decisao?.aprovada || decisao.proposta.pedidoId !== dados.pedidoId || decisao.proposta.estadoHash !== dados.estadoHash) throw new ErroRegra("A decisão financeira não está aprovada para este pedido.");
         decisaoFinanceiraValida = true;
       }
-      const estado = await conferirEfetivacaoDesistenciaPreparacaoTx(tx, dados.pedidoId, dados.estadoHash, decisaoFinanceiraValida);
-      if (estado.conferencia.resumo.financeiro.quantidadeCobrancas > 0 && !decisaoFinanceiraValida) throw new ErroRegra("Cobranças exigem decisão financeira aprovada antes da efetivação.");
+      if (dados.aplicacaoAcertoDesistenciaContratualId) {
+        if (dados.decisaoFinanceiraId) throw new ErroRegra("Escolha um único acerto financeiro para a efetivação.");
+        const aplicacaoContratual = await tx.aplicacaoAcertoDesistenciaContratual.findUnique({
+          where: { id: dados.aplicacaoAcertoDesistenciaContratualId },
+          include: { decisao: { include: { proposta: true } } },
+        });
+        if (!aplicacaoContratual?.decisao.aprovada
+          || aplicacaoContratual.decisao.proposta.pedidoId !== dados.pedidoId
+          || aplicacaoContratual.decisao.proposta.estadoHash !== dados.estadoHash) {
+          throw new ErroRegra("A aplicação contratual não está aprovada para este pedido.");
+        }
+        aplicacaoContratualValida = true;
+      }
+      const estado = aplicacaoContratualValida
+        ? await conferirEfetivacaoDesistenciaAcertoContratualTx(
+          tx, dados.aplicacaoAcertoDesistenciaContratualId!, dados.pedidoId, dados.estadoHash,
+        )
+        : await conferirEfetivacaoDesistenciaPreparacaoTx(tx, dados.pedidoId, dados.estadoHash, decisaoFinanceiraValida);
+      if (!aplicacaoContratualValida && "conferencia" in estado
+        && estado.conferencia.resumo.financeiro.quantidadeCobrancas > 0 && !decisaoFinanceiraValida) {
+        throw new ErroRegra("Cobranças exigem decisão financeira aprovada antes da efetivação.");
+      }
       const aplicacao = await tx.efetivacaoPedidoDesistenciaPreparacao.create({ data: {
         pedidoId: estado.pedido.id, matriculaId: estado.pedido.matriculaId, executorId: sessao.id,
         motivo: dados.motivo, entradaHash, estadoHash: dados.estadoHash, decisaoFinanceiraId: dados.decisaoFinanceiraId,
+        aplicacaoAcertoDesistenciaContratualId: dados.aplicacaoAcertoDesistenciaContratualId,
       } });
       await registrarEvento(tx, { tipo: "PedidoDesistenciaPreparacaoEfetivado", agregadoTipo: "Matricula", agregadoId: aplicacao.matriculaId,
         autorId: sessao.id, payload: { pedidoId: aplicacao.pedidoId, efetivacaoId: aplicacao.id } });
