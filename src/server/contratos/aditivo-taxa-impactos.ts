@@ -6,7 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { hashSubstituicao } from "./substituicao-estado";
-import { CompletarImpactosTaxaAditivoSchema, DecidirImpactosTaxaAditivoSchema, PrepararImpactosTaxaAditivoSchema, VincularImpactoTaxaAditivoSchema } from "./aditivo-taxa-impactos-schema";
+import { CompletarImpactosTaxaAditivoSchema, DecidirImpactosTaxaAditivoSchema, ObsoletarImpactosTaxaAditivoSchema, PrepararImpactosTaxaAditivoSchema, VincularImpactoTaxaAditivoSchema } from "./aditivo-taxa-impactos-schema";
 
 async function exigirFinanceiro(tx: Prisma.TransactionClient, id: string, aprovar = false) {
   const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true, permissoes: true } });
@@ -114,6 +114,21 @@ export async function completarImpactosTaxaAditivo(input: unknown) { return exec
   });
 }); }
 
+export async function obsoletarImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
+  const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = ObsoletarImpactosTaxaAditivoSchema.parse(input);
+  return prisma.$transaction(async tx => {
+    await exigirFinanceiro(tx, autor.id);
+    const referencia = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { matriculaId: true } });
+    await bloquearMatriculas(tx, [referencia.matriculaId]);
+    const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { id: true, matriculaId: true, propostaAditivoId: true, status: true } });
+    if (conjunto.status === "OBSOLETO") return { id: conjunto.id, obsoleto: true };
+    if (conjunto.status !== "APROVADO") throw new ErroRegra("Somente conjunto aprovado com fotografia divergente pode ser marcado obsoleto.");
+    await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: conjunto.id }, data: { status: "OBSOLETO" } });
+    await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoObsoletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: conjunto.propostaAditivoId, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia } });
+    return { id: conjunto.id, obsoleto: true };
+  });
+}); }
+
 export async function consultarImpactosTaxaAditivo(propostaId: string) { return executarAcao(async () => {
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA);
   const atual = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, permissoes: true } });
@@ -123,5 +138,5 @@ export async function consultarImpactosTaxaAditivo(propostaId: string) { return 
   if (!conjunto) return null;
   const impactos = conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, cobranca: { id: i.cobranca.id, codigo: i.cobranca.codigo, moeda: i.cobranca.moeda, valorNegociado: i.cobranca.valorNegociado.toFixed(2), vencimento: i.cobranca.vencimento.toISOString().slice(0, 10), status: i.cobranca.status }, decisao: i.decisao, justificativa: i.justificativa, propostaAcertoId: i.propostaAcertoId, acertoStatus: i.propostaAcerto?.status ?? null, aplicado: Boolean(i.propostaAcerto?.aplicacao) }));
   const afetadas = impactos.filter(i => i.decisao === "AFETADA");
-  return { id: conjunto.id, status: conjunto.status, aplicado: conjunto.status === "COMPLETO", decisao: conjunto.decisao && { aprovada: conjunto.decisao.aprovada, decisorId: conjunto.decisao.decisorId, decididaEm: conjunto.decisao.decididaEm.toISOString() }, podeVincular: financeiro && conjunto.status === "PENDENTE", podeDecidir: aprova && conjunto.preparadorId !== usuario.id && conjunto.status === "PENDENTE" && !conjunto.decisao, podeConcluir: aprova && conjunto.status === "APROVADO" && conjunto.decisao?.aprovada === true, pendencias: { afetadasSemVinculo: afetadas.filter(i => !i.propostaAcertoId).length, afetadasSemAplicacao: afetadas.filter(i => !i.aplicado).length }, impactos };
+  return { id: conjunto.id, status: conjunto.status, aplicado: conjunto.status === "COMPLETO", decisao: conjunto.decisao && { aprovada: conjunto.decisao.aprovada, decisorId: conjunto.decisao.decisorId, decididaEm: conjunto.decisao.decididaEm.toISOString() }, podeVincular: financeiro && conjunto.status === "PENDENTE", podeDecidir: aprova && conjunto.preparadorId !== usuario.id && conjunto.status === "PENDENTE" && !conjunto.decisao, podeConcluir: aprova && conjunto.status === "APROVADO" && conjunto.decisao?.aprovada === true, podeObsoletar: financeiro && conjunto.status === "APROVADO", pendencias: { afetadasSemVinculo: afetadas.filter(i => !i.propostaAcertoId).length, afetadasSemAplicacao: afetadas.filter(i => !i.aplicado).length }, impactos };
 }); }

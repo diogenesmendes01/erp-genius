@@ -2,21 +2,22 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { completarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "@/server/contratos/aditivo-taxa-impactos";
+import Link from "next/link";
+import { completarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, obsoletarImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "@/server/contratos/aditivo-taxa-impactos";
 
 type Impacto = { cobrancaId: string; cobranca: { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string; status: string }; decisao: "AFETADA" | "PRESERVADA"; justificativa: string; propostaAcertoId: string | null; acertoStatus: string | null; aplicado: boolean };
 type Acerto = { id: string; cobrancaId: string; codigo: string; moeda: string; valorNovo: string; vencimentoNovo: string; status: string };
-type Conjunto = { id: string; status: string; podeVincular: boolean; podeDecidir: boolean; podeConcluir: boolean; pendencias: { afetadasSemVinculo: number; afetadasSemAplicacao: number }; impactos: Impacto[] };
-export function ImpactosTaxaOperacao({ conjunto, acertos }: { conjunto: Conjunto | null; acertos: Acerto[] }) {
+type Conjunto = { id: string; status: string; podeVincular: boolean; podeDecidir: boolean; podeConcluir: boolean; podeObsoletar: boolean; pendencias: { afetadasSemVinculo: number; afetadasSemAplicacao: number }; impactos: Impacto[] };
+export function ImpactosTaxaOperacao({ conjunto, acertos, reprepararHref }: { conjunto: Conjunto | null; acertos: Acerto[]; reprepararHref: string }) {
   const router = useRouter(); const [motivo, setMotivo] = useState(""); const [selecoes, setSelecoes] = useState<Record<string, string>>({}); const [mensagem, setMensagem] = useState(""); const [ocupado, setOcupado] = useState(false); const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
-  async function executar(operacao: "aprovar" | "rejeitar" | "concluir" | "vincular", cobrancaId?: string) {
+  async function executar(operacao: "aprovar" | "rejeitar" | "concluir" | "vincular" | "obsoletar", cobrancaId?: string) {
     const propostaAcertoId = cobrancaId ? selecoes[cobrancaId] : undefined;
     if (ocupado || (operacao !== "concluir" && operacao !== "vincular" && motivo.trim().length < 5) || (operacao === "vincular" && !propostaAcertoId) || !conjunto) return;
     const entrada = JSON.stringify({ operacao, conjuntoId: conjunto.id, cobrancaId, propostaAcertoId, motivo: motivo.trim() });
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
     setOcupado(true); setMensagem("");
     try {
-      const r = operacao === "vincular" ? await vincularImpactoTaxaAditivo({ conjuntoId: conjunto.id, cobrancaId: cobrancaId!, propostaAcertoId: propostaAcertoId! }) : operacao === "concluir" ? await completarImpactosTaxaAditivo({ conjuntoId: conjunto.id }) : await decidirImpactosTaxaAditivo({ conjuntoId: conjunto.id, aprovada: operacao === "aprovar", motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave });
+      const r = operacao === "vincular" ? await vincularImpactoTaxaAditivo({ conjuntoId: conjunto.id, cobrancaId: cobrancaId!, propostaAcertoId: propostaAcertoId! }) : operacao === "concluir" ? await completarImpactosTaxaAditivo({ conjuntoId: conjunto.id }) : operacao === "obsoletar" ? await obsoletarImpactosTaxaAditivo({ conjuntoId: conjunto.id, motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave }) : await decidirImpactosTaxaAditivo({ conjuntoId: conjunto.id, aprovada: operacao === "aprovar", motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave });
       if (!r.ok) { setMensagem(r.erro); return; }
       setMensagem(operacao === "vincular" ? "Acerto vinculado à taxa afetada." : operacao === "concluir" ? "Conjunto completo registrado." : "Decisão do conjunto registrada."); tentativa.current = null; router.refresh();
     } catch { setMensagem("Não foi possível confirmar a operação. Tente novamente para conferir a mesma tentativa."); }
@@ -29,6 +30,8 @@ export function ImpactosTaxaOperacao({ conjunto, acertos }: { conjunto: Conjunto
     {conjunto.pendencias.afetadasSemAplicacao > 0 && <p role="status">Há {conjunto.pendencias.afetadasSemAplicacao} taxa(s) afetada(s) sem aplicação; a conclusão permanece indisponível.</p>}
     {conjunto.podeDecidir && <label className="block">Motivo da decisão<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>}
     {conjunto.podeDecidir && <><button type="button" disabled={ocupado || motivo.trim().length < 5 || conjunto.pendencias.afetadasSemVinculo > 0} onClick={() => executar("aprovar")}>Aprovar conjunto</button>{" "}<button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("rejeitar")}>Rejeitar conjunto</button></>}
-    {conjunto.podeConcluir && <button type="button" disabled={ocupado || conjunto.pendencias.afetadasSemAplicacao > 0} onClick={() => executar("concluir")}>Concluir impactos aplicados</button>}{mensagem && <p role="status">{mensagem}</p>}
+    {conjunto.podeConcluir && <button type="button" disabled={ocupado || conjunto.pendencias.afetadasSemAplicacao > 0} onClick={() => executar("concluir")}>Concluir impactos aplicados</button>}
+    {conjunto.podeObsoletar && <><label className="block">Motivo para reconstruir o conjunto<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label><button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("obsoletar")}>Confirmar fotografia divergente</button></>}
+    {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <p role="status">Este conjunto preserva seu histórico e não pode ser reaberto. <Link className="underline" href={reprepararHref}>Reconferir todas as taxas e preparar novo conjunto</Link>.</p>}{mensagem && <p role="status">{mensagem}</p>}
   </section>;
 }
