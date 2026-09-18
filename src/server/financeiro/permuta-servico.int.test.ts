@@ -26,6 +26,7 @@ vi.mock("@/server/_shared", async importOriginal => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import {
+  listarCobrancasParaPermuta,
   confirmarServicoPermuta,
   consultarPermutas,
   decidirCompensacaoPermuta,
@@ -115,3 +116,14 @@ it("rejeita proponente como decisor e revalida a capacidade revogada antes do re
   expect(await confirmarServicoPermuta({ acordoId: acordo.dado!.id, periodoInicio: "2099-10-01", periodoFim: "2099-10-31", quantidadeComprovada: "1", referenciaServico: "REFORCO-2099-11", evidencia: "DiÃ¡rio posterior de serviÃ§o prestado", chaveIdempotencia: "p02-confirmacao-revogada" })).toMatchObject({ ok: false });
 });
 
+
+it("lista apenas mensalidades disponíveis e bloqueia consulta pedagógica financeira", async () => {
+  await prisma.cobranca.create({ data: { matriculaId: matricula, tipo: TipoCobranca.MATRICULA, moeda: "CRC", valorOriginal: 70, valorNegociado: 70, saldo: 70, vencimento: new Date("2099-09-01") } });
+  entrar(financeiro);
+  const resultado = await listarCobrancasParaPermuta();
+  expect(resultado).toMatchObject({ ok: true, dado: [{ id: cobranca, matriculaId: matricula, moeda: "CRC", saldo: "100.00" }] });
+  if (!resultado.ok) throw new Error("Consulta indisponível");
+  expect(resultado.dado).toHaveLength(1);
+  entrar(pedagogico);
+  expect(await listarCobrancasParaPermuta()).toMatchObject({ ok: false });
+});
