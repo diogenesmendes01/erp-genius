@@ -1,5 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { MatriculaSchema } from "./schema";
+import { AtivacaoSchema, MatriculaSchema } from "./schema";
+
+describe("AtivacaoSchema — evidência do recebimento", () => {
+  const pagamento = { valorRecebido: 60, forma: "DINHEIRO", dataPagamento: "2026-09-18" };
+  it.each([undefined, "", "     ", "abcd"])("recusa evidência insuficiente: %s", (comentario) => {
+    const resultado = AtivacaoSchema.safeParse({ ...pagamento, comentario });
+    expect(resultado.success).toBe(false);
+    if (!resultado.success) expect(resultado.error.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: ["comentario"] }),
+    ]));
+  });
+  it("aceita evidência e não exige novo lastro quando não há recebimento", () => {
+    expect(AtivacaoSchema.safeParse({ ...pagamento, comentario: "Complemento destinado à taxa" }).success).toBe(true);
+    expect(AtivacaoSchema.safeParse({ ...pagamento, valorRecebido: 0 }).success).toBe(true);
+  });
+});
 
 // Base mínima válida para focar nos campos da exceção de preço (Issue #7).
 function base(over: Record<string, unknown> = {}) {

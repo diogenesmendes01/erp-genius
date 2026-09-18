@@ -117,6 +117,13 @@ export const AtivacaoSchema = z
     comentario: z.string().optional(),
   })
   .superRefine((d, ctx) => {
+    if (d.valorRecebido > 0 && (d.comentario?.trim().length ?? 0) < 5) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe a evidência da destinação do recebimento (mínimo de 5 caracteres)",
+        path: ["comentario"],
+      });
+    }
     if (d.valorRecebido > 0 && !FORMAS_SEM_COMPROVANTE.includes(d.forma) && !d.comprovanteUrl?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
