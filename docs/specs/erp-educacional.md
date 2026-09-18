@@ -255,7 +255,7 @@ Esta matriz cobre Q04–Q154, incluindo as perguntas de inventário. As escolhas
 
 ## 12. Validação e critério de conclusão
 
-Além dos critérios por corpo, os cenários transversais seguintes são obrigatórios. São requisitos de teste/homologação, ainda não resultados executados nesta etapa.
+Além dos critérios por corpo, os cenários transversais seguintes são obrigatórios. São requisitos de teste/homologação; as evidências executadas ficam registradas junto ao cenário, sem ampliar seu alcance.
 
 | ID | Cenário e resultado esperado |
 |---|---|
@@ -271,6 +271,12 @@ Além dos critérios por corpo, os cenários transversais seguintes são obrigat
 | CT-10 | Encerramento com descontos, multa, crédito e dias compensados: memória fecha com recebimentos e condições originais; aprovação independente e data efetiva preservadas. |
 | CT-11 | Material indisponível, troca de avaliador e matrícula pausada: preservar entregas/autoria, prazo restante e restrições, sem conclusão automática. |
 | CT-12 | Falha externa/reinício/reenvio/migração repetida: resultado durável, pendência verificável, nenhuma duplicação silenciosa ou envio de ensaio. |
+
+#### Evidência executada — CT-01 (18/09/2026)
+
+`src/server/matricula/ct01-isolamento-contratos.int.test.ts` exercita, no banco descartável, duas matrículas do mesmo aluno: A mensal e B com cobrança `HORA_PARTICULAR`. As fontes financeiras são recebimentos e destinações criados pela ação financeira real. A pausa de A percorre solicitação, decisão independente e aplicação pública; o encerramento percorre solicitação, prévia, rascunho, decisão e efetivação públicos. Repetir cada aplicação devolve o mesmo resultado e deixa uma única movimentação/efetivação.
+
+Em ambos os percursos, a fotografia de B — estado, cobrança, recebimentos, destinações e créditos — permanece idêntica. A autorização real de reprodução recusa somente o material de A após pausa ou encerramento e mantém o material de B autorizado. O teste usa material e credencial de Drive fictícios, sem chamar provedor externo. Ele comprova isolamento entre esses dois contratos; não substitui os demais cenários transversais ou homologação de provedores.
 
 Uma entrega fica pronta para implementação quando seu corpo, requisitos referenciados, contratos de dados/ações, estados, permissões, tratamento de legado, dependências e testes têm correspondência explícita. Questão técnica resolvível com as decisões existentes não exige nova rodada de negócio; mudança de comportamento requer refinamento próprio.
 
