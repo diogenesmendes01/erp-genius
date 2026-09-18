@@ -662,6 +662,28 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     expect(await obsoletarImpactosCoberturaAditivo({ conjuntoId: primeiro.conjuntoId, motivo, chaveIdempotencia: "q168-chave-diversa" })).toMatchObject({ ok: false });
   });
 
+  it("preserva o motivo da decisão no replay", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-replay-decisao");
+    const entrada = { conjuntoId, aprovada: true, motivo: "Financeiro independente conferiu a fotografia completa.", chaveIdempotencia: "q168-replay-aprovacao" };
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    const primeira = await decidirImpactosCoberturaAditivo(entrada);
+    expect(primeira).toMatchObject({ ok: true });
+    expect(await decidirImpactosCoberturaAditivo(entrada)).toEqual(primeira);
+    expect(await decidirImpactosCoberturaAditivo({ ...entrada, motivo: "Outra justificativa não pode substituir a decisão registrada." })).toMatchObject({ ok: false });
+    expect(await prisma.decisaoConjuntoImpactosCoberturaAditivo.findUniqueOrThrow({ where: { conjuntoId } })).toMatchObject({ motivo: entrada.motivo });
+  });
+
+  it("recusa aprovação quando outra mensalidade surgiu após o preparo", async () => {
+    const { conjuntoId } = await prepararConjuntoCobertura("q168-nova-mensalidade");
+    await prisma.cobranca.create({ data: {
+      matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
+      vencimento: new Date("2026-12-01T00:00:00Z"), coberturaInicio: new Date("2026-12-01T00:00:00Z"), coberturaFim: new Date("2026-12-31T00:00:00Z"),
+    } });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosCoberturaAditivo({ conjuntoId, aprovada: true, motivo: "Conferência de todas as mensalidades do contrato.", chaveIdempotencia: "q168-nova-mensalidade-aprovar" })).toMatchObject({ ok: false });
+    expect(await prisma.decisaoConjuntoImpactosCoberturaAditivo.count({ where: { conjuntoId } })).toBe(0);
+  });
+
   it("recusa autoaprovação", async () => {
     const { conjuntoId } = await prepararConjuntoCobertura("q168-autoaprovacao");
     authMock.mockResolvedValue({ user: { id: financeiro } });
