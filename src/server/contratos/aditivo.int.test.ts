@@ -734,7 +734,9 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
   if (modo === "PRODUCAO_MENSAL_VENCIMENTO") {
     const formalizada = await registrarCondicoesFormalizadasAditivo(pedidoCondicoes);
     if (!formalizada.ok || !formalizada.dado) throw new Error(JSON.stringify(formalizada));
-    const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo } = await import("./vencimento-aditivo");
+    const { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo, consultarVencimentosAditivo } = await import("./vencimento-aditivo");
+    const consultaVencimento = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id };
+    expect(await consultarVencimentosAditivo(consultaVencimento)).toMatchObject({ ok: false });
     const financeiro = await criarUsuario(["FINANCEIRO"]);
     const pedido = { matriculaId: fixture.matriculaId, versaoCondicoesId: formalizada.dado.id, revisaoHash: confirmarFinal.revisaoHash, motivo: "Novo vencimento contratado", evidencia: "Aditivo assinado e cobrança original conferidos", chaveIdempotencia: "vencimento-primeiro" };
     expect(await proporVencimentoAditivo(pedido)).toMatchObject({ ok: false });
@@ -780,6 +782,10 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
     expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false });
     await expect(prisma.aplicacaoVencimentoAditivo.deleteMany()).rejects.toThrow("imutável");
+    const historico = await consultarVencimentosAditivo(consultaVencimento);
+    expect(historico).toMatchObject({ ok: true, dado: { temProxima: false, propostas: [{ id: salvo.id, estado: "APLICADA", podeDecidir: false, podeSolicitarAplicacao: false }] } });
+    expect(JSON.stringify(historico)).not.toMatch(/fotografia|chaveIdempotencia|preparadorId/);
+    expect(await consultarVencimentosAditivo({ ...consultaVencimento, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
     return;
   }
   if (taxaSemConsumidor) {

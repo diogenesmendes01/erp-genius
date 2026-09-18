@@ -128,3 +128,40 @@ export async function aplicarVencimentoAditivo(input: unknown) {
   }
   return resultado;
 }
+
+/** Histórico financeiro restrito à matrícula e à versão solicitadas. */
+export async function consultarVencimentosAditivo(input: unknown) {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const d = z.object({ matriculaId: id, versaoCondicoesId: id, pagina: z.number().int().min(1).max(10000).default(1) }).strict().parse(input);
+    return prisma.$transaction(async tx => {
+      await autorFinanceiro(tx, autor.id);
+      const versao = await tx.versaoCondicoesAditivo.findFirst({ where: { id: d.versaoCondicoesId, matriculaId: d.matriculaId },
+        select: { id: true, versao: true, vigenciaInicio: true, condicoes: true, conferenciaFinal: { select: { revisaoHash: true } } } });
+      if (!versao) throw new ErroRegra("Versão contratual indisponível nesta matrícula.");
+      const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: autor.id }, select: { papeis: true, permissoes: true } });
+      const aprova = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
+      const linhas = await tx.propostaVencimentoAditivo.findMany({
+        where: { matriculaId: d.matriculaId, versaoCondicoesId: versao.id },
+        orderBy: [{ criadaEm: "desc" }, { id: "desc" }], skip: (d.pagina - 1) * 50, take: 51,
+        include: { decisao: { include: { aplicacao: true } } },
+      });
+      return {
+        matriculaId: d.matriculaId, versaoCondicoesId: versao.id, versao: versao.versao,
+        vigenciaInicio: versao.vigenciaInicio.toISOString(), revisaoHash: versao.conferenciaFinal.revisaoHash,
+        alvo: await consultarAlvoPrimeiraMensalidadeTx(tx, d.matriculaId, z.record(z.unknown()).parse(versao.condicoes).PRIMEIRA_MENSALIDADE_VENCIMENTO),
+        pagina: d.pagina, temProxima: linhas.length > 50,
+        propostas: linhas.slice(0, 50).map(p => ({
+          id: p.id, cobrancaId: p.cobrancaId, versaoCobranca: p.versaoCobranca, fuso: p.fuso,
+          vencimentoAnterior: p.vencimentoAnterior.toISOString(), vencimentoNovo: p.vencimentoNovo.toISOString(),
+          motivo: p.motivo, evidencia: p.evidencia, criadaEm: p.criadaEm.toISOString(),
+          estado: p.decisao?.aplicacao ? "APLICADA" : p.decisao ? (p.decisao.aprovada ? "APROVADA" : "REJEITADA") : "PENDENTE",
+          podeDecidir: !p.decisao && aprova && p.preparadorId !== autor.id,
+          podeSolicitarAplicacao: !!p.decisao?.aprovada && !p.decisao.aplicacao && aprova && p.decisao.decisorId === autor.id,
+          decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, decididaEm: p.decisao.decididaEm.toISOString() } : null,
+          aplicadaEm: p.decisao?.aplicacao?.aplicadaEm.toISOString() ?? null,
+        })),
+      };
+    });
+  });
+}
