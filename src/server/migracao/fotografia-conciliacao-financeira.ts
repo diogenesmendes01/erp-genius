@@ -17,7 +17,12 @@ export async function fotografiaConciliacaoFinanceiraTx(tx: Prisma.TransactionCl
   if (!mapa || mapa.matriculaId!==ids.matriculaId) throw new ErroRegra("A matrícula selecionada não corresponde ao vínculo M01 da fonte.");
   await bloquearMatriculas(tx,[ids.matriculaId]);
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${ids.cobrancaId} FOR UPDATE`;
-  const cobranca=await tx.cobranca.findUnique({where:{id:ids.cobrancaId},select:{id:true,matriculaId:true,tipo:true,status:true,moeda:true,valorOriginal:true,valorNegociado:true,valorRecebido:true,saldo:true,valorLiquidadoCredito:true,versao:true,pagoEm:true,formaPagamento:true,comprovanteUrl:true,comprovanteNome:true,comentario:true,vencimento:true}});
+  const cobrancaAtual=await tx.cobranca.findUnique({where:{id:ids.cobrancaId},select:{id:true,matriculaId:true,tipo:true,status:true,moeda:true,valorOriginal:true,valorNegociado:true,valorRecebido:true,saldo:true,valorLiquidadoCredito:true,valorCompensadoPermuta:true,versao:true,pagoEm:true,formaPagamento:true,comprovanteUrl:true,comprovanteNome:true,comentario:true,vencimento:true}});
+  // Não introduzir zero no hash das conferências anteriores à permuta.
+  const cobranca = cobrancaAtual && (() => {
+    const { valorCompensadoPermuta, ...anterior } = cobrancaAtual;
+    return valorCompensadoPermuta.gt(0) ? { ...anterior, valorCompensadoPermuta } : anterior;
+  })();
   if(!cobranca||cobranca.matriculaId!==ids.matriculaId) throw new ErroRegra("A cobrança não pertence ao contrato explícito.");
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id=${ids.cobrancaId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "PagadorPreparacaoMatricula" WHERE id=${ids.pagadorId} FOR SHARE`;
