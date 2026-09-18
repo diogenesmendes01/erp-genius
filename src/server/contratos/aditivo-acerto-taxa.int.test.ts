@@ -525,4 +525,32 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Cobrança preservada mudou depois da aprovação.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
     expect(await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "OBSOLETO" });
   });
+
+  it("reprepara a mesma classificação após rejeição, mantém um ativo e reutiliza acerto aplicado sem novo crédito", async () => {
+    const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-repreparo-inicial");
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const acerto = await propor("q170-repreparo-acerto", "Acerto aplicado antes da reconstrução do conjunto.", { recibo: "Q170-repreparo" });
+    if (!acerto.ok || !acerto.dado) throw new Error(JSON.stringify(acerto));
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirAcertoTaxaAditivo({ propostaId: acerto.dado.id, aprovada: true, motivo: "Acerto aprovado antes da reconstrução.", chaveIdempotencia: "q170-repreparo-acerto-aprovar" })).toMatchObject({ ok: true });
+    expect(await aplicarAcertoTaxaAditivo({ propostaId: acerto.dado.id, chaveIdempotencia: "q170-repreparo-acerto-aplicar" })).toMatchObject({ ok: true });
+    const creditosAntes = await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: false, motivo: "Conjunto rejeitado para reconstrução idêntica.", chaveIdempotencia: "q170-repreparo-rejeitar" })).toMatchObject({ ok: true, dado: { aprovada: false } });
+    authMock.mockResolvedValue({ user: { id: financeiro } });
+    const novo = await prepararImpactosTaxaAditivo({ ...alvo, linhas: [
+      { cobrancaId, decisao: "AFETADA", justificativa: "Taxa original alterada pelo aditivo assinado." },
+      { cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: "Cobrança adicional permanece fora do escopo do aditivo." },
+    ], chaveIdempotencia: "q170-repreparo-novo" });
+    if (!novo.ok || !novo.dado) throw new Error(JSON.stringify(novo));
+    expect(novo.dado.id).not.toBe(conjuntoId);
+    expect(await prisma.conjuntoImpactosTaxaAditivo.count({ where: { propostaAditivoId: alvo.propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } } })).toBe(1);
+    expect(await vincularImpactoTaxaAditivo({ conjuntoId: novo.dado.id, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId: novo.dado.id, aprovada: true, motivo: "Novo conjunto conferido independentemente.", chaveIdempotencia: "q170-repreparo-aprovar" })).toMatchObject({ ok: true });
+    expect(await completarImpactosTaxaAditivo({ conjuntoId: novo.dado.id })).toMatchObject({ ok: true });
+    expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
+  });
 });
