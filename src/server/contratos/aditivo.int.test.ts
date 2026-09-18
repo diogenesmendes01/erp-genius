@@ -1,3 +1,4 @@
+import { consultarCadastroContratualVigenteTx } from "./cadastro-contratual";
 import { beforeEach, expect, it, vi } from "vitest";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -780,6 +781,9 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_HORA", "PRODUCAO_MENSAL", "PRODUCAO_ME
     } else {
     expect(await prisma.aluno.findUniqueOrThrow({ where: { id: m.alunoId } })).toEqual(alunoAntesConclusao);
     expect(await consultarAplicacaoCondicoesAditivo({ matriculaId: fixture.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { cadastroContratual: { matriculaId: fixture.matriculaId, versao: 1, campos: { ALUNO_NOME: "Nome atualizado no aditivo" } } } });
+    expect(await prisma.$transaction(tx => consultarCadastroContratualVigenteTx(tx, fixture.matriculaId, new Date(v.vigenciaInicio.getTime() - 1)))).toBeNull();
+    expect(await prisma.$transaction(tx => consultarCadastroContratualVigenteTx(tx, fixture.matriculaId, v.vigenciaInicio))).toMatchObject({ versao: 1, campos: { ALUNO_NOME: "Nome atualizado no aditivo" } });
+    expect(await prisma.$transaction(tx => consultarCadastroContratualVigenteTx(tx, "outra-matricula", v.vigenciaInicio))).toBeNull();
     const fonteAtual = await consultarAditivosContratuais({ matriculaId: fixture.matriculaId });
     const nomeFormalizado = z.object({ ALUNO_NOME: z.object({ texto: z.string() }) }).parse(v.condicoes).ALUNO_NOME.texto;
     expect(fonteAtual).toMatchObject({ ok: true, dado: { fonte: { campos: expect.arrayContaining([expect.objectContaining({ origem: "ALUNO_NOME", anterior: nomeFormalizado })]) } } });
