@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { calcularObrigacaoDesistenciaContratual } from "./desistencia-acerto-contratual-calculo";
+import { decidirAcertoDesistenciaContratual as decidirAcertoDesistenciaContratualInterna } from "./desistencia-acerto-decisao";
 import { carregarFinanceiroDesistenciaTx } from "./desistencia-financeiro-tx";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
 import { conferirPedidoReplayAcertoDesistencia } from "./desistencia-acerto-replay";
@@ -140,4 +141,8 @@ export async function prepararAcertoDesistenciaContratual(input: unknown) {
   });
 }
 
-export { decidirAcertoDesistenciaContratual } from "./desistencia-acerto-decisao";
+// Arquivos "use server" só podem expor funções assíncronas. Mantemos este
+// ponto de entrada para os consumidores existentes sem reexportar o símbolo.
+export async function decidirAcertoDesistenciaContratual(input: unknown) {
+  return decidirAcertoDesistenciaContratualInterna(input);
+}
