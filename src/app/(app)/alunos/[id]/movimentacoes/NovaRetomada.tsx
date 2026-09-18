@@ -5,12 +5,13 @@ import { Pendencias } from "./Pendencias";
 import { preverRetomadaMatriculas } from "@/server/matricula/retomada-previa";
 import { solicitarRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
 import type { PreviaRetomadaMatriculasInput } from "@/server/matricula/retomada-schema";
+import { identificacaoContrato, idsAposSelecaoMatricula } from "./identificacaoContrato";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
 const data = (v: string) => v.split("-").reverse().join("/");
 
-export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; codigo: string | null; nome: string }[]; hoje: string | null }) {
+export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; identificacao: string; nome: string }[]; hoje: string | null }) {
   const [ids, setIds] = useState<string[]>([]), [retorno, setRetorno] = useState(hoje ?? ""), [motivo, setMotivo] = useState("");
   const [base, setBase] = useState<Previa | null>(null), [previa, setPrevia] = useState<Previa | null>(null);
   const [opcoes, setOpcoes] = useState<Record<string, Opcao>>({}), [datas, setDatas] = useState<Record<string, string>>({});
@@ -54,12 +55,12 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
     <h2 className="text-lg font-medium">Nova proposta de retomada</h2>
     {contratos.length === 0 ? <p>Nenhum contrato pausado disponível.</p> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos pausados</legend>
-      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.codigo ?? "Sem código"} · {m.nome}</label>)}
+      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => idsAposSelecaoMatricula(v, m.id, e.target.checked)); }} />{m.identificacao} · {m.nome}</label>)}
       <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<textarea className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
       <button type="button" className={campo} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
       {base?.matriculas.map((m) => <fieldset key={m.matriculaId} className="space-y-2 border-t pt-3">
-        <legend className="font-medium">Contrato {m.codigo ?? "sem código"}</legend>
+        <legend className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</legend>
         <Pendencias itens={m.pendencias} />
         <label className="block text-sm">Tratamento dos vencimentos <select className={campo} value={opcoes[m.matriculaId] ?? ""} onChange={(e) => { alterar(); setOpcoes((v) => ({ ...v, [m.matriculaId]: e.target.value as Opcao })); }}><option value="">Selecione</option><option value="MANTER_VENCIMENTOS">Manter vencimentos originais</option><option value="REPROGRAMAR_PARCELAS">Reprogramar vencimentos</option></select></label>
         {opcoes[m.matriculaId] === "MANTER_VENCIMENTOS" && <p className="text-sm">Vencimentos antigos podem continuar em atraso. Retomar não quita a dívida.</p>}
@@ -71,7 +72,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
     </fieldset>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status" className="text-green-700">{aviso}</p>}{ocupado && <p role="status">Processando…</p>}
     {previa && <div className="space-y-3 border-t pt-3"><p>Fuso: {previa.fusoInstitucional ?? "A conferir"}. Cobertura e vencimentos serão aprovados juntos.</p>
-      {previa.matriculas.map((m) => <div key={m.matriculaId}><h3 className="font-medium">Contrato {m.codigo ?? "sem código"}</h3>
+      {previa.matriculas.map((m) => <div key={m.matriculaId}><h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
         <Pendencias itens={m.pendencias} />
         {m.periodos.map((p) => <p key={p.cobrancaId} className="text-sm">Nova cobertura: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)} · vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p>)}
       </div>)}

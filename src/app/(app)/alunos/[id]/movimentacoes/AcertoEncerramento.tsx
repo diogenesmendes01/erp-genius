@@ -14,6 +14,7 @@ import { preverComponenteMensalEncerramento } from "@/server/matricula/encerrame
 import { consultarRascunhoAcertoEncerramento, salvarRascunhoAcertoEncerramento } from "@/server/matricula/encerramento-rascunho";
 import { conferirValidadeRascunhoEncerramento } from "@/server/matricula/encerramento-validade";
 import { PreviaMensalPedidoEncerramentoSchema, type PreviaMensalPedidoEncerramentoInput } from "@/server/matricula/encerramento-previa-schema";
+import { identificacaoContrato } from "./identificacaoContrato";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
@@ -121,7 +122,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas }: { alu
       });
     }}><fieldset disabled={ocupado} className="space-y-4">
       {contextos.map((c) => <div key={c.matriculaId} className="space-y-2 rounded border p-3">
-        <h4 className="font-medium">{matriculas.find((m) => m.id === c.matriculaId)?.codigo ?? c.matriculaId} · {c.moeda}</h4>
+        <h4 className="font-medium">{identificacaoContrato(matriculas.find((m) => m.id === c.matriculaId)?.codigo, c.matriculaId)} · {c.moeda}</h4>
         {c.pendencias.map((p) => <p className="text-amber-800" key={p}>{p}</p>)}
         {c.condicoes && <p>Condições versão {c.condicoes.versao}: dia do encerramento {c.condicoes.regras.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"}; desconto {c.condicoes.regras.metodoDesconto === "ANTES_DO_PROPORCIONAL" ? "antes" : "depois"} do proporcional. {c.condicoes.regras.condicoesDescontos}</p>}
         {c.cobrancas.map((p) => <div key={p.id} className="space-y-2 border-t pt-2">

@@ -165,6 +165,8 @@ Manter ficha única do aluno com lista identificada de contratos. Cada contexto 
 
 Pausa/encerramento passam a partir da seleção de contratos e de uma prévia de impactos. Retomada aponta a pausa de origem e mostra cobertura e vencimentos separados. Consulta acadêmica e financeira deve manter o contexto ao navegar, exportar ou abrir anexos.
 
+Em seleção, prévia e histórico dessas movimentações, cada contrato mostra seu código não vazio ou, para legado sem código, o ID completo e estável da matrícula. Dois contratos do mesmo aluno e produto nunca compartilham um rótulo genérico; selecionar um mantém o ID do outro fora do payload.
+
 Chamadas legadas que só recebem alunoId não podem continuar modificando todos os contratos por compatibilidade silenciosa. Atualizar consumidores; quando contexto não puder ser determinado com segurança, exigir seleção/conferência. Adaptadores temporários só podem operar quando a correspondência for inequívoca e as mesmas autorizações forem verificadas.
 
 A criação de segunda matrícula reutiliza a identidade do aluno já identificado. Não exigir copiar documentos pessoais para novo cadastro de pessoa; evidência e condições de cada contratação continuam identificadas conforme sua finalidade.
