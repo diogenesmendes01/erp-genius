@@ -5,6 +5,7 @@ import { decidirAditivoContratual, prepararAditivoContratual } from "@/server/co
 import type { OrigemCampo } from "@/server/contratos/campos";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "@/server/contratos/aditivo-valores";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
+import { CicloCoberturaFuturoAditivoSchema } from "@/server/contratos/aditivo-schema";
 
 type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
@@ -15,6 +16,7 @@ const fusoServidor = () => null;
 export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState(""), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
   const id = useId();
+  const [escolhaCiclo, setEscolhaCiclo] = useState("");
   const [modeloId, setModeloId] = useState(""), [valoresEstruturados, setValoresEstruturados] = useState<Partial<Record<OrigemCampo, unknown>>>({}); const modelo = modelos.find(m => m.id === modeloId);
   const fuso = useSyncExternalStore<string | null>(acompanharFuso, fusoNavegador, fusoServidor);
   return <form className="space-y-4 rounded border p-4" onSubmit={e => {
@@ -33,13 +35,19 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
       } else alteracoes.push({ origem: c.origem, novo: String(dados.get(`novo:${c.origem}`) ?? "").trim() });
     }
     if (!modelo || !vigenciaLocal || Number.isNaN(instante.getTime()) || !alteracoes.length || alteracoes.some(a => !a.novo)) { setMensagem("Selecione o modelo, a vigência e ao menos uma condição com novo valor."); return; }
-    const vigenciaInicio = instante.toISOString(), conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaInicio, alteracoes, motivo: String(dados.get("motivo") ?? "") });
+    const alteraCobertura = alteracoes.some(a => a.origem === "COBERTURA_INICIO" || a.origem === "COBERTURA_FIM");
+    const ciclo = alteraCobertura ? CicloCoberturaFuturoAditivoSchema.safeParse(escolhaCiclo === "MUDAR_REFERENCIA"
+      ? { escolha: escolhaCiclo, referencia: dados.get("referenciaCiclo"), dataReferencia: dados.get("dataReferenciaCiclo") }
+      : { escolha: escolhaCiclo }) : null;
+    if (ciclo && !ciclo.success) { setMensagem("Escolha como ficam os períodos seguintes e informe uma referência válida quando houver mudança."); return; }
+    const politica = ciclo?.success ? { cicloCoberturaFutura: ciclo.data } : {};
+    const vigenciaInicio = instante.toISOString(), conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? "") });
     const chaveAtual = tentativa && tentativa !== conteudo ? crypto.randomUUID() : chave;
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
     setMensagem(""); iniciar(async () => {
       try {
       const r = await prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
-        modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual });
+        modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual });
       if (!r.ok) setMensagem(r.erro); else if (r.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(r.dado.id)}`);
       } catch { setMensagem("Não foi possível confirmar o registro. Tente novamente sem alterar os dados para consultar o resultado da mesma tentativa."); }
     });
@@ -47,6 +55,15 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
     <div className="block"><label htmlFor={`${id}-modelo`}>Modelo institucional aprovado</label><select id={`${id}-modelo`} className="mt-1 block w-full rounded border p-2" value={modeloId} onChange={e => setModeloId(e.target.value)} required disabled={pendente}><option value="">Selecione um modelo</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.codigo} · versão {m.versao} · {m.titulo}</option>)}</select></div>
     <fieldset className="space-y-3"><legend className="font-medium">Condições do original que serão alteradas</legend>{fonte.campos.map(c => <div key={c.origem} className="rounded border p-3"><div><input id={`${id}-${c.origem}`} type="checkbox" name={`alterar:${c.origem}`} defaultChecked={c.origem === "AGENDA_PARTICULAR" && !!agenda} disabled={pendente} /> <label htmlFor={`${id}-${c.origem}`}>Alterar {c.rotulo}</label></div><p>Valor preservado: {c.anterior}</p>{c.origem === "AGENDA_PARTICULAR" ? agenda ? <div className="mt-2"><p className="font-medium">Fotografia selecionada</p><p className="whitespace-pre-wrap">{agenda.texto}</p>{agenda.pendencias.length > 0 && <p role="alert">Esta fotografia tem pendências e não pode ser vinculada.</p>}</div> : <div className="block"><label htmlFor={`${id}-novo-${c.origem}`}>Nova descrição da agenda</label><input id={`${id}-novo-${c.origem}`} className="mt-1 block w-full rounded border p-2" name={`novo:${c.origem}`} maxLength={4000} disabled={pendente} /></div> : <div className="mt-2"><ValorEstruturadoCampo campo={c.origem} rotulo={`Novo valor para ${c.rotulo}`} disabled={pendente} onChange={valor => setValoresEstruturados(anteriores => ({ ...anteriores, [c.origem]: valor }))} /></div>}</div>)}</fieldset>
+    {fonte.campos.some(c => c.origem === "COBERTURA_INICIO" || c.origem === "COBERTURA_FIM") && <fieldset className="space-y-3 rounded border p-3" disabled={pendente}>
+      <legend className="font-medium">Períodos seguintes à cobertura corrigida</legend>
+      <p>Ao alterar a cobertura, informe no aditivo se a referência dos próximos períodos será preservada ou modificada. Selecione início e fim da cobertura juntos.</p>
+      <label className="block">Regra do ciclo<select className="mt-1 block rounded border p-2" value={escolhaCiclo} onChange={e => setEscolhaCiclo(e.target.value)}><option value="">Selecione ao alterar a cobertura</option><option value="PRESERVAR_REFERENCIA">Preservar referência vigente</option><option value="MUDAR_REFERENCIA">Mudar referência</option></select></label>
+      {escolhaCiclo === "MUDAR_REFERENCIA" && <>
+        <label className="block">Referência dos períodos<select className="mt-1 block rounded border p-2" name="referenciaCiclo" defaultValue=""><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option></select></label>
+        <label className="block">Data de referência<input className="mt-1 block rounded border p-2" type="date" name="dataReferenciaCiclo" /></label>
+      </>}
+    </fieldset>}
     <label className="block">Início da vigência<input className="mt-1 block rounded border p-2" type="datetime-local" name="vigencia" required disabled={pendente} /></label>
     <p role="status">{fuso ? `Informe a vigência no fuso ${fuso}. O instante correspondente será preservado no registro.` : "Identificando o fuso do navegador…"}</p>
     <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
