@@ -54,3 +54,21 @@ it("herança aplicada permite nova aplicação direta; herança pendente bloquei
  expect(()=>conferirAplicacaoDireta([a,b],b.id)).not.toThrow();
  expect(()=>conferirAplicacaoDireta([{...a,aplicacaoVencimentoId:null},b],b.id)).toThrow();
 });
+
+it("Q170 exige conjunto completo para taxa, sem aceitar aplicação geral como prova", () => {
+ const a=v(1,{TAXA_VALOR:preco,TAXA_VENCIMENTO:data},{},"geral");
+ const pendente=projetarAplicacoesPorCampo([a]);
+ expect(pendente.TAXA_VALOR.aplicacaoId).toBeNull();
+ expect(pendente.TAXA_VENCIMENTO.aplicacaoId).toBeNull();
+ const completo=projetarAplicacoesPorCampo([{...a,conjuntoTaxaCompletoId:"conjunto-completo"}]);
+ expect(completo.TAXA_VALOR.aplicacaoId).toBe("conjunto-completo");
+ expect(completo.TAXA_VENCIMENTO.aplicacaoId).toBe("conjunto-completo");
+});
+it("Q170 conserva conjunto da origem herdada e exige nova prova para alteração explícita", () => {
+ const a={...v(1,{TAXA_VALOR:preco}),conjuntoTaxaCompletoId:"conjunto-v1"};
+ const b=v(2,{MENSALIDADE_VALOR:preco},a.condicoes as object);
+ expect(()=>conferirAplicacaoDireta([a,b],b.id)).not.toThrow();
+ expect(projetarAplicacoesPorCampo([a,b]).TAXA_VALOR).toMatchObject({origemVersaoId:"v1",aplicacaoId:"conjunto-v1"});
+ const c=v(2,{TAXA_VALOR:{...preco,valor:"400"},MENSALIDADE_VALOR:preco},a.condicoes as object);
+ expect(()=>conferirAplicacaoDireta([a,c],c.id)).toThrow("fluxo próprio");
+});

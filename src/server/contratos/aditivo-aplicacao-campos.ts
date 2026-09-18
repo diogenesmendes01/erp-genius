@@ -10,6 +10,8 @@ export type VersaoAplicacaoCampos = {
   alteracoes: { origem: string; valorEstruturado: unknown }[];
   aplicacaoGeralId: string | null;
   aplicacaoVencimentoId: string | null;
+  /** Conjunto Q170 completo, nunca uma aplicação isolada de cobrança. */
+  conjuntoTaxaCompletoId?: string | null;
 };
 const proprios = new Set(["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "COBERTURA_INICIO", "COBERTURA_FIM", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO", "MOEDA", "REGIME"]);
 
@@ -30,7 +32,7 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
       // Mesmo valor reiterado em nova proposta é nova decisão, não mera herança.
       campos.set(alteracao.origem, {
         origemVersaoId: versao.id, valorHash: hashSubstituicao(alteracao.valorEstruturado),
-        aplicacaoId: alteracao.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO" ? versao.aplicacaoVencimentoId : proprios.has(alteracao.origem) ? null : versao.aplicacaoGeralId,
+        aplicacaoId: alteracao.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO" ? versao.aplicacaoVencimentoId : (alteracao.origem === "TAXA_VALOR" || alteracao.origem === "TAXA_VENCIMENTO") ? versao.conjuntoTaxaCompletoId ?? null : proprios.has(alteracao.origem) ? null : versao.aplicacaoGeralId,
       });
     }
     if (hashSubstituicao(acumuladas) !== versao.condicoesHash) throw new ErroRegra("Condições não correspondem às alterações preservadas.");
