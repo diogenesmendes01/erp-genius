@@ -31,8 +31,9 @@ async function confirmar(acordoId: string, dados: Partial<{ inicio: string; fim:
 }
 
 async function propor(confirmacaoId: string, preparadorId = financeiroId) {
+  const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidadeId } });
   return prisma.propostaCompensacaoPermuta.create({ data: {
-    confirmacaoId, preparadorId, valor: 50, snapshot: {},
+    confirmacaoId, preparadorId, valor: 50, snapshot: { destinos: [{ cobrancaId: mensalidadeId, versao: atual.versao, saldo: atual.saldo?.toFixed(2), valor: "50.00" }] },
     chaveIdempotencia: chave("proposta"), entradaHash: chave("hash-proposta"),
   } });
 }
@@ -99,4 +100,16 @@ describe.sequential("P02/Q89/Q98 — guardas SQL da base de permuta", () => {
     expect(resultados.filter((resultado) => resultado.status === "rejected")).toHaveLength(1);
     expect(await prisma.propostaCompensacaoPermuta.count({ where: { confirmacaoId: confirmacao.id } })).toBe(1);
   });
+});
+
+it("banco rejeita aprovação de permuta após redução do saldo da mensalidade", async () => {
+  const acordo = await criarAcordo();
+  await prisma.acordoPermutaCobranca.create({ data: { acordoId: acordo.id, cobrancaId: mensalidadeId, valorMaximo: 100 } });
+  const confirmacao = await confirmar(acordo.id);
+  const proposta = await propor(confirmacao.id);
+  await prisma.destinoPropostaCompensacaoPermuta.create({ data: { propostaId: proposta.id, cobrancaId: mensalidadeId, valor: 50 } });
+  await prisma.cobranca.update({ where: { id: mensalidadeId }, data: { valorNegociado: 40, saldo: 40 } });
+  await expect(prisma.decisaoCompensacaoPermuta.create({ data: { propostaId: proposta.id, decisorId: aprovadorId, aprovada: true, motivo: "Proposta com saldo antigo" } })).rejects.toThrow("Proposta obsoleta");
+  expect(await prisma.decisaoCompensacaoPermuta.count()).toBe(0);
+  await expect(prisma.decisaoCompensacaoPermuta.create({ data: { propostaId: proposta.id, decisorId: aprovadorId, aprovada: false, motivo: "Rejeitada para nova conferência" } })).resolves.toMatchObject({ aprovada: false });
 });
