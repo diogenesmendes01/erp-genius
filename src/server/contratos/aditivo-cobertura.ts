@@ -1,11 +1,12 @@
 "use server";
+import { conferirIntervalosCoberturaAditivo } from "./aditivo-cobertura-intervalos";
 import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { hashSubstituicao } from "./substituicao-estado";
-import { extrairPoliticaCoberturaFormalizada } from "./aditivo-cobertura-politica";
+import { extrairPoliticaCoberturaFormalizada, extrairLimitesCoberturaFormalizada } from "./aditivo-cobertura-politica";
 import { AplicarImpactosCoberturaAditivoSchema, DecidirImpactosCoberturaAditivoSchema, PrepararImpactosCoberturaAditivoSchema } from "./aditivo-cobertura-schema";
 
 async function exigirFinanceiro(tx: Prisma.TransactionClient, id: string, aprovar = false) {
@@ -41,6 +42,11 @@ export async function prepararImpactosCoberturaAditivo(input: unknown) { return 
     const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: d.matriculaId, tipo: "MENSALIDADE" }, orderBy: [{ coberturaInicio: "asc" }, { id: "asc" }] });
     if (cobrancas.length !== d.linhas.length || new Set(d.linhas.map(l => l.cobrancaId)).size !== cobrancas.length || cobrancas.some(c => !d.linhas.some(l => l.cobrancaId === c.id))) throw new ErroRegra("Classifique todas as mensalidades existentes, inclusive as preservadas.");
     const linhas = d.linhas.map(l => { const c = cobrancas.find(x => x.id === l.cobrancaId)!; if (l.classificacao === "AFETADA" && (!c.coberturaInicio || !c.coberturaFim)) throw new ErroRegra("Mensalidade afetada sem cobertura histórica exige conferência antes do acerto."); return { ...l, c, fotografia: foto(c) }; });
+    conferirIntervalosCoberturaAditivo(linhas.map(l => ({
+      id: l.cobrancaId, afetada: l.classificacao === "AFETADA",
+      anterior: { inicio: civil(l.c.coberturaInicio), fim: civil(l.c.coberturaFim) },
+      nova: { inicio: l.classificacao === "AFETADA" ? l.coberturaInicioNova! : civil(l.c.coberturaInicio), fim: l.classificacao === "AFETADA" ? l.coberturaFimNova! : civil(l.c.coberturaFim) },
+    })), extrairLimitesCoberturaFormalizada(formal.proposta.snapshot, formal.proposta.entradaHash));
     const fotografia = { revisaoHash: d.revisaoHash, versaoCondicoesId: formal.id, condicoesHash: formal.condicoesHash, politica: formal.politica, cobrancas: linhas.map(l => ({ id: l.cobrancaId, classificacao: l.classificacao, justificativa: l.justificativa, coberturaInicioNova: l.coberturaInicioNova ?? null, coberturaFimNova: l.coberturaFimNova ?? null, fotografia: l.fotografia, fotografiaHash: hashSubstituicao(l.fotografia) })), motivo: d.motivo, evidencia: d.evidencia };
     const fotografiaHash = hashSubstituicao(fotografia);
     const db = tx;

@@ -5,6 +5,14 @@ import { CicloCoberturaFuturoAditivoSchema, PrepararAditivoContratualSchema } fr
 import { hashSubstituicao } from "./substituicao-estado";
 
 export type PoliticaCoberturaAditivo = z.output<typeof CicloCoberturaFuturoAditivoSchema>;
+export function extrairLimitesCoberturaFormalizada(snapshot: unknown, entradaHash: string) {
+  extrairPoliticaCoberturaFormalizada(snapshot, entradaHash);
+  const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(snapshot).entrada;
+  const inicio = entrada.alteracoes.find(a => a.origem === "COBERTURA_INICIO")?.valorEstruturado;
+  const fim = entrada.alteracoes.find(a => a.origem === "COBERTURA_FIM")?.valorEstruturado;
+  if (inicio?.tipo !== "DATA" || fim?.tipo !== "DATA" || inicio.data > fim.data) throw new ErroRegra("Limites de cobertura formalizados inválidos.");
+  return { inicio: inicio.data, fim: fim.data };
+}
 /** Lê somente o campo que integrou o snapshot assinado; tela financeira não o altera. */
 export function extrairPoliticaCoberturaFormalizada(snapshot: unknown, entradaHash: string): PoliticaCoberturaAditivo {
   if (hashSubstituicao(snapshot as Prisma.JsonValue) !== entradaHash) throw new ErroRegra("A proposta assinada perdeu sua integridade.");

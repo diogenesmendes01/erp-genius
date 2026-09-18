@@ -633,7 +633,7 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     } })).id;
     const preservadaId = incluirPreservada ? (await prisma.cobranca.create({ data: {
       matriculaId: alvo.matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100, saldo: 100, moeda: "CRC",
-      vencimento: new Date("2026-11-01T00:00:00Z"), coberturaInicio: new Date("2026-11-01T00:00:00Z"), coberturaFim: new Date("2026-11-30T00:00:00Z"),
+      vencimento: new Date("2026-12-01T00:00:00Z"), coberturaInicio: new Date("2026-12-01T00:00:00Z"), coberturaFim: new Date("2026-12-31T00:00:00Z"),
     } })).id : undefined;
     authMock.mockResolvedValue({ user: { id: financeiro } });
     const preparado = await prepararImpactosCoberturaAditivo({
@@ -786,7 +786,7 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     const { conjuntoId, preservadaId } = await prepararConjuntoCobertura("q169-preservada-mutada", undefined, true);
     if (!preservadaId) throw new Error("Mensalidade preservada indisponível");
     await aprovarConjunto(conjuntoId, "q169-preservada-mutada-aprovar");
-    await prisma.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-11-29T00:00:00Z"), versao: { increment: 1 } } });
+    await prisma.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-12-30T00:00:00Z"), versao: { increment: 1 } } });
     authMock.mockResolvedValue({ user: { id: aprovador } });
     expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q169-preservada-mutada-aplicar" })).toMatchObject({ ok: false });
     expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
@@ -808,7 +808,7 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
         coberturaInicioAnterior: impacto.coberturaInicioAnterior, coberturaFimAnterior: impacto.coberturaFimAnterior,
         coberturaInicioNova: impacto.coberturaInicioNova, coberturaFimNova: impacto.coberturaFimNova,
       } });
-      await tx.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-11-29T00:00:00Z"), versao: { increment: 1 } } });
+      await tx.cobranca.update({ where: { id: preservadaId }, data: { coberturaFim: new Date("2026-12-30T00:00:00Z"), versao: { increment: 1 } } });
       await tx.conjuntoImpactosCoberturaAditivo.update({ where: { id: conjuntoId }, data: { status: "COMPLETO" } });
     })).rejects.toThrow("Conjunto completo sem efeitos comprovados");
     expect(await prisma.aplicacaoCoberturaAditivo.count({ where: { impacto: { conjuntoId } } })).toBe(0);
