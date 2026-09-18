@@ -1,3 +1,22 @@
+import { Papel } from "@prisma/client";
+import { exigirSessaoComPapel } from "@/server/_shared";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { PermutaOperacional } from "./PermutaOperacional";
 import { consultarPermutas } from "@/server/financeiro/permuta-servico";
-export default async function PermutaPage(){const r=await consultarPermutas();if(!r.ok||!r.dado)return <section><Link href="/financeiro">Voltar ao financeiro</Link><p role="alert">{!r.ok ? r.erro : "Dados indispon�veis"}</p></section>;return <section className="mx-auto max-w-4xl space-y-4"><Link href="/financeiro" className="underline">Voltar ao financeiro</Link><h1 className="text-2xl font-medium">Permutas por serviÃ§o comprovado</h1><p role="status">Acordos e decisÃµes abaixo ainda nÃ£o efetivam compensaÃ§Ã£o nem quitam mensalidades.</p>{r.dado.map(a=><article key={a.id} className="rounded border p-3 space-y-2"><h2 className="font-medium">{a.matricula} Â· {a.moeda}</h2><p>{a.quantidadePactuada} {a.unidade.toLowerCase()} Ã— {a.valorPorUnidade} = {a.valorTotalPactuado}. {a.contrapartida}</p><p className="text-sm">{a.formulaDescricao}</p><ul>{a.confirmacoes.map(c=><li key={c.id}>{c.periodoInicio}â€“{c.periodoFim}: {c.quantidadeComprovada} ({c.referenciaServico}) Â· {c.propostas.map(p=><span key={p.id}> proposta {p.valor}: {p.decisao?.aprovada ? "aprovada, nÃ£o efetivada" : p.decisao ? "rejeitada" : "pendente"}</span>)}</li>)}</ul></article>)}</section>}
+
+export default async function PermutaPage() {
+  const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO);
+  const capacidades = await prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } });
+  const admin = usuario.papeis.includes(Papel.ADMINISTRADOR);
+  const resultado = await consultarPermutas();
+  if (!resultado.ok) {
+    return <section><Link href="/financeiro">Voltar ao financeiro</Link><p role="alert">{resultado.erro}</p></section>;
+  }
+  if (!resultado.dado) return null;
+  return <section className="mx-auto max-w-4xl space-y-4">
+    <Link href="/financeiro" className="underline">Voltar ao financeiro</Link>
+    <h1 className="text-2xl font-medium">Permutas por serviço comprovado</h1>
+    <PermutaOperacional acordos={resultado.dado} podeFinanceiro={admin || usuario.papeis.includes(Papel.FINANCEIRO)} podePedagogico={admin || usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO)} podeAprovar={admin || (usuario.papeis.includes(Papel.FINANCEIRO) && capacidades.permissoes.includes("financeiro.aprovar_acertos"))} />
+  </section>;
+}

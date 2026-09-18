@@ -1,0 +1,132 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { FormEvent, useRef, useState, useTransition } from "react";
+import {
+  confirmarServicoPermuta,
+  decidirCompensacaoPermuta,
+  prepararAcordoPermuta,
+  proporCompensacaoPermuta,
+} from "@/server/financeiro/permuta-servico";
+
+type Destino = { cobrancaId: string; valor: string };
+type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; motivo: string } | null };
+type Confirmacao = {
+  id: string;
+  periodoInicio: string;
+  periodoFim: string;
+  quantidadeComprovada: string;
+  referenciaServico: string;
+  evidencia: string;
+  propostas: Proposta[];
+};
+type Acordo = {
+  id: string;
+  matriculaId: string;
+  matricula: string;
+  moeda: string | null;
+  unidade: string;
+  quantidadePactuada: string;
+  valorPorUnidade: string | null;
+  valorTotalPactuado: string | null;
+  contrapartida: string;
+  formulaDescricao: string | null;
+  cobrancas: { id: string; codigo: string; saldo: string | null; valorMaximo: string }[];
+  confirmacoes: Confirmacao[];
+};
+
+type Resultado = { ok: boolean; erro?: string };
+const novaChave = () => crypto.randomUUID();
+
+function Mensagem({ mensagem }: { mensagem: string | null }) {
+  return mensagem ? <p role="status" className="text-sm">{mensagem}</p> : null;
+}
+
+function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElement) => Promise<Resultado>; children: React.ReactNode; legenda: string }) {
+  const router = useRouter();
+  const tentativa = useRef<FormData | null>(null);
+  const chave = useRef(novaChave());
+  const pendente = useRef(false);
+  const [ocupado, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+
+  async function enviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (pendente.current) return;
+    pendente.current = true;
+    const formulario = evento.currentTarget;
+    const dados = tentativa.current ?? new FormData(formulario);
+    tentativa.current = dados;
+    dados.set("chaveIdempotencia", chave.current);
+    setErro(null);
+    iniciar(async () => {
+      try {
+        const resultado = await onSubmit(Object.assign(formulario, { __dadosPermuta: dados }));
+        if (!resultado.ok) {
+          setErro(resultado.erro ?? "Não foi possível concluir. Repita a mesma operação.");
+          return;
+        }
+        setSucesso("Registrado. A compensação financeira continua pendente de efetivação.");
+        tentativa.current = null;
+        formulario.reset();
+        router.refresh();
+        chave.current = novaChave();
+      } catch {
+        setErro("Não foi possível confirmar o resultado. Repita a mesma operação com os mesmos dados.");
+      } finally {
+        pendente.current = false;
+      }
+    });
+  }
+
+  return <form onSubmit={enviar} className="space-y-2 rounded border p-3">
+    <fieldset disabled={ocupado} className="space-y-2">
+      <legend className="font-medium">{legenda}</legend>
+      {children}
+      <button type="submit" className="rounded border px-3 py-1">{ocupado ? "Enviando…" : "Registrar"}</button>
+    </fieldset>
+    {erro && <p role="alert" className="text-sm">{erro}</p>}
+    <Mensagem mensagem={sucesso} />
+  </form>;
+}
+
+function dados(formulario: HTMLFormElement) {
+  return (formulario as HTMLFormElement & { __dadosPermuta: FormData }).__dadosPermuta;
+}
+const campo = (formulario: HTMLFormElement, nome: string) => String(dados(formulario).get(nome) ?? "").trim();
+
+export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, podeAprovar }: { acordos: Acordo[]; podeFinanceiro: boolean; podePedagogico: boolean; podeAprovar: boolean }) {
+  return <div className="space-y-4">
+    <p role="status" className="rounded border p-3">Esta etapa registra acordo, comprovação, proposta e decisão. Mesmo aprovada, a compensação ainda não foi efetivada e nenhuma mensalidade foi quitada.</p>
+    {podeFinanceiro && <Acao legenda="Preparar acordo de permuta" onSubmit={async formulario => prepararAcordoPermuta({
+      matriculaId: campo(formulario, "matriculaId"), vigenciaInicio: campo(formulario, "vigenciaInicio"), vigenciaFim: campo(formulario, "vigenciaFim"), moeda: campo(formulario, "moeda"),
+      unidade: campo(formulario, "unidade"), quantidadePactuada: campo(formulario, "quantidadePactuada"), valorPorUnidade: campo(formulario, "valorPorUnidade"), contrapartida: campo(formulario, "contrapartida"), formulaDescricao: campo(formulario, "formulaDescricao"),
+      cobrancas: [{ cobrancaId: campo(formulario, "cobrancaId"), valorMaximo: campo(formulario, "valorMaximo") }], chaveIdempotencia: campo(formulario, "chaveIdempotencia"),
+    })}>
+      <label>Matrícula <input required name="matriculaId" /></label><label>Início <input required type="date" name="vigenciaInicio" /></label><label>Fim <input required type="date" name="vigenciaFim" /></label><label>Moeda <input required name="moeda" defaultValue="BRL" /></label>
+      <label>Unidade <select name="unidade"><option value="HORA">Hora</option><option value="AULA">Aula</option><option value="UNIDADE">Unidade</option></select></label><label>Quantidade <input required name="quantidadePactuada" inputMode="decimal" /></label><label>Valor por unidade <input required name="valorPorUnidade" inputMode="decimal" /></label>
+      <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><label>Cobrança elegível <input required name="cobrancaId" /></label><label>Limite da cobrança <input required name="valorMaximo" inputMode="decimal" /></label>
+    </Acao>}
+    {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
+      <h2 className="font-medium">{acordo.matricula} · {acordo.moeda}</h2>
+      <p>{acordo.quantidadePactuada} {acordo.unidade.toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade} = {acordo.valorTotalPactuado}</>}. {acordo.contrapartida}</p>
+      <p className="text-sm">{acordo.formulaDescricao}</p>
+      {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
+        <label>Início <input required type="date" name="periodoInicio" /></label><label>Fim <input required type="date" name="periodoFim" /></label><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
+      </Acao>}
+      {acordo.confirmacoes.map(confirmacao => <section key={confirmacao.id} className="space-y-2 border-l pl-3">
+        <p>{confirmacao.periodoInicio}–{confirmacao.periodoFim}: {confirmacao.quantidadeComprovada} ({confirmacao.referenciaServico})</p>
+        {podeFinanceiro && <Acao legenda="Propor destinação da compensação" onSubmit={async formulario => proporCompensacaoPermuta({ confirmacaoId: confirmacao.id, destinos: [{ cobrancaId: campo(formulario, "cobrancaId"), valor: campo(formulario, "valor") }], chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
+          <label>Cobrança elegível <select name="cobrancaId">{acordo.cobrancas.map(cobranca => <option key={cobranca.id} value={cobranca.id}>{cobranca.codigo} · saldo {cobranca.saldo ?? "—"}</option>)}</select></label><label>Valor proposto <input required name="valor" inputMode="decimal" /></label>
+        </Acao>}
+        {confirmacao.propostas.map(proposta => <div key={proposta.id} className="rounded border p-2">
+          <p>Proposta de {proposta.valor}: {proposta.decisao ? (proposta.decisao.aprovada ? "aprovada, não efetivada" : "rejeitada") : "aguarda decisão independente"}</p>
+          {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
+            <label>Decisão <select name="aprovar"><option value="sim">Aprovar sem efetivar</option><option value="nao">Rejeitar</option></select></label><label>Motivo <input required name="motivo" /></label>
+          </Acao>}
+        </div>)}
+      </section>)}
+    </article>)}
+  </div>;
+}
