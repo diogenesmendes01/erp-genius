@@ -17,6 +17,23 @@ function foto(c: { id: string; versao: number; valorNegociado: Prisma.Decimal; v
   return { cobranca: { id: c.id, versao: c.versao, valorNegociado: c.valorNegociado.toFixed(2), valorRecebido: c.valorRecebido?.toFixed(2) ?? null, valorLiquidadoCredito: c.valorLiquidadoCredito.toFixed(2), saldo: c.saldo?.toFixed(2) ?? null, vencimento: c.vencimento.toISOString().slice(0, 10), status: c.status } };
 }
 
+async function revalidarFotografiaConjunto(tx: Prisma.TransactionClient, conjunto: { matriculaId: string; propostaAditivoId: string; conferenciaFinalId: string; versaoCondicoesId: string; fotografia: Prisma.JsonValue; fotografiaHash: string; impactos: Array<{ cobrancaId: string; decisao: string; justificativa: string; fotografiaHash: string; propostaAcerto?: { aplicacao: { versaoAnterior: number; valorNovo: Prisma.Decimal; vencimentoNovo: Date } | null } | null }> }) {
+  const versao = await tx.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: conjunto.versaoCondicoesId }, select: { propostaId: true, conferenciaFinalId: true, condicoesHash: true } });
+  if (versao.propostaId !== conjunto.propostaAditivoId || versao.conferenciaFinalId !== conjunto.conferenciaFinalId) throw new ErroRegra("A fotografia do conjunto não pertence mais à versão formalizada.");
+  const ids = conjunto.impactos.map(i => i.cobrancaId).sort();
+  await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE id = ANY(${ids}::text[]) ORDER BY id FOR UPDATE`;
+  const cobrancas = await tx.cobranca.findMany({ where: { id: { in: ids } }, orderBy: { id: "asc" } });
+  if (cobrancas.length !== ids.length || cobrancas.some(c => c.matriculaId !== conjunto.matriculaId || c.tipo !== "MATRICULA")) throw new ErroRegra("A fotografia contém taxa fora da matrícula.");
+  for (const impacto of conjunto.impactos) {
+    const cobranca = cobrancas.find(c => c.id === impacto.cobrancaId)!;
+    if (hashSubstituicao(foto(cobranca)) !== impacto.fotografiaHash) {
+      const aplicacao = impacto.propostaAcerto?.aplicacao;
+      const aplicadaConformeProposta = Boolean(aplicacao && cobranca.versao === aplicacao.versaoAnterior + 1 && cobranca.valorNegociado.eq(aplicacao.valorNovo) && cobranca.vencimento.toISOString().slice(0, 10) === aplicacao.vencimentoNovo.toISOString().slice(0, 10));
+      if (!aplicadaConformeProposta) throw new ErroRegra("Uma taxa mudou após o preparo; prepare novamente o conjunto.");
+    }
+  }
+}
+
 export async function prepararImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = PrepararImpactosTaxaAditivoSchema.parse(input);
   return prisma.$transaction(async tx => {
@@ -52,7 +69,7 @@ export async function prepararImpactosTaxaAditivo(input: unknown) { return execu
 
 export async function decidirImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = DecidirImpactosTaxaAditivoSchema.parse(input);
-  return prisma.$transaction(async tx => { await exigirFinanceiro(tx, autor.id, true); const referencia = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { matriculaId: true } }); await bloquearMatriculas(tx, [referencia.matriculaId]); const c = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { decisao: true } }); if (c.preparadorId === autor.id) throw new ErroRegra("A decisão exige outro Financeiro."); if (c.decisao) { if (c.decisao.decisorId !== autor.id || c.decisao.aprovada !== d.aprovada || c.decisao.motivo !== d.motivo || c.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O conjunto já recebeu outra decisão."); return { id: c.decisao.id, aprovada: c.decisao.aprovada }; } const decisao = await tx.decisaoConjuntoImpactosTaxaAditivo.create({ data: { conjuntoId: c.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: c.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: c.id }, data: { status: d.aprovada ? "APROVADO" : "REJEITADO" } }); await registrarEvento(tx, { tipo: d.aprovada ? "ImpactosTaxaAditivoAprovados" : "ImpactosTaxaAditivoRejeitados", agregadoTipo: "Matricula", agregadoId: c.matriculaId, autorId: autor.id, payload: { conjuntoId: c.id, decisaoId: decisao.id, fotografiaHash: c.fotografiaHash } }); return { id: decisao.id, aprovada: decisao.aprovada }; });
+  return prisma.$transaction(async tx => { await exigirFinanceiro(tx, autor.id, true); const referencia = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, select: { matriculaId: true } }); await bloquearMatriculas(tx, [referencia.matriculaId]); const c = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { decisao: true, impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } } }); if (c.preparadorId === autor.id) throw new ErroRegra("A decisão exige outro Financeiro."); if (c.decisao) { if (c.decisao.decisorId !== autor.id || c.decisao.aprovada !== d.aprovada || c.decisao.motivo !== d.motivo || c.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("O conjunto já recebeu outra decisão."); return { id: c.decisao.id, aprovada: c.decisao.aprovada }; } if (d.aprovada) await revalidarFotografiaConjunto(tx, c); const decisao = await tx.decisaoConjuntoImpactosTaxaAditivo.create({ data: { conjuntoId: c.id, decisorId: autor.id, aprovada: d.aprovada, motivo: d.motivo, fotografiaHash: c.fotografiaHash, chaveIdempotencia: d.chaveIdempotencia } }); await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: c.id }, data: { status: d.aprovada ? "APROVADO" : "REJEITADO" } }); await registrarEvento(tx, { tipo: d.aprovada ? "ImpactosTaxaAditivoAprovados" : "ImpactosTaxaAditivoRejeitados", agregadoTipo: "Matricula", agregadoId: c.matriculaId, autorId: autor.id, payload: { conjuntoId: c.id, decisaoId: decisao.id, fotografiaHash: c.fotografiaHash } }); return { id: decisao.id, aprovada: decisao.aprovada }; });
 }); }
 
 export async function vincularImpactoTaxaAditivo(input: unknown) { return executarAcao(async () => {
@@ -73,9 +90,10 @@ export async function vincularImpactoTaxaAditivo(input: unknown) { return execut
 export async function completarImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR), d = CompletarImpactosTaxaAditivoSchema.parse(input);
   return prisma.$transaction(async tx => {
-    await exigirFinanceiro(tx, autor.id, true); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
+    await exigirFinanceiro(tx, autor.id, true); const conjunto = await tx.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: d.conjuntoId }, include: { decisao: true, impactos: { include: { propostaAcerto: { include: { aplicacao: true } } } } } }); await bloquearMatriculas(tx, [conjunto.matriculaId]);
     if (conjunto.status === "COMPLETO") return { id: conjunto.id, completo: true };
-    if (conjunto.status !== "APROVADO") throw new ErroRegra("O conjunto precisa estar aprovado antes da conclusão.");
+    if (conjunto.status !== "APROVADO" || !conjunto.decisao?.aprovada || conjunto.decisao.fotografiaHash !== conjunto.fotografiaHash) throw new ErroRegra("O conjunto precisa estar aprovado com sua fotografia vigente antes da conclusão.");
+    await revalidarFotografiaConjunto(tx, conjunto);
     if (conjunto.impactos.some(i => i.decisao === "AFETADA" && !i.propostaAcerto?.aplicacao)) throw new ErroRegra("Há taxas afetadas sem acerto aplicado.");
     await tx.conjuntoImpactosTaxaAditivo.update({ where: { id: conjunto.id }, data: { status: "COMPLETO" } });
     await registrarEvento(tx, { tipo: "ImpactosTaxaAditivoCompletos", agregadoTipo: "Matricula", agregadoId: conjunto.matriculaId, autorId: autor.id, payload: { conjuntoId: conjunto.id, propostaId: conjunto.propostaAditivoId, versaoCondicoesId: conjunto.versaoCondicoesId, fotografiaHash: conjunto.fotografiaHash } });
