@@ -58,7 +58,7 @@ import { periodoMensalNaData } from "./cobertura";
 import { exigirCondicoesMensaisAceitas } from "./condicoes-aceitas";
 import { ativarPreparacaoTx } from "./ativacao-preparacao-tx";
 import { nomeCompleto } from "@/lib/nome";
-import { resolverMensalVigente } from "@/server/contratos/aditivo-mensal-vigente";
+import { resolverMensalVigenteTx } from "@/server/contratos/aditivo-mensal-vigente";
 // Conjuntos de papéis centralizados (compartilhados com a UI).
 import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
 
@@ -497,11 +497,9 @@ async function ativarMatriculaTx(
   const restante = Math.max(0, matricula.mesesPlano - 1);
   const coberturas = expandirCoberturaMensal(matricula, primeiraMensalidade, restante);
   // A matrícula já está bloqueada; a formalização de versões também trava a
-  // matrícula, portanto esta leitura única não pode se intercalar com uma nova
-  // versão antes da criação do cronograma.
-  const versoesAditivo = await tx.versaoCondicoesAditivo.findMany({ where: { matriculaId }, select: {
-    id: true, versao: true, condicoes: true, condicoesHash: true, vigenciaInicio: true, aplicacao: { select: { id: true } },
-  } });
+  // matrícula, portanto a conferência e a projeção por cobertura não podem
+  // se intercalar com uma nova versão antes da criação do cronograma.
+  const quantidadeAditivos = await tx.versaoCondicoesAditivo.count({ where: { matriculaId } });
   const codsRestante: string[] = [];
   for (let i = 0; i < restante; i++) codsRestante.push(await gerarCodigo("cobranca"));
 
@@ -530,10 +528,10 @@ async function ativarMatriculaTx(
     // Nunca usa vencimento como substituto da cobertura para aplicar um
     // aditivo. Sem período explícito, uma versão formalizada não tem alvo
     // mensal determinável neste cronograma.
-    if (!cobertura && versoesAditivo.length) throw new ErroRegra("Aditivo formalizado exige cobertura explícita antes de gerar mensalidades.");
+    if (!cobertura && quantidadeAditivos) throw new ErroRegra("Aditivo formalizado exige cobertura explícita antes de gerar mensalidades.");
     const valores = cobertura
-      ? resolverMensalVigente(versoesAditivo, cobertura.coberturaInicio, cobertura.coberturaFim,
-        primeiraMensalidade.valorOriginal.toString(), primeiraMensalidade.valorNegociado.toString(), matricula.moeda)
+      ? await resolverMensalVigenteTx(tx, { matriculaId, inicioCobertura: cobertura.coberturaInicio, fimCobertura: cobertura.coberturaFim,
+        valorOriginal: primeiraMensalidade.valorOriginal.toString(), valorNegociadoOriginal: primeiraMensalidade.valorNegociado.toString(), moedaOriginal: matricula.moeda })
       : { valorOriginal: primeiraMensalidade.valorOriginal.toString(), valorNegociado: primeiraMensalidade.valorNegociado.toString(), moeda: matricula.moeda, versaoAditivo: null };
     const criada = await tx.cobranca.create({
       data: {

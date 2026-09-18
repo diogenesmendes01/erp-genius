@@ -18,7 +18,7 @@ const m = vi.hoisted(() => ({
   configuracaoOperacional: { findUnique: vi.fn() },
   aprovacao: { count: vi.fn() },
   recebimento: { create: vi.fn() },
-  versaoCondicoesAditivo: { findMany: vi.fn() },
+  versaoCondicoesAditivo: { findMany: vi.fn(), count: vi.fn() },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { ...m, $transaction: async (fn: (tx: typeof m) => Promise<unknown>) => fn(m) } }));
@@ -78,6 +78,7 @@ beforeEach(() => {
   m.aprovacao.count.mockResolvedValue(0);
   m.cobranca.findUniqueOrThrow.mockResolvedValue(cobrancas()[0]);
   m.versaoCondicoesAditivo.findMany.mockResolvedValue([]);
+  m.versaoCondicoesAditivo.count.mockResolvedValue(0);
 });
 
 describe("conclusão de matrícula — contrato aceito e pagamentos confirmados", () => {
