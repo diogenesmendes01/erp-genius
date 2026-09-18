@@ -28,7 +28,16 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
       const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(p.snapshot).entrada;
       if (entrada.matriculaId !== d.matriculaId) throw new ErroRegra("A proposta não corresponde à matrícula.");
       const cobrancasExistentes = await tx.cobranca.count({ where: { matriculaId: d.matriculaId } });
-      return { ...planejarEfeitosAditivo(entrada.alteracoes, { cobrancaEmitida: cobrancasExistentes > 0 }), vigenciaInicio: p.vigenciaInicio, aplicado: false as const };
+      const aplicacao = await tx.aplicacaoCondicoesAditivo.findFirst({
+        where: { matriculaId: d.matriculaId, propostaId: d.propostaId },
+        select: { id: true, aplicadaEm: true, vigenciaInicio: true, condicoesHash: true,
+          versaoCondicoes: { select: { condicoes: true, condicoesHash: true } } },
+      });
+      if (aplicacao && (hashSubstituicao(aplicacao.versaoCondicoes.condicoes) !== aplicacao.condicoesHash || aplicacao.condicoesHash !== aplicacao.versaoCondicoes.condicoesHash)) {
+        throw new ErroRegra("A aplicação preservada exige conferência de integridade.");
+      }
+      return { ...planejarEfeitosAditivo(entrada.alteracoes, { cobrancaEmitida: cobrancasExistentes > 0 }), vigenciaInicio: p.vigenciaInicio,
+        aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };
     }, { isolationLevel: "RepeatableRead" });
   });
 }
