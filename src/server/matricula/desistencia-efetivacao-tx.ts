@@ -111,19 +111,21 @@ export async function conferirEfetivacaoDesistenciaAcertoContratualTx(
   const assinaturasPendentes = processos.filter((processo) => {
     if (processo.conclusao) return false;
     const intencao = processo.intencaoCancelamento;
-    const observacao = intencao?.aplicacao && intencao.observacoes.find((item) => item.id === intencao.aplicacao?.observacaoId);
+    const observacaoSubstituicao = intencao?.aplicacao && intencao.observacoes.find((item) => item.id === intencao.aplicacao?.observacaoId);
+    const observacaoDesistencia = intencao?.observacoes.find((item) =>
+      item.resultado === "CONFIRMADO" && item.referenciaExterna === intencao.referenciaExterna,
+    );
     const cancelamentoSubstituicao = processo.estado === "CANCELADO" && !!intencao && !intencao.pedidoDesistenciaId &&
       intencao.processoId === processo.id && intencao.referenciaExterna === processo.referenciaExterna &&
       !!intencao.proposta && intencao.proposta.processoFonteId === processo.id && intencao.proposta.matriculaId === pedido.matriculaId &&
       intencao.propostaHash === intencao.proposta.entradaHash && !!intencao.decisao && intencao.decisao.propostaId === intencao.proposta.id &&
       intencao.decisao.aprovada && intencao.decisao.decisorId !== intencao.proposta.preparadaPorId &&
-      intencao.decisao.propostaHash === intencao.proposta.entradaHash && intencao.aplicacao?.propostaHash === intencao.propostaHash && observacao?.resultado === "CONFIRMADO" &&
-      observacao.referenciaExterna === intencao.referenciaExterna;
+      intencao.decisao.propostaHash === intencao.proposta.entradaHash && intencao.aplicacao?.propostaHash === intencao.propostaHash && observacaoSubstituicao?.resultado === "CONFIRMADO" &&
+      observacaoSubstituicao.referenciaExterna === intencao.referenciaExterna;
     const cancelamentoDesistencia = processo.estado === "CANCELADO" && !!intencao &&
       intencao.processoId === processo.id && intencao.pedidoDesistenciaId === pedido.id &&
       intencao.decisaoAdministrativaDesistenciaId === pedido.decisaoAdministrativa?.id && intencao.propostaHash === pedido.estadoHash &&
-      intencao.referenciaExterna === processo.referenciaExterna && observacao?.resultado === "CONFIRMADO" &&
-      observacao.referenciaExterna === intencao.referenciaExterna;
+      intencao.referenciaExterna === processo.referenciaExterna && !!observacaoDesistencia;
     const cancelamentoComprovado = cancelamentoSubstituicao || cancelamentoDesistencia;
     return !cancelamentoComprovado;
   });
