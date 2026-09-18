@@ -19,6 +19,7 @@ export function VencimentoFormulario(props: Props) {
    const entrada = { ...tentativa.current.entrada, chaveIdempotencia: tentativa.current.chave };
    const r = await (props.modo === "preparar" ? proporVencimentoAditivo(entrada) : props.modo === "decidir" ? decidirVencimentoAditivo(entrada) : aplicarVencimentoAditivo(entrada));
    if (r.ok) { setMensagem("Operação registrada."); tentativa.current = null; router.refresh(); }
+   else if (r.podeRevisar) { tentativa.current = null; setMensagem(r.erro + " Corrija os dados antes de tentar novamente."); }
    else setMensagem(r.erro + " A tentativa foi preservada; confira o histórico antes de iniciar outra operação.");
   } catch { setMensagem("Resultado não confirmado. Repita para consultar a mesma tentativa."); }
   finally { setOcupado(false); }

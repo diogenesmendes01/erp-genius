@@ -3,12 +3,25 @@ import { randomUUID } from "node:crypto";
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
+import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, ErroAutenticacao, registrarEvento } from "@/server/_shared";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { consultarAlvoPrimeiraMensalidadeTx } from "./aditivo-primeira-mensalidade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { instanteDaGrade } from "@/server/agenda/grade";
+
+// O callback só retorna após a transação terminar. Falhas desconhecidas preservam a tentativa.
+async function executarMutacaoVencimento<T>(acao: () => Promise<T>) {
+  let podeRevisar = false;
+  const resultado = await executarAcao(async () => {
+    try { return await acao(); }
+    catch (erro) {
+      podeRevisar = erro instanceof z.ZodError || erro instanceof ErroRegra || erro instanceof ErroPermissao || erro instanceof ErroAutenticacao;
+      throw erro;
+    }
+  });
+  return resultado.ok ? resultado : { ...resultado, podeRevisar };
+}
 
 const id = z.string().trim().min(1).max(100);
 const motivo = z.string().trim().min(5).max(2000);
@@ -36,7 +49,7 @@ async function conferirVersao(tx: Prisma.TransactionClient, matriculaId: string,
 }
 
 export async function proporVencimentoAditivo(input: unknown) {
-  return executarAcao(async () => {
+  return executarMutacaoVencimento(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = Preparar.parse(input);
     return prisma.$transaction(async tx => {
       await bloquear(tx, d.matriculaId); await autorFinanceiro(tx, autor.id);
@@ -71,7 +84,7 @@ export async function proporVencimentoAditivo(input: unknown) {
 }
 
 export async function decidirVencimentoAditivo(input: unknown) {
-  return executarAcao(async () => {
+  return executarMutacaoVencimento(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO), d = Decidir.parse(input);
     return prisma.$transaction(async tx => {
       const referencia = await tx.propostaVencimentoAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, select: { matriculaId: true } });
@@ -91,7 +104,7 @@ export async function decidirVencimentoAditivo(input: unknown) {
 }
 
 export async function aplicarVencimentoAditivo(input: unknown) {
-  const resultado = await executarAcao(async () => {
+  const resultado = await executarMutacaoVencimento(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
     const d = z.object({ propostaId: id, chaveIdempotencia }).strict().parse(input);
     return prisma.$transaction(async tx => {
