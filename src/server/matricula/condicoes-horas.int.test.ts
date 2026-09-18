@@ -402,7 +402,7 @@ it.each([["156.25", 0], ["100.00", 0], ["100.00", 156.25]] as const)("emite uma 
  const { salvarRascunhoAcertoEncerramento } = await import("./encerramento-rascunho");
  const { receberTx } = await import("@/server/financeiro/recebimentos");
  const recebimento = valorRecebido ? await prisma.$transaction(tx => receberTx(tx, {
-  cobrancaId: c.id, autorId: adminId, valorRecebido, forma: "DINHEIRO",
+  cobrancaId: c.id, autorId: adminId, valorRecebido, comentario: "Recebimento destinado aos serviços faturados", forma: "DINHEIRO",
   dataPagamento: new Date("2026-02-10T15:00:00Z"), chaveIdempotencia: "pagamento-horas-antes-encerramento",
  })) : null;
  const cobrancaConferida = await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } });
