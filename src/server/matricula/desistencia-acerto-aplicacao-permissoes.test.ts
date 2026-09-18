@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ ator: "aprovador", tx: {
   $executeRaw: vi.fn(),
+  $queryRaw: vi.fn(),
   usuario: { findUnique: vi.fn() },
+  pedidoDesistenciaPreparacao: { findFirst: vi.fn() },
   decisaoAdministrativaDesistencia: { findUnique: vi.fn() },
   decisaoAcertoDesistenciaContratual: { findUnique: vi.fn() },
-  aplicacaoAcertoDesistenciaContratual: { findUnique: vi.fn(), create: vi.fn() },
+  aplicacaoAcertoDesistenciaContratual: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   cobranca: { findMany: vi.fn(), update: vi.fn() },
 }, evento: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (fn: (tx: unknown) => unknown) => fn(h.tx) } }));
@@ -25,9 +27,10 @@ beforeEach(() => {
   h.tx.usuario.findUnique.mockResolvedValue({ ativo: true, papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
   h.tx.decisaoAcertoDesistenciaContratual.findUnique.mockResolvedValue({
     id: "decisao", aprovada: true, decisorId: "aprovador", aplicacao: { id: "aplicada" },
-    proposta: { pedido: { matriculaId: "matricula" } },
+    proposta: { id: "proposta", pedido: { matriculaId: "matricula" } },
   });
   h.tx.aplicacaoAcertoDesistenciaContratual.findUnique.mockResolvedValue({ id: "aplicada", decisaoId: "decisao" });
+  h.tx.$queryRaw.mockResolvedValue([]);
 });
 
 describe("Q165 aplicação: replay mantém autorização vigente", () => {
@@ -65,10 +68,12 @@ describe("Q165 aplicação nova exige decisão administrativa independente", () 
   beforeEach(() => {
     h.tx.decisaoAcertoDesistenciaContratual.findUnique.mockResolvedValue({
       id: "decisao", aprovada: true, decisorId: "aprovador", aplicacao: null,
-      proposta: { pedidoId: "pedido", estadoHash: "estado", condicoesHash: "condicoes", fotografiaHash: "fotografia",
+      proposta: { id: "proposta", pedidoId: "pedido", estadoHash: "estado", condicoesHash: "condicoes", fotografiaHash: "fotografia",
         pedido: { matriculaId: "matricula", registradorId: "secretaria" }, memoria: { itens: [] } },
     });
     h.tx.aplicacaoAcertoDesistenciaContratual.findUnique.mockResolvedValue(null);
+    h.tx.aplicacaoAcertoDesistenciaContratual.findFirst.mockResolvedValue(null);
+    h.tx.pedidoDesistenciaPreparacao.findFirst.mockResolvedValue({ id: "pedido" });
     h.tx.decisaoAdministrativaDesistencia.findUnique.mockResolvedValue({ aprovada: true, estadoHash: "estado", decisorId: "administrador" });
     h.tx.usuario.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => where.id === "administrador"
       ? { ativo: true, papeis: ["ADMINISTRADOR"] }
@@ -81,6 +86,24 @@ describe("Q165 aplicação nova exige decisão administrativa independente", () 
     expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({ ok: true, dado: { id: "nova-aplicacao" } });
     expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).toHaveBeenCalledOnce();
     expect(h.tx.$executeRaw).toHaveBeenCalledOnce();
+  });
+
+  it("recusa aplicar proposta de pedido superado", async () => {
+    h.tx.pedidoDesistenciaPreparacao.findFirst.mockResolvedValue({ id: "pedido-mais-recente" });
+
+    expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({
+      ok: false, erro: expect.stringContaining("pedido de desistência mais recente"),
+    });
+    expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).not.toHaveBeenCalled();
+  });
+
+  it("recusa uma segunda aplicação Q165 da mesma matrícula", async () => {
+    h.tx.aplicacaoAcertoDesistenciaContratual.findFirst.mockResolvedValue({ id: "aplicacao-anterior" });
+
+    expect(await aplicarAcertoDesistenciaContratual(entrada)).toMatchObject({
+      ok: false, erro: expect.stringContaining("já possui aplicação Q165"),
+    });
+    expect(h.tx.aplicacaoAcertoDesistenciaContratual.create).not.toHaveBeenCalled();
   });
 
   it.each([

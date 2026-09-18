@@ -43,6 +43,9 @@ export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof e
       });
       if (!decisao?.aprovada) throw new ErroRegra("A decisão contratual aprovada não foi encontrada.");
       await bloquearMatriculas(tx, [decisao.proposta.pedido.matriculaId]);
+      // A guarda SQL toma a matrícula antes de reler a proposta. Mantemos a
+      // mesma ordem para não inverter locks com uma inserção direta.
+      await tx.$queryRaw`SELECT id FROM "PropostaAcertoDesistenciaContratual" WHERE id=${decisao.proposta.id} FOR UPDATE`;
       await exigirExecutorTx(tx, sessao.id);
       if (decisao.decisorId !== sessao.id) throw new ErroRegra("A aplicação deve ser executada pela pessoa que aprovou o acerto.");
       const anterior = await tx.aplicacaoAcertoDesistenciaContratual.findUnique({
@@ -53,6 +56,21 @@ export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof e
         return { id: anterior.id };
       }
       if (decisao.aplicacao) throw new ErroRegra("Esta decisão contratual já foi aplicada.");
+      const matriculaId = decisao.proposta.pedido.matriculaId;
+      const [pedidoAtual, aplicacaoNaMatricula] = await Promise.all([
+        tx.pedidoDesistenciaPreparacao.findFirst({
+          where: { matriculaId }, orderBy: { versao: "desc" }, select: { id: true },
+        }),
+        tx.aplicacaoAcertoDesistenciaContratual.findFirst({
+          where: { decisao: { proposta: { pedido: { matriculaId } } } }, select: { id: true },
+        }),
+      ]);
+      if (pedidoAtual?.id !== decisao.proposta.pedidoId) {
+        throw new ErroRegra("A Secretaria registrou pedido de desistência mais recente; aplique somente o acerto do pedido atual.");
+      }
+      if (aplicacaoNaMatricula) {
+        throw new ErroRegra("A matrícula já possui aplicação Q165 pendente de efetivação.");
+      }
       const administrativa = await tx.decisaoAdministrativaDesistencia.findUnique({
         where: { pedidoId: decisao.proposta.pedidoId },
         select: { aprovada: true, estadoHash: true, decisorId: true },

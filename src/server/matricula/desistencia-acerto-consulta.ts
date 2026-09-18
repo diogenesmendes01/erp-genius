@@ -5,6 +5,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
+import { fotografiaQ165 } from "./desistencia-acerto-contratual";
 
 const entrada = z.object({ matriculaId: z.string().trim().min(1).max(100) }).strict();
 
@@ -23,7 +25,7 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
         tx.pedidoDesistenciaPreparacao.findFirst({ where: { matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true, estadoHash: true,
           decisaoAdministrativa: { select: { id: true, aprovada: true, estadoHash: true } },
         } }),
-        tx.condicoesEncerramentoMatricula.findFirst({ where: { matriculaId, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }),
+        tx.condicoesEncerramentoMatricula.findFirst({ where: { matriculaId, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true, regras: true } }),
         tx.efetivacaoPedidoDesistenciaPreparacao.findUnique({ where: { matriculaId }, select: { id: true } }),
       ]);
       if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
@@ -41,9 +43,11 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
       });
       const podeAprovar = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       const temAplicacao = !!aplicacaoExistente;
-      const impedimento = efetivacao ? "A desistência já foi efetivada." : temAplicacao ? "O acerto já foi aplicado; aguarde a efetivação da Secretaria." : !pedido ? "A Secretaria deve registrar o pedido de desistência." : !condicoes || temRevisaoPosterior || !fonteValida ? "É necessária uma versão contratual estruturada, aprovada e vigente." : null;
       const ultima = propostas[0];
-      const podeReapresentar = !!ultima?.decisao && !ultima.decisao.aplicacao;
+      const fotografiaMudou = !!ultima?.decisao?.aprovada && !ultima.decisao.aplicacao && !!condicoes
+        && (ultima.fotografiaHash !== hashSubstituicao((await fotografiaQ165(tx, matriculaId)).fotografia) || ultima.condicoesId !== condicoes.id);
+      const impedimento = efetivacao ? "A desistência já foi efetivada." : temAplicacao ? "O acerto já foi aplicado; aguarde a efetivação da Secretaria." : !pedido ? "A Secretaria deve registrar o pedido de desistência." : !condicoes || temRevisaoPosterior || !fonteValida ? "É necessária uma versão contratual estruturada, aprovada e vigente." : fotografiaMudou ? "A fotografia financeira mudou após a aprovação. A Secretaria deve registrar novo pedido; a decisão Q121 anterior não pode ser reutilizada." : null;
+      const podeReapresentar = !!ultima?.decisao && !ultima.decisao.aprovada && !ultima.decisao.aplicacao;
       return { matricula, pedido, condicoes, impedimento, podePreparar: !impedimento && (!ultima || podeReapresentar),
         reapresentacao: !impedimento && podeReapresentar ? { id: ultima.id, versao: ultima.versao, aprovada: ultima.decisao!.aprovada } : null,
         temMaisPropostas: propostas.length > 20,
