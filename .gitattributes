@@ -74,3 +74,5 @@ prisma/migrations/20260918150000_revisao_correcao_consumo_horas/migration.sql -t
 prisma/migrations/20260918160000_alias_fotografia_consumo_horas/migration.sql -text
 prisma/migrations/20260918170000_ancora_condicoes_revisao_consumo/migration.sql -text
 prisma/migrations/20260918180000_autorizacao_atendimento_pedagogico/migration.sql -text
+
+/prisma/migrations/20260918190000_destino_pedagogico_atual/migration.sql -text
