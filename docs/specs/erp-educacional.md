@@ -284,6 +284,12 @@ Em ambos os percursos, a fotografia de B — estado, cobrança, recebimentos, de
 
 O diário resultante mantém o professor original como autor, enquanto o evento registra o ator designado e a designação usada. A alocação de origem segue encerrada e a de destino permanece ativa. A evidência cobre regularização pontual de uma chamada histórica, sem reabrir acesso atual do docente anterior ou alterar a transferência.
 
+#### Evidência executada — CT-05 (18/09/2026)
+
+`src/server/agenda/ct05-replanejamento-conjunto.int.test.ts` prepara duas grades publicadas sob um calendário vigente. Um feriado exige remarcações nas duas turmas. Um encontro particular futuro, criado no horário proposto de uma delas, aparece como conflito externo: a decisão pública recusa o conjunto inteiro e não cria decisão, aplicação, evento ou mudança parcial de agenda.
+
+Após cancelar o conflito, a equipe obtém nova prévia com `estadoHash` distinto, registra nova revisão e outra pessoa aprova/aplica o conjunto. Repetir a decisão confirmada não duplica aplicação ou evento. As duas turmas recebem exatamente os horários da nova prévia; o encontro passado `MINISTRADO` e seu diário permanecem iguais. A prova não envia comunicações nem substitui a conferência de outros impactos específicos.
+
 Uma entrega fica pronta para implementação quando seu corpo, requisitos referenciados, contratos de dados/ações, estados, permissões, tratamento de legado, dependências e testes têm correspondência explícita. Questão técnica resolvível com as decisões existentes não exige nova rodada de negócio; mudança de comportamento requer refinamento próprio.
 
 Uma entrega somente fica concluída quando há implementação, migração aplicável, testes apropriados executados com evidência, regressões pertinentes e atualização da situação do projeto. Integração real exige evidência no serviço e ambiente corretos. Caixa de aceite em documento não substitui resultado.
