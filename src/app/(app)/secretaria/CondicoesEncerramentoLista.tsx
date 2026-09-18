@@ -11,7 +11,7 @@ export async function CondicoesEncerramentoLista({ ids, autorId, administrador }
       id: true, codigo: true, contratoOk: true, confirmacaoContratoEm: true, contratoDocumentoId: true,
       condicoesEncerramento: { orderBy: { versao: "desc" }, select: {
         id: true, versao: true, status: true, regras: true, motivo: true, motivoDecisao: true, preparadorId: true,
-        documento: { select: { nome: true, url: true } }, preparador: { select: { nome: true } }, decisor: { select: { nome: true } },
+        documento: { select: { nome: true, url: true } }, artefatoContratual: { select: { id: true, pdfHash: true } }, processoAssinatura: { select: { id: true, estado: true, referenciaExterna: true } }, preparador: { select: { nome: true } }, decisor: { select: { nome: true } },
       } },
     },
     orderBy: { criadoEm: "desc" },

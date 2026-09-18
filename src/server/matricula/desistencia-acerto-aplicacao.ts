@@ -53,6 +53,15 @@ export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof e
         return { id: anterior.id };
       }
       if (decisao.aplicacao) throw new ErroRegra("Esta decisão contratual já foi aplicada.");
+      const administrativa = await tx.decisaoAdministrativaDesistencia.findUnique({
+        where: { pedidoId: decisao.proposta.pedidoId },
+        select: { aprovada: true, estadoHash: true, decisorId: true },
+      });
+      const administrador = administrativa && await tx.usuario.findUnique({ where: { id: administrativa.decisorId }, select: { ativo: true, papeis: true } });
+      if (!administrativa?.aprovada || administrativa.estadoHash !== decisao.proposta.estadoHash ||
+        administrativa.decisorId === decisao.proposta.pedido.registradorId || !administrador?.ativo || !administrador.papeis.includes(Papel.ADMINISTRADOR)) {
+        throw new ErroRegra("A aplicação Q165 exige decisão administrativa aprovada e independente para este pedido.");
+      }
       const itens = itensDaMemoria(decisao.proposta.memoria);
       const cobrancas = await tx.cobranca.findMany({
         where: { matriculaId: decisao.proposta.pedido.matriculaId }, orderBy: { id: "asc" },

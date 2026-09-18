@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "@/server/matricula/condicoes-encerramento";
 import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerramento-schema";
 
-type Versao = { id: string; versao: number; status: string; regras: unknown; motivo: string; motivoDecisao: string | null; preparadorId: string; documento: { nome: string; url: string }; preparador: { nome: string }; decisor: { nome: string } | null };
+type Versao = { id: string; versao: number; status: string; regras: unknown; motivo: string; motivoDecisao: string | null; preparadorId: string; documento: { nome: string; url: string } | null; artefatoContratual: { id: string; pdfHash: string } | null; processoAssinatura: { id: string; estado: string; referenciaExterna: string | null } | null; preparador: { nome: string }; decisor: { nome: string } | null };
 const campo = "rounded border p-2 text-sm";
 
 export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorId, administrador, versoes }: {
@@ -33,7 +33,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
       return <article key={v.id} className="space-y-2 rounded bg-gray-50 p-3 text-sm">
         <h3>Versão {v.versao} · {v.status === "PENDENTE" ? "Aguardando aprovação" : v.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</h3>
         <p>Preparada por {v.preparador.nome}. Motivo: {v.motivo}</p>
-        <a href={v.documento.url} target="_blank" rel="noopener noreferrer" className="underline">Consultar contrato: {v.documento.nome}</a>
+        {v.documento ? <a href={v.documento.url} target="_blank" rel="noopener noreferrer" className="underline">Consultar contrato: {v.documento.nome}</a> : v.artefatoContratual && v.processoAssinatura ? <p>Original enviado para assinatura · processo {v.processoAssinatura.id} · {v.processoAssinatura.estado}{v.processoAssinatura.referenciaExterna ? ` · referência ${v.processoAssinatura.referenciaExterna}` : ""}.</p> : <p role="alert">Fonte contratual indisponível.</p>}
         {r ? <div className="space-y-1">
           <p>Dia do encerramento: {r.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"} da cobertura.</p>
           <p>Desconto: {r.metodoDesconto === "ANTES_DO_PROPORCIONAL" ? "antes" : "depois"} do proporcional. Condições: {r.condicoesDescontos}</p>
