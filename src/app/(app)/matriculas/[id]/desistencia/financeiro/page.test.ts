@@ -3,10 +3,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), acerto: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), acerto: vi.fn(), delta: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/desistencia-financeiro-consulta", () => ({ consultarCancelamentoFinanceiroDesistencia: mocks.consultar }));
 vi.mock("@/server/matricula/desistencia-acerto-consulta", () => ({ consultarAcertoDesistenciaContratual: mocks.acerto }));
+vi.mock("@/server/matricula/desistencia-reconferencia-delta-consulta", () => ({ consultarReconferenciaDeltaDesistencia: mocks.delta }));
+vi.mock("./ReconferenciaDeltaFormularios", () => ({
+  PrepararReconferenciaDeltaFormulario: () => createElement("div", { "data-delta": "preparar" }),
+  DecidirReconferenciaDeltaFormulario: () => createElement("div", { "data-delta": "decidir" }),
+  AplicarReconferenciaDeltaFormulario: () => createElement("div", { "data-delta": "aplicar" }),
+}));
 vi.mock("./AcertoContratualFormularios", () => ({
   PrepararAcertoContratualFormulario: ({ reapresentacao }: { reapresentacao?: { id: string; versao: number; aprovada: boolean } | null }) => createElement("div", { "data-acerto": "preparar", "data-reapresentacao": reapresentacao?.id, "data-versao-reapresentada": reapresentacao?.versao }),
   DecidirAcertoContratualFormulario: () => createElement("div", { "data-acerto": "decidir" }),
@@ -25,6 +31,7 @@ beforeEach(() => {
     matricula: { id: "m", alunoId: "aluno" }, propostas: [], podePreparar: false,
     impedimento: "Regra contratual aguardando conferência.", pedido: null, condicoes: null,
   } });
+  mocks.delta.mockResolvedValue({ ok: true, dado: { podePreparar: false, impedimento: "Aplique primeiro a memória contratual Q165.", aplicacoesBase: [] } });
 });
 
 const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: {
@@ -113,6 +120,31 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain('data-aprovar="false"');
     expect(html).not.toContain('data-formulario="proposta"');
     expect(html).toContain("Rejeitada por Financeiro C: Saldo não conferido");
+  });
+
+  it("mostra crédito externo e motivo da rejeição, sem repetir preparo durante pendência", async () => {
+    mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
+    mocks.delta.mockResolvedValue({ ok: true, dado: {
+      podePreparar: true, impedimento: null, aplicacoesBase: [{ id: "base", criadaEmISO: "2026-09-18T12:00:00Z", podePreparar: false,
+        preparoBloqueadoPor: "Conclua a conferência do informe de pagamento no fluxo financeiro.", propostas: [{
+          id: "delta-pendente", versao: 3, estado: "PENDENCIA_FINANCEIRA", fotografiaHash: "f".repeat(64), criadaEmISO: "2026-09-18T13:00:00Z", preparadorNome: "Financeiro A",
+          tipo: "PENDENCIA", pendencia: "Há informe de pagamento pendente de conferência.", itens: [],
+          creditosExternos: [{ id: "credito-externo", moeda: "BRL", saldoDisponivel: "17.00" }],
+          podeDecidirFinanceiro: false, podeDecidirAdministrativo: false, podeAplicar: false,
+          decisaoFinanceira: { id: "decisao-fin", aprovada: false, decisorNome: "Financeiro B", motivo: "Comprovante não confere." },
+          decisaoAdministrativa: null, aplicacao: null,
+        }] }],
+    } });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+
+    expect(html).toContain("Créditos externos preservados nesta fotografia");
+    expect(html).toContain("credito-externo");
+    expect(html).toContain("BRL");
+    expect(html).toContain("17.00");
+    expect(html).toContain("Comprovante não confere.");
+    expect(html).toContain("Conclua a conferência do informe");
+    expect(html).not.toContain('data-delta="preparar"');
   });
 
   it("mostra o erro sem montar valores ou formulários", async () => {

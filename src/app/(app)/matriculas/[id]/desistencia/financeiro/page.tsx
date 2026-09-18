@@ -5,14 +5,17 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCancelamentoFinanceiroDesistencia } from "@/server/matricula/desistencia-financeiro-consulta";
 import { PropostaFormulario, DecisaoFormulario } from "./Formularios";
 import { consultarAcertoDesistenciaContratual } from "@/server/matricula/desistencia-acerto-consulta";
+import { consultarReconferenciaDeltaDesistencia } from "@/server/matricula/desistencia-reconferencia-delta-consulta";
 import { AplicarAcertoContratualFormulario, DecidirAcertoContratualFormulario, PrepararAcertoContratualFormulario } from "./AcertoContratualFormularios";
+import { AplicarReconferenciaDeltaFormulario, DecidirReconferenciaDeltaFormulario, PrepararReconferenciaDeltaFormulario } from "./ReconferenciaDeltaFormularios";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { id } = await params;
-  const [resultado, acertoResultado] = await Promise.all([
+  const [resultado, acertoResultado, deltaResultado] = await Promise.all([
     consultarCancelamentoFinanceiroDesistencia({ matriculaId: id }),
     consultarAcertoDesistenciaContratual({ matriculaId: id }),
+    consultarReconferenciaDeltaDesistencia({ matriculaId: id }),
   ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
@@ -56,6 +59,29 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </article>)}
           {acerto.temMaisPropostas && <p>São exibidas as vinte memórias contratuais mais recentes. Existem propostas anteriores preservadas no histórico.</p>}
         </>;
+      })()}
+    </section>
+    <section className="space-y-4 border-t pt-5">
+      <h2 className="text-xl font-medium">Reconferência pós-aplicação</h2>
+      <p>Use este fluxo para um fato posterior à aplicação Q165. Ele calcula apenas a diferença e mantém recebimentos, créditos e origens anteriores preservados.</p>
+      {!deltaResultado.ok || !deltaResultado.dado ? <p role="alert">{deltaResultado.ok ? "Consulta da reconferência indisponível." : deltaResultado.erro}</p> : (() => {
+        const delta = deltaResultado.dado;
+        return <>{delta.impedimento && <p role="status">{delta.impedimento}</p>}{delta.aplicacoesBase.map(base => <article key={base.id} className="space-y-3 rounded border p-4">
+          <h3 className="font-medium">Aplicação Q165 de {new Date(base.criadaEmISO).toLocaleString("pt-BR")}</h3>
+          {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
+          {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}
+          {!base.propostas.length && <p>Nenhuma reconferência registrada.</p>}
+          {base.propostas.map(proposta => <div key={proposta.id} className="space-y-3 border-t pt-3"><h4>Delta {proposta.versao} · {proposta.preparadorNome} · {proposta.estado}</h4>
+            {proposta.pendencia && <p role="status">{proposta.pendencia}</p>}
+            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Ajuste devido</th><th>Ajuste saldo</th><th>Crédito novo</th><th>Redução bloqueada</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{item.moeda} {item.ajusteDevido}</td><td>{item.moeda} {item.ajusteSaldo}</td><td>{item.moeda} {item.creditoDelta}</td><td>{item.moeda} {item.reducaoCredito}</td></tr>)}</tbody></table>
+            {proposta.creditosExternos.length > 0 && <table className="w-full text-left text-sm"><caption className="text-left font-medium">Créditos externos preservados nesta fotografia</caption><thead><tr><th>Crédito</th><th>Moeda</th><th>Saldo disponível</th></tr></thead><tbody>{proposta.creditosExternos.map(credito => <tr key={credito.id}><td>{credito.id}</td><td>{credito.moeda}</td><td>{credito.saldoDisponivel}</td></tr>)}</tbody></table>}
+            {proposta.podeDecidirFinanceiro && <DecidirReconferenciaDeltaFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} administrativo={false} />}
+            {proposta.podeDecidirAdministrativo && <DecidirReconferenciaDeltaFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} administrativo />}
+            {proposta.decisaoFinanceira && <p>Decisão financeira: {proposta.decisaoFinanceira.aprovada ? "aprovada" : "rejeitada"} por {proposta.decisaoFinanceira.decisorNome}: {proposta.decisaoFinanceira.motivo}</p>}
+            {proposta.decisaoAdministrativa && <p>Decisão administrativa: {proposta.decisaoAdministrativa.aprovada ? "aprovada" : "rejeitada"} por {proposta.decisaoAdministrativa.decisorNome}: {proposta.decisaoAdministrativa.motivo}</p>}
+            {proposta.podeAplicar && proposta.decisaoFinanceira && <AplicarReconferenciaDeltaFormulario decisaoFinanceiraId={proposta.decisaoFinanceira.id} />}
+            {proposta.aplicacao && <p>Reconferência aplicada em {new Date(proposta.aplicacao.criadaEmISO).toLocaleString("pt-BR")}.</p>}
+          </div>)}</article>)}</>;
       })()}
     </section>
   </section>;
