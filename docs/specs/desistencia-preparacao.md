@@ -77,7 +77,7 @@ A decisão é uma etapa de autorização do pedido. Não cancela cobranças, nã
 
 O registro do pedido, sozinho, não cancela matrícula, cobrança, assinatura ou reserva. O ramo simples permite efetivar uma preparação sem os avanços descritos acima; não calcula acerto e não devolve dinheiro. O incremento 595 acrescenta somente o ramo financeiro descrito acima. O fluxo completo permanece pendente. Evidências: [incremento 593](../planejamento/validacao-incremento-593.md).
 
-A forma de apurar o acerto da preparação com valores já pagos está em definição na [Q165](../planejamento/acerto-desistencia-q165.md). Não presumir opção enquanto a resposta estiver pendente.
+A forma de apurar o acerto da preparação com valores já pagos foi definida na [Q165](../planejamento/acerto-desistencia-q165.md): somente regra contratual estruturada. A implementação parcial e suas pendências estão descritas abaixo.
 
 
 ## Fila administrativa — incremento 598

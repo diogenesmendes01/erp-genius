@@ -493,7 +493,7 @@ Decisão aprovada: definir no próprio aditivo se a correção de cobertura pres
 
 ### Q165 — Acerto de desistência antes da ativação
 
-Opção C aprovada: somente regra estruturada no contrato. Se faltarem condições suficientes, o acerto aguarda complementação e conferência. Financeiro prepara e outra pessoa autorizada aprova; não aplicar automaticamente proporcional de matrícula ativa, nem apuração manual livre. Preservar recebimentos e distinguir crédito apurado de devolução executada. Implementação pendente.
+Opção C aprovada: somente regra estruturada no contrato. Se faltarem condições suficientes, o acerto aguarda complementação e conferência. Financeiro prepara e outra pessoa autorizada aprova; não aplicar automaticamente proporcional de matrícula ativa, nem apuração manual livre. Preservar recebimentos e distinguir crédito apurado de devolução executada. Implementação parcial, sem aceite integral.
 
 Critérios técnicos de aceite da integração:
 
@@ -503,7 +503,7 @@ Critérios técnicos de aceite da integração:
 - Recebimento ou comprovante posterior permanece registrado. Havendo impacto novo, a equipe deve conseguir preparar uma reconferência vinculada ao acerto aplicado, com aprovação independente e efeitos somente sobre a diferença comprovada. Não reaplicar o acerto original, duplicar crédito ou presumir devolução. Se as condições estruturadas não bastarem, exigir complementação.
 - Um bloqueio sem caminho operacional para resolver essa pendência não atende ao fluxo completo. A reconferência deve preservar os demais contratos do aluno e revalidar a fotografia antes de liberar a efetivação.
 
-Estado local: base em integração, ainda sem aceite completo. A correção da conferência financeira, a resolução de pendências posteriores e a interface operacional precisam de testes integrados e revisão independente antes da conclusão.
+Estado local: fonte contratual pré-aceite, cálculo/aplicação e interface de condições integrados até247. Revisão independente do TESTER em4fcecde6 aprovou10/10 integrações do acerto e11/11 da efetivação; testes da interface/parser passaram14/14 no integrador. Ainda faltam reapresentação248, reconferência financeira incremental249, homologação da interface completa e cancelamento externo autenticado (fornecedor Q155 pendente). Estes recortes não comprovam o aceite integral.
 
 ### Q167 — Destinação negociada do excedente de permuta
 
