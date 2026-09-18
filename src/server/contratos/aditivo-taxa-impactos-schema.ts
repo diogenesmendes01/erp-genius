@@ -16,3 +16,4 @@ export const PrepararImpactosTaxaAditivoSchema = z.object({
 export const DecidirImpactosTaxaAditivoSchema = z.object({ conjuntoId: id, aprovada: z.boolean(), motivo: justificativa, chaveIdempotencia: chave }).strict();
 export const VincularImpactoTaxaAditivoSchema = z.object({ conjuntoId: id, cobrancaId: id, propostaAcertoId: id }).strict();
 export const CompletarImpactosTaxaAditivoSchema = z.object({ conjuntoId: id }).strict();
+export const ObsoletarImpactosTaxaAditivoSchema = z.object({ conjuntoId: id, motivo: justificativa, chaveIdempotencia: chave }).strict();

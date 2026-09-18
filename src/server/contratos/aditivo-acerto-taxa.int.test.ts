@@ -30,7 +30,7 @@ import { proporUtilizacaoCredito } from "@/server/financeiro/uso-credito-propost
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
 import { decidirDevolucaoCredito, proporDevolucaoCredito, registrarExecucaoDevolucaoCredito } from "@/server/financeiro/devolucao-credito";
 import { hashSubstituicao } from "./substituicao-estado";
-import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, prepararImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "./aditivo-taxa-impactos";
+import { completarImpactosTaxaAditivo, consultarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, obsoletarImpactosTaxaAditivo, prepararImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "./aditivo-taxa-impactos";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>, alvo: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }, cobrancaId: string, financeiro: string, aprovador: string;
 async function cadeiaTaxa(vencimentoTaxa?: string) {
@@ -518,6 +518,8 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Conjunto completo conferido antes da alteração posterior.", chaveIdempotencia: "q170-preservada-aprovar" })).toMatchObject({ ok: true });
     await prisma.cobranca.update({ where: { id: preservadaId }, data: { valorNegociado: 36, saldo: 36, versao: { increment: 1 } } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: false });
-    expect(await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "APROVADO" });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Cobrança preservada mudou depois da aprovação.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    expect(await obsoletarImpactosTaxaAditivo({ conjuntoId, motivo: "Cobrança preservada mudou depois da aprovação.", chaveIdempotencia: "q170-obsoletar" })).toMatchObject({ ok: true, dado: { obsoleto: true } });
+    expect(await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } })).toMatchObject({ status: "OBSOLETO" });
   });
 });
