@@ -672,6 +672,19 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
     expect(await decidirImpactosCoberturaAditivo({ conjuntoId, aprovada: true, motivo: "Financeiro independente conferiu a fotografia completa.", chaveIdempotencia })).toMatchObject({ ok: true, dado: { aprovada: true } });
   }
 
+  it("recupera o preparo idêntico após aplicação sem criar outro conjunto", async () => {
+    const { conjuntoId, mensalidadeId } = await prepararConjuntoCobertura("q168-replay-pos-aplicacao");
+    await aprovarConjunto(conjuntoId, "q168-replay-pos-aplicacao-aprovar");
+    expect(await aplicarImpactosCoberturaAditivo({ conjuntoId, chaveIdempotencia: "q168-replay-pos-aplicacao-aplicar" })).toMatchObject({ ok: true });
+    const repetido = await prepararConjuntoCobertura("q168-replay-pos-aplicacao", mensalidadeId);
+    expect(repetido.conjuntoId).toBe(conjuntoId);
+    expect(await prisma.conjuntoImpactosCoberturaAditivo.count({ where: { propostaAditivoId: alvo.propostaId } })).toBe(1);
+    expect(await prepararImpactosCoberturaAditivo({ ...alvo,
+      linhas: [{ cobrancaId: mensalidadeId, classificacao: "AFETADA", coberturaInicioNova: "2026-11-01", coberturaFimNova: "2026-11-30", justificativa: "Cobertura mensal corrigida conforme o aditivo assinado." }],
+      motivo: "Justificativa diferente depois da aplicação.", evidencia: "Conferência documental e financeira registrada.", chaveIdempotencia: "q168-replay-pos-aplicacao",
+    })).toMatchObject({ ok: false, erro: expect.stringContaining("Chave já usada") });
+  });
+
   it("permite pendente → obsoleto → nova preparação e preserva replay por conjunto", async () => {
     const primeiro = await prepararConjuntoCobertura("q168-pendente-inicial");
     const motivo = "Fotografia pendente precisa ser refeita antes da aprovação.";
