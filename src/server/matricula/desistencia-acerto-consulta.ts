@@ -23,12 +23,14 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
         tx.pedidoDesistenciaPreparacao.findFirst({ where: { matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true, estadoHash: true,
           decisaoAdministrativa: { select: { id: true, aprovada: true, estadoHash: true } },
         } }),
-        tx.condicoesEncerramentoMatricula.findFirst({ where: { matriculaId, status: "APROVADA", documento: { arquivado: false } }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }),
+        tx.condicoesEncerramentoMatricula.findFirst({ where: { matriculaId, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }),
         tx.efetivacaoPedidoDesistenciaPreparacao.findUnique({ where: { matriculaId }, select: { id: true } }),
       ]);
       if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
       const aplicacaoExistente = pedido && await tx.aplicacaoAcertoDesistenciaContratual.findFirst({ where: { decisao: { proposta: { pedidoId: pedido.id } } }, select: { id: true } });
       const temRevisaoPosterior = condicoes && await tx.condicoesEncerramentoMatricula.count({ where: { matriculaId, versao: { gt: condicoes.versao } } }) > 0;
+      const fontes = condicoes ? await tx.$queryRaw<Array<{ valida: boolean }>>`SELECT q165_fonte_condicoes_valida(${condicoes.id}, true) AS valida` : [];
+      const fonteValida = fontes[0]?.valida === true;
       const propostas = await tx.propostaAcertoDesistenciaContratual.findMany({ where: { pedido: { matriculaId } }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], take: 21,
         select: { id: true, pedidoId: true, condicoesId: true, fotografiaHash: true, criadaEm: true, preparadorId: true, preparador: { select: { nome: true } }, memoria: true,
           decisao: { select: { id: true, aprovada: true, motivo: true, decisorId: true, decisor: { select: { nome: true } }, aplicacao: { select: {
@@ -37,7 +39,7 @@ export async function consultarAcertoDesistenciaContratual(input: z.input<typeof
       });
       const podeAprovar = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       const temAplicacao = !!aplicacaoExistente;
-      const impedimento = efetivacao ? "A desistência já foi efetivada." : temAplicacao ? "O acerto já foi aplicado; aguarde a efetivação da Secretaria." : !pedido ? "A Secretaria deve registrar o pedido de desistência." : !condicoes || temRevisaoPosterior ? "É necessária uma versão contratual estruturada, aprovada e vigente." : null;
+      const impedimento = efetivacao ? "A desistência já foi efetivada." : temAplicacao ? "O acerto já foi aplicado; aguarde a efetivação da Secretaria." : !pedido ? "A Secretaria deve registrar o pedido de desistência." : !condicoes || temRevisaoPosterior || !fonteValida ? "É necessária uma versão contratual estruturada, aprovada e vigente." : null;
       return { matricula, pedido, condicoes, impedimento, podePreparar: !impedimento, temMaisPropostas: propostas.length > 20,
         propostas: propostas.slice(0, 20).map(p => {
           const itens = (p.memoria as { itens?: Array<{ cobrancaId: string; moeda: string; devido: string; saldoDevido: string; creditoApurado: string; creditoJaApurado: string }> }).itens ?? [];
