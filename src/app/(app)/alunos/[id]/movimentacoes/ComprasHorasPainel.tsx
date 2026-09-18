@@ -26,7 +26,7 @@ function Compras({ alunoId, matriculaId }: { alunoId: string; matriculaId: strin
         <p>Registrado por {c.registrador.nome} em {new Date(c.criadoEm).toLocaleString("pt-BR")}.</p>
         <p>{c.liquidacao ? `Quitação: ${c.liquidacao.valorEmDinheiro} ${c.moeda} em dinheiro e ${c.liquidacao.valorEmCredito} ${c.moeda} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {c.valorOriginal}. Desconto original: {c.descontoOriginal}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{c.minutosReservados} minutos reservados · {c.minutosConsumidos} consumidos · {c.minutosConvertidosCredito} convertidos em crédito · {c.minutosDisponiveis} ainda não reservados.</p>
-        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo ? "consumo registrado" : "reserva registrada"}</p>
+        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${r.consumo.conferenciaOcorrencia.desfecho}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
           {!r.consumo && !r.liberada && r.statusEncontro !== "CANCELADO" && <ConsumoHoras reservaId={r.id} aoSalvar={carregar} />}
           {r.statusEncontro === "CANCELADO" && !r.consumo && <LiberacaoHoras alunoId={alunoId} reservaId={r.id} propostas={r.propostasLiberacao} aoSalvar={carregar} />}
         </div>)}
@@ -85,7 +85,7 @@ function ConsumoHoras({ reservaId, aoSalvar }: { reservaId: string; aoSalvar: ()
   return <div className="space-y-2">
     <button className={estilo} disabled={ocupado} onClick={() => { void iniciar(async () => {
       setErro(""); setRevisao(null);
-      try { const r = await conferirRealizacaoHoras({ reservaId }); if (!r.ok || !r.dado) { setErro(r.ok ? "Consulta indisponível" : r.erro); return; } if (r.dado.consumoId) { await aoSalvar(); return; } setRevisao(r.dado); }
+      try { const r = await conferirRealizacaoHoras({ reservaId }); if (!r.ok || !r.dado) { setErro(r.ok ? "Consulta indisponível" : r.erro); return; } if (r.dado.consumoId) { await aoSalvar(); return; } if (!r.dado.estadoDiario) { setErro("A realização ainda não tem estado de diário conferível."); return; } setRevisao({ estadoDiario: r.dado.estadoDiario, minutos: r.dado.minutos }); }
       catch { setErro("Não foi possível conferir a realização."); }
     }); }}>Conferir realização</button>
     {revisao && <form onSubmit={event => { event.preventDefault(); const f = new FormData(event.currentTarget); void iniciar(async () => {

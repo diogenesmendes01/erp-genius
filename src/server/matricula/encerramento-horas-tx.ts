@@ -8,16 +8,26 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
   if (!m) throw new ErroRegra("Matrícula não encontrada para este aluno.");
   const compras = await tx.compraHorasAntecipadas.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, include: {
     liquidacaoAcerto: true,
-    reservas: { orderBy: { id: "asc" }, include: { consumo: true, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
+    reservas: { orderBy: { id: "asc" }, include: { consumo: { include: { conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
   } });
   const pendencias: string[] = [];
   const origens = compras.map(c => {
-    const consumos: { id: string; minutos: number; motivo: "AULA_REALIZADA"; evidencia: string }[] = [];
+    const consumos: { id: string; minutos: number; motivo: "AULA_REALIZADA" | "FALTA_COBRAVEL" | "CANCELAMENTO_TARDIO_COBRAVEL"; evidencia: string }[] = [];
     const liquidacoesAnteriores: { id: string; minutos: number; valor: string; referenciaAcerto: string }[] = [];
     if (c.liquidacaoAcerto) liquidacoesAnteriores.push({ id: c.liquidacaoAcerto.id, minutos: c.liquidacaoAcerto.minutos, valor: c.liquidacaoAcerto.valor.toFixed(2), referenciaAcerto: c.liquidacaoAcerto.decisaoId });
     let minutosReservados = 0;
     for (const r of c.reservas) {
-      if (r.consumo) { consumos.push({ id: r.consumo.id, minutos: r.minutos, motivo: "AULA_REALIZADA", evidencia: r.consumo.motivo }); continue; }
+      if (r.consumo) {
+        const conferencia = r.consumo.conferenciaOcorrencia;
+        if (conferencia) {
+          if (r.consumo.estadoDiario !== null || !["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(conferencia.desfecho)) throw new ErroRegra("Consumo por ocorrência diverge de sua conferência financeira.");
+          consumos.push({ id: r.consumo.id, minutos: r.minutos, motivo: conferencia.desfecho === "FALTA_COBRAVEL" ? "FALTA_COBRAVEL" : "CANCELAMENTO_TARDIO_COBRAVEL", evidencia: r.consumo.motivo });
+        } else {
+          if (!r.consumo.estadoDiario) throw new ErroRegra("Consumo de realização sem estado do diário exige conferência.");
+          consumos.push({ id: r.consumo.id, minutos: r.minutos, motivo: "AULA_REALIZADA", evidencia: r.consumo.motivo });
+        }
+        continue;
+      }
       const decisao = r.decisoesLiberacao[0];
       if (decisao?.proposta.destino === "REMARCACAO") continue;
       if (decisao?.proposta.destino === "CREDITO" && decisao.credito) {

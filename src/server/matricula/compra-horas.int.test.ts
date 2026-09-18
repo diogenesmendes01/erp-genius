@@ -137,12 +137,12 @@ it("realização consome uma vez sem exigir gravação ou gerar novo recebimento
     await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: alvo.reservaId, autorId: professor.id, motivo: "Professor não confirma consumo", estadoDiario: "a".repeat(64) } })).rejects.toThrow("sem permissão");
     await prisma.registroAulaAluno.updateMany({ where: { aulaId: aula.id }, data: { presente: true } });
     const revisao = await conferirRealizacaoHoras(alvo);
-    if (!revisao.ok || !revisao.dado) throw new Error("Revisão ausente");
+    if (!revisao.ok || !revisao.dado?.estadoDiario) throw new Error("Revisão ausente");
     const confirmar = { ...alvo, estadoDiario: revisao.dado.estadoDiario, motivo: "Realização conferida pelo Financeiro" };
     await prisma.aulaDiario.update({ where: { id: aula.id }, data: { conteudo: "Conteúdo corrigido antes do consumo" } });
     expect((await conferirRealizacaoHoras(confirmar)).ok).toBe(false);
     const atual = await conferirRealizacaoHoras(alvo);
-    if (!atual.ok || !atual.dado) throw new Error("Revisão atual ausente");
+    if (!atual.ok || !atual.dado?.estadoDiario) throw new Error("Revisão atual ausente");
     confirmar.estadoDiario = atual.dado.estadoDiario;
     const resultados = await Promise.all([conferirRealizacaoHoras(confirmar), conferirRealizacaoHoras(confirmar)]);
     expect(resultados[0]).toMatchObject({ ok: true }); expect(resultados[1]).toEqual(resultados[0]);

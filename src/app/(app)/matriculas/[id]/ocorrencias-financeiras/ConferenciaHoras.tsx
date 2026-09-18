@@ -27,8 +27,9 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
     <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {e.fusoOrigem}</h2>
     {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotulos[e.ocorrencia.tipo]} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {data(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
     {e.conferencia ? <section className="space-y-2"><h3>Conferência registrada</h3>
-      <p>{rotulos[e.conferencia.desfecho]} · {e.conferencia.minutos} minutos · {e.conferencia.valor} {e.conferencia.moeda}</p>
+      <p>{rotulos[e.conferencia.desfecho]} · {e.conferencia.minutos} minutos · {e.conferencia.consumoAntecipacao ? "valor preservado da compra" : "valor apurado"}: {e.conferencia.valor} {e.conferencia.moeda}</p>
       <p>{e.conferencia.conferente.nome} · {data(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
+      {e.conferencia.consumoAntecipacao && <p>Reserva antecipada {e.conferencia.consumoAntecipacao.reservaId} da compra {e.conferencia.consumoAntecipacao.reserva.compraId} consumida por esta ocorrência. Não foi criada cobrança, recebimento ou crédito.</p>}
       <details><summary>Memória preservada da conferência</summary><Memoria snapshot={e.conferencia.snapshot} data={data} /></details>
       <p>A emissão da cobrança é uma etapa separada.</p>
     </section> : e.ocorrencia && <>
@@ -43,7 +44,8 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
       })}>Conferir prévia</button>
       {previa && <section className="space-y-2 rounded border p-3"><h3>Prévia — ainda não registrada</h3>
         <p>{rotulos[previa.classificacao.desfecho]} · {previa.minutos} minutos ÷ 60 · {previa.regras.valorHora} {previa.moeda}/hora</p>
-        <p>Valor apurado: {previa.valorApurado} {previa.moeda}</p>
+        {previa.reservaAntecipada ? <p>Valor preservado da compra: {previa.valorApurado} {previa.moeda}. O valor contratual atual de {previa.valorContratualInformativo} {previa.moeda} é apenas informativo e não reprecifica as horas já quitadas.</p> : <p>Valor apurado: {previa.valorApurado} {previa.moeda}</p>}
+        {previa.reservaAntecipada && <p>Reserva antecipada {previa.reservaAntecipada.reservaId}: {previa.reservaAntecipada.minutos} minutos da compra {previa.reservaAntecipada.compraId} serão consumidos por esta ocorrência. A compra preserva {previa.reservaAntecipada.valorPagoAlocado} {previa.reservaAntecipada.moeda} já alocados; nenhuma cobrança, recebimento ou crédito será criado.</p>}
         {previa.aditivo && <p>Fonte contratual: Aditivo versão {previa.aditivo.versao}.</p>}
         <p>Cláusula de preço: {previa.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {previa.regras.clausulaCancelamento}</p>
         {previa.classificacao.limiteCancelamento && <p>Limite de cancelamento: {data(previa.classificacao.limiteCancelamento)} ({e.fusoOrigem})</p>}

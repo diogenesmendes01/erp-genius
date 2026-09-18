@@ -46,7 +46,7 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
   apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: [] });
   const encontros = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA", matriculaId: d.matriculaId, turmaId: null, status: { not: "RASCUNHO" },
     inicio: { gte: new Date(d.periodo.inicio), lt: new Date(d.periodo.fimExclusivo) } }, orderBy: [{ inicio: "asc" }, { id: "asc" }],
-    include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
+    include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, consumoAntecipacao: { select: { id: true, reservaId: true } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
       ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true } },
       reservasHoras: { select: { id: true, consumo: { select: { id: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } } } } } });
   const itens: EntradaFechamentoHoras["encontros"] = [];
@@ -67,11 +67,15 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     const parse = Memoria.safeParse(c.snapshot);
     if (!parse.success) throw new ErroRegra("Memória da conferência financeira exige conciliação.");
     const s = parse.data, o = s.classificacao.origem;
-    if (e.reservasHoras.length || c.ocorrenciaId !== e.ocorrenciasParticulares[0]?.id || s.ocorrenciaId !== c.ocorrenciaId || s.condicoesId !== c.condicoesId
+    const reserva = e.reservasHoras[0];
+    const consumoAntecipacao = c.consumoAntecipacao;
+    const conferenciaConsomeAntecipacao = !!consumoAntecipacao && !!reserva && reserva.id === consumoAntecipacao.reservaId && reserva.consumo?.id === consumoAntecipacao.id
+      && ["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(c.desfecho);
+    if ((e.reservasHoras.length && !conferenciaConsomeAntecipacao) || c.ocorrenciaId !== e.ocorrenciasParticulares[0]?.id || s.ocorrenciaId !== c.ocorrenciaId || s.condicoesId !== c.condicoesId
       || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || c.moeda !== m.moeda || s.minutos !== c.minutos
       || !new Prisma.Decimal(s.valorApurado).equals(c.valor) || !isDeepStrictEqual(s.regras, c.condicoes.regras)
       || c.ocorrencia.encontroId !== e.id || o.referenciaEncontro !== e.id || c.ocorrencia.inicio.getTime() !== e.inicio.getTime()
-      || c.ocorrencia.fim.getTime() !== e.fim.getTime()) throw new ErroRegra("Origem da conferência financeira diverge do encontro.");
+      || c.ocorrencia.fim.getTime() !== e.fim.getTime() || !!consumoAntecipacao !== conferenciaConsomeAntecipacao) throw new ErroRegra("Origem da conferência financeira diverge do encontro.");
     let valorHoraContratado = s.regras.valorHora;
     if (s.aditivo) {
       // Não resolve a versão vigente hoje: uma conferência já registrada deve
@@ -91,13 +95,14 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
       throw new ErroRegra("Preço preservado sem referência de aditivo diverge das condições-base.");
     }
     itens.push({ ...base, contratoVersaoId: c.condicoesId, valorHoraContratado, ocorrencia: o,
-      destinacao: c.itemFaturado ? { tipo: "FATURADA", cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id } : { tipo: "SEM_DESTINACAO" } });
+      destinacao: c.itemFaturado ? { tipo: "FATURADA", cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id }
+        : consumoAntecipacao ? { tipo: "ANTECIPACAO_CONFERIDA", registroId: consumoAntecipacao.id } : { tipo: "SEM_DESTINACAO" } });
   }
   const apuracao = apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: itens });
   // Confronta a recomposição com os valores efetivamente conferidos, sem reprecificar pelo catálogo.
   for (const e of encontros) {
     const c = e.conferenciaOcorrenciaHoras;
-    if (!c || c.itemFaturado) continue;
+    if (!c || c.itemFaturado || c.consumoAntecipacao) continue;
     const item = apuracao.itens.find(i => i.encontroId === e.id), semCobranca = apuracao.semCobranca.find(i => i.encontroId === e.id);
     if ((item?.desfecho ?? semCobranca?.desfecho) !== c.desfecho || !new Prisma.Decimal(item?.valor ?? "0").equals(c.valor)) throw new ErroRegra("Cálculo diverge da conferência preservada.");
   }
