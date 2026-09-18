@@ -79,7 +79,7 @@ const aluno = () => prisma.aluno.findUniqueOrThrow({ where: { id: alunoId } });
 const matricula = () => prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
 const calendario = () => prisma.cobranca.findMany({ where: { matriculaId }, orderBy: { id: "asc" } });
 const movimentosRetomada = () => prisma.movimentacaoAluno.findMany({ where: { alunoId, tipo: "REATIVACAO" } });
-const recebimentos = () => prisma.recebimento.findMany({ where: { cobranca: { matriculaId } }, orderBy: { id: "asc" } });
+const recebimentos = () => prisma.recebimento.findMany({ where: { titularMatriculaId: matriculaId }, orderBy: { id: "asc" } });
 
 function memoriaDaDivida(cobrancas: Cobranca[]) {
   return cobrancas.map((c) => ({
@@ -101,7 +101,7 @@ async function criarCobranca(idMatricula: string, dias: number, valor: number, e
 
 async function pagar(cobrancaId: string, valor: number) {
   entrar(fin.id);
-  sucesso(await registrarPagamento(cobrancaId, { chaveIdempotencia: randomUUID(), valorRecebido: valor, forma: "DINHEIRO" }));
+  sucesso(await registrarPagamento(cobrancaId, { chaveIdempotencia: randomUUID(), valorRecebido: valor, forma: "DINHEIRO", comentario: "Recebimento conferido e destinado à mensalidade identificada" }));
 }
 
 async function pausar() {
@@ -154,6 +154,7 @@ beforeEach(async () => {
   };
   await pagar(parcelas.parcial.id, 50);
   await pagar(parcelas.paga.id, 150);
+  expect(await recebimentos()).toHaveLength(2);
   entrar(sec.id);
 });
 
