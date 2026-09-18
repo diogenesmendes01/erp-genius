@@ -114,7 +114,8 @@ export async function receberTx(tx: Prisma.TransactionClient, input: {
     destinos = anterior.destinacoes.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? undefined, valor: d.valor.toNumber(), evidencia, chaveIdempotencia: d.chaveIdempotencia }));
   } else {
     const atual = await bloquearCobranca(tx, input.cobrancaId);
-    const saldo = saldoAtual(atual.valorNegociado, atual.valorRecebido, atual.valorLiquidadoCredito);
+    const origensTaxa = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: atual.id }, _sum: { valor: true } });
+    const saldo = saldoLiquidoAcertoTaxa(atual.valorNegociado, atual.valorRecebido, atual.valorLiquidadoCredito, origensTaxa._sum.valor ?? 0);
     const valor = dinheiro(input.valorRecebido);
     if (valor.gt(saldo) && !input.permitirExcedente) throw new ErroRegra("Autorize o registro do excedente como crédito.");
     destinos = [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: input.cobrancaId, valor: Prisma.Decimal.min(valor, saldo).toNumber(), evidencia, chaveIdempotencia: `cobranca:${input.cobrancaId}` }];
