@@ -416,7 +416,7 @@ function Thread({
       <Composer
         conversaId={thread.conversaId}
         desabilitado={optOut || !thread.numero.ativo || !thread.podeEnviar}
-        motivoDesabilitado={optOut ? "Contato em opt-out." : !thread.numero.ativo ? "Número inativo." : !thread.podeEnviar ? "Atendimento em leitura." : null}
+        motivoDesabilitado={optOut ? "Contato em opt-out." : !thread.numero.ativo ? "Número inativo." : thread.pendenciaDestinatario ?? (!thread.podeEnviar ? "Atendimento em leitura." : null)}
         onErro={onErro}
         onNota={onNota}
       />

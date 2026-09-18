@@ -20,6 +20,7 @@ export function contatoCorrespondeDestinoFinanceiro(
 /** O histórico fica no contato original; novo envio exige o destinatário atual da finalidade. */
 export async function destinatarioAtualDoAtendimento(a: {
   finalidade: FinalidadeAtendimentoWhatsApp; leadId: string | null; alunoId: string | null; matriculaId: string | null;
+  autorizacaoComunicacaoAcademicaId?: string | null;
   conversa: { contato: { telefoneE164: string; responsavelId: string | null; alunoId?: string | null } };
 }, db: Prisma.TransactionClient = prisma): Promise<boolean> {
   const contato = a.conversa.contato;
@@ -35,6 +36,27 @@ export async function destinatarioAtualDoAtendimento(a: {
   if (a.leadId) {
     const lead = await db.lead.findUnique({ where: { id: a.leadId }, select: { telefoneE164: true } });
     return !!lead?.telefoneE164 && lead.telefoneE164 === contato.telefoneE164;
+  }
+  if (a.finalidade === "PEDAGOGICO" && a.alunoId) {
+    if (!a.matriculaId) return false;
+    if (contato.responsavelId) {
+      if (!a.autorizacaoComunicacaoAcademicaId) return false;
+      const autorizacao = await db.autorizacaoComunicacaoAcademica.findFirst({
+        where: {
+          id: a.autorizacaoComunicacaoAcademicaId,
+          matriculaId: a.matriculaId,
+          responsavelId: contato.responsavelId,
+          vigenteEm: { lte: new Date() },
+          revogadaEm: null,
+          matricula: { alunoId: a.alunoId },
+          responsavel: { telefoneE164: contato.telefoneE164, alunos: { some: { alunoId: a.alunoId, papel: "PEDAGOGICO" } } },
+        },
+        select: { id: true },
+      });
+      return !!autorizacao;
+    }
+    if (contato.alunoId !== a.alunoId || a.autorizacaoComunicacaoAcademicaId) return false;
+    return !!await db.matricula.findFirst({ where: { id: a.matriculaId, alunoId: a.alunoId }, select: { id: true } });
   }
   if (a.alunoId) {
     const aluno = await db.aluno.findUnique({ where: { id: a.alunoId }, select: { telefoneE164: true,

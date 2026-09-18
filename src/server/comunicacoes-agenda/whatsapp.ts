@@ -119,7 +119,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   if (!aviso || aviso.canal !== "WHATSAPP" || aviso.situacao !== "PREPARADO" || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !fonte) return "ignorado" as const;
   const registrarPendencia = (motivo: MotivoPendenciaAvisoAgenda) => registrarPendenciaAvisoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, motivo });
   const destino = aviso.destinatarioResponsavelId
-    ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId } : null)
+    ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId, autorizacaoComunicacaoAcademicaId: a.id } : null)
     : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;
   const telefone = destino?.telefone ?? null;
   const idioma = aviso.aluno.pais?.idioma ?? "es";
@@ -135,6 +135,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   const contato = await garantirContato(tx, { telefoneE164: telefone, alunoId: destino!.responsavelId ? null : aviso.alunoId, responsavelId: destino!.responsavelId, nomeExibicao: aviso.aluno.primeiroNome });
   const atendimento = await garantirAtendimento(tx, {
     numeroId: config!.numeroAvisosAgendaId!, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aviso.alunoId, matriculaId: aviso.matriculaId,
+    autorizacaoComunicacaoAcademicaId: "autorizacaoComunicacaoAcademicaId" in destino! ? destino!.autorizacaoComunicacaoAcademicaId : null,
   });
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id: atendimento.id }, include: { conversa: { include: { contato: true } } } });
   if (!atual || atual.conversa.contato.telefoneE164 !== telefone || (destino!.responsavelId ? !await destinatarioAtualDoAtendimento(atual, tx) : atual.conversa.contato.alunoId !== aviso.alunoId)) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_INDISPONIVEL); return "pendente" as const; }
