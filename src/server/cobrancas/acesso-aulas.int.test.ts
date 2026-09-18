@@ -109,7 +109,7 @@ describe("restrição de aulas — automatismo D+30 e autorização manual", () 
     const c = await cenario(30);
     await rodarControleAcessoAulas();
     como(c.financeiro);
-    expect((await registrarPagamento(c.cobranca.id, { chaveIdempotencia: randomUUID(), valorRecebido: 40, forma: "DINHEIRO" })).ok).toBe(true);
+    expect((await registrarPagamento(c.cobranca.id, { chaveIdempotencia: randomUUID(), valorRecebido: 40, comentario: "Quitação do saldo remanescente conferida", forma: "DINHEIRO" })).ok).toBe(true);
     expect(await prisma.matricula.findUnique({ where: { id: c.matricula.id } })).toMatchObject({ acessoBloqueado: false, acessoBloqueioAutomatico: false });
     expect((await eventosDo("Matricula", c.matricula.id)).filter((e) => e.tipo === "AcessoDesbloqueado")).toHaveLength(1);
   });
@@ -119,7 +119,7 @@ describe("restrição de aulas — automatismo D+30 e autorização manual", () 
     await prisma.matricula.update({ where: { id: c.matricula.id }, data: { acessoBloqueado: true, acessoBloqueioManual: true, bloqueadoEm: new Date() } });
     await rodarControleAcessoAulas();
     como(c.financeiro);
-    expect((await registrarPagamento(c.cobranca.id, { chaveIdempotencia: randomUUID(), valorRecebido: 40, forma: "DINHEIRO" })).ok).toBe(true);
+    expect((await registrarPagamento(c.cobranca.id, { chaveIdempotencia: randomUUID(), valorRecebido: 40, comentario: "Quitação do saldo remanescente conferida", forma: "DINHEIRO" })).ok).toBe(true);
     expect(await prisma.matricula.findUnique({ where: { id: c.matricula.id } })).toMatchObject({ acessoBloqueado: true, acessoBloqueioManual: true, acessoBloqueioAutomatico: false });
     expect((await eventosDo("Matricula", c.matricula.id)).some((e) => e.tipo === "AcessoDesbloqueado")).toBe(false);
   });

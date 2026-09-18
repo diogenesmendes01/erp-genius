@@ -1,3 +1,4 @@
+import { receberTx } from "@/server/financeiro/recebimentos";
 import { beforeEach, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
@@ -214,10 +215,12 @@ it("aplica D+30 por cada cobrança, sem esperar o controle agendado", async () =
   const agora = new Date("2040-06-30T12:00:00.000Z");
   const cobranca = await prisma.cobranca.create({ data: {
     matriculaId: matriculaAtivaId, tipo: "MENSALIDADE", status: "ATRASADO", moeda: "CRC",
-    valorOriginal: 100, valorNegociado: 100, valorRecebido: 60, saldo: 40,
+    valorOriginal: 100, valorNegociado: 100, saldo: 100,
     vencimento: new Date(agora.getTime() - 29 * 86_400_000),
   } });
 
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiro.id, valorRecebido: 60, forma: "DINHEIRO", dataPagamento: agora, comentario: "Pagamento parcial da cobrança vinculada à gravação", chaveIdempotencia: "gravacao-parcial-d30" }));
   await expect(autorizarReproducaoGravacao("repo-d30", agora)).resolves.toMatchObject({ matriculaId: matriculaAtivaId });
   await prisma.cobranca.update({ where: { id: cobranca.id }, data: { vencimento: new Date(agora.getTime() - 30 * 86_400_000) } });
   await expect(autorizarReproducaoGravacao("repo-d30", agora)).rejects.toThrow(/não autorizada/i);
