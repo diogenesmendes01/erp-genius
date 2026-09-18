@@ -25,6 +25,12 @@ export async function prepararImpactosTaxaAditivo(input: unknown) { return execu
     if (estado.revisaoHash !== d.revisaoHash || estado.dados.ambiente !== "PRODUCAO") throw new ErroRegra("A conclusão em produção e sua revisão exata são obrigatórias.");
     const versao = await tx.versaoCondicoesAditivo.findFirst({ where: { matriculaId: d.matriculaId, propostaId: d.propostaId, conferenciaFinal: { conclusaoId: d.conclusaoId } } });
     if (!versao) throw new ErroRegra("Formalize as condições antes de preparar os impactos da taxa.");
+    const condicoes = versao.condicoes as Record<string, unknown>;
+    const taxaValor = condicoes.TAXA_VALOR as { tipo?: string; moeda?: string } | undefined;
+    const taxaVencimento = condicoes.TAXA_VENCIMENTO as { tipo?: string } | undefined;
+    if (!taxaValor && !taxaVencimento) throw new ErroRegra("O conjunto exige alteração explícita de TAXA_VALOR ou TAXA_VENCIMENTO.");
+    if (taxaValor && (taxaValor.tipo !== "DINHEIRO" || typeof taxaValor.moeda !== "string")) throw new ErroRegra("A alteração de valor da taxa está inválida.");
+    if (taxaVencimento && taxaVencimento.tipo !== "DATA") throw new ErroRegra("A alteração de vencimento da taxa está inválida.");
     const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: d.matriculaId, tipo: "MATRICULA" }, orderBy: [{ vencimento: "asc" }, { id: "asc" }] });
     if (cobrancas.length !== d.linhas.length || new Set(d.linhas.map(l => l.cobrancaId)).size !== cobrancas.length || cobrancas.some(c => !d.linhas.some(l => l.cobrancaId === c.id))) throw new ErroRegra("Declare todas as taxas existentes, afetadas ou preservadas.");
     const linhas = d.linhas.map(l => { const c = cobrancas.find(x => x.id === l.cobrancaId)!; const fotografia = foto(c); return { ...l, fotografia, fotografiaHash: hashSubstituicao(fotografia) }; });
