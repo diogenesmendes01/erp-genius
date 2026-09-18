@@ -43,7 +43,7 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
     const turmasDocente = u.papeis.includes(Papel.PROFESSOR) ? new Set((await prisma.turma.findMany({ where: escopoTurmasDocente(u.id), select: { id: true } })).map((t) => t.id)) : new Set<string>();
     const alunos = await prisma.aluno.findMany({ where: amplo ? {} : { alocacoes: { some: { ativa: true, turmaId: { in: [...turmasDocente] } } } }, take: 200,
       select: {
-        id: true, primeiroNome: true, sobrenome: true, telefoneE164: true,
+        id: true, primeiroNome: true, sobrenome: true, telefoneE164: true, whatsapp: true,
         responsaveis: { where: { papel: "PEDAGOGICO" }, select: { responsavelId: true } },
         alocacoes: {
           where: { ativa: true, ...(amplo ? {} : { turmaId: { in: [...turmasDocente] } }) },
@@ -61,7 +61,8 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
         if (!turma.matriculaId) {
           destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:LEGADO`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato pendente de conferência`, disponivel: false, impedimento: "O vínculo histórico não identifica uma matrícula para este atendimento." });
         } else {
-          destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:ALUNO`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · aluno`, disponivel: !!a.telefoneE164, impedimento: a.telefoneE164 ? null : "O aluno não possui telefone para atendimento pedagógico direto." });
+          const alunoDiretoDisponivel = !!a.telefoneE164 && a.whatsapp;
+          destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:ALUNO`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · aluno`, disponivel: alunoDiretoDisponivel, impedimento: alunoDiretoDisponivel ? null : "O aluno não possui WhatsApp ativo para atendimento pedagógico direto." });
           const autorizados = turma.matricula?.autorizacoesComunicacaoAcademica.filter((autorizacao) => autorizacao.responsavel.alunos.some((vinculo) => vinculo.alunoId === a.id) && !!autorizacao.responsavel.telefoneE164) ?? [];
           if (a.responsaveis.length && !autorizados.length) {
             destinos.push({ ...base, chave: `PEDAGOGICO:${a.id}:${turma.turmaId}:${turma.matriculaId}:PENDENTE`, nome: `Pedagógico · ${nomeCompleto(a)} · contrato ${contrato} · responsável sem autorização vigente`, disponivel: false, impedimento: "Registre ou confira a autorização pedagógica do responsável nesta matrícula." });
@@ -137,7 +138,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
           if (!autorizacao?.responsavel.telefoneE164) throw new ErroRegra("A autorização pedagógica não está vigente para este responsável.");
           telefone = autorizacao.responsavel.telefoneE164; nome = autorizacao.responsavel.nome; responsavelId = autorizacao.responsavelId;
         } else {
-          if (!a.telefoneE164) throw new ErroRegra("O aluno não possui telefone; não há atendimento pedagógico direto disponível.");
+          if (!a.telefoneE164 || !a.whatsapp) throw new ErroRegra("O aluno não possui WhatsApp ativo; não há atendimento pedagógico direto disponível.");
           telefone = a.telefoneE164; nome = nomeCompleto(a);
         }
         matriculaId = destino.matriculaId;
