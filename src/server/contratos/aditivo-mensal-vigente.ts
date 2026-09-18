@@ -1,6 +1,5 @@
-import { z } from "zod";
 import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
-import { PrepararAditivoContratualSchema } from "./aditivo-schema";
+import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
 import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { validarValorAlteracaoAditivo } from "./aditivo-valores";
@@ -190,30 +189,7 @@ export async function resolverMensalVigenteTx(
   input: EntradaMensalVigente,
 ) {
   const fimExclusivo = validarCobertura(input.inicioCobertura, input.fimCobertura);
-  const versoes = await tx.versaoCondicoesAditivo.findMany({
-    where: {
-      matriculaId: input.matriculaId,
-      vigenciaInicio: { lt: fimExclusivo },
-    },
-    select: {
-      id: true,
-      anteriorId: true,
-      proposta: { select: { snapshot: true, entradaHash: true, matriculaId: true } },
-      propostasVencimento: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
-      versao: true,
-      condicoes: true,
-      condicoesHash: true,
-      vigenciaInicio: true,
-      aplicacao: { select: { id: true } },
-    },
-  });
-
-  const cadeia = versoes.sort((a,b) => a.versao-b.versao).map(v => {
-    if (v.proposta.matriculaId !== input.matriculaId || hashSubstituicao(v.proposta.snapshot) !== v.proposta.entradaHash) throw new ErroRegra("Proposta contratual divergente da cadeia.");
-    const entrada = z.object({ entrada: PrepararAditivoContratualSchema }).parse(v.proposta.snapshot).entrada;
-    if (entrada.matriculaId !== input.matriculaId) throw new ErroRegra("Proposta pertence a outro contrato.");
-    return { ...v, alteracoes: entrada.alteracoes.map(a => ({ origem: a.origem, valorEstruturado: a.valorEstruturado })), aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null };
-  });
+  const cadeia = await carregarAplicacoesCamposTx(tx, input.matriculaId, fimExclusivo);
   const comprovadas = cadeia.map((v,i) => ({ ...v, aplicacoesPorCampo: projetarAplicacoesPorCampo(cadeia.slice(0,i+1)) }));
   return resolverMensalVigente(
     comprovadas,
