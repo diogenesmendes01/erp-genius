@@ -420,7 +420,8 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
 
   it("prepara todas as duas taxas, exige aprovação independente, vincula e só conclui após aplicar o acerto afetado", async () => {
     const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-duas-taxas");
-    expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { id: conjuntoId, status: "PENDENTE", impactos: expect.arrayContaining([
+    expect(await consultarImpactosTaxaAditivo({ matriculaId: "outra-matricula", propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: null });
+    expect(await consultarImpactosTaxaAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { id: conjuntoId, status: "PENDENTE", impactos: expect.arrayContaining([
       expect.objectContaining({ cobrancaId, decisao: "AFETADA", justificativa: expect.stringContaining("original") }),
       expect.objectContaining({ cobrancaId: preservadaId, decisao: "PRESERVADA", justificativa: expect.stringContaining("permanece") }),
     ]) } });
@@ -449,7 +450,7 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: true }] } });
     authMock.mockResolvedValue({ user: { id: aprovador } });
 
-    expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { status: "COMPLETO", aplicado: true, impactos: expect.arrayContaining([expect.objectContaining({ cobrancaId, aplicado: true }), expect.objectContaining({ cobrancaId: preservadaId, aplicado: false })]) } });
+    expect(await consultarImpactosTaxaAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { status: "COMPLETO", aplicado: true, impactos: expect.arrayContaining([expect.objectContaining({ cobrancaId, aplicado: true }), expect.objectContaining({ cobrancaId: preservadaId, aplicado: false })]) } });
   });
 
   it("não aprova nem por SQL uma taxa afetada sem acerto vinculado", async () => {

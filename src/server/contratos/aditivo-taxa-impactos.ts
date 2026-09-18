@@ -6,7 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { hashSubstituicao } from "./substituicao-estado";
-import { CompletarImpactosTaxaAditivoSchema, DecidirImpactosTaxaAditivoSchema, ObsoletarImpactosTaxaAditivoSchema, PrepararImpactosTaxaAditivoSchema, VincularImpactoTaxaAditivoSchema } from "./aditivo-taxa-impactos-schema";
+import { ConsultarImpactosTaxaAditivoSchema, CompletarImpactosTaxaAditivoSchema, DecidirImpactosTaxaAditivoSchema, ObsoletarImpactosTaxaAditivoSchema, PrepararImpactosTaxaAditivoSchema, VincularImpactoTaxaAditivoSchema } from "./aditivo-taxa-impactos-schema";
 
 async function exigirFinanceiro(tx: Prisma.TransactionClient, id: string, aprovar = false) {
   const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true, permissoes: true } });
@@ -136,13 +136,14 @@ export async function obsoletarImpactosTaxaAditivo(input: unknown) { return exec
   });
 }); }
 
-export async function consultarImpactosTaxaAditivo(propostaId: string) { return executarAcao(async () => {
+export async function consultarImpactosTaxaAditivo(input: unknown) { return executarAcao(async () => {
+  const d = ConsultarImpactosTaxaAditivoSchema.parse(input);
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA);
   const atual = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, permissoes: true } });
   const financeiro = Boolean(atual?.ativo && atual.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR));
   const aprova = Boolean(financeiro && (atual?.papeis.includes(Papel.ADMINISTRADOR) || atual?.permissoes.includes("financeiro.aprovar_acertos")));
   const incluir = { decisao: { select: { aprovada: true, decisorId: true, decididaEm: true } }, impactos: { include: { cobranca: { select: { id: true, codigo: true, moeda: true, valorNegociado: true, vencimento: true, status: true } }, propostaAcerto: { include: { aplicacao: { select: { id: true } } } } } } } as const;
-  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } }, orderBy: { criadaEm: "desc" }, include: incluir }) ?? await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { propostaAditivoId: propostaId }, orderBy: { criadaEm: "desc" }, include: incluir });
+  const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId, status: { in: ["PENDENTE", "APROVADO", "COMPLETO"] } }, orderBy: { criadaEm: "desc" }, include: incluir }) ?? await prisma.conjuntoImpactosTaxaAditivo.findFirst({ where: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId }, orderBy: { criadaEm: "desc" }, include: incluir });
   if (!conjunto) return null;
   const impactos = conjunto.impactos.map(i => ({ cobrancaId: i.cobrancaId, cobranca: { id: i.cobranca.id, codigo: i.cobranca.codigo, moeda: i.cobranca.moeda, valorNegociado: i.cobranca.valorNegociado.toFixed(2), vencimento: i.cobranca.vencimento.toISOString().slice(0, 10), status: i.cobranca.status }, decisao: i.decisao, justificativa: i.justificativa, propostaAcertoId: i.propostaAcertoId, acertoStatus: i.propostaAcerto?.status ?? null, aplicado: Boolean(i.propostaAcerto?.aplicacao) }));
   const afetadas = impactos.filter(i => i.decisao === "AFETADA");
