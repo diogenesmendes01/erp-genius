@@ -7,6 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { carregarEstadoConferenciaFinalAditivoTx } from "./aditivo-conferencia-final-estado";
 import { consultarAlvoPrimeiraMensalidadeTx } from "./aditivo-primeira-mensalidade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
+import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
 const id = z.string().trim().min(1).max(100);
@@ -90,7 +91,7 @@ export async function decidirVencimentoAditivo(input: unknown) {
 }
 
 export async function aplicarVencimentoAditivo(input: unknown) {
-  return executarAcao(async () => {
+  const resultado = await executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
     const d = z.object({ propostaId: id, chaveIdempotencia }).strict().parse(input);
     return prisma.$transaction(async tx => {
@@ -115,4 +116,15 @@ export async function aplicarVencimentoAditivo(input: unknown) {
       return { id: aplicacao.id, aplicada: true };
     }, { timeout: 30000 });
   });
+  if (resultado.ok && resultado.dado) {
+    try {
+      const aplicacao = await prisma.aplicacaoVencimentoAditivo.findUniqueOrThrow({
+        where: { id: resultado.dado.id }, select: { decisao: { select: { proposta: { select: { cobrancaId: true } } } } },
+      });
+      await reavaliarAcessoAutomaticoDaCobranca(aplicacao.decisao.proposta.cobrancaId);
+    } catch {
+      console.error("[aditivo] Vencimento aplicado; reavaliação de acesso pendente pelo cron institucional.");
+    }
+  }
+  return resultado;
 }
