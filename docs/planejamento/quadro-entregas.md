@@ -710,3 +710,5 @@ Cenário composto ainda faltante: persistir `INCERTO` do portal, reiniciar expli
 18/09/2026 — Seletor Q169 normaliza MES_CIVIL para RegraCoberturaSchema estrito, evitando carregar dataReferencia indevida no planejador. Valida data civil, recusa vigência ambígua e prova ausente; preserva referência anterior ao escolher PRESERVAR. Recorte seletor+cobertura12/12 em2arquivos, saída0; TypeScript saída0. Seletor ainda não conectado à emissão: faltam leitura temporal das provas e precedência com retomada/recomposição.
 
 18/09/2026 — Q168: decisão repetida exige o mesmo motivo, preservando a justificativa auditada. Aprovação reconsulta todas as mensalidades da matrícula e recusa cobrança surgida após preparo. Integração dirigida 2/2,38 fora do filtro, sessão25752 saída0; TypeScript sessão63075 saída0. Consulta/UI DEV2 em revisão de permissão direta antes de integração.
+
+18/09/2026 — Q168: limites novos de cobertura agora usam validação de data civil real; datas como29/02 em ano não bissexto e31/04 são recusadas antes de conversão, impedindo normalização silenciosa para outro mês. Testes de schema6/6,zero ignorados,saída0.

@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { DataCivilSchema } from "@/server/matricula/cobertura";
 
 const id = z.string().trim().min(1).max(100);
 const texto = z.string().trim().min(5).max(4000);
-const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const data = DataCivilSchema;
 export const LinhaImpactoCoberturaAditivoSchema = z.object({
   cobrancaId: id,
   classificacao: z.enum(["AFETADA", "PRESERVADA"]),
