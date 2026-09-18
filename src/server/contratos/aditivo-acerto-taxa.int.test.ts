@@ -1,3 +1,4 @@
+import { resolverMensalVigenteTx } from "./aditivo-mensal-vigente";
 import { consultarEfeitosAditivo } from "./aditivo-efeitos-consulta";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TipoDestinacaoRecebimento } from "@prisma/client";
@@ -435,9 +436,19 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     const creditosAntes = await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } });
     expect(await vincularImpactoTaxaAditivo({ conjuntoId, cobrancaId, propostaAcertoId: acerto.dado.id })).toMatchObject({ ok: true, dado: { vinculada: true } });
     expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true, motivo: "Financeiro independente conferiu todas as taxas.", chaveIdempotencia: "q170-aprovar" })).toMatchObject({ ok: true, dado: { aprovada: true } });
+    const proximaMensalidade = () => prisma.$transaction(tx => resolverMensalVigenteTx(tx, {
+      matriculaId: base.matriculaId, inicioCobertura: new Date("2026-11-01"), fimCobertura: new Date("2026-11-30"),
+      valorOriginal: "300", valorNegociadoOriginal: "300", moedaOriginal: "CRC",
+    }));
+    await expect(proximaMensalidade()).rejects.toThrow("aplicação explícita");
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await completarImpactosTaxaAditivo({ conjuntoId })).toMatchObject({ ok: true, dado: { completo: true } });
     expect(await prisma.creditoMatricula.count({ where: { origemAcertoTaxaAditivoId: { not: null } } })).toBe(creditosAntes);
+    expect(await proximaMensalidade()).toMatchObject({ valorOriginal: "300", valorNegociado: "300", moeda: "CRC" });
+    authMock.mockResolvedValue({ user: { id: base.secretariaId } });
+    expect(await consultarEfeitosAditivo({ matriculaId: base.matriculaId, propostaId: alvo.propostaId })).toMatchObject({ ok: true, dado: { aplicado: false, aplicacoesCampos: [{ campo: "TAXA_VALOR", aplicada: true }] } });
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+
     expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { status: "COMPLETO", aplicado: true, impactos: expect.arrayContaining([expect.objectContaining({ cobrancaId, aplicado: true }), expect.objectContaining({ cobrancaId: preservadaId, aplicado: false })]) } });
   });
 
