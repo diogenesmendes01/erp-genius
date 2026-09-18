@@ -460,6 +460,7 @@ enum Papel {
 model Usuario {
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
+  vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
   resolucoesPresencaHistoricaMigracao ResolucaoDivergenciaPresencaHistoricaMigracao[] @relation("ResolvedorPresencaHistoricaMigracao")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("PreparadorPresencaHistoricaMigracao")
   decisoesPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[] @relation("DecisorPresencaHistoricaMigracao")
@@ -7723,5 +7724,22 @@ model DecisaoVencimentoAditivo {
   fotografiaHash String
   chaveIdempotencia String
   decididaEm DateTime @default(now())
+  aplicacao AplicacaoVencimentoAditivo?
   @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoVencimentoAditivo {
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoVencimentoAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorVencimentoAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  versaoCobrancaAntes Int
+  versaoCobrancaDepois Int
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
 }
