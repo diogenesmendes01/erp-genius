@@ -760,11 +760,26 @@ it.each(["SANDBOX", "PRODUCAO", "PRODUCAO_CADASTRO", "PRODUCAO_HORA", "PRODUCAO_
     expect(await aplicarVencimentoAditivo(aplicar)).toMatchObject({ ok: false });
     authMock.mockResolvedValue({ user: { id: fixture.adminId } });
     const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } });
+    const decisaoSalva = await prisma.decisaoVencimentoAditivo.findUniqueOrThrow({ where: { propostaId: salvo.id } });
+    const aplicacaoDireta = {
+      decisaoId: decisaoSalva.id, executorId: fixture.adminId, chaveIdempotencia: "sql-vencimento-obsoleto",
+      fotografiaHash: salvo.fotografiaHash, versaoCobrancaAntes: antes.versao, versaoCobrancaDepois: antes.versao + 1,
+      vencimentoAnterior: salvo.vencimentoAnterior, vencimentoNovo: salvo.vencimentoNovo,
+    };
+    await expect(prisma.$transaction(async tx => {
+      await tx.cobranca.update({ where: { id: antes.id }, data: { versao: { increment: 1 } } });
+      await tx.aplicacaoVencimentoAditivo.create({ data: aplicacaoDireta });
+    })).rejects.toThrow("fotografia");
+    expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
+    expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(0);
+    await expect(prisma.aplicacaoVencimentoAditivo.create({ data: { ...aplicacaoDireta, executorId: financeiro.id } })).rejects.toThrow("aprovador");
     const aplicada = await aplicarVencimentoAditivo(aplicar);
     expect(aplicada, JSON.stringify(aplicada)).toMatchObject({ ok: true });
     expect(await aplicarVencimentoAditivo(aplicar)).toEqual(aplicada);
     expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: salvo.cobrancaId } })).toEqual({ ...antes, vencimento: salvo.vencimentoNovo, versao: antes.versao + 1, status: "PENDENTE" });
     expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
+    expect(await aplicarVencimentoAditivo({ ...aplicar, chaveIdempotencia: "outra-chave" })).toMatchObject({ ok: false });
+    await expect(prisma.aplicacaoVencimentoAditivo.deleteMany()).rejects.toThrow("imutável");
     return;
   }
   if (taxaSemConsumidor) {
