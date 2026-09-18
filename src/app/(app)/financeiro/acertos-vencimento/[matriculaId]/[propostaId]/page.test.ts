@@ -9,7 +9,7 @@ vi.mock("./Formulario", () => ({ VencimentoFormulario: ({ modo }: { modo: string
 import Page from "./page";
 const entrada = () => ({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }), searchParams: Promise.resolve({ pagina: "2" }) });
 const dado = () => ({ versao: 2, vigenciaInicio: "2026-09-01T00:00:00Z", revisaoHash: "hash", pagina: 2, temProxima: true,
- alvo: { vencimentoProposto: "2026-11-15", pendencia: "Conferir antes de aplicar", cobranca: { id: "c1" } },
+ alvo: { podePreparar: true, vencimentoProposto: "2026-11-15", pendencia: "Conferir antes de aplicar", cobranca: { id: "c1" } },
  propostas: [{ id: "acerto1", estado: "APROVADA", fuso: "America/Sao_Paulo", vencimentoAnterior: "2026-10-15T12:00:00Z", vencimentoNovo: "2026-11-15T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
 });
 beforeEach(() => { vi.resetAllMocks(); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
@@ -36,4 +36,12 @@ it("não oferece preparação sem versão formalizada", async () => {
  mocks.versao.mockResolvedValue(null);
  const html = renderToStaticMarkup(await Page(entrada()));
  expect(html).toContain("Formalize as condições"); expect(mocks.consulta).not.toHaveBeenCalled();
+});
+
+it("não oferece preparação quando a cobrança identificada exige conferência", async () => {
+ const d = dado(); d.alvo.podePreparar = false;
+ mocks.consulta.mockResolvedValue({ ok: true, dado: d });
+ const html = renderToStaticMarkup(await Page(entrada()));
+ expect(html).not.toContain('data-acao="preparar"');
+ expect(html).toContain(d.alvo.pendencia);
 });
