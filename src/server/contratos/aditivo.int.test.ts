@@ -678,6 +678,8 @@ it("PRODUCAO_MENSAL_VENCIMENTO: v2 de preço herda o vencimento v1 aplicado e ex
   authMock.mockResolvedValue({ user: { id: fixture.adminId } });
   expect(await decidirVencimentoAditivo({ propostaId: propostaVencimento.dado.id, aprovada: true, motivo: "Vencimento conferido independentemente", chaveIdempotencia: "cadeia-v1-vencimento-decisao" })).toMatchObject({ ok: true });
   expect(await aplicarVencimentoAditivo({ propostaId: propostaVencimento.dado.id, chaveIdempotencia: "cadeia-v1-vencimento-aplicacao" })).toMatchObject({ ok: true });
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: v1.proposta.id })).toMatchObject({ ok: true, dado: { aplicacoesCampos: [{ campo: "PRIMEIRA_MENSALIDADE_VENCIMENTO", aplicada: true }] } });
 
   const v2 = await concluirAditivoMensal({
     vigenciaInicio: "2026-10-01T00:00:00Z", chaveIdempotencia: "cadeia-v2-preco",
@@ -691,6 +693,7 @@ it("PRODUCAO_MENSAL_VENCIMENTO: v2 de preço herda o vencimento v1 aplicado e ex
   const aplicadaV2 = await aplicarCondicoesFormalizadasAditivo({ ...v2.finalAlvo, revisaoHash: v2.revisaoHash, chaveIdempotencia: "cadeia-v2-preco-aplicacao" });
   expect(aplicadaV2).toMatchObject({ ok: true, dado: { versao: 2 } });
   expect(await prisma.$transaction(tx => resolverMensalVigenteTx(tx, consulta))).toMatchObject({ valorNegociado: "500", moeda: "CRC", versaoAditivo: { id: condicoesV2.dado.id, versao: 2 } });
+  expect(await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: v2.proposta.id })).toMatchObject({ ok: true, dado: { aplicacoesCampos: [{ campo: "MENSALIDADE_VALOR", aplicada: true }] } });
   expect(await prisma.aplicacaoVencimentoAditivo.count()).toBe(1);
   expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(1);
 });
