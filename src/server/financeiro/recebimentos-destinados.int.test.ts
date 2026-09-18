@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, StatusMatricula } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -20,6 +20,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { registrarPagamento, registrarRecebimentoDestinado } from "./acoes";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { consultarHistoricoRecebimentos } from "./recebimentos-historico";
+import { listarContextosRecebimentoDestinado } from "./consultas";
 import { proporUtilizacaoCredito } from "./uso-credito-proposta";
 import { decidirUtilizacaoCredito } from "./uso-credito-decisao";
 import { proporDevolucaoCredito, decidirDevolucaoCredito } from "./devolucao-credito";
@@ -32,7 +33,7 @@ beforeEach(async () => {
   financeiroId = (await criarUsuario([Papel.FINANCEIRO], "Caixa Q87")).id;
   const catalogo = await seedCatalogoMinimo();
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", sobrenome: "Q87", paisId: catalogo.pais.id } });
-  matriculaId = (await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda } })).id;
+  matriculaId = (await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda, status: StatusMatricula.AGUARDANDO } })).id;
   c1 = (await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", moeda, valorOriginal: 100, valorNegociado: 100, saldo: 100, vencimento: new Date("2099-10-01") } })).id;
   c2 = (await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", moeda, valorOriginal: 80, valorNegociado: 80, saldo: 80, vencimento: new Date("2099-11-01") } })).id;
   entrar(financeiroId);
@@ -60,6 +61,27 @@ it("divide um fato de caixa em dois períodos e crédito explícito, sem duplica
   expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c2 } })).saldo!.toFixed(2)).toBe("50.00");
   const credito = await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId } });
   expect(credito.valorInicial.toFixed(2)).toBe("20.00");
+});
+
+it("oferece matrícula AGUARDANDO como preparação e registra antecipação pública sem ativá-la", async () => {
+  const antes = await listarContextosRecebimentoDestinado();
+  expect(antes).toContainEqual(expect.objectContaining({ matriculaId, status: StatusMatricula.AGUARDANDO, cobrancas: expect.arrayContaining([expect.objectContaining({ id: c1 })]) }));
+
+  const antecipacao = {
+    ...entrada("q87-aguardando-antecipacao-0001"),
+    valorRecebido: 125,
+    comentario: "Antecipação documentada durante a preparação do contrato.",
+    destinos: [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: 125, evidencia: "Acordo e evidência da antecipação antes da ativação.", chaveIdempotencia: "credito-sem-destino" }],
+  };
+  const [primeiro, replay] = await Promise.all([registrarRecebimentoDestinado(antecipacao), registrarRecebimentoDestinado(antecipacao)]);
+  expect(primeiro.ok && replay.ok).toBe(true);
+  if (!primeiro.ok) throw new Error(primeiro.erro);
+  if (!replay.ok) throw new Error(replay.erro);
+  expect(primeiro.dado?.recebimentoId).toBe(replay.dado?.recebimentoId);
+  expect(await prisma.recebimento.count()).toBe(1);
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId }, select: { status: true } })).toEqual({ status: StatusMatricula.AGUARDANDO });
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } })).saldo?.toFixed(2)).toBe("100.00");
+  expect((await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId } })).valorInicial.toFixed(2)).toBe("125.00");
 });
 
 it("a guarda SQL recusa uma destinação de outro financeiro e faz rollback sem alterar o fato de caixa", async () => {
