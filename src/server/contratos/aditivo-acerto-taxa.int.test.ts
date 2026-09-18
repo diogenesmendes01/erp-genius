@@ -452,6 +452,21 @@ describe.sequential("Q170 impactos de todas as taxas", () => {
     expect(await consultarImpactosTaxaAditivo(alvo.propostaId)).toMatchObject({ ok: true, dado: { status: "COMPLETO", aplicado: true, impactos: expect.arrayContaining([expect.objectContaining({ cobrancaId, aplicado: true }), expect.objectContaining({ cobrancaId: preservadaId, aplicado: false })]) } });
   });
 
+  it("não aprova nem por SQL uma taxa afetada sem acerto vinculado", async () => {
+    const { conjuntoId } = await prepararDuasTaxas("q170-vinculo-obrigatorio");
+    authMock.mockResolvedValue({ user: { id: aprovador } });
+    expect(await decidirImpactosTaxaAditivo({ conjuntoId, aprovada: true,
+      motivo: "Conferência independente sem vínculos ainda preparados.", chaveIdempotencia: "q170-sem-vinculo" }))
+      .toMatchObject({ ok: false, erro: expect.stringContaining("Vincule") });
+    const conjunto = await prisma.conjuntoImpactosTaxaAditivo.findUniqueOrThrow({ where: { id: conjuntoId } });
+    await expect(prisma.decisaoConjuntoImpactosTaxaAditivo.create({ data: {
+      conjuntoId, decisorId: aprovador, aprovada: true, motivo: "Tentativa direta sem acerto vinculado.",
+      fotografiaHash: conjunto.fotografiaHash, chaveIdempotencia: "q170-sql-sem-vinculo",
+    } })).rejects.toThrow("Vincule");
+    expect(await prisma.decisaoConjuntoImpactosTaxaAditivo.count({ where: { conjuntoId } })).toBe(0);
+    expect(conjunto.status).toBe("PENDENTE");
+  });
+
   it("recusa replay com entrada alterada e vínculo de acerto de outra taxa", async () => {
     const { conjuntoId, preservadaId } = await prepararDuasTaxas("q170-replay");
     authMock.mockResolvedValue({ user: { id: financeiro } });
