@@ -88,3 +88,31 @@ export async function decidirVencimentoAditivo(input: unknown) {
     }, { timeout: 30000 });
   });
 }
+
+export async function aplicarVencimentoAditivo(input: unknown) {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
+    const d = z.object({ propostaId: id, chaveIdempotencia }).strict().parse(input);
+    return prisma.$transaction(async tx => {
+      const referencia = await tx.propostaVencimentoAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, select: { matriculaId: true } });
+      await bloquear(tx, referencia.matriculaId);
+      await autorFinanceiro(tx, autor.id, true);
+      const p = await tx.propostaVencimentoAditivo.findUniqueOrThrow({ where: { id: d.propostaId }, include: { decisao: { include: { aplicacao: true } } } });
+      if (!p.decisao?.aprovada || p.decisao.decisorId !== autor.id || p.preparadorId === autor.id) throw new ErroRegra("Aplicação exige o aprovador independente da proposta.");
+      if (p.decisao.aplicacao) {
+        if (p.decisao.aplicacao.executorId !== autor.id || p.decisao.aplicacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("Aplicação já registrada com outra chave.");
+        return { id: p.decisao.aplicacao.id, aplicada: true };
+      }
+      await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
+      // A trigger reconfere a fotografia e altera a cobrança na mesma transação.
+      const aplicacao = await tx.aplicacaoVencimentoAditivo.create({ data: {
+        decisaoId: p.decisao.id, executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia,
+        fotografiaHash: p.fotografiaHash, versaoCobrancaAntes: p.versaoCobranca,
+        versaoCobrancaDepois: p.versaoCobranca + 1, vencimentoAnterior: p.vencimentoAnterior, vencimentoNovo: p.vencimentoNovo,
+      } });
+      await registrarEvento(tx, { tipo: "VencimentoAditivoAplicado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: autor.id,
+        payload: { propostaId: p.id, aplicacaoId: aplicacao.id, cobrancaId: p.cobrancaId, fotografiaHash: p.fotografiaHash } });
+      return { id: aplicacao.id, aplicada: true };
+    }, { timeout: 30000 });
+  });
+}
