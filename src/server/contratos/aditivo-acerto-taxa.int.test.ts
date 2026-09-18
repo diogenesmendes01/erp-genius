@@ -681,10 +681,12 @@ describe("Q168 obsolescência de conjunto de cobertura (requer 238)", () => {
       evidencia: pai.evidencia,
     };
     const fotografiaHash = hashSubstituicao(fotografia);
+    const cicloFuturo = pai.cicloFuturo;
+    if (cicloFuturo === null) throw new Error("Fixture exige política de ciclo formalizada");
     return prisma.$transaction(async tx => {
       const clone = await tx.conjuntoImpactosCoberturaAditivo.create({ data: {
         matriculaId: pai.matriculaId, propostaAditivoId: pai.propostaAditivoId, conferenciaFinalId: pai.conferenciaFinalId, versaoCondicoesId: pai.versaoCondicoesId,
-        preparadorId: pai.preparadorId, escolhaCiclo: pai.escolhaCiclo, cicloFuturo: pai.cicloFuturo, hashFormalizado: pai.hashFormalizado,
+        preparadorId: pai.preparadorId, escolhaCiclo: pai.escolhaCiclo, cicloFuturo, hashFormalizado: pai.hashFormalizado,
         fotografia, fotografiaHash, motivo: pai.motivo, evidencia: pai.evidencia, chaveIdempotencia,
       } });
       for (const [indice, linha] of linhas.entries()) {
