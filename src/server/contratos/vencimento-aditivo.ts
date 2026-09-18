@@ -117,7 +117,8 @@ export async function aplicarVencimentoAditivo(input: unknown) {
         if (p.decisao.aplicacao.executorId !== autor.id || p.decisao.aplicacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("Aplicação já registrada com outra chave.");
         return { id: p.decisao.aplicacao.id, aplicada: true };
       }
-      await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
+      const versaoAplicavel = await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
+      if (versaoAplicavel.vigenciaInicio > new Date()) throw new ErroRegra("Aguarde a vigência aprovada antes de aplicar o vencimento.");
       // A trigger reconfere a fotografia e altera a cobrança na mesma transação.
       const aplicacao = await tx.aplicacaoVencimentoAditivo.create({ data: {
         decisaoId: p.decisao.id, executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia,
@@ -170,7 +171,7 @@ export async function consultarVencimentosAditivo(input: unknown) {
           motivo: p.motivo, evidencia: p.evidencia, criadaEm: p.criadaEm.toISOString(),
           estado: p.decisao?.aplicacao ? "APLICADA" : p.decisao ? (p.decisao.aprovada ? "APROVADA" : "REJEITADA") : "PENDENTE",
           podeDecidir: !p.decisao && aprova && p.preparadorId !== autor.id,
-          podeSolicitarAplicacao: !!p.decisao?.aprovada && !p.decisao.aplicacao && aprova && p.decisao.decisorId === autor.id,
+          podeSolicitarAplicacao: versao.vigenciaInicio <= new Date() && !!p.decisao?.aprovada && !p.decisao.aplicacao && aprova && p.decisao.decisorId === autor.id,
           decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, decididaEm: p.decisao.decididaEm.toISOString() } : null,
           aplicadaEm: p.decisao?.aplicacao?.aplicadaEm.toISOString() ?? null,
         })),
