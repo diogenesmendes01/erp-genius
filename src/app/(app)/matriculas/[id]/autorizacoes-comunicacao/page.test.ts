@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } })) }));
 vi.mock("@/server/comunicacoes-agenda/autorizacoes", () => ({
   consultarTelaAutorizacoesComunicacaoAcademica: vi.fn(async () => ({
     matricula: { id: "m/a", codigo: "M-1", alunoNome: "Aluno" }, responsaveis: [{ id: "r", nome: "Responsável" }],
@@ -12,5 +13,5 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import Page from "./page";
 describe("AutorizacoesComunicacaoPage", () => { it("mostra registro e navegação do histórico paginado", async () => {
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m/a" }), searchParams: Promise.resolve({ cursor: "anterior" }) }));
-  expect(html).toContain("Evidência registrada"); expect(html).toContain("/matriculas/m%2Fa/autorizacoes-comunicacao"); expect(html).toContain("cursor=proxima%2Fpagina");
+  expect(html).toContain("Evidência registrada"); expect(html).toContain("31/12/2025, 18:00 (horário exibido em America/Costa_Rica; origem UTC)"); expect(html).toContain("/matriculas/m%2Fa/autorizacoes-comunicacao"); expect(html).toContain("cursor=proxima%2Fpagina");
 }); });

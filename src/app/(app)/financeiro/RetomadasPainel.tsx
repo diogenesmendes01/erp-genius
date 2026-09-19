@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { solicitarRetomada, decidirRetomada } from "@/server/retomada/acoes";
 import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/retomada/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
@@ -17,7 +18,7 @@ const principal = "rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-wh
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 
-export function RetomadasPainel({ contexto, propostas, erroConsulta }: { contexto?: Contexto | null; propostas: Propostas; erroConsulta?: string | null }) {
+export function RetomadasPainel({ contexto, propostas, erroConsulta, preferenciaFusoExibicao = null }: { contexto?: Contexto | null; propostas: Propostas; erroConsulta?: string | null; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [opcao, setOpcao] = useState<Opcao | "">("");
   const [motivo, setMotivo] = useState("");
@@ -28,6 +29,10 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta }: { context
   const [ocupado, iniciar] = useTransition();
   const hoje = contexto?.dataMinimaReprogramacao;
   const podePropor = contexto?.status === "PAUSADO" && !contexto.impedimento && !contexto.propostaPendenteId && !erroConsulta;
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   function propor(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -67,7 +72,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta }: { context
     {contexto?.propostaPendenteId && <p className="text-sm text-gray-600">Já existe uma proposta aguardando decisão. Confira os detalhes abaixo.</p>}
 
     {podePropor && contexto && <form onSubmit={propor} className="space-y-4 border-t border-gray-200 pt-4">
-      {contexto.pausa && <p className="text-xs text-gray-500">Pausa em {data(contexto.pausa.criadoEm)}{contexto.pausa.motivo ? ` · ${contexto.pausa.motivo}` : ""}</p>}
+      {contexto.pausa && <p className="text-xs text-gray-500">Pausa em {instanteAdministrativo(contexto.pausa.criadoEm)}{contexto.pausa.motivo ? ` · ${contexto.pausa.motivo}` : ""}</p>}
       <fieldset disabled={ocupado} className="space-y-2">
         <legend className="mb-2 text-sm font-medium">Como devem ficar as parcelas restantes?</legend>
         {(["MANTER_VENCIMENTOS", "REPROGRAMAR_PARCELAS"] as const).map((valor) => <label key={valor} className="flex items-center gap-2 text-sm">
@@ -93,13 +98,13 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta }: { context
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="font-medium"><Link className="text-brand-700 hover:underline" href={`/alunos/${p.alunoId}/financeiro#retomada`}>{p.alunoNome}</Link> · {rotuloOpcao(p.opcao)}</h3>
-          <p className="text-xs text-gray-500">Proposta de {p.solicitante.nome} em {data(p.criadoEm)}</p>
+          <p className="text-xs text-gray-500">Proposta de {p.solicitante.nome} em {instanteAdministrativo(p.criadoEm)}</p>
         </div>
         <span className={`rounded-full px-2 py-1 text-xs ${p.status === "PENDENTE" ? "bg-amber-50 text-amber-800" : p.status === "APROVADA" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>{p.status === "PENDENTE" ? "Aguardando aprovação" : p.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</span>
       </div>
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
       {p.parcelas.length > 0 && <TabelaParcelas parcelas={p.parcelas} novaData={(parcela) => data(parcela.novoVencimento)} />}
-      {p.aprovador && <p className="text-sm text-gray-600">Decisão de {p.aprovador.nome}{p.decididoEm ? ` em ${data(p.decididoEm)}` : ""}: {p.motivoDecisao}</p>}
+      {p.aprovador && <p className="text-sm text-gray-600">Decisão de {p.aprovador.nome}{p.decididoEm ? ` em ${instanteAdministrativo(p.decididoEm)}` : ""}: {p.motivoDecisao}</p>}
       {p.podeDecidir && <div className="space-y-2">
         <label className="block text-sm">Motivo da decisão<textarea className={`${campo} mt-1`} rows={2} minLength={5} maxLength={2000} disabled={ocupado} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
         <div className="flex gap-2">
