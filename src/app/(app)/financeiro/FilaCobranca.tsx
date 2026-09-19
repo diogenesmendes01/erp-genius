@@ -14,9 +14,15 @@ import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
 import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "@/server/whatsapp/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
+
+function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
+  const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
 
 type Filtro = "aVencer" | "emAtraso" | "bloquear" | "promessas" | null;
 
@@ -62,12 +68,14 @@ export function FilaCobranca({
   dashs,
   regua,
   podeOperar,
+  preferenciaFusoExibicao = null,
 }: {
   itens: FilaCobrancaItem[];
   dashs: DashsCobranca;
   regua: DegrauFila[];
   podeOperar: boolean;
   podeBloquear: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<Filtro>(null);
@@ -369,11 +377,12 @@ export function FilaCobranca({
       {podeOperar && <div className="mt-5"><AcessoAulasPainel /></div>}
 
       {aberta && (
-        <DrawerDetalhe
+        <DetalheCobranca
           key={`${aberta.id}:${aberta.cicloRegua}`}
           item={aberta}
           regua={regua}
           podeOperar={podeOperar}
+          preferenciaFusoExibicao={preferenciaFusoExibicao}
           onClose={() => setAberta(null)}
           onEnviarApi={() => enviarViaApi(aberta)}
           onPrepararManual={(texto) => prepararEnvioManual(aberta, texto)}
@@ -441,10 +450,11 @@ const ROTULO_ENVIO: Record<string, string> = {
   CANCELADA: "cancelada",
 };
 
-function DrawerDetalhe({
+export function DetalheCobranca({
   item,
   regua,
   podeOperar,
+  preferenciaFusoExibicao,
   onClose,
   onEnviarApi,
   onPrepararManual,
@@ -455,6 +465,7 @@ function DrawerDetalhe({
   item: FilaCobrancaItem;
   regua: DegrauFila[];
   podeOperar: boolean;
+  preferenciaFusoExibicao: string | null;
   onClose: () => void;
   onEnviarApi: () => void;
   onPrepararManual: (texto: string) => Promise<string | null>;
@@ -540,7 +551,7 @@ function DrawerDetalhe({
             </div>
             {item.respondeuEm && (
               <div className="mb-2 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-800">
-                O contato respondeu em {new Date(item.respondeuEm).toLocaleDateString("pt-BR")} — trate a conversa antes de cobrar de novo.
+                O contato respondeu em {textoInstanteOperacional(item.respondeuEm, preferenciaFusoExibicao)} — trate a conversa antes de cobrar de novo.
               </div>
             )}
             <textarea
@@ -579,10 +590,10 @@ function DrawerDetalhe({
           <div className="mx-5 mb-4 text-xs text-gray-600">
             Braço API · {item.envio.passo ?? "—"}: {ROTULO_ENVIO[item.envio.status] ?? item.envio.status}
             {item.envio.motivo && <span className="text-gray-500"> ({item.envio.motivo})</span>}
-            {item.envio.em && <span className="text-gray-400"> · {new Date(item.envio.em).toLocaleString("pt-BR")}</span>}
+            {item.envio.em && <span className="text-gray-400"> · {textoInstanteOperacional(item.envio.em, preferenciaFusoExibicao)}</span>}
           </div>
         )}
-        {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-800">Lembretes suspensos para conferência até {new Date(item.conferenciaAte).toLocaleString("pt-BR")}. O pagamento ainda não foi confirmado.</p>}
+        {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-800">Lembretes suspensos para conferência até {textoInstanteOperacional(item.conferenciaAte, preferenciaFusoExibicao)}. O pagamento ainda não foi confirmado.</p>}
         {item.estado === "promessa" && item.promessaAte && (
           <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
             Promessa de pagamento até {new Date(item.promessaAte).toLocaleDateString("pt-BR")} — fora da fila até lá.

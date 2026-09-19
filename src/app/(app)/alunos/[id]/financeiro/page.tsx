@@ -13,6 +13,7 @@ import { FichaFinanceira, type FichaFinanceiraDados } from "./FichaFinanceira";
 import { ConcluirMatriculas } from "./ConcluirMatriculas";
 import { RetomadasPainel } from "@/app/(app)/financeiro/RetomadasPainel";
 import { listarContextoRetomada, listarPropostasRetomada } from "@/server/retomada/consultas";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 export default async function FichaFinanceiraPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,10 +35,11 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     if (!resumo) notFound();
     return <ResumoFinanceiroComercial dados={resumo} />;
   }
-  const [f, informes, concessoes, contextoRetomada, propostasRetomada] = await Promise.all([
+  const [f, informes, concessoes, contextoRetomada, propostasRetomada, preferencia] = await Promise.all([
     obterFichaFinanceira(id, usuario), listarInformesPagamento(id),
     prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } }),
     listarContextoRetomada(id), listarPropostasRetomada(id),
+    consultarPreferenciaFusoEquipe(),
   ]);
   if (!f) notFound();
   const podeVerRegularizacaoIntegral = usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
@@ -143,7 +145,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
       propostas={propostasRetomada.ok ? propostasRetomada.dado ?? [] : []}
       erroConsulta={!contextoRetomada.ok ? contextoRetomada.erro : !propostasRetomada.ok ? propostasRetomada.erro : null}
     />}
-    <AcessoAulasPainel alunoId={id} /><InformesPagamento informes={informes} />
+    <AcessoAulasPainel alunoId={id} /><InformesPagamento informes={informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
     <ConcluirMatriculas matriculas={f.aluno.matriculas.filter((m) => m.status === "AGUARDANDO" || m.status === "RASCUNHO").map((m) => ({ id: m.id, nome: `${m.codigo ?? "Matrícula"} · ${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} />
     {tem(Papel.SECRETARIA_ACADEMICA) && f.aluno.matriculas.map((m) => <Link key={m.id} className="block text-sm text-brand-700 underline" href={`/secretaria?matriculaId=${m.id}`}>Consultar cadastro e confirmação documental da matrícula {m.codigo}</Link>)}
   </div>;
