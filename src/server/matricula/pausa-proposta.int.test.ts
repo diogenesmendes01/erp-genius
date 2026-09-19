@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
 import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
@@ -17,18 +18,81 @@ vi.mock("@/server/_shared", async (original) => {
 import { prisma } from "@/lib/prisma";
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { prepararFixtureSubstituicaoContratual } from "@/test/substituicao-contratual";
+import { preservarConclusaoAssinaturaTx } from "@/server/contratos/conclusao-assinatura-tx";
+import { hashPrevia } from "@/server/contratos/previa-estado";
+import { confirmarAceiteOriginal, consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { solicitarPausaMatriculas, decidirPropostaPausaMatriculas } from "./pausa-proposta";
 import { aplicarPausaMatriculasTx } from "./pausa-execucao";
 import { aplicarMovimentacaoContratual } from "./aplicar-movimentacao";
 import { pausarAluno, encerrarAluno } from "@/server/alunos/acoes";
+import { concluirMatricula } from "./acoes";
 import { preverRetomadaMatriculas } from "./retomada-previa";
 import { solicitarRetomadaMatriculas, decidirRetomadaMatriculas } from "./retomada-proposta";
 import { aplicarRetomadaMatriculasTx } from "./retomada-execucao";
 import { listarPropostasMovimentacao, obterDetalhesMovimentacao } from "./movimentacoes-consultas";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { prepararLoteMigracao } from "@/server/migracao/acoes";
+import { aplicarVinculoMigracao } from "@/server/migracao/aplicar-vinculo";
+import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
+import { proporEntradaFinanceiraHistoricaMigracao, decidirEntradaFinanceiraHistoricaMigracao } from "@/server/migracao/entrada-financeira-historica";
 let alunoId: string, matriculaId: string, outraId: string, secId: string, finId: string;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const input = () => ({ matriculaIds: [matriculaId], dataEfetiva: "2026-09-15", motivo: "Pausa solicitada pelo aluno", chaveIdempotencia: "pausa-selecao-001" });
 const decisao = { aprovar: true, motivo: "Condições e períodos conferidos" };
+
+/**
+ * A fonte civil dos quatro cenários de retomada é uma obrigação M01 real:
+ * vínculo conferido, mapa de origem criado pela aplicação e decisão financeira
+ * independente. Os demais testes preservam a fixture enxuta original.
+ */
+async function prepararMatriculaM01ComMensalidade(dataCivil: string, cobertura: { inicio: string; fim: string }, valor = "100") {
+  const catalogo = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId }, include: { produto: true } });
+  const origem = `M01-RETOMADA-${randomUUID()}`;
+  const alunoOrigemId = `aluno-${randomUUID()}`;
+  const matriculaOrigemId = `matricula-${randomUUID()}`;
+  const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.produto.idiomaId, codigo: `A${Date.now()}-${Math.floor(Math.random() * 1000)}`, ordem: 1 } });
+  const turma = await prisma.turma.create({ data: { modalidadeId: catalogo.produto.modalidadeId, nivelId: nivel.id, codigo: `M01-${randomUUID()}` } });
+  entrar(secId);
+  const vinculo = await prepararLoteMigracao({ origem, chaveLote: `vinculo-${randomUUID()}`, linhas: [{
+    linhaOrigem: "vinculo!2", tipoEntrada: "VINCULO_MATRICULA",
+    aluno: { id: alunoOrigemId, nome: "Aluno retomada", email: "retomada@example.test", documento: "DOC-RETOMADA", pais: "CR", fuso: "America/Costa_Rica" },
+    turma: { id: "turma-retomada", codigo: turma.codigo },
+    matricula: { id: matriculaOrigemId, produtoOrigem: "produto-retomada", situacao: "ATIVA", inicio: cobertura.inicio, moeda: "CRC", pais: "CR" },
+    alocacao: { inicio: cobertura.inicio }, consentimentoOrigem: "fonte-fixture",
+  }] });
+  if (!vinculo.ok || !vinculo.dado) throw new Error(vinculo.ok ? "Vínculo M01 sem retorno" : vinculo.erro);
+  const linhaVinculo = await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { loteId: vinculo.dado.loteId } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Pausa M01", paisId: catalogo.paisId } });
+  await prisma.mapaOrigemAlunoMigracao.create({ data: { origem, alunoOrigemId, alunoId: aluno.id } });
+  await revisarCorrespondenciaProdutoMigracao({ origem, produtoOrigemId: "produto-retomada", produtoId: catalogo.produtoId, paisId: catalogo.paisId, moeda: "CRC", ativa: true });
+  await revisarCorrespondenciaTurmaMigracao({ origem, turmaOrigemId: "turma-retomada", turmaId: turma.id, ativa: true });
+  await revisarCorrespondenciaStatusMatriculaMigracao({ origem, statusOrigem: "ATIVA", statusDestino: "ATIVA", ativa: true });
+  const ensaio = await ensaiarVinculoMigracao({ linhaId: linhaVinculo.id });
+  if (!ensaio.ok) throw new Error(ensaio.erro);
+  const ensaioSalvo = await prisma.ensaioVinculoMigracao.findFirstOrThrow({ where: { linhaId: linhaVinculo.id } });
+  const aplicacaoVinculo = await aplicarVinculoMigracao({ linhaId: linhaVinculo.id, ensaioId: ensaioSalvo.id, entradaHash: linhaVinculo.entradaHash, contextoHash: ensaioSalvo.contextoHash, fusoReferencia: "America/Costa_Rica", semanticaFim: "LIMITE_EXCLUSIVO", inicioAlocacao: cobertura.inicio, fimAlocacao: null, diaVencimento: 10, mesesPlano: 1, evidenciaContrato: { fonte: "contrato" }, evidenciaPagamento: { fonte: "pagamento" }, fatos: [{ tipo: "ATIVACAO", data: cobertura.inicio, evidencia: { fonte: "ativo" } }] });
+  if (!aplicacaoVinculo.ok || !aplicacaoVinculo.dado) throw new Error(aplicacaoVinculo.ok ? "Aplicação M01 sem retorno" : aplicacaoVinculo.erro);
+  alunoId = aluno.id;
+  matriculaId = aplicacaoVinculo.dado.matriculaId;
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { referenciaCobertura: "MES_CIVIL" } });
+
+  const financeiro = await prepararLoteMigracao({ origem, chaveLote: `financeiro-${randomUUID()}`, linhas: [{
+    linhaOrigem: "financeiro!2", tipoEntrada: "FINANCEIRO_HISTORICO",
+    aluno: { id: alunoOrigemId, nome: "Aluno retomada", email: "retomada@example.test", documento: "DOC-RETOMADA", pais: "CR", fuso: "America/Costa_Rica" },
+    matricula: { id: matriculaOrigemId, produtoOrigem: "produto-retomada", situacao: "ATIVA", inicio: cobertura.inicio, moeda: "CRC", pais: "CR" },
+    financeiro: { id: `financeiro-${randomUUID()}`, tipo: "MENSALIDADE", valor, moeda: "CRC", situacao: "PENDENTE" }, consentimentoOrigem: "fonte-fixture",
+  }] });
+  if (!financeiro.ok || !financeiro.dado) throw new Error(financeiro.ok ? "Financeiro M01 sem retorno" : financeiro.erro);
+  const linhaFinanceira = await prisma.linhaPreparacaoMigracao.findFirstOrThrow({ where: { loteId: financeiro.dado.loteId } });
+  entrar(finId);
+  const proposta = await proporEntradaFinanceiraHistoricaMigracao({ linhaId: linhaFinanceira.id, tipoCobranca: "MENSALIDADE", valor, moeda: "CRC", vencimento: dataCivil, competencia: dataCivil.slice(0, 7), pagador: { tipo: "ALUNO", dados: { nome: "Pagador retomada", paisId: catalogo.paisId } }, evidencia: { planilha: "financeiro!2" }, chaveIdempotencia: randomUUID() });
+  if (!proposta.ok || !proposta.dado) throw new Error(proposta.ok ? "Proposta M01 sem retorno" : proposta.erro);
+  entrar(secId);
+  const decisaoM01 = await decidirEntradaFinanceiraHistoricaMigracao({ propostaId: proposta.dado.id, aprovada: true, motivo: "Obrigação histórica conferida independentemente.", chaveIdempotencia: randomUUID() });
+  if (!decisaoM01.ok || !decisaoM01.dado) throw new Error(decisaoM01.ok ? "Decisão M01 sem retorno" : decisaoM01.erro);
+  return prisma.cobranca.update({ where: { id: decisaoM01.dado.cobrancaId }, data: { coberturaInicio: new Date(`${cobertura.inicio}T00:00:00Z`), coberturaFim: new Date(`${cobertura.fim}T00:00:00Z`) } });
+}
 beforeEach(async () => {
   await truncarBanco();
   await prisma.configuracaoOperacional.create({ data: { fusoInstitucional: "America/Sao_Paulo" } });
@@ -107,8 +171,7 @@ describe("proposta de pausa com contratos imutáveis e decisão independente", (
   });
   it.each([40, 100])("ação pública preserva recebimento de %s na pausa e retomada sem duplicar", async (recebido) => {
     const quitada = recebido === 100;
-    const paga = await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", status: "PENDENTE", valorOriginal: 100, valorNegociado: 100, valorRecebido: 0, saldo: 100, moeda: "CRC",
-      vencimento: new Date("2000-02-05"), pagoEm: new Date("1999-12-28"), coberturaInicio: new Date("2000-02-01"), coberturaFim: new Date("2000-02-29") } });
+    const paga = await prisma.cobranca.update({ where: { id: (await prepararMatriculaM01ComMensalidade("2000-02-05", { inicio: "2000-02-01", fim: "2000-02-29" })).id }, data: { pagoEm: new Date("1999-12-28") } });
     const recebimento = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: paga.id, chaveIdempotencia: "antecipacao-teste-001", autorId: finId, valorRecebido: recebido, forma: "DINHEIRO", dataPagamento: paga.pagoEm!, evidencia: "Antecipação conferida para pausa e retomada." }));
     const r = await solicitarPausaMatriculas(alunoId, { ...input(), dataEfetiva: "2000-01-01" });
     if (!r.ok) throw new Error(r.erro);
@@ -383,9 +446,7 @@ describe("núcleo transacional de execução de pausa", () => {
     } })).rejects.toThrow();
   });
   it("prévia da retomada usa somente a suspensão selecionada e não modifica a cobrança", async () => {
-    const c = await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100,
-      saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-05"), coberturaInicio: new Date("2026-10-01"), coberturaFim: new Date("2026-10-31"),
-    } });
+    const c = await prepararMatriculaM01ComMensalidade("2026-10-05", { inicio: "2026-10-01", fim: "2026-10-31" });
     const id = await aprovar();
     await executar(id);
     const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } });
@@ -448,9 +509,7 @@ describe("núcleo transacional de execução de pausa", () => {
     expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe("PAUSADA");
   });
   it("aplica retomada uma vez, preserva valores e reavalia restrição por vencimento mantido", async () => {
-    const c = await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", valorOriginal: 100, valorNegociado: 100,
-      saldo: 100, moeda: "CRC", vencimento: new Date("2026-10-05T13:00:00Z"), coberturaInicio: new Date("2026-10-01"), coberturaFim: new Date("2026-10-31"),
-    } });
+    const c = await prepararMatriculaM01ComMensalidade("2026-10-05", { inicio: "2026-10-01", fim: "2026-10-31" });
     const outra = await prisma.matricula.findUniqueOrThrow({ where: { id: outraId } });
     const pausa = await aprovar();
     await executar(pausa);
@@ -483,6 +542,64 @@ describe("núcleo transacional de execução de pausa", () => {
     expect(await prisma.movimentacaoAluno.count({ where: { matriculaId, tipo: "REATIVACAO" } })).toBe(1);
     expect(await prisma.movimentacaoAluno.count({ where: { matriculaId: outraId } })).toBe(0);
     expect(await prisma.recebimento.count()).toBe(0);
+  });
+  it("persiste a âncora versionada ao reprogramar a mesma data civil e a recupera na próxima consulta", async () => {
+    await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "Pacific/Kiritimati" } });
+    const cobrancaInicial = await prepararMatriculaM01ComMensalidade("2099-03-01", { inicio: "2099-03-01", fim: "2099-03-31" });
+    const pausa = await aprovar();
+    await executar(pausa);
+    entrar(secId);
+    const proposta = await solicitarRetomadaMatriculas(alunoId, {
+      retorno: "2099-03-15", motivo: "Reprogramação civil confirmada para a mesma data.", chaveIdempotencia: "retomada-mesma-data-versionada",
+      matriculas: [{ matriculaId, vencimentos: { opcao: "REPROGRAMAR_PARCELAS", datas: [{ cobrancaId: cobrancaInicial.id, vencimento: "2099-03-01" }] } }],
+    });
+    if (!proposta.ok || !proposta.dado) throw new Error(proposta.ok ? "Retomada sem retorno" : proposta.erro);
+    entrar(finId);
+    expect((await decidirRetomadaMatriculas(proposta.dado.propostaId, decisao)).ok).toBe(true);
+    await prisma.$transaction((tx) => aplicarRetomadaMatriculasTx(tx, proposta.dado!.propostaId, secId, new Date("2099-03-15T12:00:00Z")));
+
+    const propostaAplicada = await prisma.propostaRetomadaMatriculas.findUniqueOrThrow({ where: { id: proposta.dado.propostaId } });
+    expect(propostaAplicada.snapshot).toMatchObject({ matriculas: [{ periodos: [expect.objectContaining({ cobrancaId: cobrancaInicial.id, vencimento: "2099-03-01", versaoCobrancaAntes: cobrancaInicial.versao + 1 })] }] });
+    const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaInicial.id }, select: { id: true, vencimento: true, versao: true, ...incluirFonteVencimentoCivil } });
+    const trilhas = await carregarTrilhasVencimentoCivil(prisma, [cobranca.id], [matriculaId]);
+    expect(referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: trilhas.vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: trilhas.m01PorCobranca.get(cobranca.id), retomadasReprogramadas: trilhas.retomadasReprogramadas })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-03-01", fuso: null, origem: "RETOMADA_REPROGRAMADA" });
+  });
+  it("recupera a data civil UTC+14 da emissão real sem inferir o fuso atual", async () => {
+    // Esta fixture percorre contratação, condições e emissão pública. Ela grava
+    // 2099-10-05T12:00 Pacific/Kiritimati como 2099-10-04T22Z.
+    await truncarBanco();
+    const fixture = await prepararFixtureSubstituicaoContratual(authMock, { semSubstituicao: true, primeiraMensalidadeExigida: true, ambiente: "PRODUCAO", fusoInstitucional: "Pacific/Kiritimati" });
+    const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } }, tentativas: { orderBy: { numero: "desc" }, take: 1 } } });
+    const participantes = (processo.artefato.conferencia.snapshot as { participantes: Array<{ papel: "ALUNO"; identidade: unknown }> }).participantes;
+    const tentativa = processo.tentativas[0];
+    if (!tentativa) throw new Error("Tentativa de assinatura ausente.");
+    const conclusao = await prisma.$transaction((tx) => preservarConclusaoAssinaturaTx(tx, { processoId: processo.id, referenciaExterna: fixture.referenciaExternaFonte, originalHash: processo.artefato.pdfHash, concluidaEm: tentativa.iniciadaEm.toISOString(), pdfAssinado: Buffer.from("%PDF-assinado-fixture-UTC14"), evidencias: Buffer.from("assinatura simulada exclusivamente para teste UTC+14"), assinaturas: participantes.map((p) => ({ papel: p.papel, identidadeHash: hashPrevia(p.identidade), referenciaAssinatura: `assinatura-${p.papel}`, assinadaEm: tentativa.iniciadaEm.toISOString() })) }));
+    entrar(fixture.secretariaId);
+    const aceite = await consultarAceiteOriginal({ matriculaId: fixture.matriculaId, conclusaoId: conclusao.id });
+    if (!aceite.ok || !aceite.dado?.revisao) throw new Error("Revisão de aceite UTC+14 ausente.");
+    expect(await confirmarAceiteOriginal({ matriculaId: fixture.matriculaId, conclusaoId: conclusao.id, revisaoHash: aceite.dado.revisao.hash, evidenciasConferidas: true, motivo: "Aceite conferido para validar vencimento civil UTC+14.", chaveIdempotencia: "aceite-utc14" })).toMatchObject({ ok: true });
+    const caixa = await criarUsuario([Papel.FINANCEIRO]);
+    for (const cobrancaPendente of await prisma.cobranca.findMany({ where: { matriculaId: fixture.matriculaId } })) {
+      await prisma.$transaction((tx) => receberTx(tx, { cobrancaId: cobrancaPendente.id, autorId: caixa.id, valorRecebido: (cobrancaPendente.saldo ?? cobrancaPendente.valorNegociado).toNumber(), forma: "TRANSFERENCIA", chaveIdempotencia: `pagamento-utc14-${cobrancaPendente.id}`, dataPagamento: new Date("2099-09-01T12:00:00Z"), evidencia: "Recebimento de teste conferido antes da ativação." }));
+    }
+    const matriculaPreparada = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
+    await prisma.politicaComissao.create({ data: { paisId: matriculaPreparada.paisId, produtoId: matriculaPreparada.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: matriculaPreparada.moeda, vigenteEm: new Date("2000-01-01T00:00:00Z"), criadaPorId: fixture.adminId } });
+    entrar(fixture.adminId);
+    expect(await concluirMatricula(fixture.matriculaId)).toMatchObject({ ok: true });
+    const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
+    expect(matricula.status).toBe("ATIVA");
+    const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE" }, select: { id: true, vencimento: true, versao: true, ...incluirFonteVencimentoCivil } });
+    expect(cobranca.vencimento).toEqual(new Date("2099-10-04T22:00:00.000Z"));
+    entrar(fixture.secretariaId);
+    const pausa = await solicitarPausaMatriculas(matricula.alunoId, { matriculaIds: [fixture.matriculaId], dataEfetiva: "2099-09-15", motivo: "Pausa anterior à cobertura emitida para conferir referência civil.", chaveIdempotencia: "pausa-kiritimati-emissao" });
+    if (!pausa.ok || !pausa.dado) throw new Error(pausa.ok ? "Pausa sem retorno" : pausa.erro);
+    const pausaId = pausa.dado.propostaId;
+    entrar(fixture.adminId);
+    expect((await decidirPropostaPausaMatriculas(pausaId, decisao)).ok).toBe(true);
+    await prisma.$transaction((tx) => aplicarPausaMatriculasTx(tx, pausaId, fixture.secretariaId, new Date("2099-09-15T12:00:00Z")));
+    entrar(fixture.secretariaId);
+    const previa = await preverRetomadaMatriculas(matricula.alunoId, { retorno: "2099-11-01", matriculas: [{ matriculaId: fixture.matriculaId, vencimentos: { opcao: "MANTER_VENCIMENTOS" } }] });
+    expect(previa).toMatchObject({ ok: true, dado: { matriculas: [expect.objectContaining({ pendencias: [], periodos: [expect.objectContaining({ cobrancaId: cobranca.id, vencimentoAnterior: "2099-10-05", vencimento: "2099-10-05" })] })] } });
   });
 });
 

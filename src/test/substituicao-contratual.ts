@@ -21,7 +21,7 @@ function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
 
 /** Fluxo contratual real no banco descartável. Apenas sessão e resultado do
  * transporte são simulados; prévia, PDF, emissão e revisões usam os serviços. */
-export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; semSubstituicao?: boolean; valorServicoMensal?: string } = {}) {
+export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string } = {}) {
   const ambiente = opcoes.ambiente ?? "SANDBOX";
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const admin = await criarUsuario(["ADMINISTRADOR"]);
@@ -29,7 +29,7 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   const vendedor = await criarUsuario(["VENDEDOR"]);
   const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
   entrar(secretaria.id);
-  await prisma.configuracaoOperacional.create({ data: { prazoReservaMinutos: 60, fusoInstitucional: "UTC", exigirPrimeiraMensalidade: opcoes.primeiraMensalidadeExigida ?? false } });
+  await prisma.configuracaoOperacional.create({ data: { prazoReservaMinutos: 60, fusoInstitucional: opcoes.fusoInstitucional ?? "UTC", exigirPrimeiraMensalidade: opcoes.primeiraMensalidadeExigida ?? false } });
   const c = await seedCatalogoMinimo();
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const nivel = await prisma.nivel.create({ data: { idiomaId: c.produto.idiomaId, codigo: "Q116", ordem: 1 } });

@@ -7,6 +7,9 @@ import { prepararCoberturasRetomada } from "./retomada-cobertura";
 import { recebimentoPreservavel } from "./recebimento-preservavel";
 import type { PreviaRetomadaMatriculasInput } from "./retomada-schema";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+
+type PeriodoRetomadaComVersao = ReturnType<typeof prepararCoberturasRetomada>[number] & { versaoCobrancaAntes: number };
 
 export async function carregarPreviaRetomadaTx(tx: Prisma.TransactionClient, alunoId: string, dados: PreviaRetomadaMatriculasInput, usuarioId: string) {
   const ids = dados.matriculas.map((m) => m.matriculaId).sort();
@@ -18,11 +21,12 @@ export async function carregarPreviaRetomadaTx(tx: Prisma.TransactionClient, alu
         id: true, codigo: true, status: true, referenciaCobertura: true, dataReferenciaCobertura: true,
         itensPropostaPausa: { where: { proposta: { status: "APLICADA" } }, select: { id: true, proposta: { select: { id: true, dataEfetiva: true, aplicadaEm: true } } } },
         cobrancas: { where: { tipo: "MENSALIDADE" }, orderBy: { id: "asc" }, select: {
-          id: true, status: true, coberturaInicio: true, coberturaFim: true, vencimento: true, suspensaPorItemPausaId: true,
-          valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true, saldo: true, valorNegociado: true, destinacoesRecebimento: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } },
+          id: true, status: true, coberturaInicio: true, coberturaFim: true, vencimento: true, versao: true, suspensaPorItemPausaId: true,
+          valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true, saldo: true, valorNegociado: true, destinacoesRecebimento: { select: { id: true } }, informes: { where: { status: "A_CONFERIR" }, select: { id: true } }, ...incluirFonteVencimentoCivil,
         } },
       } });
       if (matriculas.length !== ids.length) throw new ErroRegra("A titularidade mudou durante a conferência.");
+      const trilhasVencimento = await carregarTrilhasVencimentoCivil(tx, matriculas.flatMap((m) => m.cobrancas.map((c) => c.id)), ids);
       const fusoInstitucional = await carregarFusoInstitucionalTx(tx);
       return { alunoId, retorno: dados.retorno, fusoInstitucional, somentePrevia: true as const, matriculas: matriculas.map((m) => {
         const pendencias: string[] = [];
@@ -43,15 +47,26 @@ export async function carregarPreviaRetomadaTx(tx: Prisma.TransactionClient, alu
           if (c.informes.length || (!recebimentoConferido && (c.status !== "CANCELADA" || c.valorRecebido?.greaterThan(0) || c.destinacoesRecebimento.length)))
             pendencias.push(`SUSPENSAO_A_CONFERIR:${c.id}`);
         }
-        let periodos: ReturnType<typeof prepararCoberturasRetomada> = [];
+        const vencimentosSuspensos = new Map<string, string>();
+        for (const c of suspensas) {
+          const referencia = referenciaVencimentoCivil({
+            ...c,
+            aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(c.id),
+            aplicacoesM01: trilhasVencimento.m01PorCobranca.get(c.id),
+            retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas,
+          });
+          if (referencia.estado !== "CONFIRMADO") pendencias.push(`VENCIMENTO_A_CONFERIR:${c.id}`);
+          else vencimentosSuspensos.set(c.id, referencia.dataCivil);
+        }
+        let periodos: PeriodoRetomadaComVersao[] = [];
         if (pendencias.length === 0) {
           try {
             periodos = prepararCoberturasRetomada({ retorno: dados.retorno,
               regra: m.referenciaCobertura === "MES_CIVIL" ? { referencia: "MES_CIVIL" } : { referencia: "CICLO_MATRICULA", dataReferencia: m.dataReferenciaCobertura!.toISOString().slice(0, 10) },
-              suspensos: suspensas.map((c) => ({ cobrancaId: c.id, cobertura: { inicio: c.coberturaInicio!.toISOString().slice(0, 10), fim: c.coberturaFim!.toISOString().slice(0, 10) }, vencimento: c.vencimento.toISOString().slice(0, 10) })),
+              suspensos: suspensas.map((c) => ({ cobrancaId: c.id, cobertura: { inicio: c.coberturaInicio!.toISOString().slice(0, 10), fim: c.coberturaFim!.toISOString().slice(0, 10) }, vencimento: vencimentosSuspensos.get(c.id)! })),
               mantidos: mantidas.map((c) => ({ inicio: c.coberturaInicio!.toISOString().slice(0, 10), fim: c.coberturaFim!.toISOString().slice(0, 10) })),
               vencimentos: dados.matriculas.find((i) => i.matriculaId === m.id)!.vencimentos,
-            });
+            }).map((periodo) => ({ ...periodo, versaoCobrancaAntes: suspensas.find((c) => c.id === periodo.cobrancaId)!.versao }));
           } catch (erro) {
             pendencias.push(erro instanceof Error ? erro.message : "Cobertura exige conferência.");
           }

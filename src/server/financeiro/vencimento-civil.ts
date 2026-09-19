@@ -33,7 +33,7 @@ type FonteCobranca = {
   aplicacoesAditivoVencimento?: Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>;
   aplicacoesAcertoTaxaAditivo?: Array<{ id: string; aplicadaEm: Date; versaoAnterior: number; vencimentoAnterior: Date; vencimentoNovo: Date }>;
   aplicacoesM01?: Array<{ id: string; aplicadaEm: Date; vencimento: Date }>;
-  retomadasReprogramadas?: Array<{ id: string; aplicadaEm: Date; periodos: Array<{ cobrancaId: string; vencimentoAnterior: string; vencimento: string }> }>;
+  retomadasReprogramadas?: Array<{ id: string; aplicadaEm: Date; periodos: Array<{ cobrancaId: string; vencimentoAnterior: string; vencimento: string; versaoCobrancaDepois?: number | null }> }>;
 };
 
 const memoriaEntrada = z.object({
@@ -52,7 +52,7 @@ const memoriaFechamento = z.object({
 
 const snapshotRetomada = z.object({
   matriculas: z.array(z.object({
-    periodos: z.array(z.object({ cobrancaId: z.string().min(1), vencimentoAnterior: DataCivilSchema, vencimento: DataCivilSchema }).passthrough()),
+    periodos: z.array(z.object({ cobrancaId: z.string().min(1), vencimentoAnterior: DataCivilSchema, vencimento: DataCivilSchema, versaoCobrancaAntes: z.number().int().positive().optional() }).passthrough()),
   }).passthrough()),
 }).passthrough();
 
@@ -70,7 +70,11 @@ export function periodosRetomadaReprogramada(snapshot: unknown, entrada: unknown
   const comando = entradaRetomada.safeParse(entrada);
   if (!foto.success || !comando.success) return [];
   const reprogramados = new Map(comando.data.matriculas.flatMap((m) => m.vencimentos.opcao === "REPROGRAMAR_PARCELAS" ? m.vencimentos.datas.map((d) => [d.cobrancaId, d.vencimento] as const) : []));
-  return foto.data.matriculas.flatMap((m) => m.periodos).filter((p) => reprogramados.get(p.cobrancaId) === p.vencimento);
+  return foto.data.matriculas.flatMap((m) => m.periodos)
+    .filter((p) => reprogramados.get(p.cobrancaId) === p.vencimento)
+    .map((p) => p.versaoCobrancaAntes
+      ? { cobrancaId: p.cobrancaId, vencimentoAnterior: p.vencimentoAnterior, vencimento: p.vencimento, versaoCobrancaDepois: p.versaoCobrancaAntes + 1 }
+      : { cobrancaId: p.cobrancaId, vencimentoAnterior: p.vencimentoAnterior, vencimento: p.vencimento });
 }
 
 type ClienteConsultaVencimento = Prisma.TransactionClient | PrismaClient;
@@ -81,13 +85,8 @@ type ClienteConsultaVencimento = Prisma.TransactionClient | PrismaClient;
  * o resultado deste mapa antes de chamar `referenciaVencimentoCivil`.
  */
 export async function carregarTrilhasVencimentoCivil(cliente: ClienteConsultaVencimento, cobrancaIds: string[], matriculaIds: string[]) {
-  const vazio = () => ({ m01PorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; vencimento: Date }>>(), vencimentosPorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>>(), retomadasReprogramadas: [] as Array<{ id: string; aplicadaEm: Date; periodos: Array<{ cobrancaId: string; vencimentoAnterior: string; vencimento: string }> }> });
+  const vazio = () => ({ m01PorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; vencimento: Date }>>(), vencimentosPorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>>(), retomadasReprogramadas: [] as Array<{ id: string; aplicadaEm: Date; periodos: Array<{ cobrancaId: string; vencimentoAnterior: string; vencimento: string; versaoCobrancaDepois: number | null }> }> });
   if (!cobrancaIds.length) return vazio();
-  // Mocks legados de consultas de saldo não materializam os quatro delegates
-  // append-only. Em produção todos existem; a ausência aqui só preserva a
-  // projeção de saldo que aqueles testes isolam.
-  const incompleto = cliente as Partial<ClienteConsultaVencimento>;
-  if (!incompleto.aplicacaoEntradaFinanceiraHistoricaMigracao || !incompleto.aplicacaoVencimentoAditivo || !incompleto.propostaRetomadaMatriculas || !incompleto.propostaEntradaFinanceiraHistoricaMigracao) return vazio();
   const [aplicacoesM01, aplicacoesVencimento, retomadas] = await Promise.all([
     cliente.aplicacaoEntradaFinanceiraHistoricaMigracao.findMany({ where: { cobrancaId: { in: cobrancaIds } }, select: { id: true, cobrancaId: true, propostaId: true, aplicadaEm: true } }),
     cliente.aplicacaoVencimentoAditivo.findMany({ where: { decisao: { proposta: { cobrancaId: { in: cobrancaIds } } } }, select: { id: true, aplicadaEm: true, versaoCobrancaDepois: true, vencimentoAnterior: true, vencimentoNovo: true, decisao: { select: { proposta: { select: { cobrancaId: true, fuso: true } } } } } }),
@@ -142,6 +141,9 @@ function escolherMudancaPosterior(fonte: FonteCobranca): ReferenciaVencimentoCiv
   const versaoPosteriorInvalida = [
     ...(fonte.aplicacoesAditivoVencimento ?? []).map((a) => a.versaoCobrancaDepois),
     ...(fonte.aplicacoesAcertoTaxaAditivo ?? []).map((a) => a.versaoAnterior + 1),
+    ...(fonte.retomadasReprogramadas ?? []).flatMap((r) => r.periodos
+      .filter((p) => p.cobrancaId === fonte.id)
+      .flatMap((p) => p.versaoCobrancaDepois === null || p.versaoCobrancaDepois === undefined ? [] : [p.versaoCobrancaDepois])),
   ].some((versao) => versao > fonte.versao);
   if (versaoPosteriorInvalida)
     return { estado: "A_CONFERIR", motivo: "A cadeia de aplicações possui versão posterior à cobrança atual." };
@@ -161,7 +163,10 @@ function escolherMudancaPosterior(fonte: FonteCobranca): ReferenciaVencimentoCiv
   const mudancas: MudancaPosterior[] = [
     ...aditivos,
     ...(fonte.aplicacoesAcertoTaxaAditivo ?? []).flatMap((a) => dataDaColunaCivil(a.vencimentoAnterior) === dataDaColunaCivil(a.vencimentoNovo) ? [] : [{ id: a.id, aplicadaEm: a.aplicadaEm, versaoDepois: a.versaoAnterior + 1, dataCivil: dataDaColunaCivil(a.vencimentoNovo), fuso: null, origem: "ACERTO_TAXA_ADITIVO" as const, correspondeAoAtual: dataDaColunaCivil(a.vencimentoNovo) === dataDaColunaCivil(fonte.vencimento) }]),
-    ...(fonte.retomadasReprogramadas ?? []).flatMap((r) => r.periodos.filter((p) => p.cobrancaId === fonte.id && p.vencimentoAnterior !== p.vencimento).map((p) => ({ id: r.id, aplicadaEm: r.aplicadaEm, versaoDepois: null, dataCivil: p.vencimento, fuso: null, origem: "RETOMADA_REPROGRAMADA" as const, correspondeAoAtual: p.vencimento === dataDaColunaCivil(fonte.vencimento) }))),
+    // REPROGRAMAR é uma decisão material mesmo quando conserva a mesma data
+    // civil: a execução pode normalizar o instante persistido. Ignorá-la faria
+    // a referência histórica cair indevidamente em A_CONFERIR.
+    ...(fonte.retomadasReprogramadas ?? []).flatMap((r) => r.periodos.filter((p) => p.cobrancaId === fonte.id).map((p) => ({ id: r.id, aplicadaEm: r.aplicadaEm, versaoDepois: p.versaoCobrancaDepois ?? null, dataCivil: p.vencimento, fuso: null, origem: "RETOMADA_REPROGRAMADA" as const, correspondeAoAtual: p.vencimento === dataDaColunaCivil(fonte.vencimento) }))),
   ].filter((m) => m.versaoDepois === null || m.versaoDepois <= fonte.versao);
 
   const versionadas = mudancas.filter((m) => m.versaoDepois !== null);
