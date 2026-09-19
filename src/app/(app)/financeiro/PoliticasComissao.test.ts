@@ -15,13 +15,13 @@ const dados = {
 describe("PoliticasComissao", () => {
   it("exibe vigências ISO como instantes no fuso pessoal e mantém a entrada datetime-local", () => {
     const html = renderToStaticMarkup(createElement(PoliticasComissao, { dados, preferenciaFusoExibicao: "America/Costa_Rica" }));
-    expect(html).toContain("vigência contratual desde 31/12/2025, 20:30 (horário exibido em America/Costa_Rica; instante ISO)");
-    expect(html).toContain("até 01/01/2026, 20:30 (horário exibido em America/Costa_Rica; instante ISO)");
+    expect(html).toContain("vigência desde 31/12/2025, 20:30 (horário exibido em America/Costa_Rica)");
+    expect(html).toContain("até 01/01/2026, 20:30 (horário exibido em America/Costa_Rica)");
     expect(html).toContain('name="vigencia"');
     expect(html).toContain('type="datetime-local"');
   });
   it("usa UTC se não há preferência", () => {
     const html = renderToStaticMarkup(createElement(PoliticasComissao, { dados }));
-    expect(html).toContain("01/01/2026, 02:30 (horário exibido em UTC; instante ISO)");
+    expect(html).toContain("01/01/2026, 02:30 (horário exibido em UTC)");
   });
 });
