@@ -392,6 +392,28 @@ describe("acerto financeiro da desistência em preparação", () => {
     expect(await prisma.recebimento.count({ where: { cobrancaId: original.id } })).toBe(0);
   });
 
+  it("permite alterar e excluir cobrança cancelada antes da efetivação", async () => {
+    const criada = await criarCobranca();
+    const cancelada = await prisma.cobranca.update({
+      where: { id: criada.id },
+      data: { status: "CANCELADA" },
+    });
+
+    const atualizada = await prisma.cobranca.update({
+      where: { id: cancelada.id },
+      data: { comentario: "Cancelamento ainda sem efetivação da desistência." },
+    });
+    expect(atualizada).toMatchObject({
+      id: cancelada.id,
+      status: "CANCELADA",
+      comentario: "Cancelamento ainda sem efetivação da desistência.",
+    });
+
+    await prisma.cobranca.delete({ where: { id: cancelada.id } });
+    expect(await prisma.cobranca.findUnique({ where: { id: cancelada.id } })).toBeNull();
+    expect(await prisma.efetivacaoPedidoDesistenciaPreparacao.count({ where: { matriculaId } })).toBe(0);
+  });
+
   it("nega aplicação SQL forjada com cobrança sem decisão financeira vinculada", async () => {
     await criarCobranca();
     const pedido = await registrarPedido();
