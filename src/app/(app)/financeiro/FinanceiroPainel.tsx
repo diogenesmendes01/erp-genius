@@ -181,7 +181,7 @@ export function FinanceiroPainel({
 
       {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} />}
-      {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} />}
+      {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "cobrancas" && podeOperarCobranca && (
         <FilaCobranca
           itens={fila.itens}

@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { publicarPoliticaComissao } from "@/server/financeiro/acoes";
 import type { configuracaoComissoes } from "@/server/financeiro/consultas";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-export function PoliticasComissao({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>> }) {
+export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(); const [erro, setErro] = useState(""); const [salvando, setSalvando] = useState(false);
   const [tipo, setTipo] = useState<"PERCENTUAL" | "VALOR_FIXO">("PERCENTUAL");
   async function publicar(form: FormData) {
@@ -32,8 +33,12 @@ export function PoliticasComissao({ dados }: { dados: NonNullable<Awaited<Return
       <label>Vigência (vazio = agora)<input name="vigencia" type="datetime-local" className="block rounded border p-2" /></label>
       <button disabled={salvando} className="rounded bg-brand-600 px-3 py-2 text-white disabled:opacity-50">Publicar nova versão</button>
     </form>
-    <ul className="divide-y rounded border text-sm">{dados.politicas.map((p) => <li key={p.id} className="p-3">
-      {dados.paises.find((x) => x.id === p.paisId)?.nome ?? p.paisId} · {dados.produtos.find((x) => x.id === p.produtoId)?.nome ?? p.produtoId} · v{p.versao} · {p.tipo === "VALOR_FIXO" ? formatarMoeda(p.valorFixo ?? 0, p.moeda) : `${p.percentual}% da taxa`} · desde {new Date(p.vigenteEm).toLocaleString("pt-BR")}{p.encerraEm && ` até ${new Date(p.encerraEm).toLocaleString("pt-BR")}`}
-    </li>)}</ul>
+    <ul className="divide-y rounded border text-sm">{dados.politicas.map((p) => {
+      const inicio = formatarInstanteExibicao(p.vigenteEm, preferenciaFusoExibicao, "UTC");
+      const fim = p.encerraEm ? formatarInstanteExibicao(p.encerraEm, preferenciaFusoExibicao, "UTC") : null;
+      return <li key={p.id} className="p-3">
+        {dados.paises.find((x) => x.id === p.paisId)?.nome ?? p.paisId} · {dados.produtos.find((x) => x.id === p.produtoId)?.nome ?? p.produtoId} · v{p.versao} · {p.tipo === "VALOR_FIXO" ? formatarMoeda(p.valorFixo ?? 0, p.moeda) : `${p.percentual}% da taxa`} · vigência contratual desde {inicio.texto} (horário exibido em {inicio.fuso}; instante ISO){fim && ` até ${fim.texto} (horário exibido em ${fim.fuso}; instante ISO)`}
+      </li>;
+    })}</ul>
   </section>;
 }
