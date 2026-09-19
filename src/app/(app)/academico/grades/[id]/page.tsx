@@ -4,7 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaGradeTurma } from "@/server/agenda/grade-consulta";
 import { DecidirGrade } from "./DecidirGrade";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function GradePage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -12,7 +12,8 @@ export default async function GradePage({ params }: { params: Promise<{ id: stri
   const [r, preferencia] = await Promise.all([consultarPropostaGradeTurma({ propostaId: id }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <div><Link href="/academico/grades">Voltar às grades</Link><p role="alert">{r.ok ? "Proposta indisponível." : r.erro}</p></div>;
   const p = r.dado, g = p.exibicao.grade, d = p.disponibilidade;
-  const data = (v: string) => formatarInstanteExibicao(v, preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem).texto;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem);
+  const data = (v: string) => formatarInstanteExibicao(v, fusoExibicao, p.fusoOrigem).texto;
   const futuros = p.encontrosFuturos;
   const podePublicar = !p.necessitaNovaProposta && futuros && !!d?.professorApto && !d.reservas.length && !d.conflitos.length && !d.conflitosInternos.length && !d.indisponibilidades.length;
   return <div className="space-y-5">
@@ -20,7 +21,7 @@ export default async function GradePage({ params }: { params: Promise<{ id: stri
     <header><h1 className="text-2xl font-medium">{p.turmaCodigo} · Grade versão {p.versao}</h1><p>{p.decisao ? p.publicada ? "Publicada" : "Rejeitada" : "Aguardando decisão"}</p></header>
     <p className="whitespace-pre-wrap">{p.motivo}</p>
     <dl className="space-y-1">
-      <div><dt className="inline font-medium">Fuso dos horários: </dt><dd className="inline">{p.fusoOrigem}</dd></div>
+      <div><dt className="inline font-medium">Horários exibidos em: </dt><dd className="inline">{fusoExibicao}; origem {p.fusoOrigem}</dd></div>
       <div><dt className="inline font-medium">Data inicial informada: </dt><dd className="inline">{g.dataInicialInformada}</dd></div>
       <div><dt className="inline font-medium">Primeira aula: </dt><dd className="inline">{data(g.primeiraAula)}</dd></div>
       <div><dt className="inline font-medium">Previsão de término: </dt><dd className="inline">{data(g.previsaoTermino)}</dd></div>
