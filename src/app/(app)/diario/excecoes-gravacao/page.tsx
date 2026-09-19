@@ -2,12 +2,14 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarExcecoesGravacao } from "@/server/diario/excecao-consulta";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecidirExcecao } from "./DecidirExcecao";
 
 export default async function ExcecoesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const q = await searchParams, historico = q.historico === "todos";
-  const r = await listarExcecoesGravacao({ apenasPendentes: !historico, cursor: q.cursor });
+  const [r, preferencia] = await Promise.all([listarExcecoesGravacao({ apenasPendentes: !historico, cursor: q.cursor }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
     <Link href="/diario" className="text-brand-700 underline">Voltar ao diário</Link>
     <h1 className="text-2xl font-medium">Exceções de gravação</h1>
@@ -15,8 +17,7 @@ export default async function ExcecoesPage({ searchParams }: { searchParams: Pro
     {!r.ok && <p role="alert">{r.erro}</p>}
     {r.ok && !r.dado?.itens.length && <p>Nenhuma solicitação encontrada.</p>}
     {r.ok && r.dado?.itens.map((p) => <article key={p.id} className="space-y-3 rounded border bg-[var(--surface)] p-4">
-      <h2 className="font-medium">{p.professor} · {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: p.fusoOrigem }).format(new Date(p.inicio))}</h2>
-      <p className="text-sm">{p.fusoOrigem}</p><p className="whitespace-pre-wrap">{p.motivo}</p>
+      {(() => { const exibicao = formatarInstanteExibicao(p.inicio, preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem); return <><h2 className="font-medium">{p.professor} · {exibicao.texto}</h2><p className="text-sm">{exibicao.fuso}</p></>; })()}<p className="whitespace-pre-wrap">{p.motivo}</p>
       {p.decisao && <p>{p.decisao.aprovada ? "Exceção aprovada" : "Solicitação rejeitada"}: {p.decisao.motivo}</p>}
       {p.diarioParaRevisao && <details><summary>Conferir diário atual</summary><p className="my-2 whitespace-pre-wrap">{p.diarioParaRevisao.conteudo}</p>
         <ul className="space-y-1">{p.diarioParaRevisao.registros.map((r, i) => <li key={i}>{r.nomeAluno}: {r.participacao === "IMPEDIDO_POR_RESTRICAO" ? "Impedido por restrição" : r.presente === null ? "Não informado" : r.presente ? "Presente" : "Ausente"}{r.observacao ? ` — ${r.observacao}` : ""}</li>)}</ul>
