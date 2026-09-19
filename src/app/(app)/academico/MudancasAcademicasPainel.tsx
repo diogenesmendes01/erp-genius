@@ -8,18 +8,19 @@ import {
   executarMudancaAcademica, cancelarMudancaAcademica,
 } from "@/server/academico/acoes";
 import type { ContextoMudancaAcademica, SolicitacaoAcademicaView } from "@/server/academico/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = "rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50";
 const principal = "rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50";
 const nomesStatus = { PENDENTE: "Aguardando decisão pedagógica", APROVADA: "Aprovada · aguardando execução", REJEITADA: "Rejeitada", EXECUTADA: "Executada", CANCELADA: "Cancelada" };
-const data = (valor: string) => new Date(valor).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
-export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta, podeExecutarEquivalencia }: {
+export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta, podeExecutarEquivalencia, fusoExibicao = "America/Sao_Paulo" }: {
   contexto?: ContextoMudancaAcademica | null;
   solicitacoes: SolicitacaoAcademicaView[];
   erroConsulta?: string | null;
   podeExecutarEquivalencia?: boolean;
+  fusoExibicao?: string;
 }) {
   const router = useRouter();
   const [destinoId, setDestinoId] = useState("");
@@ -32,6 +33,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
   const [aviso, setAviso] = useState<string | null>(null);
   const destino = contexto?.destinos.find((t) => t.id === destinoId);
   const podePrepararEquivalencia = contexto?.podePrepararEquivalencia === true;
+  const data = (valor: string) => formatarInstanteExibicao(valor, fusoExibicao, "America/Sao_Paulo").texto;
   const valor = (id: string, chave: string) => entradas[`${id}:${chave}`] ?? "";
   const escrever = (id: string, chave: string, texto: string) => setEntradas((atual) => ({ ...atual, [`${id}:${chave}`]: texto }));
 
@@ -55,6 +57,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
   }
 
   return <section className="space-y-5" aria-label="Mudanças acadêmicas">
+    <p className="text-xs text-gray-500">Instantes administrativos exibidos em {fusoExibicao} (origem UTC).</p>
     {(erro || erroConsulta) && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro ?? erroConsulta}</p>}
     {aviso && <p role="status" className="rounded-md bg-blue-50 p-3 text-sm text-blue-700">{aviso}</p>}
     {contexto && <div className="space-y-3 rounded-lg border border-gray-200 bg-surface p-4">
