@@ -32,3 +32,22 @@ it("oferece agendamento inicial somente por docente legível e autorização exc
   expect(html).toContain("Exceção conferida");
 });
 
+it("exibe todos os instantes da reposição no fuso pessoal e preserva o fuso de origem", () => {
+  const html = renderToStaticMarkup(createElement(ReposicoesEquipe, {
+    fusoExibicao: "America/Costa_Rica",
+    reposicoes: [{
+      id: "reposicao-fuso", modalidade: "GRAVACAO", solicitadaPor: "Secretaria",
+      solicitadaEm: "2026-09-01T03:30:00.000Z", motivo: "Ausência conferida", evidencia: "Registro acadêmico", podeDecidir: false,
+      origem: { aulaOriginalId: "aula-fuso", matriculaId: "matricula-fuso", participacao: "FALTA", inicio: "2026-09-01T03:30:00.000Z", fim: "2026-09-01T04:30:00.000Z", fuso: "UTC", turma: "T1" },
+      decisao: { aprovada: true, motivo: "Autorizada", decididaEm: "2026-09-02T03:30:00.000Z", decisor: "Gestão" },
+      conclusao: { concluida: true, dataResultado: "2026-09-03T03:30:00.000Z", versao: 1 },
+    }],
+  }));
+
+  expect(html).toContain("31/08/2026");
+  expect(html).toContain("01/09/2026");
+  expect(html).toContain("02/09/2026");
+  expect(html).toContain("exibido em America/Costa_Rica; origem UTC");
+  expect(html).not.toContain("01/09/2026, 03:30");
+});
+

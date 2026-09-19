@@ -12,6 +12,7 @@ import { OperacaoEntregaReposicao, type OperacaoEntrega } from "./OperacaoEntreg
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (typeof n.type === "function") return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
+function texto(no: unknown): string { if (typeof no === "string" || typeof no === "number") return String(no); if (Array.isArray(no)) return no.map(texto).join(""); if (!no || typeof no !== "object") return ""; return texto((no as No).props?.children); }
 const operacao: OperacaoEntrega = { reposicaoId: "repo", matriculaStatus: "ATIVA", fuso: "UTC", material: null, etapa: { correcaoId: null, prazoAte: null, prazoInicialAte: null }, liberacao: { podeLiberar: false, expiraEm: null }, indisponibilidade: null, relatosAbertos: [], avaliador: { professorId: "prof-a", nome: "Professor A", inicio: "2026-09-17T00:00:00.000Z", motivo: "Designação anterior" }, avaliadoresDisponiveis: [{ id: "prof-a", nome: "Professor A" }, { id: "prof-b", nome: "Professor B" }] };
 
 function preparar() {
@@ -64,5 +65,27 @@ it("renova a chave após sucesso e congela a entrada para retry após erro", asy
   expect(mocks.substituir).toHaveBeenNthCalledWith(1, expect.objectContaining({ professorId: "prof-b", chaveIdempotencia: "q40-chave-estável" }));
   expect(mocks.substituir).toHaveBeenNthCalledWith(2, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
   expect(mocks.substituir).toHaveBeenNthCalledWith(3, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
+});
+
+it("mostra liberação, relato e pausa no fuso pessoal, sem esconder a origem", () => {
+  preparar();
+  const exibicao = texto(OperacaoEntregaReposicao({
+    fusoExibicao: "America/Costa_Rica",
+    operacao: {
+      ...operacao,
+      material: { publicadoEm: "2026-09-01T03:30:00.000Z", disponivel: false, fonteTrocaElegivel: false },
+      etapa: { correcaoId: null, prazoAte: "2026-09-01T03:30:00.000Z", prazoInicialAte: "2026-09-01T03:30:00.000Z" },
+      liberacao: { podeLiberar: true, expiraEm: "2026-09-02T03:30:00.000Z" },
+      relatosAbertos: [{ id: "relato-fuso", criadaEm: "2026-09-03T03:30:00.000Z", descricao: "Arquivo indisponível" }],
+      indisponibilidade: { id: "pausa-fuso", inicio: "2026-09-04T03:30:00.000Z", motivo: "Aguardando arquivo" },
+    },
+  }));
+
+  expect(exibicao).toContain("31/08/2026");
+  expect(exibicao).toContain("01/09/2026");
+  expect(exibicao).toContain("02/09/2026");
+  expect(exibicao).toContain("03/09/2026");
+  expect(exibicao).toContain("exibido em America/Costa_Rica; origem UTC");
+  expect(exibicao).not.toContain("01/09/2026, 03:30");
 });
 
