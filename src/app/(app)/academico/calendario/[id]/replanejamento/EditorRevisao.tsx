@@ -6,7 +6,7 @@ import { ConteudoRevisao } from "./ConteudoRevisao";
 import { SalvarRevisao } from "./SalvarRevisao";
 
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof preverReplanejamentoCalendario>>, { ok: true }>["dado"]>;
-export function EditorRevisao({ inicial }: { inicial: Revisao }) {
+export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { inicial: Revisao; preferenciaFusoExibicao?: string | null }) {
   const [revisao, setRevisao] = useState(inicial);
   const [ajustes, setAjustes] = useState<AjusteReplanejamento[]>(inicial.ajustes);
   const [alterado, setAlterado] = useState(false);
@@ -51,7 +51,7 @@ export function EditorRevisao({ inicial }: { inicial: Revisao }) {
       {erro && <p role="alert">{erro}</p>}
     </form>
     {alterado && <p role="status">Há ajustes ainda não conferidos. O resultado abaixo corresponde à última conferência; confira novamente para guardar a revisão.</p>}
-    <ConteudoRevisao r={revisao} />
+    <ConteudoRevisao r={revisao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     {!alterado && !ocupado && <SalvarRevisao key={`${revisao.estadoHash}:${revisao.versaoRascunho}`} calendarioId={revisao.calendarioId} estadoHash={revisao.estadoHash} versaoAnterior={revisao.versaoRascunho} ajustes={revisao.ajustes.length ? revisao.ajustes : undefined} />}
   </div>;
 }
