@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -62,6 +62,63 @@ async function regraESnapshot(chave = "regra-beneficio-001", quantidadePorPeriod
   return { regraId: proposta.dado.id, beneficioId: aplicado.dado.id };
 }
 
+function sinal() {
+  let liberar!: () => void;
+  const promessa = new Promise<void>((resolve) => { liberar = resolve; });
+  return { promessa, liberar };
+}
+
+async function bloquearCalendario() {
+  const pronto = sinal();
+  const liberar = sinal();
+  const bloqueador = new PrismaClient();
+  let pid = 0;
+  const transacao = bloqueador.$transaction(async (tx) => {
+    const [conexao] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`;
+    pid = conexao.pid;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+    pronto.liberar();
+    await liberar.promessa;
+  }, { timeout: 10_000 });
+  await Promise.race([pronto.promessa, transacao]);
+  return {
+    pid,
+    soltar: async () => {
+      liberar.liberar();
+      try {
+        await transacao;
+      } finally {
+        await bloqueador.$disconnect();
+      }
+    },
+  };
+}
+
+async function esperarAcoesBloqueadas(pidBloqueador: number, quantidade: number) {
+  const limite = Date.now() + 3_000;
+  let esperas: { pid: number; consulta: string; bloqueadores: number[] }[] = [];
+  const observador = new PrismaClient();
+  try {
+    while (Date.now() < limite) {
+      esperas = await observador.$queryRaw<{ pid: number; consulta: string; bloqueadores: number[] }[]>(Prisma.sql`
+        SELECT pid, query AS consulta, pg_blocking_pids(pid) AS bloqueadores
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock'
+          AND ${pidBloqueador} = ANY(pg_blocking_pids(pid))
+          AND query LIKE '%pg_advisory_xact_lock%calendario-escola%'
+      `);
+      if (esperas.length >= quantidade) break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  } finally {
+    await observador.$disconnect();
+  }
+  expect(esperas, `As duas agendas devem aguardar o lock real do calendário: ${JSON.stringify(esperas)}`).toHaveLength(quantidade);
+  return esperas;
+}
+
 beforeEach(async () => {
   await truncarBanco();
   const catalogo = await seedCatalogoMinimo();
@@ -118,6 +175,73 @@ it("a última cota é reservável uma vez e bloqueia outra origem no mesmo perí
   expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-1", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC", motivo: "Reserva da única cota acadêmica", chaveIdempotencia: "agenda-cota-1" })).toMatchObject({ ok: true });
   await inserirPedido("pedido-cota-2", aulaExtraId);
   expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-2", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC", motivo: "Segunda reserva no mesmo período", chaveIdempotencia: "agenda-cota-2" })).toMatchObject({ ok: false });
+});
+
+it("serializa duas agendas distintas na última cota e preserva o replay vencedor", async () => {
+  const { beneficioId } = await regraESnapshot("regra-uma-cota-concorrente", 1);
+  await inserirPedido("pedido-cota-concorrente-1");
+  await inserirPedido("pedido-cota-concorrente-2", aulaExtraId);
+  const outraSecretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  const entradas = [
+    {
+      reposicaoId: "pedido-cota-concorrente-1", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC",
+      motivo: "Primeira disputa pela única cota de reposição", chaveIdempotencia: "agenda-cota-concorrente-1",
+    },
+    {
+      reposicaoId: "pedido-cota-concorrente-2", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC",
+      motivo: "Segunda disputa pela única cota de reposição", chaveIdempotencia: "agenda-cota-concorrente-2",
+    },
+  ] as const;
+  const secretarias = [secretariaId, outraSecretaria.id];
+  const bloqueio = await bloquearCalendario();
+  authMock.mockResolvedValue({ user: { id: secretarias[0] } });
+  const acoes = [agendarReposicaoIndividual(entradas[0])];
+  let erroBloqueio: unknown;
+  let resultadosEncerrados: PromiseSettledResult<Awaited<ReturnType<typeof agendarReposicaoIndividual>>>[] = [];
+  try {
+    await esperarAcoesBloqueadas(bloqueio.pid, 1);
+    authMock.mockResolvedValue({ user: { id: secretarias[1] } });
+    acoes.push(agendarReposicaoIndividual(entradas[1]));
+    const esperas = await esperarAcoesBloqueadas(bloqueio.pid, 2);
+    expect(new Set(esperas.map((espera) => espera.pid)).size).toBe(2);
+  } catch (erro) {
+    erroBloqueio = erro;
+  } finally {
+    try {
+      await bloqueio.soltar();
+    } finally {
+      resultadosEncerrados = await Promise.allSettled(acoes);
+    }
+  }
+  if (erroBloqueio) throw erroBloqueio;
+  const resultados = resultadosEncerrados.map((resultado) => {
+    if (resultado.status === "rejected") throw resultado.reason;
+    return resultado.value;
+  });
+  expect(resultados.filter((resultado) => resultado.ok)).toHaveLength(1);
+  const vencedora = resultados.findIndex((resultado) => resultado.ok);
+  const resultadoVencedor = resultados[vencedora];
+  const entradaVencedora = entradas[vencedora];
+  const secretariaVencedora = secretarias[vencedora];
+  if (!resultadoVencedor?.ok || !resultadoVencedor.dado || !entradaVencedora || !secretariaVencedora) throw new Error(JSON.stringify(resultados));
+  const reserva = await prisma.agendaReposicaoIndividual.findMany({
+    where: { beneficioId, statusBeneficio: "RESERVADA" },
+    select: { id: true, reposicaoId: true, encontroId: true, periodoInicio: true, periodoFimExclusivo: true },
+  });
+  expect(reserva).toEqual([{
+    id: resultadoVencedor.dado.agendaId,
+    reposicaoId: entradaVencedora.reposicaoId,
+    encontroId: resultadoVencedor.dado.encontroId,
+    periodoInicio: new Date("2026-10-01T00:00:00.000Z"),
+    periodoFimExclusivo: new Date("2026-11-01T00:00:00.000Z"),
+  }]);
+  authMock.mockResolvedValue({ user: { id: secretariaVencedora } });
+  expect(await agendarReposicaoIndividual(entradaVencedora)).toEqual({
+    ok: true,
+    dado: { encontroId: resultadoVencedor.dado.encontroId, idempotente: true },
+  });
+  expect(await prisma.agendaReposicaoIndividual.count({ where: { beneficioId } })).toBe(1);
+  expect(await prisma.encontroAgenda.count({ where: { reposicaoIndividualId: entradaVencedora.reposicaoId } })).toBe(1);
 });
 
 it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir benefício", async () => {
