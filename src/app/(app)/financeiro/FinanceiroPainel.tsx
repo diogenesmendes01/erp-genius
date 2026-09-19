@@ -15,6 +15,7 @@ import type { listarInformesPagamento, configuracaoComissoes } from "@/server/fi
 import { FilaCobranca } from "./FilaCobranca";
 import { RetomadasPainel } from "./RetomadasPainel";
 import type { listarPropostasRetomada } from "@/server/retomada/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -180,7 +181,7 @@ export function FinanceiroPainel({
       {nota && <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
 
       {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
-      {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} />}
+      {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "cobrancas" && podeOperarCobranca && (
         <FilaCobranca
@@ -206,7 +207,7 @@ export function FinanceiroPainel({
       {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(decidirAprovacao(id, { aprovar: ok }))} />}
 
       {aba === "cambio" && (
-        <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} />
+        <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       )}
     </div>
   );
@@ -383,14 +384,16 @@ function VisaoGeral({
   );
 }
 
-function CambioPainel({
+export function CambioPainel({
   cotacoes,
   onSalvar,
   onAtualizarAuto,
+  preferenciaFusoExibicao,
 }: {
   cotacoes: CotacaoVigente[];
   onSalvar: (entradas: { moeda: string; unidadesPorUsd: number }[]) => Promise<void>;
   onAtualizarAuto: () => Promise<void>;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const editaveis = cotacoes.filter((c) => !c.pivo);
   const [vals, setVals] = useState<Record<string, string>>(() =>
@@ -459,7 +462,7 @@ function CambioPainel({
                   />
                 </td>
                 <td className="px-4 py-2 text-xs text-gray-400">
-                  {c.vigenteEm ? new Date(c.vigenteEm).toLocaleDateString("pt-BR") : "sem cotação"}
+                  {c.vigenteEm ? (() => { const exibicao = formatarInstanteExibicao(c.vigenteEm, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; })() : "sem cotação"}
                 </td>
               </tr>
             ))}

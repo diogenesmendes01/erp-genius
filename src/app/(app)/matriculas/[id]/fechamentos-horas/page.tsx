@@ -6,6 +6,8 @@ import { consultarFechamentosHoras } from "@/server/matricula/fechamento-horas-c
 import { PrepararFechamento } from "./PrepararFechamento";
 import { DecidirFechamento } from "./DecidirFechamento";
 import { EmitirFechamento } from "./EmitirFechamento";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string(), fuso: z.string(), vencimento: z.string() }),
   apuracao: z.object({ moeda: z.string(), estado: z.enum(["AGUARDANDO_CONFERENCIA", "PROPOSTA_PARCIAL", "APURACAO_COMPLETA", "SEM_ITENS_A_FATURAR"]),
@@ -25,9 +27,17 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   await exigirSessaoPagina(Papel.FINANCEIRO);
   const { id } = await params, q = await searchParams;
   if (!q.aluno) return <p role="alert">Abra os fechamentos pela ficha financeira da matrícula.</p>;
-  const r = await consultarFechamentosHoras({ alunoId: q.aluno, matriculaId: id, cursor: q.cursor, rascunhoId: q.versao });
+  const [r, preferencia] = await Promise.all([
+    consultarFechamentosHoras({ alunoId: q.aluno, matriculaId: id, cursor: q.cursor, rascunhoId: q.versao }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, base = `/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`;
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
+  const instanteAdministrativo = (valor: Date | string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
   return <div className="space-y-4">
     <Link href={`/matriculas/${id}/ocorrencias-financeiras`} className="underline">Conferência das particulares</Link>
     <h1 className="text-2xl">Fechamentos por hora · {d.matricula.codigo ?? id}</h1>
@@ -43,7 +53,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       };
       return <section key={v.id} className="space-y-3 rounded border p-4">
         <h2 className="text-lg font-semibold">Rascunho · versão {v.versao}</h2>
-        <p>Preparado por {v.preparador.nome} em {new Date(v.criadoEm).toLocaleString("pt-BR", { timeZone: "UTC" })} (UTC).</p>
+        <p>Preparado por {v.preparador.nome} em {instanteAdministrativo(v.criadoEm)}.</p>
         <p>{v.motivo}</p>
         <p>Contrato de origem: {v.documento.nome}. {v.documento.url ? <a href={v.documento.url} target="_blank" rel="noopener noreferrer" className="underline">Abrir contrato para conferência</a> : "Documento indisponível para abertura nesta tela; solicite conferência à Secretaria."}</p>
         {v.referenciaProposta && <><p className="whitespace-pre-wrap">Cláusula informada: {v.referenciaProposta.periodo.clausula}</p>
@@ -51,7 +61,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         {v.decisao && <p>Decisão: {v.decisao.aprovada ? "proposta aprovada" : "proposta rejeitada"} por {v.decisao.decisor.nome}. {v.decisao.motivo} A decisão não comprova emissão.</p>}
         {v.emissao && <div className="rounded border p-3">
           <h3 className="font-semibold">Cobrança emitida · {v.emissao.cobranca.codigo ?? v.emissao.cobranca.id}</h3>
-          <p>Emitida por {v.emissao.executor.nome} em {new Date(v.emissao.criadaEm).toLocaleString("pt-BR", { timeZone: "UTC" })} (UTC).</p>
+          <p>Emitida por {v.emissao.executor.nome} em {instanteAdministrativo(v.emissao.criadaEm)}.</p>
           <p>Valor original: {v.emissao.cobranca.moeda} {v.emissao.cobranca.valorOriginal}. Valor atual: {v.emissao.cobranca.valorNegociado}. Saldo: {v.emissao.cobranca.saldo ?? "a conferir"}.</p>
           <Link className="underline" href={`/alunos/${d.matricula.alunoId}/financeiro`}>Consultar cobrança e recebimentos na ficha financeira</Link>
         </div>}
