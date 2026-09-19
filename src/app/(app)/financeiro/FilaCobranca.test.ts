@@ -15,7 +15,7 @@ const item: FilaCobrancaItem = {
   conferenciaAte: null,
   id: "cobranca", cicloRegua: 1, codigo: "COB-1", tipo: "MENSALIDADE",
   valorNegociado: 100, valorRecebido: 0, saldo: 100, moeda: "BRL",
-  vencimento: "2026-01-15T12:00:00.000Z", competencia: "2026-01",
+  vencimento: { estado: "CONFIRMADO", dataCivil: "2026-01-15", fuso: "Pacific/Kiritimati", origem: "EMISSAO_ENTRADA" }, competencia: "2026-01",
   estado: "acao_devida", passo: "D+3", tipoAcao: "cobrar", template: null,
   rotuloAcao: "Cobrar", atrasadaNaAcao: false, diasAtraso: 3, prioridade: 1,
   promessaAte: "2026-01-02T12:00:00.000Z", matriculaId: "matricula",
@@ -39,6 +39,11 @@ function detalhe(itemAtual: FilaCobrancaItem, preferenciaFusoExibicao: string | 
 }
 
 describe("DetalheCobranca", () => {
+  it("mantém o vencimento em conferência quando a fonte civil está ausente", () => {
+    const html = detalhe({ ...item, vencimento: { estado: "A_CONFERIR", motivo: "Fonte contratual ausente" } }, "America/Costa_Rica");
+    expect(html).toContain("Vencimento a conferir: Fonte contratual ausente");
+    expect(html).not.toContain("vence 15/01/2026");
+  });
   it("renderiza envio e resposta na preferência, sem deslocar vencimento ou competência", () => {
     const html = detalhe(item, "America/Costa_Rica");
 
