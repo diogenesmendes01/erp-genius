@@ -1,0 +1,10 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it, vi } from "vitest";
+const m = vi.hoisted(() => ({ sessao: vi.fn(), lead: vi.fn(), professores: vi.fn(), preferencia: vi.fn() }));
+vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: m.sessao, numeroOuNull: (v: unknown) => v }));
+vi.mock("@/server/comercial/consultas", () => ({ obterLead: m.lead }));
+vi.mock("@/server/turmas/consultas", () => ({ listarProfessores: m.professores }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: m.preferencia }));
+vi.mock("./FichaLead", () => ({ FichaLead: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `fuso:${preferenciaFusoExibicao}` }));
+import Page from "./page";
+it("guarda precede lead e preferência e encaminha fallback", async () => { m.sessao.mockRejectedValueOnce(new Error("negado")); await expect(Page({ params: Promise.resolve({ id: "x" }) })).rejects.toThrow("negado"); expect(m.lead).not.toHaveBeenCalled(); expect(m.preferencia).not.toHaveBeenCalled(); m.sessao.mockResolvedValue({ papeis: [], nome: "S" }); m.lead.mockResolvedValue({ lead: { id:"x", codigo:null,nome:"A",telefoneE164:null,etapa:"NOVO",segmento:"ADULTO",temperatura:"MORNO",b2b:false,criadoEm:new Date(),pais:null,vendedor:null,origemCampanha:null,origemAnuncio:null,interesse:null,objetivo:null,urgencia:null,orcamento:null,objecao:null,proximaAcao:null,proximoFollowUp:null,dataExperimental:null,dataProposta:null,motivoPerda:null,matricula:null,valorPrevisto:null,planoPrevisto:null,comissaoPrevista:null,documentos:[],professorExperimentalId:null }, timeline: [] }); m.professores.mockResolvedValue([]); m.preferencia.mockResolvedValue({ok:false}); expect(renderToStaticMarkup(await Page({params:Promise.resolve({id:"x"})}))).toContain("fuso:null"); });
