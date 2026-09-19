@@ -7,6 +7,7 @@ import {
   proporResolucaoRevisaoProgressao,
   revisarResolucaoRevisaoProgressao,
 } from "@/server/avaliacoes/resolucao-revisao-progressao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -41,8 +42,8 @@ const efeitoAcao: Record<Acao, string> = {
   ENCAMINHAR_REGULARIZACAO: "Registra o encaminhamento para regularização. Ele não confirma resultado suficiente nem resolve o caso automaticamente.",
 };
 
-function dataUtc(data: Date | string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(data));
+function dataAdministrativa(data: Date | string, preferenciaFusoExibicao: string | null | undefined) {
+  return formatarInstanteExibicao(data, preferenciaFusoExibicao, "UTC");
 }
 
 export function ResolucaoRevisaoProgressao({
@@ -50,11 +51,13 @@ export function ResolucaoRevisaoProgressao({
   statusSolicitacao,
   propostas,
   permitirPreparacao,
+  preferenciaFusoExibicao = null,
 }: {
   solicitacaoId: string;
   statusSolicitacao: string;
   propostas: Proposta[];
   permitirPreparacao: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const acaoInicial: Acao | null = !permitirPreparacao ? null : statusSolicitacao === "CANCELADA" ? "REGISTRAR_CANCELAMENTO"
@@ -66,6 +69,7 @@ export function ResolucaoRevisaoProgressao({
   const [aviso, setAviso] = useState("");
   const [ocupado, iniciar] = useTransition();
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
+  const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
 
   function invalidarPrevia(proximaAcao = acao) {
     setPrevia(null);
@@ -171,10 +175,10 @@ export function ResolucaoRevisaoProgressao({
       {!propostas.length && <p>Nenhuma proposta de resolução foi registrada.</p>}
       {propostas.map((proposta) => <article key={proposta.id} className="space-y-2 rounded border p-3">
         <p><strong>Versão {proposta.versao}:</strong> {rotulosAcao[proposta.acao]}.</p>
-        <p>{proposta.casos.length} {proposta.casos.length === 1 ? "caso" : "casos"} incluído(s). Proposta de {proposta.preparador.nome} em {dataUtc(proposta.criadaEm)} UTC.</p>
+        <p>{proposta.casos.length} {proposta.casos.length === 1 ? "caso" : "casos"} incluído(s). Proposta de {proposta.preparador.nome} em {dataAdministrativa(proposta.criadaEm, preferenciaFusoExibicao).texto} ({fusoExibicao}; origem UTC).</p>
         <p className="whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         {proposta.decisao
-          ? <p role="status">{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisor.nome} em {dataUtc(proposta.decisao.decididaEm)} UTC. {proposta.decisao.motivo}</p>
+          ? <p role="status">{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisor.nome} em {dataAdministrativa(proposta.decisao.decididaEm, preferenciaFusoExibicao).texto} ({fusoExibicao}; origem UTC). {proposta.decisao.motivo}</p>
           : <p role="status">{proposta.superada ? "Substituída por uma proposta mais recente." : "Aguardando decisão independente."}</p>}
         {proposta.podeDecidir && !proposta.decisao && <form onSubmit={(evento) => decidir(evento, proposta)} className="space-y-2 border-t pt-3">
           <p className="text-sm">A rejeição registra a recusa desta proposta histórica e não atesta o estado atual.</p>
