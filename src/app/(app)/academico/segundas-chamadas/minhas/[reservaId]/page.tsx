@@ -14,6 +14,7 @@ export default async function MinhaSegundaChamada({ params }: { params: Promise<
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, d.horario.fusoOrigem);
+  const fusoAdministrativo = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
 
   return <section className="space-y-4">
     <Link className="underline" href="/academico/segundas-chamadas/minhas">Voltar para minhas segundas chamadas</Link>
@@ -23,9 +24,9 @@ export default async function MinhaSegundaChamada({ params }: { params: Promise<
     <p>Situação da reserva: {d.status}.</p>
     {!d.realizacao && d.podeRealizar && <FormularioRealizacao reservaId={d.reservaId} />}
     {!d.realizacao && !d.podeRealizar && <p role="status">A realização não pode ser registrada nas condições atuais.</p>}
-    {d.realizacao && <p role="status">Realização registrada em {formatarInstanteExibicao(d.realizacao.realizadaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto} por {d.realizador?.nome ?? "professor não identificado"}. O horário do fato é imutável para a nota original.</p>}
+    {d.realizacao && <p role="status">Realização registrada em {formatarInstanteExibicao(d.realizacao.realizadaEm, fusoAdministrativo, "UTC").texto} ({fusoAdministrativo}; origem UTC) por {d.realizador?.nome ?? "professor não identificado"}. O horário do fato é imutável para a nota original.</p>}
     {d.notaOriginal?.status === "REJEITADA" && <p role="status">Nota original devolvida: {d.notaOriginal.motivoDecisao ?? "sem justificativa informada"}. Corrija e reenvie nesta página; não use o fluxo de correção de nota oficial.</p>}
-    {d.realizacao && d.podeLancarNota && <FormularioNota realizacaoId={d.realizacao.id} alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} realizadaEm={d.realizacao.realizadaEm} escala={d.escala} habilidades={d.habilidadesNecessarias} versaoEsperada={d.versaoEsperada} regularizacao={d.regularizacao} />}
+    {d.realizacao && d.podeLancarNota && <FormularioNota realizacaoId={d.realizacao.id} alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} realizadaEm={d.realizacao.realizadaEm} escala={d.escala} habilidades={d.habilidadesNecessarias} versaoEsperada={d.versaoEsperada} regularizacao={d.regularizacao} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />}
     {d.notaOriginal && <p role="status">Nota original: {d.notaOriginal.status}.</p>}
     {d.realizacao && !d.podeLancarNota && !d.notaOriginal && <p role="status">A nota original não está disponível para lançamento nas condições atuais.</p>}
     <p>Esta página é limitada à reserva designada. O lançamento submetido ainda exige conferência independente.</p>

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { realizarSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-docente-local";
 import { salvarNotaOriginalSegundaChamada } from "@/server/avaliacoes/segunda-chamada-realizacao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -41,12 +42,13 @@ export function FormularioRealizacao({ reservaId }: { reservaId: string }) {
   </form>;
 }
 
-export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, realizadaEm, escala, habilidades, versaoEsperada, regularizacao }: { realizacaoId: string; alocacaoId: string; codigoAvaliacao: string; realizadaEm: string; escala: { minimo: string; maximo: string }; habilidades: string[]; versaoEsperada: number; regularizacao: boolean }) {
+export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, realizadaEm, escala, habilidades, versaoEsperada, regularizacao, preferenciaFusoExibicao = null }: { realizacaoId: string; alocacaoId: string; codigoAvaliacao: string; realizadaEm: string; escala: { minimo: string; maximo: string }; habilidades: string[]; versaoEsperada: number; regularizacao: boolean; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const habilidadesValidas = habilidades as Habilidade[];
+  const dataDoFato = formatarInstanteExibicao(realizadaEm, preferenciaFusoExibicao, "UTC");
 
   return <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
     evento.preventDefault();
@@ -69,7 +71,7 @@ export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, real
     }
   }}>
     <h2 className="text-xl font-medium">Submeter nota original</h2>
-    <p>Data do fato: {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(realizadaEm))} (UTC), preservada da realização. Escala: {escala.minimo} a {escala.maximo}.</p>
+    <p>Data do fato: {dataDoFato.texto} ({dataDoFato.fuso}; origem UTC), preservada da realização. Escala: {escala.minimo} a {escala.maximo}.</p>
     <fieldset disabled={ocupado} className="space-y-3">
       {regularizacao && <><p>Você está regularizando a nota de uma realização registrada por outro professor. Informe a justificativa e as evidências da conferência.</p><label className="block" htmlFor="motivo-regularizacao">Motivo da regularização<textarea id="motivo-regularizacao" name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><label className="block" htmlFor="evidencias-regularizacao">Evidências da regularização<textarea id="evidencias-regularizacao" name="evidenciasRegularizacao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label></>}
       {habilidadesValidas.map(habilidade => <div key={habilidade} className="space-y-2 rounded border p-3"><label className="block" htmlFor={`nota-${habilidade}`}>Nota de {nomes[habilidade]}<input id={`nota-${habilidade}`} name={`nota-${habilidade}`} inputMode="decimal" required className="block rounded border p-2" /></label><label className="block" htmlFor={`comentario-${habilidade}`}>Comentário para o aluno<textarea id={`comentario-${habilidade}`} name={`comentario-${habilidade}`} maxLength={2000} className="block w-full rounded border p-2" /></label></div>)}
