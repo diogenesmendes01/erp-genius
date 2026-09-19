@@ -5,9 +5,10 @@ import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
 
 type Turma = { id: string; codigo: string; versao: number; dataInicio: string | null; horario: string | null;
   dias: number[]; quantidade: number | null; duracao: number; frequencia: string; professor: string | null };
-export function PrepararGrade({ turmas }: { turmas: Turma[] }) {
+export function PrepararGrade({ turmas, turmaInicialId }: { turmas: Turma[]; turmaInicialId?: string | null }) {
   const router = useRouter();
-  const [turmaId, selecionar] = useState("");
+  const inicialValida = turmas.some((t) => t.id === turmaInicialId) ? turmaInicialId ?? "" : "";
+  const [turmaId, selecionar] = useState(inicialValida);
   const [fuso, setFuso] = useState("");
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState("");
