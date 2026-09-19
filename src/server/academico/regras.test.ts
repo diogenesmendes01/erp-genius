@@ -11,6 +11,15 @@ import type { EstadoAcademico, TurmaAcademica } from "./estado";
 
 const agora = new Date("2026-09-08T12:00:00Z");
 const motivo = "Mudança pedagógica fundamentada";
+const ofertaDestino = {
+  disponivel: true,
+  fotografia: {
+    gradeId: "grade-destino", gradeVersao: 1, calendarioId: "calendario", calendarioVersao: 1,
+    calendarioVigenteId: "calendario", calendarioVigenteVersao: 1, cadeiaCalendario: { tipo: "GRADE_PUBLICADA" as const },
+    encontros: [{ id: "aula-futura", inicio: "2026-09-09T18:00:00.000Z", fim: "2026-09-09T19:00:00.000Z", status: "PREVISTO", professorId: "professor", professorApto: true }],
+    indisponibilidades: [],
+  },
+};
 function turma(id: string, nivelId: string): TurmaAcademica {
   return {
     id, codigo: `T-${id}`, nome: id, nivelId, modalidadeId: "regular", professorId: "professor",
@@ -26,7 +35,7 @@ function estado(): EstadoAcademico {
   const origem = { id: "alocacao-original", matriculaId: null, turmaId: "origem", criadoEm: new Date("2026-08-01T12:00:00Z"), turma: turma("origem", "A1") };
   return {
     aluno: { id: "aluno", primeiroNome: "Ana", sobrenome: "Teste", status: "ATIVO", alocacoes: [origem] },
-    origem, destino: turma("destino", "B2"),
+    origem, destino: turma("destino", "B2"), ofertaDestino,
     matriculas: [{ id: "matricula", status: "ATIVA", produtoId: "produto", produto: { idiomaId: "portugues", modalidadeId: "regular" } }],
     ultimaMovimentacao: { id: "movimento-original", tipo: "MATRICULA", criadoEm: new Date("2026-08-01T12:00:00Z") },
     totalMovimentacoes: 1,
@@ -101,13 +110,15 @@ describe("equivalência, matrícula e capacidade", () => {
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/turma atual/);
   });
 
-  it("vaga é real e destino concluído, expirado ou igual à origem não recebe transferência", () => {
+  it("vaga é real e destino concluído, sem agenda ou igual à origem não recebe transferência", () => {
     const e = estado();
     e.destino!._count.alocacoes = e.destino!.capacidade;
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/vaga/);
     e.destino!._count.alocacoes = 0; e.destino!.status = "CONCLUIDA";
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/disponível/);
     e.destino!.status = "EM_ANDAMENTO"; e.destino!.dataFim = new Date("2026-09-07T12:00:00Z");
+    expect(impedimentoEstadoAcademico(e, true, agora)).toBeNull();
+    e.ofertaDestino = { ...ofertaDestino, disponivel: false };
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/disponível/);
     e.destino = e.origem!.turma;
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/já está/);
@@ -118,21 +129,19 @@ describe("aprovação vinculada ao estado acadêmico", () => {
   it.each(["PAUSADO", "ENCERRADO"] as const)("contrato ativo independe do cadastro global %s", status => {
     const e = estado(); e.origem!.matriculaId = "matricula";
     const snapshot = montarSnapshotMudancaAcademica(e);
-    expect(snapshot).toMatchObject({ versao: 2, statusAluno: null, matriculaOrigemId: "matricula" });
+    expect(snapshot).toMatchObject({ versao: 3, statusAluno: null, matriculaOrigemId: "matricula" });
     e.aluno.status = status;
     expect(impedimentoEstadoAcademico(e, false)).toBeNull();
-    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e)).not.toThrow();
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).not.toThrow();
     e.matriculas[0].status = "PAUSADA";
     expect(impedimentoEstadoAcademico(e, false)).toMatch(/matrícula vinculada/);
-    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e)).toThrow();
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).toThrow();
   });
 
-  it("versão antiga preserva sua condição global em vez de ampliar aprovação existente", () => {
+  it("fotografia anterior à agenda obrigatória exige nova proposta", () => {
     const e = estado(); e.origem!.matriculaId = "matricula";
     const antigo = { ...montarSnapshotMudancaAcademica(e), versao: 1, statusAluno: "ATIVO" };
-    expect(() => exigirSnapshotMudancaAcademicaAtual(antigo, e)).not.toThrow();
-    e.aluno.status = "PAUSADO";
-    expect(() => exigirSnapshotMudancaAcademicaAtual(antigo, e)).toThrow(/mudaram/);
+    expect(() => exigirSnapshotMudancaAcademicaAtual(antigo, e, agora)).toThrow(/agenda vigente/);
   });
 
   it("contrato vinculado encerrado não é autorizado por outro contrato ativo", () => {
@@ -143,13 +152,11 @@ describe("aprovação vinculada ao estado acadêmico", () => {
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/matrícula vinculada/);
   });
 
-  it("snapshot legado só continua válido enquanto a alocação permanece sem vínculo conferido", () => {
+  it("snapshot sem fotografia da agenda exige nova proposta", () => {
     const e = estado();
-    const { matriculaOrigemId, ...legado } = montarSnapshotMudancaAcademica(e);
-    expect(matriculaOrigemId).toBeNull();
-    expect(() => exigirSnapshotMudancaAcademicaAtual(legado, e)).not.toThrow();
-    e.origem!.matriculaId = "matricula";
-    expect(() => exigirSnapshotMudancaAcademicaAtual(legado, e)).toThrow(/mudaram/);
+    const { agendaDestino, ...legado } = montarSnapshotMudancaAcademica(e);
+    expect(agendaDestino).toEqual(ofertaDestino.fotografia);
+    expect(() => exigirSnapshotMudancaAcademicaAtual(legado, e, agora)).toThrow(/estado verificável/);
   });
 
   it("ordenação do banco e ocupação não invalidam o pedido, mas não reservam vaga", () => {
@@ -159,8 +166,19 @@ describe("aprovação vinculada ao estado acadêmico", () => {
     const snapshot = montarSnapshotMudancaAcademica(e);
     e.matriculas.reverse(); e.destino!.vinculosDocentes.reverse(); e.destino!.diasSemana.reverse();
     e.destino!._count.alocacoes = e.destino!.capacidade;
-    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e)).not.toThrow();
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).not.toThrow();
     expect(impedimentoEstadoAcademico(e, true, agora)).toMatch(/vaga/);
+  });
+
+  it("compara a agenda aprovada e a atual no mesmo marco, sem reabrir fato passado", () => {
+    const e = estado();
+    const passado = { id: "aula-passada", inicio: "2026-09-07T18:00:00.000Z", fim: "2026-09-07T19:00:00.000Z", status: "PREVISTO", professorId: "professor", professorApto: true };
+    e.ofertaDestino = { disponivel: true, fotografia: { ...ofertaDestino.fotografia, encontros: [passado, ...ofertaDestino.fotografia!.encontros] } };
+    const snapshot = montarSnapshotMudancaAcademica(e);
+    e.ofertaDestino = { disponivel: true, fotografia: { ...e.ofertaDestino.fotografia!, encontros: [{ ...passado, status: "CANCELADO" }, ...ofertaDestino.fotografia!.encontros] } };
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).not.toThrow();
+    e.ofertaDestino = { disponivel: true, fotografia: { ...e.ofertaDestino.fotografia!, encontros: [{ ...passado, status: "CANCELADO" }, { ...ofertaDestino.fotografia!.encontros[0], status: "CANCELADO" }] } };
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).toThrow(/mudaram/);
   });
 
   it.each([
@@ -185,13 +203,13 @@ describe("aprovação vinculada ao estado acadêmico", () => {
     const e = estado();
     const snapshot = montarSnapshotMudancaAcademica(e);
     alterar(e);
-    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e)).toThrow(/mudaram/);
+    expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).toThrow(/mudaram/);
   });
 
   it("snapshot não verificável ou pertencente a outro aluno não autoriza execução", () => {
     const e = estado();
     for (const snapshot of [null, {}, { versao: 99 }, { ...montarSnapshotMudancaAcademica(e), alunoId: "aluno-alheio" }]) {
-      expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e)).toThrow();
+      expect(() => exigirSnapshotMudancaAcademicaAtual(snapshot, e, agora)).toThrow();
     }
   });
 });

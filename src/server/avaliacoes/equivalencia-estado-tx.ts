@@ -2,22 +2,47 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { bloquearEstadoAcademico, carregarEstadoAcademico } from "@/server/academico/estado";
-import { classificarDestinoAcademico, impedimentoEstadoAcademico, montarSnapshotMudancaAcademica } from "@/server/academico/regras";
+import { classificarDestinoAcademico, impedimentoEstadoAcademico, montarSnapshotMudancaAcademica, normalizarSnapshotMudancaAcademicaNoMarco, SnapshotMudancaAcademicaSchema } from "@/server/academico/regras";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { carregarFontesEquivalenciaTx } from "./fontes-equivalencia-tx";
 import { projetarEquivalenciaTransferencia, type EntradaEquivalenciaTransferencia } from "./equivalencia-transferencia";
+
+function canon(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(canon);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, valor]) => [k, canon(valor)]));
+  return v;
+}
+
+function semEstadoHash(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return snapshot;
+  const { estadoHash: _estadoHash, ...restante } = snapshot as Record<string, unknown>;
+  return restante;
+}
+
+/** Mantém todas as fontes estritas; só o recorte futuro da agenda usa o mesmo marco nos dois lados. */
+export function estadosEquivalenciaCorrespondemNoMarco(anterior: unknown, atual: unknown, marco: Date) {
+  const anteriorSemHash = semEstadoHash(anterior) as { academico?: unknown };
+  const atualSemHash = semEstadoHash(atual) as { academico?: unknown };
+  const academiaAnterior = SnapshotMudancaAcademicaSchema.safeParse(anteriorSemHash.academico);
+  const academiaAtual = SnapshotMudancaAcademicaSchema.safeParse(atualSemHash.academico);
+  if (!academiaAnterior.success || !academiaAtual.success) return false;
+  return JSON.stringify(canon({ ...anteriorSemHash, academico: normalizarSnapshotMudancaAcademicaNoMarco(academiaAnterior.data, marco) }))
+    === JSON.stringify(canon({ ...atualSemHash, academico: normalizarSnapshotMudancaAcademicaNoMarco(academiaAtual.data, marco) }));
+}
 
 /** Estado interno: nunca retornar este objeto à Secretaria. O fluxo chamador
  * autoriza o papel antes da leitura e revalida o usuário após os locks. */
 export async function conferirEstadoEquivalenciaTx(tx: Prisma.TransactionClient, entrada: {
   matriculaId: string; alocacaoOrigemId: string; turmaDestinoId: string;
   mapeamentos: EntradaEquivalenciaTransferencia["mapeamentos"];
+  agora?: Date;
 }) {
   const matricula = await tx.matricula.findUnique({ where: { id: entrada.matriculaId }, select: { alunoId: true } });
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
   await bloquearEstadoAcademico(tx, matricula.alunoId, entrada.turmaDestinoId);
-  const estado = await carregarEstadoAcademico(tx, matricula.alunoId, entrada.turmaDestinoId, entrada.matriculaId);
-  const impedimento = impedimentoEstadoAcademico(estado);
+  const agora = entrada.agora ?? new Date();
+  const estado = await carregarEstadoAcademico(tx, matricula.alunoId, entrada.turmaDestinoId, entrada.matriculaId, agora);
+  const impedimento = impedimentoEstadoAcademico(estado, true, agora);
   if (impedimento) throw new ErroRegra(impedimento);
   const mudancaAberta = await tx.solicitacaoMudancaAcademica.findFirst({ where: {
     alunoId: matricula.alunoId, matriculaId: entrada.matriculaId, status: { in: ["PENDENTE", "APROVADA"] },
@@ -54,13 +79,6 @@ export async function conferirEstadoEquivalenciaTx(tx: Prisma.TransactionClient,
     regraDestino: { id: destino.id, versao: destino.versao, conteudo: regraDestino },
     fontesOficiais, projecao,
   };
-  // Ordem de propriedades de JSONB não é estável. Arrays mantêm sua ordem
-  // semântica; objetos são serializados por chave antes da comparação.
-  function canon(v: unknown): unknown {
-    if (Array.isArray(v)) return v.map(canon);
-    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, valor]) => [k, canon(valor)]));
-    return v;
-  }
   const estadoHash = createHash("sha256").update(JSON.stringify(canon(snapshot))).digest("hex");
   return { alunoId: matricula.alunoId, snapshot, estadoHash, projecao };
 }

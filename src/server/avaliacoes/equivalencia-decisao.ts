@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "@/server/_shared";
 import { APROVADORES_ACADEMICOS, bloquearEstadoAcademico, exigirUsuarioAcademicoAtual } from "@/server/academico/estado";
 import { EntradaEquivalenciaTransferenciaSchema } from "./equivalencia-transferencia";
-import { conferirEstadoEquivalenciaTx } from "./equivalencia-estado-tx";
+import { conferirEstadoEquivalenciaTx, estadosEquivalenciaCorrespondemNoMarco } from "./equivalencia-estado-tx";
 
 const id = z.string().trim().min(1).max(100);
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -94,14 +94,16 @@ export async function decidirEquivalenciaTransferencia(input: unknown) {
         });
         if (ultima?.id !== p.id) throw new ErroRegra("Proposta superada; confira a versão mais recente.");
 
+        const agora = new Date();
         const atual = await conferirEstadoEquivalenciaTx(tx, {
           matriculaId: p.matriculaId,
           alocacaoOrigemId: p.alocacaoOrigemId,
           turmaDestinoId: p.turmaDestinoId,
           mapeamentos: mapeamentos.data,
+          agora,
         });
         const c = atual.snapshot.contexto;
-        if (atual.estadoHash !== estadoHashProposta
+        if ((atual.estadoHash !== estadoHashProposta && !estadosEquivalenciaCorrespondemNoMarco(p.snapshot, atual.snapshot, agora))
           || c.turmaOrigemId !== p.turmaOrigemId || c.turmaDestinoId !== p.turmaDestinoId
           || c.regraOrigemId !== p.regraOrigemId || c.regraDestinoId !== p.regraDestinoId
           || c.matriculaId !== p.matriculaId || c.alocacaoOrigemId !== p.alocacaoOrigemId) {

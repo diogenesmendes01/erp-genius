@@ -10,6 +10,10 @@ import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } fro
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "./regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
+import { decidirCalendarioEscolar } from "@/server/agenda/calendario-decisao";
+import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
+import { decidirGradeInicialTurma } from "@/server/agenda/grade-decisao";
 
 let professorId: string, preparadorId: string, decisorId: string, alunoId: string;
 let matriculaId: string, alocacaoOrigemId: string, turmaDestinoId: string;
@@ -37,9 +41,19 @@ let lancamentoId: string;
 beforeEach(async () => {
   await truncarBanco();
   const catalogo = await seedCatalogoMinimo();
+  await prisma.modalidade.update({ where: { id: catalogo.modalidade.id }, data: { aulasPorNivel: 4 } });
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   preparadorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
   decisorId = (await criarUsuario(["ADMINISTRADOR"])).id;
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  entrar(preparadorId);
+  const calendario = await prepararCalendarioEscolar({
+    fusoConferido: "UTC", versaoAnterior: 0, periodos: [],
+    motivo: "Calendário publicado para a decisão de equivalência.", chaveIdempotencia: "calendario-equivalencia-decisao",
+  });
+  if (!calendario.ok || !calendario.dado) throw new Error(JSON.stringify(calendario));
+  entrar(decisorId);
+  expect(await decidirCalendarioEscolar({ calendarioId: calendario.dado.id, aprovar: true, motivo: "Calendário aprovado de forma independente." })).toMatchObject({ ok: true });
   const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "A1", ordem: 1 } });
   const regraPreparada = await prisma.$transaction(tx => prepararRegraAvaliacaoTx(tx, preparadorId, {
     nivelId: nivel.id, versaoEsperada: 0, conteudo: regraAvaliacaoTeste(), motivo: "Regra para decisão de equivalência",
@@ -57,9 +71,19 @@ beforeEach(async () => {
   await prisma.turma.update({ where: { id: origem.id }, data: { dataInicio: inicio, status: "EM_ANDAMENTO" } });
   const destino = await prisma.turma.create({ data: {
     nome: "Destino da equivalência", modalidadeId: catalogo.modalidade.id, nivelId: nivel.id,
-    professorId, status: "ABERTA", dataInicio: new Date("2099-01-01T00:00:00.000Z"), capacidade: 10,
+    professorId, status: "PLANEJADA", dataInicio: new Date(Date.now() + 5 * 86_400_000), capacidade: 10,
+    diasSemana: [1, 3], horarioInicio: "18:00",
   } });
   turmaDestinoId = destino.id;
+  entrar(preparadorId);
+  const grade = await prepararGradeInicialTurma({
+    turmaId: destino.id, fusoOrigem: "UTC", versaoAnterior: 0,
+    motivo: "Grade futura publicada para o destino equivalente.", chaveIdempotencia: "grade-equivalencia-decisao",
+  });
+  if (!grade.ok || !grade.dado) throw new Error(JSON.stringify(grade));
+  entrar(decisorId);
+  expect(await decidirGradeInicialTurma({ propostaId: grade.dado.id, aprovar: true, motivo: "Grade aprovada por pessoa independente." })).toMatchObject({ ok: true });
+  await prisma.turma.update({ where: { id: destino.id }, data: { status: "ABERTA" } });
   alunoId = (await prisma.aluno.create({ data: { primeiroNome: "Aluna de equivalência", paisId: catalogo.pais.id } })).id;
   matriculaId = (await prisma.matricula.create({ data: {
     alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", codigo: "M-EQUIV-DECISAO", status: "ATIVA", ativadaEm: inicio,

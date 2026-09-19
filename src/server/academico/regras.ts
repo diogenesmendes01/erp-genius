@@ -29,7 +29,7 @@ export function impedimentoEstadoAcademico(estado: EstadoAcademico, requerDestin
   if (classificarDestinoAcademico(origem, estado.destino) === "INCOMPATIVEL") {
     return "Mudança de idioma, modalidade ou formato de ensino exige um fluxo contratual próprio. Esta operação altera somente turma ou nível.";
   }
-  if (!["ABERTA", "EM_ANDAMENTO"].includes(estado.destino.status) || (estado.destino.dataFim && estado.destino.dataFim < agora)) {
+  if (!["ABERTA", "EM_ANDAMENTO"].includes(estado.destino.status) || !estado.ofertaDestino?.disponivel) {
     return "Turma de destino não está disponível para transferência.";
   }
   if (estado.destino._count.alocacoes + estado.destino._count.reservasMatricula >= estado.destino.capacidade) return "Turma de destino sem vaga. A solicitação não reserva uma vaga.";
@@ -45,7 +45,7 @@ const TurmaSnapshotSchema = z.object({
   vinculosDocentes: z.array(z.object({ id: z.string(), professorId: z.string(), inicio: z.string(), fim: z.string().nullable() })),
 });
 export const SnapshotMudancaAcademicaSchema = z.object({
-  versao: z.union([z.literal(1), z.literal(2)]), alunoId: z.string(), statusAluno: z.literal("ATIVO").nullable(),
+  versao: z.union([z.literal(1), z.literal(2), z.literal(3)]), alunoId: z.string(), statusAluno: z.literal("ATIVO").nullable(),
   escopoMatriculaId: z.string().nullable().default(null),
   alocacaoOrigemId: z.string(), alocadaEm: z.string(),
   matriculaOrigemId: z.string().nullable().default(null),
@@ -53,6 +53,20 @@ export const SnapshotMudancaAcademicaSchema = z.object({
   matriculas: z.array(z.object({ id: z.string(), status: z.string(), produtoId: z.string(), idiomaId: z.string(), modalidadeId: z.string() })),
   ultimaMovimentacao: z.object({ id: z.string(), tipo: z.string(), criadoEm: z.string() }).nullable(),
   totalMovimentacoes: z.number().int().nonnegative(),
+  agendaDestino: z.object({
+    gradeId: z.string(), gradeVersao: z.number().int(), calendarioId: z.string(), calendarioVersao: z.number().int(),
+    calendarioVigenteId: z.string(), calendarioVigenteVersao: z.number().int(),
+    cadeiaCalendario: z.discriminatedUnion("tipo", [
+      z.object({ tipo: z.literal("GRADE_PUBLICADA") }),
+      z.object({ tipo: z.literal("REPLANEJAMENTO_APLICADO"), rascunhoId: z.string(), decisaoId: z.string(), aplicacaoId: z.string(), estadoHash: z.string() }),
+    ]),
+    encontros: z.array(z.object({ id: z.string(), inicio: z.string(), fim: z.string(), status: z.string(), professorId: z.string().nullable(), professorApto: z.boolean() })),
+    indisponibilidades: z.array(z.object({ id: z.string(), professorId: z.string(), inicio: z.string(), fim: z.string() })),
+  }).nullable().default(null),
+}).superRefine((snapshot, ctx) => {
+  if (snapshot.versao === 3 && !snapshot.agendaDestino) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["agendaDestino"], message: "A versão atual exige a fotografia da agenda." });
+  }
 });
 export type SnapshotMudancaAcademica = z.infer<typeof SnapshotMudancaAcademicaSchema>;
 
@@ -74,7 +88,7 @@ export function montarSnapshotMudancaAcademica(estado: EstadoAcademico): Snapsho
   return {
     // No vínculo contratual, a situação vinculante está em matriculas; o cadastro
     // global não decide a elegibilidade nem invalida a aprovação de outro contrato.
-    versao: 2, alunoId: estado.aluno.id, statusAluno: estado.origem.matriculaId ? null : "ATIVO", alocacaoOrigemId: estado.origem.id, alocadaEm: estado.origem.criadoEm.toISOString(),
+    versao: 3, alunoId: estado.aluno.id, statusAluno: estado.origem.matriculaId ? null : "ATIVO", alocacaoOrigemId: estado.origem.id, alocadaEm: estado.origem.criadoEm.toISOString(),
     escopoMatriculaId: estado.escopoMatriculaId ?? null,
     matriculaOrigemId: estado.origem.matriculaId ?? null,
     origem: snapshotTurma(estado.origem.turma), destino: snapshotTurma(estado.destino),
@@ -82,20 +96,58 @@ export function montarSnapshotMudancaAcademica(estado: EstadoAcademico): Snapsho
     ultimaMovimentacao: estado.ultimaMovimentacao ? { id: estado.ultimaMovimentacao.id, tipo: estado.ultimaMovimentacao.tipo, criadoEm: estado.ultimaMovimentacao.criadoEm.toISOString() } : null,
     // O contador também detecta movimentações novas com o mesmo timestamp da anterior.
     totalMovimentacoes: estado.totalMovimentacoes,
+    agendaDestino: estado.ofertaDestino?.fotografia ?? null,
   };
 }
 
-export function exigirSnapshotMudancaAcademicaAtual(snapshot: unknown, estado: EstadoAcademico) {
+/**
+ * O relógio não torna um pedido obsoleto sozinho. Para verificar a aprovação
+ * já guardada e a agenda atual, descartamos em ambos os lados as aulas que já
+ * começaram no mesmo marco. Uma remarcação, cancelamento ou indisponibilidade
+ * de aula que ainda pode afetar o novo vínculo permanece na comparação.
+ */
+export function normalizarSnapshotMudancaAcademicaNoMarco(snapshot: SnapshotMudancaAcademica, marco: Date): SnapshotMudancaAcademica {
+  if (!snapshot.agendaDestino) return snapshot;
+  const encontros = snapshot.agendaDestino.encontros.filter((encontro) => new Date(encontro.inicio) >= marco);
+  const indisponibilidades = snapshot.agendaDestino.indisponibilidades.filter((ausencia) => encontros.some((encontro) =>
+    encontro.professorId === ausencia.professorId && new Date(ausencia.inicio) < new Date(encontro.fim) && new Date(ausencia.fim) > new Date(encontro.inicio)));
+  return { ...snapshot, agendaDestino: { ...snapshot.agendaDestino, encontros, indisponibilidades } };
+}
+
+export function lerSnapshotMudancaAcademica(snapshot: unknown) {
   const parsed = SnapshotMudancaAcademicaSchema.safeParse(snapshot);
   if (!parsed.success) throw new ErroRegra("A solicitação não possui um estado verificável. Cancele-a e abra uma nova.");
+  return parsed.data;
+}
+
+/**
+ * Repetir uma solicitação antiga não promove nem aprova sua memória. Ainda
+ * exige que o escopo original inteiro permaneça igual; a única tolerância é o
+ * relógio removendo dos dois lados aulas que já começaram.
+ */
+export function memoriaLegadaMudancaAcademicaCorresponde(snapshot: SnapshotMudancaAcademica, estado: EstadoAcademico, marco: Date) {
+  const atual = montarSnapshotMudancaAcademica(estado);
+  const comparavel: SnapshotMudancaAcademica = {
+    ...atual,
+    versao: snapshot.versao,
+    statusAluno: snapshot.versao === 1 && estado.aluno.status === "ATIVO" ? "ATIVO" : null,
+    agendaDestino: snapshot.agendaDestino ? atual.agendaDestino : null,
+  };
+  return isDeepStrictEqual(
+    normalizarSnapshotMudancaAcademicaNoMarco(snapshot, marco),
+    normalizarSnapshotMudancaAcademicaNoMarco(comparavel, marco),
+  );
+}
+
+export function exigirSnapshotMudancaAcademicaAtual(snapshot: unknown, estado: EstadoAcademico, marco: Date) {
+  const anterior = lerSnapshotMudancaAcademica(snapshot);
+  if (anterior.versao !== 3) throw new ErroRegra("A solicitação não registra a agenda vigente do destino. Cancele-a e abra uma nova.");
   if (impedimentoEstadoAcademico(estado, false)) throw new ErroRegra("O aluno ou as condições da matrícula mudaram desde a solicitação. Confira o vínculo antes de continuar.");
   const atual = montarSnapshotMudancaAcademica(estado);
-  // Propostas antigas conservam o requisito global sob o qual foram aprovadas.
-  const comparavel = parsed.data.versao === 1 ? { ...atual, versao: 1, statusAluno: estado.aluno.status } : atual;
-  if (!isDeepStrictEqual(parsed.data, comparavel)) {
+  if (!isDeepStrictEqual(normalizarSnapshotMudancaAcademicaNoMarco(anterior, marco), normalizarSnapshotMudancaAcademicaNoMarco(atual, marco))) {
     throw new ErroRegra("O aluno, a matrícula, a alocação ou as condições das turmas mudaram desde a solicitação. Cancele-a e abra uma nova.");
   }
-  return parsed.data;
+  return anterior;
 }
 
 export function exigirDecisaoAcademicaIndependente(solicitanteId: string, aprovadorId: string) {

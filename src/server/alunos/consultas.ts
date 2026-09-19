@@ -5,6 +5,7 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
+import { carregarOfertasAgendaDestinoTx } from "@/server/academico/destino-agenda";
 import {
   carregarTrilhasVencimentoCivil,
   incluirFonteVencimentoCivil,
@@ -279,11 +280,11 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
 
 export async function listarTurmasAbertasComVaga(usuario?: UsuarioSessao) {
   if (!podeMovimentarAluno(usuario)) return [];
-  // Destinos de TROCA de turma: turmas ainda não encerradas (dataFim no futuro ou ausente
-  // em turmas legadas) — diferente de "aceitando matrícula" (início futuro). Um aluno pode
-  // ser transferido para uma turma em andamento.
+  const agora = new Date();
+  // Destinos em andamento podem receber transferência, desde que a agenda oficial ainda
+  // tenha aula futura. dataFim é previsão legada e não prova nem veda a oferta.
   const turmas = await prisma.turma.findMany({
-    where: { status: { in: ["ABERTA", "EM_ANDAMENTO"] }, OR: [{ dataFim: null }, { dataFim: { gte: new Date() } }] },
+    where: { status: { in: ["ABERTA", "EM_ANDAMENTO"] } },
     include: {
       modalidade: true,
       nivel: { include: { idioma: true } },
@@ -291,8 +292,9 @@ export async function listarTurmasAbertasComVaga(usuario?: UsuarioSessao) {
       _count: { select: { alocacoes: { where: { ativa: true } }, reservasMatricula: { where: { status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } } } },
     },
   });
+  const ofertas = await carregarOfertasAgendaDestinoTx(prisma, turmas.map((turma) => turma.id), agora);
   return turmas
-    .filter((t) => vagasTurma(t.capacidade, (t._count.alocacoes + t._count.reservasMatricula)) > 0)
+    .filter((t) => ofertas.get(t.id)?.disponivel && vagasTurma(t.capacidade, (t._count.alocacoes + t._count.reservasMatricula)) > 0)
     .map((t) => ({
       id: t.id,
       label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${vagasTurma(
