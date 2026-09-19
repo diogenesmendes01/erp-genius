@@ -14,6 +14,7 @@ import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
 import { listarPropostasRetomada } from "@/server/retomada/consultas";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 // Guard server-side por papel ANTES de buscar dados sensíveis (issue #1).
 // Papéis alinhados ao nav.ts; Administrador passa sempre (exigirPapelLeitura).
@@ -36,7 +37,7 @@ export default async function FinanceiroPage() {
   const podeOperarCobranca =
     papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 
-  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, informes, politicas, retomadas] = await Promise.all([
+  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, informes, politicas, retomadas, preferencia] = await Promise.all([
     podeOperarCobranca ? listarFilaCobranca() : Promise.resolve({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] }),
     listarComissoes(),
     podeOperarCobranca ? kpisFinanceiro() : Promise.resolve({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 }),
@@ -46,6 +47,7 @@ export default async function FinanceiroPage() {
     podeOperarCobranca ? listarInformesPagamento() : Promise.resolve([]),
     configuracaoComissoes(),
     podeOperarCobranca ? listarPropostasRetomada() : Promise.resolve({ ok: true as const, dado: [] }),
+    consultarPreferenciaFusoEquipe(),
   ]);
 
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
@@ -89,6 +91,7 @@ export default async function FinanceiroPage() {
       cotacoes={cotacoes}
       relatorio={relatorio}
       podeGerenciarCambio={podeGerenciarCambio}
+      preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
     />
     </>
   );

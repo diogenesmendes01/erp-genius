@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { conferirPagamento } from "@/server/financeiro/acoes";
 import type { listarInformesPagamento } from "@/server/financeiro/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-export function InformesPagamento({ informes }: { informes: Awaited<ReturnType<typeof listarInformesPagamento>> }) {
+function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
+  const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
+
+export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: { informes: Awaited<ReturnType<typeof listarInformesPagamento>>; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [erro, setErro] = useState(""); const [ocupado, setOcupado] = useState<string | null>(null);
   const [motivos, setMotivos] = useState<Record<string, string>>({});
@@ -24,7 +30,7 @@ export function InformesPagamento({ informes }: { informes: Awaited<ReturnType<t
     {informes.map((i) => <article key={i.id} className="space-y-2 rounded-md border p-3 text-sm">
       <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {new Date(i.dataPagamento).toLocaleDateString("pt-BR")}</p>
       <p>{i.status === "A_CONFERIR" ? "A conferir" : i.status === "CONFIRMADO" ? "Confirmado" : "Rejeitado"} · {i.forma}</p>
-      {i.status === "A_CONFERIR" && i.suspenderLembretesAte && <p className="text-xs text-gray-600">Prazo de conferência: {new Date(i.suspenderLembretesAte).toLocaleString("pt-BR")}</p>}
+      {i.status === "A_CONFERIR" && i.suspenderLembretesAte && <p className="text-xs text-gray-600">Prazo de conferência: {textoInstanteOperacional(i.suspenderLembretesAte, preferenciaFusoExibicao)}</p>}
       {i.comentario && <p>{i.comentario}</p>}
       {i.comprovanteUrl && <a className="text-brand-700 underline" href={i.comprovanteUrl} target="_blank" rel="noreferrer">{i.comprovanteNome ?? "Abrir comprovante"}</a>}
       {i.motivoConferencia && <p>Motivo: {i.motivoConferencia}</p>}

@@ -82,6 +82,7 @@ export function FinanceiroPainel({
   cotacoes,
   relatorio,
   podeGerenciarCambio,
+  preferenciaFusoExibicao = null,
 }: {
   fila: FilaCobrancaDados;
   informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
@@ -96,6 +97,7 @@ export function FinanceiroPainel({
   cotacoes: CotacaoVigente[];
   relatorio: RelatorioDados;
   podeGerenciarCambio: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(podeOperarCobranca ? "cobrancas" : "comissoes");
@@ -177,7 +179,7 @@ export function FinanceiroPainel({
       {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       {nota && <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
 
-      {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} />}
+      {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} />}
       {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} />}
       {aba === "cobrancas" && podeOperarCobranca && (
@@ -187,6 +189,7 @@ export function FinanceiroPainel({
           regua={fila.regua}
           podeOperar={podeOperarCobranca}
           podeBloquear={podeAprovar}
+          preferenciaFusoExibicao={preferenciaFusoExibicao}
         />
       )}
 
