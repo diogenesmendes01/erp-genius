@@ -5,14 +5,24 @@ import { consultarPainelPrevias, consultarPreenchimentoContratual } from "@/serv
 import { TextoPreviaSchema } from "@/server/contratos/previa-projecao";
 import { TextoPrevia } from "./TextoPrevia";
 import { RegistrarPrevia } from "./RegistrarPrevia";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 const pagina = (v?: string) => { const n = Number(v ?? 1); return Number.isInteger(n) && n > 0 && n <= 100000 ? n : 1; };
+const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+};
 
 export default async function ContratoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ modelo?: string; modelos?: string; historico?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, s = await searchParams;
-  const r = await consultarPainelPrevias({ matriculaId: id, paginaModelos: pagina(s.modelos), paginaHistorico: pagina(s.historico) });
+  const [r, preferencia] = await Promise.all([
+    consultarPainelPrevias({ matriculaId: id, paginaModelos: pagina(s.modelos), paginaHistorico: pagina(s.historico) }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, base = `/matriculas/${id}/contrato`;
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const revisao = d.podePreparar && s.modelo ? await consultarPreenchimentoContratual({ matriculaId: id, modeloId: s.modelo }) : null;
   const texto = revisao?.ok && revisao.dado ? TextoPreviaSchema.safeParse(revisao.dado.snapshot) : null;
   return <div className="space-y-5">
@@ -31,7 +41,7 @@ export default async function ContratoPage({ params, searchParams }: { params: P
     {texto && !texto.success && <p role="alert">Conteúdo de prévia inválido. Encaminhe para conferência.</p>}
     {texto?.success && revisao?.ok && revisao.dado && s.modelo && <section className="space-y-4 rounded border p-4"><h2 className="text-xl">Revisão antes do registro</h2><TextoPrevia dados={texto.data} /><RegistrarPrevia key={`${s.modelo}:${revisao.dado.revisaoHash}`} matriculaId={id} modeloId={s.modelo} revisaoHash={revisao.dado.revisaoHash} /></section>}
     <section className="space-y-3"><h2 className="text-xl">Prévias preservadas</h2>
-      {d.historico.length ? <ul className="space-y-2">{d.historico.map((p) => <li key={p.id} className="rounded border p-3"><Link className="underline" href={`${base}/previas/${p.id}`}>{p.modelo.codigo} · versão {p.modelo.versao} · {p.criadaEm.toISOString().replace("T", " ").slice(0, 19)} UTC</Link><p>{p.autor.nome} · {p.motivo}</p></li>)}</ul> : <p>Nenhuma prévia registrada nesta página.</p>}
+      {d.historico.length ? <ul className="space-y-2">{d.historico.map((p) => <li key={p.id} className="rounded border p-3"><Link className="underline" href={`${base}/previas/${p.id}`}>{p.modelo.codigo} · versão {p.modelo.versao} · {textoInstanteAdministrativo(p.criadaEm, preferenciaFusoExibicao)}</Link><p>{p.autor.nome} · {p.motivo}</p></li>)}</ul> : <p>Nenhuma prévia registrada nesta página.</p>}
       <nav className="flex gap-4" aria-label="Páginas das prévias">{d.paginaHistorico > 1 && <Link href={`${base}?historico=${d.paginaHistorico - 1}&modelos=${d.paginaModelos}`}>Prévias mais recentes</Link>}<span>Página {d.paginaHistorico}</span>{d.maisHistorico && <Link href={`${base}?historico=${d.paginaHistorico + 1}&modelos=${d.paginaModelos}`}>Prévias anteriores</Link>}</nav>
     </section>
   </div>;

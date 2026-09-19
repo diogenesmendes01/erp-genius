@@ -6,15 +6,26 @@ import { ConferirAssinatura } from "../../ConferirAssinatura";
 import { consultarConclusaoContratual } from "@/server/contratos/conclusao-consulta";
 import { consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { ConferirAceite } from "../../ConferirAceite";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+
+const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+};
 
 export default async function ConferenciaAssinaturaPage({ params, searchParams }: {
   params: Promise<{ id: string; artefatoId: string }>; searchParams: Promise<{ pagina?: string }>;
 }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id, artefatoId } = await params, pagina = Number((await searchParams).pagina ?? "1");
-  const r = await consultarConferenciaAssinatura({ matriculaId: id, artefatoId, pagina });
+  const [r, preferencia] = await Promise.all([
+    consultarConferenciaAssinatura({ matriculaId: id, artefatoId, pagina }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, atual = d.revisao;
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const resultadoConclusao = await consultarConclusaoContratual({ matriculaId: id, artefatoId });
   const processo = resultadoConclusao.ok ? resultadoConclusao.dado : null;
   const consultaAceite = processo?.conclusao ? await consultarAceiteOriginal({ matriculaId: id, conclusaoId: processo.conclusao.id }) : null;
@@ -28,8 +39,8 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
     {processo && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Evidências do processo de assinatura</h2>
       <p>Serviço: {processo.fornecedor}. Ambiente: {processo.ambiente === "SANDBOX" ? "Teste — não comprova assinatura em produção" : "Produção"}.</p>
       <p>Estado do envio: {processo.estadoEnvio}. A evidência preservada não substitui a conferência final da Secretaria.</p>
-      {processo.conclusao ? <><p>Conclusão registrada em {processo.conclusao.concluidaEm.replace("T", " ").replace("Z", " UTC")}.</p>
-        <ul>{processo.conclusao.assinaturas.map(a => <li key={a.papel}>{a.nome} — {a.papel.replaceAll("_", " ")} — {a.assinadaEm.replace("T", " ").replace("Z", " UTC")}</li>)}</ul>
+      {processo.conclusao ? <><p>Conclusão registrada em {textoInstanteAdministrativo(processo.conclusao.concluidaEm, preferenciaFusoExibicao)}.</p>
+        <ul>{processo.conclusao.assinaturas.map(a => <li key={a.papel}>{a.nome} — {a.papel.replaceAll("_", " ")} — {textoInstanteAdministrativo(a.assinadaEm, preferenciaFusoExibicao)}</li>)}</ul>
         <nav className="flex gap-4"><a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(processo.conclusao.id)}/pdf`}>Abrir PDF assinado</a>
           <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(processo.conclusao.id)}/auditoria`}>Baixar auditoria preservada</a></nav>
       </> : <p>Ainda não há evidência de conclusão de todas as assinaturas exigidas.</p>}
@@ -37,7 +48,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
     {d.pendencia && !aceite?.aceite && <p role="alert" className="rounded border p-3">{d.pendencia}</p>}
     {consultaAceite && !consultaAceite.ok && <p role="alert">{consultaAceite.erro}</p>}
     {aceite && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferência final do aceite</h2>
-      {aceite.aceite && <><p>Aceite confirmado por {aceite.aceite.autor.nome}, em {aceite.aceite.criadaEm.toISOString().replace("T", " ").replace("Z", " UTC")}.</p><p>{aceite.aceite.motivo}</p></>}
+      {aceite.aceite && <><p>Aceite confirmado por {aceite.aceite.autor.nome}, em {textoInstanteAdministrativo(aceite.aceite.criadaEm, preferenciaFusoExibicao)}.</p><p>{aceite.aceite.motivo}</p></>}
       {aceite.pendencia && <p role="alert">{aceite.pendencia}</p>}
       {aceite.revisao && <><p>Condições da matrícula: versão {aceite.revisao.versaoCondicoes}. Conferir o aceite não ativa a matrícula.</p>
         <ul>{aceite.revisao.entrada.itens.map(i => <li key={i.id}>{i.tipo.replaceAll("_", " ")}: {i.valor} {i.moeda}. {i.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</li>)}</ul>
@@ -58,7 +69,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
     <section className="space-y-3"><h2 className="text-xl">Histórico de conferências</h2>
       {!d.historico.length && <p>Nenhuma conferência registrada.</p>}
       {d.historico.map((h) => <article className="rounded border p-3" key={h.id}>
-        <p>{h.autor.nome}, {h.criadaEm.toISOString().replace("T", " ").slice(0, 19)} UTC.</p><p>{h.motivo}</p>
+        <p>{h.autor.nome}, {textoInstanteAdministrativo(h.criadaEm, preferenciaFusoExibicao)}.</p><p>{h.motivo}</p>
         <p>{atual?.hash === h.revisaoHash ? "Corresponde à revisão atual." : "Registro histórico; exige nova conferência antes de avançar."}</p>
       </article>)}
       {pagina > 1 && <Link className="underline mr-4" href={`?pagina=${pagina - 1}`}>Anteriores</Link>}
