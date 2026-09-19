@@ -365,8 +365,25 @@ it("cancelamento independente libera apenas habilidades pendentes e preserva a r
   const { admin, encontroId } = await publicarParaCancelamento(escrita.id);
   const consulta = await consultarCancelamentoAgendaRecuperacao({ reservaId: escrita.reservaId });
   if (!consulta.ok || !consulta.dado) throw new Error(JSON.stringify(consulta));
+  const [fonteLegada] = await prisma.$queryRaw<{ estado: { itens: Array<{ encontroId: string | null; inicio: string | null }> } }[]>`SELECT estado_cancelamento_agenda_recuperacao(${escrita.reservaId}) AS estado`;
+  const encontroOriginal = await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId } });
+  const instanteLegado = fonteLegada.estado.itens.find(item => item.encontroId === encontroId)!.inicio!;
+  expect(instanteLegado).not.toMatch(/Z|[+-]\d{2}:\d{2}$/);
+  expect(consulta.dado.estadoConferido).toBe(hashAgendaRecuperacao(fonteLegada.estado));
+  expect(consulta.dado.atual.itens.find(item => item.encontroId === encontroId)).toMatchObject({
+    inicio: `${instanteLegado}Z`, fusoOrigem: encontroOriginal.fusoOrigem,
+  });
+  expect(new Date(`${instanteLegado}Z`).getTime()).toBe(encontroOriginal.inicio.getTime());
   const d = { reservaId: escrita.reservaId, motivo: "Escola indisponível para a atividade restante", evidencia: "Comunicado institucional da indisponibilidade", estadoConferido: consulta.dado.estadoConferido, chaveIdempotencia: "cancelamento-agenda-aprovado" };
   const r = await proporCancelamentoAgendaRecuperacao(d); if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+  const propostaPersistida = await prisma.propostaCancelamentoAgendaRecuperacao.findUniqueOrThrow({ where: { id: r.dado.id } });
+  expect(propostaPersistida.snapshot).toEqual(fonteLegada.estado);
+  entrar(admin);
+  const conferencia = await consultarCancelamentoAgendaRecuperacao({ reservaId: escrita.reservaId });
+  if (!conferencia.ok || !conferencia.dado) throw new Error(JSON.stringify(conferencia));
+  expect(conferencia.dado.propostas[0]).toMatchObject({ estadoMudou: false, estadoConferido: consulta.dado.estadoConferido });
+  expect(conferencia.dado.propostas[0].origem.itens.find(item => item.encontroId === encontroId)).toMatchObject({ inicio: `${instanteLegado}Z`, fusoOrigem: encontroOriginal.fusoOrigem });
+  entrar(gestor);
   expect(await proporCancelamentoAgendaRecuperacao(d)).toEqual(r);
   expect((await proporCancelamentoAgendaRecuperacao({ ...d, motivo: "Outra causa com chave repetida" })).ok).toBe(false);
   const decisao = { propostaId: r.dado.id, aprovar: true, motivo: "Conferência independente das habilidades pendentes", estadoConferido: d.estadoConferido };
