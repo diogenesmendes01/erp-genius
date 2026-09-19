@@ -39,4 +39,20 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(mocks.preferencia).not.toHaveBeenCalled();
     expect(mocks.assinatura).not.toHaveBeenCalled();
   });
+
+  it("formata a observação da tentativa no fuso pessoal e preserva resultado e referência", async () => {
+    mocks.sessao.mockResolvedValue({});
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.assinatura.mockResolvedValue({ ok: true, dado: { revisao: null, historico: [], pendencia: null, temProxima: false } });
+    mocks.processo.mockResolvedValue({ ok: true, dado: {
+      fornecedor: "ZAPSIGN", ambiente: "SANDBOX", estado: "ENVIADO", tentativaAtual: 1, referenciaExterna: "processo-1", criadoEm: new Date("2026-10-01T02:30:00Z"), paginaTentativas: 1, temMaisTentativas: false,
+      tentativas: [{ numero: 1, iniciadaEm: new Date("2026-10-01T02:30:00Z"), temMaisObservacoes: false, observacoes: [{ resultado: "REGISTRADO", referenciaExterna: "evento-1", observadaEm: new Date("2026-10-01T03:30:00Z") }] }],
+    } });
+    mocks.conclusao.mockResolvedValue({ ok: true, dado: null });
+    mocks.aplicacao.mockResolvedValue({ ok: true, dado: null });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula", propostaId: "proposta", artefatoId: "artefato" }), searchParams: Promise.resolve({}) }));
+
+    expect(html).toContain("Resultado: REGISTRADO em 30/09/2026, 21:30 (America/Costa_Rica; origem UTC) · referência evento-1");
+  });
 });
