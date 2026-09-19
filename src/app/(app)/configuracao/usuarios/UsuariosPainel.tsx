@@ -6,6 +6,7 @@ import { Papel } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { PAPEL_LABEL } from "@/lib/roles";
 import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
 
 export interface UsuarioRow {
@@ -22,12 +23,13 @@ export interface UsuarioRow {
   ultimoAcesso: string | null; // ISO ou null
 }
 
-function formatarAcesso(iso: string | null): string {
+function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | null): string {
   if (!iso) return "nunca";
-  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const instante = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${instante.texto} (horário exibido em ${instante.fuso}; origem UTC)`;
 }
 
-export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
+export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
@@ -90,7 +92,7 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
                 <td className="px-4 py-3 text-gray-600">
                   {u.limiteDescontoTaxaPct ?? 0}% / {u.limiteDescontoMensalidadePct ?? 0}%
                 </td>
-                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso)}</td>
+                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso, preferenciaFusoExibicao)}</td>
                 <td className="px-4 py-3">
                   <span
                     className={
