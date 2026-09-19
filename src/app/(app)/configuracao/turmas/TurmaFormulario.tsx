@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarTurma, editarTurma } from "@/server/turmas/acoes";
+import type { TurmaInput } from "@/server/turmas/schema";
 import {
   diasPorSemanaDaFrequencia,
   duracaoIntervaloEmMinutos,
@@ -50,6 +51,30 @@ export interface ModalidadeOpcao extends Opcao {
 
 export function destinoPrepararGrade(turmaId: string): string {
   return `/academico/grades/nova?turmaId=${encodeURIComponent(turmaId)}`;
+}
+
+type ResultadoFormulario = { ok: boolean; erro?: string; dado?: unknown };
+type AcoesFormulario = {
+  criar: (input: TurmaInput) => Promise<ResultadoFormulario>;
+  editar: (turmaId: string, input: TurmaInput) => Promise<ResultadoFormulario>;
+};
+
+/** Caminho acionado pelo submit: criação navega; edição apenas atualiza e fecha o diálogo. */
+export async function submeterTurma(
+  turmaId: string | undefined,
+  input: TurmaInput,
+  acoes: AcoesFormulario,
+): Promise<{ ok: true; destino?: string } | { ok: false; erro: string }> {
+  if (turmaId) {
+    const resultado = await acoes.editar(turmaId, input);
+    return resultado.ok ? { ok: true } : { ok: false, erro: resultado.erro ?? "Turma não confirmada." };
+  }
+  const resultado = await acoes.criar(input);
+  const id = typeof resultado.dado === "object" && resultado.dado !== null && "id" in resultado.dado
+    ? (resultado.dado as { id?: unknown }).id
+    : null;
+  if (!resultado.ok || typeof id !== "string") return { ok: false, erro: resultado.erro ?? "Turma não confirmada." };
+  return { ok: true, destino: destinoPrepararGrade(id) };
 }
 
 export function TurmaFormulario({
@@ -133,14 +158,14 @@ export function TurmaFormulario({
       capacidade,
       rolling,
     };
-    const res = turma ? await editarTurma(turma.id, input) : await criarTurma(input);
-    if (!res.ok || !res.dado) {
-      setErro(res.ok ? "Turma não confirmada." : res.erro);
+    const res = await submeterTurma(turma?.id, input, { criar: criarTurma, editar: editarTurma });
+    if (!res.ok) {
+      setErro(res.erro);
       setSalvando(false);
       return;
     }
-    if (!turma) {
-      router.push(destinoPrepararGrade(res.dado.id));
+    if (res.destino) {
+      router.push(res.destino);
       return;
     }
     router.refresh();
