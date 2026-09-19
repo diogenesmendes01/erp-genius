@@ -4,13 +4,15 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCancelamentosAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-cancelamento";
 import { Formulario } from "./Formulario";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 const fonte = z.object({ reserva: z.object({ codigoAvaliacao: z.string(), status: z.string(), regraCancelamentoMinutos: z.number() }), encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string(), status: z.string() }).nullable() });
-function Agenda({ valor }: { valor: unknown }) {
+function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
  const r = fonte.safeParse(valor);
  if (!r.success || !r.data.encontro) return <p role="alert">Agenda sem informação suficiente para conferência.</p>;
  const e = r.data.encontro;
- const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(/[zZ]|[+-]\d\d:\d\d$/.test(v) ? v : `${v}Z`));
- return <p>Avaliação {r.data.reserva.codigoAvaliacao} · {data(e.inicio)} até {data(e.fim)} ({e.fusoOrigem}). Encontro: {e.status}. Reserva: {r.data.reserva.status}. Antecedência de cancelamento: {r.data.reserva.regraCancelamentoMinutos} minutos.</p>;
+ const fuso=resolverFusoExibicao(preferencia,e.fusoOrigem), data=(v:string)=>formatarInstanteExibicao(v,fuso,e.fusoOrigem).texto;
+ return <p>Avaliação {r.data.reserva.codigoAvaliacao} · {data(e.inicio)} até {data(e.fim)} ({fuso}; origem {e.fusoOrigem}). Encontro: {e.status}. Reserva: {r.data.reserva.status}. Antecedência de cancelamento: {r.data.reserva.regraCancelamentoMinutos} minutos.</p>;
 }
 function Efeito({ snapshot, origem, ocorridaEm }: { snapshot: unknown; origem: string; ocorridaEm: string }) {
  const r = fonte.safeParse(snapshot);
@@ -23,7 +25,7 @@ function Efeito({ snapshot, origem, ocorridaEm }: { snapshot: unknown; origem: s
 export default async function Page({ params, searchParams }: { params: Promise<{ reservaId: string }>; searchParams: Promise<{ beforeId?: string }> }) {
  await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
  const { reservaId } = await params, { beforeId } = await searchParams;
- const r = await consultarCancelamentosAgendaSegundaChamada({ reservaId, beforeId });
+ const [r, preferencia] = await Promise.all([consultarCancelamentosAgendaSegundaChamada({ reservaId, beforeId }), consultarPreferenciaFusoEquipe()]);
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
  const d = r.dado;
  return <section className="space-y-4">
@@ -31,12 +33,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
  <h1 className="text-2xl font-medium">Cancelar segunda chamada</h1>
  <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
  <p>A aprovação independente cancela este encontro. Cancelamento pela escola ou pedido do aluno dentro da antecedência devolve a oportunidade; pedido tardio do aluno consome. Vale a data original do pedido, não a data da aprovação. Não cria nota, presença ou cobrança.</p>
- <h2 className="font-medium">Agenda atual</h2><Agenda valor={d.atual} />
+ <h2 className="font-medium">Agenda atual</h2><Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
  {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} />}
  <h2 className="font-medium">Propostas e decisões</h2>
  {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
  <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}. Proposta de {p.autorNome}. Ocorrência informada: {new Date(p.ocorridaEm).toISOString()} (UTC).</p>
- <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p><Agenda valor={p.snapshot} /><Efeito snapshot={p.snapshot} origem={p.origem} ocorridaEm={p.ocorridaEm} />
+ <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} /><Efeito snapshot={p.snapshot} origem={p.origem} ocorridaEm={p.ocorridaEm} />
  {p.decisao ? <p role="status">{p.decisao.aprovada ? "Aprovado e aplicado" : "Rejeitado"} por {p.decisao.decisorNome}: {p.decisao.motivo}</p> : <p>Aguardando decisão de outra pessoa autorizada. Alterações posteriores na agenda exigem nova proposta.</p>}
  {p.podeDecidir && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} proposta={{ id: p.id, hash: p.entradaHash }} />}
  </article>)}
