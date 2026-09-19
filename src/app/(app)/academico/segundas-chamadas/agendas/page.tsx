@@ -56,7 +56,7 @@ export default async function AgendasSegundaChamadaPage({
     {d.itens.map((item) => <article key={item.reservaId} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{item.aluno} · avaliação {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matricula.codigo ?? "sem código"} · Turma {item.turma.codigo ?? item.turma.nome ?? "sem identificação"}.</p>
-      {item.agenda && <p>Horário: {dataHora(item.agenda.inicio, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.agenda.fusoOrigem))} até {dataHora(item.agenda.fim, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.agenda.fusoOrigem))} (origem {item.agenda.fusoOrigem}).</p>}
+      {item.agenda && (() => { const fuso=resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null,item.agenda.fusoOrigem); return <p>Horário: {dataHora(item.agenda.inicio,fuso)} até {dataHora(item.agenda.fim,fuso)} ({fuso}; origem {item.agenda.fusoOrigem}).</p>; })()}
       <p>Situação da reserva: {rotulo(rotulosReserva, item.statusReserva)}. Situação do encontro: {item.agenda ? rotulo(rotulosEncontro, item.agenda.status) : "Sem agenda"}.</p>
       <div className="flex gap-4"><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/remarcacao`}>Abrir remarcação</Link><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/substituicao`}>Substituir professor</Link></div>
     </article>)}

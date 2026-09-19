@@ -62,7 +62,7 @@ export default async function Page({
     {d.itens.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
       <p>Versão {p.versao} · Proposta de {p.autorNome}</p>
       <p>Horário anterior:</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
-      <p>Horário proposto: {periodo(p.inicio, p.fim, p.fusoOrigem)}</p>
+      {(() => { const fuso=resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null,p.fusoOrigem); return <p>Horário proposto: {periodo(p.inicio,p.fim,fuso)} (origem {p.fusoOrigem})</p>; })()}
       <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p>
       {p.calendario ? <>
         <p>Calendário conferido: versão {p.calendario.versao} ({p.calendario.fusoInstitucional}).</p>
