@@ -4,16 +4,21 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAutorizacoesEspeciaisRecuperacao } from "@/server/avaliacoes/recuperacao-autorizacao-consulta";
 import { Formulario } from "./Formulario";
 import { IdentificacaoAvaliacao } from "@/app/(app)/academico/avaliacoes/Identificacao";
-
-const dataHora = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(valor));
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function AutorizacaoEspecialRecuperacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { itemReservaId } = await params;
   const { depoisId } = await searchParams;
-  const resultado = await consultarAutorizacoesEspeciaisRecuperacao({ itemReservaId, ...(depoisId ? { depoisId } : {}) });
+  const [resultado, preferencia] = await Promise.all([
+    consultarAutorizacoesEspeciaisRecuperacao({ itemReservaId, ...(depoisId ? { depoisId } : {}) }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
+  const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
 
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`}>Voltar para a tentativa</Link>
@@ -24,8 +29,8 @@ export default async function AutorizacaoEspecialRecuperacao({ params, searchPar
     {d.podeAutorizar ? <Formulario itemReservaId={d.itemReservaId} /> : <p role="status">Não há autorização especial disponível para esta tentativa nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3">
-      <p>Autorizada por {autorizacao.autorizador.nome}, em {dataHora(autorizacao.criadaEm)} (UTC).</p>
-      <p>Prazo até {dataHora(autorizacao.prazoAte)} (UTC).</p>
+      <p>Autorizada por {autorizacao.autorizador.nome}, em {dataHora(autorizacao.criadaEm)} ({fuso}; origem UTC).</p>
+      <p>Prazo até {dataHora(autorizacao.prazoAte)} ({fuso}; origem UTC).</p>
       <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
     </article>)}
     {!d.historico.length && <p>Nenhuma autorização especial registrada.</p>}

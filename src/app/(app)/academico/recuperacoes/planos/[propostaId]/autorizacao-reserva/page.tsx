@@ -4,16 +4,21 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAutorizacoesReservaRecuperacao } from "@/server/avaliacoes/recuperacao-autorizacao-reserva-consulta";
 import { IdentificacaoAvaliacao } from "../../../../avaliacoes/Identificacao";
 import { AutorizarReservaEspecial, ReservarComAutorizacao } from "./Formulario";
-
-const dataHoraUtc = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(valor));
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
   const { depoisId } = await searchParams;
-  const resultado = await consultarAutorizacoesReservaRecuperacao({ propostaId, ...(depoisId ? { depoisId } : {}) });
+  const [resultado, preferencia] = await Promise.all([
+    consultarAutorizacoesReservaRecuperacao({ propostaId, ...(depoisId ? { depoisId } : {}) }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
+  const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
 
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Voltar para a operação do plano</Link>
@@ -25,7 +30,7 @@ export default async function AutorizacaoReserva({ params, searchParams }: { par
     <h2 className="text-xl font-medium">Histórico de autorizações especiais</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-2 rounded border p-3">
       <p>Habilidade: {autorizacao.habilidade.replaceAll("_", " ")}.</p>
-      <p>Autorizada por {autorizacao.autorizador.nome}, em {dataHoraUtc(autorizacao.criadaEm)} (UTC). Prazo até {dataHoraUtc(autorizacao.prazoAte)} (UTC).</p>
+      <p>Autorizada por {autorizacao.autorizador.nome}, em {dataHora(autorizacao.criadaEm)} ({fuso}; origem UTC). Prazo até {dataHora(autorizacao.prazoAte)} ({fuso}; origem UTC).</p>
       <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
       {autorizacao.reserva ? <p role="status">Reserva registrada. <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Voltar ao plano para conferir a tentativa e autorizar sua realização.</Link></p> : autorizacao.podeReservar ? <ReservarComAutorizacao propostaId={d.propostaId} propostaHash={d.propostaHash} autorizacaoId={autorizacao.id} habilidade={autorizacao.habilidade} /> : <p role="status">Esta autorização não está disponível para reserva nas condições atuais.</p>}
       <p>A realização durante pausa ou encerramento ainda exige a autorização específica de realização.</p>
