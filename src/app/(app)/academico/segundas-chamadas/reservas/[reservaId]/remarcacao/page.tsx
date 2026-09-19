@@ -4,6 +4,8 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRemarcacoesAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
 import { Formulario } from "./Formulario";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 const agendaSchema = z.object({ encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string() }).nullable() });
 function periodo(inicio: string, fim: string, fuso: string) {
@@ -16,11 +18,11 @@ function instante(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso })
     .format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
 }
-function Agenda({ valor }: { valor: unknown }) {
+function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
   const r = agendaSchema.safeParse(valor);
   if (!r.success || !r.data.encontro) return <p>Agenda indisponível para conferência.</p>;
   const e = r.data.encontro;
-  return <p>{periodo(e.inicio, e.fim, e.fusoOrigem)}</p>;
+  const fuso = resolverFusoExibicao(preferencia, e.fusoOrigem); return <p>{periodo(e.inicio, e.fim, fuso)} (origem {e.fusoOrigem})</p>;
 }
 
 export default async function Page({
@@ -33,10 +35,10 @@ export default async function Page({
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { reservaId } = await params;
   const { antesId } = await searchParams;
-  const r = await consultarRemarcacoesAgendaSegundaChamada({
+  const [r, preferencia] = await Promise.all([consultarRemarcacoesAgendaSegundaChamada({
     reservaId,
     ...(antesId ? { antesId } : {}),
-  });
+  }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <section className="space-y-4">
@@ -53,13 +55,13 @@ export default async function Page({
       <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Prazo vigente: " : "Prazo registrado: "}</dt><dd className="inline">{d.conferencia.prazoVigente ? `${instante(d.conferencia.prazoVigente, d.conferencia.fusoExibicao)} (${d.conferencia.fusoExibicao})` : "Disponibilização sem prazo registrado"}</dd></div>
     </dl>
     <h2 className="font-medium">{d.conferencia.contextoVigente ? "Agenda atual" : "Agenda registrada"}</h2>
-    <Agenda valor={d.atual} />
+    <Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
     {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoHash} />}
     <h2 className="font-medium">Propostas e decisões</h2>
     {!d.itens.length && <p>Nenhuma proposta registrada.</p>}
     {d.itens.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
       <p>Versão {p.versao} · Proposta de {p.autorNome}</p>
-      <p>Horário anterior:</p><Agenda valor={p.snapshot} />
+      <p>Horário anterior:</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
       <p>Horário proposto: {periodo(p.inicio, p.fim, p.fusoOrigem)}</p>
       <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p>
       {p.calendario ? <>
