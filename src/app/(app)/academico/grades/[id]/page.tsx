@@ -3,14 +3,16 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaGradeTurma } from "@/server/agenda/grade-consulta";
 import { DecidirGrade } from "./DecidirGrade";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function GradePage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params;
-  const r = await consultarPropostaGradeTurma({ propostaId: id });
+  const [r, preferencia] = await Promise.all([consultarPropostaGradeTurma({ propostaId: id }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <div><Link href="/academico/grades">Voltar às grades</Link><p role="alert">{r.ok ? "Proposta indisponível." : r.erro}</p></div>;
   const p = r.dado, g = p.exibicao.grade, d = p.disponibilidade;
-  const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: p.fusoOrigem }).format(new Date(v));
+  const data = (v: string) => formatarInstanteExibicao(v, preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem).texto;
   const futuros = p.encontrosFuturos;
   const podePublicar = !p.necessitaNovaProposta && futuros && !!d?.professorApto && !d.reservas.length && !d.conflitos.length && !d.conflitosInternos.length && !d.indisponibilidades.length;
   return <div className="space-y-5">
