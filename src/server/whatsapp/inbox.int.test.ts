@@ -224,6 +224,10 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
     const agora = agoraAs(10);
     const { numero: numeroCobranca } = await seedCanal({ estado: "SHADOW" });
     const { aluno, matricula, cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
+    const outraMatricula = await seedCobranca({ vencimento: diasDepois(agora, 1), telefoneAluno: "+50677770001" }, {
+      pais: aluno.paisId ? { id: aluno.paisId } : await prisma.pais.findFirstOrThrow({ select: { id: true } }),
+      produto: matricula.produtoId ? { id: matricula.produtoId } : await prisma.produto.findFirstOrThrow({ select: { id: true } }),
+    });
 
     // Conversa no número de COBRANCA, contato vinculado ao aluno devedor.
     const contatoCobranca = await prisma.contatoWhatsApp.create({
@@ -247,7 +251,13 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
       { id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] },
       atendimentoCobranca.id,
     );
-    expect(doFinanceiro?.cobrancaAtiva?.id).toBe(cobranca.id);
+    expect(doFinanceiro?.cobrancaAtiva).toMatchObject({
+      id: cobranca.id,
+      matriculaId: matricula.id,
+      vencimento: { estado: "A_CONFERIR" },
+    });
+    expect(doFinanceiro?.cobrancaAtiva?.id).not.toBe(outraMatricula.cobranca.id);
+    expect(doFinanceiro?.cobrancaAtiva?.matriculaId).not.toBe(outraMatricula.matricula.id);
     // Thread em ordem cronológica mesmo com o take desc (P2-5).
     expect(doFinanceiro?.mensagens.map((m) => m.corpo)).toEqual(["primeira", "última"]);
 

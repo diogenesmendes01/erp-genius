@@ -9,6 +9,7 @@ import { escopoAtendimentos } from "./escopo";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -21,7 +22,7 @@ export interface MensagemThread {
   status: string; origem: string | null; autorNome: string | null; templateNome: string | null; criadoEm: string;
 }
 export interface CobrancaAtivaThread {
-  id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: string;
+  id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: ReferenciaVencimentoCivil;
   valorNegociado: number; valorRecebido: number; saldo: number; status: string;
 }
 export interface NotaInternaThread { id: string; nota: string; autorNome: string | null; criadoEm: string }
@@ -132,10 +133,11 @@ async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, 
   const destino = matricula && resolverDestinoFinanceiroDaMatricula(matricula);
   if (!destino || !contatoCorrespondeDestinoFinanceiro(contato, destino)) return null;
   const c = await prisma.cobranca.findFirst({ where: { matriculaId, status: { in: ["PENDENTE", "ATRASADO"] }, matricula: { alunoId } },
-    orderBy: [{ vencimento: "asc" }, { id: "asc" }], include: { matricula: { include: { aluno: true } } } });
+    orderBy: [{ vencimento: "asc" }, { id: "asc" }], include: { ...incluirFonteVencimentoCivil, matricula: { include: { aluno: true } } } });
   if (!c) return null;
+  const trilhas = await carregarTrilhasVencimentoCivil(prisma, [c.id], [c.matriculaId]);
   return { id: c.id, matriculaId: c.matriculaId, alunoId, alunoNome: nomeCompleto(c.matricula.aluno), moeda: c.moeda,
-    vencimento: c.vencimento.toISOString(), valorNegociado: Number(c.valorNegociado), valorRecebido: Number(c.valorRecebido ?? 0),
+    vencimento: referenciaVencimentoCivil({ ...c, aplicacoesAditivoVencimento: trilhas.vencimentosPorCobranca.get(c.id), aplicacoesM01: trilhas.m01PorCobranca.get(c.id), retomadasReprogramadas: trilhas.retomadasReprogramadas }), valorNegociado: Number(c.valorNegociado), valorRecebido: Number(c.valorRecebido ?? 0),
     saldo: Number(c.saldo ?? c.valorNegociado.minus(c.valorRecebido ?? 0)), status: c.status };
 }
 

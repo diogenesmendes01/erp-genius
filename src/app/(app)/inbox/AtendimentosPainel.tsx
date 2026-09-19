@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, revisarFalhaEnvio, type RevisaoEnvio, type ItemTriagem, type OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-export function AtendimentosPainel({ opcoes, triagem, revisoes }: { opcoes: OpcoesAtendimento; triagem: ItemTriagem[] | null; revisoes: RevisaoEnvio[] | null }) {
+export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoExibicao }: { opcoes: OpcoesAtendimento; triagem: ItemTriagem[] | null; revisoes: RevisaoEnvio[] | null; preferenciaFusoExibicao: string | null }) {
   const router = useRouter();
   const [destino, setDestino] = useState("");
   const [numero, setNumero] = useState("");
@@ -44,12 +45,12 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes }: { opcoes: Opco
     {triagem && <details className="rounded-lg border border-amber-200 bg-amber-50 p-3">
       <summary className="cursor-pointer text-sm font-medium">Triagem administrativa · {triagem.length} mensagens sem finalidade</summary>
       <p className="my-2 text-xs text-gray-600">Revise cada mensagem antes de conceder acesso ao assunto correspondente. Quando necessário, abra o atendimento acima; a mensagem continua restrita até ser classificada.</p>
-      <div className="max-h-96 space-y-2 overflow-y-auto">{triagem.map((m) => <Item key={m.id} item={m} />)}</div>
+      <div className="max-h-96 space-y-2 overflow-y-auto">{triagem.map((m) => <Item key={m.id} item={m} preferenciaFusoExibicao={preferenciaFusoExibicao} />)}</div>
     </details>}
   </div>;
 }
 
-function Item({ item }: { item: ItemTriagem }) {
+function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenciaFusoExibicao: string | null }) {
   const router = useRouter();
   const [atendimentoId, setAtendimentoId] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -62,7 +63,7 @@ function Item({ item }: { item: ItemTriagem }) {
       if (!r.ok) setErro(r.erro); else router.refresh();
     } finally { setOcupado(false); }
   }}>
-    <p className="font-medium">{item.nome} · {new Date(item.criadoEm).toLocaleString("pt-BR")}</p>
+    <p className="font-medium">{item.nome} · {formatarInstanteExibicao(item.criadoEm, preferenciaFusoExibicao, "UTC").texto}</p>
     <p className="whitespace-pre-wrap break-words text-gray-700">{item.corpo ?? `[${item.tipo.toLowerCase()}]`}</p>
     {item.midiaPath && <a className="text-blue-700 underline" href={item.midiaPath} target="_blank" rel="noreferrer">Abrir anexo para revisão</a>}
     <label className="grid gap-1">Atendimento do mesmo contato e canal
