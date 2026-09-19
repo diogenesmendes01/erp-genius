@@ -84,4 +84,10 @@ describe("DetalheCobranca", () => {
     }));
     expect(detalheOperavel).toContain('data-acesso="matricula:America/Costa_Rica"');
   });
+
+  it("formata a última cobrança como instante, sem deslocar o vencimento civil", () => {
+    const html = detalhe({ ...item, ultimaCobrancaEm: "2026-01-01T02:30:00.000Z" }, "America/Costa_Rica");
+    expect(html).toContain("último 31/12/2025, 20:30");
+    expect(html).toContain("vence 15/01/2026");
+  });
 });

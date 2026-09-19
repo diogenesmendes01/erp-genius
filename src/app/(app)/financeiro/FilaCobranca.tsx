@@ -656,7 +656,7 @@ export function DetalheCobranca({
                 ? `${item.destino.telefone}${item.destino.viaResponsavel ? ` · ${item.destino.nome} (responsável)` : ""}`
                 : "sem destino"}
               {item.tentativas > 0 && ` · ${item.tentativas} tentativa(s)`}
-              {item.ultimaCobrancaEm && ` · último ${new Date(item.ultimaCobrancaEm).toLocaleDateString("pt-BR")}`}
+              {item.ultimaCobrancaEm && ` · último ${textoInstanteOperacional(item.ultimaCobrancaEm, preferenciaFusoExibicao)}`}
             </span>
             <Link href={`/alunos/${item.aluno.id}/financeiro`} className="text-brand-700 hover:underline">
               Ver ficha →
