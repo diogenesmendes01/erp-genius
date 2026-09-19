@@ -34,8 +34,11 @@ describe("ancorarCalendarioOferta", () => {
     ["sem aplicação", calendario({ replanejamentos: [{ ...calendario().replanejamentos[0], decisaoConjunta: { ...calendario().replanejamentos[0].decisaoConjunta, aplicacao: null } }] })],
     ["cadeia divergente", calendario({ replanejamentos: [{ ...calendario().replanejamentos[0], decisaoConjunta: { ...calendario().replanejamentos[0].decisaoConjunta, estadoHash: "x".repeat(64) } }] })],
     ["agenda cancelada", calendario()],
+    ["agenda removida", calendario()],
   ])("exige confirmação com %s", (_nome, atual) => {
-    const encontros = _nome === "agenda cancelada" ? [{ ...aulas[0], status: "CANCELADO" }, aulas[1]] : aulas;
+    const encontros = _nome === "agenda cancelada"
+      ? [{ ...aulas[0], status: "CANCELADO" }, aulas[1]]
+      : _nome === "agenda removida" ? [aulas[0]] : aulas;
     expect(ancorarCalendarioOferta({ ...entrada(), calendarioVigente: atual, encontros })).toBeNull();
   });
 
