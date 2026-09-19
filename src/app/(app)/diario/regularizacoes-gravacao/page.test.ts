@@ -66,6 +66,7 @@ describe("RegularizacoesGravacaoPage", () => {
 
     expect(costaRica).toContain("31/12/2025");
     expect(costaRica).toContain("America/Costa_Rica");
+    expect(costaRica).toContain("origem UTC");
     expect(utc).toContain("01/01/2026");
     expect(utc).toContain("UTC");
     expect(costaRica).not.toContain("01/01/2026");
