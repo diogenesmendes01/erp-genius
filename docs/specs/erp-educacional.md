@@ -382,6 +382,9 @@ A prévia reconhece a origem Q70 aplicada e coerente com as cobranças atuais da
 
 ### Evidência de implementação — comprovação de oferta Q161 (605)
 
+Atualização local de 19/09/2026: a prova automática usa a agenda publicada vigente e não é vetada pela data final manual legada da turma. Data final ausente ou futura, isoladamente, também não comprova oferta. Permanecem as conferências de vínculo, calendário, encontros, docentes e indisponibilidades; agenda insuficiente exige confirmação pedagógica. O limite final de cada encontro é exclusivo, inclusive à meia-noite no fuso institucional. Correção integrada em 5c296fe3; 14/14 testes dirigidos de prova e disponibilidade e TypeScript com saída 0. Não equivale à regressão completa da emissão.
+
+
 A prévia distingue agenda comprovada, confirmação pedagógica atual para o período e bloqueio por indisponibilidade. Confirmações positivas exigem proposta e decisão independente por matrícula/intervalo, preservam versões e revalidam a fonte projetada antes do consumo; não apagam Q156. A tela permite registrar e acompanhar esse fluxo. Emissão permanece desabilitada enquanto seu executor não estiver implementado e validado. [Evidências e limites do incremento](../planejamento/validacao-incremento-605.md).
 
 
