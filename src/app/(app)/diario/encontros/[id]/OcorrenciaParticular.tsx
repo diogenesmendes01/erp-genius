@@ -6,10 +6,10 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasParticular>>, { ok: true }>["dado"]>;
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
-export function OcorrenciaParticular({ dados }: { dados: Dados }) {
+export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fusoExibicao: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
   const chave = useRef({ entrada: "", valor: "" });
-  const formato = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: dados.fuso });
+  const formato = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao });
   return <section className="space-y-3 rounded border p-4">
     <h2 className="text-lg font-medium">Ocorrência da particular</h2>
     <p>Informe o que aconteceu. O Financeiro fará a conferência; este registro não substitui a chamada nem conclui o diário.</p>
@@ -44,7 +44,7 @@ export function OcorrenciaParticular({ dados }: { dados: Dados }) {
     {!dados.historico.length && <p>Nenhum informe registrado.</p>}
     {dados.historico.map(o => <article key={o.id} className="rounded border p-3">
       <p>Versão {o.versao} · {nomes[o.tipo] ?? o.tipo} · {o.autor.nome}</p>
-      <p>Registrado em {formato.format(new Date(o.criadoEm))} ({dados.fuso}).</p>
+      <p>Registrado em {formato.format(new Date(o.criadoEm))} (exibido em {fusoExibicao}; origem {dados.fuso}).</p>
       {o.comunicadoEm && <p>Comunicação em {formato.format(new Date(o.comunicadoEm))}.</p>}
       <p className="whitespace-pre-wrap">{o.evidencia}</p>
     </article>)}
