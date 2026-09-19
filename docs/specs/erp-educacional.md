@@ -183,6 +183,8 @@ Separar fuso institucional, fuso de origem da turma e preferência de exibição
 
 No painel de avaliações, no último fechamento e no histórico de designações, os instantes administrativos têm origem UTC e seguem a preferência pessoal válida apenas para apresentação; sem preferência, a interface mostra UTC. A consulta da preferência ocorre depois da guarda da página. Cálculos de fechamento, permissões, links e os formulários de designação/fechamento permanecem inalterados. Evidência local: SSR das três páginas cobre conversão que atravessa o dia, fallback UTC e guarda antes de ambas as leituras.
 
+As filas, propostas e decisões de correções acadêmicas e de resolução de progressão seguem a mesma apresentação administrativa UTC. A preferência é obtida somente depois da guarda; sem preferência, mantém UTC. Notas, trajetos, ações e campos dos formulários não são convertidos. Evidência local: quatro SSR cobrem a conversão na véspera, fallback UTC, preservação de dados exibidos e bloqueio das consultas quando a guarda falha.
+
 Conflito docente considera encontros efetivos e indisponibilidades aprovadas nas datas futuras, não só a grade semanal atual. Alteração de ausência, substituição ou calendário identifica encontros já publicados afetados e exige solução aprovada. Não cancelar nem trocar professor silenciosamente.
 
 Cada mutação relevante grava dados e evento na mesma transação, com versão e chave de repetição quando aplicável. Propostas coletivas revalidam todos os objetos; falha preserva o conjunto anterior. A aplicação no banco e o envio externo não formam uma única transação: persistir intenção de aviso após a mudança confirmada e processar com revalidação e registro durável.
