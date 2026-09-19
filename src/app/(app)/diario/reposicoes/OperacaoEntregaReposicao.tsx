@@ -13,6 +13,7 @@ import {
 } from "@/server/diario/reposicao-entrega-operacional";
 import { descartarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposicao-operacoes-relatos";
 import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeReposicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 export type OperacaoEntrega = {
   reposicaoId: string;
@@ -29,14 +30,13 @@ export type OperacaoEntrega = {
 
 const data = (valor: string | null, fuso: string) => {
   if (!valor) return "Não definido";
-  try { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor)); }
-  catch { return valor; }
+  return formatarInstanteExibicao(valor, fuso, "UTC").texto;
 };
 
 type Resultado = { ok: boolean; erro?: string };
 
 /** Gestão operacional da gravação. O painel não abre Drive nem revela a conta do aluno. */
-export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntrega }) {
+export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao: OperacaoEntrega; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
   const chaveDesignacao = useRef(crypto.randomUUID());
@@ -56,7 +56,7 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
     <p className="text-sm">O material usa uma revisão institucional registrada; alteração externa não substitui o conteúdo aprovado. Esta tela não reproduz conteúdo nem expõe conta, contato ou link do portal.</p>
     <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); if (envioDesignacao.current) return; envioDesignacao.current = true; const dados = new FormData(evento.currentTarget); const entrada = tentativaDesignacao.current ?? { reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current }; tentativaDesignacao.current = entrada; executar(async () => { try { const resultado = await substituirAvaliadorReposicaoOperacional(entrada); if (resultado.ok) { tentativaDesignacao.current = null; chaveDesignacao.current = crypto.randomUUID(); } return resultado; } finally { envioDesignacao.current = false; } }); }}>
       <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
-      {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, operacao.fuso)}. As avaliações anteriores permanecem atribuídas ao autor original.</p>}
+      {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, fusoExibicao)} (origem {operacao.fuso}). As avaliações anteriores permanecem atribuídas ao autor original.</p>}
       <label className="block">Professor avaliador<select name="professorId" required defaultValue="" disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
       <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className="rounded border px-3 py-2">{tentativaDesignacao.current ? "Repetir substituição" : operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
@@ -67,8 +67,8 @@ export function OperacaoEntregaReposicao({ operacao }: { operacao: OperacaoEntre
       <label className="block">ID oficial do arquivo no Drive<input name="arquivoOficialId" required minLength={3} maxLength={500} autoComplete="off" className="block w-full rounded border p-2" /></label>
       <p className="text-sm text-gray-600">Informe somente o identificador institucional do arquivo, nunca URL pública.</p>
       <button disabled={ocupado} className="rounded border px-3 py-2">Publicar e abrir prazo</button>
-    </form> : <><p role="status">Material publicado em {data(operacao.material.publicadoEm, operacao.fuso)} ({operacao.fuso}). Situação: {operacao.material.disponivel ? "disponível" : "indisponível"}.</p>{operacao.material.fonteTrocaElegivel && <Link href={`/diario/reposicoes/${encodeURIComponent(operacao.reposicaoId)}/troca-fonte`} className="inline-block text-sm text-brand-700 underline">Conferir e adotar a publicação corrigida da aula original</Link>}</>}
-    <p role="status">{operacao.etapa.correcaoId ? "Etapa atual: correção solicitada." : "Etapa atual: primeira entrega."} Prazo vigente: {data(operacao.etapa.prazoAte, operacao.fuso)} ({operacao.fuso}).</p>
+    </form> : <><p role="status">Material publicado em {data(operacao.material.publicadoEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}). Situação: {operacao.material.disponivel ? "disponível" : "indisponível"}.</p>{operacao.material.fonteTrocaElegivel && <Link href={`/diario/reposicoes/${encodeURIComponent(operacao.reposicaoId)}/troca-fonte`} className="inline-block text-sm text-brand-700 underline">Conferir e adotar a publicação corrigida da aula original</Link>}</>}
+    <p role="status">{operacao.etapa.correcaoId ? "Etapa atual: correção solicitada." : "Etapa atual: primeira entrega."} Prazo vigente: {data(operacao.etapa.prazoAte, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>
     {operacao.material && operacao.etapa.prazoAte && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => prorrogarEtapaOperacional({ reposicaoId: operacao.reposicaoId, solicitacaoCorrecaoId: operacao.etapa.correcaoId, prazoAnterior: operacao.etapa.prazoAte, novoPrazo: new Date(String(dados.get("novoPrazo") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Prorrogar etapa vigente</p>
       <label className="block">Novo prazo (horário local)<input name="novoPrazo" type="datetime-local" required className="block rounded border p-2" /></label>

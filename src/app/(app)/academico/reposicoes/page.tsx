@@ -5,19 +5,23 @@ import { consultarReposicoesEquipe } from "@/server/diario/reposicao-consulta";
 import { consultarOperacaoEntregaReposicao } from "@/server/diario/reposicao-entrega-operacional";
 import { ReposicoesEquipe, SolicitarReposicao } from "@/app/(app)/diario/reposicoes/ReposicoesEquipe";
 import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntregaReposicao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const podeOperarEntrega = usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
   const { matriculaId, cursor, origemCursor } = await searchParams;
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <div className="space-y-5">
     <Link className="text-sm text-brand-700 underline" href="/academico">Voltar ao acadêmico</Link>
     {!matriculaId && <><h1 className="text-2xl font-medium">Reposições individuais</h1><p role="status">Abra esta tela pelo contexto da matrícula para consultar a ausência de origem e o histórico acadêmico.</p></>}
-    {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} />}
+    {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} />}
   </div>;
 }
 
-async function Conteudo({ matriculaId, cursor, origemCursor, podeOperarEntrega }: { matriculaId: string; cursor?: string; origemCursor?: string; podeOperarEntrega: boolean }) {
+async function Conteudo({ matriculaId, cursor, origemCursor, podeOperarEntrega, fusoExibicao }: { matriculaId: string; cursor?: string; origemCursor?: string; podeOperarEntrega: boolean; fusoExibicao: string }) {
   const r = await consultarReposicoesEquipe({ matriculaId, cursor, origemCursor });
   if (!r.ok) return <p role="alert">{r.erro}</p>;
   if (!r.dado) return <p role="alert">Não foi possível consultar as reposições desta matrícula.</p>;
@@ -46,7 +50,7 @@ async function Conteudo({ matriculaId, cursor, origemCursor, podeOperarEntrega }
       })}
       {dado.proximoOrigemCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(matriculaId)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}&origemCursor=${encodeURIComponent(dado.proximoOrigemCursor)}`}>Ausências anteriores disponíveis</Link>}
     </section>}
-    <ReposicoesEquipe reposicoes={dado.reposicoes} operacoes={operacoes} mostrarRelatoEquipe={!podeOperarEntrega} mostrarCorrecoes={podeOperarEntrega} />
+    <ReposicoesEquipe reposicoes={dado.reposicoes} operacoes={operacoes} mostrarRelatoEquipe={!podeOperarEntrega} mostrarCorrecoes={podeOperarEntrega} fusoExibicao={fusoExibicao} />
     {dado.proximoCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(matriculaId)}&cursor=${encodeURIComponent(dado.proximoCursor)}`}>Reposições anteriores</Link>}
   </>;
 }
