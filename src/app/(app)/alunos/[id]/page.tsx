@@ -11,6 +11,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { nomeCompleto } from "@/lib/nome";
 import { prisma } from "@/lib/prisma";
 import { impedimentoFluxoGlobal } from "@/server/matricula/limite-legado";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
 export default async function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +29,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     podeEditarCadastroAluno(usuario) ? listarPaisesOperacionais() : Promise.resolve([]),
   ]);
   if (!dados) notFound();
+  const preferencia = await consultarPreferenciaFusoEquipe();
   const podeMovimentarGlobal = podeMovimentarAluno(usuario) && !await impedimentoFluxoGlobal(prisma, id);
   const { aluno, financeiro } = dados;
 
@@ -75,7 +77,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       ? {
           atrasado: financeiro.atrasado,
           emAberto: financeiro.emAberto,
-          proximoVencimento: financeiro.proximoVencimento ? financeiro.proximoVencimento.toISOString() : null,
+          proximoVencimento: financeiro.proximoVencimento,
         }
       : null,
     movimentacoes: aluno.movimentacoes.map((m) => ({
@@ -109,6 +111,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
       podeMovimentarGlobal={podeMovimentarGlobal}
       podeEditarCadastro={podeEditarCadastroAluno(usuario)}
       podeConsultarAcademico={usuario.papeis.some((p) => ([Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] as Papel[]).includes(p))}
+      preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
     />
     </div>
   );

@@ -11,6 +11,7 @@ import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/tes
 import { exigirSessao } from "@/server/_shared/sessao";
 import { editarAluno } from "./acoes";
 import { listarAlunos, obterAluno } from "./consultas";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 const como = (u: { id: string; papeis: Papel[] }) => authMock.mockResolvedValue({ user: { id: u.id, papeis: u.papeis } });
 
@@ -110,6 +111,62 @@ describe("cadastro acadêmico persistido — capacidade e projeção por funçã
     expect(await editarAluno(c.aluno.id, c.entrada)).toMatchObject({ ok: false, erro: "Não autenticado." });
     expect(await prisma.aluno.findUnique({ where: { id: c.aluno.id } })).toEqual(c.aluno);
     expect(await eventosDo("Aluno", c.aluno.id)).toEqual([]);
+  });
+
+  it("usa a fonte civil da cobrança selecionada, encaminha legado para conferência e não expõe trilhas ao professor", async () => {
+    const cat = await seedCatalogoMinimo();
+    const secretaria = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria vencimento");
+    const professor = await criarUsuario([Papel.PROFESSOR], "Professor vencimento");
+    const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "A1", ordem: 1 } });
+    const turma = await prisma.turma.create({ data: {
+      modalidadeId: cat.modalidade.id, nivelId: nivel.id, status: "EM_ANDAMENTO", professorId: professor.id,
+      vinculosDocentes: { create: { professorId: professor.id, inicio: new Date("2020-01-01T00:00:00Z") } },
+    } });
+    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", sobrenome: "Vencimento", paisId: cat.pais.id } });
+    const primeira = await prisma.matricula.create({ data: {
+      alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA",
+    } });
+    const escolhida = await prisma.matricula.create({ data: {
+      alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA",
+      alocacoes: { create: { turmaId: turma.id } },
+    } });
+    const vencimentoEscolhido = instanteDaGrade("2099-10-05", "12:00", "America/Costa_Rica");
+    await prisma.cobranca.create({ data: {
+      matriculaId: primeira.id, tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 80, valorNegociado: 80,
+      saldo: 80, vencimento: instanteDaGrade("2099-10-08", "12:00", "America/Costa_Rica"),
+    } });
+    const cobrancaEscolhida = await prisma.cobranca.create({ data: {
+      matriculaId: escolhida.id, tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 80, valorNegociado: 80,
+      saldo: 80, vencimento: vencimentoEscolhido,
+    } });
+    const condicoes = await prisma.condicoesEntradaPreparacao.create({ data: {
+      matriculaId: escolhida.id, preparadorId: secretaria.id, versao: 1, dados: { origem: "fixture-ficha-aluno" },
+      motivo: "Preserva a fonte civil da cobrança escolhida na ficha.", chaveIdempotencia: "ficha-aluno-vencimento-condicoes",
+      entradaHash: "v".repeat(64),
+    } });
+    const emissao = await prisma.emissaoCobrancasEntrada.create({ data: {
+      matriculaId: escolhida.id, condicoesId: condicoes.id, executorId: secretaria.id, etapa: "CONFERENCIA_SECRETARIA",
+      memoria: { fusoInstitucional: "America/Costa_Rica", cobrancas: [{ id: cobrancaEscolhida.id, vencimento: "2099-10-05" }] },
+    } });
+    await prisma.itemEmissaoEntrada.create({ data: { matriculaId: escolhida.id, emissaoId: emissao.id, cobrancaId: cobrancaEscolhida.id } });
+
+    como(secretaria);
+    const confirmada = await obterAluno(aluno.id, await exigirSessao());
+    expect(confirmada?.financeiro?.proximoVencimento).toEqual({
+      estado: "CONFIRMADO", dataCivil: "2099-10-05", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA",
+    });
+
+    await prisma.cobranca.create({ data: {
+      matriculaId: primeira.id, tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 80, valorNegociado: 80,
+      saldo: 80, vencimento: instanteDaGrade("2099-10-01", "12:00", "America/Costa_Rica"),
+    } });
+    const semFonte = await obterAluno(aluno.id, await exigirSessao());
+    expect(semFonte?.financeiro?.proximoVencimento).toMatchObject({ estado: "A_CONFERIR" });
+
+    como(professor);
+    const pedagogica = await obterAluno(aluno.id, await exigirSessao());
+    expect(pedagogica?.financeiro).toBeNull();
+    expect(pedagogica?.aluno.matriculas).toEqual([]);
   });
 
   it("tipo de documento de outro país é rejeitado sem editar aluno nem auditoria", async () => {

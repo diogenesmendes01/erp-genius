@@ -10,6 +10,8 @@ import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
 import { pausarAluno, encerrarAluno, editarAluno } from "@/server/alunos/acoes";
 import { Drawer } from "@/components/Drawer";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
   MATRICULA: "Matrícula",
@@ -61,7 +63,7 @@ export interface AlunoFicha {
   observacoes: string | null;
   turmasAtuais: { id: string; matriculaCodigo: string | null; label: string; professor: string | null; diasHorario: string | null }[];
   // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
-  financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: string | null } | null;
+  financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: ReferenciaVencimentoCivil | null } | null;
   movimentacoes: {
     matriculaId: string | null;
     matriculaCodigo: string | null;
@@ -92,6 +94,7 @@ export function FichaAluno({
   podeMovimentarGlobal = false,
   podeEditarCadastro = false,
   podeConsultarAcademico = false,
+  preferenciaFusoExibicao = null,
 }: {
   aluno: AlunoFicha;
   paises: PaisOpt[];
@@ -100,6 +103,7 @@ export function FichaAluno({
   podeMovimentarGlobal?: boolean;
   podeEditarCadastro?: boolean;
   podeConsultarAcademico?: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -110,6 +114,10 @@ export function FichaAluno({
   const [retorno, setRetorno] = useState("");
   const [motivoEnc, setMotivoEnc] = useState<(typeof MOTIVOS_ENCERRAMENTO)[number]>("Concluiu");
   const [obsEnc, setObsEnc] = useState("");
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   // edição de dados cadastrais (prefill com TODOS os valores atuais — edição lenient).
   const valoresEd = () => ({
@@ -495,7 +503,9 @@ export function FichaAluno({
               Em aberto: <strong>{formatarValores(aluno.financeiro.emAberto)}</strong>
               {aluno.financeiro.proximoVencimento && (
                 <span className="ml-2 text-gray-500">
-                  · próximo venc. {new Date(aluno.financeiro.proximoVencimento).toLocaleDateString("pt-BR")}
+                  · próximo venc. {aluno.financeiro.proximoVencimento.estado === "CONFIRMADO"
+                    ? aluno.financeiro.proximoVencimento.dataCivil
+                    : "a conferir"}
                 </span>
               )}
             </div>
@@ -520,7 +530,7 @@ export function FichaAluno({
                 {m.observacao && <div className="text-xs text-gray-500">{m.observacao}</div>}
                 <div className="text-xs text-gray-400">
                   {m.usuario ?? "sistema"} ·{" "}
-                  {new Date(m.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {instanteAdministrativo(m.criadoEm)}
                 </div>
               </li>
             ))}
