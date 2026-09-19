@@ -25,7 +25,7 @@ it("refaz a consulta após a proposta confirmada, mantendo o ID contextual fora 
   mocks.propor.mockResolvedValue({ ok: true, dado: { id: "proposta" } });
   vi.stubGlobal("FormData", class { get(nome: string) { return nome === "motivo" ? "A fonte corrigida deve ser adotada." : null; } });
   const formulario = acharFormulario(TrocaFonteReposicao({
-    contexto: { reposicaoId: "repo-contextual", materialId: "material", matriculaId: "matricula", fonteMaterialAtual: { versao: 1, revisao: "m1" }, fontePublicacaoAtual: { versao: 2, revisao: "p2" }, materialDisponivel: true, disponibilizacaoId: null, jaAdotaPublicacaoAtual: false }, propostas: [],
+    contexto: { reposicaoId: "repo-contextual", materialId: "material", matriculaId: "matricula", fonteMaterialAtual: { versao: 1, revisao: "m1" }, fontePublicacaoAtual: { versao: 2, revisao: "p2" }, materialDisponivel: true, disponibilizacaoId: null, jaAdotaPublicacaoAtual: false }, propostas: [], fusoExibicao: "America/Costa_Rica",
   }));
   await (formulario!.props!.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} });
   await Promise.resolve();

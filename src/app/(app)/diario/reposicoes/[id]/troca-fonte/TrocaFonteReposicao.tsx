@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao } from "@/server/gravacoes/troca-fonte-reposicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Proposta = {
   id: string;
@@ -32,7 +33,7 @@ type Contexto = {
 type Resultado = { ok: boolean; erro?: string };
 
 /** Não recebe arquivo, revisão ou fonte do formulário: todos são resolvidos pela reposição no servidor. */
-export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao = "UTC" }: { contexto: Contexto; propostas: Proposta[]; fusoExibicao?: string }) {
+export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { contexto: Contexto; propostas: Proposta[]; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
   const [feito, setFeito] = useState("");
@@ -74,7 +75,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao = "UTC" 
       {propostas.length === 0 ? <p className="text-sm">Nenhuma troca de fonte foi proposta para esta reposição.</p> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-white p-4 text-sm">
         <p className="font-medium">Material v{proposta.fonteMaterialAnterior.versao} ({proposta.fonteMaterialAnterior.driveRevisionId}) → publicação v{proposta.fontePublicacao.versao} ({proposta.fontePublicacao.driveRevisionId})</p>
         <p className="mt-1 whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
-        <p className="mt-1 text-gray-600">Preparada por {proposta.preparador.nome ?? "Usuário"} em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao }).format(new Date(proposta.criadaEm))} ({fusoExibicao}).</p>
+        <p className="mt-1 text-gray-600">Preparada por {proposta.preparador.nome ?? "Usuário"} em {formatarInstanteExibicao(proposta.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}).</p>
         {proposta.decisao ? <p role="status" className="mt-2">{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisor.nome ?? "Usuário"}: {proposta.decisao.motivo}{proposta.fonteMaterial ? ` Fonte MATERIAL v${proposta.fonteMaterial.versao} fixada.` : ""}</p>
           : !proposta.podeDecidir ? <p role="status" className="mt-2">Aguardando decisão de outra pessoa autorizada.</p>
             : <form className="mt-3 space-y-2" onSubmit={(evento) => { evento.preventDefault(); const motivo = String(new FormData(evento.currentTarget).get("motivo") ?? ""); const aprovar = String((evento.nativeEvent as SubmitEvent).submitter?.getAttribute("value")) === "aprovar"; executar(() => decidirTrocaFonteReposicaoGravacao({ propostaId: proposta.id, aprovar, motivo }), "Decisão registrada."); }}>
