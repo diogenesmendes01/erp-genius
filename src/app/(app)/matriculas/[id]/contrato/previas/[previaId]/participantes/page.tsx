@@ -10,18 +10,25 @@ import { RegraAssinaturaSchema } from "@/server/contratos/modelo-schema";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { FormularioParticipantes } from "./Formulario";
 import { EvidenciaParticipantes } from "./Evidencia";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 const Historico = z.object({ maioridade: ConferirParticipantesSchema.innerType().shape.maioridade,
   participantes: z.array(z.object({ papel: RegraAssinaturaSchema.shape.papel, identidade: IdentidadeSignatarioSchema,
     representacao: z.object({ descricao: z.string(), evidenciaDocumentoId: z.string() }).optional() })),
   documentos: z.array(z.object({ id: z.string(), nome: z.string() })),
 });
+const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+};
 
 export default async function ParticipantesPage({ params, searchParams }: { params: Promise<{ id: string; previaId: string }>; searchParams: Promise<{ maioridade?: string; pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id, previaId } = await params, q = await searchParams;
-  const previa = await consultarPreviaContratual(previaId);
+  const [previa, preferencia] = await Promise.all([consultarPreviaContratual(previaId), consultarPreferenciaFusoEquipe()]);
   if (!previa.ok || !previa.dado) return <p role="alert">{previa.ok ? "Prévia indisponível." : previa.erro}</p>;
   if (previa.dado.matriculaId !== id) notFound();
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const maioridade = q.maioridade === "MAIOR" || q.maioridade === "MENOR" ? q.maioridade : null;
   const n = Number(q.pagina ?? 1), pagina = Number.isInteger(n) && n > 0 && n <= 100000 ? n : 1;
   const formulario = await consultarFormularioParticipantes({ previaId, maioridade });
@@ -41,7 +48,7 @@ export default async function ParticipantesPage({ params, searchParams }: { para
         {!historico.dado.registros.length && <p>Nenhuma conferência registrada nesta página.</p>}
         {historico.dado.registros.map((r) => {
           const conteudo = Historico.safeParse(r.snapshot);
-          return <details className="rounded border p-3" key={r.id}><summary>Versão {r.versao} · {r.autor.nome} · {r.criadaEm.toISOString().replace("T", " ").slice(0, 19)} UTC</summary><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>
+          return <details className="rounded border p-3" key={r.id}><summary>Versão {r.versao} · {r.autor.nome} · {textoInstanteAdministrativo(r.criadaEm, preferenciaFusoExibicao)}</summary><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>
             {conteudo.success ? <>
               {conteudo.data.maioridade && <p>Maioridade: {conteudo.data.maioridade.classificacao === "MAIOR" ? "maior" : "menor"} · Critério: {conteudo.data.maioridade.criterio} · Evidência: {conteudo.data.documentos.find((d) => d.id === conteudo.data.maioridade?.evidenciaDocumentoId)?.nome ?? "Identificada no registro"}</p>}
               {conteudo.data.participantes.map((p) => <div key={p.papel} className="border-t pt-2"><h3 className="font-medium">{PAPEIS_MODELO[p.papel]}</h3><p>{p.identidade.nome} · {p.identidade.email} · {p.identidade.documento}</p>{p.representacao && <p>Representação: {p.representacao.descricao} · Evidência: {conteudo.data.documentos.find((d) => d.id === p.representacao?.evidenciaDocumentoId)?.nome ?? "Identificada no registro"}</p>}</div>)}
