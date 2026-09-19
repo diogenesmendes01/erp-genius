@@ -3,13 +3,19 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarVinculosAvaliacoes } from "@/server/avaliacoes/painel";
 import { nomeCompleto } from "@/lib/nome";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function PainelAvaliacoes({ searchParams }: { searchParams: Promise<{ modo?: string; pagina?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const s = await searchParams, p = Number(s.pagina ?? 1), modo = s.modo === "designadas" ? "designadas" : s.modo === "historico" ? "historico" : "atuais";
-  const r = await listarVinculosAvaliacoes({ modo, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 });
+  const [r, preferencia] = await Promise.all([
+    listarVinculosAvaliacoes({ modo, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-5">
     <h1 className="text-2xl font-medium">Avaliações por matrícula</h1>
     {usuario.papeis.includes(Papel.PROFESSOR) && <Link className="block underline" href="/academico/recuperacoes/designadas">Minhas recuperações e histórico</Link>}
@@ -21,7 +27,7 @@ export default async function PainelAvaliacoes({ searchParams }: { searchParams:
     {d.itens.map(v => <article key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{nomeCompleto(v.aluno)}</h2>
       <p>{v.matricula?.codigo ?? "Matrícula sem código"} · {v.turma.nivel.idioma.nome} {v.turma.nivel.codigo} · {v.turma.nome ?? v.turma.codigo ?? "Turma"}</p>
-      <p>{v.ativa ? "Vínculo ativo" : "Vínculo encerrado"}{v.encerradaEm ? ` em ${v.encerradaEm.toLocaleString("pt-BR", { timeZone: "UTC" })} UTC` : ""}.</p>
+      <p>{v.ativa ? "Vínculo ativo" : "Vínculo encerrado"}{v.encerradaEm ? ` em ${formatarInstanteExibicao(v.encerradaEm, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)` : ""}.</p>
       <Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(v.id)}`}>Consultar avaliações deste vínculo</Link>
     </article>)}
     <nav aria-label="Páginas de vínculos" className="flex gap-4">{d.pagina > 1 && <Link href={`?modo=${modo}&pagina=${d.pagina - 1}`}>Anterior</Link>}<span>Página {d.pagina}</span>{d.temProxima && <Link href={`?modo=${modo}&pagina=${d.pagina + 1}`}>Próxima</Link>}</nav>

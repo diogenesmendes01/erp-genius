@@ -4,6 +4,8 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { revisarFechamentoAcademico } from "@/server/avaliacoes/fechamento";
 import { ConfirmarFechamento } from "./ConfirmarFechamento";
 import { ExcecaoFrequencia } from "./ExcecaoFrequencia";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 const pendencias: Record<string, string> = {
   NOTAS_INCOMPLETAS: "Notas obrigatórias ainda não estão completas e oficializadas",
@@ -44,10 +46,14 @@ function razao(valor: { numerador: string; denominador: string } | null) {
 export default async function FechamentoAcademicoPage({ params }: { params: Promise<{ alocacaoId: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId } = await params;
-  const revisao = await revisarFechamentoAcademico({ alocacaoId });
+  const [revisao, preferencia] = await Promise.all([
+    revisarFechamentoAcademico({ alocacaoId }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!revisao.ok || !revisao.dado) return <section className="space-y-3"><Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`}>Voltar às avaliações</Link><p role="alert">{revisao.ok ? "A revisão não está disponível." : revisao.erro}</p></section>;
 
   const estado = revisao.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const resultado = estado.snapshot.consolidado.resultado;
   const frequencia = estado.snapshot.frequencia;
   const elegibilidade = estado.elegibilidade;
@@ -61,7 +67,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
 
     {ultimo && <section className={`rounded border p-4 ${ultimo.atual ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
       <h2 className="font-medium">Último fechamento</h2>
-      <p className="text-sm">Versão {ultimo.versao}, confirmada em {new Date(ultimo.confirmadoEm).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC: {ultimo.resultadoSuficiente ? "suficiente" : "insuficiente"}.</p>
+      <p className="text-sm">Versão {ultimo.versao}, confirmada em {formatarInstanteExibicao(ultimo.confirmadoEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC): {ultimo.resultadoSuficiente ? "suficiente" : "insuficiente"}.</p>
       <p className="mt-1 text-sm">{ultimo.atual ? "A base acadêmica ainda corresponde à revisão atual." : "A base acadêmica mudou desde esse fechamento; ele permanece no histórico e esta revisão precisa ser confirmada novamente."}</p>
     </section>}
 
