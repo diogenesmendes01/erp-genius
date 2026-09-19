@@ -11,7 +11,7 @@ vi.mock("@/server/contratos/aditivo-participantes", () => ({ consultarConferenci
 vi.mock("@/server/contratos/aditivo-efeitos-consulta", () => ({ consultarEfeitosAditivo: mocks.efeitos }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-consulta", () => ({ consultarAcertoTaxaPorProposta: mocks.acerto }));
 vi.mock("./Formularios", () => ({ PrepararAditivo: () => createElement("div") }));
-vi.mock("../CadastroContratualAplicado", () => ({ CadastroContratualAplicado: () => createElement("div") }));
+vi.mock("../CadastroContratualAplicado", () => ({ CadastroContratualAplicado: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("div", { "data-fuso-cadastro": preferenciaFusoExibicao }) }));
 vi.mock("./[propostaId]/EstadoCampo", () => ({ EstadoCampo: () => createElement("div") }));
 vi.mock("./ImpactosPainel", () => ({ ImpactosPainel: () => createElement("div") }));
 vi.mock("./ParticipantesFormulario", () => ({ ParticipantesFormulario: () => createElement("div") }));
@@ -53,8 +53,8 @@ describe("históricos de aditivos no fuso pessoal", () => {
     expect(proposta).toContain("30/09/2026, 21:30 (America/Costa_Rica; origem UTC)");
     expect(proposta).toContain('data-fuso-participantes="America/Costa_Rica"');
     expect(proposta).toContain('data-fuso-originais="America/Costa_Rica"');
-    expect(proposta).toContain("Vigência proposta: 2026-10-01 02:30:00 UTC.");
-    expect(proposta).toContain("Vigência prevista: 2026-10-01 02:30:00 UTC.");
+    expect(proposta).toContain("Vigência proposta: 30/09/2026, 20:30 (horário exibido em America/Costa_Rica; referência contratual preservada).");
+    expect(proposta).toContain("Vigência prevista: 30/09/2026, 20:30 (horário exibido em America/Costa_Rica; referência contratual preservada).");
   });
 
   it("recorre a UTC e não consulta preferência ou histórico depois da guarda", async () => {
