@@ -32,6 +32,7 @@ export default async function TurmasPage() {
     dataFim: t.dataFim ? t.dataFim.toISOString() : null,
     capacidade: t.capacidade,
     rolling: t.rolling,
+    status: t.status,
     modalidadeId: t.modalidadeId,
     nivelId: t.nivelId,
     modalidade: { nome: t.modalidade.nome },
@@ -44,7 +45,12 @@ export default async function TurmasPage() {
   return (
     <TurmasPainel
       turmas={rows}
-      modalidades={modalidades.map((m) => ({ id: m.id, label: m.nome, frequencia: m.frequencia }))}
+      modalidades={modalidades.map((m) => ({
+        id: m.id,
+        label: m.nome,
+        frequencia: m.frequencia,
+        horasAula: m.horasAula,
+      }))}
       niveis={niveis.map((n) => ({ id: n.id, label: `${n.idioma.nome} ${n.codigo}` }))}
       professores={professores.map((p) => ({ id: p.id, label: p.nome }))}
       podeImportar={podeImportar}

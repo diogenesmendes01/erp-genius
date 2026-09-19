@@ -6,7 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import { registrarEvento, ErroPermissao } from "@/server/_shared";
 import { sincronizarVinculoDocente } from "@/server/turmas/vinculo-docente";
-import { diasPorSemanaDaFrequencia, rotuloDiasHorario, emMinutos } from "@/server/turmas/schema";
+import {
+  diasPorSemanaDaFrequencia,
+  duracaoIntervaloEmMinutos,
+  rotuloDiasHorario,
+} from "@/server/turmas/schema";
 import {
   chaveDoCabecalhoTurma,
   resolverBool,
@@ -100,7 +104,7 @@ export async function POST(req: Request) {
   }
 
   const [modalidades, niveis, professores] = await Promise.all([
-    prisma.modalidade.findMany({ select: { id: true, nome: true, frequencia: true } }),
+    prisma.modalidade.findMany({ select: { id: true, nome: true, frequencia: true, horasAula: true } }),
     prisma.nivel.findMany({ include: { idioma: { select: { nome: true } } } }),
     prisma.usuario.findMany({
       where: { papeis: { has: Papel.PROFESSOR }, ativo: true },
@@ -165,18 +169,28 @@ export async function POST(req: Request) {
       erros.push({ linha: r, motivo: "Horário inválido (use HH:MM em início e fim)." });
       continue;
     }
-    if (emMinutos(horarioFim) <= emMinutos(horarioInicio)) {
-      erros.push({ linha: r, motivo: "Horário de fim deve ser depois do início." });
+    const duracaoInformada = duracaoIntervaloEmMinutos(horarioInicio, horarioFim);
+    const duracaoEsperada = Number(modalidade.horasAula) * 60;
+    if (!Number.isInteger(duracaoEsperada) || duracaoInformada <= 0 || duracaoInformada !== duracaoEsperada) {
+      erros.push({
+        linha: r,
+        motivo: `A aula de ${modalidade.nome} dura ${modalidade.horasAula} hora(s); início e fim precisam corresponder a essa duração.`,
+      });
       continue;
     }
 
     const dataInicio = resolverData(raw.dataInicio);
+    const textoDataFim = raw.dataFim?.trim() ?? "";
     const dataFim = resolverData(raw.dataFim);
-    if (!dataInicio || !dataFim) {
-      erros.push({ linha: r, motivo: "Datas de início e fim são obrigatórias (AAAA-MM-DD)." });
+    if (!dataInicio) {
+      erros.push({ linha: r, motivo: "A data de início é obrigatória (AAAA-MM-DD)." });
       continue;
     }
-    if (dataFim <= dataInicio) {
+    if (textoDataFim && !dataFim) {
+      erros.push({ linha: r, motivo: "Data final de referência inválida (use AAAA-MM-DD ou deixe em branco)." });
+      continue;
+    }
+    if (dataFim && dataFim <= dataInicio) {
       erros.push({ linha: r, motivo: "Data de fim deve ser depois da data de início." });
       continue;
     }
@@ -197,9 +211,18 @@ export async function POST(req: Request) {
       const codigo = await gerarCodigo("turma");
       await prisma.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`regra-avaliacao-nivel:${nivel.id}`}, 0))`;
+        await tx.$queryRaw`SELECT id FROM "Modalidade" WHERE id = ${modalidade.id} FOR SHARE`;
         await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
         const atual = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
         if (!atual?.ativo || !atual.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();
+        const modalidadeAtual = await tx.modalidade.findUnique({ where: { id: modalidade.id }, select: { nome: true, frequencia: true, horasAula: true } });
+        if (!modalidadeAtual) throw new Error("Modalidade removida durante a importação.");
+        const frequenciaAtual = diasPorSemanaDaFrequencia(modalidadeAtual.frequencia);
+        if (frequenciaAtual !== null && diasSemana.length !== frequenciaAtual)
+          throw new Error("A frequência da modalidade mudou durante a importação.");
+        const duracaoAtual = Number(modalidadeAtual.horasAula) * 60;
+        if (!Number.isInteger(duracaoAtual) || duracaoIntervaloEmMinutos(horarioInicio, horarioFim) !== duracaoAtual)
+          throw new Error("A duração da modalidade mudou durante a importação.");
         const turma = await tx.turma.create({
           data: {
             codigo,
@@ -212,7 +235,7 @@ export async function POST(req: Request) {
             horarioFim,
             diasHorario,
             dataInicio,
-            dataFim,
+            dataFim: dataFim ?? null,
             capacidade,
             rolling,
             status: StatusTurma.PLANEJADA,

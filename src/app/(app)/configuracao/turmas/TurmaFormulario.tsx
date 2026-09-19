@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarTurma, editarTurma } from "@/server/turmas/acoes";
-import { diasPorSemanaDaFrequencia } from "@/server/turmas/schema";
+import {
+  diasPorSemanaDaFrequencia,
+  duracaoIntervaloEmMinutos,
+  horarioFimPorDuracao,
+} from "@/server/turmas/schema";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -41,6 +45,7 @@ export interface Opcao {
 
 export interface ModalidadeOpcao extends Opcao {
   frequencia: string;
+  horasAula: number;
 }
 
 export function TurmaFormulario({
@@ -68,12 +73,20 @@ export function TurmaFormulario({
   const [horarioInicio, setHorarioInicio] = useState(turma?.horarioInicio ?? "");
   const [horarioFim, setHorarioFim] = useState(turma?.horarioFim ?? "");
   const [dataInicio, setDataInicio] = useState(turma?.dataInicio ?? "");
-  const [dataFim, setDataFim] = useState(turma?.dataFim ?? "");
+  const [dataFim] = useState(turma?.dataFim ?? "");
   const [capacidade, setCapacidade] = useState(turma?.capacidade ?? 12);
   const [rolling, setRolling] = useState(turma?.rolling ?? false);
 
   const modalidadeSel = modalidades.find((m) => m.id === modalidadeId);
   const diasRequeridos = modalidadeSel ? diasPorSemanaDaFrequencia(modalidadeSel.frequencia) : null;
+  const duracaoModalidadeMinutos = modalidadeSel ? modalidadeSel.horasAula * 60 : null;
+  const horarioFimDerivado = /^([01]?\d|2[0-3]):[0-5]\d$/.test(horarioInicio) && modalidadeSel &&
+    duracaoModalidadeMinutos !== null && Number.isInteger(duracaoModalidadeMinutos) && duracaoModalidadeMinutos > 0
+    ? horarioFimPorDuracao(horarioInicio, duracaoModalidadeMinutos)
+    : null;
+  const horarioFimEfetivo = turma ? horarioFim : horarioFimDerivado?.horarioFim ?? "";
+  const diasMudaram = !turma || [...diasSemana].sort().join(",") !== [...turma.diasSemana].sort().join(",");
+  const modalidadeMudou = !turma || modalidadeId !== turma.modalidadeId;
 
   function toggleDia(n: number) {
     setDiasSemana((atual) => (atual.includes(n) ? atual.filter((d) => d !== n) : [...atual, n]));
@@ -83,15 +96,15 @@ export function TurmaFormulario({
     if (!modalidadeId) return "Selecione a modalidade.";
     if (!nivelId) return "Selecione o nível.";
     if (diasSemana.length === 0) return "Selecione os dias da semana.";
-    if (diasRequeridos !== null && diasSemana.length !== diasRequeridos)
+    if ((modalidadeMudou || diasMudaram) && diasRequeridos !== null && diasSemana.length !== diasRequeridos)
       return `A modalidade ${modalidadeSel?.label} é ${modalidadeSel?.frequencia}: selecione exatamente ${diasRequeridos} dia(s) — você marcou ${diasSemana.length}.`;
     const reHora = /^([01]?\d|2[0-3]):[0-5]\d$/;
     if (!reHora.test(horarioInicio)) return "Informe o horário de início (HH:MM).";
-    if (!reHora.test(horarioFim)) return "Informe o horário de fim (HH:MM).";
-    if (horarioFim <= horarioInicio) return "O horário de fim deve ser depois do início.";
+    if (!reHora.test(horarioFimEfetivo)) return "Selecione uma modalidade com duração válida.";
+    if (turma && duracaoIntervaloEmMinutos(horarioInicio, horarioFim) <= 0)
+      return "O intervalo da aula deve ter duração positiva.";
     if (!dataInicio) return "Informe a data de início.";
-    if (!dataFim) return "Informe a data de fim.";
-    if (dataFim <= dataInicio) return "A data de fim deve ser depois da data de início.";
+    if (dataFim && dataFim <= dataInicio) return "A data de fim deve ser depois da data de início.";
     return null;
   }
 
@@ -110,9 +123,9 @@ export function TurmaFormulario({
       professorId: professorId || undefined,
       diasSemana,
       horarioInicio,
-      horarioFim,
+      horarioFim: horarioFimEfetivo,
       dataInicio,
-      dataFim,
+      dataFim: turma ? dataFim || undefined : undefined,
       capacidade,
       rolling,
     };
@@ -216,17 +229,40 @@ export function TurmaFormulario({
           <input type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horário de fim</label>
-          <input type="time" className={inputCls} value={horarioFim} onChange={(e) => setHorarioFim(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600">
+            Horário de fim {turma ? "" : "derivado"}
+          </label>
+          <input
+            type="time"
+            className={inputCls}
+            value={horarioFimEfetivo}
+            onChange={(e) => setHorarioFim(e.target.value)}
+            readOnly={!turma}
+            aria-describedby={turma ? undefined : "fim-derivado"}
+          />
+          {!turma && (
+            <p id="fim-derivado" className="mt-1 text-xs text-gray-500">
+              {horarioFimDerivado
+                ? `A modalidade define ${modalidadeSel?.horasAula} h de aula${horarioFimDerivado.atravessaDia ? "; termina no dia seguinte." : "."}`
+                : "Selecione a modalidade e informe o início para calcular o término."}
+            </p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Data de início</label>
           <input type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-600">Data de fim</label>
-          <input type="date" className={inputCls} value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-        </div>
+        {turma ? (
+          <div>
+            <label className="mb-1 block text-xs text-gray-600">Data final de referência (legado)</label>
+            <input type="date" className={inputCls} value={dataFim} readOnly />
+            <p className="mt-1 text-xs text-gray-500">A referência histórica é preservada nesta edição.</p>
+          </div>
+        ) : (
+          <div className="pt-6 text-xs text-gray-500">
+            A previsão de término será calculada ao gerar a agenda, conforme a quantidade de aulas do nível.
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-xs text-gray-600">Capacidade</label>
           <input
