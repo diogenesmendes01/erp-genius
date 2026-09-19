@@ -20,7 +20,7 @@ function mesmaAgenda(encontros: readonly Encontro[], previsao: NonNullable<Retur
     if (esperados.has(preservado.id)) return false;
     esperados.set(preservado.id, { inicio: preservado.inicio, fim: preservado.fim, status: preservado.status });
   }
-  return encontros.every((encontro) => {
+  return esperados.size === encontros.length && encontros.every((encontro) => {
     const esperado = esperados.get(encontro.id);
     return esperado?.inicio === encontro.inicio.toISOString()
       && esperado.fim === encontro.fim.toISOString()
