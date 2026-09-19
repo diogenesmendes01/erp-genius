@@ -69,7 +69,11 @@ it("reverte calendário, evento e dois horários quando um efeito material da re
   const { calendario, rascunho, decisao } = await criarRevisao(snapshot);
   await expect(prisma.$transaction(async (tx) => {
     await tx.decisaoCalendarioEscolar.create({ data: { calendarioId: calendario.id, decisorId, aprovada: true, motivo: "Publicação adversarial" } });
-    await tx.evento.create({ data: { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: decisorId, payload: { aprovada: true, revisaoId: rascunho.id, decisaoId: decisao.id } } });
+    await tx.evento.create({ data: { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: decisorId, payload: {
+      aprovada: true, revisaoId: rascunho.id, decisaoId: decisao.id,
+      encontrosIds: encontros.map((e) => e.id),
+      horarios: encontros.map((e) => ({ encontroId: e.id, inicioProposto: proposto.toISOString(), fimProposto: fimProposto.toISOString() })),
+    } } });
     await tx.encontroAgenda.update({ where: { id: encontros[0].id }, data: { inicio: proposto, fim: fimProposto } });
     await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: rascunho.id, decisaoId: decisao.id, estadoHash: "estado-hash" } });
   })).rejects.toThrow("Aplicação conjunta sem os encontros materiais da revisão");
