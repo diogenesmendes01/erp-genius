@@ -5,6 +5,12 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
+import {
+  carregarTrilhasVencimentoCivil,
+  incluirFonteVencimentoCivil,
+  referenciaVencimentoCivil,
+  type ReferenciaVencimentoCivil,
+} from "@/server/financeiro/vencimento-civil";
 
 // Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
 const PAPEIS_AMPLO_ALUNOS: Papel[] = [
@@ -85,10 +91,22 @@ export function vagasTurma(capacidade: number, ocupacaoAtiva: number) {
 
 // Situação financeira resumida a partir das cobranças. `emAberto` é por moeda (uma matrícula
 // pode ter trocado de moeda entre anos — doc 04) e nunca soma moedas diferentes.
-function resumoFinanceiro(
-  cobrancas: { status: StatusCobranca; vencimento: Date; valorNegociado: Prisma.Decimal | number; saldo?: Prisma.Decimal | number | null; valorRecebido?: Prisma.Decimal | number | null; moeda: string }[],
-) {
-  const agora = new Date();
+type CobrancaResumo = {
+  status: StatusCobranca;
+  vencimento: Date;
+  valorNegociado: Prisma.Decimal | number;
+  saldo?: Prisma.Decimal | number | null;
+  valorRecebido?: Prisma.Decimal | number | null;
+  moeda: string;
+};
+
+function proximaCobranca<T extends CobrancaResumo>(cobrancas: T[], agora: Date) {
+  return cobrancas
+    .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
+    .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0];
+}
+
+function calcularResumoFinanceiro<T extends CobrancaResumo>(cobrancas: T[], agora: Date) {
   const atrasado = cobrancas.some(
     (c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora),
   );
@@ -97,10 +115,54 @@ function resumoFinanceiro(
       .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
       .map((c) => ({ moeda: c.moeda, valor: Math.max(0, c.saldo != null ? numero(c.saldo) : numero(c.valorNegociado) - numero(c.valorRecebido ?? 0)) })),
   );
-  const proximo = cobrancas
-    .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
-    .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0];
+  const proximo = proximaCobranca(cobrancas, agora);
+  return { atrasado, emAberto, proximo };
+}
+
+function resumoFinanceiro(cobrancas: CobrancaResumo[]) {
+  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date());
   return { atrasado, emAberto, proximoVencimento: proximo?.vencimento ?? null };
+}
+
+type CobrancaResumoDaFicha = CobrancaResumo & { id: string; matriculaId: string };
+
+/**
+ * A coluna de vencimento é um instante, mas a data da obrigação é civil e só
+ * pode ser exibida quando a emissão ou aplicação preserva a sua referência.
+ * A consulta é deliberadamente restrita à cobrança que o resumo já escolheu:
+ * não altera o critério de próximo vencimento, nem carrega trilhas para a
+ * projeção pedagógica.
+ */
+async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
+  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date());
+  const resumo = { atrasado, emAberto };
+  const proxima = proximo;
+  if (!proxima) return { ...resumo, proximoVencimento: null as ReferenciaVencimentoCivil | null };
+
+  const cobranca = await prisma.cobranca.findUnique({
+    where: { id: proxima.id },
+    include: incluirFonteVencimentoCivil,
+  });
+  if (!cobranca || cobranca.matriculaId !== proxima.matriculaId) {
+    return {
+      ...resumo,
+      proximoVencimento: {
+        estado: "A_CONFERIR" as const,
+        motivo: "A cobrança selecionada não está disponível no contrato esperado para conferir o vencimento.",
+      },
+    };
+  }
+
+  const trilhas = await carregarTrilhasVencimentoCivil(prisma, [cobranca.id], [proxima.matriculaId]);
+  return {
+    ...resumo,
+    proximoVencimento: referenciaVencimentoCivil({
+      ...cobranca,
+      aplicacoesAditivoVencimento: trilhas.vencimentosPorCobranca.get(cobranca.id),
+      aplicacoesM01: trilhas.m01PorCobranca.get(cobranca.id),
+      retomadasReprogramadas: trilhas.retomadasReprogramadas,
+    }),
+  };
 }
 
 export async function listarAlunos(usuario?: UsuarioSessao) {
@@ -207,7 +269,12 @@ export async function obterAluno(id: string, usuario?: UsuarioSessao) {
       observacao: cadastro ? m.observacao : null,
     })),
   });
-  return { aluno: alunoPlano, financeiro: financeiro ? resumoFinanceiro(aluno.matriculas.flatMap((m) => m.cobrancas)) : null };
+  return {
+    aluno: alunoPlano,
+    financeiro: financeiro
+      ? await resumoFinanceiroDaFicha(aluno.matriculas.flatMap((m) => m.cobrancas))
+      : null,
+  };
 }
 
 export async function listarTurmasAbertasComVaga(usuario?: UsuarioSessao) {
