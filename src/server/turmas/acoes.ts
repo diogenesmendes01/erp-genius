@@ -13,7 +13,14 @@ import {
   ErroPermissao,
   type Resultado,
 } from "@/server/_shared";
-import { TurmaSchema, type TurmaInput, diasPorSemanaDaFrequencia, rotuloDiasHorario, emMinutos } from "./schema";
+import {
+  TurmaSchema,
+  type TurmaInput,
+  diasPorSemanaDaFrequencia,
+  duracaoIntervaloEmMinutos,
+  rotuloDiasHorario,
+  emMinutos,
+} from "./schema";
 import { conferirConclusaoTurma } from "./conclusao-agenda";
 import { sincronizarVinculoDocente } from "./vinculo-docente";
 
@@ -25,15 +32,26 @@ async function validarAgenda(
   horarioInicio: string,
   horarioFim: string,
   db: Pick<Prisma.TransactionClient, "modalidade"> = prisma,
+  exigirDuracaoDaModalidade = false,
+  exigirFrequencia = true,
 ): Promise<string> {
   const modalidade = await db.modalidade.findUnique({ where: { id: modalidadeId } });
   if (!modalidade) throw new ErroRegra("Modalidade não encontrada.");
   const req = diasPorSemanaDaFrequencia(modalidade.frequencia);
   const dias = Array.from(new Set(diasSemana)); // sem duplicados
-  if (req !== null && dias.length !== req) {
+  if (exigirFrequencia && req !== null && dias.length !== req) {
     throw new ErroRegra(
       `A modalidade ${modalidade.nome} é ${modalidade.frequencia}: selecione exatamente ${req} dia(s) — você marcou ${dias.length}.`,
     );
+  }
+  if (exigirDuracaoDaModalidade) {
+    const duracaoEsperada = Number(modalidade.horasAula) * 60;
+    const duracaoInformada = duracaoIntervaloEmMinutos(horarioInicio, horarioFim);
+    if (!Number.isInteger(duracaoEsperada) || duracaoEsperada <= 0 || duracaoInformada !== duracaoEsperada) {
+      throw new ErroRegra(
+        `A aula da modalidade ${modalidade.nome} dura ${modalidade.horasAula} hora(s). O horário informado precisa corresponder a essa duração.`,
+      );
+    }
   }
   return rotuloDiasHorario(dias, horarioInicio, horarioFim);
 }
@@ -80,12 +98,19 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
     const autor = await exigirGestorTurma();
     const dados = TurmaSchema.parse(input);
 
-    const diasHorario = await validarAgenda(dados.modalidadeId, dados.diasSemana, dados.horarioInicio, dados.horarioFim);
-
     const id = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`regra-avaliacao-nivel:${dados.nivelId}`}, 0))`;
+      await tx.$queryRaw`SELECT id FROM "Modalidade" WHERE id = ${dados.modalidadeId} FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
       await exigirGestorAtual(tx, autor.id);
+      const diasHorario = await validarAgenda(
+        dados.modalidadeId,
+        dados.diasSemana,
+        dados.horarioInicio,
+        dados.horarioFim,
+        tx,
+        true,
+      );
       const codigo = await gerarCodigo("turma");
       const turma = await tx.turma.create({
         data: {
@@ -99,7 +124,7 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
           horarioFim: dados.horarioFim,
           diasHorario,
           dataInicio: dados.dataInicio,
-          dataFim: dados.dataFim,
+          dataFim: dados.dataFim ?? null,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
           status: StatusTurma.PLANEJADA,
@@ -132,6 +157,11 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
       await exigirGestorAtual(tx, autor.id);
       const atual = await tx.turma.findUnique({ where: { id }, include: { _count: { select: { alocacoes: true } } } });
       if (!atual) throw new ErroRegra("Turma não encontrada.");
+      // O formulário de edição não apaga a referência histórica automaticamente.
+      // A limpeza explícita demanda a revisão que trate os consumidores legados.
+      const dataFim = dados.dataFim ?? atual.dataFim;
+      if (dataFim && dataFim <= dados.dataInicio)
+        throw new ErroRegra("A data final de referência deve ser depois da data de início.");
       if (dados.nivelId !== atual.nivelId && atual.regraAvaliacaoId)
         throw new ErroRegra("A turma já possui regras de avaliação vinculadas ao nível. A mudança exige revisão acadêmica específica.");
       const dias = (valores: number[]) => [...new Set(valores)].sort((a, b) => a - b).join(",");
@@ -139,7 +169,12 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
         (dados.professorId || null) !== atual.professorId || dias(dados.diasSemana) !== dias(atual.diasSemana) ||
         !atual.horarioInicio || emMinutos(dados.horarioInicio) !== emMinutos(atual.horarioInicio) ||
         !atual.horarioFim || emMinutos(dados.horarioFim) !== emMinutos(atual.horarioFim) ||
-        dados.dataInicio.getTime() !== atual.dataInicio?.getTime() || dados.dataFim.getTime() !== atual.dataFim?.getTime();
+        dados.dataInicio.getTime() !== atual.dataInicio?.getTime() || dataFim?.getTime() !== atual.dataFim?.getTime();
+      const alterouDuracaoOuModalidade = dados.modalidadeId !== atual.modalidadeId ||
+        !atual.horarioInicio || emMinutos(dados.horarioInicio) !== emMinutos(atual.horarioInicio) ||
+        !atual.horarioFim || emMinutos(dados.horarioFim) !== emMinutos(atual.horarioFim);
+      const alterouFrequenciaOuModalidade = dados.modalidadeId !== atual.modalidadeId ||
+        dias(dados.diasSemana) !== dias(atual.diasSemana);
       if (alterouGrade && await tx.encontroAgenda.count({ where: { turmaId: id, status: { not: "RASCUNHO" } } }))
         throw new ErroRegra("A turma possui agenda publicada. Mudanças de professor, nível, modalidade, datas ou horários exigem revisão e aprovação da agenda.");
       if ((dados.nivelId !== atual.nivelId || dados.modalidadeId !== atual.modalidadeId) && atual._count.alocacoes > 0)
@@ -153,7 +188,15 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
         throw new ErroRegra(`A capacidade deve comportar ${ocupacao} alocações e ${reservasOcupantes} reservas ocupantes.`);
       if (dados.capacidade < ocupacao)
         throw new ErroRegra(`A capacidade não pode ser menor que os ${ocupacao} alunos atualmente alocados.`);
-      const diasHorario = await validarAgenda(dados.modalidadeId, dados.diasSemana, dados.horarioInicio, dados.horarioFim, tx);
+      const diasHorario = await validarAgenda(
+        dados.modalidadeId,
+        dados.diasSemana,
+        dados.horarioInicio,
+        dados.horarioFim,
+        tx,
+        alterouDuracaoOuModalidade,
+        alterouFrequenciaOuModalidade,
+      );
       const turma = await tx.turma.update({
         where: { id },
         data: {
@@ -166,7 +209,7 @@ export async function editarTurma(id: string, input: TurmaInput): Promise<Result
           horarioFim: dados.horarioFim,
           diasHorario,
           dataInicio: dados.dataInicio,
-          dataFim: dados.dataFim,
+          dataFim,
           capacidade: dados.capacidade,
           rolling: dados.rolling,
         },

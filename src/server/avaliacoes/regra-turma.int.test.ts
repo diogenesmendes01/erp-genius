@@ -20,7 +20,7 @@ beforeEach(async () => {
   nivelId = (await prisma.nivel.create({ data: { idiomaId: c.idioma.id, codigo: "A1", ordem: 1 } })).id;
   authMock.mockResolvedValue({ user: { id: autor } });
 });
-const entradaTurma = () => ({ modalidadeId, nivelId, diasSemana: [1, 3], horarioInicio: "10:00", horarioFim: "11:00", dataInicio: new Date("2099-10-01T00:00:00Z"), dataFim: new Date("2099-12-01T00:00:00Z"), capacidade: 12 });
+const entradaTurma = () => ({ modalidadeId, nivelId, diasSemana: [1, 3], horarioInicio: "10:00", horarioFim: "12:00", dataInicio: new Date("2099-10-01T00:00:00Z"), dataFim: new Date("2099-12-01T00:00:00Z"), capacidade: 12 });
 async function regra(versao: number, publicar = true) {
   const p = await prisma.$transaction(tx => prepararRegraAvaliacaoTx(tx, autor, { nivelId, versaoEsperada: versao - 1, conteudo: regraAvaliacaoTeste(), motivo: "Regra fictícia para vínculo", chaveIdempotencia: `vinculo-turma-regra-${versao}` }));
   const r = await prisma.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: p.id } });
@@ -92,15 +92,32 @@ it("importação XLSX de turma futura usa a mesma publicação e registra sua re
   const r = await regra(1);
   const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Turmas");
   ws.addRow(COLUNAS_IMPORTACAO_TURMA.map(c => c.header));
-  const valores: Record<string, string> = { nome: "Turma importada teste", modalidade: "Regular", nivel: "Português A1", professor: "", diasSemana: "Seg, Qua", horarioInicio: "10:00", horarioFim: "11:00", dataInicio: "2099-10-01", dataFim: "2099-12-01", capacidade: "12", rolling: "Não" };
+  const valores: Record<string, string> = { nome: "Turma importada teste", modalidade: "Regular", nivel: "Português A1", professor: "", diasSemana: "Seg, Qua", horarioInicio: "22:00", horarioFim: "00:00", dataInicio: "2099-10-01", dataFim: "", capacidade: "12", rolling: "Não" };
   ws.addRow(COLUNAS_IMPORTACAO_TURMA.map(c => valores[c.key]));
   const arquivo = new Uint8Array(await wb.xlsx.writeBuffer());
   const f = new FormData(); f.append("file", new File([arquivo], "turmas-teste.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
   const response = await POST(new Request("http://localhost/api/turmas/importar", { method: "POST", body: f }));
   expect(await response.json()).toMatchObject({ criadas: 1, erros: [] });
   const t = await prisma.turma.findFirstOrThrow({ where: { nome: valores.nome } });
+  expect(t).toMatchObject({ horarioInicio: "22:00", horarioFim: "00:00", dataFim: null });
   expect(t.regraAvaliacaoId).toBe(r.id);
   expect((await prisma.evento.findFirstOrThrow({ where: { agregadoId: t.id, tipo: "TurmaImportada" } })).payload).toMatchObject({ regraAvaliacaoId: r.id });
+});
+
+it("importação não descarta silenciosamente uma data final inválida", async () => {
+  const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Turmas");
+  ws.addRow(COLUNAS_IMPORTACAO_TURMA.map(c => c.header));
+  const valores: Record<string, string> = { nome: "Data inválida", modalidade: "Regular", nivel: "Português A1", professor: "", diasSemana: "Seg, Qua", horarioInicio: "22:00", horarioFim: "00:00", dataInicio: "2099-10-01", dataFim: "fim-inválido", capacidade: "12", rolling: "Não" };
+  ws.addRow(COLUNAS_IMPORTACAO_TURMA.map(c => valores[c.key]));
+  const arquivo = new Uint8Array(await wb.xlsx.writeBuffer());
+  const form = new FormData();
+  form.append("file", new File([arquivo], "turmas-data-invalida.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const response = await POST(new Request("http://localhost/api/turmas/importar", { method: "POST", body: form }));
+  expect(await response.json()).toMatchObject({
+    criadas: 0,
+    erros: [{ linha: 2, motivo: expect.stringContaining("Data final de referência inválida") }],
+  });
+  expect(await prisma.turma.count()).toBe(0);
 });
 
 it("criação concorrente espera publicação em curso e usa a versão confirmada", async () => {

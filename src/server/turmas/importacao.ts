@@ -1,7 +1,8 @@
 // Importação de TURMAS por planilha (XLSX) — recurso ADMIN (doc 12: evento `TurmaImportada`).
 // Espelha a importação de alunos. Validações por linha: modalidade/nível existentes, nº de
-// dias casando com a frequência da modalidade, horários HH:MM (fim > início) e período
-// (início → fim). Funções PURAS e testáveis; a criação no banco fica na rota.
+// dias casando com a frequência da modalidade, horários HH:MM coerentes com a duração
+// da modalidade e início obrigatório. A data final é uma referência opcional de legado;
+// a agenda publicada define o período operacional.
 
 export interface ColunaImportacaoTurma {
   key: string;
@@ -18,7 +19,7 @@ export const COLUNAS_IMPORTACAO_TURMA: ColunaImportacaoTurma[] = [
   { key: "horarioInicio", header: "Horário de início (HH:MM)", obrig: true },
   { key: "horarioFim", header: "Horário de fim (HH:MM)", obrig: true },
   { key: "dataInicio", header: "Data de início (AAAA-MM-DD)", obrig: true },
-  { key: "dataFim", header: "Data de fim (AAAA-MM-DD)", obrig: true },
+  { key: "dataFim", header: "Data final de referência (AAAA-MM-DD, opcional)" },
   { key: "capacidade", header: "Capacidade" },
   { key: "rolling", header: "Rolling Pré A1 (sim/não)" },
 ];
@@ -33,7 +34,7 @@ export const EXEMPLO_LINHA_TURMA: Record<string, string> = {
   horarioInicio: "19:00",
   horarioFim: "21:00",
   dataInicio: "2026-08-01",
-  dataFim: "2026-09-15",
+  dataFim: "",
   capacidade: "16",
   rolling: "Não",
 };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { IconPlus } from "@tabler/icons-react";
+import type { StatusTurma } from "@prisma/client";
 import { TurmaFormulario, type TurmaParaEditar, type Opcao, type ModalidadeOpcao } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
 
@@ -19,6 +20,7 @@ export interface TurmaRow {
   dataFim: string | null; // ISO ou null
   capacidade: number;
   rolling: boolean;
+  status: StatusTurma;
   modalidadeId: string;
   nivelId: string;
   modalidade: { nome: string };
@@ -28,20 +30,14 @@ export interface TurmaRow {
   _count: { alocacoes: number; reservasMatricula: number };
 }
 
-/**
- * Situação da turma DERIVADA das datas (sem cron):
- * - início no futuro  → "Aceitando matrícula" (aparece no wizard de matrícula)
- * - já iniciou, não terminou → "Em andamento"
- * - passou do fim → "Encerrada"
- */
-function situacao(dataInicio: string | null, dataFim: string | null): { label: string; cls: string } {
-  if (!dataInicio || !dataFim) return { label: "Sem datas", cls: "bg-gray-100 text-gray-500" };
-  const agora = Date.now();
-  const ini = new Date(dataInicio).getTime();
-  const fim = new Date(dataFim).getTime();
-  if (agora < ini) return { label: "Aceitando matrícula", cls: "bg-green-100 text-green-700" };
-  if (agora <= fim) return { label: "Em andamento", cls: "bg-blue-100 text-blue-700" };
-  return { label: "Encerrada", cls: "bg-gray-200 text-gray-500" };
+function situacao(status: StatusTurma): { label: string; cls: string } {
+  const porStatus: Record<StatusTurma, { label: string; cls: string }> = {
+    PLANEJADA: { label: "Planejada", cls: "bg-gray-100 text-gray-700" },
+    ABERTA: { label: "Aberta", cls: "bg-green-100 text-green-700" },
+    EM_ANDAMENTO: { label: "Em andamento", cls: "bg-blue-100 text-blue-700" },
+    CONCLUIDA: { label: "Concluída", cls: "bg-gray-200 text-gray-600" },
+  };
+  return porStatus[status];
 }
 
 export function TurmasPainel({
@@ -63,8 +59,8 @@ export function TurmasPainel({
     <div>
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Onde a turma nasce (criar × alocar). Turmas com <strong>início no futuro</strong> ficam{" "}
-          <strong>aceitando matrícula</strong> e aparecem no wizard; após o início, saem automaticamente.
+          Crie a turma e publique a agenda para definir seu período. O status canônico, a agenda e as regras de admissão
+          determinam os próximos passos.
         </p>
         {form === "none" && (
           <div className="flex items-center gap-2">
@@ -113,7 +109,7 @@ export function TurmasPainel({
                 <th className="px-4 py-2 font-medium">Período</th>
                 <th className="px-4 py-2 font-medium">Professor</th>
                 <th className="px-4 py-2 font-medium">Ocupação</th>
-                <th className="px-4 py-2 font-medium">Situação</th>
+                <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium text-right">Ações</th>
               </tr>
             </thead>
@@ -121,7 +117,7 @@ export function TurmasPainel({
               {turmas.map((t) => {
                 // _count.alocacoes já vem filtrado por { ativa: true } (ver listarTurmas).
                 const vagas = Math.max(0, t.capacidade - t._count.alocacoes - t._count.reservasMatricula);
-                const sit = situacao(t.dataInicio, t.dataFim);
+                const sit = situacao(t.status);
                 return (
                   <tr key={t.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">

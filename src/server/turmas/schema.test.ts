@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { TurmaSchema, diasPorSemanaDaFrequencia, rotuloDiasHorario, emMinutos } from "./schema";
+import {
+  TurmaSchema,
+  diasPorSemanaDaFrequencia,
+  duracaoIntervaloEmMinutos,
+  horarioFimPorDuracao,
+  rotuloDiasHorario,
+  emMinutos,
+} from "./schema";
 
 const base = {
   modalidadeId: "m1",
@@ -32,14 +39,14 @@ describe("TurmaSchema — agenda estruturada", () => {
     expect(TurmaSchema.safeParse({ ...base, horarioInicio: "09:30", horarioFim: "11:00" }).success).toBe(true);
   });
 
-  it("exige horário de fim depois do início", () => {
-    expect(TurmaSchema.safeParse({ ...base, horarioInicio: "21:00", horarioFim: "19:00" }).success).toBe(false);
+  it("aceita aula que atravessa meia-noite e rejeita duração zero", () => {
+    expect(TurmaSchema.safeParse({ ...base, horarioInicio: "22:00", horarioFim: "01:00" }).success).toBe(true);
     expect(TurmaSchema.safeParse({ ...base, horarioInicio: "19:00", horarioFim: "19:00" }).success).toBe(false);
   });
 
-  it("exige início e fim, e fim depois do início", () => {
+  it("exige início, mas permite ausência de data final e rejeita referência anterior", () => {
     expect(TurmaSchema.safeParse({ ...base, dataInicio: "" }).success).toBe(false);
-    expect(TurmaSchema.safeParse({ ...base, dataFim: "" }).success).toBe(false);
+    expect(TurmaSchema.safeParse({ ...base, dataFim: "" }).success).toBe(true);
     expect(TurmaSchema.safeParse({ ...base, dataFim: "2026-08-01" }).success).toBe(false);
   });
 });
@@ -62,5 +69,9 @@ describe("rótulo derivado dias/horário", () => {
   it("emMinutos converte HH:MM", () => {
     expect(emMinutos("21:00")).toBe(1260);
     expect(emMinutos("09:30")).toBe(570);
+  });
+  it("deriva o fim e duração circular de uma aula noturna", () => {
+    expect(duracaoIntervaloEmMinutos("22:00", "01:00")).toBe(180);
+    expect(horarioFimPorDuracao("22:00", 180)).toEqual({ horarioFim: "01:00", atravessaDia: true });
   });
 });
