@@ -2,7 +2,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 
-vi.mock("./TurmaFormulario", () => ({ TurmaFormulario: () => "formulario-turma" }));
+vi.mock("./TurmaFormulario", () => ({
+  TurmaFormulario: () => "formulario-turma",
+  destinoPrepararGrade: (turmaId: string) => `/academico/grades/nova?turmaId=${encodeURIComponent(turmaId)}`,
+}));
 vi.mock("./ImportarTurmasModal", () => ({ ImportarTurmasModal: () => "importar-turmas" }));
 
 import { TurmasPainel, type TurmaRow } from "./TurmasPainel";
@@ -42,4 +45,15 @@ it("exibe o status canônico mesmo quando a referência de período já passou",
   expect(html).not.toContain("Aceitando matrícula");
   expect(html).not.toContain("Encerrada");
   expect(html).toContain("22:00–01:00");
+});
+
+it("oferece a preparação real para a turma planejada sem referência de término", () => {
+  const html = renderToStaticMarkup(createElement(TurmasPainel, {
+    turmas: [{ ...turma, status: "PLANEJADA", dataFim: null }],
+    modalidades: [{ id: "modalidade-1", label: "Regular", frequencia: "1x/semana", horasAula: 3 }],
+    niveis: [{ id: "nivel-1", label: "Português A1" }],
+    professores: [],
+  }));
+  expect(html).toContain("Previsão de término pendente da grade.");
+  expect(html).toContain('href="/academico/grades/nova?turmaId=turma-1"');
 });

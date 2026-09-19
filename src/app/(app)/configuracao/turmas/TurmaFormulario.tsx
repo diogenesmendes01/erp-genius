@@ -48,6 +48,10 @@ export interface ModalidadeOpcao extends Opcao {
   horasAula: number;
 }
 
+export function destinoPrepararGrade(turmaId: string): string {
+  return `/academico/grades/nova?turmaId=${encodeURIComponent(turmaId)}`;
+}
+
 export function TurmaFormulario({
   turma,
   modalidades,
@@ -130,9 +134,13 @@ export function TurmaFormulario({
       rolling,
     };
     const res = turma ? await editarTurma(turma.id, input) : await criarTurma(input);
-    if (!res.ok) {
-      setErro(res.erro);
+    if (!res.ok || !res.dado) {
+      setErro(res.ok ? "Turma não confirmada." : res.erro);
       setSalvando(false);
+      return;
+    }
+    if (!turma) {
+      router.push(destinoPrepararGrade(res.dado.id));
       return;
     }
     router.refresh();

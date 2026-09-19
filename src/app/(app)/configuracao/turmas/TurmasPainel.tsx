@@ -4,7 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { IconPlus } from "@tabler/icons-react";
 import type { StatusTurma } from "@prisma/client";
-import { TurmaFormulario, type TurmaParaEditar, type Opcao, type ModalidadeOpcao } from "./TurmaFormulario";
+import {
+  destinoPrepararGrade,
+  TurmaFormulario,
+  type TurmaParaEditar,
+  type Opcao,
+  type ModalidadeOpcao,
+} from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
 
 export interface TurmaRow {
@@ -144,6 +150,9 @@ export function TurmasPainel({
                     <td className="px-4 py-3 text-gray-600">
                       {t.dataInicio ? new Date(t.dataInicio).toLocaleDateString("pt-BR") : "—"}
                       {t.dataFim ? ` → ${new Date(t.dataFim).toLocaleDateString("pt-BR")}` : ""}
+                      {t.status === "PLANEJADA" && !t.dataFim && (
+                        <span className="block text-xs text-gray-500">Previsão de término pendente da grade.</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{t.professor?.nome ?? "—"}</td>
                     <td className="px-4 py-3 text-gray-600">
@@ -156,6 +165,11 @@ export function TurmasPainel({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
+                        {t.status === "PLANEJADA" && (
+                          <Link href={destinoPrepararGrade(t.id)} className="text-xs text-brand-700 hover:text-brand-800">
+                            Preparar grade
+                          </Link>
+                        )}
                         <button
                           onClick={() =>
                             setForm({
