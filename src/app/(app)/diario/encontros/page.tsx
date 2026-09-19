@@ -15,10 +15,10 @@ export default async function EncontrosDocentePage({ searchParams }: { searchPar
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}
     {r.ok && r.dado?.encontros.length === 0 && <p>Nenhum encontro disponível.</p>}
     {r.ok && r.dado?.encontros.map((e) => {
-      const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(v));
+      const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoExibicao }).format(new Date(v));
       return <article key={e.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
         <h2 className="font-medium">{e.turma} · {rotulo[e.status]}</h2>
-        <p>{data(e.inicio)} — {data(e.fim)}</p><p className="text-sm">{e.fusoOrigem} · {e.professor}</p>
+        <p>{data(e.inicio)} — {data(e.fim)}</p><p className="text-sm">Exibido em {e.fusoExibicao}; origem {e.fusoOrigem} · {e.professor}</p>
         {e.particular && <Link href={`/diario/encontros/${e.id}/cancelamento`} className="block text-brand-700 underline">Cancelamento da particular</Link>}
         {e.atribuicaoPropria && (e.particular || e.status === "PREVISTO" && new Date(e.fim) <= new Date()) && <Link href={`/diario/encontros/${e.id}`} className="inline-block text-brand-700 underline">{e.particular ? "Diário e ocorrências" : "Abrir chamada"}</Link>}
       </article>;

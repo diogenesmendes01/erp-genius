@@ -3,6 +3,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 /** Atribuição por encontro não concede acesso ao cadastro, financeiro ou restante da turma. */
 export async function consultarEncontrosDocente(input: { encontroId?: string; cursor?: string; limite?: number } = {}) {
@@ -10,7 +11,7 @@ export async function consultarEncontrosDocente(input: { encontroId?: string; cu
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
     const d = z.object({ encontroId: z.string().min(1).optional(), cursor: z.string().min(1).optional(), limite: z.number().int().min(1).max(100).default(30) }).strict().parse(input);
     return prisma.$transaction(async (tx) => {
-      const u = await tx.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true } });
+      const u = await tx.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, papeis: true, fusoExibicao: true } });
       if (!u?.ativo) throw new ErroPermissao();
       const gestao = u.papeis.some((p) => p === "GERENTE_PEDAGOGICO" || p === "ADMINISTRADOR" || p === "SECRETARIA_ACADEMICA");
       if (!gestao && !u.papeis.includes("PROFESSOR")) throw new ErroPermissao();
@@ -23,7 +24,7 @@ export async function consultarEncontrosDocente(input: { encontroId?: string; cu
           professor: { select: { nome: true } }, turma: { select: { codigo: true, nome: true } } },
       });
       const pagina = registros.slice(0, d.limite);
-      return { encontros: pagina.map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem,
+      return { encontros: pagina.map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem, fusoExibicao: resolverFusoExibicao(u.fusoExibicao, e.fusoOrigem),
         status: e.status, particular: !!e.matriculaId, professor: e.professor?.nome ?? "Sem professor", atribuicaoPropria: e.professorId === usuario.id,
         turma: e.turma ? [e.turma.codigo, e.turma.nome].filter(Boolean).join(" · ") || "Turma" : "Encontro individual",
       })), proximoCursor: registros.length > d.limite ? pagina[pagina.length - 1].id : null };

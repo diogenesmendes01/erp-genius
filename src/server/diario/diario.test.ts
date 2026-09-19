@@ -80,6 +80,13 @@ describe("diário mantém história de autoria sem reabrir cadastro", () => {
     const res = await listarAulasDiario(u(Papel.GERENTE_PEDAGOGICO));
     expect(db.aulaDiario.findMany.mock.calls[0][0].where).toEqual({}); expect(res.aulas[0].podeEditar).toBe(false);
   });
+  it("projeta o instante histórico no fuso pessoal sem mudar a origem registrada", async () => {
+    const registro = aula();
+    registro.encontro = { professorId: "prof", status: "MINISTRADO", fim: instante, finalidade: "AULA", matriculaId: null, fusoOrigem: "UTC", publicacaoGravacao: null, excecoesGravacao: [] } as never;
+    db.aulaDiario.findMany.mockResolvedValue([registro]);
+    db.usuario.findUnique.mockResolvedValue({ ativo: true, fusoExibicao: "America/Costa_Rica" });
+    expect((await listarAulasDiario(u(Papel.PROFESSOR))).aulas[0]).toMatchObject({ ocorridaEm: instante.toISOString(), fusoExibicao: "America/Costa_Rica" });
+  });
   it("docente atual registra nome obtido no servidor e presença", async () => {
     expect((await salvarAulaDiario(entrada())).ok).toBe(true);
     expect(db.registroAulaAluno.upsert.mock.calls[0][0].create).toMatchObject({ nomeAluno: "Ana Silva", presente: true });

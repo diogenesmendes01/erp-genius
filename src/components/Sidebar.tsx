@@ -109,6 +109,7 @@ export function Sidebar({
           {nome.slice(0, 2).toUpperCase()}
         </div>
         <span className="flex-1 truncate text-sm text-gray-600">{nome}</span>
+        <Link href="/preferencias" className="text-xs text-brand-700 underline" title="Preferências">Fuso</Link>
         <ThemeToggle />
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
