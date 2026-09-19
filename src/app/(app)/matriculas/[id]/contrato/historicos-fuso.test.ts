@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
   formulario: vi.fn(), conferencias: vi.fn(), conferenciaAssinatura: vi.fn(), conclusao: vi.fn(), aceite: vi.fn(), notFound: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("next/navigation", () => ({
+  notFound: mocks.notFound,
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/contratos/previas", () => ({ consultarPainelPrevias: mocks.painel, consultarPreenchimentoContratual: vi.fn(), consultarPreviaContratual: mocks.previa }));
@@ -49,6 +52,22 @@ describe("históricos contratuais no fuso pessoal", () => {
     const contrato = renderToStaticMarkup(await ContratoPage({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }));
     const previa = renderToStaticMarkup(await PreviaPage({ params: Promise.resolve({ id: "matricula", previaId: "previa" }), searchParams: Promise.resolve({}) }));
     const participantes = renderToStaticMarkup(await ParticipantesPage({ params: Promise.resolve({ id: "matricula", previaId: "previa" }), searchParams: Promise.resolve({}) }));
+    mocks.conferenciaAssinatura.mockResolvedValueOnce({ ok: true, dado: {
+      revisao: {
+        hash: "revisao-atual",
+        dados: {
+          regraTaxa: "CONFIRMACAO_PREVIA_EXIGIDA",
+          taxa: { valor: "100.00", moeda: "BRL", confirmada: true },
+          reserva: { status: "ATIVA", expiraEm: "2026-01-01T03:30:00.000Z" },
+          agenda: [],
+          agendaParticular: null,
+          participantes: [],
+        },
+      },
+      pendencia: null,
+      historico: [{ id: "conferencia", autor: { nome: "Secretaria" }, criadaEm: instante, motivo: "Documento conferido", revisaoHash: "hash" }],
+      temProxima: false,
+    } });
     const original = renderToStaticMarkup(await OriginalPage({ params: Promise.resolve({ id: "matricula", artefatoId: "original" }), searchParams: Promise.resolve({}) }));
 
     for (const html of [contrato, previa, participantes, original]) {
@@ -61,18 +80,34 @@ describe("históricos contratuais no fuso pessoal", () => {
     expect(original).toContain("Aceite conferido");
     expect(original).toContain("31/12/2025, 21:30");
     expect(original).toContain("31/12/2025, 22:30");
+    expect(original).toContain("Prazo registrado: 31/12/2025, 21:30 (horário exibido em America/Costa_Rica; origem UTC)");
   });
 
-  it("recorre a UTC e não consulta registros depois de a guarda falhar", async () => {
-    mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: null } });
-    const contrato = renderToStaticMarkup(await ContratoPage({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }));
+  it("recorre a UTC se a preferência estiver ausente ou indisponível e preserva a guarda em cada histórico", async () => {
+    const paginas = [
+      () => ContratoPage({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }),
+      () => PreviaPage({ params: Promise.resolve({ id: "matricula", previaId: "previa" }), searchParams: Promise.resolve({}) }),
+      () => ParticipantesPage({ params: Promise.resolve({ id: "matricula", previaId: "previa" }), searchParams: Promise.resolve({}) }),
+      () => OriginalPage({ params: Promise.resolve({ id: "matricula", artefatoId: "original" }), searchParams: Promise.resolve({}) }),
+    ];
 
-    expect(contrato).toContain("01/01/2026, 02:30");
-    expect(contrato).toContain("horário exibido em UTC; origem UTC");
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
+    for (const renderizar of paginas) {
+      const html = renderToStaticMarkup(await renderizar());
+      expect(html).toContain("01/01/2026, 02:30");
+      expect(html).toContain("horário exibido em UTC; origem UTC");
+    }
 
-    mocks.sessao.mockRejectedValueOnce(new Error("Sessão expirada."));
-    await expect(PreviaPage({ params: Promise.resolve({ id: "outra", previaId: "previa" }), searchParams: Promise.resolve({}) })).rejects.toThrow("Sessão expirada.");
-    expect(mocks.preferencia).toHaveBeenCalledTimes(1);
-    expect(mocks.previa).not.toHaveBeenCalled();
+    mocks.preferencia.mockResolvedValueOnce({ ok: false, erro: "Preferência indisponível." });
+    const comFalhaNaConsulta = renderToStaticMarkup(await OriginalPage({ params: Promise.resolve({ id: "matricula", artefatoId: "original" }), searchParams: Promise.resolve({}) }));
+    expect(comFalhaNaConsulta).toContain("01/01/2026, 02:30");
+    expect(comFalhaNaConsulta).toContain("horário exibido em UTC; origem UTC");
+
+    const consultasAntesDaGuarda = mocks.preferencia.mock.calls.length;
+    for (const renderizar of paginas) {
+      mocks.sessao.mockRejectedValueOnce(new Error("Sessão expirada."));
+      await expect(renderizar()).rejects.toThrow("Sessão expirada.");
+    }
+    expect(mocks.preferencia).toHaveBeenCalledTimes(consultasAntesDaGuarda);
   });
 });
