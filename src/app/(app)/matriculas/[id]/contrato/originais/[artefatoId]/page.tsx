@@ -60,7 +60,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
       <h2 className="text-xl">Condições verificadas agora</h2>
       <p>{atual.dados.regraTaxa === "CONFIRMACAO_PREVIA_EXIGIDA" ? "Taxa confirmada exigida antes da assinatura." : "A oferta permite assinatura antes do pagamento da taxa."}</p>
       <p>Taxa: {atual.dados.taxa.valor} {atual.dados.taxa.moeda}. {atual.dados.taxa.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</p>
-      <p>Reserva {atual.dados.reserva.status === "MANTIDA_PENDENCIA" ? "mantida por pendência" : "ativa"}, com {atual.dados.agenda.length} encontro(s) futuros conferidos. Prazo registrado: {atual.dados.reserva.expiraEm.replace("T", " ").slice(0, 19)} UTC.</p>
+      <p>Reserva {atual.dados.reserva.status === "MANTIDA_PENDENCIA" ? "mantida por pendência" : "ativa"}, com {atual.dados.agenda.length} encontro(s) futuros conferidos. Prazo registrado: {textoInstanteAdministrativo(atual.dados.reserva.expiraEm, preferenciaFusoExibicao)}.</p>
       {atual.dados.agendaParticular && <p className="whitespace-pre-line">{atual.dados.agendaParticular}</p>}
       <h3 className="text-lg">Participantes</h3>
       <ul>{atual.dados.participantes.map((p) => <li key={p.papel}>{p.nome} — {p.email}. {p.etapa === "CLIENTE" ? "Primeira etapa: cliente/responsáveis." : "Etapa posterior: escola."}</li>)}</ul>
