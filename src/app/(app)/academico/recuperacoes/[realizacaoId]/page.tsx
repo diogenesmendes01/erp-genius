@@ -4,18 +4,25 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarNotaRecuperacao } from "@/server/avaliacoes/recuperacao-consulta";
 import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { LancarNota, ConferirNota } from "./Formularios";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function Nota({ params, searchParams }: { params: Promise<{ realizacaoId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const { realizacaoId } = await params, { antesVersao } = await searchParams;
-  const r = await consultarNotaRecuperacao({ realizacaoId, ...(antesVersao ? { antesVersao: Number(antesVersao) } : {}) });
+  const { realizacaoId } = await params;
+  const { antesVersao } = await searchParams;
+  const [r, preferencia] = await Promise.all([
+    consultarNotaRecuperacao({ realizacaoId, ...(antesVersao ? { antesVersao: Number(antesVersao) } : {}) }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`}>Recuperações da matrícula</Link>
     <h1 className="text-2xl font-medium">Recuperação — {d.habilidade.replaceAll("_", " ")}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    <p>Realizada em {d.realizadaEm.replace("T", " ").replace("Z", " UTC")}. Escala: {d.escala.minimo} a {d.escala.maximo}.</p>
+    <p>Realizada em {formatarInstanteExibicao(d.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC). Escala: {d.escala.minimo} a {d.escala.maximo}.</p>
     <p>Professor que realizou a avaliação: {d.realizadaPor}. Registro por: {d.registradaPor}.</p>
     {d.motivoRegularizacao && <p className="whitespace-pre-wrap">Motivo da regularização: {d.motivoRegularizacao}</p>}
     <p className="whitespace-pre-wrap">Evidência: {d.evidencia}</p>
