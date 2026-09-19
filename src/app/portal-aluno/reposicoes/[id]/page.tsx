@@ -55,7 +55,7 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
       return <article key={correcao.id} className="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm"><p className="font-medium">{correcao.situacao === "PENDENTE" ? "Correção solicitada" : "Correção respondida"}{entrega ? ` para a versão ${entrega.versao}` : ""}</p><p className="mt-2 whitespace-pre-wrap">{correcao.comentario}</p><p className="mt-2">Prazo: {data(correcao.prazoAte)}</p></article>;
     })}
     {podeReproduzir && <VideoGravacaoPortalAluno reposicaoId={reposicao.id} />}
-    {detalhe && reposicao.modalidade === "GRAVACAO" && <RelatarIndisponibilidadePortalAluno reposicaoId={reposicao.id} podeRelatar={podeReproduzir} relatos={detalhe.relatosIndisponibilidade} pausas={detalhe.pausasMaterial} />}
+    {detalhe && reposicao.modalidade === "GRAVACAO" && <RelatarIndisponibilidadePortalAluno reposicaoId={reposicao.id} podeRelatar={podeReproduzir} relatos={detalhe.relatosIndisponibilidade} pausas={detalhe.pausasMaterial} fusoExibicao={fusoExibicao} />}
     {reposicao.modalidade === "GRAVACAO" && <EntregaGravacaoPortalAluno reposicaoId={reposicao.id} podeEntregar={podeEntregar} motivoBloqueio={motivoBloqueio} />}
   </section>;
 }
