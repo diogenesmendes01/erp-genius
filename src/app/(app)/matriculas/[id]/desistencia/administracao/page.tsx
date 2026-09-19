@@ -2,10 +2,19 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDecisaoAdministrativaDesistencia } from "@/server/matricula/desistencia-administrativa";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecisaoFormulario } from "./DecisaoFormulario";
+
+function textoInstanteAdministrativo(iso: string, preferenciaFusoExibicao: string | null) {
+  const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
 
 export default async function AdministracaoDesistenciaPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const { id } = await params;
   const resposta = await consultarDecisaoAdministrativaDesistencia({ matriculaId: id });
   if (!resposta.ok || !resposta.dado) return <p role="alert">{resposta.ok ? "Consulta indisponível." : resposta.erro}</p>;
@@ -22,7 +31,7 @@ export default async function AdministracaoDesistenciaPage({ params }: { params:
         <h3 className="font-medium">Versão {p.versao} · {p.registradorNome}</h3>
         <p className="whitespace-pre-wrap">{p.motivo}</p><p className="whitespace-pre-wrap">{p.evidenciaPedido}</p>
         {!p.atual && <p>As condições mudaram desde este pedido. Esta versão não pode receber nova aprovação.</p>}
-        {p.decisao ? <section className="space-y-1"><p>{p.decisao.aprovada ? "Aprovado" : "Rejeitado"} por {p.decisao.decisorNome} em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(p.decisao.dataISO))} UTC.</p><p className="whitespace-pre-wrap">{p.decisao.motivo}</p></section>
+        {p.decisao ? <section className="space-y-1"><p>{p.decisao.aprovada ? "Aprovado" : "Rejeitado"} por {p.decisao.decisorNome} em {textoInstanteAdministrativo(p.decisao.dataISO, fusoExibicao)}.</p><p className="whitespace-pre-wrap">{p.decisao.motivo}</p></section>
           : p.podeDecidir ? <DecisaoFormulario pedidoId={p.id} estadoHash={p.estadoHash} podeAprovar={p.podeAprovar} />
           : <p>Sem decisão registrada. Somente outra pessoa da Administração pode decidir um pedido elegível.</p>}
       </article>)}

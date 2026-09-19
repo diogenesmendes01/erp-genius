@@ -1,11 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/desistencia-preparacao", () => ({ consultarDesistenciaPreparacao: mocks.consultar }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./PedidoFormulario", () => ({ PedidoFormulario: ({ matriculaId }: { matriculaId: string; estadoHash: string }) =>
   createElement("div", { "data-formulario": "desistencia", "data-matricula": matriculaId }, "Formulário de pedido"),
 }));
@@ -33,6 +34,13 @@ const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, da
 } });
 
 describe("DesistenciaPage", () => {
+  beforeEach(() => {
+    mocks.sessao.mockResolvedValue({ papeis: [Papel.SECRETARIA_ACADEMICA] });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
   it("exige o escopo Secretaria/Administração e mostra somente a conferência contextual", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.SECRETARIA_ACADEMICA] });
     mocks.consultar.mockResolvedValue(resposta());
@@ -114,5 +122,37 @@ describe("DesistenciaPage", () => {
     expect(html).toContain("Reserva liberada após conferência");
     expect(html).not.toContain('data-formulario="efetivacao"');
     expect(html).not.toContain("As condições mudaram desde este registro; refaça a conferência antes de prosseguir.");
+  });
+
+  it("apresenta criação e efetivação no fuso pessoal sem converter o contrato", async () => {
+    mocks.consultar.mockResolvedValue(resposta({
+      pedidos: [{ ...resposta().dado.pedidos[0], criadaEmISO: "2026-01-01T02:30:00.000Z" }],
+      efetivacao: { pedidoId: "pedido-atual", motivo: "Registro administrativo", executorNome: "Administração", aplicadaEmISO: "2026-01-01T02:30:00.000Z" },
+    }));
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "contrato-a" }) }));
+
+    expect(html).toContain("31/12/2025, 20:30");
+    expect(html).toContain("horário exibido em America/Costa_Rica; origem UTC");
+    expect(html).toContain("MAT-21");
+    expect(html).toContain("Cliente desistiu da contratação");
+    expect(html).toContain("Mensagem registrada no atendimento");
+    expect(mocks.preferencia).toHaveBeenCalledTimes(1);
+    expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "contrato-a" });
+  });
+
+  it("usa UTC sem preferência e não consulta dados após a guarda negar acesso", async () => {
+    mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: null } });
+    mocks.consultar.mockResolvedValueOnce(resposta({ pedidos: [{ ...resposta().dado.pedidos[0], criadaEmISO: "2026-01-01T02:30:00.000Z" }] }));
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "contrato-a" }) }));
+
+    expect(html).toContain("01/01/2026, 02:30");
+    expect(html).toContain("horário exibido em UTC; origem UTC");
+
+    mocks.sessao.mockRejectedValueOnce(new Error("Acesso negado."));
+    await expect(Page({ params: Promise.resolve({ id: "contrato-b" }) })).rejects.toThrow("Acesso negado.");
+    expect(mocks.preferencia).toHaveBeenCalledTimes(1);
+    expect(mocks.consultar).toHaveBeenCalledTimes(1);
   });
 });
