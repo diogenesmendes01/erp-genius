@@ -8,6 +8,7 @@ import { listarPropostasMovimentacao, obterDetalhesMovimentacao } from "@/server
 import { decidirPropostaPausaMatriculas } from "@/server/matricula/pausa-proposta";
 import { decidirRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
 import { identificacaoContrato } from "./identificacaoContrato";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -16,7 +17,12 @@ const data = (v: string) => v.slice(0, 10).split("-").reverse().join("/");
 const status = { PENDENTE: "Aguardando decisão", APROVADA: "Aprovada; aplicação pendente", REJEITADA: "Rejeitada", APLICADA: "Aplicada" };
 const efeito: Record<string, string> = { CONFERIR_COBERTURA: "Conferir cobertura", PRESERVAR_PERIODO_ANTERIOR: "Preservar período anterior", MANTER_PERIODO_INICIADO_INTEGRAL: "Manter período integral", SUSPENDER_PERIODO_FUTURO: "Suspender período futuro" };
 
-export function MovimentacoesPainel({ alunoId }: { alunoId: string }) {
+export function TituloMovimentacao({ estado, criadoEm, preferenciaFusoExibicao }: { estado: keyof typeof status; criadoEm: string; preferenciaFusoExibicao?: string | null }) {
+  const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, "UTC");
+  return <h2 className="font-medium">{status[estado]} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC)</h2>;
+}
+
+export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }: { alunoId: string; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [tipo, setTipo] = useState<"PAUSA" | "RETOMADA">("PAUSA");
   const [lista, setLista] = useState<Lista | null>(null);
@@ -93,7 +99,7 @@ export function MovimentacoesPainel({ alunoId }: { alunoId: string }) {
     {ocupado && <p role="status">Carregando…</p>}
     {lista?.propostas.length === 0 && <p>Nenhuma proposta encontrada.</p>}
     {lista?.propostas.map((p) => <article key={p.id} className="space-y-2 rounded border p-4">
-      <h2 className="font-medium">{status[p.status]} · {data(p.criadoEm)}</h2>
+      <TituloMovimentacao estado={p.status} criadoEm={p.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       <p className="text-sm">Solicitante: {p.solicitante.nome}</p>
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
       <p className="text-sm">Contratos: {p.matriculas.map((m) => identificacaoContrato(m.codigo, m.id)).join(", ")}</p>

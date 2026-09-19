@@ -3,13 +3,19 @@
 import { useRef, useState } from "react";
 import { consultarCumprimentosRecomposicao, prepararCumprimentoRecomposicao, decidirCumprimentoRecomposicao } from "@/server/matricula/recomposicao-cumprimento";
 import { useOperacao } from "./useOperacao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
-type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void> };
+type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
 const estilo = "rounded border p-2 text-sm";
 const estados = { PENDENTE: "Cumprimento pendente", RECOMPOSTO: "Cobertura cumprida", LIQUIDADO_FINANCEIRAMENTE: "Direito acertado financeiramente" };
 
-function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar }: Props & { dia: Dias[number]; atualizar: () => Promise<void> }) {
+export function DecisaoCumprimentoHistorico({ decisor, motivo, decididaEm, preferenciaFusoExibicao }: { decisor: string | null | undefined; motivo: string | null | undefined; decididaEm: string; preferenciaFusoExibicao?: string | null }) {
+  const exibicao = formatarInstanteExibicao(decididaEm, preferenciaFusoExibicao, "UTC");
+  return <p>Decisão de {decisor}: {motivo} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC)</p>;
+}
+
+function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, preferenciaFusoExibicao }: Props & { dia: Dias[number]; atualizar: () => Promise<void> }) {
   const [ocupado, iniciar] = useOperacao();
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -31,7 +37,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar }: P
     {dia.conferencias.map((c) => <div key={c.id} className="border-l pl-3">
       <p>Preparação: {c.preparador.nome} · {c.status === "PENDENTE" ? "Aguardando decisão" : c.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</p>
       <p>Motivo: {c.motivo}</p><p>Evidência: {c.evidencia}</p>
-      {c.decididaEm && <p>Decisão de {c.decisor?.nome}: {c.motivoDecisao} · {new Date(c.decididaEm).toLocaleString("pt-BR")}</p>}
+      {c.decididaEm && <DecisaoCumprimentoHistorico decisor={c.decisor?.nome} motivo={c.motivoDecisao} decididaEm={c.decididaEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
     </div>)}
     {dia.estado === "PENDENTE" && !pendente && <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
       e.preventDefault(); const f = new FormData(e.currentTarget);

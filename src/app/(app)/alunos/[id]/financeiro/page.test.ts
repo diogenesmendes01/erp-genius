@@ -12,7 +12,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: mocks.u
 vi.mock("@/server/retomada/consultas", () => ({ listarContextoRetomada: mocks.contexto, listarPropostasRetomada: mocks.propostas }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/lib/nome", () => ({ nomeCompleto: () => "Ana Aluna" }));
-vi.mock("./FichaFinanceira", () => ({ FichaFinanceira: () => createElement("p", null, "ficha") }));
+vi.mock("./FichaFinanceira", () => ({ FichaFinanceira: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-ficha": preferenciaFusoExibicao ?? "UTC" }, "ficha") }));
 vi.mock("./ResumoFinanceiroComercial", () => ({ ResumoFinanceiroComercial: () => null }));
 vi.mock("./ConcluirMatriculas", () => ({ ConcluirMatriculas: () => null }));
 vi.mock("@/app/(app)/financeiro/InformesPagamento", () => ({ InformesPagamento: () => null }));
@@ -36,7 +36,13 @@ describe("FichaFinanceiraPage acesso a aulas", () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }) }));
     expect(mocks.sessao).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
     expect(html).toContain('data-acesso="aluno:America/Costa_Rica"');
-    expect(html).toContain("ficha");
+    expect(html).toContain('data-ficha="America/Costa_Rica"');
+  });
+  it("mantém fallback UTC quando a preferência não está disponível", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false, erro: "Preferência indisponível" });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }) }));
+    expect(html).toContain('data-ficha="UTC"');
+    expect(html).toContain('data-acesso="aluno:UTC"');
   });
   it("não consulta preferência nem ficha quando a guarda recusa", async () => {
     mocks.sessao.mockRejectedValue(new Error("sem acesso"));

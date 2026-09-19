@@ -5,10 +5,16 @@ import { useOperacao } from "./useOperacao";
 import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-horas-compradas";
 import { conferirRealizacaoHoras } from "@/server/matricula/consumo-horas";
 import { LiberacaoHoras } from "./LiberacaoHoras";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
-function Compras({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
+export function RegistroCompraHoras({ nome, criadoEm, preferenciaFusoExibicao }: { nome: string; criadoEm: string; preferenciaFusoExibicao?: string | null }) {
+  const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, "UTC");
+  return <p>Registrado por {nome} em {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC).</p>;
+}
+
+function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: string; matriculaId: string; preferenciaFusoExibicao?: string | null }) {
   const [dados, setDados] = useState<Dados | null>(null), [erro, setErro] = useState<string | null>(null), [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, iniciar] = useOperacao();
   const chave = useRef("");
@@ -23,7 +29,7 @@ function Compras({ alunoId, matriculaId }: { alunoId: string; matriculaId: strin
     {dados && <>
       {dados.compras.length === 0 && <p>Nenhuma compra de horas registrada nesta matrícula.</p>}
       {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {c.valorPagoAlocado} {c.moeda}</summary>
-        <p>Registrado por {c.registrador.nome} em {new Date(c.criadoEm).toLocaleString("pt-BR")}.</p>
+        <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         <p>{c.liquidacao ? `Quitação: ${c.liquidacao.valorEmDinheiro} ${c.moeda} em dinheiro e ${c.liquidacao.valorEmCredito} ${c.moeda} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {c.valorOriginal}. Desconto original: {c.descontoOriginal}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{c.minutosReservados} minutos reservados · {c.minutosConsumidos} consumidos · {c.minutosConvertidosCredito} convertidos em crédito · {c.minutosDisponiveis} ainda não reservados.</p>
         {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${r.consumo.conferenciaOcorrencia.desfecho}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
@@ -70,11 +76,11 @@ function Compras({ alunoId, matriculaId }: { alunoId: string; matriculaId: strin
   </div>;
 }
 
-export function ComprasHorasPainel({ alunoId, contratos }: { alunoId: string; contratos: { id: string; codigo: string | null }[] }) {
+export function ComprasHorasPainel({ alunoId, contratos, preferenciaFusoExibicao = null }: { alunoId: string; contratos: { id: string; codigo: string | null }[]; preferenciaFusoExibicao?: string | null }) {
   const [matriculaId, setMatriculaId] = useState(contratos[0]?.id ?? "");
   return <section className="space-y-3 rounded border p-3" aria-label="Compras de horas antecipadas"><h2 className="text-lg font-medium">Compras de horas antecipadas</h2>
     <label className="grid gap-1">Contrato das horas<select className={estilo} value={matriculaId} onChange={(e) => setMatriculaId(e.target.value)}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
-    {matriculaId && <Compras key={matriculaId} alunoId={alunoId} matriculaId={matriculaId} />}
+    {matriculaId && <Compras key={matriculaId} alunoId={alunoId} matriculaId={matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
   </section>;
 }
 

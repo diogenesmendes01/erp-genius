@@ -43,8 +43,8 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
   </div>;
 }
 
-export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar }: {
-  alunoId: string; contratos: { id: string; codigo: string | null }[]; usuarioId: string; podeAprovar: boolean;
+export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar, preferenciaFusoExibicao = null }: {
+  alunoId: string; contratos: { id: string; codigo: string | null }[]; usuarioId: string; podeAprovar: boolean; preferenciaFusoExibicao?: string | null;
 }) {
   const [ocupado, iniciar] = useOperacao();
   const [contexto, setContexto] = useState<Contexto | null>(null);
@@ -71,7 +71,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar 
     {contexto && <>
       <CompensacoesEncerramento compensacoes={contexto.compensacoes} />
       <RecomposicaoPainel key={contexto.matriculaId} contexto={contexto} usuarioId={usuarioId} podeAprovar={podeAprovar} atualizarContexto={atualizar} />
-      <CumprimentoPainel key={`cumprimento-${contexto.matriculaId}`} alunoId={alunoId} matriculaId={contexto.matriculaId} usuarioId={usuarioId} podeAprovar={podeAprovar} atualizarContexto={atualizar} />
+      <CumprimentoPainel key={`cumprimento-${contexto.matriculaId}`} alunoId={alunoId} matriculaId={contexto.matriculaId} usuarioId={usuarioId} podeAprovar={podeAprovar} atualizarContexto={atualizar} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       {contexto.compensacoes.filter((c) => c.status === "PENDENTE").map((c) => <Decisao key={c.id} proposta={c} usuarioId={usuarioId} podeAprovar={podeAprovar} atualizar={atualizar} />)}
       <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
         e.preventDefault(); if (!cobranca || !dias.length) { setErro("Escolha a mensalidade e adicione os dias sem oferta."); return; }
