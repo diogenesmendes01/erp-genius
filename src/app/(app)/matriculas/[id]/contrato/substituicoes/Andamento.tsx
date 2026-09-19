@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { carregarAndamentoSubstituicao } from "@/server/contratos/substituicao-andamento";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = Awaited<ReturnType<typeof carregarAndamentoSubstituicao>>;
 const etapas: Record<Dados["etapa"], { titulo: string; descricao: string }> = {
@@ -16,10 +17,11 @@ const etapas: Record<Dados["etapa"], { titulo: string; descricao: string }> = {
   SUBSTITUTO_CANCELADO: { titulo: "Processo substituto encerrado", descricao: "Este processo também foi cancelado. Consulte seu histórico para acompanhar a continuidade." },
   CONFLITO_ASSINATURA: { titulo: "Assinatura anterior exige conferência", descricao: "Há conclusão de assinatura no processo anterior ou em sua cadeia. Preserve os documentos e encaminhe o caso à Administração para o tratamento contratual aplicável; novos envios e aceite do substituto ficam bloqueados." },
 };
-const data = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19) + " UTC";
 
-export function AndamentoSubstituicao({ dados, matriculaId, propostaId }: { dados: Dados; matriculaId: string; propostaId: string }) {
+export function AndamentoSubstituicao({ dados, matriculaId, propostaId, preferenciaFusoExibicao = null }: { dados: Dados; matriculaId: string; propostaId: string; preferenciaFusoExibicao?: string | null }) {
   const texto = etapas[dados.etapa], base = `/matriculas/${encodeURIComponent(matriculaId)}/contrato/substituicoes/${encodeURIComponent(propostaId)}`;
+  const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
+  const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <section className="space-y-3 rounded border p-4" aria-label="Andamento da substituição">
     <h2 className="text-xl">{texto.titulo}</h2><p role={dados.conflitoAssinatura ? "alert" : "status"}>{texto.descricao}</p>
     {dados.ambiente === "SANDBOX" && <p role="status">Ambiente de teste: estes registros não comprovam assinatura ou cancelamento em produção.</p>}
