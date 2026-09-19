@@ -41,9 +41,10 @@ describe("carregarComprovacaoOfertaContinuidadeAgendaTx", () => {
     await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: [cancelada, base().turma.encontrosAgenda[1]] })]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AULA_EXCEPCIONAL_NO_PERIODO"] } });
     await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base()], [{ id: "aus", professorId: "p1", inicio: new Date("2026-10-01T12:00:00Z"), fim: new Date("2026-10-01T13:00:00Z") }]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["DOCENTE_INDISPONIVEL"] } });
   });
-  it("não infere vínculo, nem oferta após fim de turma no período", async () => {
+  it("não infere vínculo e não deixa dataFim sozinha provar oferta", async () => {
     await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["VINCULO_AUSENTE"] } });
-    await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ dataFim: new Date("2026-10-15T00:00:00Z") })]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["TURMA_TERMINA_NO_PERIODO"] } });
+    await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ dataFim: new Date("2026-10-15T00:00:00Z") })]) as never, entrada)).resolves.toMatchObject({ estado: "COMPROVADA_POR_AGENDA" });
+    await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ dataFim: new Date("2026-12-31T00:00:00Z"), encontrosAgenda: [] })]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AGENDA_INSUFICIENTE"] } });
   });
 });
 
@@ -52,6 +53,16 @@ it("confere o último dia inteiro no fuso da escola, inclusive depois da meia-no
   turma.propostasGrade[0].calendario.fusoInstitucional = "America/Sao_Paulo";
   turma.encontrosAgenda.push({ ...turma.encontrosAgenda[0], id: "cancelada-ultimo-dia", inicio: new Date("2026-11-01T01:00:00Z"), fim: new Date("2026-11-01T02:00:00Z"), status: "CANCELADO" });
   expect(await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base(turma)]) as never, entrada)).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AULA_EXCEPCIONAL_NO_PERIODO"] } });
+});
+
+it("usa os intervalos noturnos publicados no fuso da escola, sem recorrer ao dataFim legado", async () => {
+  const turma = base({ dataFim: new Date("2026-10-02T00:00:00Z") }).turma;
+  turma.propostasGrade[0].calendario.fusoInstitucional = "Pacific/Kiritimati";
+  turma.encontrosAgenda = [
+    { ...turma.encontrosAgenda[0], inicio: new Date("2026-09-30T22:00:00Z"), fim: new Date("2026-09-30T23:00:00Z") },
+    { ...turma.encontrosAgenda[1], inicio: new Date("2026-10-30T22:00:00Z"), fim: new Date("2026-10-30T23:00:00Z") },
+  ];
+  await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base(turma)]) as never, entrada)).resolves.toMatchObject({ estado: "COMPROVADA_POR_AGENDA" });
 });
 
 it("rejeita instante como data civil antes de consultar vínculos", async () => {

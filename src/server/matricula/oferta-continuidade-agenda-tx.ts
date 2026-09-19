@@ -58,7 +58,6 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
       if (!alocacaoCobreAula(alocacao, inicioCobertura) || !alocacaoCobreAula(alocacao, fimCobertura)) return exigir("VINCULO_AUSENTE");
     } catch { return exigir("VINCULO_AUSENTE"); }
   }
-  if (turma.dataFim && civil(turma.dataFim, fuso) < fimCivil) return exigir("TURMA_TERMINA_NO_PERIODO");
   if (!calendarioVigente || calendarioVigente.id !== grade.calendarioId || calendarioVigente.versao !== grade.calendario.versao) return exigir("CALENDARIO_DIVERGENTE");
 
   const aulas = turma.encontrosAgenda.filter((e) => e.finalidade === "AULA" && e.matriculaId === null && e.fim > e.inicio);
