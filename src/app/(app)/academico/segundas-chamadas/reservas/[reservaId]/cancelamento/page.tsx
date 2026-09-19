@@ -11,7 +11,7 @@ function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | 
  const r = fonte.safeParse(valor);
  if (!r.success || !r.data.encontro) return <p role="alert">Agenda sem informação suficiente para conferência.</p>;
  const e = r.data.encontro;
- const fuso=resolverFusoExibicao(preferencia,e.fusoOrigem), data=(v:string)=>formatarInstanteExibicao(v,fuso,e.fusoOrigem).texto;
+ const fuso=resolverFusoExibicao(preferencia,e.fusoOrigem), data=(v:string)=>formatarInstanteExibicao(/[zZ]|[+-]\d\d:\d\d$/.test(v) ? v : `${v}Z`,fuso,e.fusoOrigem).texto;
  return <p>Avaliação {r.data.reserva.codigoAvaliacao} · {data(e.inicio)} até {data(e.fim)} ({fuso}; origem {e.fusoOrigem}). Encontro: {e.status}. Reserva: {r.data.reserva.status}. Antecedência de cancelamento: {r.data.reserva.regraCancelamentoMinutos} minutos.</p>;
 }
 function Efeito({ snapshot, origem, ocorridaEm }: { snapshot: unknown; origem: string; ocorridaEm: string }) {
@@ -37,7 +37,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
  {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} />}
  <h2 className="font-medium">Propostas e decisões</h2>
  {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
- <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}. Proposta de {p.autorNome}. Ocorrência informada: {new Date(p.ocorridaEm).toISOString()} (UTC).</p>
+ <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}. Proposta de {p.autorNome}. Ocorrência informada: {formatarInstanteExibicao(p.ocorridaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto}.</p>
  <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} /><Efeito snapshot={p.snapshot} origem={p.origem} ocorridaEm={p.ocorridaEm} />
  {p.decisao ? <p role="status">{p.decisao.aprovada ? "Aprovado e aplicado" : "Rejeitado"} por {p.decisao.decisorNome}: {p.decisao.motivo}</p> : <p>Aguardando decisão de outra pessoa autorizada. Alterações posteriores na agenda exigem nova proposta.</p>}
  {p.podeDecidir && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} proposta={{ id: p.id, hash: p.entradaHash }} />}
