@@ -274,6 +274,10 @@ Além dos critérios por corpo, os cenários transversais seguintes são obrigat
 | CT-11 | Material indisponível, troca de avaliador e matrícula pausada: preservar entregas/autoria, prazo restante e restrições, sem conclusão automática. |
 | CT-12 | Falha externa/reinício/reenvio/migração repetida: resultado durável, pendência verificável, nenhuma duplicação silenciosa ou envio de ensaio. |
 
+#### Evidência executada — CT-07, última cota (18/09/2026)
+
+`src/server/diario/reposicao-agenda.int.test.ts` disputa a última cota do mesmo período com duas reposições autorizadas, aulas de origem distintas, duas Secretarias e horários sem conflito. O teste observa duas sessões PostgreSQL aguardando o bloqueio real antes da liberação. Depois, confirma exatamente uma reserva, um encontro e replay idempotente do vencedor. A liberação e o encerramento das operações são garantidos mesmo se a observação falhar. TESTER: arquivo completo 13/13 e TypeScript, saídas 0 (`113095`, `f3a355`). Integração principal: cenário dirigido 1/1, 12 fora do filtro, saída 0 (`9ede88`). Esta evidência cobre a disputa do benefício; a observação sincronizada de uso/devolução de crédito permanece separada.
+
 #### Evidência executada — CT-01 (18/09/2026)
 
 `src/server/matricula/ct01-isolamento-contratos.int.test.ts` exercita, no banco descartável, duas matrículas do mesmo aluno: A mensal e B com cobrança `HORA_PARTICULAR`. As fontes financeiras são recebimentos e destinações criados pela ação financeira real. A pausa de A percorre solicitação, decisão independente e aplicação pública; o encerramento percorre solicitação, prévia, rascunho, decisão e efetivação públicos. Repetir cada aplicação devolve o mesmo resultado e deixa uma única movimentação/efetivação.
