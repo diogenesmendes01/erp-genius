@@ -1,6 +1,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { ErroPermissao, ErroRegra } from "@/server/_shared/sessao";
 import { bloquearCalendarioAluno } from "@/server/retomada/estado";
+import { carregarOfertasAgendaDestinoTx, type OfertaAgendaDestino } from "./destino-agenda";
 
 export const SOLICITANTES_ACADEMICOS: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR];
 export const APROVADORES_ACADEMICOS: Papel[] = [Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR];
@@ -31,6 +32,9 @@ export async function exigirUsuarioAcademicoAtual(tx: Prisma.TransactionClient, 
 
 /** Mesma ordem da pausa/retomada; Turma serializa ocupação com a alocação da matrícula. */
 export async function bloquearEstadoAcademico(tx: Prisma.TransactionClient, alunoId: string, turmaDestinoId?: string) {
+  // Grade, calendário, encontros e ausências usam esta trava antes das turmas.
+  // A disponibilidade fotografada para a transferência precisa da mesma ordem.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await bloquearCalendarioAluno(tx, alunoId);
   const origens = await tx.alocacaoTurma.findMany({ where: { alunoId, ativa: true }, select: { turmaId: true } });
   const ids = [...new Set([...origens.map((a) => a.turmaId), ...(turmaDestinoId ? [turmaDestinoId] : [])])].sort();
@@ -47,13 +51,18 @@ export async function bloquearEstadoAcademico(tx: Prisma.TransactionClient, alun
   if (produtoIds.length) await tx.$queryRaw`SELECT id FROM "Produto" WHERE id IN (${Prisma.join(produtoIds)}) ORDER BY id FOR SHARE`;
 }
 
-export async function carregarEstadoAcademico(tx: Pick<Prisma.TransactionClient, "aluno" | "turma" | "matricula" | "movimentacaoAluno">, alunoId: string, turmaDestinoId?: string, matriculaId?: string) {
+export async function carregarEstadoAcademico(tx: Pick<Prisma.TransactionClient,
+  "aluno" | "turma" | "matricula" | "movimentacaoAluno" | "versaoCalendarioEscolar" | "propostaGradeTurma" | "encontroAgenda" | "indisponibilidadeDocente" | "rascunhoReplanejamento">,
+alunoId: string, turmaDestinoId?: string, matriculaId?: string, agora = new Date()) {
   const aluno = await tx.aluno.findUnique({ where: { id: alunoId }, select: {
     id: true, primeiroNome: true, sobrenome: true, status: true,
     alocacoes: { where: { ativa: true, ...(matriculaId ? { matriculaId } : {}) }, orderBy: { id: "asc" }, select: { id: true, matriculaId: true, turmaId: true, criadoEm: true, turma: { select: turmaAcademicaSelect } } },
   } });
   if (!aluno) throw new ErroRegra("Aluno não encontrado.");
   const destino = turmaDestinoId ? await tx.turma.findUnique({ where: { id: turmaDestinoId }, select: turmaAcademicaSelect }) : null;
+  const ofertaDestino: OfertaAgendaDestino | null = destino
+    ? (await carregarOfertasAgendaDestinoTx(tx, [destino.id], agora)).get(destino.id) ?? null
+    : null;
   const matriculas = await tx.matricula.findMany({ where: { alunoId, ...(matriculaId ? { id: matriculaId } : {}) }, orderBy: { id: "asc" }, select: {
     id: true, status: true, produtoId: true, produto: { select: { idiomaId: true, modalidadeId: true } },
   } });
@@ -61,6 +70,6 @@ export async function carregarEstadoAcademico(tx: Pick<Prisma.TransactionClient,
   const escopoMovimentos: Prisma.MovimentacaoAlunoWhereInput = { alunoId, ...(matriculaId ? { OR: [{ matriculaId }, { matriculaId: null }] } : {}) };
   const ultimaMovimentacao = await tx.movimentacaoAluno.findFirst({ where: escopoMovimentos, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true, tipo: true, criadoEm: true } });
   const totalMovimentacoes = await tx.movimentacaoAluno.count({ where: escopoMovimentos });
-  return { aluno, origem: aluno.alocacoes.length === 1 ? aluno.alocacoes[0] : null, destino, matriculas, ultimaMovimentacao, totalMovimentacoes, ...(matriculaId ? { escopoMatriculaId: matriculaId } : {}) };
+  return { aluno, origem: aluno.alocacoes.length === 1 ? aluno.alocacoes[0] : null, destino, ofertaDestino, matriculas, ultimaMovimentacao, totalMovimentacoes, ...(matriculaId ? { escopoMatriculaId: matriculaId } : {}) };
 }
 export type EstadoAcademico = Awaited<ReturnType<typeof carregarEstadoAcademico>>;

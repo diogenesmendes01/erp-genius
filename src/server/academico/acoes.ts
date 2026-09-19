@@ -7,7 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { docenteAtual } from "@/server/diario/permissoes";
 import { exigirFechamentoProgressaoTx } from "@/server/avaliacoes/progressao-fechamento-tx";
 import { APROVADORES_ACADEMICOS, EXECUTORES_ACADEMICOS, SOLICITANTES_ACADEMICOS, bloquearEstadoAcademico, carregarEstadoAcademico, exigirUsuarioAcademicoAtual, turmaAcademicaSelect } from "./estado";
-import { classificarDestinoAcademico, exigirDecisaoAcademicaIndependente, exigirSnapshotMudancaAcademicaAtual, impedimentoEstadoAcademico, montarSnapshotMudancaAcademica, SnapshotMudancaAcademicaSchema } from "./regras";
+import { classificarDestinoAcademico, exigirDecisaoAcademicaIndependente, exigirSnapshotMudancaAcademicaAtual, impedimentoEstadoAcademico, lerSnapshotMudancaAcademica, memoriaLegadaMudancaAcademicaCorresponde, montarSnapshotMudancaAcademica, SnapshotMudancaAcademicaSchema } from "./regras";
 import {
   CancelarMudancaAcademicaSchema, DecidirMudancaAcademicaSchema, ExecutarMudancaAcademicaSchema, RegistrarParecerMudancaSchema, SolicitarMudancaAcademicaSchema,
   type CancelarMudancaAcademicaInput, type DecidirMudancaAcademicaInput, type ExecutarMudancaAcademicaInput, type RegistrarParecerMudancaInput, type SolicitarMudancaAcademicaInput,
@@ -35,13 +35,13 @@ async function bloquearSolicitacao(tx: Prisma.TransactionClient, id: string) {
   return solicitacao;
 }
 
-async function exigirEstadoVigente(tx: Prisma.TransactionClient, solicitacao: Awaited<ReturnType<typeof bloquearSolicitacao>>) {
+async function exigirEstadoVigente(tx: Prisma.TransactionClient, solicitacao: Awaited<ReturnType<typeof bloquearSolicitacao>>, agora: Date) {
   const anterior = SnapshotMudancaAcademicaSchema.safeParse(solicitacao.snapshot);
   if (!anterior.success) throw new ErroRegra("A solicitação precisa de nova conferência do estado acadêmico.");
-  const estado = await carregarEstadoAcademico(tx, solicitacao.alunoId, solicitacao.turmaDestinoId, anterior.data.escopoMatriculaId ?? undefined);
-  const impedimento = impedimentoEstadoAcademico(estado);
+  const estado = await carregarEstadoAcademico(tx, solicitacao.alunoId, solicitacao.turmaDestinoId, anterior.data.escopoMatriculaId ?? undefined, agora);
+  const impedimento = impedimentoEstadoAcademico(estado, true, agora);
   if (impedimento) throw new ErroRegra(impedimento);
-  const snapshot = exigirSnapshotMudancaAcademicaAtual(solicitacao.snapshot, estado);
+  const snapshot = exigirSnapshotMudancaAcademicaAtual(solicitacao.snapshot, estado, agora);
   if (snapshot.alocacaoOrigemId !== solicitacao.alocacaoOrigemId || snapshot.origem.id !== solicitacao.turmaOrigemId || snapshot.destino.id !== solicitacao.turmaDestinoId) {
     throw new ErroRegra("As turmas da solicitação não correspondem ao estado aprovado. Cancele-a e abra uma nova.");
   }
@@ -62,14 +62,15 @@ export async function solicitarMudancaAcademica(alunoId: string, input: Solicita
     const solicitacaoId = await prisma.$transaction(async (tx) => {
       await bloquearEstadoAcademico(tx, alunoId, dados.turmaDestinoId);
       await exigirUsuarioAcademicoAtual(tx, autor.id, SOLICITANTES_ACADEMICOS);
-      let estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, dados.matriculaId);
-      const impedimento = impedimentoEstadoAcademico(estado);
+      const agora = new Date();
+      let estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, dados.matriculaId, agora);
+      const impedimento = impedimentoEstadoAcademico(estado, true, agora);
       if (impedimento) throw new ErroRegra(impedimento);
       if (dados.alocacaoOrigemId && estado.origem?.id !== dados.alocacaoOrigemId) throw new ErroRegra("A alocação mudou desde a consulta. Confira novamente antes de solicitar.");
       // Preparações novas capturam somente o contrato da origem inequívoca.
       // A leitura global continua necessária para recusar origens ambíguas.
       if (!dados.matriculaId && estado.origem?.matriculaId) {
-        estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, estado.origem.matriculaId);
+        estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, estado.origem.matriculaId, agora);
       }
       if (classificarDestinoAcademico(estado.origem!.turma, estado.destino!) !== "EXCECAO") throw new ErroRegra("Turmas equivalentes usam proposta de aproveitamento, aprovação independente e execução pela Secretaria.");
       const aberta = await tx.solicitacaoMudancaAcademica.findFirst({ where: { alunoId, matriculaId: estado.origem!.matriculaId, status: { in: ["PENDENTE", "APROVADA"] } } });
@@ -77,9 +78,16 @@ export async function solicitarMudancaAcademica(alunoId: string, input: Solicita
         if (aberta.solicitanteId === autor.id && aberta.turmaDestinoId === dados.turmaDestinoId && aberta.motivo === dados.motivo && aberta.horarioCompativel === dados.horarioCompativel) {
           // Repetir uma proposta anterior conserva seu escopo original, inclusive
           // quando ainda dependia do cadastro inteiro; não reescrever sua memória.
-          const anterior = SnapshotMudancaAcademicaSchema.parse(aberta.snapshot);
-          const estadoAnterior = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, anterior.escopoMatriculaId ?? undefined);
-          exigirSnapshotMudancaAcademicaAtual(aberta.snapshot, estadoAnterior);
+          const anterior = lerSnapshotMudancaAcademica(aberta.snapshot);
+          const estadoAnterior = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, anterior.escopoMatriculaId ?? undefined, agora);
+          const impedimentoAnterior = impedimentoEstadoAcademico(estadoAnterior, true, agora);
+          if (impedimentoAnterior) throw new ErroRegra(impedimentoAnterior);
+          if (anterior.versao !== 3 && !memoriaLegadaMudancaAcademicaCorresponde(anterior, estadoAnterior, agora)) {
+            throw new ErroRegra("O escopo da proposta histórica mudou. Cancele-a e abra uma nova.");
+          }
+          if (anterior.alocacaoOrigemId !== aberta.alocacaoOrigemId || anterior.origem.id !== aberta.turmaOrigemId || anterior.destino.id !== aberta.turmaDestinoId) {
+            throw new ErroRegra("A proposta preservada não corresponde mais ao vínculo atual. Cancele-a e abra uma nova.");
+          }
           return aberta.id;
         }
         throw new ErroRegra("O aluno já possui uma mudança acadêmica em aberto. Conclua ou cancele a anterior antes de solicitar outra.");
@@ -107,7 +115,7 @@ export async function registrarParecerMudanca(id: string, input: RegistrarParece
       const origemAtual = await tx.alocacaoTurma.findFirst({ where: { id: solicitacao.alocacaoOrigemId, alunoId: solicitacao.alunoId, turmaId: solicitacao.turmaOrigemId, ativa: true }, select: { turma: { select: turmaAcademicaSelect } } });
       if (!origemAtual || !docenteAtual(autor.id, origemAtual.turma)) throw new ErroPermissao("Somente o professor atualmente responsável pela turma de origem pode registrar parecer para este aluno.");
       await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
-      const estado = await exigirEstadoVigente(tx, solicitacao);
+      const estado = await exigirEstadoVigente(tx, solicitacao, new Date());
       if (!docenteAtual(autor.id, estado.origem!.turma)) throw new ErroPermissao("Somente o professor atualmente responsável pela turma de origem pode registrar parecer para este aluno.");
       const igual = solicitacao.pareceres.find((p) => p.autorId === autor.id && p.conteudo === dados.conteudo);
       if (igual) return { alunoId: solicitacao.alunoId, parecerId: igual.id };
@@ -137,7 +145,7 @@ export async function decidirMudancaAcademica(id: string, input: DecidirMudancaA
       let fechamento: { id: string; estadoHash: string } | null = null;
       if (dados.aprovar) {
         await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
-        const estado = await exigirEstadoVigente(tx, solicitacao);
+        const estado = await exigirEstadoVigente(tx, solicitacao, new Date());
         exigirParecerOuDispensa(solicitacao, estado.origem!.turma, dispensa);
         fechamento = await exigirFechamentoProgressaoTx(tx, { matriculaId: estado.origem!.matriculaId,
           alocacaoId: estado.origem!.id, gestorResponsavelId: autor.id });
@@ -171,12 +179,12 @@ export async function executarMudancaAcademica(id: string, input: ExecutarMudanc
       exigirDecisaoAcademicaIndependente(solicitacao.solicitanteId, solicitacao.aprovadorId);
       await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
       await exigirUsuarioAcademicoAtual(tx, solicitacao.aprovadorId, APROVADORES_ACADEMICOS);
-      const estado = await exigirEstadoVigente(tx, solicitacao);
+      const agora = new Date();
+      const estado = await exigirEstadoVigente(tx, solicitacao, agora);
       exigirParecerOuDispensa(solicitacao, estado.origem!.turma, solicitacao.justificativaDispensaParecer);
       await exigirFechamentoProgressaoTx(tx, { matriculaId: estado.origem!.matriculaId,
         alocacaoId: estado.origem!.id, gestorResponsavelId: solicitacao.aprovadorId,
         fechamentoId: solicitacao.fechamentoAcademicoId, estadoHashAprovado: solicitacao.fechamentoEstadoHash });
-      const agora = new Date();
       await tx.alocacaoTurma.update({ where: { id: estado.origem!.id }, data: { ativa: false, encerradaEm: agora } });
       const novaAlocacao = await tx.alocacaoTurma.create({ data: { alunoId: solicitacao.alunoId, matriculaId: estado.origem!.matriculaId ?? null, turmaId: solicitacao.turmaDestinoId, criadoEm: agora } });
       const movimentacao = await tx.movimentacaoAluno.create({ data: {

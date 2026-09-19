@@ -6,6 +6,7 @@ import { nomeCompleto } from "@/lib/nome";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, type Resultado } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
 import { APROVADORES_ACADEMICOS, EXECUTORES_ACADEMICOS, SOLICITANTES_ACADEMICOS, carregarEstadoAcademico, turmaAcademicaSelect } from "./estado";
+import { carregarOfertasAgendaDestinoTx } from "./destino-agenda";
 import { classificarDestinoAcademico, exigirSnapshotMudancaAcademicaAtual, impedimentoEstadoAcademico, rotuloTurmaAcademica, SnapshotMudancaAcademicaSchema } from "./regras";
 import { FiltrosSolicitacoesAcademicasSchema, type ContextoMudancaAcademica, type SolicitacaoAcademicaView } from "./schema";
 
@@ -14,18 +15,20 @@ export type { ContextoMudancaAcademica, SolicitacaoAcademicaView } from "./schem
 export async function listarContextoMudancaAcademica(alunoId: string, matriculaId?: string): Promise<Resultado<ContextoMudancaAcademica>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS, Papel.PROFESSOR);
+    const agora = new Date();
     if (!alunoId.trim()) throw new ErroRegra("Aluno obrigatório.");
     const amplo = autor.papeis.some((p) => SOLICITANTES_ACADEMICOS.includes(p));
     if (matriculaId !== undefined && (typeof matriculaId !== "string" || !matriculaId.trim())) throw new ErroRegra("Matrícula inválida.");
-    const estado = await carregarEstadoAcademico(prisma, alunoId, undefined, matriculaId);
+    const estado = await carregarEstadoAcademico(prisma, alunoId, undefined, matriculaId, agora);
     if (!amplo && (!estado.origem || !docenteAtual(autor.id, estado.origem.turma))) throw new ErroPermissao("Este aluno não pertence às suas turmas atuais.");
     const aberta = await prisma.solicitacaoMudancaAcademica.findFirst({ where: { alunoId, ...(matriculaId ? { matriculaId } : {}), status: { in: ["PENDENTE", "APROVADA"] } }, select: { id: true } });
     const impedimento = impedimentoEstadoAcademico(estado, false);
     const origem = estado.origem;
     const turmas = amplo && origem && !impedimento ? await prisma.turma.findMany({ where: {
       id: { not: origem.turmaId }, modalidadeId: origem.turma.modalidadeId, nivel: { idiomaId: origem.turma.nivel.idiomaId }, online: origem.turma.online,
-      status: { in: ["ABERTA", "EM_ANDAMENTO"] }, OR: [{ dataFim: null }, { dataFim: { gte: new Date() } }],
+      status: { in: ["ABERTA", "EM_ANDAMENTO"] },
     }, select: turmaAcademicaSelect, orderBy: [{ codigo: "asc" }, { id: "asc" }] }) : [];
+    const ofertas = await carregarOfertasAgendaDestinoTx(prisma, turmas.map((turma) => turma.id), agora);
     if (!amplo) {
       const aindaPermitido = await prisma.alocacaoTurma.findFirst({ where: { id: origem!.id, alunoId, ativa: true, turma: escopoTurmasDocente(autor.id) }, select: { id: true } });
       if (!aindaPermitido) throw new ErroPermissao("Este aluno não pertence mais às suas turmas atuais.");
@@ -33,7 +36,7 @@ export async function listarContextoMudancaAcademica(alunoId: string, matriculaI
     return {
       alunoId, alunoNome: nomeCompleto(estado.aluno), status: estado.aluno.status,
       origem: origem ? { alocacaoId: origem.id, matriculaId: origem.matriculaId ?? null, turmaId: origem.turmaId, label: rotuloTurmaAcademica(origem.turma), diasHorario: origem.turma.diasHorario, nivelId: origem.turma.nivelId, idiomaId: origem.turma.nivel.idiomaId, modalidadeId: origem.turma.modalidadeId } : null,
-      destinos: turmas.filter((t) => t.capacidade > (t._count.alocacoes + t._count.reservasMatricula)).map((t) => ({ id: t.id, label: rotuloTurmaAcademica(t), diasHorario: t.diasHorario,
+      destinos: turmas.filter((t) => ofertas.get(t.id)?.disponivel && t.capacidade > (t._count.alocacoes + t._count.reservasMatricula)).map((t) => ({ id: t.id, label: rotuloTurmaAcademica(t), diasHorario: t.diasHorario,
         tipo: classificarDestinoAcademico(origem!.turma, t) === "EQUIVALENTE" ? "EQUIVALENTE" as const : "EXCECAO" as const, vagas: Math.max(0, t.capacidade - (t._count.alocacoes + t._count.reservasMatricula)) })),
       podeSolicitar: amplo && !impedimento && !aberta, podeTransferirEquivalente: amplo && !impedimento && !aberta,
       podePrepararEquivalencia: autor.papeis.some(p => APROVADORES_ACADEMICOS.includes(p)) && !impedimento && !aberta,
@@ -45,6 +48,7 @@ export async function listarContextoMudancaAcademica(alunoId: string, matriculaI
 export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string; matriculaId?: string; apenasAbertas?: boolean; antesDe?: string }): Promise<Resultado<{ solicitacoes: SolicitacaoAcademicaView[]; proximo: string | null }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS, Papel.PROFESSOR);
+    const agora = new Date();
     const dados = FiltrosSolicitacoesAcademicasSchema.parse(filtros ?? {});
     const amplo = autor.papeis.some((p) => SOLICITANTES_ACADEMICOS.includes(p));
     const escopo: Prisma.SolicitacaoMudancaAcademicaWhereInput = amplo ? {} : {
@@ -82,14 +86,14 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
       const temParecer = registro.pareceres.some((p) => p.autor.ativo && p.autor.papeis.includes(Papel.PROFESSOR) && docenteAtual(p.autorId, registro.turmaOrigem));
       let impedimento: string | null = null;
       let podeDarParecer = false;
-      const estado = aberto || !amplo ? await carregarEstadoAcademico(prisma, registro.alunoId, registro.turmaDestinoId, parsed.success ? parsed.data.escopoMatriculaId ?? undefined : undefined) : null;
+      const estado = aberto || !amplo ? await carregarEstadoAcademico(prisma, registro.alunoId, registro.turmaDestinoId, parsed.success ? parsed.data.escopoMatriculaId ?? undefined : undefined, agora) : null;
       if (!amplo && (!estado?.origem || estado.origem.id !== registro.alocacaoOrigemId || !docenteAtual(autor.id, estado.origem.turma))) {
         throw new ErroPermissao("As turmas atribuídas mudaram durante a consulta. Atualize a página para consultar seu escopo atual.");
       }
       if (aberto) {
-        impedimento = impedimentoEstadoAcademico(estado!);
+        impedimento = impedimentoEstadoAcademico(estado!, true, agora);
         if (!impedimento) {
-          try { exigirSnapshotMudancaAcademicaAtual(registro.snapshot, estado!); }
+          try { exigirSnapshotMudancaAcademicaAtual(registro.snapshot, estado!, agora); }
           catch (erro) { if (erro instanceof ErroRegra) impedimento = erro.message; else throw erro; }
         }
         podeDarParecer = !impedimento && registro.status === "PENDENTE" && autor.papeis.includes(Papel.PROFESSOR) && !!estado!.origem && estado!.origem.id === registro.alocacaoOrigemId && docenteAtual(autor.id, estado!.origem.turma);

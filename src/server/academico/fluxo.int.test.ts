@@ -28,6 +28,13 @@ import { oficializarLancamentoAvaliacao, salvarLancamentoAvaliacao } from "@/ser
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { pausarAluno, trocarTurma } from "@/server/alunos/acoes";
 import { decidirRetomada, solicitarRetomada } from "@/server/retomada/acoes";
+import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
+import { decidirCalendarioEscolar } from "@/server/agenda/calendario-decisao";
+import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
+import { decidirGradeInicialTurma } from "@/server/agenda/grade-decisao";
+import { preverReplanejamentoCalendario } from "@/server/agenda/replanejamento-consulta";
+import { registrarRascunhoReplanejamento } from "@/server/agenda/replanejamento-rascunho";
+import { decidirEAplicarReplanejamentoConjunto } from "@/server/agenda/replanejamento-decisao";
 import {
   cancelarMudancaAcademica, decidirMudancaAcademica, executarMudancaAcademica,
   registrarParecerMudanca, solicitarMudancaAcademica,
@@ -76,6 +83,71 @@ async function criarTurma(nivelId: string, extra: Partial<Prisma.TurmaUncheckedC
   return prisma.turma.update({ where: { id: turma.id }, data: { status: statusFinal, dataInicio: dataInicioFinal, dataFim: dataFimFinal } });
 }
 
+async function publicarOfertaDestino(turmaId: string, indice: number) {
+  entrar(sec.id);
+  const grade = sucesso(await prepararGradeInicialTurma({
+    turmaId, fusoOrigem: "UTC", versaoAnterior: 0,
+    motivo: "Grade futura publicada para a transferência acadêmica da fixture.", chaveIdempotencia: `grade-oferta-${indice}`,
+  }));
+  entrar(gp.id);
+  sucesso(await decidirGradeInicialTurma({
+    propostaId: grade.id, aprovar: true, motivo: "Gestão aprovou a grade futura da fixture acadêmica.",
+  }));
+  await prisma.turma.update({ where: { id: turmaId }, data: { status: "ABERTA" } });
+}
+
+async function aplicarReplanejamentoDoDestino() {
+  const encontro = await prisma.encontroAgenda.findFirstOrThrow({
+    where: { turmaId: destino.id, propostaGradeId: { not: null }, status: "PREVISTO", inicio: { gt: new Date() } },
+    orderBy: [{ inicio: "asc" }, { id: "asc" }],
+  });
+  entrar(sec.id);
+  const calendario = sucesso(await prepararCalendarioEscolar({
+    fusoConferido: "UTC", versaoAnterior: 1,
+    motivo: "Calendário revisado que exige remarcação conferida da turma de destino.",
+    chaveIdempotencia: "calendario-replanejado-destino",
+    periodos: [{
+      id: "feriado-destino", nome: "Feriado da oferta de destino", tipo: "FERIADO",
+      inicio: encontro.inicio.toISOString().slice(0, 10), fim: encontro.inicio.toISOString().slice(0, 10),
+    }],
+  }));
+  const previa = sucesso(await preverReplanejamentoCalendario({ calendarioId: calendario.id }));
+  const rascunho = sucesso(await registrarRascunhoReplanejamento({
+    calendarioId: calendario.id, estadoHash: previa.estadoHash, versaoAnterior: previa.versaoRascunho,
+    motivo: "Revisão conjunta que preserva a grade histórica e ajusta encontros futuros.",
+    chaveIdempotencia: "rascunho-replanejado-destino",
+  }));
+  entrar(gp.id);
+  sucesso(await decidirEAplicarReplanejamentoConjunto({
+    calendarioId: calendario.id, revisaoId: rascunho.id, aprovar: true,
+    motivo: "Aprovação independente da agenda revista da turma de destino.", excecoesAutorizadas: [],
+  }));
+  return { calendarioId: calendario.id, rascunhoId: rascunho.id };
+}
+
+async function aplicarReplanejamentoSemRemarcacao() {
+  entrar(sec.id);
+  const calendario = sucesso(await prepararCalendarioEscolar({
+    fusoConferido: "UTC", versaoAnterior: 1, periodos: [],
+    motivo: "Calendário novo conferido sem remarcação dos encontros já publicados.",
+    chaveIdempotencia: "calendario-replanejado-sem-remarcacao",
+  }));
+  const previa = sucesso(await preverReplanejamentoCalendario({ calendarioId: calendario.id }));
+  expect(previa.revisoes.flatMap((revisao) => revisao.previsao?.propostas.filter((proposta) => proposta.alterado) ?? [])).toEqual([]);
+  const rascunho = sucesso(await registrarRascunhoReplanejamento({
+    calendarioId: calendario.id, estadoHash: previa.estadoHash, versaoAnterior: previa.versaoRascunho,
+    motivo: "Revisão conjunta vazia que confirma a agenda publicada sem reescrever a grade.",
+    chaveIdempotencia: "rascunho-replanejado-sem-remarcacao",
+  }));
+  entrar(gp.id);
+  const aplicada = sucesso(await decidirEAplicarReplanejamentoConjunto({
+    calendarioId: calendario.id, revisaoId: rascunho.id, aprovar: true,
+    motivo: "Aprovação independente da revisão sem remarcações.", excecoesAutorizadas: [],
+  }));
+  expect(aplicada).toMatchObject({ aprovada: true, aplicada: true });
+  return { calendarioId: calendario.id, rascunhoId: rascunho.id };
+}
+
 async function criarAluno(nome = "Aluno acadêmico", comMatricula = true) {
   const pessoa = await prisma.aluno.create({ data: {
     primeiroNome: nome, sobrenome: "Teste", paisId: catalogo.pais.id, status: "ATIVO",
@@ -111,18 +183,31 @@ beforeEach(async () => {
   pro = await criarUsuario([Papel.PROFESSOR], "Professor responsável");
   proAlheio = await criarUsuario([Papel.PROFESSOR], "Professor de outra turma");
   catalogo = await seedCatalogoMinimo();
+  await prisma.modalidade.update({ where: { id: catalogo.modalidade.id }, data: { aulasPorNivel: 4 } });
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  entrar(sec.id);
+  const calendario = sucesso(await prepararCalendarioEscolar({
+    fusoConferido: "UTC", versaoAnterior: 0, periodos: [],
+    motivo: "Calendário da fixture de transferência acadêmica.", chaveIdempotencia: "calendario-fluxo-academico",
+  }));
+  entrar(gp.id);
+  sucesso(await decidirCalendarioEscolar({
+    calendarioId: calendario.id, aprovar: true, motivo: "Gestão aprovou o calendário da fixture acadêmica.",
+  }));
   const a1 = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "A1", ordem: 1 } });
   const b2 = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "B2", ordem: 4 } });
   await publicarRegra(a1.id, "regra-fluxo-a1");
   await publicarRegra(b2.id, "regra-fluxo-b2");
   origem = await criarTurma(a1.id, { nome: "Origem A1" });
-  destino = await criarTurma(b2.id, { nome: "Destino B2", professorId: proAlheio.id, diasSemana: [2, 4] });
-  equivalente = await criarTurma(a1.id, { nome: "Equivalente A1", professorId: proAlheio.id, diasSemana: [2, 4] });
+  destino = await criarTurma(b2.id, { nome: "Destino B2", professorId: proAlheio.id, diasSemana: [2, 4], status: "PLANEJADA", dataInicio: new Date(Date.now() + 5 * DIA) });
+  equivalente = await criarTurma(a1.id, { nome: "Equivalente A1", professorId: pro.id, diasSemana: [1, 3], status: "PLANEJADA", dataInicio: new Date(Date.now() + 5 * DIA) });
   await prisma.vinculoDocente.createMany({ data: [
     { turmaId: origem.id, professorId: pro.id, inicio: new Date(Date.now() - 30 * DIA) },
     { turmaId: destino.id, professorId: proAlheio.id, inicio: new Date(Date.now() - 30 * DIA) },
-    { turmaId: equivalente.id, professorId: proAlheio.id, inicio: new Date(Date.now() - 30 * DIA) },
+    { turmaId: equivalente.id, professorId: pro.id, inicio: new Date(Date.now() - 30 * DIA) },
   ] });
+  await publicarOfertaDestino(destino.id, 1);
+  await publicarOfertaDestino(equivalente.id, 2);
   const c = await criarAluno();
   alunoId = c.pessoa.id; alocacaoId = c.alocacao.id; matriculaId = c.matricula!.id;
   const cobranca = await prisma.cobranca.create({ data: {
@@ -243,6 +328,36 @@ async function pedidoAprovado(idAluno = alunoId) {
 }
 
 describe("solicitação, parecer, decisão e execução separados", () => {
+  it("mantém a oferta após replanejamento aplicado e invalida a decisão baseada na fotografia anterior", async () => {
+    const anterior = await solicitar();
+    const antes = await pedido(anterior);
+    const cadeia = await aplicarReplanejamentoDoDestino();
+    const contexto = sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId));
+    expect(contexto.destinos).toEqual(expect.arrayContaining([expect.objectContaining({ id: destino.id })]));
+    entrar(gp.id);
+    expect((await decidirMudancaAcademica(anterior, { aprovar: true, motivo: "Decisão que deve reconferir a agenda replanejada." })).ok).toBe(false);
+    expect(await pedido(anterior)).toEqual(antes);
+    sucesso(await cancelarMudancaAcademica(anterior, { motivo: "Calendário replanejado exige nova aprovação pedagógica." }));
+    const atual = await solicitar();
+    const snapshot = (await pedido(atual)).snapshot as { agendaDestino: { calendarioVigenteId: string; cadeiaCalendario: { rascunhoId?: string } } };
+    expect(snapshot.agendaDestino).toMatchObject({ calendarioVigenteId: cadeia.calendarioId, cadeiaCalendario: { rascunhoId: cadeia.rascunhoId } });
+  });
+
+  it("reconhece revisão conjunta aplicada sem remarcações e mantém a grade histórica como fonte", async () => {
+    const anterior = await solicitar();
+    const cadeia = await aplicarReplanejamentoSemRemarcacao();
+    const contexto = sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId));
+    expect(contexto.destinos).toEqual(expect.arrayContaining([expect.objectContaining({ id: destino.id })]));
+    entrar(gp.id);
+    expect((await decidirMudancaAcademica(anterior, { aprovar: true, motivo: "A agenda nova exige decisão sobre fotografia atualizada." })).ok).toBe(false);
+    entrar(sec.id);
+    sucesso(await cancelarMudancaAcademica(anterior, { motivo: "Calendário confirmado em nova aplicação conjunta." }));
+    const atual = await solicitar();
+    expect((await pedido(atual)).snapshot).toMatchObject({
+      agendaDestino: { calendarioVigenteId: cadeia.calendarioId, cadeiaCalendario: { tipo: "REPLANEJAMENTO_APLICADO", rascunhoId: cadeia.rascunhoId } },
+    });
+  });
+
   it("mantém pedidos abertos independentes por contrato e impede duplicação no mesmo contrato", async () => {
     const outra = await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
     const vinculo = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId: outra.id, turmaId: equivalente.id } });
@@ -269,7 +384,7 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     const contexto = sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId));
     expect(contexto).toMatchObject({ status, podeSolicitar: true, impedimento: null });
     const id = sucesso(await solicitarMudancaAcademica(alunoId, { matriculaId, alocacaoOrigemId: alocacaoId, turmaDestinoId: destino.id, motivo, horarioCompativel: true })).solicitacaoId;
-    expect((await pedido(id)).snapshot).toMatchObject({ versao: 2, statusAluno: null });
+    expect((await pedido(id)).snapshot).toMatchObject({ versao: 3, statusAluno: null });
     await opinar(id); await aprovar(id); entrar(sec.id);
     sucesso(await executarMudancaAcademica(id, execucao));
     expect((await alocacoes()).find(a => a.ativa)).toMatchObject({ matriculaId, turmaId: destino.id });
@@ -348,7 +463,10 @@ describe("solicitação, parecer, decisão e execução separados", () => {
   it.each([1, 2])("conserva memória de proposta existente sem escopo contratual na versão %s", async (versao) => {
     const outra = await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA" } });
     const estadoAntigo = await carregarEstadoAcademico(prisma, alunoId, destino.id);
-    const memoriaAntiga = { ...montarSnapshotMudancaAcademica(estadoAntigo), versao, statusAluno: versao === 1 ? "ATIVO" : null };
+    // V1/V2 não registravam agendaDestino: o replay lê a memória imutável sem
+    // promovê-la à V3, mas aprovação e execução continuam exigindo a foto nova.
+    const { agendaDestino: _agendaDestino, ...baseLegada } = montarSnapshotMudancaAcademica(estadoAntigo);
+    const memoriaAntiga = { ...baseLegada, versao, statusAluno: versao === 1 ? "ATIVO" : null };
     const id = await solicitar();
     await prisma.solicitacaoMudancaAcademica.update({ where: { id }, data: { snapshot: memoriaAntiga } });
     expect(await solicitar()).toBe(id);

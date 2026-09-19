@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { APROVADORES_ACADEMICOS, EXECUTORES_ACADEMICOS, bloquearEstadoAcademico, exigirUsuarioAcademicoAtual } from "@/server/academico/estado";
 import { EntradaEquivalenciaTransferenciaSchema } from "./equivalencia-transferencia";
-import { conferirEstadoEquivalenciaTx } from "./equivalencia-estado-tx";
+import { conferirEstadoEquivalenciaTx, estadosEquivalenciaCorrespondemNoMarco } from "./equivalencia-estado-tx";
 
 const executarSchema = z.object({
   decisaoId: z.string().trim().min(1).max(100),
@@ -67,6 +67,9 @@ export async function executarEquivalenciaTransferencia(input: unknown) {
       if (!referencia) throw new ErroRegra("Decisão de equivalência não encontrada.");
       await bloquearEstadoAcademico(tx, referencia.proposta.matricula.alunoId, referencia.proposta.turmaDestinoId);
       await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`equivalencia-avaliacao:${referencia.proposta.matriculaId}:${referencia.proposta.alocacaoOrigemId}:${referencia.proposta.turmaDestinoId}`}, 0))`);
+      const [relogio] = await tx.$queryRaw<{ agora: Date }[]>`SELECT clock_timestamp() AT TIME ZONE 'UTC' AS agora`;
+      if (!relogio) throw new ErroRegra("Relógio transacional indisponível.");
+      const agora = relogio.agora;
       const [decisao] = await tx.$queryRaw<DecisaoBloqueada[]>(Prisma.sql`
         SELECT d.id AS "decisaoId",d.aprovada,d."decisorId" AS "decisorId",
           p.id AS "propostaId",p."preparadorId" AS "preparadorId",p."matriculaId" AS "matriculaId",
@@ -115,9 +118,10 @@ export async function executarEquivalenciaTransferencia(input: unknown) {
         alocacaoOrigemId: decisao.alocacaoOrigemId,
         turmaDestinoId: decisao.turmaDestinoId,
         mapeamentos,
+        agora,
       });
       const contexto = estado.snapshot.contexto;
-      if (snapshotAprovado.estadoHash !== estado.estadoHash
+      if ((snapshotAprovado.estadoHash !== estado.estadoHash && !estadosEquivalenciaCorrespondemNoMarco(decisao.snapshot, estado.snapshot, agora))
         || contexto.matriculaId !== decisao.matriculaId
         || contexto.alocacaoOrigemId !== decisao.alocacaoOrigemId
         || contexto.turmaOrigemId !== decisao.turmaOrigemId
@@ -127,9 +131,6 @@ export async function executarEquivalenciaTransferencia(input: unknown) {
         throw new ErroRegra("As fontes, regras, vaga ou vínculo mudaram desde a decisão. Prepare nova equivalência.");
       }
 
-      const [relogio] = await tx.$queryRaw<{ agora: Date }[]>`SELECT clock_timestamp() AT TIME ZONE 'UTC' AS agora`;
-      if (!relogio) throw new ErroRegra("Relógio transacional indisponível.");
-      const agora = relogio.agora;
       const alocacaoDestinoId = randomUUID();
       const movimentacaoId = randomUUID();
       const aplicacaoId = randomUUID();
