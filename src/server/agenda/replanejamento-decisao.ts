@@ -55,11 +55,12 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
    if (excecoes.some((p) => !p.motivoAjuste || !autorizadas.has(p.encontroId)) || autorizadas.size !== excecoes.length)
     throw new ErroRegra("Cada encontro em dia não letivo exige justificativa e autorização explícita nesta decisão.");
    const propostas = atual.revisoes.flatMap((t) => t.previsao?.propostas.filter((p) => p.alterado) ?? []);
-   if (!propostas.length) throw new ErroRegra("A revisão não possui remarcações futuras; use a decisão simples do calendário.");
    const ids = propostas.map((p) => p.encontroId);
-   await tx.$queryRaw`SELECT id FROM "EncontroAgenda" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
-   const encontrados = await tx.encontroAgenda.findMany({ where: { id: { in: ids } }, select: { id: true, status: true, inicio: true, fim: true } });
-   if (encontrados.length !== ids.length || encontrados.some((e) => e.status !== "PREVISTO" || e.inicio <= new Date())) throw new ErroRegra("Um encontro deixou de ser futuro e previsto; confira novamente o conjunto.");
+   if (ids.length) {
+    await tx.$queryRaw`SELECT id FROM "EncontroAgenda" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
+    const encontrados = await tx.encontroAgenda.findMany({ where: { id: { in: ids } }, select: { id: true, status: true, inicio: true, fim: true } });
+    if (encontrados.length !== ids.length || encontrados.some((e) => e.status !== "PREVISTO" || e.inicio <= new Date())) throw new ErroRegra("Um encontro deixou de ser futuro e previsto; confira novamente o conjunto.");
+   }
    for (const p of propostas) {
     const alterado = await tx.encontroAgenda.updateMany({ where: { id: p.encontroId, status: "PREVISTO", inicio: new Date(p.inicioAnterior), fim: new Date(p.fimAnterior) }, data: { inicio: new Date(p.inicioProposto), fim: new Date(p.fimProposto), motivo: r.motivo } });
     if (alterado.count !== 1) throw new ErroRegra("A agenda mudou durante a aplicação; confira novamente o conjunto.");
@@ -68,7 +69,7 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
    const decisao = await tx.decisaoReplanejamentoConjunto.create({ data: { rascunhoId: r.id, decisorId: autor.id, aprovada: true, motivo: d.motivo, estadoHash: r.estadoHash, excecoesAutorizadas: autorizacoes } });
    await tx.aplicacaoReplanejamentoConjunto.create({ data: { rascunhoId: r.id, decisaoId: decisao.id, estadoHash: r.estadoHash } });
    const evento = await registrarEvento(tx, { tipo: "ReplanejamentoConjuntoAplicado", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id, payload: { aprovada: true, calendarioId: r.calendarioId, decisaoCalendarioId: decisaoCalendario.id, revisaoId: r.id, decisaoId: decisao.id, encontrosIds: ids, horarios: propostas.map((p) => ({ encontroId: p.encontroId, inicioAnterior: p.inicioAnterior, fimAnterior: p.fimAnterior, inicioProposto: p.inicioProposto, fimProposto: p.fimProposto })), excecoesAutorizadas: autorizacoes, motivo: d.motivo } });
-   await criarAvisosReplanejamentoConjuntoTx(tx, { eventoId: evento.id, rascunhoId: r.id });
+   if (ids.length) await criarAvisosReplanejamentoConjuntoTx(tx, { eventoId: evento.id, rascunhoId: r.id });
    // Avalia já dentro do callback para que uma violação deferred retorne um erro
    // de negócio, sem parecer uma aplicação bem-sucedida ao chamador.
    await tx.$executeRawUnsafe('SET CONSTRAINTS "validar_aplicacao_replanejamento_material_167" IMMEDIATE');
