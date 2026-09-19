@@ -8,11 +8,13 @@ import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { hashAgendaRecuperacao } from "./recuperacao-agenda-estado";
 import { identificarMatriculaAvaliacao } from "./identificacao";
+import { apresentarEstadoCancelamentoComFusos, carregarFusosDosEstados } from "./recuperacao-agenda-cancelamento-projecao";
 
 const id = z.string().min(1).max(100), motivo = z.string().trim().min(5).max(2000);
 const estadoSchema = z.object({ reservaId: id, matriculaId: id, cancelamentoId: z.string().nullable(), itens: z.array(z.object({
   id, habilidade: z.string(), realizacaoId: z.string().nullable(), encontroId: z.string().nullable(), status: z.string().nullable(), inicio: z.string().nullable(), fim: z.string().nullable(), professorId: z.string().nullable(),
 })) });
+type EstadoCancelamento = z.infer<typeof estadoSchema>;
 async function bloquear(tx: Prisma.TransactionClient, reservaId: string, usuarioId: string) {
   const r = await tx.reservaTentativaRecuperacao.findUnique({ where: { id: reservaId }, select: { proposta: { select: { alocacaoId: true } } } });
   if (!r) throw new ErroRegra("Reserva não encontrada.");
@@ -47,9 +49,11 @@ export async function consultarCancelamentoAgendaRecuperacao(input: { reservaId:
     return prisma.$transaction(async tx => {
       const a = await bloquear(tx, d.reservaId, u.id), atual = await estado(tx, d.reservaId);
       const propostas = await tx.propostaCancelamentoAgendaRecuperacao.findMany({ where: { reservaId: d.reservaId, ...(d.antesId ? { id: { lt: d.antesId } } : {}) }, orderBy: { id: "desc" }, take: 21, include: { autor: { select: { nome: true } }, decisao: { include: { decisor: { select: { nome: true } } } } } });
-      return { reservaId: d.reservaId, identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), atual, estadoConferido: hashAgendaRecuperacao(atual),
+      const origens = propostas.slice(0, 20).map((proposta) => estadoSchema.parse(proposta.snapshot));
+      const fusosPorEncontro = await carregarFusosDosEstados(tx, [atual, ...origens]);
+      return { reservaId: d.reservaId, identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), atual: apresentarEstadoCancelamentoComFusos(atual, fusosPorEncontro), estadoConferido: hashAgendaRecuperacao(atual),
         podePropor: !atual.cancelamentoId && atual.itens.some(i => i.status === "PREVISTO" && !i.realizacaoId), proximoAntesId: propostas.length > 20 ? propostas[19].id : null,
-        propostas: propostas.slice(0,20).map(p => ({ id: p.id, autor: p.autor.nome, motivo: p.motivo, evidencia: p.evidencia, criadaEm: p.criadaEm.toISOString(), origem: estadoSchema.parse(p.snapshot), estadoMudou: !isDeepStrictEqual(p.snapshot, atual),
+        propostas: propostas.slice(0,20).map((p, indice) => ({ id: p.id, autor: p.autor.nome, motivo: p.motivo, evidencia: p.evidencia, criadaEm: p.criadaEm.toISOString(), origem: apresentarEstadoCancelamentoComFusos(origens[indice]!, fusosPorEncontro), estadoMudou: !isDeepStrictEqual(p.snapshot, atual),
           estadoConferido: !p.decisao && p.autorId !== u.id ? hashAgendaRecuperacao(p.snapshot) : null,
           decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, decisor: p.decisao.decisor.nome, criadaEm: p.decisao.criadaEm.toISOString() } : null })) };
     });

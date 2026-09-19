@@ -1,8 +1,22 @@
 "use client";
 import { useState } from "react";
 import { preverAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
-export function PreviaAgenda({ itemReservaId }: { itemReservaId: string }) {
+type RespostaPreviaAgenda = Awaited<ReturnType<typeof preverAgendaRecuperacao>>;
+type DadosPreviaAgenda = NonNullable<Extract<RespostaPreviaAgenda, { ok: true }>["dado"]>;
+
+export function ResultadoPreviaAgenda({ dado, preferenciaFusoExibicao }: { dado: DadosPreviaAgenda; preferenciaFusoExibicao: string | null }) {
+  const fuso = resolverFusoExibicao(preferenciaFusoExibicao, dado.fuso);
+  return <div role="status" className="space-y-2">
+    <p>Avaliador: {dado.professor?.nome ?? "Pendente de designação"}.</p>
+    <p>Intervalo: {formatarInstanteExibicao(dado.inicio, preferenciaFusoExibicao, dado.fuso).texto} até {formatarInstanteExibicao(dado.fim, preferenciaFusoExibicao, dado.fuso).texto} ({fuso}; origem {dado.fuso}).</p>
+    {dado.pendencias.length ? <ul className="list-disc pl-5">{dado.pendencias.map(p => <li key={p}>{p}</li>)}</ul> : <p>Nenhum impedimento encontrado nesta conferência. O horário ainda não está agendado.</p>}
+    {dado.conflitos.length > 0 && <ul className="list-disc pl-5">{dado.conflitos.map((c, i) => <li key={i}>Encontro conflitante: {formatarInstanteExibicao(c.inicio, preferenciaFusoExibicao, dado.fuso).texto} até {formatarInstanteExibicao(c.fim, preferenciaFusoExibicao, dado.fuso).texto} ({fuso}; origem {dado.fuso}){c.envolveAvaliador ? "; envolve o avaliador" : "; envolve o aluno"}.</li>)}</ul>}
+  </div>;
+}
+
+export function PreviaAgenda({ itemReservaId, preferenciaFusoExibicao }: { itemReservaId: string; preferenciaFusoExibicao: string | null }) {
   const [resposta, setResposta] = useState<Awaited<ReturnType<typeof preverAgendaRecuperacao>> | null>(null);
   const [consultando, setConsultando] = useState(false);
   return <form className="space-y-2 rounded border p-3" onChange={() => setResposta(null)} onSubmit={async e => {
@@ -23,11 +37,6 @@ export function PreviaAgenda({ itemReservaId }: { itemReservaId: string }) {
       <button type="submit" className="rounded border px-4 py-2">{consultando ? "Conferindo…" : "Conferir horário"}</button>
     </fieldset>
     {resposta && !resposta.ok && <p role="alert">{resposta.erro}</p>}
-    {resposta?.ok && resposta.dado && <div role="status" className="space-y-2">
-      <p>Avaliador: {resposta.dado.professor?.nome ?? "Pendente de designação"}.</p>
-      <p>Intervalo em UTC: {resposta.dado.inicio} até {resposta.dado.fim}.</p>
-      {resposta.dado.pendencias.length ? <ul className="list-disc pl-5">{resposta.dado.pendencias.map(p => <li key={p}>{p}</li>)}</ul> : <p>Nenhum impedimento encontrado nesta conferência. O horário ainda não está agendado.</p>}
-      {resposta.dado.conflitos.length > 0 && <ul className="list-disc pl-5">{resposta.dado.conflitos.map((c, i) => <li key={i}>Encontro conflitante: {c.inicio} até {c.fim} (UTC){c.envolveAvaliador ? "; envolve o avaliador" : "; envolve o aluno"}.</li>)}</ul>}
-    </div>}
+    {resposta?.ok && resposta.dado && <ResultadoPreviaAgenda dado={resposta.dado} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
   </form>;
 }

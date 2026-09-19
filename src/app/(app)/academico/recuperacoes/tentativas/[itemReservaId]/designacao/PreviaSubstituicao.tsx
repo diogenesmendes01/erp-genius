@@ -2,7 +2,23 @@
 import { useState, useTransition } from "react";
 import { preverSubstituicaoAvaliadorRecuperacao } from "@/server/avaliacoes/recuperacao-substituicao-previa";
 import { ProporSubstituicao } from "./ProporSubstituicao";
-export function PreviaSubstituicao({ itemReservaId, atualId, professores }: { itemReservaId: string; atualId: string | null; professores: { id: string; nome: string }[] }) {
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+type RespostaPreviaSubstituicao = Awaited<ReturnType<typeof preverSubstituicaoAvaliadorRecuperacao>>;
+type DadosPreviaSubstituicao = NonNullable<Extract<RespostaPreviaSubstituicao, { ok: true }>["dado"]>;
+
+export function ResultadoPreviaSubstituicao({ dado, itemReservaId, preferenciaFusoExibicao }: { dado: DadosPreviaSubstituicao; itemReservaId: string; preferenciaFusoExibicao: string | null }) {
+  const fuso = resolverFusoExibicao(preferenciaFusoExibicao, dado.fusoOrigem);
+  return <div className="space-y-2" role="status">
+    <p>Avaliador atual: {dado.avaliadorAtual}. Substituto conferido: {dado.substituto}.</p>
+    <p>Horário conferido: {formatarInstanteExibicao(dado.inicio, preferenciaFusoExibicao, dado.fusoOrigem).texto} até {formatarInstanteExibicao(dado.fim, preferenciaFusoExibicao, dado.fusoOrigem).texto} ({fuso}; origem {dado.fusoOrigem}).</p>
+    <p className="text-sm">Fontes conferidas: encontro publicado, matrícula e vínculo, fontes do plano, prazo vigente, professor ativo, calendário/fuso e disponibilidade do professor e do aluno.</p>
+    {dado.pendencias.length ? <ul className="list-disc pl-5">{dado.pendencias.map(p => <li key={p}>{p}</li>)}</ul> : <p>Nenhum impedimento identificado nesta conferência. A substituição ainda não foi aplicada.</p>}
+    {dado.excecaoDiaNaoLetivo && <p>O encontro original possui exceção aprovada para dia não letivo.</p>}
+    <ProporSubstituicao itemReservaId={itemReservaId} substitutoId={dado.substitutoId} estadoConferido={dado.estadoConferido} versaoEsperada={dado.versaoEsperada} />
+  </div>;
+}
+
+export function PreviaSubstituicao({ itemReservaId, atualId, professores, preferenciaFusoExibicao }: { itemReservaId: string; atualId: string | null; professores: { id: string; nome: string }[]; preferenciaFusoExibicao: string | null }) {
   const [resultado, setResultado] = useState<Awaited<ReturnType<typeof preverSubstituicaoAvaliadorRecuperacao>> | null>(null);
   const [pendente, iniciar] = useTransition();
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferir substituição na agenda</h2>
@@ -11,18 +27,6 @@ export function PreviaSubstituicao({ itemReservaId, atualId, professores }: { it
       <label className="block">Professor substituto<select name="substituto" required defaultValue="" disabled={pendente} className="block rounded border p-2"><option value="" disabled>Selecione</option>{professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <button type="submit" disabled={pendente} className="rounded border px-4 py-2">{pendente ? "Conferindo…" : "Conferir disponibilidade"}</button>
     </form>
-    {resultado && (!resultado.ok ? <p role="alert">{resultado.erro}</p> : resultado.dado && <div className="space-y-2" role="status">
-      <p>Avaliador atual: {resultado.dado.avaliadorAtual}. Substituto conferido: {resultado.dado.substituto}.</p>
-      <p>Horário conferido: {formatar(resultado.dado.inicio, resultado.dado.fusoOrigem)} até {formatar(resultado.dado.fim, resultado.dado.fusoOrigem)} ({resultado.dado.fusoOrigem}).</p>
-      <p className="text-sm">Fontes conferidas: encontro publicado, matrícula e vínculo, fontes do plano, prazo vigente, professor ativo, calendário/fuso e disponibilidade do professor e do aluno.</p>
-      {resultado.dado.pendencias.length ? <ul className="list-disc pl-5">{resultado.dado.pendencias.map(p => <li key={p}>{p}</li>)}</ul> : <p>Nenhum impedimento identificado nesta conferência. A substituição ainda não foi aplicada.</p>}
-      {resultado.dado.excecaoDiaNaoLetivo && <p>O encontro original possui exceção aprovada para dia não letivo.</p>}
-      <ProporSubstituicao itemReservaId={itemReservaId} substitutoId={resultado.dado.substitutoId} estadoConferido={resultado.dado.estadoConferido} versaoEsperada={resultado.dado.versaoEsperada} />
-    </div>)}
+    {resultado && (!resultado.ok ? <p role="alert">{resultado.erro}</p> : resultado.dado && <ResultadoPreviaSubstituicao dado={resultado.dado} itemReservaId={itemReservaId} preferenciaFusoExibicao={preferenciaFusoExibicao} />)}
   </section>;
-}
-
-function formatar(valor: string, fuso: string) {
-  try { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor)); }
-  catch { return valor.replace("T", " ").replace("Z", " UTC"); }
 }
