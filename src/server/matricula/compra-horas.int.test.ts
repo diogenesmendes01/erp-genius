@@ -1,6 +1,7 @@
 import { carregarContextoEncerramentoTx } from "./encerramento-contexto-tx";
 import { carregarDependenciasFinanceirasAulaTx } from "@/server/diario/correcao-aula-financeiro-tx";
 import { beforeEach, expect, it, vi } from "vitest";
+import { Prisma, PrismaClient } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -29,6 +30,70 @@ import { receberTx } from "@/server/financeiro/recebimentos";
 import { pagamentoConfirmado } from "@/server/financeiro/regras";
 import { kpisFinanceiro } from "@/server/financeiro/consultas";
 let input: Parameters<typeof registrarCompraHorasAntecipadas>[0], usuarioId: string;
+
+function sinal() {
+  let liberar!: () => void;
+  const promessa = new Promise<void>((resolve) => { liberar = resolve; });
+  return { promessa, liberar };
+}
+
+async function bloquearCredito(creditoId: string) {
+  const pronto = sinal();
+  const liberar = sinal();
+  const bloqueador = new PrismaClient();
+  let pid = 0;
+  const transacao = bloqueador.$transaction(async (tx) => {
+    const [conexao] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`;
+    pid = conexao.pid;
+    await tx.$queryRaw`SELECT id FROM "CreditoMatricula" WHERE id = ${creditoId} FOR UPDATE`;
+    pronto.liberar();
+    await liberar.promessa;
+  }, { timeout: 10_000 });
+  await Promise.race([pronto.promessa, transacao]);
+  return {
+    pid,
+    soltar: async () => {
+      liberar.liberar();
+      try {
+        await transacao;
+      } finally {
+        await bloqueador.$disconnect();
+      }
+    },
+  };
+}
+
+async function esperarDecisoesBloqueadas(pidBloqueador: number, quantidade: number) {
+  const limite = Date.now() + 3_000;
+  let esperas: { pid: number; consulta: string; bloqueadores: number[] }[] = [];
+  const observador = new PrismaClient();
+  try {
+    while (Date.now() < limite) {
+      esperas = await observador.$queryRaw<{ pid: number; consulta: string; bloqueadores: number[] }[]>(Prisma.sql`
+        WITH RECURSIVE atividade AS MATERIALIZED (
+          SELECT pid, query, wait_event_type, pg_blocking_pids(pid) AS bloqueadores
+          FROM pg_stat_activity
+          WHERE datname = current_database() AND pid <> pg_backend_pid()
+        ), cadeia(pid) AS (
+          SELECT pid FROM atividade WHERE ${pidBloqueador} = ANY(bloqueadores)
+          UNION
+          SELECT seguinte.pid
+          FROM atividade seguinte JOIN cadeia anterior ON anterior.pid = ANY(seguinte.bloqueadores)
+        )
+        SELECT atividade.pid, atividade.query AS consulta, atividade.bloqueadores
+        FROM atividade JOIN cadeia ON cadeia.pid = atividade.pid
+        WHERE atividade.wait_event_type = 'Lock'
+      `);
+      if (esperas.length >= quantidade) break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  } finally {
+    await observador.$disconnect();
+  }
+  expect(esperas, `As decisões devem aguardar o lock real do crédito: ${JSON.stringify(esperas)}`).toHaveLength(quantidade);
+  return esperas;
+}
+
 beforeEach(async () => {
   await truncarBanco(); const cat = await seedCatalogoMinimo(); const u = await criarUsuario(["FINANCEIRO"]); usuarioId = u.id;
   authMock.mockResolvedValue({ user: { id: u.id } });
@@ -397,13 +462,63 @@ it("guard SQL recusa proposta de devolução acima do saldo ou com proveniência
   expect(await prisma.propostaDevolucaoCredito.count()).toBe(0);
 });
 it("serializa aprovação concorrente de uso Q68 e devolução Q69 no mesmo crédito", async () => {
-  const { credito, entrada } = await creditoParaPropostaUso();
-  const uso = await proporUtilizacaoCredito({ ...entrada, valor: "150.00", chaveIdempotencia: "uso-concorrente-devolucao" }); if (!uso.ok || !uso.dado) throw new Error("Uso ausente");
-  const devolucao = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Pedido de devolução concorrente", evidenciaPedido: "Evidência de devolução concorrente", destino: "Destino conferido concorrente", motivo: "Conferir disputa pelo crédito", chaveIdempotencia: "devolucao-concorrente-uso" }); if (!devolucao.ok || !devolucao.dado) throw new Error("Devolução ausente");
-  const admin = await criarUsuario(["ADMINISTRADOR"]); authMock.mockResolvedValue({ user: { id: admin.id } });
-  const [a, b] = await Promise.all([decidirUtilizacaoCredito({ propostaId: uso.dado.id, aprovar: true, motivo: "Aprovação concorrente de uso" }), decidirDevolucaoCredito({ propostaId: devolucao.dado.id, aprovar: true, motivo: "Aprovação concorrente de devolução" })]);
-  expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
-  expect((await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)))).gte(0)).toBe(true);
+  const { credito, cobranca, entrada } = await creditoParaPropostaUso();
+  const uso = await proporUtilizacaoCredito({ ...entrada, valor: "150.00", chaveIdempotencia: "uso-concorrente-devolucao" });
+  if (!uso.ok || !uso.dado) throw new Error("Uso ausente");
+  const propostaUsoId = uso.dado.id;
+  const devolucao = await proporDevolucaoCredito({ creditoId: credito.id, valor: "100.00", pedidoAluno: "Pedido de devolução concorrente", evidenciaPedido: "Evidência de devolução concorrente", destino: "Destino conferido concorrente", motivo: "Conferir disputa pelo crédito", chaveIdempotencia: "devolucao-concorrente-uso" });
+  if (!devolucao.ok || !devolucao.dado) throw new Error("Devolução ausente");
+  const propostaDevolucaoId = devolucao.dado.id;
+  const aprovadorUso = await criarUsuario(["ADMINISTRADOR"]);
+  const aprovadorDevolucao = await criarUsuario(["ADMINISTRADOR"]);
+  const decisoes = [
+    () => decidirUtilizacaoCredito({ propostaId: propostaUsoId, aprovar: true, motivo: "Aprovação concorrente de uso" }),
+    () => decidirDevolucaoCredito({ propostaId: propostaDevolucaoId, aprovar: true, motivo: "Aprovação concorrente de devolução" }),
+  ] as const;
+  const aprovadores = [aprovadorUso.id, aprovadorDevolucao.id];
+  const recebimentosAntes = await prisma.recebimento.findMany({ orderBy: { id: "asc" } });
+  const bloqueio = await bloquearCredito(credito.id);
+  authMock.mockResolvedValue({ user: { id: aprovadores[0] } });
+  const acoes = [decisoes[0]()];
+  let erroBloqueio: unknown;
+  let resultadosEncerrados: PromiseSettledResult<Awaited<ReturnType<(typeof decisoes)[number]>>>[] = [];
+  try {
+    await esperarDecisoesBloqueadas(bloqueio.pid, 1);
+    authMock.mockResolvedValue({ user: { id: aprovadores[1] } });
+    acoes.push(decisoes[1]());
+    const esperas = await esperarDecisoesBloqueadas(bloqueio.pid, 2);
+    expect(new Set(esperas.map((espera) => espera.pid)).size).toBe(2);
+    expect(esperas.some((espera) => espera.consulta.includes('FROM "CreditoMatricula"') && espera.consulta.includes("FOR UPDATE"))).toBe(true);
+    expect(esperas.some((espera) => espera.consulta.includes('FROM "Matricula"') && espera.consulta.includes("FOR UPDATE"))).toBe(true);
+  } catch (erro) {
+    erroBloqueio = erro;
+  } finally {
+    try {
+      await bloqueio.soltar();
+    } finally {
+      resultadosEncerrados = await Promise.allSettled(acoes);
+    }
+  }
+  if (erroBloqueio) throw erroBloqueio;
+  const resultados = resultadosEncerrados.map((resultado) => {
+    if (resultado.status === "rejected") throw resultado.reason;
+    return resultado.value;
+  });
+  expect(resultados.filter((resultado) => resultado.ok)).toHaveLength(1);
+  const vencedora = resultados.findIndex((resultado) => resultado.ok);
+  const resultadoVencedor = resultados[vencedora];
+  const decisaoVencedora = decisoes[vencedora];
+  const aprovadorVencedor = aprovadores[vencedora];
+  if (!resultadoVencedor?.ok || !decisaoVencedora || !aprovadorVencedor) throw new Error(JSON.stringify(resultados));
+  authMock.mockResolvedValue({ user: { id: aprovadorVencedor } });
+  expect(await decisaoVencedora()).toEqual(resultadoVencedor);
+  expect(await prisma.recebimento.findMany({ orderBy: { id: "asc" } })).toEqual(recebimentosAntes);
+  expect(await prisma.decisaoUsoCredito.count({ where: { aprovada: true } })).toBe(vencedora === 0 ? 1 : 0);
+  expect(await prisma.reservaDevolucaoCredito.count({ where: { estado: { not: "LIBERADA" } } })).toBe(vencedora === 1 ? 1 : 0);
+  const saldoFinal = await prisma.$transaction(tx => import("@/server/financeiro/uso-credito-estado").then(({ saldoCreditoTx }) => saldoCreditoTx(tx, credito.id)));
+  expect(saldoFinal.toFixed(2)).toBe(vencedora === 0 ? "50.00" : "100.00");
+  const cobrancaFinal = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  expect(cobrancaFinal.valorLiquidadoCredito.toFixed(2)).toBe(vencedora === 0 ? "150.00" : "0.00");
 });
 it("guarda proposta de uso idempotente e versionada sem consumir crédito, alterar cobrança ou criar recebimento", async () => {
   const { credito, cobranca, entrada } = await creditoParaPropostaUso();
