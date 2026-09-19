@@ -2,32 +2,38 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarOperacaoRecuperacao } from "@/server/avaliacoes/recuperacao-operacao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { Disponibilizar, Reservar, Realizar, CancelarPelaEscola } from "./Formularios";
 import { PreviaAgenda } from "./PreviaAgenda";
 import { AgendaPublicada } from "../../AgendaPublicada";
-const horario = (s: string) => s.replace("T", " ").replace("Z", " UTC");
-
 export default async function Operacao({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const { propostaId } = await params, { depoisId } = await searchParams;
-  const r = await consultarOperacaoRecuperacao({ propostaId, depoisId });
+  const { propostaId } = await params;
+  const { depoisId } = await searchParams;
+  const [r, preferencia] = await Promise.all([
+    consultarOperacaoRecuperacao({ propostaId, depoisId }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const horario = (instante: string) => formatarInstanteExibicao(instante, fusoExibicao, "UTC").texto;
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`}>Planos desta matrícula</Link>
     <h1 className="text-2xl font-medium">Executar plano de recuperação {d.versao}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    <p>Aprovado em {horario(d.aprovadaEm)}.</p>
+    <p>Aprovado em {horario(d.aprovadaEm)} ({fusoExibicao}; origem UTC).</p>
     {d.fontesMudaram && <p role="status">As notas ou suas fontes mudaram. Novas reservas e disponibilização precisam de nova conferência do plano.</p>}
     {!d.vinculoValido && <p role="status">Vínculo ou situação da matrícula exige conferência antes de novos avanços.</p>}
     <h2 className="text-xl font-medium">Prazo e disponibilização</h2>
     <p>Prazo configurado: {d.prazoMinutos} minutos, contado a partir da disponibilização efetiva ao aluno.</p>
     {d.disponibilizacao ? <div className="space-y-2 rounded border p-3">
-      <p>Disponibilizado em {horario(d.disponibilizacao.inicio)}. Prazo original: {horario(d.disponibilizacao.prazoOriginal)}. Prazo vigente: {horario(d.disponibilizacao.prazoVigente)}.</p>
+      <p>Disponibilizado em {horario(d.disponibilizacao.inicio)}. Prazo original: {horario(d.disponibilizacao.prazoOriginal)}. Prazo vigente: {horario(d.disponibilizacao.prazoVigente)}. ({fusoExibicao}; origem UTC).</p>
       <p className="whitespace-pre-wrap">Condições: {d.disponibilizacao.condicoes}</p><p className="whitespace-pre-wrap">Comunicação registrada: {d.disponibilizacao.evidenciaComunicacao}</p>
     </div> : <p>Aguardando registro das condições disponibilizadas e da comunicação ao aluno.</p>}
-    {d.podeDisponibilizar && d.autorizacaoDisponibilizacao && <p role="status">Esta disponibilização usará a autorização especial válida até {horario(d.autorizacaoDisponibilizacao.prazoAte)}.</p>}
+    {d.podeDisponibilizar && d.autorizacaoDisponibilizacao && <p role="status">Esta disponibilização usará a autorização especial válida até {horario(d.autorizacaoDisponibilizacao.prazoAte)} ({fusoExibicao}; origem UTC).</p>}
     {d.disponibilizacao && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(d.propostaId)}/prorrogacoes`}>Propor e conferir prorrogações</Link>}
     {d.podeDisponibilizar && d.propostaHash && <Disponibilizar key={`${d.propostaHash}:${d.autorizacaoDisponibilizacao?.id ?? "sem-autorizacao"}`} propostaId={d.propostaId} propostaHash={d.propostaHash} autorizacaoPreparacaoId={d.autorizacaoDisponibilizacao?.id} />}
     {d.podeGerirDesignacoes && !d.vinculoValido && !d.autorizacaoDisponibilizacao && !d.disponibilizacao && <Link className="block underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`}>Consultar planos para obter autorização especial de preparação</Link>}
@@ -39,14 +45,14 @@ export default async function Operacao({ params, searchParams }: { params: Promi
     {d.podeReservar && d.propostaHash && <Reservar propostaId={d.propostaId} propostaHash={d.propostaHash} saldo={d.saldo} />}
     <h2 className="text-xl font-medium">Reservas e realizações</h2>
     {d.reservas.map(reserva => <article key={reserva.id} className="space-y-3 rounded border p-4">
-      <p>Reserva de {horario(reserva.criadaEm)}.</p><p className="whitespace-pre-wrap">{reserva.motivo}</p>
+      <p>Reserva de {horario(reserva.criadaEm)} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{reserva.motivo}</p>
       {reserva.cancelamento && <p className="whitespace-pre-wrap">Cancelamento pela escola: {reserva.cancelamento.motivo}. Evidência: {reserva.cancelamento.evidencia}</p>}
       {reserva.itens.map(i => <div key={i.id} className="space-y-2 rounded border p-3"><h3 className="font-medium">{i.habilidade.replaceAll("_", " ")}</h3>
-        <AgendaPublicada agenda={i.agenda} />
+        <AgendaPublicada agenda={i.agenda} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
         {!i.realizacao && !reserva.cancelamento && d.situacaoContratual !== "ATIVA" && <p role="status">{i.autorizacaoEspecialAte
-          ? `Autorização específica vigente até ${horario(i.autorizacaoEspecialAte)}. Prazo do plano, atribuição docente e condições da agenda continuam obrigatórios.`
+          ? `Autorização específica vigente até ${horario(i.autorizacaoEspecialAte)} (${fusoExibicao}; origem UTC). Prazo do plano, atribuição docente e condições da agenda continuam obrigatórios.`
           : "Sem autorização específica vigente para uma nova realização nesta situação contratual. Avaliações anteriores podem ser registradas quando o histórico comprovar a permissão na data informada."}</p>}
-        {i.realizacao ? <><p>Realizada em {horario(i.realizacao.realizadaEm)}; tentativa consumida.</p><Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacao.id)}`}>Nota e conferência desta realização</Link></> : <p>{reserva.cancelamento ? "Reserva liberada, sem realização." : "Aguardando realização; nota ainda não registrada."}</p>}
+        {i.realizacao ? <><p>Realizada em {horario(i.realizacao.realizadaEm)} ({fusoExibicao}; origem UTC); tentativa consumida.</p><Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacao.id)}`}>Nota e conferência desta realização</Link></> : <p>{reserva.cancelamento ? "Reserva liberada, sem realização." : "Aguardando realização; nota ainda não registrada."}</p>}
         {i.podeRegistrarRealizacao && <Realizar itemReservaId={i.id} somenteHistorica={!i.podeRegistrarAgora} />}
         {d.podeGerirDesignacoes && !i.realizacao && !reserva.cancelamento && !i.agenda && <PreviaAgenda itemReservaId={i.id} />}
         {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}/agenda`}>Preparar e revisar propostas de horário</Link>}

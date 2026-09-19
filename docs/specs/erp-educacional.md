@@ -564,3 +564,5 @@ As consultas de exceções, regularizações de gravação, cancelamento, remarc
 #### Fuso pessoal nas consultas de recuperação
 
 As listas de realizações, o detalhe da nota e os planos de recuperação exibem os instantes administrativos persistidos no fuso pessoal válido da equipe. Como esses registros têm origem UTC, a ausência ou invalidade da preferência usa UTC como fallback e a interface identifica o fuso de exibição e a origem. A preferência não altera os campos civis de formulários, seus payloads, nem os prazos e fatos já registrados.
+
+Na operação de um plano e na tentativa atribuída, aprovações, reservas, disponibilizações, prazos, autorizações e realizações seguem a mesma apresentação de fatos administrativos UTC. O horário publicado da agenda recebe a preferência apenas como padrão visual; sem preferência válida, ele volta ao fuso de origem da própria agenda e continua identificando essa origem. A mudança de exibição não é propagada aos formulários de data e hora locais.
