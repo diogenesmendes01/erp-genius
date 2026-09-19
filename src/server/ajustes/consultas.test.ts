@@ -6,6 +6,10 @@ vi.mock("@/lib/prisma", () => ({ prisma: {
   aluno: { findFirst }, usuario: { findUnique: usuarioMock },
   pagamentoInformado: { groupBy: () => Promise.resolve([]) },
   evento: { findMany: () => Promise.resolve([]) }, politicaRegua: { findFirst: () => Promise.resolve(null) },
+  aplicacaoEntradaFinanceiraHistoricaMigracao: { findMany: () => Promise.resolve([]) },
+  aplicacaoVencimentoAditivo: { findMany: () => Promise.resolve([]) },
+  propostaRetomadaMatriculas: { findMany: () => Promise.resolve([]) },
+  propostaEntradaFinanceiraHistoricaMigracao: { findMany: () => Promise.resolve([]) },
 } }));
 import { escopoFichaFinanceira, obterFichaFinanceira } from "./consultas";
 const u = (id: string, ...papeis: Papel[]) => ({ id, nome: "T", papeis });

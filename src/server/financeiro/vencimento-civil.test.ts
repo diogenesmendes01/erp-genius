@@ -88,4 +88,26 @@ describe("referência civil do vencimento", () => {
     expect(periodosRetomadaReprogramada(snapshot, { matriculas: [{ vencimentos: { opcao: "MANTER_VENCIMENTOS" } }] })).toEqual([]);
     expect(periodosRetomadaReprogramada(snapshot, { matriculas: [{ vencimentos: { opcao: "REPROGRAMAR_PARCELAS", datas: [{ cobrancaId: "mensal", vencimento: "2099-05-20" }] } }] })).toEqual(snapshot.matriculas[0].periodos);
   });
+
+  it("usa a versão fotografada de novas retomadas ao encadear outra alteração de vencimento", () => {
+    const snapshot = { matriculas: [{ periodos: [{ cobrancaId: "mensal", vencimentoAnterior: "2099-05-10", vencimento: "2099-05-20", versaoCobrancaAntes: 2 }] }] };
+    const retomadas = [{ id: "retomada", aplicadaEm: new Date("2099-01-01T10:00:00Z"), periodos: periodosRetomadaReprogramada(snapshot, { matriculas: [{ vencimentos: { opcao: "REPROGRAMAR_PARCELAS", datas: [{ cobrancaId: "mensal", vencimento: "2099-05-20" }] } }] }) }];
+    expect(referenciaVencimentoCivil({
+      id: "mensal", versao: 4, vencimento: new Date("2099-06-10T00:00:00Z"), retomadasReprogramadas: retomadas,
+      aplicacoesAcertoTaxaAditivo: [{ id: "taxa", aplicadaEm: new Date("2099-01-01T10:00:00Z"), versaoAnterior: 3, vencimentoAnterior: new Date("2099-05-20T00:00:00Z"), vencimentoNovo: new Date("2099-06-10T00:00:00Z") }],
+    })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-06-10", fuso: null, origem: "ACERTO_TAXA_ADITIVO" });
+  });
+
+  it("mantém legado sem âncora em conferência e considera REPROGRAMAR mesmo sem mudar a data civil", () => {
+    expect(referenciaVencimentoCivil({
+      id: "legado", versao: 3, vencimento: new Date("2099-06-10T00:00:00Z"),
+      retomadasReprogramadas: [{ id: "retomada-antiga", aplicadaEm: new Date("2099-01-01T10:00:00Z"), periodos: [{ cobrancaId: "legado", vencimentoAnterior: "2099-05-20", vencimento: "2099-05-20" }] }],
+      aplicacoesAcertoTaxaAditivo: [{ id: "taxa", aplicadaEm: new Date("2099-01-02T10:00:00Z"), versaoAnterior: 2, vencimentoAnterior: new Date("2099-05-20T00:00:00Z"), vencimentoNovo: new Date("2099-06-10T00:00:00Z") }],
+    })).toMatchObject({ estado: "A_CONFERIR" });
+
+    expect(referenciaVencimentoCivil({
+      id: "mesma-data", versao: 2, vencimento: new Date("2099-05-20T00:00:00Z"),
+      retomadasReprogramadas: [{ id: "retomada-nova", aplicadaEm: new Date("2099-01-01T10:00:00Z"), periodos: [{ cobrancaId: "mesma-data", vencimentoAnterior: "2099-05-20", vencimento: "2099-05-20", versaoCobrancaDepois: 2 }] }],
+    })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-05-20", fuso: null, origem: "RETOMADA_REPROGRAMADA" });
+  });
 });
