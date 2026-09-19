@@ -8,8 +8,9 @@ vi.mock("@/server/financeiro/acoes", () => ({ registrarCobrancaWhatsApp: vi.fn()
 vi.mock("@/server/financeiro/cobranca-manual", () => ({ prepararCobrancaManual: vi.fn() }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes", () => ({ aprovarLoteCobranca: vi.fn(), enfileirarCobrancaWhatsApp: vi.fn() }));
+vi.mock("./AcessoAulasPainel", () => ({ AcessoAulasPainel: ({ matriculaId, alunoId, preferenciaFusoExibicao }: { matriculaId?: string; alunoId?: string; preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-acesso": `${matriculaId ?? alunoId ?? "geral"}:${preferenciaFusoExibicao ?? "UTC"}` }) }));
 
-import { DetalheCobranca } from "./FilaCobranca";
+import { DetalheCobranca, FilaCobranca } from "./FilaCobranca";
 
 const item: FilaCobrancaItem = {
   conferenciaAte: null,
@@ -68,5 +69,19 @@ describe("DetalheCobranca", () => {
 
     const promessa = detalhe({ ...item, estado: "promessa", passo: null, tipoAcao: null }, null);
     expect(promessa).toContain("Promessa de pagamento até 02/01/2026");
+  });
+
+  it("encaminha a preferência aos painéis de acesso geral e da cobrança", () => {
+    const geral = renderToStaticMarkup(createElement(FilaCobranca, {
+      itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [],
+      podeOperar: true, podeBloquear: false, preferenciaFusoExibicao: "America/Costa_Rica",
+    }));
+    expect(geral).toContain('data-acesso="geral:America/Costa_Rica"');
+    const detalheOperavel = renderToStaticMarkup(createElement(DetalheCobranca, {
+      item, regua: [], podeOperar: true, preferenciaFusoExibicao: "America/Costa_Rica",
+      onClose: vi.fn(), onEnviarApi: vi.fn(), onPrepararManual: async () => null,
+      onConfirmarManual: async () => false, onPagar: vi.fn(), onPromessa: vi.fn(),
+    }));
+    expect(detalheOperavel).toContain('data-acesso="matricula:America/Costa_Rica"');
   });
 });

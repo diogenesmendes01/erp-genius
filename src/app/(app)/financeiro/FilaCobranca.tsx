@@ -374,7 +374,7 @@ export function FilaCobranca({
         </div>
       )}
 
-      {podeOperar && <div className="mt-5"><AcessoAulasPainel /></div>}
+      {podeOperar && <div className="mt-5"><AcessoAulasPainel preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
 
       {aberta && (
         <DetalheCobranca
@@ -623,7 +623,7 @@ export function DetalheCobranca({
           </ol>
         </div>
 
-        {podeOperar && <div className="px-5 pb-4"><AcessoAulasPainel matriculaId={item.matriculaId} /></div>}
+        {podeOperar && <div className="px-5 pb-4"><AcessoAulasPainel matriculaId={item.matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
 
         {/* Ações secundárias */}
         <div className="border-t border-gray-200 px-5 py-3">
