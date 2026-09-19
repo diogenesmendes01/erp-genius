@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const { consulta, sessao } = vi.hoisted(() => ({ consulta: vi.fn(), sessao: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-historico", () => ({ consultarHistoricoReservasSegundaChamada: consulta }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: sessao }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: vi.fn().mockResolvedValue({ ok: true, dado: { fusoExibicao: null } }) }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => React.createElement("a", { href }, children) }));
 import Page from "@/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/page";
 
