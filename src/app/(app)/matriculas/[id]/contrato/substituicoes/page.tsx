@@ -2,15 +2,21 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarSubstituicoesContratuais } from "@/server/contratos/substituicao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { PrepararSubstituicao } from "./Formularios";
 const pagina = (v?: string) => { const n = Number(v ?? 1); return Number.isInteger(n) && n > 0 && n <= 100000 ? n : 1; };
-const data = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19) + " UTC";
 export default async function SubstituicoesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string; conferencias?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, s = await searchParams;
-  const r = await consultarSubstituicoesContratuais({ matriculaId: id, pagina: pagina(s.pagina), paginaConferencias: pagina(s.conferencias) });
+  const [r, preferencia] = await Promise.all([
+    consultarSubstituicoesContratuais({ matriculaId: id, pagina: pagina(s.pagina), paginaConferencias: pagina(s.conferencias) }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, base = `/matriculas/${encodeURIComponent(id)}/contrato/substituicoes`;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <div className="space-y-5">
     <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/contrato`}>Voltar aos documentos</Link>
     <h1 className="text-2xl">Substituição contratual · {d.matricula.aluno}</h1>
