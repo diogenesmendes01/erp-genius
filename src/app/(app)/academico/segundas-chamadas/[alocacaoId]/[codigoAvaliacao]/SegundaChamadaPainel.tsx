@@ -28,13 +28,14 @@ const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
 }).format(new Date(valor));
 
 export function SegundaChamadaPainel({
-  alocacaoId, codigoAvaliacao, itens, ativa, fuso,
+  alocacaoId, codigoAvaliacao, itens, ativa, fuso, fusoEntrada,
 }: {
   alocacaoId: string;
   codigoAvaliacao: string;
   itens: Item[];
   ativa: boolean;
   fuso: string;
+  fusoEntrada: string;
 }) {
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState("");
@@ -143,7 +144,7 @@ export function SegundaChamadaPainel({
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/cancelamento`}>Propor ou conferir cancelamento da agenda</Link>
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/remarcacao`}>Propor ou conferir remarcação da agenda</Link>
           <p role="status">Reserva {item.reserva.status === "CONSUMIDA_FALTA" ? "consumida por falta; encontro não realizado" : item.reserva.status === "PENDENCIA_ESCOLA" ? "liberada sem consumo por impedimento da escola; revisão pendente" : item.reserva.status}. Encontro vinculado: {item.reserva.encontroId ?? "não informado"}.</p>
-          {item.reserva.status === "RESERVADA" && <FormularioOcorrencia reservaId={item.reserva.id} fuso={fuso} />}
+          {item.reserva.status === "RESERVADA" && <FormularioOcorrencia reservaId={item.reserva.id} fuso={fusoEntrada} />}
         </div>}
       </article>)}
       {!itens.length && <p>Nenhuma proposta nesta avaliação.</p>}
