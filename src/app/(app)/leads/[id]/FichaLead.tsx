@@ -22,6 +22,7 @@ import {
   atualizarResumo,
   atualizarDatas,
 } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const TRILHA: EtapaLead[] = [
   EtapaLead.NOVO,
@@ -104,10 +105,12 @@ export function FichaLead({
   lead,
   timeline,
   professores = [],
+  preferenciaFusoExibicao,
 }: {
   lead: LeadFicha;
   timeline: EventoTimeline[];
   professores?: { id: string; nome: string }[];
+  preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -182,8 +185,8 @@ export function FichaLead({
       </div>
 
       <Documentos leadId={lead.id} documentos={lead.documentos} run={run} />
-      <HistoricoDono timeline={timeline} />
-      <Timeline timeline={timeline} />
+      <HistoricoDono timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+      <Timeline timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </div>
   );
 }
@@ -270,7 +273,7 @@ function ValorOportunidade({ lead }: { lead: LeadFicha }) {
   );
 }
 
-function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
+function HistoricoDono({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimeline[]; preferenciaFusoExibicao: string | null }) {
   const itens = timeline.filter((e) => e.tipo === "LeadAtribuido");
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -287,7 +290,7 @@ function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
                 <div className="text-gray-700">Atribuição{motivo ? ` · ${motivo}` : ""}</div>
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
-                  {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").texto} (horário exibido em {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").fuso}; origem UTC)
                 </div>
               </li>
             );
@@ -599,7 +602,7 @@ function detalheEvento(tipo: string, p: Record<string, unknown>): string | null 
   return txt(p.nota);
 }
 
-function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
+function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimeline[]; preferenciaFusoExibicao: string | null }) {
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="mb-3 font-medium">Linha do tempo</h2>
@@ -616,7 +619,7 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
                 {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
-                  {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").texto} (horário exibido em {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").fuso}; origem UTC)
                 </div>
               </li>
             );
