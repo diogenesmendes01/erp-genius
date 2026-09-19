@@ -4,6 +4,8 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaEquivalencia } from "@/server/avaliacoes/equivalencia-consulta";
 import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
 import { AcoesEquivalencia } from "./AcoesEquivalencia";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomesHabilidade: Record<Habilidade, string> = {
@@ -12,7 +14,6 @@ const nomesHabilidade: Record<Habilidade, string> = {
   LEITURA: "Leitura",
   ESCRITA: "Escrita",
 };
-const dataHora = (valor: string | Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(valor));
 const textoTurma = (turma: { codigo: string | null; nome: string | null }) => turma.codigo ?? turma.nome ?? "Turma sem identificação";
 const ehObjeto = (valor: unknown): valor is Record<string, unknown> => typeof valor === "object" && valor !== null && !Array.isArray(valor);
 const ehHabilidade = (valor: unknown): valor is Habilidade => typeof valor === "string" && valor in nomesHabilidade;
@@ -67,19 +68,24 @@ function resumoPedagogico(snapshot: unknown, mapeamentos: unknown) {
 export default async function PropostaEquivalenciaPage({ params }: { params: Promise<{ propostaId: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   const { propostaId } = await params;
-  const resultado = await consultarPropostaEquivalencia({ propostaId });
+  const [resultado, preferencia] = await Promise.all([
+    consultarPropostaEquivalencia({ propostaId }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const proposta = resultado.dado;
   const pedagogica = proposta.visao === "PEDAGOGICA" ? resumoPedagogico(proposta.snapshot, proposta.mapeamentos) : null;
   const decisao = proposta.decisao;
   const estado = proposta.estado === "PENDENTE" ? "Aguardando decisão" : proposta.estado === "APROVADA" ? "Autorizada para execução" : proposta.estado === "APLICADA" ? "Transferência efetivada" : "Rejeitada";
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
+  const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "America/Sao_Paulo");
 
   return <section className="space-y-5">
     <Link className="underline" href="/academico">Voltar ao acompanhamento acadêmico</Link>
     <header className="space-y-2">
       <h1 className="text-2xl font-medium">Proposta de aproveitamento em transferência</h1>
       <p>{proposta.matricula.codigo ?? "Matrícula sem código"} · {textoTurma(proposta.turmaOrigem)} → {textoTurma(proposta.turmaDestino)}</p>
-      <p>Versão {proposta.versao} · preparada em {dataHora(proposta.criadaEm)} (horário de São Paulo).</p>
+      <p>Versão {proposta.versao} · preparada em {formatarInstanteExibicao(proposta.criadaEm, preferenciaFusoExibicao, "America/Sao_Paulo").texto} (horário exibido em {fusoExibicao}).</p>
       <p className="whitespace-pre-wrap">Motivo informado: {proposta.motivo}</p>
       <p role="status">Estado atual: {estado}.</p>
     </header>
@@ -96,7 +102,7 @@ export default async function PropostaEquivalenciaPage({ params }: { params: Pro
 
     <section className="space-y-2 rounded border p-4">
       <h2 className="text-xl font-medium">Decisão e execução</h2>
-      {decisao ? <><p>{decisao.aprovada ? "Decisão autorizada" : "Decisão de rejeição"} em {dataHora(decisao.decididaEm)} (horário de São Paulo).</p><p className="whitespace-pre-wrap">Motivo: {decisao.motivo}</p>{decisao.aplicacao && <p>Aplicada em {dataHora(decisao.aplicacao.aplicadaEm)} (horário de São Paulo).</p>}</> : <p>Aguardando uma decisão independente da gestão.</p>}
+      {decisao ? <><p>{decisao.aprovada ? "Decisão autorizada" : "Decisão de rejeição"} em {formatarInstanteExibicao(decisao.decididaEm, preferenciaFusoExibicao, "America/Sao_Paulo").texto} (horário exibido em {fusoExibicao}).</p><p className="whitespace-pre-wrap">Motivo: {decisao.motivo}</p>{decisao.aplicacao && <p>Aplicada em {formatarInstanteExibicao(decisao.aplicacao.aplicadaEm, preferenciaFusoExibicao, "America/Sao_Paulo").texto} (horário exibido em {fusoExibicao}).</p>}</> : <p>Aguardando uma decisão independente da gestão.</p>}
       {proposta.visao === "EXECUCAO" && <p>A Secretaria recebe apenas os dados necessários para efetivar a autorização, sem as fontes e o mapa pedagógico.</p>}
     </section>
 
