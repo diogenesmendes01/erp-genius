@@ -78,5 +78,5 @@ prisma/migrations/20260918180000_autorizacao_atendimento_pedagogico/migration.sq
 /prisma/migrations/20260918190000_destino_pedagogico_atual/migration.sql -text
 prisma/migrations/20260918200000_preferencia_fuso_exibicao/migration.sql -text
 prisma/migrations/20260918210000_dominio_fuso_exibicao/migration.sql -text
-
 prisma/migrations/20260919000000_calendario_sem_remarcacoes/migration.sql -text
+prisma/migrations/20260919010000_reconciliar_preservacao_desistencia/migration.sql -text
