@@ -67,6 +67,23 @@ async function exigirProfessorValido(professorId: string) {
 
 const PAPEIS_COMERCIAL: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 
+const DATA_CIVIL_LITERAL = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * O banco mantém datas como instantes. No evento, porém, conservamos também a
+ * data civil que a pessoa informou quando ela estava explícita e válida. Isso
+ * evita que uma leitura histórica escolha retroativamente um fuso inexistente.
+ */
+function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
+  if (typeof valor !== "string" || !normalizada) return null;
+  const partes = DATA_CIVIL_LITERAL.exec(valor);
+  if (!partes) return null;
+  const [ano, mes, dia] = partes.slice(1).map(Number);
+  const calendario = new Date(Date.UTC(ano, mes - 1, dia));
+  if (calendario.getUTCFullYear() !== ano || calendario.getUTCMonth() !== mes - 1 || calendario.getUTCDate() !== dia) return null;
+  return normalizada.getFullYear() === ano && normalizada.getMonth() === mes - 1 && normalizada.getDate() === dia ? valor : null;
+}
+
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
   revalidatePath("/pipeline");
@@ -332,8 +349,10 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
         autorId: autor.id,
         payload: {
           proximoFollowUp: dados.proximoFollowUp?.toISOString() ?? null,
+          proximoFollowUpCivil: dataCivilOriginal(input.proximoFollowUp, dados.proximoFollowUp),
           dataExperimental: dados.dataExperimental?.toISOString() ?? null,
           dataProposta: dados.dataProposta?.toISOString() ?? null,
+          dataPropostaCivil: dataCivilOriginal(input.dataProposta, dados.dataProposta),
         },
       });
     });

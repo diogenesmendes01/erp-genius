@@ -569,10 +569,39 @@ const EVENTO_LABEL: Record<string, string> = {
 };
 
 /** Texto auxiliar da timeline conforme o tipo de evento (resumo, datas, etapa…). */
-function detalheEvento(tipo: string, p: Record<string, unknown>): string | null {
+const DATA_CIVIL_LITERAL = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_COM_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/i;
+
+function dataCivilLiteral(valor: unknown) {
+  if (typeof valor !== "string") return null;
+  const partes = DATA_CIVIL_LITERAL.exec(valor);
+  if (!partes) return null;
+  const [ano, mes, dia] = partes.slice(1).map(Number);
+  const calendario = new Date(Date.UTC(ano, mes - 1, dia));
+  return calendario.getUTCFullYear() === ano && calendario.getUTCMonth() === mes - 1 && calendario.getUTCDate() === dia ? valor : null;
+}
+
+function dataHistoricaSemOrigemCivil(valor: unknown, civil: unknown) {
+  const literal = dataCivilLiteral(valor);
+  if (literal) return literal;
+  const confirmada = dataCivilLiteral(civil);
+  if (confirmada) return confirmada;
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  return `${valor} (registro histórico sem referência civil)`;
+}
+
+function experimentalHistorica(valor: unknown, preferenciaFusoExibicao: string | null) {
+  const literal = dataCivilLiteral(valor);
+  if (literal) return literal;
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  if (!ISO_COM_OFFSET.test(valor) || !Number.isFinite(new Date(valor).getTime()))
+    return `${valor} (registro histórico sem fuso de origem)`;
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
+
+function detalheEvento(tipo: string, p: Record<string, unknown>, preferenciaFusoExibicao: string | null): string | null {
   const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-  const data = (v: unknown) =>
-    typeof v === "string" && v ? new Date(v).toLocaleDateString("pt-BR") : null;
 
   if (tipo === "ResumoAtualizado") {
     const partes = [
@@ -586,10 +615,13 @@ function detalheEvento(tipo: string, p: Record<string, unknown>): string | null 
     return partes.length ? partes.join(" · ") : "Resumo limpo";
   }
   if (tipo === "DatasAtualizadas") {
+    const followUp = dataHistoricaSemOrigemCivil(p.proximoFollowUp, p.proximoFollowUpCivil);
+    const experimental = experimentalHistorica(p.dataExperimental, preferenciaFusoExibicao);
+    const proposta = dataHistoricaSemOrigemCivil(p.dataProposta, p.dataPropostaCivil);
     const partes = [
-      data(p.proximoFollowUp) && `Follow-up: ${data(p.proximoFollowUp)}`,
-      data(p.dataExperimental) && `Experimental: ${data(p.dataExperimental)}`,
-      data(p.dataProposta) && `Proposta: ${data(p.dataProposta)}`,
+      followUp && `Follow-up: ${followUp}`,
+      experimental && `Experimental: ${experimental}`,
+      proposta && `Proposta: ${proposta}`,
     ].filter(Boolean);
     return partes.length ? partes.join(" · ") : "Datas limpas";
   }
@@ -612,7 +644,7 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
         <ul className="flex flex-col gap-3">
           {timeline.map((ev) => {
             const p = (ev.payload ?? {}) as Record<string, unknown>;
-            const detalhe = detalheEvento(ev.tipo, p);
+            const detalhe = detalheEvento(ev.tipo, p, preferenciaFusoExibicao);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
