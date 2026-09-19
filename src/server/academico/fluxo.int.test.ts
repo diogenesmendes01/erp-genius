@@ -334,6 +334,9 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     const cadeia = await aplicarReplanejamentoDoDestino();
     const contexto = sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId));
     expect(contexto.destinos).toEqual(expect.arrayContaining([expect.objectContaining({ id: destino.id })]));
+    entrar(sec.id);
+    expect((await solicitarMudancaAcademica(alunoId, { turmaDestinoId: destino.id, motivo, horarioCompativel: true })).ok).toBe(false);
+    expect(await pedido(anterior)).toEqual(antes);
     entrar(gp.id);
     expect((await decidirMudancaAcademica(anterior, { aprovar: true, motivo: "Decisão que deve reconferir a agenda replanejada." })).ok).toBe(false);
     expect(await pedido(anterior)).toEqual(antes);

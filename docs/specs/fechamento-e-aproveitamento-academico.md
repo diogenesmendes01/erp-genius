@@ -12,6 +12,12 @@ A execução pela Secretaria confere novamente o contexto e aplica a transferên
 
 O caminho existente `trocarTurma` deve passar pelo fluxo autorizado, sem manter uma alternativa de escrita direta que ignore a equivalência. A decisão de aproveitamento não altera regras dos demais alunos nem dispensa os mínimos de nota.
 
+### Disponibilidade de destino pela agenda publicada — 19/09/2026
+
+A disponibilidade para uma transferência não depende da previsão manual `dataFim`: exige grade aprovada e pelo menos um encontro regular futuro, com professor apto e sem indisponibilidade aprovada que o alcance. Uma aula já iniciada não cria vínculo retroativo. A proposta v3 conserva a grade, o calendário vigente e, quando houver replanejamento conjunto aplicado, a cadeia dessa aplicação e a fotografia da agenda. Aprovação e execução conferem novamente o mesmo recorte futuro no mesmo marco; alteração, remoção, cancelamento ou indisponibilidade futura exige nova proposta. Fatos já iniciados não tornam uma decisão obsoleta somente pela passagem do tempo.
+
+Memórias v1/v2 continuam consultáveis e podem repetir a solicitação idêntica sem reescrita, mas não podem ser aprovadas ou executadas sem fotografia v3. A cadeia atual reconhece a grade publicada e a última revisão conjunta aplicada, inclusive sem remarcações. O reconhecimento de escritores posteriores aprovados que alterem uma agenda futura sem pertencer a essa cadeia permanece pendente de uma fonte compartilhada com Q161; até lá a divergência conserva a recusa, sem declarar a transferência integralmente concluída.
+
 ## Fechamento do resultado
 
 A gestão consulta o consolidado e confirma uma versão final. Q154 não exige uma segunda pessoa apenas para essa confirmação; as aprovações independentes de notas, correções, equivalência e exceções continuam obrigatórias.
