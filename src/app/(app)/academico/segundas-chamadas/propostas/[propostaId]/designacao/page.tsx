@@ -3,12 +3,8 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDesignacoesSegundaChamada } from "@/server/avaliacoes/segunda-chamada-designacao-consulta";
 import { Formulario } from "./Formulario";
-
-const dataUtc = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "UTC",
-}).format(new Date(valor));
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function Designacao({ params, searchParams }: {
   params: Promise<{ propostaId: string }>;
@@ -18,14 +14,19 @@ export default async function Designacao({ params, searchParams }: {
   const { propostaId } = await params;
   const { depoisVersao, busca } = await searchParams;
   const pagina = Number(depoisVersao);
-  const r = await consultarDesignacoesSegundaChamada({
-    propostaId,
-    ...(Number.isInteger(pagina) && pagina > 0 ? { depoisVersao: pagina } : {}),
-    ...(busca ? { busca } : {}),
-  });
+  const [r, preferencia] = await Promise.all([
+    consultarDesignacoesSegundaChamada({
+      propostaId,
+      ...(Number.isInteger(pagina) && pagina > 0 ? { depoisVersao: pagina } : {}),
+      ...(busca ? { busca } : {}),
+    }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
 
   const d = r.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const data = (valor: Date | string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
   const atualVigente = d.atual && d.vigenteProfessorId === d.atual.professor.id;
   return <section className="space-y-4">
     <Link className="underline" href="/academico/avaliacoes">Avaliações</Link>
@@ -33,7 +34,7 @@ export default async function Designacao({ params, searchParams }: {
     <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.turma}.</p>
     <p>Não altera o professor de encontro já publicado. Para regularizar uma aplicação registrada por outra pessoa, use a designação da avaliação.</p>
     {d.atual ? <p>
-      Última designação: {d.atual.professor.nome} · {dataUtc(d.atual.inicio)} até {d.atual.fim ? dataUtc(d.atual.fim) : "sem término"} (UTC).
+      Última designação: {d.atual.professor.nome} · {data(d.atual.inicio)} até {d.atual.fim ? data(d.atual.fim) : "sem término"} ({fusoExibicao}; origem UTC).
       {atualVigente ? " É a designação vigente." : " Não está vigente agora."}
     </p> : <p>Nenhuma designação registrada.</p>}
     <form>
@@ -44,8 +45,8 @@ export default async function Designacao({ params, searchParams }: {
     {d.podeDesignar && <Formulario propostaId={d.propostaId} professores={d.professores} />}
     <h2 className="text-xl font-medium">Histórico</h2>
     {d.historico.map(h => <article key={h.id} className="rounded border p-3">
-      <p>Versão {h.versao} · {h.professor.nome} · registrada por {h.gestor.nome} em {dataUtc(h.criadaEm)} (UTC)</p>
-      <p>Vigência: {dataUtc(h.inicio)} até {h.fim ? dataUtc(h.fim) : "sem término"} (UTC).</p>
+      <p>Versão {h.versao} · {h.professor.nome} · registrada por {h.gestor.nome} em {data(h.criadaEm)} ({fusoExibicao}; origem UTC)</p>
+      <p>Vigência: {data(h.inicio)} até {h.fim ? data(h.fim) : "sem término"} ({fusoExibicao}; origem UTC).</p>
       <p>{h.motivo}</p>
     </article>)}
     {!d.historico.length && <p>Nenhuma designação registrada.</p>}
