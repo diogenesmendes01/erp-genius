@@ -115,7 +115,12 @@ export async function dadosHomeVendedor(usuario: UsuarioSessao) {
   };
 }
 
-export async function dadosHomeProfessor(usuario: UsuarioSessao) {
+/**
+ * A mesma referência temporal governa o card de próxima aula e a lista de
+ * check-ins pendentes. Ela é capturada no servidor para que uma aba aberta em
+ * outro fuso, ou um relógio local incorreto, não escolha outra aula.
+ */
+export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Date()) {
   if (!usuario?.id) throw new ErroAutenticacao();
   exigirPapel(usuario, Papel.PROFESSOR);
   const turmas = await prisma.turma.findMany({
@@ -142,6 +147,8 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
     select: { id: true, nome: true, dataExperimental: true },
   });
 
+  const proximaExperimental = experimentais.find((e) => e.dataExperimental! >= agora);
+
   return {
     turmas: turmas.map((t) => ({
       id: t.id,
@@ -154,6 +161,16 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
       nome: e.nome,
       data: e.dataExperimental!.toISOString(),
     })),
+    // Check-in atrasado permanece disponível na lista. Somente o destaque
+    // "Próxima" exige uma ocorrência ainda futura (o instante igual a agora
+    // ainda é atendível nesta referência capturada).
+    proximaExperimental: proximaExperimental
+      ? {
+          id: proximaExperimental.id,
+          nome: proximaExperimental.nome,
+          data: proximaExperimental.dataExperimental!.toISOString(),
+        }
+      : null,
   };
 }
 

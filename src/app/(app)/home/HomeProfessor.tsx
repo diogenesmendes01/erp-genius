@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkinExperimental } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 interface Turma {
   id: string;
@@ -21,10 +22,14 @@ export function HomeProfessor({
   nome,
   turmas,
   experimentais,
+  proximaExperimental,
+  preferenciaFusoExibicao,
 }: {
   nome: string;
   turmas: Turma[];
   experimentais: Experimental[];
+  proximaExperimental: Experimental | null;
+  preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -39,18 +44,18 @@ export function HomeProfessor({
     else router.refresh();
   }
 
-  const proxima = [...experimentais].sort((a, b) => a.data.localeCompare(b.data))[0] ?? null;
+  const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
       {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
-      {proxima && (
+      {proximaExperimental && (
         <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
           <div className="text-xs font-medium text-brand-700">Próxima aula experimental</div>
           <div className="mt-1 text-lg font-medium text-gray-800">
-            {new Date(proxima.data).toLocaleString("pt-BR", { weekday: "short", hour: "2-digit", minute: "2-digit" })} · {proxima.nome}
+            {data(proximaExperimental.data).texto} ({data(proximaExperimental.data).fuso}; origem UTC) · {proximaExperimental.nome}
           </div>
         </section>
       )}
@@ -66,7 +71,7 @@ export function HomeProfessor({
                 <div className="text-sm">
                   <span className="font-medium text-gray-800">{e.nome}</span>
                   <span className="ml-2 text-gray-500">
-                    {new Date(e.data).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    {data(e.data).texto} ({data(e.data).fuso}; origem UTC)
                   </span>
                 </div>
                 <div className="flex gap-2">
