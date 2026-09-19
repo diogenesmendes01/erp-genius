@@ -44,6 +44,22 @@ function todos(no: unknown, tipo: string): No[] {
 
 }
 
+function textoDoNo(no: unknown): string {
+
+  if (typeof no === "string" || typeof no === "number") return String(no);
+
+  if (Array.isArray(no)) return no.map(textoDoNo).join("");
+
+  if (!no || typeof no !== "object") return "";
+
+  const atual = no as No;
+
+  if (typeof atual.type === "function") return textoDoNo((atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {}));
+
+  return textoDoNo(atual.props?.children);
+
+}
+
 const acordos = [{ id: "acordo", matriculaId: "matricula", matricula: "M-1", moeda: "BRL", unidade: "HORA", quantidadePactuada: "2.00", valorPorUnidade: "50.00", valorTotalPactuado: "100.00", contrapartida: "Serviço pedagógico comprovado", formulaDescricao: "2 horas x 50", cobrancas: [{ id: "cobranca", codigo: "C-1", saldo: "100.00", valorMaximo: "100.00" }], confirmacoes: [{ id: "confirmacao", periodoInicio: "2026-09-01", periodoFim: "2026-09-30", quantidadeComprovada: "2.00", referenciaServico: "SET-1", evidencia: "registro de serviço", propostas: [{ id: "proposta", valor: "100.00", destinos: [{ cobrancaId: "cobranca", valor: "100.00" }], decisao: null }] }] }];
 
 function preparar() {
@@ -157,4 +173,27 @@ it("mostra compensação aplicada com cobrança, valor e evidência da decisão"
   expect(JSON.stringify(todos(arvore, "li"))).toContain("100.00");
   expect(JSON.stringify(todos(arvore, "li"))).toContain("C-1");
   expect(todos(arvore, "form")).toHaveLength(2);
+});
+
+it("exibe somente a aplicação no fuso pessoal, sem converter período ou valor da permuta", () => {
+  preparar();
+  const conjunto = [{ ...acordos[0], confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-01-01T02:30:00.000Z" }] } }] }] }];
+
+  const texto = textoDoNo(PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: true, preferenciaFusoExibicao: "America/Costa_Rica" }));
+
+  expect(texto).toContain("31/12/2025, 20:30");
+  expect(texto).toContain("horário exibido em America/Costa_Rica; origem UTC");
+  expect(texto).toContain("100.00");
+  expect(texto).toContain("2026-09-01");
+  expect(texto).toContain("2026-09-30");
+});
+
+it("recorre a UTC para a aplicação quando a preferência está ausente", () => {
+  preparar();
+  const conjunto = [{ ...acordos[0], confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-01-01T02:30:00.000Z" }] } }] }] }];
+
+  const texto = textoDoNo(todos(PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: true, preferenciaFusoExibicao: null }), "li"));
+
+  expect(texto).toContain("01/01/2026, 02:30");
+  expect(texto).toContain("horário exibido em UTC; origem UTC");
 });

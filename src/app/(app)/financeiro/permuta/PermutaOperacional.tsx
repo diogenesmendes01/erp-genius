@@ -8,6 +8,7 @@ import {
   prepararAcordoPermuta,
   proporCompensacaoPermuta,
 } from "@/server/financeiro/permuta-servico";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -105,7 +106,7 @@ function dados(formulario: HTMLFormElement) {
 }
 const campo = (formulario: HTMLFormElement, nome: string) => String(dados(formulario).get(nome) ?? "").trim();
 
-export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, podeAprovar, opcoes = [] }: { opcoes?: Opcao[]; acordos: Acordo[]; podeFinanceiro: boolean; podePedagogico: boolean; podeAprovar: boolean }) {
+export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, podeAprovar, opcoes = [], preferenciaFusoExibicao = null }: { opcoes?: Opcao[]; acordos: Acordo[]; podeFinanceiro: boolean; podePedagogico: boolean; podeAprovar: boolean; preferenciaFusoExibicao?: string | null }) {
   const [matriculaSelecionada, selecionarMatricula] = useState("");
   const elegiveis = opcoes.filter(c => c.matriculaId === matriculaSelecionada);
   const matriculas = [...new Map(opcoes.map(c => [c.matriculaId, c])).values()];
@@ -139,7 +140,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
           {!!proposta.decisao?.aplicacoes?.length && <details>
             <summary>Compensações aplicadas</summary>
             <ul>{proposta.decisao.aplicacoes.map(aplicacao => <li key={aplicacao.id}>
-              {acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {acordo.moeda} {aplicacao.valor} · {new Date(aplicacao.aplicadaEm).toLocaleString("pt-BR", { timeZone: "UTC" })} (UTC) · serviço compensado
+              {(() => { const exibicao = formatarInstanteExibicao(aplicacao.aplicadaEm, preferenciaFusoExibicao, "UTC"); return <>{acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {acordo.moeda} {aplicacao.valor} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC) · serviço compensado</>; })()}
             </li>)}</ul>
           </details>}
           {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
