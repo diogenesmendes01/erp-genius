@@ -430,3 +430,7 @@ Históricos administrativos de aditivos: `f4d73670` integra preferência pessoal
 Complemento de observações: `880c4cd2` passa a mostrar o instante persistido de cada retorno de tentativa de assinatura do aditivo no fuso pessoal, preservando resultado e referência externa. Não altera consulta, ações ou paginação. SSR3/3 e TypeScript aprovados; revisão independente da corretiva em andamento.
 
 Revisão independente concluída para a corretiva880c4cd2: resultado/referência, paginação e vigência preservados; recorte combinado14/14 e TypeScript saída0. A validação é SSR/mockada. O aceite desta correção não resolve a paginação anterior de observações nem a integração externa de assinatura.
+
+### Histórico completo de observações de aditivo — 19/09/2026
+
+A consulta de assinatura do aditivo permite navegar pelas observações de cada tentativa, em páginas de vinte, preservando a paginação das tentativas e conferências. A ordem usa instante observado e identificador para desempatar; parâmetros inválidos ou tentativa fora da página selecionada são recusados. Revalidar usuário ativo e papel, vínculo matrícula/proposta/artefato e processo antes de retornar os registros. Esta entrega substitui o antigo resumo sem acesso às observações anteriores. Não executa envio nem integra fornecedor. Commit58bd919e; DEV49/49 integrações e quatro testes da tela, TypeScript aprovado. Validação do integrador e revisão independente registradas no quadro único.
