@@ -191,6 +191,8 @@ As filas, propostas e decisões de correções acadêmicas e de resolução de p
 
 Na segunda chamada designada, a data administrativa da realização e do lançamento da nota original pode ser apresentada no fuso pessoal, com origem UTC identificada; o instante `realizadaEm`, o campo civil `dataHora` e o campo explícito `fuso` do envio não são modificados. O histórico de designações da proposta segue a mesma apresentação UTC. Evidência local: três SSR cobrem conversão na véspera, fallback UTC, entrada ainda em UTC com preferência `America/Costa_Rica` e guarda antes das leituras.
 
+O histórico de reservas de segunda chamada mostra reserva, encontro, ocorrência, registro e realização no fuso pessoal válido. Sem preferência, recorre à referência institucional preservada pela consulta; essa referência não é apresentada como fuso de origem de um encontro. A leitura da preferência acontece após a guarda, sem alterar ações ou paginação. Evidência local: três SSR cobrem todos os instantes atravessando o dia, fallback institucional, guarda e links de paginação.
+
 Conflito docente considera encontros efetivos e indisponibilidades aprovadas nas datas futuras, não só a grade semanal atual. Alteração de ausência, substituição ou calendário identifica encontros já publicados afetados e exige solução aprovada. Não cancelar nem trocar professor silenciosamente.
 
 Cada mutação relevante grava dados e evento na mesma transação, com versão e chave de repetição quando aplicável. Propostas coletivas revalidam todos os objetos; falha preserva o conjunto anterior. A aplicação no banco e o envio externo não formam uma única transação: persistir intenção de aviso após a mudança confirmada e processar com revalidação e registro durável.
