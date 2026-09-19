@@ -15,7 +15,7 @@ const detalheSchema = z.object({ reservaId: id }).strict();
 
 type ReservaDocente = {
   reservaId: string; propostaId: string; matriculaId: string; turmaId: string; alocacaoId: string; codigoAvaliacao: string; status: string;
-  aluno: string; matriculaCodigo: string | null; turma: string; inicio: Date; fim: Date; encontroStatus: string; encontroProfessorId: string | null;
+  aluno: string; matriculaCodigo: string | null; turma: string; inicio: Date; fim: Date; fusoOrigem: string; encontroStatus: string; encontroProfessorId: string | null;
   realizacaoId: string | null; realizadaEm: Date | null; realizadorId: string | null; realizadorNome: string | null; lancamentoId: string | null; versaoNota: number | null; submetida: boolean | null; oficial: boolean | null; rejeitada: boolean | null; motivoDecisao: string | null;
   regraConteudo?: unknown;
 };
@@ -65,7 +65,7 @@ async function podeLancarNotaTx(tx: Prisma.TransactionClient, r: ReservaDocente,
 const selecionarReserva = Prisma.sql`
   SELECT r.id AS "reservaId",p.id AS "propostaId",p."matriculaId" AS "matriculaId",p."alocacaoId" AS "alocacaoId",p."turmaId" AS "turmaId",r."codigoAvaliacao" AS "codigoAvaliacao",r.status,
     aluno."primeiroNome"||CASE WHEN aluno.sobrenome IS NULL THEN '' ELSE ' '||aluno.sobrenome END AS aluno,m.codigo AS "matriculaCodigo",COALESCE(t.nome,t.codigo,'Turma sem identificação') AS turma,
-    e.inicio,e.fim,e.status AS "encontroStatus",e."professorId" AS "encontroProfessorId",realizada.id AS "realizacaoId",realizada."realizadaEm" AS "realizadaEm",realizada."professorId" AS "realizadorId",realizador.nome AS "realizadorNome",
+    e.inicio,e.fim,e."fusoOrigem",e.status AS "encontroStatus",e."professorId" AS "encontroProfessorId",realizada.id AS "realizacaoId",realizada."realizadaEm" AS "realizadaEm",realizada."professorId" AS "realizadorId",realizador.nome AS "realizadorNome",
     lancamento.id AS "lancamentoId",lancamento.versao AS "versaoNota",lancamento.submetida,lancamento.oficial,lancamento.rejeitada,lancamento."motivoDecisao" AS "motivoDecisao",regra.conteudo AS "regraConteudo"
   FROM "ReservaSegundaChamada" r JOIN "PropostaSegundaChamada" p ON p.id=r."propostaId" JOIN "Matricula" m ON m.id=p."matriculaId" JOIN "Aluno" aluno ON aluno.id=m."alunoId"
   JOIN "Turma" t ON t.id=p."turmaId" JOIN "VersaoRegraAvaliacao" regra ON regra.id=p."regraId" JOIN "AgendaSegundaChamada" agenda ON agenda."reservaId"=r.id JOIN "EncontroAgenda" e ON e.id=agenda."encontroId"
@@ -80,7 +80,7 @@ export async function listarSegundasChamadasDocente(input: { depoisId?: string }
     return prisma.$transaction(async tx => {
       await exigirProfessorAtivo(tx, u.id);
       const reservas = await tx.$queryRaw<ReservaDocente[]>(Prisma.sql`${selecionarReserva} WHERE ${escopoDocente(u.id)} AND r.id>${d.depoisId ?? ""} ORDER BY r.id ASC LIMIT 21`);
-      const itens = await Promise.all(reservas.slice(0,20).map(async r => ({ reservaId: r.reservaId, codigoAvaliacao: r.codigoAvaliacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), status: r.status,
+      const itens = await Promise.all(reservas.slice(0,20).map(async r => ({ reservaId: r.reservaId, codigoAvaliacao: r.codigoAvaliacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fusoOrigem: r.fusoOrigem, status: r.status,
         aluno: r.aluno, matriculaCodigo: r.matriculaCodigo, turma: r.turma, realizacao: r.realizacaoId && r.realizadaEm ? { id: r.realizacaoId, realizadaEm: r.realizadaEm.toISOString() } : null,
         podeRealizar: await podeRealizarTx(tx, r, u.id) })));
       return { itens, proximoId: reservas.length > 20 ? reservas[19].reservaId : null };
@@ -99,7 +99,7 @@ export async function consultarSegundaChamadaDocente(input: { reservaId: string 
       const avaliacao = regra.avaliacoes.find(a => a.codigo === r.codigoAvaliacao);
       if (!avaliacao) throw new ErroRegra("Avaliação da segunda chamada não pertence à regra vigente.");
       return { reservaId: r.reservaId, alocacaoId: r.alocacaoId, identificacao: await identificarMatriculaAvaliacao(tx, r.matriculaId, r.turmaId), codigoAvaliacao: r.codigoAvaliacao,
-        horario: { inicio: r.inicio.toISOString(), fim: r.fim.toISOString() }, status: r.status,
+        horario: { inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fusoOrigem: r.fusoOrigem }, status: r.status,
         realizacao: r.realizacaoId && r.realizadaEm ? { id: r.realizacaoId, realizadaEm: r.realizadaEm.toISOString() } : null, realizador: r.realizadorId ? { nome: r.realizadorNome ?? "Professor não identificado" } : null,
         regularizacao: !!r.realizacaoId && r.realizadorId !== u.id, notaOriginal: estadoNota(r), escala: regra.escala,
         habilidadesNecessarias: avaliacao.habilidades, versaoEsperada: r.versaoNota ?? 0, podeRealizar: await podeRealizarTx(tx, r, u.id), podeLancarNota: await podeLancarNotaTx(tx, r, u.id) };
