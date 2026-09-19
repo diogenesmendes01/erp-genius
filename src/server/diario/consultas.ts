@@ -6,6 +6,7 @@ import { alocacaoCobreAula } from "./alocacoes";
 import { carregarHistoricosContratuais } from "./historico-contratual";
 import { situacaoMatriculaNaAula } from "@/server/matricula/historico-situacao";
 import { carregarCorrecoesAulaEfetivasTx } from "./correcao-aula-efetiva-tx";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
   if (!usuario?.papeis.includes(Papel.PROFESSOR)) return [];
@@ -18,6 +19,8 @@ export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
 
 export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string) {
   if (!usuario?.id || (!ehGestaoDiario(usuario) && !usuario.papeis.includes(Papel.PROFESSOR))) return { aulas: [], proximo: null };
+  const preferencia = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, fusoExibicao: true } });
+  if (!preferencia?.ativo) return { aulas: [], proximo: null };
   const escopo = ehGestaoDiario(usuario) ? {} : { professorId: usuario.id };
   let cursor: { id: string } | undefined;
   if (antesDe) {
@@ -29,7 +32,7 @@ export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string
     where: escopo, orderBy: [{ ocorridaEm: "desc" }, { id: "desc" }], take: 51, ...(cursor ? { cursor, skip: 1 } : {}),
     select: {
       id: true, turmaId: true, professorId: true, ocorridaEm: true, conteudo: true, atualizadoEm: true,
-      encontroId: true, encontro: { select: { professorId: true, status: true, fim: true, finalidade: true, matriculaId: true,
+      encontroId: true, encontro: { select: { professorId: true, status: true, fim: true, finalidade: true, matriculaId: true, fusoOrigem: true,
         publicacaoGravacao: { select: { id: true } }, excecoesGravacao: { where: { decisao: { aprovada: true } }, take: 1, select: { id: true } } } },
       professor: { select: { nome: true } },
       turma: { select: { codigo: true, professorId: true, status: true, vinculosDocentes: true, alocacoes: { where: { OR: [
@@ -70,7 +73,7 @@ export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string
       encontroParaHistoricoCorrecao: podeLerCorrecao ? a.encontroId : null,
       encontroParaGravacao: podeLerCorrecao && a.encontro?.publicacaoGravacao && !a.encontro.excecoesGravacao.length
         && (!correcaoEfetiva || correcaoEfetiva.snapshot.gravacao?.tipo === "OFICIAL") ? a.encontroId : null,
-      ocorridaEm: a.ocorridaEm.toISOString(), conteudo: correcaoEfetiva?.snapshot.conteudo ?? a.conteudo, atualizadoEm: a.atualizadoEm.toISOString(), podeEditar,
+      ocorridaEm: a.ocorridaEm.toISOString(), fusoExibicao: resolverFusoExibicao(preferencia.fusoExibicao, a.encontro?.fusoOrigem ?? "UTC"), conteudo: correcaoEfetiva?.snapshot.conteudo ?? a.conteudo, atualizadoEm: a.atualizadoEm.toISOString(), podeEditar,
       correcaoPublicada: correcaoEfetiva ? { versao: correcaoEfetiva.versao } : null,
       registros: (correcaoEfetiva?.snapshot.registros ?? a.registros).slice().sort((x, y) => x.nomeAluno.localeCompare(y.nomeAluno)).map((r) => ({ alunoId: r.alunoId, nomeAluno: r.nomeAluno, presente: r.presente, observacao: r.observacao, participacao: r.participacao, podeEditar: podeEditar && atuais.has(r.alunoId) })),
     };

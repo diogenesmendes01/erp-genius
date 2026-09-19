@@ -61,7 +61,7 @@ it("aplica substituição independente integralmente e impede aprovação com co
   const acesso = await consultarEncontrosDocente({ encontroId: e1.id });
   expect(acesso).toMatchObject({ ok: true, dado: { encontros: [{ id: e1.id, atribuicaoPropria: true }] } });
   if (!acesso.ok || !acesso.dado) throw new Error("Acesso ausente");
-  expect(Object.keys(acesso.dado.encontros[0]).sort()).toEqual(["id", "inicio", "fim", "fusoOrigem", "status", "professor", "atribuicaoPropria", "turma", "particular"].sort());
+  expect(Object.keys(acesso.dado.encontros[0]).sort()).toEqual(["id", "inicio", "fim", "fusoOrigem", "fusoExibicao", "status", "professor", "atribuicaoPropria", "turma", "particular"].sort());
   authMock.mockResolvedValue({ user: { id: titular.id } });
   expect((await consultarEncontrosDocente({ encontroId: e1.id })).ok).toBe(false);
   expect((await consultarEncontrosDocente({ cursor: e1.id })).ok).toBe(false);
