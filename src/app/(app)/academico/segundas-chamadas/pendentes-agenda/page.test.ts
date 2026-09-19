@@ -1,10 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ listar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ listar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-fila-agenda", () => ({ listarSegundasChamadasSemAgenda: mocks.listar }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 import Page from "./page";
 describe("FilaPendentesAgenda", () => {
+ mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
  it("exibe dados mínimos e cursores codificados", async () => {
   mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [{ propostaSegundaChamadaId: "fonte/a?", aluno: "Ana", matriculaCodigo: "M1", turma: "T1", codigoAvaliacao: "AV1", prazoAte: "2026-10-02T12:00:00.000Z", situacao: { pendente: true, saldo: 1, statusMatricula: "ATIVA", alocacaoAtiva: true, possuiReservaTerminal: false, possuiPendenciaEscola: false, requerPrevia: true } }], proximoCursor: { criadaEm: "2026-09-01T12:00:00.000Z", id: "cursor &/" } } });
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ cursor: JSON.stringify({ criadaEm: "2026-09-02T12:00:00.000Z", id: "anterior" }) }) }));
