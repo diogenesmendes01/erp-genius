@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/diario/avisos-pendencias-diario", () => ({ consultarAvisosDiario: mocks.consultar }));
 
 import Page from "./page";
@@ -18,6 +19,10 @@ const base = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: 
 } });
 
 describe("PendenciasDiarioPage", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+  });
   it("alerta o administrador quando a configuração está ausente", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.ADMINISTRADOR] });
     mocks.consultar.mockResolvedValue(base({ configurada: false, configuracao: { prazoRegularizacaoDiarioMinutos: null, intervaloLembreteDiarioMinutos: null }, itens: [] }));
@@ -35,6 +40,10 @@ describe("PendenciasDiarioPage", () => {
     expect(html).toContain("encontro%2Fa%3F");
     expect(html).toContain("cursor=cursor%20%26%2F");
     expect(html).toContain("Primeira página");
+    expect(html).toContain("07:00");
+    expect(html).toContain("09:00");
+    expect(html).toContain("exibido em America/Costa_Rica; origem America/Sao_Paulo");
+    expect(mocks.preferencia).toHaveBeenCalledTimes(1);
   });
 
   it("mostra acompanhamento vencido à gestão sem oferecer escrita sem atribuição", async () => {
