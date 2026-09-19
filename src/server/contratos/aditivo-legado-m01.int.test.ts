@@ -36,9 +36,10 @@ let catalogo: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
 
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 
-/** Cria a cadeia M01 por ações públicas: lote, mapeamentos, ensaio, vínculo
- * aplicado e obrigação financeira aprovada por outra pessoa. Não insere uma
- * assinatura, uma proposta ou uma aplicação de aditivo artificialmente. */
+/** Cria uma fonte M01 com lote e mapa de origem montados pela fixture, seguida
+ * das ações públicas de ensaio, vínculo aplicado e obrigação financeira
+ * aprovada por outra pessoa. Não insere assinatura, proposta ou aplicação de
+ * aditivo artificialmente. */
 async function criarMatriculaM01(nome: string) {
   const origem = `M01-ADITIVO-${randomUUID()}`;
   const alunoOrigemId = `aluno-${randomUUID()}`;
@@ -149,7 +150,11 @@ it("DCT/Q117: M01 sem original assinado apto não propõe nem aplica aditivo e p
   const antes = {
     propostas: await prisma.propostaAditivoContratual.count(),
     aplicacoes: await prisma.aplicacaoCondicoesAditivo.count(),
+    preparacoes: await prisma.preparacaoComercialMatricula.count(),
+    conclusoes: await prisma.conclusaoAssinaturaContratual.count(),
     eventos: await prisma.evento.count({ where: { tipo: { in: ["AditivoContratualProposto", "CondicoesAditivoFormalizadas", "CondicoesAditivoAplicadas"] } } }),
+    alvoCobranca: await prisma.cobranca.findUniqueOrThrow({ where: { id: alvo.cobrancaId } }),
+    alvoMatricula: await prisma.matricula.findUniqueOrThrow({ where: { id: alvo.matriculaId } }),
     outraCobranca: await prisma.cobranca.findUniqueOrThrow({ where: { id: outro.cobrancaId } }),
     outraMatricula: await prisma.matricula.findUniqueOrThrow({ where: { id: outro.matriculaId } }),
   };
@@ -168,7 +173,11 @@ it("DCT/Q117: M01 sem original assinado apto não propõe nem aplica aditivo e p
   expect(await prepararAditivoContratual(tentativa)).toMatchObject({ ok: false, erro: expect.stringContaining("Conclusão contratual indisponível") });
   expect(await prisma.propostaAditivoContratual.count()).toBe(antes.propostas);
   expect(await prisma.aplicacaoCondicoesAditivo.count()).toBe(antes.aplicacoes);
+  expect(await prisma.preparacaoComercialMatricula.count()).toBe(antes.preparacoes);
+  expect(await prisma.conclusaoAssinaturaContratual.count()).toBe(antes.conclusoes);
   expect(await prisma.evento.count({ where: { tipo: { in: ["AditivoContratualProposto", "CondicoesAditivoFormalizadas", "CondicoesAditivoAplicadas"] } } })).toBe(antes.eventos);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: alvo.cobrancaId } })).toEqual(antes.alvoCobranca);
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: alvo.matriculaId } })).toEqual(antes.alvoMatricula);
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: outro.cobrancaId } })).toEqual(antes.outraCobranca);
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: outro.matriculaId } })).toEqual(antes.outraMatricula);
 });
