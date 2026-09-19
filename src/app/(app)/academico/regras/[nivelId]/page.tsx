@@ -4,20 +4,26 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRegrasAvaliacao } from "@/server/avaliacoes/regras";
 import { DecidirRegra, ProporRegra } from "./Formularios";
 import { ResumoRegra } from "./ResumoRegra";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function RegraNivelPage({ params, searchParams }: { params: Promise<{ nivelId: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { nivelId } = await params; const p = Number((await searchParams).pagina ?? 1);
-  const r = await consultarRegrasAvaliacao({ nivelId, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 });
+  const [r, preferencia] = await Promise.all([
+    consultarRegrasAvaliacao({ nivelId, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-6">
     <Link href="/academico/regras" className="underline">Outros níveis</Link>
     <h1 className="text-2xl font-medium">Avaliações — {d.nivel.idioma.nome} / {d.nivel.codigo}</h1>
     <p>{d.vigente ? `Última versão publicada: ${d.vigente.versao}.` : "Nenhuma versão publicada."} As versões anteriores permanecem no histórico.</p>
     {d.regras.map(v => <article key={v.id} className="space-y-4 rounded border p-4">
       <h2 className="text-lg font-medium">Versão {v.versao} — {v.decisao ? v.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando conferência"}</h2>
-      <p>Preparada por {v.preparador.nome} em {v.criadaEm.toLocaleString("pt-BR", { timeZone: "UTC" })} UTC.</p><p className="whitespace-pre-wrap">Motivo: {v.motivo}</p>
+      <p>Preparada por {v.preparador.nome} em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">Motivo: {v.motivo}</p>
       <ResumoRegra conteudo={v.conteudo} />
       {v.decisao && <p className="whitespace-pre-wrap">Decisão por {v.decisao.decisor.nome}: {v.decisao.motivo}</p>}
       {v.podeDecidir && <DecidirRegra regraId={v.id} conteudoHash={v.conteudoHash} podeAprovar={v.podeAprovar} />}

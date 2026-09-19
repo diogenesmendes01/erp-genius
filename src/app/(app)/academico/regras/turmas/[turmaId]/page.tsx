@@ -4,6 +4,8 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarMigracoesRegra, consultarPreparacaoMigracao } from "@/server/avaliacoes/migracao-regra";
 import { ResumoRegra, type ConteudoRegra } from "../../[nivelId]/ResumoRegra";
 import { DecidirMigracao, ProporMigracao } from "./Formularios";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 const nomesCampos: Record<keyof ConteudoRegra, string> = {
   titulo: "Título", aplicacao: "Condições de aplicação", escala: "Escala de notas", minimoGeral: "Mínimo da média geral",
@@ -28,9 +30,13 @@ export default async function MigracaoPage({ params, searchParams }: { params: P
   const { turmaId } = await params; const p = Number((await searchParams).pagina ?? 1);
   const base = await consultarPreparacaoMigracao({ turmaId });
   if (!base.ok || !base.dado) return <p role="alert">{base.ok ? "Consulta indisponível." : base.erro}</p>;
-  const historico = await consultarMigracoesRegra({ turmaId, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 });
+  const [historico, preferencia] = await Promise.all([
+    consultarMigracoesRegra({ turmaId, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!historico.ok || !historico.dado) return <p role="alert">{historico.ok ? "Histórico indisponível." : historico.erro}</p>;
   const d = base.dado, h = historico.dado;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-6">
     <nav className="flex gap-4"><Link className="underline" href="/configuracao/turmas">Turmas</Link><Link className="underline" href={`/academico/regras/${d.turma.nivelId}`}>Regras do nível</Link></nav>
     <h1 className="text-2xl font-medium">Regras da turma {d.turma.nome ?? d.turma.codigo ?? "selecionada"}</h1>
@@ -45,10 +51,10 @@ export default async function MigracaoPage({ params, searchParams }: { params: P
     {!h.propostas.length && <p>Nenhuma mudança proposta.</p>}
     {h.propostas.map(v => <article key={v.id} className="space-y-4 rounded border p-4">
       <h3 className="text-lg font-medium">Proposta {v.versao} — {v.decisao ? v.decisao.aprovada ? "Aplicada" : "Rejeitada" : "Aguardando decisão"}</h3>
-      <p>Preparada por {v.preparador.nome} em {v.criadaEm.toLocaleString("pt-BR", { timeZone: "UTC" })} UTC.</p><p className="whitespace-pre-wrap">{v.motivo}</p>
+      <p>Preparada por {v.preparador.nome} em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{v.motivo}</p>
       <Comparacao origem={v.origem} destino={v.destino} alteracoes={v.alteracoes} encontros={v.encontrosRevisados} alocacoes={v.alocacoesAtivasRevisadas} />
       {v.pendencia && <p role="status" className="font-medium text-amber-800">{v.pendencia}</p>}
-      {v.decisao && <p className="whitespace-pre-wrap">Decisão de {v.decisao.decisor.nome} em {v.decisao.criadaEm.toLocaleString("pt-BR", { timeZone: "UTC" })} UTC: {v.decisao.motivo}</p>}
+      {v.decisao && <p className="whitespace-pre-wrap">Decisão de {v.decisao.decisor.nome} em {formatarInstanteExibicao(v.decisao.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC): {v.decisao.motivo}</p>}
       {v.podeDecidir && <DecidirMigracao propostaId={v.id} estadoHash={v.estadoHash} podeAprovar={v.podeAprovar} />}
       {!v.decisao && !v.podeDecidir && <p>Outra pessoa autorizada precisa registrar a decisão.</p>}
     </article>)}
