@@ -145,7 +145,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
       propostas={propostasRetomada.ok ? propostasRetomada.dado ?? [] : []}
       erroConsulta={!contextoRetomada.ok ? contextoRetomada.erro : !propostasRetomada.ok ? propostasRetomada.erro : null}
     />}
-    <AcessoAulasPainel alunoId={id} /><InformesPagamento informes={informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
+    <AcessoAulasPainel alunoId={id} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} /><InformesPagamento informes={informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
     <ConcluirMatriculas matriculas={f.aluno.matriculas.filter((m) => m.status === "AGUARDANDO" || m.status === "RASCUNHO").map((m) => ({ id: m.id, nome: `${m.codigo ?? "Matrícula"} · ${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} />
     {tem(Papel.SECRETARIA_ACADEMICA) && f.aluno.matriculas.map((m) => <Link key={m.id} className="block text-sm text-brand-700 underline" href={`/secretaria?matriculaId=${m.id}`}>Consultar cadastro e confirmação documental da matrícula {m.codigo}</Link>)}
   </div>;

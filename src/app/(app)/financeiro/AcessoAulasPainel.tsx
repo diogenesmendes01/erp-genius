@@ -4,11 +4,23 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { carregarGestaoAcessoAulas, type GestaoAcessoAulas } from "@/server/cobrancas/acesso-aulas-consultas";
 import { bloquearAcesso, desbloquearAcesso, decidirSolicitacaoAcessoAulas } from "@/server/cobrancas/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = "rounded-md border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50";
 
-export function AcessoAulasPainel({ matriculaId, alunoId }: { matriculaId?: string; alunoId?: string }) {
+type SolicitacaoAcesso = GestaoAcessoAulas["matriculas"][number]["solicitacoes"][number];
+
+export function HistoricoSolicitacaoAcessoAulas({ solicitacao, preferenciaFusoExibicao = null }: { solicitacao: SolicitacaoAcesso; preferenciaFusoExibicao?: string | null }) {
+  const criado = formatarInstanteExibicao(solicitacao.criadoEm, preferenciaFusoExibicao, "UTC");
+  const decidido = solicitacao.decididoEm ? formatarInstanteExibicao(solicitacao.decididoEm, preferenciaFusoExibicao, "UTC") : null;
+  return <>
+    <p className="text-xs text-gray-500">Solicitante: {solicitacao.solicitante} · {criado.texto} (horário exibido em {criado.fuso}; origem UTC)</p>
+    {solicitacao.aprovador && <p className="text-xs text-gray-600">Decisão de {solicitacao.aprovador}: {solicitacao.motivoDecisao}{decidido && ` · ${decidido.texto} (horário exibido em ${decidido.fuso}; origem UTC)`}</p>}
+  </>;
+}
+
+export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibicao = null }: { matriculaId?: string; alunoId?: string; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [dados, setDados] = useState<GestaoAcessoAulas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -77,8 +89,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId }: { matriculaId?: stri
       {m.solicitacoes.map((p) => <div key={p.id} className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
         <p className="font-medium">{p.bloquear ? "Restrição manual" : "Liberação manual"} · {p.status === "PENDENTE" ? "Aguardando decisão" : p.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</p>
         <p>{p.motivo}</p>
-        <p className="text-xs text-gray-500">Solicitante: {p.solicitante} · {new Date(p.criadoEm).toLocaleString("pt-BR")}</p>
-        {p.aprovador && <p className="text-xs text-gray-600">Decisão de {p.aprovador}: {p.motivoDecisao}</p>}
+        <HistoricoSolicitacaoAcessoAulas solicitacao={p} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         {p.podeDecidir && <div className="space-y-2">
           <label className="block text-xs">Motivo da decisão<textarea className={campo} rows={2} maxLength={2000} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
           <div className="flex gap-2"><button className={botao} disabled={pendente || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar</button><button className={botao} disabled={pendente || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar</button></div>
