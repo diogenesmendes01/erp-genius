@@ -32,6 +32,7 @@ import {
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
 import { definirTemperatura, moverEtapa, registrarNotaInterna } from "@/server/comercial/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -39,22 +40,31 @@ import { PagamentoModal } from "@/components/PagamentoModal";
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
 
-function horaCurta(iso: string): string {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function horaCurta(iso: string, preferenciaFusoExibicao: string | null): string {
+  return formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC").texto;
 }
 
-function diaLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+function dataHoraInstante(iso: string, preferenciaFusoExibicao: string | null): string {
+  return formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC").texto;
+}
+
+function diaInstante(iso: string, preferenciaFusoExibicao: string | null): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeZone: resolverFusoExibicao(preferenciaFusoExibicao, "UTC"),
+  }).format(new Date(iso));
 }
 
 export function InboxCliente({
   conversas,
   thread,
   podeCobranca,
+  preferenciaFusoExibicao,
 }: {
   conversas: ConversaResumo[];
   thread: ThreadConversa | null;
   podeCobranca: boolean;
+  preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
   const [busca, setBusca] = useState("");
@@ -129,7 +139,7 @@ export function InboxCliente({
                     </span>
                     <span className="flex shrink-0 items-center gap-1.5">
                       {c.ultimaMensagemEm && (
-                        <span className="text-[10px] text-gray-400">{horaCurta(c.ultimaMensagemEm)}</span>
+                        <span className="text-[10px] text-gray-400">{horaCurta(c.ultimaMensagemEm, preferenciaFusoExibicao)}</span>
                       )}
                       {c.naoLidas > 0 && (
                         <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
@@ -162,6 +172,7 @@ export function InboxCliente({
             key={thread.conversaId}
             thread={thread}
             podeCobranca={podeCobranca}
+            preferenciaFusoExibicao={preferenciaFusoExibicao}
             onErro={setErro}
             onNota={setNota}
           />
@@ -191,11 +202,13 @@ const ORIGEM_LABEL: Record<string, string> = { CRON: "régua", LOTE: "lote", HUM
 function Thread({
   thread,
   podeCobranca,
+  preferenciaFusoExibicao,
   onErro,
   onNota,
 }: {
   thread: ThreadConversa;
   podeCobranca: boolean;
+  preferenciaFusoExibicao: string | null;
   onErro: (m: string | null) => void;
   onNota: (m: string | null) => void;
 }) {
@@ -227,13 +240,13 @@ function Thread({
   const grupos = useMemo(() => {
     const out: { dia: string; mensagens: ThreadConversa["mensagens"] }[] = [];
     for (const m of thread.mensagens) {
-      const dia = diaLabel(m.criadoEm);
+      const dia = diaInstante(m.criadoEm, preferenciaFusoExibicao);
       const ultimo = out[out.length - 1];
       if (ultimo && ultimo.dia === dia) ultimo.mensagens.push(m);
       else out.push({ dia, mensagens: [m] });
     }
     return out;
-  }, [thread.mensagens]);
+  }, [thread.mensagens, preferenciaFusoExibicao]);
 
   const vinculos = [
     thread.matricula && { label: `matrícula · ${thread.matricula.codigo ?? thread.matricula.id}`, href: null },
@@ -260,7 +273,7 @@ function Thread({
               {thread.janela24h &&
                 (thread.janela24h.aberta ? (
                   <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-green-700">
-                    janela 24h aberta até {horaCurta(thread.janela24h.fechaEm!)}
+                    janela 24h aberta até {horaCurta(thread.janela24h.fechaEm!, preferenciaFusoExibicao)}
                   </span>
                 ) : (
                   <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700">
@@ -324,14 +337,14 @@ function Thread({
       {/* Avisos de estado */}
       {optOut && (
         <div className="border-b border-gray-100 bg-red-50 px-4 py-2 text-xs text-red-700">
-          O contato pediu opt-out em {diaLabel(thread.contato.optOutEm!)} — nenhuma mensagem sai por aqui
+          O contato pediu opt-out em {dataHoraInstante(thread.contato.optOutEm!, preferenciaFusoExibicao)} — nenhuma mensagem sai por aqui
           (nem automática) até remover.
         </div>
       )}
       {!optOut && thread.silencio.ativo && (
         <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-amber-50 px-4 py-2 text-xs text-amber-800">
           <span>
-            Régua automática em silêncio até {new Date(thread.silencio.ate!).toLocaleString("pt-BR")} — o contato
+            Régua automática em silêncio até {dataHoraInstante(thread.silencio.ate!, preferenciaFusoExibicao)} — o contato
             respondeu e ninguém tratou (S4).
           </span>
           {podeCobranca && (
@@ -359,7 +372,7 @@ function Thread({
               thread.cobrancaAtiva.saldo > 0 ? thread.cobrancaAtiva.saldo : thread.cobrancaAtiva.valorNegociado,
               thread.cobrancaAtiva.moeda,
             )}{" "}
-            · vence {diaLabel(thread.cobrancaAtiva.vencimento)}
+            · vence {thread.cobrancaAtiva.vencimento.estado === "CONFIRMADO" ? thread.cobrancaAtiva.vencimento.dataCivil : "em conferência"}
           </span>
           <button className={btnSec} onClick={() => setPagar(true)}>
             Registrar pagamento
@@ -395,7 +408,7 @@ function Thread({
       )}
 
       {/* Cockpit do vendedor: funil do lead sem sair da conversa (doc 08 §CRM pela conversa) */}
-      {thread.lead && <CockpitLead lead={thread.lead} onErro={onErro} onNota={onNota} />}
+      {thread.lead && <CockpitLead lead={thread.lead} onErro={onErro} onNota={onNota} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
 
       {/* Mensagens */}
       <div className="flex-1 space-y-2 overflow-y-auto bg-surface-muted px-4 py-3">
@@ -404,7 +417,7 @@ function Thread({
             <div className="my-2 text-center text-[10px] text-gray-400">{g.dia}</div>
             <div className="space-y-1.5">
               {g.mensagens.map((m) => (
-                <Bolha key={m.id} m={m} />
+                <Bolha key={m.id} m={m} preferenciaFusoExibicao={preferenciaFusoExibicao} />
               ))}
             </div>
           </div>
@@ -443,7 +456,7 @@ function Thread({
   );
 }
 
-function Bolha({ m }: { m: ThreadConversa["mensagens"][number] }) {
+function Bolha({ m, preferenciaFusoExibicao }: { m: ThreadConversa["mensagens"][number]; preferenciaFusoExibicao: string | null }) {
   const saida = m.direcao === "SAIDA";
   const origem = saida ? (m.origem ? (ORIGEM_LABEL[m.origem] ?? "") : "celular") : "";
   return (
@@ -461,7 +474,7 @@ function Bolha({ m }: { m: ThreadConversa["mensagens"][number] }) {
           {m.templateNome && <span>template {m.templateNome} ·</span>}
           {origem && <span>{origem} ·</span>}
           {m.autorNome && <span>{m.autorNome} ·</span>}
-          <span>{horaCurta(m.criadoEm)}</span>
+          <span>{horaCurta(m.criadoEm, preferenciaFusoExibicao)}</span>
           {saida && <StatusEnvio status={m.status} />}
         </div>
       </div>
@@ -762,10 +775,12 @@ function CockpitLead({
   lead,
   onErro,
   onNota,
+  preferenciaFusoExibicao,
 }: {
   lead: NonNullable<ThreadConversa["lead"]>;
   onErro: (m: string) => void;
   onNota: (m: string) => void;
+  preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
@@ -838,12 +853,7 @@ function CockpitLead({
 
         {lead.dataExperimental && (
           <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-violet-700">
-            experimental {new Date(lead.dataExperimental).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            experimental {dataHoraInstante(lead.dataExperimental, preferenciaFusoExibicao)}
           </span>
         )}
 
@@ -889,7 +899,7 @@ function CockpitLead({
               {lead.notas.map((n) => (
                 <li key={n.id}>
                   <span className="text-amber-700">
-                    {new Date(n.criadoEm).toLocaleString("pt-BR")} · {n.autorNome ?? "sistema"}
+                    {dataHoraInstante(n.criadoEm, preferenciaFusoExibicao)} · {n.autorNome ?? "sistema"}
                   </span>{" "}
                   — {n.nota}
                 </li>
