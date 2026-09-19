@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { consultarResultadosPortalAluno, type ResultadoPortalAluno } from "@/server/portal-aluno/resultados";
 import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechamentos";
+import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export const dynamic = "force-dynamic";
 
@@ -44,11 +46,9 @@ const habilidade = (valor: string) => habilidades[valor] ?? "Habilidade em confe
 
 type FechamentoPortalAluno = Awaited<ReturnType<typeof consultarFechamentosPortalAluno>>[number];
 
-function dataLegivel(valor: string | null) {
+function dataLegivel(valor: string | null, fusoExibicao: string) {
   if (!valor) return null;
-  const data = new Date(valor);
-  if (Number.isNaN(data.getTime())) return null;
-  return data.toLocaleDateString("pt-BR", { dateStyle: "long" });
+  return formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
 }
 
 function ResumoFechamento({ resumo, resultadoSuficiente }: { resumo: NonNullable<FechamentoPortalAluno["resumo"]>; resultadoSuficiente: boolean }) {
@@ -73,11 +73,11 @@ function ResumoFechamento({ resumo, resultadoSuficiente }: { resumo: NonNullable
   </section>;
 }
 
-function FechamentoNivel({ fechamento, nivel }: { fechamento: FechamentoPortalAluno; nivel: string }) {
-  const confirmadoEm = dataLegivel(fechamento.confirmadoEm);
+function FechamentoNivel({ fechamento, nivel, fusoExibicao }: { fechamento: FechamentoPortalAluno; nivel: string; fusoExibicao: string }) {
+  const confirmadoEm = dataLegivel(fechamento.confirmadoEm, fusoExibicao);
   const informacoes = [
     fechamento.versao !== null ? `Versão do fechamento ${fechamento.versao}` : null,
-    confirmadoEm ? `Última confirmação em ${confirmadoEm}` : null,
+    confirmadoEm ? `Última confirmação em ${confirmadoEm} (horário exibido em ${fusoExibicao})` : null,
   ].filter((item): item is string => !!item);
   const conteudo = fechamento.estado === "CONFIRMADO_SUFICIENTE"
     ? { titulo: "Fechamento confirmado: resultado suficiente", classe: "border-green-300 bg-green-50 text-green-950", texto: "Este fechamento confirma o resultado acadêmico deste nível. A continuidade do percurso é informada separadamente pela instituição." }
@@ -107,7 +107,14 @@ const rotulosPendencia: Record<keyof ResultadoPortalAluno["matriculas"][number][
 };
 
 export default async function ResultadosPortalAlunoPage() {
-  const [resultado, fechamentos] = await Promise.all([consultarResultadosPortalAluno(), consultarFechamentosPortalAluno()]);
+  // A projeção acadêmica confirma a sessão e o escopo das matrículas antes de
+  // ler a preferência da conta. A preferência muda somente a apresentação.
+  const resultado = await consultarResultadosPortalAluno();
+  const [fechamentos, preferencia] = await Promise.all([
+    consultarFechamentosPortalAluno(),
+    consultarPreferenciaFusoPortalAluno(),
+  ]);
+  const fusoExibicao = resolverFusoExibicao(preferencia.fusoExibicao, "UTC");
   return <section className="mx-auto max-w-3xl space-y-6 p-6 sm:p-10">
     <Link href="/portal-aluno" className="text-sm text-brand-700 underline">Voltar à área do aluno</Link>
     <header><p className="text-sm text-brand-700">Frente acadêmica</p><h1 className="mt-1 text-2xl font-medium">Avaliações, habilidades e frequência</h1><p className="mt-2 text-sm text-gray-600">Mostramos avaliações já oficializadas, o acompanhamento do seu vínculo e, quando houver, a confirmação de fechamento acadêmico.</p></header>
@@ -120,7 +127,7 @@ export default async function ResultadosPortalAlunoPage() {
         const destaMatricula = fechamentos.filter((fechamento) => fechamento.matriculaId === matricula.matriculaId);
         return destaMatricula.length > 0 && <section className="space-y-3" aria-label="Fechamento acadêmico por nível">
           <h3 className="font-medium">Fechamento acadêmico</h3>
-          {destaMatricula.map((fechamento) => <FechamentoNivel key={`${fechamento.matriculaId}-${fechamento.nivelId}`} fechamento={fechamento} nivel={niveis.get(fechamento.nivelId) ?? "Nível acadêmico"} />)}
+          {destaMatricula.map((fechamento) => <FechamentoNivel key={`${fechamento.matriculaId}-${fechamento.nivelId}`} fechamento={fechamento} nivel={niveis.get(fechamento.nivelId) ?? "Nível acadêmico"} fusoExibicao={fusoExibicao} />)}
         </section>;
       })()}
       {!matricula.alocacoes.length && <p className="text-sm text-gray-600">Não há alocação acadêmica disponível neste vínculo.</p>}
