@@ -12,6 +12,7 @@ import {
 import { formatarMoeda, formatarValores, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
@@ -104,7 +105,7 @@ export interface FichaFinanceiraDados {
   permissoes: { registrarPagamento: boolean; somenteInformar: boolean; renegociar: boolean; perdao: boolean };
 }
 
-export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
+export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -112,6 +113,10 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
   const [reneg, setReneg] = useState<FichaFinanceiraDados["cobrancas"][number] | null>(null);
 
   const t = dados.tiles;
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -171,7 +176,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
                       {c.regua.tentativas}ª cobrança
                     </span>
                   )}
-                  {c.regularizacaoIntegral && <Link className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-700" href={c.regularizacaoIntegral.href} title={`Aplicada em ${new Date(c.regularizacaoIntegral.aplicadaEm).toLocaleString("pt-BR")}`}>{c.regularizacaoIntegral.escolha === "CREDITO" ? "Regularizada por crédito" : "Cobertura reprogramada"}</Link>}
+                  {c.regularizacaoIntegral && <Link className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-700" href={c.regularizacaoIntegral.href} title={`Aplicada em ${instanteAdministrativo(c.regularizacaoIntegral.aplicadaEm)}`}>{c.regularizacaoIntegral.escolha === "CREDITO" ? "Regularizada por crédito" : "Cobertura reprogramada"}</Link>}
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-end gap-2">
@@ -208,7 +213,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
                   {TIPO_AJUSTE_LABEL[a.tipo]}: {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}
                   <span className="ml-2 text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
                 </div>
-                <div className="text-xs text-gray-500">{a.motivo} · {a.autor} · {new Date(a.criadoEm).toLocaleDateString("pt-BR")}{a.vigencia ? ` · ${VIGENCIA_INFO[a.vigencia].label}` : ""}</div>
+                <div className="text-xs text-gray-500">{a.motivo} · {a.autor} · {instanteAdministrativo(a.criadoEm)}{a.vigencia ? ` · ${VIGENCIA_INFO[a.vigencia].label}` : ""}</div>
               </li>
             ))}
           </ul>
@@ -240,7 +245,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
               <li key={h.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-gray-800">{h.label}</div>
                 <div className="text-xs text-gray-500">
-                  {new Date(h.quando).toLocaleString("pt-BR")}
+                  {instanteAdministrativo(h.quando)}
                   {h.autor ? ` · ${h.autor}` : ""}
                 </div>
               </li>

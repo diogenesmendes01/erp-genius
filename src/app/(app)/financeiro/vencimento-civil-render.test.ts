@@ -77,4 +77,22 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
     expect(fichaRenderizada).toContain("Vencimento a conferir: A origem não preserva fuso e data civil.");
     expect(migracaoRenderizada).toContain("Vencimento a conferir: A origem não preserva fuso e data civil.");
   });
+
+  it("exibe os instantes administrativos da ficha na preferência sem reinterpretar o vencimento civil", () => {
+    const dados: FichaFinanceiraDados = {
+      ...ficha,
+      historico: [{ id: "historico", quando: "2026-01-01T02:30:00.000Z", label: "Cobrança enviada", autor: "Financeiro" }],
+      ajustes: [{ id: "ajuste", tipo: "DESCONTO", valorDe: 100, valorPara: 90, descontoValor: 10, moeda: "USD", motivo: "Ajuste conferido", autor: "Financeiro", criadoEm: "2026-01-01T02:30:00.000Z", vigencia: null }],
+      cobrancas: [{ ...ficha.cobrancas[0], regularizacaoIntegral: { escolha: "CREDITO", aplicadaEm: "2026-01-01T02:30:00.000Z", href: "/historico" } }],
+    };
+    mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
+    const preferida = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: "America/Costa_Rica" }));
+    const fallback = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: null }));
+
+    expect(preferida).toContain("31/12/2025, 20:30");
+    expect(preferida).toContain("horário exibido em America/Costa_Rica; origem UTC");
+    expect(fallback).toContain("01/01/2026, 02:30");
+    expect(fallback).toContain("horário exibido em UTC; origem UTC");
+    expect(preferida).toContain("vence 01/03/2099 · referência Pacific/Kiritimati");
+  });
 });

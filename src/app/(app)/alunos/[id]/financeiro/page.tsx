@@ -137,7 +137,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
 
   const mostrarRetomada = !contextoRetomada.ok || !propostasRetomada.ok || contextoRetomada.dado?.status === "PAUSADO" || (propostasRetomada.dado?.length ?? 0) > 0;
   return <div className="space-y-8">
-    <FichaFinanceira dados={dados} />
+    <FichaFinanceira dados={dados} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
     <Link className="block text-sm text-brand-700 underline" href={`/alunos/${id}/movimentacoes`}>Pausa, retomada e encerramento por matrícula</Link>
     {tem(Papel.FINANCEIRO) && f.aluno.matriculas.map(m => <Link key={m.id} href={`/matriculas/${m.id}/ocorrencias-financeiras`} className="block underline">Conferir particulares da matrícula {m.codigo ?? m.id}</Link>)}
     {mostrarRetomada && <RetomadasPainel

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { CompensacoesEncerramento, CompensacoesEncerramentoSchema } from "./CompensacoesEncerramento";
 import { useOperacao } from "./useOperacao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { preverComponenteMensalEncerramento } from "@/server/matricula/encerramento-previa";
 import { consultarRascunhoAcertoEncerramento, salvarRascunhoAcertoEncerramento } from "@/server/matricula/encerramento-rascunho";
@@ -18,6 +19,15 @@ import { identificacaoContrato } from "./identificacaoContrato";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
+export function EfetivacaoAcertoHistorico({ executor, aplicadaEm, preferenciaFusoExibicao }: { executor: string; aplicadaEm: string; preferenciaFusoExibicao?: string | null }) {
+  const exibicao = formatarInstanteExibicao(aplicadaEm, preferenciaFusoExibicao, "UTC");
+  return <p>Efetivado por {executor} em {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC).</p>;
+}
+
+export function mensagemConferenciaAcerto({ atual, motivos, conferidoEm, preferenciaFusoExibicao }: { atual: boolean; motivos: string[]; conferidoEm: string; preferenciaFusoExibicao?: string | null }) {
+  const exibicao = formatarInstanteExibicao(conferidoEm, preferenciaFusoExibicao, "UTC");
+  return `${atual ? "Origens conferidas sem alterações nesta consulta. Isso não aprova o acerto." : motivos.join(" ")} Conferido em ${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC).`;
+}
 const ResumoSchema = z.object({ contratos: z.array(z.object({ calculo: z.object({
   matriculaId: z.string(), moeda: z.string(), totalServico: z.string(), saldoDevidoSemCompensarCreditos: z.string(), creditoApuradoSemUtilizacao: z.string(),
   multa: z.object({ valor: z.string() }),
@@ -51,7 +61,7 @@ function ResumoConcluido({ snapshot }: { snapshot: unknown }) {
       <p>Crédito apurado: {c.consolidacao.totais.creditoApuradoSemUtilizacao}. Multa aplicada: {c.consolidacao.totais.multaProposta}.</p></>}
   </div>)}</div>;
 }
-export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas }: { alunoId: string; solicitacaoId: string; matriculas: { id: string; codigo: string | null }[] }) {
+export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, preferenciaFusoExibicao = null }: { alunoId: string; solicitacaoId: string; matriculas: { id: string; codigo: string | null }[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [ocupado, iniciar] = useOperacao();
   const [contextos, setContextos] = useState<Contexto[] | null>(null);
@@ -85,7 +95,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas }: { alu
   }); }
   if (rascunho?.efetivacao) return <section className="space-y-3 border-t pt-3">
     <h3 className="font-medium">Encerramento concluído</h3>
-    <p>Efetivado por {rascunho.efetivacao.executor.nome} em {new Date(rascunho.efetivacao.aplicadaEm).toLocaleString("pt-BR")}.</p>
+    <EfetivacaoAcertoHistorico executor={rascunho.efetivacao.executor.nome} aplicadaEm={rascunho.efetivacao.aplicadaEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     <p>Memória da versão {rascunho.versao} aprovada. Consulte a ficha financeira para recebimentos, utilização de créditos e devoluções posteriores.</p>
     <ResumoConcluido snapshot={rascunho.snapshot} />
     <a href={`/alunos/${alunoId}/financeiro`}>Abrir ficha financeira</a>
@@ -101,7 +111,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas }: { alu
         try {
           const r = await conferirValidadeRascunhoEncerramento({ alunoId, solicitacaoId, rascunhoId: rascunho.id });
           if (!r.ok || !r.dado) { setErro(r.ok ? "Conferência indisponível." : r.erro); return; }
-          setValidade(`${r.dado.atual ? "Origens conferidas sem alterações nesta consulta. Isso não aprova o acerto." : r.dado.motivos.join(" ")} Conferido em ${new Date(r.dado.conferidoEm).toLocaleString("pt-BR")}.`);
+          setValidade(mensagemConferenciaAcerto({ ...r.dado, preferenciaFusoExibicao }));
         } catch { setErro("Não foi possível conferir as origens atuais."); }
       }); }}>Conferir se o rascunho continua atual</button>
       {validade && <p role="status">{validade}</p>}
