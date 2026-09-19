@@ -434,3 +434,5 @@ Revisão independente concluída para a corretiva880c4cd2: resultado/referência
 ### Histórico completo de observações de aditivo — 19/09/2026
 
 A consulta de assinatura do aditivo permite navegar pelas observações de cada tentativa, em páginas de vinte, preservando a paginação das tentativas e conferências. A ordem usa instante observado e identificador para desempatar; parâmetros inválidos ou tentativa fora da página selecionada são recusados. Revalidar usuário ativo e papel, vínculo matrícula/proposta/artefato e processo antes de retornar os registros. Esta entrega substitui o antigo resumo sem acesso às observações anteriores. Não executa envio nem integra fornecedor. Commit58bd919e; DEV49/49 integrações e quatro testes da tela, TypeScript aprovado. Validação do integrador e revisão independente registradas no quadro único.
+
+Revisão independente da paginação58bd919e concluída: DEV1 em a0074770,49/49 integrações,4/4SSR e TypeScript saída0. Integrador também49/49,4/4SSR e TypeScript0. Evidências e limites registrados no quadro único; ausência de transporte externo continua pendente da integração do fornecedor.
