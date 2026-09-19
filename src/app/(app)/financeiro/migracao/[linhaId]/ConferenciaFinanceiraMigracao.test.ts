@@ -27,6 +27,17 @@ describe("conferência financeira renderizada", () => {
     expect(html).toContain("Aprovar e aplicar");
     expect(html).toContain("Rejeitar");
   });
+  it("exibe resolução, proposta e aplicação no fuso pessoal sem reinterpretar vencimento civil", () => {
+    const historico = { ...proposta(false), status: "APLICADA", aplicacao: { recebimentoId: "r", aplicadaEm: "2026-09-16T00:30:00Z", aplicadaPor: { nome: "Financeiro" } } };
+    const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: {
+      ...base, resolucao: { recebimentoId: "recibo", aplicadaEm: "2026-09-16T00:30:00Z" }, propostas: [historico],
+      cobrancas: [{ id: "c", codigo: "C1", status: "PENDENTE", tipo: "MENSALIDADE", moeda: "CRC", valorNegociado: "100", valorRecebido: null, saldo: "100", versao: 1, vencimento: { estado: "CONFIRMADO", dataCivil: "2099-02-28", fuso: null, origem: "M01_HISTORICO" } }],
+    }, preferenciaFusoExibicao: "America/Adak" }));
+    expect(html).toContain("15/09/2026");
+    expect(html).toContain("America/Adak");
+    expect(html).toContain("Financeiro");
+  });
+
   it("mostra a pendência resolvida e não oferece nova preparação", () => {
     const historico = { ...proposta(false), status: "APLICADA" };
     const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: {
