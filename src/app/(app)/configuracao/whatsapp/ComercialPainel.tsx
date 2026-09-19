@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -15,9 +16,11 @@ const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm out
 export function ComercialPainel({
   config,
   simuladas,
+  preferenciaFusoExibicao = null,
 }: {
   config: ConfigComercialView;
   simuladas: SaudacaoSimulada[];
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [autoLeadAtivo, setAutoLead] = useState(config.autoLeadAtivo);
@@ -115,7 +118,10 @@ export function ComercialPainel({
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium text-gray-800">{s.contato}</span>
                   <span className="shrink-0 text-xs text-gray-400">
-                    {new Date(s.quando).toLocaleString("pt-BR")}
+                    {(() => {
+                      const exibicao = formatarInstanteExibicao(s.quando, preferenciaFusoExibicao, "UTC");
+                      return `${exibicao.texto} (${exibicao.fuso}; origem UTC)`;
+                    })()}
                   </span>
                 </div>
                 <p className="mt-0.5 text-gray-600">{s.texto}</p>
