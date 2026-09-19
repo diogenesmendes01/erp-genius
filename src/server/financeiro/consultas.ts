@@ -4,7 +4,7 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, numeroOuNull, semDecimais } from "@/server/_shared/decimal";
 import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 import { saldoAtual } from "./regras";
-import { referenciaVencimentoCivil } from "./vencimento-civil";
+import { periodosRetomadaReprogramada, referenciaVencimentoCivil } from "./vencimento-civil";
 
 function inicioDoMes() {
   const d = new Date();
@@ -157,12 +157,32 @@ export async function listarContextosRecebimentoDestinado() {
     // A antecipação documentada pode ocorrer antes da ativação. Rascunhos e
     // matrículas encerradas/canceladas continuam fora do caixa operacional.
     where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
-    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } }, itemEmissaoEntrada: { select: { emissao: { select: { memoria: true } } } }, emissaoContinuidadeGerada: { select: { snapshot: true } }, emissaoFechamentoHoras: { select: { memoria: true } } } } },
+    include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } }, aplicacoesAcertoTaxaAditivo: { select: { id: true, aplicadaEm: true, versaoAnterior: true, vencimentoAnterior: true, vencimentoNovo: true } }, itemEmissaoEntrada: { select: { emissao: { select: { memoria: true } } } }, emissaoContinuidadeGerada: { select: { snapshot: true } }, emissaoFechamentoHoras: { select: { memoria: true } } } } },
   });
+  const cobrancaIds = matriculas.flatMap((m) => m.cobrancas.map((c) => c.id));
+  const matriculaIds = matriculas.map((m) => m.id);
+  const [aplicacoesM01, aplicacoesVencimento, retomadas] = await Promise.all([
+    prisma.aplicacaoEntradaFinanceiraHistoricaMigracao.findMany({ where: { cobrancaId: { in: cobrancaIds } }, select: { id: true, cobrancaId: true, propostaId: true, aplicadaEm: true } }),
+    prisma.aplicacaoVencimentoAditivo.findMany({ where: { decisao: { proposta: { cobrancaId: { in: cobrancaIds } } } }, select: { id: true, aplicadaEm: true, versaoCobrancaDepois: true, vencimentoAnterior: true, vencimentoNovo: true, decisao: { select: { proposta: { select: { cobrancaId: true, fuso: true } } } } } }),
+    prisma.propostaRetomadaMatriculas.findMany({ where: { status: "APLICADA", itens: { some: { matriculaId: { in: matriculaIds } } } }, select: { id: true, aplicadaEm: true, entrada: true, snapshot: true } }),
+  ]);
+  const propostasM01 = await prisma.propostaEntradaFinanceiraHistoricaMigracao.findMany({ where: { id: { in: aplicacoesM01.map((a) => a.propostaId) }, status: "APLICADA" }, select: { id: true, vencimento: true } });
+  const m01PorProposta = new Map(propostasM01.map((p) => [p.id, p]));
+  const m01PorCobranca = new Map<string, Array<{ id: string; aplicadaEm: Date; vencimento: Date }>>();
+  for (const aplicacao of aplicacoesM01) {
+    const proposta = m01PorProposta.get(aplicacao.propostaId);
+    if (proposta) m01PorCobranca.set(aplicacao.cobrancaId, [...(m01PorCobranca.get(aplicacao.cobrancaId) ?? []), { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vencimento: proposta.vencimento }]);
+  }
+  const vencimentosPorCobranca = new Map<string, Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>>();
+  for (const aplicacao of aplicacoesVencimento) {
+    const cobrancaId = aplicacao.decisao.proposta.cobrancaId;
+    vencimentosPorCobranca.set(cobrancaId, [...(vencimentosPorCobranca.get(cobrancaId) ?? []), { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, versaoCobrancaDepois: aplicacao.versaoCobrancaDepois, vencimentoAnterior: aplicacao.vencimentoAnterior, vencimentoNovo: aplicacao.vencimentoNovo, fuso: aplicacao.decisao.proposta.fuso }]);
+  }
+  const retomadasReprogramadas = retomadas.flatMap((r) => r.aplicadaEm ? [{ id: r.id, aplicadaEm: r.aplicadaEm, periodos: periodosRetomadaReprogramada(r.snapshot, r.entrada) }] : []);
   return matriculas.map((matricula) => {
     const cobrancas = matricula.cobrancas.flatMap((cobranca) => {
     const saldo = saldoAtual(cobranca.valorNegociado, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, cobranca.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), cobranca.valorCompensadoPermuta).toNumber();
-    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: referenciaVencimentoCivil(cobranca), saldo }] : [];
+    return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: m01PorCobranca.get(cobranca.id), retomadasReprogramadas }), saldo }] : [];
     });
     const identificacaoMatricula = matricula.codigo?.trim() || `ID ${matricula.id}`;
     return { matriculaId: matricula.id, identificacaoMatricula, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
