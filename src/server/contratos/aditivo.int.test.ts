@@ -35,6 +35,7 @@ import { aplicarCondicoesFormalizadasAditivo, formalizarEAplicarCondicoesAditivo
 import { resolverHoraVigenteTx } from "./aditivo-hora-vigente";
 import { resolverMensalVigenteTx } from "./aditivo-mensal-vigente";
 import { GET as abrirConclusaoAditivo } from "@/app/api/matriculas/[id]/aditivos/[propostaId]/assinaturas/[conclusaoId]/[tipo]/route";
+import { incluirFonteVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 let fixture: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let conclusaoId: string, conclusaoHash: string, modeloId: string, modeloHash: string;
@@ -375,9 +376,24 @@ it("financeira estruturada: recusa moeda divergente e cobertura parcial invertid
   const cobrancas = await prisma.cobranca.findMany({ orderBy: { id: "asc" } });
   const dinheiro = { origem: "MENSALIDADE_VALOR", novo: "500.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "500.00", moeda: "USD" } };
   await expect(preparar({ alteracoes: [dinheiro] })).rejects.toThrow("moeda contratual");
-  await expect(preparar({ alteracoes: [{ origem: "COBERTURA_INICIO", novo: "2099-11-01", valorEstruturado: { tipo: "DATA", data: "2099-11-01" } }] })).rejects.toThrow("posterior ao fim");
+  await expect(preparar({
+    alteracoes: [{ origem: "COBERTURA_INICIO", novo: "2099-11-01", valorEstruturado: { tipo: "DATA", data: "2099-11-01" } }],
+  })).rejects.toThrow("início e fim juntos");
+  await expect(preparar({
+    alteracoes: [
+      { origem: "COBERTURA_INICIO", novo: "2099-12-01", valorEstruturado: { tipo: "DATA", data: "2099-12-01" } },
+      { origem: "COBERTURA_FIM", novo: "2099-11-30", valorEstruturado: { tipo: "DATA", data: "2099-11-30" } },
+    ],
+    cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2099-12-01" },
+  })).rejects.toThrow("posterior ao fim");
   await expect(preparar({ alteracoes: [{ origem: "MOEDA", novo: "USD", valorEstruturado: { tipo: "MOEDA", moeda: "USD" } }, dinheiro] })).rejects.toThrow("todas as condições monetárias");
-  await expect(preparar({ alteracoes: [{ origem: "COBERTURA_INICIO", novo: "2099-11-01", valorEstruturado: { tipo: "DATA", data: "2099-11-01" } }, { origem: "COBERTURA_FIM", novo: "2099-12-01" }] })).rejects.toThrow("valores estruturados");
+  await expect(preparar({
+    alteracoes: [
+      { origem: "COBERTURA_INICIO", novo: "2099-11-01", valorEstruturado: { tipo: "DATA", data: "2099-11-01" } },
+      { origem: "COBERTURA_FIM", novo: "2099-12-01" },
+    ],
+    cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2099-11-01" },
+  })).rejects.toThrow("valores estruturados");
   expect(await prisma.propostaAditivoContratual.count()).toBe(0);
   expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancas);
 });
@@ -388,14 +404,14 @@ it("financeira estruturada: aprova proposta coerente sem aplicar novos valores o
     { origem: "MENSALIDADE_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } },
     { origem: "COBERTURA_INICIO", novo: "2099-11-01", valorEstruturado: { tipo: "DATA", data: "2099-11-01" } },
     { origem: "COBERTURA_FIM", novo: "2099-11-30", valorEstruturado: { tipo: "DATA", data: "2099-11-30" } },
-  ] });
+  ], cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2099-11-01" } });
   expect(await decidir(p)).toMatchObject({ aprovada: true });
   const proposta = await prisma.propostaAditivoContratual.findUniqueOrThrow({ where: { id: p.id } });
   expect(proposta.snapshot).toMatchObject({ alteracoes: [
     { campo: "MENSALIDADE_VALOR", anterior: "999999.00 CRC", novo: "500.00 CRC" },
     { campo: "COBERTURA_INICIO", anterior: "2099-10-01", novo: "2099-11-01" },
     { campo: "COBERTURA_FIM", anterior: "2099-10-31", novo: "2099-11-30" },
-  ] });
+  ], cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2099-11-01" } });
   expect(await prisma.cobranca.findMany({ orderBy: { id: "asc" } })).toEqual(cobrancas);
 });
 
@@ -675,6 +691,83 @@ async function aplicarPrimeiroVencimentoCadeia(versaoCondicoesId: string, revisa
   expect(await decidirVencimentoAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Vencimento decidido por administração independente", chaveIdempotencia: `${chave}-decisao` })).toMatchObject({ ok: true });
   expect(await aplicarVencimentoAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: `${chave}-aplicacao` })).toMatchObject({ ok: true });
 }
+
+it("PRODUCAO_MENSAL_VENCIMENTO: retomada aplicada seguida de aditivo real escolhe a cabeça versionada", async () => {
+  const { consultarAceiteOriginal, confirmarAceiteOriginal } = await import("./aceite");
+  const revisaoAceite = await consultarAceiteOriginal({ matriculaId: fixture.matriculaId, conclusaoId });
+  if (!revisaoAceite.ok || !revisaoAceite.dado?.revisao) throw new Error(JSON.stringify(revisaoAceite));
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await confirmarAceiteOriginal({
+    matriculaId: fixture.matriculaId, conclusaoId, revisaoHash: revisaoAceite.dado.revisao.hash,
+    evidenciasConferidas: true, motivo: "Aceite original conferido antes da pausa e da retomada.",
+    chaveIdempotencia: "cadeia-retomada-aditivo-aceite",
+  })).toMatchObject({ ok: true });
+  const matriculaInicial = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
+  await prisma.politicaComissao.create({ data: {
+    paisId: matriculaInicial.paisId, produtoId: matriculaInicial.produtoId, versao: 1, tipo: "PERCENTUAL",
+    percentual: 10, moeda: matriculaInicial.moeda, vigenteEm: new Date("2000-01-01T00:00:00Z"), criadaPorId: fixture.adminId,
+  } });
+  const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MATRICULA" } });
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await registrarPagamento(taxa.id, {
+    chaveIdempotencia: "cadeia-retomada-aditivo-taxa", valorRecebido: taxa.valorNegociado.toNumber(), forma: "DINHEIRO",
+    comentario: "Taxa conferida antes da ativação da matrícula de teste.",
+  })).toMatchObject({ ok: true });
+  const mensalidadeInicial = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE" } });
+  expect(await registrarPagamento(mensalidadeInicial.id, {
+    chaveIdempotencia: "cadeia-retomada-aditivo-mensalidade", valorRecebido: mensalidadeInicial.valorNegociado.toNumber(), forma: "DINHEIRO",
+    comentario: "Primeira mensalidade conferida antes da ativação da matrícula de teste.",
+  })).toMatchObject({ ok: true });
+  const { concluirMatricula } = await import("@/server/matricula/acoes");
+  const ativacao = await concluirMatricula(fixture.matriculaId);
+  if (!ativacao.ok) throw new Error(JSON.stringify(ativacao));
+
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId }, select: { alunoId: true, status: true } });
+  expect(matricula.status).toBe("ATIVA");
+  const { solicitarPausaMatriculas, decidirPropostaPausaMatriculas } = await import("@/server/matricula/pausa-proposta");
+  const { aplicarPausaMatriculasTx } = await import("@/server/matricula/pausa-execucao");
+  const { solicitarRetomadaMatriculas, decidirRetomadaMatriculas } = await import("@/server/matricula/retomada-proposta");
+  const { aplicarRetomadaMatriculasTx } = await import("@/server/matricula/retomada-execucao");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const pausa = await solicitarPausaMatriculas(matricula.alunoId, {
+    matriculaIds: [fixture.matriculaId], dataEfetiva: "2099-09-15", motivo: "Pausa aprovada antes da retomada que reprogramará a parcela.",
+    chaveIdempotencia: "cadeia-retomada-aditivo-pausa",
+  });
+  if (!pausa.ok || !pausa.dado) throw new Error(JSON.stringify(pausa));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirPropostaPausaMatriculas(pausa.dado.propostaId, { aprovar: true, motivo: "Pausa conferida por administração independente." })).toMatchObject({ ok: true });
+  await prisma.$transaction(tx => aplicarPausaMatriculasTx(tx, pausa.dado!.propostaId, fixture.secretariaId, new Date("2099-09-15T12:00:00Z")));
+  const mensalidadePausada = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE" }, select: { id: true } });
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const retomada = await solicitarRetomadaMatriculas(matricula.alunoId, {
+    retorno: "2099-10-01", motivo: "Retomada reprograma a primeira mensalidade preservada.", chaveIdempotencia: "cadeia-retomada-aditivo-retomada",
+    matriculas: [{ matriculaId: fixture.matriculaId, vencimentos: { opcao: "REPROGRAMAR_PARCELAS", datas: [{ cobrancaId: mensalidadePausada.id, vencimento: "2099-10-20" }] } }],
+  });
+  if (!retomada.ok || !retomada.dado) throw new Error(JSON.stringify(retomada));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirRetomadaMatriculas(retomada.dado.propostaId, { aprovar: true, motivo: "Retomada conferida por administração independente." })).toMatchObject({ ok: true });
+  await prisma.$transaction(tx => aplicarRetomadaMatriculasTx(tx, retomada.dado!.propostaId, fixture.secretariaId, new Date("2099-10-01T12:00:00Z")));
+  const aposRetomada = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE" }, select: { id: true, vencimento: true, versao: true } });
+  expect(aposRetomada.vencimento).toEqual(new Date("2099-10-20T00:00:00.000Z"));
+
+  const aditivo = await concluirAditivoMensal({
+    vigenciaInicio: "2026-09-01T00:00:00Z", chaveIdempotencia: "cadeia-retomada-aditivo-vencimento",
+    alteracoes: [{ origem: "PRIMEIRA_MENSALIDADE_VENCIMENTO", novo: "2099-10-25", valorEstruturado: { tipo: "DATA", data: "2099-10-25" } }],
+  }, "cadeia-retomada-aditivo-vencimento");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const condicoes = await registrarCondicoesFormalizadasAditivo({ ...aditivo.finalAlvo, revisaoHash: aditivo.revisaoHash });
+  if (!condicoes.ok || !condicoes.dado) throw new Error(JSON.stringify(condicoes));
+  await aplicarPrimeiroVencimentoCadeia(condicoes.dado.id, aditivo.revisaoHash, "cadeia-retomada-aditivo-vencimento");
+  const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: aposRetomada.id }, select: { id: true, vencimento: true, versao: true, ...incluirFonteVencimentoCivil } });
+  expect(atual).toMatchObject({ vencimento: new Date("2099-10-25T12:00:00.000Z"), versao: aposRetomada.versao + 1 });
+  const { carregarTrilhasVencimentoCivil, referenciaVencimentoCivil } = await import("@/server/financeiro/vencimento-civil");
+  const trilhas = await carregarTrilhasVencimentoCivil(prisma, [atual.id], [fixture.matriculaId]);
+  expect(referenciaVencimentoCivil({
+    ...atual, aplicacoesAditivoVencimento: trilhas.vencimentosPorCobranca.get(atual.id),
+    aplicacoesM01: trilhas.m01PorCobranca.get(atual.id), retomadasReprogramadas: trilhas.retomadasReprogramadas,
+  })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-10-25", fuso: "UTC", origem: "ADITIVO_VENCIMENTO" });
+});
 
 async function tentarAplicacaoDiretaCadeia(versaoCondicoesId: string, propostaId: string, revisaoHash: string, chave: string) {
   const versao = await prisma.versaoCondicoesAditivo.findUniqueOrThrow({ where: { id: versaoCondicoesId } });
