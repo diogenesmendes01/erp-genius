@@ -55,4 +55,20 @@ describe("ConferenciaOriginalAditivoPage", () => {
 
     expect(html).toContain("Resultado: REGISTRADO em 30/09/2026, 21:30 (America/Costa_Rica; origem UTC) · referência evento-1");
   });
+
+  it("navega pelas observações da tentativa sem perder a página de conferências ou de tentativas", async () => {
+    mocks.sessao.mockResolvedValue({}); mocks.preferencia.mockResolvedValue({ ok: false, erro: "indisponível" });
+    mocks.assinatura.mockResolvedValue({ ok: true, dado: { revisao: null, historico: [], pendencia: null, temProxima: false } });
+    mocks.processo.mockResolvedValue({ ok: true, dado: {
+      fornecedor: "ZAPSIGN", ambiente: "SANDBOX", estado: "ENVIANDO", tentativaAtual: 3, referenciaExterna: null, criadoEm: new Date("2026-10-01T02:30:00Z"), paginaTentativas: 2, temMaisTentativas: false,
+      tentativaObservacoes: 3, paginaObservacoes: 2,
+      tentativas: [{ numero: 3, iniciadaEm: new Date("2026-10-01T02:30:00Z"), temMaisObservacoes: false, paginaObservacoes: 2, observacoes: [{ id: "obs-21", resultado: "INCERTO", referenciaExterna: null, observadaEm: new Date("2026-10-01T03:30:00Z") }] }],
+    } });
+    mocks.conclusao.mockResolvedValue({ ok: true, dado: null }); mocks.aplicacao.mockResolvedValue({ ok: true, dado: null });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula", propostaId: "proposta", artefatoId: "artefato" }), searchParams: Promise.resolve({ pagina: "7", paginaTentativas: "2", tentativaObservacoes: "3", paginaObservacoes: "2" }) }));
+    expect(mocks.processo).toHaveBeenCalledWith({ matriculaId: "matricula", propostaId: "proposta", artefatoId: "artefato", paginaTentativas: 2, tentativaObservacoes: 3, paginaObservacoes: 2 });
+    expect(html).toContain("Página 2");
+    expect(html).toContain("tentativaObservacoes=3&amp;paginaObservacoes=1");
+    expect(html).toContain("pagina=7&amp;paginaTentativas=2");
+  });
 });

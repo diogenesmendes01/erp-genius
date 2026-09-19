@@ -887,6 +887,35 @@ it("prepara processo do aditivo exato e preserva incerteza sem repetir envio", a
   expect(await prisma.tentativaEnvioAditivo.count()).toBe(1);
 });
 
+it("pagina observações preservadas do processo exato sem sobreposição, inclusive em empate de instante", async () => {
+  const { confirmar, alvo } = await prepararRevisaoOriginal();
+  const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
+  if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
+  const processo = await prepararProcessoAssinaturaAditivo({ ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente: "SANDBOX" });
+  if (!processo.ok || !processo.dado) throw new Error("Processo indisponível");
+  const processoId = processo.dado.id;
+  const tentativa = await prisma.$transaction(tx => iniciarTentativaAditivoTx(tx, fixture.secretariaId, { processoId }));
+  const observadaEm = new Date("2099-10-05T12:00:00.000Z");
+  await prisma.observacaoEnvioAditivo.createMany({ data: Array.from({ length: 22 }, (_, indice) => ({
+    tentativaId: tentativa.tentativaId, chave: `pagina-observacao-${indice.toString().padStart(2, "0")}`,
+    resultado: "INCERTO", referenciaExterna: null, evidenciaHash: indice.toString(16).padStart(64, "0"), observadaEm,
+  })) });
+
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const primeira = await consultarProcessoAssinaturaAditivo({ ...alvo, paginaTentativas: 1, tentativaObservacoes: tentativa.numero, paginaObservacoes: 1 });
+  const segunda = await consultarProcessoAssinaturaAditivo({ ...alvo, paginaTentativas: 1, tentativaObservacoes: tentativa.numero, paginaObservacoes: 2 });
+  if (!primeira.ok || !primeira.dado || !segunda.ok || !segunda.dado) throw new Error("Histórico não disponível");
+  const pagina1 = primeira.dado.tentativas[0], pagina2 = segunda.dado.tentativas[0];
+  expect(pagina1.observacoes).toHaveLength(20); expect(pagina1.temMaisObservacoes).toBe(true);
+  expect(pagina2.observacoes).toHaveLength(2); expect(pagina2.temMaisObservacoes).toBe(false);
+  expect(new Set([...pagina1.observacoes, ...pagina2.observacoes].map(o => o.id)).size).toBe(22);
+  expect(pagina1.observacoes.map(o => o.id)).toEqual([...pagina1.observacoes.map(o => o.id)].sort().reverse());
+  expect(await consultarProcessoAssinaturaAditivo({ ...alvo, matriculaId: "outra-matricula", tentativaObservacoes: tentativa.numero })).toMatchObject({ ok: false });
+  expect(await consultarProcessoAssinaturaAditivo({ ...alvo, paginaTentativas: 2, tentativaObservacoes: tentativa.numero })).toMatchObject({ ok: false });
+  expect(await consultarProcessoAssinaturaAditivo({ ...alvo, tentativaObservacoes: tentativa.numero + 1 })).toMatchObject({ ok: false });
+  expect(await consultarProcessoAssinaturaAditivo({ ...alvo, tentativaObservacoes: tentativa.numero, paginaObservacoes: 0 })).toMatchObject({ ok: false });
+});
+
 it("nova tentativa do aditivo exige confirmação de não criação e recusa retorno antigo", async () => {
   const { confirmar, alvo } = await prepararRevisaoOriginal();
   const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
