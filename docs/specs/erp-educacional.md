@@ -560,3 +560,7 @@ Opção C aprovada em18/09/2026: quando um acerto reduzir uma obrigação já co
 #### Fuso pessoal nas telas secundárias do diário
 
 As consultas de exceções, regularizações de gravação, cancelamento, remarcação e histórico de correção exibem instantes persistidos no fuso pessoal válido da equipe. Na ausência de preferência válida, a tela usa o fuso de origem do encontro quando disponível; os registros de auditoria sem encontro usam UTC. Datas e horários civis que formam a entrada de uma remarcação continuam mostrados e submetidos no fuso declarado na própria proposta. A preferência apenas altera a apresentação de instantes já persistidos, incluindo intervalo conferido, criação de proposta e decisões; ela não altera agenda, duração, fuso de origem ou dados civis.
+
+#### Fuso pessoal nas consultas de recuperação
+
+As listas de realizações, o detalhe da nota e os planos de recuperação exibem os instantes administrativos persistidos no fuso pessoal válido da equipe. Como esses registros têm origem UTC, a ausência ou invalidade da preferência usa UTC como fallback e a interface identifica o fuso de exibição e a origem. A preferência não altera os campos civis de formulários, seus payloads, nem os prazos e fatos já registrados.
