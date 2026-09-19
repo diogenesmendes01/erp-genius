@@ -3,11 +3,13 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { consultarCancelamentoParticular } from "@/server/agenda/cancelamento-particular";
 import { CancelamentoParticular } from "./CancelamentoParticular";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params;
-  const r = await consultarCancelamentoParticular({ encontroId: id });
+  const [r, preferencia] = await Promise.all([consultarCancelamentoParticular({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
     <Link href="/diario/encontros" className="underline">Voltar aos encontros</Link>
     <h1 className="text-2xl font-medium">Cancelamento de particular</h1>
@@ -15,7 +17,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <p>A gestão pedagógica ou Administração decide a solicitação de outra pessoa. A aprovação cancela o encontro na agenda.</p>
     <p>Quando a escola cancela, remarcação ou crédito dependem da escolha do aluno e do ajuste autorizado. No painel de compras da matrícula, o Financeiro propõe liberar as horas para remarcação ou convertê-las em crédito, com aprovação de outra pessoa. Cancelar a agenda não libera saldo nem altera cobranças ou recebimentos por si só. Crédito apurado não significa devolução executada.</p>
     {!r.ok && <p role="alert">{r.erro}</p>}
-    {r.ok && r.dado && <CancelamentoParticular encontroId={id} dados={r.dado} />}
+    {r.ok && r.dado && <CancelamentoParticular encontroId={id} dados={r.dado} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.dado.fuso)} />}
   </div>;
 }
 

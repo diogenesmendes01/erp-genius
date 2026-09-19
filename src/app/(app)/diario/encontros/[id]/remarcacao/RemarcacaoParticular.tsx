@@ -3,9 +3,10 @@ import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarRemarcacoesParticular, proporRemarcacaoParticular, decidirRemarcacaoParticular } from "@/server/agenda/remarcacao-particular";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
-export function RemarcacaoParticular({ encontroOriginalId, dados }: { encontroOriginalId: string; dados: Dados }) {
+export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const router = useRouter();
   async function executar(acao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "Operação não aplicada."); return; } chave.current = ""; router.refresh(); }
@@ -29,7 +30,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados }: { encontroOr
       <p>{p.entrada.data} às {p.entrada.horario} · {p.entrada.fuso}</p><p>Professor: {dados.professores.find(x => x.id === p.entrada.professorId)?.nome ?? p.entrada.professorId}</p>
       <p>{p.entrada.evidenciaEscolha}</p><p>{p.entrada.motivo}</p>
       {p.entrada.motivoExcecaoNaoLetiva && <p>Exceção não letiva incluída na aprovação: {p.entrada.motivoExcecaoNaoLetiva}</p>}
-      {p.conferencia && <><p>Intervalo conferido: {new Date(p.conferencia.inicio).toLocaleString("pt-BR", { timeZone: p.entrada.fuso })} até {new Date(p.conferencia.fim).toLocaleString("pt-BR", { timeZone: p.entrada.fuso })}.</p>
+      {p.conferencia && <><p>Intervalo conferido: {formatarInstanteExibicao(p.conferencia.inicio, fusoExibicao, p.entrada.fuso).texto} até {formatarInstanteExibicao(p.conferencia.fim, fusoExibicao, p.entrada.fuso).texto} ({fusoExibicao}).</p>
         {!!p.conferencia.periodos.length && <p>Períodos não letivos atingidos: {p.conferencia.periodos.join(", ")}.</p>}{p.conferencia.pendencias.map(x => <p role="alert" key={x}>{x}</p>)}</>}
       {p.erroConferencia && <p role="alert">{p.erroConferencia}</p>}
       {p.decisao ? <p>{p.decisao.aprovada ? "Remarcação publicada" : "Proposta rejeitada"}: {p.decisao.motivo} {p.decisao.encontroNovoId && <Link className="underline" href={`/diario/encontros/${p.decisao.encontroNovoId}/cancelamento`}>Consultar novo encontro</Link>}</p> : <p>Aguardando decisão independente.</p>}

@@ -2,16 +2,17 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarCancelamentoParticular, proporCancelamentoParticular, decidirCancelamentoParticular } from "@/server/agenda/cancelamento-particular";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
-export function CancelamentoParticular({ encontroId, dados }: { encontroId: string; dados: NonNullable<Dados> }) {
+export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { encontroId: string; dados: NonNullable<Dados>; fusoExibicao: string }) {
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState("");
   const chave = useRef<string | null>(null);
   const router = useRouter();
   return <div className="space-y-4">
-    <p>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: dados.fuso }).format(new Date(dados.inicio))} · {dados.fuso} · {dados.status}</p>
+    <p>{formatarInstanteExibicao(dados.inicio, fusoExibicao, dados.fuso).texto} · {fusoExibicao} · {dados.status}</p>
     {erro && <p role="alert">{erro}</p>}
     {dados.podePropor && <form className="space-y-2" onSubmit={e => {
       e.preventDefault(); const form = new FormData(e.currentTarget), motivo = String(form.get("motivo") ?? ""), origem = String(form.get("origem")) as "ESCOLA" | "ALUNO";

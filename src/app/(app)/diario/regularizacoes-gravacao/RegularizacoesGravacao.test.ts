@@ -10,6 +10,7 @@ it("apresenta fontes e decisões sem pedir identificador de proposta", () => {
   const tela = renderToStaticMarkup(createElement(RegularizacoesGravacao, {
     fontes: [{ id: "PUBLICACAO_AULA:publicacao-1", rotulo: "Publicação da aula encontro-1", versao: null }],
     propostas: [{ id: "proposta-interna", destino: "Aula turma-1", podeDecidir: true, alvo: "PUBLICACAO_AULA", arquivoOficialId: "arquivo-oficial-1", driveRevisionId: "revisao-1", motivo: "Regularizar fonte legada", versaoEsperada: 0, criadaEm: new Date("2026-09-16T12:00:00Z"), preparador: { nome: "Gestora" }, decisao: null }],
+    fusoExibicao: "UTC",
   }));
   expect(tela).toContain("Publicação da aula encontro-1");
   expect(tela).toContain("Regularizar fonte legada");

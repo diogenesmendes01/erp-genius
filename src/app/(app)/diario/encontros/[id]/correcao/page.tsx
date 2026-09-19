@@ -3,11 +3,13 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { consultarHistoricoCorrecaoAula } from "@/server/diario/correcao-aula";
 import { CorrecaoAula } from "./CorrecaoAula";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function CorrecaoAulaPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params;
-  const revisao = await consultarHistoricoCorrecaoAula({ encontroId: id });
+  const [revisao, preferencia] = await Promise.all([consultarHistoricoCorrecaoAula({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
 
   return <main className="space-y-5">
     <Link href="/diario" className="text-brand-700 underline">Voltar ao histórico do diário</Link>
@@ -17,6 +19,6 @@ export default async function CorrecaoAulaPage({ params }: { params: Promise<{ i
     </header>
     {!revisao.ok || !revisao.dado
       ? <p role="alert" className="text-red-700">{revisao.ok ? "Não foi possível carregar a chamada para correção." : revisao.erro}</p>
-      : <CorrecaoAula key={`${revisao.dado.snapshot.diarioId}:${revisao.dado.estadoHash}:${revisao.dado.versaoAtual}`} encontroId={id} dados={revisao.dado} podeConferirImpactos={temPapel(usuario, Papel.GERENTE_PEDAGOGICO)} />}
+      : <CorrecaoAula key={`${revisao.dado.snapshot.diarioId}:${revisao.dado.estadoHash}:${revisao.dado.versaoAtual}`} encontroId={id} dados={revisao.dado} podeConferirImpactos={temPapel(usuario, Papel.GERENTE_PEDAGOGICO)} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC")} />}
   </main>;
 }
