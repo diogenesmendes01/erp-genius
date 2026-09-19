@@ -3,6 +3,8 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCorrecoesConclusaoReposicao } from "@/server/diario/correcao-reposicao-consulta";
 import { CorrecoesConclusaoReposicao } from "./CorrecoesConclusaoReposicao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function CorrecoesReposicao({
   params, searchParams,
@@ -17,11 +19,11 @@ export default async function CorrecoesReposicao({
   const antes = antesVersao === undefined ? undefined : numeroSeguro(antesVersao);
   const conclusao = conclusaoVersao === undefined ? undefined : numeroSeguro(conclusaoVersao);
   if ((antesVersao !== undefined && antes === null) || (conclusaoVersao !== undefined && conclusao === null)) return <p role="alert">Versão da consulta inválida.</p>;
-  const resultado = await consultarCorrecoesConclusaoReposicao({
+  const [resultado, preferencia] = await Promise.all([consultarCorrecoesConclusaoReposicao({
     reposicaoId,
     ...(antes ? { antesVersao: antes } : {}),
     ...(conclusao ? { conclusaoVersao: conclusao } : {}),
-  });
+  }), consultarPreferenciaFusoEquipe()]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const dado = resultado.dado;
   const professorSomente = usuario.papeis.includes(Papel.PROFESSOR) && !usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR);
@@ -36,7 +38,7 @@ export default async function CorrecoesReposicao({
     <Link className="underline" href={professorSomente ? "/diario/reposicoes" : "/academico/reposicoes"}>Voltar às reposições</Link>
     <h1 className="text-2xl font-medium">Correções da conclusão de reposição</h1>
     <p>Uma proposta não altera a conclusão vigente. A alteração só produz efeito depois de aprovação independente e nova conferência no servidor.</p>
-    <CorrecoesConclusaoReposicao key={`${dado.reposicao.id}:${dado.conclusao.id}:${dado.versaoEsperada}`} dados={dado} mostrarPreparacao={!dado.consultaHistorica && !antesVersao} />
+    <CorrecoesConclusaoReposicao key={`${dado.reposicao.id}:${dado.conclusao.id}:${dado.versaoEsperada}`} dados={dado} mostrarPreparacao={!dado.consultaHistorica && !antesVersao} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, dado.reposicao.origem.fuso)} />
     <nav className="flex flex-wrap gap-4" aria-label="Navegação entre conclusões">
       {dado.conclusaoSeguinteVersao && <Link className="underline" href={url({ conclusaoVersao: dado.conclusaoSeguinteVersao })}>Conclusão seguinte</Link>}
       {dado.conclusaoAnteriorVersao && <Link className="underline" href={url({ conclusaoVersao: dado.conclusaoAnteriorVersao })}>Conclusão anterior</Link>}
