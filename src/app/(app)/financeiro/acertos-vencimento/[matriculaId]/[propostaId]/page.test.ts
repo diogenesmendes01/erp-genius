@@ -1,8 +1,9 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/lib/prisma", () => ({ prisma: { versaoCondicoesAditivo: { findFirst: mocks.versao } } }));
 vi.mock("@/server/contratos/vencimento-aditivo", () => ({ consultarVencimentosAditivo: mocks.consulta }));
 vi.mock("./Formulario", () => ({ VencimentoFormulario: ({ modo }: { modo: string }) => createElement("span", { "data-acao": modo }, modo) }));
@@ -12,11 +13,11 @@ const dado = () => ({ versao: 2, vigenciaInicio: "2026-09-01T00:00:00Z", revisao
  alvo: { podePreparar: true, vencimentoProposto: "2026-11-15", pendencia: "Conferir antes de aplicar", cobranca: { id: "c1" } },
  propostas: [{ id: "acerto1", estado: "APROVADA", fuso: "America/Sao_Paulo", vencimentoAnterior: "2026-10-15T12:00:00Z", vencimentoNovo: "2026-11-15T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
 });
-beforeEach(() => { vi.resetAllMocks(); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
+beforeEach(() => { vi.resetAllMocks(); mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } }); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
 it("nega acesso antes de consultar versão e histórico", async () => {
  mocks.sessao.mockRejectedValue(new Error("Sem acesso"));
  await expect(Page(entrada())).rejects.toThrow("Sem acesso");
- expect(mocks.versao).not.toHaveBeenCalled(); expect(mocks.consulta).not.toHaveBeenCalled();
+ expect(mocks.versao).not.toHaveBeenCalled(); expect(mocks.consulta).not.toHaveBeenCalled(); expect(mocks.preferencia).not.toHaveBeenCalled();
 });
 it("consulta matrícula/proposta exatas e renderiza aplicação sem oferecer decisão", async () => {
  const html = renderToStaticMarkup(await Page(entrada()));
@@ -25,6 +26,15 @@ it("consulta matrícula/proposta exatas e renderiza aplicação sem oferecer dec
  expect(mocks.consulta).toHaveBeenCalledWith({ matriculaId: "m1", versaoCondicoesId: "v1", pagina: 2 });
  expect(html).toContain('data-acao="aplicar"'); expect(html).not.toContain('data-acao="decidir"');
  expect(html).toContain("&lt;script&gt;"); expect(html).toContain("?pagina=1"); expect(html).toContain("?pagina=3");
+ expect(html).toContain("31/08/2026, 18:00");
+ expect(html).toContain("referência contratual preservada");
+});
+
+it("recorre a UTC para a vigência quando a preferência falha", async () => {
+ mocks.preferencia.mockResolvedValue({ ok: false, erro: "Indisponível" });
+ const html = renderToStaticMarkup(await Page(entrada()));
+ expect(html).toContain("01/09/2026, 00:00");
+ expect(html).toContain("horário exibido em UTC");
 });
 it("mantém aplicação histórica sem repetir ação", async () => {
  const d = dado(); Object.assign(d.propostas[0], { estado: "APLICADA", podeSolicitarAplicacao: false, aplicadaEm: "2026-09-18T12:00:00Z" });
