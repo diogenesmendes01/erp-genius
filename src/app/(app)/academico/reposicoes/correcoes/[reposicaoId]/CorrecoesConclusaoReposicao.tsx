@@ -44,11 +44,11 @@ function dataHora(valor: string, fuso: string) {
   catch { return `${valor.replace("T", " ").replace("Z", " UTC")} (${fuso})`; }
 }
 
-function FonteResumo({ fonte, titulo }: { fonte: Fonte; titulo: string }) {
+function FonteResumo({ fonte, titulo, fusoExibicao }: { fonte: Fonte; titulo: string; fusoExibicao: string }) {
   return <div className="space-y-1 rounded bg-gray-50 p-3">
     <p className="font-medium">{titulo}</p>
     {!fonte.concluida && <p>Conclusão retirada. Não há nova fonte de realização ou validação.</p>}
-    {fonte.concluida && fonte.encontro && <p>Encontro particular realizado em {dataHora(fonte.encontro.realizadaEm, fonte.encontro.fuso)}. Encontro: {dataHora(fonte.encontro.inicio, fonte.encontro.fuso)} a {dataHora(fonte.encontro.fim, fonte.encontro.fuso)}.</p>}
+    {fonte.concluida && fonte.encontro && <p>Encontro particular realizado em {dataHora(fonte.encontro.realizadaEm, fusoExibicao)}. Encontro: {dataHora(fonte.encontro.inicio, fusoExibicao)} a {dataHora(fonte.encontro.fim, fusoExibicao)} (origem {fonte.encontro.fuso}).</p>}
     {fonte.concluida && fonte.entrega && <>
       <p>Entrega gravada — versão {fonte.entrega.versao}, entregue em {dataHora(fonte.entrega.entregueEm, "UTC")}.</p>
       {fonte.validadaEm && <p>Validação registrada em {dataHora(fonte.validadaEm, "UTC")}.</p>}
@@ -66,13 +66,13 @@ function isoUtc(valor: FormDataEntryValue | null) {
   return Number.isNaN(data.getTime()) ? null : data.toISOString();
 }
 
-export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao }: { dados: Dados; mostrarPreparacao: boolean }) {
+export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string }) {
   return <div className="space-y-5">
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">{dados.consultaHistorica ? "Conclusão e fonte históricas" : "Conclusão e fonte vigentes"}</h2>
-      <p>Reposição {dados.reposicao.modalidade === "PARTICULAR" ? "particular" : "por gravação"}. Aula de origem: {dataHora(dados.reposicao.origem.inicio, dados.reposicao.origem.fuso)} a {dataHora(dados.reposicao.origem.fim, dados.reposicao.origem.fuso)}.</p>
+      <p>Reposição {dados.reposicao.modalidade === "PARTICULAR" ? "particular" : "por gravação"}. Aula de origem: {dataHora(dados.reposicao.origem.inicio, fusoExibicao)} a {dataHora(dados.reposicao.origem.fim, fusoExibicao)} (exibido em {fusoExibicao}; origem {dados.reposicao.origem.fuso}).</p>
       <p>Conclusão original versão {dados.conclusao.versao}, registrada por {dados.conclusao.concluidaPor}. As datas da fonte abaixo são exibidas com o fuso correspondente.</p>
-      <FonteResumo titulo={dados.consultaHistorica ? "Fonte efetiva nesta conclusão histórica" : dados.vigente.origem === "CORRECAO_APROVADA" ? "Fonte vigente após correção aprovada" : "Fonte vigente da conclusão original"} fonte={dados.vigente.fonte} />
+      <FonteResumo titulo={dados.consultaHistorica ? "Fonte efetiva nesta conclusão histórica" : dados.vigente.origem === "CORRECAO_APROVADA" ? "Fonte vigente após correção aprovada" : "Fonte vigente da conclusão original"} fonte={dados.vigente.fonte} fusoExibicao={fusoExibicao} />
     </section>
     {mostrarPreparacao && dados.podePropor && <ProporCorrecao dados={dados} />}
     <section className="space-y-3">
@@ -80,10 +80,10 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao }: { dado
       {!dados.correcoes.length && <p>Não há correções nesta página.</p>}
       {dados.correcoes.map((correcao) => <article key={correcao.id} className="space-y-3 rounded border p-4">
         <h3 className="font-medium">Proposta versão {correcao.versao}</h3>
-        <p>Preparada por {correcao.autor} em {dataHora(correcao.criadaEm, "UTC")}.</p>
+        <p>Preparada por {correcao.autor} em {dataHora(correcao.criadaEm, fusoExibicao)}.</p>
         <p className="whitespace-pre-wrap">Motivo: {correcao.motivo}</p>
-        <div className="grid gap-3 lg:grid-cols-2"><FonteResumo titulo="Fonte anterior na sequência de propostas" fonte={correcao.antes} /><FonteResumo titulo="Depois proposto" fonte={correcao.fonte} /></div>
-        {correcao.decisao ? <div className="rounded bg-gray-50 p-3"><p className="font-medium">{correcao.decisao.aprovada ? "Correção aprovada" : "Correção rejeitada"}</p><p>Decisão de {correcao.decisao.decisor} em {dataHora(correcao.decisao.decididaEm, "UTC")}.</p><p className="whitespace-pre-wrap">{correcao.decisao.motivo}</p></div>
+        <div className="grid gap-3 lg:grid-cols-2"><FonteResumo titulo="Fonte anterior na sequência de propostas" fonte={correcao.antes} fusoExibicao={fusoExibicao} /><FonteResumo titulo="Depois proposto" fonte={correcao.fonte} fusoExibicao={fusoExibicao} /></div>
+        {correcao.decisao ? <div className="rounded bg-gray-50 p-3"><p className="font-medium">{correcao.decisao.aprovada ? "Correção aprovada" : "Correção rejeitada"}</p><p>Decisão de {correcao.decisao.decisor} em {dataHora(correcao.decisao.decididaEm, fusoExibicao)}.</p><p className="whitespace-pre-wrap">{correcao.decisao.motivo}</p></div>
           : <><p role="status">A fonte vigente permanece a mesma até uma aprovação independente.</p><DecidirCorrecao correcao={correcao} /></>}
         {correcao.decisao?.aprovada && correcao.temImpactos && <ImpactosAprovados correcao={correcao} />}
       </article>)}
