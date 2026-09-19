@@ -20,6 +20,7 @@ import {
 } from "./acoes";
 import { definirTemperatura, registrarNotaInterna } from "@/server/comercial/acoes";
 import { garantirAtendimento } from "./atendimentos";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 // Integração da inbox, atualizada ao doc 36: escopo por atendimento, envio HUMANO pela mesma
 // fila/despachante, opt-out (S10), silêncio pós-inbound tratado (S4) e vínculo de contato.
@@ -220,6 +221,103 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
 });
 
 describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
+  it("usa a fonte civil persistida da matrícula selecionada entre dois contratos do mesmo aluno", async () => {
+    const { numero: primeiroNumero } = await seedCanal({ estado: "SHADOW" });
+    const primeira = await seedCobranca({ vencimento: new Date("2099-11-01T18:00:00.000Z") });
+    const segundaMatricula = await prisma.matricula.create({
+      data: {
+        alunoId: primeira.aluno.id,
+        produtoId: primeira.matricula.produtoId,
+        paisId: primeira.matricula.paisId,
+        moeda: primeira.matricula.moeda,
+      },
+    });
+    const segundaCobranca = await prisma.cobranca.create({
+      data: {
+        matriculaId: segundaMatricula.id,
+        tipo: "MENSALIDADE",
+        valorOriginal: 85000,
+        valorNegociado: 85000,
+        saldo: 85000,
+        moeda: primeira.matricula.moeda,
+        vencimento: instanteDaGrade("2099-12-02", "12:00", "America/Costa_Rica"),
+        status: "PENDENTE",
+      },
+    });
+
+    const registrarFonte = async (matriculaId: string, cobrancaId: string, vencimento: string, chave: string) => {
+      await prisma.pagadorPreparacaoMatricula.create({
+        data: {
+          matriculaId,
+          preparadorId: financeiro.id,
+          versao: 1,
+          tipo: "ALUNO",
+          dados: { alunoId: primeira.aluno.id },
+          motivo: "Pagador explícito preservado para o contrato selecionado.",
+          chaveIdempotencia: `${chave}-pagador`,
+          entradaHash: "p".repeat(64),
+        },
+      });
+      const condicoes = await prisma.condicoesEntradaPreparacao.create({
+        data: {
+          matriculaId,
+          preparadorId: financeiro.id,
+          versao: 1,
+          dados: { origem: "fixture inbox" },
+          motivo: "Condições preservadas para a fonte civil da cobrança.",
+          chaveIdempotencia: `${chave}-condicoes`,
+          entradaHash: "v".repeat(64),
+        },
+      });
+      const emissao = await prisma.emissaoCobrancasEntrada.create({
+        data: {
+          matriculaId,
+          condicoesId: condicoes.id,
+          executorId: financeiro.id,
+          etapa: "CONFERENCIA_SECRETARIA",
+          memoria: {
+            fusoInstitucional: "America/Costa_Rica",
+            cobrancas: [{ id: cobrancaId, tipo: "MENSALIDADE", valor: "85000", moeda: "CRC", vencimento, cobertura: null, minutos: null }],
+          },
+        },
+      });
+      await prisma.itemEmissaoEntrada.create({ data: { matriculaId, emissaoId: emissao.id, cobrancaId } });
+    };
+
+    await prisma.cobranca.update({
+      where: { id: primeira.cobranca.id },
+      data: { vencimento: instanteDaGrade("2099-11-01", "12:00", "America/Costa_Rica") },
+    });
+    await registrarFonte(primeira.matricula.id, primeira.cobranca.id, "2099-11-01", "inbox-primeira");
+    await registrarFonte(segundaMatricula.id, segundaCobranca.id, "2099-12-02", "inbox-segunda");
+
+    const contato = await prisma.contatoWhatsApp.create({
+      data: { telefoneE164: primeira.aluno.telefoneE164!, alunoId: primeira.aluno.id },
+    });
+    const segundaConversa = await prisma.conversaWhatsApp.create({
+      data: { numeroId: primeiroNumero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
+    });
+    const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+      numeroId: primeiroNumero.id,
+      contatoId: contato.id,
+      finalidade: "FINANCEIRO",
+      alunoId: primeira.aluno.id,
+      matriculaId: segundaMatricula.id,
+    }));
+    await prisma.mensagemWhatsApp.create({
+      data: { conversaId: segundaConversa.id, atendimentoId: atendimento.id, numeroId: primeiroNumero.id, direcao: "ENTRADA", corpo: "Segunda cobrança", driver: "META_CLOUD" },
+    });
+
+    const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, atendimento.id);
+    expect(thread?.cobrancaAtiva).toMatchObject({
+      id: segundaCobranca.id,
+      matriculaId: segundaMatricula.id,
+      vencimento: { estado: "CONFIRMADO", dataCivil: "2099-12-02", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" },
+    });
+    expect(thread?.cobrancaAtiva?.id).not.toBe(primeira.cobranca.id);
+    expect(thread?.cobrancaAtiva?.matriculaId).not.toBe(primeira.matricula.id);
+  });
+
   it("financeiro recebe a cobrança; vendedor recebe null MESMO com contato vinculado a aluno devedor", async () => {
     const agora = agoraAs(10);
     const { numero: numeroCobranca } = await seedCanal({ estado: "SHADOW" });
