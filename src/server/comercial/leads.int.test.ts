@@ -11,7 +11,7 @@ const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { criarLead } from "./acoes";
+import { atualizarDatas, criarLead } from "./acoes";
 import { prisma } from "@/lib/prisma";
 import { listarLeads, obterLead } from "./consultas";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
@@ -110,5 +110,22 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
   it("lead nasce na etapa NOVO (máquina de estados, doc 10 §1)", async () => {
     const lead = await obterLead(leadV1, sessaoDe(gerente));
     expect(lead?.lead.etapa).toBe(EtapaLead.NOVO);
+  });
+
+  it("preserva no evento a referência civil explícita de follow-up e proposta", async () => {
+    logadoComo(vendedor1.id);
+    const resultado = await atualizarDatas(leadV1, {
+      proximoFollowUp: "2026-09-10",
+      dataExperimental: "2026-09-11T09:30",
+      dataProposta: "2026-09-12",
+    });
+    expect(resultado.ok, resultado.ok ? "" : resultado.erro).toBe(true);
+
+    const evento = (await eventosDo("Lead", leadV1)).findLast((e) => e.tipo === "DatasAtualizadas");
+    expect(evento?.payload).toMatchObject({
+      proximoFollowUpCivil: "2026-09-10",
+      dataPropostaCivil: "2026-09-12",
+      dataExperimental: expect.stringMatching(/Z$/),
+    });
   });
 });
