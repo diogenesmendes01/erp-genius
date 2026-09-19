@@ -47,9 +47,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {!d.versoes.length && <p>Nenhum rascunho salvo nesta página.</p>}
     {d.versoes.map(v => {
       const m = v.memoria ? Memoria.safeParse(v.memoria) : null;
+      const instanteEncontro = (valor: string) => {
+        if (!m?.success) return "Encontro sem horário na memória antiga";
+        const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, m.data.periodo.fuso);
+        return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem ${m.data.periodo.fuso})`;
+      };
       const encontro = (encontroId: string) => {
         const origem = m?.success ? m.data.apuracao.origens?.find(o => o.encontroId === encontroId) : null;
-        return origem?.inicio && m?.success ? new Date(origem.inicio).toLocaleString("pt-BR", { timeZone: m.data.periodo.fuso }) : "Encontro sem horário na memória antiga";
+        return origem?.inicio ? instanteEncontro(origem.inicio) : "Encontro sem horário na memória antiga";
       };
       return <section key={v.id} className="space-y-3 rounded border p-4">
         <h2 className="text-lg font-semibold">Rascunho · versão {v.versao}</h2>
@@ -74,7 +79,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Total apurado: {m.data.apuracao.moeda} {m.data.apuracao.totalApurado} · {m.data.apuracao.minutosApurados} minutos.</p>
           <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-semibold">Encontros incluídos na apuração</caption>
             <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
-            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{new Date(i.origem.inicio).toLocaleString("pt-BR", { timeZone: m.data.periodo.fuso })}</td><td>{i.minutos}</td><td>{i.valorHoraContratado}</td><td>{i.valor}</td></tr>)}</tbody>
+            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{i.valorHoraContratado}</td><td>{i.valor}</td></tr>)}</tbody>
           </table></div>
           {!m.data.apuracao.itens.length && <p>Nenhum encontro incluído para cobrança nesta versão.</p>}
           <h3 className="font-semibold">Pendências ({m.data.apuracao.pendencias.length})</h3>
@@ -87,7 +92,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               {anterior && <> <Link className="underline" href={`${base}&versao=${encodeURIComponent(anterior.rascunhoId)}`}>Consultar fechamento da cobrança {anterior.codigo ?? anterior.cobrancaId}</Link></>}
             </li>;
           })}</ul>
-          {m.data.apuracao.semCobranca.length > 0 && <ul>{m.data.apuracao.semCobranca.map(p => <li key={p.encontroId}>{new Date(p.origem.inicio).toLocaleString("pt-BR", { timeZone: m.data.periodo.fuso })} · Sem cobrança: {p.desfecho === "CANCELAMENTO_ESCOLA" ? "cancelamento pela escola" : p.desfecho === "CANCELAMENTO_NO_PRAZO" ? "cancelamento do aluno dentro do prazo" : p.desfecho}.</li>)}</ul>}
+          {m.data.apuracao.semCobranca.length > 0 && <ul>{m.data.apuracao.semCobranca.map(p => <li key={p.encontroId}>{instanteEncontro(p.origem.inicio)} · Sem cobrança: {p.desfecho === "CANCELAMENTO_ESCOLA" ? "cancelamento pela escola" : p.desfecho === "CANCELAMENTO_NO_PRAZO" ? "cancelamento do aluno dentro do prazo" : p.desfecho}.</li>)}</ul>}
         </>}
         {q.versao && v.podeDecidir && <DecidirFechamento alunoId={d.matricula.alunoId} matriculaId={id} rascunhoId={v.id} />}
         {q.versao && m?.success && v.decisao?.aprovada && !v.emissao && m.data.apuracao.itens.length > 0 && ["APURACAO_COMPLETA", "PROPOSTA_PARCIAL"].includes(m.data.apuracao.estado) &&

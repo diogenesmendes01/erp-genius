@@ -8,6 +8,7 @@ import {
   decidirRegularizacaoPeriodoIntegral,
   proporRegularizacaoPeriodoIntegral,
 } from "@/server/matricula/periodo-integral";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -35,10 +36,6 @@ function dataCivil(valor: string | null) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 }
 
-function instanteUtc(valor: string) {
-  return `${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(new Date(valor))} UTC`;
-}
-
 function MemoriaCalculo({ memoria }: { memoria: Memoria }) {
   const valores = memoria.valores;
   return <section className="space-y-2 rounded bg-gray-50 p-3" aria-label="Memória de cálculo da proposta">
@@ -64,10 +61,12 @@ export function PeriodoIntegral({
   matriculaId,
   cobrancaId,
   dados: d,
+  preferenciaFusoExibicao = null,
 }: {
   matriculaId: string;
   cobrancaId: string;
   dados: Dados;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
@@ -77,6 +76,10 @@ export function PeriodoIntegral({
   const [erro, setErro] = useState("");
   const chave = useRef<string | null>(null);
   const classe = "block w-full rounded border p-2";
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   return <div className="space-y-4">
     <p>Esta tela registra a proposta e a decisão. A aplicação financeira permanece em uma etapa posterior.</p>
@@ -148,7 +151,7 @@ export function PeriodoIntegral({
         <p className="whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         {proposta.memoria ? <MemoriaCalculo memoria={proposta.memoria} /> : <p role="alert">A memória de cálculo desta proposta não está disponível; ela não pode ser aprovada nesta tela.</p>}
         {proposta.decisao ? <><p>{proposta.decisao.aprovada ? "Proposta aprovada." : "Proposta rejeitada."}</p><p className="whitespace-pre-wrap">Justificativa da decisão: {proposta.decisao.motivo}</p>
-          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-gray-50 p-3"><p>Aplicada em {instanteUtc(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? `${proposta.decisao.aplicacao.credito.moeda} ${proposta.decisao.aplicacao.credito.valor}` : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? `${proposta.memoria.moeda} ${proposta.memoria.saldoADesobrigar}` : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
+          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-gray-50 p-3"><p>Aplicada em {instanteAdministrativo(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? `${proposta.decisao.aplicacao.credito.moeda} ${proposta.decisao.aplicacao.credito.valor}` : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? `${proposta.memoria.moeda} ${proposta.memoria.saldoADesobrigar}` : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
         </> : <p role="status">Aguardando decisão independente.</p>}
         {proposta.podeDecidir && proposta.memoria && <form className="space-y-2" onSubmit={evento => {
           evento.preventDefault();

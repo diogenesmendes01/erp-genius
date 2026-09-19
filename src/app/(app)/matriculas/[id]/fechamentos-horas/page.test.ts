@@ -37,4 +37,23 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     await expect(Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno" }) })).rejects.toThrow("sem acesso");
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
+
+  it("formata as três origens de encontro na preferência e usa o fuso do período como fallback", async () => {
+    const memoria = { periodo: { inicio: "2026-01-01", fim: "2026-01-31", fuso: "America/Sao_Paulo", vencimento: "2026-02-10" }, apuracao: {
+      moeda: "BRL", estado: "APURACAO_COMPLETA", totalApurado: "100.00", minutosApurados: 60,
+      itens: [{ encontroId: "i", minutos: 60, valorHoraContratado: "100.00", valor: "100.00", origem: { inicio: "2026-01-01T02:30:00Z" } }],
+      pendencias: [{ encontroId: "p", motivo: "Conferir" }], origens: [{ encontroId: "p", inicio: "2026-01-01T02:30:00Z" }],
+      preservados: [{ encontroId: "p", destinacao: { tipo: "FATURADA", cobrancaId: "c" } }],
+      semCobranca: [{ encontroId: "s", desfecho: "CANCELAMENTO_ESCOLA", origem: { inicio: "2026-01-01T02:30:00Z" } }],
+    } };
+    const versaoBase = (dado as { versoes: Record<string, unknown>[] }).versoes[0]!;
+    mocks.consulta.mockResolvedValue({ ok: true, dado: { ...(dado as unknown as Record<string, unknown>), versoes: [{ ...versaoBase, memoria }] } });
+    const entrada = { params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno", versao: "rascunho" }) };
+    const pessoal = renderToStaticMarkup(await Page(entrada));
+    expect(pessoal.match(/31\/12\/2025, 20:30/g)).toHaveLength(6);
+    mocks.preferencia.mockResolvedValue({ ok: false, erro: "indisponível" });
+    const fallback = renderToStaticMarkup(await Page(entrada));
+    expect(fallback).toContain("31/12/2025, 23:30");
+    expect(fallback).toContain("origem America/Sao_Paulo");
+  });
 });
