@@ -20,7 +20,7 @@ it("mostra a origem e o antes/depois sem aceitar ID de arquivo, fonte ou propost
       versaoMaterialEsperada: 1, fonteMaterialAnterior: { versao: 1, driveRevisionId: "material-r1" },
       fontePublicacao: { versao: 2, driveRevisionId: "aula-r2" }, preparadorId: "gestao-a", preparador: { nome: "Gestão A" },
       podeDecidir: true, decisao: null, fonteMaterial: null,
-    }],
+    }], fusoExibicao: "America/Costa_Rica",
   }));
   expect(tela).toContain("Material: versão 1, revisão fixa material-r1");
   expect(tela).toContain("publicação v2 (aula-r2)");
@@ -42,7 +42,7 @@ it("mantém o histórico consultável após a aprovação e não oferece nova pr
       preparadorId: "gestao-a", preparador: { nome: "Gestão A" }, podeDecidir: false,
       decisao: { aprovada: true, motivo: "Fonte confirmada.", decididaEm: "2026-09-18T12:10:00.000Z", decisor: { nome: "Gestão B" } },
       fonteMaterial: { versao: 2, driveRevisionId: "aula-r2", origemPublicacaoId: "fonte-publicacao" },
-    }],
+    }], fusoExibicao: "America/Costa_Rica",
   }));
   expect(tela).toContain("O material já adota esta publicação");
   expect(tela).toContain("Fonte MATERIAL v2 fixada");
