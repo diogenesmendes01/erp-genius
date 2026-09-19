@@ -10,6 +10,7 @@ import {
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
 import { formatarMoeda, formatarValores, type ValorMoeda } from "@/lib/dinheiro";
+import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
@@ -66,7 +67,7 @@ export interface FichaFinanceiraDados {
   acessoBloqueado: boolean;
   historico: { id: string; quando: string; label: string; autor: string | null }[];
   tiles: {
-    proximoVenc: { valor: number; moeda: string; data: string } | null;
+    proximoVenc: { valor: number; moeda: string; vencimento: VencimentoVisivel } | null;
     ultimoPago: { valor: number; moeda: string; data: string; forma: string | null } | null;
     emAberto: ValorMoeda[];
     emAtraso: ValorMoeda[];
@@ -82,7 +83,7 @@ export interface FichaFinanceiraDados {
     valorRecebido: number;
     saldo: number;
     moeda: string;
-    vencimento: string;
+    vencimento: VencimentoVisivel;
     pagoEm: string | null;
     forma: FormaPagamento | null;
     regua: ReguaFicha | null;
@@ -134,7 +135,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? new Date(t.proximoVenc.data).toLocaleDateString("pt-BR") : ""} />
+        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? rotuloVencimento(t.proximoVenc.vencimento) : ""} />
         <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? new Date(t.ultimoPago.data).toLocaleDateString("pt-BR") : ""} />
         <Tile titulo="Em aberto" valor={formatarValores(t.emAberto)} />
         <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
@@ -157,7 +158,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
             {dados.cobrancas.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-2">{TIPO_COBRANCA_LABEL[c.tipo]}</td>
-                <td className="px-4 py-2 text-gray-600">{new Date(c.vencimento).toLocaleDateString("pt-BR")}</td>
+                <td className="px-4 py-2 text-gray-600">{rotuloVencimento(c.vencimento)}</td>
                 <td className="px-4 py-2">{formatarMoeda(c.valorNegociado, c.moeda)}</td>
                 <td className="px-4 py-2 text-gray-600">
                   {STATUS_COBRANCA_LABEL[c.status]}

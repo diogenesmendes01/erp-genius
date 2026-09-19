@@ -54,6 +54,25 @@ describe("referência civil do vencimento", () => {
     })).toMatchObject({ estado: "A_CONFERIR" });
   });
 
+  it("usa a versão da cobrança, e não o relógio da aplicação, e só rejeita fuso inválido na cabeça", () => {
+    const mesmaHora = new Date("2099-01-02T10:00:00Z");
+    expect(referenciaVencimentoCivil({
+      id: "c", versao: 3, vencimento: new Date("2099-03-15T18:00:00Z"),
+      aplicacoesAditivoVencimento: [
+        { id: "fuso-legado", aplicadaEm: mesmaHora, versaoCobrancaDepois: 2, vencimentoAnterior: new Date("2099-02-10T18:00:00Z"), vencimentoNovo: new Date("2099-03-10T18:00:00Z"), fuso: "Factory" },
+        { id: "cabeca", aplicadaEm: mesmaHora, versaoCobrancaDepois: 3, vencimentoAnterior: new Date("2099-03-10T18:00:00Z"), vencimentoNovo: new Date("2099-03-15T18:00:00Z"), fuso: "America/Costa_Rica" },
+      ],
+    })).toEqual({ estado: "CONFIRMADO", dataCivil: "2099-03-15", fuso: "America/Costa_Rica", origem: "ADITIVO_VENCIMENTO" });
+
+    expect(referenciaVencimentoCivil({
+      id: "c", versao: 3, vencimento: new Date("2099-03-15T18:00:00Z"),
+      aplicacoesAditivoVencimento: [
+        { id: "valida-antiga", aplicadaEm: mesmaHora, versaoCobrancaDepois: 2, vencimentoAnterior: new Date("2099-02-10T18:00:00Z"), vencimentoNovo: new Date("2099-03-10T18:00:00Z"), fuso: "America/Costa_Rica" },
+        { id: "fuso-cabeca", aplicadaEm: mesmaHora, versaoCobrancaDepois: 3, vencimentoAnterior: new Date("2099-03-10T18:00:00Z"), vencimentoNovo: new Date("2099-03-15T18:00:00Z"), fuso: "Factory" },
+      ],
+    })).toMatchObject({ estado: "A_CONFERIR" });
+  });
+
   it("reconhece acerto de taxa e retomada aplicados como datas civis, sem forçar fuso", () => {
     expect(referenciaVencimentoCivil({
       id: "taxa", versao: 3, vencimento: new Date("2099-04-10T00:00:00Z"),

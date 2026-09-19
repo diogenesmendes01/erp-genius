@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores } from "@/lib/dinheiro";
+import { dataCivilComDeslocamento, rotuloVencimento } from "@/lib/vencimento-civil";
 import type { FilaCobrancaItem, DashsCobranca, DegrauFila } from "@/server/cobrancas/consultas";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { registrarCobrancaWhatsApp } from "@/server/financeiro/acoes";
@@ -461,7 +462,6 @@ function DrawerDetalhe({
   onPagar: () => void;
   onPromessa: (ate: string) => void;
 }) {
-  const venc = new Date(item.vencimento);
   const [texto, setTexto] = useState(item.mensagemSugerida ?? "");
   const [promessaData, setPromessaData] = useState("");
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
@@ -512,7 +512,7 @@ function DrawerDetalhe({
             <span className="text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
             <span className="text-xs text-gray-500">
               {TIPO_COBRANCA_LABEL[item.tipo as keyof typeof TIPO_COBRANCA_LABEL] ?? item.tipo}
-              {item.competencia ? ` ${item.competencia}` : ""} · vence {venc.toLocaleDateString("pt-BR")}
+              {item.competencia ? ` ${item.competencia}` : ""} · {rotuloVencimento(item.vencimento)}
             </span>
           </div>
         </div>
@@ -596,7 +596,7 @@ function DrawerDetalhe({
             {regua.map((deg) => {
               const feito = item.passosFeitos.includes(deg.passo);
               const atual = item.passo === deg.passo && item.estado === "acao_devida";
-              const data = new Date(venc.getTime() + deg.offsetDias * 86400000);
+              const data = dataCivilComDeslocamento(item.vencimento, deg.offsetDias);
               const cor = feito ? "bg-green-500" : atual ? "bg-amber-500" : deg.tipo === "bloquear" ? "border border-red-400 bg-surface" : "border border-gray-300 bg-surface";
               return (
                 <li key={deg.passo} className="mb-2.5">
@@ -604,7 +604,7 @@ function DrawerDetalhe({
                   <div className={"text-xs " + (atual ? "font-medium text-amber-700" : feito ? "text-gray-700" : "text-gray-400")}>
                     {deg.rotulo}
                     {deg.tipo === "bloquear" && !feito && <span className="text-red-500"> (aprovação)</span>}
-                    <span className="text-gray-400"> · {data.toLocaleDateString("pt-BR")}</span>
+                    <span className="text-gray-400"> · {data ?? "data a conferir"}</span>
                   </div>
                 </li>
               );

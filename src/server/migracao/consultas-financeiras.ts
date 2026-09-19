@@ -4,6 +4,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 const entrada = z.object({ linhaId: z.string().min(1).max(100), cursor: z.string().min(1).max(100).optional(), cursorRecebimentos: z.string().min(1).max(100).optional(), cursorPagadores: z.string().min(1).max(100).optional(), cursorPropostas: z.string().min(1).max(100).optional() }).strict();
 const porPagina = 20;
@@ -62,9 +63,10 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
       const cobrancas = await tx.cobranca.findMany({
         where: { matriculaId: mapa.matriculaId, ...(filtro.cursor ? { id: { gt: filtro.cursor } } : {}) },
         orderBy: { id: "asc" }, take: porPagina + 1,
-        select: { id: true, codigo: true, tipo: true, status: true, moeda: true, valorNegociado: true, valorRecebido: true, saldo: true, vencimento: true, versao: true },
+        include: { ...incluirFonteVencimentoCivil },
       });
       const pagina = cobrancas.slice(0, porPagina);
+      const trilhasVencimento = await carregarTrilhasVencimentoCivil(tx, pagina.map((c) => c.id), [mapa.matriculaId]);
       const recebimentos = await tx.recebimento.findMany({
         where: { titularMatriculaId: mapa.matriculaId }, orderBy: { id: "asc" }, take: porPagina + 1, ...(filtro.cursorRecebimentos ? { cursor: { id: filtro.cursorRecebimentos }, skip: 1 } : {}),
         select: { id: true, cobrancaId: true, valor: true, moeda: true, forma: true, dataPagamento: true, chaveIdempotencia: true, hashDados: true, autorId: true, destinacoes: { where: { tipo: "COBRANCA" }, orderBy: { id: "asc" }, select: { id: true, cobrancaId: true, valor: true } } },
@@ -89,7 +91,14 @@ export async function consultarConciliacaoFinanceiraMigracao(input: { linhaId: s
         linha: { ...linha, mapa: { matriculaId: mapa.matriculaId, entradaHash: mapa.entradaHash, codigo: mapa.matricula.codigo, status: mapa.matricula.status, moeda: mapa.matricula.moeda, aluno: `${mapa.matricula.aluno.primeiroNome} ${mapa.matricula.aluno.sobrenome}` } },
         pendenciaRegistrada: aplicacoesOrigem.some(aplicacao => aplicacao.recebimentoId === null),
         resolucao: recebida ? { recebimentoId: recebida.recebimentoId!, aplicadaEm: recebida.aplicadaEm.toISOString() } : null,
-        cobrancas: pagina.map((cobranca) => ({ ...cobranca, valorNegociado: cobranca.valorNegociado.toString(), valorRecebido: decimal(cobranca.valorRecebido), saldo: decimal(cobranca.saldo), vencimento: cobranca.vencimento.toISOString() })),
+        cobrancas: pagina.map((cobranca) => {
+          const { aplicacoesAcertoTaxaAditivo, itemEmissaoEntrada, emissaoContinuidadeGerada, emissaoFechamentoHoras, ...visivel } = cobranca;
+          return {
+            ...visivel,
+            valorNegociado: cobranca.valorNegociado.toString(), valorRecebido: decimal(cobranca.valorRecebido), saldo: decimal(cobranca.saldo),
+            vencimento: referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: trilhasVencimento.m01PorCobranca.get(cobranca.id), retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas }),
+          };
+        }),
         recebimentos: recebimentos.slice(0, porPagina).map((recebimento) => ({ ...recebimento, destinacoes: recebimento.destinacoes.map(destino => ({ ...destino, valor: destino.valor.toString() })), valor: recebimento.valor.toString(), dataPagamento: recebimento.dataPagamento.toISOString() })),
         pagadores: pagadores.slice(0, porPagina).map((pagador) => ({ ...pagador, criadaEm: pagador.criadaEm.toISOString() })),
         propostas: propostas.slice(0, porPagina).map((proposta) => ({ ...proposta, podeDecidir: proposta.status === "PENDENTE" && proposta.preparadorId !== sessao.id, valor: decimal(proposta.valor), dataPagamento: data(proposta.dataPagamento), decididoEm: data(proposta.decididoEm), aplicadaEm: data(proposta.aplicadaEm), criadoEm: proposta.criadoEm.toISOString(), recebimentoExistente: proposta.recebimentoExistente ? { ...proposta.recebimentoExistente, dataPagamento: proposta.recebimentoExistente.dataPagamento.toISOString() } : null, aplicacao: proposta.aplicacao ? { ...proposta.aplicacao, aplicadaEm: proposta.aplicacao.aplicadaEm.toISOString() } : null })),

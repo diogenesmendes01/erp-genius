@@ -8,6 +8,7 @@ import { montarReguaPorCobranca, historicoFinanceiroDoAluno } from "@/server/cob
 import { exigirSessaoComPapel, exigirPapel } from "@/server/_shared";
 import { financeiroOperacional, escopoMatriculaComercial, escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
 import { saldoAtual } from "@/server/financeiro/regras";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 /** Ausência de identidade e vínculo nunca concede acesso global. */
 export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
@@ -31,6 +32,7 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
             orderBy: { vencimento: "asc" },
             include: {
               origensCreditoAcertoTaxaAditivo: { select: { valor: true } },
+              ...incluirFonteVencimentoCivil,
               aplicacoesPeriodoIntegral: {
                 orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }],
                 take: 1,
@@ -55,6 +57,13 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   // qualquer soma/serialização — ver `_shared/decimal`.
   const alunoPlano = semDecimais(aluno);
   const cobrancas = alunoPlano.matriculas.flatMap((m) => m.cobrancas);
+  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), alunoPlano.matriculas.map((m) => m.id));
+  const referenciaVencimentoPorCobranca = new Map(cobrancas.map((c) => [c.id, referenciaVencimentoCivil({
+    ...c,
+    aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(c.id),
+    aplicacoesM01: trilhasVencimento.m01PorCobranca.get(c.id),
+    retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas,
+  })]));
   const ajustes = alunoPlano.matriculas.flatMap((m) => m.ajustes);
   const comissoes = alunoPlano.matriculas.flatMap((m) => m.comissoes);
   const agora = new Date();
@@ -109,6 +118,7 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
     acessoBloqueado,
     reguaPorCobranca,
     historico,
+    referenciaVencimentoPorCobranca,
   };
 }
 

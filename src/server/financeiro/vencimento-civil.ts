@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { dataCivilInstitucional, FusoInstitucionalSchema } from "@/server/operacao/fuso";
@@ -13,6 +14,14 @@ export type ReferenciaVencimentoCivil =
       origem: OrigemConfirmada;
     }
   | { estado: "A_CONFERIR"; motivo: string };
+
+/** Relações da própria cobrança que preservam a memória de sua emissão. */
+export const incluirFonteVencimentoCivil = {
+  aplicacoesAcertoTaxaAditivo: { select: { id: true, aplicadaEm: true, versaoAnterior: true, vencimentoAnterior: true, vencimentoNovo: true } },
+  itemEmissaoEntrada: { select: { emissao: { select: { memoria: true } } } },
+  emissaoContinuidadeGerada: { select: { snapshot: true } },
+  emissaoFechamentoHoras: { select: { memoria: true } },
+} satisfies Prisma.CobrancaInclude;
 
 type FonteCobranca = {
   id: string;
@@ -64,6 +73,45 @@ export function periodosRetomadaReprogramada(snapshot: unknown, entrada: unknown
   return foto.data.matriculas.flatMap((m) => m.periodos).filter((p) => reprogramados.get(p.cobrancaId) === p.vencimento);
 }
 
+type ClienteConsultaVencimento = Prisma.TransactionClient | PrismaClient;
+
+/**
+ * Carrega as trilhas append-only que não estão navegáveis a partir de Cobranca.
+ * O chamador inclui `incluirFonteVencimentoCivil` na consulta da cobrança e junta
+ * o resultado deste mapa antes de chamar `referenciaVencimentoCivil`.
+ */
+export async function carregarTrilhasVencimentoCivil(cliente: ClienteConsultaVencimento, cobrancaIds: string[], matriculaIds: string[]) {
+  const vazio = () => ({ m01PorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; vencimento: Date }>>(), vencimentosPorCobranca: new Map<string, Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>>(), retomadasReprogramadas: [] as Array<{ id: string; aplicadaEm: Date; periodos: Array<{ cobrancaId: string; vencimentoAnterior: string; vencimento: string }> }> });
+  if (!cobrancaIds.length) return vazio();
+  // Mocks legados de consultas de saldo não materializam os quatro delegates
+  // append-only. Em produção todos existem; a ausência aqui só preserva a
+  // projeção de saldo que aqueles testes isolam.
+  const incompleto = cliente as Partial<ClienteConsultaVencimento>;
+  if (!incompleto.aplicacaoEntradaFinanceiraHistoricaMigracao || !incompleto.aplicacaoVencimentoAditivo || !incompleto.propostaRetomadaMatriculas || !incompleto.propostaEntradaFinanceiraHistoricaMigracao) return vazio();
+  const [aplicacoesM01, aplicacoesVencimento, retomadas] = await Promise.all([
+    cliente.aplicacaoEntradaFinanceiraHistoricaMigracao.findMany({ where: { cobrancaId: { in: cobrancaIds } }, select: { id: true, cobrancaId: true, propostaId: true, aplicadaEm: true } }),
+    cliente.aplicacaoVencimentoAditivo.findMany({ where: { decisao: { proposta: { cobrancaId: { in: cobrancaIds } } } }, select: { id: true, aplicadaEm: true, versaoCobrancaDepois: true, vencimentoAnterior: true, vencimentoNovo: true, decisao: { select: { proposta: { select: { cobrancaId: true, fuso: true } } } } } }),
+    cliente.propostaRetomadaMatriculas.findMany({ where: { status: "APLICADA", itens: { some: { matriculaId: { in: matriculaIds } } } }, select: { id: true, aplicadaEm: true, entrada: true, snapshot: true } }),
+  ]);
+  const propostasM01 = await cliente.propostaEntradaFinanceiraHistoricaMigracao.findMany({ where: { id: { in: aplicacoesM01.map((a) => a.propostaId) }, status: "APLICADA" }, select: { id: true, vencimento: true } });
+  const m01PorProposta = new Map(propostasM01.map((p) => [p.id, p]));
+  const m01PorCobranca = new Map<string, Array<{ id: string; aplicadaEm: Date; vencimento: Date }>>();
+  for (const aplicacao of aplicacoesM01) {
+    const proposta = m01PorProposta.get(aplicacao.propostaId);
+    if (proposta) m01PorCobranca.set(aplicacao.cobrancaId, [...(m01PorCobranca.get(aplicacao.cobrancaId) ?? []), { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vencimento: proposta.vencimento }]);
+  }
+  const vencimentosPorCobranca = new Map<string, Array<{ id: string; aplicadaEm: Date; versaoCobrancaDepois: number; vencimentoAnterior: Date; vencimentoNovo: Date; fuso: string }>>();
+  for (const aplicacao of aplicacoesVencimento) {
+    const cobrancaId = aplicacao.decisao.proposta.cobrancaId;
+    vencimentosPorCobranca.set(cobrancaId, [...(vencimentosPorCobranca.get(cobrancaId) ?? []), { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, versaoCobrancaDepois: aplicacao.versaoCobrancaDepois, vencimentoAnterior: aplicacao.vencimentoAnterior, vencimentoNovo: aplicacao.vencimentoNovo, fuso: aplicacao.decisao.proposta.fuso }]);
+  }
+  return {
+    m01PorCobranca,
+    vencimentosPorCobranca,
+    retomadasReprogramadas: retomadas.flatMap((r) => r.aplicadaEm ? [{ id: r.id, aplicadaEm: r.aplicadaEm, periodos: periodosRetomadaReprogramada(r.snapshot, r.entrada) }] : []),
+  };
+}
+
 function confirmado(dataCivil: string, fuso: string, hora: "00:00" | "12:00", vencimento: Date, origem: OrigemConfirmada): ReferenciaVencimentoCivil {
   try {
     if (instanteDaGrade(dataCivil, hora, fuso).getTime() !== vencimento.getTime()) {
@@ -79,7 +127,16 @@ function dataDaColunaCivil(data: Date) {
   return data.toISOString().slice(0, 10);
 }
 
-type MudancaPosterior = { id: string; aplicadaEm: Date; versaoDepois: number | null; dataCivil: string; fuso: string | null; origem: OrigemConfirmada; correspondeAoAtual: boolean };
+type MudancaPosterior = {
+  id: string;
+  aplicadaEm: Date;
+  versaoDepois: number | null;
+  dataCivil: string | null;
+  fuso: string | null;
+  origem: OrigemConfirmada;
+  correspondeAoAtual: boolean;
+  erro?: string;
+};
 
 function escolherMudancaPosterior(fonte: FonteCobranca): ReferenciaVencimentoCivil | null {
   const versaoPosteriorInvalida = [
@@ -95,7 +152,9 @@ function escolherMudancaPosterior(fonte: FonteCobranca): ReferenciaVencimentoCiv
     try {
       aditivos.push({ id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, versaoDepois: aplicacao.versaoCobrancaDepois, dataCivil: dataCivilInstitucional(aplicacao.vencimentoNovo, aplicacao.fuso), fuso: aplicacao.fuso, origem: "ADITIVO_VENCIMENTO", correspondeAoAtual: aplicacao.vencimentoNovo.getTime() === fonte.vencimento.getTime() });
     } catch {
-      return { estado: "A_CONFERIR", motivo: "A aplicação de vencimento não preserva um fuso IANA utilizável para a apresentação." };
+      // A cadeia é append-only. Uma memória antiga inválida não pode ocultar a
+      // aplicação de versão maior que efetivamente virou a cabeça da cobrança.
+      aditivos.push({ id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, versaoDepois: aplicacao.versaoCobrancaDepois, dataCivil: null, fuso: null, origem: "ADITIVO_VENCIMENTO", correspondeAoAtual: aplicacao.vencimentoNovo.getTime() === fonte.vencimento.getTime(), erro: "A aplicação de vencimento vigente não preserva um fuso IANA utilizável para a apresentação." });
     }
   }
 
@@ -103,17 +162,29 @@ function escolherMudancaPosterior(fonte: FonteCobranca): ReferenciaVencimentoCiv
     ...aditivos,
     ...(fonte.aplicacoesAcertoTaxaAditivo ?? []).flatMap((a) => dataDaColunaCivil(a.vencimentoAnterior) === dataDaColunaCivil(a.vencimentoNovo) ? [] : [{ id: a.id, aplicadaEm: a.aplicadaEm, versaoDepois: a.versaoAnterior + 1, dataCivil: dataDaColunaCivil(a.vencimentoNovo), fuso: null, origem: "ACERTO_TAXA_ADITIVO" as const, correspondeAoAtual: dataDaColunaCivil(a.vencimentoNovo) === dataDaColunaCivil(fonte.vencimento) }]),
     ...(fonte.retomadasReprogramadas ?? []).flatMap((r) => r.periodos.filter((p) => p.cobrancaId === fonte.id && p.vencimentoAnterior !== p.vencimento).map((p) => ({ id: r.id, aplicadaEm: r.aplicadaEm, versaoDepois: null, dataCivil: p.vencimento, fuso: null, origem: "RETOMADA_REPROGRAMADA" as const, correspondeAoAtual: p.vencimento === dataDaColunaCivil(fonte.vencimento) }))),
-  ].filter((m) => m.versaoDepois === null || m.versaoDepois <= fonte.versao)
-    .sort((a, b) => b.aplicadaEm.getTime() - a.aplicadaEm.getTime() || b.id.localeCompare(a.id));
+  ].filter((m) => m.versaoDepois === null || m.versaoDepois <= fonte.versao);
 
-  const ultima = mudancas[0];
+  const versionadas = mudancas.filter((m) => m.versaoDepois !== null);
+  const semVersao = mudancas.filter((m) => m.versaoDepois === null);
+  // A versão da cobrança é a ordem material das aplicações que a alteram. Datas
+  // de aplicação podem empatar ou refletir a espera de locks, portanto não são a
+  // precedência entre duas aplicações versionadas.
+  if (versionadas.length && semVersao.length)
+    return { estado: "A_CONFERIR", motivo: "A cadeia mistura alteração de vencimento versionada e retomada sem ordem versionada verificável." };
+  const ordenadas = versionadas.length
+    ? [...versionadas].sort((a, b) => b.versaoDepois! - a.versaoDepois! || b.id.localeCompare(a.id))
+    : [...semVersao].sort((a, b) => b.aplicadaEm.getTime() - a.aplicadaEm.getTime() || b.id.localeCompare(a.id));
+  const ultima = ordenadas[0];
   if (!ultima) return null;
-  const empatadas = mudancas.filter((m) => m.aplicadaEm.getTime() === ultima.aplicadaEm.getTime());
-  if (empatadas.length > 1 && new Set(empatadas.map((m) => `${m.origem}:${m.dataCivil}:${m.fuso ?? ""}`)).size > 1)
+  const empatadas = versionadas.length
+    ? ordenadas.filter((m) => m.versaoDepois === ultima.versaoDepois)
+    : ordenadas.filter((m) => m.aplicadaEm.getTime() === ultima.aplicadaEm.getTime());
+  if (empatadas.length > 1 && new Set(empatadas.map((m) => `${m.origem}:${m.dataCivil ?? ""}:${m.fuso ?? ""}:${m.erro ?? ""}`)).size > 1)
     return { estado: "A_CONFERIR", motivo: "Aplicações de vencimento empatadas não permitem identificar a origem vigente." };
+  if (ultima.erro) return { estado: "A_CONFERIR", motivo: ultima.erro };
   if (!ultima.correspondeAoAtual)
     return { estado: "A_CONFERIR", motivo: "O vencimento atual diverge da última aplicação financeira registrada." };
-  return { estado: "CONFIRMADO", dataCivil: ultima.dataCivil, fuso: ultima.fuso, origem: ultima.origem };
+  return { estado: "CONFIRMADO", dataCivil: ultima.dataCivil!, fuso: ultima.fuso, origem: ultima.origem };
 }
 
 /**
