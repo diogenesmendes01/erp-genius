@@ -12,6 +12,7 @@ import { resolverDestinoCobranca, INCLUDE_MATRICULA_DESTINO } from "@/server/wha
 import { contatoCorrespondeDestinoFinanceiro } from "@/server/whatsapp/destinatario-atual";
 import { suspensoesPorConferencia } from "./conferencia";
 import { cicloDoEventoCobranca } from "./eventos";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 // Read path da régua de cobrança (doc 24). Monta a EntradaRegua de cada cobrança aberta a partir
 // dos eventos já gravados (passo cumprido + promessa) e roda o cérebro `proximaAcao`. Tudo
@@ -27,7 +28,7 @@ export interface FilaCobrancaItem {
   valorRecebido: number;
   saldo: number;
   moeda: string;
-  vencimento: string;
+  vencimento: ReferenciaVencimentoCivil;
   competencia: string | null;
   // Régua (cérebro), achatada para serializar Server → Client:
   estado: EstadoCobranca;
@@ -211,6 +212,7 @@ export async function listarFilaCobranca(): Promise<{
     where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
     orderBy: { vencimento: "asc" },
     include: {
+      ...incluirFonteVencimentoCivil,
       matricula: {
         include: {
           ...INCLUDE_MATRICULA_DESTINO,
@@ -219,6 +221,8 @@ export async function listarFilaCobranca(): Promise<{
       },
     },
   });
+
+  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), [...new Set(cobrancas.map((c) => c.matriculaId))]);
 
   // Régua de cada cobrança via o cérebro compartilhado (mesma fonte da ficha do aluno).
   const regua = await montarReguaPorCobranca(
@@ -319,7 +323,12 @@ export async function listarFilaCobranca(): Promise<{
       valorRecebido,
       saldo,
       moeda: c.moeda,
-      vencimento: c.vencimento.toISOString(),
+      vencimento: referenciaVencimentoCivil({
+        ...c,
+        aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(c.id),
+        aplicacoesM01: trilhasVencimento.m01PorCobranca.get(c.id),
+        retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas,
+      }),
       competencia: c.competencia,
       ...r,
       matriculaId: c.matriculaId,

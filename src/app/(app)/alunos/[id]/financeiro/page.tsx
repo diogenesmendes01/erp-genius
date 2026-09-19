@@ -50,7 +50,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     historico: f.historico,
     tiles: {
       proximoVenc: f.proximo
-        ? { valor: f.proximo.valorNegociado, moeda: f.proximo.moeda, data: f.proximo.vencimento.toISOString() }
+        ? { valor: f.proximo.valorNegociado, moeda: f.proximo.moeda, vencimento: f.referenciaVencimentoPorCobranca.get(f.proximo.id) ?? { estado: "A_CONFERIR", motivo: "A referência civil deste vencimento não foi carregada." } }
         : null,
       ultimoPago: f.ultimoPago
         ? {
@@ -87,7 +87,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
         valorRecebido: c.valorRecebido ?? 0,
         saldo: c.saldo ?? c.valorNegociado - (c.valorRecebido ?? 0),
         moeda: c.moeda,
-        vencimento: c.vencimento.toISOString(),
+        vencimento: f.referenciaVencimentoPorCobranca.get(c.id) ?? { estado: "A_CONFERIR", motivo: "A referência civil deste vencimento não foi carregada." },
         pagoEm: c.pagoEm ? c.pagoEm.toISOString() : null,
         forma: c.formaPagamento,
         regua: r
