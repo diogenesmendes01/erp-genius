@@ -36,10 +36,10 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
       </>}
     </section>
     <ConteudoRevisao r={r.snapshot} historico preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
-    {!!r.snapshot.particulares.length && <details className="rounded border p-4"><summary>Horários individuais registrados na conferência · exibidos em {fusoExibicao}; origem {r.calendario.fusoInstitucional}</summary>
+    {!!r.snapshot.particulares.length && <details className="rounded border p-4"><summary>Horários individuais registrados na conferência · exibidos em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</summary>
       <ul>{r.snapshot.particulares.map((p, i) => <li key={p.id}>Encontro individual {i + 1}: {data(new Date(p.inicio))} a {data(new Date(p.fim))}</li>)}</ul>
     </details>}
-    {!!r.snapshot.recuperacoes?.length && <details className="rounded border p-4"><summary>Recuperações registradas na conferência · exibidas em {fusoExibicao}; origem {r.calendario.fusoInstitucional}</summary>
+    {!!r.snapshot.recuperacoes?.length && <details className="rounded border p-4"><summary>Recuperações registradas na conferência · exibidas em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</summary>
       <ul>{r.snapshot.recuperacoes.map((p, i) => <li key={p.id}>Recuperação {i + 1}: {data(new Date(p.inicio))} a {data(new Date(p.fim))}</li>)}</ul>
     </details>}
   </div>;
