@@ -4,13 +4,14 @@ import { obterLead } from "@/server/comercial/consultas";
 import { listarProfessores } from "@/server/turmas/consultas";
 import { FichaLead, type LeadFicha, type EventoTimeline } from "./FichaLead";
 import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 export default async function LeadDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina();
 
-  const dados = await obterLead(id, usuario);
+  const [dados, preferencia] = await Promise.all([obterLead(id, usuario), consultarPreferenciaFusoEquipe()]);
   if (!dados) notFound();
   const { lead, timeline } = dados;
   const professores = await listarProfessores();
@@ -57,5 +58,5 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     autor: ev.autor ? { nome: ev.autor.nome } : null,
   }));
 
-  return <div className="space-y-4">{usuario.papeis.some((p) => ["ADMINISTRADOR", "VENDEDOR", "GERENTE_COMERCIAL", "SECRETARIA_ACADEMICA"].includes(p)) && <Link className="underline" href={`/leads/${id}/contratacao`}>Preparar contratação com reserva</Link>}<FichaLead lead={ficha} timeline={eventos} professores={professores} /></div>;
+  return <div className="space-y-4">{usuario.papeis.some((p) => ["ADMINISTRADOR", "VENDEDOR", "GERENTE_COMERCIAL", "SECRETARIA_ACADEMICA"].includes(p)) && <Link className="underline" href={`/leads/${id}/contratacao`}>Preparar contratação com reserva</Link>}<FichaLead lead={ficha} timeline={eventos} professores={professores} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} /></div>;
 }
