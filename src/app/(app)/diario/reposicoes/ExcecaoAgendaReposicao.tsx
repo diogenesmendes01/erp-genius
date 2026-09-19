@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirExcecaoAgendaReposicaoIndividual, proporExcecaoAgendaReposicaoIndividual } from "@/server/diario/reposicao-agenda";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { montarPropostaExcecaoAgenda, type HorarioExcecaoConferido } from "./ExcecaoAgendaControle";
 
 export type ExcecaoAgenda = {
@@ -14,12 +15,13 @@ export type ExcecaoAgenda = {
 
 export type HorarioExcecaoProposto = HorarioExcecaoConferido;
 
-function formato(data: string, fuso: string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(data));
-}
-
 /** Q19: a proposta reaproveita o horário já conferido; nunca aceita identificadores digitados. */
-export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes }: { reposicaoId: string; proposta?: HorarioExcecaoProposto | null; excecoes: ExcecaoAgenda[] }) {
+export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, preferenciaFusoExibicao }: {
+  reposicaoId: string;
+  proposta?: HorarioExcecaoProposto | null;
+  excecoes: ExcecaoAgenda[];
+  preferenciaFusoExibicao: string | null;
+}) {
   const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const [sucesso, setSucesso] = useState(""); const router = useRouter();
   const chaves = useRef(new Map<string, string>()).current;
   const propor = (form: HTMLFormElement) => {
@@ -57,11 +59,16 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes }: { re
       <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className="rounded border px-3 py-2">{ocupado ? "Enviando…" : "Propor exceção"}</button>
     </form>}
-    {excecoes.length > 0 && <div className="space-y-3"><h3 className="font-medium">Histórico de exceções de agenda</h3>{excecoes.map(excecao => <article key={excecao.id} className="space-y-2 rounded border p-3">
-      <p><strong>Versão {excecao.versao}:</strong> {excecao.professor}, {formato(excecao.inicio, excecao.fuso)} a {formato(excecao.fim, excecao.fuso)} ({excecao.fuso}).</p>
-      <p>Proposta por {excecao.solicitante} em {formato(excecao.criadaEm, excecao.fuso)}: {excecao.motivo}</p><p className="whitespace-pre-wrap">Evidência: {excecao.evidencia}</p>
-      {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {formato(excecao.decisao.decididaEm, excecao.fuso)}: {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border px-3 py-2">Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
-    </article>)}</div>}
+    {excecoes.length > 0 && <div className="space-y-3"><h3 className="font-medium">Histórico de exceções de agenda</h3>{excecoes.map(excecao => {
+      const inicio = formatarInstanteExibicao(excecao.inicio, preferenciaFusoExibicao, excecao.fuso);
+      const fim = formatarInstanteExibicao(excecao.fim, preferenciaFusoExibicao, excecao.fuso);
+      const criadaEm = formatarInstanteExibicao(excecao.criadaEm, preferenciaFusoExibicao, excecao.fuso);
+      const decididaEm = excecao.decisao && formatarInstanteExibicao(excecao.decisao.decididaEm, preferenciaFusoExibicao, excecao.fuso);
+      return <article key={excecao.id} className="space-y-2 rounded border p-3">
+      <p><strong>Versão {excecao.versao}:</strong> {excecao.professor}, {inicio.texto} a {fim.texto} (exibido em {inicio.fuso}; origem {excecao.fuso}).</p>
+      <p>Proposta por {excecao.solicitante} em {criadaEm.texto} (horário exibido em {criadaEm.fuso}): {excecao.motivo}</p><p className="whitespace-pre-wrap">Evidência: {excecao.evidencia}</p>
+      {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {decididaEm!.texto} (horário exibido em {decididaEm!.fuso}): {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border px-3 py-2">Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
+    </article>})}</div>}
     {erro && <p role="alert">{erro}</p>}{sucesso && <p role="status">{sucesso}</p>}
   </section>;
 }
