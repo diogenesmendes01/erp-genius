@@ -22,7 +22,7 @@ function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | 
   const r = agendaSchema.safeParse(valor);
   if (!r.success || !r.data.encontro) return <p>Agenda indisponível para conferência.</p>;
   const e = r.data.encontro;
-  const fuso = resolverFusoExibicao(preferencia, e.fusoOrigem); return <p>{periodo(e.inicio, e.fim, fuso)} (origem {e.fusoOrigem})</p>;
+  const fuso = resolverFusoExibicao(preferencia, e.fusoOrigem); const normalizar=(v:string)=>/(?:Z|[+-]\d\d:\d\d)$/i.test(v)?v:`${v}Z`; return <p>{periodo(normalizar(e.inicio), normalizar(e.fim), fuso)} (origem {e.fusoOrigem})</p>;
 }
 
 export default async function Page({
