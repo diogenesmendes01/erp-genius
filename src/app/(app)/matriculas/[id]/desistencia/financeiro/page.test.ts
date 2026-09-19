@@ -3,11 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), acerto: vi.fn(), delta: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), acerto: vi.fn(), delta: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/desistencia-financeiro-consulta", () => ({ consultarCancelamentoFinanceiroDesistencia: mocks.consultar }));
 vi.mock("@/server/matricula/desistencia-acerto-consulta", () => ({ consultarAcertoDesistenciaContratual: mocks.acerto }));
 vi.mock("@/server/matricula/desistencia-reconferencia-delta-consulta", () => ({ consultarReconferenciaDeltaDesistencia: mocks.delta }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./ReconferenciaDeltaFormularios", () => ({
   PrepararReconferenciaDeltaFormulario: () => createElement("div", { "data-delta": "preparar" }),
   DecidirReconferenciaDeltaFormulario: () => createElement("div", { "data-delta": "decidir" }),
@@ -32,6 +33,7 @@ beforeEach(() => {
     impedimento: "Regra contratual aguardando conferência.", pedido: null, condicoes: null,
   } });
   mocks.delta.mockResolvedValue({ ok: true, dado: { podePreparar: false, impedimento: "Aplique primeiro a memória contratual Q165.", aplicacoesBase: [] } });
+  mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
 });
 
 const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: {
@@ -40,7 +42,7 @@ const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, da
   cobrancas: [{ id: "cobranca-interna", tipo: "MATRICULA", status: "PENDENTE", vencimento: "2026-10-15T12:00:00.000Z", moeda: "CRC", valorOriginal: "100.00", valorNegociado: "90.00", saldo: "90.00" }],
   pedido: { id: "pedido-atual", estadoHash: "a".repeat(64) },
   podePropor: true,
-  propostas: [{ id: "proposta-atual", versao: 2, preparadorNome: "Financeiro A", motivo: "Cobrança sem baixa confirmada", evidenciaCondicoes: "Extrato e condições revisados", propostaHash: "b".repeat(64), podeDecidir: true, podeAprovar: true, decisao: null }],
+  propostas: [{ id: "proposta-atual", versao: 2, preparadorNome: "Financeiro A", criadaEmISO: "2026-10-01T02:30:00.000Z", motivo: "Cobrança sem baixa confirmada", evidenciaCondicoes: "Extrato e condições revisados", propostaHash: "b".repeat(64), podeDecidir: true, podeAprovar: true, decisao: null }],
   ...sobrescrever,
 } });
 
@@ -70,6 +72,58 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("efetivação pendente");
     expect(html).not.toContain("data-acerto=");
   });
+
+  it("exibe o histórico administrativo no fuso pessoal sem converter vencimento, valores ou memória", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.consultar.mockResolvedValue(resposta({
+      propostas: [{
+        id: "proposta-decisao", versao: 2, preparadorNome: "Financeiro A", criadaEmISO: "2026-10-01T02:30:00.000Z",
+        motivo: "Cobrança sem baixa confirmada", evidenciaCondicoes: "Extrato e condições revisados", propostaHash: "b".repeat(64), podeDecidir: false, podeAprovar: false,
+        decisao: { aprovada: true, decisorNome: "Financeiro B", decididaEmISO: "2026-10-01T03:30:00.000Z", motivo: "Conferido" },
+      }],
+    }));
+    mocks.acerto.mockResolvedValue({ ok: true, dado: {
+      matricula: { id: "contrato", alunoId: "aluno" }, pedido: null, condicoes: null, podePreparar: false, impedimento: null,
+      propostas: [{
+        id: "acerto", versao: 1, preparadorNome: "Financeiro A", criadaEmISO: "2026-10-01T04:30:00.000Z", itens: [{ cobrancaId: "cobranca-interna", moeda: "CRC", devido: "90.00", saldoDevido: "90.00", creditoApurado: "0.00" }],
+        podeDecidir: false, podeAplicar: false,
+        decisao: { aprovada: true, decisorNome: "Financeiro B", motivo: "Conferido", aplicacao: { criadaEmISO: "2026-10-01T05:30:00.000Z", creditos: [] } },
+      }],
+    } });
+    mocks.delta.mockResolvedValue({ ok: true, dado: {
+      podePreparar: false, impedimento: null, aplicacoesBase: [{
+        id: "base", criadaEmISO: "2026-10-01T06:30:00.000Z", podePreparar: false, preparoBloqueadoPor: null,
+        propostas: [{
+          id: "delta", versao: 1, estado: "APLICADA", criadaEmISO: "2026-10-01T07:30:00.000Z", preparadorNome: "Financeiro C", fotografiaHash: "d".repeat(64), pendencia: null, itens: [], creditosExternos: [],
+          podeDecidirFinanceiro: false, podeDecidirAdministrativo: false, podeAplicar: false, decisaoFinanceira: null, decisaoAdministrativa: null,
+          aplicacao: { criadaEmISO: "2026-10-01T08:30:00.000Z" },
+        }],
+      }],
+    } });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+
+    expect(html).toContain("30/09/2026, 20:30");
+    expect(html).toContain("30/09/2026, 21:30");
+    expect(html).toContain("30/09/2026, 22:30");
+    expect(html).toContain("30/09/2026, 23:30");
+    expect(html).toContain("01/10/2026, 00:30");
+    expect(html).toContain("America/Costa_Rica; origem UTC");
+    expect(html).toContain("2026-10-15");
+    expect(html).toContain("CRC 100.00");
+    expect(html).toContain("CRC 90.00");
+    expect(html).toContain("Extrato e condições revisados");
+  });
+
+  it("usa UTC quando não há preferência válida", async () => {
+    mocks.consultar.mockResolvedValue(resposta());
+    mocks.preferencia.mockResolvedValue({ ok: false, erro: "Preferência indisponível." });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+
+    expect(html).toContain("01/10/2026, 02:30");
+    expect(html).toContain("UTC; origem UTC");
+  });
   it("entrega à preparação a última versão decidida para reapresentação", async () => {
     mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
     mocks.acerto.mockResolvedValue({ ok: true, dado: {
@@ -94,6 +148,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "matricula/a?" });
     expect(html).toContain("CRC 100.00");
     expect(html).toContain("CRC 90.00");
+    expect(html).toContain("2026-10-15");
     expect(html).toContain('data-formulario="proposta"');
     expect(html).toContain('data-formulario="decisao"');
     expect(html).toContain('data-aprovar="true"');
@@ -107,8 +162,8 @@ describe("DesistenciaFinanceiraPage", () => {
       impedimento: "As cobranças mudaram desde a última proposta.",
       podePropor: false,
       propostas: [
-        { id: "proposta-obsoleta", versao: 3, preparadorNome: "Financeiro A", motivo: "Proposta desatualizada", evidenciaCondicoes: "Evidência histórica", propostaHash: "c".repeat(64), podeDecidir: true, podeAprovar: false, decisao: null },
-        { id: "proposta-rejeitada", versao: 2, preparadorNome: "Financeiro B", motivo: "Condição anterior", evidenciaCondicoes: "Evidência anterior", propostaHash: "d".repeat(64), podeDecidir: false, podeAprovar: false, decisao: { aprovada: false, decisorNome: "Financeiro C", motivo: "Saldo não conferido" } },
+        { id: "proposta-obsoleta", versao: 3, preparadorNome: "Financeiro A", criadaEmISO: "2026-10-01T02:30:00.000Z", motivo: "Proposta desatualizada", evidenciaCondicoes: "Evidência histórica", propostaHash: "c".repeat(64), podeDecidir: true, podeAprovar: false, decisao: null },
+        { id: "proposta-rejeitada", versao: 2, preparadorNome: "Financeiro B", criadaEmISO: "2026-09-30T02:30:00.000Z", motivo: "Condição anterior", evidenciaCondicoes: "Evidência anterior", propostaHash: "d".repeat(64), podeDecidir: false, podeAprovar: false, decisao: { aprovada: false, decisorNome: "Financeiro C", decididaEmISO: "2026-09-30T03:30:00.000Z", motivo: "Saldo não conferido" } },
       ],
     }));
 
@@ -119,7 +174,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain('data-formulario="decisao"');
     expect(html).toContain('data-aprovar="false"');
     expect(html).not.toContain('data-formulario="proposta"');
-    expect(html).toContain("Rejeitada por Financeiro C: Saldo não conferido");
+    expect(html).toContain("Rejeitada por Financeiro C, em 30/09/2026, 03:30 (UTC; origem UTC): Saldo não conferido");
   });
 
   it("mostra crédito externo e motivo da rejeição, sem repetir preparo durante pendência", async () => {
@@ -173,5 +228,16 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("Matrícula fora do escopo financeiro.");
     expect(html).not.toContain("Cobranças desta matrícula");
     expect(html).not.toContain('data-formulario=');
+  });
+
+  it("não consulta preferência ou dados financeiros quando a guarda falha", async () => {
+    mocks.sessao.mockRejectedValue(new Error("Sessão expirada."));
+
+    await expect(Page({ params: Promise.resolve({ id: "m" }) })).rejects.toThrow("Sessão expirada.");
+
+    expect(mocks.consultar).not.toHaveBeenCalled();
+    expect(mocks.acerto).not.toHaveBeenCalled();
+    expect(mocks.delta).not.toHaveBeenCalled();
+    expect(mocks.preferencia).not.toHaveBeenCalled();
   });
 });
