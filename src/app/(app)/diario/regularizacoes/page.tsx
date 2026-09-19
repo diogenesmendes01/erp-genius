@@ -38,7 +38,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
             <p className="text-sm">{item.designacao ? `Responsável designado: ${item.designacao.responsavel}` : "Sem responsável designado."}</p>
           </div>
           {item.podeRegularizar && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${encodeURIComponent(item.id)}`}>Abrir chamada para regularizar</Link>}
-          {resultado.dado?.gestao && <GerirDesignacoes encontroId={item.id} somenteLeitura={!item.podeGerir} />}
+          {resultado.dado?.gestao && <GerirDesignacoes encontroId={item.id} somenteLeitura={!item.podeGerir} fusoExibicao={fuso} />}
         </article>;
       })}
       <div className="flex gap-4 text-sm text-brand-700">

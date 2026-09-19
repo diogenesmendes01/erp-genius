@@ -18,7 +18,7 @@ type DadosDesignacoes = {
   }>;
 };
 
-export function GerirDesignacoes({ encontroId, somenteLeitura = false }: { encontroId: string; somenteLeitura?: boolean }) {
+export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibicao = "UTC" }: { encontroId: string; somenteLeitura?: boolean; fusoExibicao?: string }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [dados, setDados] = useState<DadosDesignacoes | null>(null);
@@ -128,8 +128,8 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false }: { encon
           {dados.historico.map((designacao) => <article key={designacao.id} className="space-y-2 rounded border p-3 text-sm">
             <p><strong>{designacao.responsavel}</strong> · designado por {designacao.designador}</p>
             <p>{designacao.motivo}</p>
-            <p className="text-gray-600">{new Date(designacao.criadaEm).toLocaleString("pt-BR")}</p>
-            {designacao.revogacao ? <p className="text-gray-700">Revogada por {designacao.revogacao.revogador}: {designacao.revogacao.motivo} ({new Date(designacao.revogacao.criadaEm).toLocaleString("pt-BR")})</p> : somenteLeitura || !dados.podeGerir ? <p className="text-gray-700">Registro preservado; regularização encerrada.</p> : <div className="space-y-2 border-t pt-2">
+            <p className="text-gray-600">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao }).format(new Date(designacao.criadaEm))} ({fusoExibicao})</p>
+            {designacao.revogacao ? <p className="text-gray-700">Revogada por {designacao.revogacao.revogador}: {designacao.revogacao.motivo} ({new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao }).format(new Date(designacao.revogacao.criadaEm))})</p> : somenteLeitura || !dados.podeGerir ? <p className="text-gray-700">Registro preservado; regularização encerrada.</p> : <div className="space-y-2 border-t pt-2">
               <label className="block">Motivo da revogação
                 <textarea className="mt-1 block w-full rounded border p-2" value={motivosRevogacao[designacao.id] ?? ""} onChange={(evento) => setMotivosRevogacao((anterior) => ({ ...anterior, [designacao.id]: evento.target.value }))} minLength={5} maxLength={2000} disabled={ocupado} />
               </label>
