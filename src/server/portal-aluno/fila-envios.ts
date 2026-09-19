@@ -14,7 +14,7 @@ export type ItemFilaEnviosPortalAluno = {
   situacao: "PREPARADO" | "CANCELADO" | "ENVIADO" | "FALHOU" | "INCERTO";
   criadoEm: Date;
   atualizadoEm: Date;
-  conciliacao: null | { id: string; estadoHash: string; evidencia: string; versao: number; secretariaNome: string; criadaEm: Date; decisao: null | { aprovada: boolean; solicitacaoReemitidaId: string | null } };
+  conciliacao: null | { id: string; estadoHash: string; evidencia: string; versao: number; secretariaNome: string; criadaEm: Date; decisao: null | { aprovada: boolean; decididaEm: Date; solicitacaoReemitidaId: string | null } };
   podeRegistrarEvidencia: boolean;
   podeDecidirReemissao: boolean;
 };
@@ -49,7 +49,7 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
           criadoEm: true,
           atualizadoEm: true,
           conta: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } },
-          conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, criadaEm: true, secretariaId: true, secretaria: { select: { nome: true } }, decisao: { select: { aprovada: true, solicitacaoReemitidaId: true } } } },
+          conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, criadaEm: true, secretariaId: true, secretaria: { select: { nome: true } }, decisao: { select: { aprovada: true, decididaEm: true, solicitacaoReemitidaId: true } } } },
         },
       });
       const itens = registros.slice(0, 20).map((registro) => ({

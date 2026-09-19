@@ -70,8 +70,9 @@ describe("consultarFilaEnviosPortalAluno", () => {
   it("projeta evid�ncia e controles apenas para a Administra��o independente", async () => {
     m.usuario.mockResolvedValue({ ativo: true, papeis: ["ADMINISTRADOR"] });
     const comConciliacao = linha("x");
-    comConciliacao.conciliacoes = [{ id: "c1", estadoHash: "a".repeat(64), evidencia: "Confer�ncia sem recibo do provedor.", versao: 2, criadaEm: new Date("2026-09-16T12:00:00Z"), secretariaId: "outra", secretaria: { nome: "Secretaria" }, decisao: null }] as never;
+    comConciliacao.conciliacoes = [{ id: "c1", estadoHash: "a".repeat(64), evidencia: "Confer�ncia sem recibo do provedor.", versao: 2, criadaEm: new Date("2026-09-16T12:00:00Z"), secretariaId: "outra", secretaria: { nome: "Secretaria" }, decisao: { aprovada: false, decididaEm: new Date("2026-09-16T13:00:00Z"), solicitacaoReemitidaId: null } }] as never;
     m.envios.mockResolvedValue([comConciliacao]);
     const r = await consultarFilaEnviosPortalAluno();
-    expect(r).toMatchObject({ ok: true, dado: { itens: [{ podeRegistrarEvidencia: true, podeDecidirReemissao: true, conciliacao: { secretariaNome: "Secretaria", evidencia: "Confer�ncia sem recibo do provedor.", versao: 2 } }] } });
+    expect(r).toMatchObject({ ok: true, dado: { itens: [{ podeRegistrarEvidencia: true, podeDecidirReemissao: true, conciliacao: { secretariaNome: "Secretaria", evidencia: "Confer�ncia sem recibo do provedor.", versao: 2, decisao: { aprovada: false, decididaEm: new Date("2026-09-16T13:00:00Z"), solicitacaoReemitidaId: null } } }] } });
+    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ select: expect.objectContaining({ conciliacoes: expect.objectContaining({ select: expect.objectContaining({ decisao: { select: expect.objectContaining({ decididaEm: true }) } }) }) }) }));
   });
