@@ -77,19 +77,19 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
     </form>}
     {operacao.liberacao.podeLiberar && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => liberarEntregaOperacional({ reposicaoId: operacao.reposicaoId, expiraEm: new Date(String(dados.get("expiraEm") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Liberação específica para matrícula {operacao.matriculaStatus.toLowerCase()}</p>
-      {operacao.liberacao.expiraEm && <p className="text-sm">Liberação vigente até {data(operacao.liberacao.expiraEm, operacao.fuso)} ({operacao.fuso}).</p>}
+      {operacao.liberacao.expiraEm && <p className="text-sm">Liberação vigente até {data(operacao.liberacao.expiraEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>}
       <label className="block">Expira em (horário local)<input name="expiraEm" type="datetime-local" required className="block rounded border p-2" /></label>
       <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className="rounded border px-3 py-2">Liberar entrega específica</button>
     </form>}
     {operacao.material && <RelatarIndisponibilidadeReposicao reposicaoId={operacao.reposicaoId} />}
     {operacao.relatosAbertos.map((relato) => <form key={relato.id} className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); const motivo = String(dados.get("motivo") ?? ""); executar(() => dados.get("decisao") === "DESCARTAR" ? descartarRelatoIndisponibilidadeEquipe({ reposicaoId: operacao.reposicaoId, relatoId: relato.id, motivo }) : confirmarIndisponibilidadeOperacional({ reposicaoId: operacao.reposicaoId, relatoId: relato.id, motivo })); }}>
-      <p className="font-medium">Relato de indisponibilidade em {data(relato.criadaEm, operacao.fuso)} ({operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{relato.descricao}</p>
+      <p className="font-medium">Relato de indisponibilidade em {data(relato.criadaEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{relato.descricao}</p>
       <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <div className="flex flex-wrap gap-2"><button name="decisao" value="CONFIRMAR" disabled={ocupado} className="rounded border px-3 py-2">Confirmar indisponibilidade e pausar prazo</button><button name="decisao" value="DESCARTAR" disabled={ocupado} className="rounded border px-3 py-2">Descartar relato sem pausar</button></div>
     </form>)}
     {operacao.indisponibilidade && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => retomarIndisponibilidadeOperacional({ reposicaoId: operacao.reposicaoId, indisponibilidadeId: operacao.indisponibilidade!.id, motivo: String(dados.get("motivo") ?? "") })); }}>
-      <p className="font-medium">Prazo pausado desde {data(operacao.indisponibilidade.inicio, operacao.fuso)} ({operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{operacao.indisponibilidade.motivo}</p>
+      <p className="font-medium">Prazo pausado desde {data(operacao.indisponibilidade.inicio, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{operacao.indisponibilidade.motivo}</p>
       <label className="block">Motivo da retomada<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className="rounded border px-3 py-2">Retomar material e prazo</button>
     </form>}
