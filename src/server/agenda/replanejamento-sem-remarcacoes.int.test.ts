@@ -16,6 +16,7 @@ import { preverReplanejamentoCalendario } from "./replanejamento-consulta";
 import { registrarRascunhoReplanejamento } from "./replanejamento-rascunho";
 import { prepararGradeInicialTurma } from "./grade-proposta";
 import { decidirGradeInicialTurma } from "./grade-decisao";
+import { carregarComprovacaoOfertaContinuidadeAgendaTx } from "@/server/matricula/oferta-continuidade-agenda-tx";
 
 beforeEach(async () => {
   await truncarBanco();
@@ -113,6 +114,35 @@ it("publica revisão conjunta sem remarcações e preserva a agenda publicada", 
   expect(primeira).toMatchObject({ ok: true, dado: { aprovada: true, aplicada: true } });
   expect(await decidirEAplicarReplanejamentoConjunto(entrada)).toEqual(primeira);
   expect(await decidirEAplicarReplanejamentoConjunto({ ...entrada, motivo: "Tentativa divergente após a decisão." })).toMatchObject({ ok: false });
+
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno da continuidade", paisId: catalogo.pais.id } });
+  const matricula = await prisma.matricula.create({ data: {
+    alunoId: aluno.id, paisId: catalogo.pais.id, produtoId: catalogo.produto.id, moeda: "CRC", status: "ATIVA",
+  } });
+  await prisma.alocacaoTurma.create({ data: {
+    matriculaId: matricula.id, alunoId: aluno.id, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00.000Z"),
+  } });
+  const primeiroDia = agendaAntes[0]!.inicio.toISOString().slice(0, 10);
+  const ultimoDia = agendaAntes.at(-1)!.inicio.toISOString().slice(0, 10);
+  const gradeOfertaId = grade.dado.id;
+  const revisaoAplicadaId = rascunho.dado.id;
+  const erroRollback = new Error("Rollback da fotografia Q161");
+  await expect(prisma.$transaction(async (tx) => {
+    const consultar = () => carregarComprovacaoOfertaContinuidadeAgendaTx(tx, {
+      matriculaId: matricula.id, inicio: new Date(`${primeiroDia}T00:00:00.000Z`), fim: new Date(`${ultimoDia}T00:00:00.000Z`),
+    });
+    const comprovada = await consultar();
+    expect(comprovada).toMatchObject({ estado: "COMPROVADA_POR_AGENDA", memoria: { fontes: [{
+      turmaId: turma.id, gradeId: gradeOfertaId, ancoraCalendario: { tipo: "REPLANEJAMENTO_APLICADO", revisaoId: revisaoAplicadaId },
+    }] } });
+    await tx.encontroAgenda.update({ where: { id: agendaAntes[0]!.id }, data: {
+      inicio: new Date(agendaAntes[0]!.inicio.getTime() + 60_000), fim: new Date(agendaAntes[0]!.fim.getTime() + 60_000),
+    } });
+    const obsoleta = await consultar();
+    expect(obsoleta).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["CALENDARIO_DIVERGENTE"] } });
+    expect(obsoleta.memoria.contextoHash).not.toBe(comprovada.memoria.contextoHash);
+    throw erroRollback;
+  })).rejects.toBe(erroRollback);
 
   const [decisaoCalendario, aplicacao, evento, agendaDepois, avisos] = await Promise.all([
     prisma.decisaoCalendarioEscolar.findUnique({ where: { calendarioId: calendarioNovo.dado.id } }),

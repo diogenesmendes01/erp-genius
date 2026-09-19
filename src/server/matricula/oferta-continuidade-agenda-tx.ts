@@ -1,6 +1,7 @@
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
+import { ancorarCalendarioOferta, type AncoraCalendarioOferta } from "@/server/agenda/cadeia-calendario-oferta";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
@@ -9,17 +10,17 @@ const Entrada = z.object({ matriculaId: z.string().trim().min(1), inicio: z.date
   for (const [campo, data] of [["inicio", d.inicio], ["fim", d.fim]] as const) {
     if (!Number.isFinite(data.getTime()) || data.getUTCHours() || data.getUTCMinutes() || data.getUTCSeconds() || data.getUTCMilliseconds()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [campo], message: "A cobertura deve usar data civil UTC." });
   }
-  if (d.fim < d.inicio) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fim"], message: "PerÃ­odo de continuidade invÃ¡lido." });
+  if (d.fim < d.inicio) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fim"], message: "Período de continuidade inválido." });
 });
 
-type Fonte = { alocacaoId: string; turmaId: string; gradeId: string; gradeVersao: number; calendarioId: string; calendarioVersao: number; encontros: Array<{ id: string; inicio: string; fim: string; status: string; professorId: string | null }>; };
+type Fonte = { alocacaoId: string; turmaId: string; gradeId: string; gradeVersao: number; calendarioId: string; calendarioVersao: number; ancoraCalendario: AncoraCalendarioOferta; encontros: Array<{ id: string; inicio: string; fim: string; status: string; professorId: string | null }>; };
 type Motivo = "VINCULO_AUSENTE" | "TURMA_SEM_OFERTA_ATIVA" | "TURMA_TERMINA_NO_PERIODO" | "GRADE_NAO_PUBLICADA" | "GRADE_DIVERGENTE" | "CALENDARIO_DIVERGENTE" | "AGENDA_INSUFICIENTE" | "AULA_EXCEPCIONAL_NO_PERIODO" | "DOCENTE_INAPTO" | "DOCENTE_INDISPONIVEL";
 const civil = (data: Date, fuso: string) => dataCivilInstitucional(data, fuso);
 /** Encontros são intervalos [inicio, fim): meia-noite no fim não ocupa o novo dia civil. */
 const civilFimInclusivo = (data: Date, fuso: string) => civil(new Date(data.getTime() - 1), fuso);
 
 
-/** Q161: a prova automÃ¡tica Ã© estreita; lacunas nunca declaram indisponibilidade. */
+/** Q161: a prova automática é estreita; lacunas nunca declaram indisponibilidade. */
 export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Prisma.TransactionClient, "alocacaoTurma" | "indisponibilidadeDocente" | "versaoCalendarioEscolar">, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const alocacoes = await tx.alocacaoTurma.findMany({
@@ -32,7 +33,13 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     } } },
   });
   const calendarioVigente = await tx.versaoCalendarioEscolar.findFirst({
-    where: { decisao: { aprovada: true } }, orderBy: [{ versao: "desc" }, { id: "desc" }], select: { id: true, versao: true },
+    where: { decisao: { aprovada: true } }, orderBy: [{ versao: "desc" }, { id: "desc" }], select: {
+      id: true, versao: true,
+      replanejamentos: { orderBy: [{ versao: "desc" }, { id: "desc" }], select: {
+        id: true, estadoHash: true, snapshot: true,
+        decisaoConjunta: { select: { id: true, aprovada: true, estadoHash: true, aplicacao: { select: { id: true, estadoHash: true } } } },
+      } },
+    },
   });
   const encontrosConferidos = alocacoes.flatMap(a => a.turma.encontrosAgenda)
     .filter(e => e.finalidade === "AULA" && e.matriculaId === null && e.professorId && e.fim > e.inicio);
@@ -58,9 +65,13 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
       if (!alocacaoCobreAula(alocacao, inicioCobertura) || !alocacaoCobreAula(alocacao, fimCobertura)) return exigir("VINCULO_AUSENTE");
     } catch { return exigir("VINCULO_AUSENTE"); }
   }
-  if (!calendarioVigente || calendarioVigente.id !== grade.calendarioId || calendarioVigente.versao !== grade.calendario.versao) return exigir("CALENDARIO_DIVERGENTE");
-
   const aulas = turma.encontrosAgenda.filter((e) => e.finalidade === "AULA" && e.matriculaId === null && e.fim > e.inicio);
+  const ancoraCalendario = ancorarCalendarioOferta({
+    grade: { calendarioId: grade.calendarioId, calendarioVersao: grade.calendario.versao },
+    calendarioVigente, turmaId: turma.id,
+    encontros: aulas.map((encontro) => ({ id: encontro.id, inicio: encontro.inicio, fim: encontro.fim, status: encontro.status })),
+  });
+  if (!ancoraCalendario) return exigir("CALENDARIO_DIVERGENTE");
   const noPeriodo = aulas.filter((e) => civil(e.inicio, fuso) <= fimCivil && civilFimInclusivo(e.fim, fuso) >= inicioCivil);
   if (!noPeriodo.length) return exigir("AGENDA_INSUFICIENTE");
   if (noPeriodo.some((e) => e.propostaGradeId !== grade.id)) return exigir("GRADE_DIVERGENTE");
@@ -70,6 +81,6 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
   if (aceitas.some((e) => !e.professorId || !e.professor?.ativo || !e.professor.papeis.includes("PROFESSOR"))) return exigir("DOCENTE_INAPTO");
 
   if (ausencias.length) return exigir("DOCENTE_INDISPONIVEL");
-  const fonte: Fonte = { alocacaoId: alocacao.id, turmaId: turma.id, gradeId: grade.id, gradeVersao: grade.versao, calendarioId: grade.calendarioId, calendarioVersao: grade.calendario.versao, encontros: aceitas.map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status, professorId: e.professorId })) };
+  const fonte: Fonte = { alocacaoId: alocacao.id, turmaId: turma.id, gradeId: grade.id, gradeVersao: grade.versao, calendarioId: grade.calendarioId, calendarioVersao: grade.calendario.versao, ancoraCalendario, encontros: aceitas.map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status, professorId: e.professorId })) };
   return { estado: "COMPROVADA_POR_AGENDA" as const, memoria: { fontes: [fonte], motivos: [] as Motivo[], contextoHash } };
 }
