@@ -1,14 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ listarAgendasSegundaChamada: vi.fn() }));
+const mocks = vi.hoisted(() => ({ listarAgendasSegundaChamada: vi.fn(), consultarPreferenciaFusoEquipe: vi.fn() }));
 
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-agendas", () => ({ listarAgendasSegundaChamada: mocks.listarAgendasSegundaChamada }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.consultarPreferenciaFusoEquipe }));
 
 import Page from "./page";
 
 describe("AgendasSegundaChamadaPage", () => {
+  mocks.consultarPreferenciaFusoEquipe.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   it("mantém navegação paginada com identificadores codificados e rótulos operacionais", async () => {
     mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: {
       itens: [{

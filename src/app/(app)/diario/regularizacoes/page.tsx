@@ -3,6 +3,8 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarRegularizacoesAula } from "@/server/diario/regularizacao-consultas";
 import { GerirDesignacoes } from "./GerirDesignacoes";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 const ROTULO_STATUS: Record<string, string> = { NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho", PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada" };
 
@@ -10,7 +12,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { cursor, modo: modoParam } = await searchParams;
   const modo = modoParam === "HISTORICO" ? "HISTORICO" : "PENDENTES";
-  const resultado = await listarRegularizacoesAula({ cursor, modo });
+  const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ cursor, modo }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
     <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
     <div>
@@ -25,11 +27,12 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
       </nav>}
       {!resultado.dado.itens.length && <p>{modo === "HISTORICO" ? "Nenhuma designação encontrada no histórico." : "Nenhuma regularização pendente."}</p>}
       {resultado.dado.itens.map((item) => {
-        const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: item.fusoOrigem }).format(new Date(valor));
+        const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem);
+        const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
         return <article key={item.id} className="space-y-3 rounded border bg-[var(--surface)] p-4">
           <div>
             <h2 className="font-medium">{item.turma}</h2>
-            <p className="text-sm">{formatar(item.inicio)} — {formatar(item.fim)} · {item.fusoOrigem}</p>
+            <p className="text-sm">{formatar(item.inicio)} — {formatar(item.fim)} · exibido em {fuso}; origem {item.fusoOrigem}</p>
             <p className="text-sm text-gray-600">Status: {ROTULO_STATUS[item.status] ?? item.status}</p>
             <p className="text-sm text-gray-600">Professor original: {item.professor}</p>
             <p className="text-sm">{item.designacao ? `Responsável designado: ${item.designacao.responsavel}` : "Sem responsável designado."}</p>

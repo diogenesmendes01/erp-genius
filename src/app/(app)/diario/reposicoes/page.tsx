@@ -4,12 +4,13 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarFilaReposicoesDocente } from "@/server/diario/reposicao-consulta";
 import { ReposicaoDocente } from "./ReposicaoDocente";
 import { listarReposicoesConcluidasDesignadas } from "@/server/diario/correcao-reposicao-consulta";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function ReposicoesDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string; correcoesAntes?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
   const { cursor, correcoesAntes } = await searchParams;
-  const r = await consultarFilaReposicoesDocente({ cursor });
-  const concluidas = await listarReposicoesConcluidasDesignadas({ antesId: correcoesAntes });
+  const [r, concluidas, preferencia] = await Promise.all([consultarFilaReposicoesDocente({ cursor }), listarReposicoesConcluidasDesignadas({ antesId: correcoesAntes }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
     <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
     <header><h1 className="text-2xl font-medium">Fila de reposições individuais</h1><p className="mt-1 text-sm text-gray-600">Mostra apenas reposições atribuídas a você. Não há dados pessoais, contrato comercial ou cobrança nesta fila.</p></header>
@@ -24,7 +25,7 @@ export default async function ReposicoesDocentePage({ searchParams }: { searchPa
       {concluidas.ok && !concluidas.dado?.itens.length && <p>Nenhuma conclusão disponível para sua consulta.</p>}
       {concluidas.ok && concluidas.dado?.itens.map(item => <div key={item.id}>
         <Link className="underline" href={`/academico/reposicoes/correcoes/${encodeURIComponent(item.id)}`}>
-          {item.modalidade === "GRAVACAO" ? "Gravação" : "Particular"} — aula de {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: item.origem.fuso }).format(new Date(item.origem.inicio))} ({item.origem.fuso}): consultar e propor correção
+          {item.modalidade === "GRAVACAO" ? "Gravação" : "Particular"} — aula de {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.origem.fuso) }).format(new Date(item.origem.inicio))} (origem {item.origem.fuso}): consultar e propor correção
         </Link>
       </div>)}
       {concluidas.ok && concluidas.dado?.proximoAntesId && <Link className="block underline" href={`/diario/reposicoes?correcoesAntes=${encodeURIComponent(concluidas.dado.proximoAntesId)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`}>Outras conclusões</Link>}

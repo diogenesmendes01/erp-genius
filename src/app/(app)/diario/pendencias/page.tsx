@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAvisosDiario } from "@/server/diario/avisos-pendencias-diario";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 function dataNoFuso(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
@@ -10,7 +12,7 @@ function dataNoFuso(valor: string, fuso: string) {
 export default async function PendenciasDiarioPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { cursor } = await searchParams;
-  const resultado = await consultarAvisosDiario({ cursor });
+  const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ cursor }), consultarPreferenciaFusoEquipe()]);
 
   return <section className="space-y-5">
     <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
@@ -26,11 +28,11 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
       {resultado.dado.itens.map((item) => <article key={item.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
         <div>
           <h2 className="font-medium">{item.turma}</h2>
-          <p className="text-sm text-gray-700">{dataNoFuso(item.inicio, item.fusoOrigem)} — {dataNoFuso(item.fim, item.fusoOrigem)} · {item.fusoOrigem}</p>
+          <p className="text-sm text-gray-700">{dataNoFuso(item.inicio, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem))} — {dataNoFuso(item.fim, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem))} · origem {item.fusoOrigem}</p>
           <p className="text-sm text-gray-600">Professor: {item.professor}</p>
         </div>
         <ul className="list-disc pl-5 text-sm">{item.pendencias.map((pendencia) => <li key={pendencia}>{pendencia}</li>)}</ul>
-        <p className={item.atrasada ? "text-sm font-medium text-red-700" : "text-sm text-gray-700"}>{item.vencimento ? <>Prazo: {dataNoFuso(item.vencimento, item.fusoOrigem)}{item.atrasada ? " — atrasada" : ""}</> : "Prazo ainda não configurado."}</p>
+        <p className={item.atrasada ? "text-sm font-medium text-red-700" : "text-sm text-gray-700"}>{item.vencimento ? <>Prazo: {dataNoFuso(item.vencimento, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem))}{item.atrasada ? " — atrasada" : ""}</> : "Prazo ainda não configurado."}</p>
         <p className="text-sm text-gray-600">{item.quantidadeLembretes > 0 ? `${item.quantidadeLembretes} lembrete(s) registrado(s).` : "Nenhum lembrete registrado."}{item.ultimoLembreteEm && <> Último: {dataNoFuso(item.ultimoLembreteEm, item.fusoOrigem)}.</>}{item.proximoLembreteEm && <> Próximo: {dataNoFuso(item.proximoLembreteEm, item.fusoOrigem)}.</>}</p>
         {item.podeRegularizar && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${encodeURIComponent(item.encontroId)}`}>Abrir diário para regularizar</Link>}
       </article>)}
