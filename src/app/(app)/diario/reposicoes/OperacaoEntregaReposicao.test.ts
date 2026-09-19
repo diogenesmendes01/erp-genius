@@ -27,7 +27,7 @@ it("envia a troca escolhida, conserva a chave no retry e mostra erro de capacida
   let professor = "prof-b";
   vi.stubGlobal("FormData", class { get(nome: string) { return ({ professorId: professor, motivo: "Substituição necessária para concluir a avaliação" } as Record<string, string>)[nome] ?? null; } });
   mocks.substituir.mockResolvedValueOnce({ ok: false, erro: "Você não tem permissão para esta ação." }).mockResolvedValueOnce({ ok: true });
-  const formulario = todos(OperacaoEntregaReposicao({ operacao }), "form")[0].props!;
+  const formulario = todos(OperacaoEntregaReposicao({ operacao, fusoExibicao: "America/Costa_Rica" }), "form")[0].props!;
   await (formulario.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
   professor = "prof-b";
   await (formulario.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
@@ -41,7 +41,7 @@ it("ignora submissão concorrente enquanto a substituição está pendente", asy
   vi.stubGlobal("FormData", class { get(nome: string) { return ({ professorId: "prof-b", motivo: "Professor B assume esta reposição gravada" } as Record<string, string>)[nome] ?? null; } });
   let concluir: ((resultado: { ok: boolean }) => void) | undefined;
   mocks.substituir.mockReturnValue(new Promise(resolve => { concluir = resolve; }));
-  const formulario = todos(OperacaoEntregaReposicao({ operacao }), "form")[0].props!;
+  const formulario = todos(OperacaoEntregaReposicao({ operacao, fusoExibicao: "America/Costa_Rica" }), "form")[0].props!;
   (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} });
   (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} });
   expect(mocks.substituir).toHaveBeenCalledTimes(1);
@@ -55,7 +55,7 @@ it("renova a chave após sucesso e congela a entrada para retry após erro", asy
   let professor = "prof-b";
   vi.stubGlobal("FormData", class { get(nome: string) { return ({ professorId: professor, motivo: "Troca de avaliador da reposição gravada" } as Record<string, string>)[nome] ?? null; } });
   mocks.substituir.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, erro: "Resultado incerto; repita a mesma operação." }).mockResolvedValueOnce({ ok: true });
-  const formulario = todos(OperacaoEntregaReposicao({ operacao }), "form")[0].props!;
+  const formulario = todos(OperacaoEntregaReposicao({ operacao, fusoExibicao: "America/Costa_Rica" }), "form")[0].props!;
   await (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
   professor = "prof-a";
   await (formulario.onSubmit as any)({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
@@ -65,3 +65,4 @@ it("renova a chave após sucesso e congela a entrada para retry após erro", asy
   expect(mocks.substituir).toHaveBeenNthCalledWith(2, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
   expect(mocks.substituir).toHaveBeenNthCalledWith(3, expect.objectContaining({ professorId: "prof-a", chaveIdempotencia: "q40-chave-nova" }));
 });
+

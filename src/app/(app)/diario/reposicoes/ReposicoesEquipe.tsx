@@ -86,7 +86,7 @@ export function SolicitarReposicao({ origem }: { origem: OrigemReposicao }) {
   </form>;
 }
 
-export function ReposicoesEquipe({ reposicoes, operacoes = {}, mostrarRelatoEquipe = false, mostrarCorrecoes = false }: { reposicoes: ReposicaoEquipe[]; operacoes?: Record<string, OperacaoEntrega>; mostrarRelatoEquipe?: boolean; mostrarCorrecoes?: boolean }) {
+export function ReposicoesEquipe({ reposicoes, operacoes = {}, mostrarRelatoEquipe = false, mostrarCorrecoes = false, fusoExibicao }: { reposicoes: ReposicaoEquipe[]; operacoes?: Record<string, OperacaoEntrega>; mostrarRelatoEquipe?: boolean; mostrarCorrecoes?: boolean; fusoExibicao: string }) {
   return <section className="space-y-4">
     <h1 className="text-2xl font-medium">Reposições individuais por matrícula</h1>
     <p>Esta lista mostra apenas a origem acadêmica e o estado da reposição. Não expõe dados pessoais nem financeiros do aluno.</p>
@@ -104,7 +104,7 @@ export function ReposicoesEquipe({ reposicoes, operacoes = {}, mostrarRelatoEqui
       {reposicao.modalidade === "PARTICULAR" && reposicao.decisao?.aprovada && !reposicao.agendaInicial && <ExcecaoAgendaReposicao reposicaoId={reposicao.id} excecoes={reposicao.excecoesAgenda ?? []} />}
       {reposicao.modalidade === "PARTICULAR" && reposicao.decisao?.aprovada && reposicao.cicloAgenda && <CicloAgenda agenda={reposicao.cicloAgenda} />}
       {reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada && mostrarRelatoEquipe && <RelatarIndisponibilidadeReposicao reposicaoId={reposicao.id} />}
-      {reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada && operacoes[reposicao.id] && <OperacaoEntregaReposicao operacao={operacoes[reposicao.id]} />}
+      {reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada && operacoes[reposicao.id] && <OperacaoEntregaReposicao operacao={operacoes[reposicao.id]} fusoExibicao={fusoExibicao} />}
     </article>)}
   </section>;
 }
