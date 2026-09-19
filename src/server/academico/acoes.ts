@@ -85,6 +85,7 @@ export async function solicitarMudancaAcademica(alunoId: string, input: Solicita
           if (anterior.versao !== 3 && !memoriaLegadaMudancaAcademicaCorresponde(anterior, estadoAnterior, agora)) {
             throw new ErroRegra("O escopo da proposta histórica mudou. Cancele-a e abra uma nova.");
           }
+          if (anterior.versao === 3) exigirSnapshotMudancaAcademicaAtual(aberta.snapshot, estadoAnterior, agora);
           if (anterior.alocacaoOrigemId !== aberta.alocacaoOrigemId || anterior.origem.id !== aberta.turmaOrigemId || anterior.destino.id !== aberta.turmaDestinoId) {
             throw new ErroRegra("A proposta preservada não corresponde mais ao vínculo atual. Cancele-a e abra uma nova.");
           }
