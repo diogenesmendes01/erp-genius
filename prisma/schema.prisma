@@ -570,6 +570,8 @@ model Usuario {
   confirmacoesIndisponibilidadeOfertaMatricula ConfirmacaoIndisponibilidadeOfertaMatricula[] @relation("ConfirmadorIndisponibilidadeOfertaMatricula")
   propostasTerminoIndisponibilidadeOferta PropostaTerminoIndisponibilidadeOferta[] @relation("AutorPropostaTerminoOferta")
   decisoesTerminoIndisponibilidadeOferta DecisaoTerminoIndisponibilidadeOferta[] @relation("DecisorTerminoOferta")
+  propostasCorrecaoRelatoIndisponibilidadeOferta PropostaCorrecaoRelatoIndisponibilidadeOferta[] @relation("AutorCorrecaoRelatoOferta")
+  decisoesCorrecaoRelatoIndisponibilidadeOferta DecisaoCorrecaoRelatoIndisponibilidadeOferta[] @relation("DecisorCorrecaoRelatoOferta")
   propostasDisponibilidadeOferta PropostaDisponibilidadeOfertaMatricula[] @relation("AutorPropostaDisponibilidadeOferta")
   decisoesDisponibilidadeOferta DecisaoDisponibilidadeOfertaMatricula[] @relation("DecisorDisponibilidadeOferta")
   propostasPeriodoIntegral PropostaPeriodoIntegral[] @relation("AutorPropostaPeriodoIntegral")
@@ -5563,8 +5565,46 @@ model RegistroIndisponibilidadeOfertaMatricula {
   criadaEm DateTime @default(now())
   confirmacao ConfirmacaoIndisponibilidadeOfertaMatricula?
   propostasTermino PropostaTerminoIndisponibilidadeOferta[]
+  propostasCorrecao PropostaCorrecaoRelatoIndisponibilidadeOferta[]
  @@unique([autorId, chaveIdempotencia])
  @@index([matriculaId, inicio, fim])
+}
+
+// Q157: correção versionada do período de um relato já confirmado. `inicio`/`fim` do
+// relato passam a refletir a última correção aprovada; cada versão preserva o antes e o
+// depois, de modo que o relato original nunca se perde.
+model PropostaCorrecaoRelatoIndisponibilidadeOferta {
+ id String @id @default(cuid())
+ registroId String
+ registro RegistroIndisponibilidadeOfertaMatricula @relation(fields: [registroId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ versao Int
+ inicioAnterior DateTime @db.Date
+ fimAnterior DateTime? @db.Date
+ inicioNovo DateTime @db.Date
+ fimNovo DateTime? @db.Date
+ motivo String
+ evidenciaTexto String
+ autorId String
+ autor Usuario @relation("AutorCorrecaoRelatoOferta", fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ decisao DecisaoCorrecaoRelatoIndisponibilidadeOferta?
+ @@unique([registroId, versao])
+ @@unique([autorId, chaveIdempotencia])
+}
+
+model DecisaoCorrecaoRelatoIndisponibilidadeOferta {
+ id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaCorrecaoRelatoIndisponibilidadeOferta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ decisorId String
+ decisor Usuario @relation("DecisorCorrecaoRelatoOferta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ aprovada Boolean
+ motivo String
+ evidenciaTexto String
+ entradaHash String
+ decididaEm DateTime @default(now())
 }
 
 model ConfirmacaoIndisponibilidadeOfertaMatricula {
