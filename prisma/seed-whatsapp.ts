@@ -73,6 +73,7 @@ export async function semearWhatsApp(prisma: PrismaClient): Promise<void> {
           offsetMinutos: d.offsetMinutos,
           rotulo: d.rotulo,
           ativo: true,
+          toleranciaMinutos: d.toleranciaMinutos, // B3/B4 (doc 32): validade do degrau
           templateId: templates.get(d.template) ?? null,
         },
         update: {},

@@ -125,3 +125,5 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
     return { solicitacoes, proximo: registros.length > 50 ? solicitacoes.at(-1)?.id ?? null : null };
   });
 }
+
+export type { DiarioTurma, ProgressaoAluno, DadosPortal } from "./consultas-legado";

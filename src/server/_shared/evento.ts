@@ -44,7 +44,11 @@ export type AgregadoTipo =
   // régua comercial editável (lead-novo e demais cadências).
   | "ConfigComercial"
   | "PoliticaComercial"
-  | "LotePreparacaoMigracao";
+  | "LotePreparacaoMigracao"
+  // Fase 2 (doc 03): financeiro automatizado + B2B.
+  | "ConfigFinanceiro"
+  | "Empresa"
+  | "FaturaB2B";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */

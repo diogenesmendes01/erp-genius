@@ -95,6 +95,7 @@ export function FichaAluno({
   podeEditarCadastro = false,
   podeConsultarAcademico = false,
   preferenciaFusoExibicao = null,
+  turmaSugerida = null,
 }: {
   aluno: AlunoFicha;
   paises: PaisOpt[];
@@ -104,6 +105,8 @@ export function FichaAluno({
   podeEditarCadastro?: boolean;
   podeConsultarAcademico?: boolean;
   preferenciaFusoExibicao?: string | null;
+  /** C4 (auto-alocação híbrida): turma SUGERIDA na ativação — o consultor confirma aqui. */
+  turmaSugerida?: { turmaId: string; label: string; diasHorario: string | null } | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -451,7 +454,21 @@ export function FichaAluno({
               <div className="text-gray-500">Professor: {turma.professor ?? "—"}</div>
             </div>
           )) : (
-            <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
+            <>
+              <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
+              {turmaSugerida && podeMovimentar && (
+                // C4 (doc 08 §auto-alocação híbrida): o sistema SUGERIU na ativação;
+                // alocar de verdade é decisão do consultor — 1 clique aqui.
+                <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 p-2">
+                  <div className="text-xs font-medium text-blue-800">Turma sugerida na ativação</div>
+                  <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
+                  {turmaSugerida.diasHorario && <div className="text-xs text-gray-500">{turmaSugerida.diasHorario}</div>}
+                  <Link className={btnPri + " mt-2 inline-block"} href={`/alunos/${aluno.id}/academico`}>
+                    Preparar alocação por matrícula
+                  </Link>
+                </div>
+              )}
+            </>
           )}
 
           {podeEditarCadastro && <>

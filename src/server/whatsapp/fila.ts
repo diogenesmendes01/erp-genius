@@ -127,6 +127,8 @@ export interface EnfileirarComercial {
   variaveis: string[];
   templateId: string | null;
   politicaComercialId: string;
+  /** B3 (doc 32): validade do disparo — o despachante CANCELA depois dela. null = sem limite. */
+  validaAte: Date | null;
 }
 
 export async function enfileirarIntencaoComercial(
@@ -163,6 +165,7 @@ export async function enfileirarIntencaoComercial(
         variaveis: e.variaveis,
         templateId: e.templateId,
         politicaComercialId: e.politicaComercialId,
+        validaAte: e.validaAte,
         criadaEm: new Date(),
         despacharAposEm: null,
         motivoFalha: null,
@@ -184,6 +187,7 @@ export async function enfileirarIntencaoComercial(
       variaveis: e.variaveis,
       templateId: e.templateId,
       politicaComercialId: e.politicaComercialId,
+      validaAte: e.validaAte,
       autorId: null,
     },
   });

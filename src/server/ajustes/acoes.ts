@@ -37,6 +37,7 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     if (cobranca.versao !== alvo.versao || !cobranca.valorNegociado.equals(alvo.valorDe) || !cobranca.valorOriginal.equals(alvo.referencia)) {
       throw new ErroRegra("A cobrança mudou desde a solicitação. Envie um novo pedido.");
     }
+    if (cobranca.faturaB2BId && await tx.faturaB2B.count({ where: { id: cobranca.faturaB2BId, status: "FECHADA" } })) throw new ErroRegra("Cancele a fatura B2B fechada antes de ajustar esta cobrança.");
     if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança paga ou cancelada não aceita este ajuste.");
     // O fechamento também bloqueia as comissões. Reler após o lock preserva uma
     // comissão que tenha sido paga enquanto este ajuste aguardava sua vez.

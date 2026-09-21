@@ -104,7 +104,7 @@ export async function relatorioDescontosComissoes() {
   const global = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
   const equipe = global ? undefined : (await prisma.usuario.findMany({ where: { OR: [{ id: usuario.id }, { gerenteComercialId: usuario.id }] }, select: { id: true } })).map((u) => u.id);
   const filtro = equipe ? { vendedorId: { in: equipe } } : {};
-  const [descPorMoeda, descPorVendedor, comissoes, vendedores] = await Promise.all([
+  const [descPorMoeda, descPorVendedor, comissoes, comissoesVend, vendedores] = await Promise.all([
     prisma.ajusteFinanceiro.groupBy({ where: filtro, by: ["moeda"], _sum: { descontoValor: true }, _count: { _all: true } }),
     prisma.ajusteFinanceiro.groupBy({
       where: filtro,
@@ -113,6 +113,13 @@ export async function relatorioDescontosComissoes() {
       _count: { _all: true },
     }),
     prisma.comissao.groupBy({ where: filtro, by: ["moeda", "status"], _sum: { valor: true }, _count: { _all: true } }),
+    // Fase 2 (doc 03 §Comissão): relatório POR VENDEDOR (apuração por moeda × status).
+    prisma.comissao.groupBy({
+      where: filtro,
+      by: ["vendedorId", "moeda", "status"],
+      _sum: { valor: true },
+      _count: { _all: true },
+    }),
     prisma.usuario.findMany({ select: { id: true, nome: true } }),
   ]);
   const nome = new Map(vendedores.map((v) => [v.id, v.nome]));
@@ -127,6 +134,15 @@ export async function relatorioDescontosComissoes() {
     comissoesPorStatus: comissoes
       .map((c) => ({ moeda: c.moeda, status: c.status, total: numeroOuNull(c._sum.valor) ?? 0, qtd: c._count._all }))
       .sort((a, b) => a.moeda.localeCompare(b.moeda)),
+    comissoesPorVendedor: comissoesVend
+      .map((c) => ({
+        vendedor: nome.get(c.vendedorId) ?? "—",
+        moeda: c.moeda,
+        status: c.status,
+        total: numeroOuNull(c._sum.valor) ?? 0,
+        qtd: c._count._all,
+      }))
+      .sort((a, b) => a.vendedor.localeCompare(b.vendedor) || a.moeda.localeCompare(b.moeda)),
   };
 }
 
@@ -183,4 +199,11 @@ export async function configuracaoComissoes() {
   ]);
   return semDecimais({ politicas: politicas.map((p) => ({ ...p, vigenteEm: p.vigenteEm.toISOString(), encerraEm: p.encerraEm?.toISOString() ?? null, criadoEm: p.criadoEm.toISOString() })),
     paises, produtos: produtos.map((p) => ({ id: p.id, nome: `${p.idioma.nome} · ${p.modalidade.nome}` })) });
+}
+
+/** Config do financeiro automatizado (Fase 2) — defaults de fábrica quando sem registro. */
+export async function carregarConfigFinanceiro() {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
+  const c = await prisma.configFinanceiro.findUnique({ where: { id: "financeiro" } });
+  return { fechamentoComissaoAutomatico: c?.fechamentoComissaoAutomatico ?? false };
 }

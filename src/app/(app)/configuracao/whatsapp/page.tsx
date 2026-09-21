@@ -19,6 +19,7 @@ import {
 import { NumerosPainel } from "./NumerosPainel";
 import { TemplatesPainel } from "./TemplatesPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
+import { metricasCopiloto } from "@/server/ia/consultas";
 import { ComercialPainel } from "./ComercialPainel";
 import { ReguasComerciaisPainel } from "./ReguaComercialPainel";
 import { AvisosAgendaPainel } from "./AvisosAgendaPainel";
@@ -37,7 +38,7 @@ export default async function WhatsAppConfigPage() {
   const ehAdmin = papeisTem(papeis, Papel.ADMINISTRADOR);
 
   // Dados administrativos só são buscados para o admin (o gerente comercial vê só o comercial).
-  const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial, preferencia] =
+  const [admin, configComercial, saudacoesSimuladas, reguaComercial, numerosResumo, templatesResumo, ensaioComercial, preferencia, metricasIA] =
     await Promise.all([
       ehAdmin
         ? Promise.all([listarNumerosConfig(), listarTemplatesConfig(), carregarPoliticaConfig(), listarVendedores(), carregarConfiguracaoAvisosAgenda()])
@@ -49,6 +50,7 @@ export default async function WhatsAppConfigPage() {
       listarTemplatesResumo(),
       carregarEnsaioComercial(),
       consultarPreferenciaFusoEquipe(),
+      metricasCopiloto(),
     ]);
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
 
@@ -62,7 +64,13 @@ export default async function WhatsAppConfigPage() {
           <AvisosAgendaPainel config={admin[4]} />
         </>
       )}
-      <ComercialPainel config={configComercial} simuladas={saudacoesSimuladas} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+      <ComercialPainel
+        config={configComercial}
+        simuladas={saudacoesSimuladas}
+        preferenciaFusoExibicao={preferenciaFusoExibicao}
+        metricasCopiloto={metricasIA}
+        numerosVendas={numerosResumo.filter((n) => n.finalidade === "VENDAS").map((n) => ({ id: n.id, rotulo: n.rotulo }))}
+      />
       <ReguasComerciaisPainel reguas={reguaComercial} numeros={numerosResumo} templates={templatesResumo} ensaio={ensaioComercial} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </div>
   );

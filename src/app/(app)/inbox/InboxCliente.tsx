@@ -31,6 +31,7 @@ import {
 } from "@/server/whatsapp/acoes";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
 import { definirTemperatura, moverEtapa, registrarNotaInterna } from "@/server/comercial/acoes";
+import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
@@ -409,6 +410,16 @@ function Thread({
 
       {/* Cockpit do vendedor: funil do lead sem sair da conversa (doc 08 §CRM pela conversa) */}
       {thread.lead && <CockpitLead lead={thread.lead} onErro={onErro} onNota={onNota} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+
+      {/* C3 (doc 27): sugestões do copiloto sobre os controles que já existem no cockpit. */}
+      {thread.lead && (thread.lead.copilotoAtivo || (thread.lead.sugestoesIA?.length ?? 0) > 0) && (
+        <CopilotoSugestoes
+          leadId={thread.lead.id}
+          sugestoes={thread.lead.sugestoesIA ?? []}
+          copilotoAtivo={thread.lead.copilotoAtivo ?? false}
+          compacto
+        />
+      )}
 
       {/* Mensagens */}
       <div className="flex-1 space-y-2 overflow-y-auto bg-surface-muted px-4 py-3">

@@ -55,6 +55,11 @@ services:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
       # Chave-mestra do envio real: só vira "1" no go-live, depois do piloto (doc 31 §rollout).
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
+      # C3 — copiloto IA (vazio = heurística local "simulado"); modelo opcional.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      IA_MODELO: ${IA_MODELO:-}
+      # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção real.
+      PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
       # Driver oficial (Meta Cloud API)
       META_WA_TOKEN: ${META_WA_TOKEN:-}
       META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
@@ -99,6 +104,23 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min — degraus de
+  # "+30min" (C1/C2) não sobrevivem a um tick horário (virariam ~"+90min" e estourariam a
+  # tolerância/validade dos degraus). Idempotente: chamadas repetidas são inofensivas.
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    command: >-
+      sh -c 'while true; do
+        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron
+          -o /dev/null -w "cron tick %{http_code}\n" || true;
+        sleep 300;
+      done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+    depends_on:
+      - app
 
   # Única borda pública: TLS automático (Let's Encrypt) para o app — webhook da Meta
   # exige HTTPS válido. Evolution NÃO passa por aqui.

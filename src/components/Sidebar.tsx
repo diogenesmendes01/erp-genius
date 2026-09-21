@@ -16,6 +16,7 @@ import {
   IconSun,
   IconMoon,
   IconMessageCircle,
+  IconBuilding,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis } from "@/lib/nav";
@@ -30,6 +31,8 @@ const ICONS: Record<string, Icone> = {
   Wallet: IconWallet,
   Settings: IconSettings,
   MessageCircle: IconMessageCircle,
+  Building: IconBuilding,
+  School: IconSchool,
 };
 
 function ThemeToggle() {

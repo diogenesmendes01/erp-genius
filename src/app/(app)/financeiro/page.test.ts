@@ -5,7 +5,7 @@ import { Papel } from "@prisma/client";
 
 const mocks = vi.hoisted(() => ({
   guard: vi.fn(), preferencia: vi.fn(), fila: vi.fn(), comissoes: vi.fn(), kpis: vi.fn(),
-  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(),
+  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
 }));
 
 vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: mocks.guard }));
@@ -17,7 +17,7 @@ vi.mock("@/server/retomada/consultas", () => ({ listarPropostasRetomada: mocks.r
 vi.mock("@/server/financeiro/consultas", () => ({
   listarComissoes: mocks.comissoes, kpisFinanceiro: mocks.kpis, dadosCambio: mocks.cotacoes,
   relatorioDescontosComissoes: mocks.relatorio, listarInformesPagamento: mocks.informes,
-  configuracaoComissoes: mocks.politicas,
+  configuracaoComissoes: mocks.politicas, carregarConfigFinanceiro: mocks.configFinanceiro,
 }));
 vi.mock("./FinanceiroPainel", () => ({
   FinanceiroPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("div", { "data-fuso": preferenciaFusoExibicao ?? "UTC" }),
@@ -32,7 +32,7 @@ describe("FinanceiroPage", () => {
     mocks.fila.mockResolvedValue({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] });
     mocks.comissoes.mockResolvedValue([]); mocks.kpis.mockResolvedValue({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 });
     mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({}); mocks.informes.mockResolvedValue([]);
-    mocks.politicas.mockResolvedValue(null); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] });
+    mocks.politicas.mockResolvedValue(null); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
   });
 
   afterEach(() => vi.clearAllMocks());
