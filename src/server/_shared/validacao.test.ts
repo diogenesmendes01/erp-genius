@@ -129,3 +129,32 @@ describe("dataHoraOpcional (schema datetime-local)", () => {
     expect(dataHoraOpcional.parse(undefined)).toBeUndefined();
   });
 });
+
+describe("validarDocumento (documentos estrangeiros)", () => {
+  it("cédula CR: física de 9 dígitos ou DIMEX de 11–12, com máscara", () => {
+    expect(validarDocumento("cedula_cr", "1-0234-0567")).toBe(true);
+    expect(validarDocumento("cedula_cr", "155812345678")).toBe(true);
+    expect(validarDocumento("cedula_cr", "012340567")).toBe(false);
+    expect(validarDocumento("cedula_cr", "12345")).toBe(false);
+  });
+  it("CURP: formato, data e dígito verificador", () => {
+    expect(validarDocumento("curp", "gode561231hdfrrn00")).toBe(true);
+    expect(validarDocumento("curp", "GODE561231HDFRRN01")).toBe(false);
+    expect(validarDocumento("curp", "GODE561331HDFRRN00")).toBe(false);
+  });
+  it("DNI AR: 7 ou 8 dígitos com pontos", () => {
+    expect(validarDocumento("dni_ar", "12.345.678")).toBe(true);
+    expect(validarDocumento("dni_ar", "1234567")).toBe(true);
+    expect(validarDocumento("dni_ar", "123456")).toBe(false);
+  });
+  it("DUI SV: dígito verificador módulo 10", () => {
+    expect(validarDocumento("dui_sv", "00016297-5")).toBe(true);
+    expect(validarDocumento("dui_sv", "00016297-4")).toBe(false);
+    expect(validarDocumento("dui_sv", "000000000")).toBe(false);
+  });
+  it("passaporte: formato ICAO, sem aceitar texto livre", () => {
+    expect(validarDocumento("passaporte", "AB123456")).toBe(true);
+    expect(validarDocumento("passaporte", "ABCDEFG")).toBe(false);
+    expect(validarDocumento("passaporte", "529.982.247-25")).toBe(false);
+  });
+});
