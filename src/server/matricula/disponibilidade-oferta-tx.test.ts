@@ -5,7 +5,7 @@ import { capturarFonteDisponibilidadeOfertaTx, conferirDisponibilidadeOfertaTx }
 const periodo = { matriculaId: "m1", inicio: new Date("2026-10-01T00:00:00.000Z"), fim: new Date("2026-10-31T00:00:00.000Z") };
 const banco = (calendario: { id: string; versao: number } | null) => ({
   versaoCalendarioEscolar: { findFirst: vi.fn().mockResolvedValue(calendario) },
-  impactoQuantidadeAulasModalidade: { findMany: vi.fn().mockResolvedValue([]) },
+  impactoQuantidadeAulasModalidade: { findMany: vi.fn().mockResolvedValue([]) }, solicitacaoMudancaAcademica: { findMany: vi.fn().mockResolvedValue([]) },
   registroIndisponibilidadeOfertaMatricula: { findMany: vi.fn().mockResolvedValue([]) },
   alocacaoTurma: { findMany: vi.fn().mockResolvedValue([]) },
   indisponibilidadeDocente: { findMany: vi.fn() },
