@@ -2,12 +2,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { prepararDestinacaoExcedentePermuta, registrarConcordanciaExcedentePermuta, decidirDestinacaoExcedentePermuta } from "@/server/matricula/excedente-permuta-destinacao";
+import { proporUsoSaldoServicoPermuta, decidirUsoSaldoServicoPermuta } from "@/server/matricula/saldo-servico-permuta-uso";
 
 type Origem = { id: string; tipo: string; valor: string };
 type Props =
  | { modo: "preparar"; matriculaId: string; cobrancaId: string; moeda: string; origens: Origem[] }
  | { modo: "concordar"; propostaId: string; parte: "ALUNO_OU_RESPONSAVEL" | "ESCOLA" }
- | { modo: "decidir"; propostaId: string };
+ | { modo: "decidir"; propostaId: string }
+ | { modo: "usar"; saldoId: string; moeda: string; disponivel: string; cobrancas: { id: string; tipo: string; saldo: string; vencimento: string }[] }
+ | { modo: "decidir-uso"; propostaId: string };
 
 const texto = (form: FormData, campo: string) => String(form.get(campo) ?? "").trim();
 
@@ -30,6 +33,8 @@ export function ExcedenteFormulario(props: Props) {
     entrada = { matriculaId: props.matriculaId, cobrancaId: props.cobrancaId, valorDevidoAcordado: texto(form, "valorDevidoAcordado"), itens, motivo: texto(form, "motivo"), ...(distribuicao ? { distribuicao } : {}) };
    } else if (props.modo === "concordar") {
     entrada = { propostaId: props.propostaId, parte: props.parte, nomeDeclarante: texto(form, "nomeDeclarante"), meio: texto(form, "meio"), evidencia: texto(form, "evidencia") };
+   } else if (props.modo === "usar") {
+    entrada = { saldoId: props.saldoId, cobrancaId: texto(form, "cobrancaId"), valor: texto(form, "valor"), motivo: texto(form, "motivo") };
    } else entrada = { propostaId: props.propostaId, aprovada: form.get("decisao") === "aprovar", motivo: texto(form, "motivo") };
    tentativa.current = { chave: crypto.randomUUID(), entrada };
   }
@@ -38,6 +43,8 @@ export function ExcedenteFormulario(props: Props) {
    const entrada = tentativa.current.entrada;
    const r = await (props.modo === "preparar" ? prepararDestinacaoExcedentePermuta({ ...entrada, chaveIdempotencia: tentativa.current.chave } as Parameters<typeof prepararDestinacaoExcedentePermuta>[0])
     : props.modo === "concordar" ? registrarConcordanciaExcedentePermuta(entrada as Parameters<typeof registrarConcordanciaExcedentePermuta>[0])
+    : props.modo === "usar" ? proporUsoSaldoServicoPermuta({ ...entrada, chaveIdempotencia: tentativa.current.chave } as Parameters<typeof proporUsoSaldoServicoPermuta>[0])
+    : props.modo === "decidir-uso" ? decidirUsoSaldoServicoPermuta(entrada as Parameters<typeof decidirUsoSaldoServicoPermuta>[0])
     : decidirDestinacaoExcedentePermuta(entrada as Parameters<typeof decidirDestinacaoExcedentePermuta>[0]));
    if (r.ok) { setConcluido(true); setMensagem("Operação registrada."); router.refresh(); }
    else { tentativa.current = null; setPreservada(false); setMensagem(r.erro + " Confira o histórico antes de tentar novamente."); }
@@ -59,10 +66,14 @@ export function ExcedenteFormulario(props: Props) {
   <label className="block">Meio (presencial, WhatsApp, e-mail…)<input name="meio" required minLength={2} maxLength={100} className="ml-2 rounded border p-2" /></label>
   <label className="block">Evidência (texto; anexo opcional pelo prontuário)<textarea name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>
  </>}
+ {props.modo === "usar" && <>
+  <label className="block">Cobrança a abater<select name="cobrancaId" required className="ml-2 rounded border p-2">{props.cobrancas.map(c => <option key={c.id} value={c.id}>{c.tipo} · vence {c.vencimento.slice(0, 10)} · saldo {c.saldo} {props.moeda}</option>)}</select></label>
+  <label className="block">Valor a abater (disponível {props.disponivel} {props.moeda})<input name="valor" required inputMode="decimal" pattern="^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$" className="ml-2 rounded border p-2" /></label>
+ </>}
  {props.modo !== "concordar" && <label className="block">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
- {props.modo === "decidir" && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
+ {(props.modo === "decidir" || props.modo === "decidir-uso") && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
  </fieldset>
- <button disabled={ocupado || concluido} className="rounded border px-3 py-2" type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : preservada ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Propor destinação" : props.modo === "concordar" ? (props.parte === "ESCOLA" ? "Registrar concordância da escola" : "Registrar concordância do aluno/responsável") : "Registrar decisão"}</button>
+ <button disabled={ocupado || concluido} className="rounded border px-3 py-2" type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : preservada ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Propor destinação" : props.modo === "usar" ? "Propor uso do saldo" : props.modo === "concordar" ? (props.parte === "ESCOLA" ? "Registrar concordância da escola" : "Registrar concordância do aluno/responsável") : "Registrar decisão"}</button>
  {mensagem && <p role="status">{mensagem}</p>}
  </form>;
 }
