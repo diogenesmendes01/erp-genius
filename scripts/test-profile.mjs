@@ -6,6 +6,7 @@ const bancos = Object.freeze({
   "dev-email": "erp_genius_test_dev_email",
   "dev-gravacoes": "erp_genius_test_dev_gravacoes",
   tester: "erp_genius_test_tester",
+  claude: "erp_genius_test_claude",
 });
 
 export function resolverBancoTeste(raiz = process.cwd(), ambiente = process.env) {

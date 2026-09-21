@@ -73,6 +73,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       <p className="whitespace-pre-wrap">Evidência: {relato.evidenciaTexto}</p>
       <p>Relatado em {instanteDoEvento(relato.criadaEm, fusoExibicao, fusoInstitucional)}.</p>
       {relato.confirmacao ? <section className="rounded bg-gray-50 p-3"><p>{relato.confirmacao.confirmada ? "Indisponibilidade confirmada" : "Indisponibilidade recusada"} em {instanteDoEvento(relato.confirmacao.confirmadaEm, fusoExibicao, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{relato.confirmacao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {relato.confirmacao.evidenciaTexto}</p></section> : <p role="status">Aguardando confirmação independente.</p>}
+      {relato.confirmacao?.confirmada && <p><Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/correcao`}>Corrigir período ou ver correções</Link></p>}
       {relato.confirmacao?.confirmada && relato.fim === null && <Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/termino`}>{relato.terminoAprovado ? "Ver histórico do término" : "Registrar o último dia de indisponibilidade"}</Link>}
       {relato.podeConfirmar && <form className="space-y-2" onSubmit={evento => {
         evento.preventDefault();
