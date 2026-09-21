@@ -467,6 +467,9 @@ model Usuario {
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
+  adiantamentosAditivoPreparados PropostaAdiantamentoAditivo[] @relation("PreparadorAdiantamentoAditivo")
+  adiantamentosAditivoDecididos DecisaoAdiantamentoAditivo[] @relation("DecisorAdiantamentoAditivo")
+  adiantamentosAditivoAplicados AplicacaoAdiantamentoAditivo[] @relation("ExecutorAdiantamentoAditivo")
   conjuntosCoberturaAditivoPreparados ConjuntoImpactosCoberturaAditivo[] @relation("PreparadorConjuntoCoberturaAditivo")
   decisoesConjuntosCoberturaAditivo DecisaoConjuntoImpactosCoberturaAditivo[] @relation("DecisorConjuntoCoberturaAditivo")
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("ExecutorCoberturaAditivo")
@@ -1721,6 +1724,7 @@ model Matricula {
   conjuntosImpactosCoberturaAditivo ConjuntoImpactosCoberturaAditivo[]
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
+  propostasAdiantamentoAditivo PropostaAdiantamentoAditivo[]
   recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
@@ -1885,6 +1889,7 @@ enum FormaPagamento {
 model Cobranca {
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
+  propostasAdiantamentoAditivo PropostaAdiantamentoAditivo[]
   impactosCoberturaAditivo ImpactoCoberturaAditivo[]
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("CobrancaAplicacaoCoberturaAditivo")
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
@@ -4396,6 +4401,7 @@ model ConclusaoAssinaturaContratual {
 model PropostaAditivoContratual {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
+  propostasAdiantamento PropostaAdiantamentoAditivo[]
     conferenciasParticipantes ConferenciaParticipantesAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
   processoAssinatura ProcessoAssinaturaAditivo?
@@ -4574,6 +4580,7 @@ model ConferenciaFinalAditivo {
 model VersaoCondicoesAditivo {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
+  propostasAdiantamento PropostaAdiantamentoAditivo[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -8195,6 +8202,75 @@ model AplicacaoVencimentoAditivo {
   versaoCobrancaDepois Int
   vencimentoAnterior DateTime
   vencimentoNovo DateTime
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
+}
+
+// Q172: aplicação do aditivo de adiantamento (valor, minutos, vencimento). Só alcança o
+// adiantamento da emissão inicial enquanto não pago nem utilizado; os minutos vigentes
+// passam a ser os da última aplicação, que a compra de horas confere ao quitar.
+model PropostaAdiantamentoAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorAdiantamentoAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  valorAnterior Decimal @db.Decimal(12, 2)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  minutosAnteriores Int
+  minutosNovos Int
+  fuso String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoAdiantamentoAditivo?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoAdiantamentoAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAdiantamentoAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorAdiantamentoAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoAdiantamentoAditivo?
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoAdiantamentoAditivo {
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoAdiantamentoAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorAdiantamentoAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  versaoCobrancaAntes Int
+  versaoCobrancaDepois Int
+  valorAnterior Decimal @db.Decimal(12, 2)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  minutosAnteriores Int
+  minutosNovos Int
   aplicadaEm DateTime @default(now())
   @@unique([executorId, chaveIdempotencia])
 }
