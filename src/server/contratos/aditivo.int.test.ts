@@ -1570,3 +1570,40 @@ it("PRODUCAO_HORA_ADIANTAMENTO: Q172 aplica o aditivo só ao adiantamento não p
   authMock.mockResolvedValue({ user: { id: financeiro.id } });
   expect(await consultarAdiantamentosAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: versao.id })).toMatchObject({ ok: true, dado: { alvo: { podePreparar: false, pendencia: expect.stringContaining("já recebeu pagamento") } } });
 });
+
+it("envio integrado do aditivo: driver simulado registra, incerteza só sai por conciliação e sem driver permanece manual", async () => {
+  const { enviarAditivoParaAssinatura, conciliarEnvioAditivo } = await import("./aditivo-envio");
+  const provedor = await import("./provedor-assinatura");
+  const { confirmar, alvo } = await prepararRevisaoOriginal();
+  const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
+  if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
+  const criado = await prepararProcessoAssinaturaAditivo({ ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "ZAPSIGN", ambiente: "SANDBOX" });
+  if (!criado.ok || !criado.dado) throw new Error(JSON.stringify(criado));
+  const pedido = { matriculaId: alvo.matriculaId, propostaId: alvo.propostaId, processoId: criado.dado.id };
+  const anterior = process.env.ASSINATURA_DRIVER;
+  try {
+    delete process.env.ASSINATURA_DRIVER;
+    expect(await enviarAditivoParaAssinatura(pedido)).toMatchObject({ ok: false, erro: expect.stringContaining("não está configurada") });
+    expect(await prisma.tentativaEnvioAditivo.count()).toBe(0);
+
+    process.env.ASSINATURA_DRIVER = "simulado";
+    const simulado = provedor.provedorAssinaturaAtivo()!;
+    const criar = simulado.criarEnvelope.bind(simulado);
+    // Primeira chamada: o fornecedor cria o envelope, mas a resposta se perde (timeout).
+    simulado.criarEnvelope = async (envelope) => { await criar(envelope); throw new Error("timeout"); };
+    expect(await enviarAditivoParaAssinatura(pedido)).toMatchObject({ ok: true, dado: { tentativa: 1, estado: "ENVIO_INCERTO" } });
+    simulado.criarEnvelope = criar;
+    // Incerto nunca autoriza repetir a criação.
+    expect(await enviarAditivoParaAssinatura(pedido)).toMatchObject({ ok: false });
+    expect(await prisma.tentativaEnvioAditivo.count()).toBe(1);
+    const conciliado = await conciliarEnvioAditivo(pedido);
+    expect(conciliado).toMatchObject({ ok: true, dado: { estado: "ENVIADO" } });
+    const processo = await prisma.processoAssinaturaAditivo.findUniqueOrThrow({ where: { id: criado.dado.id }, include: { tentativas: { include: { observacoes: { orderBy: { observadaEm: "asc" } } } } } });
+    expect(processo.referenciaExterna).toMatch(/^sim_[a-f0-9]{24}$/);
+    expect(processo.tentativas[0].observacoes.map(o => o.resultado)).toEqual(["INCERTO", "REGISTRADO"]);
+    expect(await conciliarEnvioAditivo(pedido)).toMatchObject({ ok: false });
+    expect(await conciliarEnvioAditivo({ ...pedido, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
+  } finally {
+    if (anterior === undefined) delete process.env.ASSINATURA_DRIVER; else process.env.ASSINATURA_DRIVER = anterior;
+  }
+});
