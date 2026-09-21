@@ -2714,6 +2714,7 @@ model CondicoesEncerramentoMatricula {
 }
 
 model CompraHorasAntecipadas {
+  estornosConsumo EstornoConsumoHorasCompradas[]
   liquidacaoAcerto LiquidacaoHorasAcerto?
   reservas ReservaHorasCompradas[]
   id String @id @default(cuid())
@@ -3310,8 +3311,10 @@ model AplicacaoRevisaoFinanceiraCorrecaoAula {
   decisaoRevisao DecisaoRevisaoFinanceiraCorrecaoAula @relation(fields: [decisaoRevisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   aprovacaoCorrecaoAulaId String @unique
   aprovacaoCorrecaoAula AprovacaoCorrecaoAula @relation(fields: [aprovacaoCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  conferenciaId String @unique
-  conferencia ConferenciaOcorrenciaHoras @relation(fields: [conferenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaId String? @unique
+  conferencia ConferenciaOcorrenciaHoras? @relation(fields: [conferenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  minutosDevolvidos Int?
+  estornoConsumo EstornoConsumoHorasCompradas?
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   cobrancaId String?
@@ -3327,6 +3330,21 @@ model AplicacaoRevisaoFinanceiraCorrecaoAula {
   aplicadaEm DateTime @default(now())
   origemCredito OrigemCreditoRevisaoCorrecaoAula?
   @@index([matriculaId, aplicadaEm])
+}
+
+// Q175 (fatia 2): aula paga com horas pré-pagas e declarada não cobrável devolve os minutos à
+// própria compra. Reserva e consumo continuam imutáveis; o estorno é o fato novo que os neutraliza.
+model EstornoConsumoHorasCompradas {
+  id String @id @default(cuid())
+  consumoId String @unique
+  consumo ConsumoHorasCompradas @relation(fields: [consumoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoId String @unique
+  aplicacao AplicacaoRevisaoFinanceiraCorrecaoAula @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  compraId String
+  compra CompraHorasAntecipadas @relation(fields: [compraId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  minutos Int
+  criadoEm DateTime @default(now())
+  @@index([compraId])
 }
 
 model OrigemCreditoRevisaoCorrecaoAula {
@@ -5494,6 +5512,7 @@ model ReservaHorasCompradas {
 }
 
 model ConsumoHorasCompradas {
+  estorno EstornoConsumoHorasCompradas?
   id String @id @default(cuid())
   reservaId String @unique
   reserva ReservaHorasCompradas @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
