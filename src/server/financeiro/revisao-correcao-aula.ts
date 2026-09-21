@@ -48,7 +48,7 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
       if (!proposta?.encontro.matriculaId) throw new ErroRegra("A revisão financeira exige aula particular identificada.");
       const foto = await fotoAtualTx(tx, proposta.id, tipo);
       if (!foto) throw new ErroRegra(tipo === "AULA_NAO_COBRAVEL"
-        ? "Esta aula não admite a declaração de não cobrável: exige aula particular conferida com valor, sem horas pré-pagas, e cobrança em aberto sem recebimentos ou fatura quitada. Pagamento parcial, crédito, permuta, pausa ou comprovante a conferir exigem conferência específica."
+        ? "Esta aula não admite a declaração de não cobrável: exige aula particular conferida com valor e cobrança em aberto sem recebimentos ou fatura quitada, ou aula paga com horas pré-pagas ainda não liberadas, estornadas nem liquidadas no encerramento. Pagamento parcial, crédito, permuta, pausa ou comprovante a conferir exigem conferência específica."
         : "A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas não consumidas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");
       const ultima = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { versao: true } });
       const revisao = await tx.propostaRevisaoFinanceiraCorrecaoAula.create({ data: {

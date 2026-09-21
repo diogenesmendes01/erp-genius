@@ -9,11 +9,12 @@ import { decidirRevisaoFinanceiraCorrecaoAula, proporRevisaoFinanceiraCorrecaoAu
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRevisoesFinanceirasCorrecaoAula>>, { ok: true }>["dado"]>;
 const data = (v: Date | string, preferencia: string | null, fuso: string) => { const e = formatarInstanteExibicao(v, preferencia, fuso); return `${e.texto} (${e.fuso})`; };
 const dinheiro = z.union([z.number(), z.string()]);
-const Efeito = z.object({ tipo: z.enum(["SEM_ITEM", "REDUZ_COBRANCA_ABERTA", "GERA_CREDITO"]), valorAula: dinheiro, moeda: z.string(), valorNegociadoAnterior: dinheiro.optional(), valorNegociadoNovo: dinheiro.optional(), creditoValor: dinheiro.optional() });
+const Efeito = z.object({ tipo: z.enum(["SEM_ITEM", "REDUZ_COBRANCA_ABERTA", "GERA_CREDITO", "DEVOLVE_MINUTOS"]), minutos: z.number().optional(), valorAula: dinheiro, moeda: z.string(), valorNegociadoAnterior: dinheiro.optional(), valorNegociadoNovo: dinheiro.optional(), creditoValor: dinheiro.optional() });
 /** Q175: o efeito é calculado pelo banco; a tela só o descreve antes de o Financeiro preparar ou decidir. */
 const descreverEfeito = (bruto: unknown) => {
   const e = Efeito.safeParse(bruto); if (!e.success) return null;
   const v = (x: unknown) => `${Number(x).toFixed(2)} ${e.data.moeda}`;
+  if (e.data.tipo === "DEVOLVE_MINUTOS") return `A aula foi paga com horas pré-pagas: ${e.data.minutos ?? 0} minutos voltam ao saldo da mesma compra. Nenhum valor é cobrado nem devolvido.`;
   return e.data.tipo === "SEM_ITEM" ? `A aula (${v(e.data.valorAula)}) ainda não foi fechada: deixa de entrar no próximo fechamento de horas.`
     : e.data.tipo === "REDUZ_COBRANCA_ABERTA" ? `A cobrança em aberto cai de ${v(e.data.valorNegociadoAnterior)} para ${v(e.data.valorNegociadoNovo)}${Number(e.data.valorNegociadoNovo) === 0 ? " e é cancelada" : ""}.`
       : `A fatura já está quitada e permanece como está; nasce crédito de ${v(e.data.creditoValor)} na matrícula.`;

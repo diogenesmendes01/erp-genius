@@ -1,6 +1,6 @@
 # Q175 — correção de aula particular "não devia ser cobrada": desenho técnico
 
-Estado em 21/09/2026: **opção A escolhida pelo usuário; fatia 1 implementada e verificada em banco real; fatia 2 (horas pré-pagas) pendente.** Decisões em [decisoes-2026-09-21.md](decisoes-2026-09-21.md). Este documento fixa o desenho para que a implementação possa ser feita em fatias verificáveis.
+Estado em 21/09/2026: **opção A escolhida pelo usuário; fatias 1 e 2 implementadas e verificadas em banco real.** Decisões em [decisoes-2026-09-21.md](decisoes-2026-09-21.md). Este documento fixa o desenho para que a implementação possa ser feita em fatias verificáveis.
 
 ## O que o código permite hoje
 
@@ -47,3 +47,11 @@ Diferenças em relação ao desenho: a fatura quitada **não é alterada** — o
 Verificação: três cenários de integração em `condicoes-horas.int.test.ts` (aula ainda não fechada + fechamento seguinte; cobrança em aberto reduzida/cancelada com aprovação direta sem acerto desfeita pelo trigger diferido; cobrança paga → crédito com origem, revisão tornada obsoleta pelo pagamento, crédito sem origem recusado); regressão de integração 107/107 em correção de aula, consumo Q23, condições por hora, fechamento e desistência financeira; unitários 2.134/2.134; TypeScript e ESLint sem erros.
 
 Limites conhecidos: o encontro permanece `MINISTRADO` na agenda (opção A); comissões sobre a aula zerada não são recalculadas; a desistência recusa reconhecer crédito desta origem como crédito do acerto (tratado como externo).
+
+## Fatia 2 — entregue em 21/09/2026
+
+Migration `20260921050000_estorno_consumo_horas_nao_cobravel`: model `EstornoConsumoHorasCompradas` (único por consumo e por aplicação, imutável, só nasce de aplicação `DEVOLVE_MINUTOS` aprovada, recusado em compra já liquidada); a aplicação admite conferência nula (consumo direto do diário) e `minutosDevolvidos`; nova `q23_fotografia_nao_cobravel_reserva_175` (reserva única e consumida, encontro `MINISTRADO`, sem liberação aprovada, sem estorno anterior, compra não liquidada) e despacho a partir da 175; o trigger diferido passa a exigir o estorno na mesma publicação. Saldo: `proteger_reserva_horas_compradas` e `conferir_liquidacao_horas_acerto` (definições vigentes copiadas) passam a ignorar consumo estornado, como já faziam com a liberação para remarcação; espelhos TS em `reserva-horas-compradas.ts`, `compra-horas.ts` (novo `minutosEstornados`) e `encerramento-horas-tx.ts`. Não há prazo de validade de horas no sistema (Q96): o minuto volta à mesma compra, e o limite prático é a liquidação do encerramento.
+
+Verificação: cenário de integração em `q23-consumo-horas.int.test.ts` (fotografia com efeito `DEVOLVE_MINUTOS`, estorno direto recusado, publicação atômica, dinheiro e histórico intactos, saldo 178→179 min na consulta, nova reserva usando todos os minutos aceita pelo guard do banco, segunda declaração impossível); regressões de compra de horas, consumo por ocorrência, Q23 com reserva, fatia 1 e encerramento completo aprovadas; unitários 2.146/2.146; TypeScript sem erros.
+
+Limites: o encontro estornado continua `MINISTRADO` e com a reserva original (um encontro não recebe segunda reserva — os minutos vão para outra aula); `saldo-horas.ts` (função pura sem consumidor operacional) não foi alterada.

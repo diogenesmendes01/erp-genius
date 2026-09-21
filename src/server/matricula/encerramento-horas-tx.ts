@@ -8,7 +8,7 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
   if (!m) throw new ErroRegra("Matrícula não encontrada para este aluno.");
   const compras = await tx.compraHorasAntecipadas.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, include: {
     liquidacaoAcerto: true,
-    reservas: { orderBy: { id: "asc" }, include: { consumo: { include: { conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
+    reservas: { orderBy: { id: "asc" }, include: { consumo: { include: { estorno: { select: { id: true } }, conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
   } });
   const pendencias: string[] = [];
   const origens = compras.map(c => {
@@ -18,6 +18,8 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
     let minutosReservados = 0;
     for (const r of c.reservas) {
       if (r.consumo) {
+        // Q175: minutos estornados voltaram ao saldo e entram no que resta a liquidar.
+        if (r.consumo.estorno) continue;
         const conferencia = r.consumo.conferenciaOcorrencia;
         if (conferencia) {
           if (r.consumo.estadoDiario !== null || !["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(conferencia.desfecho)) throw new ErroRegra("Consumo por ocorrência diverge de sua conferência financeira.");
