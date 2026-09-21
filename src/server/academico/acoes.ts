@@ -1,332 +1,227 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { randomBytes } from "node:crypto";
-import bcrypt from "bcryptjs";
 import { Papel, Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento, type Resultado } from "@/server/_shared";
+import { docenteAtual } from "@/server/diario/permissoes";
+import { exigirFechamentoProgressaoTx } from "@/server/avaliacoes/progressao-fechamento-tx";
+import { APROVADORES_ACADEMICOS, EXECUTORES_ACADEMICOS, SOLICITANTES_ACADEMICOS, bloquearEstadoAcademico, carregarEstadoAcademico, exigirUsuarioAcademicoAtual, turmaAcademicaSelect } from "./estado";
+import { classificarDestinoAcademico, exigirDecisaoAcademicaIndependente, exigirSnapshotMudancaAcademicaAtual, impedimentoEstadoAcademico, lerSnapshotMudancaAcademica, memoriaLegadaMudancaAcademicaCorresponde, montarSnapshotMudancaAcademica, SnapshotMudancaAcademicaSchema } from "./regras";
 import {
-  ErroPermissao,
-  ErroRegra,
-  executarAcao,
-  exigirPapel,
-  exigirSessao,
-  paraDataLocal,
-  registrarEvento,
-  temPapel,
-  type Resultado,
-  type UsuarioSessao,
-} from "@/server/_shared";
-import {
-  AvaliacaoSchema,
-  CriarAcessoPortalSchema,
-  LancarNotasSchema,
-  RegistrarAulaSchema,
-  TesteNivelSchema,
-  type AvaliacaoInput,
-  type CriarAcessoPortalInput,
-  type LancarNotasInput,
-  type RegistrarAulaInput,
-  type TesteNivelInput,
+  CancelarMudancaAcademicaSchema, DecidirMudancaAcademicaSchema, ExecutarMudancaAcademicaSchema, RegistrarParecerMudancaSchema, SolicitarMudancaAcademicaSchema,
+  type CancelarMudancaAcademicaInput, type DecidirMudancaAcademicaInput, type ExecutarMudancaAcademicaInput, type RegistrarParecerMudancaInput, type SolicitarMudancaAcademicaInput,
 } from "./schema";
 
-// ACADÊMICO — Fase 3 (doc 03): diário de classe, avaliações/notas, teste de nível,
-// PROGRESSÃO (o sistema calcula e sugere; um humano aprova — mesma filosofia híbrida do
-// C4) e certificados. Toda mutação grava Evento (doc 13).
-
-const PAPEIS_ACADEMICO: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR];
-const PAPEIS_PROGRESSAO: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
-const PAPEIS_PORTAL: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
-
-function revalidar(turmaId?: string, alunoId?: string) {
-  if (turmaId) revalidatePath(`/alunos/turma/${turmaId}`);
-  if (alunoId) revalidatePath(`/alunos/${alunoId}`);
-  revalidatePath("/portal");
+function revalidar(alunoId: string) {
+  revalidatePath("/academico"); revalidatePath("/secretaria"); revalidatePath("/diario");
+  revalidatePath("/alunos", "layout"); revalidatePath(`/alunos/${alunoId}`); revalidatePath("/configuracao/turmas");
 }
 
-/** Professor só opera as PRÓPRIAS turmas; secretaria/gerente pedagógico, todas (doc 07). */
-async function exigirTurmaNoEscopo(turmaId: string, usuario: UsuarioSessao) {
-  const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
-  if (!turma) throw new ErroRegra("Turma não encontrada.");
-  const amplo = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
-  if (!amplo && turma.professorId !== usuario.id) {
-    throw new ErroPermissao("Esta turma não está no seu escopo.");
+/** A pré-leitura só determina os locks; o pedido e a autorização são relidos depois. */
+async function bloquearSolicitacao(tx: Prisma.TransactionClient, id: string) {
+  // Correções e revisões de progressão adquirem calendário antes dos vínculos.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+  const referencia = await tx.solicitacaoMudancaAcademica.findUnique({ where: { id }, select: { alunoId: true, turmaDestinoId: true } });
+  if (!referencia) throw new ErroRegra("Solicitação acadêmica não encontrada.");
+  await bloquearEstadoAcademico(tx, referencia.alunoId, referencia.turmaDestinoId);
+  await tx.$queryRaw`SELECT id FROM "SolicitacaoMudancaAcademica" WHERE id = ${id} FOR UPDATE`;
+  const solicitacao = await tx.solicitacaoMudancaAcademica.findUnique({ where: { id }, include: {
+    pareceres: { orderBy: [{ criadoEm: "desc" }, { id: "desc" }], include: { autor: { select: { id: true, ativo: true, papeis: true } } } },
+  } });
+  if (!solicitacao || solicitacao.alunoId !== referencia.alunoId || solicitacao.turmaDestinoId !== referencia.turmaDestinoId) {
+    throw new ErroRegra("A solicitação mudou durante a consulta. Atualize a página e tente novamente.");
   }
-  return turma;
+  return solicitacao;
 }
 
-/** Diário de classe: registra (ou re-registra) a aula do dia com a frequência da turma. */
-export async function registrarAula(input: RegistrarAulaInput): Promise<Resultado<{ aulaId: string }>> {
+async function exigirEstadoVigente(tx: Prisma.TransactionClient, solicitacao: Awaited<ReturnType<typeof bloquearSolicitacao>>, agora: Date) {
+  const anterior = SnapshotMudancaAcademicaSchema.safeParse(solicitacao.snapshot);
+  if (!anterior.success) throw new ErroRegra("A solicitação precisa de nova conferência do estado acadêmico.");
+  const estado = await carregarEstadoAcademico(tx, solicitacao.alunoId, solicitacao.turmaDestinoId, anterior.data.escopoMatriculaId ?? undefined, agora);
+  const impedimento = impedimentoEstadoAcademico(estado, true, agora);
+  if (impedimento) throw new ErroRegra(impedimento);
+  const snapshot = exigirSnapshotMudancaAcademicaAtual(solicitacao.snapshot, estado, agora);
+  if (snapshot.alocacaoOrigemId !== solicitacao.alocacaoOrigemId || snapshot.origem.id !== solicitacao.turmaOrigemId || snapshot.destino.id !== solicitacao.turmaDestinoId) {
+    throw new ErroRegra("As turmas da solicitação não correspondem ao estado aprovado. Cancele-a e abra uma nova.");
+  }
+  if (classificarDestinoAcademico(estado.origem!.turma, estado.destino!) !== "EXCECAO") throw new ErroRegra("Esta solicitação não representa uma mudança excepcional de nível.");
+  return estado;
+}
+
+function exigirParecerOuDispensa(solicitacao: Awaited<ReturnType<typeof bloquearSolicitacao>>, origem: Parameters<typeof docenteAtual>[1], dispensa?: string | null) {
+  const temParecer = solicitacao.pareceres.some((p) => p.autor.ativo && p.autor.papeis.includes(Papel.PROFESSOR) && docenteAtual(p.autorId, origem));
+  if (!temParecer && !dispensa?.trim()) throw new ErroRegra("A aprovação exige parecer do professor atual ou uma dispensa justificada pela gestão por indisponibilidade do parecer.");
+}
+
+export async function solicitarMudancaAcademica(alunoId: string, input: SolicitarMudancaAcademicaInput): Promise<Resultado<{ solicitacaoId: string }>> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_ACADEMICO);
-    const dados = RegistrarAulaSchema.parse(input);
-    await exigirTurmaNoEscopo(dados.turmaId, autor);
-    // Date-only vem de <input type="date"> ("YYYY-MM-DD"): parse LOCAL (meio-dia) pelo
-    // helper compartilhado — `new Date("2026-08-20")` seria meia-noite UTC e a aula
-    // apareceria no dia ANTERIOR em fusos negativos (review PR #60).
-    const data = new Date(paraDataLocal(dados.dataISO) as string | Date);
-    if (isNaN(data.getTime())) throw new ErroRegra("Data da aula inválida.");
-
-    // Presenças só de alunos ATUALMENTE alocados na turma (alocação ativa).
-    const alocados = new Set(
-      (
-        await prisma.alocacaoTurma.findMany({
-          where: { turmaId: dados.turmaId, ativa: true },
-          select: { alunoId: true },
-        })
-      ).map((a) => a.alunoId),
-    );
-    const fora = dados.presencas.filter((p) => !alocados.has(p.alunoId));
-    if (fora.length > 0) throw new ErroRegra("Há presenças de alunos que não estão na turma.");
-    // Roster COMPLETO (review PR #60 rodada 2): aluno repetido é rejeitado; aluno alocado
-    // OMITIDO vira FALTA materializada (linha presente:false) — sem isso ele some do
-    // denominador da frequência em vez de contar ausência. Re-registro parcial não
-    // sobrescreve o que já foi lançado para quem ficou de fora da edição.
-    const vistos = new Set<string>();
-    for (const p of dados.presencas) {
-      if (vistos.has(p.alunoId)) throw new ErroRegra("Há aluno repetido na lista de presenças.");
-      vistos.add(p.alunoId);
-    }
-    const omitidos = [...alocados].filter((id) => !vistos.has(id));
-
-    const aulaId = await prisma.$transaction(async (tx) => {
-      // Re-registrar a mesma data EDITA a aula (upsert por turma×data — @@unique).
-      const aula = await tx.aula.upsert({
-        where: { turmaId_data: { turmaId: dados.turmaId, data } },
-        create: { turmaId: dados.turmaId, data, conteudo: dados.conteudo },
-        update: { conteudo: dados.conteudo },
-      });
-      for (const p of dados.presencas) {
-        await tx.presenca.upsert({
-          where: { aulaId_alunoId: { aulaId: aula.id, alunoId: p.alunoId } },
-          create: { aulaId: aula.id, alunoId: p.alunoId, presente: p.presente },
-          update: { presente: p.presente },
-        });
+    const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS);
+    const dados = SolicitarMudancaAcademicaSchema.parse(input);
+    if (!alunoId.trim()) throw new ErroRegra("Aluno obrigatório.");
+    const solicitacaoId = await prisma.$transaction(async (tx) => {
+      await bloquearEstadoAcademico(tx, alunoId, dados.turmaDestinoId);
+      await exigirUsuarioAcademicoAtual(tx, autor.id, SOLICITANTES_ACADEMICOS);
+      const agora = new Date();
+      let estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, dados.matriculaId, agora);
+      const impedimento = impedimentoEstadoAcademico(estado, true, agora);
+      if (impedimento) throw new ErroRegra(impedimento);
+      if (dados.alocacaoOrigemId && estado.origem?.id !== dados.alocacaoOrigemId) throw new ErroRegra("A alocação mudou desde a consulta. Confira novamente antes de solicitar.");
+      // Preparações novas capturam somente o contrato da origem inequívoca.
+      // A leitura global continua necessária para recusar origens ambíguas.
+      if (!dados.matriculaId && estado.origem?.matriculaId) {
+        estado = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, estado.origem.matriculaId, agora);
       }
-      for (const alunoId of omitidos) {
-        await tx.presenca.upsert({
-          where: { aulaId_alunoId: { aulaId: aula.id, alunoId } },
-          create: { aulaId: aula.id, alunoId, presente: false },
-          update: {}, // já lançado antes: a edição parcial não mexe
-        });
+      if (classificarDestinoAcademico(estado.origem!.turma, estado.destino!) !== "EXCECAO") throw new ErroRegra("Turmas equivalentes usam proposta de aproveitamento, aprovação independente e execução pela Secretaria.");
+      const aberta = await tx.solicitacaoMudancaAcademica.findFirst({ where: { alunoId, matriculaId: estado.origem!.matriculaId, status: { in: ["PENDENTE", "APROVADA"] } } });
+      if (aberta) {
+        if (aberta.solicitanteId === autor.id && aberta.turmaDestinoId === dados.turmaDestinoId && aberta.motivo === dados.motivo && aberta.horarioCompativel === dados.horarioCompativel) {
+          // Repetir uma proposta anterior conserva seu escopo original, inclusive
+          // quando ainda dependia do cadastro inteiro; não reescrever sua memória.
+          const anterior = lerSnapshotMudancaAcademica(aberta.snapshot);
+          const estadoAnterior = await carregarEstadoAcademico(tx, alunoId, dados.turmaDestinoId, anterior.escopoMatriculaId ?? undefined, agora);
+          const impedimentoAnterior = impedimentoEstadoAcademico(estadoAnterior, true, agora);
+          if (impedimentoAnterior) throw new ErroRegra(impedimentoAnterior);
+          if (anterior.versao !== 3 && !memoriaLegadaMudancaAcademicaCorresponde(anterior, estadoAnterior, agora)) {
+            throw new ErroRegra("O escopo da proposta histórica mudou. Cancele-a e abra uma nova.");
+          }
+          if (anterior.versao === 3) exigirSnapshotMudancaAcademicaAtual(aberta.snapshot, estadoAnterior, agora);
+          if (anterior.alocacaoOrigemId !== aberta.alocacaoOrigemId || anterior.origem.id !== aberta.turmaOrigemId || anterior.destino.id !== aberta.turmaDestinoId) {
+            throw new ErroRegra("A proposta preservada não corresponde mais ao vínculo atual. Cancele-a e abra uma nova.");
+          }
+          return aberta.id;
+        }
+        throw new ErroRegra("O aluno já possui uma mudança acadêmica em aberto. Conclua ou cancele a anterior antes de solicitar outra.");
       }
-      await registrarEvento(tx, {
-        tipo: "AulaRegistrada",
-        agregadoTipo: "Turma",
-        agregadoId: dados.turmaId,
-        autorId: autor.id,
-        payload: {
-          data: data.toISOString(),
-          presentes: dados.presencas.filter((p) => p.presente).length,
-          total: alocados.size,
-          faltasMaterializadas: omitidos.length,
-        },
-      });
-      return aula.id;
+      const solicitacao = await tx.solicitacaoMudancaAcademica.create({ data: {
+        alunoId, matriculaId: estado.origem!.matriculaId, alocacaoOrigemId: estado.origem!.id, turmaOrigemId: estado.origem!.turmaId, turmaDestinoId: dados.turmaDestinoId,
+        motivo: dados.motivo, horarioCompativel: dados.horarioCompativel, solicitanteId: autor.id, snapshot: montarSnapshotMudancaAcademica(estado),
+      } });
+      await registrarEvento(tx, { tipo: "MudancaAcademicaSolicitada", agregadoTipo: "Aluno", agregadoId: alunoId, autorId: autor.id,
+        payload: { solicitacaoId: solicitacao.id, alocacaoOrigemId: solicitacao.alocacaoOrigemId, turmaOrigemId: solicitacao.turmaOrigemId, turmaDestinoId: solicitacao.turmaDestinoId, motivo: dados.motivo, horarioCompativel: true } });
+      return solicitacao.id;
     });
-    revalidar(dados.turmaId);
-    return { aulaId };
+    revalidar(alunoId);
+    return { solicitacaoId };
   });
 }
 
-export async function salvarAvaliacao(input: AvaliacaoInput): Promise<Resultado<{ id: string }>> {
+export async function registrarParecerMudanca(id: string, input: RegistrarParecerMudancaInput): Promise<Resultado<{ parecerId: string }>> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_ACADEMICO);
-    const dados = AvaliacaoSchema.parse(input);
-    await exigirTurmaNoEscopo(dados.turmaId, autor);
-
-    const id = await prisma.$transaction(async (tx) => {
-      const avaliacao = await tx.avaliacao.upsert({
-        where: { turmaId_nome: { turmaId: dados.turmaId, nome: dados.nome } },
-        create: {
-          turmaId: dados.turmaId,
-          nome: dados.nome,
-          peso: dados.peso,
-          // Mesmo parse LOCAL de date-only da aula (review PR #60).
-          data: dados.dataISO ? new Date(paraDataLocal(dados.dataISO) as string | Date) : null,
-        },
-        update: {
-          peso: dados.peso,
-          data: dados.dataISO ? new Date(paraDataLocal(dados.dataISO) as string | Date) : null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "AvaliacaoDefinida",
-        agregadoTipo: "Turma",
-        agregadoId: dados.turmaId,
-        autorId: autor.id,
-        payload: { nome: dados.nome, peso: dados.peso },
-      });
-      return avaliacao.id;
+    const autor = await exigirSessaoComPapel(Papel.PROFESSOR);
+    const dados = RegistrarParecerMudancaSchema.parse(input);
+    const resultado = await prisma.$transaction(async (tx) => {
+      const solicitacao = await bloquearSolicitacao(tx, id);
+      await exigirUsuarioAcademicoAtual(tx, autor.id, [Papel.PROFESSOR]);
+      const origemAtual = await tx.alocacaoTurma.findFirst({ where: { id: solicitacao.alocacaoOrigemId, alunoId: solicitacao.alunoId, turmaId: solicitacao.turmaOrigemId, ativa: true }, select: { turma: { select: turmaAcademicaSelect } } });
+      if (!origemAtual || !docenteAtual(autor.id, origemAtual.turma)) throw new ErroPermissao("Somente o professor atualmente responsável pela turma de origem pode registrar parecer para este aluno.");
+      await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
+      const estado = await exigirEstadoVigente(tx, solicitacao, new Date());
+      if (!docenteAtual(autor.id, estado.origem!.turma)) throw new ErroPermissao("Somente o professor atualmente responsável pela turma de origem pode registrar parecer para este aluno.");
+      const igual = solicitacao.pareceres.find((p) => p.autorId === autor.id && p.conteudo === dados.conteudo);
+      if (igual) return { alunoId: solicitacao.alunoId, parecerId: igual.id };
+      if (solicitacao.status !== "PENDENTE") throw new ErroRegra("Somente solicitações pendentes recebem novos pareceres. Os pareceres anteriores permanecem no histórico.");
+      const parecer = await tx.parecerMudancaAcademica.create({ data: { solicitacaoId: id, autorId: autor.id, conteudo: dados.conteudo } });
+      await registrarEvento(tx, { tipo: "ParecerMudancaAcademicaRegistrado", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, autorId: autor.id,
+        payload: { solicitacaoId: id, parecerId: parecer.id, turmaOrigemId: solicitacao.turmaOrigemId, conteudo: dados.conteudo } });
+      return { alunoId: solicitacao.alunoId, parecerId: parecer.id };
     });
-    revalidar(dados.turmaId);
-    return { id };
+    revalidar(resultado.alunoId);
+    return { parecerId: resultado.parecerId };
   });
 }
 
-export async function lancarNotas(input: LancarNotasInput): Promise<Resultado> {
+export async function decidirMudancaAcademica(id: string, input: DecidirMudancaAcademicaInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_ACADEMICO);
-    const dados = LancarNotasSchema.parse(input);
-    const avaliacao = await prisma.avaliacao.findUnique({ where: { id: dados.avaliacaoId } });
-    if (!avaliacao) throw new ErroRegra("Avaliação não encontrada.");
-    await exigirTurmaNoEscopo(avaliacao.turmaId, autor);
-
-    await prisma.$transaction(async (tx) => {
-      // Nota só de aluno ALOCADO na turma da avaliação (review PR #60): sem esta checagem,
-      // um professor gravaria na avaliação da turma A nota de aluno da turma B,
-      // contaminando boletim e progressão. Mesma regra do diário, na MESMA transação.
-      const alocados = new Set(
-        (
-          await tx.alocacaoTurma.findMany({
-            where: { turmaId: avaliacao.turmaId, ativa: true },
-            select: { alunoId: true },
-          })
-        ).map((a) => a.alunoId),
-      );
-      const fora = dados.notas.filter((n) => !alocados.has(n.alunoId));
-      if (fora.length > 0) throw new ErroRegra("Há notas de alunos que não estão na turma desta avaliação.");
-      for (const n of dados.notas) {
-        await tx.nota.upsert({
-          where: { avaliacaoId_alunoId: { avaliacaoId: avaliacao.id, alunoId: n.alunoId } },
-          create: { avaliacaoId: avaliacao.id, alunoId: n.alunoId, valor: n.valor },
-          update: { valor: n.valor },
-        });
+    const autor = await exigirSessaoComPapel(...APROVADORES_ACADEMICOS);
+    const dados = DecidirMudancaAcademicaSchema.parse(input);
+    const dispensa = dados.justificativaDispensaParecer || null;
+    const alunoId = await prisma.$transaction(async (tx) => {
+      const solicitacao = await bloquearSolicitacao(tx, id);
+      await exigirUsuarioAcademicoAtual(tx, autor.id, APROVADORES_ACADEMICOS);
+      exigirDecisaoAcademicaIndependente(solicitacao.solicitanteId, autor.id);
+      const status = dados.aprovar ? "APROVADA" : "REJEITADA";
+      if ((solicitacao.status === status || (dados.aprovar && solicitacao.status === "EXECUTADA")) && solicitacao.aprovadorId === autor.id && solicitacao.motivoDecisao === dados.motivo && solicitacao.justificativaDispensaParecer === dispensa) return solicitacao.alunoId;
+      if (solicitacao.status !== "PENDENTE") throw new ErroRegra("Esta solicitação já foi decidida ou cancelada.");
+      let fechamento: { id: string; estadoHash: string } | null = null;
+      if (dados.aprovar) {
+        await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
+        const estado = await exigirEstadoVigente(tx, solicitacao, new Date());
+        exigirParecerOuDispensa(solicitacao, estado.origem!.turma, dispensa);
+        fechamento = await exigirFechamentoProgressaoTx(tx, { matriculaId: estado.origem!.matriculaId,
+          alocacaoId: estado.origem!.id, gestorResponsavelId: autor.id });
       }
-      await registrarEvento(tx, {
-        tipo: "NotasLancadas",
-        agregadoTipo: "Turma",
-        agregadoId: avaliacao.turmaId,
-        autorId: autor.id,
-        payload: { avaliacao: avaliacao.nome, quantidade: dados.notas.length },
-      });
+      await tx.solicitacaoMudancaAcademica.update({ where: { id }, data: {
+        status, aprovadorId: autor.id, motivoDecisao: dados.motivo, justificativaDispensaParecer: dispensa, decididoEm: new Date(),
+        ...(fechamento ? { fechamentoAcademicoId: fechamento.id, fechamentoEstadoHash: fechamento.estadoHash } : {}),
+      } });
+      await registrarEvento(tx, { tipo: "MudancaAcademicaDecidida", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, autorId: autor.id,
+        payload: { solicitacaoId: id, status, solicitanteId: solicitacao.solicitanteId, motivo: dados.motivo, justificativaDispensaParecer: dispensa,
+          ...(fechamento ? { fechamentoAcademicoId: fechamento.id, fechamentoEstadoHash: fechamento.estadoHash } : {}) } });
+      return solicitacao.alunoId;
     });
-    revalidar(avaliacao.turmaId);
+    revalidar(alunoId);
   });
 }
 
-/** Teste de nível: registro auditável no aluno (alimenta o nível inicial da matrícula). */
-export async function registrarTesteNivel(input: TesteNivelInput): Promise<Resultado> {
+export async function executarMudancaAcademica(id: string, input: ExecutarMudancaAcademicaInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_ACADEMICO);
-    const dados = TesteNivelSchema.parse(input);
-    const nivel = await prisma.nivel.findUnique({ where: { id: dados.nivelId } });
-    if (!nivel) throw new ErroRegra("Nível inexistente.");
-
-    await prisma.$transaction(async (tx) => {
-      const aluno = await tx.aluno.findUnique({ where: { id: dados.alunoId }, select: { id: true } });
-      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-      // Escopo do PROFESSOR (review PR #60 rodada 2): sem esta checagem, qualquer alunoId
-      // colado deixava inserir teste no histórico/portal de aluno de fora das suas turmas.
-      // Secretaria/gerência pedagógica (e admin) seguem sem restrição.
-      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO)) {
-        const naMinhaTurma = await tx.alocacaoTurma.findFirst({
-          where: { alunoId: dados.alunoId, ativa: true, turma: { professorId: autor.id } },
-          select: { id: true },
-        });
-        if (!naMinhaTurma) throw new ErroPermissao("Este aluno não está nas suas turmas.");
-      }
-      await tx.testeNivel.create({
-        data: {
-          alunoId: dados.alunoId,
-          nivelId: dados.nivelId,
-          pontuacao: dados.pontuacao ?? null,
-          observacao: dados.observacao,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "TesteNivelRegistrado",
-        agregadoTipo: "Aluno",
-        agregadoId: dados.alunoId,
-        autorId: autor.id,
-        payload: { nivelId: dados.nivelId, nivel: nivel.codigo, pontuacao: dados.pontuacao ?? null },
-      });
+    const autor = await exigirSessaoComPapel(...EXECUTORES_ACADEMICOS);
+    const dados = ExecutarMudancaAcademicaSchema.parse(input);
+    const alunoId = await prisma.$transaction(async (tx) => {
+      const solicitacao = await bloquearSolicitacao(tx, id);
+      await exigirUsuarioAcademicoAtual(tx, autor.id, EXECUTORES_ACADEMICOS);
+      if (solicitacao.status === "EXECUTADA" && solicitacao.executorId === autor.id && solicitacao.motivoExecucao === dados.motivo) return solicitacao.alunoId;
+      if (solicitacao.status !== "APROVADA" || !solicitacao.aprovadorId) throw new ErroRegra("Somente uma solicitação aprovada pode ser executada.");
+      const revisaoPendente = await tx.casoRevisaoProgressao.findFirst({ where: { solicitacaoId: id,
+        itensResolucao: { none: { proposta: { acao: { in: ["REGISTRAR_CANCELAMENTO", "RECONFIRMAR_EXECUTADA"] }, decisao: { aprovada: true } } } },
+      }, select: { id: true } });
+      if (revisaoPendente) throw new ErroRegra("A mudança possui revisão de correção pendente. A gestão deve resolver a solicitação antes da execução.");
+      exigirDecisaoAcademicaIndependente(solicitacao.solicitanteId, solicitacao.aprovadorId);
+      await exigirUsuarioAcademicoAtual(tx, solicitacao.solicitanteId, SOLICITANTES_ACADEMICOS);
+      await exigirUsuarioAcademicoAtual(tx, solicitacao.aprovadorId, APROVADORES_ACADEMICOS);
+      const agora = new Date();
+      const estado = await exigirEstadoVigente(tx, solicitacao, agora);
+      exigirParecerOuDispensa(solicitacao, estado.origem!.turma, solicitacao.justificativaDispensaParecer);
+      await exigirFechamentoProgressaoTx(tx, { matriculaId: estado.origem!.matriculaId,
+        alocacaoId: estado.origem!.id, gestorResponsavelId: solicitacao.aprovadorId,
+        fechamentoId: solicitacao.fechamentoAcademicoId, estadoHashAprovado: solicitacao.fechamentoEstadoHash });
+      await tx.alocacaoTurma.update({ where: { id: estado.origem!.id }, data: { ativa: false, encerradaEm: agora } });
+      const novaAlocacao = await tx.alocacaoTurma.create({ data: { alunoId: solicitacao.alunoId, matriculaId: estado.origem!.matriculaId ?? null, turmaId: solicitacao.turmaDestinoId, criadoEm: agora } });
+      const movimentacao = await tx.movimentacaoAluno.create({ data: {
+        matriculaId: estado.origem!.matriculaId ?? null,
+        alunoId: solicitacao.alunoId, tipo: "TROCA_TURMA", turmaOrigemId: solicitacao.turmaOrigemId, turmaDestinoId: solicitacao.turmaDestinoId,
+        motivo: dados.motivo, observacao: `Mudança acadêmica aprovada: ${id}`, usuarioId: autor.id, criadoEm: agora,
+      } });
+      await tx.solicitacaoMudancaAcademica.update({ where: { id }, data: {
+        status: "EXECUTADA", executorId: autor.id, motivoExecucao: dados.motivo, executadoEm: agora, movimentacaoId: movimentacao.id,
+      } });
+      await registrarEvento(tx, { tipo: "MudancaAcademicaExecutada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, autorId: autor.id,
+        payload: { solicitacaoId: id, solicitanteId: solicitacao.solicitanteId, aprovadorId: solicitacao.aprovadorId, turmaOrigemId: solicitacao.turmaOrigemId,
+          turmaDestinoId: solicitacao.turmaDestinoId, alocacaoOrigemId: solicitacao.alocacaoOrigemId, alocacaoDestinoId: novaAlocacao.id, movimentacaoId: movimentacao.id, motivo: dados.motivo, horarioCompativel: true,
+          fechamentoAcademicoId: solicitacao.fechamentoAcademicoId, fechamentoEstadoHash: solicitacao.fechamentoEstadoHash } });
+      await registrarEvento(tx, { tipo: "TrocaTurma", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, autorId: autor.id,
+        payload: { de: solicitacao.turmaOrigemId, para: solicitacao.turmaDestinoId, motivo: dados.motivo, solicitacaoId: id, horarioCompativel: true } });
+      return solicitacao.alunoId;
     });
-    revalidar(undefined, dados.alunoId);
+    revalidar(alunoId);
   });
 }
 
-/**
- * PROGRESSÃO (aprovação humana sobre o cálculo do sistema): marca o nível da turma como
- * CONCLUÍDO pelo aluno + emite o CERTIFICADO com código público de validação. A alocação
- * na próxima turma segue pelo fluxo existente de troca de turma (decisão humana).
- */
-export async function aprovarNivelAluno(turmaId: string, alunoId: string): Promise<Resultado<{ codigoValidacao: string }>> {
+export async function cancelarMudancaAcademica(id: string, input: CancelarMudancaAcademicaInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_PROGRESSAO);
-    const turma = await prisma.turma.findUnique({ where: { id: turmaId }, include: { nivel: true } });
-    if (!turma) throw new ErroRegra("Turma não encontrada.");
-    const alocado = await prisma.alocacaoTurma.findFirst({ where: { turmaId, alunoId, ativa: true } });
-    if (!alocado) throw new ErroRegra("O aluno não está (mais) nesta turma.");
-
-    // Idempotência: um certificado por aluno×nível.
-    const ja = await prisma.certificado.findFirst({ where: { alunoId, nivelId: turma.nivelId } });
-    if (ja) throw new ErroRegra(`Este aluno já tem certificado do nível ${turma.nivel.codigo}.`);
-
-    const codigoValidacao = randomBytes(6).toString("hex").toUpperCase();
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.certificado.create({
-          data: { alunoId, nivelId: turma.nivelId, turmaId, codigoValidacao },
-        });
-        await registrarEvento(tx, {
-          tipo: "NivelConcluido",
-          agregadoTipo: "Aluno",
-          agregadoId: alunoId,
-          autorId: autor.id,
-          payload: { nivelId: turma.nivelId, nivel: turma.nivel.codigo, turmaId, codigoValidacao },
-        });
-      });
-    } catch (e) {
-      // @@unique(alunoId, nivelId) — review PR #60 rodada 2: o pré-check acima não segura
-      // duas aprovações CONCORRENTES; o banco garante e o conflito é idempotência.
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        throw new ErroRegra(`Este aluno já tem certificado do nível ${turma.nivel.codigo}.`);
-      }
-      throw e;
-    }
-    revalidar(turmaId, alunoId);
-    return { codigoValidacao };
-  });
-}
-
-/** Cria (uma vez) o acesso do PORTAL para um aluno: Usuario papel ALUNO vinculado 1:1. */
-export async function criarAcessoPortal(input: CriarAcessoPortalInput): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_PORTAL);
-    const dados = CriarAcessoPortalSchema.parse(input);
-
-    const aluno = await prisma.aluno.findUnique({ where: { id: dados.alunoId } });
-    if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-    if (aluno.usuarioId) throw new ErroRegra("Este aluno já tem acesso ao portal.");
-    const emailEmUso = await prisma.usuario.findUnique({ where: { email: dados.email } });
-    if (emailEmUso) throw new ErroRegra("Já existe um usuário com este e-mail.");
-
-    const senhaHash = await bcrypt.hash(dados.senha, 10);
-    await prisma.$transaction(async (tx) => {
-      const usuario = await tx.usuario.create({
-        data: {
-          nome: [aluno.primeiroNome, aluno.sobrenome].filter(Boolean).join(" "),
-          email: dados.email,
-          senhaHash,
-          papeis: [Papel.ALUNO], // SÓ o portal — nenhuma tela interna
-        },
-      });
-      await tx.aluno.update({ where: { id: aluno.id }, data: { usuarioId: usuario.id } });
-      await registrarEvento(tx, {
-        tipo: "AcessoPortalCriado",
-        agregadoTipo: "Aluno",
-        agregadoId: aluno.id,
-        autorId: autor.id,
-        payload: { email: dados.email },
-      });
+    const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS);
+    const dados = CancelarMudancaAcademicaSchema.parse(input);
+    const alunoId = await prisma.$transaction(async (tx) => {
+      const solicitacao = await bloquearSolicitacao(tx, id);
+      await exigirUsuarioAcademicoAtual(tx, autor.id, SOLICITANTES_ACADEMICOS);
+      if (solicitacao.status === "CANCELADA" && solicitacao.canceladorId === autor.id && solicitacao.motivoCancelamento === dados.motivo) return solicitacao.alunoId;
+      if (!["PENDENTE", "APROVADA"].includes(solicitacao.status)) throw new ErroRegra("Apenas solicitações pendentes ou aprovadas podem ser canceladas. Uma mudança executada exige uma nova solicitação.");
+      await tx.solicitacaoMudancaAcademica.update({ where: { id }, data: { status: "CANCELADA", canceladorId: autor.id, motivoCancelamento: dados.motivo, canceladoEm: new Date() } });
+      await registrarEvento(tx, { tipo: "MudancaAcademicaCancelada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, autorId: autor.id,
+        payload: { solicitacaoId: id, statusAnterior: solicitacao.status, motivo: dados.motivo } });
+      return solicitacao.alunoId;
     });
-    revalidar(undefined, aluno.id);
+    revalidar(alunoId);
   });
 }

@@ -1,354 +1,166 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  Papel,
-  Prisma,
-  TipoAjuste,
-  TipoAprovacao,
-  StatusAprovacao,
-  StatusCobranca,
-  StatusFaturaB2B,
-  Vigencia,
-  TipoCobranca,
-} from "@prisma/client";
+import { Papel, Prisma, TipoAjuste, TipoAprovacao, StatusAprovacao, StatusCobranca, StatusComissao, Vigencia, TipoCobranca } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
-import {
-  exigirSessao,
-  exigirPapel,
-  exigirSessaoComPapel,
-  registrarEvento,
-  executarAcao,
-  ErroRegra,
-  ErroPermissao,
-  temPapel,
-  descontoPercentual,
-  precisaAprovacaoDesconto,
-  validarDirecaoAjuste,
-  numero,
-  numeroOuNull,
-  type Resultado,
-  type UsuarioSessao,
-} from "@/server/_shared";
+import { exigirSessaoComPapel, registrarEvento, executarAcao, ErroRegra, ErroPermissao, validarDirecaoAjuste, numero, type Resultado, type UsuarioSessao } from "@/server/_shared";
+import { exigirEscopoAjuste, exigirEscopoAprovacao } from "@/server/financeiro/acesso";
+import { bloquearCobranca, bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { dinheiro, saldoAtual, descontoAcumulado, exigirConferenciaIndependente } from "@/server/financeiro/regras";
+import { limitesAtuais, exigeAprovacaoComponente } from "@/server/financeiro/politica";
 import { AjusteSchema, DecisaoSchema, type AjusteInput, type DecisaoInput } from "./schema";
 
-function revalidar(alunoId?: string) {
-  revalidatePath("/financeiro");
-  if (alunoId) revalidatePath(`/alunos/${alunoId}/financeiro`);
+function revalidar() {
+  revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
 }
 
-const TIPO_AJUSTE_PARA_APROVACAO: Record<TipoAjuste, TipoAprovacao> = {
-  DESCONTO: TipoAprovacao.DESCONTO,
-  BOLSA: TipoAprovacao.BOLSA,
-  ALTERACAO_VALOR: TipoAprovacao.ALTERACAO_VALOR,
-  PERDAO: TipoAprovacao.PERDAO_DIVIDA,
-  RENEGOCIACAO: TipoAprovacao.ALTERACAO_VALOR,
-};
+const SnapshotSchema = z.object({
+  alunoId: z.string(), alunoNome: z.string(), moeda: z.string(),
+  valorDe: z.number(), valorPara: z.number(), descontoValor: z.number(),
+  tipo: z.nativeEnum(TipoAjuste), exigeDirecao: z.boolean(),
+  alvos: z.array(z.object({
+    id: z.string(), versao: z.number().int(), valorDe: z.number(), valorPara: z.number(), referencia: z.number(),
+    novoVencimento: z.string().nullable(),
+  })).min(1),
+});
+type Snapshot = z.infer<typeof SnapshotSchema>;
 
-type CobrancaCompleta = Prisma.CobrancaGetPayload<{
-  include: {
-    matricula: {
-      include: {
-        comissoes: true;
-        produto: { select: { modalidadeId: true } };
-        aluno: { select: { id: true; primeiroNome: true; sobrenome: true } };
-      };
-    };
-  };
-}>;
-
-/** Cobranças afetadas pela vigência. */
-function cobrancasAlvo(
-  cobranca: CobrancaCompleta,
-  todasDaMatricula: { id: string; tipo: TipoCobranca; vencimento: Date; status: StatusCobranca }[],
-  vigencia: Vigencia,
-): string[] {
-  if (vigencia === Vigencia.ESTA_COBRANCA) return [cobranca.id];
-  // próximos meses / contrato inteiro → esta + mensalidades futuras pendentes
-  const futuras = todasDaMatricula
-    .filter(
-      (c) =>
-        c.tipo === cobranca.tipo &&
-        c.status !== StatusCobranca.PAGO &&
-        c.status !== StatusCobranca.CANCELADA &&
-        c.vencimento >= cobranca.vencimento,
-    )
-    .map((c) => c.id);
-  return Array.from(new Set([cobranca.id, ...futuras]));
-}
-
-/** Aplica o ajuste: atualiza cobrança(s), grava AjusteFinanceiro, recalcula comissão se for taxa. */
-async function aplicarAjuste(
-  tx: Prisma.TransactionClient,
-  params: {
-    cobranca: CobrancaCompleta;
-    valorPara: number;
-    novoVencimento?: Date;
-    vigencia: Vigencia;
-    tipo: TipoAjuste;
-    motivo: string;
-    autorId: string;
-    aprovacaoId?: string;
-  },
-) {
-  const { cobranca, valorPara, vigencia, tipo, motivo, autorId, aprovacaoId, novoVencimento } = params;
-  const matricula = cobranca.matricula;
-  const valorDe = numero(cobranca.valorNegociado);
-  const descontoValor = valorDe - valorPara;
-  const descontoPct = valorDe > 0 ? (descontoValor / valorDe) * 100 : 0;
-
-  const todas = await tx.cobranca.findMany({
-    where: { matriculaId: matricula.id },
-    select: { id: true, tipo: true, vencimento: true, status: true },
-  });
-  const alvos = cobrancasAlvo(cobranca, todas, vigencia);
-
-  // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): mudar valor/perdoar
-  // aqui deixaria o documento fechado divergente do liquidado. Cancele a fatura antes.
-  const faturada = await tx.cobranca.findFirst({
-    where: { id: { in: alvos }, faturaB2B: { status: StatusFaturaB2B.FECHADA } },
-    include: { faturaB2B: { select: { codigo: true } } },
-  });
-  if (faturada) {
-    throw new ErroRegra(
-      `A cobrança ${faturada.codigo ?? faturada.id} está na fatura B2B ${faturada.faturaB2B?.codigo ?? ""} (fechada) — cancele a fatura antes de ajustar.`,
-    );
-  }
-
-  for (const id of alvos) {
-    await tx.cobranca.update({
-      where: { id },
-      data: {
-        valorNegociado: tipo === TipoAjuste.PERDAO ? 0 : valorPara,
-        status: tipo === TipoAjuste.PERDAO ? StatusCobranca.CANCELADA : undefined,
-        ...(novoVencimento && id === cobranca.id ? { vencimento: novoVencimento } : {}),
-      },
-    });
-  }
-
-  await tx.ajusteFinanceiro.create({
-    data: {
-      matriculaId: matricula.id,
-      cobrancaId: cobranca.id,
-      tipo,
-      valorDe,
-      valorPara: tipo === TipoAjuste.PERDAO ? 0 : valorPara,
-      descontoValor: tipo === TipoAjuste.PERDAO ? valorDe : descontoValor,
-      descontoPct,
-      moeda: cobranca.moeda,
-      vigencia,
-      motivo,
-      autorId,
-      aprovacaoId: aprovacaoId ?? null,
-      vendedorId: matricula.comissoes[0]?.vendedorId ?? null,
-      paisId: matricula.paisId,
-      modalidadeId: matricula.produto.modalidadeId,
-    },
-  });
-
-  // Comissão recalcula só quando muda a TAXA DE MATRÍCULA (comissão = % da taxa).
-  if (cobranca.tipo === TipoCobranca.MATRICULA) {
-    for (const com of matricula.comissoes) {
-      const novoValor = ((tipo === TipoAjuste.PERDAO ? 0 : valorPara) * numero(com.percentual)) / 100;
-      await tx.comissao.update({ where: { id: com.id }, data: { valor: novoValor } });
+async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, snapshot: Snapshot, motivo: string, vigencia: Vigencia, aprovacaoId?: string) {
+  // Mesma ordem da ativação/negociação: lead, matrícula, cobranças e comissões.
+  // A aprovação não pode alterar a base enquanto a ativação monta o cronograma.
+  const vinculos = await tx.cobranca.findMany({ where: { id: { in: snapshot.alvos.map((alvo) => alvo.id) } }, select: { matriculaId: true } });
+  await bloquearMatriculas(tx, vinculos.map((vinculo) => vinculo.matriculaId));
+  for (const alvo of [...snapshot.alvos].sort((a,b) => a.id.localeCompare(b.id))) {
+    const cobranca = await bloquearCobranca(tx, alvo.id);
+    if (cobranca.versao !== alvo.versao || !cobranca.valorNegociado.equals(alvo.valorDe) || !cobranca.valorOriginal.equals(alvo.referencia)) {
+      throw new ErroRegra("A cobrança mudou desde a solicitação. Envie um novo pedido.");
     }
+    if (cobranca.faturaB2BId && await tx.faturaB2B.count({ where: { id: cobranca.faturaB2BId, status: "FECHADA" } })) throw new ErroRegra("Cancele a fatura B2B fechada antes de ajustar esta cobrança.");
+    if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança paga ou cancelada não aceita este ajuste.");
+    // O fechamento também bloqueia as comissões. Reler após o lock preserva uma
+    // comissão que tenha sido paga enquanto este ajuste aguardava sua vez.
+    await tx.$queryRaw`SELECT id FROM "Comissao" WHERE "matriculaId" = ${cobranca.matriculaId} ORDER BY id FOR UPDATE`;
+    const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: cobranca.matriculaId }, include: { produto: { select: { modalidadeId: true } }, comissoes: true } });
+    const valor = dinheiro(alvo.valorPara);
+    if (cobranca.valorLiquidadoCredito.gt(0) && valor.lt(dinheiro(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito))) throw new ErroRegra("O ajuste exige revisar as utilizações de crédito e o valor já liquidado.");
+    const creditoTaxa = await tx.origemCreditoAcertoTaxaAditivo.aggregate({ where: { cobrancaId: cobranca.id }, _sum: { valor: true } });
+    const permuta = dinheiro(cobranca.valorCompensadoPermuta ?? 0);
+    const liquidadoPreservado = dinheiro(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito).plus(permuta).minus(creditoTaxa._sum.valor ?? 0);
+    if (permuta.gt(0) && valor.lt(liquidadoPreservado)) throw new ErroRegra("O ajuste produziria excedente de serviço já compensado. Confira o acordo de permuta antes de alterar a cobrança.");
+    const saldo = saldoAtual(valor, cobranca.valorRecebido, cobranca.valorLiquidadoCredito, creditoTaxa._sum.valor ?? 0, cobranca.valorCompensadoPermuta);
+    const vencimento = alvo.novoVencimento ? new Date(alvo.novoVencimento) : cobranca.vencimento;
+    await tx.cobranca.update({ where: { id: cobranca.id }, data: {
+      valorNegociado: valor, saldo, versao: { increment: 1 }, vencimento,
+      status: snapshot.tipo === TipoAjuste.PERDAO ? StatusCobranca.CANCELADA : saldo.isZero() ? StatusCobranca.PAGO : vencimento < new Date() ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE,
+      pagoEm: saldo.isZero() && snapshot.tipo !== TipoAjuste.PERDAO ? (cobranca.pagoEm ?? new Date()) : null,
+    } });
+    await tx.ajusteFinanceiro.create({ data: {
+      matriculaId: matricula.id, cobrancaId: cobranca.id, tipo: snapshot.tipo,
+      valorDe: cobranca.valorNegociado, valorPara: valor, descontoValor: cobranca.valorNegociado.minus(valor),
+      descontoPct: descontoAcumulado(cobranca.valorOriginal, valor).toDecimalPlaces(2), moeda: cobranca.moeda,
+      vigencia, motivo, autorId: autor.id, aprovacaoId: aprovacaoId ?? null,
+      vendedorId: matricula.comissoes[0]?.vendedorId ?? null, paisId: matricula.paisId, modalidadeId: matricula.produto.modalidadeId,
+    } });
+    if (cobranca.tipo === TipoCobranca.MATRICULA) {
+      for (const comissao of matricula.comissoes) {
+        // Comissão fixa e comissões já liquidadas preservam seu valor histórico.
+        if (comissao.tipo !== "PERCENTUAL" || !([StatusComissao.PENDENTE, StatusComissao.APROVADA] as StatusComissao[]).includes(comissao.status)) continue;
+        const novo = dinheiro(valor.mul(comissao.percentual).div(100));
+        await tx.comissao.update({ where: { id: comissao.id }, data: { valor: novo, valorBase: valor } });
+        await registrarEvento(tx, { tipo: "ComissaoRecalculada", agregadoTipo: "Comissao", agregadoId: comissao.id,
+          autorId: autor.id, payload: { ajusteAprovacaoId: aprovacaoId ?? null, de: numero(comissao.valor), para: novo.toNumber(), base: valor.toNumber(), politicaId: comissao.politicaId } });
+      }
+    }
+    await registrarEvento(tx, { tipo: snapshot.tipo === TipoAjuste.PERDAO ? "CobrancaPerdoada" : "CobrancaRenegociada",
+      agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: autor.id,
+      payload: { de: alvo.valorDe, para: alvo.valorPara, saldo: saldo.toNumber(), vigencia, motivo, aprovacaoId: aprovacaoId ?? null, novoVencimento: alvo.novoVencimento } });
   }
-
-  await registrarEvento(tx, {
-    tipo:
-      tipo === TipoAjuste.PERDAO
-        ? "CobrancaPerdoada"
-        : tipo === TipoAjuste.BOLSA
-          ? "BolsaConcedida"
-          : "CobrancaRenegociada",
-    agregadoTipo: "Cobranca",
-    agregadoId: cobranca.id,
-    autorId,
-    // `novoVencimento` no payload (doc 30 S6): a régua ignora passos cumpridos ANTES da
-    // última renegociação que mudou o vencimento — sem isso o replay contaria degraus da
-    // data antiga e o cron pularia lembretes (gap 14 do doc 28).
-    payload: {
-      de: valorDe,
-      para: valorPara,
-      descontoValor,
-      vigencia,
-      motivo,
-      aprovacaoId: aprovacaoId ?? null,
-      novoVencimento: novoVencimento ? novoVencimento.toISOString() : null,
-    },
-  });
 }
 
-async function carregarCobranca(cobrancaId: string): Promise<CobrancaCompleta> {
-  const cobranca = await prisma.cobranca.findUnique({
-    where: { id: cobrancaId },
-    include: {
-      matricula: {
-        include: {
-          comissoes: true,
-          produto: { select: { modalidadeId: true } },
-          aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
-        },
-      },
-    },
-  });
-  if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-  return cobranca;
-}
-
-/**
- * Renegociar / ajustar uma cobrança (doc 09 §Renegociação).
- * - Admin/Financeiro: aplica direto. Vendedor: até o limite aplica; acima → aprovação.
- * - Perdão: só Admin.
- */
 export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ aprovacao: boolean }>> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
-    exigirPapel(autor, Papel.VENDEDOR, Papel.FINANCEIRO); // Admin passa em temPapel/exigirPapel
+    const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
     const dados = AjusteSchema.parse(input);
-
-    const cobranca = await carregarCobranca(dados.cobrancaId);
-    const aluno = cobranca.matricula.aluno;
-
-    if (dados.tipo === TipoAjuste.PERDAO && !temPapel(autor, Papel.ADMINISTRADOR)) {
-      throw new ErroPermissao("Perdoar cobrança é exclusivo do Administrador.");
-    }
-
-    const valorDe = numero(cobranca.valorNegociado);
-
-    // Direção do ajuste: só ALTERACAO_VALOR pode aumentar; o resto é redução.
-    const erroDirecao = validarDirecaoAjuste(dados.tipo, valorDe, dados.valorPara);
-    if (erroDirecao) throw new ErroRegra(erroDirecao);
-
-    const descontoPct = descontoPercentual(valorDe, dados.valorPara);
-
-    // Só Financeiro/Admin aplicam sem limite. Para os demais (Vendedor),
-    // limiteDescontoPct = null NÃO é ilimitado — é "sem autonomia" (qualquer desconto → aprovação).
-    const total = temPapel(autor, Papel.FINANCEIRO) || temPapel(autor, Papel.ADMINISTRADOR);
-    const limiteUsuario = numeroOuNull(
-      (await prisma.usuario.findUnique({ where: { id: autor.id } }))?.limiteDescontoPct,
-    );
-    const acimaDoLimite = precisaAprovacaoDesconto({
-      podeAplicarSemLimite: total,
-      limiteDescontoPct: limiteUsuario,
-      descontoPct,
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Primeiro consultar somente o vínculo, autorizando antes de ler valores sensíveis.
+      const vinculo = await tx.cobranca.findUnique({ where: { id: dados.cobrancaId }, select: { matriculaId: true } });
+      if (!vinculo) throw new ErroRegra("Cobrança não encontrada.");
+      await bloquearMatriculas(tx, [vinculo.matriculaId]);
+      await exigirEscopoAjuste(autor, vinculo.matriculaId, tx);
+      const cobranca = await bloquearCobranca(tx, dados.cobrancaId);
+      if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA) throw new ErroRegra("Cobrança paga ou cancelada não aceita ajuste.");
+      if (dados.tipo === TipoAjuste.PERDAO && !autor.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao("Perdoar cobrança exige administração.");
+      const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: vinculo.matriculaId }, include: { aluno: { select: { id: true, primeiroNome: true, sobrenome: true } } } });
+      const valorPara = dados.tipo === TipoAjuste.PERDAO ? 0 : dados.valorPara;
+      const candidatos = dados.vigencia === Vigencia.ESTA_COBRANCA ? [cobranca] : await tx.cobranca.findMany({ where: {
+        matriculaId: matricula.id, tipo: cobranca.tipo, status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] },
+        ...(dados.vigencia === Vigencia.PROXIMOS_MESES ? { vencimento: { gte: cobranca.vencimento } } : {}),
+      }, orderBy: { id: "asc" } });
+      const limites = await limitesAtuais(tx, autor);
+      let acima = dados.tipo === TipoAjuste.PERDAO || dados.tipo === TipoAjuste.BOLSA;
+      const alvos: Snapshot["alvos"] = [];
+      for (const c of candidatos) {
+        const atual = await bloquearCobranca(tx, c.id);
+        const erro = validarDirecaoAjuste(dados.tipo, numero(atual.valorNegociado), valorPara);
+        if (erro) throw new ErroRegra(erro);
+        acima ||= exigeAprovacaoComponente(limites, atual.tipo, atual.valorOriginal, valorPara);
+        alvos.push({ id: atual.id, versao: atual.versao, valorDe: numero(atual.valorNegociado), referencia: numero(atual.valorOriginal), valorPara,
+          novoVencimento: atual.id === cobranca.id && dados.novoVencimento ? dados.novoVencimento.toISOString() : null });
+      }
+      const snapshot: Snapshot = {
+        alunoId: matricula.alunoId, alunoNome: nomeCompleto(matricula.aluno), moeda: cobranca.moeda,
+        valorDe: numero(cobranca.valorNegociado), valorPara, descontoValor: numero(cobranca.valorNegociado) - valorPara,
+        tipo: dados.tipo, exigeDirecao: autor.papeis.includes(Papel.GERENTE_COMERCIAL) || autor.papeis.includes(Papel.ADMINISTRADOR) || dados.tipo === TipoAjuste.PERDAO || dados.tipo === TipoAjuste.BOLSA,
+        alvos,
+      };
+      if (acima) {
+        const aprovada = await tx.aprovacao.create({ data: {
+          tipo: dados.tipo === TipoAjuste.PERDAO ? TipoAprovacao.PERDAO_DIVIDA : dados.tipo === TipoAjuste.BOLSA ? TipoAprovacao.BOLSA : dados.tipo === TipoAjuste.ALTERACAO_VALOR ? TipoAprovacao.ALTERACAO_VALOR : TipoAprovacao.DESCONTO,
+          solicitanteId: autor.id, alvoTipo: "Cobranca", alvoId: cobranca.id, vigencia: dados.vigencia,
+          motivo: dados.motivo, impactoMensal: snapshot.descontoValor, payload: snapshot,
+        } });
+        await registrarEvento(tx, { tipo: "DescontoSolicitado", agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: autor.id, payload: { aprovacaoId: aprovada.id } });
+      } else await aplicarAlvos(tx, autor, snapshot, dados.motivo, dados.vigencia);
+      return { aprovacao: acima };
     });
-
-    if (acimaDoLimite) {
-      // cria pedido de aprovação (não aplica)
-      await prisma.$transaction(async (tx) => {
-        const aprov = await tx.aprovacao.create({
-          data: {
-            tipo: TIPO_AJUSTE_PARA_APROVACAO[dados.tipo],
-            solicitanteId: autor.id,
-            alvoTipo: "Cobranca",
-            alvoId: cobranca.id,
-            vigencia: dados.vigencia,
-            motivo: dados.motivo,
-            impactoMensal: valorDe - dados.valorPara,
-            payload: {
-              alunoNome: nomeCompleto(aluno),
-              alunoId: aluno.id,
-              valorDe,
-              valorPara: dados.valorPara,
-              descontoValor: valorDe - dados.valorPara,
-              descontoPct,
-              moeda: cobranca.moeda,
-              novoVencimento: dados.novoVencimento ? dados.novoVencimento.toISOString() : null,
-              tipo: dados.tipo,
-            },
-          },
-        });
-        await registrarEvento(tx, {
-          tipo: "DescontoSolicitado",
-          agregadoTipo: "Cobranca",
-          agregadoId: cobranca.id,
-          autorId: autor.id,
-          payload: { percentual: descontoPct, vigencia: dados.vigencia, aprovacaoId: aprov.id },
-        });
-      });
-      revalidar(aluno.id);
-      return { aprovacao: true };
-    }
-
-    // aplica direto
-    await prisma.$transaction(async (tx) => {
-      await aplicarAjuste(tx, {
-        cobranca,
-        valorPara: dados.valorPara,
-        novoVencimento: dados.novoVencimento,
-        vigencia: dados.vigencia,
-        tipo: dados.tipo,
-        motivo: dados.motivo,
-        autorId: autor.id,
-      });
-    });
-    revalidar(aluno.id);
-    return { aprovacao: false };
+    revalidar(); return resultado;
   });
 }
 
-/** Decidir um pedido de aprovação (Gerente Comercial / Admin). */
 export async function decidirAprovacao(aprovacaoId: string, input: DecisaoInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor: UsuarioSessao = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
     const dados = DecisaoSchema.parse(input);
-
-    const aprov = await prisma.aprovacao.findUnique({ where: { id: aprovacaoId } });
-    if (!aprov) throw new ErroRegra("Aprovação não encontrada.");
-    if (aprov.status !== StatusAprovacao.PENDENTE) throw new ErroRegra("Pedido já decidido.");
-
-    const payload = (aprov.payload ?? {}) as Record<string, unknown>;
-    const alunoId = typeof payload.alunoId === "string" ? payload.alunoId : undefined;
-
-    if (!dados.aprovar) {
-      await prisma.$transaction(async (tx) => {
-        await tx.aprovacao.update({
-          where: { id: aprovacaoId },
-          data: { status: StatusAprovacao.REJEITADA, aprovadorId: autor.id, decididoEm: new Date() },
-        });
-        await registrarEvento(tx, {
-          tipo: "AprovacaoDecidida",
-          agregadoTipo: "Cobranca",
-          agregadoId: aprov.alvoId ?? aprovacaoId,
-          autorId: autor.id,
-          payload: { status: "REJEITADA", motivo: dados.motivo ?? null },
-        });
-      });
-      revalidar(alunoId);
-      return;
-    }
-
-    if (!aprov.alvoId) throw new ErroRegra("Aprovação sem cobrança alvo.");
-    const alvoId = aprov.alvoId;
-    const cobranca = await carregarCobranca(alvoId);
-    const valorPara = typeof payload.valorPara === "number" ? payload.valorPara : numero(cobranca.valorNegociado);
-    const novoVenc = typeof payload.novoVencimento === "string" ? new Date(payload.novoVencimento) : undefined;
-
     await prisma.$transaction(async (tx) => {
-      await aplicarAjuste(tx, {
-        cobranca,
-        valorPara,
-        novoVencimento: novoVenc,
-        vigencia: aprov.vigencia ?? Vigencia.ESTA_COBRANCA,
-        tipo: (payload.tipo as TipoAjuste) ?? TipoAjuste.DESCONTO,
-        motivo: aprov.motivo ?? "Aprovado",
-        autorId: autor.id,
-        aprovacaoId: aprov.id,
-      });
-      await tx.aprovacao.update({
-        where: { id: aprovacaoId },
-        data: { status: StatusAprovacao.APROVADA, aprovadorId: autor.id, decididoEm: new Date() },
-      });
-      await registrarEvento(tx, {
-        tipo: "AprovacaoDecidida",
-        agregadoTipo: "Cobranca",
-        agregadoId: alvoId,
-        autorId: autor.id,
-        payload: { status: "APROVADA" },
-      });
+      await tx.$queryRaw`SELECT id FROM "Aprovacao" WHERE id = ${aprovacaoId} FOR UPDATE`;
+      const aprovacao = await tx.aprovacao.findUnique({ where: { id: aprovacaoId } });
+      if (!aprovacao) throw new ErroRegra("Aprovação não encontrada.");
+      exigirConferenciaIndependente(aprovacao.solicitanteId, autor.id);
+      if (aprovacao.status !== StatusAprovacao.PENDENTE) throw new ErroRegra("Pedido já decidido.");
+      const parsed = SnapshotSchema.safeParse(aprovacao.payload);
+      if (!parsed.success) throw new ErroRegra("Pedido antigo sem versão de segurança. Solicite novamente.");
+      const snapshot = parsed.data;
+      const adm = autor.papeis.includes(Papel.ADMINISTRADOR);
+      if ((snapshot.exigeDirecao || snapshot.tipo === TipoAjuste.BOLSA || snapshot.tipo === TipoAjuste.PERDAO) && !adm) throw new ErroPermissao("Este pedido exige outra pessoa da direção/administração.");
+      const limites = await limitesAtuais(tx, autor);
+      if (!adm && limites.alcadaAlteradaEm && limites.alcadaAlteradaEm > aprovacao.criadoEm) throw new ErroPermissao("Alçada alterada após o pedido. Encaminhe à direção.");
+      const vinculos = await tx.cobranca.findMany({ where: { id: { in: snapshot.alvos.map((alvo) => alvo.id) } }, select: { matriculaId: true } });
+      await bloquearMatriculas(tx, vinculos.map((vinculo) => vinculo.matriculaId));
+      for (const alvo of snapshot.alvos) {
+        const cobranca = await tx.cobranca.findUnique({ where: { id: alvo.id }, select: { matriculaId: true, tipo: true } });
+        if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+        await exigirEscopoAprovacao(autor, cobranca.matriculaId, tx);
+        if (dados.aprovar && !adm && exigeAprovacaoComponente(limites, cobranca.tipo, alvo.referencia, alvo.valorPara)) throw new ErroPermissao("Desconto acima da sua alçada. Encaminhe à direção.");
+      }
+      if (dados.aprovar) await aplicarAlvos(tx, autor, snapshot, aprovacao.motivo ?? "Aprovado", aprovacao.vigencia ?? Vigencia.ESTA_COBRANCA, aprovacao.id);
+      await tx.aprovacao.update({ where: { id: aprovacao.id }, data: {
+        status: dados.aprovar ? StatusAprovacao.APROVADA : StatusAprovacao.REJEITADA, aprovadorId: autor.id, decididoEm: new Date(),
+      } });
+      await registrarEvento(tx, { tipo: "AprovacaoDecidida", agregadoTipo: aprovacao.alvoTipo === "Matricula" ? "Matricula" : "Cobranca", agregadoId: aprovacao.alvoId ?? aprovacao.id,
+        autorId: autor.id, payload: { status: dados.aprovar ? "APROVADA" : "REJEITADA", motivo: dados.motivo ?? null, aprovacaoId } });
     });
-    revalidar(alunoId);
+    revalidar();
   });
 }

@@ -8,7 +8,7 @@ import { EmpresasCliente } from "./EmpresasCliente";
 // B2B — Fase 2 (doc 03): lista de empresas (contrato corporativo). Guard server-side
 // ANTES de buscar dados; papéis alinhados ao nav.
 
-const PAPEIS: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+const PAPEIS: Papel[] = [Papel.FINANCEIRO];
 
 export default async function EmpresasPage() {
   const papeis = await exigirPapelLeitura(...PAPEIS);

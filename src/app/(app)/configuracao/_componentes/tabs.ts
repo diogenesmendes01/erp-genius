@@ -1,7 +1,7 @@
 import { Papel } from "@prisma/client";
 
 // Sub-abas da Configuração (doc 09): Países · Catálogo · Turmas · Usuários.
-// Dono = ADM; Turmas também acessível ao Gerente Pedagógico.
+// Currículo e turmas pertencem também à gerência pedagógica (política 36).
 export interface ConfigTab {
   href: string;
   label: string;
@@ -10,13 +10,16 @@ export interface ConfigTab {
 
 export const CONFIG_TABS: ConfigTab[] = [
   { href: "/configuracao/paises", label: "Países", papeis: [Papel.ADMINISTRADOR] },
-  { href: "/configuracao/catalogo", label: "Catálogo", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/contratos", label: "Modelos contratuais", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] },
+  { href: "/configuracao/catalogo", label: "Catálogo", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO] },
   {
     href: "/configuracao/turmas",
     label: "Turmas",
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO],
   },
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/operacao", label: "Operação", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/migracao", label: "Preparação de migração", papeis: [Papel.ADMINISTRADOR] },
   // Canal WhatsApp: admin vê tudo (número/templates/política); Gerente Comercial vê só a
   // seção Comercial (auto-lead/saudação — doc 27 C1). O gate real está na page.tsx.
   {

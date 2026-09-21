@@ -1,7 +1,10 @@
 import { listarPaises, listarProdutosCatalogo } from "@/server/paises/consultas";
 import { PaisesPainel, type PaisRow } from "./PaisesPainel";
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
 
 export default async function PaisesPage() {
+  await exigirSessaoPagina(Papel.ADMINISTRADOR);
   const [paises, produtos] = await Promise.all([listarPaises(), listarProdutosCatalogo()]);
   const rows: PaisRow[] = paises.map((p) => ({
     id: p.id,

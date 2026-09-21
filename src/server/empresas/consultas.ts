@@ -1,6 +1,6 @@
-import { StatusCobranca, TipoCobranca } from "@prisma/client";
+import { Papel, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { numero, numeroOuNull } from "@/server/_shared";
+import { numero, numeroOuNull, exigirSessaoComPapel } from "@/server/_shared";
 
 // B2B — consultas (Fase 2, doc 03): lista de empresas, ficha (colaboradores + faturas) e
 // o RELATÓRIO POR COLABORADOR (status da matrícula + mensalidades pagas/abertas/atrasadas).
@@ -16,6 +16,7 @@ export interface EmpresaResumo {
 }
 
 export async function listarEmpresas(): Promise<EmpresaResumo[]> {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
   const empresas = await prisma.empresa.findMany({
     orderBy: { criadoEm: "desc" },
     include: {
@@ -61,6 +62,7 @@ export interface FaturaResumo {
 }
 
 export async function obterEmpresa(id: string) {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
   const empresa = await prisma.empresa.findUnique({
     where: { id },
     include: {
@@ -131,6 +133,7 @@ export async function obterEmpresa(id: string) {
 
 /** Competências com mensalidades ABERTAS fora de fatura (candidatas ao fechamento). */
 export async function competenciasFaturaveis(empresaId: string): Promise<string[]> {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
   const grupos = await prisma.cobranca.groupBy({
     by: ["competencia"],
     where: {

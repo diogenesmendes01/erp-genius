@@ -5,20 +5,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores } from "@/lib/dinheiro";
+import { dataCivilComDeslocamento, rotuloVencimento } from "@/lib/vencimento-civil";
 import type { FilaCobrancaItem, DashsCobranca, DegrauFila } from "@/server/cobrancas/consultas";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { registrarCobrancaWhatsApp } from "@/server/financeiro/acoes";
-import { registrarPromessaPagamento, bloquearAcesso, desbloquearAcesso } from "@/server/cobrancas/acoes";
+import { prepararCobrancaManual } from "@/server/financeiro/cobranca-manual";
+import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
 import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "@/server/whatsapp/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { AcessoAulasPainel } from "./AcessoAulasPainel";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
+
+function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
+  const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
 
 type Filtro = "aVencer" | "emAtraso" | "bloquear" | "promessas" | null;
 
 // Cor do chip do degrau por tipo de ação (lembrar=preventivo, cobrar=atraso, bloquear=crítico).
 function chipCls(item: FilaCobrancaItem): string {
+  if (item.estado === "em_conferencia") return "bg-blue-100 text-blue-700";
   if (item.precisaBloqueio) return "bg-red-100 text-red-700";
   if (item.acessoBloqueado) return "bg-red-100 text-red-700";
   if (item.estado === "promessa") return "bg-blue-100 text-blue-700";
@@ -31,6 +41,7 @@ function chipCls(item: FilaCobrancaItem): string {
 
 // Rótulo curto da próxima ação na linha (ex.: "D+7 · cobrar · há 7d").
 function rotuloAcaoCurto(item: FilaCobrancaItem): string {
+  if (item.estado === "em_conferencia") return "comprovante a conferir";
   if (item.precisaBloqueio) return `bloqueio pendente · há ${item.diasAtraso}d`;
   if (item.acessoBloqueado) return "acesso bloqueado";
   if (item.estado === "promessa" && item.promessaAte) {
@@ -48,10 +59,6 @@ function rotuloAcaoCurto(item: FilaCobrancaItem): string {
 // Os textos dos templates saíram do client (doc 29 regra 4): a mensagem sugerida chega
 // RENDERIZADA do servidor (item.mensagemSugerida) — fonte única entre wa.me, API e cron.
 
-function linkWa(telefone: string, texto: string): string {
-  return `https://wa.me/${telefone.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`;
-}
-
 function valorDevido(item: FilaCobrancaItem): number {
   return item.saldo > 0 ? item.saldo : item.valorNegociado;
 }
@@ -61,13 +68,14 @@ export function FilaCobranca({
   dashs,
   regua,
   podeOperar,
-  podeBloquear,
+  preferenciaFusoExibicao = null,
 }: {
   itens: FilaCobrancaItem[];
   dashs: DashsCobranca;
   regua: DegrauFila[];
   podeOperar: boolean;
   podeBloquear: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<Filtro>(null);
@@ -103,11 +111,15 @@ export function FilaCobranca({
   async function run(p: Promise<{ ok: boolean; erro?: string }>, msg?: string) {
     setErro(null);
     setNota(null);
-    const r = await p;
-    if (!r.ok) setErro(r.erro ?? "Erro.");
-    else {
-      if (msg) setNota(msg);
-      router.refresh();
+    try {
+      const r = await p;
+      if (!r.ok) setErro(r.erro ?? "Erro.");
+      else {
+        if (msg) setNota(msg);
+        router.refresh();
+      }
+    } catch {
+      setErro("Não foi possível confirmar o resultado. Atualize e confira o histórico antes de repetir a ação.");
     }
   }
 
@@ -116,30 +128,78 @@ export function FilaCobranca({
   async function enviarViaApi(item: FilaCobrancaItem) {
     setErro(null);
     setNota(null);
-    const r = await enfileirarCobrancaWhatsApp(item.id);
-    if (!r.ok) {
-      setErro(r.erro ?? "Erro ao enfileirar.");
-      return;
+    try {
+      const r = await enfileirarCobrancaWhatsApp(item.id);
+      if (!r.ok) {
+        setErro(r.erro ?? "Erro ao enfileirar.");
+        return;
+      }
+      const d = r.dado!;
+      if (d.status === "DESPACHADA") setNota(`Enviado via WhatsApp (${d.passo}).`);
+      else if (d.status === "SIMULADA") setNota(`Ensaio (shadow): ${d.passo} simulado — nada foi enviado de verdade.`);
+      else if (d.status === "ADIADA") setNota(`Na fila (${d.motivo === "fora_da_janela" ? "fora da janela de horário" : d.motivo}) — envia sozinho na próxima janela.`);
+      else if (d.status === "FALHOU") setErro(`Envio falhou: ${d.motivo ?? "erro"} — o item continua na fila manual.`);
+      else if (d.status === "CANCELADA") setNota(`Não enviado: ${d.motivo === "conversa_viva" ? "o contato respondeu — trate a conversa antes" : d.motivo}.`);
+      router.refresh();
+      setAberta(null);
+    } catch {
+      setErro("Não foi possível confirmar o resultado do envio. Atualize e confira a fila antes de tentar novamente.");
     }
-    const d = r.dado!;
-    if (d.status === "DESPACHADA") setNota(`Enviado via WhatsApp (${d.passo}).`);
-    else if (d.status === "SIMULADA") setNota(`Ensaio (shadow): ${d.passo} simulado — nada foi enviado de verdade.`);
-    else if (d.status === "ADIADA") setNota(`Na fila (${d.motivo === "fora_da_janela" ? "fora da janela de horário" : d.motivo}) — envia sozinho na próxima janela.`);
-    else if (d.status === "FALHOU") setErro(`Envio falhou: ${d.motivo ?? "erro"} — o item continua na fila manual.`);
-    else if (d.status === "CANCELADA") setNota(`Não enviado: ${d.motivo === "conversa_viva" ? "o contato respondeu — trate a conversa antes" : d.motivo}.`);
-    router.refresh();
-    setAberta(null);
   }
 
-  // FALLBACK MANUAL permanente (doc 26): abre o wa.me com o texto (editável) e registra o
-  // degrau como canal "manual" — exatamente o fluxo que existia antes do braço API.
-  async function abrirWaMe(item: FilaCobrancaItem, textoOverride?: string) {
-    if (!item.passo || !item.template) return;
-    const texto = textoOverride ?? item.mensagemSugerida ?? "";
-    const telefone = item.destino?.telefone ?? item.aluno.telefone;
-    if (telefone) window.open(linkWa(telefone, texto), "_blank");
-    await run(registrarCobrancaWhatsApp(item.id, item.template as ModeloWhatsapp, item.passo), "Envio manual registrado.");
-    setAberta(null);
+  /** Preparar o link não é prova de envio: a action só devolve a URL após revalidar a cobrança. */
+  async function prepararEnvioManual(item: FilaCobrancaItem, texto: string) {
+    setErro(null);
+    setNota(null);
+    if (!item.passo || !item.template || !item.destino) {
+      setErro("Esta cobrança não possui destinatário financeiro válido para envio manual.");
+      return null;
+    }
+    try {
+      const r = await prepararCobrancaManual({
+        cobrancaId: item.id,
+        modelo: item.template as ModeloWhatsapp,
+        passo: item.passo,
+        cicloRegua: item.cicloRegua,
+        texto,
+      });
+      if (!r.ok) {
+        setErro(r.erro ?? "Não foi possível preparar o envio manual.");
+        return null;
+      }
+      if (!r.dado) {
+        setErro("Não foi possível preparar o envio manual.");
+        return null;
+      }
+      const popup = window.open(r.dado.url, "_blank");
+      setNota(popup
+        ? "WhatsApp aberto. Depois de enviar a mensagem, confirme o envio realizado."
+        : "O navegador bloqueou a nova janela. Use o link no detalhe para abrir o WhatsApp; nenhum envio foi registrado.");
+      return r.dado.url;
+    } catch {
+      setErro("Não foi possível preparar o envio manual. Confira sua conexão e tente novamente.");
+      return null;
+    }
+  }
+
+  /** A auditoria registra somente a declaração humana posterior ao envio efetivo. */
+  async function confirmarEnvioManual(item: FilaCobrancaItem) {
+    if (!item.passo || !item.template) return false;
+    setErro(null);
+    setNota(null);
+    try {
+      const r = await registrarCobrancaWhatsApp(item.id, item.template as ModeloWhatsapp, item.passo, item.cicloRegua);
+      if (!r.ok) {
+        setErro(r.erro ?? "Não foi possível confirmar o envio manual.");
+        return false;
+      }
+      setNota("Envio manual confirmado como realizado.");
+      router.refresh();
+      return true;
+    } catch {
+      setErro("Não foi possível confirmar o registro. Atualize e confira o histórico antes de repetir a confirmação.");
+      return false;
+    }
   }
 
   function alternarSelecao(id: string) {
@@ -303,9 +363,8 @@ export function FilaCobranca({
                   <AcaoRapida
                     item={item}
                     podeOperar={podeOperar}
-                    podeBloquear={podeBloquear}
                     onEnviar={() => enviarViaApi(item)}
-                    onBloquear={() => run(bloquearAcesso(item.matriculaId), "Acesso bloqueado.")}
+                    onAcesso={() => setAberta(item)}
                   />
                   <span className="text-gray-300">›</span>
                 </div>
@@ -315,19 +374,21 @@ export function FilaCobranca({
         </div>
       )}
 
+      {podeOperar && <div className="mt-5"><AcessoAulasPainel preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
+
       {aberta && (
-        <DrawerDetalhe
+        <DetalheCobranca
+          key={`${aberta.id}:${aberta.cicloRegua}`}
           item={aberta}
           regua={regua}
           podeOperar={podeOperar}
-          podeBloquear={podeBloquear}
+          preferenciaFusoExibicao={preferenciaFusoExibicao}
           onClose={() => setAberta(null)}
           onEnviarApi={() => enviarViaApi(aberta)}
-          onWaMe={(texto) => abrirWaMe(aberta, texto)}
+          onPrepararManual={(texto) => prepararEnvioManual(aberta, texto)}
+          onConfirmarManual={() => confirmarEnvioManual(aberta)}
           onPagar={() => { setPagar(aberta); setAberta(null); }}
           onPromessa={(ate) => run(registrarPromessaPagamento(aberta.id, ate), "Promessa registrada.").then(() => setAberta(null))}
-          onBloquear={() => run(bloquearAcesso(aberta.matriculaId), "Acesso bloqueado.").then(() => setAberta(null))}
-          onDesbloquear={() => run(desbloquearAcesso(aberta.matriculaId), "Acesso desbloqueado.").then(() => setAberta(null))}
         />
       )}
 
@@ -351,23 +412,21 @@ export function FilaCobranca({
 function AcaoRapida({
   item,
   podeOperar,
-  podeBloquear,
   onEnviar,
-  onBloquear,
+  onAcesso,
 }: {
   item: FilaCobrancaItem;
   podeOperar: boolean;
-  podeBloquear: boolean;
   onEnviar: () => void;
-  onBloquear: () => void;
+  onAcesso: () => void;
 }) {
   // Bloqueio pendente vence o resto: independe do passo da régua (review §1).
   if (item.acessoBloqueado) return <span className="text-[11px] text-gray-400">bloqueado</span>;
   if (item.precisaBloqueio) {
-    if (!podeBloquear) return <span className="text-[11px] text-gray-400">aguarda gerente</span>;
+    if (!podeOperar) return <span className="text-[11px] text-gray-400">restrição devida</span>;
     return (
-      <button className="rounded-md border border-red-300 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50" onClick={onBloquear}>
-        Aprovar bloqueio
+      <button className="rounded-md border border-red-300 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50" onClick={onAcesso}>
+        Consultar acesso
       </button>
     );
   }
@@ -391,35 +450,56 @@ const ROTULO_ENVIO: Record<string, string> = {
   CANCELADA: "cancelada",
 };
 
-function DrawerDetalhe({
+export function DetalheCobranca({
   item,
   regua,
   podeOperar,
-  podeBloquear,
+  preferenciaFusoExibicao,
   onClose,
   onEnviarApi,
-  onWaMe,
+  onPrepararManual,
+  onConfirmarManual,
   onPagar,
   onPromessa,
-  onBloquear,
-  onDesbloquear,
 }: {
   item: FilaCobrancaItem;
   regua: DegrauFila[];
   podeOperar: boolean;
-  podeBloquear: boolean;
+  preferenciaFusoExibicao: string | null;
   onClose: () => void;
   onEnviarApi: () => void;
-  onWaMe: (texto: string) => void;
+  onPrepararManual: (texto: string) => Promise<string | null>;
+  onConfirmarManual: () => Promise<boolean>;
   onPagar: () => void;
   onPromessa: (ate: string) => void;
-  onBloquear: () => void;
-  onDesbloquear: () => void;
 }) {
-  const venc = new Date(item.vencimento);
   const [texto, setTexto] = useState(item.mensagemSugerida ?? "");
   const [promessaData, setPromessaData] = useState("");
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
+  const [manualPreparado, setManualPreparado] = useState(false);
+  const [manualOcupado, setManualOcupado] = useState(false);
+  const [manualUrl, setManualUrl] = useState<string | null>(null);
+
+  async function abrirManual() {
+    setManualOcupado(true);
+    try {
+      const url = await onPrepararManual(texto);
+      setManualPreparado(!!url);
+      setManualUrl(url);
+    } finally {
+      setManualOcupado(false);
+    }
+  }
+
+  async function confirmarManual() {
+    setManualOcupado(true);
+    try {
+      const confirmado = await onConfirmarManual();
+      if (confirmado) onClose();
+    } finally {
+      setManualOcupado(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
@@ -443,7 +523,7 @@ function DrawerDetalhe({
             <span className="text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
             <span className="text-xs text-gray-500">
               {TIPO_COBRANCA_LABEL[item.tipo as keyof typeof TIPO_COBRANCA_LABEL] ?? item.tipo}
-              {item.competencia ? ` ${item.competencia}` : ""} · vence {venc.toLocaleDateString("pt-BR")}
+              {item.competencia ? ` ${item.competencia}` : ""} · {rotuloVencimento(item.vencimento)}
             </span>
           </div>
         </div>
@@ -455,17 +535,10 @@ function DrawerDetalhe({
               Bloqueio de acesso · {item.diasAtraso} dias de atraso
             </div>
             <div className="text-sm text-gray-700">
-              O bloqueio de acesso à aula precisa de aprovação gerencial.
+              Atraso elegível à restrição automática de acesso após 30 dias.
               <div className="mt-3 flex flex-wrap gap-2">
-                {podeBloquear ? (
-                  <button className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700" onClick={onBloquear}>
-                    Aprovar bloqueio de acesso
-                  </button>
-                ) : (
-                  <span className="text-xs text-gray-500">Aguardando aprovação do Gerente Comercial / Admin.</span>
-                )}
                 {podeOperar && item.template && (
-                  <button className={btnSec} onClick={() => onWaMe(texto)}>Enviar cobrança no WhatsApp</button>
+                  <button className={btnSec} disabled={!item.destino || !item.passo || manualOcupado} onClick={abrirManual}>Abrir WhatsApp manual</button>
                 )}
               </div>
             </div>
@@ -478,28 +551,38 @@ function DrawerDetalhe({
             </div>
             {item.respondeuEm && (
               <div className="mb-2 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-800">
-                O contato respondeu em {new Date(item.respondeuEm).toLocaleDateString("pt-BR")} — trate a conversa antes de cobrar de novo.
+                O contato respondeu em {textoInstanteOperacional(item.respondeuEm, preferenciaFusoExibicao)} — trate a conversa antes de cobrar de novo.
               </div>
             )}
             <textarea
               className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:border-brand-500"
               rows={3}
               value={texto}
-              onChange={(e) => setTexto(e.target.value)}
+              disabled={manualOcupado}
+              onChange={(e) => { setTexto(e.target.value); setManualPreparado(false); setManualUrl(null); }}
             />
             {podeOperar && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button className={btnPri} disabled={!item.destino} onClick={onEnviarApi}>
                   Enviar via WhatsApp (API)
                 </button>
-                <button className={btnSec} onClick={() => onWaMe(texto)}>
-                  Abrir no wa.me (manual)
-                </button>
+                {!manualPreparado ? (
+                  <button className={btnSec} disabled={!item.destino || manualOcupado} onClick={abrirManual}>
+                    {manualOcupado ? "Preparando…" : "Abrir WhatsApp manual"}
+                  </button>
+                ) : (
+                  <>
+                    {manualUrl && <a className={btnSec} href={manualUrl} target="_blank" rel="noreferrer">Abrir WhatsApp novamente</a>}
+                    <button className={btnSec} disabled={manualOcupado} onClick={confirmarManual}>
+                      {manualOcupado ? "Confirmando…" : "Confirmar envio realizado"}
+                    </button>
+                  </>
+                )}
               </div>
             )}
             <p className="mt-1.5 text-[11px] text-gray-500">
-              O envio via API usa o template do degrau; o texto editável acima vale para o wa.me manual.
-              {!item.destino && " Sem destino cadastrado — só o registro manual está disponível."}
+              O envio via API usa o template do degrau; o manual é preparado no servidor e só entra no histórico após a confirmação de que foi enviado.
+              {!item.destino && " Sem destinatário financeiro válido para envio manual ou via API."}
             </p>
           </div>
         ) : null}
@@ -507,9 +590,10 @@ function DrawerDetalhe({
           <div className="mx-5 mb-4 text-xs text-gray-600">
             Braço API · {item.envio.passo ?? "—"}: {ROTULO_ENVIO[item.envio.status] ?? item.envio.status}
             {item.envio.motivo && <span className="text-gray-500"> ({item.envio.motivo})</span>}
-            {item.envio.em && <span className="text-gray-400"> · {new Date(item.envio.em).toLocaleString("pt-BR")}</span>}
+            {item.envio.em && <span className="text-gray-400"> · {textoInstanteOperacional(item.envio.em, preferenciaFusoExibicao)}</span>}
           </div>
         )}
+        {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-800">Lembretes suspensos para conferência até {textoInstanteOperacional(item.conferenciaAte, preferenciaFusoExibicao)}. O pagamento ainda não foi confirmado.</p>}
         {item.estado === "promessa" && item.promessaAte && (
           <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
             Promessa de pagamento até {new Date(item.promessaAte).toLocaleDateString("pt-BR")} — fora da fila até lá.
@@ -523,7 +607,7 @@ function DrawerDetalhe({
             {regua.map((deg) => {
               const feito = item.passosFeitos.includes(deg.passo);
               const atual = item.passo === deg.passo && item.estado === "acao_devida";
-              const data = new Date(venc.getTime() + deg.offsetDias * 86400000);
+              const data = dataCivilComDeslocamento(item.vencimento, deg.offsetDias);
               const cor = feito ? "bg-green-500" : atual ? "bg-amber-500" : deg.tipo === "bloquear" ? "border border-red-400 bg-surface" : "border border-gray-300 bg-surface";
               return (
                 <li key={deg.passo} className="mb-2.5">
@@ -531,7 +615,7 @@ function DrawerDetalhe({
                   <div className={"text-xs " + (atual ? "font-medium text-amber-700" : feito ? "text-gray-700" : "text-gray-400")}>
                     {deg.rotulo}
                     {deg.tipo === "bloquear" && !feito && <span className="text-red-500"> (aprovação)</span>}
-                    <span className="text-gray-400"> · {data.toLocaleDateString("pt-BR")}</span>
+                    <span className="text-gray-400"> · {data ?? "data a conferir"}</span>
                   </div>
                 </li>
               );
@@ -539,15 +623,14 @@ function DrawerDetalhe({
           </ol>
         </div>
 
+        {podeOperar && <div className="px-5 pb-4"><AcessoAulasPainel matriculaId={item.matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
+
         {/* Ações secundárias */}
         <div className="border-t border-gray-200 px-5 py-3">
           <div className="flex flex-wrap gap-2">
             {podeOperar && <button className={btnSec} onClick={onPagar}>Registrar pagamento</button>}
             {podeOperar && (
               <button className={btnSec} onClick={() => setMostrarPromessa((v) => !v)}>Promessa de pagamento</button>
-            )}
-            {podeBloquear && item.acessoBloqueado && (
-              <button className={btnSec} onClick={onDesbloquear}>Desbloquear acesso</button>
             )}
           </div>
           {mostrarPromessa && (
@@ -573,7 +656,7 @@ function DrawerDetalhe({
                 ? `${item.destino.telefone}${item.destino.viaResponsavel ? ` · ${item.destino.nome} (responsável)` : ""}`
                 : "sem destino"}
               {item.tentativas > 0 && ` · ${item.tentativas} tentativa(s)`}
-              {item.ultimaCobrancaEm && ` · último ${new Date(item.ultimaCobrancaEm).toLocaleDateString("pt-BR")}`}
+              {item.ultimaCobrancaEm && ` · último ${textoInstanteOperacional(item.ultimaCobrancaEm, preferenciaFusoExibicao)}`}
             </span>
             <Link href={`/alunos/${item.aluno.id}/financeiro`} className="text-brand-700 hover:underline">
               Ver ficha →

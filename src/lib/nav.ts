@@ -9,6 +9,13 @@ export interface NavItem {
 }
 
 export const NAV: NavItem[] = [
+  { href: "/financeiro/permuta", label: "Permutas", icon: "Wallet", papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_PEDAGOGICO] },
+  { href: "/academico", label: "Mudanças acadêmicas", icon: "UserCheck", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
+  { href: "/comissoes", label: "Comissões", icon: "Wallet", papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
+  { href: "/secretaria", label: "Matrículas", icon: "UserCheck", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] },
+  { href: "/secretaria/envios-portal", label: "Envios do portal", icon: "Mail", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] },
+  { href: "/diario", label: "Diário de aulas", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
+  { href: "/carteiras", label: "Carteiras", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL] },
   { href: "/home", label: "Home", icon: "Home", papeis: "all" },
   {
     href: "/pipeline",
@@ -23,8 +30,7 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR],
   },
   {
-    // Inbox WhatsApp (doc 26 §Camada 3): escopo real é por NÚMERO (whatsapp/escopo.ts);
-    // o menu é só UX. Vendas (dono do número) + cobrança (respostas da régua).
+    // Cada atendimento valida finalidade e vínculos atuais; menu é apenas navegação.
     href: "/inbox",
     label: "Inbox",
     icon: "MessageCircle",
@@ -34,6 +40,8 @@ export const NAV: NavItem[] = [
       Papel.VENDEDOR,
       Papel.FINANCEIRO,
       Papel.SECRETARIA_ACADEMICA,
+      Papel.PROFESSOR,
+      Papel.GERENTE_PEDAGOGICO,
     ],
   },
   {
@@ -75,7 +83,7 @@ export const NAV: NavItem[] = [
     href: "/configuracao",
     label: "Configuração",
     icon: "Settings",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.GERENTE_COMERCIAL],
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA],
   },
 ];
 

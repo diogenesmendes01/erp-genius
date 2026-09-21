@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { EtapaLead, Papel, Segmento, Temperatura, type Prisma } from "@prisma/client";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { prisma } from "@/lib/prisma";
 import {
   ErroPermissao,
@@ -24,14 +25,9 @@ import type { ResumoExecutivo } from "./tipos";
 const PAPEIS_COMERCIAL: Papel[] = [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR];
 
 /** Visibilidade row-level do vendedor — mesmo escopo das telas do CRM (doc 07). */
-async function exigirLeadVisivel(leadId: string, usuario: UsuarioSessao) {
-  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
-  if (!lead) throw new ErroRegra("Lead não encontrado.");
-  const amplo =
-    usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-  if (!amplo && lead.vendedorDonoId !== usuario.id) {
-    throw new ErroPermissao("Este lead não está na sua carteira.");
-  }
+async function exigirLeadVisivel(leadId: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  const lead = await tx.lead.findFirst({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario, tx)] } });
+  if (!lead) throw new ErroPermissao("Este lead não está na sua carteira/equipe vigente.");
   return lead;
 }
 
@@ -136,9 +132,14 @@ async function decidirSugestao(
   const lead = await exigirLeadVisivel(sugestao.leadId, autor);
 
   await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${lead.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "SugestaoIA" WHERE id = ${sugestao.id} FOR UPDATE`;
+    const leadAtual = await exigirLeadVisivel(lead.id, autor, tx);
+    const sugestaoAtual = await tx.sugestaoIA.findUnique({ where: { id: sugestao.id } });
+    if (!sugestaoAtual || sugestaoAtual.status !== "PENDENTE" || sugestaoAtual.leadId !== leadAtual.id) throw new ErroRegra("Esta sugestão mudou ou já foi decidida.");
     if (decisao !== "DESCARTADA") {
-      const payload = valoresCorrigidos ?? (sugestao.payload as Record<string, unknown>);
-      const aplicacao = montarAplicacao(sugestao.tipo, payload, lead.etapa);
+      const payload = valoresCorrigidos ?? (sugestaoAtual.payload as Record<string, unknown>);
+      const aplicacao = montarAplicacao(sugestaoAtual.tipo, payload, leadAtual.etapa);
       await tx.lead.update({ where: { id: lead.id }, data: aplicacao.data });
       await registrarEvento(tx, {
         tipo: aplicacao.evento.tipo,

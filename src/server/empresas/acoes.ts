@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, StatusFaturaB2B, StatusMatricula, TipoCobranca } from "@prisma/client";
+import { Papel, StatusCobranca, StatusFaturaB2B, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import {
@@ -14,11 +14,11 @@ import {
   registrarEvento,
   type Resultado,
 } from "@/server/_shared";
+import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { baixarCobrancaTx } from "@/server/financeiro/baixa";
 import {
   EmpresaSchema,
   FecharFaturaSchema,
-  MatriculasLoteB2BSchema,
   type EmpresaInput,
   type FecharFaturaInput,
   type MatriculasLoteB2BInput,
@@ -27,13 +27,10 @@ import {
 // B2B — FASE 2 (doc 03): contrato corporativo (Empresa) · matrículas em LOTE ·
 // fatura ÚNICA por competência · baixa em lote. Toda mutação grava Evento (doc 13).
 //
-// Decisões de domínio (registradas também no doc 15 §Fase 2):
-//  - Matrícula B2B nasce ATIVA (lastro = CONTRATO CORPORATIVO — a empresa responde pela
-//    fatura; não há taxa individual nem comissão automática por colaborador).
-//  - As mensalidades dos colaboradores são cobranças NORMAIS (mesma máquina da Fase 0);
-//    a fatura única as AGRUPA por competência — pagar a fatura baixa todas em lote.
+// Compatibilidade histórica da main. Q88 limita novas contratações a contratos
+// individuais; criarMatriculasLoteB2B recusa a antiga ativação sem preparação.
 
-const PAPEIS_B2B: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+const PAPEIS_B2B: Papel[] = [Papel.FINANCEIRO];
 
 function revalidar() {
   revalidatePath("/empresas");
@@ -94,112 +91,11 @@ export async function criarMatriculasLoteB2B(
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_B2B);
-    const dados = MatriculasLoteB2BSchema.parse(input);
-
-    const empresa = await prisma.empresa.findUnique({ where: { id: dados.empresaId } });
-    if (!empresa) throw new ErroRegra("Empresa não encontrada.");
-    if (!empresa.ativo) throw new ErroRegra("Empresa inativa não recebe matrículas.");
-    if (!empresa.paisId) throw new ErroRegra("Defina o país da empresa antes do lote (moeda/vencimentos).");
-    const pais = await prisma.pais.findUnique({ where: { id: empresa.paisId } });
-    if (!pais) throw new ErroRegra("País da empresa inexistente.");
-    const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
-    if (!produto) throw new ErroRegra("Produto inexistente.");
-
-    const agora = new Date();
-    await prisma.$transaction(async (tx) => {
-      for (const col of dados.colaboradores) {
-        const alunoCodigo = await gerarCodigo("aluno", tx);
-        const aluno = await tx.aluno.create({
-          data: {
-            codigo: alunoCodigo,
-            primeiroNome: col.primeiroNome,
-            sobrenome: col.sobrenome,
-            email: col.email,
-            telefoneE164: col.telefone,
-            paisId: pais.id,
-          },
-        });
-        await registrarEvento(tx, {
-          tipo: "AlunoCriado",
-          agregadoTipo: "Aluno",
-          agregadoId: aluno.id,
-          autorId: autor.id,
-          payload: { codigo: alunoCodigo, via: "lote_b2b", empresaId: empresa.id },
-        });
-
-        const matCodigo = await gerarCodigo("matricula", tx);
-        const matricula = await tx.matricula.create({
-          data: {
-            codigo: matCodigo,
-            alunoId: aluno.id,
-            produtoId: produto.id,
-            paisId: pais.id,
-            empresaId: empresa.id,
-            moeda: pais.moedaLocal,
-            diaVencimento: empresa.diaVencimento,
-            mesesPlano: dados.mesesPlano,
-            // Lastro B2B: o CONTRATO CORPORATIVO responde — nasce ATIVA, sem taxa individual.
-            status: StatusMatricula.ATIVA,
-            contratoOk: true,
-            pagamentoTaxaOk: true,
-            primeiraMensalidadeOk: false,
-            ativadaEm: agora,
-          },
-        });
-
-        // Cronograma completo: N mensalidades, vencendo no dia da empresa a partir do mês
-        // que vem (competência mensal — entram nas faturas únicas).
-        for (let i = 0; i < dados.mesesPlano; i++) {
-          const venc = new Date(agora.getFullYear(), agora.getMonth() + 1 + i, empresa.diaVencimento);
-          const competencia = `${venc.getFullYear()}-${String(venc.getMonth() + 1).padStart(2, "0")}`;
-          await tx.cobranca.create({
-            data: {
-              codigo: await gerarCodigo("cobranca", tx),
-              matriculaId: matricula.id,
-              tipo: TipoCobranca.MENSALIDADE,
-              competencia,
-              valorOriginal: dados.mensalidadeValor,
-              valorNegociado: dados.mensalidadeValor,
-              moeda: pais.moedaLocal,
-              vencimento: venc,
-              status: StatusCobranca.PENDENTE,
-            },
-          });
-        }
-
-        await registrarEvento(tx, {
-          tipo: "MatriculaCriada",
-          agregadoTipo: "Matricula",
-          agregadoId: matricula.id,
-          autorId: autor.id,
-          payload: { codigo: matCodigo, via: "lote_b2b", empresaId: empresa.id },
-        });
-        await registrarEvento(tx, {
-          tipo: "MatriculaAtivada",
-          agregadoTipo: "Matricula",
-          agregadoId: matricula.id,
-          autorId: autor.id,
-          payload: { ativadaEm: agora.toISOString(), lastro: "CONTRATO_B2B", empresaId: empresa.id },
-        });
-      }
-      await registrarEvento(tx, {
-        tipo: "MatriculasLoteB2B",
-        agregadoTipo: "Empresa",
-        agregadoId: empresa.id,
-        autorId: autor.id,
-        payload: { quantidade: dados.colaboradores.length, produtoId: produto.id, mesesPlano: dados.mesesPlano },
-      });
-    });
-    revalidar();
-    return { criadas: dados.colaboradores.length };
+    void input;
+    throw new ErroRegra("Contratação corporativa em lote não integra esta entrega. Prepare contratos individuais com a empresa como responsável financeiro, preservando reserva, aceite e pagamentos exigidos.");
   });
 }
 
-/**
- * FECHA a fatura única da competência: agrupa as mensalidades ABERTAS (pendente/atrasado,
- * fora de fatura) das matrículas da empresa naquele mês. Idempotente por empresa×mês
- * (@@unique) — fechar de novo com cobranças novas exige cancelar a fatura antes.
- */
 export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resultado<{ id: string; total: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -210,6 +106,10 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
     if (!empresa) throw new ErroRegra("Empresa não encontrada.");
 
     const resultado = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Empresa" WHERE id = ${empresa.id} FOR UPDATE`;
+      const mats = await tx.matricula.findMany({ where: { empresaId: empresa.id }, select: { id: true } });
+      await bloquearMatriculas(tx, mats.map(m => m.id));
+      await tx.$queryRaw`SELECT c.id FROM "Cobranca" c JOIN "Matricula" m ON m.id = c."matriculaId" WHERE m."empresaId" = ${empresa.id} ORDER BY c.id FOR UPDATE OF c`;
       const existente = await tx.faturaB2B.findUnique({
         where: { empresaId_competencia: { empresaId: empresa.id, competencia: dados.competencia } },
       });
@@ -237,7 +137,7 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
       // fecham. O saldo entra como SNAPSHOT (`valorFaturado`) por cobrança: mudanças
       // posteriores não alteram a composição do documento fechado.
       const aberto = (c: (typeof cobrancas)[number]) =>
-        Math.max(0, numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0));
+        numeroOuNull(c.saldo) ?? Math.max(0, numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0) - numero(c.valorLiquidadoCredito) - numero(c.valorCompensadoPermuta));
       const total = cobrancas.reduce((soma, c) => soma + aberto(c), 0);
       if (total <= 0) throw new ErroRegra("As mensalidades desta competência não têm saldo aberto.");
 
@@ -298,9 +198,15 @@ export async function fecharFaturaB2B(input: FecharFaturaInput): Promise<Resulta
 export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baixadas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirPapel(autor, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
+    exigirPapel(autor, Papel.FINANCEIRO);
 
     const baixadas = await prisma.$transaction(async (tx) => {
+      const ref = await tx.faturaB2B.findUnique({ where: { id: faturaId }, select: { empresaId: true, cobrancas: { select: { matriculaId: true } } } });
+      if (!ref) throw new ErroRegra("Fatura não encontrada.");
+      await tx.$queryRaw`SELECT id FROM "Empresa" WHERE id = ${ref.empresaId} FOR UPDATE`;
+      await bloquearMatriculas(tx, ref.cobrancas.map(c => c.matriculaId));
+      await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "faturaB2BId" = ${faturaId} ORDER BY id FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "FaturaB2B" WHERE id = ${faturaId} FOR UPDATE`;
       const fatura = await tx.faturaB2B.findUnique({
         where: { id: faturaId },
         include: { cobrancas: true },
@@ -325,7 +231,7 @@ export async function pagarFaturaB2B(faturaId: string): Promise<Resultado<{ baix
         if (c.status === StatusCobranca.CANCELADA) throw divergente(`A cobrança ${c.codigo ?? c.id} foi cancelada`);
         if (c.status === StatusCobranca.PAGO) throw divergente(`A cobrança ${c.codigo ?? c.id} já foi baixada fora da fatura`);
         const snapshot = numeroOuNull(c.valorFaturado);
-        const restante = numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0);
+        const restante = numeroOuNull(c.saldo) ?? numero(c.valorNegociado) - (numeroOuNull(c.valorRecebido) ?? 0) - numero(c.valorLiquidadoCredito) - numero(c.valorCompensadoPermuta);
         if (snapshot === null || restante !== snapshot) {
           throw divergente(`A cobrança ${c.codigo ?? c.id} mudou depois do fechamento`);
         }
@@ -371,6 +277,12 @@ export async function cancelarFaturaB2B(faturaId: string): Promise<Resultado> {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_B2B);
     await prisma.$transaction(async (tx) => {
+      const ref = await tx.faturaB2B.findUnique({ where: { id: faturaId }, select: { empresaId: true, cobrancas: { select: { matriculaId: true } } } });
+      if (!ref) throw new ErroRegra("Fatura não encontrada.");
+      await tx.$queryRaw`SELECT id FROM "Empresa" WHERE id = ${ref.empresaId} FOR UPDATE`;
+      await bloquearMatriculas(tx, ref.cobrancas.map(c => c.matriculaId));
+      await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "faturaB2BId" = ${faturaId} ORDER BY id FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "FaturaB2B" WHERE id = ${faturaId} FOR UPDATE`;
       const fatura = await tx.faturaB2B.findUnique({ where: { id: faturaId } });
       if (!fatura) throw new ErroRegra("Fatura não encontrada.");
       if (fatura.status !== StatusFaturaB2B.FECHADA)

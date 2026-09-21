@@ -14,6 +14,7 @@ import {
 } from "@/server/comercial/regua-fabrica";
 import { enfileirarIntencaoComercial } from "./fila";
 import { renderizarTemplate } from "./render";
+import { reagendamentoPendente } from "./elegibilidade";
 
 // ENFILEIRADORES das réguas COMERCIAIS (doc 27 C1/C2). "Um motor, N políticas": o núcleo
 // (`processarCadencia`) é UM só — cada cenário só resolve seus CANDIDATOS (âncora +
@@ -239,25 +240,26 @@ export async function rodarPreExperimental(agora: Date = new Date()): Promise<Re
       include: { contato: { include: { lead: { include: { pais: true } } } } },
     });
 
-    return conversas.flatMap((conversa) => {
+    const candidatos: CandidatoCadencia[] = [];
+    for (const conversa of conversas) {
       const lead = conversa.contato.lead;
-      if (!lead?.dataExperimental) return [];
+      if (!lead?.dataExperimental) continue;
       // ENCERRADA quando a aula JÁ COMEÇOU: lembrete "2h antes" não pode chegar depois da
       // aula (o backlog do motor é certo para cobrança, errado para lembrete pré-evento).
       // B8 (doc 32): pedido de REAGENDAR pausa a cadência até a ação humana — o cron honra
       // o estado persistido (`aguardandoReagendamentoEm`); remarcar limpa o campo e abre
       // uma ocorrência nova.
       const jaComecou = agora >= lead.dataExperimental;
-      const aguardandoReagendamento = lead.aguardandoReagendamentoEm != null;
-      return [{
+      candidatos.push({
         leadId: lead.id,
         contatoId: conversa.contatoId,
         nome: lead.nome,
         idioma: lead.pais?.idioma ?? "es",
         ancoraEm: lead.dataExperimental,
-        encerrada: jaComecou || aguardandoReagendamento,
-      }];
-    });
+        encerrada: jaComecou || await reagendamentoPendente(lead.id, lead.dataExperimental.toISOString()),
+      });
+    }
+    return candidatos;
   }, agora);
 }
 

@@ -63,6 +63,7 @@ export const STATUS_MATRICULA_LABEL: Record<StatusMatricula, string> = {
   RASCUNHO: "Rascunho",
   AGUARDANDO: "Aguardando",
   ATIVA: "Ativa",
+  PAUSADA: "Pausada",
   ENCERRADA: "Encerrada",
   CANCELADA: "Cancelada",
 };
@@ -93,6 +94,7 @@ export const TIPO_COBRANCA_LABEL: Record<TipoCobranca, string> = {
   HORA_PARTICULAR: "Hora particular",
   MATERIAL: "Material",
   CERTIFICADO: "Certificado",
+  MULTA_ENCERRAMENTO: "Multa de encerramento",
 };
 
 export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { DriverWhatsApp, StatusTemplate } from "@prisma/client";
+import { Papel } from "@prisma/client";
 import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
@@ -22,6 +23,7 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { despacharFila } from "./despachante";
+import { garantirAtendimento } from "./atendimentos";
 
 // Integração do SHADOW por política com o canal LIVE (review PR #51 P1-3): com
 // WHATSAPP_LIVE=1, política em ensaio (SHADOW/DESLIGADA) precisa simular TODA automação —
@@ -40,7 +42,13 @@ afterEach(() => {
 });
 
 async function seedContato(telefone = "+50611112222") {
-  return prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
+  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
+  const numero = await prisma.numeroWhatsApp.findFirstOrThrow();
+  const autor = await criarUsuario([Papel.ADMINISTRADOR]);
+  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+    numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: autor.id,
+  }));
+  return { ...contato, atendimentoId: atendimento.id, autorId: autor.id, conversaId: atendimento.conversaId };
 }
 
 describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
@@ -50,8 +58,8 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
-        origem: "LOTE",
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
+        origem: "LOTE", autorId: contato.autorId,
         corpoRenderizado: "lote em ensaio",
         politicaId: politica.id,
         templateId: templates.get("amigavel"),
@@ -74,8 +82,8 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
-        origem: "LOTE",
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
+        origem: "LOTE", autorId: contato.autorId,
         corpoRenderizado: "lote aprovado",
         politicaId: politica.id,
         templateId: templates.get("amigavel"),
@@ -92,12 +100,12 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
 
   it("política SHADOW: origem HUMANO atravessa o ensaio (decisão humana envia)", async () => {
     const { numero } = await seedCanal({ estado: "SHADOW", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
         origem: "HUMANO",
         corpoRenderizado: "resposta humana",
         autorId: humano.id,
@@ -118,7 +126,7 @@ describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #5
     const contato = await seedContato();
     await prisma.configComercial.create({ data: { id: "comercial", saudacaoEstado: estado, saudacaoTexto: "Oi!" } });
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi!" },
+      data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: contato.atendimentoId, origem: "CRON", reativa: true, corpoRenderizado: "Oi!" },
     });
   }
 
@@ -148,7 +156,11 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
       data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
     });
     const contato = await seedContato();
-    const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana" } });
+    const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana", telefoneE164: contato.telefoneE164 } });
+    const ancora = new Date(Date.now() - 3600_000);
+    await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId: lead.id } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: contato.atendimentoId }, data: { leadId: lead.id } });
+    await prisma.conversaWhatsApp.update({ where: { id: contato.conversaId }, data: { capturadaEm: ancora } });
     const politica = await prisma.politicaComercial.create({
       // B1 (doc 32): comportamento geral — go-live explícito.
       data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, modoPiloto: false, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
@@ -159,7 +171,7 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
         })
       : null;
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", leadId: lead.id, passoComercial: "+30min", politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!", templateId: template?.id ?? null, variaveis: ["Ana"] },
+      data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: contato.atendimentoId, origem: "CRON", leadId: lead.id, passoComercial: "+30min", ocorrenciaComercial: ancora.toISOString(), politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!", templateId: template?.id ?? null, variaveis: ["Ana"] },
     });
   }
 
@@ -218,12 +230,12 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
 describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
   it("midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
         origem: "HUMANO",
         tipo: "IMAGEM",
         midiaPath: "/api/files/999-comprovante.jpg", // comprovante financeiro, não anexo da inbox
@@ -243,7 +255,7 @@ describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
 
   it("midiaPath do próprio storage de envio é entregue ao driver", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
 
     const dir = path.join(UPLOAD_DIR, "whatsapp-out", humano.id);
@@ -253,7 +265,7 @@ describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
       await prisma.intencaoMensagem.create({
         data: {
           numeroId: numero.id,
-          contatoId: contato.id,
+          contatoId: contato.id, atendimentoId: contato.atendimentoId,
           origem: "HUMANO",
           tipo: "IMAGEM",
           midiaPath: `/api/files/whatsapp-out/${humano.id}/foto.jpg`,

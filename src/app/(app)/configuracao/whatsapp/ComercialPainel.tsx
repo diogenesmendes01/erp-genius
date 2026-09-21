@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/consultas";
 import type { MetricaCopilotoTipo } from "@/server/ia/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -23,12 +24,14 @@ const TIPO_SUGESTAO_LABEL: Record<string, string> = {
 export function ComercialPainel({
   config,
   simuladas,
-  metricasCopiloto,
+  preferenciaFusoExibicao = null,
+  metricasCopiloto = [],
   numerosVendas = [],
 }: {
   config: ConfigComercialView;
   simuladas: SaudacaoSimulada[];
-  metricasCopiloto: MetricaCopilotoTipo[];
+  preferenciaFusoExibicao?: string | null;
+  metricasCopiloto?: MetricaCopilotoTipo[];
   /** C5: remetentes possíveis das mensagens do gestor (números de vendas). */
   numerosVendas?: { id: string; rotulo: string }[];
 }) {
@@ -38,7 +41,7 @@ export function ComercialPainel({
   const [saudacaoTexto, setTexto] = useState(config.saudacaoTexto);
   const [copilotoAtivo, setCopiloto] = useState(config.copilotoAtivo);
   const [copilotoQuietudeMinutos, setQuietude] = useState(config.copilotoQuietudeMinutos);
-  const [matriculaAutomaticaAtiva, setMatriculaAuto] = useState(config.matriculaAutomaticaAtiva);
+  const matriculaAutomaticaAtiva = false;
   const [gestaoEstado, setGestaoEstado] = useState(config.gestaoEstado);
   const [gestaoTelefoneE164, setGestaoTel] = useState(config.gestaoTelefoneE164 ?? "");
   const [gestaoNumeroId, setGestaoNumero] = useState(config.gestaoNumeroId ?? "");
@@ -163,20 +166,18 @@ export function ComercialPainel({
           )}
         </div>
 
-        {/* C4 (doc 27): matrícula automática — fechamento sem clique */}
         <div className="border-t border-gray-100 pt-4">
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
               className="mt-0.5 h-4 w-4 accent-brand-600"
               checked={matriculaAutomaticaAtiva}
-              onChange={(e) => setMatriculaAuto(e.target.checked)}
+              disabled
             />
             <span className="text-sm">
-              <span className="font-medium">Matrícula automática (fechamento C4)</span>
+              <span className="font-medium">Ativação automática de matrícula</span>
               <span className="block text-gray-500">
-                Numa matrícula aguardando: contrato assinado + taxa paga ativam sozinhos (cronograma, comissão e
-                lead matriculado). A turma continua híbrida — o sistema sugere, o consultor confirma na ficha do aluno.
+                Ativação segue conferência da matrícula; automação indisponível nesta entrega.
               </span>
             </span>
           </label>
@@ -303,7 +304,10 @@ export function ComercialPainel({
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium text-gray-800">{s.contato}</span>
                   <span className="shrink-0 text-xs text-gray-400">
-                    {new Date(s.quando).toLocaleString("pt-BR")}
+                    {(() => {
+                      const exibicao = formatarInstanteExibicao(s.quando, preferenciaFusoExibicao, "UTC");
+                      return `${exibicao.texto} (${exibicao.fuso}; origem UTC)`;
+                    })()}
                   </span>
                 </div>
                 <p className="mt-0.5 text-gray-600">{s.texto}</p>

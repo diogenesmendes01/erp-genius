@@ -44,6 +44,10 @@ describe("permissões do fluxo de matrícula (#8)", () => {
     expect(podeAtivarMatricula(vendedorEFinanceiro)).toBe(true);
     expect(podeCriarEAtivarMatricula(vendedorEFinanceiro)).toBe(true);
   });
+  it("secretaria acumular vendedor não concede caixa implicitamente", () => {
+    expect(podeCriarEAtivarMatricula([Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR])).toBe(false);
+    expect(podeCriarEAtivarMatricula([Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR], ["pagamento.caixa"])).toBe(true);
+  });
 
   it("Administrador pode tudo", () => {
     expect(podeCriarMatricula(admin)).toBe(true);

@@ -1,12 +1,18 @@
 import { Papel, Prisma, EtapaLead, Segmento, Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
+import { exigirSessaoComPapel } from "@/server/_shared";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
 export async function listarVendedores() {
+  const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   return prisma.usuario.findMany({
-    where: { papeis: { has: Papel.VENDEDOR }, ativo: true },
+    where: {
+      papeis: { has: Papel.VENDEDOR }, ativo: true,
+      ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { gerenteComercialId: usuario.id } : { id: usuario.id }),
+    },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });
@@ -31,6 +37,7 @@ export interface ConfigComercialView {
 
 /** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
 export async function carregarConfigComercial(): Promise<ConfigComercialView> {
+  await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   const c = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
   return {
     autoLeadAtivo: c?.autoLeadAtivo ?? false,
@@ -72,6 +79,7 @@ export interface ReguaComercialConfig {
 
 /** Config de TODAS as réguas comerciais (doc 27 C1/C2) — banco ou fábrica (DESLIGADA). */
 export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialConfig[]> {
+  await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   const { CADENCIAS_COMERCIAIS } = await import("./regua-fabrica");
   const registros = await prisma.politicaComercial.findMany({
     include: { degraus: { orderBy: { offsetMinutos: "asc" } } },
@@ -151,6 +159,7 @@ export interface TemplateResumo {
 
 /** Projeção MÍNIMA p/ os selects da config comercial — sem expor providerRef/sessão/dono. */
 export async function listarNumerosVendasResumo(): Promise<NumeroResumo[]> {
+  await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   const numeros = await prisma.numeroWhatsApp.findMany({
     where: { finalidade: "VENDAS" },
     orderBy: { criadoEm: "asc" },
@@ -160,6 +169,7 @@ export async function listarNumerosVendasResumo(): Promise<NumeroResumo[]> {
 }
 
 export async function listarTemplatesResumo(): Promise<TemplateResumo[]> {
+  await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   return prisma.templateWhatsApp.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } });
 }
 
@@ -173,10 +183,11 @@ export interface EnsaioComercial {
 
 /** Ensaio observável da cadência comercial (doc 27 §regra de ouro): as últimas simuladas. */
 export async function carregarEnsaioComercial(limite = 10): Promise<EnsaioComercial[]> {
+  const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   const intencoes = await prisma.intencaoMensagem.findMany({
-    where: { leadId: { not: null }, status: "SIMULADA" },
+    where: { leadId: { not: null }, status: "SIMULADA", lead: { is: await escopoComercialAtual(usuario) } },
     orderBy: { criadaEm: "desc" },
-    take: limite,
+    take: Math.max(1, Math.min(100, Math.floor(limite))),
     include: { lead: { select: { nome: true, codigo: true } } },
   });
   return intencoes.map((i) => ({
@@ -193,10 +204,11 @@ export async function carregarEnsaioComercial(limite = 10): Promise<EnsaioComerc
  * shadow SIMULOU (o que TERIA sido enviado), para o gerente validar o piloto antes de ativar.
  */
 export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoSimulada[]> {
+  const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
   const intencoes = await prisma.intencaoMensagem.findMany({
-    where: { reativa: true, status: "SIMULADA" },
+    where: { reativa: true, status: "SIMULADA", ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { lead: { is: await escopoComercialAtual(usuario) } }) },
     orderBy: { criadaEm: "desc" },
-    take: limite,
+    take: Math.max(1, Math.min(100, Math.floor(limite))),
     include: { contato: { select: { nomeExibicao: true, telefoneE164: true } } },
   });
   return intencoes.map((i) => ({
@@ -207,12 +219,9 @@ export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoS
   }));
 }
 
-// Visibilidade row-level (doc 07): Vendedor vê só os próprios; Gerente Comercial/Admin veem tudo.
-export function escopoLeads(usuario: UsuarioSessao): Prisma.LeadWhereInput {
-  const amplo =
-    usuario.papeis.includes(Papel.ADMINISTRADOR) ||
-    usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-  return amplo ? {} : { vendedorDonoId: usuario.id };
+/** Compatibilidade para consumidores antigos; equipe e cobertura são relidas no servidor. */
+export async function escopoLeads(usuario: UsuarioSessao): Promise<Prisma.LeadWhereInput> {
+  return escopoComercialAtual(usuario);
 }
 
 export interface FiltrosLead {
@@ -224,14 +233,16 @@ export interface FiltrosLead {
 }
 
 export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead = {}) {
+  if (!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR)) return [];
   const leads = await prisma.lead.findMany({
     where: {
-      ...escopoLeads(usuario),
+      AND: [await escopoComercialAtual(usuario), {
       ...(filtros.b2b !== undefined ? { b2b: filtros.b2b } : {}),
       ...(filtros.segmento ? { segmento: filtros.segmento } : {}),
       ...(filtros.temperatura ? { temperatura: filtros.temperatura } : {}),
       ...(filtros.etapa ? { etapa: filtros.etapa } : {}),
       ...(filtros.vendedorId ? { vendedorDonoId: filtros.vendedorId } : {}),
+      }],
     },
     orderBy: { criadoEm: "desc" },
     include: {
@@ -271,8 +282,9 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
 }
 
 export async function obterLead(id: string, usuario: UsuarioSessao) {
-  const lead = await prisma.lead.findUnique({
-    where: { id },
+  if (!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR)) return null;
+  const lead = await prisma.lead.findFirst({
+    where: { AND: [{ id }, await escopoComercialAtual(usuario)] },
     include: {
       pais: { select: { id: true, nome: true } },
       vendedor: { select: { id: true, nome: true } },
@@ -281,6 +293,7 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
           id: true,
           codigo: true,
           status: true,
+          secretariaAssumiuEm: true,
           // C4 (fechamento): estado do contrato + taxa (link de pagamento) para a ficha.
           contratoOk: true,
           contratoEnviadoEm: true,
@@ -294,11 +307,6 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
     },
   });
   if (!lead) return null;
-  // respeita visibilidade do vendedor
-  const amplo =
-    usuario.papeis.includes(Papel.ADMINISTRADOR) ||
-    usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-  if (!amplo && lead.vendedorDonoId !== usuario.id) return null;
 
   const timeline = await prisma.evento.findMany({
     where: { agregadoTipo: "Lead", agregadoId: id },
@@ -306,7 +314,14 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
     include: { autor: { select: { nome: true } } },
   });
 
-  return { lead, timeline };
+  const cadastroAdministrativo = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
+  return {
+    lead: {
+      ...lead,
+      documentos: cadastroAdministrativo ? lead.documentos : lead.documentos.filter((d) => d.categoria !== "OUTRO" && (!lead.matricula?.secretariaAssumiuEm || d.categoria === "PROPOSTA")),
+    },
+    timeline,
+  };
 }
 
 export type LeadListado = Awaited<ReturnType<typeof listarLeads>>[number];

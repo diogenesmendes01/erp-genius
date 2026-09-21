@@ -5,7 +5,7 @@ import { obterTurma } from "@/server/alunos/consultas";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
 import { nomeCompleto } from "@/lib/nome";
-import { diarioDaTurma, progressaoDaTurma } from "@/server/academico/consultas";
+import { diarioDaTurma, progressaoDaTurma } from "@/server/academico/consultas-legado";
 import { temPapel } from "@/server/_shared";
 import { TurmaAcademico } from "./TurmaAcademico";
 
@@ -27,12 +27,12 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
   // esta página só pela lista de alunos — o payload acadêmico (diário/notas/progressão)
   // NEM É BUSCADO para quem não é dos papéis acadêmicos (review PR #60: esconder o
   // controle não basta; o dado não pode ir ao client).
-  const podeVerAcademico = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
+  const podeVerAcademico = temPapel(usuario, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
   const [diario, progressao] = podeVerAcademico
     ? await Promise.all([diarioDaTurma(id), progressaoDaTurma(id)])
     : [null, null];
-  const podeEditar = podeVerAcademico;
-  const podeAprovar = temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
+  const podeEditar = false;
+  const podeAprovar = false;
 
   return (
     <div className="flex flex-col gap-6">

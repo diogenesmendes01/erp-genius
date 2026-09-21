@@ -146,4 +146,38 @@ describe("despachante × origem GESTAO", () => {
     expect(r.adiadas).toBe(0);
     expect(r.simuladas).toBe(1);
   });
+
+  it("alteração do destino/configuração após enfileirar cancela a intenção", async () => {
+    const numero = await seedNumero();
+    await ligarGestao(numero.id);
+    await seedLeadEstourado(45);
+    await rodarGestao(new Date());
+
+    await prisma.configComercial.update({
+      where: { id: "comercial" },
+      data: { gestaoTelefoneE164: "+5511900001111" },
+    });
+    const r = await despacharFila(new Date());
+
+    expect(r.canceladas).toBe(1);
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { origem: "GESTAO" } });
+    expect(intencao).toMatchObject({ status: "CANCELADA", motivoFalha: "configuracao_gestao_alterada" });
+  });
+
+  it("intenção de gestão com contexto de lead não recebe a exceção de automação interna", async () => {
+    const numero = await seedNumero();
+    await ligarGestao(numero.id);
+    const lead = await seedLeadEstourado(45);
+    await rodarGestao(new Date());
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { origem: "GESTAO" } });
+
+    await prisma.intencaoMensagem.update({ where: { id: intencao.id }, data: { leadId: lead.id } });
+    const r = await despacharFila(new Date());
+
+    expect(r.canceladas).toBe(1);
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({
+      status: "CANCELADA",
+      motivoFalha: "contexto_gestao_invalido",
+    });
+  });
 });

@@ -1,3 +1,6 @@
+import { rodarReconciliacaoAcessoVencimento } from "@/server/contratos/vencimento-acesso";
+import { iniciarTurmasDaAgenda } from "@/server/agenda/inicio-turmas";
+import { rodarVencimentoParticulares } from "@/server/matricula/reserva-particular-cron";
 import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
 import {
@@ -9,6 +12,7 @@ import {
   rodarPreExperimental,
 } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 import { rodarCopilotoQuietude } from "@/server/ia/copiloto";
 import { rodarGestao } from "@/server/whatsapp/cron-gestao";
 import { rodarFechamentoComissoes } from "@/server/financeiro/cron-financeiro";
@@ -44,6 +48,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const agora = new Date();
+  // Controle acadêmico executa mesmo com WhatsApp desligado, sem gerar mensagens.
+  const reservasParticulares = await seguro("reservas_particulares", () => rodarVencimentoParticulares());
+  const inicioTurmas = await seguro("inicio_turmas", () => iniciarTurmasDaAgenda(agora));
+  const acessoVencimentos = await seguro("acesso_vencimentos", () => rodarReconciliacaoAcessoVencimento());
+  const acessoAulas = await seguro("acesso_aulas", () => rodarControleAcessoAulas(agora));
   // Cobrança: enfileira + drena (o rodarCronRegua já chama o despachante no fim).
   const cobranca = await seguro("cobranca", () => rodarCronRegua(agora));
   // Cenários comerciais: só ENFILEIRAM (um enfileirador isolado por cadência)...
@@ -68,6 +77,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
   return NextResponse.json({
+    reservasParticulares,
+    inicioTurmas,
+    acessoVencimentos,
+    acessoAulas,
     cobranca,
     comercial: { leadNovo, preExperimental, noShow, contrato, linkPagamento, checkInVencido },
     copiloto,

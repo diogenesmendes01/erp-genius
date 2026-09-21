@@ -10,7 +10,9 @@ import {
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
 import { formatarMoeda, formatarValores, type ValorMoeda } from "@/lib/dinheiro";
+import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
@@ -66,7 +68,7 @@ export interface FichaFinanceiraDados {
   acessoBloqueado: boolean;
   historico: { id: string; quando: string; label: string; autor: string | null }[];
   tiles: {
-    proximoVenc: { valor: number; moeda: string; data: string } | null;
+    proximoVenc: { valor: number; moeda: string; vencimento: VencimentoVisivel } | null;
     ultimoPago: { valor: number; moeda: string; data: string; forma: string | null } | null;
     emAberto: ValorMoeda[];
     emAtraso: ValorMoeda[];
@@ -74,13 +76,15 @@ export interface FichaFinanceiraDados {
   contrato: { produto: string; moeda: string; status: string }[];
   cobrancas: {
     id: string;
+    compensacaoHref?: string;
+    regularizacaoIntegral?: { escolha: "CREDITO" | "COBERTURA_FUTURA"; aplicadaEm: string; href: string };
     tipo: TipoCobranca;
     status: StatusCobranca;
     valorNegociado: number;
     valorRecebido: number;
     saldo: number;
     moeda: string;
-    vencimento: string;
+    vencimento: VencimentoVisivel;
     pagoEm: string | null;
     forma: FormaPagamento | null;
     regua: ReguaFicha | null;
@@ -97,11 +101,11 @@ export interface FichaFinanceiraDados {
     criadoEm: string;
     vigencia: Vigencia | null;
   }[];
-  comissoes: { id: string; vendedor: string; valor: number; moeda: string; percentual: number; status: StatusComissao }[];
-  permissoes: { registrarPagamento: boolean; renegociar: boolean; perdao: boolean };
+  comissoes: { id: string; vendedor: string; valor: number; moeda: string; percentual: number; tipo: "PERCENTUAL" | "VALOR_FIXO"; status: StatusComissao }[];
+  permissoes: { registrarPagamento: boolean; somenteInformar: boolean; renegociar: boolean; perdao: boolean };
 }
 
-export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
+export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -109,6 +113,10 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
   const [reneg, setReneg] = useState<FichaFinanceiraDados["cobrancas"][number] | null>(null);
 
   const t = dados.tiles;
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -132,7 +140,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? new Date(t.proximoVenc.data).toLocaleDateString("pt-BR") : ""} />
+        <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? rotuloVencimento(t.proximoVenc.vencimento) : ""} />
         <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? new Date(t.ultimoPago.data).toLocaleDateString("pt-BR") : ""} />
         <Tile titulo="Em aberto" valor={formatarValores(t.emAberto)} />
         <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
@@ -155,7 +163,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
             {dados.cobrancas.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-2">{TIPO_COBRANCA_LABEL[c.tipo]}</td>
-                <td className="px-4 py-2 text-gray-600">{new Date(c.vencimento).toLocaleDateString("pt-BR")}</td>
+                <td className="px-4 py-2 text-gray-600">{rotuloVencimento(c.vencimento)}</td>
                 <td className="px-4 py-2">{formatarMoeda(c.valorNegociado, c.moeda)}</td>
                 <td className="px-4 py-2 text-gray-600">
                   {STATUS_COBRANCA_LABEL[c.status]}
@@ -168,13 +176,16 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
                       {c.regua.tentativas}ª cobrança
                     </span>
                   )}
+                  {c.regularizacaoIntegral && <Link className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-700" href={c.regularizacaoIntegral.href} title={`Aplicada em ${instanteAdministrativo(c.regularizacaoIntegral.aplicadaEm)}`}>{c.regularizacaoIntegral.escolha === "CREDITO" ? "Regularizada por crédito" : "Cobertura reprogramada"}</Link>}
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-end gap-2">
+                    {c.compensacaoHref && <Link className={btnSec} href={c.compensacaoHref}>Compensar dias sem oferta</Link>}
+                    {c.regularizacaoIntegral && <Link className={btnSec} href={c.regularizacaoIntegral.href}>Histórico da regularização</Link>}
                     {(c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO) && (
                       <>
                         {dados.permissoes.registrarPagamento && (
-                          <button className={btnSec} onClick={() => setPagar(c)}>Registrar pagamento</button>
+                          <button className={btnSec} onClick={() => setPagar(c)}>{dados.permissoes.somenteInformar ? "Informar pagamento" : "Registrar recebimento"}</button>
                         )}
                         {dados.permissoes.renegociar && (
                           <button className={btnSec} onClick={() => setReneg(c)}>Renegociar / ajustar</button>
@@ -202,7 +213,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
                   {TIPO_AJUSTE_LABEL[a.tipo]}: {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}
                   <span className="ml-2 text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
                 </div>
-                <div className="text-xs text-gray-500">{a.motivo} · {a.autor} · {new Date(a.criadoEm).toLocaleDateString("pt-BR")}{a.vigencia ? ` · ${VIGENCIA_INFO[a.vigencia].label}` : ""}</div>
+                <div className="text-xs text-gray-500">{a.motivo} · {a.autor} · {instanteAdministrativo(a.criadoEm)}{a.vigencia ? ` · ${VIGENCIA_INFO[a.vigencia].label}` : ""}</div>
               </li>
             ))}
           </ul>
@@ -217,7 +228,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
         ) : (
           <ul className="text-sm text-gray-700">
             {dados.comissoes.map((c) => (
-              <li key={c.id}>{c.vendedor} · {c.percentual}% · {formatarMoeda(c.valor, c.moeda)} · {STATUS_COMISSAO_LABEL[c.status]}</li>
+              <li key={c.id}>{c.vendedor} · {c.tipo === "VALOR_FIXO" ? "Valor fixo" : `${c.percentual}% da taxa`} · {formatarMoeda(c.valor, c.moeda)} · {STATUS_COMISSAO_LABEL[c.status]}</li>
             ))}
           </ul>
         )}
@@ -234,7 +245,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
               <li key={h.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-gray-800">{h.label}</div>
                 <div className="text-xs text-gray-500">
-                  {new Date(h.quando).toLocaleString("pt-BR")}
+                  {instanteAdministrativo(h.quando)}
                   {h.autor ? ` · ${h.autor}` : ""}
                 </div>
               </li>
@@ -245,6 +256,7 @@ export function FichaFinanceira({ dados }: { dados: FichaFinanceiraDados }) {
 
       {pagar && (
         <PagamentoModal
+          somenteInformar={dados.permissoes.somenteInformar}
           cobrancaId={pagar.id}
           alunoNome={dados.aluno.nome}
           moeda={pagar.moeda}

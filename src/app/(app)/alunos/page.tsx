@@ -5,6 +5,7 @@ import { listarAlunos } from "@/server/alunos/consultas";
 import { exigirSessao } from "@/server/_shared";
 import { podeCriarMatricula } from "@/server/matricula/permissoes";
 import { AlunosLista } from "./AlunosLista";
+import { ExportarPlanilha } from "@/components/ExportarPlanilha";
 
 // Guard server-side por papel ANTES de buscar dados de alunos (issue #1).
 // Papéis alinhados ao nav.ts; Administrador passa sempre (exigirPapelLeitura).
@@ -29,5 +30,5 @@ export default async function AlunosPage() {
   const podeCadastrar = podeCriarMatricula(usuario.papeis);
   // Cadastro em lote (XLSX) é exclusivo do Administrador (doc 22 — carga por lote).
   const podeImportar = usuario.papeis.includes(Papel.ADMINISTRADOR);
-  return <AlunosLista alunos={alunos} podeCadastrar={podeCadastrar} podeImportar={podeImportar} />;
+  return <><div className="mb-3 flex justify-end"><ExportarPlanilha tipo="alunos" /></div><AlunosLista alunos={alunos} podeCadastrar={podeCadastrar} podeImportar={podeImportar} /></>;
 }

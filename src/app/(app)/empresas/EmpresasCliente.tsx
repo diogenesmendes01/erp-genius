@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import type { EmpresaResumo } from "@/server/empresas/consultas";
 import { salvarEmpresa } from "@/server/empresas/acoes";
 
-// B2B — lista de empresas + criação (Fase 2, doc 03). A ficha (colaboradores, lote,
-// faturas) vive em /empresas/[id].
+// Empresas representam o responsável financeiro. As matrículas permanecem contratos
+// individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
@@ -44,7 +44,7 @@ export function EmpresasCliente({
         <div>
           <h1 className="text-2xl font-medium">Empresas (B2B)</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Contrato corporativo: colaboradores matriculados em lote e fatura única por mês.
+            Cadastro do responsável financeiro para contratos individuais e consulta de faturas históricas.
           </p>
         </div>
         <button className={btnPri} onClick={() => setCriando((v) => !v)}>Nova empresa</button>
@@ -75,7 +75,7 @@ export function EmpresasCliente({
 
       {empresas.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-          Nenhuma empresa ainda. Crie a primeira para matricular colaboradores em lote.
+          Nenhuma empresa ainda. Crie a primeira para registrar o responsável financeiro de contratos individuais.
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200">

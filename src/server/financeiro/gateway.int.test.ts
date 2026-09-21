@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { EtapaLead, FormaPagamento, Papel, StatusCobranca, StatusComissao, StatusMatricula, TipoCobranca } from "@prisma/client";
+import { FormaPagamento, Papel, StatusComissao } from "@prisma/client";
 
 // Fase 2 (doc 03): gateway por driver (simulado) — geração de link + CONCILIAÇÃO
 // automática (webhook) pela baixa compartilhada, incluindo o gatilho C4 (taxa quitada
@@ -10,8 +10,7 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
-import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";
-import { criarMatricula, gerarLinkPagamentoGateway, marcarContratoAssinado } from "@/server/matricula/acoes";
+import { truncarBanco, criarUsuario, seedCatalogoMinimo } from "@/test/integracao";
 import { processarPagamentoGateway } from "./gateway";
 import { rodarFechamentoComissoes } from "./cron-financeiro";
 import { baixarCobrancaTx } from "./baixa";
@@ -29,75 +28,20 @@ beforeEach(async () => {
 });
 
 async function seedMatriculaAguardando() {
-  const lead = await prisma.lead.create({
-    data: { nome: "Lead Gateway", vendedorDonoId: vendedor.id, etapa: EtapaLead.AGUARDANDO_MATRICULA },
-  });
-  const r = await criarMatricula({
-    leadId: lead.id,
-    alunoPrimeiroNome: "Rita",
-    alunoSobrenome: "Solís",
-    alunoGenero: "NAO_INFORMADO",
-    alunoNascimento: "1995-03-03",
-    alunoPaisId: catalogo.pais.id,
-    alunoTipoDocumentoId: catalogo.pais.tiposDocumento[0].id,
-    alunoDocumento: "1-2222-2222",
-    alunoNacionalidade: "CR",
-    alunoEmail: "rita@teste.cr",
-    alunoTelefone: "88885555",
-    alunoWhatsapp: true,
-    alunoAceitaComunicacoes: true,
-    alunoPaisResidencia: "CR",
-    pagador: "ALUNO",
-    produtoId: catalogo.produto.id,
-    taxaValor: 20000,
-    mensalidadeValor: 85000,
-    comissaoPct: 10,
-    diaVencimento: 5,
-    mesesPlano: 3,
-  });
-  if (!r.ok) throw new Error(`criarMatricula: ${(r as { erro?: string }).erro}`);
-  const taxa = await prisma.cobranca.findFirstOrThrow({
-    where: { matriculaId: r.dado!.id, tipo: TipoCobranca.MATRICULA },
-  });
-  return { matriculaId: r.dado!.id, taxa };
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Rita", paisId: catalogo.pais.id } });
+  const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "AGUARDANDO" } });
+  const taxa = await prisma.cobranca.create({ data: { matriculaId: matricula.id, tipo: "MATRICULA", valorOriginal: 20000, valorNegociado: 20000, saldo: 20000, moeda: "CRC", vencimento: new Date("2030-01-10"), gatewayRef: "aaaaaaaaaaaaaaaaaaaaaaaa" } });
+  await prisma.comissao.create({ data: { matriculaId: matricula.id, vendedorId: vendedor.id, percentual: 10, valor: 2000, moeda: "CRC" } });
+  return { matriculaId: matricula.id, taxa };
 }
 
-describe("gateway simulado — link + conciliação", () => {
-  it("gera link com gatewayRef e âncora da régua; o webhook baixa a cobrança", async () => {
-    const { taxa } = await seedMatriculaAguardando();
-
-    const r = await gerarLinkPagamentoGateway(taxa.id);
-    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
-    const comLink = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-    expect(comLink.gatewayRef).toMatch(/^[0-9a-f]{48}$/);
-    expect(comLink.linkPagamento).toContain(`/pagar/${comLink.gatewayRef}`);
-    expect(comLink.linkEnviadoEm).not.toBeNull();
-
-    // "Webhook": cliente pagou pelo link.
-    const baixa = await processarPagamentoGateway(comLink.gatewayRef!);
-    expect(baixa.quitada).toBe(true);
-    const paga = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-    expect(paga.status).toBe(StatusCobranca.PAGO);
-    const evento = (await eventosDo("Cobranca", taxa.id)).find((e) => e.tipo === "PagamentoRegistrado");
-    expect((evento?.payload as { via?: string }).via).toBe("gateway_simulado");
-  });
-
-  it("conciliação + contrato OK + config ligada → matrícula ativa SOZINHA (C4 ponta a ponta)", async () => {
-    await prisma.configComercial.upsert({
-      where: { id: "comercial" },
-      create: { id: "comercial", matriculaAutomaticaAtiva: true },
-      update: { matriculaAutomaticaAtiva: true },
-    });
-    const { matriculaId, taxa } = await seedMatriculaAguardando();
-    await marcarContratoAssinado(matriculaId);
-    await gerarLinkPagamentoGateway(taxa.id);
-    const { gatewayRef } = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-
-    const baixa = await processarPagamentoGateway(gatewayRef!);
-    expect(baixa.matriculaAtivada).toBe(true);
-    expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe(
-      StatusMatricula.ATIVA,
-    );
+describe("gateway legado respeita ledger da SPEC", () => {
+  it("não concilia nem ativa sem adaptação ao recebimento contratual", async () => {
+    const { taxa, matriculaId } = await seedMatriculaAguardando();
+    await expect(processarPagamentoGateway(taxa.gatewayRef!)).rejects.toThrow("Conciliação automática pendente");
+    expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).status).toBe("AGUARDANDO");
+    expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } })).valorRecebido).toBeNull();
+    expect(await prisma.recebimento.count()).toBe(0);
   });
 });
 
@@ -126,6 +70,8 @@ describe("fechamento mensal automático de comissões", () => {
     expect(r1.executou).toBe(true);
     expect(r1.pagas).toBe(1);
     expect(await prisma.comissao.count({ where: { status: StatusComissao.PAGA } })).toBe(1);
+    const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "ComissaoPaga" } });
+    expect(evento.payload).toMatchObject({ moeda: "CRC", politicaId: null });
 
     const r2 = await rodarFechamentoComissoes();
     expect(r2.executou).toBe(false);
@@ -159,47 +105,15 @@ describe("review PR #60 — financeiro", () => {
     expect(r2.pagas).toBe(1);
   });
 
-  it("baixas PARCIAIS CONCORRENTES acumulam a soma (lock de linha — nada se perde)", async () => {
-    const { taxa } = await seedMatriculaAguardando(); // taxa de 20000
-    // Direto no miolo compartilhado (onde o FOR UPDATE vive): duas transações reais em
-    // paralelo — sem o lock, ambas leriam recebido=0 e a 2ª sobrescreveria a 1ª (6000).
-    const parcial = (valor: number) =>
-      prisma.$transaction((tx) =>
-        baixarCobrancaTx(tx, admin.id, taxa.id, {
-          valorRecebido: valor,
-          forma: FormaPagamento.TRANSFERENCIA,
-          comprovanteUrl: "uploads/comprovante-teste.pdf",
-          via: "manual",
-        }),
-      );
-
-    const [a, b] = await Promise.all([parcial(6000), parcial(6000)]);
-    expect(a.recebidoTotal + b.recebidoTotal).toBe(6000 + 12000); // 1ª vê 6000, 2ª vê 12000
-
-    const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-    expect(Number(depois.valorRecebido)).toBe(12000); // 6000 + 6000 — sem sobrescrita
-    expect(depois.status).toBe(StatusCobranca.PENDENTE); // ainda não quitou os 20000
+  it("não permite baixa manual legada sem chave e destinação", async () => {
+    const { taxa } = await seedMatriculaAguardando();
+    await expect(prisma.$transaction(tx => baixarCobrancaTx(tx, admin.id, taxa.id, { valorRecebido: 6000, forma: FormaPagamento.TRANSFERENCIA, via: "manual" }))).rejects.toThrow("chave de idempotência");
+    expect(await prisma.recebimento.count()).toBe(0);
   });
+
 });
 
 describe("review PR #60 rodada 2 — financeiro", () => {
-  it("re-gerar o link REUSA o gatewayRef ativo — o link já enviado segue conciliável", async () => {
-    const { taxa } = await seedMatriculaAguardando();
-    const r1 = await gerarLinkPagamentoGateway(taxa.id);
-    expect(r1.ok).toBe(true);
-    const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-
-    const r2 = await gerarLinkPagamentoGateway(taxa.id);
-    expect(r2.ok).toBe(true);
-    const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
-    // A referência NÃO muda: quem recebeu o 1º link ainda paga e o webhook concilia.
-    expect(depois.gatewayRef).toBe(antes.gatewayRef);
-    expect(depois.linkPagamento).toBe(antes.linkPagamento);
-
-    const baixa = await processarPagamentoGateway(depois.gatewayRef!);
-    expect(baixa.quitada).toBe(true);
-  });
-
   it("dois ticks SIMULTÂNEOS do fechamento mensal pagam UMA vez (advisory lock por mês)", async () => {
     const { matriculaId } = await seedMatriculaAguardando();
     await prisma.configFinanceiro.upsert({
@@ -217,5 +131,17 @@ describe("review PR #60 rodada 2 — financeiro", () => {
     expect([a.executou, b.executou].filter(Boolean)).toHaveLength(1); // um fecha, o outro desiste
     expect(await prisma.comissao.count({ where: { status: StatusComissao.PAGA } })).toBe(1);
     expect(await prisma.evento.count({ where: { tipo: "FechamentoComissoesMensal" } })).toBe(1);
+  });
+});
+
+describe("reconciliação de identidade da cobrança", () => {
+  it("competência não bloqueia períodos diferentes e não substitui a identidade da emissão", async () => {
+    const { matriculaId } = await seedMatriculaAguardando();
+    const comum = { matriculaId, tipo: "HORA_PARTICULAR" as const, competencia: "2030-01", moeda: "CRC", valorOriginal: 100, valorNegociado: 100, saldo: 100, vencimento: new Date("2030-02-05") };
+    await prisma.cobranca.create({ data: comum });
+    await prisma.cobranca.create({ data: comum });
+    expect(await prisma.cobranca.count({ where: { matriculaId, tipo: "HORA_PARTICULAR", competencia: "2030-01" } })).toBe(2);
+    const indices = await prisma.$queryRaw<{ indexname: string }[]>`SELECT indexname FROM pg_indexes WHERE indexname = 'EmissaoContinuidadeMensal_matricula_cobertura_key'`;
+    expect(indices).toHaveLength(1);
   });
 });

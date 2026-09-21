@@ -31,6 +31,7 @@ export const EnviarMidiaInboxSchema = z.object({
 export type EnviarMidiaInboxInput = z.input<typeof EnviarMidiaInboxSchema>;
 
 export const VincularContatoSchema = z.object({
+  atendimentoId: z.string().min(1).optional(),
   contatoId: z.string().min(1),
   alvo: z.discriminatedUnion("tipo", [
     z.object({ tipo: z.literal("aluno"), id: z.string().min(1) }),
@@ -55,7 +56,7 @@ export const NumeroWhatsAppSchema = z.object({
   telefoneE164,
   rotulo: z.string().trim().min(2, "Dê um rótulo ao número (ex.: Cobrança)." ).max(60),
   driver: z.enum(["META_CLOUD", "BAILEYS"]),
-  finalidade: z.enum(["COBRANCA", "VENDAS"]),
+  finalidade: z.enum(["COBRANCA", "VENDAS", "AGENDA"]),
   providerRef: z
     .string()
     .trim()
@@ -70,6 +71,13 @@ export const NumeroWhatsAppSchema = z.object({
   ativo: z.boolean().default(true),
 });
 export type NumeroWhatsAppInput = z.input<typeof NumeroWhatsAppSchema>;
+
+/** Escolha explícita do canal institucional de avisos de agenda. */
+export const ConfiguracaoAvisosAgendaSchema = z.object({
+  numeroAvisosAgendaId: z.string().trim().min(1),
+  templateAvisosAgendaId: z.string().trim().min(1),
+});
+export type ConfiguracaoAvisosAgendaInput = z.input<typeof ConfiguracaoAvisosAgendaSchema>;
 
 // ---------------------------------------------------------------------------
 // Config — template (E4). Nome segue a regra da Meta: minúsculas/dígitos/underscore.

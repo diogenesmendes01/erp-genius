@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  IconHome,
+  IconHome, IconMail,
   IconLayoutKanban,
   IconUsers,
   IconUserCheck,
@@ -24,7 +24,7 @@ import { navParaPapeis } from "@/lib/nav";
 type Icone = React.ComponentType<IconProps>;
 
 const ICONS: Record<string, Icone> = {
-  Home: IconHome,
+  Home: IconHome, IconMail,
   KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
@@ -112,6 +112,7 @@ export function Sidebar({
           {nome.slice(0, 2).toUpperCase()}
         </div>
         <span className="flex-1 truncate text-sm text-gray-600">{nome}</span>
+        <Link href="/preferencias" className="text-xs text-brand-700 underline" title="Preferências">Fuso</Link>
         <ThemeToggle />
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}

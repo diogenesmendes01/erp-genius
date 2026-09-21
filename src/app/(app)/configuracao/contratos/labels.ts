@@ -1,0 +1,2 @@
+export const PAPEIS_MODELO = { ALUNO: "Aluno", REPRESENTANTE_LEGAL: "Representante legal", RESPONSAVEL_FINANCEIRO: "Responsável financeiro", REPRESENTANTE_EMPRESA: "Representante da empresa", REPRESENTANTE_ESCOLA: "Representante da escola" };
+export const CONDICOES_MODELO = { SEMPRE: "Sempre", ALUNO_MENOR: "Aluno menor de idade", ALUNO_MAIOR: "Aluno maior de idade", PAGADOR_DISTINTO: "Pagador diferente do aluno", PAGADOR_EMPRESA: "Pagador é uma empresa" };

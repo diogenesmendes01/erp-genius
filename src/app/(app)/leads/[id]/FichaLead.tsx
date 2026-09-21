@@ -1,17 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } from "@prisma/client";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { anexarDocumentoLead, arquivarDocumentoLead } from "@/server/comercial/acoes";
 import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
-import {
-  gerarLinkPagamentoGateway,
-  marcarContratoAssinado,
-  registrarContratoEnviado,
-  registrarLinkPagamento,
-} from "@/server/matricula/acoes";
+import { registrarLinkPagamento } from "@/server/matricula/acoes";
 import type { SugestaoPendente } from "@/server/ia/consultas";
 import {
   ETAPA_LABEL,
@@ -30,6 +26,7 @@ import {
   atualizarResumo,
   atualizarDatas,
 } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 const TRILHA: EtapaLead[] = [
   EtapaLead.NOVO,
@@ -55,10 +52,10 @@ export interface LeadFicha {
   pais: { nome: string } | null;
   vendedor: { nome: string } | null;
   origemCampanha: string | null;
-  waReferralHeadline: string | null;
-  waReferralSourceType: string | null;
+  waReferralHeadline?: string | null;
+  waReferralSourceType?: string | null;
   /** Lead nasceu de inbound do WhatsApp (auto-captura C1). */
-  capturadoViaWhatsApp: boolean;
+  capturadoViaWhatsApp?: boolean;
   origemAnuncio: string | null;
   interesse: string | null;
   objetivo: string | null;
@@ -123,12 +120,14 @@ export function FichaLead({
   lead,
   timeline,
   professores = [],
+  preferenciaFusoExibicao,
   sugestoesIA = [],
   copilotoAtivo = false,
 }: {
   lead: LeadFicha;
   timeline: EventoTimeline[];
   professores?: { id: string; nome: string }[];
+  preferenciaFusoExibicao: string | null;
   sugestoesIA?: SugestaoPendente[];
   copilotoAtivo?: boolean;
 }) {
@@ -211,8 +210,7 @@ export function FichaLead({
 
       <BarraAcoes lead={lead} run={run} professores={professores} />
 
-      {/* C4 (doc 27): fechamento — contrato + pagamento; com a matrícula automática ligada,
-          contrato OK + taxa paga ativam sozinhos. */}
+      {/* Acompanhamento contratual e de pagamento da matrícula aguardando. */}
       {lead.matricula?.status === "AGUARDANDO" && <FechamentoCard matricula={lead.matricula} run={run} />}
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -221,8 +219,8 @@ export function FichaLead({
       </div>
 
       <Documentos leadId={lead.id} documentos={lead.documentos} run={run} />
-      <HistoricoDono timeline={timeline} />
-      <Timeline timeline={timeline} />
+      <HistoricoDono timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+      <Timeline timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </div>
   );
 }
@@ -309,7 +307,7 @@ function ValorOportunidade({ lead }: { lead: LeadFicha }) {
   );
 }
 
-function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
+function HistoricoDono({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimeline[]; preferenciaFusoExibicao: string | null }) {
   const itens = timeline.filter((e) => e.tipo === "LeadAtribuido");
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -326,7 +324,7 @@ function HistoricoDono({ timeline }: { timeline: EventoTimeline[] }) {
                 <div className="text-gray-700">Atribuição{motivo ? ` · ${motivo}` : ""}</div>
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
-                  {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").texto} (horário exibido em {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").fuso}; origem UTC)
                 </div>
               </li>
             );
@@ -605,10 +603,39 @@ const EVENTO_LABEL: Record<string, string> = {
 };
 
 /** Texto auxiliar da timeline conforme o tipo de evento (resumo, datas, etapa…). */
-function detalheEvento(tipo: string, p: Record<string, unknown>): string | null {
+const DATA_CIVIL_LITERAL = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_COM_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/i;
+
+function dataCivilLiteral(valor: unknown) {
+  if (typeof valor !== "string") return null;
+  const partes = DATA_CIVIL_LITERAL.exec(valor);
+  if (!partes) return null;
+  const [ano, mes, dia] = partes.slice(1).map(Number);
+  const calendario = new Date(Date.UTC(ano, mes - 1, dia));
+  return calendario.getUTCFullYear() === ano && calendario.getUTCMonth() === mes - 1 && calendario.getUTCDate() === dia ? valor : null;
+}
+
+function dataHistoricaSemOrigemCivil(valor: unknown, civil: unknown) {
+  const literal = dataCivilLiteral(valor);
+  if (literal) return literal;
+  const confirmada = dataCivilLiteral(civil);
+  if (confirmada) return confirmada;
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  return `${valor} (registro histórico sem referência civil)`;
+}
+
+function experimentalHistorica(valor: unknown, preferenciaFusoExibicao: string | null) {
+  const literal = dataCivilLiteral(valor);
+  if (literal) return literal;
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  if (!ISO_COM_OFFSET.test(valor) || !Number.isFinite(new Date(valor).getTime()))
+    return `${valor} (registro histórico sem fuso de origem)`;
+  const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+}
+
+function detalheEvento(tipo: string, p: Record<string, unknown>, preferenciaFusoExibicao: string | null): string | null {
   const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-  const data = (v: unknown) =>
-    typeof v === "string" && v ? new Date(v).toLocaleDateString("pt-BR") : null;
 
   if (tipo === "ResumoAtualizado") {
     const partes = [
@@ -622,10 +649,13 @@ function detalheEvento(tipo: string, p: Record<string, unknown>): string | null 
     return partes.length ? partes.join(" · ") : "Resumo limpo";
   }
   if (tipo === "DatasAtualizadas") {
+    const followUp = dataHistoricaSemOrigemCivil(p.proximoFollowUp, p.proximoFollowUpCivil);
+    const experimental = experimentalHistorica(p.dataExperimental, preferenciaFusoExibicao);
+    const proposta = dataHistoricaSemOrigemCivil(p.dataProposta, p.dataPropostaCivil);
     const partes = [
-      data(p.proximoFollowUp) && `Follow-up: ${data(p.proximoFollowUp)}`,
-      data(p.dataExperimental) && `Experimental: ${data(p.dataExperimental)}`,
-      data(p.dataProposta) && `Proposta: ${data(p.dataProposta)}`,
+      followUp && `Follow-up: ${followUp}`,
+      experimental && `Experimental: ${experimental}`,
+      proposta && `Proposta: ${proposta}`,
     ].filter(Boolean);
     return partes.length ? partes.join(" · ") : "Datas limpas";
   }
@@ -638,7 +668,7 @@ function detalheEvento(tipo: string, p: Record<string, unknown>): string | null 
   return txt(p.nota);
 }
 
-function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
+function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimeline[]; preferenciaFusoExibicao: string | null }) {
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="mb-3 font-medium">Linha do tempo</h2>
@@ -648,14 +678,14 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
         <ul className="flex flex-col gap-3">
           {timeline.map((ev) => {
             const p = (ev.payload ?? {}) as Record<string, unknown>;
-            const detalhe = detalheEvento(ev.tipo, p);
+            const detalhe = detalheEvento(ev.tipo, p, preferenciaFusoExibicao);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
                 {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
-                  {new Date(ev.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").texto} (horário exibido em {formatarInstanteExibicao(ev.criadoEm, preferenciaFusoExibicao, "UTC").fuso}; origem UTC)
                 </div>
               </li>
             );
@@ -667,7 +697,7 @@ function Timeline({ timeline }: { timeline: EventoTimeline[] }) {
 }
 
 
-/** C4 — cockpit de FECHAMENTO da matrícula AGUARDANDO (contrato + link de pagamento). */
+/** Acompanhamento contratual e do link de pagamento da matrícula aguardando. */
 function FechamentoCard({
   matricula,
   run,
@@ -707,25 +737,7 @@ function FechamentoCard({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {!matricula.contratoOk && (
-          <>
-            <button className={btnSec} onClick={() => run(registrarContratoEnviado(matricula.id))}>
-              {matricula.contratoEnviadoEm ? "Reenviar contrato (nova régua)" : "Marcar contrato enviado"}
-            </button>
-            <button className={btnSec + " border-green-300 text-green-700 hover:bg-green-50"} onClick={() => run(marcarContratoAssinado(matricula.id))}>
-              Contrato assinado
-            </button>
-          </>
-        )}
-        {!taxaPaga && matricula.taxa && (
-          <button
-            className={btnSec + " border-brand-300 text-brand-700 hover:bg-brand-50"}
-            title="Gera o link pelo gateway (driver simulado em dev; GreenPay/PIX no futuro) e ancora a régua"
-            onClick={() => run(gerarLinkPagamentoGateway(matricula.taxa!.id))}
-          >
-            Gerar link (gateway)
-          </button>
-        )}
+        {!matricula.contratoOk && <><Link className={btnSec} href={`/matriculas/${matricula.id}/preparacao`}>Preparar matrícula</Link><Link className={btnSec} href={`/matriculas/${matricula.id}/contrato`}>Gerenciar documentos do contrato</Link></>}
         {!taxaPaga && matricula.taxa && (
           <span className="flex items-center gap-1">
             <input
@@ -749,10 +761,7 @@ function FechamentoCard({
           Link atual: <a className="underline" href={matricula.taxa.linkPagamento} target="_blank" rel="noreferrer">{matricula.taxa.linkPagamento}</a>
         </p>
       )}
-      <p className="mt-2 text-[11px] text-blue-700/70">
-        Com a matrícula automática ligada (Configuração → WhatsApp → Comercial), contrato assinado + taxa paga
-        ativam a matrícula sozinhos; as réguas de contrato/link cuidam do follow-up.
-      </p>
+      <p className="mt-2 text-[11px] text-blue-700/70">Conclua as conferências necessárias no fluxo da matrícula antes de seguir com a ativação.</p>
     </section>
   );
 }

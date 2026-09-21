@@ -9,6 +9,7 @@ import type {
   TemplateResumo,
 } from "@/server/comercial/consultas";
 import { salvarReguaComercial } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
@@ -31,11 +32,13 @@ export function ReguasComerciaisPainel({
   numeros,
   templates,
   ensaio,
+  preferenciaFusoExibicao = null,
 }: {
   reguas: ReguaComercialConfig[];
   numeros: NumeroResumo[];
   templates: TemplateResumo[];
   ensaio: EnsaioComercial[];
+  preferenciaFusoExibicao?: string | null;
 }) {
   return (
     <section className="space-y-8">
@@ -49,7 +52,7 @@ export function ReguasComerciaisPainel({
       {reguas.map((r) => (
         <ReguaComercialPainel key={r.chave} regua={r} numeros={numeros} templates={templates} />
       ))}
-      <EnsaioComercialLista ensaio={ensaio} />
+      <EnsaioComercialLista ensaio={ensaio} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </section>
   );
 }
@@ -290,7 +293,7 @@ function ReguaComercialPainel({
 }
 
 /** Ensaio observável (doc 27 §regra de ouro): o que as cadências TERIAM enviado. */
-function EnsaioComercialLista({ ensaio }: { ensaio: EnsaioComercial[] }) {
+function EnsaioComercialLista({ ensaio, preferenciaFusoExibicao = null }: { ensaio: EnsaioComercial[]; preferenciaFusoExibicao?: string | null }) {
   return (
     <div>
       <div className="mb-1 text-sm font-medium">Ensaio — últimos follow-ups simulados</div>
@@ -302,7 +305,10 @@ function EnsaioComercialLista({ ensaio }: { ensaio: EnsaioComercial[] }) {
             <li key={e.id} className="px-3 py-2 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-medium text-gray-800">{e.lead} · {e.passo}</span>
-                <span className="shrink-0 text-xs text-gray-400">{new Date(e.quando).toLocaleString("pt-BR")}</span>
+                <span className="shrink-0 text-xs text-gray-400">{(() => {
+                  const exibicao = formatarInstanteExibicao(e.quando, preferenciaFusoExibicao, "UTC");
+                  return `${exibicao.texto} (${exibicao.fuso}; origem UTC)`;
+                })()}</span>
               </div>
               <p className="mt-0.5 text-gray-600">{e.texto}</p>
             </li>

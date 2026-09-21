@@ -14,7 +14,8 @@ export const FORMAS_EXIGEM_COMPROVANTE: FormaPagamento[] = [
 // mantendo o comportamento consistente entre painel financeiro e ficha do aluno.
 export const PagamentoSchema = z
   .object({
-    valorRecebido: z.coerce.number().min(0, "Valor inválido"),
+    chaveIdempotencia: z.string().min(16, "Identificador do pagamento inválido").max(120),
+    valorRecebido: z.coerce.number().min(0.01, "Informe um valor recebido de ao menos um centavo").finite(),
     forma: z.nativeEnum(FormaPagamento).default(FormaPagamento.TRANSFERENCIA),
     dataPagamento: dataOpcional,
     comprovanteUrl: z
@@ -29,7 +30,7 @@ export const PagamentoSchema = z
       .transform((v) => (v ? v : undefined)),
     comentario: z.string().optional(),
     // Recebimento acima do negociado é bloqueado por padrão; só passa como crédito explícito.
-    permitirExcedente: z.coerce.boolean().optional().default(false),
+    permitirExcedente: z.boolean().optional().default(false),
   })
   .superRefine((dados, ctx) => {
     if (FORMAS_EXIGEM_COMPROVANTE.includes(dados.forma) && !dados.comprovanteUrl) {
@@ -41,6 +42,26 @@ export const PagamentoSchema = z
     }
   });
 export type PagamentoInput = z.input<typeof PagamentoSchema>;
+
+export const ConferenciaSchema = z.object({
+  versao: z.number().int().positive(),
+  confirmar: z.boolean(),
+  motivo: z.string().trim().max(1000).optional(),
+}).refine((d) => d.confirmar || !!d.motivo, { message: "Informe o motivo da rejeição.", path: ["motivo"] });
+
+export const PoliticaComissaoSchema = z.object({
+  paisId: z.string().min(1), produtoId: z.string().min(1),
+  tipo: z.enum(["PERCENTUAL", "VALOR_FIXO"]),
+  percentual: z.number().min(0).max(100).finite().nullable(),
+  valorFixo: z.number().min(0).finite().nullable(),
+  moeda: z.string().trim().regex(/^[A-Z]{3}$/),
+  vigenteEm: z.coerce.date(),
+}).superRefine((d, ctx) => {
+  if (d.tipo === "PERCENTUAL" ? d.percentual === null || d.valorFixo !== null : d.valorFixo === null || d.percentual !== null) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["tipo"], message: "Preencha somente o valor correspondente ao tipo da comissão." });
+  }
+});
+export type PoliticaComissaoInput = z.input<typeof PoliticaComissaoSchema>;
 
 // Modelos de cobrança via WhatsApp (wa.me, sem Cloud API).
 export const MODELOS_WHATSAPP = ["amigavel", "vencida", "firme", "dados", "promessa"] as const;

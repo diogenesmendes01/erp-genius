@@ -9,7 +9,7 @@ import { FichaEmpresa } from "./FichaEmpresa";
 // B2B — ficha da empresa (Fase 2, doc 03): dados do contrato corporativo, RELATÓRIO POR
 // COLABORADOR, matrículas em LOTE e faturas únicas (fechar/pagar/cancelar).
 
-const PAPEIS: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
+const PAPEIS: Papel[] = [Papel.FINANCEIRO];
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
