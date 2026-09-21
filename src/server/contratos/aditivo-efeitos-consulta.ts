@@ -3,6 +3,7 @@
 import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
 import { projetarAplicacoesPorCampo } from "./aditivo-aplicacao-campos";
 import { consultarAlvoPrimeiraMensalidadeTx } from "./aditivo-primeira-mensalidade";
+import { CAMPOS_ADIANTAMENTO, consultarAlvoAdiantamentoTx } from "./aditivo-adiantamento";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -38,7 +39,13 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }],
         select: { id: true, aplicadaEm: true, vencimentoNovo: true },
       }) : null;
-      const versaoFormalizada = await tx.versaoCondicoesAditivo.findUnique({ where: { propostaId: d.propostaId }, select: { id: true, versao: true } });
+      const versaoFormalizada = await tx.versaoCondicoesAditivo.findUnique({ where: { propostaId: d.propostaId }, select: { id: true, versao: true, condicoes: true } });
+      // Q172: o alvo só existe depois de formalizadas as condições; antes disso a tela orienta pelo texto padrão.
+      const alteraAdiantamento = entrada.alteracoes.some(a => (CAMPOS_ADIANTAMENTO as readonly string[]).includes(a.origem));
+      const alvoAdiantamento = alteraAdiantamento && versaoFormalizada ? await consultarAlvoAdiantamentoTx(tx, d.matriculaId, versaoFormalizada.condicoes) : null;
+      const aplicacaoAdiantamento = alteraAdiantamento ? await tx.aplicacaoAdiantamentoAditivo.findFirst({
+        where: { decisao: { proposta: { matriculaId: d.matriculaId, propostaAditivoId: d.propostaId } } }, orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }], select: { id: true, aplicadaEm: true },
+      }) : null;
       const provas = versaoFormalizada ? projetarAplicacoesPorCampo((await carregarAplicacoesCamposTx(tx, d.matriculaId)).filter(v => v.versao <= versaoFormalizada.versao)) : {};
       const aplicacoesCampos = entrada.alteracoes.map(a => ({ campo: a.origem, aplicada: !!provas[a.origem]?.aplicacaoId }));
       // Acertos de taxa comprovam somente as cobranças selecionadas; não liberam
@@ -58,6 +65,9 @@ export async function consultarEfeitosAditivo(input: z.input<typeof Alvo>) {
         aplicacoesCampos, acertosTaxaAplicados,
         primeiraMensalidade: primeiraMensalidade ? { ...primeiraMensalidade, aplicacao: aplicacaoVencimento,
           pendencia: aplicacaoVencimento ? "Este aditivo possui acerto de vencimento aplicado. Consulte o histórico financeiro para conferir a cobrança atual." : primeiraMensalidade.pendencia } : null,
+        adiantamento: alteraAdiantamento ? { formalizado: !!versaoFormalizada, aplicacao: aplicacaoAdiantamento,
+          pendencia: aplicacaoAdiantamento ? "Este aditivo possui acerto de adiantamento aplicado. Consulte o histórico financeiro para conferir a cobrança atual."
+            : alvoAdiantamento?.pendencia ?? "O adiantamento exige acerto financeiro próprio depois de formalizadas as condições do aditivo." } : null,
         aplicado: Boolean(aplicacao), aplicacao: aplicacao ? { id: aplicacao.id, aplicadaEm: aplicacao.aplicadaEm, vigenciaInicio: aplicacao.vigenciaInicio } : null };
     }, { isolationLevel: "RepeatableRead" });
   });

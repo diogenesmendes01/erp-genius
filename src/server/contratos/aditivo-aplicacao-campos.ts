@@ -10,6 +10,8 @@ export type VersaoAplicacaoCampos = {
   alteracoes: { origem: string; valorEstruturado: unknown }[];
   aplicacaoGeralId: string | null;
   aplicacaoVencimentoId: string | null;
+  /** Q172: aplicação financeira própria do adiantamento desta versão. */
+  aplicacaoAdiantamentoId?: string | null;
   /** Conjunto Q170 completo, nunca uma aplicação isolada de cobrança. */
   conjuntoTaxaCompletoId?: string | null;
   /** Conjunto Q168 completo da própria versão; uma aplicação isolada não basta. */
@@ -40,6 +42,8 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
             ? versao.conjuntoTaxaCompletoId ?? null
             : (alteracao.origem === "COBERTURA_INICIO" || alteracao.origem === "COBERTURA_FIM")
               ? versao.conjuntoCoberturaCompletoId ?? null
+              : (alteracao.origem === "ADIANTAMENTO_VALOR" || alteracao.origem === "ADIANTAMENTO_MINUTOS" || alteracao.origem === "ADIANTAMENTO_VENCIMENTO")
+                ? versao.aplicacaoAdiantamentoId ?? null
               : proprios.has(alteracao.origem) ? null : versao.aplicacaoGeralId,
       });
     }
