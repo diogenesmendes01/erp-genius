@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { bloquearFontePropostaTx } from "./fonte-contratual-tx";
 import { z } from "zod";
 import { ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { carregarBaseAditivoTx } from "./aditivo-estado";
@@ -23,10 +24,10 @@ export async function exigirAlcadasAditivoTx(tx: Prisma.TransactionClient, propo
 export async function decidirAlcadaAditivoTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = zEntrada.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-  const p = await tx.propostaAditivoContratual.findFirst({ where: { id: d.propostaId, matriculaId: d.matriculaId }, include: { decisao: true, conclusaoOriginal: { select: { processoId: true } } } });
+  const p = await tx.propostaAditivoContratual.findFirst({ where: { id: d.propostaId, matriculaId: d.matriculaId }, include: { decisao: true } });
   if (!p) throw new ErroRegra("Proposta indisponível nesta matrícula.");
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${p.matriculaId} FOR UPDATE`;
-  await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaContratual" WHERE id = ${p.conclusaoOriginal.processoId} FOR UPDATE`;
+  await bloquearFontePropostaTx(tx, p);
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autorId} FOR SHARE`;
   const ator = await tx.usuario.findUnique({ where: { id: autorId }, select: { ativo: true, papeis: true, permissoes: true } });
   if (!ator || !podeDecidir(ator, d.alcada)) throw new ErroPermissao();

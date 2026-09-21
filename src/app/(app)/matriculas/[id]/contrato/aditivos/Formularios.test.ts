@@ -18,7 +18,7 @@ function montar(escolha: string, tentativa: string | null = null, data = "2026-1
     .mockReturnValueOnce([{ COBERTURA_INICIO: { tipo: "DATA", data: "2026-11-01" }, COBERTURA_FIM: { tipo: "DATA", data: "2026-11-30" }, ALUNO_NOME: { tipo: "TEXT", texto: "Nome corrigido" } }, vi.fn()]);
   m.preparar.mockResolvedValue({ ok: true, dado: { id: "proposta" } });
   const campos = cobertura ? ["COBERTURA_INICIO", "COBERTURA_FIM"] as const : ["ALUNO_NOME"] as const;
-  const arvore = PrepararAditivo({ matriculaId: "matricula", fonte: { conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }] });
+  const arvore = PrepararAditivo({ matriculaId: "matricula", fonte: { tipo: "CONCLUSAO", conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), origemHistoricaId: null, origemHash: null, campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }] });
   return { mensagem, registrarTentativa, async enviar() { arvore.props.onSubmit({ preventDefault() {}, currentTarget: {} }); await Promise.all(m.tarefas); } };
 }
 it("envia referência e data aprováveis no payload e na identidade da tentativa", async () => {

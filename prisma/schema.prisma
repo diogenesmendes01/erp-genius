@@ -515,6 +515,8 @@ model Usuario {
   aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("ExecutorAcertoTaxaAditivo")
   propostasAgendaAditivo PropostaAgendaAditivoParticular[] @relation("PreparadorAgendaAditivo")
+  origensContratuaisHistoricasPreparadas PropostaOrigemContratualHistorica[] @relation("PreparadorOrigemContratualHistorica")
+  origensContratuaisHistoricasDecididas DecisaoOrigemContratualHistorica[] @relation("DecisorOrigemContratualHistorica")
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("AplicadorAgendaAditivo")
   propostasDevolucaoCredito PropostaDevolucaoCredito[] @relation("PreparadorDevolucaoCredito")
   decisoesDevolucaoCredito DecisaoDevolucaoCredito[] @relation("DecisorDevolucaoCredito")
@@ -1755,6 +1757,7 @@ model Matricula {
   propostasAditivo PropostaAditivoContratual[]
   propostasAgendaAditivo PropostaAgendaAditivoParticular[]
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[]
+  origensContratuaisHistoricas PropostaOrigemContratualHistorica[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
   conjuntosImpactosTaxaAditivo ConjuntoImpactosTaxaAditivo[]
@@ -4480,6 +4483,48 @@ model ConclusaoAssinaturaContratual {
   registradaEm DateTime @default(now())
 }
 
+// Origem contratual histórica (contrato legado assinado fora do sistema): PDF assinado + transcrição das condições
+// + conferência dupla (preparador transcreve, outro administrador confere PDF e transcrição e decide). Aprovada, vale
+// como fonte de aditivos no lugar da conclusão assinada; nunca há as duas na mesma matrícula. Sem dado presumido:
+// só o que a transcrição declarar fica estruturado e pode ser alterado por aditivo.
+model PropostaOrigemContratualHistorica {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  referencia String
+  assinadoEm DateTime
+  pdfAssinado Bytes
+  pdfHash String
+  transcricao Json
+  transcricaoHash String
+  projecao Json
+  projecaoHash String
+  preparadorId String
+  preparador Usuario @relation("PreparadorOrigemContratualHistorica", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoOrigemContratualHistorica?
+  propostasAditivo PropostaAditivoContratual[]
+  propostasAgendaAditivo PropostaAgendaAditivoParticular[]
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoOrigemContratualHistorica {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaOrigemContratualHistorica @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorOrigemContratualHistorica", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  pdfHashConferido String
+  transcricaoHashConferido String
+  decididaEm DateTime @default(now())
+}
+
 model PropostaAditivoContratual {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
@@ -4497,8 +4542,11 @@ model PropostaAditivoContratual {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  conclusaoOriginalId String
-  conclusaoOriginal ConclusaoAssinaturaContratual @relation(fields: [conclusaoOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // Exatamente uma fonte (CHECK no banco): conclusão assinada no sistema OU origem contratual histórica aprovada.
+  conclusaoOriginalId String?
+  conclusaoOriginal ConclusaoAssinaturaContratual? @relation(fields: [conclusaoOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemHistoricaId String?
+  origemHistorica PropostaOrigemContratualHistorica? @relation(fields: [origemHistoricaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   modeloId String
   modelo VersaoModeloContratual @relation(fields: [modeloId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   versao Int
@@ -4696,8 +4744,10 @@ model PropostaAgendaAditivoParticular {
   propostaAditivo PropostaAditivoContratual?
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  conclusaoFonteId String
-  conclusaoFonte ConclusaoAssinaturaContratual @relation(fields: [conclusaoFonteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conclusaoFonteId String?
+  conclusaoFonte ConclusaoAssinaturaContratual? @relation(fields: [conclusaoFonteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemHistoricaId String?
+  origemHistorica PropostaOrigemContratualHistorica? @relation(fields: [origemHistoricaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   preparadorId String
   preparador Usuario @relation("PreparadorAgendaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   fotografia Json
