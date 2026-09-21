@@ -2,6 +2,9 @@ import Link from "next/link";
 import { EstadoEnvioAssinatura, Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDocumentosDesistenciaPreparacao } from "@/server/matricula/desistencia-documental";
+import { consultarDesistenciaPreparacao } from "@/server/matricula/desistencia-preparacao";
+import { consultarIntegracaoAssinatura } from "@/server/contratos/envio";
+import { CancelarAssinatura } from "./CancelarAssinatura";
 
 const estados: Record<EstadoEnvioAssinatura, string> = {
   PREPARADO: "Preparado para envio", ENVIANDO: "Envio em andamento", ENVIO_INCERTO: "Resultado do envio incerto",
@@ -20,10 +23,14 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
   const resposta = await consultarDocumentosDesistenciaPreparacao({ matriculaId: id });
   if (!resposta.ok || !resposta.dado) return <p role="alert">{resposta.ok ? "Conferência indisponível." : resposta.erro}</p>;
   const d = resposta.dado;
+  // O cancelamento integrado só aparece com driver ativo; pedido e estado vêm da conferência atual e são revalidados na ação.
+  const [integracao, preparacao] = await Promise.all([consultarIntegracaoAssinatura(), consultarDesistenciaPreparacao({ matriculaId: id })]);
+  const pedidoAtual = preparacao.ok && preparacao.dado && !preparacao.dado.efetivacao ? preparacao.dado.pedidos[0] ?? null : null;
+  const cancelamentoIntegrado = integracao.ok && integracao.dado && pedidoAtual && pedidoAtual.id === d.pedido?.id ? { pedidoId: pedidoAtual.id, estadoHash: pedidoAtual.estadoHash } : null;
   return <section className="space-y-5">
     <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Voltar ao pedido de desistência</Link>
     <h1 className="text-2xl font-medium">Conferência documental · {d.matricula.codigo ?? "Matrícula em preparação"}</h1>
-    <p>Confira os documentos e processos desta contratação. Esta consulta não cancela assinaturas, não efetiva a desistência e não autoriza devolução de valores.</p>
+    <p>Confira os documentos e processos desta contratação. {cancelamentoIntegrado ? "O cancelamento de um envio aberto é uma ação própria em cada processo; nada aqui" : "Esta consulta não cancela assinaturas,"} não efetiva a desistência e não autoriza devolução de valores.</p>
     <p>{d.pedido ? `Pedido mais recente: versão ${d.pedido.versao}.` : "Ainda não existe pedido de desistência registrado."}</p>
     <section className="space-y-2 rounded border p-4"><h2 className="text-lg font-medium">Pendências documentais</h2>
       {d.possuiPendenciaDocumental ? <ul className="list-disc pl-5">{d.pendencias.map((p, i) => <li key={i}>{p}</li>)}</ul>
@@ -40,6 +47,7 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
         <p>{p.referenciaExternaPresente ? "Referência externa registrada." : "Sem referência externa registrada; isso não comprova ausência de envio."}</p>
         <p>{p.conclusaoRegistrada ? "Conclusão das assinaturas registrada; exige tratamento contratual próprio." : "Sem conclusão de assinaturas registrada nesta consulta."}</p>
         <p>{cancelamentos[p.cancelamentoSubstituicao.situacao]}</p>
+        {cancelamentoIntegrado && p.estado === "ENVIADO" && !p.conclusaoRegistrada && <CancelarAssinatura pedidoId={cancelamentoIntegrado.pedidoId} processoId={p.id} estadoHash={cancelamentoIntegrado.estadoHash} />}
       </article>)}
     </section>
   </section>;
