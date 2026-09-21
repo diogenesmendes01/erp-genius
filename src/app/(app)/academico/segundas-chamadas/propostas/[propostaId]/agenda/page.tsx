@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAgendasIniciaisSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agenda-inicial";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { Formulario } from "./Formulario";
 
-const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short", timeStyle: "short", timeZone: fuso,
-}).format(new Date(valor));
-const periodo = (inicio: string, fim: string, fuso: string) => `${data(inicio, fuso)} até ${data(fim, fuso)} (${fuso})`;
+const data = (valor: string, preferencia: string | null, fuso: string) => { const e = formatarInstanteExibicao(valor, preferencia, fuso); return `${e.texto} (${e.fuso})`; };
+const periodo = (inicio: string, fim: string, preferencia: string | null, fuso: string) => { const i = formatarInstanteExibicao(inicio, preferencia, fuso); return `${i.texto} até ${formatarInstanteExibicao(fim, preferencia, fuso).texto} (${i.fuso})`; };
 const dataCivil = (valor: string) => {
   const [ano, mes, dia] = valor.slice(0, 10).split("-");
   return ano && mes && dia ? `${dia}/${mes}/${ano}` : valor;
@@ -19,6 +19,8 @@ export default async function AgendaInicial({ params, searchParams }: {
   searchParams: Promise<{ antesId?: string }>;
 }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const { propostaId } = await params;
   const { antesId } = await searchParams;
   const r = await consultarAgendasIniciaisSegundaChamada({ propostaSegundaChamadaId: propostaId, ...(antesId ? { antesId } : {}) });
@@ -29,13 +31,13 @@ export default async function AgendaInicial({ params, searchParams }: {
     <h1 className="text-2xl font-medium">Agenda inicial da segunda chamada</h1>
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
     <p>O encontro e a reserva só são criados na aprovação independente da agenda concreta.</p>
-    <Formulario propostaSegundaChamadaId={propostaId} professores={d.professores} podePropor={d.podePropor} />
+    <Formulario propostaSegundaChamadaId={propostaId} professores={d.professores} podePropor={d.podePropor} fusoExibicao={fusoExibicao} />
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
     {!d.itens.length && <p>Nenhuma agenda inicial foi preparada.</p>}
     {d.itens.map(item => <article key={item.id} className="space-y-2 rounded border p-4">
-      <p>Versão {item.versao} · Proposta de {item.autorNome} em {data(item.criadaEm, item.fusoOrigem)} ({item.fusoOrigem}).</p>
+      <p>Versão {item.versao} · Proposta de {item.autorNome} em {data(item.criadaEm, fusoExibicao, item.fusoOrigem)}.</p>
       <p>Professor: {item.professorNome}.</p>
-      <p>Horário proposto: {periodo(item.inicio, item.fim, item.fusoOrigem)}.</p>
+      <p>Horário proposto: {periodo(item.inicio, item.fim, fusoExibicao, item.fusoOrigem)}.</p>
       <p>Motivo: {item.motivo}</p><p>Evidência: {item.evidencia}</p>
       {item.calendario ? <>
         <p>Calendário conferido: versão {item.calendario.versao} · fuso institucional {item.calendario.fusoInstitucional}.</p>

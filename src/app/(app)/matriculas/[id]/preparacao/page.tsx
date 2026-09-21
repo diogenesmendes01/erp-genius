@@ -6,15 +6,20 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreparacaoContratacao } from "@/server/matricula/preparacao-consulta";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 export default async function PreparacaoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const { matricula: m, preparacao: p } = resultado.dado;
   const prontidao = usuario.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR) ? await consultarPendenciasPreparacao(id) : null;
   const tipos: Record<string, string> = { MATRICULA: "Taxa de matrícula", MENSALIDADE: "Mensalidade", HORA_PARTICULAR: "Hora particular (60 minutos)" };
   const estados = { ATIVA: "Ativa", MANTIDA_PENDENCIA: "Mantida por pendência", EXPIRADA: "Expirada", UTILIZADA: "Utilizada", LIBERADA: "Liberada" };
-  const data = (d: Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: p?.reserva?.janela.fusoAdmissao ?? p?.reservaParticular?.horarios[0]?.fusoOrigem ?? "UTC" }).format(d);
+  const fusoOrigem = p?.reserva?.janela.fusoAdmissao ?? p?.reservaParticular?.horarios[0]?.fusoOrigem ?? "UTC";
+  const data = (d: Date, origem = fusoOrigem) => formatarInstanteExibicao(d, fusoExibicao, origem).texto;
   return <div className="space-y-4"><Link className="underline" href={`/secretaria?matriculaId=${id}`}>Voltar à contratação</Link><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
     <p>{m.aluno.primeiroNome} {m.aluno.sobrenome} · {m.produto.idioma.nome} · {m.produto.modalidade.nome} · {m.pais.nome}</p>
     {prontidao && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Pedido de desistência da preparação</Link>}
@@ -25,7 +30,7 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
       </>}
     </section>}
     {!p ? <p>Esta matrícula não possui o registro de preparação comercial. Consulte os documentos e o histórico da contratação.</p> : <>
-      <p role="status">Condições propostas: conferência e aprovações pendentes.</p><p>Preparada por {p.preparador.nome} em {data(p.criadaEm)} · {p.reserva?.janela.fusoAdmissao ?? p.reservaParticular?.horarios[0]?.fusoOrigem}</p>
+      <p role="status">Condições propostas: conferência e aprovações pendentes.</p><p>Preparada por {p.preparador.nome} em {data(p.criadaEm)} · {formatarInstanteExibicao(p.criadaEm, fusoExibicao, fusoOrigem).fuso}</p>
       <dl className="space-y-2"><div><dt>Regime proposto</dt><dd>{tipos[p.regime]}</dd></div><div><dt>Taxa proposta</dt><dd>{formatarMoeda(Number(p.taxaProposta), p.moeda)}</dd></div><div><dt>Valor proposto por mensalidade ou hora</dt><dd>{formatarMoeda(Number(p.valorServicoProposto), p.moeda)}</dd></div></dl>
       <p className="whitespace-pre-wrap">{p.motivo}</p>
       <h2 className="text-xl">Regras de entrada registradas</h2>
@@ -49,7 +54,7 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
       {prontidao && p.reservaParticular?.status === "ATIVA" && p.reservaParticular.expiraEm <= new Date() && <ConferirReserva reservaId={p.reservaParticular.id} particular />}
       {p.reservaParticularOriginal && p.reservaParticularOriginal.id !== p.reservaParticular?.id && <p>Uma nova reserva substituiu a original. A reserva de origem permanece no histórico como {estados[p.reservaParticularOriginal.status]}.</p>}
       {prontidao && p.reservaParticular && ["EXPIRADA", "LIBERADA"].includes(p.reservaParticular.status) && <Link className="underline" href={`/matriculas/${id}/nova-reserva`}>Retomar com nova reserva particular</Link>}
-      {p.reservaParticular && <><p>Particular · {estados[p.reservaParticular.status]} · Prazo: {data(p.reservaParticular.expiraEm)}</p><ul>{p.reservaParticular.horarios.map((h) => <li key={h.id}>{h.professor.nome} · {data(h.inicio)} — {data(h.fim)} · {h.fusoOrigem}</li>)}</ul><p>Confira o contrato e a emissão inicial com os horários reservados. O envio ao serviço de assinatura e a ativação desta particular ainda dependem da conclusão das integrações.</p></>}
+      {p.reservaParticular && <><p>Particular · {estados[p.reservaParticular.status]} · Prazo: {data(p.reservaParticular.expiraEm)}</p><ul>{p.reservaParticular.horarios.map((h) => <li key={h.id}>{h.professor.nome} · {data(h.inicio, h.fusoOrigem)} — {data(h.fim, h.fusoOrigem)} · {formatarInstanteExibicao(h.inicio, fusoExibicao, h.fusoOrigem).fuso}</li>)}</ul><p>Confira o contrato e a emissão inicial com os horários reservados. O envio ao serviço de assinatura e a ativação desta particular ainda dependem da conclusão das integrações.</p></>}
       <p>{m.secretariaAssumiuEm ? "A Secretaria já assumiu a matrícula." : "Aguardando a Secretaria assumir a matrícula."}</p>
       <Link className="underline" href={`/matriculas/${id}/reserva`}>Consultar reserva atual da contratação</Link>
     </>}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { decidirSegundaChamada, proporSegundaChamada } from "@/server/avaliacoes/segunda-chamada";
 import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamada-disponibilizacao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
 
 type Item = {
@@ -21,11 +22,7 @@ type Item = {
 
 type Resultado = { ok: boolean; erro?: string };
 
-const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: fuso,
-}).format(new Date(valor));
+const data = (valor: string, fuso: string) => formatarInstanteExibicao(valor, null, fuso).texto;
 
 export function SegundaChamadaPainel({
   alocacaoId, codigoAvaliacao, itens, ativa, fuso, fusoEntrada,
