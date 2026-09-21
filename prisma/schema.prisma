@@ -789,6 +789,7 @@ model Usuario {
   remarcacoesAgendaSegundaChamadaDecididas DecisaoRemarcacaoAgendaSegundaChamada[] @relation("DecisorRemarcacaoAgendaSegundaChamada")
   realizacoesSegundaChamada RealizacaoSegundaChamada[] @relation("ProfessorRealizacaoSegundaChamada")
   realizacoesSegundaChamadaRegistradas RealizacaoSegundaChamada[] @relation("RegistradorRealizacaoSegundaChamada")
+  resolucoesImpedimentoSegundaChamada ResolucaoImpedimentoSegundaChamada[] @relation("ConfirmadorResolucaoImpedimentoSegundaChamada")
   extrasSegundaChamada PropostaExtraSegundaChamada[] @relation("AutorExtraSegundaChamada")
   decisoesExtraSegundaChamada DecisaoExtraSegundaChamada[] @relation("DecisorExtraSegundaChamada")
   autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[] @relation("AutorizadorEspecialSegundaChamada")
@@ -6568,6 +6569,7 @@ id String @id @default(cuid())
   propostasRemarcacaoAgenda PropostaRemarcacaoAgendaSegundaChamada[]
   propostasSubstituicaoAgenda PropostaSubstituicaoAgendaSegundaChamada[]
   realizacao RealizacaoSegundaChamada?
+  resolucaoImpedimento ResolucaoImpedimentoSegundaChamada?
  @@index([matriculaId,regraId,codigoAvaliacao,status])
 }
 
@@ -6853,6 +6855,24 @@ id String @id @default(cuid())
  criadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
  lancamentoOriginalId String? @unique
  lancamentosOriginais VersaoLancamentoAvaliacao[] @relation("LancamentoOriginalSegundaChamada")
+ resolucoesImpedimento ResolucaoImpedimentoSegundaChamada[]
+}
+
+// Q164: o impedimento causado pela escola permanece como fato histórico; a gestão
+// pedagógica confirma sua resolução apontando a realização posterior com nota oficial.
+model ResolucaoImpedimentoSegundaChamada {
+ id String @id @default(cuid())
+ reservaImpedidaId String @unique
+ reservaImpedida ReservaSegundaChamada @relation(fields:[reservaImpedidaId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ realizacaoId String
+ realizacao RealizacaoSegundaChamada @relation(fields:[realizacaoId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ confirmadaPorId String
+ confirmadaPor Usuario @relation("ConfirmadorResolucaoImpedimentoSegundaChamada",fields:[confirmadaPorId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ motivo String
+ chaveIdempotencia String
+ confirmadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
+ @@unique([confirmadaPorId,chaveIdempotencia])
+ @@index([realizacaoId])
 }
 
 model PropostaExtraSegundaChamada {
