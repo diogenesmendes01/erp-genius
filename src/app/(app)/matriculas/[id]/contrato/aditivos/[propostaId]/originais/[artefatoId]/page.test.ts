@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({ sessao: vi.fn(), assinatura: vi.fn(), processo
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/contratos/aditivo-assinatura", () => ({ consultarAssinaturaAditivo: mocks.assinatura }));
+vi.mock("@/server/contratos/envio", () => ({ consultarIntegracaoAssinatura: vi.fn().mockResolvedValue({ ok: true, dado: null }) }));
 vi.mock("@/server/contratos/aditivo-envio", () => ({ consultarProcessoAssinaturaAditivo: mocks.processo }));
 vi.mock("@/server/contratos/aditivo-conclusao", () => ({ consultarConclusaoAssinaturaAditivo: mocks.conclusao }));
 vi.mock("@/server/contratos/aditivo-conferencia-final", () => ({ consultarConferenciaFinalAditivo: mocks.final }));
