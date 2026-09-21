@@ -1,0 +1,22 @@
+{
+  "incremento": 243,
+  "data": "2026-09-12",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 19,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 48,
+    "novasRotas": [
+      "/academico/correcoes/[lancamentoId]",
+      "/academico/correcoes/[lancamentoId]/[propostaId]"
+    ]
+  },
+  "homologacaoInterativa": false,
+  "migrationsNovas": 0
+}

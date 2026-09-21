@@ -1,0 +1,19 @@
+{
+  "incremento": 293,
+  "data": "2026-09-13",
+  "escopo": "Aprovação independente e liquidação de cobrança com crédito, sem entrada fictícia de caixa",
+  "integracao": { "aprovados": 107, "falhos": 0, "arquivos": 6, "execucoes": [ { "testes": 77, "arquivos": ["compra-horas.int.test.ts", "politica.int.test.ts", "retomada/fluxo.int.test.ts", "ajustes/ficha.int.test.ts"] }, { "testes": 30, "arquivos": ["pausa-proposta.int.test.ts", "pausa-previa.int.test.ts"] } ] },
+  "unitarios": { "aprovados": 54, "falhos": 0, "arquivos": 3 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 139,
+  "migrationNova": "20260914053000_liquidacao_credito",
+  "ultimaRegressaoIntegral": 283,
+  "coberturaNova": ["Independência e permissão do aprovador", "Aprovação concorrente idempotente", "Quitação integral por crédito sem Recebimento", "Liquidação mista sem excedente", "Revalidação de versão e saldo", "Rejeição preserva crédito", "Saldo derivado protegido contra alteração incoerente", "Crédito considerado na conferência aritmética de pausa e retomada"],
+  "limites": ["Destinação entre contratos do mesmo aluno pendente", "Devolução de dinheiro e disputa com utilização pendentes", "Encerramento e compra antecipada com crédito aplicado ainda exigem revisão dos validadores específicos", "Homologação integrada de todos os consumidores financeiros pendente", "Objetivo geral não concluído"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

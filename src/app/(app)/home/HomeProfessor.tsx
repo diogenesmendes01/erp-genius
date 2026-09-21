@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkinExperimental } from "@/server/comercial/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 interface Turma {
   id: string;
@@ -16,17 +17,21 @@ interface Experimental {
   nome: string;
   data: string;
   /** B9 (doc 32): aula já passou (além da tolerância) sem check-in — cobrar já. */
-  vencida: boolean;
+  vencida?: boolean;
 }
 
 export function HomeProfessor({
   nome,
   turmas,
   experimentais,
+  proximaExperimental,
+  preferenciaFusoExibicao,
 }: {
   nome: string;
   turmas: Turma[];
   experimentais: Experimental[];
+  proximaExperimental: Experimental | null;
+  preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -41,9 +46,10 @@ export function HomeProfessor({
     else router.refresh();
   }
 
-  // "Próxima aula" é a próxima FUTURA — uma vencida não é próxima, é pendência (B9).
-  const proxima =
-    [...experimentais].filter((e) => !e.vencida).sort((a, b) => a.data.localeCompare(b.data))[0] ?? null;
+  const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  // A seleção vem do servidor. Não recalcule a partir dos check-ins exibidos: uma lista
+  // pode conter apenas pendências passadas, sem próxima aula disponível.
+  const proxima = proximaExperimental && !proximaExperimental.vencida ? proximaExperimental : null;
   const vencidas = experimentais.filter((e) => e.vencida).length;
 
   return (
@@ -62,7 +68,7 @@ export function HomeProfessor({
         <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
           <div className="text-xs font-medium text-brand-700">Próxima aula experimental</div>
           <div className="mt-1 text-lg font-medium text-gray-800">
-            {new Date(proxima.data).toLocaleString("pt-BR", { weekday: "short", hour: "2-digit", minute: "2-digit" })} · {proxima.nome}
+            {data(proxima.data).texto} ({data(proxima.data).fuso}; origem UTC) · {proxima.nome}
           </div>
         </section>
       )}
@@ -84,7 +90,7 @@ export function HomeProfessor({
                 <div className="text-sm">
                   <span className="font-medium text-gray-800">{e.nome}</span>
                   <span className="ml-2 text-gray-500">
-                    {new Date(e.data).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    {data(e.data).texto} ({data(e.data).fuso}; origem UTC)
                   </span>
                   {e.vencida && (
                     <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">

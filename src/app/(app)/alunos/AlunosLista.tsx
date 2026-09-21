@@ -12,8 +12,8 @@ export interface AlunoRow {
   nome: string;
   status: StatusAluno;
   pais: string;
-  turma: { id: string; label: string } | null;
-  financeiro: { atrasado: boolean; emAberto: { moeda: string; valor: number }[] };
+  turmas: { id: string; label: string }[];
+  financeiro: { atrasado: boolean; emAberto: { moeda: string; valor: number }[] } | null;
 }
 
 const STATUS_CLS: Record<StatusAluno, string> = {
@@ -35,10 +35,11 @@ export function AlunosLista({
   const [status, setStatus] = useState("");
   const [pais, setPais] = useState("");
   const [turma, setTurma] = useState("");
+  const exibirFinanceiro = alunos.some((a) => a.financeiro !== null);
 
   const paisesOpts = useMemo(() => Array.from(new Set(alunos.map((a) => a.pais))).sort(), [alunos]);
   const turmasOpts = useMemo(
-    () => Array.from(new Set(alunos.map((a) => a.turma?.label).filter(Boolean) as string[])).sort(),
+    () => Array.from(new Set(alunos.flatMap((a) => a.turmas.map((t) => t.label)))).sort(),
     [alunos],
   );
 
@@ -48,7 +49,7 @@ export function AlunosLista({
         (a) =>
           (!status || a.status === status) &&
           (!pais || a.pais === pais) &&
-          (!turma || a.turma?.label === turma) &&
+          (!turma || a.turmas.some((t) => t.label === turma)) &&
           (!busca ||
             a.nome.toLowerCase().includes(busca.toLowerCase()) ||
             (a.codigo ?? "").toLowerCase().includes(busca.toLowerCase())),
@@ -122,13 +123,13 @@ export function AlunosLista({
               <th className="px-4 py-2 font-medium">País</th>
               <th className="px-4 py-2 font-medium">Turma</th>
               <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Financeiro</th>
+              {exibirFinanceiro && <th className="px-4 py-2 font-medium">Financeiro</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtrados.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-400">
+                <td colSpan={exibirFinanceiro ? 5 : 4} className="px-4 py-6 text-center text-sm text-gray-400">
                   Nenhum aluno.
                 </td>
               </tr>
@@ -142,19 +143,19 @@ export function AlunosLista({
                     <div className="text-xs text-gray-400">{a.codigo}</div>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{a.pais}</td>
-                  <td className="px-4 py-3 text-gray-600">{a.turma?.label ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-600">{a.turmas.length ? a.turmas.map((t) => <div key={t.id}>{t.label}</div>) : "—"}</td>
                   <td className="px-4 py-3">
                     <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_CLS[a.status]}>
                       {STATUS_ALUNO_LABEL[a.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    {a.financeiro.atrasado ? (
+                  {exibirFinanceiro && <td className="px-4 py-3">
+                    {a.financeiro === null ? "—" : a.financeiro.atrasado ? (
                       <span className="text-red-600">Em atraso</span>
                     ) : (
                       <span className="text-green-600">Em dia</span>
                     )}
-                  </td>
+                  </td>}
                 </tr>
               ))
             )}

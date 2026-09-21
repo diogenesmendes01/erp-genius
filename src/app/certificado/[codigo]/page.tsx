@@ -1,4 +1,4 @@
-import { validarCertificado } from "@/server/academico/consultas";
+import { validarCertificado } from "@/server/academico/consultas-legado";
 
 // VALIDAÇÃO PÚBLICA de certificado (Fase 3): terceiros conferem a autenticidade pelo
 // código impresso no certificado. Projeção mínima (nome + nível + data de emissão).

@@ -6,6 +6,19 @@ import { Prisma } from "@prisma/client";
 
 /** Agregados conhecidos (mantém consistência com o catálogo de eventos). */
 export type AgregadoTipo =
+  | "RegraAvaliacao"
+  | "ModeloContratual"
+  | "ConfiguracaoOperacional"
+  | "PoliticaComissao"
+  | "CoberturaCarteira"
+  | "AtendimentoWhatsApp"
+  | "PagamentoInformado"
+  | "Recebimento"
+  | "SolicitacaoCorrecaoCadastro"
+  | "AulaDiario"
+  | "EncontroAgenda"
+  | "VinculoDocente"
+  | "Exportacao"
   | "Lead"
   | "Matricula"
   | "Aluno"
@@ -18,6 +31,7 @@ export type AgregadoTipo =
   | "Modalidade"
   | "Nivel"
   | "Produto"
+  | "ProdutoPais"
   | "Preco"
   | "TaxaCambio"
   // Canal WhatsApp (docs 26/30). Conversa/Mensagem NÃO são agregados de Evento:
@@ -30,6 +44,7 @@ export type AgregadoTipo =
   // régua comercial editável (lead-novo e demais cadências).
   | "ConfigComercial"
   | "PoliticaComercial"
+  | "LotePreparacaoMigracao"
   // Fase 2 (doc 03): financeiro automatizado + B2B.
   | "ConfigFinanceiro"
   | "Empresa"
@@ -64,8 +79,8 @@ export interface EntradaEvento {
 export async function registrarEvento(
   tx: Prisma.TransactionClient,
   entrada: EntradaEvento,
-): Promise<void> {
-  await tx.evento.create({
+) {
+  return tx.evento.create({
     data: {
       tipo: entrada.tipo,
       agregadoTipo: entrada.agregadoTipo,

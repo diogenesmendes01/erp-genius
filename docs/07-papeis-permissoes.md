@@ -2,6 +2,8 @@
 
 > O modelo de acesso do sistema. Vale para todas as fases.
 
+> Atualização de 07/09/2026: a [política de acesso aprovada no doc 36](C:/Users/Mendes/.codex/worktrees/de19/erp-genius/docs/36-politica-de-acesso-aprovada.md) detalha ação, registro, campo e condição e prevalece sobre este documento nas divergências de permissões. Sua aprovação não representa implementação ou homologação do código.
+
 ## Princípio: a escola é uma só (sem divisão por país)
 
 Os papéis **não são ligados a país nem região**. A distribuição geográfica de leads

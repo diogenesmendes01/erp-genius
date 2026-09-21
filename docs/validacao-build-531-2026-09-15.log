@@ -1,0 +1,14 @@
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.mjs took 13ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.5s
+  Running TypeScript ...
+src/server/matricula/continuidade-cadeia.test.ts(97,45): error TS2352: Conversion of type '{ mensalidades: { status: "EMITIDA"; id: string; coberturaInicio: string | null; coberturaFim: string | null; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | "COBERTURA_FUTURA" | null; }[]; }' to type '{ mensalidades: { id: string; coberturaInicio: string | null; coberturaFim: string | null; status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADA"; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | ... 1 more ... | null; }[]; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'mensalidades' are incompatible.
+    Type '{ status: "EMITIDA"; id: string; coberturaInicio: string | null; coberturaFim: string | null; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | "COBERTURA_FUTURA" | null; }[]' is not comparable to type '{ id: string; coberturaInicio: string | null; coberturaFim: string | null; status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADA"; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | ... 1 more ... | null; }[]'.
+      Type '{ status: "EMITIDA"; id: string; coberturaInicio: string | null; coberturaFim: string | null; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | "COBERTURA_FUTURA" | null; }' is not comparable to type '{ id: string; coberturaInicio: string | null; coberturaFim: string | null; status: "PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADA"; suspensaPorItemPausaId: string | null; regularizacaoIntegral: "CREDITO" | ... 1 more ... | null; }'.
+        Types of property 'status' are incompatible.
+          Type '"EMITIDA"' is not comparable to type '"PENDENTE" | "PAGO" | "ATRASADO" | "CANCELADA"'.
+Failed to type check.
+

@@ -1,0 +1,22 @@
+{
+  "incremento": 280,
+  "data": "2026-09-13",
+  "escopo": "Ativação transacional da preparação comercial em turma, com aceite integrado, pagamentos, uso da reserva e emissão de entrada",
+  "unitarios": { "aprovados": 791, "arquivos": 86, "falhas": 0 },
+  "integracao": {
+    "aprovados": 79,
+    "falhas": 0,
+    "arquivos": ["src/server/matricula/reserva-vaga.int.test.ts", "src/server/matricula/ativacao.int.test.ts", "src/server/secretaria/politica.int.test.ts"],
+    "cenarios": ["Primeira mensalidade exigida antes da ativação", "Primeira mensalidade emitida na ativação quando dispensada na entrada", "Pagamentos e aceite integrado obrigatórios", "Política de comissão ausente impede ativação", "Falha após os efeitos reverte a transação", "Duas transações concorrentes sem duplicação", "Repetição pela ação pública", "Recebimentos preservados", "Fluxos legados e Secretaria"],
+    "ajuste": "Duas expectativas antigas de mensagem foram atualizadas para os bloqueios anteriores do novo fluxo; mantida a verificação direta da política de entrada."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "novaMigration": false,
+  "ultimaRegressaoIntegral": 279,
+  "limites": ["Ativação particular ainda bloqueada", "Restrição legada de um vínculo ativo por aluno preservada até migração dos consumidores", "Situação global legada do aluno ainda exige conferência", "Sem geração presumida de doze mensalidades futuras", "Integração real de assinatura ainda pendente"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

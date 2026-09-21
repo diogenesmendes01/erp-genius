@@ -1,0 +1,14 @@
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "erp_genius_test", schema "public" at "localhost:54329"
+
+302 migrations found in prisma/migrations
+
+Applying migration `20260915141000_atendimento_whatsapp_matricula`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260915141000_atendimento_whatsapp_matricula/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

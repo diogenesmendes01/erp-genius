@@ -1,0 +1,22 @@
+{
+  "incremento": 270,
+  "data": "2026-09-13",
+  "escopo": "Regularização de realização de recuperação com autoria separada",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 52,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "paginasEstaticas": 52
+  },
+  "migration": "20260913230000_regularizacao_realizacao_recuperacao",
+  "schemaDiff": "vazio",
+  "banco": "descartável local",
+  "ultimaRegressaoIntegral": 265,
+  "homologacaoInterativa": false,
+  "producao": false
+}

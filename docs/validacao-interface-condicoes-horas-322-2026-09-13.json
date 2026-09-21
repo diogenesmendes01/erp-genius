@@ -1,0 +1,6 @@
+{
+ "incremento":322,"data":"2026-09-13","escopo":"Interface e consulta das condições por hora",
+ "integracao":{"aprovados":5,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas","novaMigration":false,
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Sem homologação interativa","Conferência financeira e emissão integradas pendentes","Acesso por navegação de matrículas legadas pendente"],"producao":false,"enviosExternos":false
+}

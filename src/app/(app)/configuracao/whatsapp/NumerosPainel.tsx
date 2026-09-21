@@ -25,7 +25,7 @@ interface FormNumero {
   telefoneE164: string;
   rotulo: string;
   driver: "META_CLOUD" | "BAILEYS";
-  finalidade: "COBRANCA" | "VENDAS";
+  finalidade: "COBRANCA" | "VENDAS" | "AGENDA";
   providerRef: string;
   donoId: string;
   ativo: boolean;
@@ -107,7 +107,7 @@ export function NumerosPainel({
                       {n.driver === "META_CLOUD" ? "oficial (Meta Cloud)" : "baileys (Evolution)"}
                     </span>
                     <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">
-                      {n.finalidade === "COBRANCA" ? "cobrança" : "vendas"}
+                      {n.finalidade === "COBRANCA" ? "cobrança" : n.finalidade === "VENDAS" ? "vendas" : "agenda"}
                     </span>
                     {n.driver === "BAILEYS" && (
                       <span className={"rounded-full px-1.5 py-0.5 " + badge.cls}>{badge.label}</span>
@@ -197,6 +197,7 @@ export function NumerosPainel({
               >
                 <option value="COBRANCA">Cobrança</option>
                 <option value="VENDAS">Vendas</option>
+                <option value="AGENDA">Agenda institucional</option>
               </select>
             </label>
             <label className="text-xs text-gray-600">

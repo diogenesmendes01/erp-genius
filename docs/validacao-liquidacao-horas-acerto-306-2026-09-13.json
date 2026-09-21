@@ -1,0 +1,9 @@
+{
+ "incremento": 306, "data": "2026-09-13",
+ "escopo": "Liquidação de horas na transação do acerto e bloqueio de reutilização",
+ "integracao": { "compraHorasExecucaoFinal": 22, "encerramentoExecucaoAnterior": 7, "falhosNaExecucaoFinal": 0 },
+ "unitarios": 7, "typescript": "aprovado", "lint": "aprovado", "build": "aprovado, 52 páginas",
+ "migrations": 143, "schemaDiff": "vazio", "ultimaRegressaoIntegral": 298,
+ "limites": ["Efetivação completa ainda pendente", "Conferir constraints diferidas explicitamente antes de retornar sucesso", "Cenário monetário zero integrado ainda pendente", "Sem homologação interativa"],
+ "producao": false, "enviosExternos": false
+}

@@ -1,0 +1,18 @@
+{
+  "incremento": 295,
+  "data": "2026-09-13",
+  "escopo": "Apuração de encerramento considerando crédito já aplicado, separado de dinheiro",
+  "unitarios": { "aprovados": 24, "falhos": 0, "arquivos": ["encerramento-calculo.test.ts", "encerramento-previa-calculo.test.ts", "encerramento-outras-cobrancas.test.ts", "encerramento-acerto.test.ts"] },
+  "integracao": { "aprovados": 28, "falhos": 0, "arquivos": ["compra-horas.int.test.ts", "encerramento-solicitacao.int.test.ts", "condicoes-encerramento.int.test.ts"] },
+  "typescript": "aprovado no build final",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "migrationsNovas": 0,
+  "ultimaRegressaoIntegral": 283,
+  "coberturaNova": ["Contexto confere utilizações aprovadas reais no banco", "Quitação por crédito com dinheiro nulo", "Proporcional considera crédito sem alterar dinheiro recebido", "Compensações conservam crédito aplicado sem duplicar dias", "Demais cobranças conservam fontes da quitação mista"],
+  "ajusteDeTeste": "Fixture de segunda cobrança herdava o crédito da primeira por spread; corrigida para representar dívida sem liquidação, preservando a expectativa financeira original",
+  "limites": ["Efetivação financeira do acerto ainda pendente", "Crédito apurado não é saldo emitido nem devolução executada", "Destinação entre contratos e devoluções pendentes", "Objetivo geral não concluído"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

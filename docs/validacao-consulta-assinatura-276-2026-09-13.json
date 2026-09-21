@@ -1,0 +1,19 @@
+{
+  "incremento": 276,
+  "data": "2026-09-13",
+  "escopo": "Consulta protegida do processo, PDF assinado e auditoria; aceite final e adaptador pendentes",
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "aprovados": 61,
+    "falhas": 0,
+    "ajusteAposPrimeiraExecucao": "Usuário desativado invalida sessão (401), em vez de papel insuficiente (403)."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "novaMigration": false,
+  "ultimaRegressaoIntegral": 273,
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

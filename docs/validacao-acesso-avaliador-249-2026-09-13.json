@@ -1,0 +1,14 @@
+{
+  "incremento": 249,
+  "data": "2026-09-13",
+  "escopo": "Consulta limitada de avaliações pendentes designadas e filtro no painel",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 29, "falhas": 0 },
+  "correcaoDuranteValidacao": "Primeira execução: 28 aprovados e um erro no enum do papel do usuário no teste; corrigido para SECRETARIA_ACADEMICA. Reexecução final após painel: 29 aprovados.",
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "ultimaRegressaoIntegral": 245,
+  "migrationsNovas": 0,
+  "homologacaoInterativa": false,
+  "pendencias": ["Lançamento pelo substituto com autoria histórica distinta", "Interface de gestão das designações", "Demais fluxos da SPEC"]
+}

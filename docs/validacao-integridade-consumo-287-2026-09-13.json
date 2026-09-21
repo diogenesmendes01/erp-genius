@@ -1,0 +1,18 @@
+{
+  "incremento": 287,
+  "data": "2026-09-13",
+  "escopo": "Integridade estrutural do consumo e preservação de sua base acadêmica no banco",
+  "integracao": { "aprovados": 23, "falhos": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts", "src/server/diario/diario.int.test.ts"] },
+  "coberturaSQL": ["Autor sem permissão recusado", "Consumo por realização sem presença recusado", "Conteúdo e presença de horas consumidas protegidos", "Cancelamento direto de encontro consumido recusado", "Conclusão acadêmica posterior PREVISTO para MINISTRADO permitida sem alteração de contexto", "Consumo imutável"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "migrations": 133,
+  "migrationsNovas": ["20260914023000_integridade_consumo_horas", "20260914024000_contexto_trigger_consumo"],
+  "build": { "incremento": 286, "mesmoCodigoExecutavel": true, "paginasEstaticas": 52 },
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Hash exato e horário terminado continuam conferidos no serviço", "Correção aprovada com ajuste financeiro ainda pendente", "Cancelamento, liberação, validade e acerto do saldo continuam incompletos"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

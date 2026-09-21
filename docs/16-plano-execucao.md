@@ -1,5 +1,7 @@
 # Plano de Execução — ERP Genius
 
+> Integração da SPEC em 21/09/2026: os status Fases 0–3 abaixo descrevem a linha histórica da main. O aceite atual está em [quadro-entregas](planejamento/quadro-entregas.md). Diário/notas/portal/ativação usam os fluxos refinados; os atalhos antigos, a conciliação simulada sem ledger e a criação de contratos corporativos em lote não estão liberados nesta entrega.
+
 > Plano mestre para (A) **fechar a documentação** e (B) **implementar a Fase 0** em código,
 > nessa ordem. Documento vivo: marque os itens conforme avançarem.
 

@@ -1,0 +1,6 @@
+{
+ "incremento":314,"data":"2026-09-13","escopo":"Conferência da agenda no limite contratual",
+ "integracao":{"aprovados":32,"falhos":0,"arquivos":2},"typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas",
+ "ultimaSuiteUnitariaIntegral":311,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Operação pública e composição com apurações/reservas pendentes","Não cancela aulas automaticamente","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

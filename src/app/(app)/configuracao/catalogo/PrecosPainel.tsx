@@ -32,6 +32,7 @@ export const TIPO_LABEL: Record<TipoCobranca, string> = {
   HORA_PARTICULAR: "Hora particular",
   MATERIAL: "Material",
   CERTIFICADO: "Certificado",
+  MULTA_ENCERRAMENTO: "Multa de encerramento",
 };
 
 export function PrecosPainel({
@@ -132,7 +133,7 @@ export function PrecosPainel({
                 onChange={(e) => setTipo(e.target.value as TipoCobranca)}
                 className={inputCls + " w-full"}
               >
-                {Object.values(TipoCobranca).map((t) => (
+                {Object.values(TipoCobranca).filter(t => t !== TipoCobranca.MULTA_ENCERRAMENTO).map((t) => (
                   <option key={t} value={t}>
                     {TIPO_LABEL[t]}
                   </option>

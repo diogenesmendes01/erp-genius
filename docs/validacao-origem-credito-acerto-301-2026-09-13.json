@@ -1,0 +1,9 @@
+{
+ "incremento": 301, "data": "2026-09-13",
+ "escopo": "Persistência de origem de crédito de acerto com correspondência ao plano aprovado",
+ "integracao": { "aprovados": 28, "falhos": 0, "arquivos": ["encerramento-solicitacao.int.test.ts", "compra-horas.int.test.ts"] },
+ "typescript": "aprovado no build", "lintDirecionado": "aprovado", "build": { "aprovado": true, "paginasEstaticas": 52 },
+ "migrations": 141, "schemaDiff": "vazio", "ultimaRegressaoIntegral": 298,
+ "limites": ["Emissão transacional pelo fluxo completo de encerramento pendente", "Testes de estrutura não comprovam execução integral", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false, "producao": false, "enviosExternos": false
+}

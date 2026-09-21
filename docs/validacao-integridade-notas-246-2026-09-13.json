@@ -1,0 +1,32 @@
+{
+  "incremento": 246,
+  "data": "2026-09-13",
+  "migrations": [
+    "20260913090000_integridade_notas",
+    "20260913100000_corrigir_integridade_notas"
+  ],
+  "integracao": {
+    "escopo": "src/server/avaliacoes",
+    "arquivos": 4,
+    "aprovados": 55,
+    "falhasFinais": 0,
+    "primeiraExecucao": {
+      "aprovados": 35,
+      "falhas": 20,
+      "motivo": "Alias SQL n ambíguo; corrigido por migration112"
+    },
+    "porArquivo": {
+      "lancamentos.int.test.ts": 25,
+      "migracao-regra.int.test.ts": 14,
+      "regra-turma.int.test.ts": 6,
+      "regras.int.test.ts": 10
+    }
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "diffCheck": "aprovado",
+  "ultimoBuild": 245,
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

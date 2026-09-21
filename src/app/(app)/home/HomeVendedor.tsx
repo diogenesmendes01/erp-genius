@@ -10,6 +10,7 @@ import {
 import { ETAPA_LABEL } from "@/lib/labels";
 import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeVendedor } from "@/server/home/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeVendedor>>;
 
@@ -38,7 +39,15 @@ const FAIXA: Record<keyof typeof PRIO, string> = {
   proposta: "Média",
 };
 
-export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
+export function HomeVendedor({
+  nome,
+  dados,
+  preferenciaFusoExibicao,
+}: {
+  nome: string;
+  dados: Dados;
+  preferenciaFusoExibicao: string | null;
+}) {
   const { cards, sla, fila, agenda, kanban, metaMes } = dados;
   const oportunidades = fila.slice(0, 3);
   return (
@@ -130,7 +139,7 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
               {agenda.map((a) => (
                 <li key={a.id}>
                   <span className="text-gray-500">
-                    {new Date(a.hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {formatarInstanteExibicao(a.hora, preferenciaFusoExibicao, "UTC").texto}
                   </span>{" "}
                   — <Link href={`/leads/${a.id}`} className="text-brand-700 hover:underline">{a.nome}</Link>
                 </li>

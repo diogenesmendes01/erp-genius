@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
+import { confirmarTransacao } from "@/lib/transacao-confirmada";
+import { cicloDoEventoCobranca, registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
 import {
   CHAVE_CONTRATO,
   CHAVE_LEAD_NOVO,
@@ -13,6 +14,12 @@ import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
 import { driverEvolution } from "./drivers/evolution";
 import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
+import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
+import { atendimentoVisivel } from "./atendimentos";
+import { Papel } from "@prisma/client";
+import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
+import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
+import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -65,6 +72,8 @@ export interface OpcoesDespacho {
   /** Limita o dreno a UMA intenção (review PR #53 P2): o webhook despacha só a saudação
    *  reativa recém-criada, nunca a fila global de cobrança/lotes a partir de um inbound. */
   intencaoId?: string;
+  /** Cron de agenda nunca pode drenar cobrança/comercial por acidente. */
+  somenteAvisosAgenda?: boolean;
 }
 
 export async function despacharFila(
@@ -94,9 +103,12 @@ export async function despacharFila(
   const intencoes = await prisma.intencaoMensagem.findMany({
     where: {
       ...(opts.intencaoId ? { id: opts.intencaoId } : {}),
+      ...(opts.somenteAvisosAgenda ? { avisoAlteracaoAgendaId: { not: null } } : {}),
       OR: [
         { status: "PENDENTE" },
         { status: "ADIADA", despacharAposEm: { lte: agora } },
+        // Conferência pode terminar antes do prazo: revalidar a cada execução.
+        { status: "ADIADA", motivoFalha: "comprovante_em_conferencia" },
       ],
     },
     orderBy: { criadaEm: "asc" },
@@ -109,6 +121,7 @@ export async function despacharFila(
       // Fuso do destino no caminho comercial (S3) + estado de FECHAMENTO (B7 nas cadências C4).
       lead: { include: { pais: true, matricula: { include: { cobrancas: { where: { tipo: "MATRICULA" } } } } } },
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
+      avisoAlteracaoAgenda: true,
     },
   });
 
@@ -123,8 +136,21 @@ export async function despacharFila(
   };
 
   for (const it of intencoes) {
+    const invalida = await motivoIntencaoInvalida(it, agora);
+    if (invalida) {
+      await marcar(it.id, "CANCELADA", invalida);
+      r.canceladas += 1;
+      continue;
+    }
+    const conferirAte = it.cobrancaId ? await suspensaoPorConferencia(it.cobrancaId, agora) : null;
+    if (conferirAte) {
+      if (await adiar(it.id, conferirAte, "comprovante_em_conferencia")) r.adiadas += 1;
+      else r.canceladas += 1;
+      continue;
+    }
     // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
     // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
+    const agenda = it.avisoAlteracaoAgendaId != null;
     const comercialPol = it.leadId != null && it.politicaComercial;
     const politica: PoliticaCarregada = comercialPol
       ? {
@@ -158,7 +184,7 @@ export async function despacharFila(
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
     //    decisão humana explícita, não automação (S13, E3).
-    if (politica.killSwitch && automatica) {
+    if (!agenda && politica.killSwitch && automatica) {
       r.pendentes += 1;
       continue;
     }
@@ -189,10 +215,17 @@ export async function despacharFila(
       continue;
     }
 
-    const conversa = await prisma.conversaWhatsApp.findUnique({
+    const transporte = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
       select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
     });
+    const estadoAtendimento = it.atendimentoId ? await prisma.atendimentoWhatsApp.findUnique({
+      where: { id: it.atendimentoId }, select: { ultimoInboundEm: true, inboundTratadoEm: true },
+    }) : null;
+    const conversa = transporte ? { ...transporte,
+      ultimoInboundEm: estadoAtendimento?.ultimoInboundEm ?? transporte.ultimoInboundEm,
+      inboundTratadoEm: estadoAtendimento?.inboundTratadoEm ?? transporte.inboundTratadoEm,
+    } : null;
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
     //    contato posterior à criação da intenção cancela a intenção automática.
@@ -221,8 +254,8 @@ export async function despacharFila(
     if (it.origem === "CRON" && !reativa && inboundSilenciador && inboundNaoTratado) {
       const limite = new Date(inboundSilenciador.getTime() + politica.silencioPosInboundHoras * 3600_000);
       if (agora < limite) {
-        await adiar(it.id, limite, "silencio_pos_inbound");
-        r.adiadas += 1;
+        if (await adiar(it.id, limite, "silencio_pos_inbound")) r.adiadas += 1;
+        else r.canceladas += 1;
         continue;
       }
     }
@@ -283,15 +316,16 @@ export async function despacharFila(
     // 6. Idempotência dupla (além do @@unique): o degrau pode ter sido cumprido MANUALMENTE
     //    depois que a intenção nasceu — re-checa o evento antes de enviar.
     if (it.cobrancaId && it.passo) {
-      const jaCumprido = await prisma.evento.count({
+      const enviosDoPasso = await prisma.evento.findMany({
         where: {
           agregadoTipo: "Cobranca",
           agregadoId: it.cobrancaId,
           tipo: "CobrancaEnviadaWhatsApp",
           payload: { path: ["passo"], equals: it.passo },
         },
+        select: { payload: true },
       });
-      if (jaCumprido > 0) {
+      if (enviosDoPasso.some((e) => cicloDoEventoCobranca(e.payload) === it.cicloCobranca)) {
         await marcar(it.id, "CANCELADA", "degrau_ja_cumprido");
         r.canceladas += 1;
         continue;
@@ -327,7 +361,7 @@ export async function despacharFila(
     //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
-    if (automatica && !reativa && !gestao) {
+    if (!agenda && automatica && !reativa && !gestao) {
       const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
@@ -339,8 +373,8 @@ export async function despacharFila(
         },
       });
       if (enviadasHoje >= politica.tetoPorContatoDia) {
-        await adiar(it.id, new Date(agora.getTime() + 24 * 3600_000), "teto_contato_dia");
-        r.adiadas += 1;
+        if (await adiar(it.id, new Date(agora.getTime() + 24 * 3600_000), "teto_contato_dia")) r.adiadas += 1;
+        else r.canceladas += 1;
         continue;
       }
     }
@@ -352,8 +386,8 @@ export async function despacharFila(
       const hora = horaLocal(agora, fuso);
       const dia = diaSemanaLocal(agora, fuso);
       if (hora < politica.janelaInicio || hora >= politica.janelaFim || !politica.diasSemana.includes(dia)) {
-        await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela"); // re-checa a cada hora
-        r.adiadas += 1;
+        if (await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela")) r.adiadas += 1;
+        else r.canceladas += 1; // re-checa a cada hora
         continue;
       }
     }
@@ -394,11 +428,47 @@ export async function despacharFila(
     // 11. CLAIM ATÔMICO (review PR #49): só quem mover a intenção para ENVIANDO chama o
     //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
     //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
-    const claim = await prisma.intencaoMensagem.updateMany({
-      where: { id: it.id, status: it.status },
-      data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+    let claimCount = 0;
+    try {
+      await prisma.$transaction(confirmarTransacao(async (tx) => {
+        const claim = await tx.intencaoMensagem.updateMany({
+          where: { id: it.id, status: it.status },
+          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+        });
+        if (claim.count !== 1) return;
+        if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
+          await tx.intencaoMensagem.update({ where: { id: it.id }, data: { status: it.status, despacharAposEm: it.despacharAposEm } });
+          return;
+        }
+        claimCount = 1;
+      }));
+    } catch (erro) {
+      if (!erroGuardaPedagogica(erro)) throw erro;
+      await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
+      r.canceladas += 1;
+      continue;
+    }
+    if (claimCount === 0) continue; // outro worker levou — não conta em nada
+
+    // A autorização do momento do enfileiramento não vale para sempre. Releitura após
+    // o claim evita despachar com autor revogado, destinatário alterado ou saldo antigo.
+    const atual = await prisma.intencaoMensagem.findUnique({
+      where: { id: it.id }, include: { numero: true, contato: true, politicaComercial: true, avisoAlteracaoAgenda: true },
     });
-    if (claim.count === 0) continue; // outro worker levou — não conta em nada
+    const invalidaAgora = atual ? await motivoIntencaoInvalida(atual, agora) : "intencao_ausente";
+    const conferirAgora = atual?.cobrancaId ? await suspensaoPorConferencia(atual.cobrancaId, agora) : null;
+    if (!invalidaAgora && conferirAgora) {
+      if (await adiarClaim(it.id, conferirAgora)) r.adiadas += 1;
+      else r.canceladas += 1;
+      continue;
+    }
+    if (invalidaAgora || !atual) {
+      await prisma.intencaoMensagem.updateMany({ where: { id: it.id, status: "ENVIANDO" },
+        data: { status: "CANCELADA", motivoFalha: invalidaAgora, despacharAposEm: null } });
+      if (it.avisoAlteracaoAgendaId) await prisma.$transaction(confirmarTransacao((tx) => registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId!, "FALHOU")));
+      r.canceladas += 1;
+      continue;
+    }
 
     // 12. Envio real + gravação em transação (mensagem + evento de domínio + intenção).
     try {
@@ -431,7 +501,7 @@ export async function despacharFila(
         envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
       }
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(confirmarTransacao(async (tx) => {
         const conv =
           conversa ??
           (await tx.conversaWhatsApp.create({
@@ -441,6 +511,7 @@ export async function despacharFila(
         const msg = await tx.mensagemWhatsApp.create({
           data: {
             conversaId: conv.id,
+            atendimentoId: it.atendimentoId,
             numeroId: it.numeroId,
             direcao: "SAIDA",
             tipo: it.tipo,
@@ -456,11 +527,13 @@ export async function despacharFila(
           },
         });
         await tx.conversaWhatsApp.update({ where: { id: conv.id }, data: { ultimaMensagemEm: agora } });
+        if (it.atendimentoId) await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
             cobrancaId: it.cobrancaId,
             modelo: it.template?.nome ?? "texto",
             passo: it.passo as PassoRegua,
+            cicloRegua: it.cicloCobranca,
             canal: "api",
             autorId: it.autorId, // humano que aprovou (LOTE/HUMANO) ou null (CRON)
           });
@@ -483,16 +556,74 @@ export async function despacharFila(
             motivoFalha: null,
           },
         });
-      });
+        if (it.avisoAlteracaoAgendaId) await registrarResultadoAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId, "ENVIADO", envio.providerMessageId);
+      }));
       r.despachadas += 1;
     } catch (e) {
-      const motivo = e instanceof ErroDriver ? e.motivo : "erro_inesperado";
+      // Uma resposta perdida, timeout ou falha de persistência pode ocorrer DEPOIS de
+      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
+      const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
+      // A falha pode ter ocorrido após a Meta aceitar a requisição. O aviso já
+      // recebeu claim INCERTO antes do I/O e não é reaberto automaticamente.
       r.falhas += 1;
     }
   }
 
   return r;
+}
+
+type IntencaoParaValidar = {
+  id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
+  atendimentoId: string | null; cobrancaId: string | null; referenciaCobranca: string | null; cicloCobranca: number;
+  templateId: string | null; corpoRenderizado: string; variaveis: unknown;
+  leadId: string | null; ocorrenciaComercial: string | null; passoComercial: string | null;
+  politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
+  avisoAlteracaoAgendaId: string | null;
+  numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
+};
+
+async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
+  if (!it.numero.ativo) return "numero_remetente_inativo";
+  if (it.contato.optOutEm) return "opt_out";
+  const motivoAgenda = await motivoAvisoAgendaInvalido(it);
+  if (motivoAgenda) return motivoAgenda;
+  if (it.origem === "GESTAO") {
+    const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+    if (!config || config.gestaoEstado === "DESLIGADA" || config.gestaoNumeroId !== it.numeroId || config.gestaoTelefoneE164 !== it.contato.telefoneE164) return "configuracao_gestao_alterada";
+    if (it.autorId || it.atendimentoId || it.cobrancaId || it.leadId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_gestao_invalido";
+  }
+  if (it.origem !== "CRON" && it.origem !== "GESTAO") {
+    const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
+    if (!autor?.ativo) return "autor_sem_acesso";
+    if (it.cobrancaId && !autor.papeis.some((p) => [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA].includes(p as "ADMINISTRADOR" | "FINANCEIRO" | "SECRETARIA_ACADEMICA"))) return "autor_sem_acesso";
+    if (!it.atendimentoId || !await atendimentoVisivel(autor, it.atendimentoId, true)) return "atendimento_sem_acesso";
+  }
+  let matriculaAtendimento: string | null = null;
+  let finalidadeAtendimento: string | null = null;
+  if (it.atendimentoId) {
+    const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: it.atendimentoId }, include: { conversa: { include: { contato: true } } } });
+    if (!a || a.encerradoEm || a.conversa.numeroId !== it.numeroId || a.conversa.contatoId !== it.contatoId) return "atendimento_alterado";
+    matriculaAtendimento = a.matriculaId;
+    finalidadeAtendimento = a.finalidade;
+    // Aviso de agenda revalida sua identidade congelada (aluno ou responsável)
+    // no helper próprio; a regra genérica prefere responsável quando existe um.
+    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
+  }
+  if (it.cobrancaId) {
+    const snapshot = await snapshotCobranca(it.cobrancaId);
+    if (!snapshot) return "cobranca_encerrada";
+    if (finalidadeAtendimento !== "FINANCEIRO" || !matriculaAtendimento || matriculaAtendimento !== snapshot.c.matriculaId) return "contrato_atendimento_divergente";
+    if (snapshot.c.cicloRegua !== it.cicloCobranca) return "ciclo_cobranca_alterado";
+    if (!["PENDENTE", "ATRASADO"].includes(snapshot.c.status) || snapshot.saldo.lte(0)) return "cobranca_encerrada";
+    if (!snapshot.destino || snapshot.destino.telefoneE164 !== it.contato.telefoneE164) return "destinatario_alterado";
+    if (!it.referenciaCobranca || snapshot.assinatura !== it.referenciaCobranca) return "cobranca_alterada_revisar";
+  }
+  if (it.passoComercial) {
+    if (!it.politicaComercial || it.politicaComercial.estado === "DESLIGADA" || it.politicaComercial.numeroRemetenteId !== it.numeroId) return "politica_comercial_alterada";
+    return motivoCadenciaInvalida(it, agora);
+  }
+  return null;
 }
 
 function configDe(p: {
@@ -548,11 +679,38 @@ async function marcar(id: string, status: "CANCELADA" | "FALHOU", motivo: string
   });
 }
 
-async function adiar(id: string, ate: Date, motivo: string): Promise<void> {
-  await prisma.intencaoMensagem.updateMany({
-    where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
-    data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
-  });
+function erroGuardaPedagogica(erro: unknown): boolean {
+  return erro instanceof Error && /Inten..o pedag.gica|Atendimento pedag.gico/i.test(erro.message);
+}
+
+/** Retorna falso quando a revalidação SQL cancelou o novo envio sem I/O. */
+async function adiar(id: string, ate: Date, motivo: string): Promise<boolean> {
+  try {
+    await prisma.intencaoMensagem.updateMany({
+      where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
+      data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
+    });
+    return true;
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await marcar(id, "CANCELADA", "autorizacao_academica_revogada");
+    return false;
+  }
+}
+
+async function adiarClaim(id: string, ate: Date): Promise<boolean> {
+  try {
+    await prisma.intencaoMensagem.updateMany({ where: { id, status: "ENVIANDO" }, data: {
+      status: "ADIADA", motivoFalha: "comprovante_em_conferencia", despacharAposEm: ate,
+    } });
+    return true;
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await prisma.intencaoMensagem.updateMany({ where: { id, status: "ENVIANDO" }, data: {
+      status: "CANCELADA", motivoFalha: "autorizacao_academica_revogada", despacharAposEm: null,
+    } });
+    return false;
+  }
 }
 
 /** Falha pós-claim: transita exclusivamente de ENVIANDO (o claim é deste worker). */

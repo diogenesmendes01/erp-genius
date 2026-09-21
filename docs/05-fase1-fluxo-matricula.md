@@ -1,5 +1,7 @@
 # Fase 1 — Fluxo de Matrícula (máquina de estados)
 
+> **Leitura histórica — conferência em 10/09/2026:** geração de contrato, assinatura via DocuSign e confirmação automática por gateway descritas abaixo não devem ser lidas como funcionalidades entregues. Hoje a Secretaria anexa documento pronto e confirma a evidência de aceite; a ativação segue [D10–D12](38-implementacao-acesso-validacao.md), com primeira mensalidade exigida somente por configuração. A origem comercial e a produção/liberação do contrato estão em [refinamento Q103–Q105](planejamento/entrada-comercial-e-contrato.md); a ordem “pagamento antes do contrato” abaixo não está sendo presumida como resposta desse novo bloco.
+
 > A matrícula não é um evento, é uma **máquina de estados** que começa no comercial
 > e termina com o aluno ativo. É praticamente a cauda do funil de vendas.
 

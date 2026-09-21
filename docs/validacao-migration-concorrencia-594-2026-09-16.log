@@ -1,0 +1,14 @@
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "erp_genius_test", schema "public" at "localhost:54329"
+
+297 migrations found in prisma/migrations
+
+Applying migration `20260915136000_serializar_reservas_desistencia`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260915136000_serializar_reservas_desistencia/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

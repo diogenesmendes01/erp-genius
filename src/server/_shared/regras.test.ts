@@ -32,6 +32,20 @@ describe("calcularComissao", () => {
 });
 
 describe("vencimentoMensalidade", () => {
+  it.each([2027, 2028])("limita fevereiro e recupera o dia 31 em março de %i", (ano) => {
+    const fevereiro = vencimentoMensalidade(31, 1, new Date(ano, 0, 31));
+    expect(fevereiro.competencia).toBe(`${ano}-02`);
+    expect(fevereiro.data.getDate()).toBe(ano === 2028 ? 29 : 28);
+    const marco = vencimentoMensalidade(31, 1, fevereiro.data);
+    expect(marco.competencia).toBe(`${ano}-03`);
+    expect(marco.data.getDate()).toBe(31);
+  });
+  it("usa abril 30 e aceita dias fora da antiga lista", () => {
+    expect(vencimentoMensalidade(31, 0, new Date(2028, 3, 1)).data.getDate()).toBe(30);
+    expect(vencimentoMensalidade(17, 0, new Date(2028, 3, 1)).data.getDate()).toBe(17);
+    expect(() => vencimentoMensalidade(32, 0)).toThrow(/1 e 31/);
+    expect(() => vencimentoMensalidade(0, 0)).toThrow(/1 e 31/);
+  });
   const base = new Date(2026, 5, 18); // junho/2026
 
   it("usa o dia escolhido no mês atual (offset 0)", () => {
@@ -47,6 +61,11 @@ describe("vencimentoMensalidade", () => {
 });
 
 describe("vencimentoPrimeiraMensalidade", () => {
+  it("ajusta o dia 31 ao último dia sem avançar a competência", () => {
+    const r = vencimentoPrimeiraMensalidade(31, new Date(2028, 0, 15));
+    expect(r.competencia).toBe("2028-02");
+    expect(r.data.getDate()).toBe(29);
+  });
   it("vence 30 dias após o início da 1ª aula, ajustado ao dia escolhido", () => {
     // início 01/jun/2026 + 30 dias = 01/jul/2026 → dia 5 = 05/jul/2026
     const inicio = new Date(2026, 5, 1);

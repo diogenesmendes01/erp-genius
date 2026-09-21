@@ -1,0 +1,185 @@
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.mjs took 13ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.0s
+  Running TypeScript ...
+  Finished TypeScript in 5.3s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/67) ...
+  Generating static pages using 31 workers (16/67) 
+  Generating static pages using 31 workers (33/67) 
+  Generating static pages using 31 workers (50/67) 
+✓ Generating static pages using 31 workers (67/67) in 355ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /academico
+├ ƒ /academico/admissoes
+├ ƒ /academico/admissoes/[id]
+├ ƒ /academico/admissoes/excecoes
+├ ƒ /academico/admissoes/excecoes/[reservaId]
+├ ƒ /academico/avaliacoes
+├ ƒ /academico/avaliacoes/[alocacaoId]
+├ ƒ /academico/avaliacoes/[alocacaoId]/[codigo]
+├ ƒ /academico/avaliacoes/[alocacaoId]/[codigo]/designacao
+├ ƒ /academico/avaliacoes/[alocacaoId]/equivalencia
+├ ƒ /academico/avaliacoes/[alocacaoId]/extras
+├ ƒ /academico/avaliacoes/[alocacaoId]/fechamento
+├ ƒ /academico/calendario
+├ ƒ /academico/calendario/[id]
+├ ƒ /academico/calendario/[id]/replanejamento
+├ ƒ /academico/calendario/[id]/revisoes
+├ ƒ /academico/calendario/[id]/revisoes/[revisaoId]
+├ ƒ /academico/calendario/novo
+├ ƒ /academico/correcoes
+├ ƒ /academico/correcoes/[lancamentoId]
+├ ƒ /academico/correcoes/[lancamentoId]/[propostaId]
+├ ƒ /academico/correcoes/revisoes/[casoId]
+├ ƒ /academico/equivalencias
+├ ƒ /academico/equivalencias/[propostaId]
+├ ƒ /academico/grades
+├ ƒ /academico/grades/[id]
+├ ƒ /academico/grades/nova
+├ ƒ /academico/indisponibilidades
+├ ƒ /academico/recuperacoes
+├ ƒ /academico/recuperacoes/[realizacaoId]
+├ ƒ /academico/recuperacoes/correcoes/[notaId]
+├ ƒ /academico/recuperacoes/designadas
+├ ƒ /academico/recuperacoes/planos
+├ ƒ /academico/recuperacoes/planos/[propostaId]
+├ ƒ /academico/recuperacoes/planos/[propostaId]/autorizacao-reserva
+├ ƒ /academico/recuperacoes/planos/[propostaId]/prorrogacoes
+├ ƒ /academico/recuperacoes/planos/autorizacoes-preparacao
+├ ƒ /academico/recuperacoes/reservas/[reservaId]/cancelamento
+├ ƒ /academico/recuperacoes/tentativas/[itemReservaId]
+├ ƒ /academico/recuperacoes/tentativas/[itemReservaId]/agenda
+├ ƒ /academico/recuperacoes/tentativas/[itemReservaId]/autorizacao
+├ ƒ /academico/recuperacoes/tentativas/[itemReservaId]/designacao
+├ ƒ /academico/recuperacoes/tentativas/[itemReservaId]/designacao/propostas
+├ ƒ /academico/regras
+├ ƒ /academico/regras/[nivelId]
+├ ƒ /academico/regras/turmas/[turmaId]
+├ ƒ /academico/reposicoes
+├ ƒ /academico/reposicoes/correcoes/[reposicaoId]
+├ ƒ /academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]
+├ ƒ /academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes
+├ ƒ /academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico
+├ ƒ /academico/segundas-chamadas/agendas
+├ ƒ /academico/segundas-chamadas/minhas
+├ ƒ /academico/segundas-chamadas/minhas/[reservaId]
+├ ƒ /academico/segundas-chamadas/pendentes-agenda
+├ ƒ /academico/segundas-chamadas/propostas/[propostaId]/agenda
+├ ƒ /academico/segundas-chamadas/propostas/[propostaId]/designacao
+├ ƒ /academico/segundas-chamadas/reservas/[reservaId]/cancelamento
+├ ƒ /academico/segundas-chamadas/reservas/[reservaId]/remarcacao
+├ ƒ /academico/segundas-chamadas/reservas/[reservaId]/substituicao
+├ ƒ /acesso-negado
+├ ƒ /alunos
+├ ƒ /alunos/[id]
+├ ƒ /alunos/[id]/academico
+├ ƒ /alunos/[id]/creditos/[creditoId]
+├ ƒ /alunos/[id]/financeiro
+├ ƒ /alunos/[id]/movimentacoes
+├ ƒ /alunos/[id]/portal
+├ ƒ /alunos/turma/[id]
+├ ƒ /api/alunos/importar
+├ ƒ /api/alunos/modelo
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/diario/encontros/[id]/video
+├ ƒ /api/exportacoes/[tipo]
+├ ƒ /api/files/[...path]
+├ ƒ /api/matriculas/[id]/aditivos/[propostaId]/assinaturas/[conclusaoId]/[tipo]
+├ ƒ /api/matriculas/[id]/aditivos/[propostaId]/originais/[artefatoId]/pdf
+├ ƒ /api/matriculas/[id]/aditivos/[propostaId]/previa-pdf
+├ ƒ /api/matriculas/[id]/assinaturas/[conclusaoId]/[tipo]
+├ ƒ /api/matriculas/[id]/originais/[artefatoId]/pdf
+├ ƒ /api/matriculas/[id]/previas/[previaId]/pdf
+├ ƒ /api/portal-aluno/recuperacao
+├ ƒ /api/portal-aluno/reposicoes/[id]/entregas
+├ ƒ /api/portal-aluno/reposicoes/[id]/indisponibilidades
+├ ƒ /api/portal-aluno/reposicoes/[id]/video
+├ ƒ /api/portal-aluno/sair
+├ ƒ /api/portal-aluno/sessao
+├ ƒ /api/portal-aluno/token
+├ ƒ /api/turmas/importar
+├ ƒ /api/turmas/modelo
+├ ƒ /api/upload
+├ ƒ /api/whatsapp/cron
+├ ƒ /api/whatsapp/health
+├ ƒ /api/whatsapp/upload
+├ ƒ /api/whatsapp/webhook/evolution
+├ ƒ /api/whatsapp/webhook/meta
+├ ƒ /carteiras
+├ ƒ /comissoes
+├ ƒ /configuracao
+├ ƒ /configuracao/catalogo
+├ ƒ /configuracao/contratos
+├ ƒ /configuracao/contratos/[codigo]
+├ ƒ /configuracao/contratos/novo
+├ ƒ /configuracao/operacao
+├ ƒ /configuracao/paises
+├ ƒ /configuracao/turmas
+├ ƒ /configuracao/usuarios
+├ ƒ /configuracao/whatsapp
+├ ƒ /diario
+├ ƒ /diario/encontros
+├ ƒ /diario/encontros/[id]
+├ ƒ /diario/encontros/[id]/cancelamento
+├ ƒ /diario/encontros/[id]/correcao
+├ ƒ /diario/encontros/[id]/gravacao
+├ ƒ /diario/encontros/[id]/remarcacao
+├ ƒ /diario/excecoes-gravacao
+├ ƒ /diario/regularizacoes
+├ ƒ /diario/reposicoes
+├ ƒ /financeiro
+├ ƒ /home
+├ ƒ /inbox
+├ ƒ /leads
+├ ƒ /leads/[id]
+├ ƒ /leads/[id]/contratacao
+├ ○ /login
+├ ƒ /matriculas/[id]/compensacoes/[cobrancaId]
+├ ƒ /matriculas/[id]/compensacoes/[cobrancaId]/periodo-integral
+├ ƒ /matriculas/[id]/condicoes
+├ ƒ /matriculas/[id]/condicoes-horas
+├ ƒ /matriculas/[id]/continuidade-mensal
+├ ƒ /matriculas/[id]/contrato
+├ ƒ /matriculas/[id]/contrato/aditivos
+├ ƒ /matriculas/[id]/contrato/aditivos/[propostaId]
+├ ƒ /matriculas/[id]/contrato/aditivos/[propostaId]/alcadas
+├ ƒ /matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]
+├ ƒ /matriculas/[id]/contrato/originais/[artefatoId]
+├ ƒ /matriculas/[id]/contrato/previas/[previaId]
+├ ƒ /matriculas/[id]/contrato/previas/[previaId]/participantes
+├ ƒ /matriculas/[id]/contrato/substituicoes
+├ ƒ /matriculas/[id]/contrato/substituicoes/[propostaId]
+├ ƒ /matriculas/[id]/emissao
+├ ƒ /matriculas/[id]/entrada-particular
+├ ƒ /matriculas/[id]/fechamentos-horas
+├ ƒ /matriculas/[id]/indisponibilidade-oferta
+├ ƒ /matriculas/[id]/indisponibilidade-oferta/[registroId]/termino
+├ ƒ /matriculas/[id]/nova-reserva
+├ ƒ /matriculas/[id]/ocorrencias-financeiras
+├ ƒ /matriculas/[id]/pagador
+├ ƒ /matriculas/[id]/preparacao
+├ ƒ /matriculas/[id]/reserva
+├ ƒ /matriculas/nova
+├ ƒ /pipeline
+├ ƒ /portal-aluno
+├ ○ /portal-aluno/ativar
+├ ○ /portal-aluno/entrar
+├ ○ /portal-aluno/recuperar
+├ ƒ /portal-aluno/reposicoes/[id]
+├ ƒ /portal-aluno/resultados
+├ ƒ /secretaria
+├ ƒ /secretaria/reservas
+├ ƒ /secretaria/reservas/[id]
+└ ƒ /secretaria/reservas/particulares/[id]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

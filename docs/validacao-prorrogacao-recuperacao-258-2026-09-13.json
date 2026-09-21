@@ -1,0 +1,14 @@
+{
+  "incremento": 258,
+  "data": "2026-09-13",
+  "escopo": "Prorrogação independente e prazo efetivo integrado à reserva",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 44, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migration": "20260913190000_prorrogacao_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

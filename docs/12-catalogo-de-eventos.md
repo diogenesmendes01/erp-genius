@@ -125,9 +125,17 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `AlunoEditado` | Edição de dados cadastrais (motivo obrigatório) | Secretaria/Pedagógico | `{ de, para, motivo }` |
 | `AlunoImportado` | Cadastro de alunos em **lote por XLSX** (tela de Alunos → "Cadastrar por lote", só Admin) **e** carga Q10 inicial (esta **persistida como `ALUNO_IMPORTADO`** — ver nota de nomenclatura) | Admin / Sistema (docs 19, 21) | `{ origem, linha?, codigo?, codigoQ10?, ... }` |
 | `AlunoVinculadoTurma` | Carga de rosters (EstudiantesCurso Q10) | Sistema (doc 21) | `{ turmaId, nivel, ativa }` |
-| `TrocaTurma` | Troca de turma | Secretaria/Pedagógico | `{ de, para, motivo }` |
-| `AlunoPausado` | Pausa | Secretaria | `{ motivo, dataRetornoPrevista }` |
-| `AlunoReativado` | Pausado → Ativo | Secretaria | `{ data }` |
+| `TrocaTurma` | Transferência equivalente direta ou execução de mudança acadêmica aprovada | Secretaria/Pedagógico/Admin na equivalente; Secretaria/Admin na execução excepcional | `{ de, para, motivo, horarioCompativel, solicitacaoId? }` |
+| `MudancaAcademicaSolicitada` | Pedido de mudança de nível, sem alterar alocação | Secretaria/Pedagógico/Admin | `{ solicitacaoId, alocacaoOrigemId, turmaOrigemId, turmaDestinoId, motivo, horarioCompativel }` |
+| `ParecerMudancaAcademicaRegistrado` | Professor atual registra parecer | Professor da turma de origem | `{ solicitacaoId, parecerId, turmaOrigemId, conteudo }` |
+| `MudancaAcademicaDecidida` | Aprovação ou rejeição independente; aprovação aguarda execução | Pedagógico/Admin diferente do solicitante | `{ solicitacaoId, status, solicitanteId, motivo, justificativaDispensaParecer }` |
+| `MudancaAcademicaExecutada` | Aplica alocação aprovada e preserva a anterior | Secretaria/Admin | `{ solicitacaoId, solicitanteId, aprovadorId, turmaOrigemId, turmaDestinoId, alocacaoOrigemId, alocacaoDestinoId, movimentacaoId, motivo, horarioCompativel }` |
+| `MudancaAcademicaCancelada` | Cancela pedido pendente/aprovado sem alterar alocação | Secretaria/Pedagógico/Admin | `{ solicitacaoId, statusAnterior, motivo }` |
+| `AlunoPausado` | Pausa com identificação das parcelas suspensas | Secretaria/Pedagógico/Admin | `{ motivo, pausaId, protocoloRetomada }`; retorno previsto fica na movimentação |
+| `RetomadaSolicitada` | Proposta, sem aplicação do calendário | Secretaria/Financeiro/Admin | `{ propostaId, pausaId, opcao, motivo, parcelas }` |
+| `RetomadaDecidida` | Aprovação ou rejeição por outra pessoa | Financeiro/Admin | `{ propostaId, pausaId, opcao, status, solicitanteId, motivo }` |
+| `AlunoReativado` | Proposta aprovada muda Pausado → Ativo | Financeiro/Admin diferente do solicitante | `{ propostaId, pausaId, opcao, solicitanteId, motivo }` |
+| `CobrancaRetomada` | Restauração ou reprogramação de uma parcela aprovada (agregado Cobrança) | Aprovador da retomada | `{ propostaId, pausaId, opcao, de, para }`; inclui datas, status, versão e ciclo |
 | `AlunoEncerrado` | Encerramento (motivo obrigatório) | Secretaria/Pedagógico/Admin | `{ motivo, observacao }` |
 
 > `ExperimentalRealizada` / `NoShow` (check-in do professor) são do agregado **Lead** — ver seção
@@ -190,3 +198,152 @@ encerramento · pagamento · desconto · bolsa · perdão · comissão**.
 ## Notificações derivadas (lista fechada — doc 10 §5)
 Apenas estes eventos geram notificação: **Lead novo · Experimental realizada ·
 Desconto aprovado · Cobrança vencida · Comissão aprovada**.
+
+
+### Modelos contratuais — incremento 193
+
+Agregado `ModeloContratual`, identificado pela versão imutável:
+
+- `ModeloContratualProposto`: código, versão, hash de conteúdo e motivo; autor da preparação.
+- `ModeloContratualPublicado`: decisão, versão, hash e motivo; outro administrador aprovador.
+- `ModeloContratualRejeitado`: decisão, versão, hash e motivo; outro administrador decisor.
+
+Eventos são gravados na mesma transação da proposta/decisão. Publicação não comprova geração de PDF, envio, assinatura ou ativação da matrícula.
+
+
+### Prévia contratual — incremento 195
+
+`PreviaContratualRegistrada`, agregado `Matricula`: prévia, modelo, condições, hash do conteúdo e confirmação de aplicação. Autor/data no evento; texto e valores completos no snapshot protegido da prévia. Evento transacional não representa assinatura nem aceite.
+
+
+### Conferência de participantes — incremento 198
+
+`ParticipantesContratuaisConferidos`, agregado `Matricula`: prévia, conferência, versão e papéis. Registro na mesma transação da conferência imutável; identidades/evidências ficam no snapshot protegido, sem cópia no evento. Não comprova envio ou assinatura.
+
+
+### Regras de avaliação — incremento 232
+
+Agregado `RegraAvaliacao`, identificado pela versão imutável:
+
+- `RegraAvaliacaoProposta`: nível, versão, hash do conteúdo e motivo; autor da preparação.
+- `RegraAvaliacaoPublicada`: decisão, nível, versão, hash e motivo; outro gestor pedagógico/administrador.
+- `RegraAvaliacaoRejeitada`: mesma referência com decisão negativa independente.
+
+Eventos são gravados na transação da proposta/decisão. Publicação não aplica regra a turma existente, oficializa nota ou aprova progressão.
+
+
+### Migração de regra de avaliação da turma — incremento 234
+
+Agregado `Turma`: `MigracaoRegraTurmaProposta`, `MigracaoRegraTurmaAplicada` e `MigracaoRegraTurmaRejeitada`. Registram proposta, origem/destino, hash e motivo; aplicação/rejeição inclui decisão. Autor/data no evento, snapshot na proposta protegida. Decisão e efeito são atômicos; evento não aprova progressão ou muda cobrança.
+
+### Lançamento de avaliações — incremento 236
+
+Agregado `Matricula`: `AvaliacaoRascunhoRegistrado` e `AvaliacaoSubmetida` identificam registro, lançamento, turma, regra, código da avaliação e versão. `AvaliacaoOficializada` e `AvaliacaoDevolvida` identificam registro, lançamento, decisão e motivo. Autoria e data ficam no evento; notas e comentários permanecem nas versões protegidas, sem cópia no payload. Eventos e persistência são atômicos. Oficialização não fecha o resultado do nível nem aprova progressão.
+
+### Proposta de correção de nota — incremento 241
+
+`CorrecaoNotaProposta`, agregado `Matricula`, identifica proposta, lançamento oficial de origem, registro, versão e motivo. Autoria/data no evento; valores propostos na proposta imutável. Evento e proposta são atômicos. O evento não aplica notas ou registra aprovação.
+
+Incremento 242: `CorrecaoNotaAplicada` e `CorrecaoNotaRejeitada` identificam proposta, decisão, lançamento e motivo, no agregado `Matricula`. `CorrecaoNotaRevisaoNecessaria` identifica decisão e solicitações acadêmicas aprovadas/executadas afetadas, sem desfazer movimentações. A decisão preserva o snapshot desses impactos; fila operacional de resolução ainda pendente.
+
+
+### Designação de avaliador — incremento 248
+
+`AvaliadorDesignado` e `DesignacaoAvaliadorRevogada`, agregado `Matricula`, identificam designação, registro de avaliação, professor (nulo na revogação), motivo e versão. Autor/data ficam no evento. Evento e designação são gravados na mesma transação; o evento não altera autoria de notas, titularidade da turma ou oficialização. Neste incremento, a conexão da designação às permissões de acesso ainda está pendente.
+
+
+Incremento 251: eventos `AvaliacaoRascunhoRegistrado`/`AvaliacaoSubmetida` passam a identificar `realizadaPorId` e `regularizacao`. O autor do evento é o registrador; motivo/evidências da regularização permanecem na versão imutável da nota. Designação vigente passa a permitir lançamento no alcance das avaliações regulares descrito na SPEC, com conferência independente do registrador e do realizador.
+
+Q40: `AvaliadorReposicaoDesignado` registra a primeira atribuição de uma reposição gravada; `AvaliadorReposicaoSubstituido` registra designação anterior, nova designação, professores, motivo e instante da troca. Ambos usam o agregado `Matricula` e são gravados junto da alteração append-only. A substituição encerra somente o acesso efetivo futuro do avaliador anterior, sem mudar autoria, versões ou prazos existentes; a chave idempotente e o hash da entrada ficam no evento de designação inicial e no registro de substituição.
+
+
+### Plano de recuperação — incremento 253
+
+`PlanoRecuperacaoProposto`, agregado `Matricula`, identifica proposta, nível, regra, versão e habilidades. Autor/data ficam no evento; estratégias, avaliações propostas e snapshot de notas ficam na proposta imutável. Evento e proposta são atômicos. Não representa aprovação, reserva de tentativa, disponibilização ou alteração de nota.
+
+
+Incremento 254: `PlanoRecuperacaoAprovado` e `PlanoRecuperacaoRejeitado`, agregado `Matricula`, identificam proposta, decisão, versão e motivo, com autoria/data do decisor independente. Não reservam ou consomem tentativa, iniciam prazo ou alteram nota.
+
+
+Incremento 255: `TentativaRecuperacaoReservada`, agregado `Matricula`, identifica reserva, proposta aprovada, nível e habilidades. Autor/data no evento; reserva e itens são persistidos atomicamente. Não comprova realização, consumo definitivo, nota, presença ou disponibilização.
+
+
+Incremento 256: `TentativaRecuperacaoCanceladaPelaEscola`, agregado `Matricula`, identifica cancelamento, reserva, proposta, habilidades e motivo. Autor/data no evento; evidência fica no cancelamento imutável. Libera a reserva na cota sem lançar nota, presença, consumo ou cobrança.
+
+
+Incremento 257: `PlanoRecuperacaoDisponibilizado`, agregado `Matricula`, identifica disponibilização, proposta, instante inicial, prazo em minutos e limite calculado. Autor/data no evento; condições e evidência de comunicação no registro imutável. O evento não comprova envio automático pelo ERP nem aplicação da avaliação.
+
+
+Incremento 258: `ProrrogacaoRecuperacaoProposta` identifica proposta, disponibilização, versão e prazos anterior/novo. `ProrrogacaoRecuperacaoAprovada`/`ProrrogacaoRecuperacaoRejeitada` identificam proposta, decisão, motivo e novo prazo proposto. Agregado `Matricula`, com autoria/data. Somente decisão positiva válida altera o prazo efetivo; nenhum desses eventos modifica cota ou confirma comunicação ao aluno.
+
+
+Incremento 259: `RecuperacaoRealizada`, agregado `Matricula`, identifica realização, item reservado, reserva, habilidade e instante da avaliação. Professor/data no evento; evidência no registro imutável. Consome a oportunidade daquela habilidade sem criar nota, frequência ou progressão. Cancelamento institucional passa a relacionar somente habilidades pendentes liberadas.
+
+
+Incremento 260: `NotaRecuperacaoRascunhada`, `NotaRecuperacaoSubmetida`, `NotaRecuperacaoOficializada` e `NotaRecuperacaoRejeitada`, agregado `Matricula`. Identificam realização, nota e versão ou decisão; autoria no evento. Resultado oficial entra na consolidação pelo melhor resultado por habilidade, sem alterar frequência, cobranças ou executar progressão.
+
+
+Incremento 266: `ProfessorRecuperacaoDesignado` e `DesignacaoRecuperacaoRevogada`, agregado `Matricula`, identificam designação, item reservado, professor, versão e motivo. Não alteram autoria da realização, prazo ou saldo; não concedem acesso amplo ao plano.
+
+
+Incremento 270: `RecuperacaoRealizada` passa a identificar `realizadaPorId`, `registradaPorId` e eventual `motivoRegularizacao`. O autor do evento é quem registra; a autoria da avaliação permanece no realizador. Eventos históricos não são reescritos.
+
+
+Incremento 271: `CorrecaoRecuperacaoProposta`, `CorrecaoRecuperacaoAplicada` e `CorrecaoRecuperacaoRejeitada`, agregado `Matricula`, identificam proposta, nota e versão/decisão. `CorrecaoRecuperacaoRevisaoNecessaria` identifica decisão e solicitações acadêmicas aprovadas/executadas afetadas. Não consomem tentativa, regularizam frequência ou movimentam o aluno.
+
+
+Incremento 275: `ConclusaoAssinaturaPreservada`, agregado `Matricula`, identifica processo, conclusão, original, ambiente e hashes dos arquivos. Não expõe bytes ou identidades no evento, não confirma a conferência da Secretaria e não ativa matrícula.
+
+Incremento 278: ContratoConfirmado passa a identificar aceiteOriginalId, conclusaoId e artefatoId no fluxo integrado, preservando documentoId e condicoesMensais. Autor é quem conferiu pela Secretaria/Administração; o evento não ativa a matrícula nem confirma pagamento. Bytes e identidades de signatários não são copiados ao evento.
+
+### Incremento 280 — Ativação de preparação em turma
+
+MatriculaAtivada, para a preparação comercial em turma, exige aceite integrado conferido, pagamentos exigidos pela versão contratada e ingresso válido. O payload contém preparacaoId, reservaId, alocacaoId, condicoesId, emissaoAtivacaoId, contratoDocumentoId, excecaoAdmissaoId e ativadaEm. A primeira mensalidade pode ser emitida nessa transação quando seu pagamento não é requisito prévio; portanto primeiraMensalidadeOk não é condição universal deste evento. ComissaoAprovada identifica comissaoId, vendedorId e memória da política aplicada. Os eventos são gravados na mesma transação da ativação e não são repetidos em nova chamada de conclusão.
+
+### Incremento 281 — Encontros particulares na ativação
+
+MatriculaAtivada inclui reservaParticularId e encontros, lista de pares horarioReservaId/encontroId, quando o ingresso ocorre por agenda particular. reservaId e alocacaoId ficam nulos nesse caso. Cada encontro preserva matrícula, professor, início/fim e fuso do horário reservado. Matrículas por hora não exigem primeiraMensalidadeOk: o requisito financeiro é a taxa e o adiantamento quando exigido nas condições registradas. A ativação não registra aula ministrada, presença ou consumo de horas.
+
+### Incremento 282 — Diário particular
+
+AulaDiarioRegistrada e AulaDiarioAtualizada utilizam agregado Matricula quando o encontro é individual. Identificam aulaId e encontroId, conteúdo, registros e, na edição, estadoAnterior, conteudoAnterior e registrosAntes. O contexto da conclusão por exceção inclui matriculaId para encontros particulares; decisão conserva a revisão independente e não cria cobrança ou consumo de horas.
+
+### Incremento 285 — HorasCompradasReservadas
+
+Evento da matrícula com reservaId, compraId, encontroId e minutos. Identifica comprometimento de horas já pagas; não registra recebimento, aula ministrada ou consumo definitivo.
+
+### Incremento 286 — HorasCompradasConsumidas
+
+Evento da matrícula com consumoId, reservaId, minutos, diarioId e estadoDiario. Identifica conferência financeira da realização, sem alterar status acadêmico ou recebimentos. O consumo é único por reserva.
+
+### CancelamentoParticularProposto / CancelamentoParticularDecidido (incremento 288)
+
+Agregado Matricula. Proposto: propostaId, encontroId, motivo. Decidido: propostaId, decisaoId, encontroId, aprovada, motivo, reservasHorasIds, acertoFinanceiroAutomatico=false. Autoria no envelope; decisão e alteração de agenda na mesma transação. Eventos não confirmam recebimento, não liberam reserva de horas e não executam crédito/devolução. Ajuste financeiro e notificações externas permanecem pendentes.
+
+### LiberacaoHorasRemarcacaoProposta / LiberacaoHorasRemarcacaoDecidida (incremento 289)
+
+Agregado Matricula. Proposta: propostaId, reservaId, cancelamentoId, minutos. Decisão: propostaId, decisaoId, reservaId, aprovada, minutos, motivo. Autoria no envelope. Aprovação independente libera a reserva para reutilização na mesma compra; decisão rejeitada não muda saldo. Não representa crédito monetário, devolução, recebimento, consumo nem publicação de agenda. A evidência da escolha do aluno permanece na proposta financeira.
+
+### RemarcacaoParticularProposta / RemarcacaoParticularDecidida (incremento 290)
+
+Agregado Matricula. Proposta: propostaId, encontroOriginalId, inicio, fim, professorId. Decisão: propostaId, decisaoId, encontroOriginalId, encontroNovoId (nulo se rejeitada), aprovada, motivo. Autoria no envelope. Aprovação cria encontro e decisão atomicamente; preserva o encontro cancelado e não emite cobrança, pagamento ou reserva financeira. Entrada da proposta conserva escolha do aluno e eventual exceção não letiva. Notificações externas ainda não integradas.
+
+### CreditoHorasCanceladasProposto / CreditoHorasCanceladasDecidido (incremento 291)
+
+Agregado Matricula. Proposta: propostaId, reservaId, cancelamentoId, minutos, valorCredito, moeda. Decisão: propostaId, decisaoId, reservaId, aprovada, minutos, motivo; se aprovada, creditoId/valorCredito/moeda. Autoria no envelope. Decisão e crédito imutáveis na mesma transação. Conversão exclui remarcação das mesmas horas e não registra recebimento, utilização do crédito ou devolução. Memória e evidência da escolha permanecem na proposta.
+
+### UtilizacaoCreditoProposta (incremento 292)
+
+Agregado Matricula de origem. Payload: propostaId, creditoId, cobrancaId, versao, valor, moeda, aplicada=false. Autoria no envelope. Proposta imutável com concordância e snapshot. Não implica reserva de saldo, aprovação, abatimento, recebimento ou devolução. Aprovação/aplicação e seus eventos ainda pendentes.
+
+### Incremento 293 — UtilizacaoCreditoDecidida
+
+Agregado: matrícula de origem. Registra proposta, decisão, crédito, cobrança, valor, aprovação/rejeição e motivo. Emitido na transação da decisão independente; aprovação aplica liquidação por crédito sem Recebimento ou entrada de caixa. Repetição idempotente não cria outra decisão. Rejeição preserva saldo. Não comprova devolução de dinheiro.
+
+### Incremento 299 — AcertoEncerramentoDecidido
+
+Agregado Aluno; identifica pedido, rascunho, decisão e aprovação/rejeição. A decisão pertence aos contratos selecionados do pedido e não comprova encerramento, recebimento, emissão de crédito ou devolução. Emitido junto da decisão independente, sem duplicação na repetição idempotente.
+
+### RecebimentoRegistrado (Q87)
+
+Agregado `Recebimento`, na mesma transação do fato de caixa e das destinações. Preserva titular, pagador, valor/moeda, data/forma, hash material, referência do comprovante privado, comentário e destinações. O replay retorna o fato existente antes de emitir outro evento. A consulta financeira associa a prova somente quando ID do recebimento, matrícula e hash coincidem; ausência no legado não autoriza presumir prova.

@@ -1,0 +1,20 @@
+{
+  "incremento": 229,
+  "data": "2026-09-12",
+  "integracaoDirecionada": {
+    "success": true,
+    "numTotalTests": 61,
+    "numPassedTests": 4,
+    "numFailedTests": 0,
+    "numPendingTests": 57
+  },
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "ultimoBuildValidado": 228,
+  "migrationNova": false,
+  "ultimaRegressaoIntegral": 221,
+  "limites": [
+    "Concorrencia validada no servidor; ensaio interativo pendente",
+    "Sem producao ou envio externo"
+  ]
+}

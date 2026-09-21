@@ -41,7 +41,7 @@ export type ProdutoInput = z.input<typeof ProdutoSchema>;
 export const PrecoSchema = z.object({
   paisId: z.string().min(1, "Selecione o país"),
   produtoId: z.string().min(1, "Selecione o produto"),
-  tipoCobranca: z.nativeEnum(TipoCobranca),
+  tipoCobranca: z.nativeEnum(TipoCobranca).refine(t => t !== TipoCobranca.MULTA_ENCERRAMENTO, "Multa é definida no acerto contratual, não no catálogo."),
   valor: z.coerce.number().positive("Valor deve ser maior que zero"),
   versaoEstudo: z.string().optional(),
 });

@@ -1,0 +1,6 @@
+{
+ "incremento":326,"data":"2026-09-13","escopo":"Leitura da apuração por período com conferências persistidas",
+ "integracao":{"aprovados":10,"falhos":0,"arquivos":1},"unitarios":{"aprovados":821,"falhos":0,"arquivos":88},"typescript":"aprovado","lint":"aprovado","ultimoBuild":325,"novaMigration":false,
+ "ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Leitor interno, sem nova ação pública","Período/fechamento e aprovação parcial persistidos pendentes","Itens faturados e proteção transacional da emissão pendentes"],"producao":false,"enviosExternos":false
+}

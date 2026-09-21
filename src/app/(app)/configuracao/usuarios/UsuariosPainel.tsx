@@ -6,6 +6,7 @@ import { Papel } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { PAPEL_LABEL } from "@/lib/roles";
 import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
 
 export interface UsuarioRow {
@@ -15,15 +16,20 @@ export interface UsuarioRow {
   papeis: Papel[];
   ativo: boolean;
   limiteDescontoPct: number | null;
+  limiteDescontoTaxaPct: number | null;
+  limiteDescontoMensalidadePct: number | null;
+  permissoes: string[];
+  gerenteComercialId: string | null;
   ultimoAcesso: string | null; // ISO ou null
 }
 
-function formatarAcesso(iso: string | null): string {
+function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | null): string {
   if (!iso) return "nunca";
-  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const instante = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${instante.texto} (horário exibido em ${instante.fuso}; origem UTC)`;
 }
 
-export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
+export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
@@ -38,7 +44,7 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">7 papéis, multi-papel, limite de desconto e último acesso.</p>
+        <p className="text-sm text-gray-500">Papéis, equipes, alçadas e permissões específicas.</p>
         {form === "none" && (
           <button
             onClick={() => setForm("novo")}
@@ -55,6 +61,7 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
         <div className="mb-6">
           <UsuarioFormulario
             usuario={typeof form === "object" ? form.editar : undefined}
+            gerentes={usuarios.filter((u) => u.ativo && u.papeis.includes(Papel.GERENTE_COMERCIAL))}
             onClose={() => setForm("none")}
           />
         </div>
@@ -66,7 +73,7 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
             <tr>
               <th className="px-4 py-2 font-medium">Usuário</th>
               <th className="px-4 py-2 font-medium">Papéis</th>
-              <th className="px-4 py-2 font-medium">Limite %</th>
+              <th className="px-4 py-2 font-medium">Taxa / mensalidade</th>
               <th className="px-4 py-2 font-medium">Último acesso</th>
               <th className="px-4 py-2 font-medium">Status</th>
               <th className="px-4 py-2 font-medium text-right">Ações</th>
@@ -83,9 +90,9 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
                   {u.papeis.map((p) => PAPEL_LABEL[p]).join(", ")}
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  {u.limiteDescontoPct == null ? "—" : `${u.limiteDescontoPct}%`}
+                  {u.limiteDescontoTaxaPct ?? 0}% / {u.limiteDescontoMensalidadePct ?? 0}%
                 </td>
-                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso)}</td>
+                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso, preferenciaFusoExibicao)}</td>
                 <td className="px-4 py-3">
                   <span
                     className={
@@ -107,6 +114,10 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
                             email: u.email,
                             papeis: u.papeis,
                             limiteDescontoPct: u.limiteDescontoPct,
+                            limiteDescontoTaxaPct: u.limiteDescontoTaxaPct,
+                            limiteDescontoMensalidadePct: u.limiteDescontoMensalidadePct,
+                            permissoes: u.permissoes,
+                            gerenteComercialId: u.gerenteComercialId,
                           },
                         })
                       }

@@ -1,0 +1,5 @@
+{
+ "incremento":337,"data":"2026-09-14","escopo":"Emissão pela interface e consulta da cobrança",
+ "integracao":{"aprovados":17,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","build":"aprovado","paginasEstaticasGeradas":52,
+ "migration":false,"homologacaoVisual":false,"limites":["Vínculos entre complementares e detalhes de origens pendentes","Concorrência entre períodos sobrepostos pendente","Encerramento e ajustes pendentes"],"producao":false,"enviosExternos":false
+}

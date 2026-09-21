@@ -1,0 +1,2 @@
+src/server/matricula/continuidade-recomposicao-tx.test.ts(15,2): error TS1005: ',' expected.
+src/server/matricula/continuidade-recomposicao-tx.test.ts(15,3): error TS1136: Property assignment expected.

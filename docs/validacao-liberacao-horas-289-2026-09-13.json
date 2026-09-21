@@ -1,0 +1,18 @@
+{
+  "incremento": 289,
+  "data": "2026-09-13",
+  "escopo": "Liberação aprovada de reserva de horas compradas para remarcação escolhida pelo aluno após cancelamento pela escola",
+  "integracao": { "aprovados": 29, "falhos": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts", "src/server/agenda/cancelamento-particular.int.test.ts", "src/server/diario/diario.int.test.ts"] },
+  "cobertura": ["Escolha do aluno documentada", "Autoaprovação recusada mesmo com Administração", "Permissão financeiro.aprovar_acertos exigida do Financeiro", "Aprovação concorrente idempotente", "Saldo liberado reutilizável sem exceder quantidade comprada", "Reserva original e recebimentos preservados", "Cancelamento sem aprovação não libera saldo", "Estado alterado impede aprovação", "Rejeição preserva comprometimento", "Revogação de papel impede consulta", "SQL impede aprovação própria, liberação sem cancelamento válido e alteração da decisão"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 135,
+  "migrationNova": "20260914033000_liberacao_horas_remarcacao",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Conversão em crédito financeiro ainda pendente", "Remarcação/publicação de novo encontro ainda precisa de integração; reserva usa encontro já autorizado", "Validade, encerramento e correção do consumo ainda incompletos", "Q95 não concluído integralmente"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

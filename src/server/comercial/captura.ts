@@ -196,7 +196,12 @@ export async function capturarRespostaExperimental(
     agregadoTipo: "Lead",
     agregadoId: lead.id,
     autorId: null,
-    payload: { via: "whatsapp_keyword" },
+    payload: { via: "whatsapp_keyword", ocorrencia: lead.dataExperimental.toISOString() },
+  });
+  await tx.intencaoMensagem.updateMany({
+    where: { leadId: lead.id, ocorrenciaComercial: lead.dataExperimental.toISOString(),
+      politicaComercial: { chave: CHAVE_PRE_EXPERIMENTAL }, status: { in: ["PENDENTE", "ADIADA"] } },
+    data: { status: "CANCELADA", motivoFalha: "reagendamento_solicitado" },
   });
   return "reagendar";
 }

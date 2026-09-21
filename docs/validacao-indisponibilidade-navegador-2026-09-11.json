@@ -1,0 +1,13 @@
+{
+  "executadoEm": "2026-09-11T23:04:28.719Z",
+  "ambiente": "Banco descartável local, dados fictícios",
+  "alcance": "Solicitação e aprovação no navegador; sem remarcação ou cancelamento",
+  "checks": {
+    "pedidoUnico": true,
+    "autorCorreto": true,
+    "fusoCorreto": true,
+    "aprovacaoIndependente": true,
+    "aulaPreservada": true,
+    "impactoRegistrado": true
+  }
+}

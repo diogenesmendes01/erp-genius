@@ -1,0 +1,14 @@
+{
+  "executadoEm": "2026-09-11T20:42:07.064Z",
+  "ambiente": "Banco descartável local; dados fictícios",
+  "alcance": "Pedido e rascunho mensal com exceção de multa, sem aprovação ou execução do acerto",
+  "checks": {
+    "pedidoUnico": true,
+    "selecaoExata": true,
+    "contratosPreservados": true,
+    "financeiroPreservado": true,
+    "rascunhoUnico": true,
+    "calculo": true,
+    "excecaoPendente": true
+  }
+}

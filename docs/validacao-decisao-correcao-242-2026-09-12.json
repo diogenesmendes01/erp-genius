@@ -1,0 +1,25 @@
+{
+  "incremento": 242,
+  "data": "2026-09-12",
+  "migration": "20260913080000_decisao_correcao_nota",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 19,
+    "falhas": 0,
+    "reexecucaoCadeia": 19
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 48
+  },
+  "homologacaoInterativa": false,
+  "limites": [
+    "Formulários/histórico completo de correção pendentes",
+    "Fila/resolução de revisão acadêmica pendente",
+    "Impactos de recuperação/equivalência/fechamento pendentes"
+  ]
+}

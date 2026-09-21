@@ -1,0 +1,6 @@
+{
+ "incremento":320,"data":"2026-09-13","escopo":"Origem aprovada do cancelamento particular",
+ "integracao":{"aprovados":36,"falhos":0,"arquivos":3},"typescript":"aprovado no build","lint":"aprovado","build":"aprovado, 52 páginas","migrations":151,"schemaDiff":"vazio",
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Antecedência contratual e conferência financeira pendentes","Histórico real requer conferência de origem antes de migrar","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

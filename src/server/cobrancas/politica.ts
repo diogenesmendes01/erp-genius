@@ -9,8 +9,8 @@ import { REGUA, type DegrauRegua, type PassoRegua, type TipoAcao } from "./regua
 // traduz para o formato puro que o cérebro (`proximaAcao`) consome. Sem registro no banco,
 // vale a política de FÁBRICA (a própria REGUA, com os modos do doc 26 e estado DESLIGADA).
 //
-// LEIS (fora da config — doc 26/30): degrau `bloquear` NUNCA é AUTOMATICO (D+15 exige
-// aprovação humana) — imposta aqui na leitura, mesmo que o banco diga o contrário.
+// D+15 conserva seu ID histórico e o envio manual; a restrição D+30 é processada
+// pelo controle de acesso independente, sem usar o degrau de mensagem como autorização.
 
 export { MODOS_FABRICA, POLITICA_COBRANCA_NOME };
 
@@ -72,12 +72,11 @@ export async function carregarPoliticaRegua(): Promise<PoliticaCarregada> {
   for (const d of p.degraus) {
     if (!d.ativo) continue;
     const passo = PASSOS.find((x) => x === d.passo);
-    const tipo = TIPOS.find((x) => x === d.tipo);
+    const tipo = passo === "D+15" ? "cobrar" : TIPOS.find((x) => x === d.tipo);
     if (!passo || !tipo) continue; // linha malformada nunca chega ao cérebro
     const template = MODELOS_WHATSAPP.find((m) => m === d.template?.nome) ?? modeloFabrica(passo);
-    degraus.push({ passo, offsetDias: d.offsetDias, tipo, template, rotulo: d.rotulo });
-    // LEI: bloquear nunca automatiza (nem por engano de config).
-    modoPorPasso.set(passo, tipo === "bloquear" && d.modo === "AUTOMATICO" ? "MANUAL" : d.modo);
+    degraus.push({ passo, offsetDias: d.offsetDias, tipo, template, rotulo: passo === "D+15" ? "Cobrança final" : d.rotulo });
+    modoPorPasso.set(passo, (passo === "D+15" || tipo === "bloquear") && d.modo === "AUTOMATICO" ? "MANUAL" : d.modo);
     templateIdPorPasso.set(passo, d.templateId ?? null);
   }
 

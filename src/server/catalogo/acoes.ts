@@ -29,7 +29,7 @@ const PATH = "/configuracao/catalogo";
 // ----- Idiomas -----
 export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const dados = IdiomaSchema.parse(input);
     const id = await prisma.$transaction(async (tx) => {
       const idioma = await tx.idioma.create({ data: { nome: dados.nome } });
@@ -49,7 +49,7 @@ export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: s
 
 export async function alternarIdiomaAtivo(id: string): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const idioma = await prisma.idioma.findUnique({ where: { id } });
     if (!idioma) throw new ErroRegra("Idioma não encontrado.");
     await prisma.$transaction(async (tx) => {
@@ -103,6 +103,7 @@ export async function editarModalidade(id: string, input: ModalidadeInput): Prom
     const dados = ModalidadeSchema.parse(input);
     const atual = await prisma.modalidade.findUnique({ where: { id } });
     if (!atual) throw new ErroRegra("Modalidade não encontrada.");
+    if (atual.aulasPorNivel !== dados.aulasPorNivel) throw new ErroRegra("A quantidade de aulas segue revisão conjunta em Acadêmico > Quantidade de aulas da modalidade.");
     await prisma.$transaction(async (tx) => {
       await tx.modalidade.update({
         where: { id },
@@ -134,7 +135,7 @@ export async function editarModalidade(id: string, input: ModalidadeInput): Prom
 // ----- Níveis -----
 export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const dados = NivelSchema.parse(input);
     const idioma = await prisma.idioma.findUnique({ where: { id: dados.idiomaId } });
     if (!idioma) throw new ErroRegra("Idioma não encontrado.");

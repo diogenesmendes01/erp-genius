@@ -1,0 +1,160 @@
+// Fragmento de schema para F07.7 (Q33, Q72--Q74).
+//
+// Este arquivo documenta a adição da migration 178. O schema principal é
+// integrado pelo responsável da branch após a migration ter sido conferida.
+// A conta é uma identidade de aluno, deliberadamente distinta de Usuario:
+// coincidência de e-mail não concede papel interno nem permite usar a sessão
+// da equipe no portal.
+
+enum FinalidadeTokenPortalAluno {
+  CONVITE
+  RECUPERACAO
+  VALIDAR_TROCA_EMAIL
+}
+
+enum SituacaoEnvioPortalAluno {
+  PREPARADO
+  CANCELADO
+  ENVIADO
+  FALHOU
+  INCERTO
+}
+
+enum SituacaoTrocaEmailPortalAluno {
+  PENDENTE_VALIDACAO
+  PENDENTE_DECISAO
+  APROVADA_APLICADA
+  REJEITADA
+  CANCELADA
+}
+
+model ConfiguracaoOperacional {
+  // Campos novos são opcionais no banco para não inventar prazo para a escola
+  // existente. O serviço do portal exige todos antes de criar sessão ou token.
+  prazoSessaoPortalAlunoMinutos          Int?
+  prazoConvitePortalAlunoMinutos         Int?
+  prazoRecuperacaoPortalAlunoMinutos     Int?
+  prazoValidacaoEmailPortalAlunoMinutos  Int?
+}
+
+model Aluno {
+  contaPortal ContaPortalAluno?
+  trocasEmailPortal SolicitacaoTrocaEmailPortalAluno[]
+}
+
+model Usuario {
+  solicitacoesTrocaEmailPortalPreparadas SolicitacaoTrocaEmailPortalAluno[] @relation("PreparadorTrocaEmailPortal")
+  decisoesTrocaEmailPortal DecisaoTrocaEmailPortalAluno[] @relation("DecisorTrocaEmailPortal")
+}
+
+model ContaPortalAluno {
+  id                 String @id @default(cuid())
+  alunoId            String @unique
+  aluno              Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  // Só é definido ao consumir o convite; alteração de Aluno.email não o troca.
+  emailVerificado    String?
+  emailVerificadoEm  DateTime?
+  senhaHash          String?
+  versaoSessao       Int @default(1)
+  ativa              Boolean @default(true)
+  criadaEm           DateTime @default(now())
+  atualizadaEm       DateTime @updatedAt
+  sessoes            SessaoPortalAluno[]
+  tokens             TokenPortalAluno[]
+  envios             SolicitacaoEnvioPortalAluno[]
+  trocasEmail        SolicitacaoTrocaEmailPortalAluno[]
+
+  // A migration mantém unicidade funcional de LOWER(emailVerificado).
+}
+
+model SessaoPortalAluno {
+  id              String @id
+  digest          String @unique
+  contaId         String
+  conta           ContaPortalAluno @relation(fields: [contaId], references: [id], onDelete: Restrict)
+  versaoConta     Int
+  expiraEm        DateTime
+  revogadaEm      DateTime?
+  criadaEm        DateTime @default(now())
+  ultimoUsoEm     DateTime?
+
+  @@index([contaId, expiraEm])
+}
+
+// Chave SHA-256 com namespace, nunca e-mail em claro. Persiste a limitação de
+// tentativas entre processos e reinícios.
+model TentativaAutenticacaoPortalAluno {
+  chaveDigest      String @id
+  falhas           Int
+  janelaIniciadaEm DateTime
+  bloqueadaAte     DateTime?
+  atualizadaEm     DateTime @updatedAt
+}
+
+model TokenPortalAluno {
+  id              String @id @default(cuid())
+  contaId         String
+  conta           ContaPortalAluno @relation(fields: [contaId], references: [id], onDelete: Restrict)
+  finalidade      FinalidadeTokenPortalAluno
+  digest          String @unique
+  destinatario    String
+  trocaEmailId    String?
+  trocaEmail      SolicitacaoTrocaEmailPortalAluno? @relation(fields: [trocaEmailId], references: [id], onDelete: Restrict)
+  expiraEm        DateTime
+  consumidoEm     DateTime?
+  revogadoEm      DateTime?
+  criadoEm        DateTime @default(now())
+
+  @@index([contaId, finalidade, expiraEm])
+}
+
+// A fila não armazena token bruto. O despachante interno cria o token no
+// instante de enviar e o entrega diretamente ao adaptador institucional.
+model SolicitacaoEnvioPortalAluno {
+  id              String @id @default(cuid())
+  contaId         String
+  conta           ContaPortalAluno @relation(fields: [contaId], references: [id], onDelete: Restrict)
+  finalidade      FinalidadeTokenPortalAluno
+  destinatario    String
+  trocaEmailId    String?
+  situacao        SituacaoEnvioPortalAluno @default(PREPARADO)
+  chave            String @unique
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  @@index([situacao, criadoEm])
+}
+
+model SolicitacaoTrocaEmailPortalAluno {
+  id                       String @id @default(cuid())
+  alunoId                  String
+  aluno                    Aluno @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  contaId                  String
+  conta                    ContaPortalAluno @relation(fields: [contaId], references: [id], onDelete: Restrict)
+  emailAnterior            String?
+  novoEmail                String
+  novoEmailVerificadoEm    DateTime?
+  versaoContaConferida     Int
+  motivo                   String
+  evidencia                String
+  preparadorId             String
+  preparador               Usuario @relation("PreparadorTrocaEmailPortal", fields: [preparadorId], references: [id], onDelete: Restrict)
+  situacao                 SituacaoTrocaEmailPortalAluno @default(PENDENTE_VALIDACAO)
+  criadaEm                 DateTime @default(now())
+  decididaEm               DateTime?
+  tokens                   TokenPortalAluno[]
+  decisao                  DecisaoTrocaEmailPortalAluno?
+
+  @@index([alunoId, situacao, criadaEm])
+}
+
+model DecisaoTrocaEmailPortalAluno {
+  id              String @id @default(cuid())
+  solicitacaoId   String @unique
+  solicitacao     SolicitacaoTrocaEmailPortalAluno @relation(fields: [solicitacaoId], references: [id], onDelete: Restrict)
+  decisorId       String
+  decisor         Usuario @relation("DecisorTrocaEmailPortal", fields: [decisorId], references: [id], onDelete: Restrict)
+  aprovada        Boolean
+  motivo          String
+  criadaEm        DateTime @default(now())
+}

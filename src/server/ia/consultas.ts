@@ -1,3 +1,6 @@
+import { Papel } from "@prisma/client";
+import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { prisma } from "@/lib/prisma";
 
 // CONSULTAS do copiloto (C3): sugestões pendentes por lead (ficha/inbox) e a MÉTRICA-GATE
@@ -14,6 +17,8 @@ export interface SugestaoPendente {
 }
 
 export async function sugestoesPendentesDoLead(leadId: string): Promise<SugestaoPendente[]> {
+  const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+  if (!await prisma.lead.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(autor)] } })) throw new ErroPermissao("Lead fora da carteira/equipe vigente.");
   const sugestoes = await prisma.sugestaoIA.findMany({
     where: { leadId, status: "PENDENTE" },
     orderBy: { criadoEm: "asc" },
@@ -40,11 +45,13 @@ export interface MetricaCopilotoTipo {
 }
 
 export async function metricasCopiloto(): Promise<MetricaCopilotoTipo[]> {
+  const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
+  const escopo = await escopoComercialAtual(autor);
   const grupos = await prisma.sugestaoIA.groupBy({
     by: ["tipo", "status"],
     _count: { _all: true },
     // EXPIRADA fica fora da métrica: ninguém decidiu — não mede qualidade da sugestão.
-    where: { status: { in: ["PENDENTE", "ACEITA", "CORRIGIDA", "DESCARTADA"] } },
+    where: { lead: escopo, status: { in: ["PENDENTE", "ACEITA", "CORRIGIDA", "DESCARTADA"] } },
   });
 
   const porTipo = new Map<string, MetricaCopilotoTipo>();

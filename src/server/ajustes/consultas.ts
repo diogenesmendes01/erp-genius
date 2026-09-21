@@ -5,70 +5,45 @@ import { semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { montarReguaPorCobranca, historicoFinanceiroDoAluno } from "@/server/cobrancas/consultas";
 
-// Papéis com visão GLOBAL da ficha financeira (doc 07): operam o financeiro de
-// QUALQUER aluno. Vendedor NÃO está aqui — vê só a ficha de alunos ligados a ele.
-const PAPEIS_AMPLO_FICHA: Papel[] = [
-  Papel.ADMINISTRADOR,
-  Papel.FINANCEIRO,
-  Papel.SECRETARIA_ACADEMICA,
-  Papel.GERENTE_PEDAGOGICO,
-  Papel.GERENTE_COMERCIAL,
-];
+import { exigirSessaoComPapel, exigirPapel } from "@/server/_shared";
+import { financeiroOperacional, escopoMatriculaComercial, escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
+import { saldoAtual } from "@/server/financeiro/regras";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
-function temVisaoAmplaFicha(usuario: UsuarioSessao): boolean {
-  return usuario.papeis.some((p) => PAPEIS_AMPLO_FICHA.includes(p));
-}
-
-/**
- * Escopo row-level da ficha financeira (doc 07). Papéis amplos veem qualquer
- * aluno. Vendedor só vê a ficha de alunos ligados a ele: matrícula cuja comissão
- * é dele OU cujo lead de origem tem ele como dono. Sem usuário → sem restrição
- * (compat. com chamadas internas). Combine no `where` da consulta para que o
- * acesso fora do escopo retorne `null` (nunca dados de terceiros).
- */
+/** Ausência de identidade e vínculo nunca concede acesso global. */
 export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
-  if (!usuario || temVisaoAmplaFicha(usuario)) return {};
-  return {
-    matriculas: {
-      some: {
-        OR: [
-          { comissoes: { some: { vendedorId: usuario.id } } },
-          { lead: { vendedorDonoId: usuario.id } },
-        ],
-      },
-    },
-  };
-}
-
-/**
- * Uma matrícula "pertence" ao vendedor quando ele tem comissão nela OU é o dono
- * do lead de origem (mesma regra de `escopoFichaFinanceira`). Usado para filtrar,
- * row-level, as matrículas retornadas na ficha — para não vazar matrículas (e suas
- * cobranças/ajustes/comissões) de OUTROS vendedores no mesmo aluno.
- */
-function matriculaDoVendedor(
-  matricula: {
-    comissoes: { vendedorId: string }[];
-    lead: { vendedorDonoId: string | null } | null;
-  },
-  vendedorId: string,
-): boolean {
-  return (
-    matricula.comissoes.some((c) => c.vendedorId === vendedorId) ||
-    matricula.lead?.vendedorDonoId === vendedorId
-  );
+  return usuario && financeiroOperacional(usuario) ? {} : { id: { in: [] } };
 }
 
 export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSessao) {
+  const atual = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
+  if (usuario && usuario.id !== atual.id) return null;
+  usuario = atual;
+  const podeComissao = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
   const aluno = await prisma.aluno.findFirst({
     where: { id: alunoId, ...escopoFichaFinanceira(usuario) },
-    include: {
+    select: {
+      id: true, codigo: true, primeiroNome: true, sobrenome: true,
       pais: { select: { nome: true } },
-      responsaveis: { include: { responsavel: true } },
+      responsaveis: { where: { papel: "FINANCEIRO" }, select: { papel: true, responsavel: { select: { nome: true } } } },
       matriculas: {
         include: {
-          cobrancas: { orderBy: { vencimento: "asc" } },
-          comissoes: { include: { vendedor: { select: { nome: true } } } },
+          cobrancas: {
+            orderBy: { vencimento: "asc" },
+            include: {
+              origensCreditoAcertoTaxaAditivo: { select: { valor: true } },
+              ...incluirFonteVencimentoCivil,
+              aplicacoesPeriodoIntegral: {
+                orderBy: [{ aplicadaEm: "desc" }, { id: "desc" }],
+                take: 1,
+                select: {
+                  aplicadaEm: true,
+                  decisao: { select: { proposta: { select: { escolha: true } } } },
+                },
+              },
+            },
+          },
+          comissoes: { where: podeComissao ? {} : { id: { in: [] } }, include: { vendedor: { select: { nome: true } } } },
           ajustes: { orderBy: { criadoEm: "desc" }, include: { autor: { select: { nome: true } } } },
           produto: { include: { idioma: true, modalidade: true } },
           lead: { select: { vendedorDonoId: true } },
@@ -78,18 +53,17 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   });
   if (!aluno) return null;
 
-  // Row-level (doc 07): papéis amplos veem a ficha completa; vendedor só vê as
-  // SUAS matrículas (e as cobranças/ajustes/comissões aninhadas nelas) — nunca as
-  // de outros vendedores no mesmo aluno. KPIs/somatórios abaixo derivam apenas
-  // das matrículas visíveis, então não vazam totais de terceiros.
-  if (usuario && !temVisaoAmplaFicha(usuario) && usuario.papeis.includes(Papel.VENDEDOR)) {
-    aluno.matriculas = aluno.matriculas.filter((m) => matriculaDoVendedor(m, usuario.id));
-  }
-
   // Borda Server → Client: Decimal (dinheiro no banco) vira number aqui, antes de
   // qualquer soma/serialização — ver `_shared/decimal`.
   const alunoPlano = semDecimais(aluno);
   const cobrancas = alunoPlano.matriculas.flatMap((m) => m.cobrancas);
+  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), alunoPlano.matriculas.map((m) => m.id));
+  const referenciaVencimentoPorCobranca = new Map(cobrancas.map((c) => [c.id, referenciaVencimentoCivil({
+    ...c,
+    aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(c.id),
+    aplicacoesM01: trilhasVencimento.m01PorCobranca.get(c.id),
+    retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas,
+  })]));
   const ajustes = alunoPlano.matriculas.flatMap((m) => m.ajustes);
   const comissoes = alunoPlano.matriculas.flatMap((m) => m.comissoes);
   const agora = new Date();
@@ -98,12 +72,12 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   const emAtraso = somarPorMoeda(
     cobrancas
       .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora))
-      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+      .map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })),
   );
   const emAberto = somarPorMoeda(
     cobrancas
       .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
-      .map((c) => ({ moeda: c.moeda, valor: c.valorNegociado })),
+      .map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })),
   );
   const proximo = cobrancas
     .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
@@ -121,7 +95,7 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
     alunoPlano.matriculas.flatMap((m) =>
       m.cobrancas
         .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
-        .map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: m.acessoBloqueado })),
+        .map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: m.acessoBloqueado })),
     ),
     agora,
   );
@@ -144,14 +118,60 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
     acessoBloqueado,
     reguaPorCobranca,
     historico,
+    referenciaVencimentoPorCobranca,
   };
 }
 
 export async function listarAprovacoesPendentes() {
+  const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
+  if (!usuario.papeis.includes(Papel.ADMINISTRADOR) && !usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return [];
+  const adm = usuario.papeis.includes(Papel.ADMINISTRADOR);
+  const matriculas = adm ? [] : await prisma.matricula.findMany({
+    where: await escopoMatriculaAprovacao(usuario), select: { id: true, cobrancas: { select: { id: true } } },
+  });
+  // A carteira pode mudar depois do pedido. O solicitante histórico sozinho não
+  // autoriza ler valores de um objeto que saiu da equipe supervisionada.
+  const objetos: Prisma.AprovacaoWhereInput = adm ? {} : { OR: [
+    { alvoTipo: "Matricula", alvoId: { in: matriculas.map((m) => m.id) } },
+    { alvoTipo: "Cobranca", alvoId: { in: matriculas.flatMap((m) => m.cobrancas.map((c) => c.id)) } },
+  ], payload: { path: ["exigeDirecao"], equals: false } };
   const aprovacoes = await prisma.aprovacao.findMany({
-    where: { status: StatusAprovacao.PENDENTE },
+    where: {
+      status: StatusAprovacao.PENDENTE, solicitanteId: { not: usuario.id },
+      tipo: { in: adm ? ["DESCONTO", "BOLSA", "ALTERACAO_VALOR", "PERDAO_DIVIDA"] : ["DESCONTO", "ALTERACAO_VALOR"] },
+      AND: [{ alvoTipo: { in: ["Matricula", "Cobranca"] } }, objetos],
+    },
     orderBy: { criadoEm: "asc" },
     include: { solicitante: { select: { nome: true } } },
   });
   return semDecimais(aprovacoes); // impactoMensal: Decimal → number (borda Server → Client)
+}
+
+/** Contexto da negociação: não contém saldo, inadimplência, comprovantes ou extrato. */
+export async function obterResumoComercialFinanceiro(alunoId: string, usuario: UsuarioSessao) {
+  const atual = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+  if (atual.id !== usuario.id) return null;
+  exigirPapel(atual, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+  const matriculas = await prisma.matricula.findMany({
+    where: { AND: [{ alunoId }, await escopoMatriculaComercial(atual)] },
+    select: {
+      id: true, codigo: true, moeda: true, status: true,
+      aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
+      produto: { select: { idioma: { select: { nome: true } }, modalidade: { select: { nome: true } } } },
+      cobrancas: { where: { tipo: { in: ["MATRICULA", "MENSALIDADE"] } }, orderBy: { vencimento: "asc" }, select: { id: true, tipo: true, valorOriginal: true, valorNegociado: true, status: true } },
+      comissoes: { where: atual.papeis.includes(Papel.ADMINISTRADOR) ? {} : atual.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: atual.id }, { vendedor: { gerenteComercialId: atual.id } }] } : { vendedorId: atual.id }, select: { id: true, valor: true, moeda: true, tipo: true, percentual: true, status: true } },
+    },
+  });
+  if (!matriculas.length) return null;
+  const pedidos = await prisma.aprovacao.findMany({ where: { alvoTipo: "Matricula", alvoId: { in: matriculas.map((m) => m.id) }, status: "PENDENTE" }, select: { alvoId: true } });
+  const pendentes = new Set(pedidos.map((p) => p.alvoId));
+  return semDecimais({ aluno: matriculas[0].aluno, matriculas: matriculas.map((m) => ({
+    id: m.id, codigo: m.codigo, moeda: m.moeda, status: m.status, precoAguardandoAprovacao: pendentes.has(m.id),
+    produto: `${m.produto.idioma.nome} · ${m.produto.modalidade.nome}`,
+    pagamentoInicialConfirmado: m.cobrancas.find((c) => c.tipo === "MATRICULA")?.status === "PAGO",
+    precos: (["MATRICULA", "MENSALIDADE"] as const).flatMap((tipo) => {
+      const c = m.cobrancas.find((c) => c.tipo === tipo);
+      return c ? [{ id: c.id, tipo, referencia: c.valorOriginal, valor: c.valorNegociado }] : [];
+    }), comissoes: m.comissoes,
+  })) });
 }

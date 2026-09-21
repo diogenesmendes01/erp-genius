@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 import type { ColaboradorRelatorio, FaturaResumo } from "@/server/empresas/consultas";
 import {
   cancelarFaturaB2B,
-  criarMatriculasLoteB2B,
-  fecharFaturaB2B,
   pagarFaturaB2B,
   salvarEmpresa,
 } from "@/server/empresas/acoes";
 
-// FICHA DA EMPRESA (B2B — Fase 2, doc 03): contrato corporativo, relatório por
-// colaborador, lote de matrículas e faturas únicas.
+// FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
+// A matrícula é preparada individualmente; lote corporativo não está disponível.
 
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60";
@@ -44,8 +42,6 @@ export function FichaEmpresa({
   empresa,
   colaboradores,
   faturas,
-  produtos,
-  competencias,
   podePagar,
 }: {
   empresa: EmpresaFicha;
@@ -60,15 +56,6 @@ export function FichaEmpresa({
   const [nota, setNota] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
-  // Lote de colaboradores (textarea: um por linha "Nome Sobrenome; email; telefone")
-  const [loteAberto, setLoteAberto] = useState(false);
-  const [produtoId, setProdutoId] = useState("");
-  const [mensalidade, setMensalidade] = useState("");
-  const [mesesPlano, setMesesPlano] = useState(12);
-  const [listaTexto, setListaTexto] = useState("");
-
-  const [competencia, setCompetencia] = useState(competencias[0] ?? "");
-
   async function run<T>(p: Promise<{ ok: boolean; erro?: string; dado?: T }>, sucesso?: string) {
     setOcupado(true);
     setErro(null);
@@ -78,39 +65,6 @@ export function FichaEmpresa({
     if (!r.ok) return setErro(r.erro ?? "Erro.");
     if (sucesso) setNota(sucesso);
     router.refresh();
-  }
-
-  function parseColaboradores() {
-    return listaTexto
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .map((linha) => {
-        const [nomeCompleto, email, telefone] = linha.split(";").map((c) => c?.trim() ?? "");
-        const [primeiroNome, ...resto] = nomeCompleto.split(/\s+/);
-        return {
-          primeiroNome: primeiroNome ?? "",
-          sobrenome: resto.join(" "),
-          email: email || undefined,
-          telefone: telefone || undefined,
-        };
-      });
-  }
-
-  async function criarLote() {
-    const colaboradoresLote = parseColaboradores();
-    await run(
-      criarMatriculasLoteB2B({
-        empresaId: empresa.id,
-        produtoId,
-        mensalidadeValor: Number(mensalidade),
-        mesesPlano,
-        colaboradores: colaboradoresLote,
-      }),
-      `${colaboradoresLote.length} matrícula(s) criada(s) e ativada(s) pelo contrato corporativo.`,
-    );
-    setLoteAberto(false);
-    setListaTexto("");
   }
 
   return (
@@ -131,63 +85,16 @@ export function FichaEmpresa({
       {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       {nota && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{nota}</p>}
 
-      {/* Relatório por colaborador (doc 03 §B2B) */}
+      {/* Histórico de contratos individuais vinculados ao responsável financeiro. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-medium">Colaboradores ({colaboradores.length})</h2>
-          <button className={btnPri} onClick={() => setLoteAberto((v) => !v)}>Matricular em lote</button>
+          <Link className={btnPri} href="/matriculas/nova">Preparar matrícula individual</Link>
         </div>
-
-        {loteAberto && (
-          <div className="mb-4 flex flex-col gap-2 rounded-md border border-gray-200 bg-surface-muted p-3">
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Produto</span>
-                <select className={inputCls} value={produtoId} onChange={(e) => setProdutoId(e.target.value)}>
-                  <option value="">—</option>
-                  {produtos.map((p) => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Mensalidade (por colaborador)</span>
-                <input type="number" min={1} className={inputCls + " w-32"} value={mensalidade} onChange={(e) => setMensalidade(e.target.value)} />
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Meses do plano</span>
-                <input type="number" min={1} max={36} className={inputCls + " w-24"} value={mesesPlano} onChange={(e) => setMesesPlano(Number(e.target.value))} />
-              </label>
-            </div>
-            <label className="text-sm">
-              <span className="mb-1 block text-xs font-medium text-gray-600">
-                Colaboradores — um por linha: Nome Sobrenome; email (opcional); telefone (opcional)
-              </span>
-              <textarea
-                className={inputCls + " w-full"}
-                rows={5}
-                placeholder={"Ana Rojas; ana@empresa.cr; +50688881111\nLuis Mora"}
-                value={listaTexto}
-                onChange={(e) => setListaTexto(e.target.value)}
-              />
-            </label>
-            <div>
-              <button
-                className={btnPri}
-                disabled={ocupado || !produtoId || !mensalidade || !listaTexto.trim()}
-                onClick={criarLote}
-              >
-                {ocupado ? "Criando…" : "Criar matrículas do lote"}
-              </button>
-              <span className="ml-2 text-xs text-gray-500">
-                Nasce ATIVA (lastro: contrato corporativo), sem taxa individual; mensalidades entram na fatura única.
-              </span>
-            </div>
-          </div>
-        )}
+        <p className="mb-4 text-sm text-gray-500">A empresa pode ser o responsável financeiro, mas cada colaborador é preparado e contratado individualmente.</p>
 
         {colaboradores.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum colaborador matriculado ainda.</p>
+          <p className="text-sm text-gray-400">Nenhum contrato individual vinculado a esta empresa ainda.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -228,30 +135,13 @@ export function FichaEmpresa({
         )}
       </section>
 
-      {/* Fatura única (doc 03 §B2B) */}
+      {/* Faturas corporativas já registradas permanecem consultáveis e editáveis. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-medium">Faturas únicas</h2>
-          <span className="flex items-center gap-2">
-            <select className={inputCls} value={competencia} onChange={(e) => setCompetencia(e.target.value)}>
-              <option value="">Competência…</option>
-              {competencias.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <button
-              className={btnPri}
-              disabled={ocupado || !competencia}
-              onClick={() => run(fecharFaturaB2B({ empresaId: empresa.id, competencia }), "Fatura fechada.")}
-            >
-              Fechar fatura do mês
-            </button>
-          </span>
-        </div>
+        <h2 className="mb-3 font-medium">Faturas históricas</h2>
 
         {faturas.length === 0 ? (
           <p className="text-sm text-gray-400">
-            Nenhuma fatura ainda. Feche a competência para agrupar as mensalidades dos colaboradores.
+            Nenhuma fatura histórica vinculada a esta empresa.
           </p>
         ) : (
           <div className="overflow-x-auto">

@@ -8,21 +8,27 @@ import { carregarPoliticaRegua } from "./politica";
 import { TEXTOS_FABRICA } from "./fabrica";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { renderizarTemplate } from "@/server/whatsapp/render";
-import { resolverDestinoCobranca } from "@/server/whatsapp/identidade";
+import { resolverDestinoCobranca, INCLUDE_MATRICULA_DESTINO } from "@/server/whatsapp/identidade";
+import { contatoCorrespondeDestinoFinanceiro } from "@/server/whatsapp/destinatario-atual";
+import { suspensoesPorConferencia } from "./conferencia";
+import { cicloDoEventoCobranca } from "./eventos";
+import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 // Read path da régua de cobrança (doc 24). Monta a EntradaRegua de cada cobrança aberta a partir
 // dos eventos já gravados (passo cumprido + promessa) e roda o cérebro `proximaAcao`. Tudo
 // on-the-fly (Fase 0, sem cron). Devolve linhas serializáveis + contadores dos mini-dashs.
 
 export interface FilaCobrancaItem {
+  conferenciaAte?: string | null;
   id: string;
+  cicloRegua: number;
   codigo: string | null;
   tipo: string;
   valorNegociado: number;
   valorRecebido: number;
   saldo: number;
   moeda: string;
-  vencimento: string;
+  vencimento: ReferenciaVencimentoCivil;
   competencia: string | null;
   // Régua (cérebro), achatada para serializar Server → Client:
   estado: EstadoCobranca;
@@ -70,6 +76,7 @@ function inicioDoDia(d: Date): Date {
 }
 
 export interface ReguaCalculada {
+  conferenciaAte?: string | null;
   estado: EstadoCobranca;
   passo: PassoRegua | null;
   tipoAcao: TipoAcao | null;
@@ -98,13 +105,14 @@ const PASSOS_VALIDOS = new Set<PassoRegua>(["D-7", "D-3", "D0", "D+3", "D+7", "D
  * ABERTAS (status quitado não tem régua).
  */
 export async function montarReguaPorCobranca(
-  cobrancas: { id: string; vencimento: Date; acessoBloqueado: boolean }[],
+  cobrancas: { id: string; vencimento: Date; cicloRegua: number; acessoBloqueado: boolean }[],
   hoje: Date,
   politica?: readonly DegrauRegua[],
 ): Promise<Map<string, ReguaCalculada>> {
   // Política como dado (doc 26/30): sem parâmetro, carrega a do banco (fallback = fábrica).
   const degraus = politica ?? (await carregarPoliticaRegua()).degraus;
   const ids = cobrancas.map((c) => c.id);
+  const ciclos = new Map(cobrancas.map((c) => [c.id, c.cicloRegua]));
   const eventos = ids.length
     ? await prisma.evento.findMany({
         where: {
@@ -126,7 +134,9 @@ export async function montarReguaPorCobranca(
     // a régua recomeça da data nova. Eventos vêm em ordem asc, então basta limpar o
     // acumulado. Tentativas (sinal de reincidência) seguem contando o histórico inteiro.
     if (e.tipo === "CobrancaRenegociada") {
-      if (typeof p.novoVencimento === "string") passosPorId.delete(e.agregadoId);
+      // Reprogramações com ciclo explícito já estão isoladas pelo filtro dos envios.
+      // O reset cronológico permanece para as renegociações anteriores a esse contrato.
+      if (typeof p.novoVencimento === "string" && p.cicloRegua === undefined) passosPorId.delete(e.agregadoId);
       continue;
     }
     if (e.tipo === "CobrancaEnviadaWhatsApp") {
@@ -134,6 +144,9 @@ export async function montarReguaPorCobranca(
       t.count += 1;
       t.ultima = e.criadoEm; // ordenado asc → fica o mais recente
       tentativasPorId.set(e.agregadoId, t);
+      // Um envio do ciclo anterior pode terminar depois de uma reprogramação.
+      // Preserva o histórico de tentativas sem cumprir um passo do calendário novo.
+      if (cicloDoEventoCobranca(e.payload) !== ciclos.get(e.agregadoId)) continue;
       const passo = p.passo as PassoRegua | undefined;
       if (passo && PASSOS_VALIDOS.has(passo)) {
         const s = passosPorId.get(e.agregadoId) ?? new Set<PassoRegua>();
@@ -147,7 +160,9 @@ export async function montarReguaPorCobranca(
   }
 
   const mapa = new Map<string, ReguaCalculada>();
+  const conferencias = await suspensoesPorConferencia(ids, hoje);
   for (const c of cobrancas) {
+    const conferencia = conferencias.get(c.id);
     const passos = [...(passosPorId.get(c.id) ?? [])];
     const promessaAte = promessaPorId.get(c.id) ?? null;
     const acao = proximaAcao(
@@ -157,16 +172,17 @@ export async function montarReguaPorCobranca(
     );
     const tent = tentativasPorId.get(c.id);
     mapa.set(c.id, {
-      estado: acao.estado,
-      passo: acao.degrau?.passo ?? null,
-      tipoAcao: acao.degrau?.tipo ?? null,
-      template: acao.degrau?.template ?? null,
-      rotuloAcao: acao.degrau?.rotulo ?? null,
+      conferenciaAte: conferencia?.toISOString() ?? null,
+      estado: conferencia ? "em_conferencia" : acao.estado,
+      passo: conferencia ? null : acao.degrau?.passo ?? null,
+      tipoAcao: conferencia ? null : acao.degrau?.tipo ?? null,
+      template: conferencia ? null : acao.degrau?.template ?? null,
+      rotuloAcao: conferencia ? "Comprovante a conferir" : acao.degrau?.rotulo ?? null,
       atrasadaNaAcao: acao.atrasadaNaAcao,
       diasAtraso: acao.diasAtraso,
       prioridade: acao.prioridade,
       promessaAte: acao.promessaAte ? acao.promessaAte.toISOString() : null,
-      precisaBloqueio: !c.acessoBloqueado && acao.diasAtraso >= 15 && acao.estado !== "promessa",
+      precisaBloqueio: !c.acessoBloqueado && acao.diasAtraso >= 30,
       tentativas: tent?.count ?? 0,
       ultimaCobrancaEm: tent ? tent.ultima.toISOString() : null,
       passosFeitos: passos,
@@ -196,28 +212,21 @@ export async function listarFilaCobranca(): Promise<{
     where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
     orderBy: { vencimento: "asc" },
     include: {
+      ...incluirFonteVencimentoCivil,
       matricula: {
         include: {
-          pais: true,
-          aluno: {
-            include: {
-              pais: true,
-              responsaveis: { include: { responsavel: true } },
-              alocacoes: {
-                where: { ativa: true },
-                take: 1,
-                include: { turma: { include: { modalidade: true, nivel: true } } },
-              },
-            },
-          },
+          ...INCLUDE_MATRICULA_DESTINO,
+          alocacoes: { where: { ativa: true }, include: { turma: { include: { modalidade: true, nivel: true } } } },
         },
       },
     },
   });
 
+  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), [...new Set(cobrancas.map((c) => c.matriculaId))]);
+
   // Régua de cada cobrança via o cérebro compartilhado (mesma fonte da ficha do aluno).
   const regua = await montarReguaPorCobranca(
-    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, acessoBloqueado: c.matricula.acessoBloqueado })),
+    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
     hoje,
     politica.degraus,
   );
@@ -242,35 +251,40 @@ export async function listarFilaCobranca(): Promise<{
   }
 
   const destinos = cobrancas.map((c) => resolverDestinoCobranca(c));
-  const telefones = [...new Set(destinos.filter(Boolean).map((d) => d!.telefoneE164))];
-  const contatos = telefones.length
-    ? await prisma.contatoWhatsApp.findMany({
-        where: { telefoneE164: { in: telefones } },
-        select: { telefoneE164: true, conversas: { select: { ultimoInboundEm: true } } },
+  const destinoPorMatricula = new Map(destinos.filter((d): d is NonNullable<typeof d> => !!d).map((d) => [d.matriculaId, d]));
+  // "Respondeu" pertence ao assunto financeiro daquela matrícula, não ao
+  // transporte/telefone. Contextos encerrados ainda contam como histórico se
+  // continuam ligados ao destinatário atual; COMERCIAL e financeiro legado sem
+  // matrícula nunca contaminam o sinal de cobrança.
+  const atendimentos = destinoPorMatricula.size
+    ? await prisma.atendimentoWhatsApp.findMany({
+        where: { finalidade: "FINANCEIRO", matriculaId: { in: [...destinoPorMatricula.keys()] }, ultimoInboundEm: { not: null } },
+        select: { matriculaId: true, ultimoInboundEm: true, conversa: { select: { contato: { select: { telefoneE164: true, responsavelId: true } } } } },
       })
     : [];
-  const inboundPorTelefone = new Map<string, Date>();
-  for (const ct of contatos) {
-    for (const cv of ct.conversas) {
-      if (!cv.ultimoInboundEm) continue;
-      const atual = inboundPorTelefone.get(ct.telefoneE164);
-      if (!atual || cv.ultimoInboundEm > atual) inboundPorTelefone.set(ct.telefoneE164, cv.ultimoInboundEm);
-    }
+  const inboundPorMatricula = new Map<string, Date>();
+  for (const atendimento of atendimentos) {
+    if (!atendimento.matriculaId || !atendimento.ultimoInboundEm) continue;
+    const destino = destinoPorMatricula.get(atendimento.matriculaId);
+    if (!destino || !contatoCorrespondeDestinoFinanceiro(atendimento.conversa.contato, destino)) continue;
+    const atual = inboundPorMatricula.get(atendimento.matriculaId);
+    if (!atual || atendimento.ultimoInboundEm > atual) inboundPorMatricula.set(atendimento.matriculaId, atendimento.ultimoInboundEm);
   }
 
   const itens: FilaCobrancaItem[] = cobrancas.map((c, idx) => {
     const r = regua.get(c.id)!;
     const aluno = c.matricula.aluno;
-    const turma = aluno.alocacoes[0]?.turma ?? null;
+    const turma = c.matricula.alocacoes.length === 1 ? c.matricula.alocacoes[0].turma : null;
     const valorNegociado = numero(c.valorNegociado);
     const valorRecebido = numeroOuNull(c.valorRecebido) ?? 0;
     const saldo = numeroOuNull(c.saldo) ?? valorNegociado - valorRecebido;
 
     const d = destinos[idx];
-    const destino = d ? { telefone: d.telefoneE164, nome: d.nome, viaResponsavel: d.responsavelId !== null } : null;
+    const destino = d ? { telefone: d.telefoneE164, nome: d.nome,
+      viaResponsavel: d.responsavelId !== null || d.tipoPagador === "RESPONSAVEL" || d.tipoPagador === "EMPRESA" } : null;
 
     // "Respondeu" = inbound do destino DEPOIS da última cobrança enviada (doc 26 §Camada 3).
-    const inbound = destino ? inboundPorTelefone.get(destino.telefone) : undefined;
+    const inbound = d ? inboundPorMatricula.get(d.matriculaId) : undefined;
     const respondeuEm =
       inbound && r.ultimaCobrancaEm && inbound > new Date(r.ultimaCobrancaEm) ? inbound.toISOString() : null;
 
@@ -302,13 +316,19 @@ export async function listarFilaCobranca(): Promise<{
 
     return {
       id: c.id,
+      cicloRegua: c.cicloRegua,
       codigo: c.codigo,
       tipo: c.tipo,
       valorNegociado,
       valorRecebido,
       saldo,
       moeda: c.moeda,
-      vencimento: c.vencimento.toISOString(),
+      vencimento: referenciaVencimentoCivil({
+        ...c,
+        aplicacoesAditivoVencimento: trilhasVencimento.vencimentosPorCobranca.get(c.id),
+        aplicacoesM01: trilhasVencimento.m01PorCobranca.get(c.id),
+        retomadasReprogramadas: trilhasVencimento.retomadasReprogramadas,
+      }),
       competencia: c.competencia,
       ...r,
       matriculaId: c.matriculaId,

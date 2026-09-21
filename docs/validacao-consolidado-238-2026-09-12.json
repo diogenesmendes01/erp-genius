@@ -1,0 +1,27 @@
+{
+  "incremento": 238,
+  "data": "2026-09-12",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 13,
+    "primeiraExecucao": {
+      "aprovados": 12,
+      "falhas": 1,
+      "motivo": "Asserção com tamanho incorreto da lista de habilidades; corrigida para verificar a habilidade alvo."
+    }
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 47
+  },
+  "homologacaoInterativa": false,
+  "migrationsNovas": 0,
+  "limites": [
+    "Somente acompanhamento regular",
+    "Sem fechamento, frequência, recuperação persistida ou correções",
+    "Sem portal do aluno"
+  ]
+}

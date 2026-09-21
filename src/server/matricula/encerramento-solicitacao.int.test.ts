@@ -1,0 +1,471 @@
+import { aplicarCreditosAcertoTx } from "./encerramento-aplicar-creditos";
+import { aplicarAjustesCobrancaAcertoTx } from "./encerramento-aplicar-cobrancas";
+import { carregarAcertoAprovadoParaEfetivacaoTx } from "./encerramento-efetivacao-estado";
+import { decidirAcertoEncerramento } from "./encerramento-decisao";
+import { beforeEach, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: authMock }));
+vi.mock("@/server/_shared", async (original) => {
+  const real = await original<typeof import("@/server/_shared")>();
+  return { ...real, exigirSessaoComPapel: async (...papeis: Papel[]) => {
+    const session = await authMock();
+    const u = await prisma.usuario.findUniqueOrThrow({ where: { id: session.user.id }, select: { id: true, nome: true, papeis: true, ativo: true } });
+    if (!u.ativo) throw new real.ErroPermissao();
+    real.exigirPapel(u, ...papeis);
+    return u;
+  } };
+});
+import { prisma } from "@/lib/prisma";
+import { receberTx } from "@/server/financeiro/recebimentos";
+import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { seedRelatoOfertaConfirmado } from "@/test/indisponibilidade-oferta";
+import { solicitarEncerramentoMatriculas } from "./encerramento-solicitacao";
+import { exigirFluxoGlobalSemMovimentacaoContratual } from "./limite-legado";
+import { preverComponenteMensalEncerramento } from "./encerramento-previa";
+import { salvarRascunhoAcertoEncerramento, consultarRascunhoAcertoEncerramento } from "./encerramento-rascunho";
+import { conferirValidadeRascunhoEncerramento } from "./encerramento-validade";
+let alunoId: string, ids: string[], estrangeira: string, registradorId: string;
+beforeEach(async () => {
+  await truncarBanco();
+  const cat = await seedCatalogoMinimo();
+  const autor = await criarUsuario(["SECRETARIA_ACADEMICA"]); registradorId = autor.id;
+  authMock.mockResolvedValue({ user: { id: autor.id } });
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "America/Sao_Paulo" }, update: { fusoInstitucional: "America/Sao_Paulo" } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno teste", paisId: cat.pais.id } }); alunoId = aluno.id;
+  const outro = await prisma.aluno.create({ data: { primeiroNome: "Outro aluno", paisId: cat.pais.id } });
+  ids = [];
+  for (let i = 0; i < 3; i++) ids.push((await prisma.matricula.create({ data: { alunoId, paisId: cat.pais.id, produtoId: cat.produto.id, moeda: "CRC", status: i === 1 ? "PAUSADA" : "ATIVA" } })).id);
+  estrangeira = (await prisma.matricula.create({ data: { alunoId: outro.id, paisId: cat.pais.id, produtoId: cat.produto.id, moeda: "CRC", status: "ATIVA" } })).id;
+});
+const entrada = () => ({ alunoId, matriculaIds: ids.slice(0, 2), dataSolicitada: "2099-09-30", motivo: "Pedido de encerramento recebido", evidenciaPedido: "Mensagem institucional identificada no atendimento", chaveIdempotencia: "pedido-teste-001" });
+it.each(["INCLUIR", "EXCLUIR"] as const)("preserva crédito e limite contratual %s, invalidando origens alteradas", async (diaEncerramento) => {
+  const pedido = await solicitarEncerramentoMatriculas({ ...entrada(), matriculaIds: [ids[0]] });
+  if (!pedido.ok || !pedido.dado) throw new Error("Pedido ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]), financeiro = await criarUsuario(["FINANCEIRO"]);
+  const doc = await prisma.documento.create({ data: { matriculaId: ids[0], nome: "Contrato", categoria: "CONTRATO", url: "/api/files/contrato-teste.pdf" } });
+  await prisma.matricula.update({ where: { id: ids[0] }, data: { contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: registradorId } });
+  const produto = await prisma.produto.findFirstOrThrow();
+  const nivel = await prisma.nivel.create({ data: { idiomaId: produto.idiomaId, codigo: "A1-encerramento", ordem: 1 } });
+  const turma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id } });
+  const vinculo = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId: ids[0], turmaId: turma.id } });
+  const outraTurma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id } });
+  const historicoOutro = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId: ids[2], turmaId: outraTurma.id } });
+  const outroContrato = await prisma.matricula.update({ where: { id: ids[2] }, data: { ativadaEm: new Date("2026-09-01T00:00:00Z") } });
+  const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: { matriculaId: ids[0], documentoId: doc.id, preparadorId: registradorId, decisorId: admin.id, status: "APROVADA", decididaEm: new Date(), motivoDecisao: "Conferência independente", versao: 1, motivo: "Condições transcritas",
+    regras: { diaEncerramento, metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Condições do período", multa: { tipo: "SEM_PREVISAO", motivo: "Não consta multa" } } } });
+  let taxa = await prisma.cobranca.create({ data: { matriculaId: ids[0], tipo: "MATRICULA", moeda: "CRC", valorOriginal: 100, valorNegociado: 100, valorRecebido: 0, status: "PENDENTE", saldo: 100, vencimento: new Date("2099-09-05") } });
+  const recebimento = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, chaveIdempotencia: "taxa-paga-fixture", autorId: financeiro.id, valorRecebido: 100, forma: "TRANSFERENCIA", dataPagamento: new Date("2099-09-05"), evidencia: "Taxa de matrícula conferida para o acerto." }));
+  taxa = await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } });
+  const material = await prisma.cobranca.create({ data: { matriculaId: ids[0], tipo: "MATERIAL", moeda: "CRC", valorOriginal: 80, valorNegociado: 80, vencimento: new Date("2099-09-05") } });
+  const conferir = (c: typeof material, valor: string) => ({ cobrancaId: c.id, versao: c.versao, valorDevidoProposto: valor, motivo: "Acerto proposto conforme contrato", evidenciaContratual: "Cláusula contratual identificada" });
+  const contrato = { matriculaId: ids[0], condicoesId: condicoes.id, parcelas: [], multa: { tipo: "SEM_PREVISAO" as const }, outrasCobrancas: [conferir(taxa, "40"), conferir(material, "80")] };
+  const preparar = { alunoId, solicitacaoId: pedido.dado.solicitacaoId, contratos: [contrato], chaveIdempotencia: "demais-cobrancas-rascunho", motivo: "Conferência das cobranças emitidas", versaoAnterior: 0 };
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect((await salvarRascunhoAcertoEncerramento({ ...preparar, contratos: [{ ...contrato, outrasCobrancas: [contrato.outrasCobrancas[0]] }] })).ok).toBe(false);
+  const salvo = await salvarRascunhoAcertoEncerramento(preparar);
+  expect(salvo.ok, salvo.ok ? undefined : salvo.erro).toBe(true);
+  if (!salvo.ok || !salvo.dado) throw new Error("Rascunho ausente");
+  expect(await salvarRascunhoAcertoEncerramento({ ...preparar, contratos: [{ ...contrato, outrasCobrancas: [...contrato.outrasCobrancas].reverse() }] })).toEqual(salvo);
+  const consulta = await consultarRascunhoAcertoEncerramento({ alunoId, solicitacaoId: pedido.dado.solicitacaoId });
+  expect(consulta.ok && consulta.dado?.snapshot).toMatchObject({ contratos: [{ outrasCobrancasConferidas: { consolidado: { saldoDevidoSemCompensarCreditos: "80.00", creditoApurado: "60.00" } } }] });
+  const verificar = { alunoId, solicitacaoId: pedido.dado.solicitacaoId, rascunhoId: salvo.dado.id };
+  authMock.mockResolvedValue({ user: { id: admin.id } });
+  const decisaoCredito = await decidirAcertoEncerramento({ alunoId, rascunhoId: salvo.dado.id, aprovar: true, motivo: "Acerto e crédito conferidos" });
+  if (!decisaoCredito.ok || !decisaoCredito.dado) throw new Error("Decisão ausente");
+  const transacaoCredito = async (aplicarAjustes: boolean) => prisma.$transaction(async tx => {
+    const acerto = await carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisaoCredito.dado!.id, executorId: financeiro.id }, new Date("2099-09-30T12:00:00Z"));
+    const { aplicarFinanceiroEncerramentoTx } = await import("./encerramento-aplicar-financeiro");
+    const creditos = aplicarAjustes ? (await aplicarFinanceiroEncerramentoTx(tx, { alunoId, decisaoId: decisaoCredito.dado!.id, executorId: financeiro.id }, new Date("2099-09-30T12:00:00Z"))).creditos : await aplicarCreditosAcertoTx(tx, acerto);
+    expect(creditos).toMatchObject([{ matriculaId: ids[0], valor: "60.00", moeda: "CRC" }]);
+    expect(await tx.recebimento.findUniqueOrThrow({ where: { id: recebimento.id } })).toEqual(recebimento);
+    expect((await tx.cobranca.findUniqueOrThrow({ where: { id: taxa.id } })).valorRecebido).toEqual(taxa.valorRecebido);
+    expect(await tx.creditoMatricula.count()).toBe(1);
+    const { aplicarEstadoEncerramentoTx } = await import("./encerramento-aplicar-estado");
+    const { carregarHistoricosContratuais } = await import("@/server/diario/historico-contratual");
+    const limites = await aplicarEstadoEncerramentoTx(tx, acerto, new Date("2099-09-30T12:00:00Z"));
+    expect(limites).toHaveLength(1);
+    expect(limites[0]).toMatchObject({ matriculaId: ids[0], incluiDia: diaEncerramento === "INCLUIR", dataEfetiva: new Date("2099-09-30"), limiteVinculo: new Date(diaEncerramento === "INCLUIR" ? "2099-10-01T03:00:00Z" : "2099-09-30T03:00:00Z"), statusAnterior: "ATIVA" });
+    const historicos = await carregarHistoricosContratuais(tx, ids);
+    expect(historicos.get(ids[0])).toMatchObject({ status: "ENCERRADA", encerramento: { statusAnterior: "ATIVA", limiteVinculo: limites[0].limiteVinculo } });
+    expect(historicos.get(ids[1])).toMatchObject({ status: "PAUSADA", encerramento: null });
+    expect(historicos.get(ids[2])).toMatchObject({ status: "ATIVA", encerramento: null });
+    expect(await tx.alocacaoTurma.findUnique({ where: { id: vinculo.id } })).toMatchObject({ ativa: false, encerradaEm: limites[0].limiteVinculo, criadoEm: vinculo.criadoEm });
+    expect(await tx.alocacaoTurma.findUnique({ where: { id: historicoOutro.id } })).toEqual(historicoOutro);
+    expect(await tx.matricula.findUniqueOrThrow({ where: { id: ids[2] } })).toEqual(outroContrato);
+    const { carregarChamadaTx } = await import("@/server/diario/chamada-tx");
+    const aposEncerramento = new Date("2099-10-02T12:00:00Z");
+    expect((await carregarChamadaTx(tx, turma.id, aposEncerramento)).alunos).toEqual([]);
+    expect((await carregarChamadaTx(tx, outraTurma.id, aposEncerramento)).alunos.map(a => a.alunoId)).toEqual([alunoId]);
+    expect((await tx.matricula.findUniqueOrThrow({ where: { id: ids[0] } })).acessoVersao).toBe(1);
+    expect((await tx.matricula.findUniqueOrThrow({ where: { id: ids[2] } })).acessoVersao).toBe(0);
+    expect(await tx.movimentacaoAluno.count({ where: { matriculaId: ids[0], tipo: "ENCERRAMENTO" } })).toBe(1);
+    expect((await tx.aluno.findUniqueOrThrow({ where: { id: alunoId } })).status).toBe("ATIVO");
+    await tx.$executeRaw`SAVEPOINT limite_preservado`;
+    await expect(tx.registroEncerramentoMatricula.delete({ where: { id: limites[0].id } })).rejects.toThrow();
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT limite_preservado`;
+    throw new Error("FALHA_APOS_CREDITO");
+  });
+  await expect(transacaoCredito(false)).rejects.toThrow("Aplique o ajuste");
+  await expect(transacaoCredito(true)).rejects.toThrow("FALHA_APOS_CREDITO");
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+  expect(await prisma.origemCreditoAcerto.count()).toBe(0);
+  expect(await prisma.registroEncerramentoMatricula.count()).toBe(0);
+  expect(await prisma.alocacaoTurma.findUnique({ where: { id: vinculo.id } })).toEqual(vinculo);
+  expect(await prisma.movimentacaoAluno.count({ where: { tipo: "ENCERRAMENTO" } })).toBe(0);
+  expect(await prisma.ajusteCobrancaAcerto.count()).toBe(0);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } })).toEqual(taxa);
+  const origemCredito = { decisaoId: decisaoCredito.dado.id, matriculaId: ids[0], origemTipo: "COBRANCA", origemId: taxa.id, valor: 60, moeda: "CRC" };
+  await expect(prisma.origemCreditoAcerto.create({ data: { ...origemCredito, valor: 61 } })).rejects.toThrow("não corresponde");
+  await expect(prisma.origemCreditoAcerto.create({ data: { ...origemCredito, matriculaId: ids[1] } })).rejects.toThrow("não corresponde");
+  const origem = await prisma.origemCreditoAcerto.create({ data: origemCredito });
+  await expect(prisma.origemCreditoAcerto.create({ data: origemCredito })).rejects.toThrow();
+  await expect(prisma.creditoMatricula.create({ data: { matriculaId: ids[0], origemAcertoId: origem.id, moeda: "CRC", valorInicial: 61 } })).rejects.toThrow("diverge");
+  const creditoAcerto = await prisma.creditoMatricula.create({ data: { matriculaId: ids[0], origemAcertoId: origem.id, moeda: "CRC", valorInicial: 60 } });
+  expect(creditoAcerto.origemLiberacaoId).toBeNull();
+  await expect(prisma.creditoMatricula.create({ data: { matriculaId: ids[0], origemAcertoId: origem.id, moeda: "CRC", valorInicial: 60 } })).rejects.toThrow();
+  await expect(prisma.creditoMatricula.create({ data: { matriculaId: ids[0], moeda: "CRC", valorInicial: 60 } })).rejects.toThrow();
+  await expect(prisma.origemCreditoAcerto.delete({ where: { id: origem.id } })).rejects.toThrow();
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect(await conferirValidadeRascunhoEncerramento(verificar)).toMatchObject({ ok: true, dado: { atual: true } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: material.id, chaveIdempotencia: "material-pagamento-posterior", autorId: financeiro.id, valorRecebido: 20, forma: "TRANSFERENCIA", dataPagamento: new Date("2099-09-06"), evidencia: "Material pago após a conferência do rascunho." }));
+  expect(await conferirValidadeRascunhoEncerramento(verificar)).toMatchObject({ ok: true, dado: { atual: false } });
+  const materialRecebido = await prisma.cobranca.findUniqueOrThrow({ where: { id: material.id } });
+  const contratoReconciliado = { ...contrato, outrasCobrancas: [conferir(taxa, "40"), conferir(materialRecebido, "80")] };
+  const nova = await salvarRascunhoAcertoEncerramento({ ...preparar, contratos: [contratoReconciliado], versaoAnterior: 1, chaveIdempotencia: "demais-cobrancas-reconferidas" });
+  if (!nova.ok || !nova.dado) throw new Error("Nova conferência ausente");
+  const conferirNova = { ...verificar, rascunhoId: nova.dado.id };
+  expect(await conferirValidadeRascunhoEncerramento(conferirNova)).toMatchObject({ ok: true, dado: { atual: true } });
+  await prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: material.id,
+    chaveIdempotencia: "material-segundo-pagamento",
+    autorId: financeiro.id,
+    valorRecebido: 20,
+    forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2099-09-07"),
+    evidencia: "Segundo recebimento que exige reconferência do acerto.",
+  }));
+  expect(await conferirValidadeRascunhoEncerramento(conferirNova)).toMatchObject({ ok: true, dado: { atual: false } });
+  expect(await prisma.recebimento.findUniqueOrThrow({ where: { id: recebimento.id } })).toEqual(recebimento);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: taxa.id } })).toEqual(taxa);
+  expect(await prisma.rascunhoAcertoEncerramento.count()).toBe(2);
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: ids[0] } })).status).toBe("ATIVA");
+});
+it("registra seleção explícita, preserva os contratos e repete sem duplicar", async () => {
+  const input = entrada();
+  const [a, b] = await Promise.all([solicitarEncerramentoMatriculas(input), solicitarEncerramentoMatriculas({ ...input, matriculaIds: [...input.matriculaIds].reverse() })]);
+  expect(a.ok, a.ok ? undefined : a.erro).toBe(true); expect(b).toEqual(a);
+  expect(await prisma.solicitacaoEncerramentoMatriculas.count()).toBe(1);
+  expect((await prisma.itemSolicitacaoEncerramento.findMany()).map((i) => i.matriculaId).sort()).toEqual(ids.slice(0, 2).sort());
+  expect((await prisma.matricula.findMany({ where: { id: { in: ids } }, orderBy: { id: "asc" } })).map((m) => m.status)).toEqual(["ATIVA", "PAUSADA", "ATIVA"]);
+  expect((await solicitarEncerramentoMatriculas({ ...input, motivo: "Pedido modificado" })).ok).toBe(false);
+  expect((await solicitarEncerramentoMatriculas({ ...input, chaveIdempotencia: "pedido-duplicado" })).ok).toBe(false);
+});
+it("recusa mistura de alunos, papel financeiro e datas retroativas sem evidências", async () => {
+  expect((await solicitarEncerramentoMatriculas({ ...entrada(), matriculaIds: [ids[0], estrangeira] })).ok).toBe(false);
+  expect((await solicitarEncerramentoMatriculas({ ...entrada(), dataSolicitada: "2020-01-01" })).ok).toBe(false);
+  expect(await prisma.solicitacaoEncerramentoMatriculas.count()).toBe(0);
+  await prisma.usuario.update({ where: { id: registradorId }, data: { papeis: ["FINANCEIRO"] } });
+  expect((await solicitarEncerramentoMatriculas(entrada())).ok).toBe(false);
+});
+it("registra retroatividade como pedido pendente e banco impede vínculo de outro aluno", async () => {
+  const r = await solicitarEncerramentoMatriculas({ ...entrada(), dataSolicitada: "2020-01-01", motivoRetroatividade: "Pedido antigo documentado", evidenciaRetroatividade: "Referência da mensagem original" });
+  expect(r.ok, r.ok ? undefined : r.erro).toBe(true); if (!r.ok) throw new Error(r.erro);
+  const p = await prisma.solicitacaoEncerramentoMatriculas.findUniqueOrThrow({ where: { id: r.dado!.solicitacaoId } });
+  expect(p.status).toBe("ABERTA"); expect(p.dataSolicitada.toISOString().slice(0, 10)).toBe("2020-01-01");
+  await prisma.matricula.updateMany({ where: { alunoId }, data: { status: "ATIVA" } });
+  await expect(prisma.$transaction((tx) => exigirFluxoGlobalSemMovimentacaoContratual(tx, alunoId))).rejects.toThrow("fluxo contratual");
+  await expect(prisma.itemSolicitacaoEncerramento.create({ data: { solicitacaoId: p.id, alunoId, matriculaId: estrangeira } })).rejects.toThrow();
+  await expect(prisma.solicitacaoEncerramentoMatriculas.update({ where: { id: p.id }, data: { motivoRetroatividade: null } })).rejects.toThrow();
+});
+
+it("prévia carrega o pedido e as origens, exige todos os contratos e preserva cobranças", async () => {
+  const pedido = await solicitarEncerramentoMatriculas({ ...entrada(), matriculaIds: [ids[0]], dataSolicitada: "2099-09-15" });
+  expect(pedido.ok).toBe(true); if (!pedido.ok) throw new Error(pedido.erro);
+  const admin = await criarUsuario(["ADMINISTRADOR"]);
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  const doc = await prisma.documento.create({ data: { matriculaId: ids[0], nome: "Contrato", categoria: "CONTRATO", url: "/api/files/contrato-teste.pdf" } });
+  await prisma.matricula.update({ where: { id: ids[0] }, data: { contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: registradorId } });
+  const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: {
+    matriculaId: ids[0], documentoId: doc.id, preparadorId: registradorId, decisorId: admin.id, status: "APROVADA", decididaEm: new Date(), motivoDecisao: "Conferência independente", versao: 1, motivo: "Condições transcritas",
+    regras: { diaEncerramento: "INCLUIR", metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Desconto vigente no período", multa: { tipo: "SEM_PREVISAO", motivo: "Não consta multa" } },
+  } });
+  const c = await prisma.cobranca.create({ data: { matriculaId: ids[0], moeda: "CRC", tipo: "MENSALIDADE", valorOriginal: 500, valorNegociado: 400, vencimento: new Date("2099-09-05"), coberturaInicio: new Date("2099-09-01"), coberturaFim: new Date("2099-09-30") } });
+  const input = { solicitacaoId: pedido.dado!.solicitacaoId, alunoId, contratos: [{ matriculaId: ids[0], condicoesId: condicoes.id, parcelas: [{ cobrancaId: c.id, versao: c.versao, valorBase: "500", descontoValido: "100", evidenciaCondicoes: "Conferido desconto no contrato" }], multa: { tipo: "SEM_PREVISAO" as const } }] };
+  expect((await preverComponenteMensalEncerramento(input)).ok).toBe(false);
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const r = await preverComponenteMensalEncerramento(input);
+  expect(r.ok, r.ok ? undefined : r.erro).toBe(true); if (!r.ok) throw new Error(r.erro);
+  expect(r.dado!.contratos[0].calculo.totalServico).toBe("200.00");
+  const preparar = { ...input, chaveIdempotencia: "rascunho-teste-001", motivo: "Conferência inicial do financeiro", versaoAnterior: 0 };
+  const [salvo, repetido] = await Promise.all([salvarRascunhoAcertoEncerramento(preparar), salvarRascunhoAcertoEncerramento(preparar)]);
+  expect(salvo.ok, salvo.ok ? undefined : salvo.erro).toBe(true); expect(repetido).toEqual(salvo);
+  if (!salvo.ok || !salvo.dado) throw new Error("Rascunho não salvo");
+  const validadeInput = { alunoId, solicitacaoId: input.solicitacaoId, rascunhoId: salvo.dado.id };
+  const valido = await conferirValidadeRascunhoEncerramento(validadeInput);
+  expect(valido.ok && valido.dado?.atual).toBe(true);
+  const decidir = { alunoId, rascunhoId: salvo.dado.id, aprovar: true, motivo: "Acerto conferido independentemente" };
+  await prisma.usuario.update({ where: { id: financeiro.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  expect(await decidirAcertoEncerramento(decidir)).toMatchObject({ ok: false, erro: expect.stringContaining("Outra pessoa") });
+  authMock.mockResolvedValue({ user: { id: admin.id } });
+  const [decisao1, decisao2] = await Promise.all([decidirAcertoEncerramento(decidir), decidirAcertoEncerramento(decidir)]);
+  expect(decisao1.ok, decisao1.ok ? undefined : decisao1.erro).toBe(true); expect(decisao2).toEqual(decisao1);
+  if (!decisao1.ok || !decisao1.dado) throw new Error("Decisão ausente");
+  const conferirAplicacao = (agora = new Date("2099-09-15T12:00:00Z")) => prisma.$transaction(tx => carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisao1.dado!.id, executorId: financeiro.id }, agora));
+  await expect(conferirAplicacao(new Date("2099-09-14T12:00:00Z"))).rejects.toThrow("ainda não chegou");
+  expect((await conferirAplicacao()).matriculaIds).toEqual([ids[0]]);
+  expect((await conferirAplicacao()).previa.fusoInstitucional).toBe("America/Sao_Paulo");
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "America/Costa_Rica" } });
+  await expect(conferirAplicacao()).rejects.toThrow("Origens alteradas");
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: null } });
+  await expect(conferirAplicacao()).rejects.toThrow("Configure o fuso");
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "America/Sao_Paulo" } });
+  const { carregarImpactosAcademicosEncerramentoTx } = await import("./encerramento-impactos-academicos");
+  const professor = await criarUsuario(["PROFESSOR"]);
+  const encontroBase = { professorId: professor.id, preparadorId: admin.id, inicio: new Date("2099-10-01T12:00:00Z"), fim: new Date("2099-10-01T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO" as const, motivo: "Encontro para conferência acadêmica", entradaHash: "teste" };
+  await prisma.encontroAgenda.create({ data: { ...encontroBase, matriculaId: ids[2], chaveIdempotencia: "encontro-outro-contrato" } });
+  // Alterações em contrato excluído não invalidam nem ampliam o acerto selecionado.
+  expect((await conferirAplicacao()).previa.contratos[0].impactosAcademicos.encontrosParticulares).toEqual([]);
+  await expect(prisma.$transaction(tx => carregarImpactosAcademicosEncerramentoTx(tx, "outro-aluno", ids[0]))).rejects.toThrow("não encontrada");
+  await expect(prisma.$transaction(async tx => {
+    await tx.encontroAgenda.create({ data: { ...encontroBase, matriculaId: ids[0], chaveIdempotencia: "encontro-novo-apos-aprovacao" } });
+    await carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisao1.dado!.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z"));
+  })).rejects.toThrow("Origens alteradas");
+  const modalidade = await prisma.modalidade.findFirstOrThrow();
+  const idioma = await prisma.idioma.findFirstOrThrow();
+  const nivel = await prisma.nivel.create({ data: { idiomaId: idioma.id, codigo: "A1-impactos", ordem: 1 } });
+  const turma = await prisma.turma.create({ data: { modalidadeId: modalidade.id, nivelId: nivel.id } });
+  await expect(prisma.$transaction(async tx => {
+    await tx.alocacaoTurma.create({ data: { alunoId, matriculaId: ids[0], turmaId: turma.id } });
+    await carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisao1.dado!.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z"));
+  })).rejects.toThrow("Origens alteradas");
+  await expect(prisma.$transaction(async tx => {
+    const acerto = await carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisao1.dado!.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z"));
+    const registros = await aplicarAjustesCobrancaAcertoTx(tx, acerto, financeiro.id);
+    expect(registros).toHaveLength(1);
+    const ajustada = await tx.cobranca.findUniqueOrThrow({ where: { id: c.id } });
+    expect(ajustada.valorNegociado.toFixed(2)).toBe("200.00");
+    expect(ajustada.saldo?.toFixed(2)).toBe("200.00");
+    expect(ajustada.valorRecebido).toEqual(c.valorRecebido);
+    expect(ajustada.vencimento).toEqual(c.vencimento);
+    const historico = await tx.ajusteCobrancaAcerto.findUniqueOrThrow({ where: { cobrancaId: c.id } });
+    expect(historico.valorAnterior.toFixed(2)).toBe("400.00");
+    expect(historico.origem).toMatchObject({ id: c.id, valorNegociado: "400" });
+    throw new Error("FALHA_POSTERIOR_SIMULADA");
+  })).rejects.toThrow("FALHA_POSTERIOR_SIMULADA");
+  expect(await prisma.ajusteCobrancaAcerto.count()).toBe(0);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).toEqual(c);
+  await prisma.usuario.update({ where: { id: admin.id }, data: { ativo: false } });
+  await expect(conferirAplicacao()).rejects.toThrow("indisponível");
+  await prisma.usuario.update({ where: { id: admin.id }, data: { ativo: true } });
+  expect(await prisma.decisaoAcertoEncerramento.count()).toBe(1);
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: ids[0] } })).status).toBe("ATIVA");
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).toEqual(c);
+  expect(await decidirAcertoEncerramento({ ...decidir, alunoId: "outro-aluno" })).toMatchObject({ ok: false });
+  expect(await decidirAcertoEncerramento({ ...decidir, aprovar: false })).toMatchObject({ ok: false });
+  await expect(prisma.decisaoAcertoEncerramento.deleteMany()).rejects.toThrow();
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const pedidoOriginal = await prisma.solicitacaoEncerramentoMatriculas.findUniqueOrThrow({ where: { id: input.solicitacaoId } });
+  await prisma.solicitacaoEncerramentoMatriculas.update({ where: { id: input.solicitacaoId }, data: { evidenciaPedido: "Evidência modificada após a conferência" } });
+  const alterado = await conferirValidadeRascunhoEncerramento(validadeInput);
+  expect(alterado.ok && alterado.dado?.atual).toBe(false);
+  await expect(conferirAplicacao()).rejects.toThrow("Origens alteradas");
+  await prisma.solicitacaoEncerramentoMatriculas.update({ where: { id: input.solicitacaoId }, data: { evidenciaPedido: pedidoOriginal.evidenciaPedido } });
+  expect(await prisma.rascunhoAcertoEncerramento.count()).toBe(1);
+  expect((await salvarRascunhoAcertoEncerramento({ ...preparar, motivo: "Reutilização com outro motivo" })).ok).toBe(false);
+  expect((await salvarRascunhoAcertoEncerramento({ ...preparar, chaveIdempotencia: "rascunho-teste-002" })).ok).toBe(false);
+  const nova = await salvarRascunhoAcertoEncerramento({ ...preparar, chaveIdempotencia: "rascunho-teste-002", versaoAnterior: 1, motivo: "Revisão da conferência documentada" });
+  expect(nova.ok).toBe(true);
+  await expect(conferirAplicacao()).rejects.toThrow("versão posterior");
+  const anterior = await conferirValidadeRascunhoEncerramento(validadeInput);
+  expect(anterior.ok && anterior.dado?.motivos).toContain("Existe uma versão mais recente deste rascunho.");
+  expect((await conferirValidadeRascunhoEncerramento({ ...validadeInput, alunoId: "outro-aluno" })).ok).toBe(false);
+  const consulta = await consultarRascunhoAcertoEncerramento({ alunoId, solicitacaoId: input.solicitacaoId, versao: 1 });
+  expect(consulta.ok).toBe(true); if (!consulta.ok) throw new Error(consulta.erro);
+  expect(consulta.dado?.versao).toBe(1);
+  expect(consulta.dado?.motivo).toBe(preparar.motivo);
+  const fora = await consultarRascunhoAcertoEncerramento({ alunoId: "outro-aluno", solicitacaoId: input.solicitacaoId });
+  expect(fora).toEqual({ ok: true, dado: null });
+  await seedRelatoOfertaConfirmado(ids[0], "2099-09-10", "2099-09-10");
+  await seedRelatoOfertaConfirmado(ids[0], "2099-09-20", "2099-09-20");
+  const comp = await prisma.compensacaoCoberturaMatricula.create({ data: { matriculaId: ids[0], cobrancaOrigemId: c.id, documentoOrigemId: doc.id,
+    preparadorId: financeiro.id, decisorId: admin.id, status: "APROVADA", motivo: "Indisponibilidade de oferta", evidenciaCondicoes: "Conferência de origem",
+    diasPropostos: ["2099-09-10", "2099-09-20"], coberturaOriginalInicio: new Date("2099-09-01"), coberturaOriginalFim: new Date("2099-09-30"), valorCoberturaOriginal: 400, moeda: "CRC", cobrancaVersao: c.versao, motivoDecisao: "Conferência independente", decididaEm: new Date() } });
+  const dia = await prisma.diaCompensacaoCobertura.create({ data: { compensacaoId: comp.id, matriculaId: ids[0], diaOrigem: new Date("2099-09-10") } });
+  const diaProporcional = await prisma.diaCompensacaoCobertura.create({ data: { compensacaoId: comp.id, matriculaId: ids[0], diaOrigem: new Date("2099-09-20") } });
+  const comCompensacao = await salvarRascunhoAcertoEncerramento({ ...preparar, chaveIdempotencia: "rascunho-com-compensacao", versaoAnterior: 2 });
+  expect(comCompensacao.ok).toBe(true); if (!comCompensacao.ok || !comCompensacao.dado) throw new Error("Rascunho ausente");
+  const verificarComp = { ...validadeInput, rascunhoId: comCompensacao.dado.id };
+  const antesDestino = await conferirValidadeRascunhoEncerramento(verificarComp);
+  expect(antesDestino.ok && antesDestino.dado?.atual).toBe(true);
+  const { aplicarCompensacoesAcertoTx } = await import("./encerramento-aplicar-compensacoes");
+  const destinar = (modo: "SEM_AJUSTE" | "TRATAMENTO_ERRADO" | "COMPLETO") => prisma.$transaction(async tx => {
+    const decisao = await tx.decisaoAcertoEncerramento.create({ data: { rascunhoId: comCompensacao.dado!.id, decisorId: admin.id, aprovada: true, motivo: "Conferência independente das compensações" } });
+    const acerto = await carregarAcertoAprovadoParaEfetivacaoTx(tx, { alunoId, decisaoId: decisao.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z"));
+    if (modo === "TRATAMENTO_ERRADO") await aplicarAjustesCobrancaAcertoTx(tx, acerto, financeiro.id);
+    if (modo === "TRATAMENTO_ERRADO") await tx.destinacaoDiaAcerto.create({ data: { diaId: dia.id, decisaoId: decisao.id, tratamento: "PROPORCIONAL" } });
+    const { efetivarAcertoEncerramentoTx } = await import("./encerramento-efetivar-tx");
+    const destinados = modo === "COMPLETO"
+      ? (await efetivarAcertoEncerramentoTx(tx, { alunoId, decisaoId: decisao.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z"))).compensacoes
+      : await aplicarCompensacoesAcertoTx(tx, acerto);
+    expect(destinados).toHaveLength(2);
+    const registros = await tx.destinacaoDiaAcerto.findMany({ orderBy: { tratamento: "asc" } });
+    expect(registros).toMatchObject([{ diaId: dia.id, tratamento: "COMPENSACAO" }, { diaId: diaProporcional.id, tratamento: "PROPORCIONAL" }]);
+    expect(await tx.diaCompensacaoCobertura.findMany()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: dia.id, estado: "LIQUIDADO_FINANCEIRAMENTE", versao: 2, destinacaoReferencia: registros[0].id }),
+      expect.objectContaining({ id: diaProporcional.id, estado: "LIQUIDADO_FINANCEIRAMENTE", versao: 2, destinacaoReferencia: registros[1].id }),
+    ]));
+    const ajustada = await tx.cobranca.findUniqueOrThrow({ where: { id: c.id } });
+    expect(ajustada.valorNegociado.toFixed(2)).toBe("186.67");
+    expect(await tx.creditoMatricula.count()).toBe(0);
+    await tx.$executeRaw`SAVEPOINT destino_repetido`;
+    await expect(aplicarCompensacoesAcertoTx(tx, acerto)).rejects.toThrow("já destinado");
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT destino_repetido`;
+    await tx.$executeRaw`SAVEPOINT historico_preservado`;
+    await expect(tx.destinacaoDiaAcerto.delete({ where: { id: registros[0].id } })).rejects.toThrow();
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT historico_preservado`;
+    if (modo === "COMPLETO") throw new Error("FALHA_APOS_DESTINACAO");
+  });
+  await expect(destinar("SEM_AJUSTE")).rejects.toThrow("exige ajuste");
+  await expect(destinar("TRATAMENTO_ERRADO")).rejects.toThrow("tratamento");
+  await expect(destinar("COMPLETO")).rejects.toThrow("FALHA_APOS_DESTINACAO");
+  expect(await prisma.destinacaoDiaAcerto.count()).toBe(0);
+  expect(await prisma.diaCompensacaoCobertura.findMany()).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: dia.id, estado: "PENDENTE", versao: 1 }),
+    expect.objectContaining({ id: diaProporcional.id, estado: "PENDENTE", versao: 1 }),
+  ]));
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).valorNegociado.toFixed(2)).toBe("400.00");
+  await prisma.diaCompensacaoCobertura.update({ where: { id: dia.id }, data: { estado: "RECOMPOSTO", destinacaoReferencia: "cobertura-testada", destinadoEm: new Date(), versao: { increment: 1 } } });
+  const depoisDestino = await conferirValidadeRascunhoEncerramento(verificarComp);
+  expect(depoisDestino.ok && depoisDestino.dado?.atual).toBe(false);
+  authMock.mockResolvedValue({ user: { id: admin.id } });
+  const decisaoAlterada = { alunoId, rascunhoId: comCompensacao.dado.id, aprovar: true, motivo: "Revisão do acerto após mudança" };
+  expect(await decidirAcertoEncerramento(decisaoAlterada)).toMatchObject({ ok: false, erro: expect.stringContaining("mudaram") });
+  expect(await decidirAcertoEncerramento({ ...decisaoAlterada, aprovar: false })).toMatchObject({ ok: true, dado: { aprovada: false, efetivado: false } });
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect((await preverComponenteMensalEncerramento({ ...input, contratos: [...input.contratos, { ...input.contratos[0], matriculaId: ids[1] }] })).ok).toBe(false);
+  await prisma.$transaction(tx => receberTx(tx, {
+    cobrancaId: c.id,
+    chaveIdempotencia: "encerramento-parcela-recebida",
+    autorId: financeiro.id,
+    valorRecebido: 200,
+    forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2099-09-16T12:00:00Z"),
+    evidencia: "Recebimento parcial após a conferência do acerto.",
+  }));
+  expect((await preverComponenteMensalEncerramento(input)).ok).toBe(false);
+  const preservada = await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } });
+  expect(preservada.valorNegociado.toFixed(2)).toBe("400.00");
+  expect((await prisma.solicitacaoEncerramentoMatriculas.findUniqueOrThrow({ where: { id: pedido.dado!.solicitacaoId } })).status).toBe("EM_ACERTO");
+  expect(await prisma.rascunhoAcertoEncerramento.count()).toBe(3);
+  authMock.mockResolvedValue({ user: { id: registradorId } });
+  expect((await conferirValidadeRascunhoEncerramento(validadeInput)).ok).toBe(false);
+  expect((await consultarRascunhoAcertoEncerramento({ alunoId, solicitacaoId: input.solicitacaoId })).ok).toBe(false);
+});
+
+it.each(["retroatividade", "multa"])("exige autorização explícita de %s no serviço e no banco", async (excecao) => {
+  const retro = excecao === "retroatividade";
+  const pedido = await solicitarEncerramentoMatriculas({ ...entrada(), matriculaIds: [ids[0]], dataSolicitada: retro ? "2020-01-01" : "2099-09-30", ...(retro ? { motivoRetroatividade: "Pedido anterior comprovado", evidenciaRetroatividade: "Documento do pedido original" } : {}) });
+  if (!pedido.ok || !pedido.dado) throw new Error("Pedido ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]), financeiro = await criarUsuario(["FINANCEIRO"]), aprovador = await criarUsuario(["FINANCEIRO"]);
+  const doc = await prisma.documento.create({ data: { matriculaId: ids[0], nome: "Contrato teste", categoria: "CONTRATO", url: "/api/files/contrato-excecao.pdf" } });
+  await prisma.matricula.update({ where: { id: ids[0] }, data: { contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: registradorId } });
+  const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: { matriculaId: ids[0], documentoId: doc.id, preparadorId: registradorId, decisorId: admin.id, status: "APROVADA", decididaEm: new Date(), motivoDecisao: "Conferência independente", versao: 1, motivo: "Condições transcritas", regras: { diaEncerramento: "INCLUIR", metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Condições documentadas", multa: { tipo: "VALOR_FIXO", valor: "80", clausulaId: "7", condicoesAplicacao: "Encerramento antecipado" } } } });
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const salvo = await salvarRascunhoAcertoEncerramento({ alunoId, solicitacaoId: pedido.dado.solicitacaoId, chaveIdempotencia: "rascunho-excecao-explicita", versaoAnterior: 0, motivo: "Conferência das exceções propostas", contratos: [{ matriculaId: ids[0], condicoesId: condicoes.id, parcelas: [], multa: { tipo: "APLICAR", vencimento: "2099-10-05", evidenciaAplicabilidade: "Condição contratual comprovada", ...(!retro ? { excecao: { tipo: "DISPENSAR" as const, motivo: "Dispensa solicitada pelo aluno" } } : {}) } }] });
+  if (!salvo.ok || !salvo.dado) throw new Error(salvo.ok ? "Rascunho ausente" : salvo.erro);
+  const decidir = { alunoId, rascunhoId: salvo.dado.id, aprovar: true, motivo: "Decisão independente da exceção" };
+  authMock.mockResolvedValue({ user: { id: aprovador.id } });
+  expect(await decidirAcertoEncerramento(decidir)).toMatchObject({ ok: false });
+  await prisma.usuario.update({ where: { id: aprovador.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  expect(await decidirAcertoEncerramento(decidir)).toMatchObject({ ok: false, erro: expect.stringContaining(retro ? "retroatividade" : "multa") });
+  await expect(prisma.decisaoAcertoEncerramento.create({ data: { rascunhoId: salvo.dado.id, decisorId: aprovador.id, aprovada: true, motivo: "Tentativa sem autorização específica" } })).rejects.toThrow(retro ? "Retroatividade" : "Multa");
+  const autorizado = { ...decidir, autorizaRetroatividade: retro, autorizaExcecaoMulta: !retro };
+  expect(await decidirAcertoEncerramento(autorizado)).toMatchObject({ ok: true, dado: { aprovada: true, efetivado: false } });
+  expect(await prisma.decisaoAcertoEncerramento.findUniqueOrThrow({ where: { rascunhoId: salvo.dado.id } })).toMatchObject({ autorizaRetroatividade: retro, autorizaExcecaoMulta: !retro });
+  const decisao = await prisma.decisaoAcertoEncerramento.findUniqueOrThrow({ where: { rascunhoId: salvo.dado.id } });
+  const emitir = (falha: boolean) => prisma.$transaction(async tx => {
+    const { aplicarFinanceiroEncerramentoTx } = await import("./encerramento-aplicar-financeiro");
+    const cobrancas = (await aplicarFinanceiroEncerramentoTx(tx, { alunoId, decisaoId: decisao.id, executorId: financeiro.id }, new Date("2099-09-30T12:00:00Z"))).multas;
+    expect(cobrancas).toHaveLength(retro ? 1 : 0);
+    if (falha) throw new Error("FALHA_APOS_MULTA");
+    return cobrancas;
+  });
+  await expect(emitir(true)).rejects.toThrow("FALHA_APOS_MULTA");
+  expect(await prisma.cobranca.count()).toBe(0);
+  const emitidas = await emitir(false);
+  expect(await prisma.recebimento.count()).toBe(0);
+  if (retro) {
+    const multa = await prisma.cobranca.findUniqueOrThrow({ where: { id: emitidas[0] } });
+    expect(multa).toMatchObject({ matriculaId: ids[0], acertoMultaDecisaoId: decisao.id, tipo: "MULTA_ENCERRAMENTO", valorRecebido: null, pagoEm: null, vencimento: new Date("2099-10-05T00:00:00Z") });
+    expect(multa.valorNegociado.toFixed(2)).toBe("80.00"); expect(multa.saldo?.toFixed(2)).toBe("80.00");
+    await expect(emitir(false)).rejects.toThrow();
+    await expect(prisma.cobranca.update({ where: { id: multa.id }, data: { matriculaId: ids[1] } })).rejects.toThrow("origem");
+    await expect(prisma.cobranca.delete({ where: { id: multa.id } })).rejects.toThrow("origem");
+    const dados = { ...multa, id: undefined, codigo: null };
+    await expect(prisma.cobranca.create({ data: { ...dados, valorNegociado: 81, saldo: 81 } })).rejects.toThrow("diverge");
+    await expect(prisma.cobranca.create({ data: { ...dados, acertoMultaDecisaoId: null } })).rejects.toThrow();
+  }
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: ids[0] } })).status).toBe("ATIVA");
+});
+
+it.each([true, false])("confere agenda no limite exclusivo, incluindo o dia: %s", async (incluiDia) => {
+  const { conferirAgendaEncerramentoTx } = await import("./encerramento-agenda");
+  const limite = new Date(incluiDia ? "2099-10-01T03:00:00Z" : "2099-09-30T03:00:00Z");
+  const encontro = (id: string, delta: number, status: "PREVISTO" | "MINISTRADO" | "CANCELADO" | "RASCUNHO") => ({ id, inicio: new Date(limite.getTime() - 60_000).toISOString(), fim: new Date(limite.getTime() + delta).toISOString(), status, professorId: "professor", fusoOrigem: "UTC", reservasHoras: [] });
+  const resultado = await prisma.$transaction(tx => conferirAgendaEncerramentoTx(tx, { matriculaId: ids[0], regimeCobranca: null, status: "ATIVA", ativadaEm: null, acessoVersao: 0, vinculos: [], encontrosParticulares: [
+    encontro("termina-no-limite", 0, "PREVISTO"), encontro("ultrapassa-limite", 1, "PREVISTO"),
+    encontro("ministrada-apos", 60_000, "MINISTRADO"), encontro("cancelada-apos", 60_000, "CANCELADO"), encontro("rascunho-apos", 60_000, "RASCUNHO"),
+  ] }, "2099-09-30", "America/Sao_Paulo", incluiDia));
+  expect(resultado.limiteVinculo).toBe(limite.toISOString());
+  expect(resultado.encontrosARegularizar).toEqual(["ultrapassa-limite", "ministrada-apos"]);
+  expect(resultado.pendencias).toHaveLength(2);
+  expect(resultado.pendencias[1]).toContain("sem apagar a aula");
+  const semApuracao = await prisma.$transaction(tx => conferirAgendaEncerramentoTx(tx, { matriculaId: ids[0], regimeCobranca: "HORA_PARTICULAR", status: "ATIVA", ativadaEm: null, acessoVersao: 0, vinculos: [], encontrosParticulares: [encontro("hora-sem-fechamento", -1, "MINISTRADO")] }, "2099-09-30", "America/Sao_Paulo", incluiDia));
+  expect(semApuracao.pendencias).toEqual([expect.stringContaining("destinação financeira comprovada")]);
+});
+
+it("CT10: encerra matrícula ativa com proporcional, multa e recebimento preservado sem tocar outro contrato", async () => {
+  const secretariaId = registradorId;
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  const aprovador = await criarUsuario(["ADMINISTRADOR"]);
+  const pedido = await solicitarEncerramentoMatriculas({ alunoId, matriculaIds: [ids[0]], dataSolicitada: "2099-09-15", motivo: "Encerramento contratado solicitado", evidenciaPedido: "Solicitação conferida no atendimento", chaveIdempotencia: "ct10-pedido" });
+  if (!pedido.ok || !pedido.dado) throw new Error(pedido.ok ? "Pedido ausente" : pedido.erro);
+  const documento = await prisma.documento.create({ data: { matriculaId: ids[0], nome: "Contrato CT10", categoria: "CONTRATO", url: "/api/files/ct10.pdf" } });
+  await prisma.matricula.update({ where: { id: ids[0] }, data: { contratoOk: true, contratoDocumentoId: documento.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: secretariaId } });
+  const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: {
+    matriculaId: ids[0], documentoId: documento.id, preparadorId: secretariaId, decisorId: aprovador.id, status: "APROVADA", decididaEm: new Date(), versao: 1,
+    motivo: "Condições contratuais transcritas e conferidas", motivoDecisao: "Aprovação independente das condições",
+    regras: { diaEncerramento: "INCLUIR", metodoDesconto: "ANTES_DO_PROPORCIONAL", condicoesDescontos: "Desconto vigente antes do proporcional", multa: { tipo: "VALOR_FIXO", valor: "80.00", clausulaId: "CT10-7", condicoesAplicacao: "Encerramento antecipado previsto" } },
+  } });
+  const mensalidade = await prisma.cobranca.create({ data: { matriculaId: ids[0], tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 500, valorNegociado: 400, saldo: 400, vencimento: new Date("2099-09-05T00:00:00Z"), coberturaInicio: new Date("2099-09-01T00:00:00Z"), coberturaFim: new Date("2099-09-30T00:00:00Z") } });
+  const outroContratoAntes = await prisma.matricula.findUniqueOrThrow({ where: { id: ids[2] } });
+  const cobrancaOutro = await prisma.cobranca.create({ data: { matriculaId: ids[2], tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 333, valorNegociado: 333, saldo: 333, vencimento: new Date("2099-09-05T00:00:00Z") } });
+  const { receberTx } = await import("@/server/financeiro/recebimentos");
+  const recebimento = await prisma.$transaction(tx => receberTx(tx, { cobrancaId: mensalidade.id, autorId: financeiro.id, valorRecebido: 80, forma: "DINHEIRO", dataPagamento: new Date("2099-09-10T12:00:00Z"), chaveIdempotencia: "ct10-recebimento-original", evidencia: "Recebimento original preservado no acerto CT10." }));
+  const mensalidadeConferida = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const previa = await preverComponenteMensalEncerramento({ alunoId, solicitacaoId: pedido.dado.solicitacaoId, contratos: [{ matriculaId: ids[0], condicoesId: condicoes.id, parcelas: [{ cobrancaId: mensalidade.id, versao: mensalidadeConferida.versao, valorBase: "500.00", descontoValido: "100.00", evidenciaCondicoes: "Desconto e período identificados no contrato" }], multa: { tipo: "APLICAR", vencimento: "2099-10-05", evidenciaAplicabilidade: "Cláusula CT10-7 conferida" } }] });
+  expect(previa.ok, previa.ok ? undefined : previa.erro).toBe(true);
+  if (!previa.ok || !previa.dado) throw new Error(previa.ok ? "Prévia ausente" : previa.erro);
+  expect(previa.dado.contratos[0].calculo).toMatchObject({ totalServico: "200.00", saldoDevidoSemCompensarCreditos: "200.00", multa: { valor: "80.00" } });
+  const rascunho = await salvarRascunhoAcertoEncerramento({ alunoId, solicitacaoId: pedido.dado.solicitacaoId, versaoAnterior: 0, chaveIdempotencia: "ct10-rascunho", motivo: "Memória proporcional e multa conferidas", contratos: [{ matriculaId: ids[0], condicoesId: condicoes.id, parcelas: [{ cobrancaId: mensalidade.id, versao: mensalidadeConferida.versao, valorBase: "500.00", descontoValido: "100.00", evidenciaCondicoes: "Desconto e período identificados no contrato" }], multa: { tipo: "APLICAR", vencimento: "2099-10-05", evidenciaAplicabilidade: "Cláusula CT10-7 conferida" } }] });
+  if (!rascunho.ok || !rascunho.dado) throw new Error(rascunho.ok ? "Rascunho ausente" : rascunho.erro);
+  await prisma.usuario.update({ where: { id: financeiro.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  expect(await decidirAcertoEncerramento({ alunoId, rascunhoId: rascunho.dado.id, aprovar: true, motivo: "Tentativa de autoaprovação" })).toMatchObject({ ok: false, erro: expect.stringContaining("Outra pessoa") });
+  authMock.mockResolvedValue({ user: { id: aprovador.id } });
+  const decisao = await decidirAcertoEncerramento({ alunoId, rascunhoId: rascunho.dado.id, aprovar: true, motivo: "Conferência financeira independente" });
+  if (!decisao.ok || !decisao.dado) throw new Error(decisao.ok ? "Decisão ausente" : decisao.erro);
+  const { efetivarAcertoEncerramentoTx } = await import("./encerramento-efetivar-tx");
+  const resultado = await prisma.$transaction(tx => efetivarAcertoEncerramentoTx(tx, { alunoId, decisaoId: decisao.dado!.id, executorId: financeiro.id }, new Date("2099-09-15T12:00:00Z")));
+  expect(resultado).toMatchObject({ efetivado: true, matriculaIds: [ids[0]], ajustes: [expect.any(String)], multas: [expect.any(String)] });
+  const preservada = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
+  expect(preservada.valorOriginal.toFixed(2)).toBe("500.00"); expect(preservada.valorNegociado.toFixed(2)).toBe("200.00"); expect(preservada.valorRecebido?.toFixed(2)).toBe("80.00"); expect(preservada.saldo?.toFixed(2)).toBe("120.00");
+  expect(await prisma.recebimento.findUniqueOrThrow({ where: { id: recebimento.id } })).toEqual(recebimento);
+  expect(await prisma.cobranca.findFirstOrThrow({ where: { acertoMultaDecisaoId: decisao.dado.id } })).toMatchObject({ matriculaId: ids[0], tipo: "MULTA_ENCERRAMENTO", vencimento: new Date("2099-10-05T00:00:00.000Z") });
+  const multa = await prisma.cobranca.findFirstOrThrow({ where: { acertoMultaDecisaoId: decisao.dado.id } }); expect(multa.valorNegociado.toFixed(2)).toBe("80.00");
+  expect(await prisma.registroEncerramentoMatricula.findUniqueOrThrow({ where: { matriculaId: ids[0] } })).toMatchObject({ decisaoId: decisao.dado.id, dataEfetiva: new Date("2099-09-15T00:00:00.000Z"), incluiDia: true });
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: ids[0] } })).toMatchObject({ status: "ENCERRADA" });
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: ids[2] } })).toEqual(outroContratoAntes);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaOutro.id } })).toEqual(cobrancaOutro);
+});

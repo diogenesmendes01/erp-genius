@@ -1,0 +1,16 @@
+{
+  "pacotesPdf": [
+    "pdfkit@0.20.2",
+    "fontkit@2.0.4"
+  ],
+  "apontamentosPdf": {},
+  "resumoProjeto": {
+    "info": 0,
+    "low": 0,
+    "moderate": 5,
+    "high": 6,
+    "critical": 3,
+    "total": 14
+  },
+  "observacao": "Ocorrências gerais do projeto ainda precisam de tratamento; instalação não executou audit fix."
+}

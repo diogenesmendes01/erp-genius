@@ -11,7 +11,8 @@ const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { criarLead } from "./acoes";
+import { atualizarDatas, criarLead } from "./acoes";
+import { prisma } from "@/lib/prisma";
 import { listarLeads, obterLead } from "./consultas";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import type { UsuarioSessao } from "@/server/_shared";
@@ -37,6 +38,7 @@ beforeAll(async () => {
   vendedor2 = await criarUsuario([Papel.VENDEDOR], "Vendedor 2");
   gerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
   professor = await criarUsuario([Papel.PROFESSOR], "Professor");
+  await prisma.usuario.updateMany({ where: { id: { in: [vendedor1.id, vendedor2.id] } }, data: { gerenteComercialId: gerente.id } });
 
   logadoComo(vendedor1.id);
   const r1 = await criarLead({ nome: "Lead do V1", segmento: "ADULTO", temperatura: "MORNO", b2b: false });
@@ -58,9 +60,12 @@ describe("row-level de leitura (doc 07)", () => {
     expect(doV2.map((l) => l.id)).toEqual([leadV2]);
   });
 
-  it("gerente comercial enxerga os leads de todos", async () => {
+  it("gerente comercial enxerga a equipe atribuída e nega outra carteira", async () => {
+    const terceiro = await criarUsuario([Papel.VENDEDOR], "Fora da equipe");
+    const alheio = await prisma.lead.create({ data: { nome: "Outra carteira", vendedorDonoId: terceiro.id } });
     const todos = await listarLeads(sessaoDe(gerente));
     expect(new Set(todos.map((l) => l.id))).toEqual(new Set([leadV1, leadV2]));
+    expect(await obterLead(alheio.id, sessaoDe(gerente))).toBeNull();
   });
 
   it("ficha de lead de OUTRO vendedor não abre (retorna null, sem vazar)", async () => {
@@ -96,7 +101,6 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
     logadoComo(efemero.id);
 
     // Revoga o papel DEPOIS do "login" (sessão mockada continua a mesma).
-    const { prisma } = await import("@/lib/prisma");
     await prisma.usuario.update({ where: { id: efemero.id }, data: { papeis: [] } });
 
     const r = await criarLead({ nome: "Barrado", segmento: "ADULTO", temperatura: "MORNO", b2b: false });
@@ -106,5 +110,22 @@ describe("evento na mesma transação (doc 10 §9 / doc 12)", () => {
   it("lead nasce na etapa NOVO (máquina de estados, doc 10 §1)", async () => {
     const lead = await obterLead(leadV1, sessaoDe(gerente));
     expect(lead?.lead.etapa).toBe(EtapaLead.NOVO);
+  });
+
+  it("preserva no evento a referência civil explícita de follow-up e proposta", async () => {
+    logadoComo(vendedor1.id);
+    const resultado = await atualizarDatas(leadV1, {
+      proximoFollowUp: "2026-09-10",
+      dataExperimental: "2026-09-11T09:30",
+      dataProposta: "2026-09-12",
+    });
+    expect(resultado.ok, resultado.ok ? "" : resultado.erro).toBe(true);
+
+    const evento = (await eventosDo("Lead", leadV1)).findLast((e) => e.tipo === "DatasAtualizadas");
+    expect(evento?.payload).toMatchObject({
+      proximoFollowUpCivil: "2026-09-10",
+      dataPropostaCivil: "2026-09-12",
+      dataExperimental: expect.stringMatching(/Z$/),
+    });
   });
 });

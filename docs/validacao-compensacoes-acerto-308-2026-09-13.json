@@ -1,0 +1,6 @@
+{
+ "incremento":308,"data":"2026-09-13","escopo":"Destinação dos dias de compensação no acerto",
+ "integracao":{"aprovados":7,"falhos":0},"unitarios":4,"typescript":"aprovado","lint":"aprovado",
+ "migrations":145,"schemaDiff":"vazio","ultimoBuild":307,"ultimaSuiteUnitariaIntegral":307,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Etapa interna; efetivação completa pendente","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

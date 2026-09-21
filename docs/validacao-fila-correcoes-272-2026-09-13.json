@@ -1,0 +1,20 @@
+{
+  "incremento": 272,
+  "data": "2026-09-13",
+  "escopo": "Fila conjunta dos impactos das correções regulares e de recuperação",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 53,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "paginasEstaticas": 52
+  },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 265,
+  "homologacaoInterativa": false,
+  "producao": false
+}

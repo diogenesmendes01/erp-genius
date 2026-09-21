@@ -1,6 +1,10 @@
 import { listarLeads } from "@/server/comercial/consultas";
 import { KanbanBoard, type KanbanLead } from "./KanbanBoard";
 import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
+import { cache } from "react";
+
+// Uma referência por requisição, compartilhada pelo HTML e a hidratação do cliente.
+const referenciaTemporalDaRequisicao = cache(() => Date.now());
 
 export default async function PipelinePage() {
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
@@ -21,5 +25,5 @@ export default async function PipelinePage() {
     etapaDesde: l.etapaDesde.toISOString(),
   }));
 
-  return <KanbanBoard leads={rows} />;
+  return <KanbanBoard leads={rows} referenciaTemporal={referenciaTemporalDaRequisicao()} />;
 }

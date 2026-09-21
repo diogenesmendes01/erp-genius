@@ -1,0 +1,24 @@
+{
+  "incremento": 205,
+  "data": "2026-09-12",
+  "integracao": {
+    "aprovados": 49,
+    "falhas": 0,
+    "pendentes": 0
+  },
+  "reteste": {
+    "aprovados": 2,
+    "falhas": 0,
+    "naoSelecionados": 47
+  },
+  "build": "Next.js 16.3.5 e 46 páginas estáticas aprovados",
+  "typescript": "aprovado após proteção final",
+  "lint": "arquivos alterados aprovados",
+  "schema": "97 migrations locais, sem diferenças",
+  "limites": [
+    "Primitivas internas, sem adaptador HTTP ou worker de envio",
+    "Q155 pendente; fornecedor nos testes é fixture",
+    "Sem prova de integração externa, assinatura, aceite ou ativação",
+    "Última regressão integral: 201"
+  ]
+}

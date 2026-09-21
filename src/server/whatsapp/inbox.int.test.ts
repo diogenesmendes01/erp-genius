@@ -19,8 +19,10 @@ import {
   vincularContatoWhatsApp,
 } from "./acoes";
 import { definirTemperatura, registrarNotaInterna } from "@/server/comercial/acoes";
+import { garantirAtendimento } from "./atendimentos";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
-// Integração E3 (doc 30): inbox — escopo por número (D22/S11), envio HUMANO pela mesma
+// Integração da inbox, atualizada ao doc 36: escopo por atendimento, envio HUMANO pela mesma
 // fila/despachante, opt-out (S10), silêncio pós-inbound tratado (S4) e vínculo de contato.
 
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
@@ -49,11 +51,15 @@ async function seedConversaVendas(donoId: string | null) {
   const conversa = await prisma.conversaWhatsApp.create({
     data: { numeroId: numero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
   });
-  return { numero, contato, conversa };
+  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+    numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: donoId,
+  }));
+  // "conversa" nos inputs da UI é agora o atendimento, nunca o transporte.
+  return { numero, contato, conversa: atendimento, transporte: conversa };
 }
 
-describe("escopo da conversa (D22/S11)", () => {
-  it("vendedor vê só conversas do número que possui; financeiro só as de cobrança", async () => {
+describe("escopo do atendimento (doc 36)", () => {
+  it("vendedor vê o atendimento atribuído; financeiro não recebe o assunto comercial", async () => {
     const minha = await seedConversaVendas(vendedor.id);
     const outroVendedor = await criarUsuario([Papel.VENDEDOR]);
 
@@ -112,7 +118,7 @@ describe("enviarTextoInbox (origem HUMANO na MESMA fila)", () => {
 
     // …automação fica congelada na fila.
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "LOTE", corpoRenderizado: "auto" },
+      data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: conversa.id, autorId: vendedor.id, origem: "LOTE", corpoRenderizado: "auto" },
     });
     const despacho = await despacharFila();
     expect(despacho.pendentes).toBe(1);
@@ -174,13 +180,17 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
     const { numero } = await seedCanal({ estado: "SHADOW", janela: [0, 24] });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50655556666" } });
     const umaHoraAtras = new Date(Date.now() - 3600_000);
-    const conversa = await prisma.conversaWhatsApp.create({
+    await prisma.conversaWhatsApp.create({
       data: { numeroId: numero.id, contatoId: contato.id, ultimoInboundEm: umaHoraAtras },
     });
+    const { aluno, matricula } = await seedCobranca({ vencimento: new Date(), telefoneAluno: contato.telefoneE164 });
+    const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+      numeroId: numero.id, contatoId: contato.id, finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: matricula.id,
+    }));
 
     // Intenção do CRON criada DEPOIS do inbound (a lei da conversa viva não pega; S4 sim).
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", corpoRenderizado: "degrau" },
+      data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: atendimento.id, origem: "CRON", corpoRenderizado: "degrau" },
     });
     const antes = await despacharFila();
     expect(antes.adiadas).toBe(1);
@@ -189,7 +199,7 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
 
     // "Tratar" (retomar régua) marca inboundTratadoEm → o silêncio deixa de valer.
     authMock.mockResolvedValue({ user: { id: financeiro.id } });
-    const tratado = await marcarConversaTratada({ conversaId: conversa.id, motivo: "retomar_regua" });
+    const tratado = await marcarConversaTratada({ conversaId: atendimento.id, motivo: "retomar_regua" });
     expect(tratado.ok, tratado.ok ? "" : `falhou: ${(tratado as { erro?: string }).erro}`).toBe(true);
     expect((await eventosDo("ContatoWhatsApp", contato.id)).map((e) => e.tipo)).toContain("ReguaRetomada");
 
@@ -211,31 +221,141 @@ describe("silêncio pós-inbound tratado (S4/E3)", () => {
 });
 
 describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
+  it("usa a fonte civil persistida da matrícula selecionada entre dois contratos do mesmo aluno", async () => {
+    const { numero: primeiroNumero } = await seedCanal({ estado: "SHADOW" });
+    const primeira = await seedCobranca({ vencimento: new Date("2099-11-01T18:00:00.000Z") });
+    const segundaMatricula = await prisma.matricula.create({
+      data: {
+        alunoId: primeira.aluno.id,
+        produtoId: primeira.matricula.produtoId,
+        paisId: primeira.matricula.paisId,
+        moeda: primeira.matricula.moeda,
+      },
+    });
+    const segundaCobranca = await prisma.cobranca.create({
+      data: {
+        matriculaId: segundaMatricula.id,
+        tipo: "MENSALIDADE",
+        valorOriginal: 85000,
+        valorNegociado: 85000,
+        saldo: 85000,
+        moeda: primeira.matricula.moeda,
+        vencimento: instanteDaGrade("2099-12-02", "12:00", "America/Costa_Rica"),
+        status: "PENDENTE",
+      },
+    });
+
+    const registrarFonte = async (matriculaId: string, cobrancaId: string, vencimento: string, chave: string) => {
+      await prisma.pagadorPreparacaoMatricula.create({
+        data: {
+          matriculaId,
+          preparadorId: financeiro.id,
+          versao: 1,
+          tipo: "ALUNO",
+          dados: { alunoId: primeira.aluno.id },
+          motivo: "Pagador explícito preservado para o contrato selecionado.",
+          chaveIdempotencia: `${chave}-pagador`,
+          entradaHash: "p".repeat(64),
+        },
+      });
+      const condicoes = await prisma.condicoesEntradaPreparacao.create({
+        data: {
+          matriculaId,
+          preparadorId: financeiro.id,
+          versao: 1,
+          dados: { origem: "fixture inbox" },
+          motivo: "Condições preservadas para a fonte civil da cobrança.",
+          chaveIdempotencia: `${chave}-condicoes`,
+          entradaHash: "v".repeat(64),
+        },
+      });
+      const emissao = await prisma.emissaoCobrancasEntrada.create({
+        data: {
+          matriculaId,
+          condicoesId: condicoes.id,
+          executorId: financeiro.id,
+          etapa: "CONFERENCIA_SECRETARIA",
+          memoria: {
+            fusoInstitucional: "America/Costa_Rica",
+            cobrancas: [{ id: cobrancaId, tipo: "MENSALIDADE", valor: "85000", moeda: "CRC", vencimento, cobertura: null, minutos: null }],
+          },
+        },
+      });
+      await prisma.itemEmissaoEntrada.create({ data: { matriculaId, emissaoId: emissao.id, cobrancaId } });
+    };
+
+    await prisma.cobranca.update({
+      where: { id: primeira.cobranca.id },
+      data: { vencimento: instanteDaGrade("2099-11-01", "12:00", "America/Costa_Rica") },
+    });
+    await registrarFonte(primeira.matricula.id, primeira.cobranca.id, "2099-11-01", "inbox-primeira");
+    await registrarFonte(segundaMatricula.id, segundaCobranca.id, "2099-12-02", "inbox-segunda");
+
+    const contato = await prisma.contatoWhatsApp.create({
+      data: { telefoneE164: primeira.aluno.telefoneE164!, alunoId: primeira.aluno.id },
+    });
+    const segundaConversa = await prisma.conversaWhatsApp.create({
+      data: { numeroId: primeiroNumero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
+    });
+    const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+      numeroId: primeiroNumero.id,
+      contatoId: contato.id,
+      finalidade: "FINANCEIRO",
+      alunoId: primeira.aluno.id,
+      matriculaId: segundaMatricula.id,
+    }));
+    await prisma.mensagemWhatsApp.create({
+      data: { conversaId: segundaConversa.id, atendimentoId: atendimento.id, numeroId: primeiroNumero.id, direcao: "ENTRADA", corpo: "Segunda cobrança", driver: "META_CLOUD" },
+    });
+
+    const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, atendimento.id);
+    expect(thread?.cobrancaAtiva).toMatchObject({
+      id: segundaCobranca.id,
+      matriculaId: segundaMatricula.id,
+      vencimento: { estado: "CONFIRMADO", dataCivil: "2099-12-02", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" },
+    });
+    expect(thread?.cobrancaAtiva?.id).not.toBe(primeira.cobranca.id);
+    expect(thread?.cobrancaAtiva?.matriculaId).not.toBe(primeira.matricula.id);
+  });
+
   it("financeiro recebe a cobrança; vendedor recebe null MESMO com contato vinculado a aluno devedor", async () => {
     const agora = agoraAs(10);
     const { numero: numeroCobranca } = await seedCanal({ estado: "SHADOW" });
-    const { aluno, cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
+    const { aluno, matricula, cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
+    const outraMatricula = await seedCobranca({ vencimento: diasDepois(agora, 1), telefoneAluno: "+50677770001" }, {
+      pais: aluno.paisId ? { id: aluno.paisId } : await prisma.pais.findFirstOrThrow({ select: { id: true } }),
+      produto: matricula.produtoId ? { id: matricula.produtoId } : await prisma.produto.findFirstOrThrow({ select: { id: true } }),
+    });
 
     // Conversa no número de COBRANCA, contato vinculado ao aluno devedor.
     const contatoCobranca = await prisma.contatoWhatsApp.create({
-      data: { telefoneE164: "+50677770001", alunoId: aluno.id },
+      data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id },
     });
     const antes = new Date(Date.now() - 60_000);
     const conversaCobranca = await prisma.conversaWhatsApp.create({
       data: { numeroId: numeroCobranca.id, contatoId: contatoCobranca.id, ultimaMensagemEm: new Date() },
     });
+    const atendimentoCobranca = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+      numeroId: numeroCobranca.id, contatoId: contatoCobranca.id, finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: matricula.id,
+    }));
     await prisma.mensagemWhatsApp.createMany({
       data: [
-        { conversaId: conversaCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "primeira", driver: "META_CLOUD", criadoEm: antes },
-        { conversaId: conversaCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "última", driver: "META_CLOUD" },
+        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "primeira", driver: "META_CLOUD", criadoEm: antes },
+        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "última", driver: "META_CLOUD" },
       ],
     });
 
     const doFinanceiro = await carregarThread(
       { id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] },
-      conversaCobranca.id,
+      atendimentoCobranca.id,
     );
-    expect(doFinanceiro?.cobrancaAtiva?.id).toBe(cobranca.id);
+    expect(doFinanceiro?.cobrancaAtiva).toMatchObject({
+      id: cobranca.id,
+      matriculaId: matricula.id,
+      vencimento: { estado: "A_CONFERIR" },
+    });
+    expect(doFinanceiro?.cobrancaAtiva?.id).not.toBe(outraMatricula.cobranca.id);
+    expect(doFinanceiro?.cobrancaAtiva?.matriculaId).not.toBe(outraMatricula.matricula.id);
     // Thread em ordem cronológica mesmo com o take desc (P2-5).
     expect(doFinanceiro?.mensagens.map((m) => m.corpo)).toEqual(["primeira", "última"]);
 
@@ -245,12 +365,15 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
     const contatoVendas = await prisma.contatoWhatsApp.create({
       data: { telefoneE164: "+50677770002", alunoId: aluno.id },
     });
-    const conversaVendas = await prisma.conversaWhatsApp.create({
+    await prisma.conversaWhatsApp.create({
       data: { numeroId: numeroVendas.id, contatoId: contatoVendas.id, ultimaMensagemEm: new Date() },
     });
+    const atendimentoVendas = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+      numeroId: numeroVendas.id, contatoId: contatoVendas.id, finalidade: "COMERCIAL", responsavelId: vendedor.id,
+    }));
     const doVendedor = await carregarThread(
       { id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] },
-      conversaVendas.id,
+      atendimentoVendas.id,
     );
     expect(doVendedor).not.toBeNull();
     expect(doVendedor?.cobrancaAtiva).toBeNull();
@@ -340,6 +463,7 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
       data: { nome: "Lead Cockpit", vendedorDonoId: donoId, etapa: EtapaLead.NOVO },
     });
     await prisma.contatoWhatsApp.update({ where: { id: seed.contato.id }, data: { leadId: lead.id } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: seed.conversa.id }, data: { leadId: lead.id } });
     return { ...seed, lead };
   }
 
@@ -367,8 +491,7 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     });
 
     const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, conversa.id);
-    expect(thread).not.toBeNull();
-    expect(thread?.lead).toBeNull();
+    expect(thread).toBeNull(); // doc 36: nem a thread comercial nem legado são abertos pelo número.
   });
 
   it("lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)", async () => {
@@ -379,8 +502,7 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
 
     const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    expect(thread).not.toBeNull(); // A vê a conversa (é o dono do número)…
-    expect(thread?.lead).toBeNull(); // …mas NÃO o funil de um lead alheio.
+    expect(thread).toBeNull(); // doc 36: o dono do número não recebe histórico de outro vendedor.
 
     // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
     await prisma.lead.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
@@ -426,16 +548,16 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
 
 describe("vincularContatoWhatsApp", () => {
   it("vendedor vincula ao PRÓPRIO lead; lead alheio é negado; evento auditável", async () => {
-    const { contato } = await seedConversaVendas(vendedor.id);
+    const { contato, conversa } = await seedConversaVendas(vendedor.id);
     const outro = await criarUsuario([Papel.VENDEDOR]);
-    const meuLead = await prisma.lead.create({ data: { nome: "Lead Meu", vendedorDonoId: vendedor.id } });
+    const meuLead = await prisma.lead.create({ data: { nome: "Lead Meu", vendedorDonoId: vendedor.id, telefoneE164: contato.telefoneE164 } });
     const leadAlheio = await prisma.lead.create({ data: { nome: "Lead Alheio", vendedorDonoId: outro.id } });
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
 
-    const negado = await vincularContatoWhatsApp({ contatoId: contato.id, alvo: { tipo: "lead", id: leadAlheio.id } });
+    const negado = await vincularContatoWhatsApp({ contatoId: contato.id, atendimentoId: conversa.id, alvo: { tipo: "lead", id: leadAlheio.id } });
     expect(negado.ok).toBe(false);
 
-    const ok = await vincularContatoWhatsApp({ contatoId: contato.id, alvo: { tipo: "lead", id: meuLead.id } });
+    const ok = await vincularContatoWhatsApp({ contatoId: contato.id, atendimentoId: conversa.id, alvo: { tipo: "lead", id: meuLead.id } });
     expect(ok.ok, ok.ok ? "" : `falhou: ${(ok as { erro?: string }).erro}`).toBe(true);
 
     const atualizado = await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { id: contato.id } });

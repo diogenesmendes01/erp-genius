@@ -39,7 +39,8 @@ export function gatewayAtivo(): GatewayPagamento {
 
 /** O botão "pagar" da página simulada só funciona com o flag explícito no env (dev/demo). */
 export function pagamentoSimuladoHabilitado(): boolean {
-  return process.env.PAGAMENTO_SIMULADO === "1";
+  // A integração do provedor com o ledger contratual ainda exige conferência.
+  return false;
 }
 
 export interface CobrancaPublica {

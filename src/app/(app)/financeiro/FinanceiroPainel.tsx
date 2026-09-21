@@ -9,7 +9,13 @@ import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/finan
 import type { FilaCobranca as FilaCobrancaDados } from "@/server/cobrancas/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
+import { InformesPagamento } from "./InformesPagamento";
+import { PoliticasComissao } from "./PoliticasComissao";
+import type { listarInformesPagamento, configuracaoComissoes } from "@/server/financeiro/consultas";
 import { FilaCobranca } from "./FilaCobranca";
+import { RetomadasPainel } from "./RetomadasPainel";
+import type { listarPropostasRetomada } from "@/server/retomada/consultas";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -20,6 +26,7 @@ export interface ComissaoRow {
   valor: number;
   moeda: string;
   percentual: number;
+  tipo?: "PERCENTUAL" | "VALOR_FIXO";
   status: StatusComissao;
 }
 export interface Kpis {
@@ -60,10 +67,14 @@ const VIGENCIA_LABEL: Record<Vigencia, string> = {
 const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
 
-type Aba = "cobrancas" | "comissoes" | "descontos" | "geral" | "aprovacoes" | "cambio";
+type Aba = "informes" | "politicas" | "cobrancas" | "comissoes" | "descontos" | "geral" | "aprovacoes" | "cambio" | "retomadas";
 
 export function FinanceiroPainel({
   fila,
+  informes,
+  politicas,
+  retomadas,
+  erroRetomadas,
   comissoes,
   kpis,
   aprovacoes,
@@ -73,8 +84,13 @@ export function FinanceiroPainel({
   relatorio,
   configFinanceiro,
   podeGerenciarCambio,
+  preferenciaFusoExibicao = null,
 }: {
   fila: FilaCobrancaDados;
+  informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
+  politicas: Awaited<ReturnType<typeof configuracaoComissoes>>;
+  retomadas: NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
+  erroRetomadas?: string | null;
   comissoes: ComissaoRow[];
   kpis: Kpis;
   aprovacoes: AprovacaoRow[];
@@ -84,9 +100,10 @@ export function FinanceiroPainel({
   relatorio: RelatorioDados;
   configFinanceiro: { fechamentoComissaoAutomatico: boolean };
   podeGerenciarCambio: boolean;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
-  const [aba, setAba] = useState<Aba>("cobrancas");
+  const [aba, setAba] = useState<Aba>(podeOperarCobranca ? "cobrancas" : "comissoes");
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
 
@@ -137,10 +154,12 @@ export function FinanceiroPainel({
   }
 
   const abas: [Aba, string][] = [
-    ["cobrancas", "Cobranças"],
+    ...(podeOperarCobranca ? ([["cobrancas", "Cobranças"], ["informes", `A conferir (${informes.length})`]] as [Aba, string][]) : []),
+    ...(podeOperarCobranca ? ([["retomadas", `Retomadas (${retomadas.filter((p) => p.status === "PENDENTE").length})`]] as [Aba, string][]) : []),
     ["comissoes", "Comissões"],
     ["descontos", "Descontos"],
-    ["geral", "Visão geral"],
+    ...(podeOperarCobranca ? ([["geral", "Visão geral"]] as [Aba, string][]) : []),
+    ...(politicas ? ([["politicas", "Política de comissão"]] as [Aba, string][]) : []),
     ...(podeAprovar ? ([["aprovacoes", `Aprovações${aprovacoes.length ? ` (${aprovacoes.length})` : ""}`]] as [Aba, string][]) : []),
     ...(podeGerenciarCambio ? ([["cambio", "Câmbio"]] as [Aba, string][]) : []),
   ];
@@ -163,19 +182,24 @@ export function FinanceiroPainel({
       {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       {nota && <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
 
-      {aba === "cobrancas" && (
+      {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+      {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+      {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+      {aba === "cobrancas" && podeOperarCobranca && (
         <FilaCobranca
           itens={fila.itens}
           dashs={fila.dashs}
           regua={fila.regua}
           podeOperar={podeOperarCobranca}
           podeBloquear={podeAprovar}
+          preferenciaFusoExibicao={preferenciaFusoExibicao}
         />
       )}
 
       {aba === "comissoes" && (
         <Comissoes
           comissoes={comissoes}
+          podePagar={podeOperarCobranca}
           onFechar={() => run(fecharMesComissoes())}
           fechamentoAutomatico={configFinanceiro.fechamentoComissaoAutomatico}
           onToggleAutomatico={(ligado) => run(salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
@@ -191,7 +215,7 @@ export function FinanceiroPainel({
       {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(decidirAprovacao(id, { aprovar: ok }))} />}
 
       {aba === "cambio" && (
-        <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} />
+        <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       )}
     </div>
   );
@@ -199,11 +223,13 @@ export function FinanceiroPainel({
 
 function Comissoes({
   comissoes,
+  podePagar,
   onFechar,
   fechamentoAutomatico,
   onToggleAutomatico,
 }: {
   comissoes: ComissaoRow[];
+  podePagar: boolean;
   onFechar: () => void;
   fechamentoAutomatico: boolean;
   onToggleAutomatico: (ligado: boolean) => void;
@@ -215,7 +241,7 @@ function Comissoes({
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
-        <span className="flex items-center gap-3">
+        {podePagar && <span className="flex items-center gap-3">
           {/* Fase 2 (doc 03): fechamento MENSAL automático — 1x por mês, no 1º tick do cron. */}
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
             <input
@@ -227,7 +253,7 @@ function Comissoes({
             Fechamento mensal automático
           </label>
           <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>
-        </span>
+        </span>}
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <table className="w-full text-sm">
@@ -246,7 +272,7 @@ function Comissoes({
               comissoes.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-800">{c.vendedor}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.percentual}%</td>
+                  <td className="px-4 py-3 text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
                   <td className="px-4 py-3 text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
                   <td className="px-4 py-3 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
                 </tr>
@@ -390,14 +416,16 @@ function VisaoGeral({
   );
 }
 
-function CambioPainel({
+export function CambioPainel({
   cotacoes,
   onSalvar,
   onAtualizarAuto,
+  preferenciaFusoExibicao,
 }: {
   cotacoes: CotacaoVigente[];
   onSalvar: (entradas: { moeda: string; unidadesPorUsd: number }[]) => Promise<void>;
   onAtualizarAuto: () => Promise<void>;
+  preferenciaFusoExibicao?: string | null;
 }) {
   const editaveis = cotacoes.filter((c) => !c.pivo);
   const [vals, setVals] = useState<Record<string, string>>(() =>
@@ -466,7 +494,7 @@ function CambioPainel({
                   />
                 </td>
                 <td className="px-4 py-2 text-xs text-gray-400">
-                  {c.vigenteEm ? new Date(c.vigenteEm).toLocaleDateString("pt-BR") : "sem cotação"}
+                  {c.vigenteEm ? (() => { const exibicao = formatarInstanteExibicao(c.vigenteEm, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; })() : "sem cotação"}
                 </td>
               </tr>
             ))}

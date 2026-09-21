@@ -1,0 +1,16 @@
+{
+ "incremento": 297,
+ "data": "2026-09-13",
+ "escopo": "Consolidação da prévia por matrícula sem dupla apuração de compras de horas",
+ "unitarios": { "aprovados": 10, "falhos": 0 },
+ "integracao": { "aprovados": 5, "falhos": 0 },
+ "lintDirecionado": "aprovado",
+ "build": { "aprovado": true, "paginasEstaticas": 52 },
+ "typescript": "aprovado no build",
+ "migrationsNovas": 0,
+ "ultimaRegressaoIntegral": 283,
+ "limites": ["Aprovação e efetivação financeira ainda pendentes", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false,
+ "producao": false,
+ "enviosExternos": false
+}

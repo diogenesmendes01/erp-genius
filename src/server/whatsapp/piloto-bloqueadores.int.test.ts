@@ -230,7 +230,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
     expect(r.canceladas).toBe(1);
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(intencao.status).toBe("CANCELADA");
-    expect(intencao.motivoFalha).toBe("etapa_mudou");
+    expect(intencao.motivoFalha).toBe("etapa_comercial_alterada");
   });
 
   it("saída manual (fromMe) depois do enqueue → CANCELADA (vendedor_assumiu)", async () => {
@@ -268,7 +268,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
     const r = await despacharFila();
 
     expect(r.canceladas).toBe(1);
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("vendedor_assumiu");
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("atendimento_comercial_iniciado");
   });
 
   it("experimental REAGENDADA depois do enqueue → CANCELADA (ocorrencia_mudou)", async () => {
@@ -299,7 +299,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
     const r = await despacharFila();
 
     expect(r.canceladas).toBe(1);
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("ocorrencia_mudou");
+    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("ocorrencia_comercial_alterada");
   });
 });
 

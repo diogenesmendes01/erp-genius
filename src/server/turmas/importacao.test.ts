@@ -24,7 +24,7 @@ describe("importação de turmas — parsers", () => {
     expect(chaveDoCabecalhoTurma("Nível *")).toBe("nivel");
     expect(chaveDoCabecalhoTurma("Dias da semana (ex.: Seg, Qua, Sex) *")).toBe("diasSemana");
     expect(chaveDoCabecalhoTurma("Data de início (AAAA-MM-DD) *")).toBe("dataInicio");
-    expect(chaveDoCabecalhoTurma("Data de fim (AAAA-MM-DD) *")).toBe("dataFim");
+    expect(chaveDoCabecalhoTurma("Data final de referência (AAAA-MM-DD, opcional)")).toBe("dataFim");
   });
 
   it("resolve dias da semana de várias grafias (sem dígito cru ambíguo)", () => {

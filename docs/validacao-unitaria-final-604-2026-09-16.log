@@ -1,0 +1,2 @@
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+JSON report written to C:/Users/Mendes/.codex/worktrees/de19/erp-genius/docs/validacao-unitaria-final-604-2026-09-16.json

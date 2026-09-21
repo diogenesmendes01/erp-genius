@@ -1,5 +1,7 @@
 # Roadmap — ERP Genius (revisado)
 
+> Integração da SPEC em 21/09/2026: os status Fases 0–3 abaixo descrevem a linha histórica da main. O aceite atual está em [quadro-entregas](planejamento/quadro-entregas.md). Diário/notas/portal/ativação usam os fluxos refinados; os atalhos antigos, a conciliação simulada sem ledger e a criação de contratos corporativos em lote não estão liberados nesta entrega.
+
 > Filosofia: **primeiro operar tudo manualmente no sistema → depois automatizar →
 > depois dinheiro → depois acadêmico.** Cada fase entrega algo usável.
 

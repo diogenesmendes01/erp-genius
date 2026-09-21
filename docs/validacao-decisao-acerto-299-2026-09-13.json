@@ -1,0 +1,10 @@
+{
+ "incremento": 299, "data": "2026-09-13",
+ "escopo": "Decisão independente sobre versão consolidada do acerto, sem efetivação financeira",
+ "integracao": { "aprovados": 7, "falhos": 0, "arquivos": ["encerramento-solicitacao.int.test.ts"] },
+ "typescript": "aprovado", "lintDirecionado": "aprovado",
+ "build": { "aprovado": true, "paginasEstaticas": 52 },
+ "migrations": 140, "schemaDiff": "vazio", "ultimaRegressaoIntegral": 298,
+ "coberturaComplementar": ["Financeiro sem permissão de aprovação recusado", "Retroatividade sem autorização específica recusada no serviço e SQL", "Dispensa de multa sem autorização específica recusada no serviço e SQL", "Autorização explícita preservada na decisão sem efetivar matrícula"], "limites": ["Efetivação financeira pendente e exige nova revalidação", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false, "producao": false, "enviosExternos": false
+}

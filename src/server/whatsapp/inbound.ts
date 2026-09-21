@@ -9,6 +9,7 @@ import {
 } from "@/server/comercial/captura";
 import { despacharFila } from "./despachante";
 import { garantirContato, telefoneDeWaId } from "./identidade";
+import { atendimentoDoInbound } from "./atendimentos";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -84,7 +85,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
 
       // Dedupe S7: o @@unique(numeroId, providerMessageId) faz o retry do webhook explodir
       // aqui dentro — capturado fora como "duplicada", sem efeito colateral.
-      await tx.mensagemWhatsApp.create({
+      const mensagem = await tx.mensagemWhatsApp.create({
         data: {
           conversaId: conversa.id,
           numeroId: numero.id,
@@ -171,6 +172,14 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           });
         }
       }
+      const atendimentoId = await atendimentoDoInbound(tx, conversa.id);
+      if (atendimentoId) {
+        await tx.mensagemWhatsApp.update({ where: { id: mensagem.id }, data: { atendimentoId } });
+        await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: {
+          ultimaMensagemEm: m.quando, ...(m.fromMe ? {} : { ultimoInboundEm: m.quando, naoLidas: { increment: 1 } }),
+        } });
+        if (saudacaoIntencaoId) await tx.intencaoMensagem.update({ where: { id: saudacaoIntencaoId }, data: { atendimentoId } });
+      }
     });
     // Saudação "em segundos" (reativa): despacha JÁ, fora da transação. ESCOPADO à intenção
     // recém-criada (review PR #53 P2) — nunca drena a fila global (cobranças/lotes sem
@@ -242,7 +251,7 @@ async function acharNumero(ref: {
     if (porRef) return porRef;
   }
   if (ref.numeroTelefoneE164) {
-    return prisma.numeroWhatsApp.findUnique({ where: { telefoneE164: ref.numeroTelefoneE164 } });
+    return prisma.numeroWhatsApp.findFirst({ where: { telefoneE164: ref.numeroTelefoneE164, driver: ref.driver } });
   }
   return null;
 }

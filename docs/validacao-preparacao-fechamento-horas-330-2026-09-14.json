@@ -1,0 +1,6 @@
+{
+ "incremento":330,"data":"2026-09-14","escopo":"Preparação de fechamento por hora pela interface",
+ "integracao":{"aprovados":12,"falhos":0,"arquivos":1},"build":"aprovado antes do ajuste final de recuperação do formulário","paginasEstaticasGeradas":52,"typescriptFinal":"aprovado","lint":"aprovado",
+ "migration":false,"homologacaoVisual":false,
+ "limites":["Detalhamento de pendências/destinações incompleto","Aprovação e emissão pendentes"],"producao":false,"enviosExternos":false
+}

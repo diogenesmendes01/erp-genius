@@ -1,0 +1,26 @@
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.mjs took 15ms
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 error:
+./src/server/matricula/condicoes-continuidade-mensal.ts:10:17
+Error: Server Actions must be async functions.
+   8 |
+   9 |
+> 10 | export function impedimentoPreparacaoMensal(regime: string | null | undefined) {
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |   if (!regime) return "Prepare a contratação mensal antes de transcrever as condições.";
+  12 |   if (regime !== "MENSALIDADE") return "Esta contratação não é mensal.";
+  13 |   return null;
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/server/matricula/condicoes-continuidade-mensal.ts
+    ./src/app/(app)/matriculas/[id]/continuidade-mensal/page.tsx
+
+
+    at <unknown> (./src/server/matricula/condicoes-continuidade-mensal.ts:10:17)

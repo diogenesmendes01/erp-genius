@@ -7,11 +7,12 @@ export async function listarTurmas() {
   return prisma.turma.findMany({
     orderBy: { criadoEm: "desc" },
     include: {
+      regraAvaliacao: { select: { id: true, versao: true } },
       modalidade: true,
       nivel: { include: { idioma: true } },
       professor: { select: { id: true, nome: true } },
-      // Conta SOMENTE alocações ativas (issues #1/#19) — base de "matriculados/vagas"; transferência/remoção desativa e mantém histórico.
-      _count: { select: { alocacoes: { where: { ativa: true } } } },
+      // Mantém contagens separadas de matriculados e reservas ocupantes para calcular vagas.
+      _count: { select: { alocacoes: { where: { ativa: true } }, reservasMatricula: { where: { status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } } } },
     },
   });
 }

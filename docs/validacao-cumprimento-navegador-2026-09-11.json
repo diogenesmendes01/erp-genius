@@ -1,0 +1,11 @@
+{
+  "executadoEm": "2026-09-11T22:02:50.734Z",
+  "ambiente": "Local descartável; fixture com programação prévia, conferência pela interface",
+  "checks": {
+    "conferenciaUnica": true,
+    "aprovada": true,
+    "independente": true,
+    "direitoCumprido": true,
+    "semRecebimento": true
+  }
+}

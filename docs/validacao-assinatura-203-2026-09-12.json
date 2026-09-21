@@ -1,0 +1,27 @@
+{
+  "incremento": 203,
+  "data": "2026-09-12",
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "aprovados": 49,
+    "falhas": 0,
+    "pendentes": 0
+  },
+  "build": "Next.js 16.3.5 aprovado, TypeScript e 45 páginas estáticas",
+  "lint": "arquivos alterados aprovados",
+  "schema": "95 migrations locais aplicadas, sem divergências",
+  "cenarios": [
+    "Q105 com e sem taxa prévia",
+    "Informe a conferir não comprova pagamento exigido",
+    "Mudança da oferta não substitui política capturada",
+    "Reserva vencida e revisão alterada bloqueadas",
+    "Histórico, idempotência, imutabilidade e acesso por matrícula/papel",
+    "Original e participantes preservados após refatoração do helper"
+  ],
+  "limites": [
+    "Conferência interna, sem envio externo ou assinatura",
+    "Última regressão integral: incremento 201",
+    "Interface compilada, sem ensaio interativo",
+    "Q110, agenda própria de particulares e ativação completa ainda pendentes"
+  ]
+}

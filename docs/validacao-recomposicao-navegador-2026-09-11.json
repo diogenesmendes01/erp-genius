@@ -1,0 +1,14 @@
+{
+  "executadoEm": "2026-09-11T21:46:58.841Z",
+  "ambiente": "Local descartável; dados fictícios",
+  "checks": {
+    "rascunhoUnico": true,
+    "aprovacaoIndependente": true,
+    "aplicada": true,
+    "doisDiasProgramados": true,
+    "coberturaDeslocada": true,
+    "financeiroPreservado": true,
+    "direitosNaoConsumidos": true,
+    "contratosPreservados": true
+  }
+}
