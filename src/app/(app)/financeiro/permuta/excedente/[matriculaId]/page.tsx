@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDestinacoesExcedentePermuta } from "@/server/matricula/excedente-permuta-destinacao";
+import { consultarUsosSaldoServicoPermuta } from "@/server/matricula/saldo-servico-permuta-uso";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ExcedenteFormulario } from "./Formulario";
@@ -11,9 +12,10 @@ const PARTES: Record<string, string> = { ALUNO_OU_RESPONSAVEL: "Aluno ou respons
 export default async function Pagina({ params }: { params: Promise<{ matriculaId: string }> }) {
  await exigirSessaoPagina(Papel.FINANCEIRO);
  const { matriculaId } = await params;
- const [r, preferencia] = await Promise.all([consultarDestinacoesExcedentePermuta({ matriculaId }), consultarPreferenciaFusoEquipe()]);
+ const [r, usos, preferencia] = await Promise.all([consultarDestinacoesExcedentePermuta({ matriculaId }), consultarUsosSaldoServicoPermuta({ matriculaId }), consultarPreferenciaFusoEquipe()]);
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível" : r.erro}</p>;
- const d = r.dado;
+ if (!usos.ok || !usos.dado) return <p role="alert">{usos.ok ? "Consulta indisponível" : usos.erro}</p>;
+ const d = r.dado, u = usos.dado;
  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
  const instante = (valor: string) => { const e = formatarInstanteExibicao(valor, fusoExibicao, "UTC"); return `${e.texto} (horário exibido em ${e.fuso}; origem UTC)`; };
  return <main className="space-y-5"><Link href="/financeiro/permuta" className="underline">Voltar às permutas</Link>
@@ -48,7 +50,22 @@ export default async function Pagina({ params }: { params: Promise<{ matriculaId
   {p.podeDecidir && <ExcedenteFormulario modo="decidir" propostaId={p.id} />}
  </section>)}
  <h2 className="text-xl">Saldos restritos a serviços</h2>
- {!d.saldosServico.length && <p>Nenhum saldo de serviços nesta matrícula.</p>}
- {d.saldosServico.map(s => <p key={s.id}>Saldo {s.id}: {s.valorInicial} {s.moeda}, criado em {instante(s.criadoEm)}.</p>)}
+ {!u.saldos.length && <p>Nenhum saldo de serviços nesta matrícula.</p>}
+ {u.saldos.map(s => <section key={s.id} className="space-y-2 rounded border p-4">
+  <h3>Saldo {s.id} · criado em {instante(s.criadoEm)}</h3>
+  <p>Inicial {s.valorInicial} {s.moeda} · usado {s.usadoAprovado} {s.moeda} · disponível {s.disponivel} {s.moeda}. Não expira e nunca vira dinheiro; abate mensalidade, hora particular ou taxa em aberto desta matrícula, na mesma moeda.</p>
+  {s.cobrancasAbativeis.length > 0
+   ? <ExcedenteFormulario modo="usar" saldoId={s.id} moeda={s.moeda} disponivel={s.disponivel} cobrancas={s.cobrancasAbativeis} />
+   : <p role="status">{Number(s.disponivel) > 0 ? "Nenhuma cobrança em aberto abatível no momento (ou há uso aguardando decisão)." : "Saldo totalmente utilizado."}</p>}
+ </section>)}
+ <h2 className="text-xl">Usos do saldo de serviços</h2>
+ {!u.propostas.length && <p>Nenhum uso registrado.</p>}
+ {u.propostas.map(p => <section key={p.id} className="space-y-2 rounded border p-4">
+  <h3>Uso {p.id} · {p.estado}</h3>
+  <p>Cobrança {p.cobrancaId} · {p.valor} {p.moeda} · saldo {p.saldoId} · proposto por {p.preparador} em {instante(p.criadaEm)}</p>
+  <p>Motivo: {p.motivo}</p>
+  {p.decisao && <p>Decisão em {instante(p.decisao.decididaEm)}: {p.decisao.motivo}{p.decisao.aplicacaoId && <> · aplicação {p.decisao.aplicacaoId}</>}</p>}
+  {p.podeDecidir && <ExcedenteFormulario modo="decidir-uso" propostaId={p.id} />}
+ </section>)}
  </main>;
 }
