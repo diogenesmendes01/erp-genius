@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarHistoricoReservasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-historico";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { ResolverImpedimento } from "./ResolverImpedimento";
 
 const rotulos: Record<string, string> = {
   RESERVADA: "Reservada", CONSUMIDA_REALIZACAO: "Realizada", CONSUMIDA_FALTA: "Falta registrada",
@@ -36,6 +37,10 @@ export default async function Page({ params, searchParams }: {
       <p><strong>Reserva:</strong> {rotulos[item.status] ?? item.status} · {data(item.reservadaEm)} · {item.reservadaPor}</p>
       {item.encontro && <p>Encontro: {data(item.encontro.inicio)} a {data(item.encontro.fim)} · {rotulos[item.encontro.status] ?? item.encontro.status} · {item.encontro.professor}</p>}
       {item.ocorrencia && <div><p>Ocorrência: {rotulos[item.ocorrencia.status] ?? item.ocorrencia.status} em {data(item.ocorrencia.ocorridaEm)} · {item.ocorrencia.registradaPor}</p><p>Registro: {data(item.ocorrencia.criadaEm)}</p><p>Motivo: {item.ocorrencia.motivo}</p><p>Evidência: {item.ocorrencia.evidencia}</p></div>}
+      {item.resolucaoImpedimento && <div role="status"><p>Impedimento resolvido: confirmado por {item.resolucaoImpedimento.confirmadaPor} em {data(item.resolucaoImpedimento.confirmadaEm)}, pela realização de {data(item.resolucaoImpedimento.realizadaEm)}.</p><p>Justificativa: {item.resolucaoImpedimento.motivo}</p></div>}
+      {item.status === "PENDENCIA_ESCOLA" && !item.resolucaoImpedimento && (item.realizacoesQueResolvem.length
+        ? <ResolverImpedimento reservaImpedidaId={item.id} realizacoes={item.realizacoesQueResolvem.map((z) => ({ id: z.id, rotulo: `Realizada em ${data(z.realizadaEm)}` }))} />
+        : <p>Este impedimento bloqueia o fechamento até existir realização posterior desta avaliação com nota oficial e a gestão confirmar a resolução.</p>)}
       {item.realizacao && <div><p>Realização: {data(item.realizacao.realizadaEm)} · {item.realizacao.professor} · {item.realizacao.registradaPor}</p><p>Evidência: {item.realizacao.evidencia}</p></div>}
     </article>)}
     {!d.itens.length && <p>Nenhuma reserva registrada.</p>}
