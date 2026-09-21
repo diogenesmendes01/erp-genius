@@ -1,5 +1,6 @@
 "use server";
 
+import { aplicarRevisaoNaoCobravelTx } from "@/server/financeiro/revisao-correcao-aula-aplicacao-tx";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -125,6 +126,8 @@ export async function aprovarCorrecaoAula(input: { propostaId: string; propostaH
         impactos: { ...snapshotImpactos, ...(preservadas.length ? { preservacaoReposicoesConcluidas: preservadas } : {}),
           ...(continuadas.length ? { continuidadeReposicoesAutorizadas: continuadas } : {}) },
       } });
+      // Q175: o acerto financeiro da aula não cobrável nasce na mesma transação; o trigger diferido do banco exige os dois.
+      if (d.revisaoFinanceiraDecisaoId) await aplicarRevisaoNaoCobravelTx(tx, { aprovacaoId: aprovacao.id, decisaoRevisaoId: d.revisaoFinanceiraDecisaoId, autorId: usuario.id });
       await registrarEvento(tx, { tipo: "CorrecaoAulaAprovada", agregadoTipo: "EncontroAgenda", agregadoId: proposta.encontroId,
         autorId: usuario.id, payload: { propostaId: proposta.id, aprovacaoId: aprovacao.id, versao: proposta.versao,
           propostaHash: d.propostaHash, impactosHash, revisaoFinanceiraDecisaoId: d.revisaoFinanceiraDecisaoId ?? null, preservacaoReposicoesConcluidas: preservadas, continuidadeReposicoesAutorizadas: continuadas } });

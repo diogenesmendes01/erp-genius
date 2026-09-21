@@ -46,7 +46,7 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
   apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: [] });
   const encontros = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA", matriculaId: d.matriculaId, turmaId: null, status: { not: "RASCUNHO" },
     inicio: { gte: new Date(d.periodo.inicio), lt: new Date(d.periodo.fimExclusivo) } }, orderBy: [{ inicio: "asc" }, { id: "asc" }],
-    include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, consumoAntecipacao: { select: { id: true, reservaId: true } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
+    include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, consumoAntecipacao: { select: { id: true, reservaId: true } }, aplicacaoNaoCobravel: { select: { id: true } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
       ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true } },
       reservasHoras: { select: { id: true, consumo: { select: { id: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } } } } } });
   const itens: EntradaFechamentoHoras["encontros"] = [];
@@ -96,13 +96,15 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     }
     itens.push({ ...base, contratoVersaoId: c.condicoesId, valorHoraContratado, ocorrencia: o,
       destinacao: c.itemFaturado ? { tipo: "FATURADA", cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id }
+        // Q175: aula declarada não cobrável antes de ser fechada nunca entra em cobrança; a conferência permanece como histórico.
+        : c.aplicacaoNaoCobravel ? { tipo: "NAO_COBRAVEL_CORRECAO", aplicacaoId: c.aplicacaoNaoCobravel.id }
         : consumoAntecipacao ? { tipo: "ANTECIPACAO_CONFERIDA", registroId: consumoAntecipacao.id } : { tipo: "SEM_DESTINACAO" } });
   }
   const apuracao = apurarFechamentoHoras({ matriculaId: d.matriculaId, moeda: m.moeda, periodo: d.periodo, vencimento: d.vencimento, escolha: d.escolha, encontros: itens });
   // Confronta a recomposição com os valores efetivamente conferidos, sem reprecificar pelo catálogo.
   for (const e of encontros) {
     const c = e.conferenciaOcorrenciaHoras;
-    if (!c || c.itemFaturado || c.consumoAntecipacao) continue;
+    if (!c || c.itemFaturado || c.consumoAntecipacao || c.aplicacaoNaoCobravel) continue;
     const item = apuracao.itens.find(i => i.encontroId === e.id), semCobranca = apuracao.semCobranca.find(i => i.encontroId === e.id);
     if ((item?.desfecho ?? semCobranca?.desfecho) !== c.desfecho || !new Prisma.Decimal(item?.valor ?? "0").equals(c.valor)) throw new ErroRegra("Cálculo diverge da conferência preservada.");
   }
