@@ -1,6 +1,6 @@
 # Q175 — correção de aula particular "não devia ser cobrada": desenho técnico
 
-Estado em 21/09/2026: **decidido e levantado; implementação não iniciada.** Decisões em [decisoes-2026-09-21.md](decisoes-2026-09-21.md). Este documento fixa o desenho para que a implementação possa ser feita em fatias verificáveis.
+Estado em 21/09/2026: **opção A escolhida pelo usuário; fatia 1 implementada e verificada em banco real; fatia 2 (horas pré-pagas) pendente.** Decisões em [decisoes-2026-09-21.md](decisoes-2026-09-21.md). Este documento fixa o desenho para que a implementação possa ser feita em fatias verificáveis.
 
 ## O que o código permite hoje
 
@@ -37,3 +37,13 @@ Estado em 21/09/2026: **decidido e levantado; implementação não iniciada.** D
 ### Fora do recorte
 
 Duração errada, aumento de valor (cobrança complementar), transições de `IMPEDIDO_POR_RESTRICAO`, comissões sobre a aula zerada e mudança do status do encontro na agenda.
+
+## Fatia 1 — entregue em 21/09/2026
+
+Migration `20260921040000_correcao_aula_nao_cobravel`; `src/server/financeiro/revisao-correcao-aula-aplicacao-tx.ts` (aplicação atômica chamada por `aprovarCorrecaoAula`); `revisao-correcao-aula.ts` (tipo explícito, candidatas com tipos disponíveis e efeito calculado); `correcao-aula-impactos-tx.ts` (declarada a aula não cobrável, a publicação exige a revisão vinculada mesmo sem mudança de presença); `fechamento-horas*.ts` (destinação `NAO_COBRAVEL_CORRECAO`, preservada fora da nova cobrança); desistência reconhece a oitava origem de crédito sem alterar hashes anteriores; tela de revisões financeiras com escolha do tipo e descrição do efeito.
+
+Diferenças em relação ao desenho: a fatura quitada **não é alterada** — o crédito nasce ao lado dela —, então `proteger_saldo_credito_cobranca` e `recebimentos.ts` não precisaram mudar; cobrança em aberto que fica com valor zero passa a `CANCELADA`; pagamento parcial, crédito, permuta, comprovante a conferir, pausa ou acerto de encerramento fazem a fotografia recusar (conferência financeira específica).
+
+Verificação: três cenários de integração em `condicoes-horas.int.test.ts` (aula ainda não fechada + fechamento seguinte; cobrança em aberto reduzida/cancelada com aprovação direta sem acerto desfeita pelo trigger diferido; cobrança paga → crédito com origem, revisão tornada obsoleta pelo pagamento, crédito sem origem recusado); regressão de integração 107/107 em correção de aula, consumo Q23, condições por hora, fechamento e desistência financeira; unitários 2.134/2.134; TypeScript e ESLint sem erros.
+
+Limites conhecidos: o encontro permanece `MINISTRADO` na agenda (opção A); comissões sobre a aula zerada não são recalculadas; a desistência recusa reconhecer crédito desta origem como crédito do acerto (tratado como externo).

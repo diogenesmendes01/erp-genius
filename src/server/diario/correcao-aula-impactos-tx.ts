@@ -77,10 +77,12 @@ export async function carregarImpactosCorrecaoAulaTx(
     simulacoes.push({ matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, regraId: regra.id, pendencia: null, antes, depois, fechamento });
   }
   const dependenciasFinanceiras = await carregarDependenciasFinanceirasAulaTx(tx, proposta.encontroId, matriculas);
-  const ultimaRevisaoFinanceira = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { decisao: { select: { id: true, aprovada: true } } } });
+  const ultimaRevisaoFinanceira = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { tipo: true, decisao: { select: { id: true, aprovada: true } } } });
+  // Q175: declarada a aula não cobrável (e não rejeitada), a publicação só acontece vinculada a essa revisão, mesmo sem mudança de presença.
+  const naoCobravelDeclarada = ultimaRevisaoFinanceira?.tipo === "AULA_NAO_COBRAVEL" && ultimaRevisaoFinanceira.decisao?.aprovada !== false;
   const financeiro = { ...dependenciasFinanceiras,
     possuiDependenciasFinanceiras: dependenciasFinanceiras.exigeConferenciaFinanceira,
-    exigeConferenciaFinanceira: dependenciasFinanceiras.exigeConferenciaFinanceira && comparacao.registros.some(r => r.participacaoAlterada),
+    exigeConferenciaFinanceira: dependenciasFinanceiras.exigeConferenciaFinanceira && (naoCobravelDeclarada || comparacao.registros.some(r => r.participacaoAlterada)),
     revisaoFinanceira: ultimaRevisaoFinanceira?.decisao?.aprovada ? { decisaoAprovadaId: ultimaRevisaoFinanceira.decisao.id } : null,
   };
   // Preservar uma conclusão exige sua prova efetiva, não apenas a flag do histórico.
