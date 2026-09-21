@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { conferirAutor } from "./modelos-tx";
 import { carregarBaseAditivoTx } from "./aditivo-estado";
+import { bloquearFontePropostaTx } from "./fonte-contratual-tx";
 import { hashSubstituicao } from "./substituicao-estado";
 import { DecidirAditivoContratualSchema, PrepararAditivoContratualSchema } from "./aditivo-schema";
 
@@ -31,7 +32,7 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
   const snapshot = json({ ...contexto, versao, preparadaPorId: autorId, motivo: d.motivo, entrada: d });
   const entradaHash = hashSubstituicao(snapshot as Prisma.JsonObject);
   const proposta = await tx.propostaAditivoContratual.create({ data: {
-    matriculaId: d.matriculaId, conclusaoOriginalId: d.conclusaoOriginalId, modeloId: d.modeloId,
+    matriculaId: d.matriculaId, conclusaoOriginalId: contexto.conclusaoOriginalId, origemHistoricaId: contexto.origemHistoricaId, modeloId: d.modeloId,
     versao, preparadaPorId: autorId, vigenciaInicio: new Date(contexto.vigenciaInicio), motivo: d.motivo,
     baseHash: contexto.baseHash, alteracoesHash: contexto.alteracoesHash, snapshot, entradaHash, chaveIdempotencia: d.chaveIdempotencia, propostaAgendaId,
   } });
@@ -43,10 +44,10 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
 export async function decidirAditivoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = DecidirAditivoContratualSchema.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-  const p = await tx.propostaAditivoContratual.findUnique({ where: { id: d.propostaId }, include: { decisao: true, conclusaoOriginal: { select: { processoId: true } } } });
+  const p = await tx.propostaAditivoContratual.findUnique({ where: { id: d.propostaId }, include: { decisao: true } });
   if (!p) throw new ErroRegra("Proposta de aditivo não encontrada.");
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${p.matriculaId} FOR UPDATE`;
-  await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaContratual" WHERE id = ${p.conclusaoOriginal.processoId} FOR UPDATE`;
+  await bloquearFontePropostaTx(tx, p);
   await conferirAtor(tx, autorId, true);
   if (autorId === p.preparadaPorId) throw new ErroRegra("Outra pessoa da Administração deve decidir esta proposta.");
   if (p.entradaHash !== d.propostaHashEsperado || hashSubstituicao(p.snapshot) !== p.entradaHash) throw new ErroRegra("A decisão não corresponde à proposta revisada.");

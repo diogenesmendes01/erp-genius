@@ -15,8 +15,11 @@ export const CicloCoberturaFuturoAditivoSchema = z.discriminatedUnion("escolha",
 ]);
 export const PrepararAditivoContratualSchema = z.object({
   matriculaId: id,
-  conclusaoOriginalId: id,
-  conclusaoHashEsperado: hash,
+  // Exatamente uma fonte: conclusão assinada no sistema ou origem contratual histórica aprovada.
+  conclusaoOriginalId: id.optional(),
+  conclusaoHashEsperado: hash.optional(),
+  origemHistoricaId: id.optional(),
+  origemHashEsperado: hash.optional(),
   modeloId: id,
   modeloHashEsperado: hash,
   vigenciaInicio: z.string().datetime({ offset: true }),
@@ -30,6 +33,10 @@ export const PrepararAditivoContratualSchema = z.object({
   cicloCoberturaFutura: CicloCoberturaFuturoAditivoSchema.optional(),
   chaveIdempotencia: z.string().trim().min(8).max(200),
 }).strict().superRefine((d, ctx) => {
+  const fontes = [d.conclusaoOriginalId && d.conclusaoHashEsperado, d.origemHistoricaId && d.origemHashEsperado].filter(Boolean).length;
+  if (fontes !== 1 || (d.conclusaoOriginalId && d.origemHistoricaId)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Informe exatamente uma fonte contratual com o hash esperado." });
+  if (d.origemHistoricaId && d.alteracoes.some(a => ["TAXA_VALOR", "TAXA_VENCIMENTO", "PRIMEIRA_MENSALIDADE_VENCIMENTO", "ADIANTAMENTO_VALOR", "ADIANTAMENTO_MINUTOS", "ADIANTAMENTO_VENCIMENTO"].includes(a.origem)))
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["alteracoes"], message: "Contrato de origem histórica não admite aditivo de taxa, primeira mensalidade ou adiantamento: são fatos de entrada já vividos." });
   const cobertura = new Set(d.alteracoes.filter(a => a.origem === "COBERTURA_INICIO" || a.origem === "COBERTURA_FIM").map(a => a.origem));
   if (cobertura.size === 1) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["alteracoes"], message: "A correção de cobertura exige início e fim juntos." });
   if (cobertura.size === 2 && !d.cicloCoberturaFutura) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["cicloCoberturaFutura"], message: "Escolha no aditivo como ficam as referências dos ciclos futuros." });
