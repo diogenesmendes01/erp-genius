@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   guard: vi.fn(), papeisTem: vi.fn(), preferencia: vi.fn(), comercial: vi.fn(), saudacoes: vi.fn(),
   reguas: vi.fn(), numerosResumo: vi.fn(), templatesResumo: vi.fn(), ensaio: vi.fn(), numeros: vi.fn(),
   templates: vi.fn(), politica: vi.fn(), vendedores: vi.fn(), avisos: vi.fn(),
+  metricasIA: vi.fn(),
 }));
 vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: mocks.guard, papeisTem: mocks.papeisTem }));
 vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => createElement("p", null, "Acesso negado") }));
@@ -20,6 +21,7 @@ vi.mock("@/server/whatsapp/consultas", () => ({
   listarNumerosConfig: mocks.numeros, listarTemplatesConfig: mocks.templates,
   carregarPoliticaConfig: mocks.politica, carregarConfiguracaoAvisosAgenda: mocks.avisos,
 }));
+vi.mock("@/server/ia/consultas", () => ({ metricasCopiloto: mocks.metricasIA }));
 vi.mock("./ComercialPainel", () => ({ ComercialPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("p", { "data-comercial-fuso": preferenciaFusoExibicao ?? "UTC" }) }));
 vi.mock("./ReguaComercialPainel", () => ({ ReguasComerciaisPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("p", { "data-regua-fuso": preferenciaFusoExibicao ?? "UTC" }) }));
 vi.mock("./NumerosPainel", () => ({ NumerosPainel: () => createElement("p", null, "admin números") }));
@@ -35,7 +37,7 @@ describe("WhatsAppConfigPage", () => {
     mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
     mocks.papeisTem.mockReturnValue(false);
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
-    for (const m of [mocks.comercial, mocks.saudacoes, mocks.reguas, mocks.numerosResumo, mocks.templatesResumo, mocks.ensaio]) m.mockResolvedValue([]);
+    for (const m of [mocks.comercial, mocks.saudacoes, mocks.reguas, mocks.numerosResumo, mocks.templatesResumo, mocks.ensaio, mocks.metricasIA]) m.mockResolvedValue([]);
   });
   afterEach(() => vi.clearAllMocks());
 

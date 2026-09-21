@@ -9,6 +9,7 @@ import {
   kpisFinanceiro,
   dadosCambio,
   relatorioDescontosComissoes,
+  carregarConfigFinanceiro,
 } from "@/server/financeiro/consultas";
 import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
@@ -37,7 +38,7 @@ export default async function FinanceiroPage() {
   const podeOperarCobranca =
     papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 
-  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, informes, politicas, retomadas, preferencia] = await Promise.all([
+  const [fila, comissoes, kpis, aprovacoesRaw, cotacoes, relatorio, informes, politicas, retomadas, preferencia, configFinanceiro] = await Promise.all([
     podeOperarCobranca ? listarFilaCobranca() : Promise.resolve({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] }),
     listarComissoes(),
     podeOperarCobranca ? kpisFinanceiro() : Promise.resolve({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 }),
@@ -48,6 +49,7 @@ export default async function FinanceiroPage() {
     configuracaoComissoes(),
     podeOperarCobranca ? listarPropostasRetomada() : Promise.resolve({ ok: true as const, dado: [] }),
     consultarPreferenciaFusoEquipe(),
+    carregarConfigFinanceiro(),
   ]);
 
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
@@ -78,6 +80,7 @@ export default async function FinanceiroPage() {
       <Link className="underline" href="/financeiro/continuidade">Acompanhar continuidade mensal</Link>
     </div>}
     <FinanceiroPainel
+      configFinanceiro={configFinanceiro}
       fila={fila}
       informes={informes}
       politicas={politicas}

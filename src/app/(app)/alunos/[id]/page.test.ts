@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   paises: vi.fn(),
   preferencia: vi.fn(),
   impedimento: vi.fn(),
+  turmaSugerida: vi.fn(),
 }));
 
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
@@ -19,6 +20,7 @@ vi.mock("@/server/alunos/consultas", () => ({
 vi.mock("@/server/paises/consultas", () => ({ listarPaisesOperacionais: mocks.paises }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/matricula/limite-legado", () => ({ impedimentoFluxoGlobal: mocks.impedimento }));
+vi.mock("@/server/matricula/consultas", () => ({ turmaSugeridaParaAluno: mocks.turmaSugerida }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("Não encontrado"); }) }));
 vi.mock("./FichaAluno", () => ({
@@ -53,6 +55,7 @@ describe("ficha principal do aluno", () => {
     mocks.paises.mockResolvedValue([]);
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     mocks.impedimento.mockResolvedValue(false);
+    mocks.turmaSugerida.mockResolvedValue(null);
   });
 
   it("passa a referência civil confirmada e a preferência depois da guarda", async () => {

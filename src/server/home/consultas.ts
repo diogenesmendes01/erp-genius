@@ -148,6 +148,12 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
   });
 
   const proximaExperimental = experimentais.find((e) => e.dataExperimental! >= agora);
+  // B9 (doc 32): check-in VENCIDO — aula já passou (além da tolerância) sem Compareceu/
+  // Faltou. Sem o check-in a recuperação de no-show (C2) nunca dispara; o professor é o
+  // responsável e a Home é o canal do alerta.
+  const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const toleranciaMs = (config?.checkInToleranciaMinutos ?? 30) * 60_000;
+  const limiteCheckIn = new Date(Date.now() - toleranciaMs);
 
   return {
     turmas: turmas.map((t) => ({
@@ -160,6 +166,7 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
       id: e.id,
       nome: e.nome,
       data: e.dataExperimental!.toISOString(),
+      vencida: e.dataExperimental! < limiteCheckIn,
     })),
     // Check-in atrasado permanece disponível na lista. Somente o destaque
     // "Próxima" exige uma ocorrência ainda futura (o instante igual a agora
@@ -200,6 +207,14 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
     where: { dataPagamento: { gte: inicioDoMes() }, cobranca: { matricula: escopoMatriculas } },
     select: { valor: true, moeda: true },
   });
+  // B9 (doc 32): experimentais já ocorridas (além da tolerância) sem check-in do professor
+  // — o gerente cobra; sem o check-in a recuperação de no-show (C2) não dispara.
+  const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const limiteCheckIn = new Date(Date.now() - (configComercial?.checkInToleranciaMinutos ?? 30) * 60_000);
+  const checkInsVencidos = await prisma.lead.count({
+    where: { AND: [escopo], etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null, lt: limiteCheckIn } },
+  });
+
   const receitaMes = somarPorMoeda(
     pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })),
   );
@@ -222,7 +237,7 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
   const funil = await prisma.lead.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
 
   return {
-    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla },
+    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla, checkInsVencidos },
     ranking,
     equipe: vendedores.map((v) => v.nome),
     funil: funil.map((f) => ({ etapa: f.etapa, total: f._count._all })),

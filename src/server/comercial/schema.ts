@@ -94,6 +94,10 @@ export const ReguaComercialSchema = z.object({
   janelaFim: z.number().int().min(1).max(24),
   tetoPorContatoDia: z.number().int().min(1).max(10),
   degraus: z.array(DegrauComercialSchema).min(1),
+  // B1 (doc 32): cohort do piloto. modoPiloto=true (default) restringe o alcance à
+  // allowlist explícita; desligar É o go-live geral — por isso exige confirmação na UI.
+  modoPiloto: z.boolean().default(true),
+  pilotoLeadIds: z.array(z.string().min(1)).max(500, "Allowlist grande demais (máx. 500).").default([]),
 });
 export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
 
@@ -112,10 +116,34 @@ export const ConfigComercialSchema = z
     autoLeadAtivo: z.boolean(),
     saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
     saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
+    // C3 (doc 27): copiloto IA só-leitura — nasce desligado (regra de ouro).
+    copilotoAtivo: z.boolean().default(false),
+    copilotoQuietudeMinutos: z.number().int().min(1).max(1440).default(10),
+    // C4 (doc 27): matrícula automática (contrato OK + taxa PAGA ativam) — nasce desligada.
+    matriculaAutomaticaAtiva: z.boolean().default(false),
+    // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor. Nasce desligada.
+    gestaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]).default("DESLIGADA"),
+    gestaoTelefoneE164: z
+      .string()
+      .trim()
+      .max(20)
+      .optional()
+      .transform((v) => (v ? v : null)),
+    gestaoNumeroId: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v ? v : null)),
+    gestaoSlaMinutos: z.number().int().min(5).max(1440).default(30),
+    gestaoRelatorioHora: z.number().int().min(0).max(23).default(19),
   })
   .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
     message: "Escreva o texto da saudação antes de armá-la.",
     path: ["saudacaoTexto"],
+  })
+  .refine((c) => c.gestaoEstado === "DESLIGADA" || (!!c.gestaoTelefoneE164 && !!c.gestaoNumeroId), {
+    message: "Armar a gestão exige o WhatsApp do gestor e um número remetente.",
+    path: ["gestaoTelefoneE164"],
   });
 export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;
 

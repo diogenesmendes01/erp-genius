@@ -1,5 +1,7 @@
 # Plano de Execução — ERP Genius
 
+> Integração da SPEC em 21/09/2026: os status Fases 0–3 abaixo descrevem a linha histórica da main. O aceite atual está em [quadro-entregas](planejamento/quadro-entregas.md). Diário/notas/portal/ativação usam os fluxos refinados; os atalhos antigos, a conciliação simulada sem ledger e a criação de contratos corporativos em lote não estão liberados nesta entrega.
+
 > Plano mestre para (A) **fechar a documentação** e (B) **implementar a Fase 0** em código,
 > nessa ordem. Documento vivo: marque os itens conforme avançarem.
 
@@ -12,7 +14,33 @@
   (`PrecoReferencia`), `MovimentacaoAluno` tipada e ativação por 3 flags
   (`contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`). Falta só a **matriz de valores** (P5).
 
-## Estado atual (junho/2026)
+## Estado atual (agosto/2026)
+
+> **Fases 0–3 implementadas.** Além da Etapa B (Fase 0) abaixo, foram entregues:
+>
+> - **Piloto C1/C2 destravado** — bloqueadores B1–B9 do [`32`](32-comercial-c1-c2-piloto-baileys.md) §0
+>   fechados em código (allowlist do piloto, takeover manual, validade/tolerância por degrau,
+>   tick de 5 min, ADR D34, origem explícita, revalidação no despacho, pausa por REAGENDAR,
+>   alerta de check-in vencido).
+> - **C3 — IA copiloto só-leitura** (`src/server/ia`): driver Claude/simulado, sugestões por tipo
+>   (resumo/temperatura/segmento/etapa) com decisão humana e métrica-gate; gatilhos quietude/
+>   mudança de etapa/sob demanda.
+> - **C4 — Fechamento**: réguas de contrato e link de pagamento no mesmo motor; matrícula
+>   AUTOMÁTICA (contrato OK + taxa PAGA) com auto-alocação HÍBRIDA de turma (sugere; humano
+>   confirma).
+> - **C5 — Gestão**: alerta de SLA + relatório diário (funil e gargalos) no WhatsApp do gestor
+>   (origem GESTAO na outbox, shadow próprio).
+> - **Fase 2 — Financeiro**: gateway por DRIVER (simulado local com página `/pagar/[token]` e
+>   webhook; GreenPay/PIX futuros no mesmo contrato), baixa COMPARTILHADA com conciliação
+>   automática, fechamento mensal de comissões automático + relatório por vendedor, e B2B
+>   (`/empresas`): matrículas em lote, fatura única, relatório por colaborador.
+> - **Fase 3 — Acadêmico + portal**: diário de classe (frequência), avaliações/notas, teste de
+>   nível, progressão sugerida + certificados com validação pública, papel ALUNO e `/portal`.
+>
+> Tudo nasce DESLIGADO; a matriz de valores (P5), o gateway real (P1) e a WABA (P2) seguem
+> como pendências de dado/terceiros no [`15`](15-decisoes-adr.md).
+
+## Estado anterior (junho/2026)
 - **Documentação:** docs `01`–`23` cobrem escopo, arquitetura, roadmap, domínio, fluxo de
   matrícula, catálogo, papéis, CRM/WhatsApp, telas da Fase 0, regras cross-cutting, modelo de
   dados, catálogo de eventos, convenções, testes, ADRs, glossário, design system e as cargas Q10.

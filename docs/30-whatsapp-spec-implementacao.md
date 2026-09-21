@@ -8,7 +8,7 @@
 ## Decisões fechadas nesta spec (pendências resolvidas)
 | # | Decisão | Valor |
 |---|---|---|
-| S1 | **Trava do cron** (doc 26 §Em aberto) | **LIGADA como lei**: régua *automática* exige número driver oficial. Manual e lote-com-aprovação rodam em qualquer driver. Reversível só por código. |
+| S1 | **Trava do cron** (doc 26 §Em aberto) | **LIGADA como lei para COBRANÇA**: régua *automática* de cobrança exige número driver oficial. Manual e lote-com-aprovação rodam em qualquer driver. **Exceção decidida (D34, doc 15): cadências COMERCIAIS (C1/C2) e a classe reativa rodam no Baileys** — o risco de ban é aceito e contido por teto/janela/pacing + cohort do piloto (doc 32 B1) + kill switch; revalidação na WABA quando o driver oficial assumir. Reversível só por código. |
 | S2 | **Destinatário da cobrança** (gap 9) | Determinístico: responsável com vínculo `FINANCEIRO` e telefone (o mais antigo, se N); sem responsável cadastrado → `aluno.telefoneE164`; sem telefone algum → intenção **não nasce**, item vai à fila humana com motivo `sem_destino`. |
 | S3 | **Fuso da janela de envio** (gap 11) | Janela avaliada em `Aluno.fuso ?? Pais.fuso ?? America/Sao_Paulo` do destinatário. Cron roda em UTC. |
 | S4 | **Silêncio pós-inbound** (gap 13) | Inbound não tratado **suspende degraus automáticos do contato por 72h** (config `silencioPosInboundHoras`); tratar = registrar promessa/pagamento ou "retomar régua". |

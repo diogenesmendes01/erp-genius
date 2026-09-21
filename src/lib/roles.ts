@@ -1,6 +1,6 @@
 import { Papel } from "@prisma/client";
 
-// Rótulos legíveis dos 7 papéis (ver docs/07).
+// Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3).
 export const PAPEL_LABEL: Record<Papel, string> = {
   ADMINISTRADOR: "Administrador",
   GERENTE_COMERCIAL: "Gerente Comercial",
@@ -9,6 +9,7 @@ export const PAPEL_LABEL: Record<Papel, string> = {
   PROFESSOR: "Professor",
   FINANCEIRO: "Financeiro",
   SECRETARIA_ACADEMICA: "Secretaria Acadêmica",
+  ALUNO: "Aluno (portal)",
 };
 
 export function temPapel(papeis: string[] = [], ...alvo: Papel[]): boolean {

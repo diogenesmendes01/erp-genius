@@ -47,7 +47,8 @@ async function filaComercial(chave = "LEAD_NOVO_SEM_RESPOSTA") {
   const politica = await prisma.politicaComercial.create({ data: { chave, nome: chave, estado: "ATIVA", janelaInicio: 0, janelaFim: 24,
     diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: c.numero.id, degraus: { create: { passo, offsetMinutos: chave === "PRE_EXPERIMENTAL" ? -120 : 30, rotulo: "teste" } } } });
   const dados = { numeroId: c.numero.id, contatoId: c.contato.id, leadId: c.lead.id, politicaComercialId: politica.id,
-    ocorrenciaComercial: ocorrencia.toISOString(), passoComercial: passo, corpoRenderizado: "Mensagem autorizada", variaveis: [], templateId: null };
+    ocorrenciaComercial: ocorrencia.toISOString(), passoComercial: passo, corpoRenderizado: "Mensagem autorizada", variaveis: [], templateId: null,
+    validaAte: new Date(ocorrencia.getTime() + 7 * 24 * 3600_000) };
   await prisma.$transaction((tx) => enfileirarIntencaoComercial(tx, dados));
   const i = await prisma.intencaoMensagem.findFirstOrThrow();
   return { ...c, ancora, aula, dados, i };

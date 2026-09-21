@@ -10,14 +10,7 @@ vendas/CRM com automação de atendimento via WhatsApp.
 
 ## Módulos
 
-| Módulo | O que existe no código local | O que falta completar |
-|---|---|---|
-| Alunos e Matrículas | Cadastro, documentos, ativação e retomada mediante aprovação | Renovação reutilizando aluno existente e múltiplos cursos |
-| Financeiro | Contas a receber, conferência, recebimentos parciais, ajustes e comissões | Pagamentos integrados, conciliação e contas a pagar |
-| Acadêmico | Turmas, diário/presença e mudanças de nível aprovadas | Agenda por encontro, avaliações, progressão e certificados |
-| Professores e Funcionários | Cadastro, papéis e vínculos docentes | Disponibilidade, substituições e remuneração por aula/hora |
-| Vendas / CRM | Funil, experimental, propostas, carteira/equipe e cobertura | Tarefas completas, SLA, métricas por coorte e retenção |
-| WhatsApp | Inbox, atendimento institucional, fila e cadências com revalidação | Homologação real, histórico paginado e recuperação de webhooks |
+O escopo e a situação de cada entrega são mantidos no [quadro único](docs/planejamento/quadro-entregas.md). O repositório inclui matrícula/contratos, financeiro, agenda, avaliações, portal, CRM e WhatsApp, além dos módulos de IA assistiva, gateway simulado e empresas incorporados da main. A existência do módulo não comprova conclusão integral da SPEC.
 
 ## Documentação
 
@@ -36,9 +29,4 @@ Para rodar localmente, ver [`SETUP.md`](SETUP.md).
 
 ## Status
 
-**08/09/2026 — D01–D14 implementadas e validadas localmente no escopo documentado.**
-A última rodada passou com 571 testes unitários, 390 de integração, TypeScript, build e
-32 verificações HTTP; ESLint teve 0 erros e 9 avisos preexistentes. Há cadências de
-WhatsApp no código. ERP completo, integrações externas e homologação/implantação em
-produção continuam pendentes. Consultar o [relatório consolidado](docs/41-situacao-consolidada-do-projeto.md)
-para distinguir entregas, validação local e próximos passos; os docs 33/34 são históricos.
+A consolidação da SPEC está em desenvolvimento local. Consulte o [quadro de entregas](docs/planejamento/quadro-entregas.md) para evidências e pendências. Integrações externas continuam desligadas até homologação; este merge não autoriza produção.

@@ -85,3 +85,6 @@ export interface SolicitacaoAcademicaView {
   podeCancelar: boolean;
   impedimento: string | null;
 }
+
+export { RegistrarAulaSchema, AvaliacaoSchema, LancarNotasSchema, TesteNivelSchema, CriarAcessoPortalSchema } from "./schema-legado";
+export type { RegistrarAulaInput, AvaliacaoInput, LancarNotasInput, TesteNivelInput, CriarAcessoPortalInput } from "./schema-legado";

@@ -39,6 +39,8 @@ async function seedPolitica(
 ) {
   return prisma.politicaComercial.create({
     data: {
+        // B1 (doc 32): estas suites cobrem o comportamento GERAL — go-live explícito.
+        modoPiloto: false,
       chave,
       nome,
       estado,

@@ -16,6 +16,8 @@ interface Experimental {
   id: string;
   nome: string;
   data: string;
+  /** B9 (doc 32): aula já passou (além da tolerância) sem check-in — cobrar já. */
+  vencida?: boolean;
 }
 
 export function HomeProfessor({
@@ -45,17 +47,28 @@ export function HomeProfessor({
   }
 
   const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+  // A seleção vem do servidor. Não recalcule a partir dos check-ins exibidos: uma lista
+  // pode conter apenas pendências passadas, sem próxima aula disponível.
+  const proxima = proximaExperimental && !proximaExperimental.vencida ? proximaExperimental : null;
+  const vencidas = experimentais.filter((e) => e.vencida).length;
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
       {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
-      {proximaExperimental && (
+      {vencidas > 0 && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <strong>{vencidas}</strong> experimental(is) com <strong>check-in vencido</strong> — registre
+          Compareceu/Faltou: sem o check-in a recuperação de no-show não acontece.
+        </p>
+      )}
+
+      {proxima && (
         <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
           <div className="text-xs font-medium text-brand-700">Próxima aula experimental</div>
           <div className="mt-1 text-lg font-medium text-gray-800">
-            {data(proximaExperimental.data).texto} ({data(proximaExperimental.data).fuso}; origem UTC) · {proximaExperimental.nome}
+            {data(proxima.data).texto} ({data(proxima.data).fuso}; origem UTC) · {proxima.nome}
           </div>
         </section>
       )}
@@ -67,12 +80,23 @@ export function HomeProfessor({
         ) : (
           <ul className="flex flex-col gap-2">
             {experimentais.map((e) => (
-              <li key={e.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
+              <li
+                key={e.id}
+                className={
+                  "flex items-center justify-between rounded-md px-3 py-2 " +
+                  (e.vencida ? "border border-red-200 bg-red-50" : "bg-gray-50")
+                }
+              >
                 <div className="text-sm">
                   <span className="font-medium text-gray-800">{e.nome}</span>
                   <span className="ml-2 text-gray-500">
                     {data(e.data).texto} ({data(e.data).fuso}; origem UTC)
                   </span>
+                  {e.vencida && (
+                    <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      Check-in vencido
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button

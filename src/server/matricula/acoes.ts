@@ -450,6 +450,8 @@ async function ativarMatriculaTx(
     return ativarPreparacaoTx(tx, matriculaId, autor.id);
   }
   await bloquearMatriculas(tx, [matriculaId]);
+  // Serializa também com o caminho de fechamento automático que usa o mesmo claim.
+  await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "Cobranca" WHERE "matriculaId" = ${matriculaId} ORDER BY id FOR UPDATE`;
   const matricula = await tx.matricula.findUnique({
     where: { id: matriculaId },
@@ -695,5 +697,186 @@ export async function criarEAtivarMatricula(
 
     revalidar(res.leadId);
     return { id: res.id, alunoId: res.alunoId };
+  });
+}
+
+/**
+ * Mantida para cron/webhook compatíveis. Fechamento comercial não prova aceite,
+ * reserva, grade, pré-pagamento ou aprovação independente; por isso não ativa.
+ */
+export async function ativarSeFechamentoCompletoTx(
+  _tx: Prisma.TransactionClient,
+  _matriculaId: string,
+  _autorId: string | null,
+): Promise<{ ativou: boolean; leadId: string | null }> {
+  void _tx;
+  void _matriculaId;
+  void _autorId;
+  return { ativou: false, leadId: null };
+}
+
+// ---------------------------------------------------------------------------
+// C4 — FECHAMENTO (doc 27 Onda 2): contrato e link de pagamento como ESTADO
+// auditável + gatilhos da matrícula automática. A assinatura digital real
+// (DocuSign etc.) é integração futura — o provedor chamará `marcarContratoAssinado`
+// pelo mesmo caminho; hoje quem marca é o humano que conferiu a assinatura.
+// ---------------------------------------------------------------------------
+
+/** Papéis que operam o fechamento: comercial (cria/negocia) + quem ativa (recebe). */
+const PAPEIS_FECHAMENTO: Papel[] = [...PAPEIS_CRIAR, ...PAPEIS_ATIVAR];
+
+/**
+ * Titularidade do fechamento (review PR #60): VENDEDOR só opera matrícula cujo LEAD é da
+ * carteira dele — sem isto, qualquer `matriculaId` colado dava contrato/link (e até a
+ * autoativação) sobre negócio alheio. Papéis amplos (gerente/financeiro/secretaria; admin
+ * via temPapel) passam. Roda DENTRO da transação da ação.
+ */
+async function exigirMatriculaNoEscopoTx(
+  tx: Prisma.TransactionClient,
+  matriculaId: string,
+  autor: UsuarioSessao,
+) {
+  const matricula = await tx.matricula.findUnique({
+    where: { id: matriculaId },
+    include: { lead: { select: { vendedorDonoId: true } } },
+  });
+  if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
+  if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO)) {
+    if (!matricula.lead) {
+      throw new ErroPermissao("Matrícula sem lead deve ser operada pela Secretaria ou Financeiro.");
+    }
+    const noEscopo = await tx.lead.findFirst({
+      where: { AND: [{ id: matricula.leadId! }, await escopoComercialAtual(autor, tx)] },
+      select: { id: true },
+    });
+    if (!noEscopo) throw new ErroPermissao("Esta matrícula não está na sua carteira comercial.");
+  }
+  return matricula;
+}
+
+/**
+ * Registra que o CONTRATO foi enviado ao cliente — âncora da régua "contrato sem
+ * assinatura" (C4). Reenviar atualiza a âncora (ocorrência nova da cadência).
+ */
+export async function registrarContratoEnviado(matriculaId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    void matriculaId;
+    throw new ErroRegra("O envio do contrato só é registrado após gerar e vincular o documento no fluxo de contratos da Secretaria.");
+  });
+}
+
+/**
+ * Marca o CONTRATO como assinado (contratoOk) e, com a config de matrícula automática
+ * LIGADA e a taxa já PAGA, conclui a ativação na mesma transação (C4).
+ */
+export async function marcarContratoAssinado(matriculaId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    void matriculaId;
+    throw new ErroRegra("A assinatura não pode ser confirmada por este atalho. Use a conferência documental da Secretaria no fluxo de contratos.");
+  });
+}
+
+/**
+ * Registra o LINK DE PAGAMENTO enviado ao cliente (taxa de matrícula) — âncora da régua
+ * "link sem pagamento" (C4). Na Fase 2 o gateway gera o link; aqui pode ser colado
+ * manualmente (Pix copia-e-cola, link do provedor). Reenviar atualiza a âncora.
+ */
+export async function registrarLinkPagamento(cobrancaId: string, url: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const link = url.trim();
+    if (!link) throw new ErroRegra("Informe o link (ou código) de pagamento enviado.");
+    if (link.length > 2048) throw new ErroRegra("Link longo demais.");
+    const agora = new Date();
+    const leadId = await prisma.$transaction(async (tx) => {
+      const cobranca = await tx.cobranca.findUnique({
+        where: { id: cobrancaId },
+        include: { matricula: { select: { id: true, leadId: true, status: true } } },
+      });
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
+      await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
+      if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
+        throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
+      }
+      if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
+        throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
+      await tx.cobranca.update({
+        where: { id: cobrancaId },
+        data: { linkPagamento: link, linkEnviadoEm: agora },
+      });
+      await registrarEvento(tx, {
+        tipo: "LinkPagamentoEnviado",
+        agregadoTipo: "Cobranca",
+        agregadoId: cobrancaId,
+        autorId: autor.id,
+        payload: { quando: agora.toISOString(), reenvio: cobranca.linkEnviadoEm != null },
+      });
+      return cobranca.matricula.leadId;
+    });
+    revalidar(leadId);
+  });
+}
+
+/**
+ * Gera o link de pagamento pelo GATEWAY (driver ativo — Fase 2) para uma cobrança aberta,
+ * gravando `gatewayRef` (chave da conciliação) + `linkPagamento`/`linkEnviadoEm` (âncora
+ * da régua C4). Substitui o registro manual quando o gateway está disponível.
+ */
+export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Resultado<{ url: string }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_FECHAMENTO);
+    const { gatewayAtivo } = await import("@/server/financeiro/gateway");
+    const driver = gatewayAtivo();
+
+    const agora = new Date();
+    const { url, leadId } = await prisma.$transaction(async (tx) => {
+      const cobranca = await tx.cobranca.findUnique({
+        where: { id: cobrancaId },
+        include: { matricula: { select: { id: true, leadId: true } } },
+      });
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      // Titularidade (review PR #60): mesmo escopo do fechamento; VENDEDOR só na TAXA.
+      await exigirMatriculaNoEscopoTx(tx, cobranca.matricula.id, autor);
+      if (!temPapel(autor, ...PAPEIS_ATIVAR) && cobranca.tipo !== TipoCobranca.MATRICULA) {
+        throw new ErroPermissao("Vendedor só opera o link da taxa de matrícula.");
+      }
+      if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO)
+        throw new ErroRegra("Esta cobrança não está aberta para pagamento.");
+
+      // REUSA o link ativo (review PR #60 rodada 2): trocar o `gatewayRef` a cada geração
+      // deixaria o link já enviado órfão no provedor — cliente paga e o webhook não acha
+      // mais a cobrança pela referência. Enquanto a cobrança está aberta, re-gerar só
+      // re-ancora a régua (linkEnviadoEm) e devolve o MESMO link pagável.
+      const link =
+        cobranca.gatewayRef && cobranca.linkPagamento
+          ? { gatewayRef: cobranca.gatewayRef, url: cobranca.linkPagamento }
+          : await driver.gerarLink({
+              id: cobranca.id,
+              valor: numero(cobranca.valorNegociado),
+              moeda: cobranca.moeda,
+            });
+      await tx.cobranca.update({
+        where: { id: cobrancaId },
+        data: { gatewayRef: link.gatewayRef, linkPagamento: link.url, linkEnviadoEm: agora },
+      });
+      await registrarEvento(tx, {
+        tipo: "LinkPagamentoEnviado",
+        agregadoTipo: "Cobranca",
+        agregadoId: cobrancaId,
+        autorId: autor.id,
+        payload: {
+          quando: agora.toISOString(),
+          via: `gateway_${driver.nome}`,
+          reenvio: cobranca.linkEnviadoEm != null,
+          linkReutilizado: !!(cobranca.gatewayRef && cobranca.linkPagamento),
+        },
+      });
+      return { url: link.url, leadId: cobranca.matricula.leadId };
+    });
+    revalidar(leadId);
+    return { url };
   });
 }

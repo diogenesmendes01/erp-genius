@@ -235,20 +235,78 @@ export async function registrarCobrancaWhatsApp(
 export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
-    const pagas = await prisma.$transaction(async (tx) => {
-      const bloqueadas = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "Comissao" WHERE status = 'APROVADA' ORDER BY id FOR UPDATE`;
-      const aprovadas = await tx.comissao.findMany({ where: { id: { in: bloqueadas.map((c) => c.id) }, status: StatusComissao.APROVADA } });
-      if (!aprovadas.length) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
-      const agora = new Date();
-      for (const c of aprovadas) {
-        await tx.comissao.update({ where: { id: c.id }, data: { status: StatusComissao.PAGA, pagaEm: agora } });
-        await registrarEvento(tx, { tipo: "ComissaoPaga", agregadoTipo: "Comissao", agregadoId: c.id, autorId: autor.id,
-          payload: { pagaEm: agora.toISOString(), valor: numero(c.valor), moeda: c.moeda, politicaId: c.politicaId } });
-      }
-      return aprovadas.length;
-    });
+    const pagas = await prisma.$transaction((tx) => fecharComissoesAprovadasTx(tx, autor.id));
+    if (pagas === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
     revalidatePath("/financeiro");
     return { pagas };
+  });
+}
+
+/**
+ * NÚCLEO do fechamento (Fase 2): paga as comissões APROVADAS. Compartilhado entre a ação
+ * manual (botão "Fechar mês" — sem corte: decisão humana paga tudo) e o fechamento
+ * AUTOMÁTICO do cron, que passa `aprovadasAntesDe` = 1º dia do mês corrente (review PR #60):
+ * o robô só paga o período JÁ FECHADO — vendas do mês corrente ficam para o próximo ciclo.
+ * Comissões antigas sem `aprovadaEm` (pré-migration) caem no corte pelo `criadoEm`.
+ */
+export async function fecharComissoesAprovadasTx(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  autorId: string | null,
+  aprovadasAntesDe: Date | null = null,
+): Promise<number> {
+  const bloqueadas = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "Comissao" WHERE status = 'APROVADA' ORDER BY id FOR UPDATE`;
+  const aprovadas = await tx.comissao.findMany({
+    where: {
+      id: { in: bloqueadas.map(c => c.id) },
+      status: StatusComissao.APROVADA,
+      ...(aprovadasAntesDe
+        ? {
+            OR: [
+              { aprovadaEm: { lt: aprovadasAntesDe } },
+              { aprovadaEm: null, criadoEm: { lt: aprovadasAntesDe } },
+            ],
+          }
+        : {}),
+    },
+  });
+  const agora = new Date();
+  for (const c of aprovadas) {
+    await tx.comissao.update({
+      where: { id: c.id },
+      data: { status: StatusComissao.PAGA, pagaEm: agora },
+    });
+    await registrarEvento(tx, {
+      tipo: "ComissaoPaga",
+      agregadoTipo: "Comissao",
+      agregadoId: c.id,
+      autorId,
+      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
+    });
+  }
+  return aprovadas.length;
+}
+
+/** Config do financeiro automatizado (Fase 2). Financeiro/Admin; evento auditável. */
+export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomatico: boolean }): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
+    const ligado = !!input.fechamentoComissaoAutomatico;
+    await prisma.$transaction(async (tx) => {
+      const antes = await tx.configFinanceiro.findUnique({ where: { id: "financeiro" } });
+      await tx.configFinanceiro.upsert({
+        where: { id: "financeiro" },
+        create: { id: "financeiro", fechamentoComissaoAutomatico: ligado },
+        update: { fechamentoComissaoAutomatico: ligado },
+      });
+      await registrarEvento(tx, {
+        tipo: "ConfigFinanceiroAlterada",
+        agregadoTipo: "ConfigFinanceiro",
+        agregadoId: "financeiro",
+        autorId: autor.id,
+        payload: { antes: antes?.fechamentoComissaoAutomatico ?? false, depois: ligado },
+      });
+    });
+    revalidatePath("/financeiro");
   });
 }
 

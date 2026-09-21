@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } from "@prisma/client";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { anexarDocumentoLead, arquivarDocumentoLead } from "@/server/comercial/acoes";
+import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
+import { registrarLinkPagamento } from "@/server/matricula/acoes";
+import type { SugestaoPendente } from "@/server/ia/consultas";
 import {
   ETAPA_LABEL,
   SEGMENTO_LABEL,
@@ -48,6 +52,10 @@ export interface LeadFicha {
   pais: { nome: string } | null;
   vendedor: { nome: string } | null;
   origemCampanha: string | null;
+  waReferralHeadline?: string | null;
+  waReferralSourceType?: string | null;
+  /** Lead nasceu de inbound do WhatsApp (auto-captura C1). */
+  capturadoViaWhatsApp?: boolean;
   origemAnuncio: string | null;
   interesse: string | null;
   objetivo: string | null;
@@ -59,7 +67,14 @@ export interface LeadFicha {
   dataExperimental: string | null;
   dataProposta: string | null;
   motivoPerda: MotivoPerda | null;
-  matricula: { id: string; codigo: string | null; status: string } | null;
+  matricula: {
+    id: string;
+    codigo: string | null;
+    status: string;
+    contratoOk: boolean;
+    contratoEnviadoEm: string | null;
+    taxa: { id: string; status: string; linkPagamento: string | null; linkEnviadoEm: string | null } | null;
+  } | null;
   valorPrevisto: number | null;
   planoPrevisto: string | null;
   comissaoPrevista: number | null;
@@ -106,11 +121,15 @@ export function FichaLead({
   timeline,
   professores = [],
   preferenciaFusoExibicao,
+  sugestoesIA = [],
+  copilotoAtivo = false,
 }: {
   lead: LeadFicha;
   timeline: EventoTimeline[];
   professores?: { id: string; nome: string }[];
   preferenciaFusoExibicao: string | null;
+  sugestoesIA?: SugestaoPendente[];
+  copilotoAtivo?: boolean;
 }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -143,11 +162,20 @@ export function FichaLead({
           {lead.codigo} · {lead.telefoneE164 ?? "sem telefone"} · {lead.pais?.nome ?? "sem país"} ·
           no funil há {diasNoFunil(lead.criadoEm)}d · dono: {lead.vendedor?.nome ?? "—"}
         </p>
-        {(lead.origemCampanha || lead.origemAnuncio) && (
+        {(lead.origemCampanha || lead.origemAnuncio) ? (
           <p className="mt-1 text-xs text-gray-400">
             Origem: {lead.origemCampanha ?? "—"} {lead.origemAnuncio ? `· ${lead.origemAnuncio}` : ""}
           </p>
-        )}
+        ) : lead.waReferralHeadline || lead.waReferralSourceType ? (
+          <p className="mt-1 text-xs text-gray-400">
+            Origem: {lead.waReferralSourceType === "ad" ? "anúncio" : lead.waReferralSourceType ?? "referral"}
+            {lead.waReferralHeadline ? ` · ${lead.waReferralHeadline}` : ""} (click-to-WhatsApp)
+          </p>
+        ) : lead.capturadoViaWhatsApp ? (
+          // B6 (doc 32): no Baileys o referral de anúncio não é garantido — a origem é
+          // declarada como NÃO IDENTIFICADA (nunca inferida) até o preenchimento manual.
+          <p className="mt-1 text-xs text-gray-400">Origem: não identificada (WhatsApp)</p>
+        ) : null}
 
         {/* Trilha de estágios */}
         <div className="mt-3 flex flex-wrap gap-1">
@@ -177,7 +205,13 @@ export function FichaLead({
 
       <ValorOportunidade lead={lead} />
 
+      {/* C3 (doc 27): sugestões do copiloto — só-leitura até o vendedor decidir. */}
+      <CopilotoSugestoes leadId={lead.id} sugestoes={sugestoesIA} copilotoAtivo={copilotoAtivo} />
+
       <BarraAcoes lead={lead} run={run} professores={professores} />
+
+      {/* Acompanhamento contratual e de pagamento da matrícula aguardando. */}
+      {lead.matricula?.status === "AGUARDANDO" && <FechamentoCard matricula={lead.matricula} run={run} />}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Resumo lead={lead} run={run} />
@@ -658,6 +692,76 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+
+/** Acompanhamento contratual e do link de pagamento da matrícula aguardando. */
+function FechamentoCard({
+  matricula,
+  run,
+}: {
+  matricula: NonNullable<LeadFicha["matricula"]>;
+  run: (p: Promise<{ ok: boolean; erro?: string }>) => Promise<void>;
+}) {
+  const [linkUrl, setLinkUrl] = useState("");
+  const taxaPaga = matricula.taxa?.status === "PAGO";
+
+  return (
+    <section className="rounded-lg border border-blue-200 bg-blue-50/50 p-4">
+      <h2 className="mb-2 text-sm font-medium text-blue-800">
+        Fechamento — matrícula {matricula.codigo ?? ""} aguardando
+      </h2>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span
+          className={
+            "rounded-full px-2 py-0.5 font-medium " +
+            (matricula.contratoOk
+              ? "bg-green-100 text-green-700"
+              : matricula.contratoEnviadoEm
+                ? "bg-amber-100 text-amber-700"
+                : "bg-gray-100 text-gray-600")
+          }
+        >
+          Contrato: {matricula.contratoOk ? "assinado" : matricula.contratoEnviadoEm ? "enviado, sem assinatura" : "não enviado"}
+        </span>
+        <span
+          className={
+            "rounded-full px-2 py-0.5 font-medium " +
+            (taxaPaga ? "bg-green-100 text-green-700" : matricula.taxa?.linkEnviadoEm ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600")
+          }
+        >
+          Taxa: {taxaPaga ? "paga" : matricula.taxa?.linkEnviadoEm ? "link enviado, sem pagamento" : "pendente"}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!matricula.contratoOk && <><Link className={btnSec} href={`/matriculas/${matricula.id}/preparacao`}>Preparar matrícula</Link><Link className={btnSec} href={`/matriculas/${matricula.id}/contrato`}>Gerenciar documentos do contrato</Link></>}
+        {!taxaPaga && matricula.taxa && (
+          <span className="flex items-center gap-1">
+            <input
+              className={inputCls + " w-64"}
+              placeholder="Link/código de pagamento enviado"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+            />
+            <button
+              className={btnSec}
+              disabled={!linkUrl.trim()}
+              onClick={() => run(registrarLinkPagamento(matricula.taxa!.id, linkUrl))}
+            >
+              {matricula.taxa.linkEnviadoEm ? "Reenviar link" : "Registrar link"}
+            </button>
+          </span>
+        )}
+      </div>
+      {matricula.taxa?.linkPagamento && !taxaPaga && (
+        <p className="mt-2 break-all text-[11px] text-blue-700">
+          Link atual: <a className="underline" href={matricula.taxa.linkPagamento} target="_blank" rel="noreferrer">{matricula.taxa.linkPagamento}</a>
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-blue-700/70">Conclua as conferências necessárias no fluxo da matrícula antes de seguir com a ativação.</p>
     </section>
   );
 }

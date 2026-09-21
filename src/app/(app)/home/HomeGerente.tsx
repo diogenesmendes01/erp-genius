@@ -34,6 +34,18 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
         </div>
       )}
 
+      {kpis.checkInsVencidos > 0 && (
+        // B9 (doc 32): experimental já ocorrida sem check-in do professor — sem ele a
+        // recuperação de no-show (C2) não dispara; o gerente cobra o registro.
+        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+          <IconAlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            Check-in vencido: <strong>{kpis.checkInsVencidos}</strong> experimental(is) já ocorrida(s) sem
+            registro de Compareceu/Faltou.
+          </span>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-3 font-medium">Ranking de vendedores</h2>

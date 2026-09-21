@@ -12,6 +12,8 @@ export interface DegrauComercialCarregado extends DegrauAncora {
   rotulo: string;
   templateId: string | null;
   templateCorpo: string;
+  /** B3/B4 (doc 32): tolerância máxima de atraso (min) — vira `validaAte` na intenção. */
+  toleranciaMinutos: number | null;
 }
 
 export interface PoliticaComercialCarregada {
@@ -28,6 +30,10 @@ export interface PoliticaComercialCarregada {
   tetoPorContatoDia: number;
   silencioPosInboundHoras: number;
   numeroRemetenteId: string | null;
+  /** B1 (doc 32): cohort do piloto. Em modo piloto só a allowlist é elegível (vazia =
+   *  ninguém); desligar é o go-live geral — decisão explícita, nunca default. */
+  modoPiloto: boolean;
+  pilotoLeadIds: readonly string[];
 }
 
 /** Cadência de fábrica por chave (lei de código: ordem canônica + textos padrão). */
@@ -47,6 +53,7 @@ function politicaDeFabrica(chave: string): PoliticaComercialCarregada {
       rotulo: d.rotulo,
       templateId: null,
       templateCorpo: d.texto,
+      toleranciaMinutos: d.toleranciaMinutos,
     })),
     ordem: f.ordem,
     janelaInicio: 9,
@@ -55,6 +62,8 @@ function politicaDeFabrica(chave: string): PoliticaComercialCarregada {
     tetoPorContatoDia: 2,
     silencioPosInboundHoras: 72,
     numeroRemetenteId: null,
+    modoPiloto: true,
+    pilotoLeadIds: [],
   };
 }
 
@@ -70,6 +79,7 @@ export async function carregarPoliticaComercial(
   const fabrica = FABRICA_POR_CHAVE.get(chave);
   const ordem = fabrica?.ordem ?? p.degraus.map((d) => d.passo);
   const textoFabrica = new Map((fabrica?.degraus ?? []).map((d) => [d.passo, d.texto]));
+  const toleranciaFabrica = new Map((fabrica?.degraus ?? []).map((d) => [d.passo, d.toleranciaMinutos]));
   const degraus: DegrauComercialCarregado[] = p.degraus
     .filter((d) => d.ativo)
     .map((d) => ({
@@ -78,6 +88,8 @@ export async function carregarPoliticaComercial(
       rotulo: d.rotulo,
       templateId: d.templateId,
       templateCorpo: d.template?.corpo ?? textoFabrica.get(d.passo) ?? "",
+      // NULL no banco = "use a tolerância de fábrica" (linhas criadas antes do B3/B4).
+      toleranciaMinutos: d.toleranciaMinutos ?? toleranciaFabrica.get(d.passo) ?? null,
     }));
 
   return {
@@ -93,5 +105,7 @@ export async function carregarPoliticaComercial(
     tetoPorContatoDia: p.tetoPorContatoDia,
     silencioPosInboundHoras: p.silencioPosInboundHoras,
     numeroRemetenteId: p.numeroRemetenteId,
+    modoPiloto: p.modoPiloto,
+    pilotoLeadIds: p.pilotoLeadIds,
   };
 }
