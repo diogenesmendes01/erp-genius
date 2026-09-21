@@ -470,6 +470,9 @@ model Usuario {
   adiantamentosAditivoPreparados PropostaAdiantamentoAditivo[] @relation("PreparadorAdiantamentoAditivo")
   adiantamentosAditivoDecididos DecisaoAdiantamentoAditivo[] @relation("DecisorAdiantamentoAditivo")
   adiantamentosAditivoAplicados AplicacaoAdiantamentoAditivo[] @relation("ExecutorAdiantamentoAditivo")
+  moedasAditivoPreparadas PropostaMoedaAditivo[] @relation("PreparadorMoedaAditivo")
+  moedasAditivoDecididas DecisaoMoedaAditivo[] @relation("DecisorMoedaAditivo")
+  moedasAditivoAplicadas AplicacaoMoedaAditivo[] @relation("ExecutorMoedaAditivo")
   conjuntosCoberturaAditivoPreparados ConjuntoImpactosCoberturaAditivo[] @relation("PreparadorConjuntoCoberturaAditivo")
   decisoesConjuntosCoberturaAditivo DecisaoConjuntoImpactosCoberturaAditivo[] @relation("DecisorConjuntoCoberturaAditivo")
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("ExecutorCoberturaAditivo")
@@ -1727,6 +1730,7 @@ model Matricula {
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
   propostasAdiantamentoAditivo PropostaAdiantamentoAditivo[]
+  propostasMoedaAditivo PropostaMoedaAditivo[]
   recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
@@ -4468,6 +4472,7 @@ model PropostaAditivoContratual {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
   propostasAdiantamento PropostaAdiantamentoAditivo[]
+  propostasMoeda PropostaMoedaAditivo[]
     conferenciasParticipantes ConferenciaParticipantesAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
   processoAssinatura ProcessoAssinaturaAditivo?
@@ -4647,6 +4652,7 @@ model VersaoCondicoesAditivo {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
   propostasAdiantamento PropostaAdiantamentoAditivo[]
+  propostasMoeda PropostaMoedaAditivo[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -8341,6 +8347,60 @@ model AplicacaoAdiantamentoAditivo {
   vencimentoNovo DateTime
   minutosAnteriores Int
   minutosNovos Int
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
+}
+
+// Q173: aplicação do aditivo de moeda, só para o futuro e só com a matrícula "limpa" na moeda
+// antiga. A aplicação atualiza Matricula.moeda; a moeda anterior fica preservada aqui.
+model PropostaMoedaAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorMoedaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  moedaAnterior String
+  moedaNova String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoMoedaAditivo?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoMoedaAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaMoedaAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorMoedaAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoMoedaAditivo?
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoMoedaAditivo {
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoMoedaAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorMoedaAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  moedaAnterior String
+  moedaNova String
   aplicadaEm DateTime @default(now())
   @@unique([executorId, chaveIdempotencia])
 }
