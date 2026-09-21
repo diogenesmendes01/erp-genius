@@ -716,10 +716,8 @@ export async function ativarSeFechamentoCompletoTx(
 }
 
 // ---------------------------------------------------------------------------
-// C4 — FECHAMENTO (doc 27 Onda 2): contrato e link de pagamento como ESTADO
-// auditável + gatilhos da matrícula automática. A assinatura digital real
-// (DocuSign etc.) é integração futura — o provedor chamará `marcarContratoAssinado`
-// pelo mesmo caminho; hoje quem marca é o humano que conferiu a assinatura.
+// C4 legado: contrato e link como histórico. Os atalhos de assinatura abaixo
+// permanecem bloqueados; o aceite e a ativação usam a preparação documental da SPEC.
 // ---------------------------------------------------------------------------
 
 /** Papéis que operam o fechamento: comercial (cria/negocia) + quem ativa (recebe). */
@@ -728,8 +726,8 @@ const PAPEIS_FECHAMENTO: Papel[] = [...PAPEIS_CRIAR, ...PAPEIS_ATIVAR];
 /**
  * Titularidade do fechamento (review PR #60): VENDEDOR só opera matrícula cujo LEAD é da
  * carteira dele — sem isto, qualquer `matriculaId` colado dava contrato/link (e até a
- * autoativação) sobre negócio alheio. Papéis amplos (gerente/financeiro/secretaria; admin
- * via temPapel) passam. Roda DENTRO da transação da ação.
+ * autoativação) sobre negócio alheio. Papéis administrativos seguem sua autorização; gerente comercial continua
+ * limitado à equipe/carteira vigente. Roda DENTRO da transação da ação.
  */
 async function exigirMatriculaNoEscopoTx(
   tx: Prisma.TransactionClient,

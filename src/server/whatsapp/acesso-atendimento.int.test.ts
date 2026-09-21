@@ -55,6 +55,20 @@ async function filaComercial(chave = "LEAD_NOVO_SEM_RESPOSTA") {
 }
 
 describe("D02: atendimento comercial segue carteira/equipe/cobertura atual", () => {
+  it("participante da conversa fora da carteira abre a thread sem herdar sugestões de IA", async () => {
+    const c = await comercial();
+    await prisma.configComercial.create({ data: { id: "comercial", copilotoAtivo: true } });
+    const sugestao = await prisma.sugestaoIA.create({ data: { leadId: c.lead.id, loteId: "teste", tipo: "RESUMO", gatilho: "SOB_DEMANDA", payload: { objetivo: "restrito" }, modelo: "teste" } });
+    await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: c.a.id, usuarioId: c.outro.id, concedenteId: c.vendedor.id, inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60000), motivo: "Apoio restrito à conversa" } });
+    authMock.mockResolvedValue({ user: { id: c.outro.id } });
+    const restrita = await carregarThread(sessao(c.outro), c.a.id);
+    expect(restrita).not.toBeNull();
+    expect(restrita?.lead).toMatchObject({ copilotoAtivo: false, sugestoesIA: [] });
+    authMock.mockResolvedValue({ user: { id: c.vendedor.id } });
+    const titular = await carregarThread(sessao(c.vendedor), c.a.id);
+    expect(titular?.lead?.copilotoAtivo).toBe(true);
+    expect(titular?.lead?.sugestoesIA?.map(s => s.id)).toEqual([sugestao.id]);
+  });
   it("dono do número não herda o lead; transferência revoga anterior e mensagem humana pendente", async () => {
     const c = await comercial();
     expect((await listarConversas(sessao(c.vendedor))).map((a) => a.id)).toContain(c.a.id);

@@ -70,6 +70,8 @@ describe("fechamento mensal automático de comissões", () => {
     expect(r1.executou).toBe(true);
     expect(r1.pagas).toBe(1);
     expect(await prisma.comissao.count({ where: { status: StatusComissao.PAGA } })).toBe(1);
+    const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "ComissaoPaga" } });
+    expect(evento.payload).toMatchObject({ moeda: "CRC", politicaId: null });
 
     const r2 = await rodarFechamentoComissoes();
     expect(r2.executou).toBe(false);

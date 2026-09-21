@@ -280,7 +280,7 @@ export async function fecharComissoesAprovadasTx(
       agregadoTipo: "Comissao",
       agregadoId: c.id,
       autorId,
-      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor) },
+      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor), moeda: c.moeda, politicaId: c.politicaId },
     });
   }
   return aprovadas.length;

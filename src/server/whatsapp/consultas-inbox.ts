@@ -113,18 +113,20 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contatoId) : null,
-    lead: comercial && a.lead ? await leadNaThread(a.lead) : null,
+    lead: comercial && a.lead ? await leadNaThread(usuario, a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString() })) };
 }
 
-async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
+async function leadNaThread(usuario: UsuarioSessao, lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
   const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: lead.id, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
   const config = await prisma.configComercial.findUnique({ where: { id: "comercial" }, select: { copilotoAtivo: true } });
-  const sugestoesIA = config?.copilotoAtivo ? await sugestoesPendentesDoLead(lead.id) : [];
-  return { ...lead, copilotoAtivo: config?.copilotoAtivo ?? false, sugestoesIA, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
+  const copilotoAtivo = !!config?.copilotoAtivo && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
+    && !!await prisma.lead.count({ where: { AND: [{ id: lead.id }, await escopoComercialAtual(usuario)] } });
+  const sugestoesIA = copilotoAtivo ? await sugestoesPendentesDoLead(lead.id) : [];
+  return { ...lead, copilotoAtivo, sugestoesIA, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
     etapasPermitidas: ETAPAS_MANUAIS.filter((d) => d !== lead.etapa && transicaoManualPermitida(lead.etapa, d)),
     notas: notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
       autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() })) };
