@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-financeira-consulta";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { ConferenciaHoras } from "./ConferenciaHoras";
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const { id } = await params, { cursor } = await searchParams;
   const r = await consultarOcorrenciasFinanceiras({ matriculaId: id, cursor });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
@@ -18,7 +21,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <p><Link href={`/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`} className="underline">Histórico de fechamentos por hora</Link></p>
     <p><Link href={`/matriculas/${id}/ocorrencias-financeiras/revisoes-correcao-aula`} className="underline">Revisões financeiras de correções Q23</Link></p>
     {!d.encontros.length && <p>Nenhum encontro particular nesta página.</p>}
-    {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} />)}
+    {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} fusoExibicao={fusoExibicao} />)}
     {d.proximoCursor && <Link href={`/matriculas/${id}/ocorrencias-financeiras?cursor=${encodeURIComponent(d.proximoCursor)}`} className="underline">Próximos encontros</Link>}
   </div>;
 }

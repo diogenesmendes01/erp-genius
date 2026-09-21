@@ -2,9 +2,13 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarReservasSecretaria, listarReservasParticularesSecretaria } from "@/server/matricula/reserva-painel";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { ConferirReserva } from "./ConferirReserva";
 export default async function ReservasPage({ searchParams }: { searchParams: Promise<{ pagina?: string; matriculaId?: string; historico?: string; tipo?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const fusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const filtros = await searchParams;
   const particular = filtros.tipo === "particular";
   const resultado = await (particular ? listarReservasParticularesSecretaria : listarReservasSecretaria)({ pagina: Number(filtros.pagina ?? 1), matriculaId: filtros.matriculaId || undefined, historico: filtros.historico === "todos" });
@@ -20,15 +24,15 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
     <p>Reservas ativas e mantidas por pendência ocupam vagas ou horários. Nas particulares, a conferência pode expirar a reserva sem avanço formal. Pagamentos, documentos e pendências exigem o tratamento aplicável; não há devolução ou cancelamento da contratação por esta conferência.</p>
     <nav className="flex gap-4"><Link href={url(1, false)}>Ocupantes</Link><Link href={url(1, true)}>Incluir histórico</Link></nav>
     {!r.registros.length && <p>Nenhuma reserva nesta consulta.</p>}
-    {r.registros.map((v) => <section key={v.id} className="space-y-2 rounded border p-4">
+    {r.registros.map((v) => { const prazo = formatarInstanteExibicao(v.expiraEm, fusoExibicao, v.fuso ?? "UTC"); return <section key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{v.matricula.codigo ?? "Matrícula sem código"} · {[v.matricula.aluno.primeiroNome, v.matricula.aluno.sobrenome].filter(Boolean).join(" ")}</h2>
       <p>{v.referencia} · {estados[v.status]}</p>
-      <p>Prazo: {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: v.fuso ?? "UTC" }).format(v.expiraEm)} · {v.fuso ?? "UTC (fuso da reserva indisponível)"}{v.prazoVencido ? " · Prazo vencido" : ""}</p>
+      <p>Prazo: {prazo.texto} · {v.fuso || fusoExibicao ? prazo.fuso : "UTC (fuso da reserva indisponível)"}{v.prazoVencido ? " · Prazo vencido" : ""}</p>
       {v.quantidadeHorarios !== null && <p>{v.quantidadeHorarios} horário(s) reservado(s). Consulte a preparação para os detalhes.</p>}
       <p className="whitespace-pre-wrap">{v.motivo}</p><Link className="underline" href={`/secretaria?matriculaId=${v.matriculaId}`}>Consultar contratação</Link>
       {v.podeConferir && <ConferirReserva reservaId={v.id} particular={v.particular} />}
       <div><Link className="underline" href={v.particular ? `/secretaria/reservas/particulares/${v.id}` : `/secretaria/reservas/${v.id}`}>Resolução e histórico da reserva</Link></div>
-    </section>)}
+    </section>; })}
     <nav aria-label="Páginas das reservas" className="flex gap-4">{r.pagina > 1 && <Link href={url(r.pagina - 1)}>Anterior</Link>}{r.possuiMais && <Link href={url(r.pagina + 1)}>Próxima</Link>}</nav>
   </div>;
 }

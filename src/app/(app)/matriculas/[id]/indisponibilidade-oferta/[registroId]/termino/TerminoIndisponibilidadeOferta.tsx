@@ -8,6 +8,7 @@ import {
   decidirTerminoIndisponibilidadeOferta,
   proporTerminoIndisponibilidadeOferta,
 } from "@/server/matricula/indisponibilidade-oferta-termino";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -15,10 +16,11 @@ function dataCivil(valor: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 }
 
-function instanteDoEvento(valor: string, fusoInstitucional: string | null) {
+function instanteDoEvento(valor: string, fusoExibicao: string | null, fusoInstitucional: string | null) {
   const instante = new Date(valor);
-  if (!fusoInstitucional) return `${instante.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC")} (fuso institucional não configurado)`;
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoInstitucional }).format(instante);
+  if (!fusoInstitucional && !fusoExibicao) return `${instante.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC")} (fuso institucional não configurado)`;
+  const exibicao = formatarInstanteExibicao(instante, fusoExibicao, fusoInstitucional ?? "UTC");
+  return `${exibicao.texto} (${exibicao.fuso})`;
 }
 
 export function TerminoIndisponibilidadeOferta({
@@ -26,11 +28,13 @@ export function TerminoIndisponibilidadeOferta({
   inicio,
   dados: d,
   fusoInstitucional,
+  fusoExibicao = null,
 }: {
   registroId: string;
   inicio: string;
   dados: Dados;
   fusoInstitucional: string | null;
+  fusoExibicao?: string | null;
 }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
@@ -88,8 +92,8 @@ export function TerminoIndisponibilidadeOferta({
       <h3>Último dia indisponível: {dataCivil(proposta.fim)}</h3>
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {proposta.evidenciaTexto}</p>
-      <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoInstitucional)}.</p>
-      {proposta.decisao ? <section className="rounded bg-gray-50 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
+      <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoExibicao, fusoInstitucional)}.</p>
+      {proposta.decisao ? <section className="rounded bg-gray-50 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoExibicao, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
       {proposta.podeDecidir && <form className="space-y-2" onSubmit={evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);
