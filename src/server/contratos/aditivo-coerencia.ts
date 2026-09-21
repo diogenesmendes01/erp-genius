@@ -15,9 +15,13 @@ export const AlteracaoTipadaAditivoSchema = z.object({ origem: OrigemCampoSchema
 const EntradaSchema = z.object({ origem: ContextoCoerenciaValoresAditivoSchema, alteracoes: z.array(AlteracaoTipadaAditivoSchema).max(100) }).strict();
 
 /** Confere relações entre valores tipados e fatos da origem; não aplica as condições. */
+export const MENSAGEM_REGIME_NOVA_CONTRATACAO = "A mudança de regime (mensalidade ↔ particular por hora) não é feita por aditivo. Encerre este contrato com o acerto correspondente e abra uma nova negociação para o aluno no regime desejado.";
+
 export function validarCoerenciaValoresAditivo(entrada: unknown): void {
   const d = EntradaSchema.parse(entrada);
   if (new Set(d.alteracoes.map(a => a.origem)).size !== d.alteracoes.length) throw new Error("Alteração tipada repetida.");
+  // Q174 (21/09/2026): mudança de regime é nova contratação. Recusar aqui evita um aditivo assinado que travaria a cobrança.
+  if (d.alteracoes.some(a => a.origem === "REGIME")) throw new Error(MENSAGEM_REGIME_NOVA_CONTRATACAO);
   for (const alteracao of d.alteracoes) validarValorAlteracaoAditivo(alteracao.origem, alteracao.valorEstruturado);
 
   const inicioAlterado = d.alteracoes.find(a => a.origem === "COBERTURA_INICIO")?.valorEstruturado;
