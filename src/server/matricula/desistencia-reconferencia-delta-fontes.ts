@@ -20,6 +20,7 @@ type CreditoFoto = {
   origemAcertoDesistenciaContratualId: string | null;
   origemReconferenciaDeltaDesistenciaId: string | null;
   origemRevisaoCorrecaoAulaId?: string | null;
+  origemExcedentePermutaId?: string | null;
 };
 type FotoFinanceira = { matriculaId: string; cobrancas: CobrancaFoto[]; creditos: CreditoFoto[] };
 type OrigemPorCobranca = { cobrancaId: string; valor: Prisma.Decimal; moeda: string };
@@ -69,7 +70,7 @@ function classificarCredito(credito: CreditoFoto, saldoDisponivel: Prisma.Decima
     credito.origemDestinacaoRecebimentoId ?? null, credito.origemLiberacaoId ?? null, credito.origemAcertoId ?? null,
     credito.origemPeriodoIntegralId ?? null, credito.origemAcertoTaxaAditivoId ?? null,
     credito.origemAcertoDesistenciaContratualId ?? null, credito.origemReconferenciaDeltaDesistenciaId ?? null,
-    credito.origemRevisaoCorrecaoAulaId ?? null,
+    credito.origemRevisaoCorrecaoAulaId ?? null, credito.origemExcedentePermutaId ?? null,
   ];
   if (origens.some(origem => origem !== null && (typeof origem !== "string" || !origem.trim()))) {
     throw new Error("Origem do crédito inválida na fonte financeira.");

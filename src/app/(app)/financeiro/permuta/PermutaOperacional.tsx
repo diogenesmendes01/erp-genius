@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState, useTransition } from "react";
 import {
@@ -125,6 +126,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       <h2 className="font-medium">{acordo.matricula} · {acordo.moeda}</h2>
       <p>{acordo.quantidadePactuada} {acordo.unidade.toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade} = {acordo.valorTotalPactuado}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>
+      {podeFinanceiro && <p className="text-sm"><Link href={`/financeiro/permuta/excedente/${acordo.matriculaId}`} className="underline">Excedente de permuta desta matrícula (destinação negociada)</Link></p>}
       {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
         <label>Início <input required type="date" name="periodoInicio" /></label><label>Fim <input required type="date" name="periodoFim" /></label><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
       </Acao>}
