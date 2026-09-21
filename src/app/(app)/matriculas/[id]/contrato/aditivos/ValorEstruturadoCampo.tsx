@@ -100,6 +100,8 @@ export function ValorEstruturadoCampo({ campo, rotulo, disabled, onChange }: Pro
   }
 
   if (campo === "REGIME") {
+    // Q174: o servidor recusa o aditivo de regime; a tela orienta antes de o usuário tentar.
+    if (!texto(valor, "REGIME", "regime")) return <p role="status" id={id}>{rotulo}: a mudança de regime não é feita por aditivo. Encerre este contrato com o acerto correspondente e abra uma nova negociação para o aluno no regime desejado.</p>;
     return <><label className="block" htmlFor={id}>{rotulo}</label><select id={id} className="mt-1 block rounded border p-2" value={texto(valor, "REGIME", "regime")} onChange={event => atualizar({ tipo: "REGIME", regime: event.target.value })} disabled={disabled}>
       <option value="">Selecione o regime</option>
       <option value="MENSALIDADE">Mensalidade</option>
