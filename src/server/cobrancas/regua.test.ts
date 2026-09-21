@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { proximaAcao, diferencaEmDias, REGUA, type EntradaRegua, type PassoRegua } from "./regua";
+import { proximaAcao, diferencaEmDias, diaCivilGravado, diasCivisDesde, REGUA, type EntradaRegua, type PassoRegua } from "./regua";
 
 // Vencimento de referência fixo para todos os cenários.
 const VENC = new Date(2026, 5, 23); // 2026-06-23
@@ -176,5 +176,28 @@ describe("regua — prioridade (menor = mais urgente)", () => {
     expect(bloq.prioridade).toBeLessThan(cobrarD7.prioridade);
     expect(cobrarD7.prioridade).toBeLessThan(cobrarD3.prioridade);
     expect(cobrarD3.prioridade).toBeLessThan(lembrarD3.prioridade);
+  });
+});
+
+describe("Q176 — dia civil no fuso único da escola", () => {
+  const fuso = "America/Costa_Rica"; // UTC-6, sem horário de verão
+  it("recupera o dia civil nas três convenções de gravação", () => {
+    expect(diaCivilGravado(new Date("2026-03-10T18:00:00Z"), fuso)).toBe("2026-03-10"); // meio-dia institucional
+    expect(diaCivilGravado(new Date("2026-03-10T06:00:00Z"), fuso)).toBe("2026-03-10"); // meia-noite institucional
+    expect(diaCivilGravado(new Date("2026-03-10T00:00:00Z"), fuso)).toBe("2026-03-10"); // meia-noite UTC (legado)
+    expect(diaCivilGravado(new Date("2026-03-09T21:00:00Z"), "Europe/Moscow")).toBe("2026-03-10"); // meia-noite em fuso positivo
+  });
+  it("vira o dia à meia-noite da escola, não do servidor nem de UTC", () => {
+    const vencimento = new Date("2026-03-10T00:00:00Z");
+    expect(diasCivisDesde(new Date("2026-04-09T05:59:00Z"), vencimento, fuso)).toBe(29); // ainda 08/04 na Costa Rica
+    expect(diasCivisDesde(new Date("2026-04-09T06:00:00Z"), vencimento, fuso)).toBe(30);
+  });
+  it("proximaAcao usa o fuso informado para atraso e promessa", () => {
+    const entrada = { vencimento: new Date("2026-03-10T00:00:00Z"), quitada: false, passosFeitos: [] };
+    expect(proximaAcao(entrada, new Date("2026-03-11T05:00:00Z"), undefined, fuso).diasAtraso).toBe(0);
+    expect(proximaAcao(entrada, new Date("2026-03-11T07:00:00Z"), undefined, fuso).diasAtraso).toBe(1);
+    const prometida = { ...entrada, promessaAte: new Date("2026-03-12T00:00:00Z") };
+    expect(proximaAcao(prometida, new Date("2026-03-13T05:00:00Z"), undefined, fuso).estado).toBe("promessa"); // ainda dia 12 na escola
+    expect(proximaAcao(prometida, new Date("2026-03-13T07:00:00Z"), undefined, fuso).estado).not.toBe("promessa");
   });
 });
