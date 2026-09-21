@@ -5,7 +5,7 @@ vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("@/lib/prisma", () => ({ prisma: {
   aluno: { findFirst }, usuario: { findUnique: usuarioMock },
   pagamentoInformado: { groupBy: () => Promise.resolve([]) },
-  evento: { findMany: () => Promise.resolve([]) }, politicaRegua: { findFirst: () => Promise.resolve(null) },
+  evento: { findMany: () => Promise.resolve([]) }, politicaRegua: { findFirst: () => Promise.resolve(null) }, configuracaoOperacional: { findUnique: () => Promise.resolve(null) },
   aplicacaoEntradaFinanceiraHistoricaMigracao: { findMany: () => Promise.resolve([]) },
   aplicacaoVencimentoAditivo: { findMany: () => Promise.resolve([]) },
   propostaRetomadaMatriculas: { findMany: () => Promise.resolve([]) },

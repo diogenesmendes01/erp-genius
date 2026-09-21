@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { numero, numeroOuNull } from "@/server/_shared/decimal";
 import { somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
+import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { proximaAcao, type DegrauRegua, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
 import { carregarPoliticaRegua } from "./politica";
 import { TEXTOS_FABRICA } from "./fabrica";
@@ -111,6 +112,10 @@ export async function montarReguaPorCobranca(
 ): Promise<Map<string, ReguaCalculada>> {
   // Política como dado (doc 26/30): sem parâmetro, carrega a do banco (fallback = fábrica).
   const degraus = politica ?? (await carregarPoliticaRegua()).degraus;
+  // Q176: o dia da régua vira no fuso único da escola; sem configuração, segue o legado.
+  const configuracao = cobrancas.length ? await prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }) : null;
+  const fusoLido = FusoInstitucionalSchema.safeParse(configuracao?.fusoInstitucional);
+  const fusoInstitucional = fusoLido.success ? fusoLido.data : null;
   const ids = cobrancas.map((c) => c.id);
   const ciclos = new Map(cobrancas.map((c) => [c.id, c.cicloRegua]));
   const eventos = ids.length
@@ -169,6 +174,7 @@ export async function montarReguaPorCobranca(
       { vencimento: c.vencimento, quitada: false, passosFeitos: passos, promessaAte },
       hoje,
       degraus,
+      fusoInstitucional,
     );
     const tent = tentativasPorId.get(c.id);
     mapa.set(c.id, {
