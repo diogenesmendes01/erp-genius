@@ -7,7 +7,7 @@ import { useState } from "react";
 export function VideoGravacaoPortalAluno({ reposicaoId }: { reposicaoId: string }) {
   const [erro, setErro] = useState(false);
   const fonte = `/api/portal-aluno/reposicoes/${encodeURIComponent(reposicaoId)}/video`;
-  return <section className="mt-5 space-y-3 rounded border bg-white p-5" aria-label="Gravação da reposição">
+  return <section className="mt-5 space-y-3 rounded border bg-surface p-5" aria-label="Gravação da reposição">
     <h2 className="font-medium">Assistir à gravação</h2>
     <video
       className="w-full rounded bg-black"

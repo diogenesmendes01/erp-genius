@@ -74,7 +74,7 @@ export function Sidebar({
   const itens = navParaPapeis(papeis);
 
   return (
-    <aside className="flex w-56 flex-col border-r border-gray-200 bg-surface p-3">
+    <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">
       <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
         <IconSchool className="h-5 w-5 text-brand-600" />
         Genius

@@ -86,7 +86,7 @@ export function HomeVendedor({
                   <span className="ml-2 text-sm text-gray-500">{o.motivo}</span>
                   <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">Prioridade {FAIXA[o.prioridade]}</span>
                 </div>
-                <Link href={`/leads/${o.id}`} className="rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700">Atender</Link>
+                <Link href={`/leads/${o.id}`} className="rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:opacity-90">Atender</Link>
               </li>
             ))}
           </ul>

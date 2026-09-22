@@ -54,13 +54,13 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
   }
   return <section className="mx-auto max-w-3xl p-6 sm:p-10"><Link href="/portal-aluno" className="text-sm text-brand-700 underline">Voltar às reposições</Link>
     <h1 className="mt-5 text-2xl font-medium">Reposição {reposicao.modalidade === "GRAVACAO" ? "por gravação" : "particular"}</h1>
-    <dl className="mt-6 grid gap-3 rounded-lg border bg-white p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{reposicao.statusMatricula}</dd></div></dl>
+    <dl className="mt-6 grid gap-3 rounded-lg border bg-surface p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{reposicao.statusMatricula}</dd></div></dl>
     <p className="mt-3 text-xs text-gray-500">Instantes exibidos em {fusoExibicao}.</p>
     {detalhe?.prazoEtapaAte && <p className="mt-4 text-sm text-gray-600">Prazo vigente {etapaCorrecao ? "para responder à correção" : "da entrega"}: {data(detalhe.prazoEtapaAte)}.</p>}
     {detalhe?.entregas.map((entrega) => {
       const validada = detalhe.entregaValidada?.entregaId === entrega.id;
       const correcao = detalhe.correcoes.find((item) => item.entregaId === entrega.id);
-      return <article key={entrega.id} className="mt-4 rounded border bg-white p-4 text-sm"><p className="font-medium">Entrega versão {entrega.versao} em {data(entrega.entregueEm)}</p>
+      return <article key={entrega.id} className="mt-4 rounded border bg-surface p-4 text-sm"><p className="font-medium">Entrega versão {entrega.versao} em {data(entrega.entregueEm)}</p>
         {validada && <p role="status" className="mt-2 font-medium text-green-700">Esta é a versão aprovada na reposição em {data(detalhe.entregaValidada!.validadaEm)}.</p>}
         {!validada && correcao && <p role="status" className="mt-2 text-amber-800">Esta versão foi encaminhada para correção; ela não é a versão aprovada.</p>}
         <p className="mt-2 whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="mt-2 whitespace-pre-wrap">Atividade: {entrega.atividade}</p></article>;

@@ -37,7 +37,7 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
         <label className="block">Hora<input type="time" name="hora" required disabled={ocupado} className="ml-2 rounded border p-2" /></label>
       </fieldset>}
       <label className="block">Evidência ou motivo da atualização<textarea name="evidencia" required minLength={5} maxLength={2000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
-      <button type="submit" disabled={ocupado} className="rounded bg-brand-700 px-3 py-2 text-white">{ocupado ? "Registrando…" : dados.versaoAtual ? "Registrar nova versão" : "Registrar ocorrência"}</button>
+      <button type="submit" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">{ocupado ? "Registrando…" : dados.versaoAtual ? "Registrar nova versão" : "Registrar ocorrência"}</button>
     </form> : <p>{dados.conferidaFinanceiramente ? "Informe conferido pelo Financeiro. Alterações exigem revisão dos efeitos financeiros." : "O informe fica disponível após o término da aula ou a aprovação do cancelamento."}</p>}
     {mensagem && <p role="status">{mensagem}</p>}
     <h3 className="font-medium">Histórico de informes</h3>

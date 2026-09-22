@@ -199,7 +199,7 @@ export function PrepararEquivalenciaTransferencia({
         <textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || registrada} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={ocupado || registrada} /> Conferi a prévia e compreendo que a decisão e a execução são etapas separadas.</label>
-      <button disabled={ocupado || registrada || !revisao} className="rounded bg-brand-700 px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
+      <button disabled={ocupado || registrada || !revisao} className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
     </section>
     {erro && <p role="alert">{erro}</p>}
     {mensagem && <p role="status">{mensagem}</p>}
