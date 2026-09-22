@@ -43,6 +43,6 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
       </label>
     </div>
     <p className="mt-3 text-xs text-gray-500">O template deve conter <code>{"{horarios}"}</code> e pode usar <code>{"{nome}"}</code>. O envio proativo usa somente Meta Cloud; Baileys não é habilitado para este canal.</p>
-    <button className="mt-4 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" disabled={salvando || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{salvando ? "Salvando…" : "Salvar canal de agenda"}</button>
+    <button className="mt-4 rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" disabled={salvando || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{salvando ? "Salvando…" : "Salvar canal de agenda"}</button>
   </section>;
 }

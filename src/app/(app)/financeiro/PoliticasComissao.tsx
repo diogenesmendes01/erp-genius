@@ -31,7 +31,7 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { d
       <label>Tipo<select className="block rounded border p-2" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}><option value="PERCENTUAL">Percentual da taxa</option><option value="VALOR_FIXO">Valor fixo na moeda do país</option></select></label>
       <label>{tipo === "PERCENTUAL" ? "Percentual" : "Valor"}<input required name="valor" type="number" min="0" max={tipo === "PERCENTUAL" ? "100" : undefined} step="0.01" className="block w-28 rounded border p-2" /></label>
       <label>Vigência (vazio = agora)<input name="vigencia" type="datetime-local" className="block rounded border p-2" /></label>
-      <button disabled={salvando} className="rounded bg-brand-600 px-3 py-2 text-white disabled:opacity-50">Publicar nova versão</button>
+      <button disabled={salvando} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">Publicar nova versão</button>
     </form>
     <ul className="divide-y rounded border text-sm">{dados.politicas.map((p) => {
       const inicio = formatarInstanteExibicao(p.vigenteEm, preferenciaFusoExibicao, "UTC");

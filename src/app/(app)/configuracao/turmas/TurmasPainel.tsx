@@ -73,7 +73,7 @@ export function TurmasPainel({
             {podeImportar && <ImportarTurmasModal />}
             <button
               onClick={() => setForm("nova")}
-              className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+              className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95"
             >
               <IconPlus className="h-4 w-4" /> Nova turma
             </button>

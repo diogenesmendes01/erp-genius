@@ -9,7 +9,7 @@ interface ResultadoImport {
   erros: { linha: number; motivo: string }[];
 }
 
-const btnPri = "rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50";
 
 /** Modal de cadastro de alunos em lote (XLSX) — exibido só para administrador (doc 22). */
@@ -90,7 +90,7 @@ export function ImportarAlunosModal() {
                 ref={fileRef}
                 type="file"
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:opacity-90"
+                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
               />
             </div>
 

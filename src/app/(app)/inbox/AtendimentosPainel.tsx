@@ -32,7 +32,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
           {opcoes.numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>
       </label>
-      <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-600 px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
+      <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
       {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>

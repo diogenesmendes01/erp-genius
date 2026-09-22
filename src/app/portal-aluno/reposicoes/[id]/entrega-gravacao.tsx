@@ -27,7 +27,7 @@ export function EntregaGravacaoPortalAluno({ reposicaoId, podeEntregar, motivoBl
     <label className="block text-sm">Resumo do que foi assistido<textarea required minLength={5} maxLength={4000} name="resumo" className="mt-1 min-h-24 w-full rounded border p-2" /></label>
     <label className="block text-sm">Atividade realizada<textarea required minLength={5} maxLength={4000} name="atividade" className="mt-1 min-h-24 w-full rounded border p-2" /></label>
     <label className="block text-sm">Evidência ou observação<textarea required minLength={5} maxLength={4000} name="evidencia" className="mt-1 min-h-20 w-full rounded border p-2" /></label>
-    <button disabled={enviando} className="rounded bg-brand-600 px-3 py-2 text-sm text-white disabled:opacity-60">{enviando ? "Enviando…" : "Enviar para avaliação"}</button>
+    <button disabled={enviando} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-60">{enviando ? "Enviando…" : "Enviar para avaliação"}</button>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
   </form>;
 }

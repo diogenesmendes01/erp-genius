@@ -57,8 +57,12 @@
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
 > (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão
-> primário, **não inverte** no dark), `--brand` (accent de checkbox/radio), `--brand-text` /
-> `text-brand-700` (links, só texto — nunca fundo), `--brand-bg` (estado ativo).
+> primário, **não inverte** no dark), `--brand` (accent de checkbox/radio **e** fundo de
+> indicador de estado ativo — aba selecionada, passo concluído do wizard, chip de dia da
+> semana marcado; nesses casos o fundo é `bg-brand-600`, nunca `bg-brand-solid`, porque não é
+> uma ação — é feedback de seleção, e clarear no dark é aceitável ali), `--brand-text` /
+> `text-brand-700` (links, só texto — nunca fundo), `--brand-bg` (fundo claro de hover/estado
+> ativo em itens de menu).
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
@@ -66,5 +70,6 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
 - **Botão primário:** `bg-brand-solid text-white hover:opacity-90`. **Destrutivo:** `bg-danger text-white`.
+- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-600 text-white` — é seleção, não ação; não promova para `bg-brand-solid`.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.

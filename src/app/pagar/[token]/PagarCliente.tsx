@@ -59,7 +59,7 @@ export function PagarCliente({
       ) : simuladoHabilitado ? (
         <>
           <button
-            className="mt-4 w-full rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+            className="mt-4 w-full rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
             disabled={estado === "pagando"}
             onClick={pagar}
           >

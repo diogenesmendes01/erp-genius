@@ -121,8 +121,22 @@
   }
 
   /* Indicador de foco único para todo o app — cobre os controles que hoje usam
-     outline-none sem substituto visível ao navegar por teclado (ganho rápido 7). */
-  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+     outline-none sem substituto visível ao navegar por teclado (ganho rápido 7).
+     Tailwind v3 não emite CSS Cascade Layers nativas: @layer base só reposiciona
+     o bloco onde @tailwind base foi expandido, então esta regra sempre compila
+     ANTES das utilities (inclusive .outline-none). Por isso a seletor NÃO pode
+     usar :where() — :where() zera a especificidade do grupo, empatando 0-1-0 com
+     a de .outline-none (uma classe), e em empate quem vem depois no CSS
+     compilado (a utility) vence. O seletor abaixo, sem :where(), fica com
+     especificidade 0-1-1 (tag + pseudo-classe) — 0-2-0 no caso de [tabindex] —
+     sempre maior que 0-1-0, então vence outline-none em qualquer ordem, sem
+     precisar tocar nos ~51 outline-none que já existem nos inputs/selects. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
   }

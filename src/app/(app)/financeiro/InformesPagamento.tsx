@@ -36,7 +36,7 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
       {i.motivoConferencia && <p>Motivo: {i.motivoConferencia}</p>}
       {i.podeConferir && <div className="flex flex-wrap items-center gap-2">
         <input aria-label="Motivo da decisão" className="rounded border px-2 py-1" placeholder="Motivo (obrigatório para rejeitar)" value={motivos[i.id] ?? ""} onChange={(e) => setMotivos({ ...motivos, [i.id]: e.target.value })} />
-        <button disabled={ocupado !== null} className="rounded bg-brand-600 px-3 py-1.5 text-white disabled:opacity-50" onClick={() => decidir(i.id, i.versao, true)}>Confirmar recebimento</button>
+        <button disabled={ocupado !== null} className="rounded bg-brand-solid px-3 py-1.5 text-white disabled:opacity-50" onClick={() => decidir(i.id, i.versao, true)}>Confirmar recebimento</button>
         <button disabled={ocupado !== null || !motivos[i.id]?.trim()} className="rounded border px-3 py-1.5 disabled:opacity-50" onClick={() => decidir(i.id, i.versao, false)}>Rejeitar</button>
       </div>}
     </article>)}

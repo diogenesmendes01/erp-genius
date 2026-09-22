@@ -61,7 +61,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
         <p>{m.periodos.filter((p) => p.efeito === "SUSPENDER_PERIODO_FUTURO").length} período(s) futuro(s) a suspender; {m.periodos.filter((p) => p.efeito === "MANTER_PERIODO_INICIADO_INTEGRAL").length} período(s) iniciado(s) mantido(s) integralmente.</p>
         <Pendencias itens={m.pendencias} />
       </div>)}
-      <button type="button" className="rounded bg-brand-600 px-3 py-2 text-sm text-white disabled:opacity-50" disabled={ocupado} onClick={enviar}>Registrar proposta para decisão independente</button>
+      <button type="button" className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50" disabled={ocupado} onClick={enviar}>Registrar proposta para decisão independente</button>
     </div>}
   </section>;
 }
