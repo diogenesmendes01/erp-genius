@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { TipoCobranca, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
 import { GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
-import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda, formatarMoedaParaCampo } from "@/lib/dinheiro";
 import { PAISES_ISO } from "@/lib/paises-iso";
 import { criarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
@@ -14,6 +14,14 @@ const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Números já parseados dos três campos de dinheiro do passo 2 — validarPasso2 devolve
+ *  isto (ou um erro), montarInput só aceita isto, nunca o texto cru de novo. */
+interface ValoresMonetariosPasso2 {
+  taxa: number;
+  mensalidade: number;
+  certificado: number;
+}
 
 export interface PrecoRef {
   paisId: string;
@@ -151,8 +159,11 @@ export function MatriculaFormulario({
   function prefillPrecos(pid: string, prodId: string) {
     const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
     const mens = precoRefDe(pid, prodId, TipoCobranca.MENSALIDADE);
-    if (taxa) setTaxa(String(taxa.valor));
-    if (mens) setMens(String(mens.valor));
+    const moedaDoPais = paises.find((p) => p.id === pid)?.moedaLocal;
+    // formatarMoedaParaCampo (não String cru): pré-preenche já no formato que o campo
+    // exibe depois do blur — vírgula, casas certas pra moeda — em vez do ponto do JS.
+    if (taxa) setTaxa(formatarMoedaParaCampo(taxa.valor, moedaDoPais));
+    if (mens) setMens(formatarMoedaParaCampo(mens.valor, moedaDoPais));
   }
 
   // País dirige documento/telefone/moeda — ao trocar, reseta o tipo de documento se não
@@ -164,7 +175,7 @@ export function MatriculaFormulario({
     prefillPrecos(novoPaisId, produtoId);
   }
 
-  function montarInput(referencia: "MES_CIVIL" | "CICLO_MATRICULA") {
+  function montarInput(referencia: "MES_CIVIL" | "CICLO_MATRICULA", valores: ValoresMonetariosPasso2) {
     return {
       leadId: lead?.id,
       // Identificação
@@ -218,9 +229,9 @@ export function MatriculaFormulario({
       origemNivel,
       dataAvaliacaoNivel,
       diaVencimento,
-      taxaValor: parseMoeda(taxaValor) ?? 0,
-      mensalidadeValor: parseMoeda(mensalidadeValor) ?? 0,
-      certificadoValor: parseMoeda(certificadoValor) ?? 0,
+      taxaValor: valores.taxa,
+      mensalidadeValor: valores.mensalidade,
+      certificadoValor: valores.certificado,
       mesesPlano,
       cobertura: { referencia, inicio: inicioCobertura },
       primeiroVencimento,
@@ -248,13 +259,17 @@ export function MatriculaFormulario({
   }
 
   // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
-  // certificado GRATUITOS registrados na matrícula, silencioso — validado antes de montar
-  // o payload, não dentro dele.
-  function validarPasso2(): string | null {
-    if (parseMoeda(taxaValor) === null) return "Informe a taxa de matrícula, com no máximo duas casas decimais.";
-    if (parseMoeda(mensalidadeValor) === null) return "Informe a mensalidade, com no máximo duas casas decimais.";
-    if (certificadoValor !== "" && parseMoeda(certificadoValor) === null) return "Informe o valor do certificado, com no máximo duas casas decimais.";
-    return null;
+  // certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
+  // devolve os números prontos — montarInput não reparseia (e não tem fallback ?? 0
+  // interno pra ninguém reusar por engano sem validar antes).
+  function validarPasso2(): { erro: string } | ValoresMonetariosPasso2 {
+    const taxa = parseMoeda(taxaValor);
+    if (taxa === null) return { erro: "Informe a taxa de matrícula, com no máximo duas casas decimais." };
+    const mensalidade = parseMoeda(mensalidadeValor);
+    if (mensalidade === null) return { erro: "Informe a mensalidade, com no máximo duas casas decimais." };
+    const certificado = certificadoValor === "" ? 0 : parseMoeda(certificadoValor);
+    if (certificado === null) return { erro: "Informe o valor do certificado, com no máximo duas casas decimais." };
+    return { taxa, mensalidade, certificado };
   }
 
   function irParaPasso(p: 1 | 2) {
@@ -275,13 +290,13 @@ export function MatriculaFormulario({
       setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
       return;
     }
-    const erroPasso2 = validarPasso2();
-    if (erroPasso2) {
-      setErro(erroPasso2);
+    const passo2 = validarPasso2();
+    if ("erro" in passo2) {
+      setErro(passo2.erro);
       return;
     }
     setSalvando(true);
-    const res = await criarMatricula(montarInput(referenciaCobertura));
+    const res = await criarMatricula(montarInput(referenciaCobertura, passo2));
     if (!res.ok) {
       setErro(res.erro);
       setSalvando(false);
