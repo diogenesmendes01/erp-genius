@@ -69,6 +69,32 @@ function ordemMoeda(moeda: string): number {
 }
 
 /**
+ * Interpreta o texto digitado num campo de dinheiro. Aceita SOMENTE um separador decimal —
+ * vírgula OU ponto, nunca os dois juntos — e rejeita qualquer outra coisa (incluindo separador
+ * de milhar): "1.234" não vira 1234 nem 1,234 por adivinhação, é considerado inválido. É a
+ * mesma regra que já protegia RecebimentoDestinadoForm.tsx (antiga `centavos()` local,
+ * promovida pra cá — ver docs/42-auditoria-frontend-ux.md, achado "dinheiro em
+ * type=number step=0.01"), agora compartilhada por todo `CampoMoeda`.
+ * Devolve o valor na unidade principal da moeda (não em centavos) ou `null` se o texto
+ * estiver vazio ou não puder ser interpretado com segurança — a chamadora decide a mensagem.
+ */
+export function parseMoeda(texto: string): number | null {
+  const normalizado = texto.trim().replace(",", ".");
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalizado)) return null;
+  return Number(normalizado);
+}
+
+/**
+ * Formata um valor já válido para reexibição no campo, sempre com vírgula decimal e sem
+ * separador de milhar (o que `parseMoeda` entende de volta, sem ambiguidade). Uso típico:
+ * normalizar o texto do campo ao perder o foco (`onBlur`), depois que o operador termina de
+ * digitar — nunca a cada tecla, para não brigar com o cursor.
+ */
+export function formatarMoedaParaCampo(valor: number): string {
+  return valor.toFixed(2).replace(".", ",");
+}
+
+/**
  * Soma itens {moeda, valor} agrupando por moeda — NUNCA mistura moedas diferentes num
  * total só. Devolve uma linha por moeda, ordenada (USD primeiro, depois alfabética).
  */

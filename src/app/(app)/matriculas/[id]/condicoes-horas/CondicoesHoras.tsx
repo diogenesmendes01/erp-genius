@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { consultarCondicoesHoras, prepararCondicoesHoras, decidirCondicoesHoras } from "@/server/matricula/condicoes-horas";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { parseMoeda } from "@/lib/dinheiro";
+import { CampoMoeda } from "@/components/CampoMoeda";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
+  const [valorHora, setValorHora] = useState("");
   const classe = "block w-full rounded border p-2";
   const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; };
   const vigencia = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, d.fuso ?? "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; referência contratual preservada)`; };
@@ -16,11 +19,13 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
     {mensagem && <p role="status">{mensagem}</p>}
     {d.podePreparar && d.documentoId && d.fuso && <form className="space-y-3 rounded border p-4" onSubmit={event => {
       event.preventDefault(); const f = new FormData(event.currentTarget);
+      const valorHoraNumero = parseMoeda(valorHora);
+      if (valorHoraNumero === null) { setMensagem("Informe o preço por hora, com no máximo duas casas decimais."); return; }
       iniciar(async () => {
         setMensagem("");
         try {
           const r = await prepararCondicoesHoras({ matriculaId: d.matriculaId, documentoId: d.documentoId!, motivo: String(f.get("motivo")), regras: {
-            moeda: d.moeda, unidadeMinutos: 60, valorHora: String(f.get("valor")), antecedenciaCancelamentoMinutos: Number(f.get("antecedencia")),
+            moeda: d.moeda, unidadeMinutos: 60, valorHora: valorHoraNumero.toFixed(2), antecedenciaCancelamentoMinutos: Number(f.get("antecedencia")),
             vigenteDesde: instanteDaGrade(String(f.get("data")), String(f.get("hora")), d.fuso!).toISOString(),
             clausulaPreco: String(f.get("preco")), clausulaCancelamento: String(f.get("cancelamento")),
           } });
@@ -29,7 +34,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
       });
     }}>
       <fieldset disabled={ocupado} className="space-y-3"><legend>Nova transcrição do contrato confirmado</legend>
-        <label className="block">Preço por hora de 60 minutos ({d.moeda})<input className={classe} name="valor" type="number" min="0" max="9999999999.99" step="0.01" required /></label>
+        <label className="block">Preço por hora de 60 minutos ({d.moeda})<CampoMoeda className={classe} value={valorHora} onChange={setValorHora} moeda={d.moeda} required /></label>
         <label className="block">Antecedência de cancelamento, em minutos<input className={classe} name="antecedencia" type="number" min="0" max="5256000" step="1" required /></label>
         <p>Início de vigência conforme contrato · horário de {d.fuso}</p>
         <label className="block">Data<input className={classe} name="data" type="date" required /></label>

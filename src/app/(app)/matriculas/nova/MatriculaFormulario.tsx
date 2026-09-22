@@ -4,10 +4,11 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { TipoCobranca, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
 import { GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { PAISES_ISO } from "@/lib/paises-iso";
 import { criarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -144,8 +145,8 @@ export function MatriculaFormulario({
   const refTaxa = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MATRICULA);
   const refMens = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MENSALIDADE);
   const semTabela = !refTaxa || !refMens;
-  const taxaManual = !!refTaxa && taxaValor !== "" && Number(taxaValor) !== refTaxa.valor;
-  const mensManual = !!refMens && mensalidadeValor !== "" && Number(mensalidadeValor) !== refMens.valor;
+  const taxaManual = !!refTaxa && taxaValor !== "" && parseMoeda(taxaValor) !== refTaxa.valor;
+  const mensManual = !!refMens && mensalidadeValor !== "" && parseMoeda(mensalidadeValor) !== refMens.valor;
 
   function prefillPrecos(pid: string, prodId: string) {
     const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
@@ -217,9 +218,9 @@ export function MatriculaFormulario({
       origemNivel,
       dataAvaliacaoNivel,
       diaVencimento,
-      taxaValor: taxaValor === "" ? 0 : Number(taxaValor),
-      mensalidadeValor: mensalidadeValor === "" ? 0 : Number(mensalidadeValor),
-      certificadoValor: certificadoValor === "" ? 0 : Number(certificadoValor),
+      taxaValor: parseMoeda(taxaValor) ?? 0,
+      mensalidadeValor: parseMoeda(mensalidadeValor) ?? 0,
+      certificadoValor: parseMoeda(certificadoValor) ?? 0,
       mesesPlano,
       cobertura: { referencia, inicio: inicioCobertura },
       primeiroVencimento,
@@ -572,12 +573,12 @@ export function MatriculaFormulario({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
-                <input type="number" step="0.01" className={inputCls} value={taxaValor} onChange={(e) => setTaxa(e.target.value)} />
+                <CampoMoeda value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Mensalidade</label>
-                <input type="number" step="0.01" className={inputCls} value={mensalidadeValor} onChange={(e) => setMens(e.target.value)} />
+                <CampoMoeda value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
               </div>
               <div>
@@ -617,7 +618,7 @@ export function MatriculaFormulario({
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Certificado (só Costa Rica)</label>
-                <input type="number" step="0.01" className={inputCls} value={certificadoValor} onChange={(e) => setCert(e.target.value)} placeholder="0" />
+                <CampoMoeda value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />
               </div>
             </div>
             {semTabela && (
@@ -635,7 +636,7 @@ export function MatriculaFormulario({
               </div>
             )}
             <p className="mt-3 text-sm text-gray-600">
-              Taxa de matrícula: <strong>{formatarMoeda(Number(taxaValor || 0), moeda)}</strong>. Mensalidade: {formatarMoeda(Number(mensalidadeValor || 0), moeda)}.
+              Taxa de matrícula: <strong>{formatarMoeda(parseMoeda(taxaValor) ?? 0, moeda)}</strong>. Mensalidade: {formatarMoeda(parseMoeda(mensalidadeValor) ?? 0, moeda)}.
             </p>
           </section>
 

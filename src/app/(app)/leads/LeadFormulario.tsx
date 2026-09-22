@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Segmento, Temperatura } from "@prisma/client";
 import { SEGMENTO_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
 import { LeadSchema, type LeadInput } from "@/server/comercial/schema";
 import { criarLead, editarLead } from "@/server/comercial/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -46,6 +47,7 @@ export function LeadFormulario({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LeadInput>({
@@ -148,7 +150,13 @@ export function LeadFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Matrícula prevista</label>
-          <input type="number" step="0.01" {...register("valorPrevisto")} className={inputCls} />
+          <Controller
+            control={control}
+            name="valorPrevisto"
+            render={({ field }) => (
+              <CampoMoeda value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+            )}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Plano previsto</label>
@@ -156,7 +164,13 @@ export function LeadFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600">Comissão prevista</label>
-          <input type="number" step="0.01" {...register("comissaoPrevista")} className={inputCls} />
+          <Controller
+            control={control}
+            name="comissaoPrevista"
+            render={({ field }) => (
+              <CampoMoeda value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+            )}
+          />
         </div>
       </div>
 
