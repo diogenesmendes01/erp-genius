@@ -92,7 +92,7 @@ export function PrecosPainel({
         {!aberto && (
           <button
             onClick={() => setAberto(true)}
-            className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
           >
             <IconPlus className="h-4 w-4" /> Novo preço
           </button>
@@ -159,7 +159,7 @@ export function PrecosPainel({
             <button
               onClick={salvar}
               disabled={salvando}
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
             >
               {salvando ? "Salvando…" : "Salvar preço"}
             </button>

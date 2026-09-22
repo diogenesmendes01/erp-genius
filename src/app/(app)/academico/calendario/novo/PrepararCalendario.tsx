@@ -42,7 +42,7 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
       <button type="button" disabled={periodos.length >= 10000} onClick={() => setPeriodos((anteriores) => [...anteriores, { id: crypto.randomUUID(), nome: "", tipo: "FERIADO", inicio: "", fim: "" }])} className="rounded border px-3 py-2">Adicionar período</button>
       <p className="text-sm">As datas inicial e final estão incluídas. Remover um período altera apenas esta proposta; versões anteriores permanecem preservadas.</p>
       <label className="block">Motivo da nova versão<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className={campo} /></label>
-      <button disabled={motivo.trim().length < 5} className="rounded bg-brand-700 px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Preparando…" : "Preparar calendário para revisão"}</button>
+      <button disabled={motivo.trim().length < 5} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Preparando…" : "Preparar calendário para revisão"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;
