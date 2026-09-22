@@ -44,8 +44,9 @@
 | Neutro (chips) | `--neutral-muted` | `#EFEEE9` | `#2F2F2C` |
 | Texto primário | `--text-primary` | `#1A1A19` | `#ECECEA` |
 | Texto secundário | `--text-secondary` | `#5F5E5A` | `#A7A6A1` |
-| Texto terciário | `--text-terciary` | `#88877F` | `#6E6D68` |
-| Borda | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
+| Texto terciário | `--text-terciary` | `#6D6C64` | `#979692` |
+| Borda (card) | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
+| Borda (controle — input/select, `gray-300`) | `--border-control` | `rgba(0,0,0,.42)` | `rgba(255,255,255,.34)` |
 
 ## Tokens — Semânticos (fundo / texto — repare a inversão)
 | Cor | Token bg / text | Claro (bg / text) | Escuro (bg / text) |
@@ -56,14 +57,20 @@
 | Perigo/atraso (vermelho) | `--danger-bg` / `--danger-text` | `#FCEBEB` / `#791F1F` | `#791F1F` / `#F7C1C1` |
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
-> (texto branco nos dois modos) — distintas dos badges. Marca: `--brand` (botão primário),
-> `--brand-text` (links), `--brand-bg` (estado ativo).
+> (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão
+> primário, **não inverte** no dark), `--brand` (accent de checkbox/radio **e** fundo de
+> indicador de estado ativo — aba selecionada, passo concluído do wizard, chip de dia da
+> semana marcado; nesses casos o fundo é `bg-brand-600`, nunca `bg-brand-solid`, porque não é
+> uma ação — é feedback de seleção, e clarear no dark é aceitável ali), `--brand-text` /
+> `text-brand-700` (links, só texto — nunca fundo), `--brand-bg` (fundo claro de hover/estado
+> ativo em itens de menu).
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-600 text-white`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-white hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
+- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-600 text-white` — é seleção, não ação; não promova para `bg-brand-solid`.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.

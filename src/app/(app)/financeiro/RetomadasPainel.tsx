@@ -14,7 +14,7 @@ type Parcela = Contexto["parcelas"][number];
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = "rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50";
-const principal = "rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50";
+const principal = "rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50";
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 

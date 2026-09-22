@@ -8,7 +8,7 @@ import { listarAlunosParaChamada } from "@/server/diario/chamada";
 import type { AulaDiarioView, TurmaDiario } from "@/server/diario/consultas";
 
 const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
-const botao = "rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50";
+const botao = "rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white disabled:opacity-50";
 function dataLocal(iso = new Date().toISOString()) {
   const d = new Date(iso); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);

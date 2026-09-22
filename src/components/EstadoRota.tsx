@@ -13,7 +13,7 @@ type Props = {
 
 export function EstadoRota({ icone: Icone, titulo, texto, acao }: Props) {
   const classe =
-    "mt-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700";
+    "mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95";
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">

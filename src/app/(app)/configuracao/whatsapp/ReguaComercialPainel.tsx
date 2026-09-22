@@ -15,7 +15,7 @@ import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
 interface DegrauForm {
@@ -266,7 +266,7 @@ function ReguaComercialPainel({
                   onChange={(e) => buscarLeadsPiloto(e.target.value)}
                 />
                 {opcoesPiloto.length > 0 && (
-                  <ul className="absolute z-10 mt-1 w-64 rounded-md border border-gray-200 bg-surface shadow">
+                  <ul className="absolute z-10 mt-1 w-64 rounded-md border border-gray-200 bg-surface">
                     {opcoesPiloto.map((l) => (
                       <li key={l.id}>
                         <button

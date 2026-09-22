@@ -64,7 +64,7 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
         <label>Antecedência para cancelamento (minutos)<input className={campo} name={`${c.chave}-antecedencia`} type="number" min={0} max={2147483647} step={1} required defaultValue={c.valor?.antecedenciaCancelamentoMinutos} /></label>
       </fieldset>)}
       <label className="block">Motivo da proposta<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <button className="rounded bg-brand-700 px-4 py-2 text-white" disabled={ocupado}>{ocupado ? "Salvando…" : "Enviar proposta para conferência"}</button>
+      <button className="rounded bg-brand-solid px-4 py-2 text-white" disabled={ocupado}>{ocupado ? "Salvando…" : "Enviar proposta para conferência"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;

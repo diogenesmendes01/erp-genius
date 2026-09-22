@@ -11,7 +11,7 @@ import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/a
 // estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
 // (cron só em driver oficial); prontidão S15 validada no servidor ao armar.
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
@@ -103,7 +103,7 @@ export function PoliticaPainel({
           className={
             "rounded-md px-3 py-1.5 text-sm font-medium " +
             (form.killSwitch
-              ? "bg-danger text-white hover:opacity-90"
+              ? "bg-danger text-white hover:brightness-95"
               : "border border-red-300 text-red-700 hover:bg-red-50")
           }
         >

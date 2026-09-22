@@ -16,7 +16,7 @@ export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | nu
     if (!valido(fusoExibicao)) { setErro("Escolha um fuso IANA válido, como America/Costa_Rica."); return; }
     iniciar(async () => { try { await salvarPreferenciaFusoPortalAluno({ fusoExibicao }); setFeito("Preferência salva."); router.refresh(); } catch { setErro("Não foi possível salvar a preferência. Confira sua sessão e o fuso informado."); } });
   }
-  return <form className="mt-5 space-y-3 rounded border bg-white p-4" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
+  return <form className="mt-5 space-y-3 rounded border bg-surface p-4" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
     <label className="block text-sm">Fuso de exibição<input name="fusoExibicao" value={fuso} disabled={ocupado} onChange={(e) => setFuso(e.target.value)} list="fusos-portal" placeholder="Usar fuso de origem" className="mt-1 block w-full rounded border p-2" /></label>
     <datalist id="fusos-portal"><option value="">Usar fuso de origem do encontro</option>{destaques.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}{fusos.filter((f) => !destaques.some(([valor]) => valor === f)).map((f) => <option key={f} value={f} />)}</datalist>
     <p className="text-sm text-gray-600">Pesquise pelo local ou identificador IANA. Sem preferência, os horários continuam no fuso de origem.</p><button disabled={ocupado} className="rounded border px-3 py-2 text-sm">{ocupado ? "Salvando…" : "Salvar"}</button>{feito && <p role="status">{feito}</p>}{erro && <p role="alert" className="text-red-700">{erro}</p>}

@@ -76,7 +76,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
         <Pendencias itens={m.pendencias} />
         {m.periodos.map((p) => <p key={p.cobrancaId} className="text-sm">Nova cobertura: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)} · vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p>)}
       </div>)}
-      <button type="button" disabled={ocupado} className="rounded bg-brand-600 px-3 py-2 text-white disabled:opacity-50" onClick={enviar}>Registrar proposta para decisão independente</button>
+      <button type="button" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" onClick={enviar}>Registrar proposta para decisão independente</button>
     </div>}
   </section>;
 }

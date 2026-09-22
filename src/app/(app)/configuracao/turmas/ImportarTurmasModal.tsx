@@ -9,7 +9,7 @@ interface ResultadoImport {
   erros: { linha: number; motivo: string }[];
 }
 
-const btnPri = "rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50";
 
 /** Modal de importação de turmas em lote (XLSX) — exibido só para administrador (doc 12). */
@@ -67,7 +67,7 @@ export function ImportarTurmasModal() {
           onClick={fechar}
         >
           <div
-            className="w-full max-w-lg rounded-lg border border-gray-200 bg-surface p-5 shadow-xl"
+            className="w-full max-w-lg rounded-lg border border-gray-200 bg-surface p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-1 text-lg font-medium">Importar turmas por lote</h2>
@@ -90,7 +90,7 @@ export function ImportarTurmasModal() {
                 ref={fileRef}
                 type="file"
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-700"
+                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
               />
             </div>
 

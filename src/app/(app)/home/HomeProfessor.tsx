@@ -102,7 +102,7 @@ export function HomeProfessor({
                   <button
                     onClick={() => checkin(e.id, true)}
                     disabled={pendente === e.id + "true"}
-                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95 disabled:opacity-60"
                   >
                     Compareceu
                   </button>

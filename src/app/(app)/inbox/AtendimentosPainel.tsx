@@ -32,7 +32,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
           {opcoes.numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>
       </label>
-      <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-600 px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
+      <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
       {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
@@ -56,7 +56,7 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  return <form className="space-y-2 rounded border border-amber-200 bg-white p-3 text-sm" onSubmit={async (e) => {
+  return <form className="space-y-2 rounded border border-amber-200 bg-surface p-3 text-sm" onSubmit={async (e) => {
     e.preventDefault(); setOcupado(true); setErro(null);
     try {
       const r = await classificarMensagemWhatsApp({ mensagemId: item.id, atendimentoId, motivo });
@@ -86,7 +86,7 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
   const [evidencia, setEvidencia] = useState("");
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  return <form className="space-y-2 rounded border bg-white p-3 text-sm" onSubmit={async (e) => {
+  return <form className="space-y-2 rounded border bg-surface p-3 text-sm" onSubmit={async (e) => {
     e.preventDefault(); setOcupado(true);
     try {
       const r = await revisarFalhaEnvio({ id: item.id, decisao, evidencia });

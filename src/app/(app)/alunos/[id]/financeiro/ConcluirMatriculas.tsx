@@ -15,7 +15,7 @@ export function ConcluirMatriculas({ matriculas }: { matriculas: { id: string; n
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
     {matriculas.map((m) => <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
       <span>{m.nome}</span>
-      <button disabled={ocupado !== null} className="rounded bg-brand-600 px-3 py-2 text-white disabled:opacity-50" onClick={async () => {
+      <button disabled={ocupado !== null} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" onClick={async () => {
         setOcupado(m.id); setErro(null);
         try {
           const resultado = await concluirMatricula(m.id);

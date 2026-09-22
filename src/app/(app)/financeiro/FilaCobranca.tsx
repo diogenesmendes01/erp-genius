@@ -16,7 +16,7 @@ import { PagamentoModal } from "@/components/PagamentoModal";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
 
 function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
