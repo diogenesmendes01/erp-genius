@@ -75,7 +75,7 @@ export function AplicarVinculoMigracao(props: Props) {
     }
   }
 
-  return <section className="mt-3 space-y-3 rounded border border-emerald-300 bg-emerald-50 p-3 text-xs">
+  return <section className="mt-3 space-y-3 rounded border border-green-200 bg-green-50 p-3 text-xs">
     <div><strong>Aplicar vínculo migrado</strong><p>Usa o ensaio vigente da fotografia conferida; não gera cobrança, pagamento ou aceite.</p></div>
     <details><summary>Fonte e destino conferidos</summary><pre className="mt-2 overflow-auto rounded bg-surface p-2">{JSON.stringify(props.dadosOrigem, null, 2)}</pre><p>Origem: {props.origem} · Produto: {props.produtoDestino ?? "ausente"} · Turma: {props.turmaDestino ?? "ausente"} · Situação: {props.statusDestino ?? "ausente"}</p></details>
     <label>Ensaio vigente pronto<select className="ml-2 rounded border p-1" value={ensaioId} onChange={(event) => setEnsaioId(event.target.value)}><option value="">Selecione</option>{ensaioPermitido && exibicaoEnsaio && <option value={ensaioPermitido.id}>{exibicaoEnsaio.texto} (horário exibido em {exibicaoEnsaio.fuso}; origem UTC) · {ensaioPermitido.ensaiadoPor.nome}</option>}</select></label>

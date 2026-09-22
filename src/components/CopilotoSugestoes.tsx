@@ -98,18 +98,18 @@ export function CopilotoSugestoes({
     <section
       className={
         compacto
-          ? "border-b border-violet-100 bg-violet-50/60 px-4 py-2"
-          : "rounded-lg border border-violet-200 bg-violet-50/60 p-4"
+          ? "border-b border-ai-100 bg-ai-100/60 px-4 py-2"
+          : "rounded-lg border border-ai-200 bg-ai-100/60 p-4"
       }
       aria-label="Sugestões do copiloto"
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-ai-700">
           <IconSparkles className="h-3.5 w-3.5" />
           Copiloto (sugestões — nada é aplicado sem você)
         </div>
         <button
-          className={btnMini + " border border-violet-300 text-violet-700 hover:bg-violet-100"}
+          className={btnMini + " border border-ai-300 text-ai-700 hover:bg-ai-100"}
           disabled={ocupado === "gerar" || !copilotoAtivo}
           title={copilotoAtivo ? "Analisar a conversa agora" : "Copiloto desligado na configuração"}
           onClick={() => run("gerar", gerarSugestoesLead(leadId))}
@@ -121,16 +121,16 @@ export function CopilotoSugestoes({
       {erro && <p className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-700">{erro}</p>}
 
       {sugestoes.length === 0 ? (
-        <p className="mt-1 text-xs text-violet-600/80">Sem sugestões pendentes.</p>
+        <p className="mt-1 text-xs text-ai-600/80">Sem sugestões pendentes.</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {sugestoes.map((s) => (
-            <li key={s.id} className="rounded-md border border-violet-200 bg-surface px-2.5 py-2 text-xs">
+            <li key={s.id} className="rounded-md border border-ai-200 bg-surface px-2.5 py-2 text-xs">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
                   <span className="font-medium text-gray-800">{TIPO_LABEL[s.tipo] ?? s.tipo}</span>
                   {s.tipo !== "RESUMO" && (
-                    <span className="ml-1.5 rounded-full bg-violet-100 px-1.5 py-0.5 text-violet-700">
+                    <span className="ml-1.5 rounded-full bg-ai-100 px-1.5 py-0.5 text-ai-700">
                       {valorDaSugestao(s)}
                     </span>
                   )}
@@ -184,7 +184,7 @@ export function CopilotoSugestoes({
                     <label key={campo} className="flex items-center gap-2">
                       <span className="w-24 shrink-0 text-gray-500">{label}</span>
                       <input
-                        className="w-full rounded border border-gray-300 px-2 py-0.5 text-xs outline-none focus:border-violet-400"
+                        className="w-full rounded border border-gray-300 px-2 py-0.5 text-xs outline-none focus:border-ai-400"
                         value={edicao[campo] ?? ""}
                         onChange={(e) => setEdicao((v) => ({ ...v, [campo]: e.target.value }))}
                       />
@@ -192,7 +192,7 @@ export function CopilotoSugestoes({
                   ))}
                   <div className="flex gap-1.5 pt-0.5">
                     <button
-                      className={btnMini + " bg-violet-600 text-white hover:bg-violet-700"}
+                      className={btnMini + " bg-ai-solid text-white hover:brightness-95"}
                       disabled={ocupado === s.id}
                       onClick={() => salvarCorrecao(s)}
                     >

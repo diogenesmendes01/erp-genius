@@ -55,6 +55,11 @@
 | Sucesso (verde) | `--success-bg` / `--success-text` | `#EAF3DE` / `#27500A` | `#27500A` / `#C0DD97` |
 | Aviso (âmbar) | `--warning-bg` / `--warning-text` | `#FAEEDA` / `#633806` | `#633806` / `#FAC775` |
 | Perigo/atraso (vermelho) | `--danger-bg` / `--danger-text` | `#FCEBEB` / `#791F1F` | `#791F1F` / `#F7C1C1` |
+| IA (roxo — sugestões do copiloto, doc 27 C3) | `--ai-bg` / `--ai-text` | `#F3EEFC` / `#5B21B6` | `#2F2350` / `#C4B5FD` |
+
+> **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
+> IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6D28D9`, não
+> inverte) é o botão de aceitar/aplicar sugestão — mesma lógica de `--brand-solid`.
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
 > (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão
@@ -74,3 +79,10 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 - **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-600 text-white` — é seleção, não ação; não promova para `bg-brand-solid`.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.
+- **Só use as shades mapeadas no `tailwind.config.ts`** (`gray`, `brand`/`brand-solid`, `green`,
+  `red`, `amber`, `blue`, `indigo`, `orange`, `ai`/`ai-solid`, `danger`, `success`). Qualquer
+  outra cor (`rose`, `emerald`, `sky`, `slate`, `violet`, `purple`, `cyan`, `teal`, `yellow`,
+  `lime`, `fuchsia`, `pink`, `zinc`, `neutral`, `stone`, ou uma shade fora das listadas) cai na
+  paleta padrão do Tailwind, que **não inverte** no dark. Dobre pro equivalente semântico:
+  `rose`→`red`, `emerald`→`green`, `sky`→`blue`, `slate`→`gray`. Se nenhum couber, é sinal de
+  precisar um token novo (como `--ai-*`) — não invente shade solta.
