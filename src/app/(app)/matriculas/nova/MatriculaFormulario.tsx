@@ -477,7 +477,7 @@ export function MatriculaFormulario({
             <button
               type="button"
               onClick={() => irParaPasso(2)}
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95"
             >
               Próximo: curso e contrato →
             </button>

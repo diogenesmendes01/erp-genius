@@ -138,7 +138,7 @@ export function CopilotoSugestoes({
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
-                    className={btnMini + " bg-success text-white hover:opacity-90"}
+                    className={btnMini + " bg-success text-white hover:brightness-95"}
                     disabled={ocupado === s.id}
                     onClick={() => run(s.id, aceitarSugestao(s.id))}
                   >

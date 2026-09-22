@@ -74,7 +74,7 @@ export function Sidebar({
   const itens = navParaPapeis(papeis);
 
   return (
-    <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">
+    <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">
       <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
         <IconSchool className="h-5 w-5 text-brand-600" />
         Genius
@@ -98,7 +98,7 @@ export function Sidebar({
               <Icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.href === "/inbox" && naoLidasInbox > 0 && (
-                <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
                   {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
                 </span>
               )}

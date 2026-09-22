@@ -25,7 +25,7 @@ export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibic
       <label className="grid gap-1 text-sm">Início<input name="inicio" type="datetime-local" required className={estilo} /></label>
       <label className="grid gap-1 text-sm">Fim<input name="fim" type="datetime-local" required className={estilo} /></label>
       <label className="grid gap-1 text-sm md:col-span-2">Motivo<input name="motivo" required minLength={5} maxLength={1000} className={estilo} /></label>
-      <button disabled={ocupado} className="rounded bg-brand-600 px-4 py-2 text-sm text-white disabled:opacity-50">Conceder cobertura</button>
+      <button disabled={ocupado} className="rounded bg-brand-solid px-4 py-2 text-sm text-white disabled:opacity-50">Conceder cobertura</button>
     </form>
     {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
     <ul className="space-y-2">{coberturas.map((c) => { const inicio = formatarInstanteExibicao(c.inicio, preferenciaFusoExibicao, "UTC"); const fim = formatarInstanteExibicao(c.fim, preferenciaFusoExibicao, "UTC"); return <li key={c.id} className="rounded border p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{c.substituto} atende a carteira de {c.titular}</strong>{!c.revogada && <button disabled={ocupado} onClick={() => revogar(c.id)} className="text-brand-700">Revogar</button>}</div><p>{inicio.texto} até {fim.texto} (horário exibido em {inicio.fuso}; origem UTC){c.revogada ? " · Revogada" : ""}</p><p className="text-gray-500">{c.motivo}</p></li>; })}</ul>

@@ -84,7 +84,7 @@ interface PaisOpt {
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50";
 
 export function FichaAluno({
@@ -437,7 +437,7 @@ export function FichaAluno({
           </select>
           <input className={inputCls + " mb-3"} placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
           <div className="flex gap-2">
-            <button className={btnPri + " bg-danger hover:opacity-90"} onClick={() => run(encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>Confirmar encerramento</button>
+            <button className={btnPri + " bg-danger hover:brightness-95"} onClick={() => run(encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>Confirmar encerramento</button>
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
           </div>
         </div>

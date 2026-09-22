@@ -268,7 +268,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
               onChange={(e) => setObs(e.target.value)}
             />
             <div className="flex gap-2">
-              <button onClick={confirmarPerda} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+              <button onClick={confirmarPerda} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95">
                 Confirmar perda
               </button>
               <button onClick={() => setPerda(null)} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
