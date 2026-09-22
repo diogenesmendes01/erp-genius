@@ -247,6 +247,16 @@ export function MatriculaFormulario({
     return null;
   }
 
+  // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
+  // certificado GRATUITOS registrados na matrícula, silencioso — validado antes de montar
+  // o payload, não dentro dele.
+  function validarPasso2(): string | null {
+    if (parseMoeda(taxaValor) === null) return "Informe a taxa de matrícula, com no máximo duas casas decimais.";
+    if (parseMoeda(mensalidadeValor) === null) return "Informe a mensalidade, com no máximo duas casas decimais.";
+    if (certificadoValor !== "" && parseMoeda(certificadoValor) === null) return "Informe o valor do certificado, com no máximo duas casas decimais.";
+    return null;
+  }
+
   function irParaPasso(p: 1 | 2) {
     if (p === 2) {
       const e = validarPasso1();
@@ -263,6 +273,11 @@ export function MatriculaFormulario({
     setErro(null);
     if (!referenciaCobertura || !inicioCobertura || !primeiroVencimento) {
       setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
+      return;
+    }
+    const erroPasso2 = validarPasso2();
+    if (erroPasso2) {
+      setErro(erroPasso2);
       return;
     }
     setSalvando(true);

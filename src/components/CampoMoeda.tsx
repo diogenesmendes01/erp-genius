@@ -50,7 +50,7 @@ export function CampoMoeda({
       {moeda && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500"
+          className="pointer-events-none absolute left-3 top-1/2 max-w-[2.5rem] -translate-y-1/2 truncate text-sm text-gray-500"
         >
           {simboloMoeda(moeda)}
         </span>
@@ -67,7 +67,9 @@ export function CampoMoeda({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={normalizarAoSair}
-        className={moeda ? className + " pl-9" : className}
+        // pl-14 (não pl-9): símbolos de 4 caracteres existem de verdade neste app
+        // (COL$, CLP$) e colidiam com o texto digitado no espaço mais estreito.
+        className={moeda ? className + " pl-14" : className}
       />
     </div>
   );

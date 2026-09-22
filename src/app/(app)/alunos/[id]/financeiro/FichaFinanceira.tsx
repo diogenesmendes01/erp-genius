@@ -323,11 +323,18 @@ function RenegociarModal({
   const desconto = cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
 
   async function salvar() {
+    // Nunca ?? 0 aqui: texto inválido no valor viraria "novo valor: zero" registrado,
+    // silencioso — o mesmo tipo de erro que o CampoMoeda existe pra evitar.
+    const valorParaNumero = tipo === TipoAjuste.PERDAO ? 0 : parseMoeda(valorPara);
+    if (valorParaNumero === null) {
+      onErro("Informe o novo valor, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const r = await ajustarCobranca({
       cobrancaId: cobranca.id,
       tipo,
-      valorPara: tipo === TipoAjuste.PERDAO ? 0 : parseMoeda(valorPara) ?? 0,
+      valorPara: valorParaNumero,
       vigencia,
       novoVencimento: novoVenc,
       motivo,
