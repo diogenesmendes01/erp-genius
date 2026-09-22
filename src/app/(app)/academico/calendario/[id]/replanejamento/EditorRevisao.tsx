@@ -45,7 +45,7 @@ export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { ini
         </fieldset>)}
         <div className="flex gap-3">
           <button type="button" disabled={ajustes.length >= opcoes.length} className="rounded border px-3 py-2" onClick={() => { setAjustes((v) => [...v, { encontroId: "", data: "", horario: "", motivo: "" }]); setAlterado(true); }}>Adicionar ajuste</button>
-          <button className="rounded bg-brand-700 px-3 py-2 text-white">{ocupado ? "Conferindo…" : "Conferir datas e conflitos"}</button>
+          <button className="rounded bg-brand-solid px-3 py-2 text-white">{ocupado ? "Conferindo…" : "Conferir datas e conflitos"}</button>
         </div>
       </fieldset>
       {erro && <p role="alert">{erro}</p>}

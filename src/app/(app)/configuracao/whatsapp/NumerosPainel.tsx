@@ -9,7 +9,7 @@ import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
@@ -296,7 +296,7 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
         <p className="mt-1 text-xs text-gray-500">
           No celular do número: WhatsApp → aparelhos conectados → conectar aparelho.
         </p>
-        <div className="mt-3 flex min-h-64 items-center justify-center rounded-md border border-gray-200 bg-white p-3">
+        <div className="mt-3 flex min-h-64 items-center justify-center rounded-md border border-gray-200 bg-surface p-3">
           {estado === "CONECTADO" ? (
             <p className="text-sm text-green-700">Conectado! O número já envia e recebe por aqui.</p>
           ) : qr ? (

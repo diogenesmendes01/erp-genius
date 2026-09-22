@@ -58,13 +58,13 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     }, "Proposta registrada para decisão independente.");
   };
   return <section className="space-y-5">
-    <section className="rounded border bg-white p-4 text-sm" aria-label="Fontes atuais da reposição">
+    <section className="rounded border bg-surface p-4 text-sm" aria-label="Fontes atuais da reposição">
       <h2 className="font-medium">Fonte da reposição</h2>
       <p className="mt-1">Material: versão {contexto.fonteMaterialAtual.versao}, revisão fixa {contexto.fonteMaterialAtual.revisao}.</p>
       <p>Publicação corrigida da aula original: versão {contexto.fontePublicacaoAtual.versao}, revisão fixa {contexto.fontePublicacaoAtual.revisao}.</p>
       <p className="mt-1 text-gray-700">O material está {contexto.materialDisponivel ? "disponível" : "indisponível"}. A troca só cria outra versão da fonte; não altera disponibilização, entregas, avaliações ou prazos.</p>
     </section>
-    <form className="space-y-3 rounded border bg-white p-4" onSubmit={propor}>
+    <form className="space-y-3 rounded border bg-surface p-4" onSubmit={propor}>
       <h2 className="font-medium">Propor adoção da publicação corrigida</h2>
       <p className="text-sm text-gray-700">A fonte publicada acima será fotografada pelo servidor. Esta tela não aceita identificador de arquivo, revisão ou URL.</p>
       {contexto.jaAdotaPublicacaoAtual ? <p role="status">O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
@@ -72,7 +72,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
       <h2 className="font-medium">Histórico antes e depois</h2>
-      {propostas.length === 0 ? <p className="text-sm">Nenhuma troca de fonte foi proposta para esta reposição.</p> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-white p-4 text-sm">
+      {propostas.length === 0 ? <p className="text-sm">Nenhuma troca de fonte foi proposta para esta reposição.</p> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-surface p-4 text-sm">
         <p className="font-medium">Material v{proposta.fonteMaterialAnterior.versao} ({proposta.fonteMaterialAnterior.driveRevisionId}) → publicação v{proposta.fontePublicacao.versao} ({proposta.fontePublicacao.driveRevisionId})</p>
         <p className="mt-1 whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         <p className="mt-1 text-gray-600">Preparada por {proposta.preparador.nome ?? "Usuário"} em {formatarInstanteExibicao(proposta.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}).</p>

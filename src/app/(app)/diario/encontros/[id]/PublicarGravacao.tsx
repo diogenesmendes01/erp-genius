@@ -39,7 +39,7 @@ export function PublicarGravacao({ encontroId }: { encontroId: string }) {
         <input value={arquivoOficialId} onChange={(evento) => setArquivoOficialId(evento.target.value)} disabled={ocupado} required minLength={3} maxLength={500} pattern="[A-Za-z0-9_-]+" className="mt-1 block w-full rounded border p-2" />
       </label>
       <p className="text-sm text-gray-600">Em um link como drive.google.com/file/d/1AbC_dEfG-23/view, informe somente <code>1AbC_dEfG-23</code>.</p>
-      <button type="submit" disabled={ocupado} className="rounded bg-brand-700 px-3 py-2 text-sm text-white disabled:opacity-50">{ocupado ? "Publicando…" : "Publicar gravação e concluir aula"}</button>
+      <button type="submit" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">{ocupado ? "Publicando…" : "Publicar gravação e concluir aula"}</button>
     </form>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </section>;

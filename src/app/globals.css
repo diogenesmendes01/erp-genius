@@ -15,15 +15,24 @@
   --surface-muted: #f4f4f0;
   --neutral-muted: #efeee9;
   --border: rgba(0, 0, 0, 0.1);
+  /* Borda de controle (input/select — border-gray-300): mais escura que --border de card,
+     para o contorno do campo ficar perceptível (ver docs/42-auditoria-frontend-ux.md, 7.2). */
+  --border-control: rgba(0, 0, 0, 0.42);
   --text-primary: #1a1a19;
   --text-secondary: #5f5e5a;
-  --text-terciary: #88877f;
+  /* #6d6c64 (era #88877f): o valor antigo reprovava contraste AA — é a cor de todo
+     placeholder do sistema (ver auditoria, ganho rápido 8). */
+  --text-terciary: #6d6c64;
 
   /* Marca */
   --brand: #4338ca;
   --brand-text: #3730a3;
   --brand-bg: #eef2ff;
   --brand-border: #c7d2fe;
+  /* Fundo de botão primário — NÃO inverte no dark (mesma tinta nos dois temas, sempre com
+     text-white). Distinto de --brand-text (link) e --brand (accent de checkbox/radio).
+     Ver docs/18-design-system.md. */
+  --brand-solid: #4338ca;
 
   /* Semânticas (fundo / texto) */
   --info-bg: #e6f1fb;
@@ -47,14 +56,19 @@
   --surface-muted: #2b2b29;
   --neutral-muted: #2f2f2c;
   --border: rgba(255, 255, 255, 0.12);
+  --border-control: rgba(255, 255, 255, 0.34);
   --text-primary: #ececea;
   --text-secondary: #a7a6a1;
-  --text-terciary: #6e6d68;
+  /* #979692 (era #6e6d68): mesma correção de contraste do claro. */
+  --text-terciary: #979692;
 
-  --brand: #6366f1;
+  /* #6b6ef5 (era #6366f1): 4,47:1 contra branco reprovava o mínimo AA de 4,5:1. */
+  --brand: #6b6ef5;
   --brand-text: #a5b4fc;
   --brand-bg: #1f1d33;
   --brand-border: rgba(255, 255, 255, 0.14);
+  /* Mesmo hex do claro — ver comentário em :root. */
+  --brand-solid: #4338ca;
 
   --info-bg: #0c447c;
   --info-text: #b5d4f4;
@@ -94,5 +108,32 @@
   input[type="checkbox"],
   input[type="radio"] {
     accent-color: var(--brand);
+  }
+
+  /* Só regular (400) e medium (500) são pesos reais (ver docs/18) — headings sem
+     font-medium explícito caiam no negrito sintético do navegador; esta regra fecha
+     o buraco de uma vez (ver docs/42-auditoria-frontend-ux.md, ganho rápido 9). */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 500;
+  }
+
+  /* Indicador de foco único para todo o app — cobre os controles que hoje usam
+     outline-none sem substituto visível ao navegar por teclado (ganho rápido 7). */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  /* Evita o zoom automático do iOS Safari em campo com font-size < 16px, sem alterar
+     a densidade no desktop (ganho rápido 10). */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 }

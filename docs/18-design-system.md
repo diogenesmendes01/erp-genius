@@ -56,14 +56,15 @@
 | Perigo/atraso (vermelho) | `--danger-bg` / `--danger-text` | `#FCEBEB` / `#791F1F` | `#791F1F` / `#F7C1C1` |
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
-> (texto branco nos dois modos) — distintas dos badges. Marca: `--brand` (botão primário),
-> `--brand-text` (links), `--brand-bg` (estado ativo).
+> (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão
+> primário, **não inverte** no dark), `--brand` (accent de checkbox/radio), `--brand-text` /
+> `text-brand-700` (links, só texto — nunca fundo), `--brand-bg` (estado ativo).
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-600 text-white`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-white hover:opacity-90`. **Destrutivo:** `bg-danger text-white`.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.

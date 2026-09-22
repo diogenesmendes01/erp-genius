@@ -29,7 +29,7 @@ export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajuste
     <p>O registro conserva as datas e pendências mostradas nesta consulta. A agenda permanece como está até a aprovação e aplicação do conjunto.</p>
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block">Motivo do registro<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
-      <button disabled={motivo.trim().length < 5} className="rounded bg-brand-700 px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Registrando…" : "Guardar revisão"}</button>
+      <button disabled={motivo.trim().length < 5} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Registrando…" : "Guardar revisão"}</button>
     </fieldset>
     {erro && <div role="alert"><p>{erro}</p><button type="button" disabled={ocupado} onClick={() => router.refresh()} className="underline">Consultar novamente a agenda</button></div>}
   </form>;
