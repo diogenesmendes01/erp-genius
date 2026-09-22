@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { consultarResultadosPortalAluno, type ResultadoPortalAluno } from "@/server/portal-aluno/resultados";
 import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechamentos";
 import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { ErroAutenticacao } from "@/server/_shared";
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +111,18 @@ const rotulosPendencia: Record<keyof ResultadoPortalAluno["matriculas"][number][
 export default async function ResultadosPortalAlunoPage() {
   // A projeção acadêmica confirma a sessão e o escopo das matrículas antes de
   // ler a preferência da conta. A preferência muda somente a apresentação.
-  const resultado = await consultarResultadosPortalAluno();
+  // O guard vive dentro de consultarResultadosPortalAluno (compartilhado com outras
+  // chamadas) e continua lançando ErroAutenticacao — aqui, numa página, convertemos
+  // isso em redirect em vez de deixar estourar como erro 500 (ver
+  // docs/42-auditoria-frontend-ux.md, achado N1). Qualquer outro erro sobe normalmente
+  // para o error.tsx do portal.
+  let resultado: ResultadoPortalAluno;
+  try {
+    resultado = await consultarResultadosPortalAluno();
+  } catch (erro) {
+    if (erro instanceof ErroAutenticacao) redirect("/portal-aluno/entrar");
+    throw erro;
+  }
   const [fechamentos, preferencia] = await Promise.all([
     consultarFechamentosPortalAluno(),
     consultarPreferenciaFusoPortalAluno(),

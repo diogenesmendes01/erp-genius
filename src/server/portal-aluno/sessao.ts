@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import type { Prisma as PrismaTypes } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -91,10 +92,26 @@ export async function revalidarSessaoPortalAlunoTx(
   if (!atual) throw new ErroAutenticacao("Sessão do aluno inválida ou expirada.");
 }
 
-/** Guard exclusivo do portal. Não chama auth() nem lê cookie de funcionário. */
+/**
+ * Guard exclusivo do portal para Server Actions e route handlers: falha de identidade
+ * continua sendo erro (401/rejeição), não navegação. Não chama auth() nem lê cookie de
+ * funcionário.
+ */
 export async function exigirSessaoPortalAluno(): Promise<SessaoPortalAluno> {
   const sessao = await lerSessaoPortalAluno();
   if (!sessao) throw new ErroAutenticacao("Sessão do aluno inválida ou expirada.");
+  return sessao;
+}
+
+/**
+ * Guard exclusivo do portal para páginas (RSC): cookie ausente ou expirado manda para a
+ * tela de entrar, em vez de lançar — sem isso, sessão morta virava erro 500 em inglês
+ * (ver docs/42-auditoria-frontend-ux.md, achado N1). Não usar em Server Action nem em
+ * route handler: ali a falha precisa continuar sendo erro, não redirect.
+ */
+export async function exigirSessaoPortalAlunoPagina(): Promise<SessaoPortalAluno> {
+  const sessao = await lerSessaoPortalAluno();
+  if (!sessao) redirect("/portal-aluno/entrar");
   return sessao;
 }
 
