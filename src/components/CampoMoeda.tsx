@@ -42,7 +42,9 @@ export function CampoMoeda({
 }) {
   function normalizarAoSair() {
     const numero = parseMoeda(value);
-    if (numero !== null) onChange(formatarMoedaParaCampo(numero));
+    // Com moeda conhecida, respeita as casas decimais dela (CRC/CLP saem sem centavos) —
+    // sem moeda ainda (ex.: previsão antes de escolher o país), duas casas por padrão.
+    if (numero !== null) onChange(formatarMoedaParaCampo(numero, moeda));
   }
 
   return (

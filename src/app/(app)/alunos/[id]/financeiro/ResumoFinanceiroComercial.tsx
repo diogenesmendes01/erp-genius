@@ -53,7 +53,7 @@ function LinhaAjustePreco({
   ajustar: (form: FormData) => Promise<void>;
   ocupado: boolean;
 }) {
-  const [valor, setValor] = useState(formatarMoedaParaCampo(preco.valor));
+  const [valor, setValor] = useState(formatarMoedaParaCampo(preco.valor, moeda));
   return (
     <form action={ajustar} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="cobrancaId" value={preco.id} />
