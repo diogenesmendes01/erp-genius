@@ -46,6 +46,12 @@ export function simboloMoeda(moeda: string): string {
   return SIMBOLO_MOEDA[m] ?? m;
 }
 
+/** Casas decimais que a moeda usa na exibição (0 para as que circulam sem centavos por
+ *  convenção local — mesma lista de `formatarMoeda`). */
+export function casasDecimais(moeda: string): number {
+  return SEM_DECIMAIS.has(normalizar(moeda)) ? 0 : 2;
+}
+
 /**
  * Formata um valor na sua moeda, com símbolo e casas decimais corretos. O agrupamento
  * de milhar segue pt-BR (1.234.567,89) — padrão da matriz e consistente em toda a LATAM.
@@ -89,9 +95,13 @@ export function parseMoeda(texto: string): number | null {
  * separador de milhar (o que `parseMoeda` entende de volta, sem ambiguidade). Uso típico:
  * normalizar o texto do campo ao perder o foco (`onBlur`), depois que o operador termina de
  * digitar — nunca a cada tecla, para não brigar com o cursor.
+ * `moeda` é opcional: quando informada, respeita as casas decimais da moeda (CRC/CLP saem
+ * sem centavos, "100" em vez de "100,00" — mesma convenção de `formatarMoeda`); omitida,
+ * usa duas casas (comportamento anterior, para quem ainda não tem a moeda à mão).
  */
-export function formatarMoedaParaCampo(valor: number): string {
-  return valor.toFixed(2).replace(".", ",");
+export function formatarMoedaParaCampo(valor: number, moeda?: string): string {
+  const casas = moeda ? casasDecimais(moeda) : 2;
+  return valor.toFixed(casas).replace(".", ",");
 }
 
 /**
