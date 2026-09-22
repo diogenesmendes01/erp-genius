@@ -100,7 +100,7 @@ export function DiarioAulas({ aulas, turmas }: { aulas: AulaDiarioView[]; turmas
       <p className="mt-1 text-xs text-gray-500">Professor: {a.professor}</p>
       {a.encontroParaCorrecao && <Link className="mt-2 inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${a.encontroParaCorrecao}/correcao`}>Propor ou conferir correção</Link>}
       {!a.encontroParaCorrecao && a.encontroParaHistoricoCorrecao && <Link className="mt-2 inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${a.encontroParaHistoricoCorrecao}/correcao`}>Consultar histórico de correções</Link>}
-      {a.correcaoPublicada && <p className="mt-2 text-sm text-green-800">Correção publicada · versão {a.correcaoPublicada.versao}.</p>}
+      {a.correcaoPublicada && <p className="mt-2 text-sm text-green-700">Correção publicada · versão {a.correcaoPublicada.versao}.</p>}
       {a.encontroParaGravacao && <Link className="mt-2 block text-sm text-brand-700 underline" href={`/diario/encontros/${a.encontroParaGravacao}/gravacao`}>Assistir à gravação</Link>}
       <p className="my-4 whitespace-pre-wrap text-sm text-gray-700">{a.conteudo}</p>
       <ul className="divide-y divide-gray-100 text-sm">{a.registros.map((r) => <li key={r.alunoId} className="py-2"><span className="font-medium">{r.nomeAluno}</span><span className="ml-3 text-gray-500">{r.participacao === "IMPEDIDO_POR_RESTRICAO" ? "Impedido por restrição" : r.presente === null ? "Presença não informada" : r.presente ? "Presente" : "Ausente"}</span>{r.observacao && <p className="mt-1 whitespace-pre-wrap text-gray-600">{r.observacao}</p>}</li>)}</ul>

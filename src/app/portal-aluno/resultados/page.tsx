@@ -82,11 +82,11 @@ function FechamentoNivel({ fechamento, nivel, fusoExibicao }: { fechamento: Fech
     confirmadoEm ? `Última confirmação em ${confirmadoEm} (horário exibido em ${fusoExibicao})` : null,
   ].filter((item): item is string => !!item);
   const conteudo = fechamento.estado === "CONFIRMADO_SUFICIENTE"
-    ? { titulo: "Fechamento confirmado: resultado suficiente", classe: "border-green-300 bg-green-50 text-green-950", texto: "Este fechamento confirma o resultado acadêmico deste nível. A continuidade do percurso é informada separadamente pela instituição." }
+    ? { titulo: "Fechamento confirmado: resultado suficiente", classe: "border-green-200 bg-green-50 text-green-700", texto: "Este fechamento confirma o resultado acadêmico deste nível. A continuidade do percurso é informada separadamente pela instituição." }
     : fechamento.estado === "CONFIRMADO_INSUFICIENTE"
-      ? { titulo: "Fechamento confirmado: resultado insuficiente", classe: "border-amber-300 bg-amber-50 text-amber-950", texto: "Este fechamento confirma o resultado acadêmico deste nível. Consulte o acompanhamento e as pendências mostradas abaixo." }
+      ? { titulo: "Fechamento confirmado: resultado insuficiente", classe: "border-amber-200 bg-amber-50 text-amber-700", texto: "Este fechamento confirma o resultado acadêmico deste nível. Consulte o acompanhamento e as pendências mostradas abaixo." }
       : fechamento.estado === "EM_REVISAO"
-        ? { titulo: "Fechamento em revisão", classe: "border-amber-300 bg-amber-50 text-amber-950", texto: confirmadoEm ? "A confirmação anterior está sendo revista. O resultado atualizado será mostrado depois da conferência." : "A conferência deste nível está em andamento. Ainda não há resultado confirmado." }
+        ? { titulo: "Fechamento em revisão", classe: "border-amber-200 bg-amber-50 text-amber-700", texto: confirmadoEm ? "A confirmação anterior está sendo revista. O resultado atualizado será mostrado depois da conferência." : "A conferência deste nível está em andamento. Ainda não há resultado confirmado." }
         : { titulo: "Fechamento ainda não confirmado", classe: "border-gray-300 bg-gray-50 text-gray-800", texto: "O acompanhamento deste nível segue disponível. Ainda não há um resultado acadêmico confirmado." };
   return <article className={`rounded border p-4 text-sm ${conteudo.classe}`}>
     <p className="font-medium">{nivel}</p>
@@ -161,5 +161,5 @@ export default async function ResultadosPortalAlunoPage() {
 function Pendencias({ pendencias }: { pendencias: ResultadoPortalAluno["matriculas"][number]["alocacoes"][number]["pendencias"] }) {
   const itens = (Object.entries(pendencias) as Array<[keyof typeof pendencias, number]>).filter(([, quantidade]) => quantidade > 0);
   if (!itens.length) return <p role="status" className="text-sm text-gray-600">Não há pendências operacionais identificadas nesta consulta.</p>;
-  return <section aria-label="Pendências acadêmicas"><h4 className="font-medium">Pendências</h4><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{itens.map(([tipo, quantidade]) => <li key={tipo}>{rotulosPendencia[tipo]}: {quantidade}.</li>)}</ul></section>;
+  return <section aria-label="Pendências acadêmicas"><h4 className="font-medium">Pendências</h4><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">{itens.map(([tipo, quantidade]) => <li key={tipo}>{rotulosPendencia[tipo]}: {quantidade}.</li>)}</ul></section>;
 }

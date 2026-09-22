@@ -65,7 +65,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
       <p className="text-sm text-gray-700">Esta revisão consolida o vínculo mais recente da matrícula neste nível. Confirmar cria uma nova versão histórica; não aprova nem executa progressão.</p>
     </header>
 
-    {ultimo && <section className={`rounded border p-4 ${ultimo.atual ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
+    {ultimo && <section className={`rounded border p-4 ${ultimo.atual ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
       <h2 className="font-medium">Último fechamento</h2>
       <p className="text-sm">Versão {ultimo.versao}, confirmada em {formatarInstanteExibicao(ultimo.confirmadoEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC): {ultimo.resultadoSuficiente ? "suficiente" : "insuficiente"}.</p>
       <p className="mt-1 text-sm">{ultimo.atual ? "A base acadêmica ainda corresponde à revisão atual." : "A base acadêmica mudou desde esse fechamento; ele permanece no histórico e esta revisão precisa ser confirmada novamente."}</p>
@@ -87,7 +87,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
     <section className="rounded border p-4">
       <h2 className="text-lg font-medium">Situação para fechamento</h2>
       <p className="mt-2 font-medium">{elegibilidade.situacao === "SUFICIENTE" ? "Resultado suficiente na revisão" : elegibilidade.situacao === "INSUFICIENTE" ? "Resultado insuficiente na revisão" : "Há pendências a resolver"}.</p>
-      {elegibilidade.pendencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{elegibilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendencias[pendencia] ?? "Pendência acadêmica em conferência"}.</li>)}</ul>}
+      {elegibilidade.pendencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">{elegibilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendencias[pendencia] ?? "Pendência acadêmica em conferência"}.</li>)}</ul>}
       {elegibilidade.insuficiencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{elegibilidade.insuficiencias.map((insuficiencia) => <li key={insuficiencia}>{insuficiencias[insuficiencia] ?? "Insuficiência acadêmica"}.</li>)}</ul>}
       {!elegibilidade.podeProgredir && elegibilidade.podeFechar && <p className="mt-2 text-sm">A versão pode ser confirmada como insuficiente, mas não libera progressão.</p>}
     </section>

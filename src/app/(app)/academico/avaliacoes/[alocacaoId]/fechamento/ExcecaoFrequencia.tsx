@@ -105,13 +105,13 @@ export function ExcecaoFrequencia({
     <p className="text-sm text-gray-700">A exceção preserva a frequência real e seus registros. Ela não cria presenças, não muda faltas e não concede nem substitui notas.</p>
 
     {!frequenciaAbaixo && proposta?.decisao?.aprovada && <p role="status">A frequência atual já não está abaixo do mínimo. A autorização permanece no histórico, mas a revisão usa o estado atual.</p>}
-    {frequenciaAbaixo && temPendencias && <p role="status" className="text-amber-900">Há chamadas ou registros históricos de frequência a conferir. Regularize-os antes de propor uma exceção.</p>}
+    {frequenciaAbaixo && temPendencias && <p role="status" className="text-amber-700">Há chamadas ou registros históricos de frequência a conferir. Regularize-os antes de propor uma exceção.</p>}
 
     {proposta && <section className="space-y-1 rounded border bg-gray-50 p-3 text-sm">
       <h3 className="font-medium">Proposta registrada · versão {proposta.versao}</h3>
       <p>Motivo: {proposta.motivo}</p>
       <p>Evidências: {proposta.evidencias}</p>
-      {propostaObsoleta && <p role="status" className="text-amber-900">A frequência ou o contexto conferido mudou desde esta proposta. Esta autorização histórica não se aplica à revisão atual; uma nova proposta usa a fonte atual.</p>}
+      {propostaObsoleta && <p role="status" className="text-amber-700">A frequência ou o contexto conferido mudou desde esta proposta. Esta autorização histórica não se aplica à revisão atual; uma nova proposta usa a fonte atual.</p>}
       {!proposta.decisao && (proposta.autorId === usuarioId
         ? <p role="status">Aguarda decisão de outra pessoa autorizada. Quem propôs não pode decidir.</p>
         : <p role="status">Aguarda decisão independente.</p>)}
