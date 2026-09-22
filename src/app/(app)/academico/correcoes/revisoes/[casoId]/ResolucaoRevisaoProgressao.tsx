@@ -166,7 +166,7 @@ export function ResolucaoRevisaoProgressao({
           setMotivo(evento.target.value); tentativa.current = null;
         }} className="mt-1 block w-full rounded border p-2" /></label>
         <p className="text-sm">Confira o motivo antes de enviar. A prévia continua válida apenas enquanto a ação e o estado consultado não mudarem.</p>
-        <button disabled={ocupado || !motivo.trim()} className="rounded bg-brand-700 px-3 py-2 text-white">Propor resolução</button>
+        <button disabled={ocupado || !motivo.trim()} className="rounded bg-brand-solid px-3 py-2 text-white">Propor resolução</button>
       </form>}
     </div>}
 
@@ -183,7 +183,7 @@ export function ResolucaoRevisaoProgressao({
         {proposta.podeDecidir && !proposta.decisao && <form onSubmit={(evento) => decidir(evento, proposta)} className="space-y-2 border-t pt-3">
           <p className="text-sm">A rejeição registra a recusa desta proposta histórica e não atesta o estado atual.</p>
           <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className="rounded bg-brand-700 px-3 py-2 text-white">Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className="rounded border px-3 py-2">Rejeitar proposta</button></div>
+          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className="rounded border px-3 py-2">Rejeitar proposta</button></div>
         </form>}
       </article>)}
     </section>

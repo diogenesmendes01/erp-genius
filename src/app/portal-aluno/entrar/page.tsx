@@ -24,7 +24,7 @@ export default function EntrarPortalAlunoPage() {
     finally { setEnviando(false); }
   }
 
-  return <section className="mx-auto flex min-h-screen max-w-md items-center px-5"><div className="w-full rounded-xl border bg-white p-7 shadow-sm">
+  return <section className="mx-auto flex min-h-screen max-w-md items-center px-5"><div className="w-full rounded-xl border bg-surface p-7">
     <p className="text-sm text-brand-700">Genius Idiomas</p><h1 className="mt-1 text-2xl font-medium">Área de reposições</h1>
     <p className="mt-2 text-sm text-gray-600">Entre com o e-mail individual confirmado no seu convite.</p>
     <form onSubmit={entrar} className="mt-6 space-y-4">

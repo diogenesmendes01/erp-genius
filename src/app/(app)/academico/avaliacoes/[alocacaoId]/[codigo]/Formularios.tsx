@@ -45,7 +45,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
         <label className="block">Comentário para o aluno — {nomes[h]}<textarea name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
       <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
-      <button className="rounded bg-brand-700 px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar versão"}</button>
+      <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar versão"}</button>
     </fieldset>{mensagem && <p role="status">{mensagem}</p>}
   </form>;
 }

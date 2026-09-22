@@ -87,7 +87,7 @@ export function AcoesEquivalencia({
         <textarea name="motivo" required minLength={5} maxLength={2000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o mapeamento e seus efeitos antes de registrar a decisão.</label>
-      <button disabled={pendente} className="rounded bg-brand-700 px-4 py-2 text-white">{pendente ? "Registrando…" : "Registrar decisão"}</button>
+      <button disabled={pendente} className="rounded bg-brand-solid px-4 py-2 text-white">{pendente ? "Registrando…" : "Registrar decisão"}</button>
     </form>}
 
     {podeExecutar && decisaoId && <form className="space-y-3 rounded border p-4" onSubmit={executar}>
@@ -97,7 +97,7 @@ export function AcoesEquivalencia({
         <textarea name="motivoExecucao" required minLength={5} maxLength={4000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={pendente} /> Confirmei a compatibilidade de horário com o aluno.</label>
-      <button disabled={pendente} className="rounded bg-brand-700 px-4 py-2 text-white">{pendente ? "Efetivando…" : "Efetivar transferência"}</button>
+      <button disabled={pendente} className="rounded bg-brand-solid px-4 py-2 text-white">{pendente ? "Efetivando…" : "Efetivar transferência"}</button>
     </form>}
     {mensagem && <p role="status">{mensagem}</p>}
   </section>;

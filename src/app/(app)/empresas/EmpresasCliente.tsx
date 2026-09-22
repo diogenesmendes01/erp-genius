@@ -9,7 +9,7 @@ import { salvarEmpresa } from "@/server/empresas/acoes";
 // Empresas representam o responsável financeiro. As matrículas permanecem contratos
 // individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function EmpresasCliente({

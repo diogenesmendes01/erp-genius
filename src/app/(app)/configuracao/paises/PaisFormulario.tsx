@@ -164,7 +164,7 @@ export function PaisFormulario({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
         >
           {isSubmitting ? "Salvando…" : "Salvar país"}
         </button>

@@ -66,7 +66,7 @@ export function AlunosLista({
           {podeCadastrar && (
             <Link
               href="/matriculas/nova"
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               Cadastrar aluno
             </Link>

@@ -31,7 +31,7 @@ export function RelatarIndisponibilidadePortalAluno({
     finally { setEnviando(false); }
   }
 
-  return <section className="mt-5 space-y-3 rounded border bg-white p-5" aria-label="Indisponibilidade do material">
+  return <section className="mt-5 space-y-3 rounded border bg-surface p-5" aria-label="Indisponibilidade do material">
     <h2 className="font-medium">Problema com o material</h2>
     <p className="text-sm text-gray-600">Avise a escola se a gravação autorizada não estiver disponível. O prazo só é pausado depois da confirmação.</p>
     {pausas.length > 0 && <div className="space-y-2 text-sm" aria-label="Histórico de indisponibilidades">
