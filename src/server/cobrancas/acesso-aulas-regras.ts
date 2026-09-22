@@ -1,4 +1,4 @@
-import { diferencaEmDias } from "./regua";
+import { diasDeAtraso } from "./regua";
 
 export const DIAS_RESTRICAO_AUTOMATICA = 30;
 
@@ -11,10 +11,10 @@ export interface CobrancaParaRestricao {
 }
 
 /** A pausa dos lembretes não equivale à regularização da dívida nem suspende D+30. */
-export function cobrancaGeraRestricaoAutomatica(cobranca: CobrancaParaRestricao, agora: Date): boolean {
+export function cobrancaGeraRestricaoAutomatica(cobranca: CobrancaParaRestricao, agora: Date, fusoInstitucional?: string | null): boolean {
   if (cobranca.status === "CANCELADA" || cobranca.status === "PAGO") return false;
   const saldo = cobranca.saldo ?? Math.max(0, cobranca.valorNegociado - (cobranca.valorRecebido ?? 0));
-  if (saldo <= 0 || diferencaEmDias(agora, cobranca.vencimento) < DIAS_RESTRICAO_AUTOMATICA) return false;
+  if (saldo <= 0 || diasDeAtraso(agora, cobranca.vencimento, fusoInstitucional) < DIAS_RESTRICAO_AUTOMATICA) return false;
   return true;
 }
 

@@ -5,6 +5,7 @@ import { RegistroCompraHoras } from "./ComprasHorasPainel";
 import { DecisaoCumprimentoHistorico } from "./CumprimentoPainel";
 import { EfetivacaoAcertoHistorico, mensagemConferenciaAcerto } from "./AcertoEncerramento";
 import { TituloMovimentacao } from "./MovimentacoesPainel";
+import { ImpactosAcademicosAcerto } from "./ImpactosAcademicosAcerto";
 
 const instante = "2026-01-01T02:30:00.000Z";
 
@@ -37,5 +38,13 @@ describe("históricos administrativos das movimentações", () => {
     expect(html).toContain("horário exibido em UTC; origem UTC");
     expect(html.match(/01\/01\/2026, 02:30/g)).toHaveLength(5);
     expect(html.match(/horário exibido em UTC; origem UTC/g)).toHaveLength(5);
+  });
+
+  it("exibe encontros particulares do acerto na preferência pessoal e no fuso de origem sem preferência", () => {
+    const snapshot = { fusoInstitucional: "UTC", contratos: [{ impactosAcademicos: { matriculaId: "m", status: "ATIVA", vinculos: [], encontrosParticulares: [{ id: "e", inicio: instante, fusoOrigem: "UTC", status: "PREVISTO" }] } }] };
+    const pessoal = renderToStaticMarkup(createElement(ImpactosAcademicosAcerto, { snapshot, preferenciaFusoExibicao: "America/Sao_Paulo" }));
+    expect(pessoal).toContain("31/12/2025, 23:30 (America/Sao_Paulo)");
+    const origem = renderToStaticMarkup(createElement(ImpactosAcademicosAcerto, { snapshot }));
+    expect(origem).toContain("01/01/2026, 02:30 (UTC)");
   });
 });

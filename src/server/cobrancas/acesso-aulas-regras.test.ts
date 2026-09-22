@@ -24,3 +24,9 @@ describe("restrição de aulas por dívida elegível", () => {
     expect(acessoEfetivoBloqueado(false, false)).toBe(false);
   });
 });
+
+it("Q176: D+30 vira à meia-noite do fuso da escola", () => {
+  const cobranca = { status: "PENDENTE", vencimento: new Date("2026-03-10T00:00:00Z"), saldo: 100, valorNegociado: 100, valorRecebido: 0 };
+  expect(cobrancaGeraRestricaoAutomatica(cobranca, new Date("2026-04-09T05:59:00Z"), "America/Costa_Rica")).toBe(false);
+  expect(cobrancaGeraRestricaoAutomatica(cobranca, new Date("2026-04-09T06:00:00Z"), "America/Costa_Rica")).toBe(true);
+});

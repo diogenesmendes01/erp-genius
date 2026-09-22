@@ -31,7 +31,7 @@ export async function carregarOrigensExcedentePermutaTx(
     obrigacaoAtual: string; recebido: string; creditoLiquidado: string; permutaCompensada: string; saldo: string | null;
     informesAConferir: Array<{ id: string; versao: number; valor: string; moeda: string }>;
     propostasUsoCreditoAguardarDecisao: Array<{ id: string; creditoId: string; versao: number; valor: string }>;
-    cadeias: Array<{ origemId: string; tipo: "CAIXA" | "CREDITO" | "PERMUTA"; recebimentoId?: string; destinacaoId?: string; creditoId?: string; propostaId?: string; decisaoId?: string; aplicacaoId?: string; confirmacaoId?: string; acordoId?: string }>;
+    cadeias: Array<{ origemId: string; tipo: "CAIXA" | "CREDITO" | "PERMUTA"; recebimentoId?: string; destinacaoId?: string; creditoId?: string; propostaId?: string; decisaoId?: string; aplicacaoId?: string; confirmacaoId?: string; acordoId?: string; saldoServicoId?: string }>;
   };
   origens: OrigemLiquidacaoAcerto[];
   pendencias: PendenciaOrigem[];
@@ -46,6 +46,7 @@ export async function carregarOrigensExcedentePermutaTx(
     aplicacoesPermuta: { orderBy: { id: "asc" }, select: {
       id: true, cobrancaId: true, valor: true, decisaoId: true,
       decisao: { select: { id: true, aprovada: true, propostaId: true } },
+      usoSaldoServico: { select: { id: true, aprovada: true, proposta: { select: { id: true, cobrancaId: true, valor: true, moeda: true, saldo: { select: { id: true, matriculaId: true, moeda: true } } } } } },
       destino: { select: {
         id: true, cobrancaId: true, valor: true, propostaId: true,
         proposta: { select: {
@@ -67,7 +68,7 @@ export async function carregarOrigensExcedentePermutaTx(
     if (valor.lte(0)) throw new ErroRegra(mensagem);
   };
   const origens: OrigemLiquidacaoAcerto[] = [];
-  const cadeias: Array<{ origemId: string; tipo: "CAIXA" | "CREDITO" | "PERMUTA"; recebimentoId?: string; destinacaoId?: string; creditoId?: string; propostaId?: string; decisaoId?: string; aplicacaoId?: string; confirmacaoId?: string; acordoId?: string }> = [];
+  const cadeias: Array<{ origemId: string; tipo: "CAIXA" | "CREDITO" | "PERMUTA"; recebimentoId?: string; destinacaoId?: string; creditoId?: string; propostaId?: string; decisaoId?: string; aplicacaoId?: string; confirmacaoId?: string; acordoId?: string; saldoServicoId?: string }> = [];
 
   for (const destino of cobranca.destinacoesRecebimento) {
     if (destino.cobrancaId !== cobranca.id || destino.recebimento.titularMatriculaId !== cobranca.matriculaId || destino.recebimento.moeda !== cobranca.moeda) {
@@ -97,6 +98,19 @@ export async function carregarOrigensExcedentePermutaTx(
   if (!totalCredito.equals(cobranca.valorLiquidadoCredito)) throw new ErroRegra("O contador de crédito diverge das utilizações aprovadas.");
 
   for (const aplicacao of cobranca.aplicacoesPermuta) {
+    // Q171: uso aprovado do saldo restrito a serviços também é liquidação por serviço (fonte PERMUTA), com cadeia própria.
+    if (aplicacao.usoSaldoServico) {
+      const uso = aplicacao.usoSaldoServico, saldo = uso.proposta.saldo;
+      if (aplicacao.destino || aplicacao.decisao || aplicacao.cobrancaId !== cobranca.id || uso.proposta.cobrancaId !== cobranca.id || !uso.aprovada ||
+        saldo.matriculaId !== cobranca.matriculaId || saldo.moeda !== cobranca.moeda || uso.proposta.moeda !== cobranca.moeda || !aplicacao.valor.equals(uso.proposta.valor)) {
+        throw new ErroRegra("A aplicação do saldo de serviços não preserva a cadeia aprovada de saldo, proposta e decisão.");
+      }
+      positivo(aplicacao.valor, "A aplicação de permuta deve ter valor positivo.");
+      origens.push({ id: aplicacao.id, tipo: "PERMUTA", cobrancaId: cobranca.id, versaoCobranca: cobranca.versao, moeda: cobranca.moeda, valor: aplicacao.valor });
+      cadeias.push({ origemId: aplicacao.id, tipo: "PERMUTA", aplicacaoId: aplicacao.id, decisaoId: uso.id, propostaId: uso.proposta.id, saldoServicoId: saldo.id });
+      continue;
+    }
+    if (!aplicacao.destino || !aplicacao.decisao) throw new ErroRegra("A aplicação de permuta não possui destino aprovado nem uso de saldo de serviços.");
     const proposta = aplicacao.destino.proposta;
     const acordo = proposta.confirmacao.acordo;
     if (aplicacao.cobrancaId !== cobranca.id || aplicacao.destino.cobrancaId !== cobranca.id ||

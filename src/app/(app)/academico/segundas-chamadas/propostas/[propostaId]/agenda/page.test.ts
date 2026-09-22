@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ consultar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn().mockResolvedValue({ ok: false, erro: "Indisponível" }) }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-agenda-inicial", () => ({ consultarAgendasIniciaisSegundaChamada: mocks.consultar }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./Formulario", () => ({ Formulario: ({ proposta }: { proposta?: { podeAprovar: boolean; impedimentoAprovacao: string | null } }) => proposta ? `${proposta.podeAprovar ? "aprovar" : "rejeitar"}:${proposta.impedimentoAprovacao ?? ""}` : "formulário" }));
 import Page from "./page";
 
@@ -15,12 +16,21 @@ describe("AgendaInicialSegundaChamadaPage", () => {
  it("exibe histórico legível, data civil e paginação codificada", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado: { identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" }, professores: [], podePropor: false, itens: [item], proximoId: "próximo &/" } });
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ propostaId: "fonte" }), searchParams: Promise.resolve({ antesId: "anterior" }) }));
-  expect(html).toContain("Proposta de Secretaria");
+  expect(html).toContain("Proposta de Secretaria em 01/09/2026, 09:00 (America/Sao_Paulo)");
+  expect(html).toContain("02/10/2026, 09:00 até 02/10/2026, 10:00 (America/Sao_Paulo)");
   expect(html).toContain("Feriado, de 02/10/2026 até 02/10/2026");
   expect(html).not.toContain("01/10/2026");
   expect(html).toContain("Primeira página");
   expect(html).toContain("antesId=pr%C3%B3ximo%20%26%2F");
   expect(html).not.toContain("calendarioId");
+ });
+ it("exibe criação e horário proposto na preferência pessoal de fuso", async () => {
+  mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: "America/Sao_Paulo" } });
+  mocks.consultar.mockResolvedValue({ ok: true, dado: { identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" }, professores: [], podePropor: false, itens: [{ ...item, fusoOrigem: "UTC" }], proximoId: null } });
+  const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ propostaId: "fonte" }), searchParams: Promise.resolve({}) }));
+  expect(html).toContain("em 01/09/2026, 09:00 (America/Sao_Paulo)");
+  expect(html).toContain("02/10/2026, 09:00 até 02/10/2026, 10:00 (America/Sao_Paulo)");
+  expect(html).not.toContain("(UTC)");
  });
  it("mostra somente o erro da consulta", async () => {
   mocks.consultar.mockResolvedValue({ ok: false, erro: "Sem acesso." });

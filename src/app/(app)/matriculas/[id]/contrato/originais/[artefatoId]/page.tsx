@@ -6,6 +6,8 @@ import { ConferirAssinatura } from "../../ConferirAssinatura";
 import { consultarConclusaoContratual } from "@/server/contratos/conclusao-consulta";
 import { consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { ConferirAceite } from "../../ConferirAceite";
+import { consultarIntegracaoAssinatura } from "@/server/contratos/envio";
+import { EnviarAssinatura } from "../../EnviarAssinatura";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
@@ -30,11 +32,20 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
   const processo = resultadoConclusao.ok ? resultadoConclusao.dado : null;
   const consultaAceite = processo?.conclusao ? await consultarAceiteOriginal({ matriculaId: id, conclusaoId: processo.conclusao.id }) : null;
   const aceite = consultaAceite?.ok ? consultaAceite.dado : null;
+  const consultaIntegracao = await consultarIntegracaoAssinatura();
+  const integracao = consultaIntegracao.ok ? consultaIntegracao.dado : null;
+  // Só a conferência registrada para a revisão atual autoriza o envio; a ação revalida tudo na transação.
+  const conferenciaAtual = atual ? d.historico.find((h) => h.revisaoHash === atual.hash) ?? null : null;
+  const podeEnviar = !!integracao && !!conferenciaAtual && (!processo || processo.estadoEnvio === "PREPARADO");
+  const podeConciliar = !!integracao && !!processo && (processo.estadoEnvio === "ENVIANDO" || processo.estadoEnvio === "ENVIO_INCERTO");
   return <div className="space-y-4">
     <Link className="underline" href={`/matriculas/${id}/contrato`}>Voltar aos documentos da matrícula</Link>
     <h1 className="text-2xl">Conferência para assinatura</h1>
     <a className="underline" href={`/api/matriculas/${id}/originais/${artefatoId}/pdf`} target="_blank" rel="noopener noreferrer">Abrir original preservado</a>
-    <p>O envio ao serviço de assinatura ainda não está disponível. Esta conferência registra a revisão; não comprova envio, assinatura ou aceite.</p>
+    <p>{integracao ? "O envio ao serviço de assinatura exige conferência registrada para a revisão atual." : "O envio ao serviço de assinatura ainda não está disponível."} Esta conferência registra a revisão; não comprova envio, assinatura ou aceite.</p>
+    {!consultaIntegracao.ok && <p role="alert">{consultaIntegracao.erro}</p>}
+    {podeEnviar && conferenciaAtual && integracao && <EnviarAssinatura modo="ENVIAR" matriculaId={id} artefatoId={artefatoId} conferenciaId={conferenciaAtual.id} servico={integracao.fornecedor} ambiente={integracao.ambiente} />}
+    {podeConciliar && processo && integracao && <EnviarAssinatura modo="CONCILIAR" matriculaId={id} processoId={processo.processoId} servico={integracao.fornecedor} ambiente={integracao.ambiente} />}
     {!resultadoConclusao.ok && <p role="alert">{resultadoConclusao.erro}</p>}
     {processo && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Evidências do processo de assinatura</h2>
       <p>Serviço: {processo.fornecedor}. Ambiente: {processo.ambiente === "SANDBOX" ? "Teste — não comprova assinatura em produção" : "Produção"}.</p>

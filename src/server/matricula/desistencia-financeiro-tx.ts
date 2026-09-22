@@ -38,7 +38,7 @@ export async function carregarFinanceiroDesistenciaTx(
   const creditos = await tx.creditoMatricula.findMany({ where: { matriculaId }, orderBy: { id: "asc" }, select: {
     id: true, origemLiberacaoId: true, origemAcertoId: true, origemPeriodoIntegralId: true, origemDestinacaoRecebimentoId: true,
     origemAcertoTaxaAditivoId: true, origemAcertoDesistenciaContratualId: true,
-    origemReconferenciaDeltaDesistenciaId: true,
+    origemReconferenciaDeltaDesistenciaId: true, origemRevisaoCorrecaoAulaId: true, origemExcedentePermutaId: true,
     valorInicial: true, moeda: true, criadoEm: true,
   } });
   const cobrancaIds = cobrancas.map((c) => c.id);
@@ -143,9 +143,12 @@ export async function carregarFinanceiroDesistenciaTx(
   );
 
   return {
-    snapshot: { matriculaId, cobrancas: serializadas, creditos: creditos.map(({ origemAcertoTaxaAditivoId: _origemTaxa, origemReconferenciaDeltaDesistenciaId, ...credito }) => ({
+    snapshot: { matriculaId, cobrancas: serializadas, creditos: creditos.map(({ origemAcertoTaxaAditivoId: _origemTaxa, origemReconferenciaDeltaDesistenciaId, origemRevisaoCorrecaoAulaId, origemExcedentePermutaId, ...credito }) => ({
       ...credito,
       ...(origemReconferenciaDeltaDesistenciaId ? { origemReconferenciaDeltaDesistenciaId } : {}),
+      // Q175: só aparece quando existe, preservando o hash das fotografias anteriores.
+      ...(origemRevisaoCorrecaoAulaId ? { origemRevisaoCorrecaoAulaId } : {}),
+      ...(origemExcedentePermutaId ? { origemExcedentePermutaId } : {}),
       valorInicial: credito.valorInicial.toFixed(2), criadoEm: credito.criadoEm.toISOString(),
     })) },
     resumo: {

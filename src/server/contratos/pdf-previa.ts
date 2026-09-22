@@ -10,7 +10,7 @@ import { ErroRegra } from "@/server/_shared/sessao";
 const EntradaPdf = z.object({ previaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), criadaEm: z.date(), conteudoHash: z.string().regex(/^[a-f0-9]{64}$/), snapshot: TextoPreviaSchema });
 const EntradaAditivoPdf = z.object({ propostaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), criadaEm: z.date(),
   propostaHash: z.string().regex(/^[a-f0-9]{64}$/), modeloCodigo: z.string(), modeloVersao: z.number().int().positive(),
-  versaoProposta: z.number().int().positive(), ambiente: z.enum(["SANDBOX", "PRODUCAO"]), documento: TextoPreviaSchema.shape.documento }).strict();
+  versaoProposta: z.number().int().positive(), ambiente: z.enum(["SANDBOX", "PRODUCAO", "HISTORICO"]), documento: TextoPreviaSchema.shape.documento }).strict();
 const EntradaOriginalAditivoPdf = EntradaAditivoPdf.extend({ conferenciaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), conferenciaHash: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const regular = path.join(process.cwd(), "src/assets/fonts/NotoSans-Regular.ttf"), negrito = path.join(process.cwd(), "src/assets/fonts/NotoSans-Bold.ttf");
 
@@ -24,7 +24,7 @@ export async function gerarPdfPreviaAditivo(input: z.input<typeof EntradaAditivo
   const d = EntradaAditivoPdf.parse(input);
   return renderizarDocumento({ registroId: d.propostaId, criadaEm: d.criadaEm, conteudoHash: d.propostaHash,
     modeloCodigo: d.modeloCodigo, modeloVersao: d.modeloVersao, rotuloVersao: `Proposta de aditivo - versão ${d.versaoProposta}`,
-    documento: d.documento, assunto: "Prévia de aditivo sem assinatura", cabecalho: `PRÉVIA DE ADITIVO - SEM ASSINATURA${d.ambiente === "SANDBOX" ? " - AMBIENTE DE TESTE" : ""}` });
+    documento: d.documento, assunto: "Prévia de aditivo sem assinatura", cabecalho: `PRÉVIA DE ADITIVO - SEM ASSINATURA${d.ambiente === "SANDBOX" ? " - AMBIENTE DE TESTE" : d.ambiente === "HISTORICO" ? " - CONTRATO DE ORIGEM HISTÓRICA" : ""}` });
 }
 
 /** Original binário do aditivo; ainda depende das assinaturas e da aplicação aprovadas. */
@@ -32,7 +32,7 @@ export async function gerarPdfOriginalAditivo(input: z.input<typeof EntradaOrigi
   const d = EntradaOriginalAditivoPdf.parse(input);
   const pdf = await renderizarDocumento({ registroId: d.conferenciaId, criadaEm: d.criadaEm, conteudoHash: d.conferenciaHash,
     modeloCodigo: d.modeloCodigo, modeloVersao: d.modeloVersao, rotuloVersao: `Aditivo - proposta versão ${d.versaoProposta}\nProposta ${d.propostaId} - SHA-256 ${d.propostaHash}`,
-    documento: d.documento, assunto: "Original de aditivo para assinatura", cabecalho: `ADITIVO CONTRATUAL${d.ambiente === "SANDBOX" ? " - AMBIENTE DE TESTE" : ""}` });
+    documento: d.documento, assunto: "Original de aditivo para assinatura", cabecalho: `ADITIVO CONTRATUAL${d.ambiente === "SANDBOX" ? " - AMBIENTE DE TESTE" : d.ambiente === "HISTORICO" ? " - CONTRATO DE ORIGEM HISTÓRICA" : ""}` });
   return { ...pdf, gerador: { ...metadadosGerador(), versao: "aditivo-original-1" } };
 }
 

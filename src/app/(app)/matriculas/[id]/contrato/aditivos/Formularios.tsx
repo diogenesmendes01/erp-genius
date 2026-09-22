@@ -7,7 +7,7 @@ import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { CicloCoberturaFuturoAditivoSchema } from "@/server/contratos/aditivo-schema";
 
-type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
+type Fonte = { tipo: "CONCLUSAO" | "ORIGEM_HISTORICA"; conclusaoId: string | null; conclusaoHash: string | null; origemHistoricaId: string | null; origemHash: string | null; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
 const acompanharFuso = () => () => {};
 const fusoNavegador = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "fuso local do navegador";
@@ -46,7 +46,7 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
     setMensagem(""); iniciar(async () => {
       try {
-      const r = await prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
+      const r = await prepararAditivoContratual({ matriculaId, ...(fonte.tipo === "ORIGEM_HISTORICA" ? { origemHistoricaId: fonte.origemHistoricaId!, origemHashEsperado: fonte.origemHash! } : { conclusaoOriginalId: fonte.conclusaoId!, conclusaoHashEsperado: fonte.conclusaoHash! }),
         modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual });
       if (!r.ok) setMensagem(r.erro); else if (r.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(r.dado.id)}`);
       } catch { setMensagem("Não foi possível confirmar o registro. Tente novamente sem alterar os dados para consultar o resultado da mesma tentativa."); }

@@ -10,6 +10,10 @@ export type VersaoAplicacaoCampos = {
   alteracoes: { origem: string; valorEstruturado: unknown }[];
   aplicacaoGeralId: string | null;
   aplicacaoVencimentoId: string | null;
+  /** Q172: aplicação financeira própria do adiantamento desta versão. */
+  aplicacaoAdiantamentoId?: string | null;
+  /** Q173: aplicação financeira própria da moeda desta versão. */
+  aplicacaoMoedaId?: string | null;
   /** Conjunto Q170 completo, nunca uma aplicação isolada de cobrança. */
   conjuntoTaxaCompletoId?: string | null;
   /** Conjunto Q168 completo da própria versão; uma aplicação isolada não basta. */
@@ -34,12 +38,18 @@ export function projetarAplicacoesPorCampo(cadeia: readonly VersaoAplicacaoCampo
       // Mesmo valor reiterado em nova proposta é nova decisão, não mera herança.
       campos.set(alteracao.origem, {
         origemVersaoId: versao.id, valorHash: hashSubstituicao(alteracao.valorEstruturado),
-        aplicacaoId: alteracao.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO"
+        // Q173: a moeda e os valores que o aditivo de moeda obriga a reexpressar (taxa e adiantamento já vividos)
+        // ficam provados pela aplicação de moeda da própria versão: preservados, sem efeito retroativo.
+        aplicacaoId: (alteracao.origem === "MOEDA" || ((alteracao.origem === "TAXA_VALOR" || alteracao.origem === "ADIANTAMENTO_VALOR") && versao.alteracoes.some(a => a.origem === "MOEDA")))
+          ? versao.aplicacaoMoedaId ?? null
+          : alteracao.origem === "PRIMEIRA_MENSALIDADE_VENCIMENTO"
           ? versao.aplicacaoVencimentoId
           : (alteracao.origem === "TAXA_VALOR" || alteracao.origem === "TAXA_VENCIMENTO")
             ? versao.conjuntoTaxaCompletoId ?? null
             : (alteracao.origem === "COBERTURA_INICIO" || alteracao.origem === "COBERTURA_FIM")
               ? versao.conjuntoCoberturaCompletoId ?? null
+              : (alteracao.origem === "ADIANTAMENTO_VALOR" || alteracao.origem === "ADIANTAMENTO_MINUTOS" || alteracao.origem === "ADIANTAMENTO_VENCIMENTO")
+                ? versao.aplicacaoAdiantamentoId ?? null
               : proprios.has(alteracao.origem) ? null : versao.aplicacaoGeralId,
       });
     }

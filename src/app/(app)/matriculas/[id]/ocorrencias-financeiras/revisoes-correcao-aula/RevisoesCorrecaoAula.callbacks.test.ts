@@ -18,7 +18,7 @@ function montar() {
   mocks.useTransition.mockReturnValue([false, (acao: () => void) => { void acao(); }]);
   mocks.useState.mockReturnValue(["", vi.fn()]);
   mocks.useRef.mockReturnValue({ current: new Map() });
-  return RevisoesCorrecaoAula({ matriculaId: "matricula", dados: { usuarioId: "fin", revisoes: [], candidatas: [{ id: "q23", encontroId: "encontro", versao: 1, encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "America/Sao_Paulo" }, podePreparar: true, preparoBloqueadoPor: null }] } as never });
+  return RevisoesCorrecaoAula({ matriculaId: "matricula", dados: { usuarioId: "fin", revisoes: [], candidatas: [{ id: "q23", encontroId: "encontro", versao: 1, encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "America/Sao_Paulo" }, podePreparar: true, preparoBloqueadoPor: null, tiposDisponiveis: [{ tipo: "SEM_ALTERACAO_VALORES", efeito: null }, { tipo: "AULA_NAO_COBRAVEL", efeito: { tipo: "GERA_CREDITO", valorAula: "156.25", moeda: "CRC", creditoValor: "156.25" } }] }] } as never });
 }
 
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
