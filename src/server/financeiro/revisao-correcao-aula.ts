@@ -19,17 +19,23 @@ async function exigirFinanceiroTx(tx: Prisma.TransactionClient, usuarioId: strin
   if (!usuario?.ativo || !usuario.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 
-async function fotoAtualTx(tx: Prisma.TransactionClient, propostaId: string) {
-  const linhas = await tx.$queryRaw<FotoSql[]>`SELECT fotografia, "fotografiaHash" FROM q23_fotografia_financeira_materializada_257(${propostaId})`;
+const TipoRevisao = z.enum(["SEM_ALTERACAO_VALORES", "AULA_NAO_COBRAVEL"]);
+async function fotoAtualTx(tx: Prisma.TransactionClient, propostaId: string, tipo: z.infer<typeof TipoRevisao> = "SEM_ALTERACAO_VALORES") {
+  // Q175: o tipo é sempre escolha explícita do Financeiro; nunca há fallback de uma fotografia para a outra.
+  const linhas = tipo === "AULA_NAO_COBRAVEL"
+    ? await tx.$queryRaw<FotoSql[]>`SELECT fotografia, "fotografiaHash" FROM q23_fotografia_nao_cobravel_materializada_175(${propostaId})`
+    : await tx.$queryRaw<FotoSql[]>`SELECT fotografia, "fotografiaHash" FROM q23_fotografia_financeira_materializada_257(${propostaId})`;
   return linhas[0] ?? null;
 }
 
-/** Prepara somente a confirmação sem delta: não cria nem altera efeitos financeiros. */
+/** Prepara a confirmação sem delta ou a declaração de aula não cobrável (Q175). Nenhum efeito nasce aqui: o acerto só acontece na publicação acadêmica. */
 export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
-    const d = z.object({ propostaCorrecaoAulaId: id, motivo: texto, chaveIdempotencia: z.string().min(8).max(100) }).strict().parse(input);
-    const entradaHash = hash(d);
+    const d = z.object({ propostaCorrecaoAulaId: id, motivo: texto, chaveIdempotencia: z.string().min(8).max(100), tipo: TipoRevisao.optional() }).strict().parse(input);
+    const tipo = d.tipo ?? "SEM_ALTERACAO_VALORES";
+    // O hash das entradas anteriores à Q175 não conhecia o tipo; o padrão continua fora dele.
+    const entradaHash = hash(tipo === "SEM_ALTERACAO_VALORES" ? { propostaCorrecaoAulaId: d.propostaCorrecaoAulaId, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia } : { ...d, tipo });
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
       await exigirFinanceiroTx(tx, usuario.id);
@@ -40,12 +46,14 @@ export async function proporRevisaoFinanceiraCorrecaoAula(input: unknown) {
       }
       const proposta = await tx.propostaCorrecaoAula.findUnique({ where: { id: d.propostaCorrecaoAulaId }, select: { id: true, encontroId: true, versao: true, entradaHash: true, encontro: { select: { matriculaId: true } } } });
       if (!proposta?.encontro.matriculaId) throw new ErroRegra("A revisão financeira exige aula particular identificada.");
-      const foto = await fotoAtualTx(tx, proposta.id);
-      if (!foto) throw new ErroRegra("A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas não consumidas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");
+      const foto = await fotoAtualTx(tx, proposta.id, tipo);
+      if (!foto) throw new ErroRegra(tipo === "AULA_NAO_COBRAVEL"
+        ? "Esta aula não admite a declaração de não cobrável: exige aula particular conferida com valor e cobrança em aberto sem recebimentos ou fatura quitada, ou aula paga com horas pré-pagas ainda não liberadas, estornadas nem liquidadas no encerramento. Pagamento parcial, crédito, permuta, pausa ou comprovante a conferir exigem conferência específica."
+        : "A fotografia não comprova equivalência Q92 sem alteração de valores. Pendências, reservas não consumidas, cancelamentos e outros efeitos financeiros seguem fluxo próprio.");
       const ultima = await tx.propostaRevisaoFinanceiraCorrecaoAula.findFirst({ where: { propostaCorrecaoAulaId: proposta.id }, orderBy: { versao: "desc" }, select: { versao: true } });
       const revisao = await tx.propostaRevisaoFinanceiraCorrecaoAula.create({ data: {
         propostaCorrecaoAulaId: proposta.id, versao: (ultima?.versao ?? 0) + 1, versaoCorrecaoAula: proposta.versao,
-        tipo: "SEM_ALTERACAO_VALORES", preparadorId: usuario.id, propostaHash: proposta.entradaHash,
+        tipo, preparadorId: usuario.id, propostaHash: proposta.entradaHash,
         fotografia: foto.fotografia as Prisma.InputJsonValue, fotografiaHash: foto.fotografiaHash, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia, entradaHash,
       } });
       await registrarEvento(tx, { tipo: "RevisaoFinanceiraCorrecaoAulaProposta", agregadoTipo: "Matricula", agregadoId: proposta.encontro.matriculaId,
@@ -95,29 +103,36 @@ export async function consultarRevisoesFinanceirasCorrecaoAula(input: unknown) {
           podeDecidir: temAlcadaFinanceira(usuario) && !revisao.decisao && revisao.preparador.id !== usuario.id && revisao.propostaCorrecaoAula.autorId !== usuario.id,
           fotografia: { fundamento: foto.fundamento, ocorrencia: foto.ocorrencia, conferencia: foto.conferencia, reservaConsumida: foto.reservaConsumida,
             compraAntecipada: foto.compraAntecipada, condicoes: foto.condicoes, cobranca: foto.cobranca, informesPagamento: foto.informesPagamento,
-            recebimentos: foto.recebimentos, destinacoes: foto.destinacoes },
+            recebimentos: foto.recebimentos, destinacoes: foto.destinacoes, efeito: foto.efeito ?? null },
         };
       });
       const brutas = await tx.propostaCorrecaoAula.findMany({ where: { encontro: { matriculaId: d.matriculaId }, rejeicao: null, aprovacao: null }, orderBy: { versao: "desc" }, distinct: ["encontroId"], select: { id: true, encontroId: true, versao: true, encontro: { select: { id: true, inicio: true, fim: true, fusoOrigem: true } } } });
       // The SQL projection is the eligibility authority. Do not expose a Q23
       // motive merely because it belongs to this enrolment.
-      const candidatas: Array<(typeof brutas)[number] & { podePreparar: boolean; preparoBloqueadoPor: string | null }> = [];
+      type TipoDisponivel = { tipo: z.infer<typeof TipoRevisao>; efeito: unknown };
+      const candidatas: Array<(typeof brutas)[number] & { podePreparar: boolean; preparoBloqueadoPor: string | null; tiposDisponiveis: TipoDisponivel[] }> = [];
       for (const candidata of brutas) {
-        const foto = await fotoAtualTx(tx, candidata.id);
-        if (!foto) continue;
+        // Q175: as duas fotografias são independentes; o Financeiro escolhe o tipo entre os que o banco comprova.
+        const semAlteracao = await fotoAtualTx(tx, candidata.id), naoCobravel = await fotoAtualTx(tx, candidata.id, "AULA_NAO_COBRAVEL");
+        if (!semAlteracao && !naoCobravel) continue;
+        const tiposDisponiveis: TipoDisponivel[] = [
+          ...(semAlteracao ? [{ tipo: "SEM_ALTERACAO_VALORES" as const, efeito: null }] : []),
+          ...(naoCobravel ? [{ tipo: "AULA_NAO_COBRAVEL" as const, efeito: (naoCobravel.fotografia as Record<string, unknown>).efeito ?? null }] : []),
+        ];
         const ultima = revisoesBrutas.find(r => r.propostaCorrecaoAulaId === candidata.id);
         if (!ultima) {
-          candidatas.push({ ...candidata, podePreparar: true, preparoBloqueadoPor: null });
+          candidatas.push({ ...candidata, podePreparar: true, preparoBloqueadoPor: null, tiposDisponiveis });
           continue;
         }
-        const fotografiaAtual = ultima.fotografiaHash === foto.fotografiaHash;
+        const foto = ultima.tipo === "AULA_NAO_COBRAVEL" ? naoCobravel : semAlteracao;
+        const fotografiaAtual = !!foto && ultima.fotografiaHash === foto.fotografiaHash;
         const preparadorAtual = temAlcadaFinanceira(ultima.preparador);
         const decisorAtual = !ultima.decisao || temAlcadaFinanceira(ultima.decisao.decisor);
         const podePreparar = ultima.decisao?.aprovada === false || !fotografiaAtual || !preparadorAtual || !decisorAtual;
         const preparoBloqueadoPor = podePreparar ? null
           : ultima.decisao ? "A revisão aprovada permanece vigente e aguarda publicação pedagógica."
             : "A revisão financeira vigente aguarda decisão independente.";
-        candidatas.push({ ...candidata, podePreparar, preparoBloqueadoPor });
+        candidatas.push({ ...candidata, podePreparar, preparoBloqueadoPor, tiposDisponiveis });
       }
       return { usuarioId: usuario.id, revisoes, candidatas };
     });

@@ -5,6 +5,7 @@ import { cobrancaGeraRestricaoAutomatica } from "@/server/cobrancas/acesso-aulas
 import { exigirSessaoPortalAluno, type SessaoPortalAluno } from "@/server/portal-aluno/sessao";
 import { obterDriveOrganizacaoId } from "./credenciais";
 import { resolverFonteRevisaoGravacaoTx } from "./fonte-revisao-tx";
+import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 
 export type AutorizacaoReproducaoGravacao = {
   /** Identificador interno da fonte oficial; nunca deve atravessar uma resposta HTTP. */
@@ -84,13 +85,14 @@ export async function autorizarReproducaoGravacaoTx(
       where: { matriculaId: fonte.matriculaId },
       select: { status: true, vencimento: true, saldo: true, valorNegociado: true, valorRecebido: true },
     });
+    const fusoInstitucional = await carregarFusoInstitucionalTx(tx);
     const bloqueioD30 = cobrancas.some((cobranca) => cobrancaGeraRestricaoAutomatica({
       status: cobranca.status,
       vencimento: cobranca.vencimento,
       saldo: cobranca.saldo === null ? null : Number(cobranca.saldo),
       valorNegociado: Number(cobranca.valorNegociado),
       valorRecebido: cobranca.valorRecebido === null ? null : Number(cobranca.valorRecebido),
-    }, agora));
+    }, agora, fusoInstitucional));
     if (bloqueioD30) throw new ErroPermissao("Reprodução não autorizada.");
 
     return { fileId: fonteFixa.fileId, reposicaoId: fonte.reposicaoId, matriculaId: fonte.matriculaId,

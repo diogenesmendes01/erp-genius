@@ -15,13 +15,25 @@ import { validarCoerenciaValoresAditivo } from "./aditivo-coerencia";
 import { carregarCadeiaAditivoTx } from "./aditivo-cadeia";
 import { representarValorAlteracaoAditivo } from "./aditivo-valores";
 
-/** Base própria de aditivo: consulta o documento preservado, não regenera o
- * contrato assinado com o cadastro atual. Chamador confere a sessão primeiro. */
-export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrada: unknown, antesDaVersao?: number) {
-  const d = PrepararAditivoContratualSchema.parse(entrada);
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-  await bloquearMatriculas(tx, [d.matriculaId]);
-  const c = await tx.conclusaoAssinaturaContratual.findFirst({ where: { id: d.conclusaoOriginalId, processo: { matriculaId: d.matriculaId } }, include: {
+type EntradaFonte = { matriculaId: string; conclusaoOriginalId?: string; conclusaoHashEsperado?: string; origemHistoricaId?: string; origemHashEsperado?: string };
+
+/** Fonte da base: conclusão assinada (com integridade e evidências revalidadas) ou origem contratual
+ * histórica aprovada (PDF + transcrição conferidos). Exatamente uma por matrícula. */
+async function carregarFonteBaseTx(tx: Prisma.TransactionClient, d: EntradaFonte) {
+  if (d.origemHistoricaId) {
+    const o = await tx.propostaOrigemContratualHistorica.findFirst({ where: { id: d.origemHistoricaId, matriculaId: d.matriculaId }, include: { decisao: true } });
+    if (!o?.decisao?.aprovada) throw new ErroRegra("Origem contratual histórica indisponível ou não aprovada nesta matrícula.");
+    await tx.$queryRaw`SELECT id FROM "PropostaOrigemContratualHistorica" WHERE id = ${o.id} FOR UPDATE`;
+    if (o.entradaHash !== d.origemHashEsperado || createHash("sha256").update(o.pdfAssinado).digest("hex") !== o.pdfHash
+      || hashSubstituicao(o.transcricao as Prisma.JsonObject) !== o.transcricaoHash || hashSubstituicao(o.projecao as Prisma.JsonObject) !== o.projecaoHash
+      || o.decisao.pdfHashConferido !== o.pdfHash || o.decisao.transcricaoHashConferido !== o.transcricaoHash) throw new ErroRegra("Confira a origem histórica e sua integridade antes de propor o aditivo.");
+    if (await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: d.matriculaId } } })
+      || await tx.propostaOrigemContratualHistorica.count({ where: { id: { not: o.id }, matriculaId: d.matriculaId, decisao: { is: { aprovada: true } } } }))
+      throw new ErroRegra("Há mais de uma fonte contratual nesta matrícula. Resolva a fonte antes de propor condições.");
+    return { conclusaoOriginalId: null, origemHistoricaId: o.id, previaSnapshot: o.projecao as unknown, contratoOriginal: { documentoId: o.id, pdfHash: o.pdfHash },
+      base: { tipo: "ORIGEM_HISTORICA", origemHistoricaId: o.id, origemHash: o.entradaHash, pdfAssinadoHash: o.pdfHash, transcricaoHash: o.transcricaoHash, projecaoHash: o.projecaoHash, referenciaExterna: o.referencia, ambiente: "HISTORICO" } };
+  }
+  const c = await tx.conclusaoAssinaturaContratual.findFirst({ where: { id: d.conclusaoOriginalId ?? "", processo: { matriculaId: d.matriculaId } }, include: {
     processo: { include: { artefato: { include: { previa: true, conferencia: true } }, tentativas: { orderBy: { numero: "desc" }, take: 1 } } },
   } });
   if (!c) throw new ErroRegra("Conclusão contratual indisponível nesta matrícula.");
@@ -34,13 +46,26 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
     assinaturas: ConclusaoAssinaturaSchema.shape.assinaturas.element.strip().array().parse(c.assinaturas) }, a.conferencia.snapshot, envio.iniciadaEm);
   if (validada.entradaHash !== c.entradaHash || validada.pdfHash !== c.pdfHash || validada.evidenciasHash !== c.evidenciasHash) throw new ErroRegra("As evidências divergem da conclusão preservada.");
   const outras = await tx.conclusaoAssinaturaContratual.count({ where: { id: { not: c.id }, processo: { matriculaId: d.matriculaId } } });
-  if (outras) throw new ErroRegra("Há mais de um original assinado nesta matrícula. Resolva a fonte contratual antes de propor condições.");
+  if (outras || await tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: d.matriculaId, decisao: { is: { aprovada: true } } } }))
+    throw new ErroRegra("Há mais de um original assinado nesta matrícula. Resolva a fonte contratual antes de propor condições.");
+  return { conclusaoOriginalId: c.id, origemHistoricaId: null, previaSnapshot: a.previa.snapshot as unknown, contratoOriginal: { documentoId: a.id, pdfHash: a.pdfHash },
+    base: { tipo: "ORIGINAL", conclusaoOriginalId: c.id, conclusaoHash: c.entradaHash, artefatoOriginalId: a.id, originalHash: a.pdfHash, pdfAssinadoHash: c.pdfHash, ambiente: p.ambiente, referenciaExterna: p.referenciaExterna } };
+}
+
+/** Base própria de aditivo: consulta o documento preservado, não regenera o
+ * contrato assinado com o cadastro atual. Chamador confere a sessão primeiro. */
+export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrada: unknown, antesDaVersao?: number) {
+  const d = PrepararAditivoContratualSchema.parse(entrada);
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+  await bloquearMatriculas(tx, [d.matriculaId]);
+  const fonte = await carregarFonteBaseTx(tx, d);
+  const previaSnapshot = fonte.previaSnapshot;
   const modelo = await tx.versaoModeloContratual.findUnique({ where: { id: d.modeloId }, include: { decisao: true } });
   if (!modelo?.decisao?.aprovada || modelo.conteudoHash !== d.modeloHashEsperado) throw new ErroRegra("Confira a versão publicada do modelo de aditivo.");
   const conteudo = ConteudoModeloSchema.parse(modelo.conteudo);
-  const original = TextoPreviaSchema.parse(a.previa.snapshot);
+  const original = TextoPreviaSchema.parse(previaSnapshot);
   const cadeia = await carregarCadeiaAditivoTx(tx, { matriculaId: d.matriculaId, antesDaVersao });
-  const regimeOriginal = z.object({ condicoes: z.object({ aulas: z.object({ regime: z.enum(["MENSALIDADE", "HORA_PARTICULAR"]) }) }) }).parse(a.previa.snapshot).condicoes.aulas.regime;
+  const regimeOriginal = z.object({ condicoes: z.object({ aulas: z.object({ regime: z.enum(["MENSALIDADE", "HORA_PARTICULAR"]) }) }) }).parse(previaSnapshot).condicoes.aulas.regime;
   const regime = cadeia.condicoes.REGIME?.tipo === "REGIME" ? cadeia.condicoes.REGIME.regime : regimeOriginal;
   if (!conteudo.regimes.includes(regime)) throw new ErroRegra("Modelo incompatível com o regime contratado.");
   const fontes: Partial<Record<OrigemCampo, string>> = {};
@@ -60,7 +85,7 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
     const relacionadas = new Set(["MOEDA", "TAXA_VALOR", "MENSALIDADE_VALOR", "HORA_VALOR", "ADIANTAMENTO_VALOR", "COBERTURA_INICIO", "COBERTURA_FIM"]);
     if (d.alteracoes.some(m => relacionadas.has(m.origem) && !m.valorEstruturado)) throw new ErroRegra("Preencha os valores estruturados de todas as condições financeiras alteradas nesta proposta.");
     try {
-      const origemAtual = extrairOrigemEstruturadaAditivo(a.previa.snapshot);
+      const origemAtual = extrairOrigemEstruturadaAditivo(previaSnapshot);
       if (cadeia.condicoes.MOEDA?.tipo === "MOEDA") origemAtual.moeda = cadeia.condicoes.MOEDA.moeda;
       if (cadeia.condicoes.COBERTURA_INICIO?.tipo === "DATA") origemAtual.coberturaInicio = cadeia.condicoes.COBERTURA_INICIO.data;
       if (cadeia.condicoes.COBERTURA_FIM?.tipo === "DATA") origemAtual.coberturaFim = cadeia.condicoes.COBERTURA_FIM.data;
@@ -72,16 +97,15 @@ export async function carregarBaseAditivoTx(tx: Prisma.TransactionClient, entrad
   const vigenciaInicio = new Date(d.vigenciaInicio).toISOString();
   if (cadeia.ultimaVigencia && new Date(vigenciaInicio) <= cadeia.ultimaVigencia) throw new ErroRegra("A vigência precisa suceder os aditivos formalizados anteriores.");
   const documento = preencherTextoAditivo(modelo.conteudo, {
-    contratoOriginal: { documentoId: a.id, pdfHash: a.pdfHash }, aditivosAnteriores: cadeia.referencias, vigenciaInicio, alteracoes,
+    contratoOriginal: fonte.contratoOriginal, aditivosAnteriores: cadeia.referencias, vigenciaInicio, alteracoes,
     ...(d.cicloCoberturaFutura ? { cicloCoberturaFutura: d.cicloCoberturaFutura } : {}),
   }, fontes);
   const condicoes = await tx.condicoesEntradaPreparacao.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
   const pagador = await tx.pagadorPreparacaoMatricula.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
-  const base = { tipo: "ORIGINAL", matriculaId: d.matriculaId, conclusaoOriginalId: c.id, conclusaoHash: c.entradaHash,
-    artefatoOriginalId: a.id, originalHash: a.pdfHash, pdfAssinadoHash: c.pdfHash, ambiente: p.ambiente, referenciaExterna: p.referenciaExterna,
+  const base = { ...fonte.base, matriculaId: d.matriculaId,
     modeloId: modelo.id, modeloHash: modelo.conteudoHash, publicacaoId: modelo.decisao.id,
     modeloCodigo: modelo.codigo, modeloVersao: modelo.versao, condicoes, pagador, aditivosAnterioresIds: cadeia.ids, fontes };
-  return { matriculaId: d.matriculaId, conclusaoOriginalId: c.id, modeloId: modelo.id, vigenciaInicio,
+  return { matriculaId: d.matriculaId, conclusaoOriginalId: fonte.conclusaoOriginalId, origemHistoricaId: fonte.origemHistoricaId, modeloId: modelo.id, vigenciaInicio,
     ...(d.cicloCoberturaFutura ? { cicloCoberturaFutura: d.cicloCoberturaFutura } : {}),
     base, baseHash: hashSubstituicao(base), alteracoes, alteracoesHash: hashSubstituicao(alteracoes), documento };
 }

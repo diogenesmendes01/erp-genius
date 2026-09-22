@@ -58,7 +58,8 @@ export const SnapshotMudancaAcademicaSchema = z.object({
     calendarioVigenteId: z.string(), calendarioVigenteVersao: z.number().int(),
     cadeiaCalendario: z.discriminatedUnion("tipo", [
       z.object({ tipo: z.literal("GRADE_PUBLICADA") }),
-      z.object({ tipo: z.literal("REPLANEJAMENTO_APLICADO"), rascunhoId: z.string(), decisaoId: z.string(), aplicacaoId: z.string(), estadoHash: z.string() }),
+      z.object({ tipo: z.literal("REPLANEJAMENTO_APLICADO"), rascunhoId: z.string(), decisaoId: z.string(), aplicacaoId: z.string(), estadoHash: z.string(),
+        alteracoesQuantidade: z.array(z.object({ propostaId: z.string(), decisaoId: z.string(), aplicacaoId: z.string(), estadoHash: z.string() })).min(1).optional() }),
     ]),
     encontros: z.array(z.object({ id: z.string(), inicio: z.string(), fim: z.string(), status: z.string(), professorId: z.string().nullable(), professorApto: z.boolean() })),
     indisponibilidades: z.array(z.object({ id: z.string(), professorId: z.string(), inicio: z.string(), fim: z.string() })),

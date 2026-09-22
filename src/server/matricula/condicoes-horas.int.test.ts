@@ -704,3 +704,101 @@ it.each(["13:00", "14:00"])("encerramento confere cancelamento do aluno comunica
  if (horario === "13:00") expect(resultado).toMatchObject({ pendencias: [], destinacoesHoras: [{ tipo: "SEM_COBRANCA" }] });
  else expect(resultado).toMatchObject({ pendencias: [expect.stringContaining("sem destinação financeira")], destinacoesHoras: [] });
 });
+
+// ── Q175: correção "aula não devia ser cobrada" ───────────────────────────────────────────────
+async function prepararAulaNaoCobravel(chave: string, emitir: boolean) {
+  const { d, e, professor } = await prepararPreviaFinanceira();
+  const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
+  const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
+  const previa = await preverConferenciaOcorrenciaHoras(d); if (!previa.ok || !previa.dado) throw new Error("Prévia ausente");
+  expect(await conferirOcorrenciaHoras({ ...d, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência da particular antes da correção", chaveIdempotencia: `${chave}-conferencia` })).toMatchObject({ ok: true });
+  const emissao = emitir ? await emitirCobrancaDaPrevia(d, `${chave}-emissao`) : null;
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
+  await prisma.aulaDiario.create({ data: { encontroId: e.id, professorId: professor.id, ocorridaEm: e.inicio, conteudo: "Aula particular conferida.", registros: { create: { alunoId: m.alunoId, matriculaId, nomeAluno: "Condições por hora", presente: true, participacao: "PRESENTE" } } } });
+  await prisma.encontroAgenda.update({ where: { id: e.id }, data: { status: "MINISTRADO" } });
+  const { revisarCorrecaoAula, proporCorrecaoAula } = await import("@/server/diario/correcao-aula");
+  login(professor.id); const atual = await revisarCorrecaoAula({ encontroId: e.id }); if (!atual.ok || !atual.dado) throw new Error("Q23 ausente");
+  // Opção A: o diário registra o fato no conteúdo; a declaração de não cobrável pertence à revisão financeira.
+  const q23 = await proporCorrecaoAula({ encontroId: e.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Aula lançada, mas não realizada por indisponibilidade de sala.", evidencia: "Registro da coordenação sobre a sala indisponível.", chaveIdempotencia: `${chave}-proposta`,
+    alteracao: { conteudo: "Aula não realizada: sala indisponível por responsabilidade da escola.", registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: r.participacao, observacao: r.observacao })) } });
+  if (!q23.ok || !q23.dado) throw new Error(JSON.stringify(q23));
+  return { d, e, emissao, propostaId: q23.dado.id };
+}
+
+async function revisarEPublicarNaoCobravel(propostaId: string, chave: string) {
+  const { proporRevisaoFinanceiraCorrecaoAula, decidirRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
+  const { revisarImpactosCorrecaoAula, aprovarCorrecaoAula } = await import("@/server/diario/correcao-aula");
+  const fin1 = await criarUsuario(["FINANCEIRO"]), fin2 = await criarUsuario(["FINANCEIRO"]), gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  login(fin1.id); const r = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: propostaId, tipo: "AULA_NAO_COBRAVEL", motivo: "Aula não ocorreu por motivo da escola; não deve ser cobrada.", chaveIdempotencia: `${chave}-revisao` });
+  if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+  expect(await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: r.dado.id, aprovada: true, motivo: "Autoaprovação indevida." })).toMatchObject({ ok: false });
+  login(fin2.id); const dec = await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: r.dado.id, aprovada: true, motivo: "Outra pessoa conferiu o efeito calculado." });
+  if (!dec.ok || !dec.dado) throw new Error(JSON.stringify(dec));
+  login(gestor.id); const impactos = await revisarImpactosCorrecaoAula({ propostaId }); if (!impactos.ok || !impactos.dado) throw new Error("Impactos ausentes");
+  const publicar = () => aprovarCorrecaoAula({ propostaId, propostaHash: impactos.dado!.propostaHash, impactosHash: impactos.dado!.impactosHash, motivo: "Gestão publica a correção com o acerto financeiro.", revisaoFinanceiraDecisaoId: dec.dado!.id });
+  return { revisaoId: r.dado.id, decisaoId: dec.dado.id, publicar, gestorId: gestor.id };
+}
+
+it("Q175 aula ainda não fechada: publicação atômica marca não cobrável e o fechamento seguinte a deixa de fora", async () => {
+  const { d, e, propostaId } = await prepararAulaNaoCobravel("q175-sem-item", false);
+  const { publicar, revisaoId } = await revisarEPublicarNaoCobravel(propostaId, "q175-sem-item");
+  expect((await prisma.propostaRevisaoFinanceiraCorrecaoAula.findUniqueOrThrow({ where: { id: revisaoId } })).fotografia).toMatchObject({ tipo: "AULA_NAO_COBRAVEL", efeito: { tipo: "SEM_ITEM" } });
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.count()).toBe(0);
+  const publicada = await publicar(); if (!publicada.ok) throw new Error(JSON.stringify(publicada));
+  expect(await publicar()).toEqual(publicada);
+  const conferencia = await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: e.id } });
+  expect(conferencia.valor.toFixed(2)).toBe("156.25"); // histórico imutável
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findMany()).toMatchObject([{ efeito: "SEM_ITEM", conferenciaId: conferencia.id, cobrancaId: null, creditoValor: null }]);
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+  await expect(prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.deleteMany()).rejects.toThrow();
+  const { prepararFechamentoHoras } = await import("./fechamento-horas-rascunho");
+  login(adminId);
+  const rascunho = await prepararFechamentoHoras({ alunoId: d.alunoId, matriculaId: d.matriculaId, documentoId, versaoAnterior: 0,
+    periodo: { referencia: { referencia: "MES_CIVIL" as const }, dataNoPeriodo: "2026-01-15", fuso: "America/Sao_Paulo", vencimento: "2026-02-10", clausula: "Apuração mensal após a correção" },
+    escolha: "AGUARDAR" as const, motivo: "Fechamento após a aula não cobrável", chaveIdempotencia: "q175-sem-item-fechamento" });
+  if (!rascunho.ok || !rascunho.dado) throw new Error(JSON.stringify(rascunho));
+  const gravado = await prisma.rascunhoFechamentoHoras.findUniqueOrThrow({ where: { id: rascunho.dado.id } });
+  expect(JSON.stringify(gravado)).toContain("NAO_COBRAVEL_CORRECAO");
+  expect(JSON.stringify(gravado)).not.toContain('"valor":"156.25"');
+});
+
+it("Q175 cobrança em aberto: a publicação reduz a fatura na mesma transação e o banco recusa publicar sem o acerto", async () => {
+  const { emissao, propostaId } = await prepararAulaNaoCobravel("q175-aberta", true);
+  const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
+  expect(antes.valorNegociado.toFixed(2)).toBe("156.25");
+  const { publicar, decisaoId, gestorId } = await revisarEPublicarNaoCobravel(propostaId, "q175-aberta");
+  // Escrita direta da aprovação, sem a aplicação, é desfeita pelo trigger diferido.
+  const proposta = await prisma.propostaCorrecaoAula.findUniqueOrThrow({ where: { id: propostaId } });
+  await expect(prisma.aprovacaoCorrecaoAula.create({ data: { propostaId, decisorId: gestorId, motivo: "Publicação direta sem acerto financeiro", propostaHash: proposta.entradaHash, impactosHash: "a".repeat(64), impactos: {}, revisaoFinanceiraDecisaoId: decisaoId } })).rejects.toThrow();
+  expect(await prisma.aprovacaoCorrecaoAula.count()).toBe(0);
+  expect(await publicar()).toMatchObject({ ok: true });
+  const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } });
+  expect(depois).toMatchObject({ versao: antes.versao + 1, status: "CANCELADA", valorOriginal: antes.valorOriginal });
+  expect(depois.valorNegociado.toFixed(2)).toBe("0.00");
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findMany()).toMatchObject([{ efeito: "REDUZ_COBRANCA_ABERTA", cobrancaId: antes.id, versaoCobrancaAntes: antes.versao }]);
+  expect(await prisma.itemFechamentoHoras.count()).toBe(1); // item e emissão preservados
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+});
+
+it("Q175 cobrança paga: fatura permanece quitada e nasce crédito na matrícula com origem rastreável; pagamento posterior à revisão a torna obsoleta", async () => {
+  const { emissao, propostaId } = await prepararAulaNaoCobravel("q175-paga", true);
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  // Revisão preparada com a fatura ainda aberta fica obsoleta quando o pagamento chega.
+  const aberta = await revisarEPublicarNaoCobravel(propostaId, "q175-paga-aberta");
+  login(adminId);
+  expect(await registrarPagamento(emissao!.cobrancaId, { chaveIdempotencia: "q175-paga-recebimento-01", valorRecebido: 156.25, forma: "DINHEIRO", comentario: "Fatura de horas quitada antes da correção." })).toMatchObject({ ok: true });
+  expect(await aberta.publicar()).toMatchObject({ ok: false });
+  expect(await prisma.aprovacaoCorrecaoAula.count()).toBe(0);
+  const paga = await revisarEPublicarNaoCobravel(propostaId, "q175-paga-quitada");
+  expect((await prisma.propostaRevisaoFinanceiraCorrecaoAula.findUniqueOrThrow({ where: { id: paga.revisaoId } })).fotografia).toMatchObject({ efeito: { tipo: "GERA_CREDITO" } });
+  const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
+  expect(await paga.publicar()).toMatchObject({ ok: true });
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: antes.id } })).toEqual(antes);
+  const creditos = await prisma.creditoMatricula.findMany({ include: { origemRevisaoCorrecaoAula: true } });
+  expect(creditos).toHaveLength(1);
+  expect(creditos[0]).toMatchObject({ matriculaId, moeda: antes.moeda, origemRevisaoCorrecaoAula: { cobrancaId: antes.id } });
+  expect(creditos[0].valorInicial.toFixed(2)).toBe("156.25");
+  // Crédito sem a origem da correção, ou com valor diferente dela, é recusado pelo banco.
+  await expect(prisma.creditoMatricula.create({ data: { matriculaId, moeda: antes.moeda, valorInicial: "10.00" } })).rejects.toThrow();
+  await expect(prisma.origemCreditoRevisaoCorrecaoAula.deleteMany()).rejects.toThrow();
+});

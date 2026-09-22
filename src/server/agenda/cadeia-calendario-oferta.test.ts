@@ -62,4 +62,52 @@ describe("ancorarCalendarioOferta", () => {
     expect(ancora).toMatchObject({ tipo: "REPLANEJAMENTO_APLICADO", calendarioId: "cal-posterior", revisaoId: "revisao-posterior" });
     expect(ancorarCalendarioOferta({ ...entrada(), calendarioVigente: calendario({ id: "cal-posterior", versao: 3, replanejamentos: [{ ...calendario().replanejamentos[0], snapshot: snapshotPosterior }] }), encontros: aulas })).toBeNull();
   });
+  it("aceita a evolução PREVISTO→MINISTRADO após a fotografia, mas não outro status", () => {
+    const ministrada = [aulas[0], { ...aulas[1], status: "MINISTRADO" }];
+    expect(ancorarCalendarioOferta({ ...entrada(), encontros: ministrada })).toMatchObject({ tipo: "REPLANEJAMENTO_APLICADO", revisaoId: "revisao" });
+    expect(ancorarCalendarioOferta({ ...entrada(), encontros: [aulas[0], { ...aulas[1], status: "NAO_REALIZADO" }] })).toBeNull();
+    expect(ancorarCalendarioOferta({ ...entrada(), encontros: [{ ...aulas[0], status: "PREVISTO" }, aulas[1]] })).toBeNull();
+  });
+
+  describe("alteração de quantidade aplicada depois do replanejamento", () => {
+    const aplicadoEm = new Date("2026-09-21T00:00:00.000Z");
+    const comData = () => calendario({ replanejamentos: [{ ...calendario().replanejamentos[0], decisaoConjunta: { ...calendario().replanejamentos[0].decisaoConjunta, aplicacao: { id: "aplicacao", estadoHash: "h".repeat(64), aplicadaEm: aplicadoEm } } }] });
+    const iso = (e: typeof aulas[number]) => ({ id: e.id as string | null, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status });
+    const nova = { id: "aula-nova", inicio: new Date("2026-10-15T12:00:00.000Z"), fim: new Date("2026-10-15T13:00:00.000Z"), status: "PREVISTO" };
+    const alteracao = (ajustes: Record<string, unknown> = {}) => ({
+      propostaId: "quantidade", estadoHash: "q".repeat(64),
+      decisao: { id: "decisao-q", aprovada: true, estadoHash: "q".repeat(64) },
+      aplicacao: { id: "aplicacao-q", estadoHash: "q".repeat(64), aplicadaEm: new Date("2026-09-25T00:00:00.000Z") },
+      impactoSnapshot: { agendaAntes: aulas.map(iso), agendaDepois: [...aulas.map(iso), { ...iso(nova), id: null }] },
+      ...ajustes,
+    });
+    const ancorar = (alteracoes: unknown[], encontros = [...aulas, nova]) => ancorarCalendarioOferta({ ...entrada(), calendarioVigente: comData(), encontros, alteracoesQuantidade: alteracoes as never });
+
+    it("encadeia a aplicação aprovada e guarda o elo na âncora", () => {
+      expect(ancorar([alteracao()])).toMatchObject({ tipo: "REPLANEJAMENTO_APLICADO", revisaoId: "revisao",
+        alteracoesQuantidade: [{ propostaId: "quantidade", decisaoId: "decisao-q", aplicacaoId: "aplicacao-q", estadoHash: "q".repeat(64) }] });
+    });
+
+    it("reconhece cancelamento e remarcação registrados pela alteração", () => {
+      const depois = [iso(aulas[0]), { ...iso(aulas[1]), status: "CANCELADO" }];
+      expect(ancorar([alteracao({ impactoSnapshot: { agendaAntes: aulas.map(iso), agendaDepois: depois } })], [aulas[0], { ...aulas[1], status: "CANCELADO" }])).not.toBeNull();
+    });
+
+    it.each([
+      ["sem aplicação", alteracao({ aplicacao: null })],
+      ["rejeitada", alteracao({ decisao: { id: "decisao-q", aprovada: false, estadoHash: "q".repeat(64) } })],
+      ["hash divergente", alteracao({ estadoHash: "x".repeat(64) })],
+      ["anterior ao replanejamento", alteracao({ aplicacao: { id: "aplicacao-q", estadoHash: "q".repeat(64), aplicadaEm: new Date("2026-09-20T00:00:00.000Z") } })],
+      ["partida divergente da agenda replanejada", alteracao({ impactoSnapshot: { agendaAntes: [iso(aulas[0])], agendaDepois: [...aulas.map(iso), { ...iso(nova), id: null }] } })],
+      ["fotografia ilegível", alteracao({ impactoSnapshot: { agendaAntes: "x" } })],
+    ])("exige confirmação com alteração %s", (_nome, item) => {
+      expect(ancorar([item])).toBeNull();
+    });
+
+    it("não aceita encontro que nenhuma alteração explica", () => {
+      const intruso = { ...nova, id: "intruso", inicio: new Date("2026-10-22T12:00:00.000Z"), fim: new Date("2026-10-22T13:00:00.000Z") };
+      expect(ancorar([alteracao()], [...aulas, nova, intruso])).toBeNull();
+      expect(ancorar([], [...aulas, nova])).toBeNull();
+    });
+  });
 });

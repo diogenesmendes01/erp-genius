@@ -1,4 +1,5 @@
 import { conferirAplicacaoDireta } from "./aditivo-aplicacao-campos";
+import { regimeFonteContratualTx } from "./fonte-contratual-tx";
 import { carregarAplicacoesCamposTx } from "./aditivo-aplicacao-campos-tx";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
@@ -18,8 +19,7 @@ const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.JsonObject;
 async function exigirMoedaERegimeAplicaveis(tx: Prisma.TransactionClient, matriculaId: string, condicoes: Prisma.JsonValue) {
   const matricula = await tx.matricula.findUnique({ where: { id: matriculaId }, select: { moeda: true, preparacaoComercial: { select: { regime: true } } } });
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
-  const original = await tx.conclusaoAssinaturaContratual.findFirst({ where: { processo: { matriculaId } }, include: { processo: { include: { artefato: { include: { previa: true } } } } } });
-  const regimeOriginal = original ? z.object({ condicoes: z.object({ aulas: z.object({ regime: z.enum(["MENSALIDADE", "HORA_PARTICULAR"]) }) }) }).parse(original.processo.artefato.previa.snapshot).condicoes.aulas.regime : null;
+  const regimeOriginal = await regimeFonteContratualTx(tx, matriculaId);
   if (!regimeOriginal) throw new ErroRegra("O regime do contrato assinado exige conferência.");
   if (matricula.preparacaoComercial && matricula.preparacaoComercial.regime !== regimeOriginal) throw new ErroRegra("A preparação comercial diverge do contrato assinado.");
   const campos = z.record(z.unknown()).parse(condicoes);

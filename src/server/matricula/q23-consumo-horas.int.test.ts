@@ -218,3 +218,48 @@ it("Q23 ancora a matrícula: condição aplicável aguarda a foto e invalida a p
   expect(publicacao).toMatchObject({ ok: false });
   expect(await prisma.aprovacaoCorrecaoAula.count({ where: { propostaId: q23.id } })).toBe(0);
 }, 100_000);
+
+it("Q175 horas pré-pagas: aula não cobrável estorna o consumo e devolve os minutos à mesma compra, sem mover dinheiro", async () => {
+  const fonte = await prepararCompraEReservas(); login(financeiroId);
+  const previa = await conferirRealizacaoHoras({ reservaId: fonte.diario.reservaId }); if (!previa.ok || !previa.dado?.estadoDiario) throw new Error("Prévia do diário ausente");
+  expect(await conferirRealizacaoHoras({ reservaId: fonte.diario.reservaId, estadoDiario: previa.dado.estadoDiario, motivo: "Realização original conferida pelo Financeiro" })).toMatchObject({ ok: true });
+  await prisma.encontroAgenda.update({ where: { id: fonte.diario.encontro.id }, data: { status: "MINISTRADO" } });
+  const antes = await fotografiaFinanceiraImutavel(fonte.cobrancaId, fonte.compraId);
+  const consumo = await prisma.consumoHorasCompradas.findUniqueOrThrow({ where: { reservaId: fonte.diario.reservaId } });
+  const { consultarComprasHorasAntecipadas: consultarComprasHoras } = await import("./compra-horas");
+  const saldo = async () => { login(financeiroId); const r = await consultarComprasHoras({ alunoId, matriculaId }); if (!r.ok || !r.dado) throw new Error(JSON.stringify(r)); return r.dado.compras.find(c => c.id === fonte.compraId)!; };
+  expect(await saldo()).toMatchObject({ minutosConsumidos: 1, minutosReservados: 1, minutosDisponiveis: 178 });
+
+  // Opção A: o diário registra o fato no conteúdo, sem mexer na presença; o Financeiro declara a aula não cobrável.
+  login(fonte.diario.professorId); const atual = await revisarCorrecaoAula({ encontroId: fonte.diario.encontro.id }); if (!atual.ok || !atual.dado) throw new Error("Q23 ausente");
+  const q23 = await proporCorrecaoAula({ encontroId: fonte.diario.encontro.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Aula lançada, mas não realizada por falha da escola.", evidencia: "Registro da coordenação sobre a indisponibilidade.", chaveIdempotencia: "q175b-proposta",
+    alteracao: { conteudo: "Aula não realizada: indisponibilidade de responsabilidade da escola.", registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: r.participacao, observacao: r.observacao })) } });
+  if (!q23.ok || !q23.dado) throw new Error(JSON.stringify(q23));
+  login(financeiroId); const revisao = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: q23.dado.id, tipo: "AULA_NAO_COBRAVEL", motivo: "Aula não ocorreu; os minutos pré-pagos devem voltar ao saldo.", chaveIdempotencia: "q175b-revisao" });
+  if (!revisao.ok || !revisao.dado) throw new Error(JSON.stringify(revisao));
+  expect((await prisma.propostaRevisaoFinanceiraCorrecaoAula.findUniqueOrThrow({ where: { id: revisao.dado.id } })).fotografia).toMatchObject({ tipo: "AULA_NAO_COBRAVEL", efeito: { tipo: "DEVOLVE_MINUTOS", consumoId: consumo.id, compraId: fonte.compraId, minutos: 1 } });
+  login(aprovadorFinanceiroId); const decisao = await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: revisao.dado.id, aprovada: true, motivo: "Efeito conferido por outra pessoa do Financeiro." });
+  if (!decisao.ok || !decisao.dado) throw new Error(JSON.stringify(decisao));
+  // Estorno direto, sem a aplicação aprovada, é recusado pelo banco.
+  await expect(prisma.estornoConsumoHorasCompradas.create({ data: { consumoId: consumo.id, aplicacaoId: "inexistente", compraId: fonte.compraId, minutos: 1 } })).rejects.toThrow();
+  const publicada = await publicarCorrecao(q23.dado.id, decisao.dado.id); if (!publicada.ok) throw new Error(JSON.stringify(publicada));
+
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findMany()).toMatchObject([{ efeito: "DEVOLVE_MINUTOS", minutosDevolvidos: 1, cobrancaId: null, creditoValor: null }]);
+  expect(await prisma.estornoConsumoHorasCompradas.findMany()).toMatchObject([{ consumoId: consumo.id, compraId: fonte.compraId, minutos: 1 }]);
+  await expect(prisma.estornoConsumoHorasCompradas.deleteMany()).rejects.toThrow();
+  // Nenhum dinheiro se move e o histórico (reserva e consumo) permanece.
+  expect(await fotografiaFinanceiraImutavel(fonte.cobrancaId, fonte.compraId)).toEqual(antes);
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+  expect(await prisma.consumoHorasCompradas.findUnique({ where: { id: consumo.id } })).toEqual(consumo);
+  // Os minutos voltaram ao saldo visível e ao guard de reserva do banco.
+  expect(await saldo()).toMatchObject({ minutosConsumidos: 0, minutosEstornados: 1, minutosReservados: 1, minutosDisponiveis: 179 });
+  const novoInicio = new Date(Date.now() + 3_600_000), novoFim = new Date(novoInicio.getTime() + 179 * 60_000);
+  const novo = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: fonte.diario.professorId, preparadorId: adminId, inicio: novoInicio, fim: novoFim, fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula remarcada com os minutos devolvidos", chaveIdempotencia: "q175b-encontro-novo", entradaHash: "fixture" } });
+  login(financeiroId);
+  expect(await reservarHorasCompradasParaEncontro({ compraId: fonte.compraId, encontroId: novo.id, motivo: "Reserva usando todos os minutos disponíveis", chaveIdempotencia: "q175b-reserva-nova" })).toMatchObject({ ok: true });
+  expect(await saldo()).toMatchObject({ minutosDisponiveis: 0 });
+  // A mesma aula não admite segunda declaração.
+  login(financeiroId);
+  const { consultarRevisoesFinanceirasCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
+  expect(await consultarRevisoesFinanceirasCorrecaoAula({ matriculaId })).toMatchObject({ ok: true, dado: { candidatas: [] } });
+}, 120_000);

@@ -467,6 +467,17 @@ model Usuario {
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
+  adiantamentosAditivoPreparados PropostaAdiantamentoAditivo[] @relation("PreparadorAdiantamentoAditivo")
+  adiantamentosAditivoDecididos DecisaoAdiantamentoAditivo[] @relation("DecisorAdiantamentoAditivo")
+  adiantamentosAditivoAplicados AplicacaoAdiantamentoAditivo[] @relation("ExecutorAdiantamentoAditivo")
+  destinacoesExcedentePermutaPreparadas PropostaDestinacaoExcedentePermuta[] @relation("PreparadorDestinacaoExcedentePermuta")
+  usosSaldoServicoPermutaPreparados PropostaUsoSaldoServicoPermuta[] @relation("PreparadorUsoSaldoServicoPermuta")
+  usosSaldoServicoPermutaDecididos DecisaoUsoSaldoServicoPermuta[] @relation("DecisorUsoSaldoServicoPermuta")
+  destinacoesExcedentePermutaDecididas DecisaoDestinacaoExcedentePermuta[] @relation("DecisorDestinacaoExcedentePermuta")
+  concordanciasExcedentePermutaRegistradas ConcordanciaDestinacaoExcedentePermuta[] @relation("RegistradorConcordanciaExcedentePermuta")
+  moedasAditivoPreparadas PropostaMoedaAditivo[] @relation("PreparadorMoedaAditivo")
+  moedasAditivoDecididas DecisaoMoedaAditivo[] @relation("DecisorMoedaAditivo")
+  moedasAditivoAplicadas AplicacaoMoedaAditivo[] @relation("ExecutorMoedaAditivo")
   conjuntosCoberturaAditivoPreparados ConjuntoImpactosCoberturaAditivo[] @relation("PreparadorConjuntoCoberturaAditivo")
   decisoesConjuntosCoberturaAditivo DecisaoConjuntoImpactosCoberturaAditivo[] @relation("DecisorConjuntoCoberturaAditivo")
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("ExecutorCoberturaAditivo")
@@ -504,6 +515,8 @@ model Usuario {
   aplicacoesCondicoesAditivo AplicacaoCondicoesAditivo[]
   aplicacoesAcertoTaxaAditivo AplicacaoAcertoTaxaAditivo[] @relation("ExecutorAcertoTaxaAditivo")
   propostasAgendaAditivo PropostaAgendaAditivoParticular[] @relation("PreparadorAgendaAditivo")
+  origensContratuaisHistoricasPreparadas PropostaOrigemContratualHistorica[] @relation("PreparadorOrigemContratualHistorica")
+  origensContratuaisHistoricasDecididas DecisaoOrigemContratualHistorica[] @relation("DecisorOrigemContratualHistorica")
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[] @relation("AplicadorAgendaAditivo")
   propostasDevolucaoCredito PropostaDevolucaoCredito[] @relation("PreparadorDevolucaoCredito")
   decisoesDevolucaoCredito DecisaoDevolucaoCredito[] @relation("DecisorDevolucaoCredito")
@@ -570,6 +583,8 @@ model Usuario {
   confirmacoesIndisponibilidadeOfertaMatricula ConfirmacaoIndisponibilidadeOfertaMatricula[] @relation("ConfirmadorIndisponibilidadeOfertaMatricula")
   propostasTerminoIndisponibilidadeOferta PropostaTerminoIndisponibilidadeOferta[] @relation("AutorPropostaTerminoOferta")
   decisoesTerminoIndisponibilidadeOferta DecisaoTerminoIndisponibilidadeOferta[] @relation("DecisorTerminoOferta")
+  propostasCorrecaoRelatoIndisponibilidadeOferta PropostaCorrecaoRelatoIndisponibilidadeOferta[] @relation("AutorCorrecaoRelatoOferta")
+  decisoesCorrecaoRelatoIndisponibilidadeOferta DecisaoCorrecaoRelatoIndisponibilidadeOferta[] @relation("DecisorCorrecaoRelatoOferta")
   propostasDisponibilidadeOferta PropostaDisponibilidadeOfertaMatricula[] @relation("AutorPropostaDisponibilidadeOferta")
   decisoesDisponibilidadeOferta DecisaoDisponibilidadeOfertaMatricula[] @relation("DecisorDisponibilidadeOferta")
   propostasPeriodoIntegral PropostaPeriodoIntegral[] @relation("AutorPropostaPeriodoIntegral")
@@ -789,6 +804,7 @@ model Usuario {
   remarcacoesAgendaSegundaChamadaDecididas DecisaoRemarcacaoAgendaSegundaChamada[] @relation("DecisorRemarcacaoAgendaSegundaChamada")
   realizacoesSegundaChamada RealizacaoSegundaChamada[] @relation("ProfessorRealizacaoSegundaChamada")
   realizacoesSegundaChamadaRegistradas RealizacaoSegundaChamada[] @relation("RegistradorRealizacaoSegundaChamada")
+  resolucoesImpedimentoSegundaChamada ResolucaoImpedimentoSegundaChamada[] @relation("ConfirmadorResolucaoImpedimentoSegundaChamada")
   extrasSegundaChamada PropostaExtraSegundaChamada[] @relation("AutorExtraSegundaChamada")
   decisoesExtraSegundaChamada DecisaoExtraSegundaChamada[] @relation("DecisorExtraSegundaChamada")
   autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[] @relation("AutorizadorEspecialSegundaChamada")
@@ -1715,9 +1731,17 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  destinacoesExcedentePermuta PropostaDestinacaoExcedentePermuta[]
+  saldosServicoPermuta SaldoServicoPermuta[]
+  usosSaldoServicoPermuta PropostaUsoSaldoServicoPermuta[]
+  origensCreditoExcedentePermuta OrigemCreditoExcedentePermuta[]
+  aplicacoesRevisaoCorrecaoAula AplicacaoRevisaoFinanceiraCorrecaoAula[]
+  origensCreditoRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula[]
   conjuntosImpactosCoberturaAditivo ConjuntoImpactosCoberturaAditivo[]
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
+  propostasAdiantamentoAditivo PropostaAdiantamentoAditivo[]
+  propostasMoedaAditivo PropostaMoedaAditivo[]
   recebimentosTitulares Recebimento[] @relation("TitularRecebimento")
   propostasPresencaHistoricaMigracao PropostaPresencaHistoricaMigracao[]
   propostasConciliacaoFinanceira PropostaConciliacaoFinanceiraMigracao[]
@@ -1733,6 +1757,7 @@ model Matricula {
   propostasAditivo PropostaAditivoContratual[]
   propostasAgendaAditivo PropostaAgendaAditivoParticular[]
   aplicacoesAgendaAditivo AplicacaoAgendaAditivoParticular[]
+  origensContratuaisHistoricas PropostaOrigemContratualHistorica[]
   propostasSubstituicaoContratual PropostaSubstituicaoContratual[]
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[]
   conjuntosImpactosTaxaAditivo ConjuntoImpactosTaxaAditivo[]
@@ -1880,8 +1905,13 @@ enum FormaPagamento {
 }
 
 model Cobranca {
+  destinacoesExcedentePermuta PropostaDestinacaoExcedentePermuta[]
+  origensCreditoExcedentePermuta OrigemCreditoExcedentePermuta[]
+  aplicacoesRevisaoCorrecaoAula AplicacaoRevisaoFinanceiraCorrecaoAula[]
+  origensCreditoRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula[]
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
+  propostasAdiantamentoAditivo PropostaAdiantamentoAditivo[]
   impactosCoberturaAditivo ImpactoCoberturaAditivo[]
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("CobrancaAplicacaoCoberturaAditivo")
   propostasAcertoTaxaAditivo PropostaAcertoTaxaAditivo[] @relation("CobrancaPropostaAcertoTaxaAditivo")
@@ -1911,6 +1941,7 @@ model Cobranca {
   elegibilidadesPermuta AcordoPermutaCobranca[]
   destinosPropostaPermuta DestinoPropostaCompensacaoPermuta[]
   aplicacoesPermuta AplicacaoCompensacaoPermuta[]
+  usosSaldoServicoPermuta PropostaUsoSaldoServicoPermuta[]
   @@unique([id, matriculaId], map: "cobranca_id_matricula_key")
   suspensaPorItemPausaId String?
   suspensaPorItemPausa ItemPropostaPausa? @relation("SuspensaoPausaMatricula", fields: [suspensaPorItemPausaId, matriculaId], references: [id, matriculaId], onDelete: Restrict, onUpdate: Restrict)
@@ -2702,6 +2733,7 @@ model CondicoesEncerramentoMatricula {
 }
 
 model CompraHorasAntecipadas {
+  estornosConsumo EstornoConsumoHorasCompradas[]
   liquidacaoAcerto LiquidacaoHorasAcerto?
   reservas ReservaHorasCompradas[]
   id String @id @default(cuid())
@@ -3234,6 +3266,7 @@ model RejeicaoCorrecaoAula {
 // Q23: decisão independente que torna efetiva a projeção da proposta, sem
 // reescrever AulaDiario ou RegistroAulaAluno.
 model AprovacaoCorrecaoAula {
+  aplicacaoRevisaoFinanceira AplicacaoRevisaoFinanceiraCorrecaoAula?
   id String @id @default(cuid())
   propostaId String @unique
   proposta PropostaCorrecaoAula @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3275,6 +3308,7 @@ model PropostaRevisaoFinanceiraCorrecaoAula {
 }
 
 model DecisaoRevisaoFinanceiraCorrecaoAula {
+  aplicacaoNaoCobravel AplicacaoRevisaoFinanceiraCorrecaoAula?
   id String @id @default(cuid())
   propostaId String @unique
   proposta PropostaRevisaoFinanceiraCorrecaoAula @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -3286,6 +3320,65 @@ model DecisaoRevisaoFinanceiraCorrecaoAula {
   fotografiaHash String
   criadaEm DateTime @default(dbgenerated("(CURRENT_TIMESTAMP AT TIME ZONE 'UTC'::text)"))
   aprovacaoCorrecaoAula AprovacaoCorrecaoAula? @relation("AprovacaoCorrecaoAulaRevisaoFinanceira")
+}
+
+// Q175: efeito financeiro da correção "aula não devia ser cobrada". Nasce na MESMA transação
+// da aprovação acadêmica; conferência, item e emissão permanecem imutáveis.
+model AplicacaoRevisaoFinanceiraCorrecaoAula {
+  id String @id @default(cuid())
+  decisaoRevisaoId String @unique
+  decisaoRevisao DecisaoRevisaoFinanceiraCorrecaoAula @relation(fields: [decisaoRevisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovacaoCorrecaoAulaId String @unique
+  aprovacaoCorrecaoAula AprovacaoCorrecaoAula @relation(fields: [aprovacaoCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conferenciaId String? @unique
+  conferencia ConferenciaOcorrenciaHoras? @relation(fields: [conferenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  minutosDevolvidos Int?
+  estornoConsumo EstornoConsumoHorasCompradas?
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String?
+  cobranca Cobranca? @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  efeito String
+  valorAula Decimal @db.Decimal(12, 2)
+  moeda String
+  versaoCobrancaAntes Int?
+  valorNegociadoAnterior Decimal? @db.Decimal(12, 2)
+  valorNegociadoNovo Decimal? @db.Decimal(12, 2)
+  creditoValor Decimal? @db.Decimal(12, 2)
+  fotografiaHash String
+  aplicadaEm DateTime @default(now())
+  origemCredito OrigemCreditoRevisaoCorrecaoAula?
+  @@index([matriculaId, aplicadaEm])
+}
+
+// Q175 (fatia 2): aula paga com horas pré-pagas e declarada não cobrável devolve os minutos à
+// própria compra. Reserva e consumo continuam imutáveis; o estorno é o fato novo que os neutraliza.
+model EstornoConsumoHorasCompradas {
+  id String @id @default(cuid())
+  consumoId String @unique
+  consumo ConsumoHorasCompradas @relation(fields: [consumoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoId String @unique
+  aplicacao AplicacaoRevisaoFinanceiraCorrecaoAula @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  compraId String
+  compra CompraHorasAntecipadas @relation(fields: [compraId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  minutos Int
+  criadoEm DateTime @default(now())
+  @@index([compraId])
+}
+
+model OrigemCreditoRevisaoCorrecaoAula {
+  id String @id @default(cuid())
+  aplicacaoId String @unique
+  aplicacao AplicacaoRevisaoFinanceiraCorrecaoAula @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  moeda String
+  credito CreditoMatricula?
+  criadaEm DateTime @default(now())
+  @@index([cobrancaId])
 }
 
 model DecisaoExcecaoGravacao {
@@ -4390,9 +4483,53 @@ model ConclusaoAssinaturaContratual {
   registradaEm DateTime @default(now())
 }
 
+// Origem contratual histórica (contrato legado assinado fora do sistema): PDF assinado + transcrição das condições
+// + conferência dupla (preparador transcreve, outro administrador confere PDF e transcrição e decide). Aprovada, vale
+// como fonte de aditivos no lugar da conclusão assinada; nunca há as duas na mesma matrícula. Sem dado presumido:
+// só o que a transcrição declarar fica estruturado e pode ser alterado por aditivo.
+model PropostaOrigemContratualHistorica {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  referencia String
+  assinadoEm DateTime
+  pdfAssinado Bytes
+  pdfHash String
+  transcricao Json
+  transcricaoHash String
+  projecao Json
+  projecaoHash String
+  preparadorId String
+  preparador Usuario @relation("PreparadorOrigemContratualHistorica", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoOrigemContratualHistorica?
+  propostasAditivo PropostaAditivoContratual[]
+  propostasAgendaAditivo PropostaAgendaAditivoParticular[]
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoOrigemContratualHistorica {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaOrigemContratualHistorica @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorOrigemContratualHistorica", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  pdfHashConferido String
+  transcricaoHashConferido String
+  decididaEm DateTime @default(now())
+}
+
 model PropostaAditivoContratual {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
+  propostasAdiantamento PropostaAdiantamentoAditivo[]
+  propostasMoeda PropostaMoedaAditivo[]
     conferenciasParticipantes ConferenciaParticipantesAditivo[]
     originaisAditivo ArtefatoAditivoContratual[]
   processoAssinatura ProcessoAssinaturaAditivo?
@@ -4405,8 +4542,11 @@ model PropostaAditivoContratual {
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  conclusaoOriginalId String
-  conclusaoOriginal ConclusaoAssinaturaContratual @relation(fields: [conclusaoOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // Exatamente uma fonte (CHECK no banco): conclusão assinada no sistema OU origem contratual histórica aprovada.
+  conclusaoOriginalId String?
+  conclusaoOriginal ConclusaoAssinaturaContratual? @relation(fields: [conclusaoOriginalId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemHistoricaId String?
+  origemHistorica PropostaOrigemContratualHistorica? @relation(fields: [origemHistoricaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   modeloId String
   modelo VersaoModeloContratual @relation(fields: [modeloId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   versao Int
@@ -4571,6 +4711,8 @@ model ConferenciaFinalAditivo {
 model VersaoCondicoesAditivo {
   conjuntosImpactosCobertura ConjuntoImpactosCoberturaAditivo[]
   propostasVencimento PropostaVencimentoAditivo[]
+  propostasAdiantamento PropostaAdiantamentoAditivo[]
+  propostasMoeda PropostaMoedaAditivo[]
   id String @id @default(cuid())
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -4602,8 +4744,10 @@ model PropostaAgendaAditivoParticular {
   propostaAditivo PropostaAditivoContratual?
   matriculaId String
   matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  conclusaoFonteId String
-  conclusaoFonte ConclusaoAssinaturaContratual @relation(fields: [conclusaoFonteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  conclusaoFonteId String?
+  conclusaoFonte ConclusaoAssinaturaContratual? @relation(fields: [conclusaoFonteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemHistoricaId String?
+  origemHistorica PropostaOrigemContratualHistorica? @relation(fields: [origemHistoricaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   preparadorId String
   preparador Usuario @relation("PreparadorAgendaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   fotografia Json
@@ -5284,6 +5428,10 @@ model CreditoMatricula {
   origemAcertoDesistenciaContratual OrigemCreditoAcertoDesistenciaContratual? @relation(fields: [origemAcertoDesistenciaContratualId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   origemReconferenciaDeltaDesistenciaId String? @unique
   origemReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia? @relation(fields: [origemReconferenciaDeltaDesistenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemRevisaoCorrecaoAulaId String? @unique
+  origemRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula? @relation(fields: [origemRevisaoCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  origemExcedentePermutaId String? @unique
+  origemExcedentePermuta OrigemCreditoExcedentePermuta? @relation(fields: [origemExcedentePermutaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   reconhecimentosReconferenciaDelta ReconhecimentoCreditoReconferenciaDeltaDesistencia[]
   valorInicial Decimal @db.Decimal(12, 2)
   moeda String
@@ -5434,6 +5582,7 @@ model ReservaHorasCompradas {
 }
 
 model ConsumoHorasCompradas {
+  estorno EstornoConsumoHorasCompradas?
   id String @id @default(cuid())
   reservaId String @unique
   reserva ReservaHorasCompradas @relation(fields: [reservaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -5562,8 +5711,46 @@ model RegistroIndisponibilidadeOfertaMatricula {
   criadaEm DateTime @default(now())
   confirmacao ConfirmacaoIndisponibilidadeOfertaMatricula?
   propostasTermino PropostaTerminoIndisponibilidadeOferta[]
+  propostasCorrecao PropostaCorrecaoRelatoIndisponibilidadeOferta[]
  @@unique([autorId, chaveIdempotencia])
  @@index([matriculaId, inicio, fim])
+}
+
+// Q157: correção versionada do período de um relato já confirmado. `inicio`/`fim` do
+// relato passam a refletir a última correção aprovada; cada versão preserva o antes e o
+// depois, de modo que o relato original nunca se perde.
+model PropostaCorrecaoRelatoIndisponibilidadeOferta {
+ id String @id @default(cuid())
+ registroId String
+ registro RegistroIndisponibilidadeOfertaMatricula @relation(fields: [registroId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ versao Int
+ inicioAnterior DateTime @db.Date
+ fimAnterior DateTime? @db.Date
+ inicioNovo DateTime @db.Date
+ fimNovo DateTime? @db.Date
+ motivo String
+ evidenciaTexto String
+ autorId String
+ autor Usuario @relation("AutorCorrecaoRelatoOferta", fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ decisao DecisaoCorrecaoRelatoIndisponibilidadeOferta?
+ @@unique([registroId, versao])
+ @@unique([autorId, chaveIdempotencia])
+}
+
+model DecisaoCorrecaoRelatoIndisponibilidadeOferta {
+ id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaCorrecaoRelatoIndisponibilidadeOferta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ decisorId String
+ decisor Usuario @relation("DecisorCorrecaoRelatoOferta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ aprovada Boolean
+ motivo String
+ evidenciaTexto String
+ entradaHash String
+ decididaEm DateTime @default(now())
 }
 
 model ConfirmacaoIndisponibilidadeOfertaMatricula {
@@ -5675,6 +5862,7 @@ model AplicacaoPeriodoIntegral {
 }
 
 model ConferenciaOcorrenciaHoras {
+  aplicacaoNaoCobravel AplicacaoRevisaoFinanceiraCorrecaoAula?
  itemFaturado ItemFechamentoHoras?
  consumoAntecipacao ConsumoHorasCompradas? @relation("ConsumoAntecipacaoOcorrencia")
  id String @id @default(cuid())
@@ -6568,6 +6756,7 @@ id String @id @default(cuid())
   propostasRemarcacaoAgenda PropostaRemarcacaoAgendaSegundaChamada[]
   propostasSubstituicaoAgenda PropostaSubstituicaoAgendaSegundaChamada[]
   realizacao RealizacaoSegundaChamada?
+  resolucaoImpedimento ResolucaoImpedimentoSegundaChamada?
  @@index([matriculaId,regraId,codigoAvaliacao,status])
 }
 
@@ -6853,6 +7042,24 @@ id String @id @default(cuid())
  criadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
  lancamentoOriginalId String? @unique
  lancamentosOriginais VersaoLancamentoAvaliacao[] @relation("LancamentoOriginalSegundaChamada")
+ resolucoesImpedimento ResolucaoImpedimentoSegundaChamada[]
+}
+
+// Q164: o impedimento causado pela escola permanece como fato histórico; a gestão
+// pedagógica confirma sua resolução apontando a realização posterior com nota oficial.
+model ResolucaoImpedimentoSegundaChamada {
+ id String @id @default(cuid())
+ reservaImpedidaId String @unique
+ reservaImpedida ReservaSegundaChamada @relation(fields:[reservaImpedidaId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ realizacaoId String
+ realizacao RealizacaoSegundaChamada @relation(fields:[realizacaoId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ confirmadaPorId String
+ confirmadaPor Usuario @relation("ConfirmadorResolucaoImpedimentoSegundaChamada",fields:[confirmadaPorId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+ motivo String
+ chaveIdempotencia String
+ confirmadaEm DateTime @default(dbgenerated("(clock_timestamp() AT TIME ZONE 'UTC')"))
+ @@unique([confirmadaPorId,chaveIdempotencia])
+ @@index([realizacaoId])
 }
 
 model PropostaExtraSegundaChamada {
@@ -8065,17 +8272,171 @@ model ResolucaoDivergenciaPresencaHistoricaMigracao {
 }
 
 model AplicacaoCompensacaoPermuta {
+  origensExcedente OrigemExcedentePermuta[]
   id String @id @default(cuid())
-  destinoId String @unique
-  destino DestinoPropostaCompensacaoPermuta @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  decisaoId String
-  decisao DecisaoCompensacaoPermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // Exatamente uma origem (CHECK no banco): destino de proposta de compensação OU uso aprovado de saldo restrito (Q171).
+  destinoId String? @unique
+  destino DestinoPropostaCompensacaoPermuta? @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String?
+  decisao DecisaoCompensacaoPermuta? @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  usoSaldoServicoId String? @unique
+  usoSaldoServico DecisaoUsoSaldoServicoPermuta? @relation(fields: [usoSaldoServicoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   cobrancaId String
   cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   valor Decimal @db.Decimal(12, 2)
   aplicadaEm DateTime @default(now())
   @@index([cobrancaId])
   @@index([decisaoId])
+}
+
+// Q167C/Q171: destinação NEGOCIADA do excedente de permuta. O excedente nasce quando um acerto reduz a
+// obrigação de uma cobrança já compensada por serviços; nada é convertido automaticamente. O acordo escolhe
+// entre saldo restrito a serviços e crédito financeiro, com concordância das partes e aprovação independente.
+model PropostaDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  moeda String
+  valorDevidoAcordado Decimal @db.Decimal(12, 2)
+  valorExcedente Decimal @db.Decimal(12, 2)
+  fotografia Json
+  fotografiaHash String
+  preparadorId String
+  preparador Usuario @relation("PreparadorDestinacaoExcedentePermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  origens OrigemExcedentePermuta[]
+  itens ItemDestinacaoExcedentePermuta[]
+  concordancias ConcordanciaDestinacaoExcedentePermuta[]
+  decisao DecisaoDestinacaoExcedentePermuta?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([cobrancaId, criadaEm])
+}
+
+model OrigemExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoPermutaId String
+  aplicacaoPermuta AplicacaoCompensacaoPermuta @relation(fields: [aplicacaoPermutaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  @@unique([propostaId, aplicacaoPermutaId])
+  @@index([aplicacaoPermutaId])
+}
+
+model ItemDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  tipo String
+  valor Decimal @db.Decimal(12, 2)
+  saldoServico SaldoServicoPermuta?
+  origemCredito OrigemCreditoExcedentePermuta?
+  @@unique([propostaId, tipo])
+}
+
+model ConcordanciaDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  parte String
+  nomeDeclarante String
+  meio String
+  evidencia String
+  registradaPorId String
+  registradaPor Usuario @relation("RegistradorConcordanciaExcedentePermuta", fields: [registradaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  registradaEm DateTime @default(now())
+  @@unique([propostaId, parte])
+}
+
+model DecisaoDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorDestinacaoExcedentePermuta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  decididaEm DateTime @default(now())
+  saldosServico SaldoServicoPermuta[]
+  origensCredito OrigemCreditoExcedentePermuta[]
+}
+
+// Saldo restrito a serviços: abate cobranças da MESMA matrícula, não expira e nunca vira dinheiro.
+model SaldoServicoPermuta {
+  id String @id @default(cuid())
+  itemId String @unique
+  item ItemDestinacaoExcedentePermuta @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String
+  decisao DecisaoDestinacaoExcedentePermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  moeda String
+  valorInicial Decimal @db.Decimal(12, 2)
+  criadoEm DateTime @default(now())
+  usos PropostaUsoSaldoServicoPermuta[]
+  @@index([matriculaId])
+}
+
+// Q171: uso do saldo restrito a serviços. Abate cobrança da MESMA matrícula (mensalidade, hora particular ou taxa)
+// por proposta do Financeiro e aprovação independente; a aprovação nasce como AplicacaoCompensacaoPermuta
+// (é crédito de serviço) e o resto do sistema segue lendo valorCompensadoPermuta. Nunca vira dinheiro.
+model PropostaUsoSaldoServicoPermuta {
+  id String @id @default(cuid())
+  saldoId String
+  saldo SaldoServicoPermuta @relation(fields: [saldoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  moeda String
+  valor Decimal @db.Decimal(12, 2)
+  motivo String
+  preparadorId String
+  preparador Usuario @relation("PreparadorUsoSaldoServicoPermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoUsoSaldoServicoPermuta?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([saldoId])
+  @@index([cobrancaId])
+  @@index([matriculaId])
+}
+
+model DecisaoUsoSaldoServicoPermuta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaUsoSaldoServicoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorUsoSaldoServicoPermuta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoCompensacaoPermuta?
+}
+
+model OrigemCreditoExcedentePermuta {
+  id String @id @default(cuid())
+  itemId String @unique
+  item ItemDestinacaoExcedentePermuta @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String
+  decisao DecisaoDestinacaoExcedentePermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  moeda String
+  credito CreditoMatricula?
+  criadaEm DateTime @default(now())
 }
 
 
@@ -8135,6 +8496,129 @@ model AplicacaoVencimentoAditivo {
   versaoCobrancaDepois Int
   vencimentoAnterior DateTime
   vencimentoNovo DateTime
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
+}
+
+// Q172: aplicação do aditivo de adiantamento (valor, minutos, vencimento). Só alcança o
+// adiantamento da emissão inicial enquanto não pago nem utilizado; os minutos vigentes
+// passam a ser os da última aplicação, que a compra de horas confere ao quitar.
+model PropostaAdiantamentoAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorAdiantamentoAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  valorAnterior Decimal @db.Decimal(12, 2)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  minutosAnteriores Int
+  minutosNovos Int
+  fuso String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoAdiantamentoAditivo?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoAdiantamentoAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaAdiantamentoAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorAdiantamentoAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoAdiantamentoAditivo?
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoAdiantamentoAditivo {
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoAdiantamentoAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorAdiantamentoAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  versaoCobrancaAntes Int
+  versaoCobrancaDepois Int
+  valorAnterior Decimal @db.Decimal(12, 2)
+  valorNovo Decimal @db.Decimal(12, 2)
+  vencimentoAnterior DateTime
+  vencimentoNovo DateTime
+  minutosAnteriores Int
+  minutosNovos Int
+  aplicadaEm DateTime @default(now())
+  @@unique([executorId, chaveIdempotencia])
+}
+
+// Q173: aplicação do aditivo de moeda, só para o futuro e só com a matrícula "limpa" na moeda
+// antiga. A aplicação atualiza Matricula.moeda; a moeda anterior fica preservada aqui.
+model PropostaMoedaAditivo {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostaAditivoId String
+  propostaAditivo PropostaAditivoContratual @relation(fields: [propostaAditivoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCondicoesId String
+  versaoCondicoes VersaoCondicoesAditivo @relation(fields: [versaoCondicoesId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparadorId String
+  preparador Usuario @relation("PreparadorMoedaAditivo", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  moedaAnterior String
+  moedaNova String
+  fotografia Json
+  fotografiaHash String
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  criadaEm DateTime @default(now())
+  decisao DecisaoMoedaAditivo?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([matriculaId, criadaEm])
+}
+
+model DecisaoMoedaAditivo {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaMoedaAditivo @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorMoedaAditivo", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  chaveIdempotencia String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoMoedaAditivo?
+  @@unique([decisorId, chaveIdempotencia])
+}
+
+model AplicacaoMoedaAditivo {
+  id String @id @default(cuid())
+  decisaoId String @unique
+  decisao DecisaoMoedaAditivo @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  executorId String
+  executor Usuario @relation("ExecutorMoedaAditivo", fields: [executorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fotografiaHash String
+  chaveIdempotencia String
+  moedaAnterior String
+  moedaNova String
   aplicadaEm DateTime @default(now())
   @@unique([executorId, chaveIdempotencia])
 }

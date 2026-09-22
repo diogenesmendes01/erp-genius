@@ -134,11 +134,50 @@ function validarCPF(valor: string): boolean {
   return calc(9) === Number(cpf[9]) && calc(10) === Number(cpf[10]);
 }
 
+/** Cédula física (Costa Rica): 9 dígitos, província 1–9; DIMEX: 11–12 dígitos. Não há dígito verificador público. */
+function validarCedulaCR(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "");
+  return /^[1-9]\d{8}$/.test(limpo) || /^[1-9]\d{10,11}$/.test(limpo);
+}
+
+const ALFABETO_CURP = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+/** CURP (México): 18 posições com data plausível e dígito verificador módulo 10. */
+function validarCURP(valor: string): boolean {
+  const curp = valor.trim().toUpperCase();
+  if (!/^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HMX][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$/.test(curp)) return false;
+  let soma = 0;
+  for (let i = 0; i < 17; i++) soma += ALFABETO_CURP.indexOf(curp[i]!) * (18 - i);
+  return (10 - (soma % 10)) % 10 === Number(curp[17]);
+}
+
+/** DNI (Argentina): 7 ou 8 dígitos, sem dígito verificador. */
+function validarDNIAR(valor: string): boolean {
+  const limpo = valor.replace(/[\s.]/g, "");
+  return /^[1-9]\d{6,7}$/.test(limpo);
+}
+
+/** DUI (El Salvador): 8 dígitos + verificador módulo 10 com pesos 9…2. */
+function validarDUISV(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "");
+  if (!/^\d{9}$/.test(limpo) || /^0{9}$/.test(limpo)) return false;
+  let soma = 0;
+  for (let i = 0; i < 8; i++) soma += Number(limpo[i]) * (9 - i);
+  return (10 - (soma % 10)) % 10 === Number(limpo[8]);
+}
+
+/** Passaporte: só formato ICAO (6–9 alfanuméricos com ao menos um dígito); não há verificador universal. */
+function validarPassaporte(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "").toUpperCase();
+  return /^[A-Z0-9]{6,9}$/.test(limpo) && /\d/.test(limpo);
+}
+
 const VALIDADORES: Record<string, ValidadorDocumento> = {
   cpf: validarCPF,
-  // TODO (P5/B1): algoritmos reais de cedula_cr, curp, dni_ar, dui_sv, passaporte.
-  // Por ora, validadores ainda não implementados deixam o documento como "não validado".
-  passaporte: () => false,
+  cedula_cr: validarCedulaCR,
+  curp: validarCURP,
+  dni_ar: validarDNIAR,
+  dui_sv: validarDUISV,
+  passaporte: validarPassaporte,
 };
 
 /**

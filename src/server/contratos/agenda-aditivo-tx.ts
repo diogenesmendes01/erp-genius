@@ -35,16 +35,26 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
   const preparador = await tx.usuario.findUnique({ where: { id: preparadorId }, select: { ativo: true, papeis: true } });
   if (!preparador?.ativo || !preparador.papeis.some(p => ["SECRETARIA_ACADEMICA", "ADMINISTRADOR", "GERENTE_PEDAGOGICO"].includes(p))) throw new ErroRegra("Permissão operacional necessária.");
 
-  const fontes = await tx.conclusaoAssinaturaContratual.findMany({
-    where: { processo: { matriculaId: matricula.id, estado: "ENVIADO" } }, orderBy: { concluidaEm: "desc" },
-    include: { processo: { include: { artefato: { include: { conferencia: true } }, tentativas: { orderBy: { numero: "desc" }, take: 1 } } } },
-  });
-  if (fontes.length !== 1) throw new ErroRegra("Confira a fonte assinada vigente do contrato antes da alteração de agenda.");
-  const fonte = fontes[0], tentativa = fonte.processo.tentativas[0], artefato = fonte.processo.artefato;
-  if (fonte.processo.ambiente !== "PRODUCAO" || !tentativa || fonte.processo.referenciaExterna !== fonte.referenciaExterna || fonte.originalHash !== artefato.pdfHash || createHash("sha256").update(artefato.pdf).digest("hex") !== artefato.pdfHash) throw new ErroRegra("Confira a fonte assinada em produção e sua integridade antes da alteração de agenda.");
-  const validada = validarConclusaoAssinatura({ processoId: fonte.processo.id, referenciaExterna: fonte.referenciaExterna, originalHash: fonte.originalHash, concluidaEm: fonte.concluidaEm.toISOString(), pdfAssinado: fonte.pdfAssinado, evidencias: fonte.evidencias, assinaturas: ConclusaoAssinaturaSchema.shape.assinaturas.element.strip().array().parse(fonte.assinaturas) }, artefato.conferencia.snapshot, tentativa.iniciadaEm);
-  if (validada.entradaHash !== fonte.entradaHash || validada.pdfHash !== fonte.pdfHash || validada.evidenciasHash !== fonte.evidenciasHash) throw new ErroRegra("As evidências da fonte assinada divergem da conclusão preservada.");
-  if (!await tx.aceiteOriginalContratual.count({ where: { matriculaId: matricula.id, conclusaoId: fonte.id } })) throw new ErroRegra("O aceite conferido do contrato original é necessário antes da alteração de agenda.");
+  // Contrato legado: a origem histórica aprovada é a fonte contratual da agenda (sem aceite no sistema).
+  const origensHistoricas = await tx.propostaOrigemContratualHistorica.findMany({ where: { matriculaId: matricula.id, decisao: { is: { aprovada: true } } }, take: 2, select: { id: true, entradaHash: true, assinadoEm: true } });
+  let fonte: { id: string; entradaHash: string; concluidaEm: Date; tipo: "CONCLUSAO" | "ORIGEM_HISTORICA" };
+  if (origensHistoricas.length) {
+    if (origensHistoricas.length > 1 || await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: matricula.id } } })) throw new ErroRegra("Confira a fonte contratual vigente antes da alteração de agenda.");
+    await tx.$queryRaw`SELECT id FROM "PropostaOrigemContratualHistorica" WHERE id = ${origensHistoricas[0].id} FOR UPDATE`;
+    fonte = { id: origensHistoricas[0].id, entradaHash: origensHistoricas[0].entradaHash, concluidaEm: origensHistoricas[0].assinadoEm, tipo: "ORIGEM_HISTORICA" };
+  } else {
+    const fontes = await tx.conclusaoAssinaturaContratual.findMany({
+      where: { processo: { matriculaId: matricula.id, estado: "ENVIADO" } }, orderBy: { concluidaEm: "desc" },
+      include: { processo: { include: { artefato: { include: { conferencia: true } }, tentativas: { orderBy: { numero: "desc" }, take: 1 } } } },
+    });
+    if (fontes.length !== 1) throw new ErroRegra("Confira a fonte assinada vigente do contrato antes da alteração de agenda.");
+    const fonteAssinada = fontes[0], tentativa = fonteAssinada.processo.tentativas[0], artefato = fonteAssinada.processo.artefato;
+    if (fonteAssinada.processo.ambiente !== "PRODUCAO" || !tentativa || fonteAssinada.processo.referenciaExterna !== fonteAssinada.referenciaExterna || fonteAssinada.originalHash !== artefato.pdfHash || createHash("sha256").update(artefato.pdf).digest("hex") !== artefato.pdfHash) throw new ErroRegra("Confira a fonte assinada em produção e sua integridade antes da alteração de agenda.");
+    const validada = validarConclusaoAssinatura({ processoId: fonteAssinada.processo.id, referenciaExterna: fonteAssinada.referenciaExterna, originalHash: fonteAssinada.originalHash, concluidaEm: fonteAssinada.concluidaEm.toISOString(), pdfAssinado: fonteAssinada.pdfAssinado, evidencias: fonteAssinada.evidencias, assinaturas: ConclusaoAssinaturaSchema.shape.assinaturas.element.strip().array().parse(fonteAssinada.assinaturas) }, artefato.conferencia.snapshot, tentativa.iniciadaEm);
+    if (validada.entradaHash !== fonteAssinada.entradaHash || validada.pdfHash !== fonteAssinada.pdfHash || validada.evidenciasHash !== fonteAssinada.evidenciasHash) throw new ErroRegra("As evidências da fonte assinada divergem da conclusão preservada.");
+    if (!await tx.aceiteOriginalContratual.count({ where: { matriculaId: matricula.id, conclusaoId: fonteAssinada.id } })) throw new ErroRegra("O aceite conferido do contrato original é necessário antes da alteração de agenda.");
+    fonte = { id: fonteAssinada.id, entradaHash: fonteAssinada.entradaHash, concluidaEm: fonteAssinada.concluidaEm, tipo: "CONCLUSAO" };
+  }
   await carregarCadeiaAditivoTx(tx, { matriculaId: matricula.id });
   // Uma versão formalizada mas ainda sem efeito não é tomada como vigente por
   // esta consulta. Ela fica explícita para que a futura decisão revalide a base.
@@ -109,7 +119,7 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
     contexto: { calendarioId: calendario.id, calendarioVersao: calendario.versao, fusoInstitucional: calendario.fusoInstitucional, aditivos: aditivos.map(a => ({ versaoId: a.id, propostaId: a.propostaId, condicoesHash: a.condicoesHash, aplicada: !!a.aplicacao })) }, encontros: fotografia };
   const proposta = PropostaAgendaAditivoSchema.parse({ ...semTexto, texto: textoAgendaAditivo({ ...semTexto, texto: "Agenda" }) });
   return { somenteConsulta: true as const, matricula: { id: matricula.id, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim() },
-    fonte: { conclusaoId: fonte.id, conclusaoHash: fonte.entradaHash, concluidaEm: fonte.concluidaEm.toISOString() }, calendario: { id: calendario.id, versao: calendario.versao, fuso: calendario.fusoInstitucional }, proposta, pendencias };
+    fonte: { tipo: fonte.tipo, conclusaoId: fonte.id, conclusaoHash: fonte.entradaHash, concluidaEm: fonte.concluidaEm.toISOString() }, calendario: { id: calendario.id, versao: calendario.versao, fuso: calendario.fusoInstitucional }, proposta, pendencias };
 }
 
 /** Persiste somente a fotografia conferida. A proposta contratual posterior é
@@ -132,8 +142,8 @@ export async function registrarPropostaAgendaAditivoTx(tx: Prisma.TransactionCli
   const id = randomUUID();
   await tx.$executeRaw(Prisma.sql`
     INSERT INTO "PropostaAgendaAditivoParticular"
-      (id,"matriculaId","conclusaoFonteId","preparadorId",fotografia,"fotografiaHash",pendencias,"chaveIdempotencia","entradaHash")
-    VALUES (${id},${fotografia.matriculaId},${fotografia.fonteContratualId},${preparadorId},${JSON.stringify(fotografia)}::jsonb,${fotografiaHash},'[]'::jsonb,${d.chaveIdempotencia},${entradaHash})`);
+      (id,"matriculaId","conclusaoFonteId","origemHistoricaId","preparadorId",fotografia,"fotografiaHash",pendencias,"chaveIdempotencia","entradaHash")
+    VALUES (${id},${fotografia.matriculaId},${conferencia.fonte.tipo === "CONCLUSAO" ? fotografia.fonteContratualId : null},${conferencia.fonte.tipo === "ORIGEM_HISTORICA" ? fotografia.fonteContratualId : null},${preparadorId},${JSON.stringify(fotografia)}::jsonb,${fotografiaHash},'[]'::jsonb,${d.chaveIdempotencia},${entradaHash})`);
   return { id, fotografiaHash, proposta: fotografia };
 }
 

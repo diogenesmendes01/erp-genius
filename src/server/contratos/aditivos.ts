@@ -1,5 +1,6 @@
 "use server";
 import { consultarCadastroContratualVigenteTx } from "./cadastro-contratual";
+import { carregarFonteContratualTx } from "./fonte-contratual-tx";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -41,10 +42,8 @@ export async function consultarAditivosContratuais(input: { matriculaId: string;
       const m = await tx.matricula.findUnique({ where: { id: d.matriculaId }, select: { id: true, codigo: true,
         aluno: { select: { primeiroNome: true, sobrenome: true } }, preparacaoComercial: { select: { regime: true } } } });
       if (!m) throw new ErroRegra("Matrícula não encontrada.");
-      const conclusoes = await tx.conclusaoAssinaturaContratual.findMany({ where: { processo: { matriculaId: d.matriculaId } }, take: 2,
-        select: { id: true, entradaHash: true, processo: { select: { estado: true, ambiente: true, artefato: { select: { id: true, previa: { select: { snapshot: true } } } } } } } });
-      const fonte = conclusoes.length === 1 && conclusoes[0].processo.estado === "ENVIADO" ? conclusoes[0] : null;
-      const campos = fonte ? TextoPreviaSchema.parse(fonte.processo.artefato.previa.snapshot).documento.campos : [];
+      const { fonte, impedimento } = await carregarFonteContratualTx(tx, d.matriculaId);
+      const campos = fonte ? TextoPreviaSchema.parse(fonte.previa).documento.campos : [];
       const origens = [...new Set(campos.map(c => c.origem))].filter(o => !o.startsWith("ADITIVO_"));
       const cadeia = fonte ? await carregarCadeiaAditivoTx(tx, { matriculaId: d.matriculaId }) : null;
       const condicoes = cadeia?.condicoes ?? {};
@@ -57,11 +56,13 @@ export async function consultarAditivosContratuais(input: { matriculaId: string;
           preparadaPor: { select: { nome: true } }, decisao: { select: { aprovada: true, decisor: { select: { nome: true } } } } } });
       const cadastroContratual = await consultarCadastroContratualVigenteTx(tx, m.id, new Date());
       return { cadastroContratual, matricula: { id: m.id, codigo: m.codigo, aluno: [m.aluno.primeiroNome, m.aluno.sobrenome].filter(Boolean).join(" ") },
-        fonte: fonte ? { conclusaoId: fonte.id, conclusaoHash: fonte.entradaHash, artefatoId: fonte.processo.artefato.id, ambiente: fonte.processo.ambiente,
+        fonte: fonte ? { tipo: fonte.tipo, conclusaoId: fonte.tipo === "CONCLUSAO" ? fonte.id : null, conclusaoHash: fonte.tipo === "CONCLUSAO" ? fonte.hash : null,
+          origemHistoricaId: fonte.tipo === "ORIGEM_HISTORICA" ? fonte.id : null, origemHash: fonte.tipo === "ORIGEM_HISTORICA" ? fonte.hash : null,
+          artefatoId: fonte.tipo === "CONCLUSAO" ? fonte.artefatoId : null, ambiente: fonte.tipo === "CONCLUSAO" ? fonte.ambiente : "HISTORICO",
           campos: origens.map(origem => { const estruturado = condicoes[origem]; let anterior = campos.find(c => c.origem === origem)!.valor;
             if (estruturado !== undefined) anterior = representarValorAlteracaoAditivo(validarValorAlteracaoAditivo(origem, estruturado));
             return { origem, rotulo: ROTULOS_ORIGEM[origem], anterior }; }) } : null,
-        impedimento: fonte ? null : conclusoes.length > 1 ? "Há mais de um original assinado. A fonte contratual precisa de conferência." : "A preparação exige um original com todas as assinaturas concluídas e envio confirmado.",
+        impedimento,
         modelos: modelos.slice(0, 20).map(m => { const c = ConteudoModeloSchema.parse(m.conteudo); return { id: m.id, codigo: m.codigo, versao: m.versao, modeloHash: m.conteudoHash, titulo: c.titulo, aplicacao: c.aplicacao }; }),
         paginaModelos: d.paginaModelos, maisModelos: modelos.length > 20,
         propostas: propostas.slice(0, 20), pagina: d.pagina, maisPropostas: propostas.length > 20 };
@@ -76,7 +77,7 @@ export async function consultarPropostaAditivo(input: { matriculaId: string; pro
     return prisma.$transaction(async tx => {
       await conferirAutor(tx, ator.id);
       const p = await tx.propostaAditivoContratual.findFirst({ where: { id: d.propostaId, matriculaId: d.matriculaId }, select: {
-        id: true, conclusaoOriginalId: true, versao: true, vigenciaInicio: true, motivo: true, criadaEm: true, preparadaPorId: true, preparadaPor: { select: { nome: true } },
+        id: true, conclusaoOriginalId: true, origemHistoricaId: true, versao: true, vigenciaInicio: true, motivo: true, criadaEm: true, preparadaPorId: true, preparadaPor: { select: { nome: true } },
         entradaHash: true, snapshot: true, decisao: { select: { aprovada: true, motivo: true, decididaEm: true, decisor: { select: { nome: true } } } },
       } });
       if (!p) throw new ErroRegra("Proposta indisponível nesta matrícula.");
@@ -84,8 +85,8 @@ export async function consultarPropostaAditivo(input: { matriculaId: string; pro
       const s = ProjecaoAditivoSchema.parse(p.snapshot);
       const superada = await tx.propostaAditivoContratual.count({ where: { matriculaId: d.matriculaId, versao: { gt: p.versao } } }) > 0;
       const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: ator.id }, select: { ativo: true, papeis: true } });
-      return { id: p.id, conclusaoOriginalId: p.conclusaoOriginalId, versao: p.versao, vigenciaInicio: p.vigenciaInicio, motivo: p.motivo, criadaEm: p.criadaEm,
-        preparadaPor: p.preparadaPor.nome, propostaHash: p.entradaHash, ambiente: s.base.ambiente, artefatoOriginalId: s.base.artefatoOriginalId,
+      return { id: p.id, conclusaoOriginalId: p.conclusaoOriginalId, origemHistoricaId: p.origemHistoricaId, versao: p.versao, vigenciaInicio: p.vigenciaInicio, motivo: p.motivo, criadaEm: p.criadaEm,
+        preparadaPor: p.preparadaPor.nome, propostaHash: p.entradaHash, ambiente: s.base.ambiente, artefatoOriginalId: s.base.artefatoOriginalId ?? null,
         modeloCodigo: s.base.modeloCodigo, modeloVersao: s.base.modeloVersao, cicloCoberturaFutura: s.cicloCoberturaFutura ?? null, alteracoes: s.alteracoes, documento: s.documento,
         impactos: classificarAlteracoesAditivo(s.alteracoes),
         decisao: p.decisao, superada, podeDecidir: !p.decisao && usuario.ativo && usuario.papeis.includes(Papel.ADMINISTRADOR) && p.preparadaPorId !== ator.id };

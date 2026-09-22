@@ -6,6 +6,7 @@ import { RegrasHorasSchema } from "@/server/matricula/condicoes-horas-schema";
 import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-financeira-consulta";
 import { preverConferenciaOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-previa";
 import { conferirOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-conferir";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 const rotulos: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Falta do aluno", FALTA_COBRAVEL: "Falta cobrável", CANCELAMENTO_ALUNO: "Cancelamento do aluno", CANCELAMENTO_ESCOLA: "Cancelamento da escola", CANCELAMENTO_NO_PRAZO: "Cancelamento dentro do prazo", CANCELAMENTO_TARDIO: "Cancelamento fora do prazo" };
@@ -17,14 +18,14 @@ function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => s
     <p>Vigência: {data(r.data.regras.vigenteDesde)} · Antecedência de cancelamento: {r.data.regras.antecedenciaCancelamentoMinutos} minutos.</p>
     <p>Cláusula de preço: {r.data.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {r.data.regras.clausulaCancelamento}</p></div>;
 }
-export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"] }) {
+export function ConferenciaHoras({ encontro: e, condicoes, matricula, fusoExibicao = null }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"]; fusoExibicao?: string | null }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [previa, setPrevia] = useState<Previa | null>(null), [mensagem, setMensagem] = useState("");
   const [condicoesId, setCondicoesId] = useState("");
   const chave = useRef({ entrada: "", valor: "" });
-  const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(v));
+  const data = (v: string) => formatarInstanteExibicao(v, fusoExibicao, e.fusoOrigem).texto, fusoEfetivo = formatarInstanteExibicao(e.inicio, fusoExibicao, e.fusoOrigem).fuso;
   const origem = { alunoId: matricula.alunoId, matriculaId: matricula.id, ocorrenciaId: e.ocorrencia?.id ?? "", condicoesId };
   return <article className="space-y-3 rounded border p-4">
-    <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {e.fusoOrigem}</h2>
+    <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {fusoEfetivo}</h2>
     {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotulos[e.ocorrencia.tipo]} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {data(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
     {e.conferencia ? <section className="space-y-2"><h3>Conferência registrada</h3>
       <p>{rotulos[e.conferencia.desfecho]} · {e.conferencia.minutos} minutos · {e.conferencia.consumoAntecipacao ? "valor preservado da compra" : "valor apurado"}: {e.conferencia.valor} {e.conferencia.moeda}</p>
@@ -48,7 +49,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
         {previa.reservaAntecipada && <p>Reserva antecipada {previa.reservaAntecipada.reservaId}: {previa.reservaAntecipada.minutos} minutos da compra {previa.reservaAntecipada.compraId} serão consumidos por esta ocorrência. A compra preserva {previa.reservaAntecipada.valorPagoAlocado} {previa.reservaAntecipada.moeda} já alocados; nenhuma cobrança, recebimento ou crédito será criado.</p>}
         {previa.aditivo && <p>Fonte contratual: Aditivo versão {previa.aditivo.versao}.</p>}
         <p>Cláusula de preço: {previa.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {previa.regras.clausulaCancelamento}</p>
-        {previa.classificacao.limiteCancelamento && <p>Limite de cancelamento: {data(previa.classificacao.limiteCancelamento)} ({e.fusoOrigem})</p>}
+        {previa.classificacao.limiteCancelamento && <p>Limite de cancelamento: {data(previa.classificacao.limiteCancelamento)} ({fusoEfetivo})</p>}
         {previa.pendencias.map(p => <p key={p} role="status">{p}</p>)}
         {!previa.pendencias.length && <form onSubmit={event => {
           event.preventDefault(); const f = new FormData(event.currentTarget);

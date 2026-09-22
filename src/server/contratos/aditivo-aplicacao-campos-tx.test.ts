@@ -21,7 +21,7 @@ function contexto(inicio = "2027-02-01", fim = "2027-02-28") {
   };
   const versao = {
     id: "v", versao: 1, propostaId: "p", proposta: { snapshot, entradaHash: hashSubstituicao(snapshot), matriculaId: "m" },
-    conjuntosImpactosTaxa: [], propostasVencimento: [], aplicacao: null,
+    conjuntosImpactosTaxa: [], propostasVencimento: [], propostasAdiantamento: [], propostasMoeda: [], aplicacao: null,
     conjuntosImpactosCobertura: [{
       id: "conjunto", propostaAditivoId: "p", preparadorId: "fin1", hashFormalizado: hashSubstituicao(snapshot),
       fotografiaHash: "foto", cicloFuturo: ciclo,

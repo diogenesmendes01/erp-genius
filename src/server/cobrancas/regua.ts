@@ -1,3 +1,4 @@
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 
 // CÉREBRO da cobrança (doc 24). Função PURA, determinística, sem IA: dada uma cobrança, o que
@@ -69,6 +70,29 @@ export interface EntradaRegua {
   passosFeitos: PassoRegua[];
   /** Data prometida (do evento PromessaPagamento `{ ate }`), se houver. */
   promessaAte?: Date | null;
+}
+
+/**
+ * Q176: o dia da régua vira no fuso ÚNICO da escola, nunca no do servidor. Datas
+ * gravadas (vencimento, promessa) nasceram como dia civil em convenções distintas —
+ * meio-dia ou meia-noite do fuso institucional, ou meia-noite UTC no legado. O maior
+ * entre o dia UTC e o dia institucional recupera o dia civil nas três; para instantes
+ * legados ambíguos escolhe o dia mais tardio, que nunca antecipa cobrança ou restrição.
+ */
+export function diaCivilGravado(gravada: Date, fuso: string): string {
+  const utc = gravada.toISOString().slice(0, 10), institucional = dataCivilInstitucional(gravada, fuso);
+  return utc > institucional ? utc : institucional;
+}
+
+/** Dias civis de `gravada` até hoje no fuso institucional (positivo = já passou). */
+export function diasCivisDesde(agora: Date, gravada: Date, fuso: string): number {
+  const dia = (civil: string) => Date.parse(`${civil}T00:00:00Z`);
+  return Math.round((dia(dataCivilInstitucional(agora, fuso)) - dia(diaCivilGravado(gravada, fuso))) / 86400000);
+}
+
+/** Sem fuso institucional configurado permanece o cálculo legado, no relógio do processo. */
+export function diasDeAtraso(agora: Date, gravada: Date, fuso?: string | null): number {
+  return fuso ? diasCivisDesde(agora, gravada, fuso) : diferencaEmDias(agora, gravada);
 }
 
 function inicioDoDia(d: Date): Date {
@@ -165,15 +189,16 @@ export function proximaAcao(
   entrada: EntradaRegua,
   hoje: Date,
   politica: readonly DegrauRegua[] = REGUA,
+  fusoInstitucional?: string | null,
 ): ResultadoRegua {
-  const diasAtraso = diferencaEmDias(hoje, entrada.vencimento);
+  const diasAtraso = diasDeAtraso(hoje, entrada.vencimento, fusoInstitucional);
   const promessaAte = entrada.promessaAte ?? null;
 
   if (entrada.quitada) {
     return { estado: "quitada", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 999, promessaAte };
   }
   // Promessa vigente = data prometida ainda não passou (>= hoje). Dormente até lá.
-  if (promessaAte && diferencaEmDias(promessaAte, hoje) >= 0) {
+  if (promessaAte && diasDeAtraso(hoje, promessaAte, fusoInstitucional) <= 0) {
     return { estado: "promessa", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 900, promessaAte };
   }
 

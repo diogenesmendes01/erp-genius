@@ -52,7 +52,7 @@ export async function bloquearEstadoAcademico(tx: Prisma.TransactionClient, alun
 }
 
 export async function carregarEstadoAcademico(tx: Pick<Prisma.TransactionClient,
-  "aluno" | "turma" | "matricula" | "movimentacaoAluno" | "versaoCalendarioEscolar" | "propostaGradeTurma" | "encontroAgenda" | "indisponibilidadeDocente" | "rascunhoReplanejamento">,
+  "aluno" | "turma" | "matricula" | "movimentacaoAluno" | "versaoCalendarioEscolar" | "propostaGradeTurma" | "encontroAgenda" | "indisponibilidadeDocente" | "rascunhoReplanejamento" | "impactoQuantidadeAulasModalidade">,
 alunoId: string, turmaDestinoId?: string, matriculaId?: string, agora = new Date()) {
   const aluno = await tx.aluno.findUnique({ where: { id: alunoId }, select: {
     id: true, primeiroNome: true, sobrenome: true, status: true,

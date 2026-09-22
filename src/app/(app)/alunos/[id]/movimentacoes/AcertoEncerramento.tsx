@@ -105,7 +105,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
     <p>Conferência das mensalidades e multa. Taxas, compensações, horas antecipadas e demais ajustes precisam compor o acerto completo antes da aprovação.</p>
     <button type="button" disabled={ocupado} onClick={carregar} className={estilo}>Carregar / atualizar conferência</button>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
-    {rascunho && <details><summary>Rascunho salvo · versão {rascunho.versao} · {rascunho.preparador.nome}</summary><p>{rascunho.motivo}</p><Resumo snapshot={rascunho.snapshot} /><LancamentosEncerramento snapshot={rascunho.snapshot} /><ImpactosAcademicosAcerto snapshot={rascunho.snapshot} />{rascunho.decisao && <p>{rascunho.decisao.aprovada ? "Acerto aprovado, aguardando efetivação" : "Versão rejeitada"}: {rascunho.decisao.motivo}</p>}{rascunho.podeEfetivar && rascunho.decisao && <EfetivarAcerto alunoId={alunoId} decisaoId={rascunho.decisao.id} atualizar={carregar} />}{rascunho.podeDecidir && <DecisaoAcerto alunoId={alunoId} rascunhoId={rascunho.id} />}<OutrasCobrancasResumo snapshot={rascunho.snapshot} />
+    {rascunho && <details><summary>Rascunho salvo · versão {rascunho.versao} · {rascunho.preparador.nome}</summary><p>{rascunho.motivo}</p><Resumo snapshot={rascunho.snapshot} /><LancamentosEncerramento snapshot={rascunho.snapshot} /><ImpactosAcademicosAcerto snapshot={rascunho.snapshot} preferenciaFusoExibicao={preferenciaFusoExibicao} />{rascunho.decisao && <p>{rascunho.decisao.aprovada ? "Acerto aprovado, aguardando efetivação" : "Versão rejeitada"}: {rascunho.decisao.motivo}</p>}{rascunho.podeEfetivar && rascunho.decisao && <EfetivarAcerto alunoId={alunoId} decisaoId={rascunho.decisao.id} atualizar={carregar} />}{rascunho.podeDecidir && <DecisaoAcerto alunoId={alunoId} rascunhoId={rascunho.id} />}<OutrasCobrancasResumo snapshot={rascunho.snapshot} />
       <button type="button" disabled={ocupado} className={estilo} onClick={() => { void iniciar(async () => {
         setErro(null); setValidade(null);
         try {
@@ -162,7 +162,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
       </div>)}
       <button className={estilo}>Calcular componente mensal</button>
     </fieldset></form>}
-    {previa != null && <div className="space-y-3"><Resumo snapshot={previa} /><ImpactosAcademicosAcerto snapshot={previa} /><OutrasCobrancasResumo snapshot={previa} />
+    {previa != null && <div className="space-y-3"><Resumo snapshot={previa} /><ImpactosAcademicosAcerto snapshot={previa} preferenciaFusoExibicao={preferenciaFusoExibicao} /><OutrasCobrancasResumo snapshot={previa} />
       <label className="grid gap-1">Motivo desta versão<textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = ""; }} disabled={ocupado} minLength={5} maxLength={2000} className={estilo} /></label>
       <button disabled={ocupado || !entrada || motivo.trim().length < 5} className={estilo} onClick={() => { if (!entrada) return; void iniciar(async () => {
         setErro(null); chave.current ||= crypto.randomUUID();
