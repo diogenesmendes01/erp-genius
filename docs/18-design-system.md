@@ -44,8 +44,9 @@
 | Neutro (chips) | `--neutral-muted` | `#EFEEE9` | `#2F2F2C` |
 | Texto primário | `--text-primary` | `#1A1A19` | `#ECECEA` |
 | Texto secundário | `--text-secondary` | `#5F5E5A` | `#A7A6A1` |
-| Texto terciário | `--text-terciary` | `#88877F` | `#6E6D68` |
-| Borda | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
+| Texto terciário | `--text-terciary` | `#6D6C64` | `#979692` |
+| Borda (card) | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
+| Borda (controle — input/select, `gray-300`) | `--border-control` | `rgba(0,0,0,.42)` | `rgba(255,255,255,.34)` |
 
 ## Tokens — Semânticos (fundo / texto — repare a inversão)
 | Cor | Token bg / text | Claro (bg / text) | Escuro (bg / text) |
@@ -69,7 +70,7 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-solid text-white hover:opacity-90`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-white hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
 - **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-600 text-white` — é seleção, não ação; não promova para `bg-brand-solid`.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.
