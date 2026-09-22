@@ -1,17 +1,32 @@
 import Link from "next/link";
-import { consultarEntregaGravacaoPortalAluno, exigirReposicaoDoPortalAluno, estadoEntregaPortalAluno } from "@/server/portal-aluno/reposicoes";
+import { notFound, redirect } from "next/navigation";
+import { consultarEntregaGravacaoPortalAluno, exigirReposicaoDoPortalAluno, estadoEntregaPortalAluno, type ReposicaoPortalAluno } from "@/server/portal-aluno/reposicoes";
 import { EntregaGravacaoPortalAluno } from "./entrega-gravacao";
 import { RelatarIndisponibilidadePortalAluno } from "./relatar-indisponibilidade";
 import { VideoGravacaoPortalAluno } from "./video-gravacao";
 import { autorizarReproducaoGravacao } from "@/server/gravacoes/autorizacao";
 import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { ErroAutenticacao, ErroPermissao } from "@/server/_shared";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReposicaoPortalAlunoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const reposicao = await exigirReposicaoDoPortalAluno(id);
+  // Mesmo padrão de .../resultados/page.tsx: o guard vive dentro de
+  // exigirReposicaoDoPortalAluno (compartilhado com outras chamadas). ErroAutenticacao
+  // vira redirect; ErroPermissao (reposição de outro aluno — id trocado na URL, link
+  // velho, bookmark) vira notFound() — não é "sua sessão expirou" (não é isso que
+  // aconteceu) nem deveria confirmar que o registro existe. ErroRegra (id ausente,
+  // praticamente inalcançável por essa rota) continua subindo para error.tsx.
+  let reposicao: ReposicaoPortalAluno;
+  try {
+    reposicao = await exigirReposicaoDoPortalAluno(id);
+  } catch (erro) {
+    if (erro instanceof ErroAutenticacao) redirect("/portal-aluno/entrar");
+    if (erro instanceof ErroPermissao) notFound();
+    throw erro;
+  }
   const [detalhe, preferencia] = await Promise.all([consultarEntregaGravacaoPortalAluno(id), consultarPreferenciaFusoPortalAluno()]);
   const fusoExibicao = resolverFusoExibicao(preferencia.fusoExibicao, "UTC");
   const data = (valor: Date | string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
