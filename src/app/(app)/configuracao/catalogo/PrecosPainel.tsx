@@ -60,12 +60,19 @@ export function PrecosPainel({
 
   async function salvar() {
     setErro(null);
+    // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
+    // matrículas passariam a usar como preço negociado — silencioso.
+    const valorNumero = parseMoeda(valor);
+    if (valorNumero === null) {
+      setErro("Informe o valor, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const res = await criarPreco({
       paisId,
       produtoId,
       tipoCobranca,
-      valor: parseMoeda(valor) ?? 0,
+      valor: valorNumero,
       versaoEstudo: versaoEstudo || undefined,
     });
     setSalvando(false);

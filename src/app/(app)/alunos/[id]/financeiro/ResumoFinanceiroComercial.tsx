@@ -11,9 +11,15 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   const router = useRouter(); const [mensagem, setMensagem] = useState(""); const [ocupado, setOcupado] = useState(false);
   async function ajustar(form: FormData) {
+    // parseMoeda (não Number): "1.234" digitado não pode virar 1234 por acidente. E nunca
+    // ?? 0: texto inválido viraria "novo valor: zero" registrado, silencioso.
+    const valorPara = parseMoeda(String(form.get("valor")));
+    if (valorPara === null) {
+      setMensagem("Informe o novo valor, com no máximo duas casas decimais.");
+      return;
+    }
     setOcupado(true); setMensagem("");
-    // parseMoeda (não Number): "1.234" digitado não pode virar 1234 por acidente.
-    const r = await ajustarCobranca({ cobrancaId: String(form.get("cobrancaId")), valorPara: parseMoeda(String(form.get("valor"))) ?? 0, tipo: TipoAjuste.DESCONTO,
+    const r = await ajustarCobranca({ cobrancaId: String(form.get("cobrancaId")), valorPara, tipo: TipoAjuste.DESCONTO,
       vigencia: form.get("futuras") ? Vigencia.PROXIMOS_MESES : Vigencia.ESTA_COBRANCA, motivo: String(form.get("motivo")) });
     setOcupado(false); setMensagem(!r.ok ? r.erro : r.dado?.aprovacao ? "Pedido encaminhado para aprovação independente." : "Preço ajustado dentro da alçada.");
     if (r.ok) router.refresh();

@@ -76,10 +76,17 @@ export function PagamentoModal({
       onErro(`Anexe o comprovante para pagamentos via ${FORMA_PAGAMENTO_LABEL[forma]}.`);
       return;
     }
+    // parseMoeda pode devolver null (texto não interpretável) — nunca cair pra 0 aqui:
+    // um valor inválido viraria um pagamento de zero registrado, silencioso.
+    const valorRecebido = parseMoeda(valor);
+    if (valorRecebido === null) {
+      onErro("Informe o valor recebido, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const r = await registrarPagamento(cobrancaId, {
       chaveIdempotencia,
-      valorRecebido: parseMoeda(valor) ?? 0,
+      valorRecebido,
       forma,
       dataPagamento: data,
       comprovanteUrl,
