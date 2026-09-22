@@ -36,7 +36,7 @@ function Registro({ item, preferenciaFusoExibicao }: {
     <p>Preparada por {item.preparador.nome} em {formatarInstanteExibicao(item.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p>
     <p className="whitespace-pre-wrap"><strong>Motivo:</strong> {item.motivo}</p>
     <p className="whitespace-pre-wrap"><strong>Evidência:</strong> {item.evidencia}</p>
-    {fotografia ? <section className="space-y-2 rounded bg-slate-50 p-3">
+    {fotografia ? <section className="space-y-2 rounded bg-gray-50 p-3">
       <h4 className="font-medium">Fotografia conferida</h4>
       <p>Turma {fotografia.turma.nome ?? fotografia.turma.codigo ?? "sem identificação"} · {fotografia.turma.status}; início {fotografia.turma.dataInicio ?? "não informado"}.</p>
       <p>Versão preservada: {fotografia.destino.versao}; {fotografia.encontros.length} encontros, {fotografia.diarios.length} diários e {fotografia.alocacoes.length} alocações no momento da proposta.</p>

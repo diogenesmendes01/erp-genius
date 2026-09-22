@@ -425,7 +425,7 @@ function AcaoRapida({
   if (item.precisaBloqueio) {
     if (!podeOperar) return <span className="text-[11px] text-gray-400">restrição devida</span>;
     return (
-      <button className="rounded-md border border-red-300 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50" onClick={onAcesso}>
+      <button className="rounded-md border border-red-200 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50" onClick={onAcesso}>
         Consultar acesso
       </button>
     );
@@ -531,7 +531,7 @@ export function DetalheCobranca({
         {/* Ação de hoje — bloqueio pendente tem precedência (review §1) */}
         {item.precisaBloqueio ? (
           <div className="mx-5 mb-4 rounded-md bg-red-50 p-3">
-            <div className="mb-2 text-xs font-medium text-red-800">
+            <div className="mb-2 text-xs font-medium text-red-700">
               Bloqueio de acesso · {item.diasAtraso} dias de atraso
             </div>
             <div className="text-sm text-gray-700">
@@ -550,7 +550,7 @@ export function DetalheCobranca({
               {item.atrasadaNaAcao && <span className="ml-1 font-normal">(atrasada)</span>}
             </div>
             {item.respondeuEm && (
-              <div className="mb-2 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-800">
+              <div className="mb-2 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700">
                 O contato respondeu em {textoInstanteOperacional(item.respondeuEm, preferenciaFusoExibicao)} — trate a conversa antes de cobrar de novo.
               </div>
             )}
@@ -593,9 +593,9 @@ export function DetalheCobranca({
             {item.envio.em && <span className="text-gray-400"> · {textoInstanteOperacional(item.envio.em, preferenciaFusoExibicao)}</span>}
           </div>
         )}
-        {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-800">Lembretes suspensos para conferência até {textoInstanteOperacional(item.conferenciaAte, preferenciaFusoExibicao)}. O pagamento ainda não foi confirmado.</p>}
+        {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-700">Lembretes suspensos para conferência até {textoInstanteOperacional(item.conferenciaAte, preferenciaFusoExibicao)}. O pagamento ainda não foi confirmado.</p>}
         {item.estado === "promessa" && item.promessaAte && (
-          <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
+          <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-700">
             Promessa de pagamento até {new Date(item.promessaAte).toLocaleDateString("pt-BR")} — fora da fila até lá.
           </div>
         )}
@@ -608,7 +608,7 @@ export function DetalheCobranca({
               const feito = item.passosFeitos.includes(deg.passo);
               const atual = item.passo === deg.passo && item.estado === "acao_devida";
               const data = dataCivilComDeslocamento(item.vencimento, deg.offsetDias);
-              const cor = feito ? "bg-green-500" : atual ? "bg-amber-500" : deg.tipo === "bloquear" ? "border border-red-400 bg-surface" : "border border-gray-300 bg-surface";
+              const cor = feito ? "bg-success" : atual ? "bg-amber-600" : deg.tipo === "bloquear" ? "border border-danger bg-surface" : "border border-gray-300 bg-surface";
               return (
                 <li key={deg.passo} className="mb-2.5">
                   <span className={"absolute -left-[7px] mt-1 h-3 w-3 rounded-full " + cor} />

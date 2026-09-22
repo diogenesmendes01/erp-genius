@@ -41,7 +41,7 @@ export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, po
     });
   }
 
-  if (!podeFechar) return <p role="status" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Resolva as pendências da revisão antes de confirmar uma versão final.</p>;
+  if (!podeFechar) return <p role="status" className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Resolva as pendências da revisão antes de confirmar uma versão final.</p>;
   return <form className="space-y-3 rounded border p-4" onSubmit={confirmar}>
     <h2 className="text-lg font-medium">Confirmar versão final</h2>
     <p className="text-sm text-gray-700">{resultadoSuficiente

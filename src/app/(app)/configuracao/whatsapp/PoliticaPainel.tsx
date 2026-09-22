@@ -104,7 +104,7 @@ export function PoliticaPainel({
             "rounded-md px-3 py-1.5 text-sm font-medium " +
             (form.killSwitch
               ? "bg-danger text-white hover:brightness-95"
-              : "border border-red-300 text-red-700 hover:bg-red-50")
+              : "border border-red-200 text-red-700 hover:bg-red-50")
           }
         >
           {form.killSwitch ? "Kill switch LIGADO — destravar" : "Kill switch"}

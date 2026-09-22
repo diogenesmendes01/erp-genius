@@ -16,7 +16,7 @@ export default async function CertificadoPage({ params }: { params: Promise<{ co
         </p>
       ) : (
         <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
-          <p className="font-medium text-green-800">Certificado autêntico ✅</p>
+          <p className="font-medium text-green-700">Certificado autêntico ✅</p>
           <dl className="mt-2 space-y-1 text-gray-700">
             <div><dt className="inline text-gray-500">Aluno: </dt><dd className="inline font-medium">{cert.aluno}</dd></div>
             <div><dt className="inline text-gray-500">Nível: </dt><dd className="inline">{cert.nivel}</dd></div>

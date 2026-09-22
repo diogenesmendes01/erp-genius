@@ -43,12 +43,27 @@ const config: Config = {
         // bg-brand-solid + hover:brightness-95. Distinto de brand-700 (só texto/link).
         "brand-solid": "var(--brand-solid)",
         // semânticas (bg = tom claro/escuro; texto inverte)
-        green: { 50: "var(--success-bg)", 100: "var(--success-bg)", 600: "var(--success-text)", 700: "var(--success-text)" },
+        // green.200 e blue.200 fecham o mesmo idioma de "borda tingida" que amber.200 e
+        // red.200 já usam (border-{cor}-200 reaproveitando o tom de fundo claro como
+        // contorno) — não é decoração nova, é preencher uma lacuna do mapa.
+        green: { 50: "var(--success-bg)", 100: "var(--success-bg)", 200: "var(--success-bg)", 600: "var(--success-text)", 700: "var(--success-text)" },
         red: { 50: "var(--danger-bg)", 100: "var(--danger-bg)", 200: "var(--danger-bg)", 500: "var(--danger-text)", 600: "var(--danger-text)", 700: "var(--danger-text)" },
         amber: { 50: "var(--warning-bg)", 100: "var(--warning-bg)", 200: "var(--warning-bg)", 600: "var(--warning-text)", 700: "var(--warning-text)", 800: "var(--warning-text)" },
-        blue: { 50: "var(--info-bg)", 100: "var(--info-bg)", 600: "var(--info-text)", 700: "var(--info-text)" },
+        blue: { 50: "var(--info-bg)", 100: "var(--info-bg)", 200: "var(--info-bg)", 600: "var(--info-text)", 700: "var(--info-text)" },
         indigo: { 100: "var(--info-bg)", 700: "var(--info-text)" },
         orange: { 100: "var(--warning-bg)", 700: "var(--warning-text)" },
+        // IA (sugestões do copiloto — doc 27 C3): identidade própria, distinta do resto
+        // da paleta semântica. Ver globals.css.
+        ai: {
+          50: "var(--ai-bg)",
+          100: "var(--ai-bg)",
+          200: "var(--ai-border)",
+          300: "var(--ai-border)",
+          400: "var(--ai-border)",
+          600: "var(--ai-text)",
+          700: "var(--ai-text)",
+        },
+        "ai-solid": "var(--ai-solid)",
         // ações sólidas
         danger: "var(--danger-solid)",
         success: "var(--success-solid)",
