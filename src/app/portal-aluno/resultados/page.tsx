@@ -58,14 +58,14 @@ function ResumoFechamento({ resumo, resultadoSuficiente }: { resumo: NonNullable
     <h4 className="font-medium">Resumo confirmado</h4>
     <p>Resultado geral: {razao(resumo.geral)}. Mínimo de referência: {numero(resumo.minimoGeral)}.</p>
     <div className="grid gap-2 sm:grid-cols-2">
-      {resumo.habilidades.map((item) => <article key={item.habilidade} className="rounded border border-current/20 bg-white/50 p-3">
+      {resumo.habilidades.map((item) => <article key={item.habilidade} className="rounded border border-current/20 bg-surface-muted p-3">
         <p className="font-medium">{habilidade(item.habilidade)}</p>
         <p>Resultado: {razao(item.resultado)}</p>
         <p>Mínimo de referência: {numero(item.minimo)}.</p>
         {item.atendeMinimo !== null && <p className="mt-1 text-xs">{item.atendeMinimo ? "Mínimo atendido." : "Abaixo do mínimo de referência."}</p>}
       </article>)}
     </div>
-    <section className="rounded border border-current/20 bg-white/50 p-3" aria-label="Frequência confirmada">
+    <section className="rounded border border-current/20 bg-surface-muted p-3" aria-label="Frequência confirmada">
       <h5 className="font-medium">Frequência</h5>
       <p className="mt-1">Aulas consideradas: {resumo.frequencia.base}. Presenças: {resumo.frequencia.presencas} · regularizadas: {resumo.frequencia.regularizadas} · faltas: {resumo.frequencia.faltas} · impedimentos: {resumo.frequencia.impedimentos}.</p>
       <p className="mt-1">Percentual registrado: {razao(resumo.frequencia.percentual)}{resumo.frequencia.percentual ? "%" : ""}. Mínimo de referência: {numero(resumo.frequencia.minimoPercentual)}%.</p>
@@ -132,8 +132,8 @@ export default async function ResultadosPortalAlunoPage() {
     <Link href="/portal-aluno" className="text-sm text-brand-700 underline">Voltar à área do aluno</Link>
     <header><p className="text-sm text-brand-700">Frente acadêmica</p><h1 className="mt-1 text-2xl font-medium">Avaliações, habilidades e frequência</h1><p className="mt-2 text-sm text-gray-600">Mostramos avaliações já oficializadas, o acompanhamento do seu vínculo e, quando houver, a confirmação de fechamento acadêmico.</p></header>
     <p className="text-sm text-gray-600">Valores marcados como “aprox.” foram arredondados somente para esta visualização.</p>
-    {!resultado.matriculas.length && <p className="rounded border bg-white p-4 text-sm text-gray-700">Não há vínculo acadêmico com resultados disponíveis neste acesso.</p>}
-    {resultado.matriculas.map((matricula, indiceMatricula) => <section key={matricula.matriculaId} className="space-y-4 rounded-lg border bg-white p-5" aria-label={`Vínculo acadêmico ${indiceMatricula + 1}`}>
+    {!resultado.matriculas.length && <p className="rounded border bg-surface p-4 text-sm text-gray-700">Não há vínculo acadêmico com resultados disponíveis neste acesso.</p>}
+    {resultado.matriculas.map((matricula, indiceMatricula) => <section key={matricula.matriculaId} className="space-y-4 rounded-lg border bg-surface p-5" aria-label={`Vínculo acadêmico ${indiceMatricula + 1}`}>
       <h2 className="text-xl font-medium">{matricula.codigo ? `Matrícula ${matricula.codigo}` : `Vínculo acadêmico ${indiceMatricula + 1}`}</h2>
       {(() => {
         const niveis = new Map(matricula.alocacoes.map((alocacao) => [alocacao.nivelId, `${alocacao.idioma} · nível ${alocacao.nivel}`]));

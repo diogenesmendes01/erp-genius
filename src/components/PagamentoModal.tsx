@@ -8,7 +8,7 @@ import { registrarPagamento } from "@/server/financeiro/acoes";
 import { UploadArquivo } from "@/components/UploadArquivo";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60";
 
 // Formas em que o comprovante é essencial pro fluxo (doc 09 §Registrar pagamento:
 // "Essencial pro fluxo de transferência — anexa a prova"). GreenPay também gera prova.

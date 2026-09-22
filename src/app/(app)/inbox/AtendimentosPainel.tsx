@@ -56,7 +56,7 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  return <form className="space-y-2 rounded border border-amber-200 bg-white p-3 text-sm" onSubmit={async (e) => {
+  return <form className="space-y-2 rounded border border-amber-200 bg-surface p-3 text-sm" onSubmit={async (e) => {
     e.preventDefault(); setOcupado(true); setErro(null);
     try {
       const r = await classificarMensagemWhatsApp({ mensagemId: item.id, atendimentoId, motivo });
@@ -86,7 +86,7 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
   const [evidencia, setEvidencia] = useState("");
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  return <form className="space-y-2 rounded border bg-white p-3 text-sm" onSubmit={async (e) => {
+  return <form className="space-y-2 rounded border bg-surface p-3 text-sm" onSubmit={async (e) => {
     e.preventDefault(); setOcupado(true);
     try {
       const r = await revisarFalhaEnvio({ id: item.id, decisao, evidencia });

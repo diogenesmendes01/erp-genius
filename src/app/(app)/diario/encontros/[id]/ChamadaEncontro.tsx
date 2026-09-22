@@ -37,7 +37,7 @@ export function ChamadaEncontro({ dados }: { dados: Dados }) {
         {!a.podeEditar && <p className="text-sm text-gray-500">Registro histórico em leitura.</p>}
       </div>)}
       <p className="text-sm text-gray-500">Salvar a chamada não conclui a aula. A gravação ou a exceção aprovada ainda precisa ser conferida.</p>
-      <button disabled={ocupado} className="rounded bg-brand-700 px-4 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Salvando…" : dados.diarioId ? "Salvar lançamento pendente" : "Registrar diário"}</button>
+      <button disabled={ocupado} className="rounded bg-brand-solid px-4 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Salvando…" : dados.diarioId ? "Salvar lançamento pendente" : "Registrar diário"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     {salvo && <p role="status" className="text-green-700">Lançamento salvo.</p>}

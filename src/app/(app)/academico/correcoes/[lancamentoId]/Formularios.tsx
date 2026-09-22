@@ -23,7 +23,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
     </div>)}
     <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi os valores vigentes e as alterações propostas.</label>
-    <button className="rounded bg-brand-700 px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
+    <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
   </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
 }
 

@@ -18,7 +18,9 @@ const config: Config = {
           50: "var(--surface-muted)",
           100: "var(--neutral-muted)",
           200: "var(--border)",
-          300: "var(--border)",
+          // Borda de controle (input/select) — mais escura que a borda de card (200),
+          // para o contorno do campo ficar perceptível (ver docs/18-design-system.md).
+          300: "var(--border-control)",
           400: "var(--text-terciary)",
           500: "var(--text-secondary)",
           600: "var(--text-secondary)",
@@ -37,6 +39,9 @@ const config: Config = {
           700: "var(--brand-text)",
           800: "var(--brand-text)",
         },
+        // Fundo de botão primário — não inverte no dark (ver globals.css). Uso:
+        // bg-brand-solid + hover:opacity-90. Distinto de brand-700 (só texto/link).
+        "brand-solid": "var(--brand-solid)",
         // semânticas (bg = tom claro/escuro; texto inverte)
         green: { 50: "var(--success-bg)", 100: "var(--success-bg)", 600: "var(--success-text)", 700: "var(--success-text)" },
         red: { 50: "var(--danger-bg)", 100: "var(--danger-bg)", 200: "var(--danger-bg)", 500: "var(--danger-text)", 600: "var(--danger-text)", 700: "var(--danger-text)" },
