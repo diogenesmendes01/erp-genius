@@ -16,7 +16,7 @@ export function FusoExibicaoFormulario({ atual }: { atual: string | null }) {
     if (!valido(fusoExibicao)) { setErro("Escolha um fuso IANA válido, como America/Sao_Paulo."); return; }
     iniciar(async () => { const r = await salvarPreferenciaFusoEquipe({ fusoExibicao }); if (!r.ok) { setErro("Não foi possível salvar a preferência. Confira sua sessão e o fuso informado."); return; } setFeito("Preferência salva."); router.refresh(); });
   }
-  return <form className="space-y-3 rounded border bg-white p-5" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
+  return <form className="space-y-3 rounded border bg-surface p-5" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
     <label className="block">Fuso de exibição<input name="fusoExibicao" value={fuso} disabled={ocupado} onChange={(e) => setFuso(e.target.value)} list="fusos-exibicao" placeholder="Usar fuso de origem" className="mt-1 block w-full rounded border p-2" /></label>
     <datalist id="fusos-exibicao"><option value="">Usar fuso de origem do encontro</option>{destaques.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}{fusos.filter((f) => !destaques.some(([valor]) => valor === f)).map((f) => <option key={f} value={f} />)}</datalist>
     <p className="text-sm text-gray-600">Pesquise pelo local ou identificador IANA. Sem preferência, cada encontro continua no fuso de origem. Isso não altera calendário, cobrança ou mensagens.</p>

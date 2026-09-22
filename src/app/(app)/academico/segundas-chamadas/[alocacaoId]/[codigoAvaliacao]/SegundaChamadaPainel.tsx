@@ -82,7 +82,7 @@ export function SegundaChamadaPainel({
       <h2 className="font-medium">Propor segunda chamada</h2>
       <label className="block">Motivo<textarea required minLength={5} maxLength={4000} name="motivo" className="block w-full border" /></label>
       <label className="block">Evidências<textarea required minLength={5} maxLength={4000} name="evidencias" className="block w-full border" /></label>
-      <button disabled={ocupado} className="rounded bg-brand-700 px-3 py-2 text-white">Enviar proposta</button>
+      <button disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Enviar proposta</button>
     </form>}
 
     <section className="space-y-3" aria-label="Histórico da segunda chamada">
@@ -112,7 +112,7 @@ export function SegundaChamadaPainel({
             </select>
           </label>
           <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
-          <button disabled={ocupado} className="rounded bg-brand-700 px-3 py-2 text-white">Registrar decisão</button>
+          <button disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Registrar decisão</button>
         </form>}
         {item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao && <form className="space-y-2" onSubmit={evento => {
           evento.preventDefault();

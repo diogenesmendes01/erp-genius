@@ -16,7 +16,7 @@ export default function AcessoNegadoPage() {
       </p>
       <Link
         href="/home"
-        className="mt-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+        className="mt-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
       >
         Voltar ao início
       </Link>
