@@ -4,17 +4,20 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cancelarDevolucaoCredito, conciliarDevolucaoCredito, decidirDevolucaoCredito, proporDevolucaoCredito, registrarExecucaoDevolucaoCredito } from "@/server/financeiro/devolucao-credito";
 import type { consultarPropostasUsoCredito } from "@/server/financeiro/uso-credito-proposta";
+import { parseMoeda } from "@/lib/dinheiro";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 
 export function DevolucaoCredito({ dados }: { dados: Dados }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const chavesExecucao = useRef(new Map<string, string>()); const router = useRouter();
+  const [valor, setValor] = useState("");
   function enviar(acao: () => Promise<{ ok: boolean; erro?: string }>) { iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "Não foi possível concluir."); return; } router.refresh(); } catch { setErro("Resultado incerto. Consulte a reserva antes de repetir."); } }); }
   return <section className="space-y-4 border-t pt-4"><h2 className="text-xl font-medium">Devolução de crédito</h2><p>Disponível: {dados.valorCredito} {dados.moeda} · reservado: {dados.reservaDevolucao} · saída confirmada: {dados.devolvido}. Registrar a operação manualmente não cria recebimento. A aprovação reserva o valor; uma resposta incerta só é encerrada por conciliação com evidência.</p>
     {erro && <p role="alert">{erro}</p>}
-    <form onChange={() => { chave.current = ""; }} onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const k = chave.current; enviar(async () => { const r = await proporDevolucaoCredito({ creditoId: dados.creditoId, valor: String(f.get("valor")), pedidoAluno: String(f.get("pedidoAluno")), evidenciaPedido: String(f.get("evidenciaPedido")), destino: String(f.get("destino")), motivo: String(f.get("motivo")), chaveIdempotencia: k }); if (r.ok) chave.current = ""; return r; }); }}><fieldset disabled={ocupado} className="space-y-2"><legend>Nova proposta de devolução</legend>
-      <label className="block">Valor<input className={estilo} name="valor" type="number" min="0.01" max={dados.valorCredito} step="0.01" required /></label>
+    <form onChange={() => { chave.current = ""; }} onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const k = chave.current; enviar(async () => { const numero = parseMoeda(valor); if (numero === null) return { ok: false, erro: "Informe um valor válido, com no máximo duas casas decimais." }; const r = await proporDevolucaoCredito({ creditoId: dados.creditoId, valor: numero.toFixed(2), pedidoAluno: String(f.get("pedidoAluno")), evidenciaPedido: String(f.get("evidenciaPedido")), destino: String(f.get("destino")), motivo: String(f.get("motivo")), chaveIdempotencia: k }); if (r.ok) { chave.current = ""; setValor(""); } return r; }); }}><fieldset disabled={ocupado} className="space-y-2"><legend>Nova proposta de devolução</legend>
+      <label className="block">Valor<CampoMoeda className={estilo} name="valor" moeda={dados.moeda} value={valor} onChange={setValor} required /></label>
       <label className="block">Pedido do aluno<textarea className={estilo} name="pedidoAluno" minLength={5} maxLength={2000} required /></label>
       <label className="block">Evidência do pedido<textarea className={estilo} name="evidenciaPedido" minLength={5} maxLength={2000} required /></label>
       <label className="block">Destino conferido<textarea className={estilo} name="destino" minLength={5} maxLength={2000} required /></label>

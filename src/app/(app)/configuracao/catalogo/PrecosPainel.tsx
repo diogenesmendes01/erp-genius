@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 export interface PrecoRow {
   id: string;
@@ -64,7 +65,7 @@ export function PrecosPainel({
       paisId,
       produtoId,
       tipoCobranca,
-      valor: valor === "" ? 0 : Number(valor),
+      valor: parseMoeda(valor) ?? 0,
       versaoEstudo: versaoEstudo || undefined,
     });
     setSalvando(false);
@@ -142,11 +143,10 @@ export function PrecosPainel({
             </div>
             <div>
               <label className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
-              <input
-                type="number"
-                step="0.01"
+              <CampoMoeda
+                moeda={moedaPais}
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={setValor}
                 className={inputCls + " w-full"}
               />
             </div>

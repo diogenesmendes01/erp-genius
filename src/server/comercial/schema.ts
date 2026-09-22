@@ -1,9 +1,20 @@
 import { z } from "zod";
 import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
 import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
+import { parseMoeda } from "@/lib/dinheiro";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
+
+// parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente
+// (ver docs/42-auditoria-frontend-ux.md, ganho rápido 13). null explícito ("" ou ausente)
+// passa direto; qualquer outra coisa não numérica no formato esperado vira NaN e o
+// z.number() seguinte rejeita com mensagem clara, em vez de gravar silenciosamente.
+function valorMonetarioOpcional(v: unknown) {
+  if (v === "" || v == null) return null;
+  if (typeof v === "number") return v;
+  return parseMoeda(String(v)) ?? NaN;
+}
 
 export const LeadSchema = z.object({
   nome: z.string().min(1, "Informe o nome"),
@@ -18,9 +29,9 @@ export const LeadSchema = z.object({
   origemAnuncio: z.string().optional(),
   origemPalavra: z.string().optional(),
   // valor da oportunidade (doc 09 §Ficha do Lead)
-  valorPrevisto: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0).nullable()).optional(),
+  valorPrevisto: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
   planoPrevisto: z.string().optional(),
-  comissaoPrevista: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0).nullable()).optional(),
+  comissaoPrevista: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
 });
 export type LeadInput = z.input<typeof LeadSchema>;
 
