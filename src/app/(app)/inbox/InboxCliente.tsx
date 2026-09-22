@@ -193,7 +193,7 @@ export function InboxCliente({
 
 function StatusEnvio({ status }: { status: string }) {
   if (status === "FALHOU") return <IconAlertTriangle className="h-3.5 w-3.5 text-red-500" />;
-  if (status === "LIDA") return <IconChecks className="h-3.5 w-3.5 text-blue-500" />;
+  if (status === "LIDA") return <IconChecks className="h-3.5 w-3.5 text-blue-600" />;
   if (status === "ENTREGUE") return <IconChecks className="h-3.5 w-3.5 text-gray-400" />;
   return <IconCheck className="h-3.5 w-3.5 text-gray-400" />;
 }
@@ -350,7 +350,7 @@ function Thread({
           </span>
           {podeCobranca && (
             <button
-              className="shrink-0 rounded-md border border-amber-300 px-2 py-0.5 text-amber-800 hover:bg-amber-100"
+              className="shrink-0 rounded-md border border-amber-200 px-2 py-0.5 text-amber-800 hover:bg-amber-100"
               onClick={() =>
                 run(
                   marcarConversaTratada({ conversaId: thread.conversaId, motivo: "retomar_regua" }),
@@ -863,7 +863,7 @@ function CockpitLead({
         </span>
 
         {lead.dataExperimental && (
-          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-violet-700">
+          <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">
             experimental {dataHoraInstante(lead.dataExperimental, preferenciaFusoExibicao)}
           </span>
         )}
@@ -890,7 +890,7 @@ function CockpitLead({
               // Feedback antes do round-trip: o NotaInternaSchema limita em 2000 (review PR #58 P2).
               maxLength={2000}
               placeholder="Ex.: prefere aula à noite, decide com a esposa até sexta."
-              className="flex-1 resize-none rounded-md border border-amber-300 bg-surface px-2 py-1 outline-none focus:border-amber-500"
+              className="flex-1 resize-none rounded-md border border-amber-200 bg-surface px-2 py-1 outline-none focus:border-amber-600"
             />
             <button
               className={btnPri + " text-xs"}

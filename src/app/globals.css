@@ -47,6 +47,15 @@
   /* Ações sólidas (texto branco nos dois modos) */
   --danger-solid: #b91c1c;
   --success-solid: #2f7a12;
+
+  /* IA (sugestões do copiloto — doc 27 C3): identidade visual própria, deliberadamente
+     distinta do resto da UI, para o operador reconhecer "isto foi gerado por IA" de
+     relance. Mesmo padrão bg/text que os outros semânticos (inverte no dark);
+     --ai-solid é o botão primário de aceitar sugestão, não inverte (como --brand-solid). */
+  --ai-bg: #f3eefc;
+  --ai-text: #5b21b6;
+  --ai-border: #ddd0f8;
+  --ai-solid: #6d28d9;
 }
 
 .dark {
@@ -81,6 +90,11 @@
 
   --danger-solid: #b91c1c;
   --success-solid: #2f7a12;
+
+  --ai-bg: #2f2350;
+  --ai-text: #c4b5fd;
+  --ai-border: rgba(196, 181, 253, 0.3);
+  --ai-solid: #6d28d9;
 }
 
 @layer base {

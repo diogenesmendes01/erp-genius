@@ -710,7 +710,7 @@ function FechamentoCard({
 
   return (
     <section className="rounded-lg border border-blue-200 bg-blue-50/50 p-4">
-      <h2 className="mb-2 text-sm font-medium text-blue-800">
+      <h2 className="mb-2 text-sm font-medium text-blue-700">
         Fechamento — matrícula {matricula.codigo ?? ""} aguardando
       </h2>
       <div className="flex flex-wrap items-center gap-2 text-xs">

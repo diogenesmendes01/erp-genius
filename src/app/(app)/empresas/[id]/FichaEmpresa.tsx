@@ -173,7 +173,7 @@ export function FichaEmpresa({
                         <span className="flex gap-1">
                           {podePagar && (
                             <button
-                              className={btnSec + " border-green-300 text-green-700"}
+                              className={btnSec + " border-green-200 text-green-700"}
                               disabled={ocupado}
                               onClick={() => run(pagarFaturaB2B(f.id), "Fatura paga — cobranças baixadas em lote.")}
                             >

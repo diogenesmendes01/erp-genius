@@ -22,7 +22,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
     </div>
     {!resultado.ok && <p role="alert" className="text-red-700">{resultado.erro}</p>}
     {resultado.ok && resultado.dado && <>
-      {!resultado.dado.configurada && <p role="alert" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">Os prazos de regularização e lembrete do diário ainda não foram configurados.{usuario.papeis.includes(Papel.ADMINISTRADOR) && <> <Link className="underline" href="/configuracao/operacao/avisos-diario">Configurar avisos</Link>.</>}</p>}
+      {!resultado.dado.configurada && <p role="alert" className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Os prazos de regularização e lembrete do diário ainda não foram configurados.{usuario.papeis.includes(Papel.ADMINISTRADOR) && <> <Link className="underline" href="/configuracao/operacao/avisos-diario">Configurar avisos</Link>.</>}</p>}
       {resultado.dado.gestao && <p className="text-sm text-gray-600">Acompanhamento da gestão: alertas começam somente depois do prazo de regularização.</p>}
       {!resultado.dado.itens.length && <p>Nenhuma pendência de diário encontrada.</p>}
       {resultado.dado.itens.map((item) => {

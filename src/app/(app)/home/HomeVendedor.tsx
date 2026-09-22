@@ -18,9 +18,9 @@ type Icone = React.ComponentType<IconProps>;
 
 const PRIO: Record<string, { Icon: Icone; iconCls: string; cls: string }> = {
   quente: { Icon: IconFlame, iconCls: "text-red-500", cls: "border-l-red-500" },
-  atencao: { Icon: IconAlertTriangle, iconCls: "text-amber-500", cls: "border-l-amber-500" },
-  agenda: { Icon: IconCalendarEvent, iconCls: "text-blue-500", cls: "border-l-blue-500" },
-  proposta: { Icon: IconCoin, iconCls: "text-green-500", cls: "border-l-green-500" },
+  atencao: { Icon: IconAlertTriangle, iconCls: "text-amber-600", cls: "border-l-amber-600" },
+  agenda: { Icon: IconCalendarEvent, iconCls: "text-blue-600", cls: "border-l-blue-600" },
+  proposta: { Icon: IconCoin, iconCls: "text-green-600", cls: "border-l-green-600" },
 };
 
 function Card({ titulo, valor, cls }: { titulo: string; valor: string; cls: string }) {
