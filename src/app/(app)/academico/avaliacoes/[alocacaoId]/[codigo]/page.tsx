@@ -8,6 +8,7 @@ import { dataHoraAvaliacaoLocal } from "@/server/avaliacoes/tempo";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { IdentificacaoAvaliacao } from "../../Identificacao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 export default async function LancamentoPage({ params, searchParams }: {
@@ -15,7 +16,8 @@ export default async function LancamentoPage({ params, searchParams }: {
 }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId, codigo } = await params, busca = await searchParams, p = Number(busca.pagina ?? 1);
-  const validacaoFuso = FusoInstitucionalSchema.safeParse(busca.fuso ?? "UTC");
+  const fusoInstitucional = await consultarFusoInstitucional();
+  const validacaoFuso = FusoInstitucionalSchema.safeParse(busca.fuso ?? fusoInstitucional ?? "UTC");
   if (!validacaoFuso.success) return <div role="alert">Fuso inválido. <Link className="underline" href="?fuso=UTC">Voltar para UTC</Link></div>;
   const fusoEntrada = validacaoFuso.data;
   const [r, preferencia] = await Promise.all([
