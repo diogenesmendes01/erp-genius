@@ -10,6 +10,12 @@ import { Papel } from "@prisma/client";
  * Papéis da sessão atual (vazio se não autenticado). Admin é tratado pelos helpers abaixo.
  * Papéis FRESCOS do banco — nunca do JWT (mesma regra de `_shared/sessao.ts`): papel
  * revogado ou usuário desativado perde a leitura AGORA, não no próximo login.
+ *
+ * A auditoria (ganho rápido 15) pedia `cache()` do React aqui, para deduplicar chamadas
+ * repetidas dentro da mesma renderização. NÃO aplicado: o `react` instalado (18.3.1) não
+ * exporta `cache` (só a partir do React 19 estável — confirmado em node_modules). Envolver
+ * quebraria a importação deste módulo em produção. Fica para quando o React for atualizado
+ * (agentes não alteram package.json/lockfile — AGENTS.md).
  */
 export async function papeisDaSessao(): Promise<Papel[]> {
   // imports dinâmicos: mantém papeisTem() (regra pura) testável sem carregar NextAuth/Prisma
