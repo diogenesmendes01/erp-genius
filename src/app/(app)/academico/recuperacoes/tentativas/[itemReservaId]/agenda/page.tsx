@@ -6,13 +6,15 @@ import { IdentificacaoAvaliacao } from "../../../../avaliacoes/Identificacao";
 import { ProporAgenda, DecidirAgenda } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 
 export default async function Agenda({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { itemReservaId } = await params, { antesVersao } = await searchParams;
-  const [r, preferencia] = await Promise.all([
+  const [r, preferencia, fusoInstitucional] = await Promise.all([
     consultarPropostasAgendaRecuperacao({ itemReservaId, ...(antesVersao ? { antesVersao: Number(antesVersao) } : {}) }),
     consultarPreferenciaFusoEquipe(),
+    consultarFusoInstitucional(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
@@ -21,7 +23,7 @@ export default async function Agenda({ params, searchParams }: { params: Promise
   return <section className="space-y-4">
     <h1 className="text-2xl font-medium">Propostas de horário — {d.habilidade.replaceAll("_", " ")}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    {!d.agendaPublicada && <ProporAgenda itemReservaId={itemReservaId} versaoEsperada={d.versaoEsperada} />}
+    {!d.agendaPublicada && <ProporAgenda itemReservaId={itemReservaId} versaoEsperada={d.versaoEsperada} fusoInstitucional={fusoInstitucional} />}
     {d.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-4">
       <h2 className="text-xl">Versão {p.versao}{p.versaoAtual ? " — mais recente" : " — histórica"}</h2>
       {(() => { const fuso = resolverFusoExibicao(preferenciaFuso, p.fuso); return <p>Proposta de {p.autor}. Horário: {formatarInstanteExibicao(p.inicio, preferenciaFuso, p.fuso).texto} até {formatarInstanteExibicao(p.fim, preferenciaFuso, p.fuso).texto} ({fuso}; origem {p.fuso}).</p>; })()}

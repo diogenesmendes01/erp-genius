@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/recuperacao-operacao", () => ({ consultarOperacaoRecuperacao: mocks.consultar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("../../../avaliacoes/Identificacao", () => ({ IdentificacaoAvaliacao: () => "Identificação" }));
 vi.mock("./Formularios", () => ({
   Disponibilizar: () => "Disponibilizar",
@@ -20,6 +21,7 @@ import Page from "./page";
 describe("operação de recuperação", () => {
   it("mantém formulário histórico após pausa sem oferecer realização nova", async () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    mocks.fuso.mockResolvedValue(null);
     mocks.consultar.mockResolvedValue({ ok: true, dado: {
       propostaId: "plano", versao: 1, aprovadaEm: "2026-09-18T10:00:00.000Z", alocacaoId: "alocacao", propostaHash: null,
       identificacao: {}, fontesMudaram: false, vinculoValido: false, prazoMinutos: 60, situacaoContratual: "PAUSADA",
@@ -39,6 +41,7 @@ describe("operação de recuperação", () => {
 
   it("exibe os instantes administrativos no fuso preferido", async () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.fuso.mockResolvedValue(null);
     mocks.consultar.mockResolvedValue({ ok: true, dado: {
       propostaId: "plano", versao: 1, aprovadaEm: "2026-10-01T02:30:00.000Z", alocacaoId: "alocacao", propostaHash: null,
       identificacao: {}, fontesMudaram: false, vinculoValido: true, prazoMinutos: 60, situacaoContratual: "ATIVA",
@@ -52,6 +55,7 @@ describe("operação de recuperação", () => {
 
   it("recorre ao UTC de origem quando a preferência falha", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false, erro: "Indisponível" });
+    mocks.fuso.mockResolvedValue(null);
     mocks.consultar.mockResolvedValue({ ok: true, dado: {
       propostaId: "plano", versao: 1, aprovadaEm: "2026-10-01T02:30:00.000Z", alocacaoId: "alocacao", propostaHash: null,
       identificacao: {}, fontesMudaram: false, vinculoValido: true, prazoMinutos: 60, situacaoContratual: "ATIVA",

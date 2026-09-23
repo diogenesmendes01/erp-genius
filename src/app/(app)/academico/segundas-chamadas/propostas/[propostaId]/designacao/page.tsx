@@ -5,6 +5,7 @@ import { consultarDesignacoesSegundaChamada } from "@/server/avaliacoes/segunda-
 import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 
 export default async function Designacao({ params, searchParams }: {
   params: Promise<{ propostaId: string }>;
@@ -14,13 +15,14 @@ export default async function Designacao({ params, searchParams }: {
   const { propostaId } = await params;
   const { depoisVersao, busca } = await searchParams;
   const pagina = Number(depoisVersao);
-  const [r, preferencia] = await Promise.all([
+  const [r, preferencia, fusoInstitucional] = await Promise.all([
     consultarDesignacoesSegundaChamada({
       propostaId,
       ...(Number.isInteger(pagina) && pagina > 0 ? { depoisVersao: pagina } : {}),
       ...(busca ? { busca } : {}),
     }),
     consultarPreferenciaFusoEquipe(),
+    consultarFusoInstitucional(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
 
@@ -42,7 +44,7 @@ export default async function Designacao({ params, searchParams }: {
       <button className="ml-2 rounded border p-2">Buscar</button>
     </form>
     {d.refinarBusca && <p>Mostrando os primeiros 50 resultados. Refine a busca.</p>}
-    {d.podeDesignar && <Formulario propostaId={d.propostaId} professores={d.professores} />}
+    {d.podeDesignar && <Formulario propostaId={d.propostaId} professores={d.professores} fusoInstitucional={fusoInstitucional} />}
     <h2 className="text-xl font-medium">Histórico</h2>
     {d.historico.map(h => <article key={h.id} className="rounded border p-3">
       <p>Versão {h.versao} · {h.professor.nome} · registrada por {h.gestor.nome} em {data(h.criadaEm)} ({fusoExibicao}; origem UTC)</p>

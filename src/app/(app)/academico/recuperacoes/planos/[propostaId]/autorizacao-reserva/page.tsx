@@ -6,14 +6,16 @@ import { IdentificacaoAvaliacao } from "../../../../avaliacoes/Identificacao";
 import { AutorizarReservaEspecial, ReservarComAutorizacao } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 
 export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
   const { depoisId } = await searchParams;
-  const [resultado, preferencia] = await Promise.all([
+  const [resultado, preferencia, fusoInstitucional] = await Promise.all([
     consultarAutorizacoesReservaRecuperacao({ propostaId, ...(depoisId ? { depoisId } : {}) }),
     consultarPreferenciaFusoEquipe(),
+    consultarFusoInstitucional(),
   ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
@@ -26,7 +28,7 @@ export default async function AutorizacaoReserva({ params, searchParams }: { par
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Situação da matrícula: {d.statusMatricula}.</p>
     <p>A fonte desta prévia é o plano aprovado e disponibilizado. Autorizar ou reservar aqui não registra realização da avaliação.</p>
-    {d.podeAutorizar ? <AutorizarReservaEspecial propostaId={d.propostaId} habilidades={d.habilidades} /> : <p role="status">Não há autorização especial de pré-reserva disponível nas condições atuais.</p>}
+    {d.podeAutorizar ? <AutorizarReservaEspecial propostaId={d.propostaId} habilidades={d.habilidades} fusoInstitucional={fusoInstitucional} /> : <p role="status">Não há autorização especial de pré-reserva disponível nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações especiais</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-2 rounded border p-3">
       <p>Habilidade: {autorizacao.habilidade.replaceAll("_", " ")}.</p>

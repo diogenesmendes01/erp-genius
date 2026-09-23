@@ -3,8 +3,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporCancelamentoAgendaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-cancelamento-local";
 import { decidirCancelamentoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-cancelamento";
-type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string } };
-export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
+import { CampoFuso } from "@/components/CampoFuso";
+type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string }; fusoInstitucional: string | null };
+export function Formulario({ reservaId, estadoConferido, proposta, fusoInstitucional }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
  const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState("");
  return <form className="space-y-3 rounded border p-4" onSubmit={async e => {
@@ -29,7 +30,7 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
  <p>Propor não cancela o encontro. Outra pessoa autorizada precisa revisar e aprovar.</p>
  <label className="block">Origem<select name="origem" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="ESCOLA">Escola</option><option value="ALUNO">Aluno</option></select></label>
  <label className="block">Data e hora da ocorrência<input name="dataHoraLocal" type="datetime-local" step="0.001" required className="block border p-2" /></label>
- <label className="block">Fuso da data informada<input name="fuso" defaultValue="UTC" required maxLength={100} className="block border p-2" /><span className="text-sm">Exemplo: America/Sao_Paulo ou America/Costa_Rica.</span></label>
+ <label className="block">Fuso da data informada<CampoFuso padrao={fusoInstitucional ?? ""} className="block border p-2" /><span className="text-sm">Exemplo: America/Sao_Paulo ou America/Costa_Rica.</span></label>
  <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
  </>}
  <label className="block">{proposta ? "Motivo da decisão" : "Motivo do cancelamento"}<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
