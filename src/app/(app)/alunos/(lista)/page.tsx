@@ -4,7 +4,7 @@ import { AcessoNegado } from "@/components/AcessoNegado";
 import { listarAlunos } from "@/server/alunos/consultas";
 import { exigirSessao } from "@/server/_shared";
 import { podeCriarMatricula } from "@/server/matricula/permissoes";
-import { AlunosLista } from "./AlunosLista";
+import { AlunosLista } from "../AlunosLista";
 import { ExportarPlanilha } from "@/components/ExportarPlanilha";
 
 // Guard server-side por papel ANTES de buscar dados de alunos (issue #1).

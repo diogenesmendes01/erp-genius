@@ -19,7 +19,7 @@ vi.mock("@/server/financeiro/consultas", () => ({
   relatorioDescontosComissoes: mocks.relatorio, listarInformesPagamento: mocks.informes,
   configuracaoComissoes: mocks.politicas, carregarConfigFinanceiro: mocks.configFinanceiro,
 }));
-vi.mock("./FinanceiroPainel", () => ({
+vi.mock("../FinanceiroPainel", () => ({
   FinanceiroPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => createElement("div", { "data-fuso": preferenciaFusoExibicao ?? "UTC" }),
 }));
 
