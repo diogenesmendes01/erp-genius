@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
@@ -107,6 +107,7 @@ export function FinanceiroPainel({
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const ocupadoRef = useRef(false);
 
   // Seletor de moeda de consolidação (Fase B). Default USD; preferência salva no navegador
   // (sem coluna nova). `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
@@ -147,14 +148,22 @@ export function FinanceiroPainel({
     router.refresh();
   }
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>) {
+  // `ocupadoRef` trava de forma SÍNCRONA, antes do primeiro `await` — setOcupado(true) sozinho
+  // não bastaria: React agrupa a atualização de estado, então um segundo clique no mesmo
+  // frame (antes do re-render aplicar `disabled`) ainda chamaria a action de novo. Recebe uma
+  // fábrica, não a promise já criada, para a action nem começar a rodar se a trava já estiver
+  // fechada.
+  async function run(acao: () => Promise<{ ok: boolean; erro?: string }>) {
+    if (ocupadoRef.current) return;
+    ocupadoRef.current = true;
     setErro(null);
     setOcupado(true);
     try {
-      const r = await p;
+      const r = await acao();
       if (!r.ok) setErro(r.erro ?? "Erro.");
       else router.refresh();
     } finally {
+      ocupadoRef.current = false;
       setOcupado(false);
     }
   }
@@ -206,9 +215,9 @@ export function FinanceiroPainel({
         <Comissoes
           comissoes={comissoes}
           podePagar={podeOperarCobranca}
-          onFechar={() => run(fecharMesComissoes())}
+          onFechar={() => run(() => fecharMesComissoes())}
           fechamentoAutomatico={configFinanceiro.fechamentoComissaoAutomatico}
-          onToggleAutomatico={(ligado) => run(salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
+          onToggleAutomatico={(ligado) => run(() => salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
           isPending={ocupado}
         />
       )}
@@ -219,7 +228,7 @@ export function FinanceiroPainel({
         <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />
       )}
 
-      {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(decidirAprovacao(id, { aprovar: ok }))} isPending={ocupado} />}
+      {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={ocupado} />}
 
       {aba === "cambio" && (
         <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
@@ -262,8 +271,11 @@ export function Comissoes({
             />
             Fechamento mensal automático
           </label>
+          {/* `isPending` também fica true durante o toggle de fechamento automático (mesma
+              trava de `run`) — texto fixo, não "Fechando…", para não afirmar uma operação que
+              pode não ser esta. */}
           <button className={btnPri} disabled={isPending} onClick={onFechar}>
-            {isPending ? "Fechando…" : "Fechar mês e marcar pagas"}
+            Fechar mês e marcar pagas
           </button>
         </span>}
       </div>
