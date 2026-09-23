@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { FormaPagamento } from "@prisma/client";
 import { FORMA_PAGAMENTO_LABEL } from "@/lib/labels";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { registrarPagamento } from "@/server/financeiro/acoes";
 import { UploadArquivo } from "@/components/UploadArquivo";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
@@ -60,7 +61,8 @@ export function PagamentoModal({
   const [salvando, setSalvando] = useState(false);
 
   // diff compara o pagamento atual com o SALDO restante (coerente com acumularPagamento no backend).
-  const diff = saldo - Number(valor || 0);
+  // parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente.
+  const diff = saldo - (parseMoeda(valor) ?? 0);
   const exigeComprovante = FORMAS_EXIGEM_COMPROVANTE.includes(forma);
   const faltaComprovante = exigeComprovante && !comprovanteUrl;
   const faltaEvidencia = !somenteInformar && comentario.trim().length < 5;
@@ -74,10 +76,17 @@ export function PagamentoModal({
       onErro(`Anexe o comprovante para pagamentos via ${FORMA_PAGAMENTO_LABEL[forma]}.`);
       return;
     }
+    // parseMoeda pode devolver null (texto não interpretável) — nunca cair pra 0 aqui:
+    // um valor inválido viraria um pagamento de zero registrado, silencioso.
+    const valorRecebido = parseMoeda(valor);
+    if (valorRecebido === null) {
+      onErro("Informe o valor recebido, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const r = await registrarPagamento(cobrancaId, {
       chaveIdempotencia,
-      valorRecebido: valor === "" ? 0 : Number(valor),
+      valorRecebido,
       forma,
       dataPagamento: data,
       comprovanteUrl,
@@ -104,7 +113,7 @@ export function PagamentoModal({
         <label className="mb-1 block text-xs font-medium text-gray-600">
           Saldo restante: {formatarMoeda(saldo, moeda)}
         </label>
-        <input type="number" step="0.01" className={inputCls + " mb-1"} value={valor} onChange={(e) => setValor(e.target.value)} />
+        <CampoMoeda value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
         {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
         {diff < 0 && (
           <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">

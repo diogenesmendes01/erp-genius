@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatarMoeda, simboloMoeda, somarPorMoeda, formatarValores, consolidar } from "./dinheiro";
+import { formatarMoeda, simboloMoeda, somarPorMoeda, formatarValores, consolidar, parseMoeda, formatarMoedaParaCampo, casasDecimais } from "./dinheiro";
 
 describe("dinheiro — formatação por moeda", () => {
   it("usa símbolo e casas decimais corretos por moeda", () => {
@@ -22,6 +22,93 @@ describe("dinheiro — formatação por moeda", () => {
 
   it("valor inválido vira 0 (não NaN)", () => {
     expect(formatarMoeda(NaN, "USD")).toBe("US$ 0,00");
+  });
+});
+
+describe("dinheiro — parseMoeda (entrada do operador, ganho rápido 13 da auditoria)", () => {
+  it("aceita vírgula decimal", () => {
+    expect(parseMoeda("1234,56")).toBe(1234.56);
+    expect(parseMoeda("0,5")).toBe(0.5);
+  });
+
+  it("aceita ponto decimal", () => {
+    expect(parseMoeda("1234.56")).toBe(1234.56);
+  });
+
+  it("aceita inteiro sem separador", () => {
+    expect(parseMoeda("1234")).toBe(1234);
+    expect(parseMoeda("0")).toBe(0);
+  });
+
+  it("REJEITA separador de milhar — o bug real que a auditoria encontrou: 1.234 não pode virar 1234, nem 1,234", () => {
+    expect(parseMoeda("1.234")).toBeNull();
+    expect(parseMoeda("1,234")).toBeNull();
+    expect(parseMoeda("1.234,56")).toBeNull();
+    expect(parseMoeda("1,234.56")).toBeNull();
+  });
+
+  it("rejeita mais de duas casas decimais", () => {
+    expect(parseMoeda("12,345")).toBeNull();
+    expect(parseMoeda("12.345")).toBeNull();
+  });
+
+  it("rejeita texto vazio, só espaço, ou não numérico", () => {
+    expect(parseMoeda("")).toBeNull();
+    expect(parseMoeda("   ")).toBeNull();
+    expect(parseMoeda("abc")).toBeNull();
+    expect(parseMoeda("R$ 100")).toBeNull();
+  });
+
+  it("rejeita negativo (dinheiro digitado não é negativo neste app)", () => {
+    expect(parseMoeda("-100")).toBeNull();
+  });
+
+  it("tolera espaço nas pontas", () => {
+    expect(parseMoeda("  1234,56  ")).toBe(1234.56);
+  });
+
+  it("aceita uma casa decimal só", () => {
+    expect(parseMoeda("10,5")).toBe(10.5);
+  });
+});
+
+describe("dinheiro — formatarMoedaParaCampo (normalização ao perder o foco)", () => {
+  it("sem moeda informada, sempre duas casas, sempre vírgula, nunca separador de milhar", () => {
+    expect(formatarMoedaParaCampo(1234.5)).toBe("1234,50");
+    expect(formatarMoedaParaCampo(1234567.8)).toBe("1234567,80");
+    expect(formatarMoedaParaCampo(0)).toBe("0,00");
+  });
+
+  it("com moeda de duas casas (USD/BRL/…), igual ao comportamento sem moeda", () => {
+    expect(formatarMoedaParaCampo(1234.5, "USD")).toBe("1234,50");
+    expect(formatarMoedaParaCampo(1234.5, "BRL")).toBe("1234,50");
+  });
+
+  it("com moeda sem centavos (CRC/CLP/…), sai sem casa decimal — mesma convenção de formatarMoeda", () => {
+    expect(formatarMoedaParaCampo(2500000, "CRC")).toBe("2500000");
+    expect(formatarMoedaParaCampo(1234.5, "CLP")).toBe("1235"); // arredonda: convenção local não tem fração
+    expect(formatarMoedaParaCampo(0, "CRC")).toBe("0");
+  });
+
+  it("o que formatarMoedaParaCampo devolve, parseMoeda entende de volta (round-trip), com e sem moeda", () => {
+    for (const v of [0, 0.5, 10.5, 1234.56, 1234567.89]) {
+      expect(parseMoeda(formatarMoedaParaCampo(v))).toBe(v);
+      expect(parseMoeda(formatarMoedaParaCampo(v, "USD"))).toBe(v);
+    }
+    for (const v of [0, 100, 2500000]) {
+      expect(parseMoeda(formatarMoedaParaCampo(v, "CRC"))).toBe(v);
+    }
+  });
+});
+
+describe("dinheiro — casasDecimais", () => {
+  it("0 para moedas sem centavos, 2 para as demais", () => {
+    expect(casasDecimais("CRC")).toBe(0);
+    expect(casasDecimais("CLP")).toBe(0);
+    expect(casasDecimais("crc")).toBe(0); // normaliza caixa, igual simboloMoeda
+    expect(casasDecimais("USD")).toBe(2);
+    expect(casasDecimais("BRL")).toBe(2);
+    expect(casasDecimais("XYZ")).toBe(2); // desconhecida cai no padrão de 2 casas
   });
 });
 

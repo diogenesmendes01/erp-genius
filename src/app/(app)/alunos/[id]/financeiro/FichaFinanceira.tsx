@@ -9,11 +9,12 @@ import {
   STATUS_COBRANCA_LABEL,
   STATUS_COMISSAO_LABEL,
 } from "@/lib/labels";
-import { formatarMoeda, formatarValores, type ValorMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
@@ -319,14 +320,21 @@ function RenegociarModal({
   const [motivo, setMotivo] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  const desconto = cobranca.valorNegociado - Number(valorPara || 0);
+  const desconto = cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
 
   async function salvar() {
+    // Nunca ?? 0 aqui: texto inválido no valor viraria "novo valor: zero" registrado,
+    // silencioso — o mesmo tipo de erro que o CampoMoeda existe pra evitar.
+    const valorParaNumero = tipo === TipoAjuste.PERDAO ? 0 : parseMoeda(valorPara);
+    if (valorParaNumero === null) {
+      onErro("Informe o novo valor, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const r = await ajustarCobranca({
       cobrancaId: cobranca.id,
       tipo,
-      valorPara: tipo === TipoAjuste.PERDAO ? 0 : valorPara === "" ? 0 : Number(valorPara),
+      valorPara: valorParaNumero,
       vigencia,
       novoVencimento: novoVenc,
       motivo,
@@ -345,7 +353,7 @@ function RenegociarModal({
       {tipo !== TipoAjuste.PERDAO && (
         <>
           <label className="mb-1 block text-xs text-gray-600">Novo valor (de {formatarMoeda(cobranca.valorNegociado, moeda)})</label>
-          <input type="number" step="0.01" className={inputCls + " mb-1"} value={valorPara} onChange={(e) => setValor(e.target.value)} />
+          <CampoMoeda value={valorPara} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Novo valor" />
           {desconto !== 0 && <p className="mb-2 text-xs text-gray-600">Desconto concedido: <strong>{formatarMoeda(desconto, moeda)}</strong></p>}
         </>
       )}

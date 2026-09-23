@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 export interface PrecoRow {
   id: string;
@@ -59,12 +60,19 @@ export function PrecosPainel({
 
   async function salvar() {
     setErro(null);
+    // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
+    // matrículas passariam a usar como preço negociado — silencioso.
+    const valorNumero = parseMoeda(valor);
+    if (valorNumero === null) {
+      setErro("Informe o valor, com no máximo duas casas decimais.");
+      return;
+    }
     setSalvando(true);
     const res = await criarPreco({
       paisId,
       produtoId,
       tipoCobranca,
-      valor: valor === "" ? 0 : Number(valor),
+      valor: valorNumero,
       versaoEstudo: versaoEstudo || undefined,
     });
     setSalvando(false);
@@ -142,11 +150,10 @@ export function PrecosPainel({
             </div>
             <div>
               <label className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
-              <input
-                type="number"
-                step="0.01"
+              <CampoMoeda
+                moeda={moedaPais}
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={setValor}
                 className={inputCls + " w-full"}
               />
             </div>

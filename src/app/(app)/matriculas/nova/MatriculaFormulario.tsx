@@ -4,15 +4,24 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { TipoCobranca, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
 import { GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda, formatarMoedaParaCampo } from "@/lib/dinheiro";
 import { PAISES_ISO } from "@/lib/paises-iso";
 import { criarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Números já parseados dos três campos de dinheiro do passo 2 — validarPasso2 devolve
+ *  isto (ou um erro), montarInput só aceita isto, nunca o texto cru de novo. */
+interface ValoresMonetariosPasso2 {
+  taxa: number;
+  mensalidade: number;
+  certificado: number;
+}
 
 export interface PrecoRef {
   paisId: string;
@@ -144,14 +153,17 @@ export function MatriculaFormulario({
   const refTaxa = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MATRICULA);
   const refMens = precoRefDe(alunoPaisId, produtoId, TipoCobranca.MENSALIDADE);
   const semTabela = !refTaxa || !refMens;
-  const taxaManual = !!refTaxa && taxaValor !== "" && Number(taxaValor) !== refTaxa.valor;
-  const mensManual = !!refMens && mensalidadeValor !== "" && Number(mensalidadeValor) !== refMens.valor;
+  const taxaManual = !!refTaxa && taxaValor !== "" && parseMoeda(taxaValor) !== refTaxa.valor;
+  const mensManual = !!refMens && mensalidadeValor !== "" && parseMoeda(mensalidadeValor) !== refMens.valor;
 
   function prefillPrecos(pid: string, prodId: string) {
     const taxa = precoRefDe(pid, prodId, TipoCobranca.MATRICULA);
     const mens = precoRefDe(pid, prodId, TipoCobranca.MENSALIDADE);
-    if (taxa) setTaxa(String(taxa.valor));
-    if (mens) setMens(String(mens.valor));
+    const moedaDoPais = paises.find((p) => p.id === pid)?.moedaLocal;
+    // formatarMoedaParaCampo (não String cru): pré-preenche já no formato que o campo
+    // exibe depois do blur — vírgula, casas certas pra moeda — em vez do ponto do JS.
+    if (taxa) setTaxa(formatarMoedaParaCampo(taxa.valor, moedaDoPais));
+    if (mens) setMens(formatarMoedaParaCampo(mens.valor, moedaDoPais));
   }
 
   // País dirige documento/telefone/moeda — ao trocar, reseta o tipo de documento se não
@@ -163,7 +175,7 @@ export function MatriculaFormulario({
     prefillPrecos(novoPaisId, produtoId);
   }
 
-  function montarInput(referencia: "MES_CIVIL" | "CICLO_MATRICULA") {
+  function montarInput(referencia: "MES_CIVIL" | "CICLO_MATRICULA", valores: ValoresMonetariosPasso2) {
     return {
       leadId: lead?.id,
       // Identificação
@@ -217,9 +229,9 @@ export function MatriculaFormulario({
       origemNivel,
       dataAvaliacaoNivel,
       diaVencimento,
-      taxaValor: taxaValor === "" ? 0 : Number(taxaValor),
-      mensalidadeValor: mensalidadeValor === "" ? 0 : Number(mensalidadeValor),
-      certificadoValor: certificadoValor === "" ? 0 : Number(certificadoValor),
+      taxaValor: valores.taxa,
+      mensalidadeValor: valores.mensalidade,
+      certificadoValor: valores.certificado,
       mesesPlano,
       cobertura: { referencia, inicio: inicioCobertura },
       primeiroVencimento,
@@ -246,6 +258,20 @@ export function MatriculaFormulario({
     return null;
   }
 
+  // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
+  // certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
+  // devolve os números prontos — montarInput não reparseia (e não tem fallback ?? 0
+  // interno pra ninguém reusar por engano sem validar antes).
+  function validarPasso2(): { erro: string } | ValoresMonetariosPasso2 {
+    const taxa = parseMoeda(taxaValor);
+    if (taxa === null) return { erro: "Informe a taxa de matrícula, com no máximo duas casas decimais." };
+    const mensalidade = parseMoeda(mensalidadeValor);
+    if (mensalidade === null) return { erro: "Informe a mensalidade, com no máximo duas casas decimais." };
+    const certificado = certificadoValor === "" ? 0 : parseMoeda(certificadoValor);
+    if (certificado === null) return { erro: "Informe o valor do certificado, com no máximo duas casas decimais." };
+    return { taxa, mensalidade, certificado };
+  }
+
   function irParaPasso(p: 1 | 2) {
     if (p === 2) {
       const e = validarPasso1();
@@ -264,8 +290,13 @@ export function MatriculaFormulario({
       setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
       return;
     }
+    const passo2 = validarPasso2();
+    if ("erro" in passo2) {
+      setErro(passo2.erro);
+      return;
+    }
     setSalvando(true);
-    const res = await criarMatricula(montarInput(referenciaCobertura));
+    const res = await criarMatricula(montarInput(referenciaCobertura, passo2));
     if (!res.ok) {
       setErro(res.erro);
       setSalvando(false);
@@ -572,12 +603,12 @@ export function MatriculaFormulario({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
-                <input type="number" step="0.01" className={inputCls} value={taxaValor} onChange={(e) => setTaxa(e.target.value)} />
+                <CampoMoeda value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Mensalidade</label>
-                <input type="number" step="0.01" className={inputCls} value={mensalidadeValor} onChange={(e) => setMens(e.target.value)} />
+                <CampoMoeda value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
               </div>
               <div>
@@ -617,7 +648,7 @@ export function MatriculaFormulario({
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-600">Certificado (só Costa Rica)</label>
-                <input type="number" step="0.01" className={inputCls} value={certificadoValor} onChange={(e) => setCert(e.target.value)} placeholder="0" />
+                <CampoMoeda value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />
               </div>
             </div>
             {semTabela && (
@@ -635,7 +666,7 @@ export function MatriculaFormulario({
               </div>
             )}
             <p className="mt-3 text-sm text-gray-600">
-              Taxa de matrícula: <strong>{formatarMoeda(Number(taxaValor || 0), moeda)}</strong>. Mensalidade: {formatarMoeda(Number(mensalidadeValor || 0), moeda)}.
+              Taxa de matrícula: <strong>{formatarMoeda(parseMoeda(taxaValor) ?? 0, moeda)}</strong>. Mensalidade: {formatarMoeda(parseMoeda(mensalidadeValor) ?? 0, moeda)}.
             </p>
           </section>
 

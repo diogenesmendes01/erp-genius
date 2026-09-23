@@ -46,6 +46,12 @@ export function simboloMoeda(moeda: string): string {
   return SIMBOLO_MOEDA[m] ?? m;
 }
 
+/** Casas decimais que a moeda usa na exibição (0 para as que circulam sem centavos por
+ *  convenção local — mesma lista de `formatarMoeda`). */
+export function casasDecimais(moeda: string): number {
+  return SEM_DECIMAIS.has(normalizar(moeda)) ? 0 : 2;
+}
+
 /**
  * Formata um valor na sua moeda, com símbolo e casas decimais corretos. O agrupamento
  * de milhar segue pt-BR (1.234.567,89) — padrão da matriz e consistente em toda a LATAM.
@@ -66,6 +72,36 @@ export function formatarMoeda(valor: number, moeda: string, opts?: { semSimbolo?
 // USD primeiro (referência de consolidação), depois as demais em ordem alfabética.
 function ordemMoeda(moeda: string): number {
   return moeda === "USD" ? 0 : 1;
+}
+
+/**
+ * Interpreta o texto digitado num campo de dinheiro. Aceita SOMENTE um separador decimal —
+ * vírgula OU ponto, nunca os dois juntos — e rejeita qualquer outra coisa (incluindo separador
+ * de milhar): "1.234" não vira 1234 nem 1,234 por adivinhação, é considerado inválido. É a
+ * mesma regra que já protegia RecebimentoDestinadoForm.tsx (antiga `centavos()` local,
+ * promovida pra cá — ver docs/42-auditoria-frontend-ux.md, achado "dinheiro em
+ * type=number step=0.01"), agora compartilhada por todo `CampoMoeda`.
+ * Devolve o valor na unidade principal da moeda (não em centavos) ou `null` se o texto
+ * estiver vazio ou não puder ser interpretado com segurança — a chamadora decide a mensagem.
+ */
+export function parseMoeda(texto: string): number | null {
+  const normalizado = texto.trim().replace(",", ".");
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalizado)) return null;
+  return Number(normalizado);
+}
+
+/**
+ * Formata um valor já válido para reexibição no campo, sempre com vírgula decimal e sem
+ * separador de milhar (o que `parseMoeda` entende de volta, sem ambiguidade). Uso típico:
+ * normalizar o texto do campo ao perder o foco (`onBlur`), depois que o operador termina de
+ * digitar — nunca a cada tecla, para não brigar com o cursor.
+ * `moeda` é opcional: quando informada, respeita as casas decimais da moeda (CRC/CLP saem
+ * sem centavos, "100" em vez de "100,00" — mesma convenção de `formatarMoeda`); omitida,
+ * usa duas casas (comportamento anterior, para quem ainda não tem a moeda à mão).
+ */
+export function formatarMoedaParaCampo(valor: number, moeda?: string): string {
+  const casas = moeda ? casasDecimais(moeda) : 2;
+  return valor.toFixed(casas).replace(".", ",");
 }
 
 /**

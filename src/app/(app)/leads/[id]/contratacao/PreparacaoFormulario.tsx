@@ -3,17 +3,22 @@ import { AgendaParticularFormulario, type AgendaConferida } from "./AgendaPartic
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararContratacao, prepararContratacaoNovaPessoa } from "@/server/matricula/preparacao-comercial";
+import { parseMoeda } from "@/lib/dinheiro";
+import { CampoMoeda } from "@/components/CampoMoeda";
 export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaPessoa, paises }: { novaPessoa: boolean; paises: { id: string; nome: string }[]; leadId: string; oferta: { id: string; versaoEntrada: number; formaAgenda: string | null; produtoId: string; paisId: string; moeda: string }; candidatos: { id: string; primeiroNome: string; sobrenome: string | null }[]; turmas: { id: string; nome: string }[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const particular = oferta.formaAgenda?.startsWith("PARTICULAR_") ?? false;
   const [agendaParticular, setAgendaParticular] = useState<AgendaConferida | null>(null);
   const [regime, setRegime] = useState("");
+  const [taxa, setTaxa] = useState(""); const [servico, setServico] = useState("");
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition();
   return <form className="space-y-4 rounded border p-4" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget);
     if (f.get("confirmacao") !== "on") { setErro("Confirme a identidade do cadastro selecionado."); return; }
     if (particular && !agendaParticular) { setErro("Confira e confirme os horários particulares antes de preparar."); return; }
+    const taxaNumero = parseMoeda(taxa), servicoNumero = parseMoeda(servico);
+    if (taxaNumero === null || servicoNumero === null) { setErro("Informe a taxa e o valor propostos, com no máximo duas casas decimais."); return; }
     iniciar(async () => { try { chave.current ??= crypto.randomUUID();
-      const comum = { minutosAdiantamento: f.get("minutosAdiantamento") ? Number(f.get("minutosAdiantamento")) : undefined, leadId, produtoId: oferta.produtoId, paisId: oferta.paisId, turmaId: particular ? undefined : String(f.get("turma")), agendaParticular: particular ? agendaParticular! : undefined, regime: String(f.get("regime")) as "MENSALIDADE" | "HORA_PARTICULAR", taxaProposta: String(f.get("taxa")), valorServicoProposto: String(f.get("servico")), motivo: String(f.get("motivo")), chaveIdempotencia: chave.current };
+      const comum = { minutosAdiantamento: f.get("minutosAdiantamento") ? Number(f.get("minutosAdiantamento")) : undefined, leadId, produtoId: oferta.produtoId, paisId: oferta.paisId, turmaId: particular ? undefined : String(f.get("turma")), agendaParticular: particular ? agendaParticular! : undefined, regime: String(f.get("regime")) as "MENSALIDADE" | "HORA_PARTICULAR", taxaProposta: taxaNumero.toFixed(2), valorServicoProposto: servicoNumero.toFixed(2), motivo: String(f.get("motivo")), chaveIdempotencia: chave.current };
       const r = novaPessoa ? await prepararContratacaoNovaPessoa({ ...comum, cadastroNovoConferido: true, novoCadastro: { primeiroNome: String(f.get("primeiroNome")), sobrenome: String(f.get("sobrenome") ?? "").trim() || undefined, email: String(f.get("email") ?? "").trim() || undefined, paisId: String(f.get("paisCadastro")) } }) : await prepararContratacao({ ...comum, alunoId: String(f.get("aluno")), identidadeConferida: true });
       if (!r.ok || !r.dado) { setErro(r.ok ? "Preparação não confirmada." : r.erro); return; }
       router.push(`/matriculas/${r.dado.matriculaId}/preparacao`);
@@ -30,8 +35,8 @@ export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaP
     <label className="flex items-center gap-2"><input type="checkbox" name="confirmacao" required />{novaPessoa ? "Conferi os dados e a necessidade de cadastrar uma pessoa nova." : "Conferi que o cadastro selecionado corresponde à pessoa desta contratação."}</label>
     {particular ? <AgendaParticularFormulario leadId={leadId} ofertaId={oferta.id} versaoOferta={oferta.versaoEntrada} fixa={oferta.formaAgenda === "PARTICULAR_GRADE_FIXA"} onChange={setAgendaParticular} /> : <label className="block">Turma<select name="turma" required defaultValue="" className="block w-full rounded border p-2"><option value="" disabled>Escolha uma turma disponível</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></label>}
     <label className="block">Cobrança proposta<select name="regime" required value={regime} onChange={(e) => setRegime(e.target.value)} className="block w-full rounded border p-2"><option value="" disabled>Selecione o regime</option><option value="MENSALIDADE">Mensalidade fixa</option><option value="HORA_PARTICULAR">Por hora de 60 minutos</option></select></label>
-    <label className="block">Taxa de matrícula proposta ({oferta.moeda})<input name="taxa" type="number" min="0" step="0.01" max="9999999999.99" required className="block rounded border p-2" /></label>
-    <label className="block">Valor proposto por mensalidade ou hora ({oferta.moeda})<input name="servico" type="number" min="0" step="0.01" max="9999999999.99" required className="block rounded border p-2" /></label>
+    <label className="block">Taxa de matrícula proposta ({oferta.moeda})<CampoMoeda value={taxa} onChange={setTaxa} moeda={oferta.moeda} required className="block rounded border p-2" /></label>
+    <label className="block">Valor proposto por mensalidade ou hora ({oferta.moeda})<CampoMoeda value={servico} onChange={setServico} moeda={oferta.moeda} required className="block rounded border p-2" /></label>
     {regime === "HORA_PARTICULAR" && <label className="block">Minutos contratados para antecipação inicial<input name="minutosAdiantamento" type="number" min="1" step="1" max="2147483647" className="block rounded border p-2" /><span>Obrigatório quando a oferta exige adiantamento. Valor calculado pelo preço por hora informado, sem arredondar o tempo para cima.</span></label>}
     <label className="block">Condições propostas e motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>Valores propostos ficam sujeitos à conferência e às aprovações aplicáveis. Este envio reserva a vaga ou os horários conferidos e não emite cobrança ou contrato para assinatura.</p>
