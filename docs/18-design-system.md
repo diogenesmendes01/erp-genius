@@ -16,9 +16,10 @@
   na variável `--font-sans`. `globals.css` referencia `var(--font-sans)`.
 - **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
   negrito pesado (`font-bold` evitado; use `font-medium`).
-  > **Nota de alinhamento:** a implementação atual em `layout.tsx` ainda registra quatro pesos
-  > (400/500/600/700); a redução para 400/500 está sendo alinhada em PR de front-end. Esta doc
-  > descreve o padrão **pretendido** — ao alinhar, mantenha só 400/500.
+  `layout.tsx` registra só esses dois arquivos e `src/app/fonts/` contém só eles. Elementos que
+  o navegador deixa em negrito por padrão (`h1`–`h4`, `b`, `strong`, `th`) são levados a 500 em
+  `globals.css` — qualquer peso acima de 500 seria negrito sintético. `src/app/tipografia.test.ts`
+  falha se um peso maior voltar ao código.
 
 ## Cantos & bordas
 - Raios: `rounded-md` = 8px · `rounded-lg` = 10px · `rounded-xl` = 12px · `rounded-full` (chips/avatar).
