@@ -21,7 +21,7 @@ export function RelatarIndisponibilidadeReposicao({ reposicaoId }: { reposicaoId
         if (!resultado.ok) { setErro(resultado.erro); return; }
         formulario.reset();
         router.refresh();
-      } catch { setErro("O relato não foi registrado. Consulte a reposição antes de tentar novamente."); }
+      } catch { setErro("Não foi possível confirmar o relato. Consulte a reposição antes de tentar novamente."); }
     });
   }}>
     <p className="font-medium">Relatar indisponibilidade do material</p>
