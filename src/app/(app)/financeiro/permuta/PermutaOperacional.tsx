@@ -9,6 +9,7 @@ import {
   proporCompensacaoPermuta,
 } from "@/server/financeiro/permuta-servico";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -103,8 +104,8 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
 
 // Estado próprio por formulário: o par de período também aparece uma vez por acordo, dentro de acordos.map.
 function CamposPeriodo({ nomeInicio, nomeFim }: { nomeInicio: string; nomeFim: string }) {
-  const [inicio, setInicio] = useState("");
-  return <><label>Início <input required type="date" name={nomeInicio} onChange={e => setInicio(e.target.value)} /></label><label>Fim <input required type="date" name={nomeFim} min={inicio || undefined} /></label></>;
+  const periodo = useInicioDoPeriodo();
+  return <><label>Início <input required type="date" name={nomeInicio} {...periodo.propsInicio} /></label><label>Fim <input required type="date" name={nomeFim} min={periodo.min} /></label></>;
 }
 
 function dados(formulario: HTMLFormElement) {

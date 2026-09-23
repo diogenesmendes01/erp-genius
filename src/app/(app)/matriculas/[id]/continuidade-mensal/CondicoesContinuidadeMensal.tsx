@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensal, prepararCondicoesContinuidadeMensal } from "@/server/matricula/condicoes-continuidade-mensal";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -23,7 +24,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
-  const [calendarioInicio, setCalendarioInicio] = useState("");
+  const periodo = useInicioDoPeriodo();
   const [referencia, setReferencia] = useState<Referencia>("");
   const [referenciaVencimento, setReferenciaVencimento] = useState<ReferenciaVencimento>("");
   const [ajusteVencimento, setAjusteVencimento] = useState<AjusteVencimento>("");
@@ -121,8 +122,8 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
               <label className="block" htmlFor="calendario-id">Identificador do calendário<input id="calendario-id" className={classe} name="calendarioId" required /></label>
               <label className="block" htmlFor="calendario-versao">Versão do calendário<input id="calendario-versao" className={classe} name="calendarioVersao" type="number" min="1" step="1" required /></label>
               <label className="block" htmlFor="calendario-referencia">Referência do calendário<input id="calendario-referencia" className={classe} name="calendarioReferencia" required /></label>
-              <label className="block" htmlFor="calendario-inicio">Início da vigência<input id="calendario-inicio" className={classe} name="calendarioInicioVigencia" type="date" required onChange={evento => setCalendarioInicio(evento.target.value)} /></label>
-              <label className="block" htmlFor="calendario-fim">Fim da vigência<input id="calendario-fim" className={classe} name="calendarioFimVigencia" type="date" required min={calendarioInicio || undefined} /></label>
+              <label className="block" htmlFor="calendario-inicio">Início da vigência<input id="calendario-inicio" className={classe} name="calendarioInicioVigencia" type="date" required {...periodo.propsInicio} /></label>
+              <label className="block" htmlFor="calendario-fim">Fim da vigência<input id="calendario-fim" className={classe} name="calendarioFimVigencia" type="date" required min={periodo.min} /></label>
             </div>
             <fieldset className="space-y-1"><legend>Dias da semana considerados úteis</legend>{diasDaSemana.map(([dia, nome]) => <label key={dia} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={diasSemanaUteis.includes(dia)} onChange={evento => setDiasSemanaUteis(atual => evento.target.checked ? [...atual, dia] : atual.filter(valor => valor !== dia))} />{nome}</label>)}</fieldset>
             <fieldset className="space-y-2"><legend>Feriados do calendário</legend>{feriados.map((feriado, indice) => <div key={indice} className="flex gap-2"><input className={classe} type="date" value={feriado} aria-label={`Feriado ${indice + 1}`} onChange={evento => setFeriados(atual => atual.map((valor, posicao) => posicao === indice ? evento.target.value : valor))} required /><button type="button" className="rounded border px-2" onClick={() => setFeriados(atual => atual.filter((_, posicao) => posicao !== indice))}>Remover</button></div>)}<button type="button" className="rounded border p-2" onClick={() => setFeriados(atual => [...atual, ""])}>Adicionar feriado</button></fieldset>

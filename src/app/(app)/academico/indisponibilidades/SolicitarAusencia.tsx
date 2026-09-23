@@ -2,12 +2,13 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { solicitarIndisponibilidadeLocal } from "@/server/agenda/indisponibilidade";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const [mensagem, setMensagem] = useState("");
-  const [inicio, setInicio] = useState("");
+  const periodo = useInicioDoPeriodo();
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useTransition();
   return <form className="space-y-3 rounded-lg border bg-[var(--surface)] p-4" onSubmit={(event) => {
@@ -31,8 +32,8 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
     <fieldset disabled={ocupado || professores.length === 0} className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">Professor<select name="professorId" required className="mt-1 block w-full rounded border p-2">{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <label className="text-sm">Fuso dos horários<input name="fuso" required defaultValue={fusoInicial} placeholder="America/Sao_Paulo" className="mt-1 block w-full rounded border p-2" /></label>
-      <label className="text-sm">Início da indisponibilidade<input name="inicio" required type="datetime-local" onChange={(e) => setInicio(e.target.value)} className="mt-1 block w-full rounded border p-2" /></label>
-      <label className="text-sm">Fim da indisponibilidade<input name="fim" required type="datetime-local" min={inicio || undefined} className="mt-1 block w-full rounded border p-2" /></label>
+      <label className="text-sm">Início da indisponibilidade<input name="inicio" required type="datetime-local" {...periodo.propsInicio} className="mt-1 block w-full rounded border p-2" /></label>
+      <label className="text-sm">Fim da indisponibilidade<input name="fim" required type="datetime-local" min={periodo.min} className="mt-1 block w-full rounded border p-2" /></label>
       <label className="text-sm sm:col-span-2">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
       <button className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Registrando…" : "Enviar solicitação"}</button>
     </fieldset>
