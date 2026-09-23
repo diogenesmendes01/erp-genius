@@ -83,12 +83,12 @@ export function LeadsLista({
       )}
 
       <div className="mb-3 flex flex-wrap gap-2">
-        <select value={fTipo} onChange={(e) => setTipo(e.target.value)} className={selCls}>
+        <select value={fTipo} onChange={(e) => setTipo(e.target.value)} aria-label="Filtrar por tipo de lead" className={selCls}>
           <option value="">PF e B2B</option>
           <option value="pf">Pessoa Física</option>
           <option value="b2b">Empresa (B2B)</option>
         </select>
-        <select value={fEtapa} onChange={(e) => setEtapa(e.target.value)} className={selCls}>
+        <select value={fEtapa} onChange={(e) => setEtapa(e.target.value)} aria-label="Filtrar por etapa" className={selCls}>
           <option value="">Todas as etapas</option>
           {Object.values(EtapaLead).map((e) => (
             <option key={e} value={e}>
@@ -96,7 +96,7 @@ export function LeadsLista({
             </option>
           ))}
         </select>
-        <select value={fSeg} onChange={(e) => setSeg(e.target.value)} className={selCls}>
+        <select value={fSeg} onChange={(e) => setSeg(e.target.value)} aria-label="Filtrar por segmento" className={selCls}>
           <option value="">Todos os segmentos</option>
           {Object.values(Segmento).map((s) => (
             <option key={s} value={s}>
@@ -104,7 +104,7 @@ export function LeadsLista({
             </option>
           ))}
         </select>
-        <select value={fTemp} onChange={(e) => setTemp(e.target.value)} className={selCls}>
+        <select value={fTemp} onChange={(e) => setTemp(e.target.value)} aria-label="Filtrar por temperatura" className={selCls}>
           <option value="">Toda temperatura</option>
           {Object.values(Temperatura).map((t) => (
             <option key={t} value={t}>
