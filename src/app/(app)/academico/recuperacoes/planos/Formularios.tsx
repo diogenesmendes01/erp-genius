@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { proporPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-proposta";
 import { decidirPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-decisao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 type Habilidade = typeof HABILIDADES[number];
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -45,7 +46,7 @@ export function DecidirPlano({ propostaId, propostaHash, podeAprovar }: { propos
     try {
       const r = await decidirPlanoRecuperacao({ propostaId, propostaHash, aprovada: data.get("decisao") === "aprovar", motivo: String(data.get("motivo") ?? "") });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Não foi possível confirmar a decisão. Confira e tente novamente."); }
+    } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { setEnviando(false); }
   }}>
     <fieldset disabled={enviando} className="space-y-2">

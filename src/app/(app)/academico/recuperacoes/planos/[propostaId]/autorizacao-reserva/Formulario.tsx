@@ -6,6 +6,7 @@ import { autorizarReservaEspecialLocal } from "@/server/avaliacoes/recuperacao-a
 import { reservarTentativaRecuperacao } from "@/server/avaliacoes/recuperacao-reserva";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Habilidade = typeof HABILIDADES[number];
 
@@ -34,7 +35,7 @@ export function AutorizarReservaEspecial({ propostaId, habilidades, fusoInstituc
         const resultado = await autorizarReservaEspecialLocal({ propostaId, habilidade: habilidade as Habilidade, motivo, prazoLocal, fuso, chaveIdempotencia: tentativa.current!.chave });
         if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
       } catch {
-        setMensagem("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação.");
+        setMensagem(MSG_RESULTADO_INCERTO);
       }
     });
   }}>
@@ -68,7 +69,7 @@ export function ReservarComAutorizacao({ propostaId, propostaHash, autorizacaoId
         const resultado = await reservarTentativaRecuperacao({ propostaId, propostaHash, habilidades: [habilidade as Habilidade], motivo, chaveIdempotencia: tentativa.current!.chave, autorizacaoEspecialReservaId: autorizacaoId });
         if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
       } catch {
-        setMensagem("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação.");
+        setMensagem(MSG_RESULTADO_INCERTO);
       }
     });
   }}>

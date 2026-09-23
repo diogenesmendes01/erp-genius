@@ -6,6 +6,7 @@ import { reservarTentativaRecuperacao } from "@/server/avaliacoes/recuperacao-re
 import { cancelarReservaRecuperacaoPelaEscola } from "@/server/avaliacoes/recuperacao-cancelamento";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -15,7 +16,7 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
     e.preventDefault(); if (enviando) return;
     const data = new FormData(e.currentTarget); setEnviando(true); setErro("");
     try { const r = await executar(data); if (!r.ok) setErro(r.erro); else router.refresh(); }
-    catch { setErro("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação."); }
+    catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setEnviando(false); }
   }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className="rounded border px-4 py-2" type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }

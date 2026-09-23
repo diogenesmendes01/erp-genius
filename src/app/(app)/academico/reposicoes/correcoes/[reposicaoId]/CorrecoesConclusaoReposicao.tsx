@@ -123,7 +123,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
         const resultado = await proporCorrecaoConclusaoReposicao({ ...comum, ...fonte });
         if (!resultado.ok) { setErro(resultado.erro); return; }
         router.refresh();
-      } catch { setErro("A correção não foi registrada. Confira o histórico antes de reenviar."); }
+      } catch { setErro("Não foi possível confirmar a correção. Confira o histórico antes de reenviar."); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3">
     <h2 className="text-xl font-medium">Propor correção</h2>
