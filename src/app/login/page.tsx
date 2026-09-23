@@ -46,33 +46,30 @@ export default function LoginPage() {
           <div>
             <label htmlFor="login-email" className="mb-1 block text-sm text-gray-600">E-mail</label>
             <input
+              {...register("email")}
               id="login-email"
               type="email"
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={errors.email ? "login-email-erro" : undefined}
-              {...register("email")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
-            {errors.email && (
-              <p id="login-email-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-            )}
+            {/* Sempre montado: região aria-live precisa existir antes do texto mudar para ser anunciada. */}
+            <p id="login-email-erro" aria-live="polite" className="mt-1 text-xs text-red-600 empty:hidden">{errors.email?.message}</p>
           </div>
 
           <div>
             <label htmlFor="login-senha" className="mb-1 block text-sm text-gray-600">Senha</label>
             <input
+              {...register("senha")}
               id="login-senha"
               type="password"
               autoComplete="current-password"
               aria-invalid={errors.senha ? true : undefined}
               aria-describedby={errors.senha ? "login-senha-erro" : undefined}
-              {...register("senha")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
-            {errors.senha && (
-              <p id="login-senha-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.senha.message}</p>
-            )}
+            <p id="login-senha-erro" aria-live="polite" className="mt-1 text-xs text-red-600 empty:hidden">{errors.senha?.message}</p>
           </div>
 
           {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
