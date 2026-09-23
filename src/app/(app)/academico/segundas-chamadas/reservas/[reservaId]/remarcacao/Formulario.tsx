@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporRemarcacaoAgendaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-remarcacao-local";
 import { decidirRemarcacaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 type Props = {
  reservaId: string;
  estadoConferido: string;
@@ -11,6 +12,7 @@ type Props = {
 export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
  const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [decisao, setDecisao] = useState("");
+ const periodo = useInicioDoPeriodo();
  return <form className="space-y-3 rounded border p-4" onSubmit={async e => {
   e.preventDefault(); if (trava.current) return;
   const f = new FormData(e.currentTarget);
@@ -41,8 +43,8 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
   {proposta.periodosNaoLetivos.length > 0 && <label className="block"><input name="autorizarDiaNaoLetivo" type="checkbox" disabled={decisao !== "aprovar"} required={decisao === "aprovar"} /> Autorizar explicitamente a exceção para os {proposta.periodosNaoLetivos.length} período(s) não letivo(s) revisados.</label>}
  </> : <>
  <p>A proposta mantém o horário atual até outra pessoa autorizada aprovar. O prazo da avaliação e a oportunidade reservada permanecem os mesmos.</p>
- <label className="block">Novo início<input name="inicioLocal" type="datetime-local" required className="block border p-2" /></label>
- <label className="block">Novo término<input name="fimLocal" type="datetime-local" required className="block border p-2" /></label>
+ <label className="block">Novo início<input name="inicioLocal" type="datetime-local" required {...periodo.propsInicio} className="block border p-2" /></label>
+ <label className="block">Novo término<input name="fimLocal" type="datetime-local" required min={periodo.min} className="block border p-2" /></label>
  <label className="block">Fuso dos horários<input name="fusoOrigem" required maxLength={100} placeholder="America/Sao_Paulo" className="block border p-2" /><span className="text-sm">Informe o fuso em que preencheu início e término.</span></label>
  <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
  <label className="block">Justificativa de exceção não letiva, se o horário a atingir<textarea name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>

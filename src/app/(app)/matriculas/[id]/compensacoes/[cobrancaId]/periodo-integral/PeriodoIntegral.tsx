@@ -9,6 +9,7 @@ import {
   proporRegularizacaoPeriodoIntegral,
 } from "@/server/matricula/periodo-integral";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -74,6 +75,7 @@ export function PeriodoIntegral({
   const [escolha, setEscolha] = useState<Escolha>(baseReconferencia?.escolha === "CREDITO" || baseReconferencia?.escolha === "COBERTURA_FUTURA" ? baseReconferencia.escolha : "");
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
+  const periodo = useInicioDoPeriodo();
   const chave = useRef<string | null>(null);
   const classe = "block w-full rounded border p-2";
   const instanteAdministrativo = (valor: string) => {
@@ -130,7 +132,7 @@ export function PeriodoIntegral({
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>{d.podeReconferir ? "Reconferir escolha do aluno" : "Escolha do aluno"}</legend>
         <label className="block" htmlFor="escolha">Tratamento escolhido<select id="escolha" className={classe} name="escolha" value={escolha} onChange={evento => setEscolha(evento.target.value as Escolha)} required><option value="" disabled>Selecione</option><option value="CREDITO">Crédito a constituir em etapa posterior</option><option value="COBERTURA_FUTURA">Cobertura futura a definir</option></select></label>
-        {escolha === "COBERTURA_FUTURA" && <fieldset className="space-y-2 rounded border p-3"><legend>Período de cobertura futura</legend><label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" defaultValue={baseReconferencia?.coberturaFutura?.inicio ?? ""} required /></label><label className="block" htmlFor="fim">Fim civil<input id="fim" className={classe} name="fim" type="date" defaultValue={baseReconferencia?.coberturaFutura?.fim ?? ""} required /></label></fieldset>}
+        {escolha === "COBERTURA_FUTURA" && <fieldset className="space-y-2 rounded border p-3"><legend>Período de cobertura futura</legend><label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" defaultValue={baseReconferencia?.coberturaFutura?.inicio ?? ""} {...periodo.propsInicio} required /></label><label className="block" htmlFor="fim">Fim civil<input id="fim" className={classe} name="fim" type="date" defaultValue={baseReconferencia?.coberturaFutura?.fim ?? ""} min={periodo.min} required /></label></fieldset>}
         <label className="block" htmlFor="clausula">Cláusula contratual aplicável<textarea id="clausula" className={classe} name="clausula" defaultValue={baseReconferencia?.clausula ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidenciaEscolha">Evidência da escolha do aluno<textarea id="evidenciaEscolha" className={classe} name="evidenciaEscolha" defaultValue={baseReconferencia?.evidenciaEscolha ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" defaultValue={baseReconferencia?.motivo ?? ""} minLength={5} maxLength={2000} required /></label>
