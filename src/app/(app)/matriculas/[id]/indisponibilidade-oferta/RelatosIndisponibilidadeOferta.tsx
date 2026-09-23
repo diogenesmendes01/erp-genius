@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { confirmarRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-confirmacao";
 import { consultarRelatosIndisponibilidadeOferta, registrarRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-relato";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -20,7 +21,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
-  const [inicio, setInicio] = useState("");
+  const periodo = useInicioDoPeriodo();
   const chave = useRef<string | null>(null);
   const classe = "block w-full rounded border p-2";
   const paginaAnterior = d.pagina > 1 ? d.pagina - 1 : null;
@@ -56,8 +57,8 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Novo relato</legend>
-        <label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" required onChange={(e) => setInicio(e.target.value)} /></label>
-        <label className="block" htmlFor="fim">Fim civil, se já conhecido<input id="fim" className={classe} name="fim" type="date" min={inicio || undefined} /></label>
+        <label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" required {...periodo.propsInicio} /></label>
+        <label className="block" htmlFor="fim">Fim civil, se já conhecido<input id="fim" className={classe} name="fim" type="date" min={periodo.min} /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência do relato<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className="rounded border p-2">{ocupado ? "Registrando…" : "Registrar relato"}</button>
