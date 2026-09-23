@@ -37,6 +37,9 @@ describe("exigirSessao", () => {
     m.usuario.mockResolvedValue({ nome: "Vendedora", papeis: [Papel.VENDEDOR], ativo: true, permissoes: ["dados.exportar_leads"] });
     const usuario = await exigirSessao();
     expect(usuario).toEqual({ id: "sessao-ok", nome: "Vendedora", papeis: [Papel.VENDEDOR], permissoes: ["dados.exportar_leads"] });
+    // O mock devolve `permissoes` independente do que foi pedido — sem checar o select,
+    // um `select` que perdesse `permissoes: true` na fonte ainda passaria aqui.
+    expect(m.usuario).toHaveBeenCalledWith(expect.objectContaining({ select: expect.objectContaining({ permissoes: true }) }));
   });
 });
 

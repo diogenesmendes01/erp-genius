@@ -5,16 +5,25 @@ import { Papel } from "@prisma/client";
 
 /**
  * Usuário autenticado, com o que as ações precisam (id + papéis). `permissoes` é opcional
- * de propósito: só `carregarUsuarioFresco` o preenche (via `cache()`, ver abaixo); fixtures
- * de teste em todo o repositório constroem este objeto sem essa coluna, e torná-la
- * obrigatória quebraria ~150 delas sem relação com este ganho rápido. Quem precisa da
- * permissão real usa `usuario.permissoes ?? []`.
+ * de propósito: só `carregarUsuarioFresco` o preenche; fixtures de teste em todo o
+ * repositório constroem este objeto sem essa coluna, e torná-la obrigatória quebraria ~150
+ * delas sem relação com este ganho rápido. Nunca leia `usuario.permissoes` diretamente —
+ * use `temPermissao(usuario, capacidade)` abaixo, que trata ausência como negada.
  */
 export interface UsuarioSessao {
   id: string;
   nome: string;
   papeis: Papel[];
   permissoes?: string[];
+}
+
+/**
+ * `permissoes` ausente (fixture de teste, ou um caminho que ainda não carregou a sessão via
+ * `carregarUsuarioFresco`) é tratado como SEM a permissão — nunca copie `?? []` direto num
+ * novo call site: quem esquecer o `??` aqui lança em vez de silenciosamente liberar acesso.
+ */
+export function temPermissao(usuario: UsuarioSessao, capacidade: string): boolean {
+  return (usuario.permissoes ?? []).includes(capacidade);
 }
 
 /** Lançado quando não há sessão válida. */
