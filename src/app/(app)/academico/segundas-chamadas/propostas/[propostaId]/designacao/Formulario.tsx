@@ -13,6 +13,7 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [inicio, setInicio] = useState("");
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
 
   return <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
@@ -52,10 +53,10 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
         </select>
       </label>
       <label className="block">Início
-        <input name="inicio" type="datetime-local" step="0.001" required className="block rounded border p-2" />
+        <input name="inicio" type="datetime-local" step="0.001" required onChange={(e) => setInicio(e.target.value)} className="block rounded border p-2" />
       </label>
       <label className="block">Fim (opcional)
-        <input name="fim" type="datetime-local" step="0.001" className="block rounded border p-2" />
+        <input name="fim" type="datetime-local" step="0.001" min={inicio || undefined} className="block rounded border p-2" />
       </label>
       <label className="block">Fuso IANA
         <CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" />
