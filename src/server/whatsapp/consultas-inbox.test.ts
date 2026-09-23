@@ -27,4 +27,12 @@ describe("listarConversas — ordem da lista", () => {
     const conversas = await listarConversas(usuario);
     expect(conversas.map((c) => c.id)).toEqual(["recente-lida", "meio-nao-lida", "antiga-lida"]);
   });
+
+  it("pede a ordem por recência ao banco — sem isso o teste acima só provaria que preservamos a ordem do mock, não a ordem real", async () => {
+    m.findMany.mockResolvedValue([]);
+    await listarConversas({ id: "u1", nome: "V", papeis: [Papel.VENDEDOR] });
+    expect(m.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: [{ ultimaMensagemEm: "desc" }, { criadoEm: "desc" }] }),
+    );
+  });
 });
