@@ -284,12 +284,14 @@ export function FilaCobranca({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar cobrança por aluno ou código"
           placeholder="Buscar aluno ou código…"
           className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
         <select
           value={fPais}
           onChange={(e) => setFPais(e.target.value)}
+          aria-label="Filtrar por país"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todos os países</option>
@@ -298,6 +300,7 @@ export function FilaCobranca({
         <select
           value={fTurma}
           onChange={(e) => setFTurma(e.target.value)}
+          aria-label="Filtrar por turma"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todas as turmas</option>

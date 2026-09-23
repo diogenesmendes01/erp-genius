@@ -44,32 +44,38 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-600">E-mail</label>
+            <label htmlFor="login-email" className="mb-1 block text-sm text-gray-600">E-mail</label>
             <input
+              id="login-email"
               type="email"
               autoComplete="email"
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? "login-email-erro" : undefined}
               {...register("email")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+              <p id="login-email-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.email.message}</p>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-gray-600">Senha</label>
+            <label htmlFor="login-senha" className="mb-1 block text-sm text-gray-600">Senha</label>
             <input
+              id="login-senha"
               type="password"
               autoComplete="current-password"
+              aria-invalid={errors.senha ? true : undefined}
+              aria-describedby={errors.senha ? "login-senha-erro" : undefined}
               {...register("senha")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
             {errors.senha && (
-              <p className="mt-1 text-xs text-red-600">{errors.senha.message}</p>
+              <p id="login-senha-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.senha.message}</p>
             )}
           </div>
 
-          {erro && <p className="text-sm text-red-600">{erro}</p>}
+          {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
 
           <button
             type="submit"

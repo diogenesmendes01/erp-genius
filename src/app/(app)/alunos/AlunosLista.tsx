@@ -78,12 +78,14 @@ export function AlunosLista({
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar aluno por nome ou código"
           placeholder="Buscar por nome ou código…"
           className="w-64 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
+          aria-label="Filtrar por status"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todos os status</option>
@@ -96,6 +98,7 @@ export function AlunosLista({
         <select
           value={pais}
           onChange={(e) => setPais(e.target.value)}
+          aria-label="Filtrar por país"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todos os países</option>
@@ -106,6 +109,7 @@ export function AlunosLista({
         <select
           value={turma}
           onChange={(e) => setTurma(e.target.value)}
+          aria-label="Filtrar por turma"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todas as turmas</option>

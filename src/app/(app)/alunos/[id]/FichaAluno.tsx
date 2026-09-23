@@ -417,9 +417,9 @@ export function FichaAluno({
       {modal === "pausar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Pausar aluno</h3>
-          <input className={inputCls + " mb-2"} placeholder="Motivo" value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />
-          <label className="mb-1 block text-xs text-gray-600">Retorno previsto (opcional)</label>
-          <input type="date" className={inputCls + " mb-3"} value={retorno} onChange={(e) => setRetorno(e.target.value)} />
+          <input className={inputCls + " mb-2"} aria-label="Motivo da pausa" placeholder="Motivo" value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />
+          <label htmlFor="pausa-retorno" className="mb-1 block text-xs text-gray-600">Retorno previsto (opcional)</label>
+          <input id="pausa-retorno" type="date" className={inputCls + " mb-3"} value={retorno} onChange={(e) => setRetorno(e.target.value)} />
           <div className="flex gap-2">
             <button className={btnPri} onClick={() => run(pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>Confirmar pausa</button>
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
@@ -430,12 +430,12 @@ export function FichaAluno({
       {modal === "encerrar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Encerrar aluno</h3>
-          <select className={inputCls + " mb-2"} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
+          <select className={inputCls + " mb-2"} aria-label="Motivo do encerramento" value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
             {MOTIVOS_ENCERRAMENTO.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <input className={inputCls + " mb-3"} placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
+          <input className={inputCls + " mb-3"} aria-label="Observação do encerramento" placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
           <div className="flex gap-2">
             <button className={btnPri + " bg-danger hover:brightness-95"} onClick={() => run(encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>Confirmar encerramento</button>
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
