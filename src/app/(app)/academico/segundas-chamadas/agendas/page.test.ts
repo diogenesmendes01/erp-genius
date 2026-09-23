@@ -50,6 +50,25 @@ describe("AgendasSegundaChamadaPage", () => {
     expect(html).not.toContain("Em conferência");
   });
 
+  it("mostra o valor cru em vez de inventar uma situação para um status não mapeado", async () => {
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: {
+      itens: [{
+        reservaId: "reserva-c",
+        statusReserva: "STATUS_FUTURO",
+        codigoAvaliacao: "FALA",
+        reservadaEm: "2026-09-15T10:00:00.000Z",
+        matricula: { codigo: "M-3" }, aluno: "Cau", turma: { codigo: "T-3", nome: "Turma" },
+        agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "STATUS_FUTURO" },
+      }],
+      proximoCursor: null,
+    } });
+
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Situação da reserva: STATUS_FUTURO.");
+    expect(html).toContain("Situação do encontro: STATUS_FUTURO.");
+    expect(html).not.toContain("Em conferência");
+  });
+
   it("mostra somente o erro da consulta", async () => {
     mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: false, erro: "Cursor inválido." });
 
