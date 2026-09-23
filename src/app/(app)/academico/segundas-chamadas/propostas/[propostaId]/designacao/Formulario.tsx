@@ -3,10 +3,12 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { designarProfessorSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-designacao-local";
+import { CampoFuso } from "@/components/CampoFuso";
 
-export function Formulario({ propostaId, professores }: {
+export function Formulario({ propostaId, professores, fusoInstitucional }: {
   propostaId: string;
   professores: { id: string; nome: string }[];
+  fusoInstitucional: string | null;
 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
@@ -56,14 +58,8 @@ export function Formulario({ propostaId, professores }: {
         <input name="fim" type="datetime-local" step="0.001" className="block rounded border p-2" />
       </label>
       <label className="block">Fuso IANA
-        <input name="fuso" list="fusos-designacao-segunda-chamada" defaultValue="UTC" required className="block rounded border p-2" />
+        <CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" />
       </label>
-      <datalist id="fusos-designacao-segunda-chamada">
-        <option value="UTC" />
-        <option value="America/Sao_Paulo" />
-        <option value="America/Manaus" />
-        <option value="America/Rio_Branco" />
-      </datalist>
       <label className="block">Motivo
         <textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>

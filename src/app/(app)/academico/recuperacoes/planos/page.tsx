@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPlanosRecuperacao } from "@/server/avaliacoes/recuperacao-planos-consulta";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { PrepararPlano, DecidirPlano } from "./Formularios";
 import { AutorizarPreparacao } from "./AutorizarPreparacao";
@@ -17,9 +18,10 @@ function valor(f: { numerador: string; denominador: string } | null) {
 export default async function Planos({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId = "", antesVersao } = await searchParams;
-  const [r, preferencia] = await Promise.all([
+  const [r, preferencia, fusoInstitucional] = await Promise.all([
     consultarPlanosRecuperacao({ alocacaoId, ...(antesVersao ? { antesVersao: Number(antesVersao) } : {}) }),
     consultarPreferenciaFusoEquipe(),
+    consultarFusoInstitucional(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
@@ -33,7 +35,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
     {d.impedimentoProposta && <p role="status">{d.impedimentoProposta}</p>}
     {d.autorizacaoPreparacao && <p role="status">Autorização especial de preparação vigente até {formatarInstanteExibicao(d.autorizacaoPreparacao.prazoAte, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p>}
     {!d.autorizacaoPreparacao && <p>Não há autorização especial de preparação vigente.</p>}
-    {d.podeAutorizarPreparacao && !antesVersao && <AutorizarPreparacao alocacaoId={alocacaoId} />}
+    {d.podeAutorizarPreparacao && !antesVersao && <AutorizarPreparacao alocacaoId={alocacaoId} fusoInstitucional={fusoInstitucional} />}
     {d.podeConsultarHistoricoPreparacao && <Link className="block underline" href={`/academico/recuperacoes/planos/autorizacoes-preparacao?${new URLSearchParams({ alocacaoId })}`}>Consultar histórico de autorizações de preparação</Link>}
     {d.podePropor && !antesVersao && <PrepararPlano key={`${d.versaoEsperada}:${d.autorizacaoPreparacao?.id ?? "sem-autorizacao"}`} alocacaoId={alocacaoId} versaoEsperada={d.versaoEsperada} obrigatorias={d.obrigatorias} selecionaveis={d.selecionaveis} autorizacaoPreparacaoId={d.autorizacaoPreparacao?.id} />}
     <p>Preparar um plano não o aprova. A aprovação é independente e a execução da recuperação continua indisponível até as etapas próprias.</p>

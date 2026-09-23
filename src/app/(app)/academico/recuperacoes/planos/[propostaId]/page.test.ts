@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/recuperacao-operacao", () => ({ consultarOperacaoRecuperacao: mocks.consultar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("../../../avaliacoes/Identificacao", () => ({ IdentificacaoAvaliacao: () => "Identificação" }));
 vi.mock("./Formularios", () => ({
   Disponibilizar: () => "Disponibilizar",

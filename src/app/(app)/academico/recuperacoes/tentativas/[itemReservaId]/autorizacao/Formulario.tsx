@@ -3,8 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { autorizarRecuperacaoEspecialLocal } from "@/server/avaliacoes/recuperacao-autorizacao-local";
+import { CampoFuso } from "@/components/CampoFuso";
 
-export function Formulario({ itemReservaId }: { itemReservaId: string }) {
+export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
@@ -32,8 +33,7 @@ export function Formulario({ itemReservaId }: { itemReservaId: string }) {
     <p>Informe a data e a hora limite para realizar esta recuperação e confira o fuso escolhido.</p>
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block" htmlFor="prazo-local">Prazo para realização<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
-      <label className="block" htmlFor="fuso">Fuso do prazo<input id="fuso" name="fuso" list="fusos-autorizacao-recuperacao" defaultValue="UTC" required maxLength={100} className="block rounded border p-2" /></label>
-      <datalist id="fusos-autorizacao-recuperacao"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
+      <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. Exemplos: America/Sao_Paulo e America/Costa_Rica. Horários ambíguos ou inexistentes exigem correção.</p>
       <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className="rounded border px-4 py-2" type="submit">{ocupado ? "Autorizando…" : "Autorizar realização especial"}</button>

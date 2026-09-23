@@ -3,8 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { autorizarPreparacaoEspecialLocal } from "@/server/avaliacoes/recuperacao-autorizacao-preparacao-local";
+import { CampoFuso } from "@/components/CampoFuso";
 
-export function AutorizarPreparacao({ alocacaoId }: { alocacaoId: string }) {
+export function AutorizarPreparacao({ alocacaoId, fusoInstitucional }: { alocacaoId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
@@ -32,8 +33,7 @@ export function AutorizarPreparacao({ alocacaoId }: { alocacaoId: string }) {
     <p>A autorização libera somente a preparação de uma proposta. Ela não aprova o plano nem executa qualquer recuperação.</p>
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block" htmlFor="prazo-local">Prazo da autorização<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
-      <label className="block" htmlFor="fuso">Fuso do prazo<input id="fuso" name="fuso" list="fusos-autorizacao-preparacao" defaultValue="UTC" required maxLength={100} className="block rounded border p-2" /></label>
-      <datalist id="fusos-autorizacao-preparacao"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
+      <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. A data e a hora são convertidas no servidor; horários ambíguos ou inexistentes exigem correção.</p>
       <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className="rounded border px-4 py-2">{ocupado ? "Autorizando…" : "Autorizar preparação"}</button>

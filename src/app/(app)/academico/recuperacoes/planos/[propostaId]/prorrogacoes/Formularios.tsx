@@ -5,7 +5,7 @@ import { proporProrrogacaoRecuperacaoLocal } from "@/server/avaliacoes/recuperac
 import { decidirProrrogacaoRecuperacao } from "@/server/avaliacoes/recuperacao-prorrogacao";
 const campo = (d: FormData, nome: string) => String(d.get(nome) ?? "");
 
-export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsperada }: { disponibilizacaoId: string; prazoAnterior: string; versaoEsperada: number }) {
+export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsperada, fusoInstitucional }: { disponibilizacaoId: string; prazoAnterior: string; versaoEsperada: number; fusoInstitucional: string | null }) {
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   return <Formulario titulo="Propor prorrogação" executar={async d => {
     const dados = { disponibilizacaoId, prazoAnterior, versaoEsperada, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), motivo: campo(d, "motivo") }, entrada = JSON.stringify(dados);
@@ -14,7 +14,7 @@ export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsp
     if (r.ok) tentativa.current = null;
     return r;
   }}>
-    <Horario rotulo="Novo prazo proposto" />
+    <Horario rotulo="Novo prazo proposto" fusoInstitucional={fusoInstitucional} />
     <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>O prazo só muda após aprovação por outra pessoa da gestão. A proposta não concede nova tentativa.</p>
   </Formulario>;
