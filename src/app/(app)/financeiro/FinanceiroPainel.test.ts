@@ -22,12 +22,11 @@ describe("Comissoes — botão de fechamento não permite duplo clique", () => {
     expect(html).not.toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechar/);
   });
 
-  it("botão desabilitado e com o rótulo de progresso durante a operação, junto do toggle automático", () => {
+  it("botão e toggle desabilitados durante qualquer operação em andamento — sem trocar o texto para 'Fechando…', que mentiria se a operação em voo for o toggle, não o fechamento", () => {
     const html = renderToStaticMarkup(createElement(Comissoes, {
       comissoes, podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: true,
     }));
-    expect(html).toContain("Fechando…");
-    expect(html).toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechando…<\/button>/);
+    expect(html).toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechar mês e marcar pagas<\/button>/);
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*\sdisabled=""/);
   });
 });
