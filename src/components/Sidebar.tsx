@@ -19,7 +19,7 @@ import {
   IconBuilding,
   type IconProps,
 } from "@tabler/icons-react";
-import { navParaPapeis } from "@/lib/nav";
+import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
 
 type Icone = React.ComponentType<IconProps>;
 
@@ -71,10 +71,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
-  const hrefAtivo = itens
-    .map((item) => item.href)
-    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
-    .sort((a, b) => b.length - a.length)[0];
+  const hrefAtivo = hrefAtivoMaisLongo(pathname, itens.map((item) => item.href));
 
   return (
     <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">

@@ -13,11 +13,14 @@ describe("Sidebar", () => {
   it("destaca só o item de prefixo mais longo, não os dois, em /financeiro/permuta", () => {
     mocks.pathname.mockReturnValue("/financeiro/permuta");
     const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana" }));
-    expect(html).toMatch(/<a(?=[^>]*\shref="\/financeiro\/permuta")(?=[^>]*\saria-current="page")[^>]*>/);
+    expect(html).toMatch(/<a(?=[^>]*\shref="\/financeiro\/permuta")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-50[^"]*")[^>]*>/);
     // Exatamente uma âncora marcada — se /financeiro (o prefixo mais curto) também
-    // estivesse marcado, esse total seria 2, não 1.
+    // estivesse marcado, esse total seria 2, não 1. Cobre aria-current E a classe visual,
+    // já que hoje o mesmo `ativo` dirige as duas — se um dia divergirem, este teste pega.
     const marcadosAtivos = [...html.matchAll(/aria-current="page"/g)];
     expect(marcadosAtivos).toHaveLength(1);
+    const ancorasComClasseAtiva = [...html.matchAll(/<a[^>]*class="[^"]*bg-brand-50[^"]*"[^>]*>/g)];
+    expect(ancorasComClasseAtiva).toHaveLength(1);
   });
 
   it("aria-current fica ausente quando nenhum item corresponde à rota atual", () => {

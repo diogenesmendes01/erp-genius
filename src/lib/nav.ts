@@ -84,3 +84,18 @@ export function navParaPapeis(papeis: string[] = []): NavItem[] {
     (item) => item.papeis === "all" || item.papeis.some((p) => papeis.includes(p)),
   );
 }
+
+/**
+ * Escolhe, entre vários hrefs candidatos, o de prefixo mais longo que corresponde à rota
+ * atual — usado para decidir qual item de navegação fica "ativo" quando dois hrefs
+ * compartilham prefixo (ex. /financeiro e /financeiro/permuta; ver Sidebar.tsx e SubTabs.tsx,
+ * que compartilham esta implementação para não divergir).
+ *
+ * Borda de segmento: um href só casa a rota exata ou um prefixo seguido de "/", nunca um
+ * prefixo de string cru — /alunos não casaria um hipotético /alunos-outro-nome.
+ */
+export function hrefAtivoMaisLongo(pathname: string, hrefs: string[]): string | undefined {
+  return hrefs
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+}
