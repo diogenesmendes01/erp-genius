@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { proporAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda-proposta";
 import { decidirAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda-decisao";
 import { Formulario } from "../../../planos/[propostaId]/Formularios";
@@ -7,6 +7,7 @@ import { CampoFuso } from "@/components/CampoFuso";
 
 export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional }: { itemReservaId: string; versaoEsperada: number; fusoInstitucional: string | null }) {
   const chave = useRef<{ entrada: string; id: string } | null>(null);
+  const [inicio, setInicio] = useState("");
   return <Formulario titulo="Guardar proposta de horário" executar={async dados => {
     const campo = (nome: string) => String(dados.get(nome) ?? "");
     const d = { itemReservaId, versaoEsperada, inicioLocal: campo("inicio"), fimLocal: campo("fim"), fuso: campo("fuso"), motivo: campo("motivo") };
@@ -15,8 +16,8 @@ export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional 
     return proporAgendaRecuperacao({ ...d, chaveIdempotencia: chave.current.id });
   }}>
     <p>A proposta preserva os horários e a conferência para revisão. Não agenda a avaliação.</p>
-    <label className="block">Início<input name="inicio" type="datetime-local" required className="block rounded border p-2" /></label>
-    <label className="block">Fim<input name="fim" type="datetime-local" required className="block rounded border p-2" /></label>
+    <label className="block">Início<input name="inicio" type="datetime-local" required onChange={(e) => setInicio(e.target.value)} className="block rounded border p-2" /></label>
+    <label className="block">Fim<input name="fim" type="datetime-local" required min={inicio || undefined} className="block rounded border p-2" /></label>
     <label className="block">Fuso dos horários<CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
     <p>Exemplo: America/Sao_Paulo. Confira também a data final ao atravessar a meia-noite.</p>
     <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>

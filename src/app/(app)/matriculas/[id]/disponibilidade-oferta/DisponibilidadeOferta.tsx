@@ -8,6 +8,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
   const [dados, setDados] = useState(inicial);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [inicio, setInicio] = useState("");
   const chave = useRef<string | null>(null);
   async function carregar(pagina = dados.pagina) {
     const r = await consultarDisponibilidadesOferta({ matriculaId, pagina });
@@ -32,8 +33,8 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Propor confirmação de oferta</legend>
-        <label className="block">Início do período<input type="date" name="inicio" required className={campo} /></label>
-        <label className="block">Fim do período<input type="date" name="fim" required className={campo} /></label>
+        <label className="block">Início do período<input type="date" name="inicio" required onChange={(e) => setInicio(e.target.value)} className={campo} /></label>
+        <label className="block">Fim do período<input type="date" name="fim" required min={inicio || undefined} className={campo} /></label>
         <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
         <label className="block">Evidências da oferta<textarea name="evidencia" required minLength={5} maxLength={4000} className={campo} /></label>
         <button className="rounded border p-2" type="submit">Enviar para conferência</button>

@@ -75,7 +75,7 @@ export function TerminoIndisponibilidadeOferta({
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Propor término</legend>
         <p className="text-sm">Informe o último dia de indisponibilidade; não informe a data de retorno.</p>
-        <label className="block" htmlFor="fim">Último dia indisponível<input id="fim" className={classe} name="fim" type="date" required /></label>
+        <label className="block" htmlFor="fim">Último dia indisponível<input id="fim" className={classe} name="fim" type="date" min={inicio.slice(0, 10)} required /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className="rounded border p-2">{ocupado ? "Registrando…" : "Propor último dia"}</button>
