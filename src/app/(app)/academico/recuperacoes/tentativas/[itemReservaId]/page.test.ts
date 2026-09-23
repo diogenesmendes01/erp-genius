@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/avaliacoes/recuperacao-fila-docente", () => ({ consultarTentativaRecuperacaoDesignada: mocks.consultar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("../../AgendaPublicada", () => ({ AgendaPublicada: () => "Agenda" }));
 
 import Page from "./page";
@@ -17,7 +18,7 @@ const dado = {
 };
 
 describe("tentativa de recuperação atribuída", () => {
-  beforeEach(() => { vi.resetAllMocks(); mocks.sessao.mockResolvedValue({}); mocks.consultar.mockResolvedValue({ ok: true, dado }); });
+  beforeEach(() => { vi.resetAllMocks(); mocks.sessao.mockResolvedValue({}); mocks.consultar.mockResolvedValue({ ok: true, dado }); mocks.fuso.mockResolvedValue(null); });
 
   it("mostra fatos administrativos no fuso preferido", async () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });

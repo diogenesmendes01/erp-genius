@@ -5,6 +5,7 @@ import { disponibilizarRecuperacaoLocal, realizarRecuperacaoLocal } from "@/serv
 import { reservarTentativaRecuperacao } from "@/server/avaliacoes/recuperacao-reserva";
 import { cancelarReservaRecuperacaoPelaEscola } from "@/server/avaliacoes/recuperacao-cancelamento";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
+import { CampoFuso } from "@/components/CampoFuso";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -18,14 +19,14 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
     finally { setEnviando(false); }
   }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className="rounded border px-4 py-2" type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }
-export function Horario({ rotulo = "Data e horário efetivos" }: { rotulo?: string }) {
+export function Horario({ rotulo = "Data e horário efetivos", fusoInstitucional }: { rotulo?: string; fusoInstitucional: string | null }) {
   return <><label className="block">{rotulo}<input name="dataHora" type="datetime-local" step="0.001" required className="block rounded border p-2" /></label>
-    <label className="block">Fuso desse horário<input name="fuso" defaultValue="UTC" required maxLength={100} className="block rounded border p-2" /></label><p>Informe o fuso, por exemplo America/Sao_Paulo ou America/Costa_Rica. Horários ambíguos ou inexistentes precisam ser corrigidos.</p></>;
+    <label className="block">Fuso desse horário<CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label><p>Informe o fuso, por exemplo America/Sao_Paulo ou America/Costa_Rica. Horários ambíguos ou inexistentes precisam ser corrigidos.</p></>;
 }
 const campo = (d: FormData, nome: string) => String(d.get(nome) ?? "");
-export function Disponibilizar({ propostaId, propostaHash, autorizacaoPreparacaoId }: { propostaId: string; propostaHash: string; autorizacaoPreparacaoId?: string }) {
+export function Disponibilizar({ propostaId, propostaHash, autorizacaoPreparacaoId, fusoInstitucional }: { propostaId: string; propostaHash: string; autorizacaoPreparacaoId?: string; fusoInstitucional: string | null }) {
   return <Formulario titulo="Registrar disponibilização" executar={d => disponibilizarRecuperacaoLocal({ propostaId, propostaHash, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), condicoes: campo(d, "condicoes"), evidenciaComunicacao: campo(d, "evidencia"), autorizacaoPreparacaoId })}>
-    <Horario />
+    <Horario fusoInstitucional={fusoInstitucional} />
     <label className="block">Condições disponibilizadas ao aluno<textarea name="condicoes" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <label className="block">Evidência de comunicação ao aluno<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
@@ -44,11 +45,11 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
     <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
-export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHistorica = false }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[]; somenteHistorica?: boolean }) {
+export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHistorica = false, fusoInstitucional }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[]; somenteHistorica?: boolean; fusoInstitucional: string | null }) {
   const [realizadaPorId, setRealizadaPorId] = useState("");
   return <Formulario titulo={somenteHistorica ? "Registrar realização histórica" : "Registrar realização"} executar={d => realizarRecuperacaoLocal({ itemReservaId, realizadaPorId: realizadaPorId || undefined, motivoRegularizacao: realizadaPorId ? campo(d, "motivoRegularizacao") : undefined, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), evidencia: campo(d, "evidencia") })}>
     {somenteHistorica && <p role="status">Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente.</p>}
-    <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} />
+    <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} fusoInstitucional={fusoInstitucional} />
     {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<select value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2"><option value="">Eu realizei</option>{professoresHistoricos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>}
     {realizadaPorId && <label className="block">Motivo da regularização<textarea name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}
     <label className="block">Evidência da avaliação realizada<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
