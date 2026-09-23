@@ -11,8 +11,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen">
+      <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-brand-700 focus:shadow">
+        Pular para o conteúdo
+      </a>
       <Sidebar papeis={usuario.papeis} nome={usuario.nome} naoLidasInbox={naoLidasInbox} />
-      <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+      <main id="conteudo" className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
     </div>
   );
 }
