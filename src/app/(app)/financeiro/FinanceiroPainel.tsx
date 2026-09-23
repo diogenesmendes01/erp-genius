@@ -279,8 +279,8 @@ export function Comissoes({
           </button>
         </span>}
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Vendedor</th>
@@ -492,7 +492,7 @@ export function CambioPainel({
         Quantas unidades de cada moeda equivalem a <strong>1 US$</strong> (pivô). Usado só na consolidação
         gerencial — nunca na conta do aluno. Cada alteração grava uma nova cotação (mantém histórico).
       </p>
-      <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs text-gray-500">
             <tr>
@@ -559,7 +559,7 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         {descontoPorMoeda.length === 0 ? (
           <p className="text-sm text-gray-400">Sem descontos.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
@@ -588,8 +588,8 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         {comissoesPorVendedor.length === 0 ? (
           <p className="text-sm text-gray-400">Sem comissões.</p>
         ) : (
-          <div className="mb-6 overflow-hidden rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
+          <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
@@ -618,8 +618,8 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         {descontoPorVendedor.length === 0 ? (
           <p className="text-sm text-gray-400">Sem descontos por vendedor.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
@@ -648,8 +648,8 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         {comissoesPorStatus.length === 0 ? (
           <p className="text-sm text-gray-400">Sem comissões.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
