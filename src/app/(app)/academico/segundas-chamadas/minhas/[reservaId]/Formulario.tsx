@@ -6,6 +6,7 @@ import { realizarSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada
 import { salvarNotaOriginalSegundaChamada } from "@/server/avaliacoes/segunda-chamada-realizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { CampoFuso } from "@/components/CampoFuso";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -25,7 +26,7 @@ export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reserva
       const resultado = await realizarSegundaChamadaLocal({ reservaId, dataHora: String(dados.get("dataHora") ?? ""), fuso: String(dados.get("fuso") ?? ""), evidencia: String(dados.get("evidencia") ?? "") });
       if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
     } catch {
-      setMensagem("Resultado não confirmado. Confira os dados e tente novamente.");
+      setMensagem(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }
@@ -65,7 +66,7 @@ export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, real
       const resultado = await salvarNotaOriginalSegundaChamada({ realizacaoId, lancamento: { alocacaoId, codigoAvaliacao, realizadaEm, notas, submetida: true, versaoEsperada, chaveIdempotencia, ...(regularizacao ? { motivoRegularizacao, evidenciasRegularizacao } : {}) } });
       if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
     } catch {
-      setMensagem("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação.");
+      setMensagem(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }

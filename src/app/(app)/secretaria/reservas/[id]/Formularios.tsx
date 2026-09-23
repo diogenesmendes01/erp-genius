@@ -4,6 +4,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { useRouter } from "next/navigation";
 import { prepararResolucaoParticular, decidirResolucaoParticular } from "@/server/matricula/reserva-particular-resolucao";
 import { prepararResolucaoReserva, decidirResolucaoReserva } from "@/server/matricula/reserva-resolucao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 export function PrepararResolucao({ reservaId, versao, fuso, particular = false }: { reservaId: string; versao: number; fuso: string; particular?: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [tipo, setTipo] = useState<"PRORROGAR" | "LIBERAR">("PRORROGAR");
@@ -29,7 +30,7 @@ export function DecidirResolucao({ propostaId, podeAprovar, particular = false }
   function decidir(aprovar: boolean) { iniciar(async () => { try {
     const r = await (particular ? decidirResolucaoParticular : decidirResolucaoReserva)({ propostaId, aprovar, motivo });
     if (!r.ok) { setMensagem(r.erro); return; } router.refresh();
-  } catch { setMensagem("Resultado não confirmado. Reenvie a mesma decisão para conferir."); } }); }
+  } catch { setMensagem(MSG_DECISAO_INCERTA); } }); }
   return <div className="space-y-2"><label className="block">Motivo da decisão<textarea className="block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} /></label>
     <div className="flex gap-3"><button className="rounded border p-2" disabled={ocupado || motivo.trim().length < 5 || !podeAprovar} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className="rounded border p-2" disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button></div>
     {!podeAprovar && <p>A aprovação exige a proposta mais recente, estado conferido e prazo válido. Prepare uma nova proposta se necessário.</p>}{mensagem && <p role="alert">{mensagem}</p>}

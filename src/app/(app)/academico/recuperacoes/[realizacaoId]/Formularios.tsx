@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarNotaRecuperacao, decidirNotaRecuperacao } from "@/server/avaliacoes/recuperacao-nota";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno }: { realizacaoId: string; versaoEsperada: number; nota: string | null; comentarioAluno: string }) {
   const [erro, setErro] = useState(""), [enviando, setEnviando] = useState(false);
@@ -35,7 +36,7 @@ export function ConferirNota({ notaId, entradaHash, podeAprovar }: { notaId: str
     try {
       const r = await decidirNotaRecuperacao({ notaId, entradaHash, aprovada: data.get("decisao") === "aprovar", motivo: String(data.get("motivo") ?? "") });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Confira e tente novamente."); }
+    } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { setEnviando(false); }
   }}>
     <fieldset disabled={enviando} className="space-y-2">

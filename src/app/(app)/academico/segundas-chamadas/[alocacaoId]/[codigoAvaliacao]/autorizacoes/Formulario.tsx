@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { autorizarSegundaChamadaEspecialLocal } from "@/server/avaliacoes/segunda-chamada-autorizacao-local";
 import { CampoFuso } from "@/components/CampoFuso";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function Formulario({ alocacaoId, codigoAvaliacao, fusoInstitucional }: { alocacaoId: string; codigoAvaliacao: string; fusoInstitucional: string | null }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function Formulario({ alocacaoId, codigoAvaliacao, fusoInstitucional }: {
         const resultado = await autorizarSegundaChamadaEspecialLocal({ alocacaoId, codigoAvaliacao, motivo, prazoLocal, fuso, chaveIdempotencia: tentativa.current!.chave });
         if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
       } catch {
-        setMensagem("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação.");
+        setMensagem(MSG_RESULTADO_INCERTO);
       }
     });
   }}>
