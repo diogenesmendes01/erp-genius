@@ -15,13 +15,14 @@ const rotulosReserva: Record<string, string> = {
   PENDENCIA_ESCOLA: "Pendência da escola",
 };
 const rotulosEncontro: Record<string, string> = {
+  RASCUNHO: "Rascunho",
   PREVISTO: "Previsto",
   MINISTRADO: "Ministrado",
   CANCELADO: "Cancelado",
   NAO_REALIZADO: "Não realizado",
   IMPEDIDO_ESCOLA: "Impedido pela escola",
 };
-const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? "Em conferência";
+const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? valor;
 
 function dataHora(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", {

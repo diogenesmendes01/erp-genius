@@ -32,6 +32,24 @@ describe("AgendasSegundaChamadaPage", () => {
     expect(html).toContain("Previsto");
   });
 
+  it("não confunde encontro em rascunho com encontro em conferência", async () => {
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: {
+      itens: [{
+        reservaId: "reserva-b",
+        statusReserva: "RESERVADA",
+        codigoAvaliacao: "FALA",
+        reservadaEm: "2026-09-15T10:00:00.000Z",
+        matricula: { codigo: "M-2" }, aluno: "Bia", turma: { codigo: "T-2", nome: "Turma" },
+        agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "RASCUNHO" },
+      }],
+      proximoCursor: null,
+    } });
+
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Situação do encontro: Rascunho.");
+    expect(html).not.toContain("Em conferência");
+  });
+
   it("mostra somente o erro da consulta", async () => {
     mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: false, erro: "Cursor inválido." });
 
