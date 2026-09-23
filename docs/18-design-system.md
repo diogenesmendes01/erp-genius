@@ -17,7 +17,7 @@
 - **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
   negrito pesado (`font-bold` evitado; use `font-medium`).
   `layout.tsx` registra só esses dois arquivos e `src/app/fonts/` contém só eles. Elementos que
-  o navegador deixa em negrito por padrão (`h1`–`h4`, `b`, `strong`, `th`) são levados a 500 em
+  o navegador deixa em negrito por padrão (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 500 em
   `globals.css` — qualquer peso acima de 500 seria negrito sintético. `src/app/tipografia.test.ts`
   falha se um peso maior voltar ao código.
 
