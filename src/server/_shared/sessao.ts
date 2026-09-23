@@ -3,11 +3,27 @@ import { Papel } from "@prisma/client";
 // Guards de Server Action (ver docs/13 §"Padrão de Server Action" e §"Regras inegociáveis").
 // Permissão SEMPRE verificada no servidor — o menu role-aware é só UX, não segurança.
 
-/** Usuário autenticado, com o que as ações precisam (id + papéis). */
+/**
+ * Usuário autenticado, com o que as ações precisam (id + papéis). `permissoes` é opcional
+ * de propósito: só `carregarUsuarioFresco` o preenche; fixtures de teste em todo o
+ * repositório constroem este objeto sem essa coluna, e torná-la obrigatória quebraria ~150
+ * delas sem relação com este ganho rápido. Nunca leia `usuario.permissoes` diretamente —
+ * use `temPermissao(usuario, capacidade)` abaixo, que trata ausência como negada.
+ */
 export interface UsuarioSessao {
   id: string;
   nome: string;
   papeis: Papel[];
+  permissoes?: string[];
+}
+
+/**
+ * `permissoes` ausente (fixture de teste, ou um caminho que ainda não carregou a sessão via
+ * `carregarUsuarioFresco`) é tratado como SEM a permissão — nunca copie `?? []` direto num
+ * novo call site: quem esquecer o `??` aqui lança em vez de silenciosamente liberar acesso.
+ */
+export function temPermissao(usuario: UsuarioSessao, capacidade: string): boolean {
+  return (usuario.permissoes ?? []).includes(capacidade);
 }
 
 /** Lançado quando não há sessão válida. */
@@ -39,16 +55,26 @@ export class ErroRegra extends Error {
  * do login; sem esta releitura, revogar um papel ou desativar um usuário só valeria no
  * próximo login (risco apontado no doc 16 §limitações). Custo: 1 query por ação/página.
  * Retorna null quando o usuário não existe mais ou foi desativado (sessão inválida).
+ *
+ * `permissoes` incluído no select para `ExportarPlanilha.tsx` não precisar de um segundo
+ * `findUnique` só para essa coluna (ganho rápido 15 da auditoria, parte segura).
+ *
+ * A auditoria também pedia `cache()` do React aqui para deduplicar chamadas repetidas
+ * dentro da mesma renderização. NÃO aplicado: o `react` instalado neste projeto é 18.3.1,
+ * que não exporta `cache` (confirmado em node_modules — `cache` só existe a partir do React
+ * 19 estável). `cache(async (id) => ...)` quebraria a importação deste módulo em produção,
+ * não só em teste. Agentes não alteram package.json/lockfile (AGENTS.md) — a memoização por
+ * requisição fica para quando o React for atualizado.
  */
 async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o Prisma.
   const { prisma } = await import("@/lib/prisma");
   const atual = await prisma.usuario.findUnique({
     where: { id },
-    select: { nome: true, papeis: true, ativo: true },
+    select: { nome: true, papeis: true, ativo: true, permissoes: true },
   });
   if (!atual || !atual.ativo) return null;
-  return { id, nome: atual.nome, papeis: atual.papeis };
+  return { id, nome: atual.nome, papeis: atual.papeis, permissoes: atual.permissoes };
 }
 
 /**
