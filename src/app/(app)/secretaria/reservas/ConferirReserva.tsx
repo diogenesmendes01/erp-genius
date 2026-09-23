@@ -10,7 +10,7 @@ export function ConferirReserva({ reservaId, particular = false }: { reservaId: 
     iniciar(async () => {
       try {
         const r = await (particular ? conferirReservaParticularSecretaria : conferirReservaSecretaria)({ reservaId });
-        if (!r.ok || !r.dado) { setMensagem(r.ok ? "Resultado não confirmado." : r.erro); return; }
+        if (!r.ok || !r.dado) { setMensagem(r.ok ? "Resultado não confirmado. Atualize a página para ver o estado atual da reserva." : r.erro); return; }
         setMensagem(({ PRAZO_VIGENTE: "O prazo da reserva ainda está vigente.", SEM_TRANSICAO: "A reserva já foi tratada; consulte seu estado atual.",
           PENDENCIA_REGISTRADA: "Reserva mantida por pendência da contratação.", HORARIOS_LIBERADOS: "Reserva expirada; horários liberados. A preparação permanece pendente de nova reserva.", CONFERIR_ASSINATURA_EXTERNA: "É necessário conferir o processo de assinatura externa antes de liberar a vaga. Esta conferência não liberou a reserva." })[r.dado.resultado]);
         router.refresh();

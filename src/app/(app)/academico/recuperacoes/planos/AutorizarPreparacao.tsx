@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { autorizarPreparacaoEspecialLocal } from "@/server/avaliacoes/recuperacao-autorizacao-preparacao-local";
 import { CampoFuso } from "@/components/CampoFuso";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function AutorizarPreparacao({ alocacaoId, fusoInstitucional }: { alocacaoId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function AutorizarPreparacao({ alocacaoId, fusoInstitucional }: { alocaca
         const resultado = await autorizarPreparacaoEspecialLocal({ alocacaoId, motivo, prazoLocal, fuso, chaveIdempotencia: tentativa.current!.chave });
         if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
       } catch {
-        setMensagem("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma operação.");
+        setMensagem(MSG_RESULTADO_INCERTO);
       }
     });
   }}>

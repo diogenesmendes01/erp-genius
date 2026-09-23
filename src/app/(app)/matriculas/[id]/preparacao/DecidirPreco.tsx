@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirPrecoPreparacao } from "@/server/matricula/preparacao-preco";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 export function DecidirPreco({ preparacaoId, podeAprovar }: { preparacaoId: string; podeAprovar: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState(""); const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition();
@@ -11,7 +12,7 @@ export function DecidirPreco({ preparacaoId, podeAprovar }: { preparacaoId: stri
         const r = await decidirPrecoPreparacao({ preparacaoId, aprovar, motivo });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("Resultado não confirmado. Reenvie a mesma decisão para conferir."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }
   return <section className="space-y-3 rounded border p-4"><h3 className="font-medium">Decidir exceção de preço</h3>

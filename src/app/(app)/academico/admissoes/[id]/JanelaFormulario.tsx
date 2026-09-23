@@ -2,6 +2,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararJanelaAdmissao, decidirJanelaAdmissao } from "@/server/matricula/janela-admissao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function JanelaFormulario({ turmaId, versaoAnterior, fusoConferido }: { turmaId: string; versaoAnterior: number; fusoConferido: string }) {
   const router = useRouter(), tentativa = useRef<{ assinatura: string; chave: string } | null>(null);
@@ -44,7 +45,7 @@ export function DecidirJanela({ propostaId, podeAprovar }: { propostaId: string;
       try {
         const r = await decidirJanelaAdmissao({ propostaId, aprovar, motivo });
         if (!r.ok) { setErro(r.erro); return; } router.refresh();
-      } catch { setErro("Não foi possível confirmar a decisão. Reenvie a mesma decisão para conferir."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }
   return <fieldset disabled={ocupado} className="space-y-2 rounded border p-3"><legend>Decisão desta versão</legend>
