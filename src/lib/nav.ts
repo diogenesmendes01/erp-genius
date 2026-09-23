@@ -63,14 +63,6 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL],
   },
   {
-    // Fase 3 (doc 03): PORTAL DO ALUNO — só o papel ALUNO vê; row-level pelo vínculo
-    // Aluno.usuarioId (o portal mostra exclusivamente os dados do próprio aluno).
-    href: "/portal",
-    label: "Meu portal",
-    icon: "School",
-    papeis: [Papel.ALUNO],
-  },
-  {
     // B2B — Fase 2 (doc 03): contrato corporativo, lote de colaboradores e fatura única.
     href: "/empresas",
     label: "Empresas",
@@ -91,4 +83,19 @@ export function navParaPapeis(papeis: string[] = []): NavItem[] {
   return NAV.filter(
     (item) => item.papeis === "all" || item.papeis.some((p) => papeis.includes(p)),
   );
+}
+
+/**
+ * Escolhe, entre vários hrefs candidatos, o de prefixo mais longo que corresponde à rota
+ * atual — usado para decidir qual item de navegação fica "ativo" quando dois hrefs
+ * compartilham prefixo (ex. /financeiro e /financeiro/permuta; ver Sidebar.tsx e SubTabs.tsx,
+ * que compartilham esta implementação para não divergir).
+ *
+ * Borda de segmento: um href só casa a rota exata ou um prefixo seguido de "/", nunca um
+ * prefixo de string cru — /alunos não casaria um hipotético /alunos-outro-nome.
+ */
+export function hrefAtivoMaisLongo(pathname: string, hrefs: string[]): string | undefined {
+  return hrefs
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 }

@@ -19,7 +19,7 @@ import {
   IconBuilding,
   type IconProps,
 } from "@tabler/icons-react";
-import { navParaPapeis } from "@/lib/nav";
+import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
 
 type Icone = React.ComponentType<IconProps>;
 
@@ -32,7 +32,6 @@ const ICONS: Record<string, Icone> = {
   Settings: IconSettings,
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
-  School: IconSchool,
 };
 
 function ThemeToggle() {
@@ -72,6 +71,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
+  const hrefAtivo = hrefAtivoMaisLongo(pathname, itens.map((item) => item.href));
 
   return (
     <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">
@@ -80,14 +80,15 @@ export function Sidebar({
         Genius
       </div>
 
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-1" aria-label="Navegação principal">
         {itens.map((item) => {
           const Icon = ICONS[item.icon] ?? IconHome;
-          const ativo = pathname.startsWith(item.href);
+          const ativo = item.href === hrefAtivo;
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={ativo ? "page" : undefined}
               className={
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors " +
                 (ativo
@@ -100,6 +101,7 @@ export function Sidebar({
               {item.href === "/inbox" && naoLidasInbox > 0 && (
                 <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
                   {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
+                  <span className="sr-only"> mensagens não lidas</span>
                 </span>
               )}
             </Link>
