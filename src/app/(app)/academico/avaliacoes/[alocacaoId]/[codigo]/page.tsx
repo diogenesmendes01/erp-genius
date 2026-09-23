@@ -16,7 +16,7 @@ export default async function LancamentoPage({ params, searchParams }: {
 }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId, codigo } = await params, busca = await searchParams, p = Number(busca.pagina ?? 1);
-  const fusoInstitucional = await consultarFusoInstitucional();
+  const fusoInstitucional = busca.fuso ? null : await consultarFusoInstitucional();
   const validacaoFuso = FusoInstitucionalSchema.safeParse(busca.fuso ?? fusoInstitucional ?? "UTC");
   if (!validacaoFuso.success) return <div role="alert">Fuso inválido. <Link className="underline" href="?fuso=UTC">Voltar para UTC</Link></div>;
   const fusoEntrada = validacaoFuso.data;

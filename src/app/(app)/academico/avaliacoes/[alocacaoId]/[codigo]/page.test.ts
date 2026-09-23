@@ -57,6 +57,7 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("anterior=2026-10-01T02:30");
     expect(html).toContain('href="?fuso=UTC&amp;pagina=2"');
     expect(html).toContain('href="/academico/avaliacoes/alocacao/final/designacao"');
+    expect(mocks.fuso).not.toHaveBeenCalled();
   });
 
   it("recorre ao fuso informado para o histórico sem preferência e preserva São Paulo na entrada", async () => {
@@ -67,6 +68,7 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain('value="America/Sao_Paulo"');
     expect(html).toContain("entrada=America/Sao_Paulo");
     expect(html).toContain("anterior=2026-09-30T23:30");
+    expect(mocks.fuso).not.toHaveBeenCalled();
   });
 
   it("não consulta lançamentos, preferência ou fuso institucional quando a guarda falha", async () => {
@@ -82,6 +84,7 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("Fuso inválido");
     expect(mocks.consultar).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
+    expect(mocks.fuso).not.toHaveBeenCalled();
   });
 
   it("sem fuso na URL, usa o fuso institucional configurado como entrada padrão", async () => {
