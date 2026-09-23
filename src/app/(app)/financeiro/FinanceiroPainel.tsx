@@ -280,7 +280,7 @@ export function Comissoes({
         </span>}
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Vendedor</th>
@@ -619,7 +619,7 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <p className="text-sm text-gray-400">Sem descontos por vendedor.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
@@ -649,7 +649,7 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <p className="text-sm text-gray-400">Sem comissões.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
