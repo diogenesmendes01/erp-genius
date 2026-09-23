@@ -72,9 +72,13 @@ export function InboxCliente({
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
 
-  // Notificação básica (E3): a lista se atualiza sozinha a cada 30s (SSR refresh).
+  // Notificação básica (E3): a lista se atualiza sozinha a cada 30s (SSR refresh). Só com a
+  // aba em primeiro plano (ganho rápido 22 da auditoria) — em segundo plano o refresh
+  // reconstrói a árvore inteira sem ninguém olhando, ~120 vezes/hora à toa.
   useEffect(() => {
-    const t = setInterval(() => router.refresh(), 30_000);
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, 30_000);
     return () => clearInterval(t);
   }, [router]);
 
