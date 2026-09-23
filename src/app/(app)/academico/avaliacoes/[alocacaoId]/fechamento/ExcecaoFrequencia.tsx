@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirExcecaoFrequencia, proporExcecaoFrequencia } from "@/server/avaliacoes/excecao-frequencia";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type PropostaExcecao = {
   id: string;
@@ -68,7 +69,7 @@ export function ExcecaoFrequencia({
         setMensagem("Proposta registrada para decisão independente. A frequência real e as notas não foram alteradas.");
         router.refresh();
       } catch {
-        setErro("A proposta não foi registrada. Confira os dados atuais e tente novamente.");
+        setErro(MSG_RESULTADO_INCERTO);
       }
     });
   }
@@ -93,7 +94,7 @@ export function ExcecaoFrequencia({
         setMensagem("Decisão registrada. Atualizando a revisão para conferir os efeitos atuais.");
         router.refresh();
       } catch {
-        setErro("A decisão não foi registrada. Confira os dados atuais e tente novamente.");
+        setErro(MSG_DECISAO_INCERTA);
       }
     });
   }
