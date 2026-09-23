@@ -150,7 +150,8 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
       {/* Cobranças */}
       <section className="overflow-hidden rounded-lg border border-gray-200">
         <div className="border-b border-gray-100 bg-gray-50 px-4 py-2 text-sm font-medium">Cobranças</div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Tipo</th>
@@ -199,6 +200,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {/* Histórico de negociação */}
