@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Papel } from "@prisma/client";
+import { Papel, StatusEncontroAgenda, StatusReservaSegundaChamada } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAgendasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agendas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
-const rotulosReserva: Record<string, string> = {
+const rotulosReserva = {
   RESERVADA: "Reservada",
   CONSUMIDA_REALIZACAO: "Realizada",
   CONSUMIDA_FALTA: "Falta",
@@ -13,15 +13,16 @@ const rotulosReserva: Record<string, string> = {
   LIBERADA_CANCELAMENTO_TEMPESTIVO: "Cancelada dentro do prazo",
   CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelada fora do prazo",
   PENDENCIA_ESCOLA: "Pendência da escola",
-};
-const rotulosEncontro: Record<string, string> = {
+} satisfies Record<StatusReservaSegundaChamada, string>;
+const rotulosEncontro = {
+  RASCUNHO: "Rascunho",
   PREVISTO: "Previsto",
   MINISTRADO: "Ministrado",
   CANCELADO: "Cancelado",
   NAO_REALIZADO: "Não realizado",
   IMPEDIDO_ESCOLA: "Impedido pela escola",
-};
-const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? "Em conferência";
+} satisfies Record<StatusEncontroAgenda, string>;
+const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? valor;
 
 function dataHora(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
