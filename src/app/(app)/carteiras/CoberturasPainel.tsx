@@ -4,10 +4,12 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { concederCobertura, revogarCobertura } from "@/server/acesso/coberturas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibicao = null }: { vendedores: { id: string; nome: string }[]; coberturas: { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string }[]; preferenciaFusoExibicao?: string | null }) {
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const periodo = useInicioDoPeriodo();
   const router = useRouter();
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setErro(null); setOcupado(true);
@@ -22,8 +24,8 @@ export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibic
   return <div className="space-y-5">
     <form onSubmit={salvar} className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">
       {([['titularId', 'Titular da carteira'], ['substitutoId', 'Quem fará a cobertura']] as const).map(([name, label]) => <label key={name} className="grid gap-1 text-sm">{label}<select name={name} required className={estilo}><option value="">Selecione</option>{vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}</select></label>)}
-      <label className="grid gap-1 text-sm">Início<input name="inicio" type="datetime-local" required className={estilo} /></label>
-      <label className="grid gap-1 text-sm">Fim<input name="fim" type="datetime-local" required className={estilo} /></label>
+      <label className="grid gap-1 text-sm">Início<input name="inicio" type="datetime-local" required {...periodo.propsInicio} className={estilo} /></label>
+      <label className="grid gap-1 text-sm">Fim<input name="fim" type="datetime-local" required min={periodo.min} className={estilo} /></label>
       <label className="grid gap-1 text-sm md:col-span-2">Motivo<input name="motivo" required minLength={5} maxLength={1000} className={estilo} /></label>
       <button disabled={ocupado} className="rounded bg-brand-solid px-4 py-2 text-sm text-white disabled:opacity-50">Conceder cobertura</button>
     </form>

@@ -9,6 +9,7 @@ import {
   proporCompensacaoPermuta,
 } from "@/server/financeiro/permuta-servico";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { useInicioDoPeriodo } from "@/lib/periodo-form";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -101,6 +102,12 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
   </form>;
 }
 
+// Estado próprio por formulário: o par de período também aparece uma vez por acordo, dentro de acordos.map.
+function CamposPeriodo({ nomeInicio, nomeFim }: { nomeInicio: string; nomeFim: string }) {
+  const periodo = useInicioDoPeriodo();
+  return <><label>Início <input required type="date" name={nomeInicio} {...periodo.propsInicio} /></label><label>Fim <input required type="date" name={nomeFim} min={periodo.min} /></label></>;
+}
+
 function dados(formulario: HTMLFormElement) {
   return (formulario as HTMLFormElement & { __dadosPermuta: FormData }).__dadosPermuta;
 }
@@ -117,7 +124,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       unidade: campo(formulario, "unidade"), quantidadePactuada: campo(formulario, "quantidadePactuada"), valorPorUnidade: campo(formulario, "valorPorUnidade"), contrapartida: campo(formulario, "contrapartida"), formulaDescricao: campo(formulario, "formulaDescricao"),
       cobrancas: elegiveis.filter(c => campo(formulario, `limite:${c.id}`)).map(c => ({ cobrancaId: c.id, valorMaximo: campo(formulario, `limite:${c.id}`) })), chaveIdempotencia: campo(formulario, "chaveIdempotencia"),
     })}>
-      <label>Matrícula <select required name="matriculaId" value={matriculaSelecionada} onChange={e => selecionarMatricula(e.target.value)}><option value="">Selecione</option>{matriculas.map(c => <option key={c.matriculaId} value={c.matriculaId}>{c.aluno} · {c.matricula}</option>)}</select></label><label>Início <input required type="date" name="vigenciaInicio" /></label><label>Fim <input required type="date" name="vigenciaFim" /></label><label>Moeda <input required name="moeda" readOnly value={elegiveis[0]?.moeda ?? ""} /></label>
+      <label>Matrícula <select required name="matriculaId" value={matriculaSelecionada} onChange={e => selecionarMatricula(e.target.value)}><option value="">Selecione</option>{matriculas.map(c => <option key={c.matriculaId} value={c.matriculaId}>{c.aluno} · {c.matricula}</option>)}</select></label><CamposPeriodo nomeInicio="vigenciaInicio" nomeFim="vigenciaFim" /><label>Moeda <input required name="moeda" readOnly value={elegiveis[0]?.moeda ?? ""} /></label>
       <label>Unidade <select name="unidade"><option value="HORA">Hora</option><option value="AULA">Aula</option><option value="UNIDADE">Unidade</option></select></label><label>Quantidade <input required name="quantidadePactuada" inputMode="decimal" /></label><label>Valor por unidade <input required name="valorPorUnidade" inputMode="decimal" /></label>
       <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><fieldset key={matriculaSelecionada}><legend>Mensalidades elegíveis: informe o limite apenas nas escolhidas</legend>{elegiveis.map(c => <label key={c.id} className="block">{c.codigo} · {c.vencimento} · saldo {c.moeda} {c.saldo}<input name={`limite:${c.id}`} inputMode="decimal" aria-label={`Limite ${c.codigo} ${c.vencimento}`} /></label>)}</fieldset>
     </Acao>}
@@ -126,7 +133,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       <p>{acordo.quantidadePactuada} {acordo.unidade.toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade} = {acordo.valorTotalPactuado}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>
       {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
-        <label>Início <input required type="date" name="periodoInicio" /></label><label>Fim <input required type="date" name="periodoFim" /></label><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
+        <CamposPeriodo nomeInicio="periodoInicio" nomeFim="periodoFim" /><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
       </Acao>}
       {acordo.confirmacoes.map(confirmacao => <section key={confirmacao.id} className="space-y-2 border-l pl-3">
         <p>{confirmacao.periodoInicio}–{confirmacao.periodoFim}: {confirmacao.quantidadeComprovada} ({confirmacao.referenciaServico})</p>
