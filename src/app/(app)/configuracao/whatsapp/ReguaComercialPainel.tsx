@@ -183,7 +183,7 @@ function ReguaComercialPainel({
           </label>
         </div>
 
-        <div className="overflow-hidden rounded-md border border-gray-200">
+        <div className="overflow-x-auto rounded-md border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-surface-muted text-xs text-gray-500">
               <tr>
