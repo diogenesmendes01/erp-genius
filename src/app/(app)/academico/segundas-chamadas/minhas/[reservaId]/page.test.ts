@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/avaliacoes/segunda-chamada-docente", () => ({ consultarSegundaChamadaDocente: mocks.consulta }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import Page from "./page";
@@ -20,13 +21,14 @@ describe("segunda chamada designada", () => {
     mocks.sessao.mockResolvedValue({});
     mocks.consulta.mockResolvedValue({ ok: true, dado });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
-  it("mostra a saída no fuso pessoal e mantém UTC como entrada explícita", async () => {
+  it("mostra a saída no fuso pessoal e usa o fuso institucional como entrada padrão", async () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ reservaId: "reserva" }) }));
     expect(html).toMatch(/31\/12\/2025.*20:30/);
     expect(html).toContain("America/Costa_Rica; origem UTC");
-    expect(html).toMatch(/<input[^>]*name="fuso"[^>]*value="UTC"/);
+    expect(html).toMatch(/<input[^>]*name="fuso"[^>]*value="America\/Sao_Paulo"/);
   });
 
   it("recorre a UTC quando não há preferência", async () => {

@@ -6,6 +6,7 @@ import { consultarCancelamentosAgendaSegundaChamada } from "@/server/avaliacoes/
 import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 const fonte = z.object({ reserva: z.object({ codigoAvaliacao: z.string(), status: z.string(), regraCancelamentoMinutos: z.number() }), encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string(), status: z.string() }).nullable() });
 function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
  const r = fonte.safeParse(valor);
@@ -25,7 +26,7 @@ function Efeito({ snapshot, origem, ocorridaEm }: { snapshot: unknown; origem: s
 export default async function Page({ params, searchParams }: { params: Promise<{ reservaId: string }>; searchParams: Promise<{ beforeId?: string }> }) {
  await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
  const { reservaId } = await params, { beforeId } = await searchParams;
- const [r, preferencia] = await Promise.all([consultarCancelamentosAgendaSegundaChamada({ reservaId, beforeId }), consultarPreferenciaFusoEquipe()]);
+ const [r, preferencia, fusoInstitucional] = await Promise.all([consultarCancelamentosAgendaSegundaChamada({ reservaId, beforeId }), consultarPreferenciaFusoEquipe(), consultarFusoInstitucional()]);
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
  const d = r.dado;
  return <section className="space-y-4">
@@ -34,13 +35,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
  <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
  <p>A aprovação independente cancela este encontro. Cancelamento pela escola ou pedido do aluno dentro da antecedência devolve a oportunidade; pedido tardio do aluno consome. Vale a data original do pedido, não a data da aprovação. Não cria nota, presença ou cobrança.</p>
  <h2 className="font-medium">Agenda atual</h2><Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
- {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} />}
+ {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} fusoInstitucional={fusoInstitucional} />}
  <h2 className="font-medium">Propostas e decisões</h2>
  {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
  <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}. Proposta de {p.autorNome}. Ocorrência informada: {formatarInstanteExibicao(p.ocorridaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto} ({resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC")}; origem UTC).</p>
  <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} /><Efeito snapshot={p.snapshot} origem={p.origem} ocorridaEm={p.ocorridaEm} />
  {p.decisao ? <p role="status">{p.decisao.aprovada ? "Aprovado e aplicado" : "Rejeitado"} por {p.decisao.decisorNome}: {p.decisao.motivo}</p> : <p>Aguardando decisão de outra pessoa autorizada. Alterações posteriores na agenda exigem nova proposta.</p>}
- {p.podeDecidir && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} proposta={{ id: p.id, hash: p.entradaHash }} />}
+ {p.podeDecidir && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} proposta={{ id: p.id, hash: p.entradaHash }} fusoInstitucional={fusoInstitucional} />}
  </article>)}
  {!d.propostas.length && <p>Nenhuma proposta registrada.</p>}
  {d.proximoId && <Link className="underline" href={`?beforeId=${encodeURIComponent(d.proximoId)}`}>Propostas anteriores</Link>}

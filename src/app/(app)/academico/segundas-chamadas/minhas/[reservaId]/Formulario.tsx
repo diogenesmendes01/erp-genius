@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { realizarSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-docente-local";
 import { salvarNotaOriginalSegundaChamada } from "@/server/avaliacoes/segunda-chamada-realizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { CampoFuso } from "@/components/CampoFuso";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
-export function FormularioRealizacao({ reservaId }: { reservaId: string }) {
+export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
   const [mensagem, setMensagem] = useState("");
@@ -32,8 +33,7 @@ export function FormularioRealizacao({ reservaId }: { reservaId: string }) {
     <h2 className="text-xl font-medium">Registrar realização</h2>
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block" htmlFor="data-hora">Data e horário da realização<input id="data-hora" name="dataHora" type="datetime-local" step="0.001" required className="block rounded border p-2" /></label>
-      <label className="block" htmlFor="fuso">Fuso da realização<input id="fuso" name="fuso" list="fusos-segunda-chamada" defaultValue="UTC" required maxLength={100} className="block rounded border p-2" /></label>
-      <datalist id="fusos-segunda-chamada"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
+      <label className="block" htmlFor="fuso">Fuso da realização<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Informe o fuso explicitamente. A data efetiva deve pertencer ao encontro; histórico e autorização aplicável são conferidos ao enviar. Horários ambíguos ou inexistentes precisam de correção.</p>
       <label className="block" htmlFor="evidencia">Evidência da realização<textarea id="evidencia" name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar realização"}</button>

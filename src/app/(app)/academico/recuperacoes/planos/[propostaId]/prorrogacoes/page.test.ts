@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consultar: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/avaliacoes/recuperacao-prorrogacao-consulta", () => ({ consultarProrrogacoesRecuperacao: mocks.consultar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 
 import Page from "./page";
 
@@ -19,6 +20,7 @@ describe("prorrogações de recuperação", () => {
     vi.clearAllMocks();
     mocks.sessao.mockResolvedValue({});
     mocks.consultar.mockResolvedValue({ ok: true, dado });
+    mocks.fuso.mockResolvedValue(null);
   });
 
   it("mostra prazo e decisão no fuso pessoal, com a origem administrativa", async () => {

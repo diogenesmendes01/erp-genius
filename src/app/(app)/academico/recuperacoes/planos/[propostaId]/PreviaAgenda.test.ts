@@ -12,10 +12,10 @@ const base = {
 
 describe("prévia de agenda da recuperação", () => {
   it("muda só a saída para a preferência e preserva os campos locais de entrada", () => {
-    const formulario = renderToStaticMarkup(createElement(PreviaAgenda, { itemReservaId: "item", preferenciaFusoExibicao: "America/Costa_Rica" }));
+    const formulario = renderToStaticMarkup(createElement(PreviaAgenda, { itemReservaId: "item", preferenciaFusoExibicao: "America/Costa_Rica", fusoInstitucional: "America/Sao_Paulo" }));
     expect(formulario).toContain('type="datetime-local"');
     expect(formulario).toContain('name="fuso"');
-    expect(formulario).toContain('value="UTC"');
+    expect(formulario).toContain('value="America/Sao_Paulo"');
 
     const html = renderToStaticMarkup(createElement(ResultadoPreviaAgenda, { preferenciaFusoExibicao: "America/Costa_Rica", dado: base }));
     expect(html).toContain("31/12/2025, 20:30");

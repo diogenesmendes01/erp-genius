@@ -3,8 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { autorizarSegundaChamadaEspecialLocal } from "@/server/avaliacoes/segunda-chamada-autorizacao-local";
+import { CampoFuso } from "@/components/CampoFuso";
 
-export function Formulario({ alocacaoId, codigoAvaliacao }: { alocacaoId: string; codigoAvaliacao: string }) {
+export function Formulario({ alocacaoId, codigoAvaliacao, fusoInstitucional }: { alocacaoId: string; codigoAvaliacao: string; fusoInstitucional: string | null }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
@@ -32,8 +33,7 @@ export function Formulario({ alocacaoId, codigoAvaliacao }: { alocacaoId: string
     <p>Esta autorização vale somente para a pendência existente desta segunda chamada. Não cria prazo geral, saldo, agendamento ou realização.</p>
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block" htmlFor="prazo-local">Prazo para realização<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
-      <label className="block" htmlFor="fuso">Fuso do prazo<input id="fuso" name="fuso" list="fusos-autorizacao-segunda-chamada" defaultValue="UTC" required maxLength={100} className="block rounded border p-2" /></label>
-      <datalist id="fusos-autorizacao-segunda-chamada"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
+      <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. A data e a hora são convertidas no servidor; horários ambíguos ou inexistentes exigem correção.</p>
       <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className="rounded border px-4 py-2">{ocupado ? "Autorizando…" : "Autorizar realização especial"}</button>

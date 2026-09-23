@@ -6,13 +6,14 @@ import { Formulario } from "./Formulario";
 import { IdentificacaoAvaliacao } from "@/app/(app)/academico/avaliacoes/Identificacao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 
 
 export default async function AutorizacoesSegundaChamada({ params, searchParams }: { params: Promise<{ alocacaoId: string; codigoAvaliacao: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { alocacaoId, codigoAvaliacao } = await params;
   const { depoisId } = await searchParams;
-  const [resultado, preferencia] = await Promise.all([consultarAutorizacoesEspeciaisSegundaChamada({ alocacaoId, codigoAvaliacao, ...(depoisId ? { depoisId } : {}) }), consultarPreferenciaFusoEquipe()]);
+  const [resultado, preferencia, fusoInstitucional] = await Promise.all([consultarAutorizacoesEspeciaisSegundaChamada({ alocacaoId, codigoAvaliacao, ...(depoisId ? { depoisId } : {}) }), consultarPreferenciaFusoEquipe(), consultarFusoInstitucional()]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
@@ -24,7 +25,7 @@ export default async function AutorizacoesSegundaChamada({ params, searchParams 
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Avaliação: {d.codigoAvaliacao}.</p>
     <p>Situação da matrícula: {d.statusMatricula}.</p>
-    {d.podeAutorizar ? <Formulario alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} /> : <p role="status">Não há pendência elegível para autorização especial nas condições atuais.</p>}
+    {d.podeAutorizar ? <Formulario alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} fusoInstitucional={fusoInstitucional} /> : <p role="status">Não há pendência elegível para autorização especial nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3"><p>Autorizada por {autorizacao.autorizador.nome}, em {formatarInstanteExibicao(autorizacao.criadaEm, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p>Prazo até {formatarInstanteExibicao(autorizacao.prazoAte, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p className="whitespace-pre-wrap">{autorizacao.motivo}</p></article>)}
     {!d.historico.length && <p>Nenhuma autorização especial registrada.</p>}

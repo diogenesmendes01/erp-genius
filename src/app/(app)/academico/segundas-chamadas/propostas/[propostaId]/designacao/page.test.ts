@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/avaliacoes/segunda-chamada-designacao-consulta", () => ({ consultarDesignacoesSegundaChamada: mocks.consulta }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("./Formulario", () => ({ Formulario: () => null }));
 
 import Page from "./page";
@@ -23,6 +24,7 @@ describe("designação da segunda chamada", () => {
     mocks.sessao.mockResolvedValue({});
     mocks.consulta.mockResolvedValue({ ok: true, dado });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.fuso.mockResolvedValue(null);
   });
 
   it("apresenta designações administrativas no fuso pessoal", async () => {
