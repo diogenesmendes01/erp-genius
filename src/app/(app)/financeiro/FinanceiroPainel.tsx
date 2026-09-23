@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
@@ -106,6 +106,8 @@ export function FinanceiroPainel({
   const [aba, setAba] = useState<Aba>(podeOperarCobranca ? "cobrancas" : "comissoes");
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const ocupadoRef = useRef(false);
 
   // Seletor de moeda de consolidação (Fase B). Default USD; preferência salva no navegador
   // (sem coluna nova). `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
@@ -146,11 +148,24 @@ export function FinanceiroPainel({
     router.refresh();
   }
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>) {
+  // `ocupadoRef` trava de forma SÍNCRONA, antes do primeiro `await` — setOcupado(true) sozinho
+  // não bastaria: React agrupa a atualização de estado, então um segundo clique no mesmo
+  // frame (antes do re-render aplicar `disabled`) ainda chamaria a action de novo. Recebe uma
+  // fábrica, não a promise já criada, para a action nem começar a rodar se a trava já estiver
+  // fechada.
+  async function run(acao: () => Promise<{ ok: boolean; erro?: string }>) {
+    if (ocupadoRef.current) return;
+    ocupadoRef.current = true;
     setErro(null);
-    const r = await p;
-    if (!r.ok) setErro(r.erro ?? "Erro.");
-    else router.refresh();
+    setOcupado(true);
+    try {
+      const r = await acao();
+      if (!r.ok) setErro(r.erro ?? "Erro.");
+      else router.refresh();
+    } finally {
+      ocupadoRef.current = false;
+      setOcupado(false);
+    }
   }
 
   const abas: [Aba, string][] = [
@@ -200,9 +215,10 @@ export function FinanceiroPainel({
         <Comissoes
           comissoes={comissoes}
           podePagar={podeOperarCobranca}
-          onFechar={() => run(fecharMesComissoes())}
+          onFechar={() => run(() => fecharMesComissoes())}
           fechamentoAutomatico={configFinanceiro.fechamentoComissaoAutomatico}
-          onToggleAutomatico={(ligado) => run(salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
+          onToggleAutomatico={(ligado) => run(() => salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
+          isPending={ocupado}
         />
       )}
 
@@ -212,7 +228,7 @@ export function FinanceiroPainel({
         <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />
       )}
 
-      {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(decidirAprovacao(id, { aprovar: ok }))} />}
+      {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={ocupado} />}
 
       {aba === "cambio" && (
         <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
@@ -221,18 +237,20 @@ export function FinanceiroPainel({
   );
 }
 
-function Comissoes({
+export function Comissoes({
   comissoes,
   podePagar,
   onFechar,
   fechamentoAutomatico,
   onToggleAutomatico,
+  isPending,
 }: {
   comissoes: ComissaoRow[];
   podePagar: boolean;
   onFechar: () => void;
   fechamentoAutomatico: boolean;
   onToggleAutomatico: (ligado: boolean) => void;
+  isPending: boolean;
 }) {
   const aPagar = somarPorMoeda(
     comissoes.filter((c) => c.status === StatusComissao.APROVADA).map((c) => ({ moeda: c.moeda, valor: c.valor })),
@@ -248,11 +266,17 @@ function Comissoes({
               type="checkbox"
               className="h-4 w-4 accent-brand-600"
               checked={fechamentoAutomatico}
+              disabled={isPending}
               onChange={(e) => onToggleAutomatico(e.target.checked)}
             />
             Fechamento mensal automático
           </label>
-          <button className={btnPri} onClick={onFechar}>Fechar mês e marcar pagas</button>
+          {/* `isPending` também fica true durante o toggle de fechamento automático (mesma
+              trava de `run`) — texto fixo, não "Fechando…", para não afirmar uma operação que
+              pode não ser esta. */}
+          <button className={btnPri} disabled={isPending} onClick={onFechar}>
+            Fechar mês e marcar pagas
+          </button>
         </span>}
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -285,12 +309,14 @@ function Comissoes({
   );
 }
 
-function Aprovacoes({
+export function Aprovacoes({
   aprovacoes,
   onDecidir,
+  isPending,
 }: {
   aprovacoes: AprovacaoRow[];
   onDecidir: (id: string, aprovar: boolean) => void;
+  isPending: boolean;
 }) {
   const impactoMensal = somarPorMoeda(aprovacoes.map((a) => ({ moeda: a.moeda, valor: a.impactoMensal })));
   const impactoAnual = impactoMensal.map((v) => ({ moeda: v.moeda, valor: v.valor * 12 }));
@@ -326,13 +352,15 @@ function Aprovacoes({
                 <div className="flex shrink-0 gap-2">
                   <button
                     onClick={() => onDecidir(a.id, true)}
-                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95"
+                    disabled={isPending}
+                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95 disabled:opacity-60"
                   >
                     Aprovar
                   </button>
                   <button
                     onClick={() => onDecidir(a.id, false)}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                    disabled={isPending}
+                    className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-60"
                   >
                     Rejeitar
                   </button>
