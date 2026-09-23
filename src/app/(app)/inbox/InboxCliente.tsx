@@ -72,10 +72,25 @@ export function InboxCliente({
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
 
-  // Notificação básica (E3): a lista se atualiza sozinha a cada 30s (SSR refresh).
+  // Notificação básica (E3): a lista se atualiza sozinha a cada 30s (SSR refresh). O
+  // `setInterval` continua ticando com a aba em segundo plano — só o refresh() em si fica
+  // condicionado a document.visibilityState === "visible" (ganho rápido 22 da auditoria):
+  // sem isso, cada tick reconstrói a árvore inteira sem ninguém olhando, ~120 vezes/hora à
+  // toa por sessão deixada aberta numa aba de fundo. Ao voltar para a aba, refresh()
+  // imediato: sem isso a lista ficaria com até 30s de atraso justo quando alguém acabou de
+  // trocar de aba para checar a inbox.
   useEffect(() => {
-    const t = setInterval(() => router.refresh(), 30_000);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, 30_000);
+    function aoMudarVisibilidade() {
+      if (document.visibilityState === "visible") router.refresh();
+    }
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
+    };
   }, [router]);
 
   // Abrir a thread zera as não-lidas (uma vez por conversa aberta).
@@ -107,7 +122,7 @@ export function InboxCliente({
       {nota && <p className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
 
       <div className="flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
-        {/* Lista de conversas (não-lidas primeiro) */}
+        {/* Lista de conversas, por recência (ver listarConversas) — não reordena por não lidas */}
         <div className="flex w-80 shrink-0 flex-col border-r border-gray-200">
           <div className="border-b border-gray-100 p-2">
             <input

@@ -73,7 +73,13 @@ export async function listarConversas(usuario: UsuarioSessao): Promise<ConversaR
           : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
       naoLidas: a.naoLidas, ultimaMensagemEm: a.ultimaMensagemEm?.toISOString() ?? null,
       preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null };
-  }).sort((a, b) => Number(b.naoLidas > 0) - Number(a.naoLidas > 0));
+  });
+  // Sem reordenar por não-lidas aqui (ganho rápido 22 da auditoria): o polling de 30s da
+  // inbox reconsulta a lista com frequência, e um agrupamento "não lidas primeiro" fazia a
+  // conversa pular de posição sempre que naoLidas cruzava zero (lida em outra aba, nova
+  // mensagem chegando) — a linha some debaixo do cursor de quem estava prestes a clicar. A
+  // ordem já vem estável do banco (orderBy ultimaMensagemEm desc); o badge de não lidas
+  // continua visível por linha, só não pula mais a lista inteira.
 }
 
 export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
