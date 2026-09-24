@@ -43,10 +43,13 @@ function minutosDesde(iso: string, agora: number): number {
 }
 
 
-function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
+function Card({ lead, agora, bloqueado }: { lead: KanbanLead; agora: number; bloqueado: boolean }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { etapa: lead.etapa },
+    // Enquanto uma movimentação está no servidor, nenhum cartão arrasta: o segundo arraste seria
+    // ignorado pela trava do executor, mas a tela deixaria tentar.
+    disabled: bloqueado,
   });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
   return (
@@ -90,7 +93,7 @@ function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
   );
 }
 
-function Coluna({ etapa, leads, agora }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number }) {
+function Coluna({ etapa, leads, agora, bloqueado }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number; bloqueado: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa });
   const total = leads.reduce((s, l) => s + (l.valorPrevisto ?? 0), 0);
   const gargalo =
@@ -115,7 +118,7 @@ function Coluna({ etapa, leads, agora }: { etapa: EtapaLead; leads: KanbanLead[]
         className={"flex min-h-[60px] flex-col gap-2 rounded-md p-1 " + (isOver ? "bg-brand-50 ring-1 ring-brand-300" : "")}
       >
         {leads.map((l) => (
-          <Card key={l.id} lead={l} agora={agora} />
+          <Card key={l.id} lead={l} agora={agora} bloqueado={bloqueado} />
         ))}
         {leads.length === 0 && (
           <div className="rounded-lg border border-dashed border-gray-200 p-3 text-center text-xs text-gray-300">vazio</div>
@@ -241,7 +244,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
               const limite = agora - periodoPerdido * 86400000;
               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);
             }
-            return <Coluna key={col} etapa={col} leads={itens} agora={agora} />;
+            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} />;
           })}
         </div>
       </DndContext>

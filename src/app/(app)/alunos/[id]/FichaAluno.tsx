@@ -229,7 +229,7 @@ export function FichaAluno({
 
       <Drawer
         open={modal === "editar"}
-        onClose={() => setModal("none")}
+        onClose={() => { acao.limpar(); setModal("none"); }}
         title="Editar dados do aluno"
         footer={
           <>
