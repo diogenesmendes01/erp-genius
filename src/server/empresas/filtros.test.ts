@@ -52,3 +52,11 @@ describe("filtros de empresas na URL", () => {
     expect(hrefDosCamposEmpresas({ busca: " acme ", situacao: "x", pais: "" })).toBe("/empresas?busca=acme");
   });
 });
+
+describe("teto da busca de empresas", () => {
+  it("no máximo 6 palavras: a 7ª em diante é descartada (limita o tamanho da consulta)", () => {
+    const where = whereFiltrosEmpresas(lerFiltrosEmpresas({ busca: "a b c d e f g" })) as { AND: unknown[] };
+    expect(where.AND).toHaveLength(6);
+    expect(JSON.stringify(where)).not.toContain('"g"');
+  });
+});

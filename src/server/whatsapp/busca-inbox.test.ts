@@ -47,3 +47,11 @@ describe("busca da inbox", () => {
     expect(hrefInbox({})).toBe("/inbox");
   });
 });
+
+describe("teto da busca da inbox", () => {
+  it("no máximo 6 palavras: a 7ª em diante é descartada (limita o tamanho da consulta)", () => {
+    const where = whereBuscaConversas("a b c d e f g") as { AND: unknown[] };
+    expect(where.AND).toHaveLength(6);
+    expect(JSON.stringify(where)).not.toContain('"g"');
+  });
+});
