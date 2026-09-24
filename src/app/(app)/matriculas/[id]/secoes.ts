@@ -4,6 +4,11 @@ import { Papel } from "@prisma/client";
 // registro e a lista do hub /matriculas/[id]. Os papéis de cada seção são os MESMOS do
 // exigirSessaoPagina da página — secoes.test.ts lê cada page.tsx e confere, então uma aba nunca
 // oferece uma página que o papel não abre. Administrador passa sempre (como no guard).
+//
+// Sub-telas podem abrir para mais papéis que a aba da sua seção. Ex.: as Alçadas do aditivo
+// (contrato/aditivos/[propostaId]/alcadas) abrem para Financeiro, Gerente comercial e Gerência
+// pedagógica, mas a aba Contrato é só da Secretaria — ofertá-la levaria a uma página que eles não
+// abrem. Nessas URLs eles veem o cabeçalho sem aba marcada, e é intencional.
 
 export type SecaoMatricula = { caminho: string; rotulo: string; papeis: Papel[] };
 

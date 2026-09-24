@@ -53,7 +53,8 @@ describe("hub /matriculas/[id]", () => {
   it("lista as seções que o papel abre", async () => {
     mocks.carregar.mockResolvedValue({ usuario: { papeis: [Papel.VENDEDOR] }, cabecalho });
     const html = renderToStaticMarkup(await Hub({ params }));
-    expect(html).toContain("Matrícula M-000123");
+    expect(html).toContain("Seções da matrícula");
+    expect(html).not.toContain("Ana Silva"); // já está no cabeçalho do layout
     expect([...html.matchAll(/<a[^>]*\shref="([^"]+)"/g)].map((m) => m[1])).toEqual(["/matriculas/m1/preparacao", "/matriculas/m1/reserva"]);
   });
 
