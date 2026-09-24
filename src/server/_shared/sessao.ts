@@ -61,9 +61,10 @@ export class ErroRegra extends Error {
  * `findUnique` só para essa coluna (ganho rápido 15 da auditoria, parte segura).
  *
  * Memoizado POR REQUISIÇÃO (memoPorRequisicao): layout, página e consultas de uma mesma renderização
- * leem a linha uma vez só. Cada requisição nova relê — a frescura continua a mesma.
+ * leem a linha uma vez só. Cada requisição nova relê — a frescura continua a mesma. É o ÚNICO memo
+ * de usuário: papeisDaSessao (lib/guards) também passa por aqui, para a árvore não ler duas vezes.
  */
-const carregarUsuarioFresco = memoPorRequisicao(async (id: string): Promise<UsuarioSessao | null> => {
+export const carregarUsuarioFresco = memoPorRequisicao(async (id: string): Promise<UsuarioSessao | null> => {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o Prisma.
   const { prisma } = await import("@/lib/prisma");
   const atual = await prisma.usuario.findUnique({

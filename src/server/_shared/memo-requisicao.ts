@@ -1,4 +1,4 @@
-import { cache } from "react";
+import * as React from "react";
 
 // Memo POR REQUISIÇÃO (ganho rápido 15, docs/42-auditoria-frontend-ux.md): o layout, a página e cada
 // consulta pedem o mesmo usuário fresco — em /financeiro eram ~12 leituras da mesma linha por render.
@@ -8,5 +8,17 @@ import { cache } from "react";
 // /matriculas/[id] já o usam). Fora de uma renderização de Server Component (Server Action, rota de
 // API) e no Vitest, `cache` não memoriza ou nem existe: a função roda a cada chamada, exatamente
 // como antes. A frescura não muda — o memo vive só dentro de uma requisição.
-export const memoPorRequisicao: <F extends (...args: never[]) => unknown>(f: F) => F =
-  typeof cache === "function" ? cache : (f) => f;
+
+/** Lê `React.cache` sem quebrar: no Vitest um `vi.mock("react")` sem `cache` LANÇA ao acessar a chave. */
+function cacheDoReact(): (<F extends (...args: never[]) => unknown>(f: F) => F) | undefined {
+  try {
+    const c = (React as { cache?: unknown }).cache;
+    return typeof c === "function" ? (c as <F extends (...args: never[]) => unknown>(f: F) => F) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const cache = cacheDoReact();
+
+export const memoPorRequisicao: <F extends (...args: never[]) => unknown>(f: F) => F = cache ?? ((f) => f);
