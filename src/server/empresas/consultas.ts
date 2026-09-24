@@ -1,6 +1,7 @@
 import { Papel, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { numero, numeroOuNull, exigirSessaoComPapel } from "@/server/_shared";
+import { EMPRESAS_POR_PAGINA, whereFiltrosEmpresas, type FiltrosEmpresas } from "./filtros";
 
 // B2B — consultas (Fase 2, doc 03): lista de empresas, ficha (colaboradores + faturas) e
 // o RELATÓRIO POR COLABORADOR (status da matrícula + mensalidades pagas/abertas/atrasadas).
@@ -17,13 +18,38 @@ export interface EmpresaResumo {
 
 export async function listarEmpresas(): Promise<EmpresaResumo[]> {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
-  const empresas = await prisma.empresa.findMany({
+  return resumirEmpresas(await prisma.empresa.findMany({
     orderBy: { criadoEm: "desc" },
     include: {
       _count: { select: { matriculas: true, faturas: { where: { status: "FECHADA" } } } },
     },
-  });
-  const paises = await prisma.pais.findMany({ select: { id: true, nome: true } });
+  }));
+}
+
+/** Lista de /empresas (E4): uma página com os filtros da URL, o total filtrado e o total geral. */
+export async function listarEmpresasPagina(filtros: FiltrosEmpresas) {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
+  const where = whereFiltrosEmpresas(filtros);
+  const [empresas, total, totalBase] = await Promise.all([
+    prisma.empresa.findMany({
+      where,
+      // id como desempate: empresas criadas no mesmo instante não trocam de página entre consultas.
+      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      skip: (filtros.pagina - 1) * EMPRESAS_POR_PAGINA,
+      take: EMPRESAS_POR_PAGINA,
+      include: {
+        _count: { select: { matriculas: true, faturas: { where: { status: "FECHADA" } } } },
+      },
+    }),
+    prisma.empresa.count({ where }),
+    prisma.empresa.count(),
+  ]);
+  return { itens: await resumirEmpresas(empresas), total, totalBase };
+}
+
+async function resumirEmpresas(empresas: (Awaited<ReturnType<typeof prisma.empresa.findMany>>[number] & { _count: { matriculas: number; faturas: number } })[]): Promise<EmpresaResumo[]> {
+  const paisIds = [...new Set(empresas.map((e) => e.paisId).filter((id): id is string => !!id))];
+  const paises = paisIds.length ? await prisma.pais.findMany({ where: { id: { in: paisIds } }, select: { id: true, nome: true } }) : [];
   const nomePais = new Map(paises.map((p) => [p.id, p.nome]));
   return empresas.map((e) => ({
     id: e.id,
