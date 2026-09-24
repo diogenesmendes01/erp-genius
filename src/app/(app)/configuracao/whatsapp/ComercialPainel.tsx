@@ -245,7 +245,7 @@ export function ComercialPainel({
           </div>
         </div>
 
-        <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+        <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : "Salvar configuração comercial"}
         </button>
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

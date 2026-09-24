@@ -84,12 +84,12 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className={btnSec} disabled={ocupado} onClick={sincronizar} title="Mapeador: espelha o status da WABA">
+          <button type="button" className={btnSec} disabled={ocupado} onClick={sincronizar} title="Mapeador: espelha o status da WABA">
             <span className="flex items-center gap-1">
               <IconCloudDownload className="h-3.5 w-3.5" /> Sincronizar com a Meta
             </span>
           </button>
-          <button className={btnPri} disabled={ocupado} onClick={() => setForm(FORM_VAZIO)}>
+          <button type="button" className={btnPri} disabled={ocupado} onClick={() => setForm(FORM_VAZIO)}>
             <span className="flex items-center gap-1">
               <IconPlus className="h-4 w-4" /> Novo template
             </span>
@@ -212,7 +212,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           {/* Erro dentro do card, colado ao "Salvar" — o formulário continua aberto para corrigir. */}
           <FeedbackAcao erro={origem === "form" ? acao.erro : null} className="mt-3" />
           <div className="mt-3 flex justify-end">
-            <button className={btnPri} disabled={ocupado} onClick={salvar}>
+            <button type="button" className={btnPri} disabled={ocupado} onClick={salvar}>
               {ocupado ? "Salvando…" : "Salvar template"}
             </button>
           </div>

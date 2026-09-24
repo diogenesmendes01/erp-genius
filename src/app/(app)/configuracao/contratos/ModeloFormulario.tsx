@@ -45,7 +45,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
           <label>Origem do preenchimento<select value={c.origem ?? ""} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, origem: (e.target.value || undefined) as OrigemCampo | undefined } : v) })} className={campo}><option value="">Pendente de definição</option>{Object.entries(ROTULOS_ORIGEM).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
           <button type="button" onClick={() => setValor({ ...valor, campos: valor.campos.filter((_, j) => j !== i) })}>Remover campo {i + 1}</button>
         </div>)}
-        <button type="button" disabled={valor.campos.length >= 100} className="rounded border p-2" onClick={() => setValor({ ...valor, campos: [...valor.campos, { chave: "", descricao: "" }] })}>Adicionar campo</button>
+        <button type="button" disabled={valor.campos.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, campos: [...valor.campos, { chave: "", descricao: "" }] })}>Adicionar campo</button>
       </fieldset>
       <fieldset className="space-y-3"><legend className="font-medium">Seções do documento</legend>
         {valor.secoes.map((s, i) => <div key={i} className="space-y-2 rounded border p-3">
@@ -53,7 +53,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
           <label className="block">Texto<textarea required rows={6} maxLength={20000} value={s.texto} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, texto: e.target.value } : v) })} className={campo} /></label>
           <button type="button" disabled={valor.secoes.length === 1} onClick={() => setValor({ ...valor, secoes: valor.secoes.filter((_, j) => j !== i) })}>Remover seção {i + 1}</button>
         </div>)}
-        <button type="button" disabled={valor.secoes.length >= 100} className="rounded border p-2" onClick={() => setValor({ ...valor, secoes: [...valor.secoes, { titulo: "", texto: "" }] })}>Adicionar seção</button>
+        <button type="button" disabled={valor.secoes.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, secoes: [...valor.secoes, { titulo: "", texto: "" }] })}>Adicionar seção</button>
       </fieldset>
       <fieldset className="space-y-3"><legend className="font-medium">Assinaturas exigidas</legend>
         {valor.assinaturas.map((a, i) => <div key={i} className="grid gap-2 rounded border p-3 sm:grid-cols-3">
@@ -61,7 +61,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
           <label>Quando exigir<select className={campo} value={a.condicao} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, condicao: e.target.value as typeof a.condicao } : v) })}>{Object.entries(CONDICOES_MODELO).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
           <button type="button" onClick={() => setValor({ ...valor, assinaturas: valor.assinaturas.filter((_, j) => j !== i) })}>Remover regra {i + 1}</button>
         </div>)}
-        <button type="button" disabled={valor.assinaturas.length >= 20} className="rounded border p-2" onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>
+        <button type="button" disabled={valor.assinaturas.length >= 20} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>
       </fieldset>
       <label className="block">Motivo da proposta<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
       <button type="submit" className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Salvando proposta…" : "Salvar proposta para aprovação"}</button>
