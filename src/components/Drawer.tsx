@@ -17,12 +17,18 @@ export function Drawer({
   title,
   children,
   footer,
+  lado = "direita",
+  largura = "w-full max-w-2xl md:w-[45%]",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** De que lado o painel desliza. A gaveta de navegação mobile abre pela esquerda. */
+  lado?: "direita" | "esquerda";
+  /** Classes de largura do painel. */
+  largura?: string;
 }) {
   const raiz = useRef<HTMLDivElement>(null);
   const painel = useRef<HTMLElement>(null);
@@ -46,8 +52,9 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         className={
-          "absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-gray-200 bg-surface transition-transform duration-200 md:w-[45%] " +
-          (open ? "translate-x-0" : "translate-x-full")
+          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface transition-transform duration-200 ${largura} ` +
+          (lado === "esquerda" ? "left-0 border-r " : "right-0 border-l ") +
+          (open ? "translate-x-0" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
         }
       >
         <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">

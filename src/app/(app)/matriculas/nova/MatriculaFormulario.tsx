@@ -330,7 +330,7 @@ export function MatriculaFormulario({
           {/* Identificação */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Identificação</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-nome" label="Nome" obrig>
                 {(id) => <input id={id} aria-required="true" className={inputCls} value={primeiroNome} onChange={(e) => setPrimeiroNome(e.target.value)} />}
               </Campo>
@@ -360,7 +360,7 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-1 text-sm font-medium">Documentação</h2>
             <p className="mb-4 text-xs text-gray-400">O país dirige os tipos de documento e a validação. Documento inválido avisa, mas não bloqueia (doc 04).</p>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-pais" label="País" obrig>
                 {(id) => (
                   <select id={id} aria-required="true" className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
@@ -398,7 +398,7 @@ export function MatriculaFormulario({
           {/* Contato */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Contato</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-email" label="E-mail" obrig>
                 {(id) => <input id={id} aria-required="true" type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />}
               </Campo>
@@ -421,7 +421,7 @@ export function MatriculaFormulario({
           {/* Residência */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Residência</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-pais-residencia" label="País de residência" obrig>
                 {(id) => <SelectISO id={id} obrig value={paisResidencia} onChange={setPaisResidencia} comVazio />}
               </Campo>
@@ -452,7 +452,7 @@ export function MatriculaFormulario({
           {/* Acadêmico */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Acadêmico</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-escolaridade" label="Escolaridade">
                 {(id) => (
                   <select id={id} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
@@ -472,14 +472,14 @@ export function MatriculaFormulario({
           {/* Operacional */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Operacional</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-fuso" label="Fuso horário">
                 {(id) => <input id={id} className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />}
               </Campo>
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
               <p className="mb-2 text-xs font-medium text-gray-600">Contato de emergência</p>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
                 <input aria-label="Nome do contato de emergência" className={inputCls} placeholder="Nome" value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />
                 <input aria-label="Parentesco do contato de emergência" className={inputCls} placeholder="Parentesco" value={emergenciaParentesco} onChange={(e) => setEmergParentesco(e.target.value)} />
                 <input aria-label="Telefone do contato de emergência" className={inputCls} placeholder="Telefone" value={emergenciaTelefone} onChange={(e) => setEmergTel(e.target.value)} />
@@ -500,7 +500,7 @@ export function MatriculaFormulario({
               <option value="EMPRESA">Empresa (B2B)</option>
             </select>
             {pagador !== "ALUNO" && (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
                 <input aria-label={pagador === "EMPRESA" ? "Nome da empresa pagadora" : "Nome do responsável financeiro"} className={inputCls} placeholder={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} value={respNome} onChange={(e) => setRespNome(e.target.value)} />
                 {pagador === "RESPONSAVEL" && (
                   <input aria-label="Parentesco do responsável financeiro" className={inputCls} placeholder="Parentesco" value={respParentesco} onChange={(e) => setRespParentesco(e.target.value)} />
@@ -542,7 +542,7 @@ export function MatriculaFormulario({
           {/* Curso & alocação */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Curso & alocação</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <div>
                 <label htmlFor="matricula-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
                 <select
@@ -610,7 +610,7 @@ export function MatriculaFormulario({
                 justificativa da exceção (será auditada).
               </p>
             )}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <label htmlFor="matricula-taxa" className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
                 <CampoMoeda id="matricula-taxa" value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
