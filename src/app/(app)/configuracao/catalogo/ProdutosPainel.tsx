@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { criarProduto } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export interface ProdutoRow {
   id: string;
@@ -27,27 +29,20 @@ export function ProdutosPainel({
   const router = useRouter();
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [modalidadeId, setModalidadeId] = useState(modalidades[0]?.id ?? "");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Sem chave de idempotência: criarProduto não recebe chave do cliente — a falha de rede manda
+  // conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   async function adicionar() {
     if (!idiomaId || !modalidadeId) return;
-    setErro(null);
-    setSalvando(true);
-    const res = await criarProduto({ idiomaId, modalidadeId });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
-    router.refresh();
+    const d = await acao.executar(() => criarProduto({ idiomaId, modalidadeId }));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Produtos</h2>
       <p className="mb-3 text-sm text-gray-500">Unidade vendável = idioma × modalidade.</p>
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
@@ -89,12 +84,13 @@ export function ProdutosPainel({
         </select>
         <button
           onClick={adicionar}
-          disabled={salvando}
+          disabled={acao.ocupado}
           className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
           <IconPlus className="h-4 w-4" /> Adicionar produto
         </button>
       </div>
+      <FeedbackAcao erro={acao.erro} className="mt-3" />
     </section>
   );
 }

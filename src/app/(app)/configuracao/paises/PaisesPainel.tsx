@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { StatusPais } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { alterarStatusPais, alternarProdutoPais } from "@/server/paises/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { PaisFormulario, type PaisParaEditar } from "./PaisFormulario";
 
 export interface PaisRow {
@@ -50,28 +52,24 @@ export function PaisesPainel({
   produtos: { id: string; label: string }[];
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Sem chave de idempotência: alternarProdutoPais inverte o estado atual (repetir desfaz) e
+  // alterarStatusPais não recebe chave — a falha de rede manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
   const [form, setForm] = useState<"none" | "novo" | { editar: PaisParaEditar }>("none");
-  const [pendente, setPendente] = useState<string | null>(null);
+  // Onde mostrar o resultado: nas ações de status da linha ("status:id") ou no catálogo do país ("catalogo:id").
+  const [origem, setOrigem] = useState<string | null>(null);
   const [catalogo, setCatalogo] = useState<string | null>(null);
 
   async function mudarStatus(id: string, alvo: StatusPais) {
-    setErro(null);
-    setPendente(id + alvo);
-    const res = await alterarStatusPais(id, alvo);
-    setPendente(null);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
-    router.refresh();
+    setOrigem("status:" + id);
+    const d = await acao.executar(() => alterarStatusPais(id, alvo));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   async function toggleProduto(paisId: string, produtoId: string) {
-    setErro(null);
-    const res = await alternarProdutoPais(paisId, produtoId);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+    setOrigem("catalogo:" + paisId);
+    const d = await acao.executar(() => alternarProdutoPais(paisId, produtoId));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
@@ -89,10 +87,6 @@ export function PaisesPainel({
           </button>
         )}
       </div>
-
-      {erro && (
-        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>
-      )}
 
       {form !== "none" && (
         <div className="mb-6">
@@ -169,7 +163,7 @@ export function PaisesPainel({
                         <button
                           key={a.alvo}
                           onClick={() => mudarStatus(p.id, a.alvo)}
-                          disabled={pendente === p.id + a.alvo}
+                          disabled={acao.ocupado}
                           className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
                         >
                           {a.label}
@@ -182,6 +176,7 @@ export function PaisesPainel({
                         Catálogo
                       </button>
                     </div>
+                    <FeedbackAcao erro={origem === "status:" + p.id ? acao.erro : null} className="mt-1" />
                   </td>
                 </tr>,
                 catalogo === p.id ? (
@@ -195,6 +190,7 @@ export function PaisesPainel({
                               type="checkbox"
                               checked={p.produtosOferecidos.includes(prod.id)}
                               onChange={() => toggleProduto(p.id, prod.id)}
+                              disabled={acao.ocupado}
                               className="rounded border-gray-300"
                             />
                             {prod.label}
@@ -202,6 +198,7 @@ export function PaisesPainel({
                         ))}
                         {produtos.length === 0 && <span className="text-xs text-gray-400">Cadastre produtos no Catálogo.</span>}
                       </div>
+                      <FeedbackAcao erro={origem === "catalogo:" + p.id ? acao.erro : null} className="mt-2" />
                     </td>
                   </tr>
                 ) : null,

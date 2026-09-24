@@ -7,6 +7,8 @@ import { TipoCobranca } from "@prisma/client";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export interface PrecoRow {
   id: string;
@@ -47,8 +49,11 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Sem chave de idempotência: criarPreco cria um preço novo (e aposenta o ativo) a cada chamada e
+  // alternarPrecoAtivo inverte o estado atual — a falha de rede manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
+  const [origem, setOrigem] = useState<string | null>(null);
 
   const [paisId, setPaisId] = useState(paises[0]?.id ?? "");
   const [produtoId, setProdutoId] = useState(produtos[0]?.id ?? "");
@@ -59,27 +64,22 @@ export function PrecosPainel({
   const moedaPais = paises.find((p) => p.id === paisId)?.moedaLocal ?? "";
 
   async function salvar() {
-    setErro(null);
+    setOrigem("novo");
     // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
     // matrículas passariam a usar como preço negociado — silencioso.
     const valorNumero = parseMoeda(valor);
     if (valorNumero === null) {
-      setErro("Informe o valor, com no máximo duas casas decimais.");
+      acao.setErro("Informe o valor, com no máximo duas casas decimais.");
       return;
     }
-    setSalvando(true);
-    const res = await criarPreco({
+    const d = await acao.executar(() => criarPreco({
       paisId,
       produtoId,
       tipoCobranca,
       valor: valorNumero,
       versaoEstudo: versaoEstudo || undefined,
-    });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    }));
+    if (d?.tipo !== "ok") return;
     setValor("");
     setVersao("");
     setAberto(false);
@@ -87,10 +87,9 @@ export function PrecosPainel({
   }
 
   async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarPrecoAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+    setOrigem(id);
+    const d = await acao.executar(() => alternarPrecoAtivo(id));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
@@ -109,7 +108,6 @@ export function PrecosPainel({
       <p className="mb-3 text-sm text-gray-500">
         País × produto × tipo de cobrança. Um novo preço substitui o ativo anterior (vira histórico).
       </p>
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {aberto && (
         <div className="mb-4 rounded-lg border border-gray-200 bg-surface p-5">
@@ -164,13 +162,14 @@ export function PrecosPainel({
               <input id="precos-versao-estudo" value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
             </div>
           </div>
+          <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-4" />
           <div className="mt-4 flex gap-2">
             <button
               onClick={salvar}
-              disabled={salvando}
+              disabled={acao.ocupado}
               className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
             >
-              {salvando ? "Salvando…" : "Salvar preço"}
+              {acao.ocupado ? "Salvando…" : "Salvar preço"}
             </button>
             <button
               onClick={() => setAberto(false)}
@@ -223,9 +222,10 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => alternar(p.id)} className="text-xs text-gray-500 hover:text-gray-800">
+                    <button onClick={() => alternar(p.id)} disabled={acao.ocupado} className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50">
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
+                    <FeedbackAcao erro={origem === p.id ? acao.erro : null} className="mt-1 text-left" />
                   </td>
                 </tr>
               ))

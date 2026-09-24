@@ -11,7 +11,8 @@ import type {
 import { salvarReguaComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
@@ -81,9 +82,9 @@ function ReguaComercialPainel({
   const [pilotoLeads, setPilotoLeads] = useState(regua.pilotoLeads);
   const [buscaPiloto, setBuscaPiloto] = useState("");
   const [opcoesPiloto, setOpcoesPiloto] = useState<{ id: string; nome: string; codigo: string | null }[]>([]);
-  const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
+  // Um estado por régua: o resultado aparece sob o botão da régua salva. salvarReguaComercial não
+  // recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   const numerosVendas = numeros.filter((n) => n.finalidade === "VENDAS");
 
@@ -94,10 +95,12 @@ function ReguaComercialPainel({
   async function buscarLeadsPiloto(q: string) {
     setBuscaPiloto(q);
     if (q.trim().length < 2) return setOpcoesPiloto([]);
-    const r = await buscarVinculosInbox(q);
-    if (r.ok && r.dado) {
+    // Busca só-leitura a cada tecla: fora do useAcaoCliente (a trava de duplo clique descartaria as
+    // teclas seguintes); falha, de negócio ou de rede, só não traz sugestões — como antes.
+    const d = await executarAcaoCliente(() => buscarVinculosInbox(q), { idempotente: false });
+    if (d.tipo === "ok" && d.dado) {
       const jaNaLista = new Set(pilotoLeads.map((l) => l.id));
-      setOpcoesPiloto(r.dado.leads.filter((l) => !jaNaLista.has(l.id)));
+      setOpcoesPiloto(d.dado.leads.filter((l) => !jaNaLista.has(l.id)));
     }
   }
 
@@ -117,10 +120,7 @@ function ReguaComercialPainel({
   }
 
   async function salvar() {
-    setOcupado(true);
-    setErro(null);
-    setNota(null);
-    const r = await salvarReguaComercial({
+    const desfecho = await acao.executar(() => salvarReguaComercial({
       chave: regua.chave,
       estado,
       numeroRemetenteId,
@@ -135,11 +135,8 @@ function ReguaComercialPainel({
         ativo: d.ativo,
         templateId: d.templateId,
       })),
-    });
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
-    setNota(`Régua "${regua.nome}" salva.`);
-    router.refresh();
+    }), `Régua "${regua.nome}" salva.`);
+    if (desfecho?.tipo === "ok") router.refresh();
   }
 
   return (
@@ -147,9 +144,6 @@ function ReguaComercialPainel({
       <div className="mb-2">
         <h3 className="text-sm font-medium">{regua.nome}</h3>
       </div>
-
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4">
         <div className="flex flex-wrap items-end gap-4">
@@ -286,9 +280,10 @@ function ReguaComercialPainel({
           )}
         </div>
 
-        <button className={btnPri} disabled={ocupado} onClick={salvar}>
-          {ocupado ? "Salvando…" : `Salvar "${regua.nome}"`}
+        <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+          {acao.ocupado ? "Salvando…" : `Salvar "${regua.nome}"`}
         </button>
+        <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       </div>
     </div>
   );
