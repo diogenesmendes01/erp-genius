@@ -1,6 +1,11 @@
 import { StatusAluno } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, sanearFiltrosAlunos, sincronizarCampos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
+import { camposDosFiltros, destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, sanearFiltrosAlunos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
+import { sincronizarCamposFiltro } from "@/lib/filtros-url";
+
+// A lista usa a sincronização genérica (useFiltrosUrl) sobre os campos derivados destes filtros.
+const sincronizarCampos = (atuais: ReturnType<typeof camposDosFiltros>, antes: ReturnType<typeof lerFiltrosAlunos>, depois: ReturnType<typeof lerFiltrosAlunos>) =>
+  sincronizarCamposFiltro(atuais, camposDosFiltros(antes), camposDosFiltros(depois));
 
 describe("lerFiltrosAlunos", () => {
   it("lê, apara e valida os filtros da URL", () => {
