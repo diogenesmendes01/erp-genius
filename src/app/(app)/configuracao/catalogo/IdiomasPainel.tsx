@@ -6,6 +6,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export interface IdiomaRow {
   id: string;
@@ -101,7 +102,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <button
           onClick={adicionar}
           disabled={acao.ocupado}
-          className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
+          className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar
         </button>

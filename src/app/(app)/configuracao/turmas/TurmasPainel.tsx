@@ -13,6 +13,7 @@ import {
 } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
 import { useDialogo } from "@/lib/dialogo";
+import { botaoClasses } from "@/components/Botao";
 
 export interface TurmaRow {
   id: string;
@@ -108,7 +109,7 @@ export function TurmasPainel({
             {podeImportar && <ImportarTurmasModal />}
             <button
               onClick={() => setForm("nova")}
-              className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95"
+              className={botaoClasses({ tamanho: "lg" })}
             >
               <IconPlus className="h-4 w-4" /> Nova turma
             </button>

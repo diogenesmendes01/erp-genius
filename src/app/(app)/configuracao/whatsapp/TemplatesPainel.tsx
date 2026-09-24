@@ -12,6 +12,7 @@ import {
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { botaoClasses } from "@/components/Botao";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
 // - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
@@ -19,8 +20,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 // - Editor (Marco 2): criar/editar com variáveis amigáveis; submeter → em revisão →
 //   aprovado/rejeitado (via webhook). Em número Baileys todo template vale no ato.
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
+const btnPri = botaoClasses({ tamanho: "md" });
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {

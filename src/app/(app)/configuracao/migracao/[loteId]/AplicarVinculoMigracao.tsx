@@ -13,6 +13,7 @@ import {
   type FormularioVinculo,
 } from "./formulario-aplicar-vinculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Props = {
   linhaId: string;
@@ -95,7 +96,7 @@ export function AplicarVinculoMigracao(props: Props) {
       <label>Evidência do complemento de vigência<input aria-label="Evidência do complemento de vigência" className="block rounded border p-1" value={formulario.evidenciaComplemento} onChange={(event) => atualizar("evidenciaComplemento", event.target.value)} /></label>
     </div>
     <fieldset className="rounded border bg-surface p-2"><legend>Fatos históricos explícitos</legend>{formulario.fatos.map((fato, indice) => <div key={indice} className="mt-2 flex gap-2"><label>Tipo do fato<select aria-label={`Tipo do fato ${indice + 1}`} value={fato.tipo} onChange={(event) => atualizarFato(indice, { tipo: event.target.value as FatoFormularioVinculo["tipo"] })}>{["ATIVACAO", "PAUSA", "ENCERRAMENTO", "CANCELAMENTO"].map((tipo) => <option key={tipo}>{tipo}</option>)}</select></label><label>Data do fato<input aria-label={`Data do fato ${indice + 1}`} type="date" value={fato.data} onChange={(event) => atualizarFato(indice, { data: event.target.value })} /></label><label>Evidência do fato<input aria-label={`Evidência do fato ${indice + 1}`} value={fato.evidencia} onChange={(event) => atualizarFato(indice, { evidencia: event.target.value })} /></label>{formulario.fatos.length > 1 && <button type="button" onClick={() => atualizar("fatos", formulario.fatos.filter((_, atual) => atual !== indice))}>Remover</button>}</div>)}<button type="button" className="mt-2 rounded border px-2 py-1" onClick={() => atualizar("fatos", [...formulario.fatos, { tipo: "PAUSA", data: "", evidencia: "" }])}>Adicionar fato</button></fieldset>
-    <button type="button" disabled={ocupado || !ensaio || !destinosCompletos} className="rounded bg-brand-solid px-3 py-1 text-white disabled:opacity-50" onClick={aplicar}>{ocupado ? "Aplicando…" : "Aplicar vínculo conferido"}</button>
+    <button type="button" disabled={ocupado || !ensaio || !destinosCompletos} className={botaoClasses({ tamanho: "sm" })} onClick={aplicar}>{ocupado ? "Aplicando…" : "Aplicar vínculo conferido"}</button>
     {erro && <p role="alert">{erro}</p>}
     <MensagemStatus texto={sucesso} />
   </section>;

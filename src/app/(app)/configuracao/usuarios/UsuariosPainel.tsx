@@ -10,6 +10,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
+import { botaoClasses } from "@/components/Botao";
 
 export interface UsuarioRow {
   id: string;
@@ -53,7 +54,7 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
         {form === "none" && (
           <button
             onClick={() => setForm("novo")}
-            className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95"
+            className={botaoClasses({ tamanho: "lg" })}
           >
             <IconPlus className="h-4 w-4" /> Novo usuário
           </button>
