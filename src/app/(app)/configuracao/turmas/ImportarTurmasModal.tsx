@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/Modal";
+import { botaoClasses } from "@/components/Botao";
 
 interface ResultadoImport {
   total: number;
@@ -10,8 +11,8 @@ interface ResultadoImport {
   erros: { linha: number; motivo: string }[];
 }
 
-const btnPri = "rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50";
+const btnPri = botaoClasses({ tamanho: "lg" });
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "lg" });
 
 /** Modal de importação de turmas em lote (XLSX) — exibido só para administrador (doc 12). */
 export function ImportarTurmasModal() {
@@ -115,7 +116,7 @@ export function ImportarTurmasModal() {
 
           <div className="flex justify-end gap-2">
             {/* Durante o envio nada fecha — o resultado precisa aparecer aqui; depois dele, só este botão fecha. */}
-            <button type="button" className={btnSec + " disabled:opacity-60"} onClick={fechar} disabled={enviando}>
+            <button type="button" className={btnSec} onClick={fechar} disabled={enviando}>
               {res ? "Fechar" : "Cancelar"}
             </button>
             <button type="button" className={btnPri} onClick={enviar} disabled={enviando}>

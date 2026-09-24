@@ -8,6 +8,7 @@ import { prepararModeloContratual } from "@/server/contratos/modelos";
 
 type Conteudo = z.infer<typeof ConteudoModeloSchema>;
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "./labels";
+import { botaoClasses } from "@/components/Botao";
 const campo = "block w-full rounded border p-2";
 const vazio: Conteudo = { titulo: "", finalidade: "CONTRATO", regimes: [], aplicacao: "", campos: [], secoes: [{ titulo: "", texto: "" }], assinaturas: [] };
 export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?: string; versaoEsperada: number; inicial?: Conteudo }) {
@@ -63,7 +64,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
         <button type="button" disabled={valor.assinaturas.length >= 20} className="rounded border p-2" onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>
       </fieldset>
       <label className="block">Motivo da proposta<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
-      <button className="rounded bg-black px-4 py-2 text-white">{ocupado ? "Salvando proposta…" : "Salvar proposta para aprovação"}</button>
+      <button type="submit" className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Salvando proposta…" : "Salvar proposta para aprovação"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
   </form>;
