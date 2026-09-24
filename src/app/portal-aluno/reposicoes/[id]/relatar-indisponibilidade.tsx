@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL, rotular } from "@/lib/labels";
 
 type Relato = { id: string; descricao: string; situacao: string; criadoEm: string; confirmadoEm: string | null };
 type Pausa = { id: string; inicio: string; fim: string | null };
@@ -42,7 +43,7 @@ export function RelatarIndisponibilidadePortalAluno({
         : `Material indisponível desde ${data(pausa.inicio, fusoExibicao)}. A escola está regularizando.`}</p>)}
     </div>}
     {relatos.length > 0 && <details className="text-sm"><summary>Meus relatos enviados</summary><div className="mt-2 space-y-2">
-      {relatos.map((relato) => <article key={relato.id} className="rounded border p-2"><p className="whitespace-pre-wrap">{relato.descricao}</p><p className="mt-1 text-gray-600">{relato.situacao} em {data(relato.criadoEm, fusoExibicao)}{relato.confirmadoEm ? ` · confirmado em ${data(relato.confirmadoEm, fusoExibicao)}` : ""}</p></article>)}
+      {relatos.map((relato) => <article key={relato.id} className="rounded border p-2"><p className="whitespace-pre-wrap">{relato.descricao}</p><p className="mt-1 text-gray-600">{rotular(SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL, relato.situacao)} · relatado em {data(relato.criadoEm, fusoExibicao)}{relato.confirmadoEm ? ` · confirmado em ${data(relato.confirmadoEm, fusoExibicao)}` : ""}</p></article>)}
     </div></details>}
     {podeRelatar && <form onSubmit={relatar} className="space-y-2 border-t pt-3"><label className="block text-sm">Descreva o problema<textarea required minLength={5} maxLength={4000} name="descricao" className="mt-1 min-h-20 w-full rounded border p-2" /></label><button disabled={enviando} className="rounded border px-3 py-2 text-sm disabled:opacity-60">{enviando ? "Enviando…" : "Relatar indisponibilidade"}</button></form>}
     <MensagemStatus texto={sucesso} className="text-sm text-green-700" />

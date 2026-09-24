@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { FORMA_PAGAMENTO_LABEL, rotular } from "@/lib/labels";
 import { conferirPagamento } from "@/server/financeiro/acoes";
 import type { listarInformesPagamento } from "@/server/financeiro/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -33,7 +34,7 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
     {!informes.length && <p className="text-sm text-gray-500">Nenhum informe neste atendimento.</p>}
     {informes.map((i) => <article key={i.id} className="space-y-2 rounded-md border p-3 text-sm">
       <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {new Date(i.dataPagamento).toLocaleDateString("pt-BR")}</p>
-      <p>{i.status === "A_CONFERIR" ? "A conferir" : i.status === "CONFIRMADO" ? "Confirmado" : "Rejeitado"} · {i.forma}</p>
+      <p>{i.status === "A_CONFERIR" ? "A conferir" : i.status === "CONFIRMADO" ? "Confirmado" : "Rejeitado"} · {rotular(FORMA_PAGAMENTO_LABEL, i.forma)}</p>
       {i.status === "A_CONFERIR" && i.suspenderLembretesAte && <p className="text-xs text-gray-600">Prazo de conferência: {textoInstanteOperacional(i.suspenderLembretesAte, preferenciaFusoExibicao)}</p>}
       {i.comentario && <p>{i.comentario}</p>}
       {i.comprovanteUrl && <a className="text-brand-700 underline" href={i.comprovanteUrl} target="_blank" rel="noreferrer">{i.comprovanteNome ?? "Abrir comprovante"}</a>}

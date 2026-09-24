@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -59,18 +60,18 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       <label className="block">Cobrança de taxa
         <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
           <option value="">Selecione a cobrança</option>
-          {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {c.moeda} {c.valorNegociado} · {c.vencimento.slice(0, 10)}</option>)}
+          {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.vencimento.slice(0, 10)}</option>)}
         </select>
       </label>
       {atual && <dl className="grid gap-2 rounded bg-gray-50 p-3 sm:grid-cols-2">
-        <div><dt>Valor original / negociado</dt><dd>{atual.moeda} {atual.valorOriginal} / {atual.valorNegociado}</dd></div>
-        <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.moeda} {atual.valorRecebido ?? "0.00"} / {atual.valorLiquidadoCredito}</dd></div>
-        <div><dt>Saldo atual / após acerto</dt><dd>{atual.moeda} {atual.saldo ?? "Não informado"} / {atual.saldoAposAcerto}</dd></div>
-        <div><dt>Valor após acerto</dt><dd>{atual.moeda} {atual.valorNovo}</dd></div>
+        <div><dt>Valor original / negociado</dt><dd>{formatarMoeda(atual.valorOriginal, atual.moeda)} / {formatarMoeda(atual.valorNegociado, atual.moeda)}</dd></div>
+        <div><dt>Recebido / liquidado com crédito</dt><dd>{formatarMoeda(atual.valorRecebido ?? 0, atual.moeda)} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
+        <div><dt>Saldo atual / após acerto</dt><dd>{atual.saldo == null ? "Não informado" : formatarMoeda(atual.saldo, atual.moeda)} / {formatarMoeda(atual.saldoAposAcerto, atual.moeda)}</dd></div>
+        <div><dt>Valor após acerto</dt><dd>{formatarMoeda(atual.valorNovo, atual.moeda)}</dd></div>
         <div><dt>Vencimento atual / proposto</dt><dd>{atual.vencimento.slice(0, 10)} / {atual.vencimentoNovo.slice(0, 10)}</dd></div>
-        <div><dt>Novo crédito apurado</dt><dd>{atual.moeda} {atual.creditoNovo}</dd></div>
+        <div><dt>Novo crédito apurado</dt><dd>{formatarMoeda(atual.creditoNovo, atual.moeda)}</dd></div>
       </dl>}
-      {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {atual.moeda} {atual.pendencia.valor}.</p>}
+      {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {formatarMoeda(atual.pendencia.valor, atual.moeda)}.</p>}
       <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
       <label className="block">Evidência conferida<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
       <button type="button" disabled={!podeEnviar || ocupado} onClick={propor}>{ocupado ? "Registrando proposta…" : "Propor acerto"}</button>

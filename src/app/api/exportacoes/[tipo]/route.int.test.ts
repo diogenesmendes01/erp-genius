@@ -72,7 +72,7 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toContain("no-store");
     expect(res.headers.get("content-type")).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    expect(await linhas(res)).toEqual([["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], ["L-000001", "Carteira autorizada", "PF", "ADULTO", "NOVO", "MORNO", "", ven.nome]]);
+    expect(await linhas(res)).toEqual([["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], ["L-000001", "Carteira autorizada", "PF", "Adulto", "Novo", "Morno", "", ven.nome]]);
     const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "DadosExportados" } });
     expect(evento.autorId).toBe(ven.id);
     expect(evento.payload).toMatchObject({ conjunto: "leads", quantidade: 1, colunas: ["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], filtros: {} });
@@ -112,7 +112,7 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
     const dados = await linhas(res);
     expect(dados).toHaveLength(2);
     expect(dados[0]).toEqual(["Código", "Nome", "Situação", "País", "Turma"]);
-    expect(dados[1]).toEqual(["A-000001", "Ana", aluno.status, cat.pais.nome, "Regular A1"]);
+    expect(dados[1]).toEqual(["A-000001", "Ana", "Ativo", cat.pais.nome, "Regular A1"]);
     expect(JSON.stringify(dados)).not.toMatch(/pessoal@|88887777|segredo|999|outra turma/);
   });
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
-import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
+import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import type { FilaCobranca as FilaCobrancaDados } from "@/server/cobrancas/consultas";
@@ -595,7 +595,7 @@ function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
                   <tr key={i}>
                     <td className="px-4 py-2 font-medium text-gray-700">{c.vendedor}</td>
                     <td className="px-4 py-2 text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2 text-gray-500">{c.status}</td>
+                    <td className="px-4 py-2 text-gray-500">{rotular(STATUS_COMISSAO_LABEL, c.status)}</td>
                     <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
                     <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
                   </tr>

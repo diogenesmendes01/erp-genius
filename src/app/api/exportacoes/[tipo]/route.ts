@@ -8,6 +8,7 @@ import { lerFiltrosAlunos } from "@/server/alunos/filtros";
 import { listarLeads } from "@/server/comercial/consultas";
 import { filtrosDaConsultaLeads, lerFiltrosLeads } from "@/server/comercial/filtros";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { ETAPA_LABEL, SEGMENTO_LABEL, STATUS_ALUNO_LABEL, TEMPERATURA_LABEL, rotular } from "@/lib/labels";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,12 +54,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
       folha.columns = [{ header: "Código", key: "codigo", width: 18 }, { header: "Nome", key: "nome", width: 35 }, { header: "Situação", key: "status", width: 20 }, { header: "País", key: "pais", width: 25 }, { header: "Turma", key: "turma", width: 35 }];
       const dados = await listarAlunos(usuario, filtrosAlunos!);
       assinaturaAlunos = assinaturaDaProjecaoAlunos(dados);
-      for (const aluno of dados) { ids.push(aluno.id); folha.addRow({ codigo: aluno.codigo ?? "", nome: aluno.nome, status: aluno.status, pais: aluno.pais, turma: aluno.turmas.map((t) => t.label).join("; ") }); }
+      for (const aluno of dados) { ids.push(aluno.id); folha.addRow({ codigo: aluno.codigo ?? "", nome: aluno.nome, status: rotular(STATUS_ALUNO_LABEL, aluno.status), pais: aluno.pais, turma: aluno.turmas.map((t) => t.label).join("; ") }); }
     } else {
       // Mesmas colunas da tabela de /leads, exceto o telefone (dado de contato fica fora da planilha).
       folha.columns = [{ header: "Código", key: "codigo", width: 18 }, { header: "Nome", key: "nome", width: 35 }, { header: "Tipo", key: "tipo", width: 12 }, { header: "Segmento", key: "segmento", width: 20 }, { header: "Etapa", key: "etapa", width: 25 }, { header: "Temperatura", key: "temperatura", width: 20 }, { header: "País", key: "pais", width: 25 }, { header: "Dono", key: "dono", width: 30 }];
       const dados = await listarLeads(usuario, filtrosDaConsultaLeads(filtrosLeads!));
-      for (const lead of dados) { ids.push(lead.id); folha.addRow({ codigo: lead.codigo ?? "", nome: lead.nome, tipo: lead.b2b ? "B2B" : "PF", segmento: lead.segmento, etapa: lead.etapa, temperatura: lead.temperatura, pais: lead.pais?.nome ?? "", dono: lead.vendedor?.nome ?? "" }); }
+      for (const lead of dados) { ids.push(lead.id); folha.addRow({ codigo: lead.codigo ?? "", nome: lead.nome, tipo: lead.b2b ? "B2B" : "PF", segmento: rotular(SEGMENTO_LABEL, lead.segmento), etapa: rotular(ETAPA_LABEL, lead.etapa), temperatura: rotular(TEMPERATURA_LABEL, lead.temperatura), pais: lead.pais?.nome ?? "", dono: lead.vendedor?.nome ?? "" }); }
     }
     folha.getRow(1).font = { bold: true };
     folha.views = [{ state: "frozen", ySplit: 1 }];

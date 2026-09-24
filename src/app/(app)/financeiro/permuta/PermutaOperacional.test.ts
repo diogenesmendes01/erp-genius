@@ -170,7 +170,7 @@ it("mostra compensação aplicada com cobrança, valor e evidência da decisão"
   const conjunto = [{ ...acordos[0], confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-09-18T12:00:00Z" }] } }] }] }];
   const arvore = PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: true });
   expect(todos(arvore, "details")).toHaveLength(1);
-  expect(JSON.stringify(todos(arvore, "li"))).toContain("100.00");
+  expect(JSON.stringify(todos(arvore, "li"))).toContain("R$ 100,00");
   expect(JSON.stringify(todos(arvore, "li"))).toContain("C-1");
   expect(todos(arvore, "form")).toHaveLength(2);
 });
@@ -183,7 +183,7 @@ it("exibe somente a aplicação no fuso pessoal, sem converter período ou valor
 
   expect(texto).toContain("31/12/2025, 20:30");
   expect(texto).toContain("horário exibido em America/Costa_Rica; origem UTC");
-  expect(texto).toContain("100.00");
+  expect(texto).toContain("R$ 100,00");
   expect(texto).toContain("2026-09-01");
   expect(texto).toContain("2026-09-30");
 });

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "@/server/matricula/condicoes-encerramento";
 import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerramento-schema";
 import { montarAcertoDesistenciaPreparacao, type AlcanceAcerto, type TipoAcerto } from "./condicoes-encerramento-formulario";
+import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
 type Cobranca = { id: string; codigo: string | null; tipo: string };
@@ -24,7 +25,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
   const [cobrancasAcerto, setCobrancasAcerto] = useState<string[]>([]);
   const rotuloCobranca = (cobrancaId: string) => {
     const cobranca = cobrancas.find((item) => item.id === cobrancaId);
-    return cobranca ? `${cobranca.codigo ?? cobranca.tipo} (${cobranca.tipo})` : cobrancaId;
+    return cobranca ? `${cobranca.codigo ?? rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)} (${rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)})` : cobrancaId;
   };
   const descreverAcerto = (acerto: NonNullable<ReturnType<typeof RegrasEncerramentoSchema.parse>["acertoDesistenciaPreparacao"]>) => {
     const valor = acerto.tipo === "VALOR_FIXO" ? `${acerto.valor} fixo` : `${acerto.percentual}% do valor negociado`;
@@ -32,7 +33,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
     const alcance = aplicacao.unidade === "TOTAL_CONTRATACAO"
       ? `total da contratação: ${aplicacao.rateio.map((item) => `${rotuloCobranca(item.cobrancaId)} ${item.percentual}%`).join(", ")}`
       : aplicacao.alcance.tipo === "TODAS_COBRANCAS_MATRICULA" ? "todas as cobranças da matrícula"
-        : aplicacao.alcance.tipo === "TIPOS_COBRANCA" ? `tipos: ${aplicacao.alcance.tipos.join(", ")}`
+        : aplicacao.alcance.tipo === "TIPOS_COBRANCA" ? `tipos: ${aplicacao.alcance.tipos.map((tipo) => rotular(TIPO_COBRANCA_LABEL, tipo)).join(", ")}`
           : `cobranças: ${aplicacao.alcance.cobrancaIds.map(rotuloCobranca).join(", ")}`;
     return { valor, alcance, clausulaId: acerto.clausulaId };
   };
@@ -102,7 +103,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
         </>}
         <label className="grid gap-1 text-sm">Regra de acerto por desistência antes da ativação<select value={tipoAcerto} onChange={(e) => setTipoAcerto(e.target.value as TipoAcerto)} required={!documentoId} className={campo}><option value="">{documentoId ? "Não informar nesta versão" : "Selecione a regra Q165"}</option><option value="VALOR_FIXO">Valor fixo</option><option value="PERCENTUAL_VALOR_NEGOCIADO">Percentual do valor negociado</option></select></label>
         {tipoAcerto && <><label className="grid gap-1 text-sm">Cláusula do acerto<input name="clausulaAcerto" required className={campo} /></label><label className="grid gap-1 text-sm">{tipoAcerto === "VALOR_FIXO" ? "Valor do acerto" : "Percentual do acerto"}<input name="valorAcerto" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" required className={campo} /></label><label className="grid gap-1 text-sm md:col-span-2">Alcance da regra<select value={alcanceAcerto} onChange={(e) => { setAlcanceAcerto(e.target.value as AlcanceAcerto); setCobrancasAcerto([]); }} className={campo}><option value="TODAS_COBRANCAS_MATRICULA">Todas as cobranças da matrícula</option><option value="TIPOS_COBRANCA">Tipos de cobrança selecionados</option><option value="COBRANCAS_IDENTIFICADAS">Cobranças identificadas</option><option value="TOTAL_CONTRATACAO">Total da contratação com rateio</option></select></label>
-          {alcanceAcerto === "TIPOS_COBRANCA" && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>Tipos alcançados</legend>{["MULTA_ENCERRAMENTO", "MATRICULA", "MENSALIDADE", "HORA_PARTICULAR", "MATERIAL", "CERTIFICADO"].map((tipo) => <label key={tipo}><input type="checkbox" name="tiposAcerto" value={tipo} /> {tipo}</label>)}</fieldset>}
+          {alcanceAcerto === "TIPOS_COBRANCA" && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>Tipos alcançados</legend>{["MULTA_ENCERRAMENTO", "MATRICULA", "MENSALIDADE", "HORA_PARTICULAR", "MATERIAL", "CERTIFICADO"].map((tipo) => <label key={tipo}><input type="checkbox" name="tiposAcerto" value={tipo} /> {rotular(TIPO_COBRANCA_LABEL, tipo)}</label>)}</fieldset>}
           {["COBRANCAS_IDENTIFICADAS", "TOTAL_CONTRATACAO"].includes(alcanceAcerto) && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>{alcanceAcerto === "TOTAL_CONTRATACAO" ? "Cobranças e rateio do total" : "Cobranças alcançadas"}</legend>{cobrancas.map((cobranca) => <div key={cobranca.id} className="flex flex-wrap items-center gap-2"><label><input type="checkbox" name="cobrancasAcerto" value={cobranca.id} checked={cobrancasAcerto.includes(cobranca.id)} onChange={() => setCobrancasAcerto((atuais) => atuais.includes(cobranca.id) ? atuais.filter((id) => id !== cobranca.id) : [...atuais, cobranca.id])} /> {rotuloCobranca(cobranca.id)}</label>{alcanceAcerto === "TOTAL_CONTRATACAO" && cobrancasAcerto.includes(cobranca.id) && <label>Rateio %<input name={`rateio:${cobranca.id}`} inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" required className={campo} /></label>}</div>)}</fieldset>}</>}
         <label className="grid gap-1 text-sm">Motivo e referência da conferência<textarea name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
         <button disabled={ocupado} className={`${campo} self-end`}>Enviar para aprovação administrativa</button>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { proporLiberacaoHorasRemarcacao, decidirLiberacaoHorasRemarcacao } from "@/server/matricula/liberacao-horas";
 import { useOperacao } from "./useOperacao";
+import { formatarMoeda } from "@/lib/dinheiro";
 const estilo = "rounded border p-2 text-sm";
 type Proposta = { id: string; destino: "REMARCACAO" | "CREDITO"; valorCredito: string | null; calculoCredito: unknown; motivo: string; evidenciaEscolhaRemarcacao: string; podeDecidir: boolean; decisao: { aprovada: boolean; motivo: string; credito: { id: string; valorInicial: string; moeda: string } | null } | null };
 export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { alunoId: string; reservaId: string; propostas: Proposta[]; aoSalvar: () => Promise<void> }) {
@@ -28,7 +29,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
       <p>Destino: {p.destino === "CREDITO" ? "Crédito financeiro" : "Remarcação"}</p>
       <p>{p.evidenciaEscolhaRemarcacao}</p><p>{p.motivo}</p><p>{p.decisao ? p.decisao.aprovada ? p.destino === "CREDITO" ? "Horas convertidas em crédito" : "Horas liberadas" : "Proposta rejeitada" : "Aguardando decisão financeira independente"}</p>
       {p.destino === "CREDITO" && <><p>Valor proposto: {p.valorCredito}. Usa o valor pago original e a proporção dos minutos, com arredondamento acumulado da compra.</p><MemoriaCredito calculo={p.calculoCredito} /></>}
-      {p.decisao?.credito && <p>Crédito original apurado: {p.decisao.credito.valorInicial} {p.decisao.credito.moeda}. <Link className="underline" href={`/alunos/${alunoId}/creditos/${p.decisao.credito.id}`}>Consultar saldo e utilização do crédito</Link>. Devolução ainda não disponível.</p>}
+      {p.decisao?.credito && <p>Crédito original apurado: {formatarMoeda(p.decisao.credito.valorInicial, p.decisao.credito.moeda)}. <Link className="underline" href={`/alunos/${alunoId}/creditos/${p.decisao.credito.id}`}>Consultar saldo e utilização do crédito</Link>. Devolução ainda não disponível.</p>}
       {p.decisao && <p>{p.decisao.motivo}</p>}
       {p.podeDecidir && <form onSubmit={e => {
         e.preventDefault(); const f = new FormData(e.currentTarget);

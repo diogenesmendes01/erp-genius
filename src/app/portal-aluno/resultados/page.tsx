@@ -5,6 +5,7 @@ import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechament
 import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ErroAutenticacao } from "@/server/_shared";
+import { rotular } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,9 @@ const pendenciasHabilidade: Record<string, string> = {
   FONTE_APROVEITAMENTO_ALTERADA: "Uma nota aproveitada de vínculo anterior mudou na origem e está em nova conferência.",
 };
 
-const habilidade = (valor: string) => habilidades[valor] ?? "Habilidade em conferência";
+// Sem rótulo: mostra o próprio código (rotular avisa em desenvolvimento) — "Habilidade em conferência"
+// dizia ao ALUNO que havia uma conferência em andamento, o que ninguém registrou (E5).
+const habilidade = (valor: string) => rotular(habilidades, valor);
 
 type FechamentoPortalAluno = Awaited<ReturnType<typeof consultarFechamentosPortalAluno>>[number];
 
@@ -150,7 +153,7 @@ export default async function ResultadosPortalAlunoPage() {
         </header>
         {alocacao.avaliacoes.length > 0 && <section className="space-y-3" aria-label="Avaliações oficializadas"><h4 className="font-medium">Avaliações oficializadas</h4>{alocacao.avaliacoes.map((avaliacao) => <article key={avaliacao.codigo} className="rounded border p-3 text-sm"><p className="font-medium">{avaliacao.titulo} · {avaliacao.etapa === "FINAL" ? "etapa final" : "etapa intermediária"}</p><dl className="mt-2 grid gap-2">{avaliacao.notas.map((nota) => <div key={nota.habilidade}><dt className="text-gray-600">{habilidade(nota.habilidade)}</dt><dd>Nota: {numero(nota.nota)}</dd>{nota.comentarioAluno && <dd className="mt-1 whitespace-pre-wrap text-gray-700">Comentário: {nota.comentarioAluno}</dd>}</div>)}</dl></article>)}</section>}
         {alocacao.recuperacoes.length > 0 && <section className="space-y-3" aria-label="Recuperações oficializadas"><h4 className="font-medium">Recuperações oficializadas</h4>{alocacao.recuperacoes.map((recuperacao, indice) => <article key={`${recuperacao.habilidade}-${indice}`} className="rounded border p-3 text-sm"><p className="font-medium">{habilidade(recuperacao.habilidade)}</p><p>Nota: {numero(recuperacao.nota)}</p>{recuperacao.comentarioAluno && <p className="mt-1 whitespace-pre-wrap text-gray-700">Comentário: {recuperacao.comentarioAluno}</p>}</article>)}</section>}
-        {alocacao.consolidado && <section className="space-y-3" aria-label="Acompanhamento atual das habilidades"><h4 className="font-medium">Acompanhamento atual das habilidades</h4><p className="text-sm text-gray-700">Referência geral atual: {razao(alocacao.consolidado.geral)}. Mínimo de referência: {numero(alocacao.consolidado.minimoGeral)}.</p><div className="grid gap-2 sm:grid-cols-2">{alocacao.consolidado.habilidades.map((resultadoHabilidade) => <article key={resultadoHabilidade.habilidade} className="rounded border p-3 text-sm"><p className="font-medium">{habilidade(resultadoHabilidade.habilidade)}</p><p>Referência parcial: {razao(resultadoHabilidade.resultado)}</p><p>Mínimo de referência: {numero(resultadoHabilidade.minimo)}</p>{resultadoHabilidade.pendencias.length > 0 && <ul className="mt-1 list-disc space-y-1 pl-5 text-amber-800">{resultadoHabilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendenciasHabilidade[pendencia] ?? "Há uma pendência de resultado em conferência."}</li>)}</ul>}</article>)}</div></section>}
+        {alocacao.consolidado && <section className="space-y-3" aria-label="Acompanhamento atual das habilidades"><h4 className="font-medium">Acompanhamento atual das habilidades</h4><p className="text-sm text-gray-700">Referência geral atual: {razao(alocacao.consolidado.geral)}. Mínimo de referência: {numero(alocacao.consolidado.minimoGeral)}.</p><div className="grid gap-2 sm:grid-cols-2">{alocacao.consolidado.habilidades.map((resultadoHabilidade) => <article key={resultadoHabilidade.habilidade} className="rounded border p-3 text-sm"><p className="font-medium">{habilidade(resultadoHabilidade.habilidade)}</p><p>Referência parcial: {razao(resultadoHabilidade.resultado)}</p><p>Mínimo de referência: {numero(resultadoHabilidade.minimo)}</p>{resultadoHabilidade.pendencias.length > 0 && <ul className="mt-1 list-disc space-y-1 pl-5 text-amber-800">{resultadoHabilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendenciasHabilidade[pendencia] ?? "Há uma pendência de resultado."}</li>)}</ul>}</article>)}</div></section>}
         {alocacao.frequencia && <section className="space-y-2" aria-label="Frequência consolidada"><h4 className="font-medium">Frequência consolidada</h4><p className="text-sm">Aulas consideradas: {alocacao.frequencia.base}. Presenças: {alocacao.frequencia.presencas} · regularizadas: {alocacao.frequencia.regularizadas} · faltas: {alocacao.frequencia.faltas} · impedimentos: {alocacao.frequencia.impedimentos}.</p><p className="text-sm">Percentual de referência: {razao(alocacao.frequencia.percentual)}{alocacao.frequencia.percentual ? "%" : ""}. Mínimo de referência: {numero(alocacao.frequencia.minimoPercentual)}%.</p>{alocacao.frequencia.pendencias > 0 && <p className="text-sm text-amber-800">Há {alocacao.frequencia.pendencias} pendência(s) de frequência em conferência.</p>}</section>}
         <Pendencias pendencias={alocacao.pendencias} />
       </article>)}
