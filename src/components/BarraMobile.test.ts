@@ -22,6 +22,16 @@ describe("BarraMobile (shell abaixo de md)", () => {
     expect(html).toContain('aria-label="Sair"');
   });
 
+  it("todo controle da barra tem alvo de toque ≥ 40px (min-h-10 e min-w-10)", () => {
+    const html = render();
+    const cabecalho = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
+    const controles = [...cabecalho.matchAll(/<(?:button|a)\b[^>]*>/g)].map((m) => m[0]);
+    expect(controles).toHaveLength(4); // menu, tema, fuso, sair
+    for (const c of controles) expect(c).toMatch(/class="(?=[^"]*\bmin-h-10\b)(?=[^"]*\bmin-w-10\b)[^"]*"/);
+    // Ícones da barra em 24px (h-6), inclusive o do tema, que na Sidebar é menor.
+    expect(cabecalho).not.toMatch(/tabler-icon[^"]*\bh-[45]\b/);
+  });
+
   it("título da área = item ativo da navegação (prefixo mais longo)", () => {
     mocks.pathname.mockReturnValueOnce("/alunos/123/financeiro");
     expect(render()).toMatch(/<span[^>]*\btruncate\b[^>]*>Alunos<\/span>/);
