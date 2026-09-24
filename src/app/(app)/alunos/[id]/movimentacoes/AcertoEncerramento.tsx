@@ -11,6 +11,7 @@ import { CompensacoesEncerramento, CompensacoesEncerramentoSchema } from "./Comp
 import { useOperacao } from "./useOperacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { preverComponenteMensalEncerramento } from "@/server/matricula/encerramento-previa";
 import { consultarRascunhoAcertoEncerramento, salvarRascunhoAcertoEncerramento } from "@/server/matricula/encerramento-rascunho";
@@ -138,7 +139,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
         {c.pendencias.map((p) => <p className="text-amber-800" key={p}>{p}</p>)}
         {c.condicoes && <p>Condições versão {c.condicoes.versao}: dia do encerramento {c.condicoes.regras.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"}; desconto {c.condicoes.regras.metodoDesconto === "ANTES_DO_PROPORCIONAL" ? "antes" : "depois"} do proporcional. {c.condicoes.regras.condicoesDescontos}</p>}
         {c.cobrancas.map((p) => <div key={p.id} className="space-y-2 border-t pt-2">
-          <p>{p.tipo === "MENSALIDADE" ? "Mensalidade" : p.tipo === "HORA_PARTICULAR" ? "Particulares por hora" : "Outra cobrança"} {p.id}: referência {formatarMoeda(p.valorOriginal, c.moeda)}, negociado {formatarMoeda(p.valorNegociado, c.moeda)}, recebido em dinheiro {p.valorRecebido != null ? formatarMoeda(p.valorRecebido, c.moeda) : "não registrado"}, liquidado por crédito {formatarMoeda(p.valorLiquidadoCredito ?? "0", c.moeda)}.
+          <p>{rotular(TIPO_COBRANCA_LABEL, p.tipo)} {p.id}: referência {formatarMoeda(p.valorOriginal, c.moeda)}, negociado {formatarMoeda(p.valorNegociado, c.moeda)}, recebido em dinheiro {p.valorRecebido != null ? formatarMoeda(p.valorRecebido, c.moeda) : "não registrado"}, liquidado por crédito {formatarMoeda(p.valorLiquidadoCredito ?? "0", c.moeda)}.
             {p.tipo === "MENSALIDADE" && <> Cobertura: {p.coberturaInicio ?? "pendente"} a {p.coberturaFim ?? "pendente"}.</>}</p>
           {p.origemFaturamentoHoras && <p>Origem: fechamento aprovado com {p.origemFaturamentoHoras.itens.length} encontro(s) faturado(s). O valor original permanece no histórico; qualquer redução proposta depende da aprovação do acerto.</p>}
           {p.conferencias.map((msg) => <p key={msg} className="text-amber-800">{msg}</p>)}
