@@ -14,7 +14,7 @@ vi.mock("react", async (original) => {
 import { EmpresasCliente } from "./EmpresasCliente";
 import { EMPRESAS_POR_PAGINA, lerFiltrosEmpresas } from "@/server/empresas/filtros";
 
-const empresa = (i: number) => ({ id: `e${i}`, codigo: `E-${i}`, nome: `Empresa ${i}`, pais: null, ativo: true, colaboradores: 0, faturasAbertas: 0 });
+const empresa = (i: number) => ({ id: `e${i}`, codigo: `E-${i}`, nome: `Empresa ${i}`, pais: null, ativo: true, colaboradores: 0, faturasAReceber: 0 });
 const paises = [{ id: "p1", nome: "Costa Rica" }];
 const render = (props: Partial<Parameters<typeof EmpresasCliente>[0]>) =>
   renderToStaticMarkup(createElement(EmpresasCliente, { empresas: [], total: 0, totalBase: 0, filtros: lerFiltrosEmpresas({}), paises, ...props }));
