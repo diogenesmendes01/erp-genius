@@ -1,5 +1,6 @@
 export const metadata = {
-  title: "Área do aluno | Genius",
+  // absolute: o portal do aluno não herda o sufixo " · ERP Genius" do template raiz.
+  title: { absolute: "Área do aluno | Genius" },
   robots: { index: false, follow: false },
 };
 
