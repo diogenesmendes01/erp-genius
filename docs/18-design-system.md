@@ -87,3 +87,7 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
   paleta padrão do Tailwind, que **não inverte** no dark. Dobre pro equivalente semântico:
   `rose`→`red`, `emerald`→`green`, `sky`→`blue`, `slate`→`gray`. Se nenhum couber, é sinal de
   precisar um token novo (como `--ai-*`) — não invente shade solta.
+- `src/app/paleta.test.ts` trava as duas regras acima em `src/app`, `src/components` e `src/lib`:
+  falha com cor fora do mapa, shade não listada (inclusive sob `dark:`/`hover:`), sombra
+  (`shadow-*`, `drop-shadow-*`, `shadow-[…]`) ou cor arbitrária (`bg-[#…]`, `rgb()`, `hsl()`). Ele lê o mapa direto do `tailwind.config.ts` — mapear uma shade
+  nova no config já a libera.
