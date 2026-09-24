@@ -129,6 +129,27 @@ describe("rótulos e moeda de domínio", () => {
     expect(ZERO_FALSO.test("c.saldo != null ? formatarMoeda(c.saldo, c.moeda) : \"—\"")).toBe(false);
   });
 
+  it("pontos migrados para o mapa único continuam nele (nem ternário local, nem acesso direto ao mapa sem rotular)", () => {
+    // Um ternário/mapa local que reescreve o rótulo não imprime o enum cru — ENUM_CRU não o vê.
+    // Estes pontos foram migrados nesta etapa e ficam presos ao rotular(<MAPA>, …).
+    const MIGRADOS: [arquivo: string, trecho: string][] = [
+      ["src/app/(app)/alunos/[id]/movimentacoes/AcertoEncerramento.tsx", "rotular(TIPO_COBRANCA_LABEL, p.tipo)"],
+      ["src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx", "rotular(STATUS_COBRANCA_LABEL, item.status)"],
+      ["src/app/(app)/financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx", "rotular(STATUS_COBRANCA_LABEL, i.cobranca.status)"],
+      ["src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx", "rotular(STATUS_COMISSAO_LABEL, c.status)"],
+      ["src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx", "rotular(STATUS_COBRANCA_LABEL, foto.data.cobranca.status)"],
+      ["src/app/(app)/empresas/[id]/FichaEmpresa.tsx", "rotular(STATUS_MATRICULA_LABEL, c.statusMatricula)"],
+      ["src/app/portal-aluno/reposicoes/[id]/relatar-indisponibilidade.tsx", "rotular(SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL, relato.situacao)"],
+      ["src/app/(app)/secretaria/SecretariaPainel.tsx", "rotular(STATUS_MATRICULA_LABEL, m.status)"],
+      ["src/app/(app)/financeiro/recebimentos/page.tsx", "rotular(FORMA_PAGAMENTO_LABEL, r.forma)"],
+    ];
+    const faltando = MIGRADOS.filter(([arquivo, trecho]) => !telas.find((t) => t.arquivo === arquivo)?.conteudo.includes(trecho));
+    expect(faltando).toEqual([]);
+    // O rótulo antigo e divergente do acerto não volta ("Particulares por hora", "Outra cobrança").
+    const acerto = telas.find((t) => t.arquivo.endsWith("movimentacoes/AcertoEncerramento.tsx"))!.conteudo;
+    expect(acerto).not.toMatch(/Particulares por hora|"Outra cobrança"/);
+  });
+
   it("rótulo ausente não vira estado inventado (`?? \"… em conferência …\"`, também com || e outras aspas)", () => {
     const ofensores = telas.flatMap(({ arquivo, conteudo }) => linhasCom(conteudo, INVENTA_ESTADO).map((l) => `${arquivo}:${l}`));
     expect(ofensores).toEqual([]);
