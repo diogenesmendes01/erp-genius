@@ -5,6 +5,8 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
+import { ALUNOS_POR_PAGINA, whereFiltrosAlunos, type FiltrosAlunos } from "./filtros";
+import { rotuloTurmaAcademica } from "@/server/academico/regras";
 import { carregarOfertasAgendaDestinoTx } from "@/server/academico/destino-agenda";
 import {
   carregarTrilhasVencimentoCivil,
@@ -166,11 +168,51 @@ async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
   };
 }
 
-export async function listarAlunos(usuario?: UsuarioSessao) {
+/** Escopo do usuário E filtros da URL — os filtros só estreitam, nunca alargam o que o papel vê. */
+export function whereListaAlunos(usuario: UsuarioSessao, filtros?: FiltrosAlunos): Prisma.AlunoWhereInput {
+  const escopo = escopoAlunos(usuario);
+  if (!filtros) return escopo;
+  return { AND: [escopo, whereFiltrosAlunos(filtros, temVisaoAmpla(usuario) ? undefined : escopoTurmasDocente(usuario.id))] };
+}
+
+/**
+ * Lista da tela /alunos (E4): filtros aplicados no servidor e uma página de ALUNOS_POR_PAGINA.
+ * `total` (com filtros) e `totalBase` (só o escopo) alimentam o "N de M alunos" e o estado vazio
+ * duplo (base vazia × filtro sem resultado).
+ */
+export async function listarAlunosPagina(usuario: UsuarioSessao | undefined, filtros: FiltrosAlunos) {
+  if (!usuario) return { itens: [], total: 0, totalBase: 0 };
+  const [itens, total, totalBase] = await Promise.all([
+    listarAlunos(usuario, filtros, { skip: (filtros.pagina - 1) * ALUNOS_POR_PAGINA, take: ALUNOS_POR_PAGINA }),
+    prisma.aluno.count({ where: whereListaAlunos(usuario, filtros) }),
+    prisma.aluno.count({ where: escopoAlunos(usuario) }),
+  ]);
+  return { itens, total, totalBase };
+}
+
+/** Opções dos filtros: países e turmas que o usuário enxerga — não mais tiradas da página carregada. */
+export async function opcoesFiltroAlunos(usuario?: UsuarioSessao) {
+  if (!usuario) return { paises: [], turmas: [] };
+  const [paises, turmas] = await Promise.all([
+    prisma.pais.findMany({ where: { alunos: { some: escopoAlunos(usuario) } }, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+    prisma.turma.findMany({
+      where: temVisaoAmpla(usuario) ? { alocacoes: { some: { ativa: true } } } : escopoTurmasDocente(usuario.id),
+      orderBy: [{ modalidade: { nome: "asc" } }, { nivel: { codigo: "asc" } }, { codigo: "asc" }],
+      select: { id: true, codigo: true, nome: true, modalidade: { select: { nome: true } }, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } } },
+    }),
+  ]);
+  // Rótulo com código e nome da turma: "Inglês B1" sozinho repetia entre turmas diferentes, e quem
+  // escolhia uma via só metade dos alunos sem saber por quê.
+  return { paises, turmas: turmas.map((t) => ({ id: t.id, label: rotuloTurmaAcademica(t) })) };
+}
+
+export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlunos, pagina?: { skip: number; take: number }) {
   if (!usuario) return [];
+  const verFinanceiro = podeVerFinanceiroAluno(usuario);
   const alunos = await prisma.aluno.findMany({
-    where: escopoAlunos(usuario),
-    orderBy: [{ primeiroNome: "asc" }, { sobrenome: "asc" }],
+    where: whereListaAlunos(usuario, filtros),
+    orderBy: [{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }],
+    ...(pagina ?? {}),
     include: {
       pais: { select: { nome: true } },
       alocacoes: {
@@ -178,7 +220,10 @@ export async function listarAlunos(usuario?: UsuarioSessao) {
         orderBy: { id: "asc" },
         include: { turma: { include: { modalidade: true, nivel: true, vinculosDocentes: true } } },
       },
+      // Cobranças só para quem vê financeiro: antes vinham para todo papel (inclusive Professor) e
+      // eram descartadas — agora o filtro impossível evita a leitura.
       matriculas: {
+        where: verFinanceiro ? {} : { id: { in: [] } },
         select: { cobrancas: { select: { status: true, vencimento: true, valorNegociado: true, saldo: true, valorRecebido: true, moeda: true } } },
       },
     },
@@ -195,7 +240,7 @@ export async function listarAlunos(usuario?: UsuarioSessao) {
       pais: a.pais.nome,
       criadoEm: a.criadoEm.toISOString(),
       turmas: alocacoes.map(({ turma }) => ({ id: turma.id, label: `${turma.modalidade.nome} ${turma.nivel.codigo}` })),
-      financeiro: podeVerFinanceiroAluno(usuario) ? resumoFinanceiro(cobrancas) : null,
+      financeiro: verFinanceiro ? resumoFinanceiro(cobrancas) : null,
     };
   });
 }
