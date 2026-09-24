@@ -115,8 +115,8 @@ export function PrecosPainel({
         <div className="mb-4 rounded-lg border border-gray-200 bg-surface p-5">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-600">País</label>
-              <select value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>
+              <label htmlFor="precos-pais" className="mb-1 block text-xs text-gray-600">País</label>
+              <select id="precos-pais" value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>
                 {paises.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nome}
@@ -125,8 +125,8 @@ export function PrecosPainel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Produto</label>
-              <select value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"}>
+              <label htmlFor="precos-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
+              <select id="precos-produto" value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"}>
                 {produtos.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label}
@@ -135,8 +135,9 @@ export function PrecosPainel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Tipo de cobrança</label>
+              <label htmlFor="precos-tipo-cobranca" className="mb-1 block text-xs text-gray-600">Tipo de cobrança</label>
               <select
+                id="precos-tipo-cobranca"
                 value={tipoCobranca}
                 onChange={(e) => setTipo(e.target.value as TipoCobranca)}
                 className={inputCls + " w-full"}
@@ -149,8 +150,9 @@ export function PrecosPainel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
+              <label htmlFor="precos-valor" className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
               <CampoMoeda
+                id="precos-valor"
                 moeda={moedaPais}
                 value={valor}
                 onChange={setValor}
@@ -158,8 +160,8 @@ export function PrecosPainel({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Versão do estudo (opcional)</label>
-              <input value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
+              <label htmlFor="precos-versao-estudo" className="mb-1 block text-xs text-gray-600">Versão do estudo (opcional)</label>
+              <input id="precos-versao-estudo" value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
             </div>
           </div>
           <div className="mt-4 flex gap-2">

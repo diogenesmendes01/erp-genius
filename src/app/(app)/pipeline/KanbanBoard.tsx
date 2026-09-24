@@ -212,6 +212,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
       <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
         <span>Perdidos:</span>
         <select
+          aria-label="Período dos perdidos exibidos"
           value={periodoPerdido}
           onChange={(e) => setPeriodoPerdido(Number(e.target.value))}
           className="rounded border border-gray-300 px-2 py-1 outline-none focus:border-brand-500"
@@ -240,6 +241,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
           <div className="w-full max-w-md rounded-lg bg-surface p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-3 text-sm font-medium">Marcar perdido — {perda.nome}</h3>
             <select
+              aria-label="Motivo da perda"
               className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value as MotivoPerda)}
@@ -250,6 +252,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
             </select>
             <input
               className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              aria-label="Observação da perda"
               placeholder="Observação (obrigatória se 'Outro')"
               value={obs}
               onChange={(e) => setObs(e.target.value)}

@@ -129,6 +129,7 @@ export function InboxCliente({
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
+              aria-label="Buscar conversas por contato"
               placeholder="Buscar contato…"
               className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
             />
@@ -403,6 +404,7 @@ function Thread({
                 type="date"
                 value={promessaData}
                 onChange={(e) => setPromessaData(e.target.value)}
+                aria-label="Data da promessa de pagamento"
                 className="rounded-md border border-gray-300 px-2 py-0.5 text-xs outline-none focus:border-brand-500"
               />
               <button
@@ -650,6 +652,7 @@ function Composer({
         <input
           ref={arquivoRef}
           type="file"
+          aria-label="Anexar arquivo"
           accept="application/pdf,image/jpeg,image/png,image/webp,audio/ogg,audio/mpeg,audio/mp4,video/mp4"
           className="hidden"
           onChange={(e) => {
@@ -689,6 +692,7 @@ function Composer({
             }
           }}
           rows={1}
+          aria-label="Mensagem"
           placeholder={gravando ? "Gravando áudio…" : "Escreva uma mensagem (Enter envia)"}
           className="max-h-32 flex-1 resize-y rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
           disabled={gravando}
@@ -759,6 +763,7 @@ function VincularPainel({
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          aria-label="Buscar aluno, responsável ou lead para vincular"
           placeholder="Buscar aluno, responsável ou lead pelo nome…"
           className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
@@ -905,6 +910,7 @@ function CockpitLead({
               onChange={(e) => setTexto(e.target.value)}
               // Feedback antes do round-trip: o NotaInternaSchema limita em 2000 (review PR #58 P2).
               maxLength={2000}
+              aria-label="Nova nota interna"
               placeholder="Ex.: prefere aula à noite, decide com a esposa até sexta."
               className="flex-1 resize-none rounded-md border border-amber-200 bg-surface px-2 py-1 outline-none focus:border-amber-600"
             />

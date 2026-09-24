@@ -339,6 +339,7 @@ export function FilaCobranca({
                   {podeOperar && elegivelLote(item) && (
                     <input
                       type="checkbox"
+                      aria-label={`Selecionar ${item.aluno.nome} para o lote`}
                       className="h-3.5 w-3.5 accent-brand-600"
                       checked={selecao.has(item.id)}
                       onClick={(e) => e.stopPropagation()}
@@ -559,6 +560,7 @@ export function DetalheCobranca({
               </div>
             )}
             <textarea
+              aria-label="Mensagem de cobrança"
               className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:border-brand-500"
               rows={3}
               value={texto}
@@ -641,6 +643,7 @@ export function DetalheCobranca({
             <div className="mt-3 flex items-center gap-2">
               <input
                 type="date"
+                aria-label="Data da promessa de pagamento"
                 className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
                 value={promessaData}
                 onChange={(e) => setPromessaData(e.target.value)}

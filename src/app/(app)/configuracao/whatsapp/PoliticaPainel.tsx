@@ -258,6 +258,7 @@ export function PoliticaPainel({
                         type="number"
                         min={-30}
                         max={90}
+                        aria-label={`${d.passo} — offset (dias)`}
                         className={inputCls + " w-20"}
                         value={d.offsetDias}
                         onChange={(e) => mudarDegrau(d.passo, { offsetDias: Number(e.target.value) })}
@@ -268,6 +269,7 @@ export function PoliticaPainel({
                         <span className="text-xs text-gray-500">manual (lei: aprovação humana sempre)</span>
                       ) : (
                         <select
+                          aria-label={`${d.passo} — modo`}
                           className={inputCls}
                           value={d.modo}
                           onChange={(e) => mudarDegrau(d.passo, { modo: e.target.value })}
@@ -284,6 +286,7 @@ export function PoliticaPainel({
                       ) : (
                         <span className="flex items-center gap-1.5">
                           <select
+                            aria-label={`${d.passo} — template`}
                             className={inputCls + " max-w-48"}
                             value={d.templateId ?? ""}
                             onChange={(e) => mudarDegrau(d.passo, { templateId: e.target.value || null })}
@@ -306,6 +309,7 @@ export function PoliticaPainel({
                     <td className="py-2">
                       <input
                         type="checkbox"
+                        aria-label={`${d.passo} — ativo`}
                         className="h-3.5 w-3.5 accent-brand-600"
                         checked={d.ativo}
                         onChange={(e) => mudarDegrau(d.passo, { ativo: e.target.checked })}
