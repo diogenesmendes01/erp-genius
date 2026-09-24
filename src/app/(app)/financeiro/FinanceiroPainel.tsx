@@ -408,8 +408,9 @@ function VisaoGeral({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-500">Consolidar em</span>
+        <span id="financeiro-consolidar-rotulo" className="text-sm text-gray-500">Consolidar em</span>
         <select
+          aria-labelledby="financeiro-consolidar-rotulo"
           value={moedaCons}
           onChange={(e) => onMoeda(e.target.value)}
           className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
@@ -516,6 +517,7 @@ export function CambioPainel({
                     type="number"
                     step="0.0001"
                     min="0"
+                    aria-label={`Cotação: 1 US$ em ${c.moeda}`}
                     value={vals[c.moeda] ?? ""}
                     onChange={(e) => setVals((v) => ({ ...v, [c.moeda]: e.target.value }))}
                     placeholder="ex.: 512"

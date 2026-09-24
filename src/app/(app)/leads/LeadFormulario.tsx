@@ -85,20 +85,33 @@ export function LeadFormulario({
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <div className="col-span-2 md:col-span-1">
-          <label className="mb-1 block text-xs text-gray-600">Nome</label>
-          <input {...register("nome")} className={inputCls} />
-          {errors.nome && <p className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
+          <label htmlFor="lead-nome" className="mb-1 block text-xs text-gray-600">Nome</label>
+          <input
+            id="lead-nome"
+            {...register("nome")}
+            aria-invalid={errors.nome ? true : undefined}
+            aria-describedby={errors.nome ? "lead-nome-erro" : undefined}
+            className={inputCls}
+          />
+          {errors.nome && <p id="lead-nome-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">WhatsApp/telefone</label>
-          <input {...register("telefoneE164")} placeholder="+5511999998888" className={inputCls} />
+          <label htmlFor="lead-telefone" className="mb-1 block text-xs text-gray-600">WhatsApp/telefone</label>
+          <input
+            id="lead-telefone"
+            {...register("telefoneE164")}
+            aria-invalid={errors.telefoneE164 ? true : undefined}
+            aria-describedby={errors.telefoneE164 ? "lead-telefone-erro" : undefined}
+            placeholder="+5511999998888"
+            className={inputCls}
+          />
           {errors.telefoneE164 && (
-            <p className="mt-1 text-xs text-red-600">{errors.telefoneE164.message}</p>
+            <p id="lead-telefone-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.telefoneE164.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">País</label>
-          <select {...register("paisId")} className={inputCls}>
+          <label htmlFor="lead-pais" className="mb-1 block text-xs text-gray-600">País</label>
+          <select id="lead-pais" {...register("paisId")} className={inputCls}>
             <option value="">—</option>
             {paises.map((p) => (
               <option key={p.id} value={p.id}>
@@ -109,8 +122,8 @@ export function LeadFormulario({
         </div>
         {podeAtribuir && (
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Dono (vendedor)</label>
-            <select {...register("vendedorDonoId")} className={inputCls}>
+            <label htmlFor="lead-vendedor-dono" className="mb-1 block text-xs text-gray-600">Dono (vendedor)</label>
+            <select id="lead-vendedor-dono" {...register("vendedorDonoId")} className={inputCls}>
               <option value="">{lead ? "—" : "Atribuir depois"}</option>
               {vendedores.map((v) => (
                 <option key={v.id} value={v.id}>
@@ -121,8 +134,8 @@ export function LeadFormulario({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Segmento</label>
-          <select {...register("segmento")} className={inputCls}>
+          <label htmlFor="lead-segmento" className="mb-1 block text-xs text-gray-600">Segmento</label>
+          <select id="lead-segmento" {...register("segmento")} className={inputCls}>
             {Object.values(Segmento).map((s) => (
               <option key={s} value={s}>
                 {SEGMENTO_LABEL[s]}
@@ -131,8 +144,8 @@ export function LeadFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Temperatura</label>
-          <select {...register("temperatura")} className={inputCls}>
+          <label htmlFor="lead-temperatura" className="mb-1 block text-xs text-gray-600">Temperatura</label>
+          <select id="lead-temperatura" {...register("temperatura")} className={inputCls}>
             {Object.values(Temperatura).map((t) => (
               <option key={t} value={t}>
                 {TEMPERATURA_LABEL[t]}
@@ -141,34 +154,34 @@ export function LeadFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Campanha (origem)</label>
-          <input {...register("origemCampanha")} className={inputCls} />
+          <label htmlFor="lead-origem-campanha" className="mb-1 block text-xs text-gray-600">Campanha (origem)</label>
+          <input id="lead-origem-campanha" {...register("origemCampanha")} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Anúncio (origem)</label>
-          <input {...register("origemAnuncio")} className={inputCls} />
+          <label htmlFor="lead-origem-anuncio" className="mb-1 block text-xs text-gray-600">Anúncio (origem)</label>
+          <input id="lead-origem-anuncio" {...register("origemAnuncio")} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Matrícula prevista</label>
+          <label htmlFor="lead-valor-previsto" className="mb-1 block text-xs text-gray-600">Matrícula prevista</label>
           <Controller
             control={control}
             name="valorPrevisto"
             render={({ field }) => (
-              <CampoMoeda value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+              <CampoMoeda id="lead-valor-previsto" value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
             )}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Plano previsto</label>
-          <input {...register("planoPrevisto")} placeholder="Ex.: Regular A1" className={inputCls} />
+          <label htmlFor="lead-plano-previsto" className="mb-1 block text-xs text-gray-600">Plano previsto</label>
+          <input id="lead-plano-previsto" {...register("planoPrevisto")} placeholder="Ex.: Regular A1" className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Comissão prevista</label>
+          <label htmlFor="lead-comissao-prevista" className="mb-1 block text-xs text-gray-600">Comissão prevista</label>
           <Controller
             control={control}
             name="comissaoPrevista"
             render={({ field }) => (
-              <CampoMoeda value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+              <CampoMoeda id="lead-comissao-prevista" value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
             )}
           />
         </div>

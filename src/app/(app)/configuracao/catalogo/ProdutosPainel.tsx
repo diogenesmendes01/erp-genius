@@ -73,14 +73,14 @@ export function ProdutosPainel({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
+        <select aria-label="Idioma do novo produto" value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
           {idiomas.map((i) => (
             <option key={i.id} value={i.id}>
               {i.nome}
             </option>
           ))}
         </select>
-        <select value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls}>
+        <select aria-label="Modalidade do novo produto" value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls}>
           {modalidades.map((m) => (
             <option key={m.id} value={m.id}>
               {m.nome}

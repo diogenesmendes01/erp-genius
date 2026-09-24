@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { FormaPagamento } from "@prisma/client";
 import { FORMA_PAGAMENTO_LABEL } from "@/lib/labels";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
@@ -59,6 +59,7 @@ export function PagamentoModal({
   const [comentario, setComentario] = useState("");
   const [permitirExcedente, setPermitirExcedente] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const campoId = useId();
 
   // diff compara o pagamento atual com o SALDO restante (coerente com acumularPagamento no backend).
   // parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente.
@@ -110,9 +111,9 @@ export function PagamentoModal({
         {jaRecebido > 0 && (
           <p className="text-xs text-gray-600">Já recebido: {formatarMoeda(jaRecebido, moeda)}</p>
         )}
-        <label className="mb-1 block text-xs font-medium text-gray-600">
+        <p className="mb-1 block text-xs font-medium text-gray-600">
           Saldo restante: {formatarMoeda(saldo, moeda)}
-        </label>
+        </p>
         <CampoMoeda value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
         {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
         {diff < 0 && (
@@ -121,15 +122,15 @@ export function PagamentoModal({
             Acima do negociado — registrar excedente de {formatarMoeda(-diff, moeda)} como crédito.
           </label>
         )}
-        <label className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
-        <select className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
+        <label htmlFor={`${campoId}-forma`} className="mb-1 mt-2 block text-xs text-gray-600">Forma</label>
+        <select id={`${campoId}-forma`} className={inputCls + " mb-2"} value={forma} onChange={(e) => setForma(e.target.value as FormaPagamento)}>
           {Object.values(FormaPagamento).map((f) => <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>)}
         </select>
-        <label className="mb-1 block text-xs text-gray-600">Data (opcional)</label>
-        <input type="date" className={inputCls + " mb-2"} value={data} onChange={(e) => setData(e.target.value)} />
-        <label className="mb-1 block text-xs text-gray-600">
+        <label htmlFor={`${campoId}-data`} className="mb-1 block text-xs text-gray-600">Data (opcional)</label>
+        <input id={`${campoId}-data`} type="date" className={inputCls + " mb-2"} value={data} onChange={(e) => setData(e.target.value)} />
+        <p className="mb-1 block text-xs text-gray-600">
           Comprovante (PDF/JPG/PNG){exigeComprovante && <span className="text-red-600"> *</span>}
-        </label>
+        </p>
         <div className="mb-2">
           <UploadArquivo
             label="Anexar comprovante"
@@ -146,8 +147,8 @@ export function PagamentoModal({
             </p>
           )}
         </div>
-        <label className="mb-1 block text-xs text-gray-600">{somenteInformar ? "Comentário" : "Evidência do recebimento e destinação *"}</label>
-        <input className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
+        <label htmlFor={`${campoId}-comentario`} className="mb-1 block text-xs text-gray-600">{somenteInformar ? "Comentário" : "Evidência do recebimento e destinação *"}</label>
+        <input id={`${campoId}-comentario`} aria-required={!somenteInformar} className={inputCls + " mb-4"} value={comentario} onChange={(e) => setComentario(e.target.value)} />
         <div className="flex gap-2">
           <button className={btnPri} disabled={salvando || faltaComprovante || faltaEvidencia} onClick={salvar}>
             {salvando ? "Salvando…" : somenteInformar ? "Enviar para conferência" : "Registrar recebimento"}

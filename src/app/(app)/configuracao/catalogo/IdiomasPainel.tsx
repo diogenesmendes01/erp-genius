@@ -93,6 +93,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
+          aria-label="Nome do novo idioma"
           placeholder="Novo idioma (ex.: Inglês)"
           className={inputCls + " w-64"}
           onKeyDown={(e) => e.key === "Enter" && adicionar()}

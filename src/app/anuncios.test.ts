@@ -78,6 +78,10 @@ describe("anúncio do resultado de ações", () => {
     expect(renderizacoesSemRegiao(/[a-zA-Z]*(?:erro|Erro|error|Error|falha|Falha)[a-zA-Z]*/)).toEqual([]);
   });
 
+  it("erro de campo do react-hook-form (`errors.campo`, `formState.errors.campo`) tem role/aria-live", () => {
+    expect(renderizacoesSemRegiao(/(?:\w+\.)*errors\.[\w?.]+/)).toEqual([]);
+  });
+
   it("mensagem de sucesso/aviso não é um <p> condicional mudo", () => {
     expect(renderizacoesSemRegiao(/nota|msg|sucesso|aviso|mensagemSucesso/)).toEqual([]);
   });
