@@ -73,8 +73,8 @@ export function PaisFormulario({
         {pais ? `Editar país — ${pais.nome}` : "Novo país"}
       </h2>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <div className="col-span-2 md:col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
+        <div className="sm:col-span-2 md:col-span-1">
           <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-nome">Nome</label>
           <input id="pais-nome" {...register("nome")} className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "pais-nome-erro" : undefined} />
           {errors.nome && <p id="pais-nome-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}

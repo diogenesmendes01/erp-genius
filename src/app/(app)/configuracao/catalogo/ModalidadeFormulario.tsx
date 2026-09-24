@@ -74,7 +74,7 @@ export function ModalidadeFormulario({
         {modalidade ? `Editar modalidade — ${modalidade.nome}` : "Nova modalidade"}
       </h3>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-nome">Nome</label>
           <input id="modalidade-nome" {...register("nome")} placeholder="Regular" className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "modalidade-nome-erro" : undefined} />

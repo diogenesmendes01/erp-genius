@@ -80,7 +80,7 @@ export function UsuarioFormulario({
         {usuario ? `Editar usuário — ${usuario.nome}` : "Novo usuário"}
       </h2>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="usuario-nome">Nome</label>
           <input id="usuario-nome" {...register("nome")} className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "usuario-nome-erro" : undefined} />
@@ -122,7 +122,7 @@ export function UsuarioFormulario({
 
       <fieldset className="mt-4">
         <legend className="mb-2 text-xs text-gray-600">Papéis</legend>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3">
           {Object.values(Papel).map((p) => (
             <label key={p} className="flex items-center gap-2 text-sm text-gray-700">
               <input
