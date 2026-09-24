@@ -12,6 +12,7 @@ import { useDialogo } from "@/lib/dialogo";
  * abriu ao fechar (useDialogo). Segue o design system (flat, tokens, sentence case).
  */
 export function Drawer({
+  id,
   open,
   onClose,
   title,
@@ -20,6 +21,8 @@ export function Drawer({
   lado = "direita",
   largura = "w-full max-w-2xl md:w-[45%]",
 }: {
+  /** id do painel (para aria-controls de quem o abre). */
+  id?: string;
   open: boolean;
   onClose: () => void;
   title: string;
@@ -45,6 +48,7 @@ export function Drawer({
       />
       {/* painel */}
       <aside
+        id={id}
         ref={painel}
         // Só é diálogo enquanto aberto; fechado, além de inert, deixa de se anunciar como modal.
         role={open ? "dialog" : undefined}
