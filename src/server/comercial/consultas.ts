@@ -1,9 +1,10 @@
-import { Papel, Prisma, EtapaLead, Segmento, Temperatura } from "@prisma/client";
+import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { exigirSessaoComPapel } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
+import { LEADS_POR_PAGINA, filtrosDaConsultaLeads, whereFiltrosLead, type FiltrosLead, type FiltrosLeads } from "./filtros";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
 export async function listarVendedores() {
@@ -224,27 +225,23 @@ export async function escopoLeads(usuario: UsuarioSessao): Promise<Prisma.LeadWh
   return escopoComercialAtual(usuario);
 }
 
-export interface FiltrosLead {
-  b2b?: boolean;
-  segmento?: Segmento;
-  temperatura?: Temperatura;
-  etapa?: EtapaLead;
-  vendedorId?: string;
+export type { FiltrosLead };
+
+const podeListarLeads = (usuario: UsuarioSessao) =>
+  !!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR);
+
+/** Escopo comercial do usuário E os filtros (interseção — um filtro nunca amplia a carteira). */
+async function whereListaLeads(usuario: UsuarioSessao, filtros: FiltrosLead): Promise<Prisma.LeadWhereInput> {
+  return { AND: [await escopoComercialAtual(usuario), whereFiltrosLead(filtros)] };
 }
 
-export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead = {}) {
-  if (!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR)) return [];
+export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead = {}, pagina?: { skip: number; take: number }) {
+  if (!podeListarLeads(usuario)) return [];
   const leads = await prisma.lead.findMany({
-    where: {
-      AND: [await escopoComercialAtual(usuario), {
-      ...(filtros.b2b !== undefined ? { b2b: filtros.b2b } : {}),
-      ...(filtros.segmento ? { segmento: filtros.segmento } : {}),
-      ...(filtros.temperatura ? { temperatura: filtros.temperatura } : {}),
-      ...(filtros.etapa ? { etapa: filtros.etapa } : {}),
-      ...(filtros.vendedorId ? { vendedorDonoId: filtros.vendedorId } : {}),
-      }],
-    },
-    orderBy: { criadoEm: "desc" },
+    where: await whereListaLeads(usuario, filtros),
+    // id como desempate: sem ele, leads criados no mesmo instante podiam trocar de página entre consultas.
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+    ...(pagina ?? {}),
     include: {
       pais: { select: { nome: true } },
       vendedor: { select: { id: true, nome: true } },
@@ -325,3 +322,15 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
 }
 
 export type LeadListado = Awaited<ReturnType<typeof listarLeads>>[number];
+
+/** Lista de /leads (E4): uma página com os filtros da URL, o total filtrado e o total da carteira. */
+export async function listarLeadsPagina(usuario: UsuarioSessao, filtros: FiltrosLeads) {
+  if (!podeListarLeads(usuario)) return { itens: [] as LeadListado[], total: 0, totalBase: 0 };
+  const consulta = filtrosDaConsultaLeads(filtros);
+  const [itens, total, totalBase] = await Promise.all([
+    listarLeads(usuario, consulta, { skip: (filtros.pagina - 1) * LEADS_POR_PAGINA, take: LEADS_POR_PAGINA }),
+    whereListaLeads(usuario, consulta).then((where) => prisma.lead.count({ where })),
+    escopoComercialAtual(usuario).then((where) => prisma.lead.count({ where })),
+  ]);
+  return { itens, total, totalBase };
+}
