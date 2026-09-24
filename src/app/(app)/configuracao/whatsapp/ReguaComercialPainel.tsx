@@ -11,6 +11,7 @@ import type {
 import { salvarReguaComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
@@ -147,8 +148,8 @@ function ReguaComercialPainel({
         <h3 className="text-sm font-medium">{regua.nome}</h3>
       </div>
 
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{nota}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4">
         <div className="flex flex-wrap items-end gap-4">

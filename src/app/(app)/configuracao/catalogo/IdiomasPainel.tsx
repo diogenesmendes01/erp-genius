@@ -46,7 +46,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Idiomas</h2>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full min-w-[640px] text-sm">

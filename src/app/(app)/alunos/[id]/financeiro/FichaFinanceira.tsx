@@ -15,6 +15,7 @@ import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
@@ -121,8 +122,8 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
 
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {msg && <p className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{msg}</p>}
+      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={msg} className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       <header>
         <Link href={`/alunos/${dados.aluno.id}`} className="text-xs text-brand-700 hover:underline">← Ficha do aluno</Link>

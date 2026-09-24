@@ -9,6 +9,7 @@ import {
   pagarFaturaB2B,
   salvarEmpresa,
 } from "@/server/empresas/acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -82,8 +83,8 @@ export function FichaEmpresa({
         </p>
       </header>
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{nota}</p>}
+      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       {/* Histórico de contratos individuais vinculados ao responsável financeiro. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">

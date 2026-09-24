@@ -27,7 +27,7 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   return <section className="rounded-lg border border-gray-200 p-4">
     <h2 className="text-lg font-medium">Avisos de agenda</h2>
     <p className="mt-1 text-sm text-gray-500">Escolha o número institucional e o template Meta. Sem esta configuração, os avisos ficam preparados e não são enviados.</p>
-    {erro && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+    {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className="text-xs text-gray-600">Número institucional de agenda
         <select className={input} value={numeroAvisosAgendaId} onChange={(e) => setNumero(e.target.value)}>
