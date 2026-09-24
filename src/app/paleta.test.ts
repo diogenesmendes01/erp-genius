@@ -17,10 +17,12 @@ const PADRAO_TAILWIND = new Set(
 );
 
 const UTILITARIO_COR =
-  /(?<![\w-])(?:[a-z0-9-]+:)*!?(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration|shadow)-([a-z]+)-(\d{2,3})(?:\/\d+)?(?![\w-])/g;
-// Sombra como classe: precedida de início/espaço/aspas e seguida de espaço/aspas — não pega "ensaio (shadow)".
-const UTILITARIO_SOMBRA = /(?:^|[\s"'`])((?:[a-z0-9-]+:)*shadow(?:-(?:sm|md|lg|xl|2xl|inner))?)(?=[\s"'`]|$)/g;
-const HEX_ARBITRARIO = /(?<![\w-])(?:[a-z0-9-]+:)*[a-z-]+-\[#[0-9a-fA-F]{3,8}\]/g;
+  /(?<![\w-])(?:[a-z0-9-]+:)*!?(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+)-(\d{2,3})(?:\/\d+)?(?![\w-])/g;
+// Sombra/elevação como classe (docs/18: sem sombras): shadow-*, drop-shadow-* e valores arbitrários shadow-[…].
+// Precedida de início/espaço/aspas e seguida de espaço/aspas — não pega o texto "ensaio (shadow)".
+const UTILITARIO_SOMBRA = /(?:^|[\s"'`])((?:[a-z0-9-]+:)*(?:drop-)?shadow(?:-(?:sm|md|lg|xl|2xl|inner)|-\[[^\]\s]+\])?)(?=[\s"'`]|$)/g;
+// Cor solta em valor arbitrário: hex, rgb()/rgba(), hsl()/hsla(). Nomes de cor CSS (bg-[red]) não entram.
+const COR_ARBITRARIA = /(?<![\w-])(?:[a-z0-9-]+:)*[a-z-]+-\[(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?)\([^\]]*\))\]/g;
 
 function violacoesDePaleta(texto: string): string[] {
   const achados: string[] = [];
@@ -30,7 +32,7 @@ function violacoesDePaleta(texto: string): string[] {
     if (permitidas ? !permitidas.has(Number(shade)) : PADRAO_TAILWIND.has(cor)) achados.push(classe);
   }
   for (const m of texto.matchAll(UTILITARIO_SOMBRA)) achados.push(m[1]);
-  for (const m of texto.matchAll(HEX_ARBITRARIO)) achados.push(m[0]);
+  for (const m of texto.matchAll(COR_ARBITRARIA)) achados.push(m[0]);
   return achados;
 }
 
@@ -46,8 +48,10 @@ describe("paleta do design system", () => {
   it("o detector pega cor fora do mapa, shade não mapeada, variantes, sombra e hex; e aceita o mapeado", () => {
     expect(violacoesDePaleta(`"bg-rose-500 dark:text-emerald-700 hover:border-gray-950 md:dark:ring-sky-300 !text-slate-400 text-brand-900 border-t-red-300"`))
       .toEqual(["bg-rose-500", "dark:text-emerald-700", "hover:border-gray-950", "md:dark:ring-sky-300", "!text-slate-400", "text-brand-900", "border-t-red-300"]);
-    expect(violacoesDePaleta(`"rounded shadow-md focus:shadow" "bg-[#fff]"`)).toEqual(["shadow-md", "focus:shadow", "bg-[#fff]"]);
-    expect(violacoesDePaleta(`"text-red-500 bg-gray-100/50 border-ai-200 bg-brand-solid bg-surface -mt-2 shadow-none"`)).toEqual([]);
+    expect(violacoesDePaleta(`"rounded shadow-md focus:shadow drop-shadow-lg shadow-[0_4px_8px_#0003]" "bg-[#fff]"`))
+      .toEqual(["shadow-md", "focus:shadow", "drop-shadow-lg", "shadow-[0_4px_8px_#0003]", "bg-[#fff]"]);
+    expect(violacoesDePaleta(`"bg-[rgb(0,0,0)] dark:text-[hsla(0,0%,100%,.8)]"`)).toEqual(["bg-[rgb(0,0,0)]", "dark:text-[hsla(0,0%,100%,.8)]"]);
+    expect(violacoesDePaleta(`"text-red-500 bg-gray-100/50 border-ai-200 bg-brand-solid bg-surface -mt-2 shadow-none drop-shadow-none w-[640px]"`)).toEqual([]);
     expect(violacoesDePaleta(`<option value="SHADOW">Ensaio (shadow) — não envia</option> "desligada/shadow/ativa"`)).toEqual([]);
   });
 
