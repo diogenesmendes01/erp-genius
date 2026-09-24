@@ -1,7 +1,7 @@
 import { Papel, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "./sessao";
-import { memoPorRequisicao } from "./memo-requisicao";
+import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
 /** Carteira é um vínculo atual: comissão histórica e número remetente não o substituem. */
 export async function escopoComercialAtual(
@@ -19,7 +19,7 @@ export async function escopoComercialAtual(
 }
 
 const escopoMemo = memoPorRequisicao((id: string, papeisJson: string) =>
-  calcularEscopo({ id, nome: "", papeis: JSON.parse(papeisJson) as Papel[] }, prisma));
+  calcularEscopo({ id, nome: "", papeis: JSON.parse(papeisJson) as Papel[] }, prisma).then(congelar));
 
 async function calcularEscopo(
   usuario: UsuarioSessao,

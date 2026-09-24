@@ -1,5 +1,5 @@
 import { Papel } from "@prisma/client";
-import { memoPorRequisicao } from "./memo-requisicao";
+import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
 // Guards de Server Action (ver docs/13 §"Padrão de Server Action" e §"Regras inegociáveis").
 // Permissão SEMPRE verificada no servidor — o menu role-aware é só UX, não segurança.
@@ -72,7 +72,7 @@ export const carregarUsuarioFresco = memoPorRequisicao(async (id: string): Promi
     select: { nome: true, papeis: true, ativo: true, permissoes: true },
   });
   if (!atual || !atual.ativo) return null;
-  return { id, nome: atual.nome, papeis: atual.papeis, permissoes: atual.permissoes };
+  return congelar({ id, nome: atual.nome, papeis: atual.papeis, permissoes: atual.permissoes });
 });
 
 /**
