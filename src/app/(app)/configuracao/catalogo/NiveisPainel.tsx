@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { criarNivel } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { IdiomaRow } from "./IdiomasPainel";
 
 const inputCls =
@@ -14,19 +16,14 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [codigo, setCodigo] = useState("");
   const [ordem, setOrdem] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Sem chave de idempotência: criarNivel cria um registro novo a cada chamada — a falha de rede
+  // manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   async function adicionar() {
     if (!idiomaId || !codigo.trim()) return;
-    setErro(null);
-    setSalvando(true);
-    const res = await criarNivel({ idiomaId, codigo: codigo.trim(), ordem: ordem === "" ? 0 : Number(ordem) });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    const d = await acao.executar(() => criarNivel({ idiomaId, codigo: codigo.trim(), ordem: ordem === "" ? 0 : Number(ordem) }));
+    if (d?.tipo !== "ok") return;
     setCodigo("");
     setOrdem("");
     router.refresh();
@@ -35,7 +32,6 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Níveis (CEFR)</h2>
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="flex flex-col gap-4">
         {idiomas.map((i) => (
@@ -85,12 +81,13 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         />
         <button
           onClick={adicionar}
-          disabled={salvando}
+          disabled={acao.ocupado}
           className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
           <IconPlus className="h-4 w-4" /> Adicionar nível
         </button>
       </div>
+      <FeedbackAcao erro={acao.erro} className="mt-3" />
     </section>
   );
 }

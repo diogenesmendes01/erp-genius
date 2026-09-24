@@ -9,6 +9,8 @@ import {
   duracaoIntervaloEmMinutos,
   horarioFimPorDuracao,
 } from "@/server/turmas/schema";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -91,8 +93,9 @@ export function TurmaFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Sem chave de idempotência: repetir a criação geraria outra turma (novo código); a falha de rede
+  // manda conferir a lista antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   const [nome, setNome] = useState(turma?.nome ?? "");
   const [modalidadeId, setModalidadeId] = useState(turma?.modalidadeId ?? "");
@@ -140,11 +143,9 @@ export function TurmaFormulario({
   async function onSubmit() {
     const e = validar();
     if (e) {
-      setErro(e);
+      acao.setErro(e);
       return;
     }
-    setErro(null);
-    setSalvando(true);
     const input = {
       nome: nome || undefined,
       modalidadeId,
@@ -158,14 +159,13 @@ export function TurmaFormulario({
       capacidade,
       rolling,
     };
-    const res = await submeterTurma(turma?.id, input, { criar: criarTurma, editar: editarTurma });
-    if (!res.ok) {
-      setErro(res.erro);
-      setSalvando(false);
-      return;
-    }
-    if (res.destino) {
-      router.push(res.destino);
+    const desfecho = await acao.executar(async () => {
+      const res = await submeterTurma(turma?.id, input, { criar: criarTurma, editar: editarTurma });
+      return res.ok ? { ok: true as const, dado: res.destino } : res;
+    });
+    if (desfecho?.tipo !== "ok") return;
+    if (desfecho.dado) {
+      router.push(desfecho.dado);
       return;
     }
     router.refresh();
@@ -315,16 +315,16 @@ export function TurmaFormulario({
         Turma rolling (porta de entrada Pré A1)
       </label>
 
-      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="button"
           onClick={onSubmit}
-          disabled={salvando}
+          disabled={acao.ocupado}
           className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
-          {salvando ? "Salvando…" : "Salvar turma"}
+          {acao.ocupado ? "Salvando…" : "Salvar turma"}
         </button>
         <button
           type="button"

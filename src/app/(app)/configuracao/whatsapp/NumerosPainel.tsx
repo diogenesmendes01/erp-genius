@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import type { NumeroConfig } from "@/server/whatsapp/consultas";
 import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -51,20 +52,17 @@ export function NumerosPainel({
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormNumero | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // salvarNumeroWhatsApp não recebe chave de idempotência (sem id, cada envio cria um número):
+  // resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
   const [qrDe, setQrDe] = useState<NumeroConfig | null>(null);
 
   async function salvar() {
     if (!form) return;
-    setSalvando(true);
-    setErro(null);
-    const r = await salvarNumeroWhatsApp(form);
-    setSalvando(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
+    const dados = form;
+    const d = await acao.executar(() => salvarNumeroWhatsApp(dados), "Número salvo.");
+    if (d?.tipo !== "ok") return;
     setForm(null);
-    setNota("Número salvo.");
     router.refresh();
   }
 
@@ -83,9 +81,6 @@ export function NumerosPainel({
           </span>
         </button>
       </div>
-
-      {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       {numeros.length === 0 && !form ? (
         <div className="mt-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
@@ -236,12 +231,14 @@ export function NumerosPainel({
               />
               Número ativo
             </label>
-            <button className={btnPri} disabled={salvando} onClick={salvar}>
-              {salvando ? "Salvando…" : "Salvar número"}
+            <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+              {acao.ocupado ? "Salvando…" : "Salvar número"}
             </button>
           </div>
         </div>
       )}
+      {/* Logo abaixo do "Salvar número" — e no mesmo lugar depois que o formulário fecha no sucesso. */}
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
 
       {qrDe && <QrModal numero={qrDe} onClose={() => { setQrDe(null); router.refresh(); }} />}
     </section>
@@ -252,18 +249,15 @@ export function NumerosPainel({
 function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => void }) {
   const [qr, setQr] = useState<string | null>(null);
   const [estado, setEstado] = useState<string>(numero.sessao);
-  const [erro, setErro] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(false);
+  // conectarNumeroQr não recebe chave de idempotência: resultado incerto manda conferir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   async function pedirQr() {
-    setCarregando(true);
-    setErro(null);
-    const r = await conectarNumeroQr(numero.id);
-    setCarregando(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao conectar.");
-    setQr(r.dado!.qrBase64);
-    setEstado(r.dado!.estado);
-    if (r.dado!.erro) setErro(r.dado!.erro);
+    const d = await acao.executar(() => conectarNumeroQr(numero.id));
+    if (d?.tipo !== "ok") return;
+    setQr(d.dado!.qrBase64);
+    setEstado(d.dado!.estado);
+    if (d.dado!.erro) acao.setErro(d.dado!.erro);
   }
 
   useEffect(() => {
@@ -277,8 +271,10 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
   useEffect(() => {
     if (estado === "CONECTADO") return;
     const t = setInterval(async () => {
-      const r = await consultarSessaoNumero(numero.id);
-      if (r.ok) setEstado(r.dado!.sessao);
+      // Poll só-leitura: falha (de negócio ou de rede) é ignorada — o próximo tique tenta de novo.
+      // Fora do useAcaoCliente para não travar/limpar o botão "Atualizar QR" a cada 5s.
+      const d = await executarAcaoCliente(() => consultarSessaoNumero(numero.id), { idempotente: false });
+      if (d.tipo === "ok") setEstado(d.dado!.sessao);
     }, 5000);
     return () => clearInterval(t);
   }, [estado, numero.id]);
@@ -304,13 +300,13 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
             // eslint-disable-next-line @next/next/no-img-element
             <img src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`} alt="QR de conexão" className="h-56 w-56" />
           ) : (
-            <p className="text-sm text-gray-400">{carregando ? "Gerando QR…" : "Sem QR — tente atualizar."}</p>
+            <p className="text-sm text-gray-400">{acao.ocupado ? "Gerando QR…" : "Sem QR — tente atualizar."}</p>
           )}
         </div>
-        {erro && <p role="alert" className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{erro}</p>}
+        <FeedbackAcao erro={acao.erro} className="mt-2" />
         <div className="mt-3 flex items-center justify-between">
           <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
-          <button className={btnSec} disabled={carregando || estado === "CONECTADO"} onClick={pedirQr}>
+          <button className={btnSec} disabled={acao.ocupado || estado === "CONECTADO"} onClick={pedirQr}>
             Atualizar QR
           </button>
         </div>

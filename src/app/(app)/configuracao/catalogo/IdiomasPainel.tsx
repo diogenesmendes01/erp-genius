@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export interface IdiomaRow {
   id: string;
@@ -19,34 +21,30 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Sem chave de idempotência: criarIdioma cria outro registro a cada chamada e alternarIdiomaAtivo
+  // inverte o estado atual — a falha de rede manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
+  const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
     if (!nome.trim()) return;
-    setErro(null);
-    setSalvando(true);
-    const res = await criarIdioma({ nome: nome.trim() });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    setOrigem("novo");
+    const d = await acao.executar(() => criarIdioma({ nome: nome.trim() }));
+    if (d?.tipo !== "ok") return;
     setNome("");
     router.refresh();
   }
 
   async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarIdiomaAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+    setOrigem(id);
+    const d = await acao.executar(() => alternarIdiomaAtivo(id));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Idiomas</h2>
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full min-w-[640px] text-sm">
@@ -78,10 +76,12 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => alternar(i.id)}
-                    className="text-xs text-gray-500 hover:text-gray-800"
+                    disabled={acao.ocupado}
+                    className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
                   </button>
+                  <FeedbackAcao erro={origem === i.id ? acao.erro : null} className="mt-1 text-left" />
                 </td>
               </tr>
             ))}
@@ -100,12 +100,13 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         />
         <button
           onClick={adicionar}
-          disabled={salvando}
+          disabled={acao.ocupado}
           className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
           <IconPlus className="h-4 w-4" /> Adicionar
         </button>
       </div>
+      <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-3" />
     </section>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { PaisSchema, type PaisInput } from "@/server/paises/schema";
 import { criarPais, editarPais } from "@/server/paises/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -32,13 +33,15 @@ export function PaisFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Sem chave de idempotência: repetir criarPais esbarra no código ISO já criado e editarPais cria de
+  // novo os tipos de documento sem id — a falha de rede manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<PaisInput>({
     resolver: zodResolver(PaisSchema),
     defaultValues: pais ?? {
@@ -55,12 +58,8 @@ export function PaisFormulario({
   const { fields, append, remove } = useFieldArray({ control, name: "tiposDocumento", keyName: "_formKey" });
 
   async function onSubmit(data: PaisInput) {
-    setErro(null);
-    const res = pais ? await editarPais(pais.id, data) : await criarPais(data);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    const d = await acao.executar<unknown>(() => pais ? editarPais(pais.id, data) : criarPais(data));
+    if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();
   }
@@ -160,15 +159,15 @@ export function PaisFormulario({
         </div>
       </div>
 
-      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={acao.ocupado}
           className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
-          {isSubmitting ? "Salvando…" : "Salvar país"}
+          {acao.ocupado ? "Salvando…" : "Salvar país"}
         </button>
         <button
           type="button"

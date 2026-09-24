@@ -9,7 +9,9 @@ import {
   sincronizarTemplatesMeta,
   submeterTemplateMeta,
 } from "@/server/whatsapp/acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
 // - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
@@ -41,37 +43,34 @@ const FORM_VAZIO: FormTemplate = { nome: "", corpo: "", idioma: "es", categoria:
 export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) {
   const router = useRouter();
   const [form, setForm] = useState<FormTemplate | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  // Nenhuma das actions (sincronizar, submeter, salvar) recebe chave de idempotência: resultado
+  // incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O resultado aparece onde o botão foi clicado: cabeçalho (sincronizar), linha do template
+  // (submeter, pelo id) ou formulário (salvar).
+  const [origem, setOrigem] = useState<string | null>(null);
+  const ocupado = acao.ocupado;
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>, msg: string) {
-    setOcupado(true);
-    setErro(null);
-    setNota(null);
-    const r = await p;
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro.");
-    setNota(msg);
-    router.refresh();
+  async function run<T>(secao: string, disparar: () => Promise<Resultado<T>>, sucesso: MensagemSucesso<T>) {
+    setOrigem(secao);
+    const d = await acao.executar(disparar, sucesso);
+    if (d?.tipo === "ok") router.refresh();
+    return d;
   }
+  const feedback = (secao: string) => (
+    <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
+  );
 
   async function sincronizar() {
-    setOcupado(true);
-    setErro(null);
-    setNota(null);
-    const r = await sincronizarTemplatesMeta();
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro na sincronização.");
-    const d = r.dado!;
-    setNota(`Sincronizado com a WABA: ${d.total} template(s) lá, ${d.atualizados} atualizado(s), ${d.importados} importado(s).`);
-    router.refresh();
+    await run("sincronizar", () => sincronizarTemplatesMeta(), (d) =>
+      `Sincronizado com a WABA: ${d!.total} template(s) lá, ${d!.atualizados} atualizado(s), ${d!.importados} importado(s).`);
   }
 
   async function salvar() {
     if (!form) return;
-    await run(salvarTemplateWhatsApp(form), "Template salvo.");
-    setForm(null);
+    const dados = form;
+    const d = await run("form", () => salvarTemplateWhatsApp(dados), "Template salvo.");
+    if (d?.tipo === "ok") setForm(null);
   }
 
   return (
@@ -97,8 +96,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
         </div>
       </div>
 
-      {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
+      {feedback("sincronizar")}
 
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
         {templates.map((t) => {
@@ -117,7 +115,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
                     <button
                       className={btnSec}
                       disabled={ocupado}
-                      onClick={() => run(submeterTemplateMeta(t.id), "Template submetido — a Meta responde pelo webhook.")}
+                      onClick={() => run(t.id, () => submeterTemplateMeta(t.id), "Template submetido — a Meta responde pelo webhook.")}
                     >
                       <span className="flex items-center gap-1">
                         <IconSend className="h-3.5 w-3.5" /> Submeter à Meta
@@ -149,6 +147,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
                   {"{nome} {valor} {vencimento} {link}"} para a régua preencher.
                 </p>
               )}
+              {feedback(t.id)}
             </div>
           );
         })}
@@ -216,6 +215,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           </div>
         </div>
       )}
+      {/* Logo abaixo do "Salvar template" — e no mesmo lugar depois que o formulário fecha no sucesso. */}
+      {feedback("form")}
     </section>
   );
 }

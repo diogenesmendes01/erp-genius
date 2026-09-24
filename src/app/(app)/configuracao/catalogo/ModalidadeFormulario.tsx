@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Segmento } from "@prisma/client";
 import { ModalidadeSchema, type ModalidadeInput } from "@/server/catalogo/schema";
 import { criarModalidade, editarModalidade } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -37,12 +38,14 @@ export function ModalidadeFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Sem chave de idempotência: criarModalidade cria outro registro a cada chamada — a falha de rede
+  // manda conferir a página antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ModalidadeInput>({
     resolver: zodResolver(ModalidadeSchema),
     defaultValues: modalidade ?? {
@@ -57,14 +60,10 @@ export function ModalidadeFormulario({
   });
 
   async function onSubmit(data: ModalidadeInput) {
-    setErro(null);
-    const res = modalidade
-      ? await editarModalidade(modalidade.id, data)
-      : await criarModalidade(data);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    const d = await acao.executar<unknown>(() => modalidade
+      ? editarModalidade(modalidade.id, data)
+      : criarModalidade(data));
+    if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();
   }
@@ -125,15 +124,15 @@ export function ModalidadeFormulario({
         </div>
       </div>
 
-      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={acao.ocupado}
           className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
-          {isSubmitting ? "Salvando…" : "Salvar modalidade"}
+          {acao.ocupado ? "Salvando…" : "Salvar modalidade"}
         </button>
         <button
           type="button"
