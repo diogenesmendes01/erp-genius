@@ -114,6 +114,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
                 <div className="flex items-center gap-2">
                   {(t.statusMeta === "RASCUNHO" || t.statusMeta === "REJEITADO") && (
                     <button
+                      type="button"
                       className={btnSec}
                       disabled={ocupado}
                       onClick={() => run(t.id, () => submeterTemplateMeta(t.id), "Template submetido — a Meta responde pelo webhook.")}
@@ -124,6 +125,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
                     </button>
                   )}
                   <button
+                    type="button"
                     className={btnSec}
                     onClick={() =>
                       setForm({

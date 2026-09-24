@@ -123,6 +123,7 @@ export function NumerosPainel({
                     </button>
                   )}
                   <button
+                    type="button"
                     className={btnSec}
                     onClick={() =>
                       setForm({
