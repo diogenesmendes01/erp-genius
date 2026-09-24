@@ -44,6 +44,14 @@ const ACOES_STATUS: Record<StatusPais, { label: string; alvo: StatusPais }[]> = 
   ENCERRADO: [],
 };
 
+/** Confirmação curta por status de destino, anunciada na linha do país. */
+const CONFIRMACAO_STATUS: Record<StatusPais, string> = {
+  RASCUNHO: "País voltou a rascunho.",
+  ATIVO: "País ativado.",
+  PAUSADO: "País pausado.",
+  ENCERRADO: "País encerrado.",
+};
+
 export function PaisesPainel({
   paises,
   produtos,
@@ -62,13 +70,13 @@ export function PaisesPainel({
 
   async function mudarStatus(id: string, alvo: StatusPais) {
     setOrigem("status:" + id);
-    const d = await acao.executar(() => alterarStatusPais(id, alvo));
+    const d = await acao.executar(() => alterarStatusPais(id, alvo), CONFIRMACAO_STATUS[alvo]);
     if (d?.tipo === "ok") router.refresh();
   }
 
   async function toggleProduto(paisId: string, produtoId: string) {
     setOrigem("catalogo:" + paisId);
-    const d = await acao.executar(() => alternarProdutoPais(paisId, produtoId));
+    const d = await acao.executar(() => alternarProdutoPais(paisId, produtoId), "Catálogo do país atualizado.");
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -176,7 +184,7 @@ export function PaisesPainel({
                         Catálogo
                       </button>
                     </div>
-                    <FeedbackAcao erro={origem === "status:" + p.id ? acao.erro : null} className="mt-1" />
+                    <FeedbackAcao erro={origem === "status:" + p.id ? acao.erro : null} sucesso={origem === "status:" + p.id ? acao.sucesso : undefined} className="mt-1" />
                   </td>
                 </tr>,
                 catalogo === p.id ? (
@@ -198,7 +206,7 @@ export function PaisesPainel({
                         ))}
                         {produtos.length === 0 && <span className="text-xs text-gray-400">Cadastre produtos no Catálogo.</span>}
                       </div>
-                      <FeedbackAcao erro={origem === "catalogo:" + p.id ? acao.erro : null} className="mt-2" />
+                      <FeedbackAcao erro={origem === "catalogo:" + p.id ? acao.erro : null} sucesso={origem === "catalogo:" + p.id ? acao.sucesso : undefined} className="mt-2" />
                     </td>
                   </tr>
                 ) : null,
