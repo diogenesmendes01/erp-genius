@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { salvarConfiguracaoAvisosDiario } from "@/server/diario/avisos-pendencias-diario";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Valores = { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
 
@@ -30,6 +31,6 @@ export function AvisosDiarioFormulario({ valores }: { valores: Valores }) {
       <label className="block text-sm">Intervalo entre lembretes (minutos)<input className="mt-1 block w-full rounded border p-2" name="intervaloLembreteDiarioMinutos" type="number" min={1} max={2147483647} step={1} required defaultValue={valores.intervaloLembreteDiarioMinutos ?? ""} /></label>
       <button className="rounded border px-3 py-2" type="submit">{ocupado ? "Salvando…" : "Salvar avisos"}</button>
     </fieldset>
-    {mensagem && <p role="status" className="text-sm">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} className="text-sm" />
   </form>;
 }

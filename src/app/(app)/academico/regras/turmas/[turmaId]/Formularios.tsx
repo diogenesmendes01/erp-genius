@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirMigracaoRegra, proporMigracaoRegra } from "@/server/avaliacoes/migracao-regra";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada }: {
   turmaId: string; destinoId: string; estadoHash: string; versaoEsperada: number;
@@ -22,7 +23,7 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
       <label className="block">Motivo da mudança<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi as versões e os impactos apresentados.</label>
       <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
-    </fieldset>{mensagem && <p role="status">{mensagem}</p>}
+    </fieldset><MensagemStatus texto={mensagem} />
   </form>;
 }
 
@@ -41,6 +42,6 @@ export function DecidirMigracao({ propostaId, estadoHash, podeAprovar }: { propo
       <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi a proposta e seus impactos.</label>
       <button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
-    </fieldset>{mensagem && <p role="status">{mensagem}</p>}
+    </fieldset><MensagemStatus texto={mensagem} />
   </form>;
 }

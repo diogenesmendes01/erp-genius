@@ -16,6 +16,7 @@ import { consultarRascunhoAcertoEncerramento, salvarRascunhoAcertoEncerramento }
 import { conferirValidadeRascunhoEncerramento } from "@/server/matricula/encerramento-validade";
 import { PreviaMensalPedidoEncerramentoSchema, type PreviaMensalPedidoEncerramentoInput } from "@/server/matricula/encerramento-previa-schema";
 import { identificacaoContrato } from "./identificacaoContrato";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
@@ -104,7 +105,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
     <h3 className="font-medium">Preparação financeira do encerramento</h3>
     <p>Conferência das mensalidades e multa. Taxas, compensações, horas antecipadas e demais ajustes precisam compor o acerto completo antes da aprovação.</p>
     <button type="button" disabled={ocupado} onClick={carregar} className={estilo}>Carregar / atualizar conferência</button>
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {rascunho && <details><summary>Rascunho salvo · versão {rascunho.versao} · {rascunho.preparador.nome}</summary><p>{rascunho.motivo}</p><Resumo snapshot={rascunho.snapshot} /><LancamentosEncerramento snapshot={rascunho.snapshot} /><ImpactosAcademicosAcerto snapshot={rascunho.snapshot} />{rascunho.decisao && <p>{rascunho.decisao.aprovada ? "Acerto aprovado, aguardando efetivação" : "Versão rejeitada"}: {rascunho.decisao.motivo}</p>}{rascunho.podeEfetivar && rascunho.decisao && <EfetivarAcerto alunoId={alunoId} decisaoId={rascunho.decisao.id} atualizar={carregar} />}{rascunho.podeDecidir && <DecisaoAcerto alunoId={alunoId} rascunhoId={rascunho.id} />}<OutrasCobrancasResumo snapshot={rascunho.snapshot} />
       <button type="button" disabled={ocupado} className={estilo} onClick={() => { void iniciar(async () => {
         setErro(null); setValidade(null);
@@ -114,7 +115,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
           setValidade(mensagemConferenciaAcerto({ ...r.dado, preferenciaFusoExibicao }));
         } catch { setErro("Não foi possível conferir as origens atuais."); }
       }); }}>Conferir se o rascunho continua atual</button>
-      {validade && <p role="status">{validade}</p>}
+      <MensagemStatus texto={validade} />
     </details>}
     {contextos && <form key={geracao} className="space-y-4" onChange={limparPrevia} onSubmit={(e) => {
       e.preventDefault(); const f = new FormData(e.currentTarget); const s = (nome: string) => String(f.get(nome) ?? "");

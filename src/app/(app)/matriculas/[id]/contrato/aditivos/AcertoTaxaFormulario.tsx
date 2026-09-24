@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -74,6 +75,6 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       <label className="block">Evidência conferida<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
       <button type="button" disabled={!podeEnviar || ocupado} onClick={propor}>{ocupado ? "Registrando proposta…" : "Propor acerto"}</button>
     </fieldset>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </section>;
 }

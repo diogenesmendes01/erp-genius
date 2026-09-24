@@ -4,6 +4,7 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao } from "@/server/gravacoes/troca-fonte-reposicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Proposta = {
   id: string;
@@ -85,7 +86,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
             </form>}
       </article>)}
     </section>
-    {feito && <p role="status">{feito}</p>}
+    <MensagemStatus texto={feito} />
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </section>;
 }

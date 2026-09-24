@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirExcecaoFrequencia, proporExcecaoFrequencia } from "@/server/avaliacoes/excecao-frequencia";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type PropostaExcecao = {
   id: string;
@@ -112,7 +113,7 @@ export function ExcecaoFrequencia({
       <h3 className="font-medium">Proposta registrada · versão {proposta.versao}</h3>
       <p>Motivo: {proposta.motivo}</p>
       <p>Evidências: {proposta.evidencias}</p>
-      {propostaObsoleta && <p role="status" className="text-amber-700">A frequência ou o contexto conferido mudou desde esta proposta. Esta autorização histórica não se aplica à revisão atual; uma nova proposta usa a fonte atual.</p>}
+      <MensagemStatus texto={propostaObsoleta ? "A frequência ou o contexto conferido mudou desde esta proposta. Esta autorização histórica não se aplica à revisão atual; uma nova proposta usa a fonte atual." : null} className="text-amber-700" />
       {!proposta.decisao && (proposta.autorId === usuarioId
         ? <p role="status">Aguarda decisão de outra pessoa autorizada. Quem propôs não pode decidir.</p>
         : <p role="status">Aguarda decisão independente.</p>)}
@@ -154,6 +155,6 @@ export function ExcecaoFrequencia({
     </form>}
 
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
-    {mensagem && <p role="status" className="text-sm">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} className="text-sm" />
   </section>;
 }

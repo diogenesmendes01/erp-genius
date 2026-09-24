@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { carregarGestaoAcessoAulas, type GestaoAcessoAulas } from "@/server/cobrancas/acesso-aulas-consultas";
 import { bloquearAcesso, desbloquearAcesso, decidirSolicitacaoAcessoAulas } from "@/server/cobrancas/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = "rounded-md border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50";
@@ -70,7 +71,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
     <h2 className="font-medium">Acesso às aulas</h2>
     <p className="text-xs text-gray-500">Atraso de 30 dias gera restrição automática. Pedidos manuais exigem motivo e aprovação de outra pessoa da administração.</p>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
-    {aviso && <p role="status" className="text-sm text-brand-700">{aviso}</p>}
+    <MensagemStatus texto={aviso} className="text-sm text-brand-700" />
     {!dados && !erro && <p className="text-sm text-gray-500">Carregando solicitações…</p>}
     {dados?.matriculas.length === 0 && <p className="text-sm text-gray-500">Nenhuma restrição ou solicitação pendente.</p>}
     {dados?.matriculas.map((m) => <article key={m.id} className="space-y-3 border-t border-gray-100 pt-3">

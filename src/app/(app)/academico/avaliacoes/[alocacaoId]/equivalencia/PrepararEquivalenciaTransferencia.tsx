@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-proposta";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
@@ -202,6 +203,6 @@ export function PrepararEquivalenciaTransferencia({
       <button disabled={ocupado || registrada || !revisao} className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
     </section>
     {erro && <p role="alert">{erro}</p>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

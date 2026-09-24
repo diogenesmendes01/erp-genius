@@ -6,6 +6,7 @@ import { reservarHorasCompradasParaEncontro } from "@/server/matricula/reserva-h
 import { conferirRealizacaoHoras } from "@/server/matricula/consumo-horas";
 import { LiberacaoHoras } from "./LiberacaoHoras";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -25,7 +26,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
   }
   return <div className="space-y-3">
     <button type="button" disabled={ocupado} className={estilo} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Consultar compras de horas</button>
-    {erro && <p role="alert">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {dados && <>
       {dados.compras.length === 0 && <p>Nenhuma compra de horas registrada nesta matrícula.</p>}
       {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {c.valorPagoAlocado} {c.moeda}</summary>

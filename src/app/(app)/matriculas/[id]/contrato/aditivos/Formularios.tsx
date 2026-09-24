@@ -6,6 +6,7 @@ import type { OrigemCampo } from "@/server/contratos/campos";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "@/server/contratos/aditivo-valores";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { CicloCoberturaFuturoAditivoSchema } from "@/server/contratos/aditivo-schema";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
@@ -83,6 +84,6 @@ export function DecidirAditivo({ propostaId, propostaHash, superada }: { propost
     <h2 className="text-xl">Decisão administrativa</h2><label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o original, as alterações e a vigência desta proposta.</label>
     <label className="block">Decisão<select className="mt-1 block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}><option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
     <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
-    {mensagem && <p role="status">{mensagem}</p>}<button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
+    <MensagemStatus texto={mensagem} /><button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensal, prepararCondicoesContinuidadeMensal } from "@/server/matricula/condicoes-continuidade-mensal";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -34,8 +35,8 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
 
   return <div className="space-y-4">
     <p>Matrícula {d.codigo ?? d.matriculaId} · moeda contratual {d.moeda}</p>
-    {d.impedimento && <p role="status">{d.impedimento}</p>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={d.impedimento} />
+    <MensagemStatus texto={mensagem} />
     {d.podePreparar && d.documentoId && <form className="space-y-3 rounded border p-4" onSubmit={evento => {
       evento.preventDefault();
       const formulario = new FormData(evento.currentTarget);

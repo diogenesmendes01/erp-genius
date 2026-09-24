@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { consultarCumprimentosRecomposicao, prepararCumprimentoRecomposicao, decidirCumprimentoRecomposicao } from "@/server/matricula/recomposicao-cumprimento";
 import { useOperacao } from "./useOperacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -63,7 +64,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       <label className="grid gap-1">Justificativa da decisão de cumprimento<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={estilo}>Registrar decisão de cumprimento</button>
     </fieldset></form>)}
-    {erro && <p role="alert">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
   </article>;
 }
 

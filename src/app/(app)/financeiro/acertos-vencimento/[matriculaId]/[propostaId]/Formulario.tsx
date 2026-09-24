@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo } from "@/server/contratos/vencimento-aditivo";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 export function VencimentoFormulario(props: Props) {
@@ -32,6 +33,6 @@ export function VencimentoFormulario(props: Props) {
  {props.modo === "decidir" && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
  </fieldset>
  <button disabled={ocupado || concluido} className="rounded border px-3 py-2" type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : tentativa.current ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Preparar acerto" : props.modo === "decidir" ? "Registrar decisão" : "Aplicar vencimento aprovado"}</button>
- {mensagem && <p role="status">{mensagem}</p>}
+ <MensagemStatus texto={mensagem} />
  </form>;
 }

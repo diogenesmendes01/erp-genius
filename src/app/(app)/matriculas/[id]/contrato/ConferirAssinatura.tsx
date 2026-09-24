@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registrarConferenciaAssinatura } from "@/server/contratos/assinatura-conferencia";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function ConferirAssinatura({ matriculaId, artefatoId, revisaoHash }: { matriculaId: string; artefatoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -16,7 +17,7 @@ export function ConferirAssinatura({ matriculaId, artefatoId, revisaoHash }: { m
   }}>
     <label className="block"><input name="conferido" type="checkbox" required disabled={pendente} /> Conferi o original, os participantes e as condições de reserva e pagamento apresentadas.</label>
     <label className="block">Motivo<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={2000} required disabled={pendente} /></label>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar conferência para assinatura"}</button>
   </form>;
 }

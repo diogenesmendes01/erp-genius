@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { consultarVinculosLegados, vincularAlocacaoLegada } from "@/server/matricula/vinculo-legado";
 import { useOperacao } from "./useOperacao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Vinculos = NonNullable<Extract<Awaited<ReturnType<typeof consultarVinculosLegados>>, { ok: true }>["dado"]>;
 export function VinculosLegados({ alunoId }: { alunoId: string }) {
@@ -37,7 +38,7 @@ export function VinculosLegados({ alunoId }: { alunoId: string }) {
     <h2 className="text-lg font-medium">Conferir vínculos antigos com turmas</h2>
     <p className="text-sm">Identifique o contrato que já corresponde a cada vínculo. Confira os registros da escola antes de confirmar; esta operação preserva a turma e as datas.</p>
     <button type="button" disabled={ocupado} className="rounded border p-2 text-sm" onClick={consultar}>Consultar vínculos sem matrícula</button>
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {vinculos?.length === 0 && <p>Nenhum vínculo ativo sem matrícula identificado.</p>}
     {vinculos?.map((v) => <fieldset key={v.alocacaoId} disabled={ocupado} className="space-y-2 border-t pt-3">
       <legend className="font-medium">{v.turma}</legend>

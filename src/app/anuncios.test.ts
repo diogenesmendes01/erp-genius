@@ -35,13 +35,39 @@ function renderizacoesSemRegiao(variavel: RegExp) {
   );
 }
 
+/**
+ * Região polite montada junto com o próprio texto — `{aviso && <p role="status">{aviso}</p>}` ou
+ * `{ocupado && <p role="status">Processando…</p>}` — pode passar em silêncio: ela não existia antes da mudança.
+ * Só em telas cliente, onde o texto aparece depois de uma ação; conteúdo composto (prévias, listas) fica de fora.
+ */
+function regioesPoliteMontadasComOTexto() {
+  const re = /\{\s*([\w.?]+)\s*&&\s*\(?\s*<(p|div|span)\b/g;
+  return telas
+    .filter(({ conteudo }) => /^\s*["']use client["']/.test(conteudo))
+    .flatMap(({ arquivo, conteudo }) =>
+      [...conteudo.matchAll(re)]
+        .filter((m) => {
+          const inicio = m.index! + m[0].lastIndexOf("<");
+          const tag = tagEm(conteudo, inicio);
+          if (!/role="status"|aria-live="polite"/.test(tag)) return false;
+          const corpo = conteudo.slice(inicio + tag.length, conteudo.indexOf(`</${m[2]}>`, inicio)).trim();
+          return corpo === `{${m[1]}}` || !/[<{}]/.test(corpo);
+        })
+        .map((m) => `${arquivo}:${conteudo.slice(0, m.index).split("\n").length} ${m[1]}`),
+    );
+}
+
 describe("anúncio do resultado de ações", () => {
   it("toda mensagem de erro renderizada condicionalmente tem role/aria-live", () => {
     expect(renderizacoesSemRegiao(/[a-zA-Z]*(?:erro|Erro|error|Error|falha|Falha)[a-zA-Z]*/)).toEqual([]);
   });
 
-  it("mensagem de sucesso/aviso não é um <p> condicional mudo — usa MensagemStatus", () => {
+  it("mensagem de sucesso/aviso não é um <p> condicional mudo", () => {
     expect(renderizacoesSemRegiao(/nota|msg|sucesso|aviso|mensagemSucesso/)).toEqual([]);
+  });
+
+  it("região polite não é montada junto com o próprio texto — usa MensagemStatus (região sempre montada)", () => {
+    expect(regioesPoliteMontadasComOTexto()).toEqual([]);
   });
 
   it("nenhuma região polite é escondida com display:none (hidden / empty:hidden) — isso a tira da árvore de acessibilidade", () => {

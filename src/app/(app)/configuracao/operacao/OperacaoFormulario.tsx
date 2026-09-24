@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarConfiguracaoOperacional } from "@/server/operacao/acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferenciaHoras, fusoInstitucional, prazoReservaMinutos }: { exigirPrimeiraMensalidade: boolean; prazoConferenciaHoras: number | null; fusoInstitucional: string | null; prazoReservaMinutos: number | null }) {
   const router = useRouter();
@@ -26,6 +27,6 @@ export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferencia
     <label className="block">Prazo inicial de reserva de vaga (minutos)<input name="reserva" type="number" min="1" max="2147483647" step="1" defaultValue={prazoReservaMinutos ?? ""} className="mt-1 block w-36 rounded border p-2" /></label>
     <p className="text-gray-500">Vale para novas reservas. Deixar em branco impede criar novas reservas até configurar o prazo; não libera nem altera reservas existentes. Prorrogações exigem proposta e aprovação próprias.</p>
     <button disabled={salvando} className="rounded bg-brand-solid px-4 py-2 text-white disabled:opacity-50">{salvando ? "Salvando…" : "Salvar configuração"}</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

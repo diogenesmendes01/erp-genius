@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useOperacao } from "./useOperacao";
 import { solicitarEncerramentoMatriculas } from "@/server/matricula/encerramento-solicitacao";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function NovoEncerramento({ alunoId, contratos, hoje }: {
   alunoId: string; contratos: { id: string; nome: string }[]; hoje: string | null;
@@ -53,6 +54,6 @@ export function NovoEncerramento({ alunoId, contratos, hoje }: {
       </fieldset>
     </form>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    {aviso && <p role="status" className="text-green-700">{aviso}</p>}
+    <MensagemStatus texto={aviso} className="text-green-700" />
   </section>;
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { salvarPrazosPortalAluno } from "@/server/portal-aluno/configuracao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const campos = {
   prazoSessaoPortalAlunoMinutos: "Duração da sessão",
@@ -36,6 +37,6 @@ export function PrazosPortalFormulario({ valores }: { valores: Prazos }) {
       </label>)}
       <button className="rounded border px-3 py-2" type="submit">{ocupado ? "Salvando…" : "Salvar prazos do portal"}</button>
     </fieldset>
-    {mensagem && <p role="status" className="text-sm">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} className="text-sm" />
   </form>;
 }

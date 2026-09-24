@@ -7,6 +7,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { solicitarRetomada, decidirRetomada } from "@/server/retomada/acoes";
 import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
@@ -67,7 +68,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       <p className="mt-1 text-sm text-gray-500">A proposta precisa ser aprovada por outra pessoa do Financeiro ou da Administração antes de retomar o aluno e aplicar os vencimentos.</p>
     </div>
     {(erro || erroConsulta) && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro ?? erroConsulta}</p>}
-    {aviso && <p role="status" className="rounded-md bg-blue-50 p-3 text-sm text-blue-700">{aviso}</p>}
+    <MensagemStatus texto={aviso} className="rounded-md bg-blue-50 p-3 text-sm text-blue-700" />
     {contexto?.status === "PAUSADO" && contexto.impedimento && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">{contexto.impedimento}</p>}
     {contexto?.propostaPendenteId && <p className="text-sm text-gray-600">Já existe uma proposta aguardando decisão. Confira os detalhes abaixo.</p>}
 
