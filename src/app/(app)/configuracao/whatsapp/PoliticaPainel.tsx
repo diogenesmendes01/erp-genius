@@ -331,7 +331,7 @@ export function PoliticaPainel({
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
             prontidão: número oficial exige template aprovado nos degraus automáticos/lote.
           </p>
-          <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+          <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
             {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
           </button>
         </div>
