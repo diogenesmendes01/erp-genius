@@ -71,8 +71,28 @@ describe("InboxCliente — master-detail no celular (E6)", () => {
     const lista = classeDaLista(html);
     expect(lista.split(" ")).toContain("flex");
     expect(lista.split(" ")).not.toContain("hidden");
+    // Largura toda no celular; a coluna fixa (w-80) só a partir de md.
+    expect(lista.split(" ")).toContain("w-full");
+    expect(lista.split(" ")).not.toContain("w-80");
+    expect(lista.split(" ")).toContain("md:w-80");
     expect(html).toMatch(/<div class="hidden [^"]*md:flex[^"]*">Escolha uma conversa ao lado\.<\/div>/);
     expect(html).not.toContain('href="/inbox"');
+    // Itens da lista não submetem formulário algum.
+    expect(html).toMatch(/<button type="button"[^>]*aria-current|<button type="button"[^>]*class="block w-full/);
+  });
+
+  it("thread com min-h-0 (seção e raiz): sem isso a rolagem das mensagens não encolhe e o compositor some", () => {
+    const html = render(true);
+    const secao = html.match(/<section aria-label="Conversa com Ana" class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(secao).toEqual(expect.arrayContaining(["flex", "min-h-0", "min-w-0", "flex-1", "flex-col"]));
+    // Raiz do Thread: primeira div depois do link de volta.
+    const raiz = html.match(/Conversas<\/a><div class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(raiz).toEqual(expect.arrayContaining(["min-h-0", "flex-1", "flex-col"]));
+  });
+
+  it("link de volta com alvo de toque de 40px", () => {
+    const link = render(true).match(/<a[^>]*href="\/inbox"[^>]*>/)?.[0] ?? "";
+    expect(link).toMatch(/class="[^"]*\bmin-h-10\b/);
   });
 
   it("com conversa aberta: a lista some abaixo de md e a thread tem o caminho de volta", () => {
@@ -86,7 +106,10 @@ describe("InboxCliente — master-detail no celular (E6)", () => {
     expect(html).toMatch(/<button[^>]*aria-current="true"/);
   });
 
-  it("altura em dvh (100vh no celular inclui a barra do navegador)", () => {
-    expect(render(false)).toContain("h-[calc(100dvh-13rem)]");
+  it("altura em dvh (100vh no celular inclui a barra do navegador); abaixo de md desconta a barra do shell", () => {
+    const html = render(false);
+    expect(html).toContain("h-[calc(100dvh-16.5rem)]");
+    expect(html).toContain("md:h-[calc(100dvh-13rem)]");
+    expect(html).not.toMatch(/\bh-\[calc\(100vh/);
   });
 });

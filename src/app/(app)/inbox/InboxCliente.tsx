@@ -125,8 +125,9 @@ export function InboxCliente({
 
       {/* Master-detail (E6): abaixo de md cabe um painel por vez — sem conversa aberta, a lista ocupa a
           largura toda; com `?c=`, a thread ocupa a tela e "Conversas" volta à lista. A partir de md, as
-          duas colunas lado a lado. Altura em dvh: no celular, 100vh inclui a barra do navegador. */}
-      <div className="flex h-[calc(100dvh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
+          duas colunas lado a lado. Altura em dvh: no celular, 100vh inclui a barra do navegador; abaixo de md
+          desconta também a barra do shell (BarraMobile, ~3,5rem). */}
+      <div className="flex h-[calc(100dvh-16.5rem)] min-h-[420px] md:h-[calc(100dvh-13rem)] overflow-hidden rounded-lg border border-gray-200 bg-surface">
         {/* Lista de conversas, por recência (ver listarConversas) — não reordena por não lidas */}
         <div className={"w-full shrink-0 flex-col md:w-80 md:border-r md:border-gray-200 " + (thread ? "hidden md:flex" : "flex")}>
           <div className="border-b border-gray-100 p-2">
@@ -193,8 +194,8 @@ export function InboxCliente({
         {/* Thread */}
         {thread ? (
           <section aria-label={`Conversa com ${thread.contato.nome}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <Link href="/inbox" className="flex items-center gap-1 border-b border-gray-200 px-3 py-2.5 text-sm text-brand-700 md:hidden">
-              <IconArrowLeft className="h-4 w-4" aria-hidden /> Conversas
+            <Link href="/inbox" className="flex min-h-10 items-center gap-1 border-b border-gray-200 px-3 py-2 text-sm text-brand-700 md:hidden">
+              <IconArrowLeft className="h-5 w-5" aria-hidden /> Conversas
             </Link>
             <Thread
               key={thread.conversaId}
