@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { salvarConfiguracaoAvisosDiario } from "@/server/diario/avisos-pendencias-diario";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Valores = { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
 
@@ -29,7 +30,7 @@ export function AvisosDiarioFormulario({ valores }: { valores: Valores }) {
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block text-sm">Prazo para regularização (minutos)<input className="mt-1 block w-full rounded border p-2" name="prazoRegularizacaoDiarioMinutos" type="number" min={1} max={2147483647} step={1} required defaultValue={valores.prazoRegularizacaoDiarioMinutos ?? ""} /></label>
       <label className="block text-sm">Intervalo entre lembretes (minutos)<input className="mt-1 block w-full rounded border p-2" name="intervaloLembreteDiarioMinutos" type="number" min={1} max={2147483647} step={1} required defaultValue={valores.intervaloLembreteDiarioMinutos ?? ""} /></label>
-      <button className="rounded border px-3 py-2" type="submit">{ocupado ? "Salvando…" : "Salvar avisos"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "md" })} type="submit">{ocupado ? "Salvando…" : "Salvar avisos"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} className="text-sm" />
   </form>;

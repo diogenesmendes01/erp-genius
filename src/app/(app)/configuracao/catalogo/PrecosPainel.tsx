@@ -9,6 +9,7 @@ import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export interface PrecoRow {
   id: string;
@@ -99,7 +100,7 @@ export function PrecosPainel({
         {!aberto && (
           <button
             onClick={() => setAberto(true)}
-            className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95"
+            className={botaoClasses({ tamanho: "md" })}
           >
             <IconPlus className="h-4 w-4" /> Novo preço
           </button>
@@ -167,13 +168,13 @@ export function PrecosPainel({
             <button
               onClick={salvar}
               disabled={acao.ocupado}
-              className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
+              className={botaoClasses({ tamanho: "lg" })}
             >
               {acao.ocupado ? "Salvando…" : "Salvar preço"}
             </button>
             <button
               onClick={() => setAberto(false)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
             >
               Cancelar
             </button>

@@ -4,6 +4,7 @@ import { FormaAgendaOferta } from "@prisma/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { configurarEntradaOferta, consultarEntradasOfertas } from "@/server/catalogo/entrada-oferta";
+import { botaoClasses } from "@/components/Botao";
 
 type Oferta = Awaited<ReturnType<typeof consultarEntradasOfertas>>[number];
 function Formulario({ oferta }: { oferta: Oferta }) {
@@ -39,7 +40,7 @@ function Formulario({ oferta }: { oferta: Oferta }) {
     </label>
     <label className="block">Motivo da configuração <input name="motivo" required minLength={5} maxLength={2000} className="rounded border p-2" /></label>
     {erro && <p role="alert">{erro}</p>}
-    <button disabled={pendente} className="rounded border px-3 py-2">{pendente ? "Salvando…" : "Salvar regras da oferta"}</button>
+    <button type="submit" disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "md" })}>{pendente ? "Salvando…" : "Salvar regras da oferta"}</button>
   </form>;
 }
 export function EntradasOfertas({ ofertas }: { ofertas: Oferta[] }) {

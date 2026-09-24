@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Oferta = { produtoId: string; paisId: string; moeda: string; rotulo: string };
 type Turma = { id: string; rotulo: string };
@@ -24,7 +25,7 @@ export function EnsaioVinculoMigracao({ linhaId, origem, produtoOrigemId, turmaO
     {produtoOrigemId && <Produto origem={origem} produtoOrigemId={produtoOrigemId} atual={produtoAtual} ofertas={ofertasProduto} ocupado={ocupado} executar={executar} />}
     {turmaOrigemId && <TurmaFormulario origem={origem} turmaOrigemId={turmaOrigemId} atual={turmaAtual} turmas={turmas} ocupado={ocupado} executar={executar} />}
     {statusOrigem && <StatusFormulario origem={origem} statusOrigem={statusOrigem} atual={statusAtual} ocupado={ocupado} executar={executar} />}
-    <button type="button" className="rounded border px-2 py-1" disabled={ocupado} onClick={() => executar(async () => { const r = await ensaiarVinculoMigracao({ linhaId }); return r.ok ? { ok: true } : { ok: false, erro: r.erro }; }, "Ensaio registrado. O histórico abaixo foi atualizado.")}>{ocupado ? "Conferindo…" : "Ensaiar vínculo"}</button>
+    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "sm" })} disabled={ocupado} onClick={() => executar(async () => { const r = await ensaiarVinculoMigracao({ linhaId }); return r.ok ? { ok: true } : { ok: false, erro: r.erro }; }, "Ensaio registrado. O histórico abaixo foi atualizado.")}>{ocupado ? "Conferindo…" : "Ensaiar vínculo"}</button>
     <MensagemStatus texto={mensagem} /><Historico ensaios={ensaios} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>;
 }
 
@@ -44,7 +45,7 @@ function StatusFormulario({ origem, statusOrigem, atual, ocupado, executar }: { 
   return <fieldset className="rounded border bg-surface p-2"><legend className="px-1 font-medium">Situação da origem: {statusOrigem}</legend>{atual ? <p className="mb-1">Vigente: {status[atual.destino as keyof typeof status]} · versão {atual.versao} · {atual.ativa ? "ativa" : "revogada"}</p> : <p className="mb-1">Sem correspondência vigente.</p>}<label>Situação de destino<select className="ml-2 rounded border p-1" value={statusDestino} onChange={(e) => setStatusDestino(e.target.value)}><option value="">Selecione uma situação</option>{Object.entries(status).map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select></label><Acoes ocupado={ocupado} podeSalvar={!!statusDestino} podeRevogar={!!atual?.ativa} salvar={salvar} /></fieldset>;
 }
 
-function Acoes({ ocupado, podeSalvar, podeRevogar, salvar }: { ocupado: boolean; podeSalvar: boolean; podeRevogar: boolean; salvar: (ativa: boolean) => Promise<void> | undefined }) { return <div className="mt-2 flex gap-2"><button type="button" disabled={ocupado || !podeSalvar} className="rounded border px-2 py-1" onClick={() => salvar(true)}>Salvar correspondência</button><button type="button" disabled={ocupado || !podeRevogar} className="rounded border px-2 py-1" onClick={() => salvar(false)}>Revogar correspondência</button></div>; }
+function Acoes({ ocupado, podeSalvar, podeRevogar, salvar }: { ocupado: boolean; podeSalvar: boolean; podeRevogar: boolean; salvar: (ativa: boolean) => Promise<void> | undefined }) { return <div className="mt-2 flex gap-2"><button type="button" disabled={ocupado || !podeSalvar} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => salvar(true)}>Salvar correspondência</button><button type="button" disabled={ocupado || !podeRevogar} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => salvar(false)}>Revogar correspondência</button></div>; }
 function Historico({ ensaios, preferenciaFusoExibicao }: { ensaios: Ensaio[]; preferenciaFusoExibicao: string | null }) {
   const instanteAdministrativo = (valor: Date) => {
     const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
