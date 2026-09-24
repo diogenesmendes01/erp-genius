@@ -415,7 +415,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
             <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60">
               Confirmar perda
             </button>
-            <button onClick={fecharPerda} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+            <button type="button" onClick={fecharPerda} disabled={acaoPerda.ocupado} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60">
               Cancelar
             </button>
           </div>
