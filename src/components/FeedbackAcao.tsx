@@ -29,7 +29,11 @@ export function FeedbackAcao({ erro, sucesso, progresso, className = "" }: {
           {erro}
         </p>
       )}
-      <MensagemStatus texto={sucesso} progresso={progresso} className={`rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 ${className}`.trim()} />
+      {/* A região polite só existe onde a tela anuncia sucesso/progresso (prop passada, mesmo que null):
+          quem mostra apenas erro não ganha uma região vazia a mais por linha. */}
+      {(sucesso !== undefined || progresso !== undefined) && (
+        <MensagemStatus texto={sucesso} progresso={progresso} className={`rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 ${className}`.trim()} />
+      )}
     </>
   );
 }

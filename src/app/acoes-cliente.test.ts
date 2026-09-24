@@ -67,7 +67,16 @@ const clientesComAction = ["src/app", "src/components"].flatMap((raiz) =>
     .filter(({ conteudo }) => /^import\s+(?!type\b)[^;]*from\s+["']@\/server\//m.test(conteudo)),
 );
 
-const trataFalha = (conteudo: string) => /\bcatch\b|\buseAcaoCliente\b|\bexecutarAcaoCliente\b/.test(conteudo);
+/**
+ * Só código: strings e comentários saem (numa passada só, para `"https://…"` não virar comentário).
+ * `// } catch {` ou `"useAcaoCliente("` num texto não contam como tratamento.
+ */
+const soCodigo = (fonte: string) =>
+  fonte.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m[0] === "/" ? "" : '""'));
+
+/** Sintaxe de verdade: `} catch {`, `} catch (e) {`, `.catch(` — ou a chamada dos helpers do E3. */
+const trataFalha = (conteudo: string) =>
+  /\}\s*catch\s*[({]|\.catch\(|\buseAcaoCliente\(|\bexecutarAcaoCliente\(/.test(soCodigo(conteudo));
 
 describe("ações no cliente tratam falha de transporte", () => {
   it("nenhum componente novo chama server action sem catch ou useAcaoCliente", () => {
