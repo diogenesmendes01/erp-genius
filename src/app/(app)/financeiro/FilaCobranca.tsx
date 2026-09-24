@@ -15,6 +15,7 @@ import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "@/server/whatsa
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
@@ -245,8 +246,8 @@ export function FilaCobranca({
 
   return (
     <div>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       {/* Mini-dashs = filtros da régua */}
       <div className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

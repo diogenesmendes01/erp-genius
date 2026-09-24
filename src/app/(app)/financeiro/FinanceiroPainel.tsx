@@ -16,6 +16,7 @@ import { FilaCobranca } from "./FilaCobranca";
 import { RetomadasPainel } from "./RetomadasPainel";
 import type { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -194,8 +195,8 @@ export function FinanceiroPainel({
         ))}
       </nav>
 
-      {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {erro && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}

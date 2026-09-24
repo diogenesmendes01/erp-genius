@@ -72,7 +72,7 @@ export function UploadArquivo({
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handle} disabled={enviando} />
       </label>
       <p className="mt-1 text-xs text-gray-400">{RESTRICOES}</p>
-      {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-1 text-xs text-red-600">{erro}</p>}
     </div>
   );
 }

@@ -74,7 +74,7 @@ export function PagarCliente({
           Pagamento online indisponível no momento — fale com a escola para concluir por outro canal.
         </p>
       )}
-      {erro && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
     </div>
   );
 }
