@@ -6,7 +6,8 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 // Resultado de uma ação, renderizado junto do grupo de botões que a disparou — nunca no topo da
 // página nem atrás de um overlay (docs/42-auditoria-frontend-ux.md, E3). Quando um erro aparece, ele
 // é trazido para o centro da tela e recebe o foco: o operador que clicou em "Salvar" vê o motivo sem
-// procurar, e o leitor de tela o anuncia (role="alert"). Sucesso vai pela região polite sempre montada.
+// procurar, e o leitor de tela o anuncia (role="alert"). Sucesso vai por uma região polite que só existe
+// quando a tela passa `sucesso`/`progresso` (mesmo null) — e aí fica montada antes do texto aparecer.
 export function FeedbackAcao({ erro, sucesso, progresso, className = "" }: {
   erro: string | null | undefined;
   sucesso?: string | null;
