@@ -6,6 +6,7 @@ import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import type { NumeroConfig } from "@/server/whatsapp/consultas";
 import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
@@ -282,35 +283,30 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
   const badge = SESSAO_BADGE[estado] ?? SESSAO_BADGE.DESCONECTADO;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-surface p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Conectar {numero.rotulo}</span>
-          <button className="text-gray-400 hover:text-gray-700" onClick={onClose} aria-label="Fechar">
-            <IconX className="h-4 w-4" />
-          </button>
-        </div>
-        <p className="mt-1 text-xs text-gray-500">
-          No celular do número: WhatsApp → aparelhos conectados → conectar aparelho.
-        </p>
-        <div className="mt-3 flex min-h-64 items-center justify-center rounded-md border border-gray-200 bg-surface p-3">
-          {estado === "CONECTADO" ? (
-            <p className="text-sm text-green-700">Conectado! O número já envia e recebe por aqui.</p>
-          ) : qr ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`} alt="QR de conexão" className="h-56 w-56" />
-          ) : (
-            <p className="text-sm text-gray-400">{acao.ocupado ? "Gerando QR…" : "Sem QR — tente atualizar."}</p>
-          )}
-        </div>
-        <FeedbackAcao erro={acao.erro} className="mt-2" />
-        <div className="mt-3 flex items-center justify-between">
-          <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
+    <Modal titulo={`Conectar ${numero.rotulo}`} aoFechar={onClose} bloquearFechamento={acao.ocupado} largura="max-w-sm">
+      <p className="text-xs text-gray-500">
+        No celular do número: WhatsApp → aparelhos conectados → conectar aparelho.
+      </p>
+      <div className="mt-3 flex min-h-64 items-center justify-center rounded-md border border-gray-200 bg-surface p-3">
+        {estado === "CONECTADO" ? (
+          <p className="text-sm text-green-700">Conectado! O número já envia e recebe por aqui.</p>
+        ) : qr ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`} alt="QR de conexão" className="h-56 w-56" />
+        ) : (
+          <p className="text-sm text-gray-400">{acao.ocupado ? "Gerando QR…" : "Sem QR — tente atualizar."}</p>
+        )}
+      </div>
+      <FeedbackAcao erro={acao.erro} className="mt-2" />
+      <div className="mt-3 flex items-center justify-between">
+        <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
+        <div className="flex items-center gap-2">
+          <button className={btnSec} onClick={onClose}>Fechar</button>
           <button className={btnSec} disabled={acao.ocupado || estado === "CONECTADO"} onClick={pedirQr}>
             Atualizar QR
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

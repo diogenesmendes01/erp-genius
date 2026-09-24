@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
@@ -16,6 +16,7 @@ import { PagamentoModal } from "@/components/PagamentoModal";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { useDialogo } from "@/lib/dialogo";
 
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
@@ -329,26 +330,34 @@ export function FilaCobranca({
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200">
           {filtrados.map((item) => (
+            // Linha acessível por teclado (docs/42 E7): a ação principal é um <button> de verdade, com o
+            // `::after` esticado sobre a linha inteira — clicar em qualquer ponto continua abrindo o
+            // detalhe. Checkbox do lote e ações rápidas ficam FORA do botão (controle dentro de botão é
+            // HTML inválido) e acima da camada esticada (relative z-10), então não abrem a linha.
             <div
               key={item.id}
-              className="cursor-pointer border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50"
-              onClick={() => setAberta(item)}
+              className="relative border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50 has-[button:focus-visible]:bg-gray-50"
             >
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                  {podeOperar && elegivelLote(item) && (
-                    <input
-                      type="checkbox"
-                      aria-label={`Selecionar ${item.aluno.nome} para o lote`}
-                      className="h-3.5 w-3.5 accent-brand-600"
-                      checked={selecao.has(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => alternarSelecao(item.id)}
-                    />
-                  )}
-                  {item.aluno.nome}
-                </span>
-                <span className="text-sm font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
+              <div className="flex items-center gap-2">
+                {podeOperar && elegivelLote(item) && (
+                  <input
+                    type="checkbox"
+                    aria-label={`Selecionar ${item.aluno.nome} para o lote`}
+                    className="relative z-10 h-3.5 w-3.5 accent-brand-600"
+                    checked={selecao.has(item.id)}
+                    onChange={() => alternarSelecao(item.id)}
+                  />
+                )}
+                <button
+                  type="button"
+                  className="block w-full min-w-0 cursor-pointer text-left after:absolute after:inset-0"
+                  onClick={() => setAberta(item)}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-gray-800">{item.aluno.nome}</span>
+                    <span className="text-sm font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
+                  </span>
+                </button>
               </div>
               <div className="mt-1 flex items-center justify-between gap-3">
                 <span className="truncate text-xs text-gray-500">
@@ -357,7 +366,7 @@ export function FilaCobranca({
                   {item.tentativas > 1 && <span className="ml-1 text-amber-600">· {item.tentativas}ª cobrança</span>}
                   {!item.destino && <span className="ml-1 text-red-600">· sem destino</span>}
                 </span>
-                <div className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="relative z-10 flex shrink-0 items-center gap-2">
                   {item.respondeuEm && (
                     <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">respondeu</span>
                   )}
@@ -505,12 +514,27 @@ export function DetalheCobranca({
     }
   }
 
+  // Diálogo acessível (docs/42 E7): Escape fecha, foco entra e fica preso no painel e volta à linha
+  // que o abriu. Enquanto o envio manual está sendo preparado/confirmado, nem Escape, nem clique no
+  // fundo, nem ✕ fecham — o resultado da ação precisa chegar ao operador.
+  const painel = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  useDialogo(painel, { aberto: true, aoFechar: onClose, bloquearFechamento: manualOcupado });
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
-      <div className="h-full w-full max-w-md overflow-y-auto bg-surface" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => { if (!manualOcupado) onClose(); }}>
+      <div
+        ref={painel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
+        className="h-full w-full max-w-md overflow-y-auto bg-surface"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <span className="text-sm font-medium">Detalhe da cobrança</span>
-          <button className="text-gray-400 hover:text-gray-700" onClick={onClose}>✕</button>
+          <h2 id={tituloId} className="text-sm font-medium">Detalhe da cobrança</h2>
+          <button type="button" aria-label="Fechar detalhe da cobrança" className="text-gray-400 hover:text-gray-700 disabled:opacity-50" disabled={manualOcupado} onClick={onClose}>✕</button>
         </div>
 
         <div className="px-5 py-4">
