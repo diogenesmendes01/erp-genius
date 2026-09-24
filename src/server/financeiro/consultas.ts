@@ -188,10 +188,16 @@ export async function listarContextosRecebimentoDestinado() {
   });
 }
 
-export async function configuracaoComissoes() {
+/** Quem configura a política de comissão: Administrador ou permissão `comissao.configurar`. Sem carregar a política. */
+export async function podeConfigurarComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return true;
   const atual = await prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } });
-  if (!usuario.papeis.includes(Papel.ADMINISTRADOR) && !atual.permissoes.includes("comissao.configurar")) return null;
+  return atual.permissoes.includes("comissao.configurar");
+}
+
+export async function configuracaoComissoes() {
+  if (!(await podeConfigurarComissoes())) return null;
   const [politicas, paises, produtos] = await Promise.all([
     prisma.politicaComissao.findMany({ orderBy: { criadoEm: "desc" } }),
     prisma.pais.findMany({ where: { status: "ATIVO" }, select: { id: true, nome: true, moedaLocal: true } }),
