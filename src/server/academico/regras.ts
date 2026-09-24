@@ -9,7 +9,13 @@ export function classificarDestinoAcademico(origem: Classificavel, destino: Clas
   return origem.nivelId === destino.nivelId ? "EQUIVALENTE" : "EXCECAO";
 }
 
-export function rotuloTurmaAcademica(turma: Pick<TurmaAcademica, "codigo" | "nome" | "modalidade" | "nivel">) {
+/** Só os campos lidos — a lista de alunos (filtro de turma) usa o mesmo rótulo com um select enxuto. */
+export function rotuloTurmaAcademica(turma: {
+  codigo: TurmaAcademica["codigo"];
+  nome: TurmaAcademica["nome"];
+  modalidade: Pick<TurmaAcademica["modalidade"], "nome">;
+  nivel: Pick<TurmaAcademica["nivel"], "codigo"> & { idioma: Pick<TurmaAcademica["nivel"]["idioma"], "nome"> };
+}) {
   return [turma.codigo, turma.nome, turma.modalidade.nome, `${turma.nivel.idioma.nome} ${turma.nivel.codigo}`].filter(Boolean).join(" · ");
 }
 

@@ -47,7 +47,10 @@ export function filtrosParaQuery(f: FiltrosAlunos, { semPagina = false } = {}): 
   return q.toString();
 }
 
-export const temFiltroAlunos = (f: FiltrosAlunos) => !!(f.busca || f.status || f.paisId || f.turmaId);
+/** Palavras da busca (no máximo 6 — limita o tamanho da consulta). */
+export const palavrasDaBusca = (busca: string) => busca.split(/\s+/).filter(Boolean).slice(0, 6);
+
+export const temFiltroAlunos =(f: FiltrosAlunos) => !!(f.busca || f.status || f.paisId || f.turmaId);
 
 /**
  * Condição dos filtros — sempre combinada com o escopo do usuário por quem consulta (AND), nunca no
@@ -56,8 +59,10 @@ export const temFiltroAlunos = (f: FiltrosAlunos) => !!(f.busca || f.status || f
  */
 export function whereFiltrosAlunos(f: FiltrosAlunos, escopoTurma?: Prisma.TurmaWhereInput): Prisma.AlunoWhereInput {
   const e: Prisma.AlunoWhereInput[] = [];
-  if (f.busca) {
-    const contem = { contains: f.busca, mode: "insensitive" as const };
+  // Busca por palavras: cada uma precisa aparecer em algum campo. "Ana Silva" acha a aluna mesmo com
+  // nome e sobrenome em colunas separadas (comparar a frase inteira em cada coluna não acharia).
+  for (const palavra of palavrasDaBusca(f.busca)) {
+    const contem = { contains: palavra, mode: "insensitive" as const };
     e.push({ OR: [{ primeiroNome: contem }, { sobrenome: contem }, { nomePreferido: contem }, { codigo: contem }] });
   }
   if (f.status) e.push({ status: f.status });

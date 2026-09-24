@@ -6,6 +6,7 @@ import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
 import { ALUNOS_POR_PAGINA, whereFiltrosAlunos, type FiltrosAlunos } from "./filtros";
+import { rotuloTurmaAcademica } from "@/server/academico/regras";
 import { carregarOfertasAgendaDestinoTx } from "@/server/academico/destino-agenda";
 import {
   carregarTrilhasVencimentoCivil,
@@ -168,7 +169,7 @@ async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
 }
 
 /** Escopo do usuário E filtros da URL — os filtros só estreitam, nunca alargam o que o papel vê. */
-function whereListaAlunos(usuario: UsuarioSessao, filtros?: FiltrosAlunos): Prisma.AlunoWhereInput {
+export function whereListaAlunos(usuario: UsuarioSessao, filtros?: FiltrosAlunos): Prisma.AlunoWhereInput {
   const escopo = escopoAlunos(usuario);
   if (!filtros) return escopo;
   return { AND: [escopo, whereFiltrosAlunos(filtros, temVisaoAmpla(usuario) ? undefined : escopoTurmasDocente(usuario.id))] };
@@ -196,11 +197,13 @@ export async function opcoesFiltroAlunos(usuario?: UsuarioSessao) {
     prisma.pais.findMany({ where: { alunos: { some: escopoAlunos(usuario) } }, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
     prisma.turma.findMany({
       where: temVisaoAmpla(usuario) ? { alocacoes: { some: { ativa: true } } } : escopoTurmasDocente(usuario.id),
-      orderBy: [{ modalidade: { nome: "asc" } }, { nivel: { codigo: "asc" } }],
-      select: { id: true, modalidade: { select: { nome: true } }, nivel: { select: { codigo: true } } },
+      orderBy: [{ modalidade: { nome: "asc" } }, { nivel: { codigo: "asc" } }, { codigo: "asc" }],
+      select: { id: true, codigo: true, nome: true, modalidade: { select: { nome: true } }, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } } },
     }),
   ]);
-  return { paises, turmas: turmas.map((t) => ({ id: t.id, label: `${t.modalidade.nome} ${t.nivel.codigo}` })) };
+  // Rótulo com código e nome da turma: "Inglês B1" sozinho repetia entre turmas diferentes, e quem
+  // escolhia uma via só metade dos alunos sem saber por quê.
+  return { paises, turmas: turmas.map((t) => ({ id: t.id, label: rotuloTurmaAcademica(t) })) };
 }
 
 export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlunos, pagina?: { skip: number; take: number }) {

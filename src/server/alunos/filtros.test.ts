@@ -48,6 +48,19 @@ describe("whereFiltrosAlunos", () => {
     const contem = { contains: "Ana", mode: "insensitive" };
     expect(w).toEqual({ AND: [{ OR: [{ primeiroNome: contem }, { sobrenome: contem }, { nomePreferido: contem }, { codigo: contem }] }] });
   });
+
+  it("nome completo: \"Ana Silva\" exige cada palavra em algum campo (nome e sobrenome em colunas separadas)", () => {
+    const w = whereFiltrosAlunos(lerFiltrosAlunos({ busca: "  Ana   Silva " })) as { AND: { OR: Record<string, { contains: string }>[] }[] };
+    expect(w.AND).toHaveLength(2);
+    expect(w.AND.map((c) => c.OR[0].primeiroNome.contains)).toEqual(["Ana", "Silva"]);
+    // Aluna com primeiroNome "Ana" e sobrenome "Silva": cada condição acha a palavra em algum campo.
+    const aluna = { primeiroNome: "Ana", sobrenome: "Silva", nomePreferido: null, codigo: "A-1" } as Record<string, string | null>;
+    const atende = w.AND.every((c) => c.OR.some((campo) => {
+      const [nome, { contains }] = Object.entries(campo)[0];
+      return (aluna[nome] ?? "").toLowerCase().includes(contains.toLowerCase());
+    }));
+    expect(atende).toBe(true);
+  });
   it("turma do professor fica presa às turmas dele (URL montada à mão não revela turma alheia)", () => {
     const escopo = { vinculosDocentes: { some: { professorId: "prof" } } };
     const w = whereFiltrosAlunos(lerFiltrosAlunos({ turma: "t1" }), escopo as never);
