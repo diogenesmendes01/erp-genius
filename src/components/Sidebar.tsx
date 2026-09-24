@@ -37,7 +37,7 @@ const ICONS: Record<string, Icone> = {
 };
 
 /** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */
-export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700" }: { className?: string }) {
+export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", classeIcone = "h-4 w-4" }: { className?: string; classeIcone?: string }) {
   const [dark, setDark] = useState(false);
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -58,7 +58,7 @@ export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700" }:
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-label="Alternar tema"
     >
-      {dark ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+      {dark ? <IconSun className={classeIcone} /> : <IconMoon className={classeIcone} />}
     </button>
   );
 }

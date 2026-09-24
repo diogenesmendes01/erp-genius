@@ -32,6 +32,17 @@ describe("grades responsivas", () => {
     expect(ofensores).toEqual([]);
   });
 
+  it("nenhum item ocupa duas+ colunas como base (col-span-2 numa grade de uma coluna recria a segunda)", () => {
+    const COL_SPAN_BASE = /["'`\s]col-span-([2-9]|1[0-2])(?=["'`\s])/;
+    const ofensores = telas
+      .filter(({ arquivo }) => !KPIS_DUAS_COLUNAS.has(arquivo))
+      .flatMap(({ arquivo, conteudo }) =>
+        conteudo.split("\n").map((l, i) => (COL_SPAN_BASE.test(l) ? `${arquivo}:${i + 1}` : "")).filter(Boolean));
+    expect(ofensores).toEqual([]);
+    expect(COL_SPAN_BASE.test('className="col-span-2 md:col-span-1"')).toBe(true);
+    expect(COL_SPAN_BASE.test('className="sm:col-span-2 md:col-span-1"')).toBe(false);
+  });
+
   it("a exceção de KPIs não sobra: cada arquivo listado ainda tem a grade de indicadores", () => {
     const sobrando = [...KPIS_DUAS_COLUNAS].filter((a) => !telas.some((t) => t.arquivo === a && BASE_MULTICOLUNA.test(t.conteudo)));
     expect(sobrando).toEqual([]);

@@ -19,4 +19,14 @@ describe("AppLayout", () => {
     expect(html).toContain("Pular para o conteúdo");
     expect(html).toMatch(/<main id="conteudo"/);
   });
+
+  it("monta a barra mobile junto da Sidebar, numa coluna no celular e em linha a partir de md", async () => {
+    mocks.sessao.mockResolvedValue({ papeis: ["ADMINISTRADOR"], nome: "Ana" });
+    mocks.naoLidas.mockResolvedValue(0);
+    const html = renderToStaticMarkup(await AppLayout({ children: createElement("p", null, "conteúdo") }));
+    // Sem a barra, a Sidebar escondida abaixo de md deixaria o celular sem menu, tema, fuso e sair.
+    expect(html).toContain("<header>BarraMobile</header>");
+    expect(html).toContain("<aside>Sidebar</aside>");
+    expect(html).toMatch(/^<div class="[^"]*flex-col[^"]*md:flex-row/);
+  });
 });
