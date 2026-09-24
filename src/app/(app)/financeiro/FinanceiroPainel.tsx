@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
@@ -17,7 +17,9 @@ import { FilaCobranca } from "./FilaCobranca";
 import { RetomadasPainel } from "./RetomadasPainel";
 import type { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
 import { abasVisiveis, ROTULO_ABA, type AbaFinanceiro } from "./abas";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
@@ -109,10 +111,11 @@ export function FinanceiroPainel({
   preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
-  const ocupadoRef = useRef(false);
+  // Câmbio, fechamento de comissões, configuração e aprovações: nenhuma action recebe chave de
+  // idempotência — resultado incerto manda conferir antes de repetir. A trava de duplo clique que
+  // antes era manual (ocupadoRef) é a do executor.
+  const acao = useAcaoCliente({ idempotente: false });
+  const ocupado = acao.ocupado;
 
   // Seletor de moeda de consolidação (Fase B). Default USD; preferência salva no navegador
   // (sem coluna nova). `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
@@ -133,44 +136,22 @@ export function FinanceiroPainel({
   }
 
   async function salvarCambio(entradas: { moeda: string; unidadesPorUsd: number }[]) {
-    setErro(null);
-    setNota(null);
-    const r = await salvarTaxasCambio({ entradas });
-    if (!r.ok) setErro(r.erro ?? "Erro ao salvar câmbio.");
-    else { setNota("Cotações salvas."); router.refresh(); }
+    const d = await acao.executar(() => salvarTaxasCambio({ entradas }), "Cotações salvas.");
+    if (d?.tipo === "ok") router.refresh();
   }
 
   async function atualizarCambioAuto() {
-    setErro(null);
-    setNota(null);
-    const r = await atualizarCotacoesAutomatico();
-    if (!r.ok) { setErro(r.erro ?? "Erro ao atualizar câmbio."); return; }
-    const semCot = r.dado?.semCotacao ?? [];
-    setNota(
-      `Cotações atualizadas pela fonte pública: ${r.dado?.atualizadas ?? 0}` +
-        (semCot.length ? ` · sem cotação na fonte: ${semCot.join(", ")}` : ""),
-    );
-    router.refresh();
+    const d = await acao.executar(() => atualizarCotacoesAutomatico(), (dado) => {
+      const semCot = dado?.semCotacao ?? [];
+      return `Cotações atualizadas pela fonte pública: ${dado?.atualizadas ?? 0}` + (semCot.length ? ` · sem cotação na fonte: ${semCot.join(", ")}` : "");
+    });
+    if (d?.tipo === "ok") router.refresh();
   }
 
-  // `ocupadoRef` trava de forma SÍNCRONA, antes do primeiro `await` — setOcupado(true) sozinho
-  // não bastaria: React agrupa a atualização de estado, então um segundo clique no mesmo
-  // frame (antes do re-render aplicar `disabled`) ainda chamaria a action de novo. Recebe uma
-  // fábrica, não a promise já criada, para a action nem começar a rodar se a trava já estiver
-  // fechada.
-  async function run(acao: () => Promise<{ ok: boolean; erro?: string }>) {
-    if (ocupadoRef.current) return;
-    ocupadoRef.current = true;
-    setErro(null);
-    setOcupado(true);
-    try {
-      const r = await acao();
-      if (!r.ok) setErro(r.erro ?? "Erro.");
-      else router.refresh();
-    } finally {
-      ocupadoRef.current = false;
-      setOcupado(false);
-    }
+  // Recebe uma fábrica, não a promise já criada: com a trava do executor fechada, a action nem começa.
+  async function run<T>(disparar: () => Promise<Resultado<T>>) {
+    const d = await acao.executar(disparar);
+    if (d?.tipo === "ok") router.refresh();
   }
 
   // As contagens vêm das três filas pendentes, que a página carrega em qualquer aba.
@@ -203,8 +184,7 @@ export function FinanceiroPainel({
         ))}
       </nav>
 
-      {erro && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
 
       {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
       {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
