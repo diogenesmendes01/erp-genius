@@ -10,6 +10,8 @@ import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
 import { pausarAluno, encerrarAluno, editarAluno } from "@/server/alunos/acoes";
 import { Drawer } from "@/components/Drawer";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
@@ -109,7 +111,9 @@ export function FichaAluno({
   turmaSugerida?: { turmaId: string; label: string; diasHorario: string | null } | null;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Editar, pausar e encerrar não recebem chave de idempotência (server/alunos/acoes.ts:49, :182, :226):
+  // conferir a ficha antes de repetir. Um só executor — só um painel fica aberto por vez (`modal`).
+  const acao = useAcaoCliente({ idempotente: false });
   const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "editar">("none");
 
   // estados dos modais
@@ -166,15 +170,18 @@ export function FichaAluno({
 
   function abrirEdicao() {
     setEd(valoresEd()); // recarrega valores atuais a cada abertura
-    setErro(null);
-    setModal("editar");
+    abrir("editar");
   }
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>) {
-    setErro(null);
-    const r = await p;
-    if (!r.ok) setErro(r.erro ?? "Erro.");
-    else {
+  // O erro é exibido dentro do painel aberto; trocar de painel não pode herdar o erro do anterior.
+  function abrir(m: typeof modal) {
+    acao.limpar();
+    setModal(m);
+  }
+
+  async function run(chamada: () => ReturnType<typeof editarAluno>) {
+    const d = await acao.executar(chamada);
+    if (d?.tipo === "ok") {
       setModal("none");
       router.refresh();
     }
@@ -182,8 +189,6 @@ export function FichaAluno({
 
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-
       <header>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-medium">{aluno.nome}</h1>
@@ -205,14 +210,14 @@ export function FichaAluno({
           </button>}
           {podeMovimentarGlobal && aluno.status === StatusAluno.ATIVO && (
             <>
-              <button className={btnSec} onClick={() => setModal("pausar")}>Pausar</button>
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+              <button className={btnSec} onClick={() => abrir("pausar")}>Pausar</button>
+              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
           {podeMovimentarGlobal && aluno.status === StatusAluno.PAUSADO && (
             <>
               {podeEditarCadastro ? <Link className={btnPri} href={`/alunos/${aluno.id}/financeiro#retomada`}>Propor retomada</Link> : <span className="self-center text-sm text-gray-500">A secretaria deve encaminhar uma proposta de retomada para aprovação financeira.</span>}
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
         </div>
@@ -227,24 +232,28 @@ export function FichaAluno({
         onClose={() => setModal("none")}
         title="Editar dados do aluno"
         footer={
-          <div className="flex justify-end gap-2">
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
-            <button
-              className={btnPri}
-              disabled={!ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
-              onClick={() =>
-                run(
-                  editarAluno(aluno.id, {
-                    ...ed,
-                    genero: ed.genero || undefined,
-                    escolaridade: ed.escolaridade || undefined,
-                  }),
-                )
-              }
-            >
-              Salvar alterações
-            </button>
-          </div>
+          <>
+            {/* Dentro do painel, acima dos botões: no topo da página ficaria atrás do overlay. */}
+            <FeedbackAcao erro={modal === "editar" ? acao.erro : null} className="mb-3" />
+            <div className="flex justify-end gap-2">
+              <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+              <button
+                className={btnPri}
+                disabled={acao.ocupado || !ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
+                onClick={() =>
+                  run(() =>
+                    editarAluno(aluno.id, {
+                      ...ed,
+                      genero: ed.genero || undefined,
+                      escolaridade: ed.escolaridade || undefined,
+                    }),
+                  )
+                }
+              >
+                {acao.ocupado ? "Salvando…" : "Salvar alterações"}
+              </button>
+            </div>
+          </>
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -420,8 +429,9 @@ export function FichaAluno({
           <input className={inputCls + " mb-2"} aria-label="Motivo da pausa" placeholder="Motivo" value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />
           <label htmlFor="pausa-retorno" className="mb-1 block text-xs text-gray-600">Retorno previsto (opcional)</label>
           <input id="pausa-retorno" type="date" className={inputCls + " mb-3"} value={retorno} onChange={(e) => setRetorno(e.target.value)} />
+          <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri} onClick={() => run(pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>Confirmar pausa</button>
+            <button className={btnPri} disabled={acao.ocupado} onClick={() => run(() => pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>{acao.ocupado ? "Confirmando…" : "Confirmar pausa"}</button>
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
           </div>
         </div>
@@ -436,8 +446,9 @@ export function FichaAluno({
             ))}
           </select>
           <input className={inputCls + " mb-3"} aria-label="Observação do encerramento" placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
+          <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri + " bg-danger hover:brightness-95"} onClick={() => run(encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>Confirmar encerramento</button>
+            <button className={btnPri + " bg-danger hover:brightness-95"} disabled={acao.ocupado} onClick={() => run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>{acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}</button>
             <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
           </div>
         </div>

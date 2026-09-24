@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -9,6 +8,8 @@ import { SEGMENTO_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
 import { LeadSchema, type LeadInput } from "@/server/comercial/schema";
 import { criarLead, editarLead } from "@/server/comercial/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -43,13 +44,15 @@ export function LeadFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // criarLead/editarLead não recebem chave de idempotência (server/comercial/acoes.ts:136 cria um lead
+  // novo a cada chamada; :244 sobrescreve): resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LeadInput>({
     resolver: zodResolver(LeadSchema),
     defaultValues: lead ?? {
@@ -69,12 +72,9 @@ export function LeadFormulario({
   });
 
   async function onSubmit(data: LeadInput) {
-    setErro(null);
-    const res = lead ? await editarLead(lead.id, data) : await criarLead(data);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    const desfecho = await acao.executar<unknown>(() => (lead ? editarLead(lead.id, data) : criarLead(data)));
+    // Fecha o formulário só com o lead confirmado pelo servidor.
+    if (desfecho?.tipo !== "ok") return;
     router.refresh();
     onClose();
   }
@@ -192,15 +192,15 @@ export function LeadFormulario({
         Lead corporativo (B2B)
       </label>
 
-      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={acao.ocupado}
           className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
         >
-          {isSubmitting ? "Salvando…" : "Salvar lead"}
+          {acao.ocupado ? "Salvando…" : "Salvar lead"}
         </button>
         <button
           type="button"

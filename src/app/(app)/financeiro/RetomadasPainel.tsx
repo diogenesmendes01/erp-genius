@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { solicitarRetomada, decidirRetomada } from "@/server/retomada/acoes";
 import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
@@ -25,9 +26,12 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
   const [motivo, setMotivo] = useState("");
   const [datas, setDatas] = useState<Record<string, string>>({});
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  const [erro, setErro] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
-  const [ocupado, iniciar] = useTransition();
+  // Proposta e decisão não recebem chave de idempotência (server/retomada/acoes.ts:29 e :63); o servidor
+  // só reconhece a repetição idêntica pelo conteúdo (acoes.ts:47 e :75). Conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O resultado aparece junto da proposta nova ("proposta") ou da proposta decidida (id).
+  const [alvo, setAlvo] = useState<string | null>(null);
+  const ocupado = acao.ocupado;
   const hoje = contexto?.dataMinimaReprogramacao;
   const podePropor = contexto?.status === "PAUSADO" && !contexto.impedimento && !contexto.propostaPendenteId && !erroConsulta;
   const instanteAdministrativo = (valor: string) => {
@@ -35,31 +39,25 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
   };
 
-  function propor(evento: FormEvent<HTMLFormElement>) {
+  async function propor(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!contexto || !opcao) return;
-    iniciar(async () => {
-      setErro(null); setAviso(null);
-      const resposta = await solicitarRetomada(contexto.alunoId, {
-        opcao, motivo,
-        novosVencimentos: opcao === "REPROGRAMAR_PARCELAS" ? contexto.parcelas.map((p) => ({ cobrancaId: p.cobrancaId, vencimento: datas[p.cobrancaId] ?? p.vencimento.slice(0, 10) })) : [],
-      });
-      if (!resposta.ok) { setErro(resposta.erro); return; }
-      setOpcao(""); setMotivo(""); setDatas({});
-      setAviso("Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.");
-      router.refresh();
-    });
+    setAlvo("proposta");
+    const d = await acao.executar(() => solicitarRetomada(contexto.alunoId, {
+      opcao, motivo,
+      novosVencimentos: opcao === "REPROGRAMAR_PARCELAS" ? contexto.parcelas.map((p) => ({ cobrancaId: p.cobrancaId, vencimento: datas[p.cobrancaId] ?? p.vencimento.slice(0, 10) })) : [],
+    }), "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.");
+    if (d?.tipo !== "ok") return;
+    setOpcao(""); setMotivo(""); setDatas({});
+    router.refresh();
   }
 
-  function decidir(id: string, aprovar: boolean) {
-    iniciar(async () => {
-      setErro(null); setAviso(null);
-      const resposta = await decidirRetomada(id, { aprovar, motivo: motivosDecisao[id] ?? "" });
-      if (!resposta.ok) { setErro(resposta.erro); return; }
-      setAviso(aprovar ? "Proposta aprovada. A retomada e o calendário foram aplicados." : "Proposta rejeitada. A situação dos contratos e os vencimentos foram preservados.");
-      window.dispatchEvent(new Event("acesso-aulas-atualizado"));
-      router.refresh();
-    });
+  async function decidir(id: string, aprovar: boolean) {
+    setAlvo(id);
+    const d = await acao.executar(() => decidirRetomada(id, { aprovar, motivo: motivosDecisao[id] ?? "" }), aprovar ? "Proposta aprovada. A retomada e o calendário foram aplicados." : "Proposta rejeitada. A situação dos contratos e os vencimentos foram preservados.");
+    if (d?.tipo !== "ok") return;
+    window.dispatchEvent(new Event("acesso-aulas-atualizado"));
+    router.refresh();
   }
 
   return <section id="retomada" aria-label="Retomada após pausa" className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4">
@@ -67,8 +65,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       <h2 className="text-lg font-medium">Retomada após pausa</h2>
       <p className="mt-1 text-sm text-gray-500">A proposta precisa ser aprovada por outra pessoa do Financeiro ou da Administração antes de retomar o aluno e aplicar os vencimentos.</p>
     </div>
-    {(erro || erroConsulta) && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro ?? erroConsulta}</p>}
-    <MensagemStatus texto={aviso} className="rounded-md bg-blue-50 p-3 text-sm text-blue-700" />
+    {erroConsulta && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erroConsulta}</p>}
     {contexto?.status === "PAUSADO" && contexto.impedimento && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">{contexto.impedimento}</p>}
     {contexto?.propostaPendenteId && <p className="text-sm text-gray-600">Já existe uma proposta aguardando decisão. Confira os detalhes abaixo.</p>}
 
@@ -93,6 +90,8 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       </label>
       <button className={principal} type="submit" disabled={ocupado || !opcao || motivo.trim().length < 5}>Enviar proposta para aprovação</button>
     </form>}
+    {/* Fora do formulário: no sucesso ele some (proposta pendente), e a confirmação continua visível. */}
+    <FeedbackAcao erro={alvo === "proposta" ? acao.erro : null} sucesso={alvo === "proposta" ? acao.sucesso : undefined} />
 
     {propostas.length === 0 && !podePropor && !erroConsulta && <p className="text-sm text-gray-500">Nenhuma proposta de retomada.</p>}
     {propostas.map((p) => <article key={p.id} className="space-y-3 border-t border-gray-200 pt-4">
@@ -113,6 +112,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
           <button className={botao} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar proposta</button>
         </div>
       </div>}
+      <FeedbackAcao erro={alvo === p.id ? acao.erro : null} sucesso={alvo === p.id ? acao.sucesso : undefined} />
       {p.status === "PENDENTE" && p.impedimentoAprovacao && <p className="text-sm text-amber-800">{p.impedimentoAprovacao} <Link className="underline" href={`/alunos/${p.alunoId}/movimentacoes`}>Consultar movimentações por matrícula</Link></p>}
       {p.status === "PENDENTE" && !p.podeDecidir && <p className="text-xs text-gray-500">Aguardando aprovação de outra pessoa do Financeiro ou da Administração.</p>}
     </article>)}

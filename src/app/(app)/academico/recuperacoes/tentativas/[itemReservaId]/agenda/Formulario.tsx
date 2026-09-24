@@ -5,6 +5,11 @@ import { decidirAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda
 import { Formulario } from "../../../planos/[propostaId]/Formularios";
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
+
+// O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }: executarAcaoCliente decide a
+// mensagem de resultado incerto conforme a idempotência desta action, e o desfecho volta nesse formato.
+const resposta = (d: DesfechoAcao<unknown>) => d.tipo === "ok" ? { ok: true as const } : { ok: false as const, erro: d.mensagem };
 
 export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional }: { itemReservaId: string; versaoEsperada: number; fusoInstitucional: string | null }) {
   const chave = useRef<{ entrada: string; id: string } | null>(null);
@@ -14,7 +19,9 @@ export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional 
     const d = { itemReservaId, versaoEsperada, inicioLocal: campo("inicio"), fimLocal: campo("fim"), fuso: campo("fuso"), motivo: campo("motivo") };
     const entrada = JSON.stringify(d);
     if (chave.current?.entrada !== entrada) chave.current = { entrada, id: crypto.randomUUID() };
-    return proporAgendaRecuperacao({ ...d, chaveIdempotencia: chave.current.id });
+    const chaveIdempotencia = chave.current.id;
+    // Chave estável por entrada; o servidor devolve a proposta já criada com a mesma chave (server/avaliacoes/recuperacao-agenda-proposta.ts:30-33).
+    return resposta(await executarAcaoCliente(() => proporAgendaRecuperacao({ ...d, chaveIdempotencia }), { idempotente: true }));
   }}>
     <p>A proposta preserva os horários e a conferência para revisão. Não agenda a avaliação.</p>
     <label className="block">Início<input name="inicio" type="datetime-local" required {...periodo.propsInicio} className="block rounded border p-2" /></label>
@@ -26,8 +33,9 @@ export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional 
 }
 
 export function DecidirAgenda({ propostaId, estadoConferido, podeAprovar }: { propostaId: string; estadoConferido: string; podeAprovar: boolean }) {
-  return <Formulario titulo="Decidir proposta de horário" executar={async dados => decidirAgendaRecuperacao({ propostaId, estadoConferido,
-    aprovar: dados.get("decisao") === "aprovar", autorizarDiaNaoLetivo: dados.get("excecao") === "on", motivo: String(dados.get("motivo") ?? "") })}>
+  // Decisão sem chave de idempotência no contrato (server/avaliacoes/recuperacao-agenda-decisao.ts:14): a falha não manda reenviar.
+  return <Formulario titulo="Decidir proposta de horário" executar={async dados => resposta(await executarAcaoCliente(() => decidirAgendaRecuperacao({ propostaId, estadoConferido,
+    aprovar: dados.get("decisao") === "aprovar", autorizarDiaNaoLetivo: dados.get("excecao") === "on", motivo: String(dados.get("motivo") ?? "") }), { idempotente: false }))}>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2">
       <option value="" disabled>Selecione</option><option value="rejeitar">Rejeitar proposta</option>
       {podeAprovar && <option value="aprovar">Aprovar e publicar o horário</option>}

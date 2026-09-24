@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EmpresaResumo } from "@/server/empresas/consultas";
 import { salvarEmpresa } from "@/server/empresas/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 // Empresas representam o responsável financeiro. As matrículas permanecem contratos
 // individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
@@ -23,18 +25,16 @@ export function EmpresasCliente({
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState("");
   const [paisId, setPaisId] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  // salvarEmpresa não recebe chave de idempotência (server/empresas/acoes.ts:41 — sem id, cria uma
+  // empresa nova a cada chamada, :68): resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   async function criar() {
-    setOcupado(true);
-    setErro(null);
-    const r = await salvarEmpresa({ nome, paisId });
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao criar.");
+    const d = await acao.executar(() => salvarEmpresa({ nome, paisId }));
+    if (d?.tipo !== "ok") return;
     setCriando(false);
     setNome("");
-    if (r.dado) router.push(`/empresas/${r.dado.id}`);
+    if (d.dado) router.push(`/empresas/${d.dado.id}`);
     else router.refresh();
   }
 
@@ -49,8 +49,6 @@ export function EmpresasCliente({
         </div>
         <button className={btnPri} onClick={() => setCriando((v) => !v)}>Nova empresa</button>
       </div>
-
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {criando && (
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4">
@@ -67,9 +65,10 @@ export function EmpresasCliente({
               ))}
             </select>
           </label>
-          <button className={btnPri} disabled={ocupado || nome.trim().length < 2} onClick={criar}>
-            {ocupado ? "Criando…" : "Criar"}
+          <button className={btnPri} disabled={acao.ocupado || nome.trim().length < 2} onClick={criar}>
+            {acao.ocupado ? "Criando…" : "Criar"}
           </button>
+          <FeedbackAcao erro={acao.erro} className="basis-full" />
         </div>
       )}
 
