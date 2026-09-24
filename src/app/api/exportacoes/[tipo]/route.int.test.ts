@@ -72,10 +72,10 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toContain("no-store");
     expect(res.headers.get("content-type")).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    expect(await linhas(res)).toEqual([["Código", "Nome", "Etapa", "Temperatura"], ["L-000001", "Carteira autorizada", "NOVO", "MORNO"]]);
+    expect(await linhas(res)).toEqual([["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], ["L-000001", "Carteira autorizada", "PF", "ADULTO", "NOVO", "MORNO", "", ven.nome]]);
     const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "DadosExportados" } });
     expect(evento.autorId).toBe(ven.id);
-    expect(evento.payload).toMatchObject({ conjunto: "leads", quantidade: 1, colunas: ["Código", "Nome", "Etapa", "Temperatura"], filtros: {} });
+    expect(evento.payload).toMatchObject({ conjunto: "leads", quantidade: 1, colunas: ["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], filtros: {} });
     expect(JSON.stringify(evento.payload)).not.toContain("Carteira autorizada");
     expect(JSON.stringify(evento.payload)).not.toContain(lead.telefoneE164);
   });
