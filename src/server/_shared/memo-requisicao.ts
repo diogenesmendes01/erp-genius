@@ -22,3 +22,16 @@ function cacheDoReact(): (<F extends (...args: never[]) => unknown>(f: F) => F) 
 const cache = cacheDoReact();
 
 export const memoPorRequisicao: <F extends (...args: never[]) => unknown>(f: F) => F = cache ?? ((f) => f);
+
+/**
+ * Congela em profundidade o que sai do memo: o MESMO objeto (usuário, papéis, escopo) é entregue a
+ * todos os chamadores da requisição. Hoje ninguém o altera; congelado, uma alteração futura falha na
+ * hora (TypeError em modo estrito) em vez de vazar entre consultas da mesma requisição.
+ */
+export function congelar<T>(valor: T): T {
+  if (valor && typeof valor === "object" && !Object.isFrozen(valor)) {
+    Object.freeze(valor);
+    for (const v of Object.values(valor as Record<string, unknown>)) congelar(v);
+  }
+  return valor;
+}
