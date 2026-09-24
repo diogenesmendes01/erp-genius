@@ -159,7 +159,7 @@ export function EmpresasCliente({
                   <th className="px-4 py-2 font-medium">País</th>
                   <th className="px-4 py-2 font-medium">Colaboradores</th>
                   {/* Faturas FECHADAS = emitidas e aguardando pagamento (StatusFaturaB2B). */}
-                    <th className="px-4 py-2 font-medium">Faturas a receber</th>
+                  <th className="px-4 py-2 font-medium">Faturas a receber</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -174,7 +174,7 @@ export function EmpresasCliente({
                     </td>
                     <td className="px-4 py-2 text-gray-500">{e.pais ?? "—"}</td>
                     <td className="px-4 py-2 text-gray-700">{e.colaboradores}</td>
-                    <td className="px-4 py-2 text-gray-700">{e.faturasAbertas}</td>
+                    <td className="px-4 py-2 text-gray-700">{e.faturasAReceber}</td>
                     <td className="px-4 py-2">
                       <span className={"rounded-full px-2 py-0.5 text-xs " + (e.ativo ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
                         {e.ativo ? "Ativa" : "Inativa"}
