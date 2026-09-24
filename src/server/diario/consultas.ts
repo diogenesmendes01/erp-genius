@@ -6,6 +6,7 @@ import { alocacaoCobreAula } from "./alocacoes";
 import { carregarHistoricosContratuais } from "./historico-contratual";
 import { situacaoMatriculaNaAula } from "@/server/matricula/historico-situacao";
 import { carregarCorrecoesAulaEfetivasTx } from "./correcao-aula-efetiva-tx";
+import { whereBuscaAulas } from "./busca-diario";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
@@ -17,19 +18,23 @@ export async function listarTurmasParaDiario(usuario: UsuarioSessao) {
   return turmas.map((t) => ({ id: t.id, label: [t.codigo, t.nome].filter(Boolean).join(" · ") }));
 }
 
-export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string) {
+/** Histórico do diário, 50 por vez (cursor `antesDe`). `busca` filtra no servidor, em AND com o escopo (E4). */
+export async function listarAulasDiario(usuario: UsuarioSessao, antesDe?: string, busca = "") {
   if (!usuario?.id || (!ehGestaoDiario(usuario) && !usuario.papeis.includes(Papel.PROFESSOR))) return { aulas: [], proximo: null };
   const preferencia = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { ativo: true, fusoExibicao: true } });
   if (!preferencia?.ativo) return { aulas: [], proximo: null };
   const escopo = ehGestaoDiario(usuario) ? {} : { professorId: usuario.id };
+  const filtroBusca = whereBuscaAulas(busca);
+  const where = Object.keys(filtroBusca).length ? { AND: [escopo, filtroBusca] } : escopo;
   let cursor: { id: string } | undefined;
   if (antesDe) {
-    const autorizado = await prisma.aulaDiario.findFirst({ where: { ...escopo, id: antesDe }, select: { id: true } });
+    // O cursor também precisa atender à busca: um link antigo com outra busca não abre página alheia.
+    const autorizado = await prisma.aulaDiario.findFirst({ where: Object.keys(filtroBusca).length ? { AND: [where, { id: antesDe }] } : { ...escopo, id: antesDe }, select: { id: true } });
     if (!autorizado) return { aulas: [], proximo: null };
     cursor = autorizado;
   }
   const registros = await prisma.aulaDiario.findMany({
-    where: escopo, orderBy: [{ ocorridaEm: "desc" }, { id: "desc" }], take: 51, ...(cursor ? { cursor, skip: 1 } : {}),
+    where, orderBy: [{ ocorridaEm: "desc" }, { id: "desc" }], take: 51, ...(cursor ? { cursor, skip: 1 } : {}),
     select: {
       id: true, turmaId: true, professorId: true, ocorridaEm: true, conteudo: true, atualizadoEm: true,
       encontroId: true, encontro: { select: { professorId: true, status: true, fim: true, finalidade: true, matriculaId: true, fusoOrigem: true,
