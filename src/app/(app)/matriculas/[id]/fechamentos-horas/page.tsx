@@ -57,7 +57,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         return origem?.inicio ? instanteEncontro(origem.inicio) : "Encontro sem horário na memória antiga";
       };
       return <section key={v.id} className="space-y-3 rounded border p-4">
-        <h2 className="text-lg font-semibold">Rascunho · versão {v.versao}</h2>
+        <h2 className="text-lg font-medium">Rascunho · versão {v.versao}</h2>
         <p>Preparado por {v.preparador.nome} em {instanteAdministrativo(v.criadoEm)}.</p>
         <p>{v.motivo}</p>
         <p>Contrato de origem: {v.documento.nome}. {v.documento.url ? <a href={v.documento.url} target="_blank" rel="noopener noreferrer" className="underline">Abrir contrato para conferência</a> : "Documento indisponível para abertura nesta tela; solicite conferência à Secretaria."}</p>
@@ -65,7 +65,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Escolha proposta: {v.referenciaProposta.escolha === "AGUARDAR" ? "aguardar conferências pendentes" : "emissão parcial sujeita à aprovação"}.</p></>}
         {v.decisao && <p>Decisão: {v.decisao.aprovada ? "proposta aprovada" : "proposta rejeitada"} por {v.decisao.decisor.nome}. {v.decisao.motivo} A decisão não comprova emissão.</p>}
         {v.emissao && <div className="rounded border p-3">
-          <h3 className="font-semibold">Cobrança emitida · {v.emissao.cobranca.codigo ?? v.emissao.cobranca.id}</h3>
+          <h3 className="font-medium">Cobrança emitida · {v.emissao.cobranca.codigo ?? v.emissao.cobranca.id}</h3>
           <p>Emitida por {v.emissao.executor.nome} em {instanteAdministrativo(v.emissao.criadaEm)}.</p>
           <p>Valor original: {v.emissao.cobranca.moeda} {v.emissao.cobranca.valorOriginal}. Valor atual: {v.emissao.cobranca.valorNegociado}. Saldo: {v.emissao.cobranca.saldo ?? "a conferir"}.</p>
           <Link className="underline" href={`/alunos/${d.matricula.alunoId}/financeiro`}>Consultar cobrança e recebimentos na ficha financeira</Link>
@@ -77,12 +77,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Período: {data(m.data.periodo.inicio)} a {data(m.data.periodo.fim)} · Fuso: {m.data.periodo.fuso} · Vencimento: {data(m.data.periodo.vencimento)}</p>
           <p>Estado da apuração quando preparada: {estados[m.data.apuracao.estado]}</p>
           <p>Total apurado: {m.data.apuracao.moeda} {m.data.apuracao.totalApurado} · {m.data.apuracao.minutosApurados} minutos.</p>
-          <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-semibold">Encontros incluídos na apuração</caption>
+          <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-medium">Encontros incluídos na apuração</caption>
             <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
             <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{i.valorHoraContratado}</td><td>{i.valor}</td></tr>)}</tbody>
           </table></div>
           {!m.data.apuracao.itens.length && <p>Nenhum encontro incluído para cobrança nesta versão.</p>}
-          <h3 className="font-semibold">Pendências ({m.data.apuracao.pendencias.length})</h3>
+          <h3 className="font-medium">Pendências ({m.data.apuracao.pendencias.length})</h3>
           <ul>{m.data.apuracao.pendencias.map(p => <li key={p.encontroId}>{encontro(p.encontroId)}: {p.motivo}</li>)}</ul>
           <p>Encontros com destinação preservada: {m.data.apuracao.preservados.length}. Encontros sem cobrança: {m.data.apuracao.semCobranca.length}.</p>
           <ul className="space-y-2">{m.data.apuracao.preservados.map(p => {
