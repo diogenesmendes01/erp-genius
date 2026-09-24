@@ -56,6 +56,10 @@ describe("trilha de navegação", () => {
     expect(resumo("/academico/recuperacoes/tentativas/ct1x2y3/agenda")).toEqual(["Acadêmico → /academico", "Recuperações → /academico/recuperacoes"]);
   });
 
+  it("seções da configuração do WhatsApp (E8): configuração → WhatsApp → seção", () => {
+    expect(resumo("/configuracao/whatsapp/reguas")).toEqual(["Configuração → /configuracao", "WhatsApp → /configuracao/whatsapp", "Régua comercial"]);
+  });
+
   it("query string e barra final são ignoradas; área sozinha tem um item só", () => {
     expect(resumo("/leads/cl1z2x3/?aba=historico")).toEqual(["Leads → /leads", "Ficha do lead"]);
     expect(trilhaDoCaminho("/home")).toHaveLength(1);
