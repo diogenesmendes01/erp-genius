@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/Sidebar";
 import { BarraMobile } from "@/components/BarraMobile";
+import { Trilha } from "@/components/Trilha";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { contarNaoLidas } from "@/server/whatsapp/consultas";
 
@@ -18,7 +19,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </a>
       <BarraMobile papeis={usuario.papeis} nome={usuario.nome} naoLidasInbox={naoLidasInbox} />
       <Sidebar papeis={usuario.papeis} nome={usuario.nome} naoLidasInbox={naoLidasInbox} />
-      <main id="conteudo" className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+      <main id="conteudo" className="min-w-0 flex-1 p-4 md:p-8">
+        <Trilha />
+        {children}
+      </main>
     </div>
   );
 }
