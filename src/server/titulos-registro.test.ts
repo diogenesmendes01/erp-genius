@@ -8,7 +8,12 @@ const m = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, lead: { findFirst: m.lead }, empresa: { findUnique: m.empresa } } }));
 vi.mock("@/server/_shared", () => ({ exigirSessao: m.sessao }));
 vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: async () => ({ vendedorDonoId: { in: ["v1"] } }) }));
-vi.mock("@/server/alunos/consultas", () => ({ escopoAlunos: (u: { papeis: string[] }) => (u.papeis.includes("PROFESSOR") ? { alocacoes: "da-turma" } : {}) }));
+// Espelha o fail-closed real: professor vê as suas turmas; visão ampla vê tudo; resto, nada.
+vi.mock("@/server/alunos/consultas", () => ({
+  escopoAlunos: (u: { papeis: string[] }) =>
+    u.papeis.includes("SECRETARIA_ACADEMICA") || u.papeis.includes("ADMINISTRADOR") ? {}
+      : u.papeis.includes("PROFESSOR") ? { alocacoes: "da-turma" } : { id: { in: [] } },
+}));
 
 import { tituloAluno, tituloEmpresa, tituloLead } from "./titulos-registro";
 
@@ -36,6 +41,12 @@ describe("títulos de aba das fichas (E2)", () => {
     m.lead.mockResolvedValueOnce({ nome: "Bia" });
     expect(await tituloLead("l1")).toBe("Bia · Lead");
     expect(m.lead.mock.calls[0][0].where).toEqual({ AND: [{ id: "l1" }, { vendedorDonoId: { in: ["v1"] } }] });
+    // Cada papel que abre a ficha do lead também lê o título.
+    for (const papel of [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL]) {
+      m.sessao.mockResolvedValue(u(papel));
+      m.lead.mockResolvedValueOnce({ nome: "Caio" });
+      expect(await tituloLead("l2"), papel).toBe("Caio · Lead");
+    }
   });
 
   it("empresa: só financeiro/admin consultam", async () => {
@@ -45,5 +56,8 @@ describe("títulos de aba das fichas (E2)", () => {
     m.sessao.mockResolvedValue(u(Papel.FINANCEIRO));
     m.empresa.mockResolvedValueOnce({ nome: "Acme" });
     expect(await tituloEmpresa("e1")).toBe("Acme · Empresa");
+    m.sessao.mockResolvedValue(u(Papel.ADMINISTRADOR));
+    m.empresa.mockResolvedValueOnce({ nome: "Beta" });
+    expect(await tituloEmpresa("e2")).toBe("Beta · Empresa");
   });
 });
