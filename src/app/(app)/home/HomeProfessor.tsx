@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkinExperimental } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 interface Turma {
   id: string;
@@ -34,16 +36,16 @@ export function HomeProfessor({
   preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [pendente, setPendente] = useState<string | null>(null);
+  // checkinExperimental não recebe chave de idempotência e recusa a repetição — depois do 1º check-in
+  // a etapa deixa de ser "agendada" (server/comercial/acoes.ts:593, :603): resultado incerto manda
+  // conferir antes de repetir. O erro aparece sob a linha da experimental que o disparou.
+  const acao = useAcaoCliente({ idempotente: false });
+  const [alvo, setAlvo] = useState<string | null>(null);
 
   async function checkin(id: string, compareceu: boolean) {
-    setErro(null);
-    setPendente(id + compareceu);
-    const r = await checkinExperimental(id, compareceu);
-    setPendente(null);
-    if (!r.ok) setErro(r.erro);
-    else router.refresh();
+    setAlvo(id);
+    const d = await acao.executar(() => checkinExperimental(id, compareceu));
+    if (d?.tipo === "ok") router.refresh();
   }
 
   const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -55,7 +57,6 @@ export function HomeProfessor({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {vencidas > 0 && (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -80,8 +81,8 @@ export function HomeProfessor({
         ) : (
           <ul className="flex flex-col gap-2">
             {experimentais.map((e) => (
+              <Fragment key={e.id}>
               <li
-                key={e.id}
                 className={
                   "flex items-center justify-between rounded-md px-3 py-2 " +
                   (e.vencida ? "border border-red-200 bg-red-50" : "bg-gray-50")
@@ -101,20 +102,22 @@ export function HomeProfessor({
                 <div className="flex gap-2">
                   <button
                     onClick={() => checkin(e.id, true)}
-                    disabled={pendente === e.id + "true"}
+                    disabled={acao.ocupado}
                     className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95 disabled:opacity-60"
                   >
                     Compareceu
                   </button>
                   <button
                     onClick={() => checkin(e.id, false)}
-                    disabled={pendente === e.id + "false"}
+                    disabled={acao.ocupado}
                     className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-60"
                   >
                     Faltou
                   </button>
                 </div>
               </li>
+              {alvo === e.id && acao.erro && <li><FeedbackAcao erro={acao.erro} /></li>}
+              </Fragment>
             ))}
           </ul>
         )}

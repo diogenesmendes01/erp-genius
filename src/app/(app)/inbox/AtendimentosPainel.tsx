@@ -4,22 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, revisarFalhaEnvio, type RevisaoEnvio, type ItemTriagem, type OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+
+// Nenhuma das três actions recebe chave de idempotência (server/whatsapp/operacoes-atendimento.ts):
+// abrirAtendimentoInstitucional (:103) grava um evento novo a cada chamada; classificarMensagemWhatsApp
+// (:198) e revisarFalhaEnvio (:240) recusam a repetição ("já classificada" / "já revisado"). Resultado
+// incerto manda conferir antes de repetir.
 
 export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoExibicao }: { opcoes: OpcoesAtendimento; triagem: ItemTriagem[] | null; revisoes: RevisaoEnvio[] | null; preferenciaFusoExibicao: string | null }) {
   const router = useRouter();
   const [destino, setDestino] = useState("");
   const [numero, setNumero] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  const acao = useAcaoCliente({ idempotente: false });
   const destinoSelecionado = opcoes.destinos.find((item) => item.chave === destino);
   return <div className="space-y-3">
     <form className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-3" onSubmit={async (e) => {
-      e.preventDefault(); setErro(null); setOcupado(true);
-      try {
-        const r = await abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero });
-        if (!r.ok) setErro(r.erro); else { router.push(`/inbox?c=${r.dado!.id}`); router.refresh(); }
-      } finally { setOcupado(false); }
+      e.preventDefault();
+      const d = await acao.executar(() => abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero }));
+      if (d?.tipo === "ok") { router.push(`/inbox?c=${d.dado!.id}`); router.refresh(); }
     }}>
       <label className="grid gap-1 text-sm">Finalidade e destinatário
         <select required value={destino} onChange={(e) => setDestino(e.target.value)} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="max-w-sm rounded border p-2">
@@ -33,11 +36,11 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
           {opcoes.numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>
       </label>
-      <button disabled={ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
+      <button disabled={acao.ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
       {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
-    {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
+    <FeedbackAcao erro={acao.erro} />
     {revisoes && <details className="rounded-lg border border-gray-200 p-3">
       <summary className="cursor-pointer text-sm font-medium">Envios que exigem revisão · {revisoes.length}</summary>
       <p className="my-2 text-xs text-gray-600">Um envio com erro pode ter chegado ao destinatário. Confirme o resultado no provedor antes de autorizar uma nova tentativa.</p>
@@ -55,14 +58,11 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
   const router = useRouter();
   const [atendimentoId, setAtendimentoId] = useState("");
   const [motivo, setMotivo] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  const acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-2 rounded border border-amber-200 bg-surface p-3 text-sm" onSubmit={async (e) => {
-    e.preventDefault(); setOcupado(true); setErro(null);
-    try {
-      const r = await classificarMensagemWhatsApp({ mensagemId: item.id, atendimentoId, motivo });
-      if (!r.ok) setErro(r.erro); else router.refresh();
-    } finally { setOcupado(false); }
+    e.preventDefault();
+    const d = await acao.executar(() => classificarMensagemWhatsApp({ mensagemId: item.id, atendimentoId, motivo }));
+    if (d?.tipo === "ok") router.refresh();
   }}>
     <p className="font-medium">{item.nome} · {formatarInstanteExibicao(item.criadoEm, preferenciaFusoExibicao, "UTC").texto}</p>
     <p className="whitespace-pre-wrap break-words text-gray-700">{item.corpo ?? `[${item.tipo.toLowerCase()}]`}</p>
@@ -76,8 +76,8 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
     <label className="grid gap-1">Motivo da classificação
       <input required minLength={12} maxLength={1000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="rounded border p-1.5" />
     </label>
-    <button disabled={ocupado || !item.atendimentos.length} className="rounded border px-3 py-1.5 disabled:opacity-50">Classificar esta mensagem</button>
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}
+    <button disabled={acao.ocupado || !item.atendimentos.length} className="rounded border px-3 py-1.5 disabled:opacity-50">Classificar esta mensagem</button>
+    <FeedbackAcao erro={acao.erro} />
   </form>;
 }
 
@@ -85,15 +85,12 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
   const router = useRouter();
   const [decisao, setDecisao] = useState<"CANCELAR" | "REENVIAR_APOS_VERIFICACAO">("CANCELAR");
   const [evidencia, setEvidencia] = useState("");
-  const [mensagem, setMensagem] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  const acao = useAcaoCliente({ idempotente: false });
   return <form className="space-y-2 rounded border bg-surface p-3 text-sm" onSubmit={async (e) => {
-    e.preventDefault(); setOcupado(true);
-    try {
-      const r = await revisarFalhaEnvio({ id: item.id, decisao, evidencia });
-      setMensagem(r.ok ? r.dado!.mensagem : r.erro);
-      if (r.ok) router.refresh();
-    } finally { setOcupado(false); }
+    e.preventDefault();
+    // A mensagem do servidor (cancelado / nova tentativa autorizada / cobrança mudou) é o resultado.
+    const d = await acao.executar(() => revisarFalhaEnvio({ id: item.id, decisao, evidencia }), (dado) => dado?.mensagem ?? null);
+    if (d?.tipo === "ok") router.refresh();
   }}>
     <p className="font-medium">{item.contato} · {item.motivo}</p>
     <p className="whitespace-pre-wrap">{item.corpo}</p>
@@ -106,7 +103,7 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
     <label className="grid gap-1">Evidência da conferência
       <input required minLength={12} maxLength={1000} value={evidencia} onChange={(e) => setEvidencia(e.target.value)} className="rounded border p-1.5" />
     </label>
-    <button disabled={ocupado} className="rounded border px-3 py-1.5 disabled:opacity-50">Registrar revisão</button>
-    <MensagemStatus texto={mensagem} />
+    <button disabled={acao.ocupado} className="rounded border px-3 py-1.5 disabled:opacity-50">Registrar revisão</button>
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
 }
