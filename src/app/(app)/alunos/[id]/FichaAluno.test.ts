@@ -61,4 +61,6 @@ it("cada rótulo do painel de edição aponta para um campo existente e as ajuda
     expect(html).toMatch(new RegExp(`id="${campo}"[^>]*aria-describedby="${ajuda}"|aria-describedby="${ajuda}"[^>]*id="${campo}"`));
     expect(html).toContain(`id="${ajuda}"`);
   }
+  // O motivo é obrigatório (Salvar só habilita com ele) — o leitor de tela precisa saber disso.
+  expect(html).toMatch(/<textarea(?=[^>]*\sid="ficha-motivo")(?=[^>]*\saria-required="true")[^>]*>/);
 });
