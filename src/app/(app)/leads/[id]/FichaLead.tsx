@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EtapaLead, Segmento, Temperatura, MotivoPerda, CategoriaDocumento } from "@prisma/client";
 import { UploadArquivo } from "@/components/UploadArquivo";
@@ -27,6 +27,9 @@ import {
   atualizarDatas,
 } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
 
 const TRILHA: EtapaLead[] = [
   EtapaLead.NOVO,
@@ -131,21 +134,8 @@ export function FichaLead({
   sugestoesIA?: SugestaoPendente[];
   copilotoAtivo?: boolean;
 }) {
-  const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const refresh = () => router.refresh();
-
-  async function run(p: Promise<{ ok: boolean; erro?: string }>) {
-    setErro(null);
-    const r = await p;
-    if (!r.ok) setErro(r.erro ?? "Erro.");
-    else refresh();
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-
       {/* Cabeçalho */}
       <header>
         <div className="flex flex-wrap items-center gap-3">
@@ -208,21 +198,40 @@ export function FichaLead({
       {/* C3 (doc 27): sugestões do copiloto — só-leitura até o vendedor decidir. */}
       <CopilotoSugestoes leadId={lead.id} sugestoes={sugestoesIA} copilotoAtivo={copilotoAtivo} />
 
-      <BarraAcoes lead={lead} run={run} professores={professores} />
+      <BarraAcoes lead={lead} professores={professores} />
 
       {/* Acompanhamento contratual e de pagamento da matrícula aguardando. */}
-      {lead.matricula?.status === "AGUARDANDO" && <FechamentoCard matricula={lead.matricula} run={run} />}
+      {lead.matricula?.status === "AGUARDANDO" && <FechamentoCard matricula={lead.matricula} />}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Resumo lead={lead} run={run} />
-        <ProximosPassos lead={lead} run={run} />
+        <Resumo lead={lead} />
+        <ProximosPassos lead={lead} />
       </div>
 
-      <Documentos leadId={lead.id} documentos={lead.documentos} run={run} />
+      <Documentos leadId={lead.id} documentos={lead.documentos} />
       <HistoricoDono timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       <Timeline timeline={timeline} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </div>
   );
+}
+
+// Um estado de ação por seção da ficha: o erro aparece junto do botão que o disparou, não no topo.
+// Nenhuma action daqui recebe chave de idempotência — server/comercial/acoes.ts: moverEtapa :364,
+// atualizarResumo :288, atualizarDatas :328, registrarInteracao :403 (grava um evento novo a cada
+// chamada), agendarExperimental :426, enviarProposta :485, marcarPerdido :508, anexarDocumentoLead
+// :531 (cria um Documento a cada chamada), arquivarDocumentoLead :559; e server/matricula/acoes.ts:782
+// registrarLinkPagamento. Resultado incerto manda conferir antes de repetir.
+function useAcaoSecao() {
+  const router = useRouter();
+  const acao = useAcaoCliente({ idempotente: false });
+  /** Executa e, só com a confirmação do servidor, recarrega a ficha. Devolve se deu certo. */
+  async function run<T>(disparar: () => Promise<Resultado<T>>): Promise<boolean> {
+    const desfecho = await acao.executar(disparar);
+    if (desfecho?.tipo !== "ok") return false;
+    router.refresh();
+    return true;
+  }
+  return { acao, run };
 }
 
 const CATEGORIA_LABEL: Record<CategoriaDocumento, string> = {
@@ -236,13 +245,14 @@ const CATEGORIA_LABEL: Record<CategoriaDocumento, string> = {
 function Documentos({
   leadId,
   documentos,
-  run,
 }: {
   leadId: string;
   documentos: LeadFicha["documentos"];
-  run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
 }) {
   const [categoria, setCategoria] = useState<CategoriaDocumento>(CategoriaDocumento.PROPOSTA);
+  const { acao, run } = useAcaoSecao();
+  // O erro aparece sob o anexo ou sob a linha do documento arquivado.
+  const [alvo, setAlvo] = useState<string | null>(null);
 
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -255,23 +265,31 @@ function Documentos({
         </select>
         <UploadArquivo
           label="Anexar documento"
-          onUpload={(r) => run(anexarDocumentoLead(leadId, { categoria, nome: r.nome, url: r.url }))}
+          onUpload={(r) => { setAlvo("anexar"); run(() => anexarDocumentoLead(leadId, { categoria, nome: r.nome, url: r.url })); }}
         />
       </div>
+      <FeedbackAcao erro={alvo === "anexar" ? acao.erro : null} className="mb-3" />
       {documentos.length === 0 ? (
         <p className="text-sm text-gray-400">Nenhum documento anexado.</p>
       ) : (
         <ul className="flex flex-col gap-1 text-sm">
           {documentos.map((d) => (
-            <li key={d.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
+            <Fragment key={d.id}>
+            <li className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
               <a href={d.url} target="_blank" className="text-brand-700 hover:underline">
                 <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">{CATEGORIA_LABEL[d.categoria as CategoriaDocumento]}</span>{" "}
                 {d.nome}
               </a>
-              <button onClick={() => run(arquivarDocumentoLead(d.id))} className="text-xs text-gray-400 hover:text-red-600">
+              <button
+                disabled={acao.ocupado}
+                onClick={() => { setAlvo(d.id); run(() => arquivarDocumentoLead(d.id)); }}
+                className="text-xs text-gray-400 hover:text-red-600"
+              >
                 arquivar
               </button>
             </li>
+            {alvo === d.id && acao.erro && <li><FeedbackAcao erro={acao.erro} /></li>}
+            </Fragment>
           ))}
         </ul>
       )}
@@ -337,11 +355,9 @@ function HistoricoDono({ timeline, preferenciaFusoExibicao }: { timeline: Evento
 
 function BarraAcoes({
   lead,
-  run,
   professores,
 }: {
   lead: LeadFicha;
-  run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
   professores: { id: string; nome: string }[];
 }) {
   const [modal, setModal] = useState<"none" | "interacao" | "experimental" | "perdido">("none");
@@ -351,6 +367,20 @@ function BarraAcoes({
   const [profExp, setProfExp] = useState(lead.professorExperimentalId ?? "");
   const [motivo, setMotivo] = useState<MotivoPerda>(MotivoPerda.NAO_RESPONDEU);
   const [obs, setObs] = useState("");
+  const { acao, run } = useAcaoSecao();
+  // Onde mostrar o resultado: na barra (etapa, proposta) ou no painel aberto (interação, experimental, perda).
+  const [origem, setOrigem] = useState<"barra" | "interacao" | "experimental" | "perdido">("barra");
+  const feedback = (secao: typeof origem) => <FeedbackAcao erro={origem === secao ? acao.erro : null} />;
+
+  function alternar(painel: "interacao" | "experimental" | "perdido") {
+    acao.limpar();
+    setModal(modal === painel ? "none" : painel);
+  }
+
+  async function executar(secao: typeof origem, disparar: () => Promise<Resultado<unknown>>) {
+    setOrigem(secao);
+    return run(disparar);
+  }
 
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -358,7 +388,11 @@ function BarraAcoes({
         <select
           aria-label="Mudar etapa do lead"
           value=""
-          onChange={(e) => e.target.value && run(moverEtapa(lead.id, e.target.value as EtapaLead))}
+          disabled={acao.ocupado}
+          onChange={(e) => {
+            const etapa = e.target.value as EtapaLead;
+            if (etapa) executar("barra", () => moverEtapa(lead.id, etapa));
+          }}
           className={inputCls + " w-auto"}
         >
           <option value="">Mudar etapa…</option>
@@ -368,16 +402,16 @@ function BarraAcoes({
             </option>
           ))}
         </select>
-        <button className={btnSec} onClick={() => setModal(modal === "interacao" ? "none" : "interacao")}>
+        <button className={btnSec} onClick={() => alternar("interacao")}>
           Registrar interação
         </button>
-        <button className={btnSec} onClick={() => setModal(modal === "experimental" ? "none" : "experimental")}>
+        <button className={btnSec} onClick={() => alternar("experimental")}>
           Agendar experimental
         </button>
-        <button className={btnSec} onClick={() => run(enviarProposta(lead.id))}>
+        <button className={btnSec} disabled={acao.ocupado} onClick={() => executar("barra", () => enviarProposta(lead.id))}>
           Enviar proposta
         </button>
-        <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal(modal === "perdido" ? "none" : "perdido")}>
+        <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => alternar("perdido")}>
           Marcar perdido
         </button>
         {lead.matricula ? (
@@ -390,16 +424,20 @@ function BarraAcoes({
           </a>
         )}
       </div>
+      {origem === "barra" && acao.erro && <div className="mt-3">{feedback("barra")}</div>}
 
       {modal === "interacao" && (
         <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
           <input aria-label="Canal da interação" className={inputCls} placeholder="Canal (WhatsApp, ligação…)" value={canal} onChange={(e) => setCanal(e.target.value)} />
           <textarea aria-label="Nota da interação" className={inputCls} placeholder="O que aconteceu na conversa?" value={nota} onChange={(e) => setNota(e.target.value)} />
+          {feedback("interacao")}
           <div>
             <button
               className={btnPri}
-              onClick={() => {
-                run(registrarInteracao(lead.id, { canal, nota }));
+              disabled={acao.ocupado}
+              onClick={async () => {
+                // Nota e canal só são limpos com a interação confirmada — na falha, o texto fica para conferir.
+                if (!(await executar("interacao", () => registrarInteracao(lead.id, { canal, nota })))) return;
                 setNota("");
                 setCanal("");
                 setModal("none");
@@ -430,13 +468,20 @@ function BarraAcoes({
           </div>
           <button
             className={btnPri}
-            onClick={() => {
-              if (dataExp) run(agendarExperimental(lead.id, { dataISO: dataExp, professorId: profExp || undefined }));
-              setModal("none");
+            disabled={acao.ocupado}
+            onClick={async () => {
+              if (!dataExp) {
+                setOrigem("experimental");
+                acao.setErro("Informe a data/hora da experimental.");
+                return;
+              }
+              if (await executar("experimental", () => agendarExperimental(lead.id, { dataISO: dataExp, professorId: profExp || undefined })))
+                setModal("none");
             }}
           >
             Agendar
           </button>
+          {origem === "experimental" && acao.erro && <div className="basis-full">{feedback("experimental")}</div>}
         </div>
       )}
 
@@ -450,12 +495,13 @@ function BarraAcoes({
             ))}
           </select>
           <input aria-label="Observação da perda" className={inputCls} placeholder="Observação (obrigatória se 'Outro')" value={obs} onChange={(e) => setObs(e.target.value)} />
+          {feedback("perdido")}
           <div>
             <button
               className={btnPri + " bg-danger hover:brightness-95"}
-              onClick={() => {
-                run(marcarPerdido(lead.id, { motivoPerda: motivo, observacao: obs }));
-                setModal("none");
+              disabled={acao.ocupado}
+              onClick={async () => {
+                if (await executar("perdido", () => marcarPerdido(lead.id, { motivoPerda: motivo, observacao: obs }))) setModal("none");
               }}
             >
               Confirmar perda
@@ -469,12 +515,11 @@ function BarraAcoes({
 
 function Resumo({
   lead,
-  run,
 }: {
   lead: LeadFicha;
-  run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
 }) {
   const [editar, setEditar] = useState(false);
+  const { acao, run } = useAcaoSecao();
   const [f, setF] = useState({
     interesse: lead.interesse ?? "",
     objetivo: lead.objetivo ?? "",
@@ -497,7 +542,7 @@ function Resumo({
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-medium">Resumo executivo</h2>
-        <button className="text-xs text-brand-700 hover:text-brand-800" onClick={() => setEditar(!editar)}>
+        <button className="text-xs text-brand-700 hover:text-brand-800" onClick={() => { acao.limpar(); setEditar(!editar); }}>
           {editar ? "Cancelar" : "Editar"}
         </button>
       </div>
@@ -509,12 +554,13 @@ function Resumo({
               <input id={`ficha-lead-resumo-${k}`} className={inputCls} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
             </div>
           ))}
+          <FeedbackAcao erro={acao.erro} />
           <div>
             <button
               className={btnPri}
-              onClick={() => {
-                run(atualizarResumo(lead.id, f));
-                setEditar(false);
+              disabled={acao.ocupado}
+              onClick={async () => {
+                if (await run(() => atualizarResumo(lead.id, f))) setEditar(false);
               }}
             >
               Salvar resumo
@@ -537,11 +583,10 @@ function Resumo({
 
 function ProximosPassos({
   lead,
-  run,
 }: {
   lead: LeadFicha;
-  run: (p: Promise<{ ok: boolean; erro?: string }>) => void;
 }) {
+  const { acao, run } = useAcaoSecao();
   const [followUp, setFollow] = useState(soData(lead.proximoFollowUp));
   // datetime-local p/ preservar o horário da experimental já agendada (issue #16).
   const [exp, setExp] = useState(soDataHora(lead.dataExperimental));
@@ -565,11 +610,13 @@ function ProximosPassos({
           <label htmlFor="ficha-lead-data-proposta" className="mb-1 block text-xs text-gray-600">Data da proposta</label>
           <input id="ficha-lead-data-proposta" type="date" className={inputCls} value={prop} onChange={(e) => setProp(e.target.value)} />
         </div>
+        <FeedbackAcao erro={acao.erro} />
         <div>
           <button
             className={btnPri}
+            disabled={acao.ocupado}
             onClick={() =>
-              run(
+              run(() =>
                 atualizarDatas(lead.id, {
                   proximoFollowUp: followUp,
                   dataExperimental: exp,
@@ -701,12 +748,11 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
 /** Acompanhamento contratual e do link de pagamento da matrícula aguardando. */
 function FechamentoCard({
   matricula,
-  run,
 }: {
   matricula: NonNullable<LeadFicha["matricula"]>;
-  run: (p: Promise<{ ok: boolean; erro?: string }>) => Promise<void>;
 }) {
   const [linkUrl, setLinkUrl] = useState("");
+  const { acao, run } = useAcaoSecao();
   const taxaPaga = matricula.taxa?.status === "PAGO";
 
   return (
@@ -750,14 +796,15 @@ function FechamentoCard({
             />
             <button
               className={btnSec}
-              disabled={!linkUrl.trim()}
-              onClick={() => run(registrarLinkPagamento(matricula.taxa!.id, linkUrl))}
+              disabled={!linkUrl.trim() || acao.ocupado}
+              onClick={() => run(() => registrarLinkPagamento(matricula.taxa!.id, linkUrl))}
             >
               {matricula.taxa.linkEnviadoEm ? "Reenviar link" : "Registrar link"}
             </button>
           </span>
         )}
       </div>
+      <FeedbackAcao erro={acao.erro} className="mt-2" />
       {matricula.taxa?.linkPagamento && !taxaPaga && (
         <p className="mt-2 break-all text-[11px] text-blue-700">
           Link atual: <a className="underline" href={matricula.taxa.linkPagamento} target="_blank" rel="noreferrer">{matricula.taxa.linkPagamento}</a>

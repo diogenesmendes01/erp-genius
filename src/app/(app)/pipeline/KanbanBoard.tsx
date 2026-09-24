@@ -18,6 +18,8 @@ import { COLUNAS } from "./colunas";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export interface KanbanLead {
   id: string;
@@ -41,10 +43,13 @@ function minutosDesde(iso: string, agora: number): number {
 }
 
 
-function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
+function Card({ lead, agora, bloqueado }: { lead: KanbanLead; agora: number; bloqueado: boolean }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { etapa: lead.etapa },
+    // Enquanto uma movimentação está no servidor, nenhum cartão arrasta: o segundo arraste seria
+    // ignorado pela trava do executor, mas a tela deixaria tentar.
+    disabled: bloqueado,
   });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
   return (
@@ -88,7 +93,7 @@ function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
   );
 }
 
-function Coluna({ etapa, leads, agora }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number }) {
+function Coluna({ etapa, leads, agora, bloqueado }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number; bloqueado: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa });
   const total = leads.reduce((s, l) => s + (l.valorPrevisto ?? 0), 0);
   const gargalo =
@@ -113,7 +118,7 @@ function Coluna({ etapa, leads, agora }: { etapa: EtapaLead; leads: KanbanLead[]
         className={"flex min-h-[60px] flex-col gap-2 rounded-md p-1 " + (isOver ? "bg-brand-50 ring-1 ring-brand-300" : "")}
       >
         {leads.map((l) => (
-          <Card key={l.id} lead={l} agora={agora} />
+          <Card key={l.id} lead={l} agora={agora} bloqueado={bloqueado} />
         ))}
         {leads.length === 0 && (
           <div className="rounded-lg border border-dashed border-gray-200 p-3 text-center text-xs text-gray-300">vazio</div>
@@ -131,7 +136,13 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
   }, []);
   const router = useRouter();
   const [tipo, setTipo] = useState<"pf" | "b2b">("pf");
-  const [erro, setErro] = useState<string | null>(null);
+  // Nem moverEtapa nem marcarPerdido recebem chave de idempotência (server/comercial/acoes.ts:364 e
+  // :508 — cada chamada grava um evento novo): resultado incerto manda conferir antes de repetir.
+  // O arraste NÃO é otimista: o card só muda de coluna com o refresh após a confirmação do servidor,
+  // então na falha ele continua onde o servidor o tem e o motivo aparece logo acima do quadro.
+  const acaoMover = useAcaoCliente({ idempotente: false });
+  // A perda tem estado próprio: o erro fica dentro do modal, não atrás do overlay.
+  const acaoPerda = useAcaoCliente({ idempotente: false });
   const [perda, setPerda] = useState<KanbanLead | null>(null);
   const [motivo, setMotivo] = useState<MotivoPerda>(MotivoPerda.NAO_RESPONDEU);
   const [obs, setObs] = useState("");
@@ -161,31 +172,33 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
       setPerda(lead);
       return;
     }
-    setErro(null);
+    acaoMover.limpar();
     // Espelha a regra do servidor: feedback imediato e evita uma ida ao backend
     // para um destino que será recusado (etapa de evento ou salto inválido).
     if (!transicaoManualPermitida(lead.etapa, destino)) {
-      setErro(
+      acaoMover.setErro(
         `Não é possível arrastar de "${ETAPA_LABEL[lead.etapa]}" para "${ETAPA_LABEL[destino]}". ` +
           "Esta etapa é definida por uma ação específica.",
       );
       return;
     }
-    const r = await moverEtapa(lead.id, destino);
-    if (!r.ok) setErro(r.erro);
-    else router.refresh();
+    const desfecho = await acaoMover.executar(() => moverEtapa(lead.id, destino));
+    if (desfecho?.tipo === "ok") router.refresh();
   }
 
   async function confirmarPerda() {
     if (!perda) return;
-    setErro(null);
-    const r = await marcarPerdido(perda.id, { motivoPerda: motivo, observacao: obs });
-    if (!r.ok) setErro(r.erro);
-    else {
-      setPerda(null);
-      setObs("");
-      router.refresh();
-    }
+    const desfecho = await acaoPerda.executar(() => marcarPerdido(perda.id, { motivoPerda: motivo, observacao: obs }));
+    // O modal só fecha com a perda confirmada; na falha, motivo e observação ficam para conferir.
+    if (desfecho?.tipo !== "ok") return;
+    setPerda(null);
+    setObs("");
+    router.refresh();
+  }
+
+  function fecharPerda() {
+    acaoPerda.limpar();
+    setPerda(null);
   }
 
   return (
@@ -207,7 +220,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
       <p className="mb-3 text-xs text-gray-400">
         Arraste o card pela alça &quot;⠿ arrastar&quot; para mover de etapa. Soltar em <strong>Matriculado</strong> abre a matrícula; em <strong>Perdido</strong> pede o motivo.
       </p>
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <FeedbackAcao erro={acaoMover.erro} className="mb-3" />
 
       <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
         <span>Perdidos:</span>
@@ -231,13 +244,13 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
               const limite = agora - periodoPerdido * 86400000;
               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);
             }
-            return <Coluna key={col} etapa={col} leads={itens} agora={agora} />;
+            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} />;
           })}
         </div>
       </DndContext>
 
       {perda && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setPerda(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={fecharPerda}>
           <div className="w-full max-w-md rounded-lg bg-surface p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-3 text-sm font-medium">Marcar perdido — {perda.nome}</h3>
             <select
@@ -257,11 +270,12 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
               value={obs}
               onChange={(e) => setObs(e.target.value)}
             />
+            <FeedbackAcao erro={acaoPerda.erro} className="mb-3" />
             <div className="flex gap-2">
-              <button onClick={confirmarPerda} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95">
+              <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60">
                 Confirmar perda
               </button>
-              <button onClick={() => setPerda(null)} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+              <button onClick={fecharPerda} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
                 Cancelar
               </button>
             </div>

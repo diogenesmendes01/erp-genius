@@ -9,6 +9,8 @@ import { PAISES_ISO } from "@/lib/paises-iso";
 import { criarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -66,16 +68,19 @@ export function MatriculaFormulario({
   precos: PrecoRef[];
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [aberturaMsg, setAberturaMsg] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // criarMatricula não recebe chave de idempotência (server/matricula/acoes.ts:622-633): repetir pode
+  // criar aluno e contrato em dobro — conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // Solicitar abertura só grava um evento, sem chave (server/turmas/acoes.ts:74-93): repetir duplica o pedido.
+  const abertura = useAcaoCliente({ idempotente: false });
+  // Depois do sucesso a tela navega; o botão segue travado até sair, para não criar a matrícula de novo.
+  const [navegando, setNavegando] = useState(false);
+  const salvando = acao.ocupado || navegando;
   // Wizard: passo 1 = informações do aluno · passo 2 = curso, alocação e contrato.
   const [passo, setPasso] = useState<1 | 2>(1);
 
   async function pedirAbertura() {
-    setAberturaMsg(null);
-    const r = await solicitarAberturaTurma({ produtoId, nivelId: nivelInicialId || undefined });
-    setAberturaMsg(r.ok ? "Solicitação enviada ao Gerente Pedagógico." : r.erro);
+    await abertura.executar(() => solicitarAberturaTurma({ produtoId, nivelId: nivelInicialId || undefined }), "Solicitação enviada ao Gerente Pedagógico.");
   }
 
   const leadNome = lead ? dividirNome(lead.nome) : null;
@@ -276,32 +281,28 @@ export function MatriculaFormulario({
     if (p === 2) {
       const e = validarPasso1();
       if (e) {
-        setErro(e);
+        acao.setErro(e);
         return;
       }
     }
-    setErro(null);
+    acao.limpar();
     setPasso(p);
   }
 
   async function salvar() {
-    setErro(null);
+    acao.limpar();
     if (!referenciaCobertura || !inicioCobertura || !primeiroVencimento) {
-      setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
+      acao.setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
       return;
     }
     const passo2 = validarPasso2();
     if ("erro" in passo2) {
-      setErro(passo2.erro);
+      acao.setErro(passo2.erro);
       return;
     }
-    setSalvando(true);
-    const res = await criarMatricula(montarInput(referenciaCobertura, passo2));
-    if (!res.ok) {
-      setErro(res.erro);
-      setSalvando(false);
-      return;
-    }
+    const res = await acao.executar(() => criarMatricula(montarInput(referenciaCobertura, passo2)));
+    if (res?.tipo !== "ok") return;
+    setNavegando(true);
     if (res.dado?.aguardaPreco) {
       router.push(`/alunos/${res.dado.alunoId}/financeiro?aprovacao=pendente`);
       router.refresh();
@@ -322,8 +323,6 @@ export function MatriculaFormulario({
       )}
 
       <Stepper passo={passo} onIr={irParaPasso} />
-
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {/* Passo 1 — Informações do aluno */}
       {passo === 1 && (
@@ -512,6 +511,8 @@ export function MatriculaFormulario({
             )}
           </section>
 
+          {/* Validação do passo 1 (também pelo Stepper): junto do botão que avança. */}
+          <FeedbackAcao erro={acao.erro} />
           <div className="flex justify-end">
             <button
               type="button"
@@ -567,11 +568,11 @@ export function MatriculaFormulario({
                   ))}
                 </select>
                 {!turmaId && (
-                  <button type="button" onClick={pedirAbertura} className="mt-1 text-xs text-brand-700 hover:underline">
+                  <button type="button" onClick={pedirAbertura} disabled={abertura.ocupado} className="mt-1 text-xs text-brand-700 hover:underline">
                     Sem turma compatível? Solicitar abertura ao Gerente Pedagógico
                   </button>
                 )}
-                {aberturaMsg && <p className="mt-1 text-xs text-gray-500">{aberturaMsg}</p>}
+                <FeedbackAcao erro={abertura.erro} sucesso={abertura.sucesso} className="mt-1" />
               </div>
               <div>
                 <label htmlFor="matricula-nivel-inicial" className="mb-1 block text-xs text-gray-600">Nível inicial</label>
@@ -681,6 +682,7 @@ export function MatriculaFormulario({
             </p>
           </section>
 
+          <FeedbackAcao erro={acao.erro} />
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { IconSparkles } from "@tabler/icons-react";
 import type { SugestaoPendente } from "@/server/ia/consultas";
 import { aceitarSugestao, corrigirSugestao, descartarSugestao, gerarSugestoesLead } from "@/server/ia/acoes";
+import type { Resultado } from "@/server/_shared/resultado";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 // C3 (doc 27): sugestões do copiloto embutidas ONDE O VENDEDOR JÁ ESTÁ (ficha do lead e
 // cockpit da inbox) — sugestão sobre controles que já existem, nunca uma segunda forma de
@@ -64,20 +67,23 @@ export function CopilotoSugestoes({
   compacto?: boolean;
 }) {
   const router = useRouter();
-  const [ocupado, setOcupado] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  // Nenhuma action daqui recebe chave de idempotência. Gerar não é só-leitura: expira as pendentes e
+  // grava um lote novo de sugestões (server/ia/copiloto.ts:132-148); aceitar/corrigir/descartar recusam
+  // a repetição ("já foi decidida", server/ia/acoes.ts:131). Resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // "gerar" ou o id da sugestão: o erro e o "Analisando…" aparecem onde o clique aconteceu.
+  const [alvo, setAlvo] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
   const [edicao, setEdicao] = useState<Record<string, string>>({});
 
   if (!copilotoAtivo && sugestoes.length === 0) return null;
 
-  async function run(id: string, p: Promise<{ ok: boolean; erro?: string }>) {
-    setOcupado(id);
-    setErro(null);
-    const r = await p;
-    setOcupado(null);
-    if (!r.ok) setErro(r.erro ?? "Não foi possível concluir.");
-    else router.refresh();
+  async function run<T>(id: string, disparar: () => Promise<Resultado<T>>): Promise<boolean> {
+    setAlvo(id);
+    const d = await acao.executar(disparar);
+    if (d?.tipo !== "ok") return false;
+    router.refresh();
+    return true;
   }
 
   function abrirCorrecao(s: SugestaoPendente) {
@@ -90,8 +96,8 @@ export function CopilotoSugestoes({
     const resumo = Object.fromEntries(
       Object.entries(edicao).map(([c, v]) => [c, v.trim() ? v.trim() : null]),
     );
-    setEditando(null);
-    void run(s.id, corrigirSugestao(s.id, { resumo }));
+    // A edição só fecha com a correção confirmada; na falha, o texto corrigido continua na tela.
+    void run(s.id, () => corrigirSugestao(s.id, { resumo })).then((ok) => { if (ok) setEditando(null); });
   }
 
   return (
@@ -110,15 +116,15 @@ export function CopilotoSugestoes({
         </div>
         <button
           className={btnMini + " border border-ai-300 text-ai-700 hover:bg-ai-100"}
-          disabled={ocupado === "gerar" || !copilotoAtivo}
+          disabled={acao.ocupado || !copilotoAtivo}
           title={copilotoAtivo ? "Analisar a conversa agora" : "Copiloto desligado na configuração"}
-          onClick={() => run("gerar", gerarSugestoesLead(leadId))}
+          onClick={() => run("gerar", () => gerarSugestoesLead(leadId))}
         >
-          {ocupado === "gerar" ? "Analisando…" : "Gerar sugestões"}
+          {acao.ocupado && alvo === "gerar" ? "Analisando…" : "Gerar sugestões"}
         </button>
       </div>
 
-      {erro && <p role="alert" className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-700">{erro}</p>}
+      <FeedbackAcao erro={alvo === "gerar" ? acao.erro : null} className="mt-1" />
 
       {sugestoes.length === 0 ? (
         <p className="mt-1 text-xs text-ai-600/80">Sem sugestões pendentes.</p>
@@ -139,15 +145,15 @@ export function CopilotoSugestoes({
                 <div className="flex shrink-0 gap-1.5">
                   <button
                     className={btnMini + " bg-success text-white hover:brightness-95"}
-                    disabled={ocupado === s.id}
-                    onClick={() => run(s.id, aceitarSugestao(s.id))}
+                    disabled={acao.ocupado}
+                    onClick={() => run(s.id, () => aceitarSugestao(s.id))}
                   >
                     Aceitar
                   </button>
                   {s.tipo === "RESUMO" && (
                     <button
                       className={btnMini + " border border-gray-300 text-gray-600 hover:bg-gray-50"}
-                      disabled={ocupado === s.id}
+                      disabled={acao.ocupado}
                       onClick={() => (editando === s.id ? setEditando(null) : abrirCorrecao(s))}
                     >
                       Corrigir
@@ -155,13 +161,14 @@ export function CopilotoSugestoes({
                   )}
                   <button
                     className={btnMini + " border border-gray-300 text-gray-500 hover:bg-gray-50"}
-                    disabled={ocupado === s.id}
-                    onClick={() => run(s.id, descartarSugestao(s.id))}
+                    disabled={acao.ocupado}
+                    onClick={() => run(s.id, () => descartarSugestao(s.id))}
                   >
                     Descartar
                   </button>
                 </div>
               </div>
+              {editando !== s.id && <FeedbackAcao erro={alvo === s.id ? acao.erro : null} className="mt-1.5" />}
 
               {s.tipo === "RESUMO" && editando !== s.id && (
                 <dl className="mt-1.5 grid grid-cols-1 gap-x-4 gap-y-0.5 text-gray-600 sm:grid-cols-2">
@@ -190,10 +197,11 @@ export function CopilotoSugestoes({
                       />
                     </label>
                   ))}
+                  <FeedbackAcao erro={alvo === s.id ? acao.erro : null} />
                   <div className="flex gap-1.5 pt-0.5">
                     <button
                       className={btnMini + " bg-ai-solid text-white hover:brightness-95"}
-                      disabled={ocupado === s.id}
+                      disabled={acao.ocupado}
                       onClick={() => salvarCorrecao(s)}
                     >
                       Aplicar corrigido
