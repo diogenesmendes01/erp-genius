@@ -1,7 +1,8 @@
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
-import { carregarThread, listarConversas } from "@/server/whatsapp/consultas";
+import { carregarThread, listarConversasInbox } from "@/server/whatsapp/consultas";
+import { lerBuscaInbox } from "@/server/whatsapp/busca-inbox";
 import { InboxCliente } from "./InboxCliente";
 import { AtendimentosPainel } from "./AtendimentosPainel";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
@@ -14,13 +15,16 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ c?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const usuario = await exigirSessaoPagina(...PAPEIS_INBOX);
-  const { c } = await searchParams;
+  const parametros = await searchParams;
+  const c = typeof parametros.c === "string" ? parametros.c : undefined;
+  // Busca no servidor (E4): alcança as conversas mais antigas, fora das 200 recentes.
+  const busca = lerBuscaInbox(parametros);
 
-  const [conversas, thread, opcoes, triagem, revisoes, preferencia] = await Promise.all([
-    listarConversas(usuario),
+  const [lista, thread, opcoes, triagem, revisoes, preferencia] = await Promise.all([
+    listarConversasInbox(usuario, { busca }),
     c ? carregarThread(usuario, c) : Promise.resolve(null),
     listarOpcoesAtendimento(),
     temPapel(usuario, Papel.ADMINISTRADOR) ? listarTriagemWhatsApp() : Promise.resolve(null),
@@ -42,7 +46,7 @@ export default async function InboxPage({
         <AtendimentosPainel opcoes={opcoes} triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       </div>
       <div className="mt-4">
-        <InboxCliente conversas={conversas} thread={thread} podeCobranca={podeCobranca} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+        <InboxCliente conversas={lista.itens} busca={busca} limitada={lista.limitada} thread={thread} podeCobranca={podeCobranca} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       </div>
     </div>
   );
