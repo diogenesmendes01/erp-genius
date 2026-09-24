@@ -21,10 +21,10 @@ export const papeisDaSessao = memoPorRequisicao(async (): Promise<Papel[]> => {
   const session = await auth();
   const id = session?.user?.id;
   if (!id) return [];
-  const { prisma } = await import("@/lib/prisma");
-  const atual = await prisma.usuario.findUnique({ where: { id }, select: { papeis: true, ativo: true } });
-  if (!atual || !atual.ativo) return [];
-  return atual.papeis;
+  // O mesmo memo de usuário de exigirSessao/exigirSessaoPagina: uma leitura por requisição na árvore
+  // inteira, mesmo quando a página usa os dois guards. Inativo ou inexistente → sem papéis.
+  const { carregarUsuarioFresco } = await import("@/server/_shared/sessao");
+  return (await carregarUsuarioFresco(id))?.papeis ?? [];
 });
 
 /** O conjunto de papéis tem pelo menos um dos alvos? (Administrador sempre passa.) */

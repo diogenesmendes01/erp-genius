@@ -12,12 +12,14 @@ export async function escopoComercialAtual(
   // Memo por requisição só fora de transação (ganho rápido 15): dentro de uma tx, o escopo tem de
   // ser lido NELA (isolamento), então nunca vem do memo. A chave é primitiva (id + papéis) — o objeto
   // usuário muda de identidade entre chamadas.
-  if (tx === prisma) return escopoMemo(usuario.id, [...usuario.papeis].sort().join(","));
+  // Identidade de referência com o singleton: um client derivado ($extends) ou uma tx cai no ramo
+  // sem memo — o custo é só perder o memo, nunca ler fora da transação.
+  if (tx === prisma) return escopoMemo(usuario.id, JSON.stringify([...usuario.papeis].sort()));
   return calcularEscopo(usuario, tx);
 }
 
-const escopoMemo = memoPorRequisicao((id: string, papeis: string) =>
-  calcularEscopo({ id, nome: "", papeis: papeis ? (papeis.split(",") as Papel[]) : [] }, prisma));
+const escopoMemo = memoPorRequisicao((id: string, papeisJson: string) =>
+  calcularEscopo({ id, nome: "", papeis: JSON.parse(papeisJson) as Papel[] }, prisma));
 
 async function calcularEscopo(
   usuario: UsuarioSessao,
