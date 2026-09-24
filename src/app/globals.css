@@ -124,13 +124,18 @@
     accent-color: var(--brand);
   }
 
-  /* Só regular (400) e medium (500) são pesos reais (ver docs/18) — headings sem
-     font-medium explícito caiam no negrito sintético do navegador; esta regra fecha
-     o buraco de uma vez (ver docs/42-auditoria-frontend-ux.md, ganho rápido 9). */
+  /* Só regular (400) e medium (500) são pesos reais (ver docs/18). Headings, dt, b, strong e th
+     pedem negrito por padrão e cairiam no negrito sintético do navegador (ganho rápido 9). */
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  h5,
+  h6,
+  dt,
+  b,
+  strong,
+  th {
     font-weight: 500;
   }
 

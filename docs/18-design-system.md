@@ -16,9 +16,10 @@
   na variável `--font-sans`. `globals.css` referencia `var(--font-sans)`.
 - **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
   negrito pesado (`font-bold` evitado; use `font-medium`).
-  > **Nota de alinhamento:** a implementação atual em `layout.tsx` ainda registra quatro pesos
-  > (400/500/600/700); a redução para 400/500 está sendo alinhada em PR de front-end. Esta doc
-  > descreve o padrão **pretendido** — ao alinhar, mantenha só 400/500.
+  `layout.tsx` registra só esses dois arquivos e `src/app/fonts/` contém só eles. Elementos que
+  o navegador deixa em negrito por padrão (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 500 em
+  `globals.css` — qualquer peso acima de 500 seria negrito sintético. `src/app/tipografia.test.ts`
+  falha se um peso maior voltar ao código.
 
 ## Cantos & bordas
 - Raios: `rounded-md` = 8px · `rounded-lg` = 10px · `rounded-xl` = 12px · `rounded-full` (chips/avatar).
@@ -86,3 +87,7 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
   paleta padrão do Tailwind, que **não inverte** no dark. Dobre pro equivalente semântico:
   `rose`→`red`, `emerald`→`green`, `sky`→`blue`, `slate`→`gray`. Se nenhum couber, é sinal de
   precisar um token novo (como `--ai-*`) — não invente shade solta.
+- `src/app/paleta.test.ts` trava as duas regras acima em `src/app`, `src/components` e `src/lib`:
+  falha com cor fora do mapa, shade não listada (inclusive sob `dark:`/`hover:`), sombra
+  (`shadow-*`, `drop-shadow-*`, `shadow-[…]`) ou cor arbitrária (`bg-[#…]`, `rgb()`, `hsl()`). Ele lê o mapa direto do `tailwind.config.ts` — mapear uma shade
+  nova no config já a libera.

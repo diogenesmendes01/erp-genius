@@ -13,7 +13,7 @@ import {
 } from "@/server/financeiro/consultas";
 import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
-import { FinanceiroPainel, type AprovacaoRow } from "./FinanceiroPainel";
+import { FinanceiroPainel, type AprovacaoRow } from "../FinanceiroPainel";
 import { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
