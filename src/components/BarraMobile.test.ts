@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ pathname: vi.fn(() => "/financeiro/permuta") }
 vi.mock("next/navigation", () => ({ usePathname: mocks.pathname }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 
-import { BarraMobile } from "./BarraMobile";
+import { BarraMobile, rotuloBotaoMenu } from "./BarraMobile";
 
 const render = (naoLidasInbox = 0) =>
   renderToStaticMarkup(createElement(BarraMobile, { papeis: [Papel.ADMINISTRADOR], nome: "Ana Souza", naoLidasInbox }));
@@ -42,14 +42,28 @@ describe("BarraMobile (shell abaixo de md)", () => {
   it("a gaveta de navegação começa fechada: fora da árvore (sem role=dialog) e com a mesma lista da Sidebar", () => {
     const html = render();
     expect(html).not.toMatch(/role="dialog"/);
-    expect(html).toContain('aria-label="Navegação principal"');
+    // Rótulo próprio: não se confunde com a "Navegação principal" da Sidebar.
+    expect(html).toContain('aria-label="Menu de navegação"');
+    // O botão aponta para o painel que controla.
+    expect(html).toMatch(/<button[^>]*aria-controls="menu-navegacao"/);
+    expect(html).toMatch(/<aside[^>]*id="menu-navegacao"/);
     expect(html).toContain('href="/alunos"');
     // Pela esquerda: fechada, fica deslocada para fora da tela à esquerda.
     expect(html).toMatch(/<aside[^>]*class="[^"]*\bleft-0\b[^"]*-translate-x-full/);
   });
 
-  it("não lidas da inbox continuam visíveis no celular (ponto no botão de menu + texto para leitor de tela)", () => {
-    expect(render(5)).toContain("5 mensagens não lidas");
-    expect(render(0)).not.toContain("mensagens não lidas</span></span></button>");
+  it("não lidas da inbox: ponto visual + NOME ACESSÍVEL do botão (o aria-label substitui texto interno)", () => {
+    const botao = (html: string) => html.match(/<button[^>]*aria-haspopup="dialog"[^>]*>/)?.[0] ?? "";
+    expect(botao(render(5))).toContain('aria-label="Abrir menu, 5 mensagens não lidas"');
+    expect(botao(render(1))).toContain('aria-label="Abrir menu, 1 mensagem não lida"');
+    expect(botao(render(0))).toContain('aria-label="Abrir menu"');
+    // Nenhum texto sr-only escondido atrás do aria-label (leitor de tela não o anunciaria).
+    const conteudo = render(5).match(/<button[^>]*aria-haspopup="dialog"[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? "";
+    expect(conteudo).not.toContain("sr-only");
+  });
+
+  it("rótulo do botão de menu acompanha o estado", () => {
+    expect(rotuloBotaoMenu(true, 5)).toBe("Fechar menu");
+    expect(rotuloBotaoMenu(false, 150)).toBe("Abrir menu, 99+ mensagens não lidas");
   });
 });

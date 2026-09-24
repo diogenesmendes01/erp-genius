@@ -5,14 +5,16 @@ import { describe, expect, it } from "vitest";
 // E6 (docs/42-auditoria-frontend-ux.md): grade de formulário com `grid-cols-2` como base deixa cada
 // campo com ~140px num celular de 375px. A base é uma coluna (`grid-cols-1 sm:grid-cols-2 …`).
 // Exceção deliberada: blocos de indicadores (KPIs), em que dois por linha no celular é o desenho.
-const KPIS_DUAS_COLUNAS = new Set([
-  "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx",
-  "src/app/(app)/financeiro/FilaCobranca.tsx",
-  "src/app/(app)/financeiro/FinanceiroPainel.tsx",
-  "src/app/(app)/home/HomeGerente.tsx",
-  "src/app/(app)/home/HomeVendedor.tsx",
-  "src/app/(app)/leads/[id]/FichaLead.tsx",
-]);
+// A exceção é CONTADA por arquivo (uma grade de KPI em cada): uma segunda grade de duas colunas
+// no mesmo arquivo — um formulário novo, por exemplo — ainda falha.
+const KPIS_DUAS_COLUNAS: Record<string, number> = {
+  "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1,
+  "src/app/(app)/financeiro/FilaCobranca.tsx": 1,
+  "src/app/(app)/financeiro/FinanceiroPainel.tsx": 1,
+  "src/app/(app)/home/HomeGerente.tsx": 1,
+  "src/app/(app)/home/HomeVendedor.tsx": 1,
+  "src/app/(app)/leads/[id]/FichaLead.tsx": 1,
+};
 
 const telas = ["src/app", "src/components"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
@@ -21,36 +23,37 @@ const telas = ["src/app", "src/components"].flatMap((raiz) =>
 );
 
 /** `grid-cols-N` (N ≥ 2) sem prefixo de breakpoint, dentro de uma string de classes. */
-const BASE_MULTICOLUNA = /["'`\s]grid-cols-([2-9]|1[0-2])(?=["'`\s])/;
+const BASE_MULTICOLUNA = /["'`\s]grid-cols-([2-9]|1[0-2])(?=["'`\s])/g;
+/** `col-span-N` (N ≥ 2) sem prefixo: numa grade de uma coluna, recria a segunda. */
+const COL_SPAN_BASE = /["'`\s]col-span-([2-9]|1[0-2])(?=["'`\s])/g;
+
+const ocorrencias = (conteudo: string, re: RegExp) =>
+  conteudo.split("\n").flatMap((l, i) => [...l.matchAll(re)].map(() => i + 1));
 
 describe("grades responsivas", () => {
-  it("nenhuma grade usa mais de uma coluna como base no celular (fora os KPIs listados)", () => {
-    const ofensores = telas
-      .filter(({ arquivo }) => !KPIS_DUAS_COLUNAS.has(arquivo))
-      .flatMap(({ arquivo, conteudo }) =>
-        conteudo.split("\n").map((l, i) => (BASE_MULTICOLUNA.test(l) ? `${arquivo}:${i + 1}` : "")).filter(Boolean));
+  it("nenhuma grade usa mais de uma coluna como base no celular (fora as grades de KPI contadas)", () => {
+    const ofensores = telas.flatMap(({ arquivo, conteudo }) => {
+      const linhas = ocorrencias(conteudo, BASE_MULTICOLUNA);
+      return linhas.length > (KPIS_DUAS_COLUNAS[arquivo] ?? 0) ? [`${arquivo}:${linhas.join(",")}`] : [];
+    });
     expect(ofensores).toEqual([]);
   });
 
   it("nenhum item ocupa duas+ colunas como base (col-span-2 numa grade de uma coluna recria a segunda)", () => {
-    const COL_SPAN_BASE = /["'`\s]col-span-([2-9]|1[0-2])(?=["'`\s])/;
-    const ofensores = telas
-      .filter(({ arquivo }) => !KPIS_DUAS_COLUNAS.has(arquivo))
-      .flatMap(({ arquivo, conteudo }) =>
-        conteudo.split("\n").map((l, i) => (COL_SPAN_BASE.test(l) ? `${arquivo}:${i + 1}` : "")).filter(Boolean));
+    const ofensores = telas.flatMap(({ arquivo, conteudo }) => ocorrencias(conteudo, COL_SPAN_BASE).map((l) => `${arquivo}:${l}`));
     expect(ofensores).toEqual([]);
-    expect(COL_SPAN_BASE.test('className="col-span-2 md:col-span-1"')).toBe(true);
-    expect(COL_SPAN_BASE.test('className="sm:col-span-2 md:col-span-1"')).toBe(false);
   });
 
-  it("a exceção de KPIs não sobra: cada arquivo listado ainda tem a grade de indicadores", () => {
-    const sobrando = [...KPIS_DUAS_COLUNAS].filter((a) => !telas.some((t) => t.arquivo === a && BASE_MULTICOLUNA.test(t.conteudo)));
+  it("a exceção de KPIs não sobra: cada arquivo listado ainda tem as suas grades de indicadores", () => {
+    const sobrando = Object.entries(KPIS_DUAS_COLUNAS).filter(([a, n]) => (ocorrencias(telas.find((t) => t.arquivo === a)?.conteudo ?? "", BASE_MULTICOLUNA).length) < n);
     expect(sobrando).toEqual([]);
   });
 
-  it("o detector aceita a base de uma coluna e acusa a de duas", () => {
-    expect(BASE_MULTICOLUNA.test('className="grid grid-cols-2 gap-4"')).toBe(true);
-    expect(BASE_MULTICOLUNA.test('className="grid grid-cols-1 sm:grid-cols-2 gap-4"')).toBe(false);
-    expect(BASE_MULTICOLUNA.test('className="grid gap-2 md:grid-cols-3"')).toBe(false);
+  it("os detectores aceitam a base de uma coluna e acusam a de duas", () => {
+    expect(ocorrencias('className="grid grid-cols-2 gap-4"', BASE_MULTICOLUNA)).toHaveLength(1);
+    expect(ocorrencias('className="grid grid-cols-1 sm:grid-cols-2 gap-4"', BASE_MULTICOLUNA)).toHaveLength(0);
+    expect(ocorrencias('className="grid gap-2 md:grid-cols-3"', BASE_MULTICOLUNA)).toHaveLength(0);
+    expect(ocorrencias('className="col-span-2 md:col-span-1"', COL_SPAN_BASE)).toHaveLength(1);
+    expect(ocorrencias('className="sm:col-span-2 md:col-span-1"', COL_SPAN_BASE)).toHaveLength(0);
   });
 });
