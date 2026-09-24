@@ -7,6 +7,8 @@ import { IconPlus } from "@tabler/icons-react";
 import { PAPEL_LABEL } from "@/lib/roles";
 import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
 
 export interface UsuarioRow {
@@ -31,14 +33,17 @@ function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | nu
 
 export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Ativar/desativar é um alternador sem chave de idempotência: repetir desfaz o que já foi aplicado.
+  // A falha de rede manda conferir o status na lista antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O erro aparece na linha do usuário cujo botão disparou a ação, não no topo da lista.
+  const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
-  async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarUsuarioAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+  async function alternar(id: string, sucesso: string) {
+    setAlvo(id);
+    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id), sucesso);
+    if (desfecho?.tipo === "ok") router.refresh();
   }
 
   return (
@@ -54,8 +59,6 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
           </button>
         )}
       </div>
-
-      {erro && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {form !== "none" && (
         <div className="mb-6">
@@ -126,12 +129,14 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                       Editar
                     </button>
                     <button
-                      onClick={() => alternar(u.id)}
-                      className="text-xs text-gray-500 hover:text-gray-800"
+                      onClick={() => alternar(u.id, u.ativo ? "Usuário desativado." : "Usuário ativado.")}
+                      disabled={acao.ocupado}
+                      className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-60"
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
                     </button>
                   </div>
+                  <FeedbackAcao erro={alvo === u.id ? acao.erro : null} sucesso={alvo === u.id ? acao.sucesso : undefined} className="mt-2" />
                 </td>
               </tr>
             ))}

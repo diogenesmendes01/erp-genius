@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import type { DegrauConfig, NumeroConfig, PoliticaConfig, TemplateConfig } from "@/server/whatsapp/consultas";
 import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
@@ -44,9 +46,19 @@ export function PoliticaPainel({
     numeroRemetenteId: politica.numeroRemetenteId ?? "",
     degraus: politica.degraus as DegrauConfig[],
   });
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Nenhuma das duas actions recebe chave de idempotência (o kill switch grava o estado-alvo, mas sem
+  // chave): resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O resultado aparece junto do botão que o disparou (kill switch no topo, salvar no rodapé).
+  const [origem, setOrigem] = useState<"kill" | "salvar" | null>(null);
+
+  async function run<T>(secao: "kill" | "salvar", disparar: () => Promise<Resultado<T>>, sucesso: string) {
+    setOrigem(secao);
+    return acao.executar(disparar, sucesso);
+  }
+  const feedback = (secao: "kill" | "salvar") => (
+    <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
+  );
 
   const remetente = numeros.find((n) => n.id === form.numeroRemetenteId) ?? null;
   const aprovadoPorId = new Map(templates.map((t) => [t.id, t.statusMeta === "APROVADO"]));
@@ -59,10 +71,7 @@ export function PoliticaPainel({
   }
 
   async function salvar() {
-    setSalvando(true);
-    setErro(null);
-    setNota(null);
-    const r = await salvarPoliticaRegua({
+    const desfecho = await run("salvar", () => salvarPoliticaRegua({
       ...form,
       numeroRemetenteId: form.numeroRemetenteId || undefined,
       degraus: form.degraus.map((d) => ({
@@ -72,20 +81,19 @@ export function PoliticaPainel({
         ativo: d.ativo,
         templateId: d.templateId ?? undefined,
       })),
-    });
-    setSalvando(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
-    setNota("Política salva — cron, fila e timeline passam a ler esta configuração.");
-    router.refresh();
+    }), "Política salva — cron, fila e timeline passam a ler esta configuração.");
+    if (desfecho?.tipo === "ok") router.refresh();
   }
 
   async function alternarKill() {
-    setErro(null);
     const ligar = !form.killSwitch;
-    const r = await acionarKillSwitchRegua(ligar);
-    if (!r.ok) return setErro(r.erro ?? "Erro no kill switch.");
+    const d = await run(
+      "kill",
+      () => acionarKillSwitchRegua(ligar),
+      ligar ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.",
+    );
+    if (d?.tipo !== "ok") return;
     setForm((f) => ({ ...f, killSwitch: ligar }));
-    setNota(ligar ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.");
     router.refresh();
   }
 
@@ -101,8 +109,9 @@ export function PoliticaPainel({
         </div>
         <button
           onClick={alternarKill}
+          disabled={acao.ocupado}
           className={
-            "rounded-md px-3 py-1.5 text-sm font-medium " +
+            "rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-60 " +
             (form.killSwitch
               ? "bg-danger text-white hover:brightness-95"
               : "border border-red-200 text-red-700 hover:bg-red-50")
@@ -112,8 +121,7 @@ export function PoliticaPainel({
         </button>
       </div>
 
-      {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
+      {feedback("kill")}
 
       <div className="mt-4 rounded-lg border border-gray-200 bg-surface p-4">
         {/* Config global */}
@@ -327,10 +335,11 @@ export function PoliticaPainel({
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
             prontidão: número oficial exige template aprovado nos degraus automáticos/lote.
           </p>
-          <button className={btnPri} disabled={salvando} onClick={salvar}>
-            {salvando ? "Salvando…" : "Salvar política"}
+          <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+            {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
           </button>
         </div>
+        {feedback("salvar")}
       </div>
     </section>
   );
