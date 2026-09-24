@@ -1,5 +1,5 @@
 import { sugestoesPendentesDoLead, type SugestaoPendente } from "@/server/ia/consultas";
-import { Papel, type EtapaLead } from "@prisma/client";
+import { Papel, type EtapaLead, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
@@ -7,6 +7,7 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { escopoAtendimentos } from "./escopo";
+import { LIMITE_CONVERSAS, LIMITE_NAO_LIDAS_FORA, mesclarPorRecencia, whereBuscaConversas } from "./busca-inbox";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
@@ -57,29 +58,53 @@ const contextoInclude = {
 } as const;
 
 export async function listarConversas(usuario: UsuarioSessao): Promise<ConversaResumo[]> {
-  const itens = await prisma.atendimentoWhatsApp.findMany({
-    where: await escopoAtendimentos(usuario), take: 200, orderBy: [{ ultimaMensagemEm: "desc" }, { criadoEm: "desc" }],
-    include: { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" }, take: 1, select: { corpo: true, tipo: true } } },
-  });
-  return itens.map((a) => {
-    const pedag = a.finalidade === "PEDAGOGICO";
-    const nome = a.aluno ? nomeCompleto(a.aluno) : a.lead?.nome ?? (pedag ? "Atendimento pedagógico" : a.conversa.contato.nomeExibicao ?? "Contato institucional");
-    const m = a.mensagens[0];
-    return { id: a.id, numeroId: a.conversa.numeroId, numeroRotulo: pedag ? "Canal institucional" : a.conversa.numero.rotulo,
-      finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contatoId,
-      contatoNome: nome, contatoTelefone: pedag ? "" : a.conversa.contato.telefoneE164,
-      optOut: !!a.conversa.contato.optOutEm, vinculo: a.finalidade === "FINANCEIRO" ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Financeiro legado · matrícula não identificada")
-        : pedag ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Pedagógico legado · matrícula não identificada")
-          : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
-      naoLidas: a.naoLidas, ultimaMensagemEm: a.ultimaMensagemEm?.toISOString() ?? null,
-      preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null };
-  });
+  return (await listarConversasInbox(usuario)).itens;
+}
+
+/**
+ * Lista da inbox (E4): as LIMITE_CONVERSAS mais recentes e, se a lista foi cortada, também todas as
+ * que têm não lidas — nenhuma conversa com mensagem por ler fica fora da lista. `busca` filtra no
+ * servidor (nome do contato/aluno/lead ou telefone). `limitada` avisa a tela de que há mais antigas.
+ */
+export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "" }: { busca?: string } = {}): Promise<{ itens: ConversaResumo[]; limitada: boolean }> {
+  const escopo = await escopoAtendimentos(usuario);
+  const filtroBusca = whereBuscaConversas(busca);
+  const where: Prisma.AtendimentoWhatsAppWhereInput = Object.keys(filtroBusca).length ? { AND: [escopo, filtroBusca] } : escopo;
+  const orderBy = [{ ultimaMensagemEm: "desc" as const }, { criadoEm: "desc" as const }];
+  const include = { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
+  const recentes = await prisma.atendimentoWhatsApp.findMany({ where, take: LIMITE_CONVERSAS + 1, orderBy, include });
+  const limitada = recentes.length > LIMITE_CONVERSAS;
+  const lista = recentes.slice(0, LIMITE_CONVERSAS);
+  const naoLidasFora = limitada
+    ? await prisma.atendimentoWhatsApp.findMany({
+        where: { AND: [where, { naoLidas: { gt: 0 } }, { id: { notIn: lista.map((a) => a.id) } }] },
+        take: LIMITE_NAO_LIDAS_FORA, orderBy, include,
+      })
+    : [];
+  // As não lidas de fora entram na MESMA ordem por recência, sem ir para o topo.
   // Sem reordenar por não-lidas aqui (ganho rápido 22 da auditoria): o polling de 30s da
   // inbox reconsulta a lista com frequência, e um agrupamento "não lidas primeiro" fazia a
   // conversa pular de posição sempre que naoLidas cruzava zero (lida em outra aba, nova
   // mensagem chegando) — a linha some debaixo do cursor de quem estava prestes a clicar. A
   // ordem já vem estável do banco (orderBy ultimaMensagemEm desc); o badge de não lidas
   // continua visível por linha, só não pula mais a lista inteira.
+  return { itens: mesclarPorRecencia(lista, naoLidasFora).map(resumirConversa), limitada };
+}
+
+type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
+
+function resumirConversa(a: AtendimentoDaLista): ConversaResumo {
+  const pedag = a.finalidade === "PEDAGOGICO";
+  const nome = a.aluno ? nomeCompleto(a.aluno) : a.lead?.nome ?? (pedag ? "Atendimento pedagógico" : a.conversa.contato.nomeExibicao ?? "Contato institucional");
+  const m = a.mensagens[0];
+  return { id: a.id, numeroId: a.conversa.numeroId, numeroRotulo: pedag ? "Canal institucional" : a.conversa.numero.rotulo,
+    finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contatoId,
+    contatoNome: nome, contatoTelefone: pedag ? "" : a.conversa.contato.telefoneE164,
+    optOut: !!a.conversa.contato.optOutEm, vinculo: a.finalidade === "FINANCEIRO" ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Financeiro legado · matrícula não identificada")
+      : pedag ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Pedagógico legado · matrícula não identificada")
+        : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
+    naoLidas: a.naoLidas, ultimaMensagemEm: a.ultimaMensagemEm?.toISOString() ?? null,
+    preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null };
 }
 
 export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
