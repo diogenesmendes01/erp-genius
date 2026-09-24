@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { salvarPrazosPortalAluno } from "@/server/portal-aluno/configuracao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 const campos = {
   prazoSessaoPortalAlunoMinutos: "Duração da sessão",
@@ -35,7 +36,7 @@ export function PrazosPortalFormulario({ valores }: { valores: Prazos }) {
         {campos[campo]} (minutos)
         <input className="mt-1 block w-full rounded border p-2" name={campo} type="number" min={1} max={525600} step={1} required defaultValue={valores[campo] ?? ""} />
       </label>)}
-      <button className="rounded border px-3 py-2" type="submit">{ocupado ? "Salvando…" : "Salvar prazos do portal"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "md" })} type="submit">{ocupado ? "Salvando…" : "Salvar prazos do portal"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} className="text-sm" />
   </form>;
