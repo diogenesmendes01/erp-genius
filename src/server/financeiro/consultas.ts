@@ -11,16 +11,45 @@ function inicioDoMes() {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
+/** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
+function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
+  return usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO) ? {} :
+    usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: usuario.id }, { vendedor: { gerenteComercialId: usuario.id } }] } : { vendedorId: usuario.id };
+}
+
+const ORDEM_COMISSOES = [{ vendedor: { nome: "asc" as const } }, { criadoEm: "desc" as const }, { id: "desc" as const }];
+
+export const COMISSOES_POR_PAGINA = 50;
+
 export async function listarComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
-  const where: Prisma.ComissaoWhereInput = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO) ? {} :
-    usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: usuario.id }, { vendedor: { gerenteComercialId: usuario.id } }] } : { vendedorId: usuario.id };
   const comissoes = await prisma.comissao.findMany({
-    where,
-    orderBy: [{ vendedor: { nome: "asc" } }, { criadoEm: "desc" }],
+    where: escopoComissoes(usuario),
+    orderBy: ORDEM_COMISSOES,
     include: { vendedor: { select: { nome: true } } },
   });
-  return comissoes.map((c) => ({
+  return comissoes.map(resumirComissao);
+}
+
+/**
+ * Lista de /comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
+ * página. Filtro por situação (em AND com o escopo), 50 por página, total filtrado.
+ */
+export async function listarComissoesPagina({ status, pagina }: { status: StatusComissao | null; pagina: number }) {
+  const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
+  const where: Prisma.ComissaoWhereInput = { AND: [escopoComissoes(usuario), status ? { status } : {}] };
+  const [comissoes, total] = await Promise.all([
+    prisma.comissao.findMany({
+      where, orderBy: ORDEM_COMISSOES, skip: (pagina - 1) * COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA,
+      include: { vendedor: { select: { nome: true } } },
+    }),
+    prisma.comissao.count({ where }),
+  ]);
+  return { itens: comissoes.map(resumirComissao), total };
+}
+
+function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { select: { nome: true } } } }>) {
+  return {
     id: c.id,
     vendedor: c.vendedor.nome,
     valor: numero(c.valor),
@@ -29,7 +58,7 @@ export async function listarComissoes() {
     tipo: c.tipo,
     status: c.status,
     dataPrevistaPagamento: c.dataPrevistaPagamento ? c.dataPrevistaPagamento.toISOString() : null,
-  }));
+  };
 }
 
 export async function kpisFinanceiro() {
