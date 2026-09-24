@@ -1,4 +1,5 @@
 import { Papel } from "@prisma/client";
+import { memoPorRequisicao } from "./memo-requisicao";
 
 // Guards de Server Action (ver docs/13 §"Padrão de Server Action" e §"Regras inegociáveis").
 // Permissão SEMPRE verificada no servidor — o menu role-aware é só UX, não segurança.
@@ -59,14 +60,10 @@ export class ErroRegra extends Error {
  * `permissoes` incluído no select para `ExportarPlanilha.tsx` não precisar de um segundo
  * `findUnique` só para essa coluna (ganho rápido 15 da auditoria, parte segura).
  *
- * A auditoria também pedia `cache()` do React aqui para deduplicar chamadas repetidas
- * dentro da mesma renderização. NÃO aplicado: o `react` instalado neste projeto é 18.3.1,
- * que não exporta `cache` (confirmado em node_modules — `cache` só existe a partir do React
- * 19 estável). `cache(async (id) => ...)` quebraria a importação deste módulo em produção,
- * não só em teste. Agentes não alteram package.json/lockfile (AGENTS.md) — a memoização por
- * requisição fica para quando o React for atualizado.
+ * Memoizado POR REQUISIÇÃO (memoPorRequisicao): layout, página e consultas de uma mesma renderização
+ * leem a linha uma vez só. Cada requisição nova relê — a frescura continua a mesma.
  */
-async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> {
+const carregarUsuarioFresco = memoPorRequisicao(async (id: string): Promise<UsuarioSessao | null> => {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o Prisma.
   const { prisma } = await import("@/lib/prisma");
   const atual = await prisma.usuario.findUnique({
@@ -75,7 +72,7 @@ async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> 
   });
   if (!atual || !atual.ativo) return null;
   return { id, nome: atual.nome, papeis: atual.papeis, permissoes: atual.permissoes };
-}
+});
 
 /**
  * Usuário EXCLUSIVO do portal (review PR #60): o papel ALUNO existe só para o /portal.
