@@ -6,6 +6,7 @@ import type { ConfiguracaoAvisosAgendaConfig } from "@/server/whatsapp/consultas
 import { salvarConfiguracaoAvisosAgenda } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 
@@ -41,7 +42,7 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
       </label>
     </div>
     <p className="mt-3 text-xs text-gray-500">O template deve conter <code>{"{horarios}"}</code> e pode usar <code>{"{nome}"}</code>. O envio proativo usa somente Meta Cloud; Baileys não é habilitado para este canal.</p>
-    <button className="mt-4 rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" disabled={acao.ocupado || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar canal de agenda"}</button>
+    <button className={`${botaoClasses({ tamanho: "md" })} mt-4`} disabled={acao.ocupado || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar canal de agenda"}</button>
     <FeedbackAcao erro={acao.erro} className="mt-3" />
   </section>;
 }

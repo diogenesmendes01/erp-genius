@@ -7,6 +7,7 @@ import { criarNivel } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { IdiomaRow } from "./IdiomasPainel";
+import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
   "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -82,7 +83,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <button
           onClick={adicionar}
           disabled={acao.ocupado}
-          className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
+          className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar nível
         </button>

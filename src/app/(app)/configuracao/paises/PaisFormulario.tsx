@@ -8,6 +8,7 @@ import { PaisSchema, type PaisInput } from "@/server/paises/schema";
 import { criarPais, editarPais } from "@/server/paises/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -165,14 +166,14 @@ export function PaisFormulario({
         <button
           type="submit"
           disabled={acao.ocupado}
-          className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
+          className={botaoClasses({ tamanho: "lg" })}
         >
           {acao.ocupado ? "Salvando…" : "Salvar país"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
         >
           Cancelar
         </button>

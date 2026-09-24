@@ -8,13 +8,14 @@ import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/a
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { botaoClasses } from "@/components/Botao";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
 // estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
 // (cron só em driver oficial); prontidão S15 validada no servidor ao armar.
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
+const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];

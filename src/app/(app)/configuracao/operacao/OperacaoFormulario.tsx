@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { salvarConfiguracaoOperacional } from "@/server/operacao/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferenciaHoras, fusoInstitucional, prazoReservaMinutos }: { exigirPrimeiraMensalidade: boolean; prazoConferenciaHoras: number | null; fusoInstitucional: string | null; prazoReservaMinutos: number | null }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferencia
     <p className="text-gray-500">O prazo é fixado quando a secretaria informa o pagamento. Afeta apenas aquela cobrança. Ao vencer o prazo, a régua pode retomar se ainda houver saldo; rejeitar o comprovante encerra a suspensão. Alterar esta configuração vale para novos informes.</p>
     <label className="block">Prazo inicial de reserva de vaga (minutos)<input name="reserva" type="number" min="1" max="2147483647" step="1" defaultValue={prazoReservaMinutos ?? ""} className="mt-1 block w-36 rounded border p-2" /></label>
     <p className="text-gray-500">Vale para novas reservas. Deixar em branco impede criar novas reservas até configurar o prazo; não libera nem altera reservas existentes. Prorrogações exigem proposta e aprovação próprias.</p>
-    <button disabled={acao.ocupado} className="rounded bg-brand-solid px-4 py-2 text-white disabled:opacity-50">{acao.ocupado ? "Salvando…" : "Salvar configuração"}</button>
+    <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>{acao.ocupado ? "Salvando…" : "Salvar configuração"}</button>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
 }
