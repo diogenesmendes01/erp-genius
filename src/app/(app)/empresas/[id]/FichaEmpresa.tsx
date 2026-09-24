@@ -62,9 +62,9 @@ export function FichaEmpresa({
   const [origem, setOrigem] = useState<"faturas" | "contrato" | null>(null);
   const ocupado = acao.ocupado;
 
-  function run<T>(secao: "faturas" | "contrato", disparar: () => Promise<Resultado<T>>, sucesso: string) {
+  async function run<T>(secao: "faturas" | "contrato", disparar: () => Promise<Resultado<T>>, sucesso: string) {
     setOrigem(secao);
-    return acao.executar(disparar, () => { router.refresh(); return sucesso; });
+    if ((await acao.executar(disparar, sucesso))?.tipo === "ok") router.refresh();
   }
   const feedback = (secao: "faturas" | "contrato") => (
     <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />

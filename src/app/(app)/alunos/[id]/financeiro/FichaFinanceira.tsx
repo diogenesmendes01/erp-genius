@@ -332,14 +332,15 @@ function RenegociarModal({
       acao.setErro("Informe o novo valor, com no máximo duas casas decimais.");
       return;
     }
-    await acao.executar(() => ajustarCobranca({
+    const desfecho = await acao.executar(() => ajustarCobranca({
       cobrancaId: cobranca.id,
       tipo,
       valorPara: valorParaNumero,
       vigencia,
       novoVencimento: novoVenc,
       motivo,
-    }), (dado) => onDone(!!dado?.aprovacao));
+    }));
+    if (desfecho?.tipo === "ok") onDone(!!desfecho.dado?.aprovacao);
   }
 
   return (

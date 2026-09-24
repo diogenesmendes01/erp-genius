@@ -42,9 +42,10 @@ function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
       acao.setErro("Informe o novo valor, com no máximo duas casas decimais.");
       return;
     }
-    await acao.executar(() => ajustarCobranca({ cobrancaId: String(form.get("cobrancaId")), valorPara, tipo: TipoAjuste.DESCONTO,
+    const desfecho = await acao.executar(() => ajustarCobranca({ cobrancaId: String(form.get("cobrancaId")), valorPara, tipo: TipoAjuste.DESCONTO,
       vigencia: form.get("futuras") ? Vigencia.PROXIMOS_MESES : Vigencia.ESTA_COBRANCA, motivo: String(form.get("motivo")) }),
-    (dado) => { router.refresh(); return dado?.aprovacao ? "Pedido encaminhado para aprovação independente." : "Preço ajustado dentro da alçada."; });
+    (dado) => dado?.aprovacao ? "Pedido encaminhado para aprovação independente." : "Preço ajustado dentro da alçada.");
+    if (desfecho?.tipo === "ok") router.refresh();
   }
   return (
     <div className="space-y-2">

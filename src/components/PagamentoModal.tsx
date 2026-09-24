@@ -88,7 +88,7 @@ export function PagamentoModal({
       acao.setErro("Informe o valor recebido, com no máximo duas casas decimais.");
       return;
     }
-    await acao.executar(() => registrarPagamento(cobrancaId, {
+    const desfecho = await acao.executar(() => registrarPagamento(cobrancaId, {
       chaveIdempotencia,
       valorRecebido,
       forma,
@@ -97,7 +97,9 @@ export function PagamentoModal({
       comprovanteNome,
       comentario,
       permitirExcedente,
-    }), () => onDone());
+    }));
+    // Fecha o modal só depois que o executor já liberou o ocupado.
+    if (desfecho?.tipo === "ok") onDone();
   }
 
   return (
