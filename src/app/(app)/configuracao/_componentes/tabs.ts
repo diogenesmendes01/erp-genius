@@ -20,8 +20,8 @@ export const CONFIG_TABS: ConfigTab[] = [
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/operacao", label: "Operação", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/migracao", label: "Preparação de migração", papeis: [Papel.ADMINISTRADOR] },
-  // Canal WhatsApp: admin vê tudo (número/templates/política); Gerente Comercial vê só a
-  // seção Comercial (auto-lead/saudação — doc 27 C1). O gate real está na page.tsx.
+  // Canal WhatsApp: admin vê todas as seções; Gerente Comercial vê Comercial e Régua comercial
+  // (doc 27 C1). O gate real está em whatsapp/secoes.ts + o guard de cada página de seção (E8).
   {
     href: "/configuracao/whatsapp",
     label: "WhatsApp",

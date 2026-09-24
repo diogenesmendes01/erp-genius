@@ -707,7 +707,7 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
         },
       });
     });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
   });
 }
 
@@ -841,7 +841,7 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
         },
       });
     });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
   });
 }
 
