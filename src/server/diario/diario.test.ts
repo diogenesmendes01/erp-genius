@@ -76,6 +76,15 @@ describe("diário mantém história de autoria sem reabrir cadastro", () => {
     expect((await listarAulasDiario(u(Papel.VENDEDOR))).aulas).toEqual([]);
     expect(db.aulaDiario.findMany).not.toHaveBeenCalled();
   });
+  it("busca (E4) entra em AND com o escopo, inclusive na validação do cursor", async () => {
+    await listarAulasDiario(u(Papel.PROFESSOR), undefined, "verbos");
+    const where = db.aulaDiario.findMany.mock.calls[0][0].where;
+    expect(where.AND[0]).toEqual({ professorId: "prof" });
+    expect(JSON.stringify(where.AND[1])).toContain("verbos");
+    db.aulaDiario.findFirst.mockResolvedValueOnce(null); // cursor fora da busca
+    expect((await listarAulasDiario(u(Papel.PROFESSOR), "aula-x", "verbos")).aulas).toEqual([]);
+    expect(db.aulaDiario.findFirst.mock.calls.at(-1)![0].where).toEqual({ AND: [where, { id: "aula-x" }] });
+  });
   it("gestão pedagógica consulta sem assumir autoria docente", async () => {
     const res = await listarAulasDiario(u(Papel.GERENTE_PEDAGOGICO));
     expect(db.aulaDiario.findMany.mock.calls[0][0].where).toEqual({}); expect(res.aulas[0].podeEditar).toBe(false);
