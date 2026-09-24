@@ -44,12 +44,12 @@ describe("planilha com rótulos, não enums crus (E5)", () => {
     expect((await linhas(res))[1]).toEqual(["A-1", "Ana Silva", "Ativo", "Costa Rica", ""]);
   });
 
-  it("leads: etapa e temperatura rotuladas (\"Novo\", \"Morno\")", async () => {
-    mocks.listarLeads.mockResolvedValueOnce([{ id: "l1", codigo: "L-1", nome: "Ana", etapa: "NOVO", temperatura: "MORNO" }]);
+  it("leads: segmento, etapa e temperatura rotulados (\"Adulto\", \"Novo\", \"Morno\")", async () => {
+    mocks.listarLeads.mockResolvedValueOnce([{ id: "l1", codigo: "L-1", nome: "Ana", b2b: false, segmento: "ADULTO", etapa: "NOVO", temperatura: "MORNO", pais: { nome: "Costa Rica" }, vendedor: { nome: "Bia" } }]);
     mocks.contarLeads.mockResolvedValueOnce(1); // a linha continua na carteira na conferência final
     const res = await GET(new Request("http://localhost/api/exportacoes/leads"), { params: Promise.resolve({ tipo: "leads" }) });
     expect(res.status).toBe(200);
-    expect((await linhas(res))[1]).toEqual(["L-1", "Ana", "Novo", "Morno"]);
+    expect((await linhas(res))[1]).toEqual(["L-1", "Ana", "PF", "Adulto", "Novo", "Morno", "Costa Rica", "Bia"]);
   });
 });
 
