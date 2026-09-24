@@ -77,7 +77,7 @@ export function NumerosPainel({
             Dois motores atrás da mesma porta: o driver é atributo do número, não do módulo.
           </p>
         </div>
-        <button className={btnPri} onClick={() => setForm(FORM_VAZIO)}>
+        <button type="button" className={btnPri} onClick={() => setForm(FORM_VAZIO)}>
           <span className="flex items-center gap-1">
             <IconPlus className="h-4 w-4" /> Novo número
           </span>
@@ -116,13 +116,14 @@ export function NumerosPainel({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {n.driver === "BAILEYS" && n.ativo && (
-                    <button className={btnSec} onClick={() => setQrDe(n)}>
+                    <button type="button" className={btnSec} onClick={() => setQrDe(n)}>
                       <span className="flex items-center gap-1">
                         <IconQrcode className="h-3.5 w-3.5" /> Conectar QR
                       </span>
                     </button>
                   )}
                   <button
+                    type="button"
                     className={btnSec}
                     onClick={() =>
                       setForm({
@@ -233,7 +234,7 @@ export function NumerosPainel({
               />
               Número ativo
             </label>
-            <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+            <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
               {acao.ocupado ? "Salvando…" : "Salvar número"}
             </button>
           </div>
@@ -302,8 +303,8 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
       <div className="mt-3 flex items-center justify-between">
         <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
         <div className="flex items-center gap-2">
-          <button className={btnSec} onClick={onClose}>Fechar</button>
-          <button className={btnSec} disabled={acao.ocupado || estado === "CONECTADO"} onClick={pedirQr}>
+          <button type="button" className={btnSec} onClick={onClose}>Fechar</button>
+          <button type="button" className={btnSec} disabled={acao.ocupado || estado === "CONECTADO"} onClick={pedirQr}>
             Atualizar QR
           </button>
         </div>

@@ -290,7 +290,7 @@ function ReguaComercialPainel({
           )}
         </div>
 
-        <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+        <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : `Salvar "${regua.nome}"`}
         </button>
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
