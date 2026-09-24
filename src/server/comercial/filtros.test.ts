@@ -8,10 +8,14 @@ import {
   hrefDosCamposLeads,
   lerFiltrosLeads,
   sanearFiltrosLeads,
-  sincronizarCamposLeads,
   temFiltroLeads,
   whereFiltrosLead,
 } from "./filtros";
+import { sincronizarCamposFiltro } from "@/lib/filtros-url";
+
+// A lista usa a sincronização genérica (useFiltrosUrl) sobre os campos derivados destes filtros.
+const sincronizarCamposLeads = (atuais: ReturnType<typeof camposDosFiltrosLeads>, antes: ReturnType<typeof lerFiltrosLeads>, depois: ReturnType<typeof lerFiltrosLeads>) =>
+  sincronizarCamposFiltro(atuais, camposDosFiltrosLeads(antes), camposDosFiltrosLeads(depois));
 
 describe("filtros de leads na URL", () => {
   it("lê e valida: enums desconhecidos, id estranho e página inválida caem para vazio/1", () => {

@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { StatusAluno } from "@prisma/client";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
-import { ALUNOS_POR_PAGINA, camposDosFiltros, filtrosParaQuery, hrefDosCampos, sincronizarCampos, temFiltroAlunos, type CamposAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
-import { criarEspera } from "@/lib/espera";
+import { ALUNOS_POR_PAGINA, camposDosFiltros, filtrosParaQuery, hrefDosCampos, temFiltroAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
+import { useFiltrosUrl } from "@/lib/filtros-url";
+import { Paginacao } from "@/components/Paginacao";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
 
 export interface AlunoRow {
@@ -62,38 +61,8 @@ export function AlunosLista({
   const inicio = total ? (filtros.pagina - 1) * ALUNOS_POR_PAGINA + 1 : 0;
   const fim = (filtros.pagina - 1) * ALUNOS_POR_PAGINA + alunos.length;
   const temProxima = fim < total;
-  const router = useRouter();
-  const [buscando, iniciar] = useTransition();
-  // Campos controlados, sem recriar o formulário (o foco não se perde): quando os filtros da URL
-  // mudam, só os campos cujo filtro mudou são atualizados (sincronizarCampos) — a busca em edição
-  // sobrevive a um select que navega. A espera pendente dos selects é cancelada a cada mudança.
-  const [campos, setCampos] = useState<CamposAlunos>(() => camposDosFiltros(filtros));
-  const anteriores = useRef(filtros);
-  const [espera] = useState(() => criarEspera(400));
-  const chaveFiltros = filtrosParaQuery(filtros);
-  useEffect(() => {
-    espera.cancelar();
-    setCampos((atuais) => sincronizarCampos(atuais, anteriores.current, filtros));
-    anteriores.current = filtros;
-    // chaveFiltros representa `filtros` por valor (o objeto muda de identidade a cada render do servidor).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chaveFiltros, espera]);
-  useEffect(() => () => espera.cancelar(), [espera]);
-
-  const navegar = (href: string) => iniciar(() => router.push(href));
-  const aplicar = (c: CamposAlunos) => { espera.cancelar(); navegar(hrefDosCampos(c)); };
-  const mudarSelect = (campo: "status" | "pais" | "turma") => (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const novos = { ...campos, [campo]: e.target.value };
-    setCampos(novos);
-    espera.agendar(() => aplicar(novos));
-  };
-  /** Link real (abre em nova aba, copia) que, no clique simples, navega dentro da transição. */
-  const aoClicar = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    e.preventDefault();
-    espera.cancelar();
-    navegar(href);
-  };
+  // Campos controlados, transição, espera nos selects e links na transição: useFiltrosUrl (E4).
+  const { campos, buscando, aplicar, mudarTexto, mudarSelect, aoClicar } = useFiltrosUrl({ campos: camposDosFiltros(filtros), hrefDosCampos });
 
   return (
     <div>
@@ -122,7 +91,7 @@ export function AlunosLista({
         <input
           name="busca"
           value={campos.busca}
-          onChange={(e) => setCampos({ ...campos, busca: e.target.value })}
+          onChange={mudarTexto("busca")}
           maxLength={100}
           aria-label="Buscar aluno por nome ou código"
           placeholder="Buscar por nome ou código…"
@@ -211,13 +180,7 @@ export function AlunosLista({
         </table>
       </div>
 
-      {(filtros.pagina > 1 || temProxima) && (
-        <nav aria-label="Páginas de alunos" className="mt-3 flex items-center gap-4 text-sm">
-          {filtros.pagina > 1 && <Link href={hrefPagina(filtros, filtros.pagina - 1)} onClick={aoClicar(hrefPagina(filtros, filtros.pagina - 1))} className="text-brand-700 hover:underline">← Anterior</Link>}
-          <span className="text-gray-500">Página {filtros.pagina}</span>
-          {temProxima && <Link href={hrefPagina(filtros, filtros.pagina + 1)} onClick={aoClicar(hrefPagina(filtros, filtros.pagina + 1))} className="text-brand-700 hover:underline">Próxima →</Link>}
-        </nav>
-      )}
+      <Paginacao pagina={filtros.pagina} temProxima={temProxima} href={(p) => hrefPagina(filtros, p)} aoClicar={aoClicar} rotulo="Páginas de alunos" />
     </div>
   );
 }
