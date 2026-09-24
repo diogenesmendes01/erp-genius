@@ -45,6 +45,10 @@ describe("/secretaria — busca e páginas (E4)", () => {
       ],
     });
     expect(whereBuscaMatriculas("  ")).toEqual({});
+    // No máximo 6 palavras: a 7ª em diante é descartada (limita o tamanho da consulta).
+    const sete = whereBuscaMatriculas("a b c d e f g") as { AND: unknown[] };
+    expect(sete.AND).toHaveLength(6);
+    expect(JSON.stringify(sete)).not.toContain('"g"');
   });
 
   it("formulário GET de busca; página e busca chegam à consulta; contador e paginação", async () => {
