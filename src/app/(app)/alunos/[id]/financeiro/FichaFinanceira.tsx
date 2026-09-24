@@ -369,7 +369,7 @@ function RenegociarModal({
       <label htmlFor={`${campoId}-vencimento`} className="mb-1 block text-xs text-gray-600">Novo vencimento (opcional)</label>
       <input id={`${campoId}-vencimento`} type="date" className={inputCls + " mb-2"} value={novoVenc} onChange={(e) => setVenc(e.target.value)} />
       <label htmlFor={`${campoId}-motivo`} className="mb-1 block text-xs text-gray-600">Motivo (obrigatório)</label>
-      <input id={`${campoId}-motivo`} className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <input id={`${campoId}-motivo`} aria-required="true" className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       <p className="mb-3 text-xs text-gray-400">Acima do seu limite de desconto, o pedido vai para aprovação do Gerente Comercial / Admin.</p>
       <div className="flex gap-2">
         <button className={btnPri} disabled={salvando} onClick={salvar}>{salvando ? "Salvando…" : "Aplicar ajuste"}</button>
