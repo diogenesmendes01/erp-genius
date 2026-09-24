@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Modal } from "@/components/Modal";
 
 interface ResultadoImport {
   total: number;
@@ -63,73 +64,65 @@ export function ImportarTurmasModal() {
       </button>
 
       {aberto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={fechar}
-        >
-          <div
-            className="w-full max-w-lg rounded-lg border border-gray-200 bg-surface p-5"
-            onClick={(e) => e.stopPropagation()}
+        <Modal titulo="Importar turmas por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+          <p className="mb-4 text-sm text-gray-500">
+            Envie uma planilha <strong>.xlsx</strong>. <strong>Modalidade</strong> e{" "}
+            <strong>Nível</strong> são obrigatórios; o nº de dias deve casar com a frequência da
+            modalidade. Baixe o modelo para ver as colunas e um exemplo.
+          </p>
+
+          <a
+            href="/api/turmas/modelo"
+            className="mb-4 inline-block text-sm font-medium text-brand-700 hover:underline"
           >
-            <h2 className="mb-1 text-lg font-medium">Importar turmas por lote</h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Envie uma planilha <strong>.xlsx</strong>. <strong>Modalidade</strong> e{" "}
-              <strong>Nível</strong> são obrigatórios; o nº de dias deve casar com a frequência da
-              modalidade. Baixe o modelo para ver as colunas e um exemplo.
-            </p>
+            ↓ Baixar modelo (.xlsx)
+          </a>
 
-            <a
-              href="/api/turmas/modelo"
-              className="mb-4 inline-block text-sm font-medium text-brand-700 hover:underline"
-            >
-              ↓ Baixar modelo (.xlsx)
-            </a>
-
-            <div className="mb-3">
-              <label htmlFor={planilhaId} className="mb-1 block text-xs text-gray-600">Planilha de turmas</label>
-              <input
-                id={planilhaId}
-                ref={fileRef}
-                type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
-              />
-            </div>
-
-            {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-
-            {res && (
-              <div className="mb-3 rounded-md border border-gray-200 p-3 text-sm">
-                <p className="font-medium text-gray-800">
-                  {res.criadas} de {res.total} turma(s) cadastrada(s).
-                </p>
-                {res.erros.length > 0 && (
-                  <div className="mt-2">
-                    <p className="mb-1 text-xs font-medium text-amber-700">
-                      {res.erros.length} linha(s) com problema:
-                    </p>
-                    <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
-                      {res.erros.map((e) => (
-                        <li key={e.linha}>
-                          Linha {e.linha}: {e.motivo}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <button type="button" className={btnSec} onClick={fechar}>
-                {res ? "Fechar" : "Cancelar"}
-              </button>
-              <button type="button" className={btnPri} onClick={enviar} disabled={enviando}>
-                {enviando ? "Enviando…" : "Importar"}
-              </button>
-            </div>
+          <div className="mb-3">
+            <label htmlFor={planilhaId} className="mb-1 block text-xs text-gray-600">Planilha de turmas</label>
+            <input
+              id={planilhaId}
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
+            />
           </div>
-        </div>
+
+          {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+
+          {res && (
+            <div className="mb-3 rounded-md border border-gray-200 p-3 text-sm">
+              <p className="font-medium text-gray-800">
+                {res.criadas} de {res.total} turma(s) cadastrada(s).
+              </p>
+              {res.erros.length > 0 && (
+                <div className="mt-2">
+                  <p className="mb-1 text-xs font-medium text-amber-700">
+                    {res.erros.length} linha(s) com problema:
+                  </p>
+                  <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                    {res.erros.map((e) => (
+                      <li key={e.linha}>
+                        Linha {e.linha}: {e.motivo}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            {/* Durante o envio nada fecha — o resultado precisa aparecer aqui; depois dele, só este botão fecha. */}
+            <button type="button" className={btnSec + " disabled:opacity-60"} onClick={fechar} disabled={enviando}>
+              {res ? "Fechar" : "Cancelar"}
+            </button>
+            <button type="button" className={btnPri} onClick={enviar} disabled={enviando}>
+              {enviando ? "Enviando…" : "Importar"}
+            </button>
+          </div>
+        </Modal>
       )}
     </>
   );

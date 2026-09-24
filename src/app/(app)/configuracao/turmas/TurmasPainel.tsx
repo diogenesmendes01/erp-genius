@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { IconPlus } from "@tabler/icons-react";
 import type { StatusTurma } from "@prisma/client";
@@ -12,6 +12,7 @@ import {
   type ModalidadeOpcao,
 } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
+import { useDialogo } from "@/lib/dialogo";
 
 export interface TurmaRow {
   id: string;
@@ -46,6 +47,39 @@ function situacao(status: StatusTurma): { label: string; cls: string } {
   return porStatus[status];
 }
 
+// Casco de diálogo do formulário de turma (E7): TurmaFormulario já desenha o próprio cartão e o
+// título ("Nova turma"/"Editar turma"), então aqui não entra o <Modal> compartilhado — ele duplicaria
+// o título e o cartão. O comportamento é o mesmo do Modal: role="dialog" + aria-modal, Escape e o
+// fundo fecham (menos durante o salvamento), foco preso e devolvido (useDialogo). Alinhado ao topo com rolagem: o formulário é
+// mais alto que a tela no celular.
+function DialogoFormularioTurma({ titulo, aoFechar, bloquearFechamento, children }: {
+  titulo: string;
+  aoFechar: () => void;
+  bloquearFechamento: boolean;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento });
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      onClick={() => { if (!bloquearFechamento) aoFechar(); }}
+    >
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label={titulo}
+        tabIndex={-1}
+        className="my-8 w-full max-w-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function TurmasPainel({
   turmas,
   modalidades,
@@ -60,6 +94,7 @@ export function TurmasPainel({
   podeImportar?: boolean;
 }) {
   const [form, setForm] = useState<"none" | "nova" | { editar: TurmaParaEditar }>("none");
+  const [salvandoTurma, setSalvandoTurma] = useState(false);
 
   return (
     <div>
@@ -82,23 +117,16 @@ export function TurmasPainel({
       </div>
 
       {form !== "none" && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-          onClick={() => setForm("none")}
-        >
-          <div
-            className="my-8 w-full max-w-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <TurmaFormulario
-              turma={typeof form === "object" ? form.editar : undefined}
-              modalidades={modalidades}
-              niveis={niveis}
-              professores={professores}
-              onClose={() => setForm("none")}
-            />
-          </div>
-        </div>
+        <DialogoFormularioTurma titulo={typeof form === "object" ? "Editar turma" : "Nova turma"} aoFechar={() => setForm("none")} bloquearFechamento={salvandoTurma}>
+          <TurmaFormulario
+            turma={typeof form === "object" ? form.editar : undefined}
+            modalidades={modalidades}
+            niveis={niveis}
+            professores={professores}
+            onClose={() => setForm("none")}
+            aoMudarOcupado={setSalvandoTurma}
+          />
+        </DialogoFormularioTurma>
       )}
 
       {turmas.length === 0 ? (

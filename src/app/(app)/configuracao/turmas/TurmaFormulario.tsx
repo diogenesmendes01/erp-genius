@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarTurma, editarTurma } from "@/server/turmas/acoes";
 import type { TurmaInput } from "@/server/turmas/schema";
@@ -85,17 +85,21 @@ export function TurmaFormulario({
   niveis,
   professores,
   onClose,
+  aoMudarOcupado,
 }: {
   turma?: TurmaParaEditar;
   modalidades: ModalidadeOpcao[];
   niveis: Opcao[];
   professores: Opcao[];
   onClose: () => void;
+  /** Avisa quem envolve o formulário (o diálogo) que há um salvamento em curso — para não fechar no meio. */
+  aoMudarOcupado?: (ocupado: boolean) => void;
 }) {
   const router = useRouter();
   // Sem chave de idempotência: repetir a criação geraria outra turma (novo código); a falha de rede
   // manda conferir a lista antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
+  useEffect(() => { aoMudarOcupado?.(acao.ocupado); }, [acao.ocupado, aoMudarOcupado]);
 
   const [nome, setNome] = useState(turma?.nome ?? "");
   const [modalidadeId, setModalidadeId] = useState(turma?.modalidadeId ?? "");
@@ -329,7 +333,8 @@ export function TurmaFormulario({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          disabled={acao.ocupado}
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60"
         >
           Cancelar
         </button>
