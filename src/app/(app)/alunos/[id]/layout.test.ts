@@ -14,5 +14,7 @@ describe("layouts das fichas: título de aba (E2)", () => {
     expect(await Lead.generateMetadata(p("l1"))).toEqual({ title: "Lead l1" });
     expect(await Empresa.generateMetadata(p("e1"))).toEqual({ title: "Empresa e1" });
     expect(Aluno.default({ children: "filho" })).toBe("filho");
+    expect(Lead.default({ children: "filho" })).toBe("filho");
+    expect(Empresa.default({ children: "filho" })).toBe("filho");
   });
 });
