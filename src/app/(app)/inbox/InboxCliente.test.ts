@@ -57,3 +57,36 @@ describe("InboxCliente", () => {
     expect(html).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
   });
 });
+
+describe("InboxCliente — master-detail no celular (E6)", () => {
+  const conversa = { id: "atendimento", numeroId: "numero", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: "contato", contatoNome: "Ana", contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null };
+  const render = (comThread: boolean) => renderToStaticMarkup(createElement(InboxCliente, {
+    conversas: [conversa], thread: comThread ? thread : null, podeCobranca: false, preferenciaFusoExibicao: null,
+  } as never));
+  // Classe da coluna que contém a busca de conversas (a lista).
+  const classeDaLista = (html: string) => html.match(/<div class="([^"]*)"><div class="border-b border-gray-100 p-2"><input[^>]*aria-label="Buscar conversas por contato"/)?.[1] ?? "";
+
+  it("sem conversa aberta: a lista ocupa a tela; o aviso de escolher só aparece a partir de md", () => {
+    const html = render(false);
+    const lista = classeDaLista(html);
+    expect(lista.split(" ")).toContain("flex");
+    expect(lista.split(" ")).not.toContain("hidden");
+    expect(html).toMatch(/<div class="hidden [^"]*md:flex[^"]*">Escolha uma conversa ao lado\.<\/div>/);
+    expect(html).not.toContain('href="/inbox"');
+  });
+
+  it("com conversa aberta: a lista some abaixo de md e a thread tem o caminho de volta", () => {
+    const html = render(true);
+    const lista = classeDaLista(html).split(" ");
+    expect(lista).toContain("hidden");
+    expect(lista).toContain("md:flex");
+    expect(lista).not.toContain("flex");
+    expect(html).toContain('aria-label="Conversa com Ana"');
+    expect(html).toMatch(/<a(?=[^>]*\shref="\/inbox")(?=[^>]*\sclass="[^"]*md:hidden[^"]*")[^>]*>(?:(?!<\/a>).)*Conversas<\/a>/);
+    expect(html).toMatch(/<button[^>]*aria-current="true"/);
+  });
+
+  it("altura em dvh (100vh no celular inclui a barra do navegador)", () => {
+    expect(render(false)).toContain("h-[calc(100dvh-13rem)]");
+  });
+});
