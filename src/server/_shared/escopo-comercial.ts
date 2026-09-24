@@ -1,6 +1,7 @@
 import { Papel, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "./sessao";
+import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
 /** Carteira é um vínculo atual: comissão histórica e número remetente não o substituem. */
 export async function escopoComercialAtual(
@@ -8,6 +9,22 @@ export async function escopoComercialAtual(
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<Prisma.LeadWhereInput> {
   if (!usuario?.id) return { id: "__sem_acesso__" };
+  // Memo por requisição só fora de transação (ganho rápido 15): dentro de uma tx, o escopo tem de
+  // ser lido NELA (isolamento), então nunca vem do memo. A chave é primitiva (id + papéis) — o objeto
+  // usuário muda de identidade entre chamadas.
+  // Identidade de referência com o singleton: um client derivado ($extends) ou uma tx cai no ramo
+  // sem memo — o custo é só perder o memo, nunca ler fora da transação.
+  if (tx === prisma) return escopoMemo(usuario.id, JSON.stringify([...usuario.papeis].sort()));
+  return calcularEscopo(usuario, tx);
+}
+
+const escopoMemo = memoPorRequisicao((id: string, papeisJson: string) =>
+  calcularEscopo({ id, nome: "", papeis: JSON.parse(papeisJson) as Papel[] }, prisma).then(congelar));
+
+async function calcularEscopo(
+  usuario: UsuarioSessao,
+  tx: Prisma.TransactionClient | typeof prisma,
+): Promise<Prisma.LeadWhereInput> {
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
   const vendedor = usuario.papeis.includes(Papel.VENDEDOR);
   const gerente = usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
