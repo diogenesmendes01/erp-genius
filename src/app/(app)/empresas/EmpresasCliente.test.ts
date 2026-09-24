@@ -14,7 +14,7 @@ vi.mock("react", async (original) => {
 import { EmpresasCliente } from "./EmpresasCliente";
 import { EMPRESAS_POR_PAGINA, lerFiltrosEmpresas } from "@/server/empresas/filtros";
 
-const empresa = (i: number) => ({ id: `e${i}`, codigo: `E-${i}`, nome: `Empresa ${i}`, pais: null, ativo: true, colaboradores: 0, faturasAbertas: 0 });
+const empresa = (i: number) => ({ id: `e${i}`, codigo: `E-${i}`, nome: `Empresa ${i}`, pais: null, ativo: true, colaboradores: 0, faturasAReceber: 0 });
 const paises = [{ id: "p1", nome: "Costa Rica" }];
 const render = (props: Partial<Parameters<typeof EmpresasCliente>[0]>) =>
   renderToStaticMarkup(createElement(EmpresasCliente, { empresas: [], total: 0, totalBase: 0, filtros: lerFiltrosEmpresas({}), paises, ...props }));
@@ -40,6 +40,8 @@ describe("EmpresasCliente (filtros na URL)", () => {
     const html = render({ empresas, total: 120, totalBase: 300, filtros: lerFiltrosEmpresas({ situacao: "ativas", pagina: "2" }) });
     expect(html).toContain("51–100 de 120 empresas encontradas (de 300 no total)");
     expect(html).toContain('aria-label="Páginas de empresas"');
+    // Faturas FECHADAS (emitidas, aguardando pagamento): "a receber", não "em aberto" (que sugere ABERTA).
+    expect(html).toContain(">Faturas a receber</th>");
     expect(html).toContain('href="/empresas?situacao=ativas"');
     expect(html).toContain('href="/empresas?situacao=ativas&amp;pagina=3"');
   });
@@ -50,6 +52,8 @@ describe("EmpresasCliente (filtros na URL)", () => {
       const html = render({ empresas: [empresa(1)], total: 1, totalBase: 1 });
       expect(html).toMatch(/<button type="submit" disabled=""[^>]*>Buscando…<\/button>/);
       expect(html).toContain('aria-busy="true"');
+      // Também no estado vazio: o leitor de tela ouve que a região está carregando.
+      expect(render({ totalBase: 5, filtros: lerFiltrosEmpresas({ situacao: "inativas" }) })).toMatch(/<div aria-busy="true"[^>]*>Nenhuma empresa com esses filtros/);
     } finally {
       pendente.valor = false;
     }

@@ -103,17 +103,6 @@ export type CamposAlunos = { busca: string; status: string; pais: string; turma:
 export const camposDosFiltros = (f: FiltrosAlunos): CamposAlunos =>
   ({ busca: f.busca, status: f.status ?? "", pais: f.paisId ?? "", turma: f.turmaId ?? "" });
 
-/**
- * Quando a URL muda (Limpar, voltar do navegador, link, resultado de um select), só os campos
- * cujo FILTRO mudou são atualizados; os demais mantêm o que a pessoa está digitando. Assim o
- * formulário não é recriado (o foco não se perde) e um select que navega não apaga a busca em edição.
- */
-export function sincronizarCampos(atuais: CamposAlunos, anteriores: FiltrosAlunos, novos: FiltrosAlunos): CamposAlunos {
-  const antes = camposDosFiltros(anteriores), depois = camposDosFiltros(novos);
-  const r = { ...atuais };
-  for (const k of Object.keys(depois) as (keyof CamposAlunos)[]) if (antes[k] !== depois[k]) r[k] = depois[k];
-  return r;
-}
 
 /** Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. */
 export const hrefDosCampos = (c: CamposAlunos) => hrefAlunos(lerFiltrosAlunos({ busca: c.busca, status: c.status, pais: c.pais, turma: c.turma }));
