@@ -402,7 +402,7 @@ export function FichaAluno({
           {/* Auditoria */}
           <div className="sm:col-span-2">
             <label htmlFor="ficha-motivo" className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
-            <textarea id="ficha-motivo" aria-describedby="ficha-motivo-ajuda"
+            <textarea id="ficha-motivo" aria-describedby="ficha-motivo-ajuda" aria-required="true"
               className={inputCls}
               rows={2}
               placeholder="Ex.: correção de documento informado pelo aluno"
