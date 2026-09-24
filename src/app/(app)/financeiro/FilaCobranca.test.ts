@@ -91,3 +91,39 @@ describe("DetalheCobranca", () => {
     expect(html).toContain("vence 15/01/2026");
   });
 });
+
+describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
+  const dashs = { aVencer: 0, emAtraso: 1, bloquear: 0, promessas: 0, recebidoHoje: [] };
+  const fila = (podeOperar: boolean) => renderToStaticMarkup(createElement(FilaCobranca, {
+    itens: [item, { ...item, id: "outra", aluno: { id: "aluno-2", nome: "Bruno Costa", telefone: null } }],
+    dashs, regua: [], podeOperar, podeBloquear: false,
+  }));
+
+  it("cada linha abre por um <button type=\"button\"> com o nome do aluno", () => {
+    const html = fila(true);
+    for (const nome of ["Ana Silva", "Bruno Costa"]) {
+      expect(html).toMatch(new RegExp(`<button type="button"[^>]*>(?:(?!</button>).)*${nome}(?:(?!</button>).)*</button>`));
+    }
+    expect(html).not.toMatch(/<div[^>]*cursor-pointer[^>]*>/);
+  });
+
+  it("o checkbox do lote fica fora de qualquer botão e mantém o rótulo", () => {
+    const html = fila(true);
+    expect(html).toContain('aria-label="Selecionar Ana Silva para o lote"');
+    expect(html).toMatch(/type="checkbox"/);
+    expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*type="checkbox"/);
+    // ações rápidas (outros botões) também não ficam aninhadas no botão da linha
+    expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*<button\b/);
+  });
+
+  it("o detalhe é um diálogo modal rotulado pelo título, com ✕ nomeado", () => {
+    const html = detalhe(item, null);
+    expect(html).toMatch(/role="dialog"/);
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain('tabindex="-1"');
+    const id = html.match(/aria-labelledby="([^"]+)"/)?.[1];
+    expect(id).toBeTruthy();
+    expect(html).toContain(`<h2 id="${id}" class="text-sm font-medium">Detalhe da cobrança</h2>`);
+    expect(html).toContain('aria-label="Fechar detalhe da cobrança"');
+  });
+});
