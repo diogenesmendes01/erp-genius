@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   ReguaComercialConfig,
@@ -13,6 +13,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
+import { criarBuscaMaisRecente } from "@/lib/busca-recente";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
@@ -85,7 +86,9 @@ function ReguaComercialPainel({
   // Um estado por régua: o resultado aparece sob o botão da régua salva. salvarReguaComercial não
   // recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
-  const buscaSeq = useRef(0);
+  const [buscaPilotoRecente] = useState(criarBuscaMaisRecente);
+  // Saiu da tela: a busca em voo é invalidada e sua resposta não grava mais estado.
+  useEffect(() => () => buscaPilotoRecente.cancelar(), [buscaPilotoRecente]);
 
   const numerosVendas = numeros.filter((n) => n.finalidade === "VENDAS");
 
@@ -95,18 +98,19 @@ function ReguaComercialPainel({
 
   async function buscarLeadsPiloto(q: string) {
     setBuscaPiloto(q);
-    // Cada tecla numera a sua busca; uma resposta que chega depois de outra mais nova é descartada,
-    // senão sugestões de "an" podiam sobrescrever as de "ana".
-    const seq = ++buscaSeq.current;
-    if (q.trim().length < 2) return setOpcoesPiloto([]);
-    // Busca só-leitura a cada tecla: fora do useAcaoCliente (a trava de duplo clique descartaria as
-    // teclas seguintes); falha, de negócio ou de rede, só não traz sugestões — como antes.
-    const d = await executarAcaoCliente(() => buscarVinculosInbox(q), { idempotente: false });
-    if (seq !== buscaSeq.current) return;
-    if (d.tipo === "ok" && d.dado) {
-      const jaNaLista = new Set(pilotoLeads.map((l) => l.id));
-      setOpcoesPiloto(d.dado.leads.filter((l) => !jaNaLista.has(l.id)));
+    if (q.trim().length < 2) {
+      buscaPilotoRecente.cancelar(); // uma resposta de antes não pode repovoar a lista já limpa
+      return setOpcoesPiloto([]);
     }
+    // Busca só-leitura a cada tecla: fora do useAcaoCliente (a trava de duplo clique descartaria as
+    // teclas seguintes). Só a resposta da busca mais recente vale — "an" não sobrescreve "ana".
+    const r = await buscaPilotoRecente.buscar(() => executarAcaoCliente(() => buscarVinculosInbox(q), { idempotente: false }));
+    if (!r.atual) return;
+    const d = r.valor;
+    // Falha (de negócio ou de rede) limpa as sugestões: as da busca anterior não correspondem ao texto atual.
+    if (d.tipo !== "ok" || !d.dado) return setOpcoesPiloto([]);
+    const jaNaLista = new Set(pilotoLeads.map((l) => l.id));
+    setOpcoesPiloto(d.dado.leads.filter((l) => !jaNaLista.has(l.id)));
   }
 
   function adicionarLeadPiloto(l: { id: string; nome: string; codigo: string | null }) {
