@@ -182,7 +182,7 @@ export function FichaAluno({
 
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <header>
         <div className="flex flex-wrap items-center gap-3">
@@ -250,24 +250,24 @@ export function FichaAluno({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Identificação */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Nome</label>
-            <input className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />
+            <label htmlFor="ficha-primeiroNome" className="mb-1 block text-xs text-gray-600">Nome</label>
+            <input id="ficha-primeiroNome" className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Sobrenome(s)</label>
-            <input className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />
+            <label htmlFor="ficha-sobrenome" className="mb-1 block text-xs text-gray-600">Sobrenome(s)</label>
+            <input id="ficha-sobrenome" className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Nome preferido</label>
-            <input className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />
+            <label htmlFor="ficha-nomePreferido" className="mb-1 block text-xs text-gray-600">Nome preferido</label>
+            <input id="ficha-nomePreferido" className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Nascimento</label>
-            <input type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />
+            <label htmlFor="ficha-nascimento" className="mb-1 block text-xs text-gray-600">Nascimento</label>
+            <input id="ficha-nascimento" type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Gênero</label>
-            <select className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
+            <label htmlFor="ficha-genero" className="mb-1 block text-xs text-gray-600">Gênero</label>
+            <select id="ficha-genero" className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
               <option value="">—</option>
               {Object.values(Genero).map((g) => (
                 <option key={g} value={g}>{GENERO_LABEL[g]}</option>
@@ -277,8 +277,8 @@ export function FichaAluno({
 
           {/* Documentação */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">País</label>
-            <select
+            <label htmlFor="ficha-paisId" className="mb-1 block text-xs text-gray-600">País</label>
+            <select id="ficha-paisId"
               className={inputCls}
               value={ed.paisId}
               onChange={(e) => {
@@ -296,8 +296,8 @@ export function FichaAluno({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Tipo de documento</label>
-            <select className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
+            <label htmlFor="ficha-tipoDocumentoId" className="mb-1 block text-xs text-gray-600">Tipo de documento</label>
+            <select id="ficha-tipoDocumentoId" className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
               <option value="">—</option>
               {tiposDocEd.map((t) => (
                 <option key={t.id} value={t.id}>{t.nome}</option>
@@ -305,31 +305,31 @@ export function FichaAluno({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Número do documento</label>
-            <input className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />
-            <p className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
+            <label htmlFor="ficha-documento" className="mb-1 block text-xs text-gray-600">Número do documento</label>
+            <input id="ficha-documento" aria-describedby="ficha-documento-ajuda" className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />
+            <p id="ficha-documento-ajuda" className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">País emissor</label>
-            <SelectISO value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />
+            <label htmlFor="ficha-documentoPaisEmissor" className="mb-1 block text-xs text-gray-600">País emissor</label>
+            <SelectISO id="ficha-documentoPaisEmissor" value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Nacionalidade</label>
-            <SelectISO value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />
+            <label htmlFor="ficha-nacionalidade" className="mb-1 block text-xs text-gray-600">Nacionalidade</label>
+            <SelectISO id="ficha-nacionalidade" value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Segunda nacionalidade</label>
-            <SelectISO value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />
+            <label htmlFor="ficha-segundaNacionalidade" className="mb-1 block text-xs text-gray-600">Segunda nacionalidade</label>
+            <SelectISO id="ficha-segundaNacionalidade" value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />
           </div>
 
           {/* Contato */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">E-mail</label>
-            <input type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />
+            <label htmlFor="ficha-email" className="mb-1 block text-xs text-gray-600">E-mail</label>
+            <input id="ficha-email" type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Telefone</label>
-            <input className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />
+            <label htmlFor="ficha-telefone" className="mb-1 block text-xs text-gray-600">Telefone</label>
+            <input id="ficha-telefone" className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />
           </div>
           <div className="flex items-center gap-4 pt-5 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -344,42 +344,42 @@ export function FichaAluno({
 
           {/* Residência */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">País de residência</label>
-            <SelectISO value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />
+            <label htmlFor="ficha-paisResidencia" className="mb-1 block text-xs text-gray-600">País de residência</label>
+            <SelectISO id="ficha-paisResidencia" value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">CEP / Código postal</label>
-            <input className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />
+            <label htmlFor="ficha-cep" className="mb-1 block text-xs text-gray-600">CEP / Código postal</label>
+            <input id="ficha-cep" className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Região / Estado / Província</label>
-            <input className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />
+            <label htmlFor="ficha-regiao" className="mb-1 block text-xs text-gray-600">Região / Estado / Província</label>
+            <input id="ficha-regiao" className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Cidade</label>
-            <input className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />
+            <label htmlFor="ficha-cidade" className="mb-1 block text-xs text-gray-600">Cidade</label>
+            <input id="ficha-cidade" className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Bairro / Distrito</label>
-            <input className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />
+            <label htmlFor="ficha-bairro" className="mb-1 block text-xs text-gray-600">Bairro / Distrito</label>
+            <input id="ficha-bairro" className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Rua</label>
-            <input className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />
+            <label htmlFor="ficha-rua" className="mb-1 block text-xs text-gray-600">Rua</label>
+            <input id="ficha-rua" className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Número</label>
-            <input className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />
+            <label htmlFor="ficha-numero" className="mb-1 block text-xs text-gray-600">Número</label>
+            <input id="ficha-numero" className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Complemento</label>
-            <input className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />
+            <label htmlFor="ficha-complemento" className="mb-1 block text-xs text-gray-600">Complemento</label>
+            <input id="ficha-complemento" className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />
           </div>
 
           {/* Acadêmico / operacional */}
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Escolaridade</label>
-            <select className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
+            <label htmlFor="ficha-escolaridade" className="mb-1 block text-xs text-gray-600">Escolaridade</label>
+            <select id="ficha-escolaridade" className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
               <option value="">—</option>
               {Object.values(Escolaridade).map((e) => (
                 <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
@@ -387,29 +387,29 @@ export function FichaAluno({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Idioma nativo</label>
-            <input className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />
+            <label htmlFor="ficha-idiomaNativo" className="mb-1 block text-xs text-gray-600">Idioma nativo</label>
+            <input id="ficha-idiomaNativo" className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Fuso horário</label>
-            <input className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />
+            <label htmlFor="ficha-fuso" className="mb-1 block text-xs text-gray-600">Fuso horário</label>
+            <input id="ficha-fuso" className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-gray-600">Observações</label>
-            <textarea className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
+            <label htmlFor="ficha-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
+            <textarea id="ficha-observacoes" className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
           </div>
 
           {/* Auditoria */}
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
-            <textarea
+            <label htmlFor="ficha-motivo" className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
+            <textarea id="ficha-motivo" aria-describedby="ficha-motivo-ajuda" aria-required="true"
               className={inputCls}
               rows={2}
               placeholder="Ex.: correção de documento informado pelo aluno"
               value={ed.motivo}
               onChange={(e) => set("motivo", e.target.value)}
             />
-            <p className="mt-1 text-xs text-gray-500">Fica registrado na auditoria, junto com quem editou.</p>
+            <p id="ficha-motivo-ajuda" className="mt-1 text-xs text-gray-500">Fica registrado na auditoria, junto com quem editou.</p>
           </div>
         </div>
       </Drawer>
@@ -568,9 +568,9 @@ function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
 }
 
 /** Select de país ISO 3166. */
-function SelectISO({ value, onChange, comVazio }: { value: string; onChange: (v: string) => void; comVazio?: boolean }) {
+function SelectISO({ id, value, onChange, comVazio }: { id?: string; value: string; onChange: (v: string) => void; comVazio?: boolean }) {
   return (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select id={id} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>

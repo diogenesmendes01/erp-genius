@@ -47,3 +47,20 @@ it("mantém vencimento sem fonte em conferência e recorre a UTC para movimenta�
   expect(html).toContain("próximo venc. a conferir");
   expect(html).toContain("01/01/2026, 02:30 (horário exibido em UTC; origem UTC)");
 });
+
+it("cada rótulo do painel de edição aponta para um campo existente e as ajudas estão ligadas ao campo", () => {
+  const html = renderToStaticMarkup(createElement(FichaAluno, {
+    aluno: aluno(null), paises: [], podeEditarCadastro: true, preferenciaFusoExibicao: null,
+  }));
+  const alvos = [...html.matchAll(/<label[^>]*\sfor="(ficha-[^"]+)"/g)].map((m) => m[1]);
+  expect(alvos).toHaveLength(26);
+  for (const id of alvos) {
+    expect([...html.matchAll(new RegExp(`\\sid="${id}"`, "g"))], id).toHaveLength(1);
+  }
+  for (const [campo, ajuda] of [["ficha-documento", "ficha-documento-ajuda"], ["ficha-motivo", "ficha-motivo-ajuda"]]) {
+    expect(html).toMatch(new RegExp(`id="${campo}"[^>]*aria-describedby="${ajuda}"|aria-describedby="${ajuda}"[^>]*id="${campo}"`));
+    expect(html).toContain(`id="${ajuda}"`);
+  }
+  // O motivo é obrigatório (Salvar só habilita com ele) — o leitor de tela precisa saber disso.
+  expect(html).toMatch(/<textarea(?=[^>]*\sid="ficha-motivo")(?=[^>]*\saria-required="true")[^>]*>/);
+});
