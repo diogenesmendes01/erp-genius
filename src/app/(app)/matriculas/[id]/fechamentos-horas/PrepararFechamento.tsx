@@ -36,7 +36,7 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
       } catch { setMensagem("Não foi possível confirmar o resultado. Consulte o histórico antes de repetir; a mesma entrada conserva sua chave de solicitação."); }
     });
   }}>
-    <fieldset disabled={ocupado} className="space-y-3"><legend className="font-semibold">Preparar apuração mensal</legend>
+    <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Preparar apuração mensal</legend>
       <label className="block">Referência contratual<select className={classe} required value={referencia} onChange={e => setReferencia(e.target.value)}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
       {referencia === "CICLO_MATRICULA" && <label className="block">Data de referência do ciclo<input className={classe} type="date" name="ancora" required /></label>}
       <label className="block">Uma data dentro do período a apurar<input className={classe} type="date" name="data" required /></label>
