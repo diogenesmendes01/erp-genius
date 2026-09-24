@@ -173,9 +173,9 @@ function ReguaComercialPainel({
           <label className="text-sm">
             <span className="mb-1 block text-xs font-medium text-gray-600">Janela (h)</span>
             <span className="flex items-center gap-1">
-              <input type="number" min={0} max={23} className={inputCls + " w-16"} value={janelaInicio} onChange={(e) => setJanelaInicio(Number(e.target.value))} />
+              <input type="number" min={0} max={23} aria-label="Janela: início (h)" className={inputCls + " w-16"} value={janelaInicio} onChange={(e) => setJanelaInicio(Number(e.target.value))} />
               <span className="text-gray-400">às</span>
-              <input type="number" min={1} max={24} className={inputCls + " w-16"} value={janelaFim} onChange={(e) => setJanelaFim(Number(e.target.value))} />
+              <input type="number" min={1} max={24} aria-label="Janela: fim (h)" className={inputCls + " w-16"} value={janelaFim} onChange={(e) => setJanelaFim(Number(e.target.value))} />
             </span>
           </label>
           <label className="text-sm">
@@ -200,10 +200,10 @@ function ReguaComercialPainel({
                   <td className="px-3 py-2">{d.rotulo}</td>
                   <td className="px-3 py-2">
                     {/* Negativo = ANTES da âncora (pré-experimental: -1440, -120). */}
-                    <input type="number" min={-43200} max={43200} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
+                    <input type="number" min={-43200} max={43200} aria-label={`${d.rotulo} — após (min)`} className={inputCls + " w-24"} value={d.offsetMinutos} onChange={(e) => editarDegrau(i, { offsetMinutos: Number(e.target.value) })} />
                   </td>
                   <td className="px-3 py-2">
-                    <select className={inputCls} value={d.templateId} onChange={(e) => editarDegrau(i, { templateId: e.target.value })}>
+                    <select aria-label={`${d.rotulo} — template`} className={inputCls} value={d.templateId} onChange={(e) => editarDegrau(i, { templateId: e.target.value })}>
                       <option value="">(texto de fábrica)</option>
                       {templates.map((t) => (
                         <option key={t.id} value={t.id}>{t.nome}</option>
@@ -211,7 +211,7 @@ function ReguaComercialPainel({
                     </select>
                   </td>
                   <td className="px-3 py-2">
-                    <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={d.ativo} onChange={(e) => editarDegrau(i, { ativo: e.target.checked })} />
+                    <input type="checkbox" aria-label={`${d.rotulo} — ativo`} className="h-4 w-4 accent-brand-600" checked={d.ativo} onChange={(e) => editarDegrau(i, { ativo: e.target.checked })} />
                   </td>
                 </tr>
               ))}
@@ -262,6 +262,7 @@ function ReguaComercialPainel({
               <div className="relative">
                 <input
                   className={inputCls + " w-64"}
+                  aria-label="Buscar lead para adicionar ao piloto"
                   placeholder="Buscar lead por nome…"
                   value={buscaPiloto}
                   onChange={(e) => buscarLeadsPiloto(e.target.value)}

@@ -77,13 +77,13 @@ export function ModalidadeFormulario({
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Nome</label>
-          <input {...register("nome")} placeholder="Regular" className={inputCls} />
-          {errors.nome && <p className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-nome">Nome</label>
+          <input id="modalidade-nome" {...register("nome")} placeholder="Regular" className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "modalidade-nome-erro" : undefined} />
+          {errors.nome && <p id="modalidade-nome-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Segmento</label>
-          <select {...register("segmento")} className={inputCls}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-segmento">Segmento</label>
+          <select id="modalidade-segmento" {...register("segmento")} className={inputCls}>
             {SEGMENTOS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
@@ -92,35 +92,35 @@ export function ModalidadeFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Frequência</label>
-          <input {...register("frequencia")} placeholder="1x/semana" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-frequencia">Frequência</label>
+          <input id="modalidade-frequencia" {...register("frequencia")} placeholder="1x/semana" className={inputCls} aria-invalid={errors.frequencia ? true : undefined} aria-describedby={errors.frequencia ? "modalidade-frequencia-erro" : undefined} />
           {errors.frequencia && (
-            <p className="mt-1 text-xs text-red-600">{errors.frequencia.message}</p>
+            <p id="modalidade-frequencia-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.frequencia.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horas/aula</label>
-          <input type="number" step="0.5" {...register("horasAula")} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-horas-aula">Horas/aula</label>
+          <input id="modalidade-horas-aula" type="number" step="0.5" {...register("horasAula")} className={inputCls} aria-invalid={errors.horasAula ? true : undefined} aria-describedby={errors.horasAula ? "modalidade-horas-aula-erro" : undefined} />
           {errors.horasAula && (
-            <p className="mt-1 text-xs text-red-600">{errors.horasAula.message}</p>
+            <p id="modalidade-horas-aula-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.horasAula.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Duração por nível</label>
-          <input {...register("duracaoPorNivel")} placeholder="3 meses" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-duracao-por-nivel">Duração por nível</label>
+          <input id="modalidade-duracao-por-nivel" {...register("duracaoPorNivel")} placeholder="3 meses" className={inputCls} aria-invalid={errors.duracaoPorNivel ? true : undefined} aria-describedby={errors.duracaoPorNivel ? "modalidade-duracao-por-nivel-erro" : undefined} />
           {errors.duracaoPorNivel && (
-            <p className="mt-1 text-xs text-red-600">{errors.duracaoPorNivel.message}</p>
+            <p id="modalidade-duracao-por-nivel-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.duracaoPorNivel.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Aulas por nível (opcional)</label>
-          <input type="number" {...register("aulasPorNivel")} placeholder="12" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-aulas-por-nivel">Aulas por nível (opcional)</label>
+          <input id="modalidade-aulas-por-nivel" type="number" {...register("aulasPorNivel")} placeholder="12" className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Mínimo para abrir</label>
-          <input type="number" {...register("minimoAbrir")} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-minimo-abrir">Mínimo para abrir</label>
+          <input id="modalidade-minimo-abrir" type="number" {...register("minimoAbrir")} className={inputCls} aria-invalid={errors.minimoAbrir ? true : undefined} aria-describedby={errors.minimoAbrir ? "modalidade-minimo-abrir-erro" : undefined} />
           {errors.minimoAbrir && (
-            <p className="mt-1 text-xs text-red-600">{errors.minimoAbrir.message}</p>
+            <p id="modalidade-minimo-abrir-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.minimoAbrir.message}</p>
           )}
         </div>
       </div>

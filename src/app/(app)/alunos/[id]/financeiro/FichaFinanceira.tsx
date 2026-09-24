@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormaPagamento, TipoAjuste, Vigencia, TipoCobranca, StatusCobranca, StatusComissao } from "@prisma/client";
@@ -322,8 +322,9 @@ function RenegociarModal({
   const [novoVenc, setVenc] = useState("");
   const [motivo, setMotivo] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const campoId = useId();
 
-  const desconto = cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
+  const desconto =cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
 
   async function salvar() {
     // Nunca ?? 0 aqui: texto inválido no valor viraria "novo valor: zero" registrado,
@@ -349,26 +350,26 @@ function RenegociarModal({
 
   return (
     <Modal titulo="Renegociar / ajustar" onClose={onClose}>
-      <label className="mb-1 block text-xs text-gray-600">Tipo</label>
-      <select className={inputCls + " mb-2"} value={tipo} onChange={(e) => setTipo(e.target.value as TipoAjuste)}>
+      <label htmlFor={`${campoId}-tipo`} className="mb-1 block text-xs text-gray-600">Tipo</label>
+      <select id={`${campoId}-tipo`} className={inputCls + " mb-2"} value={tipo} onChange={(e) => setTipo(e.target.value as TipoAjuste)}>
         {tipos.map((t) => <option key={t} value={t}>{TIPO_AJUSTE_LABEL[t]}</option>)}
       </select>
       {tipo !== TipoAjuste.PERDAO && (
         <>
-          <label className="mb-1 block text-xs text-gray-600">Novo valor (de {formatarMoeda(cobranca.valorNegociado, moeda)})</label>
-          <CampoMoeda value={valorPara} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Novo valor" />
+          <label htmlFor={`${campoId}-valor`} className="mb-1 block text-xs text-gray-600">Novo valor (de {formatarMoeda(cobranca.valorNegociado, moeda)})</label>
+          <CampoMoeda id={`${campoId}-valor`} value={valorPara} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} />
           {desconto !== 0 && <p className="mb-2 text-xs text-gray-600">Desconto concedido: <strong>{formatarMoeda(desconto, moeda)}</strong></p>}
         </>
       )}
-      <label className="mb-1 block text-xs text-gray-600">Vigência</label>
-      <select className={inputCls + " mb-1"} value={vigencia} onChange={(e) => setVig(e.target.value as Vigencia)}>
+      <label htmlFor={`${campoId}-vigencia`} className="mb-1 block text-xs text-gray-600">Vigência</label>
+      <select id={`${campoId}-vigencia`} className={inputCls + " mb-1"} value={vigencia} onChange={(e) => setVig(e.target.value as Vigencia)}>
         {Object.values(Vigencia).map((v) => <option key={v} value={v}>{VIGENCIA_INFO[v].label}</option>)}
       </select>
       <p className={"mb-2 text-xs " + VIGENCIA_INFO[vigencia].cls}>{VIGENCIA_INFO[vigencia].label}</p>
-      <label className="mb-1 block text-xs text-gray-600">Novo vencimento (opcional)</label>
-      <input type="date" className={inputCls + " mb-2"} value={novoVenc} onChange={(e) => setVenc(e.target.value)} />
-      <label className="mb-1 block text-xs text-gray-600">Motivo (obrigatório)</label>
-      <input className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <label htmlFor={`${campoId}-vencimento`} className="mb-1 block text-xs text-gray-600">Novo vencimento (opcional)</label>
+      <input id={`${campoId}-vencimento`} type="date" className={inputCls + " mb-2"} value={novoVenc} onChange={(e) => setVenc(e.target.value)} />
+      <label htmlFor={`${campoId}-motivo`} className="mb-1 block text-xs text-gray-600">Motivo (obrigatório)</label>
+      <input id={`${campoId}-motivo`} aria-required="true" className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       <p className="mb-3 text-xs text-gray-400">Acima do seu limite de desconto, o pedido vai para aprovação do Gerente Comercial / Admin.</p>
       <div className="flex gap-2">
         <button className={btnPri} disabled={salvando} onClick={salvar}>{salvando ? "Salvando…" : "Aplicar ajuste"}</button>

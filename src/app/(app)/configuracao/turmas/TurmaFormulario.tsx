@@ -178,8 +178,9 @@ export function TurmaFormulario({
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <div className="md:col-span-3">
-          <label className="mb-1 block text-xs text-gray-600">Nome da turma (opcional)</label>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nome">Nome da turma (opcional)</label>
           <input
+            id="turma-nome"
             className={inputCls}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -187,8 +188,8 @@ export function TurmaFormulario({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Modalidade</label>
-          <select className={inputCls} value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-modalidade">Modalidade</label>
+          <select id="turma-modalidade" className={inputCls} value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)}>
             <option value="">Selecione…</option>
             {modalidades.map((m) => (
               <option key={m.id} value={m.id}>
@@ -198,8 +199,8 @@ export function TurmaFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Nível</label>
-          <select className={inputCls} value={nivelId} onChange={(e) => setNivelId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nivel">Nível</label>
+          <select id="turma-nivel" className={inputCls} value={nivelId} onChange={(e) => setNivelId(e.target.value)}>
             <option value="">Selecione…</option>
             {niveis.map((n) => (
               <option key={n.id} value={n.id}>
@@ -209,8 +210,8 @@ export function TurmaFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Professor (opcional)</label>
-          <select className={inputCls} value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-professor">Professor (opcional)</label>
+          <select id="turma-professor" className={inputCls} value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
             <option value="">—</option>
             {professores.map((p) => (
               <option key={p.id} value={p.id}>
@@ -223,7 +224,7 @@ export function TurmaFormulario({
 
       {/* Agenda (calendário real) */}
       <div className="mt-4 border-t border-gray-100 pt-4">
-        <label className="mb-1 block text-xs text-gray-600">
+        <div className="mb-1 block text-xs text-gray-600">
           Dias da semana
           {diasRequeridos !== null && modalidadeSel && (
             <span className="ml-1 text-gray-400">
@@ -233,7 +234,7 @@ export function TurmaFormulario({
           {modalidadeSel && diasRequeridos === null && (
             <span className="ml-1 text-gray-400">— {modalidadeSel.frequencia}: marque os dias</span>
           )}
-        </label>
+        </div>
         <div className="flex flex-wrap gap-2">
           {DIAS.map((d) => {
             const ativo = diasSemana.includes(d.n);
@@ -258,14 +259,15 @@ export function TurmaFormulario({
 
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horário de início</label>
-          <input type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-inicio">Horário de início</label>
+          <input id="turma-horario-inicio" type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-fim">
             Horário de fim {turma ? "" : "derivado"}
           </label>
           <input
+            id="turma-horario-fim"
             type="time"
             className={inputCls}
             value={horarioFimEfetivo}
@@ -282,13 +284,13 @@ export function TurmaFormulario({
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Data de início</label>
-          <input type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-inicio">Data de início</label>
+          <input id="turma-data-inicio" type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
         </div>
         {turma ? (
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Data final de referência (legado)</label>
-            <input type="date" className={inputCls} value={dataFim} readOnly />
+            <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-fim">Data final de referência (legado)</label>
+            <input id="turma-data-fim" type="date" className={inputCls} value={dataFim} readOnly />
             <p className="mt-1 text-xs text-gray-500">A referência histórica é preservada nesta edição.</p>
           </div>
         ) : (
@@ -297,8 +299,9 @@ export function TurmaFormulario({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Capacidade</label>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-capacidade">Capacidade</label>
           <input
+            id="turma-capacidade"
             type="number"
             className={inputCls}
             value={capacidade}

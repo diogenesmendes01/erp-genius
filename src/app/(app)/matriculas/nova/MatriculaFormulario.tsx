@@ -332,25 +332,27 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Identificação</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="Nome" obrig>
-                <input className={inputCls} value={primeiroNome} onChange={(e) => setPrimeiroNome(e.target.value)} />
+              <Campo id="matricula-nome" label="Nome" obrig>
+                {(id) => <input id={id} aria-required="true" className={inputCls} value={primeiroNome} onChange={(e) => setPrimeiroNome(e.target.value)} />}
               </Campo>
-              <Campo label="Sobrenome(s)" obrig>
-                <input className={inputCls} value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} />
+              <Campo id="matricula-sobrenome" label="Sobrenome(s)" obrig>
+                {(id) => <input id={id} aria-required="true" className={inputCls} value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} />}
               </Campo>
-              <Campo label="Nome preferido">
-                <input className={inputCls} value={nomePreferido} onChange={(e) => setNomePreferido(e.target.value)} />
+              <Campo id="matricula-nome-preferido" label="Nome preferido">
+                {(id) => <input id={id} className={inputCls} value={nomePreferido} onChange={(e) => setNomePreferido(e.target.value)} />}
               </Campo>
-              <Campo label="Data de nascimento" obrig>
-                <input type="date" className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />
+              <Campo id="matricula-nascimento" label="Data de nascimento" obrig>
+                {(id) => <input id={id} aria-required="true" type="date" className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />}
               </Campo>
-              <Campo label="Gênero" obrig>
-                <select className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
-                  <option value="">—</option>
-                  {Object.values(Genero).map((g) => (
-                    <option key={g} value={g}>{GENERO_LABEL[g]}</option>
-                  ))}
-                </select>
+              <Campo id="matricula-genero" label="Gênero" obrig>
+                {(id) => (
+                  <select id={id} aria-required="true" className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
+                    <option value="">—</option>
+                    {Object.values(Genero).map((g) => (
+                      <option key={g} value={g}>{GENERO_LABEL[g]}</option>
+                    ))}
+                  </select>
+                )}
               </Campo>
             </div>
           </section>
@@ -360,32 +362,36 @@ export function MatriculaFormulario({
             <h2 className="mb-1 text-sm font-medium">Documentação</h2>
             <p className="mb-4 text-xs text-gray-400">O país dirige os tipos de documento e a validação. Documento inválido avisa, mas não bloqueia (doc 04).</p>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="País" obrig>
-                <select className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
-                  {paises.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nome}</option>
-                  ))}
-                </select>
+              <Campo id="matricula-pais" label="País" obrig>
+                {(id) => (
+                  <select id={id} aria-required="true" className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
+                    {paises.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nome}</option>
+                    ))}
+                  </select>
+                )}
               </Campo>
-              <Campo label="Tipo de documento" obrig>
-                <select className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)}>
-                  <option value="">—</option>
-                  {tiposDocDoPais.map((t) => (
-                    <option key={t.id} value={t.id}>{t.nome}</option>
-                  ))}
-                </select>
+              <Campo id="matricula-tipo-documento" label="Tipo de documento" obrig>
+                {(id) => (
+                  <select id={id} aria-required="true" className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)}>
+                    <option value="">—</option>
+                    {tiposDocDoPais.map((t) => (
+                      <option key={t.id} value={t.id}>{t.nome}</option>
+                    ))}
+                  </select>
+                )}
               </Campo>
-              <Campo label="Número do documento" obrig>
-                <input className={inputCls} value={documento} onChange={(e) => setDoc(e.target.value)} />
+              <Campo id="matricula-documento" label="Número do documento" obrig>
+                {(id) => <input id={id} aria-required="true" className={inputCls} value={documento} onChange={(e) => setDoc(e.target.value)} />}
               </Campo>
-              <Campo label="País emissor">
-                <SelectISO value={documentoPaisEmissor} onChange={setDocEmissor} comVazio />
+              <Campo id="matricula-pais-emissor" label="País emissor">
+                {(id) => <SelectISO id={id} value={documentoPaisEmissor} onChange={setDocEmissor} comVazio />}
               </Campo>
-              <Campo label="Nacionalidade" obrig>
-                <SelectISO value={nacionalidade} onChange={setNacionalidade} comVazio />
+              <Campo id="matricula-nacionalidade" label="Nacionalidade" obrig>
+                {(id) => <SelectISO id={id} obrig value={nacionalidade} onChange={setNacionalidade} comVazio />}
               </Campo>
-              <Campo label="Segunda nacionalidade">
-                <SelectISO value={segundaNacionalidade} onChange={setSegNacionalidade} comVazio />
+              <Campo id="matricula-segunda-nacionalidade" label="Segunda nacionalidade">
+                {(id) => <SelectISO id={id} value={segundaNacionalidade} onChange={setSegNacionalidade} comVazio />}
               </Campo>
             </div>
           </section>
@@ -394,11 +400,11 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Contato</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="E-mail" obrig>
-                <input type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Campo id="matricula-email" label="E-mail" obrig>
+                {(id) => <input id={id} aria-required="true" type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />}
               </Campo>
-              <Campo label="Telefone principal" obrig>
-                <input className={inputCls} value={telefone} onChange={(e) => setTel(e.target.value)} placeholder="+506..." />
+              <Campo id="matricula-telefone" label="Telefone principal" obrig>
+                {(id) => <input id={id} aria-required="true" className={inputCls} value={telefone} onChange={(e) => setTel(e.target.value)} placeholder="+506..." />}
               </Campo>
               <div className="flex items-end gap-4 pb-2">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -417,29 +423,29 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Residência</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="País de residência" obrig>
-                <SelectISO value={paisResidencia} onChange={setPaisResidencia} comVazio />
+              <Campo id="matricula-pais-residencia" label="País de residência" obrig>
+                {(id) => <SelectISO id={id} obrig value={paisResidencia} onChange={setPaisResidencia} comVazio />}
               </Campo>
-              <Campo label="CEP / Código postal">
-                <input className={inputCls} value={cep} onChange={(e) => setCep(e.target.value)} />
+              <Campo id="matricula-cep" label="CEP / Código postal">
+                {(id) => <input id={id} className={inputCls} value={cep} onChange={(e) => setCep(e.target.value)} />}
               </Campo>
-              <Campo label="Região / Estado / Província">
-                <input className={inputCls} value={regiao} onChange={(e) => setRegiao(e.target.value)} />
+              <Campo id="matricula-regiao" label="Região / Estado / Província">
+                {(id) => <input id={id} className={inputCls} value={regiao} onChange={(e) => setRegiao(e.target.value)} />}
               </Campo>
-              <Campo label="Cidade">
-                <input className={inputCls} value={cidade} onChange={(e) => setCidade(e.target.value)} />
+              <Campo id="matricula-cidade" label="Cidade">
+                {(id) => <input id={id} className={inputCls} value={cidade} onChange={(e) => setCidade(e.target.value)} />}
               </Campo>
-              <Campo label="Bairro / Distrito">
-                <input className={inputCls} value={bairro} onChange={(e) => setBairro(e.target.value)} />
+              <Campo id="matricula-bairro" label="Bairro / Distrito">
+                {(id) => <input id={id} className={inputCls} value={bairro} onChange={(e) => setBairro(e.target.value)} />}
               </Campo>
-              <Campo label="Rua">
-                <input className={inputCls} value={rua} onChange={(e) => setRua(e.target.value)} />
+              <Campo id="matricula-rua" label="Rua">
+                {(id) => <input id={id} className={inputCls} value={rua} onChange={(e) => setRua(e.target.value)} />}
               </Campo>
-              <Campo label="Número">
-                <input className={inputCls} value={numero} onChange={(e) => setNumero(e.target.value)} />
+              <Campo id="matricula-numero" label="Número">
+                {(id) => <input id={id} className={inputCls} value={numero} onChange={(e) => setNumero(e.target.value)} />}
               </Campo>
-              <Campo label="Complemento">
-                <input className={inputCls} value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+              <Campo id="matricula-complemento" label="Complemento">
+                {(id) => <input id={id} className={inputCls} value={complemento} onChange={(e) => setComplemento(e.target.value)} />}
               </Campo>
             </div>
           </section>
@@ -448,16 +454,18 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Acadêmico</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="Escolaridade">
-                <select className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
-                  <option value="">—</option>
-                  {Object.values(Escolaridade).map((e) => (
-                    <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
-                  ))}
-                </select>
+              <Campo id="matricula-escolaridade" label="Escolaridade">
+                {(id) => (
+                  <select id={id} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
+                    <option value="">—</option>
+                    {Object.values(Escolaridade).map((e) => (
+                      <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
+                    ))}
+                  </select>
+                )}
               </Campo>
-              <Campo label="Idioma nativo">
-                <input className={inputCls} value={idiomaNativo} onChange={(e) => setIdiomaNativo(e.target.value)} placeholder="Ex.: Espanhol" />
+              <Campo id="matricula-idioma-nativo" label="Idioma nativo">
+                {(id) => <input id={id} className={inputCls} value={idiomaNativo} onChange={(e) => setIdiomaNativo(e.target.value)} placeholder="Ex.: Espanhol" />}
               </Campo>
             </div>
           </section>
@@ -466,40 +474,40 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Operacional</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo label="Fuso horário">
-                <input className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />
+              <Campo id="matricula-fuso" label="Fuso horário">
+                {(id) => <input id={id} className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />}
               </Campo>
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
               <p className="mb-2 text-xs font-medium text-gray-600">Contato de emergência</p>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <input className={inputCls} placeholder="Nome" value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />
-                <input className={inputCls} placeholder="Parentesco" value={emergenciaParentesco} onChange={(e) => setEmergParentesco(e.target.value)} />
-                <input className={inputCls} placeholder="Telefone" value={emergenciaTelefone} onChange={(e) => setEmergTel(e.target.value)} />
+                <input aria-label="Nome do contato de emergência" className={inputCls} placeholder="Nome" value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />
+                <input aria-label="Parentesco do contato de emergência" className={inputCls} placeholder="Parentesco" value={emergenciaParentesco} onChange={(e) => setEmergParentesco(e.target.value)} />
+                <input aria-label="Telefone do contato de emergência" className={inputCls} placeholder="Telefone" value={emergenciaTelefone} onChange={(e) => setEmergTel(e.target.value)} />
               </div>
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
-              <label className="mb-1 block text-xs text-gray-600">Observações</label>
-              <textarea className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+              <label htmlFor="matricula-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
+              <textarea id="matricula-observacoes" className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
             </div>
           </section>
 
           {/* Responsável financeiro (pagador) */}
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
-            <h2 className="mb-4 text-sm font-medium">Responsável financeiro (pagador)</h2>
-            <select className={inputCls + " mb-2 md:w-1/3"} value={pagador} onChange={(e) => setPagador(e.target.value as typeof pagador)}>
+            <h2 id="matricula-pagador-titulo" className="mb-4 text-sm font-medium">Responsável financeiro (pagador)</h2>
+            <select aria-labelledby="matricula-pagador-titulo" className={inputCls + " mb-2 md:w-1/3"} value={pagador} onChange={(e) => setPagador(e.target.value as typeof pagador)}>
               <option value="ALUNO">O próprio aluno (Adulto)</option>
               <option value="RESPONSAVEL">Responsável (Kids/Teens)</option>
               <option value="EMPRESA">Empresa (B2B)</option>
             </select>
             {pagador !== "ALUNO" && (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <input className={inputCls} placeholder={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} value={respNome} onChange={(e) => setRespNome(e.target.value)} />
+                <input aria-label={pagador === "EMPRESA" ? "Nome da empresa pagadora" : "Nome do responsável financeiro"} className={inputCls} placeholder={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} value={respNome} onChange={(e) => setRespNome(e.target.value)} />
                 {pagador === "RESPONSAVEL" && (
-                  <input className={inputCls} placeholder="Parentesco" value={respParentesco} onChange={(e) => setRespParentesco(e.target.value)} />
+                  <input aria-label="Parentesco do responsável financeiro" className={inputCls} placeholder="Parentesco" value={respParentesco} onChange={(e) => setRespParentesco(e.target.value)} />
                 )}
-                <input className={inputCls} placeholder="Telefone" value={respTelefone} onChange={(e) => setRespTelefone(e.target.value)} />
-                <input className={inputCls} placeholder="E-mail" value={respEmail} onChange={(e) => setRespEmail(e.target.value)} />
+                <input aria-label="Telefone do responsável financeiro" className={inputCls} placeholder="Telefone" value={respTelefone} onChange={(e) => setRespTelefone(e.target.value)} />
+                <input aria-label="E-mail do responsável financeiro" className={inputCls} placeholder="E-mail" value={respEmail} onChange={(e) => setRespEmail(e.target.value)} />
               </div>
             )}
           </section>
@@ -535,8 +543,9 @@ export function MatriculaFormulario({
             <h2 className="mb-4 text-sm font-medium">Curso & alocação</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Produto</label>
+                <label htmlFor="matricula-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
                 <select
+                  id="matricula-produto"
                   className={inputCls}
                   value={produtoId}
                   onChange={(e) => {
@@ -550,8 +559,8 @@ export function MatriculaFormulario({
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Turma (Aberta com vaga)</label>
-                <select className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)}>
+                <label htmlFor="matricula-turma" className="mb-1 block text-xs text-gray-600">Turma (Aberta com vaga)</label>
+                <select id="matricula-turma" className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)}>
                   <option value="">Sem alocação / lista de espera</option>
                   {turmas.map((t) => (
                     <option key={t.id} value={t.id}>{t.label}</option>
@@ -565,8 +574,8 @@ export function MatriculaFormulario({
                 {aberturaMsg && <p className="mt-1 text-xs text-gray-500">{aberturaMsg}</p>}
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Nível inicial</label>
-                <select className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
+                <label htmlFor="matricula-nivel-inicial" className="mb-1 block text-xs text-gray-600">Nível inicial</label>
+                <select id="matricula-nivel-inicial" className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
                   <option value="">—</option>
                   {niveis.map((n) => (
                     <option key={n.id} value={n.id}>{n.label}</option>
@@ -574,16 +583,16 @@ export function MatriculaFormulario({
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Origem do nível</label>
-                <select className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
+                <label htmlFor="matricula-origem-nivel" className="mb-1 block text-xs text-gray-600">Origem do nível</label>
+                <select id="matricula-origem-nivel" className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
                   <option value={OrigemNivel.MANUAL}>Manual</option>
                   <option value={OrigemNivel.AVALIACAO}>Avaliação</option>
                 </select>
               </div>
               {origemNivel === OrigemNivel.AVALIACAO && (
                 <div>
-                  <label className="mb-1 block text-xs text-gray-600">Data da avaliação</label>
-                  <input type="date" className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />
+                  <label htmlFor="matricula-data-avaliacao" className="mb-1 block text-xs text-gray-600">Data da avaliação</label>
+                  <input id="matricula-data-avaliacao" type="date" className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />
                 </div>
               )}
             </div>
@@ -602,26 +611,26 @@ export function MatriculaFormulario({
             )}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
-                <CampoMoeda value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
+                <label htmlFor="matricula-taxa" className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
+                <CampoMoeda id="matricula-taxa" value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Mensalidade</label>
-                <CampoMoeda value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />
+                <label htmlFor="matricula-mensalidade" className="mb-1 block text-xs text-gray-600">Mensalidade</label>
+                <CampoMoeda id="matricula-mensalidade" value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />
                 <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Dia de vencimento</label>
-                <select className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
+                <label htmlFor="matricula-dia-vencimento" className="mb-1 block text-xs text-gray-600">Dia de vencimento</label>
+                <select id="matricula-dia-vencimento" className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>Dia {d}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Meses do plano</label>
-                <input type="number" className={inputCls} value={mesesPlano} onChange={(e) => setMeses(Number(e.target.value))} />
+                <label htmlFor="matricula-meses-plano" className="mb-1 block text-xs text-gray-600">Meses do plano</label>
+                <input id="matricula-meses-plano" type="number" className={inputCls} value={mesesPlano} onChange={(e) => setMeses(Number(e.target.value))} />
               </div>
               <div>
                 <label htmlFor="referencia-cobertura" className="mb-1 block text-xs text-gray-600">Cobertura prevista no contrato</label>
@@ -643,20 +652,22 @@ export function MatriculaFormulario({
                 <p className="text-xs text-gray-600">{referenciaCobertura === "MES_CIVIL" ? "Informe o primeiro dia do mês contratado." : "Esta data define a referência dos ciclos mensais."} A cobertura é independente do vencimento; a mensalidade permanece integral.</p>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Comissão da matrícula</label>
+                <p className="mb-1 block text-xs text-gray-600">Comissão da matrícula</p>
                 <p className="text-sm text-gray-600">Calculada pela política vigente da oferta: percentual da taxa ou valor fixo. A administração configura as versões no Financeiro.</p>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Certificado (só Costa Rica)</label>
-                <CampoMoeda value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />
+                <label htmlFor="matricula-certificado" className="mb-1 block text-xs text-gray-600">Certificado (só Costa Rica)</label>
+                <CampoMoeda id="matricula-certificado" value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />
               </div>
             </div>
             {semTabela && (
               <div className="mt-4 border-t border-gray-100 pt-4">
-                <label className="mb-1 block text-xs text-gray-600">
+                <label htmlFor="matricula-justificativa-sem-preco" className="mb-1 block text-xs text-gray-600">
                   Justificativa da exceção (sem tabela de preço) <span className="text-red-500">*</span>
                 </label>
                 <textarea
+                  id="matricula-justificativa-sem-preco"
+                  aria-required="true"
                   className={inputCls}
                   rows={2}
                   value={justificativaSemPreco}
@@ -704,30 +715,35 @@ export function MatriculaFormulario({
 }
 
 /** Campo com label e marcador de obrigatório. */
-function Campo({ label, obrig, children }: { label: string; obrig?: boolean; children: ReactNode }) {
+function Campo({ id, label, obrig, children }: { id: string; label: string; obrig?: boolean; children: (id: string) => ReactNode }) {
+  // O mesmo id vai para o htmlFor do rótulo e é repassado ao campo filho (render prop).
   return (
     <div>
-      <label className="mb-1 block text-xs text-gray-600">
+      <label htmlFor={id} className="mb-1 block text-xs text-gray-600">
         {label}
         {obrig && <span className="text-red-500"> *</span>}
       </label>
-      {children}
+      {children(id)}
     </div>
   );
 }
 
 /** Select de país ISO 3166 (nacionalidade, residência, país emissor). */
 function SelectISO({
+  id,
+  obrig,
   value,
   onChange,
   comVazio,
 }: {
+  id: string;
+  obrig?: boolean;
   value: string;
   onChange: (v: string) => void;
   comVazio?: boolean;
 }) {
   return (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select id={id} aria-required={obrig ? true : undefined} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>

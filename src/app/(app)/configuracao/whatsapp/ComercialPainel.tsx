@@ -105,12 +105,13 @@ export function ComercialPainel({
         </label>
 
         <div>
-          <div className="text-sm font-medium">Saudação automática</div>
+          <div id="comercial-saudacao-estado-rotulo" className="text-sm font-medium">Saudação automática</div>
           <p className="mb-2 text-sm text-gray-500">
             Responde o 1º inbound em segundos, fora da janela de horário. Texto fixo (a IA não fala com o lead nesta fase).
             Em <span className="font-medium">ensaio</span> o sistema só registra o que teria sido enviado, sem enviar.
           </p>
           <select
+            aria-labelledby="comercial-saudacao-estado-rotulo"
             className="rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
             value={saudacaoEstado}
             onChange={(e) => setSaudacaoEstado(e.target.value as ConfigComercialView["saudacaoEstado"])}
@@ -122,8 +123,9 @@ export function ComercialPainel({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">Texto da saudação</label>
+          <label htmlFor="comercial-saudacao-texto" className="mb-1 block text-xs font-medium text-gray-600">Texto da saudação</label>
           <textarea
+            id="comercial-saudacao-texto"
             className={inputCls}
             rows={3}
             value={saudacaoTexto}

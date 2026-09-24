@@ -76,36 +76,36 @@ export function PaisFormulario({
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <div className="col-span-2 md:col-span-1">
-          <label className="mb-1 block text-xs text-gray-600">Nome</label>
-          <input {...register("nome")} className={inputCls} />
-          {errors.nome && <p className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-nome">Nome</label>
+          <input id="pais-nome" {...register("nome")} className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "pais-nome-erro" : undefined} />
+          {errors.nome && <p id="pais-nome-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Código ISO</label>
-          <input {...register("codigoISO")} placeholder="CR" maxLength={2} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-codigo-iso">Código ISO</label>
+          <input id="pais-codigo-iso" {...register("codigoISO")} placeholder="CR" maxLength={2} className={inputCls} aria-invalid={errors.codigoISO ? true : undefined} aria-describedby={errors.codigoISO ? "pais-codigo-iso-erro" : undefined} />
           {errors.codigoISO && (
-            <p className="mt-1 text-xs text-red-600">{errors.codigoISO.message}</p>
+            <p id="pais-codigo-iso-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.codigoISO.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Moeda</label>
-          <input {...register("moedaLocal")} placeholder="CRC" maxLength={3} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-moeda">Moeda</label>
+          <input id="pais-moeda" {...register("moedaLocal")} placeholder="CRC" maxLength={3} className={inputCls} aria-invalid={errors.moedaLocal ? true : undefined} aria-describedby={errors.moedaLocal ? "pais-moeda-erro" : undefined} />
           {errors.moedaLocal && (
-            <p className="mt-1 text-xs text-red-600">{errors.moedaLocal.message}</p>
+            <p id="pais-moeda-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.moedaLocal.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">DDI</label>
-          <input {...register("ddi")} placeholder="+506" className={inputCls} />
-          {errors.ddi && <p className="mt-1 text-xs text-red-600">{errors.ddi.message}</p>}
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-ddi">DDI</label>
+          <input id="pais-ddi" {...register("ddi")} placeholder="+506" className={inputCls} aria-invalid={errors.ddi ? true : undefined} aria-describedby={errors.ddi ? "pais-ddi-erro" : undefined} />
+          {errors.ddi && <p id="pais-ddi-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.ddi.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Fuso horário</label>
-          <input {...register("fuso")} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-fuso">Fuso horário</label>
+          <input id="pais-fuso" {...register("fuso")} className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Idioma</label>
-          <input {...register("idioma")} placeholder="es" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-idioma">Idioma</label>
+          <input id="pais-idioma" {...register("idioma")} placeholder="es" className={inputCls} />
         </div>
       </div>
 
@@ -132,11 +132,13 @@ export function PaisFormulario({
             <div key={f._formKey} className="flex items-center gap-2">
               <input
                 {...register(`tiposDocumento.${i}.nome`)}
+                aria-label={`Nome do tipo de documento ${i + 1}`}
                 placeholder="Cédula"
                 className={inputCls + " flex-1"}
               />
               <select
                 {...register(`tiposDocumento.${i}.validador`)}
+                aria-label={`Validador do tipo de documento ${i + 1}`}
                 className={inputCls + " w-40"}
               >
                 {VALIDADORES.map((v) => (

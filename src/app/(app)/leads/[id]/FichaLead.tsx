@@ -248,7 +248,7 @@ function Documentos({
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="mb-3 font-medium">Documentos</h2>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <select className={inputCls + " w-auto"} value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
+        <select aria-label="Categoria do documento" className={inputCls + " w-auto"} value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
           {Object.values(CategoriaDocumento).map((c) => (
             <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
           ))}
@@ -356,6 +356,7 @@ function BarraAcoes({
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="flex flex-wrap items-center gap-2">
         <select
+          aria-label="Mudar etapa do lead"
           value=""
           onChange={(e) => e.target.value && run(moverEtapa(lead.id, e.target.value as EtapaLead))}
           className={inputCls + " w-auto"}
@@ -392,8 +393,8 @@ function BarraAcoes({
 
       {modal === "interacao" && (
         <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
-          <input className={inputCls} placeholder="Canal (WhatsApp, ligação…)" value={canal} onChange={(e) => setCanal(e.target.value)} />
-          <textarea className={inputCls} placeholder="O que aconteceu na conversa?" value={nota} onChange={(e) => setNota(e.target.value)} />
+          <input aria-label="Canal da interação" className={inputCls} placeholder="Canal (WhatsApp, ligação…)" value={canal} onChange={(e) => setCanal(e.target.value)} />
+          <textarea aria-label="Nota da interação" className={inputCls} placeholder="O que aconteceu na conversa?" value={nota} onChange={(e) => setNota(e.target.value)} />
           <div>
             <button
               className={btnPri}
@@ -413,12 +414,12 @@ function BarraAcoes({
       {modal === "experimental" && (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4">
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
-            <input type="datetime-local" className={inputCls} value={dataExp} onChange={(e) => setDataExp(e.target.value)} />
+            <label htmlFor="ficha-lead-agendar-data" className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
+            <input id="ficha-lead-agendar-data" type="datetime-local" className={inputCls} value={dataExp} onChange={(e) => setDataExp(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Professor responsável</label>
-            <select className={inputCls} value={profExp} onChange={(e) => setProfExp(e.target.value)}>
+            <label htmlFor="ficha-lead-agendar-professor" className="mb-1 block text-xs text-gray-600">Professor responsável</label>
+            <select id="ficha-lead-agendar-professor" className={inputCls} value={profExp} onChange={(e) => setProfExp(e.target.value)}>
               <option value="">Definir depois</option>
               {professores.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -441,14 +442,14 @@ function BarraAcoes({
 
       {modal === "perdido" && (
         <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
-          <select className={inputCls} value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoPerda)}>
+          <select aria-label="Motivo da perda" className={inputCls} value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoPerda)}>
             {Object.values(MotivoPerda).map((m) => (
               <option key={m} value={m}>
                 {MOTIVO_PERDA_LABEL[m]}
               </option>
             ))}
           </select>
-          <input className={inputCls} placeholder="Observação (obrigatória se 'Outro')" value={obs} onChange={(e) => setObs(e.target.value)} />
+          <input aria-label="Observação da perda" className={inputCls} placeholder="Observação (obrigatória se 'Outro')" value={obs} onChange={(e) => setObs(e.target.value)} />
           <div>
             <button
               className={btnPri + " bg-danger hover:brightness-95"}
@@ -504,8 +505,8 @@ function Resumo({
         <div className="flex flex-col gap-2">
           {campos.map(([k, label]) => (
             <div key={k}>
-              <label className="mb-1 block text-xs text-gray-600">{label}</label>
-              <input className={inputCls} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+              <label htmlFor={`ficha-lead-resumo-${k}`} className="mb-1 block text-xs text-gray-600">{label}</label>
+              <input id={`ficha-lead-resumo-${k}`} className={inputCls} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
             </div>
           ))}
           <div>
@@ -552,17 +553,17 @@ function ProximosPassos({
       <p className="mb-3 text-xs text-gray-400">Alimentam a fila inteligente da Home.</p>
       <div className="flex flex-col gap-2">
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Próximo follow-up</label>
-          <input type="date" className={inputCls} value={followUp} onChange={(e) => setFollow(e.target.value)} />
+          <label htmlFor="ficha-lead-follow-up" className="mb-1 block text-xs text-gray-600">Próximo follow-up</label>
+          <input id="ficha-lead-follow-up" type="date" className={inputCls} value={followUp} onChange={(e) => setFollow(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
-          <input type="datetime-local" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <label htmlFor="ficha-lead-data-experimental" className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
+          <input id="ficha-lead-data-experimental" type="datetime-local" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
           <p className="mt-1 text-xs text-gray-400">Mantém o horário já agendado; ajuste a data sem perder a hora.</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Data da proposta</label>
-          <input type="date" className={inputCls} value={prop} onChange={(e) => setProp(e.target.value)} />
+          <label htmlFor="ficha-lead-data-proposta" className="mb-1 block text-xs text-gray-600">Data da proposta</label>
+          <input id="ficha-lead-data-proposta" type="date" className={inputCls} value={prop} onChange={(e) => setProp(e.target.value)} />
         </div>
         <div>
           <button
@@ -741,6 +742,7 @@ function FechamentoCard({
         {!taxaPaga && matricula.taxa && (
           <span className="flex items-center gap-1">
             <input
+              aria-label="Link ou código de pagamento enviado"
               className={inputCls + " w-64"}
               placeholder="Link/código de pagamento enviado"
               value={linkUrl}
