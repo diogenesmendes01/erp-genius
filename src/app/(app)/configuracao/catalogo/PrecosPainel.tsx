@@ -86,9 +86,9 @@ export function PrecosPainel({
     router.refresh();
   }
 
-  async function alternar(id: string) {
+  async function alternar(id: string, sucesso: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarPrecoAtivo(id));
+    const d = await acao.executar(() => alternarPrecoAtivo(id), sucesso);
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -222,10 +222,10 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => alternar(p.id)} disabled={acao.ocupado} className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50">
+                    <button onClick={() => alternar(p.id, p.ativo ? "Preço desativado." : "Preço reativado.")} disabled={acao.ocupado} className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50">
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
-                    <FeedbackAcao erro={origem === p.id ? acao.erro : null} className="mt-1 text-left" />
+                    <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />
                   </td>
                 </tr>
               ))

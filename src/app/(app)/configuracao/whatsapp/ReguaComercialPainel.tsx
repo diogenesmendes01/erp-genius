@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   ReguaComercialConfig,
@@ -85,6 +85,7 @@ function ReguaComercialPainel({
   // Um estado por régua: o resultado aparece sob o botão da régua salva. salvarReguaComercial não
   // recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
+  const buscaSeq = useRef(0);
 
   const numerosVendas = numeros.filter((n) => n.finalidade === "VENDAS");
 
@@ -94,10 +95,14 @@ function ReguaComercialPainel({
 
   async function buscarLeadsPiloto(q: string) {
     setBuscaPiloto(q);
+    // Cada tecla numera a sua busca; uma resposta que chega depois de outra mais nova é descartada,
+    // senão sugestões de "an" podiam sobrescrever as de "ana".
+    const seq = ++buscaSeq.current;
     if (q.trim().length < 2) return setOpcoesPiloto([]);
     // Busca só-leitura a cada tecla: fora do useAcaoCliente (a trava de duplo clique descartaria as
     // teclas seguintes); falha, de negócio ou de rede, só não traz sugestões — como antes.
     const d = await executarAcaoCliente(() => buscarVinculosInbox(q), { idempotente: false });
+    if (seq !== buscaSeq.current) return;
     if (d.tipo === "ok" && d.dado) {
       const jaNaLista = new Set(pilotoLeads.map((l) => l.id));
       setOpcoesPiloto(d.dado.leads.filter((l) => !jaNaLista.has(l.id)));

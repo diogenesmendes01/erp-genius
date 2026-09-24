@@ -88,7 +88,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               <IconCloudDownload className="h-3.5 w-3.5" /> Sincronizar com a Meta
             </span>
           </button>
-          <button className={btnPri} onClick={() => setForm(FORM_VAZIO)}>
+          <button className={btnPri} disabled={ocupado} onClick={() => setForm(FORM_VAZIO)}>
             <span className="flex items-center gap-1">
               <IconPlus className="h-4 w-4" /> Novo template
             </span>
@@ -208,6 +208,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
             Editar um template aprovado volta o status para rascunho — re-submeta à Meta depois. A Meta limita a
             frequência de submissões e pode reclassificar utility → marketing.
           </p>
+          {/* Erro dentro do card, colado ao "Salvar" — o formulário continua aberto para corrigir. */}
+          <FeedbackAcao erro={origem === "form" ? acao.erro : null} className="mt-3" />
           <div className="mt-3 flex justify-end">
             <button className={btnPri} disabled={ocupado} onClick={salvar}>
               {ocupado ? "Salvando…" : "Salvar template"}
@@ -215,8 +217,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           </div>
         </div>
       )}
-      {/* Logo abaixo do "Salvar template" — e no mesmo lugar depois que o formulário fecha no sucesso. */}
-      {feedback("form")}
+      {/* O card fecha no sucesso; "Template salvo." é anunciado aqui, numa região sempre montada. */}
+      <FeedbackAcao erro={null} sucesso={!form && origem === "form" ? acao.sucesso : null} className="mt-3" />
     </section>
   );
 }

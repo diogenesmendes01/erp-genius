@@ -40,9 +40,9 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
   const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
-  async function alternar(id: string) {
+  async function alternar(id: string, sucesso: string) {
     setAlvo(id);
-    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id));
+    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id), sucesso);
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
@@ -129,14 +129,14 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                       Editar
                     </button>
                     <button
-                      onClick={() => alternar(u.id)}
+                      onClick={() => alternar(u.id, u.ativo ? "Usuário desativado." : "Usuário ativado.")}
                       disabled={acao.ocupado}
                       className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-60"
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
                     </button>
                   </div>
-                  <FeedbackAcao erro={alvo === u.id ? acao.erro : null} className="mt-2" />
+                  <FeedbackAcao erro={alvo === u.id ? acao.erro : null} sucesso={alvo === u.id ? acao.sucesso : undefined} className="mt-2" />
                 </td>
               </tr>
             ))}

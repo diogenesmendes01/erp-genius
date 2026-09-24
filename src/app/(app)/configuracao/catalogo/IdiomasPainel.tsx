@@ -36,9 +36,9 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
     router.refresh();
   }
 
-  async function alternar(id: string) {
+  async function alternar(id: string, sucesso: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarIdiomaAtivo(id));
+    const d = await acao.executar(() => alternarIdiomaAtivo(id), sucesso);
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -75,13 +75,13 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
-                    onClick={() => alternar(i.id)}
+                    onClick={() => alternar(i.id, i.ativo ? "Idioma desativado." : "Idioma ativado.")}
                     disabled={acao.ocupado}
                     className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
                   </button>
-                  <FeedbackAcao erro={origem === i.id ? acao.erro : null} className="mt-1 text-left" />
+                  <FeedbackAcao erro={origem === i.id ? acao.erro : null} sucesso={origem === i.id ? acao.sucesso : undefined} className="mt-1 text-left" />
                 </td>
               </tr>
             ))}
