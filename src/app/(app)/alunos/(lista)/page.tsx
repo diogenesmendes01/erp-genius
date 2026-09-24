@@ -3,7 +3,7 @@ import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import { listarAlunosPagina, opcoesFiltroAlunos, podeVerFinanceiroAluno } from "@/server/alunos/consultas";
 import { redirect } from "next/navigation";
-import { ALUNOS_POR_PAGINA, filtrosParaQuery, lerFiltrosAlunos } from "@/server/alunos/filtros";
+import { destinoPaginaAlunos, filtrosParaQuery, lerFiltrosAlunos, sanearFiltrosAlunos } from "@/server/alunos/filtros";
 import { exigirSessao } from "@/server/_shared";
 import { podeCriarMatricula } from "@/server/matricula/permissoes";
 import { AlunosLista } from "../AlunosLista";
@@ -29,20 +29,11 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
   const lidos = lerFiltrosAlunos(await searchParams);
   const usuario = await exigirSessao();
   const opcoes = await opcoesFiltroAlunos(usuario);
-  // País/turma que não está mais nas opções (link salvo, turma encerrada, fora do escopo) é
-  // descartado: senão o select mostraria "Todas" e a lista viria filtrada e vazia.
-  const filtros = {
-    ...lidos,
-    paisId: opcoes.paises.some((p) => p.id === lidos.paisId) ? lidos.paisId : null,
-    turmaId: opcoes.turmas.some((t) => t.id === lidos.turmaId) ? lidos.turmaId : null,
-  };
+  // Em sequência (não em paralelo): a lista precisa dos filtros já saneados pelas opções.
+  const filtros = sanearFiltrosAlunos(lidos, opcoes);
   const pagina = await listarAlunosPagina(usuario, filtros);
-  // Página além do fim (link antigo, filtro que encolheu): vai para a última que existe.
-  const ultima = Math.max(1, Math.ceil(pagina.total / ALUNOS_POR_PAGINA));
-  if (filtros.pagina > ultima) {
-    const query = filtrosParaQuery({ ...filtros, pagina: ultima });
-    redirect(query ? `/alunos?${query}` : "/alunos");
-  }
+  const destino = destinoPaginaAlunos(filtros, pagina.total);
+  if (destino) redirect(destino);
   // "Cadastrar aluno" leva ao fluxo de matrícula (aluno nasce da matrícula — doc 09).
   // Gateado pela permissão real de criar matrícula (Vendedor/Gerente Comercial/Admin).
   const podeCadastrar = podeCriarMatricula(usuario.papeis);

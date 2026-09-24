@@ -4,6 +4,12 @@ import { StatusAluno } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+// useTransition simulado: `pendente.valor` decide se a navegação está em andamento no render.
+const pendente = vi.hoisted(() => ({ valor: false }));
+vi.mock("react", async (original) => {
+  const react = await original<typeof import("react")>();
+  return { ...react, useTransition: () => [pendente.valor, (f: () => void) => f()] as const };
+});
 vi.mock("./ImportarAlunosModal", () => ({ ImportarAlunosModal: () => null }));
 
 import { AlunosLista, type AlunoRow } from "./AlunosLista";
@@ -25,18 +31,28 @@ describe("AlunosLista (filtros na URL)", () => {
     expect(html).toContain('href="/alunos"'); // limpar filtros
   });
 
-  it("o formulário é recriado quando os filtros mudam (Limpar, voltar do navegador): chave = filtros sem página", () => {
-    // Com defaultValue, o Next não remontaria os campos só por mudar a URL; a chave força a recriação.
-    // Aqui: a chave muda com os filtros, não muda com a página, e os campos refletem os filtros novos.
-    const comAna = render({ totalBase: 5, filtros: lerFiltrosAlunos({ busca: "ana", status: "ATIVO", pagina: "2" }) });
-    expect(comAna).toContain('data-filtros="busca=ana&amp;status=ATIVO"');
-    const limpo = render({ totalBase: 5, filtros: lerFiltrosAlunos({}) });
-    expect(limpo).toContain('data-filtros=""');
-    expect(limpo).not.toContain('value="ana"');
-    expect(limpo).not.toContain('value="ATIVO" selected=""');
-    const pausado = render({ totalBase: 5, filtros: lerFiltrosAlunos({ status: "PAUSADO" }) });
+  it("campos controlados refletem os filtros da URL (sem recriar o formulário — sem `key`)", () => {
+    const pausado = render({ totalBase: 5, filtros: lerFiltrosAlunos({ status: "PAUSADO", busca: "ana" }) });
     expect(pausado).toContain('<option value="PAUSADO" selected="">');
-    expect(pausado).toContain('data-filtros="status=PAUSADO"');
+    expect(pausado).toContain('value="ana"');
+    const limpo = render({ totalBase: 5, filtros: lerFiltrosAlunos({}) });
+    expect(limpo).not.toContain('value="ana"');
+    expect(limpo).toContain('<option value="" selected="">Todos os status</option>');
+  });
+
+  it("carregando: botão desativado com \"Buscando…\", contador e tabela aria-busy", () => {
+    pendente.valor = true;
+    try {
+      const html = render({ alunos: [aluno(1)], total: 1, totalBase: 1 });
+      expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled=""[^>]*>Buscando…<\/button>/);
+      expect(html).toContain('aria-busy="true"');
+      expect(html).not.toContain("1–1 de 1 aluno");
+    } finally {
+      pendente.valor = false;
+    }
+    const parado = render({ alunos: [aluno(1)], total: 1, totalBase: 1 });
+    expect(parado).toContain('aria-busy="false"');
+    expect(parado).toMatch(/<button[^>]*type="submit"(?![^>]*\sdisabled="")[^>]*>Buscar<\/button>/);
   });
 
   it("contador N de M distingue o recorte do total do escopo", () => {
@@ -61,10 +77,6 @@ describe("AlunosLista (filtros na URL)", () => {
     expect(html).toContain('href="/alunos?status=ATIVO"'); // anterior → página 1
     expect(html).toContain('href="/alunos?status=ATIVO&amp;pagina=3"');
     expect(html).toContain("51–100 de 120 alunos");
-  });
-
-  it("tabela sinaliza carregamento por aria-busy (falso em repouso)", () => {
-    expect(render({ totalBase: 1 })).toContain('aria-busy="false"');
   });
 
   it("coluna Financeiro segue a permissão, não os dados da página", () => {

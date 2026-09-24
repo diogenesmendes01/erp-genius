@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusAluno } from "@prisma/client";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
-import { ALUNOS_POR_PAGINA, filtrosParaQuery, lerFiltrosAlunos, temFiltroAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
+import { ALUNOS_POR_PAGINA, camposDosFiltros, filtrosParaQuery, hrefDosCampos, sincronizarCampos, temFiltroAlunos, type CamposAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
+import { criarEspera } from "@/lib/espera";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
 
 export interface AlunoRow {
@@ -63,30 +64,36 @@ export function AlunosLista({
   const temProxima = fim < total;
   const router = useRouter();
   const [buscando, iniciar] = useTransition();
-  const espera = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (espera.current) clearTimeout(espera.current); }, []);
+  // Campos controlados, sem recriar o formulário (o foco não se perde): quando os filtros da URL
+  // mudam, só os campos cujo filtro mudou são atualizados (sincronizarCampos) — a busca em edição
+  // sobrevive a um select que navega. A espera pendente dos selects é cancelada a cada mudança.
+  const [campos, setCampos] = useState<CamposAlunos>(() => camposDosFiltros(filtros));
+  const anteriores = useRef(filtros);
+  const [espera] = useState(() => criarEspera(400));
+  const chaveFiltros = filtrosParaQuery(filtros);
+  useEffect(() => {
+    espera.cancelar();
+    setCampos((atuais) => sincronizarCampos(atuais, anteriores.current, filtros));
+    anteriores.current = filtros;
+    // chaveFiltros representa `filtros` por valor (o objeto muda de identidade a cada render do servidor).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chaveFiltros, espera]);
+  useEffect(() => () => espera.cancelar(), [espera]);
 
   const navegar = (href: string) => iniciar(() => router.push(href));
-  const aplicar = (form: HTMLFormElement) => {
-    if (espera.current) clearTimeout(espera.current);
-    // Mesmo leitor da página: só as chaves de filtro, validadas; página volta à 1.
-    const query = filtrosParaQuery(lerFiltrosAlunos(new URLSearchParams(new FormData(form) as unknown as string[][])));
-    navegar(query ? `/alunos?${query}` : "/alunos");
-  };
-  const enviarDepois = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const form = e.currentTarget.form;
-    if (espera.current) clearTimeout(espera.current);
-    if (form) espera.current = setTimeout(() => aplicar(form), 400);
+  const aplicar = (c: CamposAlunos) => { espera.cancelar(); navegar(hrefDosCampos(c)); };
+  const mudarSelect = (campo: "status" | "pais" | "turma") => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const novos = { ...campos, [campo]: e.target.value };
+    setCampos(novos);
+    espera.agendar(() => aplicar(novos));
   };
   /** Link real (abre em nova aba, copia) que, no clique simples, navega dentro da transição. */
   const aoClicar = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
+    espera.cancelar();
     navegar(href);
   };
-  // Chave dos campos: quando os filtros mudam (Limpar, voltar do navegador, link), o formulário é
-  // recriado com os valores novos — com defaultValue, o Next manteria os antigos na tela.
-  const chaveFiltros = filtrosParaQuery(filtros, { semPagina: true });
 
   return (
     <div>
@@ -106,35 +113,34 @@ export function AlunosLista({
       </div>
 
       <form
-        key={chaveFiltros}
-        data-filtros={chaveFiltros}
         action="/alunos"
-        onSubmit={(e) => { e.preventDefault(); aplicar(e.currentTarget); }}
+        onSubmit={(e) => { e.preventDefault(); aplicar(campos); }}
         className="mb-3 flex flex-wrap items-center gap-2"
         role="search"
         aria-label="Filtrar alunos"
       >
         <input
           name="busca"
-          defaultValue={filtros.busca}
+          value={campos.busca}
+          onChange={(e) => setCampos({ ...campos, busca: e.target.value })}
           maxLength={100}
           aria-label="Buscar aluno por nome ou código"
           placeholder="Buscar por nome ou código…"
           className={campo + " w-64 px-3"}
         />
-        <select name="status" defaultValue={filtros.status ?? ""} onChange={enviarDepois} aria-label="Filtrar por status" className={campo}>
+        <select name="status" value={campos.status} onChange={mudarSelect("status")} aria-label="Filtrar por status" className={campo}>
           <option value="">Todos os status</option>
           {Object.values(StatusAluno).map((s) => (
             <option key={s} value={s}>{STATUS_ALUNO_LABEL[s]}</option>
           ))}
         </select>
-        <select name="pais" defaultValue={filtros.paisId ?? ""} onChange={enviarDepois} aria-label="Filtrar por país" className={campo}>
+        <select name="pais" value={campos.pais} onChange={mudarSelect("pais")} aria-label="Filtrar por país" className={campo}>
           <option value="">Todos os países</option>
           {opcoes.paises.map((p) => (
             <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
         </select>
-        <select name="turma" defaultValue={filtros.turmaId ?? ""} onChange={enviarDepois} aria-label="Filtrar por turma" className={campo}>
+        <select name="turma" value={campos.turma} onChange={mudarSelect("turma")} aria-label="Filtrar por turma" className={campo}>
           <option value="">Todas as turmas</option>
           {opcoes.turmas.map((t) => (
             <option key={t.id} value={t.id}>{t.label}</option>

@@ -70,3 +70,50 @@ export function whereFiltrosAlunos(f: FiltrosAlunos, escopoTurma?: Prisma.TurmaW
   if (f.turmaId) e.push({ alocacoes: { some: { ativa: true, turmaId: f.turmaId, ...(escopoTurma ? { turma: escopoTurma } : {}) } } });
   return e.length ? { AND: e } : {};
 }
+
+/**
+ * País/turma que não estão mais nas opções (link salvo, turma encerrada, fora do escopo) são
+ * descartados — senão o select mostraria "Todas" e a lista viria filtrada e vazia.
+ */
+export function sanearFiltrosAlunos(
+  f: FiltrosAlunos,
+  opcoes: { paises: { id: string }[]; turmas: { id: string }[] },
+): FiltrosAlunos {
+  return {
+    ...f,
+    paisId: opcoes.paises.some((p) => p.id === f.paisId) ? f.paisId : null,
+    turmaId: opcoes.turmas.some((t) => t.id === f.turmaId) ? f.turmaId : null,
+  };
+}
+
+/** Link da lista com estes filtros ("/alunos" quando não há nenhum). */
+export const hrefAlunos = (f: FiltrosAlunos) => {
+  const q = filtrosParaQuery(f);
+  return q ? `/alunos?${q}` : "/alunos";
+};
+
+/** Página além do fim (link antigo, filtro que encolheu): destino da última página que existe; null se a página é válida. */
+export function destinoPaginaAlunos(f: FiltrosAlunos, total: number): string | null {
+  const ultima = Math.max(1, Math.ceil(total / ALUNOS_POR_PAGINA));
+  return f.pagina > ultima ? hrefAlunos({ ...f, pagina: ultima }) : null;
+}
+
+/** Valores dos campos do formulário (texto), a partir dos filtros. */
+export type CamposAlunos = { busca: string; status: string; pais: string; turma: string };
+export const camposDosFiltros = (f: FiltrosAlunos): CamposAlunos =>
+  ({ busca: f.busca, status: f.status ?? "", pais: f.paisId ?? "", turma: f.turmaId ?? "" });
+
+/**
+ * Quando a URL muda (Limpar, voltar do navegador, link, resultado de um select), só os campos
+ * cujo FILTRO mudou são atualizados; os demais mantêm o que a pessoa está digitando. Assim o
+ * formulário não é recriado (o foco não se perde) e um select que navega não apaga a busca em edição.
+ */
+export function sincronizarCampos(atuais: CamposAlunos, anteriores: FiltrosAlunos, novos: FiltrosAlunos): CamposAlunos {
+  const antes = camposDosFiltros(anteriores), depois = camposDosFiltros(novos);
+  const r = { ...atuais };
+  for (const k of Object.keys(depois) as (keyof CamposAlunos)[]) if (antes[k] !== depois[k]) r[k] = depois[k];
+  return r;
+}
+
+/** Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. */
+export const hrefDosCampos = (c: CamposAlunos) => hrefAlunos(lerFiltrosAlunos({ busca: c.busca, status: c.status, pais: c.pais, turma: c.turma }));
