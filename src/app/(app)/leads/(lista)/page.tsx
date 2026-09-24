@@ -2,7 +2,7 @@ import { listarLeads, listarVendedores } from "@/server/comercial/consultas";
 import { listarPaisesOperacionais } from "@/server/paises/consultas";
 import { Papel } from "@prisma/client";
 import { ExportarPlanilha } from "@/components/ExportarPlanilha";
-import { LeadsLista, type LeadRow } from "./LeadsLista";
+import { LeadsLista, type LeadRow } from "../LeadsLista";
 import { exigirSessaoPagina, podeAtribuirOutroDono } from "@/server/_shared";
 
 export default async function LeadsPage() {
