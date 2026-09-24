@@ -65,7 +65,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       </label>
       {atual && <dl className="grid gap-2 rounded bg-gray-50 p-3 sm:grid-cols-2">
         <div><dt>Valor original / negociado</dt><dd>{formatarMoeda(atual.valorOriginal, atual.moeda)} / {formatarMoeda(atual.valorNegociado, atual.moeda)}</dd></div>
-        <div><dt>Recebido / liquidado com crédito</dt><dd>{formatarMoeda(atual.valorRecebido ?? 0, atual.moeda)} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
+        <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.valorRecebido != null ? formatarMoeda(atual.valorRecebido, atual.moeda) : "não registrado"} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
         <div><dt>Saldo atual / após acerto</dt><dd>{atual.saldo == null ? "Não informado" : formatarMoeda(atual.saldo, atual.moeda)} / {formatarMoeda(atual.saldoAposAcerto, atual.moeda)}</dd></div>
         <div><dt>Valor após acerto</dt><dd>{formatarMoeda(atual.valorNovo, atual.moeda)}</dd></div>
         <div><dt>Vencimento atual / proposto</dt><dd>{atual.vencimento.slice(0, 10)} / {atual.vencimentoNovo.slice(0, 10)}</dd></div>

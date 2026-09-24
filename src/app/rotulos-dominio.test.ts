@@ -34,6 +34,11 @@ const ENUM_SEM_MAPA: Record<string, number> = {
   "src/app/(app)/financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx#p.status": 1, // situação da proposta (E5b)
   "src/app/(app)/secretaria/SecretariaPainel.tsx#c.status": 1, // situação da correção cadastral (E5b)
   "src/app/(app)/inbox/InboxCliente.tsx#d.status": 1, // fallback de status de envio fora de NOTA_POR_STATUS
+  "src/app/(app)/alunos/[id]/movimentacoes/AcertoEncerramento.tsx#a.tipo": 1, // tipo do ajuste anterior (E5b)
+  "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx#pagador.tipo": 1, // tipo de pagador (E5b)
+  "src/app/(app)/matriculas/[id]/nova-reserva/Formulario.tsx#revisao.pagador.tipo": 1, // tipo de pagador (E5b)
+  "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx#c.tipo": 1, // tipo de comissão (E5b)
+  "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx#d.tipo": 1, // tipo de destinação (E5b)
 };
 
 const telas = ["src/app", "src/components"].flatMap((raiz) =>
@@ -64,10 +69,12 @@ const DINHEIRO_SEM_FORMATO = new RegExp(
 );
 /** Campo de enum de um objeto impresso direto ({x.status}, ${x.forma}). */
 const ENUM_CRU = new RegExp(
-  String.raw`(?<![=\w(,])(?:\{|\$\{)\s*([\w?!\[\]]+(?:\??\.[\w\[\]]+)*\??\.(?:status|forma|situacao|etapa|temperatura|segmento|statusMatricula))\s*\}`,
+  String.raw`(?<![=\w(,])(?:\{|\$\{)\s*([\w?!\[\]]+(?:\??\.[\w\[\]]+)*\??\.(?:status|forma|situacao|etapa|temperatura|segmento|statusMatricula|tipo))\s*\}`,
   "g",
 );
 const INVENTA_ESTADO = /(?:\?\?|\|\|)\s*["'`][^"'`\n]*em conferência/i;
+/** Valor ausente formatado como zero: `formatarMoeda(x ?? 0, …)` mostra "₡ 0" onde não há registro. */
+const ZERO_FALSO = /formatarMoeda\([^,()]*\?\?\s*0(?:\.0+)?\s*,/;
 
 const linhasCom = (conteudo: string, re: RegExp) =>
   conteudo.split("\n").map((l, i) => (re.test(l) ? i + 1 : 0)).filter(Boolean);
@@ -113,6 +120,13 @@ describe("rótulos e moeda de domínio", () => {
     const { ofensores, sobrando } = excedentes(ENUM_CRU, ENUM_SEM_MAPA, ({ conteudo }) => conteudo.includes('from "@/lib/labels"'));
     expect(ofensores).toEqual([]);
     expect(sobrando).toEqual([]);
+  });
+
+  it("valor ausente não vira zero monetário (formatarMoeda(x ?? 0, …))", () => {
+    const ofensores = telas.flatMap(({ arquivo, conteudo }) => linhasCom(conteudo, ZERO_FALSO).map((l) => `${arquivo}:${l}`));
+    expect(ofensores).toEqual([]);
+    expect(ZERO_FALSO.test("formatarMoeda(c.saldo ?? 0, c.moeda)")).toBe(true);
+    expect(ZERO_FALSO.test("c.saldo != null ? formatarMoeda(c.saldo, c.moeda) : \"—\"")).toBe(false);
   });
 
   it("rótulo ausente não vira estado inventado (`?? \"… em conferência …\"`, também com || e outras aspas)", () => {
