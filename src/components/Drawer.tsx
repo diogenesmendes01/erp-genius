@@ -40,8 +40,9 @@ export function Drawer({
       {/* painel */}
       <aside
         ref={painel}
-        role="dialog"
-        aria-modal="true"
+        // Só é diálogo enquanto aberto; fechado, além de inert, deixa de se anunciar como modal.
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
         aria-label={title}
         tabIndex={-1}
         className={

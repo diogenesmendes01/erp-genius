@@ -114,7 +114,8 @@ export function ImportarTurmasModal() {
           )}
 
           <div className="flex justify-end gap-2">
-            <button type="button" className={btnSec} onClick={fechar}>
+            {/* Durante o envio nada fecha — o resultado precisa aparecer aqui; depois dele, só este botão fecha. */}
+            <button type="button" className={btnSec + " disabled:opacity-60"} onClick={fechar} disabled={enviando}>
               {res ? "Fechar" : "Cancelar"}
             </button>
             <button type="button" className={btnPri} onClick={enviar} disabled={enviando}>

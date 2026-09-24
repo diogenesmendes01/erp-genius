@@ -157,7 +157,7 @@ export function PagamentoModal({
         <button className={btnPri} disabled={acao.ocupado || faltaComprovante || faltaEvidencia} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : somenteInformar ? "Enviar para conferência" : "Registrar recebimento"}
         </button>
-        <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
+        <button type="button" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60" disabled={acao.ocupado} onClick={onClose}>Cancelar</button>
       </div>
     </Modal>
   );

@@ -333,7 +333,8 @@ export function TurmaFormulario({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          disabled={acao.ocupado}
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60"
         >
           Cancelar
         </button>

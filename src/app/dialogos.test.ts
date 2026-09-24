@@ -20,7 +20,8 @@ describe("overlays são diálogos acessíveis", () => {
   it("todo `fixed inset-0` tem role=\"dialog\" + aria-modal + useDialogo", () => {
     const ofensores = telas
       .filter(({ conteudo }) => TEM_OVERLAY.test(conteudo))
-      .filter(({ conteudo }) => !(/role="dialog"/.test(conteudo) && /aria-modal="true"/.test(conteudo) && /\buseDialogo\(/.test(conteudo)))
+      // role/aria-modal fixos ou condicionais ao estado aberto (Drawer: role={open ? "dialog" : undefined}).
+      .filter(({ conteudo }) => !(/role=(?:"dialog"|\{[^}]*"dialog")/.test(conteudo) && /aria-modal=(?:"true"|\{[^}]*\btrue\b)/.test(conteudo) && /\buseDialogo\(/.test(conteudo)))
       .map((t) => t.arquivo);
     expect(ofensores).toEqual([]);
   });
