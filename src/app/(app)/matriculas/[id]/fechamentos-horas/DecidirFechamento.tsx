@@ -16,7 +16,7 @@ export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoI
         if (r.ok) router.refresh();
       } catch { setMensagem("Resultado não confirmado. Atualize o histórico antes de repetir a decisão."); }
     });
-  }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-semibold">Decisão independente</legend>
+  }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend>
     <label className="block">Decisão<select className="block w-full rounded border p-2" required value={decisao} onChange={e => setDecisao(e.target.value)}>
       <option value="">Selecione</option><option value="APROVAR">Aprovar a proposta apresentada</option><option value="REJEITAR">Rejeitar a proposta</option>
     </select></label>
