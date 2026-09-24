@@ -19,7 +19,7 @@ vi.mock("@/lib/dialogo", () => ({ useDialogo: () => undefined }));
 import { Drawer } from "./Drawer";
 
 const renderizar = (open: boolean) =>
-  renderToStaticMarkup(createElement(Drawer, { open, onClose: () => undefined, title: "Menu", children: createElement("a", { href: "/x" }, "link") }));
+  renderToStaticMarkup(createElement(Drawer, { open, onClose: () => undefined, title: "Menu" } as Parameters<typeof Drawer>[0], createElement("a", { href: "/x" }, "link")));
 
 describe("Drawer — inert", () => {
   beforeEach(() => { refs.lista.length = 0; });
