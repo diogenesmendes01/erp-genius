@@ -595,7 +595,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       return criado.id;
     });
 
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
   });
 }
@@ -627,7 +627,7 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
       await registrarEvento(tx, { tipo: "ConfiguracaoAvisosAgendaAlterada", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id,
         payload: { antes, depois: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } } });
     });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return undefined;
   });
 }
@@ -654,7 +654,7 @@ export async function conectarNumeroQr(numeroId: string): Promise<Resultado<Cone
     }
 
     const r: ResultadoConexao = await conectarInstanciaEvolution({ id: numero.id, providerRef });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return r;
   });
 }
@@ -667,7 +667,7 @@ export async function consultarSessaoNumero(numeroId: string): Promise<Resultado
     if (!numero) throw new ErroRegra("Número não encontrado.");
     if (numero.driver !== "BAILEYS" || !numero.providerRef) return { sessao: numero.sessao };
     const sessao = await consultarEstadoInstancia({ id: numero.id, providerRef: numero.providerRef });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return { sessao };
   });
 }
@@ -727,7 +727,7 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
       return criado.id;
     });
 
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
   });
 }
@@ -762,7 +762,7 @@ export async function submeterTemplateMeta(templateId: string): Promise<Resultad
         payload: { metaTemplateId },
       });
     });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
   });
 }
 
@@ -772,7 +772,7 @@ export async function sincronizarTemplatesMeta(): Promise<Resultado<ResultadoSyn
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     try {
       const r = await sincronizarTemplatesWaba();
-      revalidatePath("/configuracao/whatsapp");
+      revalidatePath("/configuracao/whatsapp", "layout");
       return r;
     } catch (e) {
       if (e instanceof ErroMeta) throw new ErroRegra(`Sincronização falhou: ${e.message}`);
@@ -919,7 +919,7 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       });
     });
 
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     revalidatePath("/financeiro"); // timeline do drawer lê a política do banco (E2)
   });
 }
@@ -945,7 +945,7 @@ export async function acionarKillSwitchRegua(ligado: boolean): Promise<Resultado
         payload: { antes: { killSwitch: politica.killSwitch }, depois: { killSwitch: ligado } },
       });
     });
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     revalidatePath("/financeiro");
   });
 }
