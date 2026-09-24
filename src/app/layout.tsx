@@ -14,7 +14,8 @@ const anthropicSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ERP Genius",
+  // Cada tela pode dar o próprio título (ex.: "M-000123 · Ana Silva · ERP Genius"); sem título, fica "ERP Genius".
+  title: { default: "ERP Genius", template: "%s · ERP Genius" },
   description: "Gestão escolar da Escola Genius",
 };
 
