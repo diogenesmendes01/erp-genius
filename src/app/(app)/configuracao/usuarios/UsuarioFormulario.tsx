@@ -121,8 +121,8 @@ export function UsuarioFormulario({
       </div>
       <p className="mt-2 text-xs text-gray-500">Limite vazio exige aprovação para conceder desconto. Taxa e mensalidade são verificadas separadamente.</p>
 
-      <div className="mt-4">
-        <div className="mb-2 block text-xs text-gray-600">Papéis</div>
+      <fieldset className="mt-4">
+        <legend className="mb-2 text-xs text-gray-600">Papéis</legend>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {Object.values(Papel).map((p) => (
             <label key={p} className="flex items-center gap-2 text-sm text-gray-700">
@@ -139,7 +139,7 @@ export function UsuarioFormulario({
           ))}
         </div>
         {errors.papeis && <p id="usuario-papeis-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.papeis.message}</p>}
-      </div>
+      </fieldset>
 
       {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
 
