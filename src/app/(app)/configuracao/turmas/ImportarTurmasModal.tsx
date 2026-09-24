@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface ResultadoImport {
@@ -17,6 +17,7 @@ export function ImportarTurmasModal() {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const planilhaId = useId();
   const [erro, setErro] = useState<string | null>(null);
   const [res, setRes] = useState<ResultadoImport | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -85,8 +86,9 @@ export function ImportarTurmasModal() {
             </a>
 
             <div className="mb-3">
-              <label className="mb-1 block text-xs text-gray-600">Planilha de turmas</label>
+              <label htmlFor={planilhaId} className="mb-1 block text-xs text-gray-600">Planilha de turmas</label>
               <input
+                id={planilhaId}
                 ref={fileRef}
                 type="file"
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

@@ -61,7 +61,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
+        <select aria-label="Idioma do novo nível" value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
           {idiomas.map((i) => (
             <option key={i.id} value={i.id}>
               {i.nome}
@@ -71,6 +71,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <input
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
+          aria-label="Código do novo nível"
           placeholder="Código (ex.: B1)"
           className={inputCls + " w-40"}
         />
@@ -78,6 +79,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
           value={ordem}
           onChange={(e) => setOrdem(e.target.value)}
           type="number"
+          aria-label="Ordem do novo nível"
           placeholder="Ordem"
           className={inputCls + " w-28"}
         />
