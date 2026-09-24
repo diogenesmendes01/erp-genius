@@ -80,6 +80,21 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
     expect(JSON.stringify(evento.payload)).not.toContain(lead.telefoneE164);
   });
 
+  it("E4: ?status=ATIVO exporta só o recorte da tela e registra o filtro aplicado", async () => {
+    const cat = await seedCatalogoMinimo();
+    const secretaria = await criarUsuario([Papel.SECRETARIA_ACADEMICA]);
+    await prisma.usuario.update({ where: { id: secretaria.id }, data: { permissoes: ["dados.exportar_alunos"] } });
+    await prisma.aluno.create({ data: { codigo: "A-000010", primeiroNome: "Aluna ativa", paisId: cat.pais.id, status: "ATIVO" } });
+    await prisma.aluno.create({ data: { codigo: "A-000011", primeiroNome: "Aluna pausada", paisId: cat.pais.id, status: "PAUSADO" } });
+    entrar(secretaria.id);
+    const res = await exportar("alunos", "?status=ATIVO&colunas=email");
+    expect(res.status).toBe(200);
+    const dados = await linhas(res);
+    expect(dados.map((l) => l[1])).toEqual(["Nome", "Aluna ativa"]);
+    const evento = await prisma.evento.findFirstOrThrow({ where: { tipo: "DadosExportados" } });
+    expect(evento.payload).toMatchObject({ conjunto: "alunos", quantidade: 1, filtros: { status: "ATIVO" } });
+  });
+
   it("alunos exportados por professor mantêm vínculo atual e não entregam campos financeiros/contato", async () => {
     const cat = await seedCatalogoMinimo();
     const professor = await criarUsuario([Papel.PROFESSOR, Papel.VENDEDOR]);

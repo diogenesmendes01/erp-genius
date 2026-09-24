@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessao, ErroAutenticacao, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { exigirCapacidade } from "@/server/_shared/capacidades";
 import { listarAlunos } from "@/server/alunos/consultas";
+import { lerFiltrosAlunos } from "@/server/alunos/filtros";
 import { listarLeads } from "@/server/comercial/consultas";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 
@@ -20,7 +21,13 @@ function assinaturaDaProjecaoAlunos(alunos: Awaited<ReturnType<typeof listarAlun
     .sort((a, b) => a.id.localeCompare(b.id)));
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ tipo: string }> }) {
+/** Filtros aplicados, para a trilha de auditoria — só os preenchidos. */
+function filtrosRegistrados(f: ReturnType<typeof lerFiltrosAlunos> | null) {
+  if (!f) return {};
+  return Object.fromEntries(Object.entries({ busca: f.busca, status: f.status, paisId: f.paisId, turmaId: f.turmaId }).filter(([, v]) => v));
+}
+
+export async function GET(req: Request, { params }: { params: Promise<{ tipo: string }> }) {
   try {
     const { tipo } = await params;
     if (tipo !== "alunos" && tipo !== "leads") return Response.json({ erro: "Exportação não encontrada." }, { status: 404 });
@@ -30,11 +37,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ tipo: s
     const folha = livro.addWorksheet(tipo === "alunos" ? "Alunos" : "Leads");
     const ids: string[] = [];
     let assinaturaAlunos: string | null = null;
+    // Mesmo recorte da tela (E4): o link de exportação leva os filtros da lista. Só as chaves de
+    // filtro são lidas e validadas (lerFiltrosAlunos); qualquer outra (colunas, ids…) é ignorada, e
+    // a planilha sai inteira — sem paginação. Os filtros só estreitam o escopo do usuário.
+    const filtrosAlunos = tipo === "alunos" ? { ...lerFiltrosAlunos(new URL(req.url).searchParams), pagina: 1 } : null;
     // Somente colunas da listagem autorizada. Não usar objetos Prisma nem campos
     // fornecidos pelo cliente; strings são células de texto, nunca fórmulas.
     if (tipo === "alunos") {
       folha.columns = [{ header: "Código", key: "codigo", width: 18 }, { header: "Nome", key: "nome", width: 35 }, { header: "Situação", key: "status", width: 20 }, { header: "País", key: "pais", width: 25 }, { header: "Turma", key: "turma", width: 35 }];
-      const dados = await listarAlunos(usuario);
+      const dados = await listarAlunos(usuario, filtrosAlunos!);
       assinaturaAlunos = assinaturaDaProjecaoAlunos(dados);
       for (const aluno of dados) { ids.push(aluno.id); folha.addRow({ codigo: aluno.codigo ?? "", nome: aluno.nome, status: aluno.status, pais: aluno.pais, turma: aluno.turmas.map((t) => t.label).join("; ") }); }
     } else {
@@ -51,14 +62,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ tipo: s
     await exigirCapacidade(atual, tipo === "alunos" ? "dados.exportar_alunos" : "dados.exportar_leads");
     if (atual.id !== usuario.id) throw new ErroPermissao();
     if (tipo === "alunos") {
-      if (assinaturaAlunos !== assinaturaDaProjecaoAlunos(await listarAlunos(atual))) {
+      if (assinaturaAlunos !== assinaturaDaProjecaoAlunos(await listarAlunos(atual, filtrosAlunos!))) {
         throw new ErroPermissao("O acesso aos registros mudou durante a exportação. Gere uma nova planilha.");
       }
     } else {
       const permitidos = await prisma.lead.count({ where: { AND: [{ id: { in: ids } }, await escopoComercialAtual(atual)] } });
       if (permitidos !== ids.length) throw new ErroPermissao("O acesso aos registros mudou durante a exportação. Gere uma nova planilha.");
     }
-    await prisma.$transaction(async (tx) => registrarEvento(tx, { tipo: "DadosExportados", agregadoTipo: "Exportacao", agregadoId: randomUUID(), autorId: atual.id, payload: { conjunto: tipo, quantidade: folha.rowCount - 1, colunas: folha.columns.map((c) => String(c.header)), filtros: {}, finalidade: "exportacao_da_listagem" } }));
+    await prisma.$transaction(async (tx) => registrarEvento(tx, { tipo: "DadosExportados", agregadoTipo: "Exportacao", agregadoId: randomUUID(), autorId: atual.id, payload: { conjunto: tipo, quantidade: folha.rowCount - 1, colunas: folha.columns.map((c) => String(c.header)), filtros: filtrosRegistrados(filtrosAlunos), finalidade: "exportacao_da_listagem" } }));
     return new Response(arquivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="${tipo}.xlsx"`, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   } catch (erro) {
     if (erro instanceof ErroAutenticacao) return Response.json({ erro: "Não autenticado." }, { status: 401 });
