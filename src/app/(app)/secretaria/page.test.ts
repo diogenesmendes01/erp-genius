@@ -22,6 +22,21 @@ const render = async (params: Record<string, string>) => renderToStaticMarkup(aw
 describe("/secretaria — busca e páginas (E4)", () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.count.mockResolvedValue(0); mocks.findMany.mockResolvedValue([]); });
 
+  it("guard de sessão antes de qualquer consulta", async () => {
+    mocks.sessao.mockRejectedValueOnce(new Error("negado"));
+    await expect(render({ busca: "ana" })).rejects.toThrow("negado");
+    expect(mocks.count).not.toHaveBeenCalled();
+    expect(mocks.findMany).not.toHaveBeenCalled();
+  });
+
+  it("link direto (matriculaId): avisa e oferece ver todas; busca nova não carrega o id escondido", async () => {
+    mocks.count.mockResolvedValue(1);
+    const html = await render({ matriculaId: "m1" });
+    expect(html).toContain("Mostrando a matrícula do link direto.");
+    expect(html).not.toContain('name="matriculaId"');
+    expect((mocks.count.mock.calls[0] as unknown as [{ where: { AND: { id?: string }[] } }])[0].where.AND[0]).toMatchObject({ id: "m1" });
+  });
+
   it("busca por palavras no aluno ou no código", () => {
     expect(whereBuscaMatriculas("ana M-12")).toEqual({
       AND: [
