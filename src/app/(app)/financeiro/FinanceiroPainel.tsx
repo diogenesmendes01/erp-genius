@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
@@ -17,6 +18,7 @@ import { RetomadasPainel } from "./RetomadasPainel";
 import type { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { abasVisiveis, ROTULO_ABA, type AbaFinanceiro } from "./abas";
 
 type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -68,9 +70,9 @@ const VIGENCIA_LABEL: Record<Vigencia, string> = {
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
 
-type Aba = "informes" | "politicas" | "cobrancas" | "comissoes" | "descontos" | "geral" | "aprovacoes" | "cambio" | "retomadas";
-
 export function FinanceiroPainel({
+  aba,
+  podeConfigurarPoliticas,
   fila,
   informes,
   politicas,
@@ -87,6 +89,9 @@ export function FinanceiroPainel({
   podeGerenciarCambio,
   preferenciaFusoExibicao = null,
 }: {
+  /** Aba ativa, já validada pela página contra o papel (resolverAba). Os dados das outras abas vêm vazios. */
+  aba: AbaFinanceiro;
+  podeConfigurarPoliticas: boolean;
   fila: FilaCobrancaDados;
   informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
   politicas: Awaited<ReturnType<typeof configuracaoComissoes>>;
@@ -98,13 +103,12 @@ export function FinanceiroPainel({
   podeAprovar: boolean;
   podeOperarCobranca: boolean;
   cotacoes: CotacaoVigente[];
-  relatorio: RelatorioDados;
+  relatorio: RelatorioDados | null;
   configFinanceiro: { fechamentoComissaoAutomatico: boolean };
   podeGerenciarCambio: boolean;
   preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
-  const [aba, setAba] = useState<Aba>(podeOperarCobranca ? "cobrancas" : "comissoes");
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -169,29 +173,33 @@ export function FinanceiroPainel({
     }
   }
 
-  const abas: [Aba, string][] = [
-    ...(podeOperarCobranca ? ([["cobrancas", "Cobranças"], ["informes", `A conferir (${informes.length})`]] as [Aba, string][]) : []),
-    ...(podeOperarCobranca ? ([["retomadas", `Retomadas (${retomadas.filter((p) => p.status === "PENDENTE").length})`]] as [Aba, string][]) : []),
-    ["comissoes", "Comissões"],
-    ["descontos", "Descontos"],
-    ...(podeOperarCobranca ? ([["geral", "Visão geral"]] as [Aba, string][]) : []),
-    ...(politicas ? ([["politicas", "Política de comissão"]] as [Aba, string][]) : []),
-    ...(podeAprovar ? ([["aprovacoes", `Aprovações${aprovacoes.length ? ` (${aprovacoes.length})` : ""}`]] as [Aba, string][]) : []),
-    ...(podeGerenciarCambio ? ([["cambio", "Câmbio"]] as [Aba, string][]) : []),
-  ];
+  // As contagens vêm das três filas pendentes, que a página carrega em qualquer aba.
+  const contagem: Partial<Record<AbaFinanceiro, number>> = {
+    informes: informes.length,
+    retomadas: retomadas.filter((p) => p.status === "PENDENTE").length,
+    aprovacoes: aprovacoes.length,
+  };
+  const rotulo = (a: AbaFinanceiro) =>
+    a === "informes" || a === "retomadas" ? `${ROTULO_ABA[a]} (${contagem[a]})`
+    : a === "aprovacoes" && contagem.aprovacoes ? `${ROTULO_ABA[a]} (${contagem.aprovacoes})`
+    : ROTULO_ABA[a];
+  const abas = abasVisiveis({ podeOperarCobranca, podeAprovar, podeGerenciarCambio, podeConfigurarPoliticas });
 
   return (
     <div>
       <h1 className="mb-3 text-2xl font-medium">Financeiro</h1>
-      <nav className="mb-5 flex flex-wrap gap-1">
-        {abas.map(([a, label]) => (
-          <button
+      {/* Aba na URL: linkável, sobrevive a voltar/F5 e a página só consulta os dados dela. */}
+      <nav aria-label="Seções do financeiro" className="mb-5 flex flex-wrap gap-1">
+        {abas.map((a) => (
+          <Link
             key={a}
-            onClick={() => setAba(a)}
+            href={`/financeiro?aba=${a}`}
+            scroll={false}
+            aria-current={aba === a ? "page" : undefined}
             className={"rounded-md px-3 py-1.5 text-sm " + (aba === a ? "bg-brand-600 font-medium text-white" : "text-gray-600 hover:bg-gray-100")}
           >
-            {label}
-          </button>
+            {rotulo(a)}
+          </Link>
         ))}
       </nav>
 
@@ -223,7 +231,7 @@ export function FinanceiroPainel({
         />
       )}
 
-      {aba === "descontos" && <Descontos relatorio={relatorio} />}
+      {aba === "descontos" && relatorio && <Descontos relatorio={relatorio} />}
 
       {aba === "geral" && (
         <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />
