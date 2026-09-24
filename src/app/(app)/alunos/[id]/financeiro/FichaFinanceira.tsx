@@ -14,6 +14,8 @@ import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 
@@ -109,7 +111,6 @@ export interface FichaFinanceiraDados {
 
 export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [pagar, setPagar] = useState<FichaFinanceiraDados["cobrancas"][number] | null>(null);
   const [reneg, setReneg] = useState<FichaFinanceiraDados["cobrancas"][number] | null>(null);
@@ -122,7 +123,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
 
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <MensagemStatus texto={msg} className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       <header>
@@ -269,7 +269,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
           saldoRestante={pagar.saldo}
           onClose={() => setPagar(null)}
           onDone={() => { setPagar(null); router.refresh(); }}
-          onErro={setErro}
         />
       )}
       {reneg && (
@@ -283,7 +282,6 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
             if (aprovacao) setMsg("Ajuste acima do limite — enviado para aprovação.");
             router.refresh();
           }}
-          onErro={setErro}
         />
       )}
     </div>
@@ -306,14 +304,12 @@ function RenegociarModal({
   podePerdao,
   onClose,
   onDone,
-  onErro,
 }: {
   cobranca: FichaFinanceiraDados["cobrancas"][number];
   moeda: string;
   podePerdao: boolean;
   onClose: () => void;
   onDone: (aprovacao: boolean) => void;
-  onErro: (e: string) => void;
 }) {
   const tipos = [TipoAjuste.DESCONTO, TipoAjuste.BOLSA, TipoAjuste.ALTERACAO_VALOR, TipoAjuste.RENEGOCIACAO, ...(podePerdao ? [TipoAjuste.PERDAO] : [])];
   const [tipo, setTipo] = useState<TipoAjuste>(TipoAjuste.DESCONTO);
@@ -321,7 +317,9 @@ function RenegociarModal({
   const [vigencia, setVig] = useState<Vigencia>(Vigencia.ESTA_COBRANCA);
   const [novoVenc, setVenc] = useState("");
   const [motivo, setMotivo] = useState("");
-  const [salvando, setSalvando] = useState(false);
+  // ajustarCobranca não recebe chave de idempotência: se o resultado ficar incerto, a instrução é
+  // conferir a cobrança antes de repetir — reenviar poderia registrar o ajuste duas vezes.
+  const acao = useAcaoCliente({ idempotente: false });
   const campoId = useId();
 
   const desconto =cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
@@ -331,21 +329,18 @@ function RenegociarModal({
     // silencioso — o mesmo tipo de erro que o CampoMoeda existe pra evitar.
     const valorParaNumero = tipo === TipoAjuste.PERDAO ? 0 : parseMoeda(valorPara);
     if (valorParaNumero === null) {
-      onErro("Informe o novo valor, com no máximo duas casas decimais.");
+      acao.setErro("Informe o novo valor, com no máximo duas casas decimais.");
       return;
     }
-    setSalvando(true);
-    const r = await ajustarCobranca({
+    const desfecho = await acao.executar(() => ajustarCobranca({
       cobrancaId: cobranca.id,
       tipo,
       valorPara: valorParaNumero,
       vigencia,
       novoVencimento: novoVenc,
       motivo,
-    });
-    setSalvando(false);
-    if (!r.ok) onErro(r.erro);
-    else onDone(!!r.dado?.aprovacao);
+    }));
+    if (desfecho?.tipo === "ok") onDone(!!desfecho.dado?.aprovacao);
   }
 
   return (
@@ -371,8 +366,9 @@ function RenegociarModal({
       <label htmlFor={`${campoId}-motivo`} className="mb-1 block text-xs text-gray-600">Motivo (obrigatório)</label>
       <input id={`${campoId}-motivo`} aria-required="true" className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       <p className="mb-3 text-xs text-gray-400">Acima do seu limite de desconto, o pedido vai para aprovação do Gerente Comercial / Admin.</p>
+      <FeedbackAcao erro={acao.erro} className="mb-3" />
       <div className="flex gap-2">
-        <button className={btnPri} disabled={salvando} onClick={salvar}>{salvando ? "Salvando…" : "Aplicar ajuste"}</button>
+        <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Aplicar ajuste"}</button>
         <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
       </div>
     </Modal>
