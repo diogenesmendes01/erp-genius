@@ -13,7 +13,8 @@ export interface EmpresaResumo {
   pais: string | null;
   ativo: boolean;
   colaboradores: number;
-  faturasAbertas: number;
+  /** Faturas FECHADAS: emitidas e aguardando pagamento (StatusFaturaB2B). */
+  faturasAReceber: number;
 }
 
 export async function listarEmpresas(): Promise<EmpresaResumo[]> {
@@ -58,7 +59,7 @@ async function resumirEmpresas(empresas: (Awaited<ReturnType<typeof prisma.empre
     pais: e.paisId ? nomePais.get(e.paisId) ?? null : null,
     ativo: e.ativo,
     colaboradores: e._count.matriculas,
-    faturasAbertas: e._count.faturas,
+    faturasAReceber: e._count.faturas,
   }));
 }
 

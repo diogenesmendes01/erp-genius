@@ -148,16 +148,6 @@ export const camposDosFiltrosLeads = (f: FiltrosLeads): CamposLeads => ({
   dono: f.donoId ?? "",
 });
 
-/**
- * Quando a URL muda, só os campos cujo FILTRO mudou são atualizados; os demais mantêm o que a pessoa
- * está digitando (o formulário não é recriado, o foco não se perde).
- */
-export function sincronizarCamposLeads(atuais: CamposLeads, anteriores: FiltrosLeads, novos: FiltrosLeads): CamposLeads {
-  const antes = camposDosFiltrosLeads(anteriores), depois = camposDosFiltrosLeads(novos);
-  const r = { ...atuais };
-  for (const k of Object.keys(depois) as (keyof CamposLeads)[]) if (antes[k] !== depois[k]) r[k] = depois[k];
-  return r;
-}
 
 /** Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. */
 export const hrefDosCamposLeads = (c: CamposLeads) => hrefLeads(lerFiltrosLeads({ ...c }));

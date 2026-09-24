@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { EtapaLead, Segmento, Temperatura } from "@prisma/client";
 import {
@@ -16,12 +15,11 @@ import {
   camposDosFiltrosLeads,
   filtrosLeadsParaQuery,
   hrefDosCamposLeads,
-  sincronizarCamposLeads,
   temFiltroLeads,
-  type CamposLeads,
   type FiltrosLeads,
 } from "@/server/comercial/filtros";
-import { criarEspera } from "@/lib/espera";
+import { useFiltrosUrl } from "@/lib/filtros-url";
+import { Paginacao } from "@/components/Paginacao";
 import { LeadFormulario } from "./LeadFormulario";
 
 export interface LeadRow {
@@ -77,37 +75,8 @@ export function LeadsLista({
   const inicio = total ? (filtros.pagina - 1) * LEADS_POR_PAGINA + 1 : 0;
   const fim = (filtros.pagina - 1) * LEADS_POR_PAGINA + leads.length;
   const temProxima = fim < total;
-  const router = useRouter();
-  const [buscando, iniciar] = useTransition();
-  // Campos controlados, sem recriar o formulário (o foco não se perde): quando a URL muda, só os
-  // campos cujo filtro mudou são atualizados. A espera pendente dos selects é cancelada a cada mudança.
-  const [campos, setCampos] = useState<CamposLeads>(() => camposDosFiltrosLeads(filtros));
-  const anteriores = useRef(filtros);
-  const [espera] = useState(() => criarEspera(400));
-  const chaveFiltros = filtrosLeadsParaQuery(filtros);
-  useEffect(() => {
-    espera.cancelar();
-    setCampos((atuais) => sincronizarCamposLeads(atuais, anteriores.current, filtros));
-    anteriores.current = filtros;
-    // chaveFiltros representa `filtros` por valor (o objeto muda de identidade a cada render do servidor).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chaveFiltros, espera]);
-  useEffect(() => () => espera.cancelar(), [espera]);
-
-  const navegar = (href: string) => iniciar(() => router.push(href));
-  const aplicar = (c: CamposLeads) => { espera.cancelar(); navegar(hrefDosCamposLeads(c)); };
-  const mudarSelect = (campo: Exclude<keyof CamposLeads, "busca">) => (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const novos = { ...campos, [campo]: e.target.value };
-    setCampos(novos);
-    espera.agendar(() => aplicar(novos));
-  };
-  /** Link real (abre em nova aba, copia) que, no clique simples, navega dentro da transição. */
-  const aoClicar = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    e.preventDefault();
-    espera.cancelar();
-    navegar(href);
-  };
+  // Campos controlados, transição, espera nos selects e links na transição: useFiltrosUrl (E4).
+  const { campos, buscando, aplicar, mudarTexto, mudarSelect, aoClicar } = useFiltrosUrl({ campos: camposDosFiltrosLeads(filtros), hrefDosCampos: hrefDosCamposLeads });
 
   return (
     <div>
@@ -144,7 +113,7 @@ export function LeadsLista({
         <input
           name="busca"
           value={campos.busca}
-          onChange={(e) => setCampos({ ...campos, busca: e.target.value })}
+          onChange={mudarTexto("busca")}
           maxLength={100}
           aria-label="Buscar lead por nome, código ou telefone"
           placeholder="Buscar por nome, código ou telefone…"
@@ -256,13 +225,7 @@ export function LeadsLista({
         </table>
       </div>
 
-      {(filtros.pagina > 1 || temProxima) && (
-        <nav aria-label="Páginas de leads" className="mt-3 flex items-center gap-4 text-sm">
-          {filtros.pagina > 1 && <Link href={hrefPagina(filtros, filtros.pagina - 1)} onClick={aoClicar(hrefPagina(filtros, filtros.pagina - 1))} className="text-brand-700 hover:underline">← Anterior</Link>}
-          <span className="text-gray-500">Página {filtros.pagina}</span>
-          {temProxima && <Link href={hrefPagina(filtros, filtros.pagina + 1)} onClick={aoClicar(hrefPagina(filtros, filtros.pagina + 1))} className="text-brand-700 hover:underline">Próxima →</Link>}
-        </nav>
-      )}
+      <Paginacao pagina={filtros.pagina} temProxima={temProxima} href={(p) => hrefPagina(filtros, p)} aoClicar={aoClicar} rotulo="Páginas de leads" />
     </div>
   );
 }
