@@ -20,6 +20,7 @@ import type { EtapaLead, Temperatura } from "@prisma/client";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
 import type { ConversaResumo, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
+import { LIMITE_CONVERSAS, hrefInbox } from "@/server/whatsapp/busca-inbox";
 import {
   buscarVinculosInbox,
   enviarMidiaInbox,
@@ -63,14 +64,27 @@ export function InboxCliente({
   thread,
   podeCobranca,
   preferenciaFusoExibicao,
+  busca = "",
+  limitada = false,
 }: {
   conversas: ConversaResumo[];
   thread: ThreadConversa | null;
   podeCobranca: boolean;
   preferenciaFusoExibicao: string | null;
+  /** Busca aplicada no servidor (?busca=), mantida ao abrir uma conversa. */
+  busca?: string;
+  /** A lista foi cortada nas mais recentes (as com não lidas vêm sempre). */
+  limitada?: boolean;
 }) {
   const router = useRouter();
-  const [busca, setBusca] = useState("");
+  // Busca no servidor (E4): antes filtrava só as conversas carregadas. O campo acompanha a URL
+  // (voltar do navegador, "Limpar") sem perder o que está sendo digitado entre os refresh de 30s.
+  const [campoBusca, setCampoBusca] = useState(busca);
+  const buscaAnterior = useRef(busca);
+  useEffect(() => {
+    if (buscaAnterior.current !== busca) setCampoBusca(busca);
+    buscaAnterior.current = busca;
+  }, [busca]);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
 
@@ -107,17 +121,6 @@ export function InboxCliente({
     }
   }, [thread, conversaAtual, router]);
 
-  const filtradas = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    if (!q) return conversas;
-    return conversas.filter(
-      (c) =>
-        c.contatoNome.toLowerCase().includes(q) ||
-        c.contatoTelefone.includes(q) ||
-        (c.vinculo ?? "").toLowerCase().includes(q),
-    );
-  }, [conversas, busca]);
-
   return (
     <div>
       {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
@@ -130,29 +133,38 @@ export function InboxCliente({
       <div className="flex h-[calc(100dvh-16.5rem)] min-h-[420px] md:h-[calc(100dvh-13rem)] overflow-hidden rounded-lg border border-gray-200 bg-surface">
         {/* Lista de conversas, por recência (ver listarConversas) — não reordena por não lidas */}
         <div className={"w-full shrink-0 flex-col md:w-80 md:border-r md:border-gray-200 " + (thread ? "hidden md:flex" : "flex")}>
-          <div className="border-b border-gray-100 p-2">
+          <form
+            action="/inbox"
+            role="search"
+            aria-label="Buscar conversas"
+            onSubmit={(e) => { e.preventDefault(); router.push(hrefInbox({ busca: campoBusca.trim(), c: thread?.conversaId })); }}
+            className="border-b border-gray-100 p-2"
+          >
             <input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              name="busca"
+              value={campoBusca}
+              onChange={(e) => setCampoBusca(e.target.value)}
+              maxLength={100}
               aria-label="Buscar conversas por contato"
-              placeholder="Buscar contato…"
+              placeholder="Buscar por nome ou telefone… (Enter)"
               className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
             />
-          </div>
+            {thread && <input type="hidden" name="c" value={thread.conversaId} />}
+          </form>
           <div className="flex-1 overflow-y-auto">
-            {filtradas.length === 0 ? (
-              <p className="p-4 text-sm text-gray-400">
-                {conversas.length === 0
-                  ? "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."
-                  : "Nada nesta busca."}
+            {conversas.length === 0 ? (
+              <p className="p-4 text-sm text-gray-500">
+                {busca ? (
+                  <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ c: thread?.conversaId })} className="text-brand-700 hover:underline">Limpar busca</Link></>
+                ) : "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."}
               </p>
             ) : (
-              filtradas.map((c) => (
+              conversas.map((c) => (
                 <button
                   key={c.id}
                   type="button"
                   aria-current={thread?.conversaId === c.id ? "true" : undefined}
-                  onClick={() => router.push(`/inbox?c=${c.id}`)}
+                  onClick={() => router.push(hrefInbox({ busca, c: c.id }))}
                   className={
                     "block w-full border-b border-gray-100 px-3 py-2.5 text-left hover:bg-gray-50 " +
                     (thread?.conversaId === c.id ? "bg-brand-50" : "")
@@ -188,13 +200,19 @@ export function InboxCliente({
                 </button>
               ))
             )}
+            {limitada && (
+              <p className="p-3 text-xs text-gray-500">
+                Mostrando as {LIMITE_CONVERSAS} conversas mais recentes e todas com mensagens não lidas. Busque pelo nome
+                ou telefone para encontrar as mais antigas.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Thread */}
         {thread ? (
           <section aria-label={`Conversa com ${thread.contato.nome}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <Link href="/inbox" className="flex min-h-10 items-center gap-1 border-b border-gray-200 px-3 py-2 text-sm text-brand-700 md:hidden">
+            <Link href={hrefInbox({ busca })} className="flex min-h-10 items-center gap-1 border-b border-gray-200 px-3 py-2 text-sm text-brand-700 md:hidden">
               <IconArrowLeft className="h-5 w-5" aria-hidden /> Conversas
             </Link>
             <Thread

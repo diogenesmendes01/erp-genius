@@ -64,7 +64,7 @@ describe("InboxCliente — master-detail no celular (E6)", () => {
     conversas: [conversa], thread: comThread ? thread : null, podeCobranca: false, preferenciaFusoExibicao: null,
   } as never));
   // Classe da coluna que contém a busca de conversas (a lista).
-  const classeDaLista = (html: string) => html.match(/<div class="([^"]*)"><div class="border-b border-gray-100 p-2"><input[^>]*aria-label="Buscar conversas por contato"/)?.[1] ?? "";
+  const classeDaLista = (html: string) => html.match(/<div class="([^"]*)"><form[^>]*class="border-b border-gray-100 p-2"[^>]*><input[^>]*aria-label="Buscar conversas por contato"/)?.[1] ?? "";
 
   it("sem conversa aberta: a lista ocupa a tela; o aviso de escolher só aparece a partir de md", () => {
     const html = render(false);
@@ -111,5 +111,36 @@ describe("InboxCliente — master-detail no celular (E6)", () => {
     expect(html).toContain("h-[calc(100dvh-16.5rem)]");
     expect(html).toContain("md:h-[calc(100dvh-13rem)]");
     expect(html).not.toMatch(/\bh-\[calc\(100vh/);
+  });
+});
+
+describe("InboxCliente — busca no servidor e lista cortada (E4)", () => {
+  const conversa = { id: "atendimento", numeroId: "numero", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: "contato", contatoNome: "Ana", contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null };
+  const render = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(InboxCliente, {
+    conversas: [conversa], thread: null, podeCobranca: false, preferenciaFusoExibicao: null, ...props,
+  } as never));
+
+  it("formulário GET de busca com o termo atual; com conversa aberta, ela é mantida", () => {
+    const html = render({ busca: "ana" });
+    expect(html).toMatch(/<form[^>]*action="\/inbox"[^>]*role="search"/);
+    expect(html).toMatch(/<input name="busca" maxLength="100" aria-label="Buscar conversas por contato"[^>]*value="ana"/);
+    expect(html).not.toContain('name="c"');
+    expect(render({ busca: "ana", thread })).toContain('<input type="hidden" name="c" value="atendimento"/>');
+  });
+
+  it("busca sem resultado: diz o termo e oferece limpar (mantendo a conversa aberta)", () => {
+    const html = render({ conversas: [], busca: "zé" });
+    expect(html).toContain("Nenhuma conversa para “zé”.");
+    expect(html).toContain('href="/inbox">Limpar busca</a>');
+    expect(render({ conversas: [], busca: "", thread: null })).toContain("Nenhuma conversa ainda");
+  });
+
+  it("lista cortada: avisa que há mais antigas e como achá-las", () => {
+    expect(render({ limitada: true })).toContain("Mostrando as 200 conversas mais recentes e todas com mensagens não lidas.");
+    expect(render({ limitada: false })).not.toContain("Mostrando as 200");
+  });
+
+  it("voltar para a lista (celular) mantém a busca", () => {
+    expect(render({ busca: "ana", thread })).toMatch(/<a[^>]*href="\/inbox\?busca=ana"[^>]*>(?:(?!<\/a>).)*Conversas<\/a>/);
   });
 });
