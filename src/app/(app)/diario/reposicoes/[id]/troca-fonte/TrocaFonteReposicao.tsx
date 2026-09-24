@@ -68,7 +68,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     <form className="space-y-3 rounded border bg-surface p-4" onSubmit={propor}>
       <h2 className="font-medium">Propor adoção da publicação corrigida</h2>
       <p className="text-sm text-gray-700">A fonte publicada acima será fotografada pelo servidor. Esta tela não aceita identificador de arquivo, revisão ou URL.</p>
-      {contexto.jaAdotaPublicacaoAtual ? <p role="status">O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
+      {contexto.jaAdotaPublicacaoAtual ? <p>O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className="rounded border px-3 py-2">Preparar para decisão independente</button></>}
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">

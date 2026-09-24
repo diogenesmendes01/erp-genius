@@ -96,8 +96,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
       <button className={botao} disabled={ocupado} onClick={() => carregar()}>Consultar propostas</button>
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    <MensagemStatus texto={aviso} className="text-green-700" />
-    <MensagemStatus texto={ocupado ? "Carregando…" : null} />
+    <MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Carregando…" : null} />
     {lista?.propostas.length === 0 && <p>Nenhuma proposta encontrada.</p>}
     {lista?.propostas.map((p) => <article key={p.id} className="space-y-2 rounded border p-4">
       <TituloMovimentacao estado={p.status} criadoEm={p.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
