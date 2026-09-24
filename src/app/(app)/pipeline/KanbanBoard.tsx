@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { EtapaLead, Temperatura, MotivoPerda } from "@prisma/client";
+import { COLUNAS } from "./colunas";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
@@ -39,20 +40,6 @@ function minutosDesde(iso: string, agora: number): number {
   return Math.floor((agora - new Date(iso).getTime()) / 60000);
 }
 
-// Funil completo na ordem do doc 08. As etapas geradas por evento (Exp. Realizada,
-// Proposta, Aguardando Matrícula) seguem visíveis para acompanhamento, mas NÃO
-// recebem arraste — só ETAPAS_MANUAIS + Matriculado/Perdido (fluxo próprio) aceitam.
-const COLUNAS: EtapaLead[] = [
-  EtapaLead.NOVO,
-  EtapaLead.EM_ATENDIMENTO,
-  EtapaLead.QUALIFICADO,
-  EtapaLead.EXPERIMENTAL_AGENDADA,
-  EtapaLead.EXPERIMENTAL_REALIZADA,
-  EtapaLead.PROPOSTA,
-  EtapaLead.AGUARDANDO_MATRICULA,
-  EtapaLead.MATRICULADO,
-  EtapaLead.PERDIDO,
-];
 
 function Card({ lead, agora }: { lead: KanbanLead; agora: number }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
