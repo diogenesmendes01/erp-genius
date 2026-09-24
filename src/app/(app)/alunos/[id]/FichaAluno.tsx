@@ -236,7 +236,7 @@ export function FichaAluno({
             {/* Dentro do painel, acima dos botões: no topo da página ficaria atrás do overlay. */}
             <FeedbackAcao erro={modal === "editar" ? acao.erro : null} className="mb-3" />
             <div className="flex justify-end gap-2">
-              <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+              <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
               <button
                 className={btnPri}
                 disabled={acao.ocupado || !ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
@@ -432,7 +432,7 @@ export function FichaAluno({
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
             <button className={btnPri} disabled={acao.ocupado} onClick={() => run(() => pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>{acao.ocupado ? "Confirmando…" : "Confirmar pausa"}</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+            <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
       )}
@@ -449,7 +449,7 @@ export function FichaAluno({
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
             <button className={btnPri + " bg-danger hover:brightness-95"} disabled={acao.ocupado} onClick={() => run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>{acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+            <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
       )}

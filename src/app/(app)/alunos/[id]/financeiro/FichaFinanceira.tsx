@@ -15,6 +15,7 @@ import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
@@ -344,7 +345,7 @@ function RenegociarModal({
   }
 
   return (
-    <Modal titulo="Renegociar / ajustar" onClose={onClose}>
+    <Modal titulo="Renegociar / ajustar" aoFechar={onClose} bloquearFechamento={acao.ocupado}>
       <label htmlFor={`${campoId}-tipo`} className="mb-1 block text-xs text-gray-600">Tipo</label>
       <select id={`${campoId}-tipo`} className={inputCls + " mb-2"} value={tipo} onChange={(e) => setTipo(e.target.value as TipoAjuste)}>
         {tipos.map((t) => <option key={t} value={t}>{TIPO_AJUSTE_LABEL[t]}</option>)}
@@ -372,16 +373,5 @@ function RenegociarModal({
         <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
       </div>
     </Modal>
-  );
-}
-
-function Modal({ titulo, onClose, children }: { titulo: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg bg-surface p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="mb-3 text-sm font-medium">{titulo}</h3>
-        {children}
-      </div>
-    </div>
   );
 }

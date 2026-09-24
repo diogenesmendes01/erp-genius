@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   useDraggable,
   useDroppable,
+  type Announcements,
+  type ClientRect,
   type DragEndEvent,
+  type KeyboardCoordinateGetter,
+  type ScreenReaderInstructions,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { EtapaLead, Temperatura, MotivoPerda } from "@prisma/client";
@@ -19,6 +26,7 @@ import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, MOTIVO_PERDA_LABEL } f
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export interface KanbanLead {
@@ -42,8 +50,97 @@ function minutosDesde(iso: string, agora: number): number {
   return Math.floor((agora - new Date(iso).getTime()) / 60000);
 }
 
+// Acessibilidade do quadro (docs/42-auditoria-frontend-ux.md, E6/E7): o dnd-kit anuncia instruções de
+// teclado por padrão — em inglês e sem KeyboardSensor registrado, ou seja, prometendo o que não
+// funcionava. Aqui o teclado funciona de fato (Espaço/Enter pega, setas trocam de coluna, Espaço/Enter
+// solta, Esc cancela) e as instruções e os anúncios saem em pt-BR, com o nome do lead e da etapa.
+export const INSTRUCOES_KANBAN: ScreenReaderInstructions = {
+  draggable:
+    "Para mover o lead de etapa, pressione Espaço ou Enter na alça de arraste. " +
+    "Use as setas para a esquerda e para a direita para escolher a etapa, " +
+    "Espaço ou Enter para soltar e Esc para cancelar. " +
+    "Sem arrastar, use o seletor “Mover para…” do card.",
+};
 
-function Card({ lead, agora, bloqueado }: { lead: KanbanLead; agora: number; bloqueado: boolean }) {
+function rotuloEtapa(id: UniqueIdentifier | undefined): string | null {
+  if (id == null) return null;
+  return ETAPA_LABEL[id as EtapaLead] ?? null;
+}
+
+/** Anúncios do leitor de tela para o arraste, a partir do lead de cada id. */
+export function anunciosKanban(leadPorId: (id: UniqueIdentifier) => Pick<KanbanLead, "nome" | "etapa"> | undefined): Announcements {
+  const lead = (id: UniqueIdentifier) => {
+    const l = leadPorId(id);
+    return { nome: l?.nome ?? "sem nome", etapa: l?.etapa, origem: l ? ETAPA_LABEL[l.etapa] : "etapa atual" };
+  };
+  return {
+    onDragStart({ active }) {
+      const l = lead(active.id);
+      return `Lead ${l.nome} pego na etapa ${l.origem}.`;
+    },
+    onDragOver({ active, over }) {
+      const l = lead(active.id);
+      const destino = rotuloEtapa(over?.id);
+      return destino ? `Lead ${l.nome} sobre a etapa ${destino}.` : `Lead ${l.nome} fora de uma etapa.`;
+    },
+    onDragEnd({ active, over }) {
+      const l = lead(active.id);
+      const destino = over ? (over.id as EtapaLead) : null;
+      if (!destino || !rotuloEtapa(destino) || destino === l.etapa) {
+        return `Lead ${l.nome} solto sem mudar de etapa; continua em ${l.origem}.`;
+      }
+      if (destino === EtapaLead.MATRICULADO) return `Lead ${l.nome} solto em ${ETAPA_LABEL[destino]}; abrindo a matrícula.`;
+      if (destino === EtapaLead.PERDIDO) return `Lead ${l.nome} solto em ${ETAPA_LABEL[destino]}; informe o motivo da perda.`;
+      if (l.etapa && !transicaoManualPermitida(l.etapa, destino)) {
+        return `Lead ${l.nome} não pode ir de ${l.origem} para ${ETAPA_LABEL[destino]}; continua em ${l.origem}.`;
+      }
+      return `Lead ${l.nome} movido para ${ETAPA_LABEL[destino]}.`;
+    },
+    onDragCancel({ active }) {
+      const l = lead(active.id);
+      return `Movimentação cancelada; ${l.nome} continua em ${l.origem}.`;
+    },
+  };
+}
+
+/**
+ * Seta para a esquerda/direita leva o card para a coluna vizinha de uma vez (o padrão do dnd-kit anda
+ * 25px por tecla — uma dúzia de toques por coluna). Devolve a nova posição do canto superior esquerdo
+ * do card, alinhada ao topo da coluna de destino, ou null quando não há coluna naquele sentido.
+ */
+export function colunaVizinha(colunas: ClientRect[], card: ClientRect, sentido: 1 | -1): { x: number; y: number } | null {
+  if (colunas.length === 0) return null;
+  const ordenadas = [...colunas].sort((a, b) => a.left - b.left);
+  const centro = card.left + card.width / 2;
+  // Coluna atual: a que contém o centro do card; fora de todas, a mais próxima dele.
+  let atual = ordenadas.findIndex((c) => centro >= c.left && centro <= c.right);
+  if (atual === -1) {
+    let menor = Infinity;
+    ordenadas.forEach((c, i) => {
+      const d = Math.abs(c.left + c.width / 2 - centro);
+      if (d < menor) { menor = d; atual = i; }
+    });
+  }
+  const alvo = ordenadas[atual + sentido];
+  if (!alvo) return null;
+  return { x: alvo.left + (alvo.width - card.width) / 2, y: alvo.top };
+}
+
+const coordenadasTecladoKanban: KeyboardCoordinateGetter = (event, { context }) => {
+  if (event.code !== "ArrowRight" && event.code !== "ArrowLeft") return undefined;
+  const card = context.collisionRect;
+  if (!card) return undefined;
+  event.preventDefault();
+  const destino = colunaVizinha([...context.droppableRects.values()], card, event.code === "ArrowRight" ? 1 : -1);
+  return destino ?? undefined;
+};
+
+function Card({ lead, agora, bloqueado, aoMover }: {
+  lead: KanbanLead;
+  agora: number;
+  bloqueado: boolean;
+  aoMover: (lead: KanbanLead, destino: EtapaLead) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { etapa: lead.etapa },
@@ -81,19 +178,44 @@ function Card({ lead, agora, bloqueado }: { lead: KanbanLead; agora: number; blo
         )}
       </div>
       {lead.proximaAcao && <div className="mt-1 text-xs text-gray-500">Próxima: {lead.proximaAcao}</div>}
-      {/* alça de arraste */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="mt-2 w-full cursor-grab rounded border border-dashed border-gray-200 py-0.5 text-[10px] text-gray-400 hover:bg-gray-50 active:cursor-grabbing"
-      >
-        ⠿ arrastar
-      </button>
+      <div className="mt-2 flex gap-1">
+        {/* alça de arraste — touch-none: no toque, o gesto arrasta o card em vez de rolar a página */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="flex-1 cursor-grab touch-none rounded border border-dashed border-gray-200 py-0.5 text-[10px] text-gray-400 hover:bg-gray-50 active:cursor-grabbing"
+        >
+          ⠿ arrastar
+        </button>
+        {/* Alternativa sem arraste (E6): mesmo fluxo do soltar. Fica fora da alça — não inicia arraste. */}
+        <select
+          aria-label={`Mover ${lead.nome} para outra etapa`}
+          value=""
+          disabled={bloqueado}
+          onPointerDown={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            const destino = e.target.value as EtapaLead;
+            if (destino) aoMover(lead, destino);
+          }}
+          className="min-w-0 flex-1 rounded border border-gray-200 bg-surface px-1 py-0.5 text-[10px] text-gray-500 outline-none focus:border-brand-500 disabled:opacity-60"
+        >
+          <option value="">Mover para…</option>
+          {COLUNAS.filter((c) => c !== lead.etapa).map((c) => (
+            <option key={c} value={c}>{ETAPA_LABEL[c]}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
 
-function Coluna({ etapa, leads, agora, bloqueado }: { etapa: EtapaLead; leads: KanbanLead[]; agora: number; bloqueado: boolean }) {
+function Coluna({ etapa, leads, agora, bloqueado, aoMover }: {
+  etapa: EtapaLead;
+  leads: KanbanLead[];
+  agora: number;
+  bloqueado: boolean;
+  aoMover: (lead: KanbanLead, destino: EtapaLead) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa });
   const total = leads.reduce((s, l) => s + (l.valorPrevisto ?? 0), 0);
   const gargalo =
@@ -118,7 +240,7 @@ function Coluna({ etapa, leads, agora, bloqueado }: { etapa: EtapaLead; leads: K
         className={"flex min-h-[60px] flex-col gap-2 rounded-md p-1 " + (isOver ? "bg-brand-50 ring-1 ring-brand-300" : "")}
       >
         {leads.map((l) => (
-          <Card key={l.id} lead={l} agora={agora} bloqueado={bloqueado} />
+          <Card key={l.id} lead={l} agora={agora} bloqueado={bloqueado} aoMover={aoMover} />
         ))}
         {leads.length === 0 && (
           <div className="rounded-lg border border-dashed border-gray-200 p-3 text-center text-xs text-gray-300">vazio</div>
@@ -148,7 +270,12 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
   const [obs, setObs] = useState("");
   const [periodoPerdido, setPeriodoPerdido] = useState(30); // dias; 0 = todos
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // No toque, um leve atraso separa "segurar para arrastar" de "rolar o quadro".
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: coordenadasTecladoKanban }),
+  );
 
   const visiveis = useMemo(() => leads.filter((l) => (tipo === "b2b" ? l.b2b : !l.b2b)), [leads, tipo]);
   const porEtapa = useMemo(() => {
@@ -157,12 +284,14 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
     for (const l of visiveis) (m.get(l.etapa) ?? m.set(l.etapa, []).get(l.etapa)!).push(l);
     return m;
   }, [visiveis]);
+  const anuncios = useMemo(() => {
+    const porId = new Map(leads.map((l) => [l.id as UniqueIdentifier, l]));
+    return anunciosKanban((id) => porId.get(id));
+  }, [leads]);
 
-  async function onDragEnd(e: DragEndEvent) {
-    const destino = e.over?.id as EtapaLead | undefined;
-    if (!destino) return;
-    const lead = visiveis.find((l) => l.id === e.active.id);
-    if (!lead || lead.etapa === destino) return;
+  // Fluxo único de mudança de etapa: o soltar do arraste e o seletor "Mover para…" passam por aqui.
+  async function moverPara(lead: KanbanLead, destino: EtapaLead) {
+    if (lead.etapa === destino) return;
 
     if (destino === EtapaLead.MATRICULADO) {
       router.push(`/matriculas/nova?lead=${lead.id}`);
@@ -184,6 +313,14 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
     }
     const desfecho = await acaoMover.executar(() => moverEtapa(lead.id, destino));
     if (desfecho?.tipo === "ok") router.refresh();
+  }
+
+  async function onDragEnd(e: DragEndEvent) {
+    const destino = e.over?.id as EtapaLead | undefined;
+    if (!destino) return;
+    const lead = visiveis.find((l) => l.id === e.active.id);
+    if (!lead) return;
+    await moverPara(lead, destino);
   }
 
   async function confirmarPerda() {
@@ -219,6 +356,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
       </div>
       <p className="mb-3 text-xs text-gray-400">
         Arraste o card pela alça &quot;⠿ arrastar&quot; para mover de etapa. Soltar em <strong>Matriculado</strong> abre a matrícula; em <strong>Perdido</strong> pede o motivo.
+        {" "}Pelo teclado, Espaço na alça pega o card e as setas trocam de coluna; ou use &quot;Mover para…&quot; no card.
       </p>
       <FeedbackAcao erro={acaoMover.erro} className="mb-3" />
 
@@ -236,7 +374,11 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
         </select>
       </div>
 
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragEnd={onDragEnd}
+        accessibility={{ announcements: anuncios, screenReaderInstructions: INSTRUCOES_KANBAN }}
+      >
         <div className="flex gap-3 overflow-x-auto pb-4">
           {COLUNAS.map((col) => {
             let itens = porEtapa.get(col) ?? [];
@@ -244,43 +386,40 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
               const limite = agora - periodoPerdido * 86400000;
               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);
             }
-            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} />;
+            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} aoMover={moverPara} />;
           })}
         </div>
       </DndContext>
 
       {perda && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={fecharPerda}>
-          <div className="w-full max-w-md rounded-lg bg-surface p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 text-sm font-medium">Marcar perdido — {perda.nome}</h3>
-            <select
-              aria-label="Motivo da perda"
-              className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value as MotivoPerda)}
-            >
-              {Object.values(MotivoPerda).map((m) => (
-                <option key={m} value={m}>{MOTIVO_PERDA_LABEL[m]}</option>
-              ))}
-            </select>
-            <input
-              className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              aria-label="Observação da perda"
-              placeholder="Observação (obrigatória se 'Outro')"
-              value={obs}
-              onChange={(e) => setObs(e.target.value)}
-            />
-            <FeedbackAcao erro={acaoPerda.erro} className="mb-3" />
-            <div className="flex gap-2">
-              <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60">
-                Confirmar perda
-              </button>
-              <button onClick={fecharPerda} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
-                Cancelar
-              </button>
-            </div>
+        <Modal titulo={<>Marcar perdido — {perda.nome}</>} aoFechar={fecharPerda} bloquearFechamento={acaoPerda.ocupado}>
+          <select
+            aria-label="Motivo da perda"
+            className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value as MotivoPerda)}
+          >
+            {Object.values(MotivoPerda).map((m) => (
+              <option key={m} value={m}>{MOTIVO_PERDA_LABEL[m]}</option>
+            ))}
+          </select>
+          <input
+            className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            aria-label="Observação da perda"
+            placeholder="Observação (obrigatória se 'Outro')"
+            value={obs}
+            onChange={(e) => setObs(e.target.value)}
+          />
+          <FeedbackAcao erro={acaoPerda.erro} className="mb-3" />
+          <div className="flex gap-2">
+            <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60">
+              Confirmar perda
+            </button>
+            <button type="button" onClick={fecharPerda} disabled={acaoPerda.ocupado} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60">
+              Cancelar
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
