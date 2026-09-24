@@ -1,6 +1,6 @@
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
-import { SubTabs } from "./_componentes/SubTabs";
+import { SubTabs } from "@/components/SubTabs";
 import { tabsParaPapeis } from "./_componentes/tabs";
 
 export default async function ConfiguracaoLayout({

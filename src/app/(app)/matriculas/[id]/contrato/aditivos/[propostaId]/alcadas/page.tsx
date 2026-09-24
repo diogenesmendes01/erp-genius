@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAlcadasAditivo } from "@/server/contratos/aditivo-alcadas";
@@ -16,7 +17,8 @@ export default async function AlcadasAditivoPage({ params }: { params: Promise<{
   const dado = resultado.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const vigencia = formatarInstanteExibicao(dado.vigenciaInicio, fusoExibicao, "UTC");
-  return <div className="space-y-5"><h1 className="text-2xl">Alçadas da proposta de aditivo</h1>
+  // O cabeçalho da matrícula (código · aluno · estado) vem do layout de /matriculas/[id]; aqui, o caminho de volta ao aditivo.
+  return <div className="space-y-5"><Link href={`/matriculas/${matriculaId}/contrato/aditivos/${propostaId}`} className="text-sm text-brand-700 hover:underline">← Voltar ao aditivo</Link><h1 className="text-2xl">Alçadas da proposta de aditivo</h1>
     <p>As decisões abaixo tratam os impactos desta proposta. Elas não aplicam condições novas, não alteram horários e não formalizam o aditivo.</p>
     <p>Vigência proposta: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada).</p>
     {dado.superada && <p role="status">Existe uma proposta mais recente; esta versão permanece somente para consulta.</p>}
