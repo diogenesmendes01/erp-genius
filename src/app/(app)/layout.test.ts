@@ -7,6 +7,7 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/whatsapp/consultas", () => ({ contarNaoLidas: mocks.naoLidas }));
 vi.mock("@/components/Sidebar", () => ({ Sidebar: () => createElement("aside", null, "Sidebar") }));
 vi.mock("@/components/BarraMobile", () => ({ BarraMobile: () => createElement("header", null, "BarraMobile") }));
+vi.mock("@/components/Trilha", () => ({ Trilha: () => createElement("nav", null, "Trilha") }));
 
 import AppLayout from "./layout";
 
@@ -28,5 +29,13 @@ describe("AppLayout", () => {
     expect(html).toContain("<header>BarraMobile</header>");
     expect(html).toContain("<aside>Sidebar</aside>");
     expect(html).toMatch(/^<div class="[^"]*flex-col[^"]*md:flex-row/);
+  });
+
+  it("a trilha de navegação fica no topo do conteúdo (antes da página), uma vez só no shell", async () => {
+    mocks.sessao.mockResolvedValue({ papeis: ["ADMINISTRADOR"], nome: "Ana" });
+    mocks.naoLidas.mockResolvedValue(0);
+    const html = renderToStaticMarkup(await AppLayout({ children: createElement("p", null, "conteúdo") }));
+    expect(html).toContain("><nav>Trilha</nav><p>conteúdo</p></main>");
+    expect(html.match(/<nav>Trilha<\/nav>/g)).toHaveLength(1);
   });
 });
