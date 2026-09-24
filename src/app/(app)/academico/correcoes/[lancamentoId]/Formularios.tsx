@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporCorrecaoNota, decidirCorrecaoNota } from "@/server/avaliacoes/correcao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; nota: string | null; comentarioAluno: string };
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -24,7 +25,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
     <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi os valores vigentes e as alterações propostas.</label>
     <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+  </fieldset><MensagemStatus texto={mensagem} /></form>;
 }
 
 export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAprovar }: { propostaId: string; propostaHash: string; impactosHash: string; podeAprovar: boolean }) {
@@ -41,5 +42,5 @@ export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAp
     <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi notas, comentários e impactos apresentados.</label>
     <button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+  </fieldset><MensagemStatus texto={mensagem} /></form>;
 }

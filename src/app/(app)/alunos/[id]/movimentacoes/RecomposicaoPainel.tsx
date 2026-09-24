@@ -9,6 +9,7 @@ import { decidirRecomposicaoCobertura } from "@/server/matricula/recomposicao-de
 import { aplicarRecomposicaoCobertura } from "@/server/matricula/recomposicao-aplicar";
 import type { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { useOperacao } from "./useOperacao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoRecomposicao>>, { ok: true }>["dado"]>;
@@ -41,7 +42,7 @@ export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizar
     <h3 className="font-medium">Recomposição de cobertura</h3>
     <p>Revise a cobertura de todas as mensalidades. A proposta preserva valores e vencimentos; aprovação e aplicação permanecem identificadas separadamente.</p>
     <button type="button" className={estilo} disabled={ocupado} onClick={() => executar(carregar)}>Consultar rascunho de recomposição</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     {rascunho && <div className="space-y-2 rounded border p-3"><p>Versão {rascunho.versao} · preparada por {rascunho.preparador.nome}</p><Resumo dados={rascunho.snapshot} />
       <button type="button" className={estilo} disabled={ocupado} onClick={() => executar(async () => { const r = await conferirValidadeRascunhoRecomposicao({ ...base, rascunhoId: rascunho.id }); if (!r.ok) throw new Error(r.erro); setMensagem(r.dado?.atual ? "Origens atuais conferidas. Isso não aprova a proposta." : r.dado?.motivos.join(" ") ?? "Conferência indisponível."); })}>Conferir atualidade</button>
       {rascunho.decisao ? <div><p>{rascunho.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {rascunho.decisao.decisor.nome}: {rascunho.decisao.motivo}</p>{rascunho.decisao.aplicacao && <p>Programação aplicada. O cumprimento dos dias é acompanhado separadamente.</p>}{rascunho.decisao.aprovada && !rascunho.decisao.aplicacao && <button className={estilo} type="button" disabled={ocupado} onClick={() => executar(async () => { const r = await aplicarRecomposicaoCobertura({ ...base, decisaoId: rascunho.decisao!.id }); if (!r.ok) throw new Error(r.erro); setEntrada(null); setPrevia(null); await carregar(); await atualizarContexto(); setMensagem("Programação aplicada. Atualize as compensações para ver as datas. Cumprimento ainda não confirmado."); })}>Aplicar programação aprovada</button>}</div> : rascunho.preparador.id === usuarioId ? <p>Outra pessoa precisa decidir esta versão.</p> : podeAprovar && <form onSubmit={(e) => {

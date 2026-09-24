@@ -35,7 +35,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Níveis (CEFR)</h2>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="flex flex-col gap-4">
         {idiomas.map((i) => (

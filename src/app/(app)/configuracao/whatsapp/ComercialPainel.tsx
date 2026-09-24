@@ -6,6 +6,7 @@ import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/c
 import type { MetricaCopilotoTipo } from "@/server/ia/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -83,8 +84,8 @@ export function ComercialPainel({
         </p>
       </div>
 
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{nota}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4">
         <label className="flex items-start gap-3">

@@ -47,7 +47,7 @@ export function ProdutosPainel({
     <section>
       <h2 className="mb-3 text-lg font-medium">Produtos</h2>
       <p className="mb-3 text-sm text-gray-500">Unidade vendável = idioma × modalidade.</p>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">

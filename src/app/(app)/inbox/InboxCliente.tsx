@@ -34,6 +34,7 @@ import { definirTemperatura, moverEtapa, registrarNotaInterna } from "@/server/c
 import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -118,8 +119,8 @@ export function InboxCliente({
 
   return (
     <div>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       <div className="flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
         {/* Lista de conversas, por recência (ver listarConversas) — não reordena por não lidas */}

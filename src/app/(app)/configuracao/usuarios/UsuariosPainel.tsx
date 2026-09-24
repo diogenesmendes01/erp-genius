@@ -55,7 +55,7 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
         )}
       </div>
 
-      {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {form !== "none" && (
         <div className="mb-6">

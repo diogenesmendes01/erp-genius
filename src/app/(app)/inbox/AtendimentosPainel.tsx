@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, revisarFalhaEnvio, type RevisaoEnvio, type ItemTriagem, type OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoExibicao }: { opcoes: OpcoesAtendimento; triagem: ItemTriagem[] | null; revisoes: RevisaoEnvio[] | null; preferenciaFusoExibicao: string | null }) {
   const router = useRouter();
@@ -106,6 +107,6 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
       <input required minLength={12} maxLength={1000} value={evidencia} onChange={(e) => setEvidencia(e.target.value)} className="rounded border p-1.5" />
     </label>
     <button disabled={ocupado} className="rounded border px-3 py-1.5 disabled:opacity-50">Registrar revisão</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

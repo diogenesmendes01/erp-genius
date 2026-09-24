@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirExcecaoAgendaReposicaoIndividual, proporExcecaoAgendaReposicaoIndividual } from "@/server/diario/reposicao-agenda";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { montarPropostaExcecaoAgenda, type HorarioExcecaoConferido } from "./ExcecaoAgendaControle";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export type ExcecaoAgenda = {
   id: string; professor: string; inicio: string; fim: string; fuso: string; motivo: string; evidencia: string;
@@ -69,6 +70,6 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, prefer
       <p>Proposta por {excecao.solicitante} em {criadaEm.texto} (horário exibido em {criadaEm.fuso}): {excecao.motivo}</p><p className="whitespace-pre-wrap">Evidência: {excecao.evidencia}</p>
       {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {decididaEm!.texto} (horário exibido em {decididaEm!.fuso}): {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className="rounded border px-3 py-2">Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
     </article>})}</div>}
-    {erro && <p role="alert">{erro}</p>}{sucesso && <p role="status">{sucesso}</p>}
+    {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={sucesso} />
   </section>;
 }

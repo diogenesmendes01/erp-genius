@@ -50,7 +50,7 @@ export function EmpresasCliente({
         <button className={btnPri} onClick={() => setCriando((v) => !v)}>Nova empresa</button>
       </div>
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {criando && (
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4">

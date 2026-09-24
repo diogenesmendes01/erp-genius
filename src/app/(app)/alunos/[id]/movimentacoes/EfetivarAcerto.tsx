@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { efetivarAcertoEncerramento } from "@/server/matricula/encerramento-efetivar";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: string; decisaoId: string; atualizar: () => void }) {
   const [ocupado, setOcupado] = useState(false), [mensagem, setMensagem] = useState("");
@@ -17,6 +18,6 @@ export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: str
       } catch { setMensagem("Não foi possível confirmar o resultado. Atualize a conferência antes de repetir."); }
       finally { setOcupado(false); }
     }}>{ocupado ? "Efetivando…" : "Efetivar encerramento aprovado"}</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </div>;
 }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-decisao";
 import { executarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-execucao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function AcoesEquivalencia({
   propostaId,
@@ -99,6 +100,6 @@ export function AcoesEquivalencia({
       <label className="block"><input type="checkbox" required disabled={pendente} /> Confirmei a compatibilidade de horário com o aluno.</label>
       <button disabled={pendente} className="rounded bg-brand-solid px-4 py-2 text-white">{pendente ? "Efetivando…" : "Efetivar transferência"}</button>
     </form>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </section>;
 }

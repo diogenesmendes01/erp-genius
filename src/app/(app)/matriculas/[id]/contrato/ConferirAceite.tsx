@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { confirmarAceiteOriginal } from "@/server/contratos/aceite";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matriculaId: string; conclusaoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -18,7 +19,7 @@ export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matr
   }}>
     <label className="block"><input type="checkbox" name="conferido" required disabled={pendente} /> Conferi o original, o PDF assinado, a auditoria, todas as assinaturas exigidas e as condições desta matrícula.</label>
     <label className="block">Registro da conferência<textarea name="motivo" className="block w-full rounded border p-2" required minLength={5} maxLength={2000} disabled={pendente} /></label>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Confirmar aceite do original assinado"}</button>
   </form>;
 }

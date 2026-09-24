@@ -6,6 +6,7 @@ import { preverRetomadaMatriculas } from "@/server/matricula/retomada-previa";
 import { solicitarRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
 import type { PreviaRetomadaMatriculasInput } from "@/server/matricula/retomada-schema";
 import { identificacaoContrato } from "./identificacaoContrato";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -70,7 +71,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
       </fieldset>)}
       {base && <button type="button" className={campo} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}
     </fieldset>}
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status" className="text-green-700">{aviso}</p>}{ocupado && <p role="status">Processando…</p>}
+    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Processando…" : null} />
     {previa && <div className="space-y-3 border-t pt-3"><p>Fuso: {previa.fusoInstitucional ?? "A conferir"}. Cobertura e vencimentos serão aprovados juntos.</p>
       {previa.matriculas.map((m) => <div key={m.matriculaId}><h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
         <Pendencias itens={m.pendencias} />

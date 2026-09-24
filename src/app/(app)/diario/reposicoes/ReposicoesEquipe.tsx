@@ -10,6 +10,7 @@ import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeRep
 import { criarControleAgendaParticular } from "./AgendaParticularControle";
 import { ExcecaoAgendaReposicao, type HorarioExcecaoProposto } from "./ExcecaoAgendaReposicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export type OrigemReposicao = {
   aulaOriginalId: string;
@@ -150,7 +151,7 @@ function AgendarParticular({ reposicaoId, opcoes, excecoes, preferenciaFusoExibi
     {previa && <div role="status" className="rounded bg-gray-50 p-3"><p>{previa.quantidadePorPeriodo === null ? "Sem benefício normal vigente." : `Cota: ${previa.saldo} de ${previa.quantidadePorPeriodo} disponível no período de ${previa.periodo?.inicio} até ${previa.periodo?.fimExclusivo} (fim exclusivo).`}</p><p>Conflitos: {previa.conflitos.encontros} encontro(s), {previa.conflitos.indisponibilidades ? "indisponibilidade docente" : "sem indisponibilidade docente"}, {previa.conflitos.reservas ? "reserva contratada" : "sem reserva contratada"}.</p>{previa.exigeAutorizacaoExcecao && <p>Sem benefício normal, selecione uma autorização excepcional aprovada para esta reposição.</p>}{previa.diasNaoLetivos.length > 0 && <p>{previa.excecaoAgendaAprovada ? "A exceção de agenda deste docente e horário já está aprovada." : "O horário atinge dia não letivo e requer exceção de agenda aprovada para este mesmo docente e intervalo."}</p>}{previa.podeAgendar ? <button className="mt-2 rounded border px-4 py-2">Confirmar agendamento</button> : <p className="mt-2">A prévia não permite confirmar este horário.</p>}</div>}
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
-    {sucesso && <p role="status">{sucesso}</p>}
+    <MensagemStatus texto={sucesso} />
   </form><ExcecaoAgendaReposicao reposicaoId={reposicaoId} proposta={previa?.diasNaoLetivos.length && !previa.excecaoAgendaAprovada ? horarioConferido : null} excecoes={excecoes} preferenciaFusoExibicao={preferenciaFusoExibicao} /></>;
 }
 

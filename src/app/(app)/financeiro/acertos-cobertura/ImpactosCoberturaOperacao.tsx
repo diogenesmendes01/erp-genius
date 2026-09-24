@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { aplicarImpactosCoberturaAditivo, decidirImpactosCoberturaAditivo, obsoletarImpactosCoberturaAditivo } from "@/server/contratos/aditivo-cobertura";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Politica = { escolha: "PRESERVAR_REFERENCIA" } | { escolha: "MUDAR_REFERENCIA"; referencia: "MES_CIVIL" | "CICLO_MATRICULA"; dataReferencia: string };
 type Conjunto = { id: string; status: string; politica: Politica; motivo: string; evidencia: string; decisao: { aprovada: boolean; motivo: string } | null; podeDecidir: boolean; podeAplicar: boolean; podeObsoletar: boolean; pendencias: { afetadasSemAplicacao: number }; impactos: { cobrancaId: string; classificacao: string; justificativa: string; aplicado: boolean; coberturaInicioAnterior: string | null; coberturaFimAnterior: string | null; coberturaInicioNova: string | null; coberturaFimNova: string | null; cobranca: { codigo: string | null; moeda: string; coberturaInicio: string | null; coberturaFim: string | null; vencimento: string; status: string } }[] };
@@ -29,6 +30,6 @@ export function ImpactosCoberturaOperacao({ conjunto, reprepararHref }: { conjun
     {conjunto.podeDecidir && <><button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("aprovar")}>Aprovar conjunto</button>{" "}<button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("rejeitar")}>Rejeitar conjunto</button></>}
     {conjunto.podeAplicar && <button type="button" disabled={ocupado} onClick={() => executar("aplicar")}>Aplicar coberturas aprovadas</button>}
     {conjunto.podeObsoletar && <button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("obsoletar")}>{conjunto.status === "APROVADO" ? "Confirmar divergência material" : "Descartar conjunto pendente"}</button>}
-    {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <a className="underline" href={reprepararHref}>Reconferir mensalidades e preparar novo conjunto</a>}{mensagem && <p role="status">{mensagem}</p>}
+    {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <a className="underline" href={reprepararHref}>Reconferir mensalidades e preparar novo conjunto</a>}<MensagemStatus texto={mensagem} />
   </section>;
 }

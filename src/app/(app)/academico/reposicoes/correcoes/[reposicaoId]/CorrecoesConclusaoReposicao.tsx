@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Fonte = {
   concluida: boolean;
@@ -156,7 +157,7 @@ function DecidirCorrecao({ correcao }: { correcao: Dados["correcoes"][number] })
     });
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend><p className="text-sm">Rejeitar não atesta que a fonte atual esteja correta. Aprovar exige que esta seja a proposta mais recente e que a fonte ainda seja válida.</p>
     <div className="space-y-2 rounded bg-gray-50 p-3"><p className="font-medium">Dependências acadêmicas</p><p>A correção não desfaz movimentações acadêmicas. {correcao.impactos.length ? "As mudanças abaixo exigem conferência pedagógica após a aprovação." : "Não há mudança acadêmica vinculada para revisar."}</p>{!!correcao.impactos.length && <ul className="list-disc pl-5">{correcao.impactos.map((impacto) => <li key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}.</li>)}</ul>}</div>
-    {correcao.impedimentoAprovacao && <p role="status">{correcao.impedimentoAprovacao}</p>}
+    <MensagemStatus texto={correcao.impedimentoAprovacao} />
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{correcao.podeAprovar && correcao.impactosHash && <option value="aprovar">Aprovar correção</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>
     {(!correcao.podeAprovar || !correcao.impactosHash) && <p role="status">Esta proposta não pode ser aprovada no estado atual, mas ainda pode ser rejeitada.</p>}
     <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>

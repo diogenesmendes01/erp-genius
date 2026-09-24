@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirCompensacaoCobertura, prepararCompensacaoCobertura } from "@/server/matricula/compensacao-cobertura";
 import { consultarCompensacoesCobertura } from "@/server/matricula/compensacao-cobertura-consulta";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCompensacoesCobertura>>, { ok: true }>["dado"]>;
 
@@ -83,7 +84,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
       </fieldset>
     </form>}
 
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     {erro && <p role="alert">{erro}</p>}
     <section className="space-y-3">
       <h2 className="text-lg">Últimas propostas</h2>

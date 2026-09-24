@@ -158,7 +158,7 @@ export function PaisFormulario({
         </div>
       </div>
 
-      {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
 
       <div className="mt-5 flex gap-2">
         <button

@@ -323,7 +323,7 @@ export function MatriculaFormulario({
 
       <Stepper passo={passo} onIr={irParaPasso} />
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {/* Passo 1 — Informações do aluno */}
       {passo === 1 && (

@@ -6,6 +6,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -15,8 +16,8 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
   const vigencia = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, d.fuso ?? "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; referência contratual preservada)`; };
   return <div className="space-y-4">
     <p>Matrícula {d.codigo ?? d.matriculaId} · {d.moeda}</p>
-    {d.impedimento && <p role="status">{d.impedimento}</p>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={d.impedimento} />
+    <MensagemStatus texto={mensagem} />
     {d.podePreparar && d.documentoId && d.fuso && <form className="space-y-3 rounded border p-4" onSubmit={event => {
       event.preventDefault(); const f = new FormData(event.currentTarget);
       const valorHoraNumero = parseMoeda(valorHora);

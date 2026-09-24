@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { efetivarPedidoDesistenciaPreparacao } from "@/server/matricula/desistencia-efetivacao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId }: { pedidoId: string; estadoHash: string; decisaoFinanceiraId?: string }) {
   const router = useRouter();
@@ -29,6 +30,6 @@ export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId
       <label className="block"><input type="checkbox" name="conferencia" value="confirmada" required /> Confirmei que não há pagamento, comprovante ou assinatura pendente de registro para esta contratação.</label>
       <button type="submit" className="rounded border px-3 py-2">{ocupado ? "Efetivando…" : "Confirmar desistência e liberar reservas"}</button>
     </fieldset>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }
