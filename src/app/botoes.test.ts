@@ -31,7 +31,8 @@ export function botoesCrus(fonte: string): string[] {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
       const attr = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className");
       const texto = attr && ts.isJsxAttribute(attr) && attr.initializer ? attr.initializer.getText(sf) : "";
-      if (texto && !/botaoClasses|\bbtn[A-Z]\w*/.test(texto) && /\bpx-/.test(texto) && /\b(border|bg-)/.test(texto)) achados.push(`<button> à mão: ${texto.slice(0, 80)}`);
+      // Padding em qualquer forma (px-, py-, p-) com borda ou fundo: cara de botão.
+      if (texto && !/botaoClasses|\bbtn[A-Z]\w*/.test(texto) && /\bp[xy]?-\d/.test(texto) && /\b(border|bg-)/.test(texto)) achados.push(`<button> à mão: ${texto.slice(0, 80)}`);
     }
     ts.forEachChild(n, visitar);
   };
@@ -66,6 +67,7 @@ describe("botões nas áreas migradas", () => {
       "<button className={`rounded bg-brand-solid px-3 py-2 text-white ${a}`}>x</button>",
       '<button className="rounded bg-brand-600 px-3 py-2 text-white">x</button>',
       '<button className="rounded border px-3 py-2">x</button>',
+      '<button type="button" className="rounded border p-2">Adicionar</button>',
       '<button className={"rounded-md px-3 " + (a ? "bg-danger text-white" : "border")}>x</button>',
       'const c = "rounded bg-black px-4 py-2 text-white";',
     ];
