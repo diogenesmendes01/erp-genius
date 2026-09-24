@@ -180,7 +180,7 @@ export function TurmaFormulario({
     <div className="rounded-lg border border-gray-200 bg-surface p-5">
       <h3 className="mb-4 text-sm font-medium">{turma ? "Editar turma" : "Nova turma"}</h3>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
         <div className="md:col-span-3">
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nome">Nome da turma (opcional)</label>
           <input
@@ -261,7 +261,7 @@ export function TurmaFormulario({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-5">
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-inicio">Horário de início</label>
           <input id="turma-horario-inicio" type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />

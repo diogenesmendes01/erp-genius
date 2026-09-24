@@ -12,17 +12,26 @@ import { useDialogo } from "@/lib/dialogo";
  * abriu ao fechar (useDialogo). Segue o design system (flat, tokens, sentence case).
  */
 export function Drawer({
+  id,
   open,
   onClose,
   title,
   children,
   footer,
+  lado = "direita",
+  largura = "w-full max-w-2xl md:w-[45%]",
 }: {
+  /** id do painel (para aria-controls de quem o abre). */
+  id?: string;
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** De que lado o painel desliza. A gaveta de navegação mobile abre pela esquerda. */
+  lado?: "direita" | "esquerda";
+  /** Classes de largura do painel. */
+  largura?: string;
 }) {
   const raiz = useRef<HTMLDivElement>(null);
   const painel = useRef<HTMLElement>(null);
@@ -39,6 +48,7 @@ export function Drawer({
       />
       {/* painel */}
       <aside
+        id={id}
         ref={painel}
         // Só é diálogo enquanto aberto; fechado, além de inert, deixa de se anunciar como modal.
         role={open ? "dialog" : undefined}
@@ -46,14 +56,15 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         className={
-          "absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-gray-200 bg-surface transition-transform duration-200 md:w-[45%] " +
-          (open ? "translate-x-0" : "translate-x-full")
+          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface transition-transform duration-200 ${largura} ` +
+          (lado === "esquerda" ? "left-0 border-r " : "right-0 border-l ") +
+          (open ? "translate-x-0" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
         }
       >
         <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <h2 className="text-base font-medium">{title}</h2>
-          <button onClick={onClose} aria-label="Fechar" className="text-gray-500 hover:text-gray-700">
-            <IconX size={18} />
+          <button type="button" onClick={onClose} aria-label="Fechar" className="-m-2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+            <IconX size={20} />
           </button>
         </header>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>

@@ -10,6 +10,19 @@ vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 import { Sidebar } from "./Sidebar";
 
 describe("Sidebar", () => {
+  it("só aparece a partir de md (abaixo disso a navegação fica na barra mobile)", () => {
+    mocks.pathname.mockReturnValue("/home");
+    const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana" }));
+    expect(html).toMatch(/<aside[^>]*class="[^"]*\bhidden\b[^"]*\bmd:flex\b/);
+  });
+
+  it("\"Envios do portal\" usa o ícone de envelope, não o de Home (chave Mail)", () => {
+    mocks.pathname.mockReturnValue("/home");
+    const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana" }));
+    const link = html.match(/<a[^>]*href="\/secretaria\/envios-portal"[^>]*>([\s\S]*?)<\/a>/)?.[1] ?? "";
+    expect(link).toContain("tabler-icon-mail");
+  });
+
   it("destaca só o item de prefixo mais longo, não os dois, em /financeiro/permuta", () => {
     mocks.pathname.mockReturnValue("/financeiro/permuta");
     const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana" }));
