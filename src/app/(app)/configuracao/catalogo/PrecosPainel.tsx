@@ -111,7 +111,7 @@ export function PrecosPainel({
 
       {aberto && (
         <div className="mb-4 rounded-lg border border-gray-200 bg-surface p-5">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
             <div>
               <label htmlFor="precos-pais" className="mb-1 block text-xs text-gray-600">País</label>
               <select id="precos-pais" value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>

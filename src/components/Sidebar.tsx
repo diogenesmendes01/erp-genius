@@ -24,7 +24,9 @@ import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
 type Icone = React.ComponentType<IconProps>;
 
 const ICONS: Record<string, Icone> = {
-  Home: IconHome, IconMail,
+  Home: IconHome,
+  // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
+  Mail: IconMail,
   KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
@@ -34,7 +36,8 @@ const ICONS: Record<string, Icone> = {
   Building: IconBuilding,
 };
 
-function ThemeToggle() {
+/** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */
+export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700" }: { className?: string }) {
   const [dark, setDark] = useState(false);
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -50,7 +53,8 @@ function ThemeToggle() {
   return (
     <button
       onClick={alternar}
-      className="text-gray-400 hover:text-gray-700"
+      type="button"
+      className={className}
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-label="Alternar tema"
     >
@@ -59,28 +63,22 @@ function ThemeToggle() {
   );
 }
 
-export function Sidebar({
-  papeis,
-  nome,
-  naoLidasInbox = 0,
-}: {
+/**
+ * Links da navegação principal por papel, com o ativo pelo prefixo mais longo (aria-current) e a
+ * contagem de não lidas da inbox. Uma fonte só para a Sidebar (md+) e a gaveta da barra mobile —
+ * as duas não podem divergir. `aoNavegar` fecha a gaveta ao escolher um item.
+ */
+export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Navegação principal" }: {
   papeis: string[];
-  nome: string;
-  /** Notificação básica da inbox (doc 30 E3): soma de não-lidas no escopo do usuário. */
   naoLidasInbox?: number;
+  aoNavegar?: () => void;
+  rotulo?: string;
 }) {
   const pathname = usePathname();
   const itens = navParaPapeis(papeis);
   const hrefAtivo = hrefAtivoMaisLongo(pathname, itens.map((item) => item.href));
-
   return (
-    <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3">
-      <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
-        <IconSchool className="h-5 w-5 text-brand-600" />
-        Genius
-      </div>
-
-      <nav className="flex flex-col gap-1" aria-label="Navegação principal">
+      <nav className="flex flex-col gap-1" aria-label={rotulo}>
         {itens.map((item) => {
           const Icon = ICONS[item.icon] ?? IconHome;
           const ativo = item.href === hrefAtivo;
@@ -88,6 +86,7 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              onClick={aoNavegar}
               aria-current={ativo ? "page" : undefined}
               className={
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors " +
@@ -108,6 +107,29 @@ export function Sidebar({
           );
         })}
       </nav>
+  );
+}
+
+export function Sidebar({
+  papeis,
+  nome,
+  naoLidasInbox = 0,
+}: {
+  papeis: string[];
+  nome: string;
+  /** Notificação básica da inbox (doc 30 E3): soma de não-lidas no escopo do usuário. */
+  naoLidasInbox?: number;
+}) {
+  // Só a partir de md; abaixo disso a navegação fica na barra mobile (BarraMobile), que abre a
+  // mesma lista numa gaveta — antes a Sidebar de 224px fixos deixava ~87px de conteúdo em 375px.
+  return (
+    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3 md:flex">
+      <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
+        <IconSchool className="h-5 w-5 text-brand-600" />
+        Genius
+      </div>
+
+      <NavLinks papeis={papeis} naoLidasInbox={naoLidasInbox} />
 
       <div className="mt-auto flex items-center gap-2 border-t border-gray-100 pt-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-xs font-medium text-brand-700">

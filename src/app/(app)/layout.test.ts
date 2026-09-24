@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({ sessao: vi.fn(), naoLidas: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/whatsapp/consultas", () => ({ contarNaoLidas: mocks.naoLidas }));
 vi.mock("@/components/Sidebar", () => ({ Sidebar: () => createElement("aside", null, "Sidebar") }));
+vi.mock("@/components/BarraMobile", () => ({ BarraMobile: () => createElement("header", null, "BarraMobile") }));
 
 import AppLayout from "./layout";
 

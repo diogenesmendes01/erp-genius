@@ -83,7 +83,7 @@ export function LeadFormulario({
     <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border border-gray-200 bg-surface p-5">
       <h2 className="mb-4 text-sm font-medium">{lead ? "Editar lead" : "Novo lead"}</h2>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
         <div className="col-span-2 md:col-span-1">
           <label htmlFor="lead-nome" className="mb-1 block text-xs text-gray-600">Nome</label>
           <input
