@@ -1,6 +1,6 @@
 import { StatusAluno } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { filtrosParaQuery, lerFiltrosAlunos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
+import { destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, sanearFiltrosAlunos, sincronizarCampos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
 
 describe("lerFiltrosAlunos", () => {
   it("lê, apara e valida os filtros da URL", () => {
@@ -66,5 +66,38 @@ describe("whereFiltrosAlunos", () => {
     const w = whereFiltrosAlunos(lerFiltrosAlunos({ turma: "t1" }), escopo as never);
     expect(w).toEqual({ AND: [{ alocacoes: { some: { ativa: true, turmaId: "t1", turma: escopo } } }] });
     expect(whereFiltrosAlunos(lerFiltrosAlunos({ turma: "t1" }))).toEqual({ AND: [{ alocacoes: { some: { ativa: true, turmaId: "t1" } } }] });
+  });
+});
+
+describe("lógica da página e do formulário (funções puras)", () => {
+  const opcoes = { paises: [{ id: "p1" }], turmas: [{ id: "t1" }] };
+
+  it("sanearFiltrosAlunos descarta país/turma fora das opções e mantém os válidos", () => {
+    expect(sanearFiltrosAlunos(lerFiltrosAlunos({ pais: "p9", turma: "t1", status: "ATIVO" }), opcoes))
+      .toMatchObject({ paisId: null, turmaId: "t1", status: "ATIVO" });
+  });
+
+  it("destinoPaginaAlunos: página além do fim vai para a última; página válida não redireciona", () => {
+    expect(destinoPaginaAlunos(lerFiltrosAlunos({ pagina: "9", status: "ATIVO" }), 120)).toBe("/alunos?status=ATIVO&pagina=3");
+    expect(destinoPaginaAlunos(lerFiltrosAlunos({ pagina: "9" }), 0)).toBe("/alunos");
+    expect(destinoPaginaAlunos(lerFiltrosAlunos({ pagina: "3" }), 120)).toBeNull();
+  });
+
+  it("sincronizarCampos: só o campo cujo filtro mudou é atualizado — a busca em edição sobrevive ao select", () => {
+    const antes = lerFiltrosAlunos({ status: "ATIVO" });
+    const depois = lerFiltrosAlunos({ status: "PAUSADO" });
+    const digitando = { busca: "mar", status: "PAUSADO", pais: "", turma: "" };
+    expect(sincronizarCampos(digitando, antes, depois)).toEqual({ busca: "mar", status: "PAUSADO", pais: "", turma: "" });
+  });
+
+  it("sincronizarCampos: Limpar/voltar do navegador atualiza todos os campos que mudaram", () => {
+    const antes = lerFiltrosAlunos({ busca: "ana", status: "ATIVO" });
+    expect(sincronizarCampos({ busca: "ana", status: "ATIVO", pais: "", turma: "" }, antes, lerFiltrosAlunos({})))
+      .toEqual({ busca: "", status: "", pais: "", turma: "" });
+  });
+
+  it("hrefDosCampos valida e volta à página 1", () => {
+    expect(hrefDosCampos({ busca: " mar ", status: "X", pais: "p1", turma: "" })).toBe("/alunos?busca=mar&pais=p1");
+    expect(hrefAlunos(lerFiltrosAlunos({}))).toBe("/alunos");
   });
 });

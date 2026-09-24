@@ -74,3 +74,17 @@ describe("lista de alunos: escopo sempre junto dos filtros", () => {
     expect((mocks.paises.mock.calls[0] as unknown[])[0]).toMatchObject({ where: { alunos: { some: escopoAlunos(professor) } } });
   });
 });
+
+describe("opções de turma distinguíveis", () => {
+  it("rótulo com código e nome da turma — duas \"Inglês B1\" não saem iguais", async () => {
+    mocks.turmas.mockResolvedValueOnce([
+      { id: "t1", codigo: "T-01", nome: "Manhã", modalidade: { nome: "Regular" }, nivel: { codigo: "B1", idioma: { nome: "Inglês" } } },
+      { id: "t2", codigo: "T-02", nome: "Noite", modalidade: { nome: "Regular" }, nivel: { codigo: "B1", idioma: { nome: "Inglês" } } },
+    ]);
+    const { turmas } = await opcoesFiltroAlunos({ id: "sec", nome: "Se", papeis: [Papel.SECRETARIA_ACADEMICA] });
+    expect(turmas).toEqual([
+      { id: "t1", label: "T-01 · Manhã · Regular · Inglês B1" },
+      { id: "t2", label: "T-02 · Noite · Regular · Inglês B1" },
+    ]);
+  });
+});
