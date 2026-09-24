@@ -56,24 +56,29 @@ export function EsqueletoAbas({ rotulo }: { rotulo: string }) {
   );
 }
 
-/** Lista de conversas à esquerda + conversa aberta (inbox). */
+/** Título + painel de atendimentos + lista de conversas à esquerda e conversa aberta (inbox). */
 export function EsqueletoConversas({ rotulo }: { rotulo: string }) {
   return (
-    <Carregando rotulo={rotulo} className="flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
-      <div className="w-80 shrink-0 space-y-3 border-r border-gray-200 p-3">
-        <div className={`${bloco} h-8`} />
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="space-y-2">
-            <div className={`${bloco} h-4 w-2/3`} />
-            <div className={`${bloco} h-3 w-full`} />
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className={`${bloco} h-6 w-48`} />
-        <div className={`${bloco} h-10 w-2/3`} />
-        <div className={`${bloco} ml-auto h-10 w-1/2`} />
-        <div className={`${bloco} mt-auto h-10`} />
+    <Carregando rotulo={rotulo}>
+      <div className={`${bloco} h-7 w-24`} />
+      <div className={`${bloco} mt-1 h-4 w-2/3`} />
+      <div className={`${bloco} mt-6 h-24`} />
+      <div className="mt-4 flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
+        <div className="w-80 shrink-0 space-y-3 border-r border-gray-200 p-3">
+          <div className={`${bloco} h-8`} />
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="space-y-2">
+              <div className={`${bloco} h-4 w-2/3`} />
+              <div className={`${bloco} h-3 w-full`} />
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className={`${bloco} h-6 w-48`} />
+          <div className={`${bloco} h-10 w-2/3`} />
+          <div className={`${bloco} ml-auto h-10 w-1/2`} />
+          <div className={`${bloco} mt-auto h-10`} />
+        </div>
       </div>
     </Carregando>
   );
