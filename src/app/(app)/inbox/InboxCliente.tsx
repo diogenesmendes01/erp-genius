@@ -474,11 +474,15 @@ function Thread({
           onClose={() => setPagar(false)}
           onDone={async () => {
             setPagar(false);
-            await marcarConversaTratada({ conversaId: thread.conversaId, motivo: "pagamento" });
-            onNota("Pagamento registrado.");
+            // O pagamento já entrou; só a marcação da conversa pode ter ficado incerta.
+            try {
+              await marcarConversaTratada({ conversaId: thread.conversaId, motivo: "pagamento" });
+              onNota("Pagamento registrado.");
+            } catch {
+              onErro("Pagamento registrado. Confira se a conversa ficou marcada como tratada.");
+            }
             router.refresh();
           }}
-          onErro={onErro}
         />
       )}
     </div>

@@ -407,7 +407,6 @@ export function FilaCobranca({
           saldoRestante={pagar.saldo}
           onClose={() => setPagar(null)}
           onDone={() => { setPagar(null); router.refresh(); }}
-          onErro={setErro}
         />
       )}
     </div>

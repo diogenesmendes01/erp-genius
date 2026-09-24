@@ -9,7 +9,9 @@ import {
   pagarFaturaB2B,
   salvarEmpresa,
 } from "@/server/empresas/acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -53,20 +55,20 @@ export function FichaEmpresa({
   podePagar: boolean;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  // Antes, uma falha de rede deixava `ocupado` preso em true e travava a ficha inteira. Nenhuma das
+  // três ações tem chave de idempotência: resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O resultado aparece na seção do botão que o disparou (faturas ou contrato), não no topo.
+  const [origem, setOrigem] = useState<"faturas" | "contrato" | null>(null);
+  const ocupado = acao.ocupado;
 
-  async function run<T>(p: Promise<{ ok: boolean; erro?: string; dado?: T }>, sucesso?: string) {
-    setOcupado(true);
-    setErro(null);
-    setNota(null);
-    const r = await p;
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro.");
-    if (sucesso) setNota(sucesso);
-    router.refresh();
+  async function run<T>(secao: "faturas" | "contrato", disparar: () => Promise<Resultado<T>>, sucesso: string) {
+    setOrigem(secao);
+    if ((await acao.executar(disparar, sucesso))?.tipo === "ok") router.refresh();
   }
+  const feedback = (secao: "faturas" | "contrato") => (
+    <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,9 +84,6 @@ export function FichaEmpresa({
           {empresa.contatoEmail ? ` (${empresa.contatoEmail})` : ""}
         </p>
       </header>
-
-      {erro && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       {/* Histórico de contratos individuais vinculados ao responsável financeiro. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -176,7 +175,7 @@ export function FichaEmpresa({
                             <button
                               className={btnSec + " border-green-200 text-green-700"}
                               disabled={ocupado}
-                              onClick={() => run(pagarFaturaB2B(f.id), "Fatura paga — cobranças baixadas em lote.")}
+                              onClick={() => run("faturas", () => pagarFaturaB2B(f.id), "Fatura paga — cobranças baixadas em lote.")}
                             >
                               Registrar pagamento
                             </button>
@@ -184,7 +183,7 @@ export function FichaEmpresa({
                           <button
                             className={btnSec + " border-red-200 text-red-600"}
                             disabled={ocupado}
-                            onClick={() => run(cancelarFaturaB2B(f.id), "Fatura cancelada.")}
+                            onClick={() => run("faturas", () => cancelarFaturaB2B(f.id), "Fatura cancelada.")}
                           >
                             Cancelar
                           </button>
@@ -197,6 +196,7 @@ export function FichaEmpresa({
             </table>
           </div>
         )}
+        {feedback("faturas")}
       </section>
 
       {/* Dados do contrato */}
@@ -211,7 +211,7 @@ export function FichaEmpresa({
           className={btnSec + " mt-3"}
           disabled={ocupado}
           onClick={() =>
-            run(
+            run("contrato", () =>
               salvarEmpresa({
                 id: empresa.id,
                 nome: empresa.nome,
@@ -230,6 +230,7 @@ export function FichaEmpresa({
         >
           {empresa.ativo ? "Inativar empresa" : "Reativar empresa"}
         </button>
+        {feedback("contrato")}
       </section>
     </div>
   );
