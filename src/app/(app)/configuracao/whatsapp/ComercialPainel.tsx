@@ -6,7 +6,8 @@ import type { ConfigComercialView, SaudacaoSimulada } from "@/server/comercial/c
 import type { MetricaCopilotoTipo } from "@/server/ia/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -48,15 +49,11 @@ export function ComercialPainel({
   const [gestaoNumeroId, setGestaoNumero] = useState(config.gestaoNumeroId ?? "");
   const [gestaoSlaMinutos, setGestaoSla] = useState(config.gestaoSlaMinutos);
   const [gestaoRelatorioHora, setGestaoHora] = useState(config.gestaoRelatorioHora);
-  const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
+  // salvarConfigComercial não recebe chave de idempotência: resultado incerto manda conferir.
+  const acao = useAcaoCliente({ idempotente: false });
 
   async function salvar() {
-    setOcupado(true);
-    setErro(null);
-    setNota(null);
-    const r = await salvarConfigComercial({
+    const d = await acao.executar(() => salvarConfigComercial({
       autoLeadAtivo,
       saudacaoEstado,
       saudacaoTexto,
@@ -68,11 +65,8 @@ export function ComercialPainel({
       gestaoNumeroId,
       gestaoSlaMinutos,
       gestaoRelatorioHora,
-    });
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
-    setNota("Configuração comercial salva.");
-    router.refresh();
+    }), "Configuração comercial salva.");
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
@@ -83,9 +77,6 @@ export function ComercialPainel({
           Automação do 1º contato pelo número de vendas. Tudo começa desligado; ligue quando o piloto validar.
         </p>
       </div>
-
-      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      <MensagemStatus texto={nota} className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" />
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4">
         <label className="flex items-start gap-3">
@@ -253,9 +244,10 @@ export function ComercialPainel({
           </div>
         </div>
 
-        <button className={btnPri} disabled={ocupado} onClick={salvar}>
-          {ocupado ? "Salvando…" : "Salvar configuração comercial"}
+        <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+          {acao.ocupado ? "Salvando…" : "Salvar configuração comercial"}
         </button>
+        <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       </div>
 
       {/* Métrica-gate (doc 27): taxa de aceitação por tipo — autoriza (ou não) auto-aplicação futura. */}
