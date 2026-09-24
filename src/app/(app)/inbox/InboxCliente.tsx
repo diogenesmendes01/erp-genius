@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  IconArrowLeft,
   IconCheck,
   IconChecks,
   IconAlertTriangle,
@@ -122,9 +123,12 @@ export function InboxCliente({
       {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
-      <div className="flex h-[calc(100vh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
+      {/* Master-detail (E6): abaixo de md cabe um painel por vez — sem conversa aberta, a lista ocupa a
+          largura toda; com `?c=`, a thread ocupa a tela e "Conversas" volta à lista. A partir de md, as
+          duas colunas lado a lado. Altura em dvh: no celular, 100vh inclui a barra do navegador. */}
+      <div className="flex h-[calc(100dvh-13rem)] min-h-[420px] overflow-hidden rounded-lg border border-gray-200 bg-surface">
         {/* Lista de conversas, por recência (ver listarConversas) — não reordena por não lidas */}
-        <div className="flex w-80 shrink-0 flex-col border-r border-gray-200">
+        <div className={"w-full shrink-0 flex-col md:w-80 md:border-r md:border-gray-200 " + (thread ? "hidden md:flex" : "flex")}>
           <div className="border-b border-gray-100 p-2">
             <input
               value={busca}
@@ -145,6 +149,8 @@ export function InboxCliente({
               filtradas.map((c) => (
                 <button
                   key={c.id}
+                  type="button"
+                  aria-current={thread?.conversaId === c.id ? "true" : undefined}
                   onClick={() => router.push(`/inbox?c=${c.id}`)}
                   className={
                     "block w-full border-b border-gray-100 px-3 py-2.5 text-left hover:bg-gray-50 " +
@@ -186,16 +192,21 @@ export function InboxCliente({
 
         {/* Thread */}
         {thread ? (
-          <Thread
-            key={thread.conversaId}
-            thread={thread}
-            podeCobranca={podeCobranca}
-            preferenciaFusoExibicao={preferenciaFusoExibicao}
-            onErro={setErro}
-            onNota={setNota}
-          />
+          <section aria-label={`Conversa com ${thread.contato.nome}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <Link href="/inbox" className="flex items-center gap-1 border-b border-gray-200 px-3 py-2.5 text-sm text-brand-700 md:hidden">
+              <IconArrowLeft className="h-4 w-4" aria-hidden /> Conversas
+            </Link>
+            <Thread
+              key={thread.conversaId}
+              thread={thread}
+              podeCobranca={podeCobranca}
+              preferenciaFusoExibicao={preferenciaFusoExibicao}
+              onErro={setErro}
+              onNota={setNota}
+            />
+          </section>
         ) : (
-          <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+          <div className="hidden flex-1 items-center justify-center text-sm text-gray-400 md:flex">
             Escolha uma conversa ao lado.
           </div>
         )}
@@ -274,7 +285,7 @@ function Thread({
   ].filter(Boolean) as { label: string; href: string | null }[];
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Cabeçalho da conversa */}
       <div className="border-b border-gray-200 px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
