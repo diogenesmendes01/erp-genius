@@ -53,6 +53,6 @@ describe("Condições de encerramento", () => {
     ] });
 
     expect(html).toContain("Original enviado foi cancelado; a versão aprovada permanece como evidência do acerto.");
-    expect(html).toContain("Acerto Q165 antes da ativação: 80 fixo; cláusula 7.2; alcance cobranças: MEN-001 (MENSALIDADE).");
+    expect(html).toContain("Acerto Q165 antes da ativação: 80 fixo; cláusula 7.2; alcance cobranças: MEN-001 (Mensalidade).");
   });
 });

@@ -1,4 +1,5 @@
 import type { consultarPreviaContinuidadeMensal } from "@/server/matricula/continuidade-previa";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 type Resultado = Awaited<ReturnType<typeof consultarPreviaContinuidadeMensal>>;
 
@@ -44,10 +45,10 @@ export function PreviaContinuidadeMensal({ resultado }: { resultado: Resultado }
         <div><dt className="font-medium">Calendário financeiro</dt><dd>{resultado.dado.plano.memoriaVencimento.referenciaCalendarioAplicada ? `${resultado.dado.plano.memoriaVencimento.referenciaCalendarioAplicada.referencia} · versão ${resultado.dado.plano.memoriaVencimento.referenciaCalendarioAplicada.versao}` : "Não aplicado"}</dd></div>
         <div><dt className="font-medium">Marco calculado para emissão</dt><dd>{data(resultado.dado.plano.emissaoEm)}</dd></div>
         <div><dt className="font-medium">Situação do marco</dt><dd>{resultado.dado.plano.status === "PRONTA_PARA_EMISSAO" ? "Data alcançada; a emissão ainda depende do fluxo próprio" : "Aguardar a data calculada"}</dd></div>
-        <div><dt className="font-medium">Preço de referência da preparação</dt><dd>{resultado.dado.memoriaPreco.referencia.valorOriginalReferencia} {resultado.dado.plano.moeda}</dd></div>
-        <div><dt className="font-medium">Preço contratado na preparação</dt><dd>{resultado.dado.memoriaPreco.referencia.valorNegociadoPreparacao} {resultado.dado.plano.moeda}</dd></div>
-        <div><dt className="font-medium">Preço original aplicado</dt><dd>{resultado.dado.plano.valorOriginal} {resultado.dado.plano.moeda}</dd></div>
-        <div><dt className="font-medium">Preço negociado aplicado</dt><dd>{resultado.dado.plano.valorNegociado} {resultado.dado.plano.moeda}</dd></div>
+        <div><dt className="font-medium">Preço de referência da preparação</dt><dd>{formatarMoeda(resultado.dado.memoriaPreco.referencia.valorOriginalReferencia, resultado.dado.plano.moeda)}</dd></div>
+        <div><dt className="font-medium">Preço contratado na preparação</dt><dd>{formatarMoeda(resultado.dado.memoriaPreco.referencia.valorNegociadoPreparacao, resultado.dado.plano.moeda)}</dd></div>
+        <div><dt className="font-medium">Preço original aplicado</dt><dd>{formatarMoeda(resultado.dado.plano.valorOriginal, resultado.dado.plano.moeda)}</dd></div>
+        <div><dt className="font-medium">Preço negociado aplicado</dt><dd>{formatarMoeda(resultado.dado.plano.valorNegociado, resultado.dado.plano.moeda)}</dd></div>
         <div><dt className="font-medium">Oferta para a cobertura</dt><dd>{situacaoOferta(resultado.dado.oferta.estado)}</dd></div>
       </dl>
       <p>Comprovação de oferta: {resultado.dado.comprovacaoOferta.estado === "COMPROVADA_POR_AGENDA" ? "agenda e vínculo conferidos para o período" : resultado.dado.comprovacaoOferta.estado === "CONFIRMADA_PELA_GESTAO" ? "confirmada pela Gestão Pedagógica para o período" : resultado.dado.comprovacaoOferta.estado === "BLOQUEADA_POR_INDISPONIBILIDADE" ? "há indisponibilidade confirmada ou aguardando conferência" : "necessária confirmação específica da Gestão Pedagógica"}.</p>

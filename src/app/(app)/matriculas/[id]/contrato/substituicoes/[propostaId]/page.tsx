@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaSubstituicao } from "@/server/contratos/substituicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarMoeda } from "@/lib/dinheiro";
 import { TextoPrevia } from "../../TextoPrevia";
 import { DecidirSubstituicao } from "../Formularios";
 import { AndamentoSubstituicao } from "../Andamento";
@@ -34,7 +35,7 @@ export default async function PropostaPage({ params, searchParams }: { params: P
       <TextoPrevia dados={doc.texto} />
       <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Pessoas identificadas para assinatura</h3>
         <ul>{doc.assinatura.participantes.map(p => <li key={`${p.papel}:${p.etapa}`}>{p.nome} · {p.email} · {p.papel.replaceAll("_", " ")} · {p.etapa === "CLIENTE" ? "cliente" : "escola"}</li>)}</ul>
-        <p>Taxa: {doc.assinatura.taxa.valor} {doc.assinatura.taxa.moeda}. {doc.assinatura.taxa.confirmada ? "Recebimento confirmado." : "Recebimento não confirmado."}</p>
+        <p>Taxa: {formatarMoeda(doc.assinatura.taxa.valor, doc.assinatura.taxa.moeda)}. {doc.assinatura.taxa.confirmada ? "Recebimento confirmado." : "Recebimento não confirmado."}</p>
         <p>{doc.assinatura.regraTaxa === "CONFIRMACAO_PREVIA_EXIGIDA" ? "Assinatura exige taxa confirmada previamente." : "Assinatura sem pagamento prévio da taxa."}</p>
         <p>Reserva na revisão: {doc.assinatura.reserva.status.replaceAll("_", " ")} · prazo {data(doc.assinatura.reserva.expiraEm)}.</p>
       </section>

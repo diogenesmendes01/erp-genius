@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { conferirParticipantesAditivo, consultarFormularioParticipantesAditivo } from "@/server/contratos/aditivo-participantes";
 import { EvidenciaSeletor, type EvidenciaDisponivel } from "./EvidenciaSeletor";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { rotular } from "@/lib/labels";
+import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
-const rotulos: Record<string, string> = { ALUNO: "Aluno", REPRESENTANTE_LEGAL: "Representante legal", RESPONSAVEL_FINANCEIRO: "Responsável financeiro", REPRESENTANTE_EMPRESA: "Representante da empresa", REPRESENTANTE_ESCOLA: "Representante da escola" };
 const campo = "mt-1 block w-full rounded border p-2";
 
 export function ParticipantesFormulario({ matriculaId, propostaId }: { matriculaId: string; propostaId: string }) {
@@ -77,7 +78,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
           {evidencia("maioridade", "Documento que sustenta a classificação")}
         </fieldset>}
         {formulario.participantesSugeridos.map(p => <fieldset key={p.papel} className="space-y-3 rounded border p-3" disabled={pendente}>
-          <legend>{rotulos[p.papel]} · {p.etapa === "CLIENTE" ? "assinatura do cliente" : "assinatura da escola após o cliente"}</legend>
+          <legend>{rotular(PAPEIS_MODELO, p.papel)} · {p.etapa === "CLIENTE" ? "assinatura do cliente" : "assinatura da escola após o cliente"}</legend>
           {p.automatico ? p.identidade ? <dl><dt>Nome</dt><dd>{p.identidade.nome}</dd><dt>E-mail</dt><dd>{p.identidade.email}</dd><dt>Documento</dt><dd>{p.identidade.documento}</dd></dl>
             : <p role="alert">Complete nome, e-mail e documento no cadastro correspondente e reabra a conferência.</p>
             : <><label className="block">Nome completo<input className={campo} name={`${p.papel}:nome`} required maxLength={200} /></label>

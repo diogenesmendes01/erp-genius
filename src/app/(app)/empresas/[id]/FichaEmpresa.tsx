@@ -10,6 +10,7 @@ import {
   salvarEmpresa,
 } from "@/server/empresas/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { formatarMoeda } from "@/lib/dinheiro";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 
@@ -125,7 +126,7 @@ export function FichaEmpresa({
                       {c.mensalidadesAtrasadas}
                     </td>
                     <td className="px-3 py-2 text-gray-700">
-                      {c.moeda} {c.totalPago.toLocaleString("pt-BR")}
+                      {formatarMoeda(c.totalPago, c.moeda)}
                     </td>
                   </tr>
                 ))}
@@ -164,7 +165,7 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-600">{f.competencia}</td>
                     <td className="px-3 py-2 text-gray-600">{f.cobrancas}</td>
                     <td className="px-3 py-2 text-gray-800">
-                      {f.moeda} {f.valorTotal.toLocaleString("pt-BR")}
+                      {formatarMoeda(f.valorTotal, f.moeda)}
                     </td>
                     <td className="px-3 py-2 text-gray-600">{new Date(f.vencimento).toLocaleDateString("pt-BR")}</td>
                     <td className="px-3 py-2 text-gray-600">{STATUS_FATURA[f.status] ?? f.status}</td>

@@ -8,6 +8,7 @@ import { consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { ConferirAceite } from "../../ConferirAceite";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -51,7 +52,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
       {aceite.aceite && <><p>Aceite confirmado por {aceite.aceite.autor.nome}, em {textoInstanteAdministrativo(aceite.aceite.criadaEm, preferenciaFusoExibicao)}.</p><p>{aceite.aceite.motivo}</p></>}
       {aceite.pendencia && <p role="alert">{aceite.pendencia}</p>}
       {aceite.revisao && <><p>Condições da matrícula: versão {aceite.revisao.versaoCondicoes}. Conferir o aceite não ativa a matrícula.</p>
-        <ul>{aceite.revisao.entrada.itens.map(i => <li key={i.id}>{i.tipo.replaceAll("_", " ")}: {i.valor} {i.moeda}. {i.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</li>)}</ul>
+        <ul>{aceite.revisao.entrada.itens.map(i => <li key={i.id}>{i.tipo.replaceAll("_", " ")}: {formatarMoeda(i.valor, i.moeda)}. {i.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</li>)}</ul>
         {!!aceite.revisao.entrada.emitirNaAtivacao.length && <p>Existe cobrança prevista para emissão na ativação, conforme as condições do contrato.</p>}
         <ConferirAceite key={aceite.revisao.hash} matriculaId={id} conclusaoId={aceite.revisao.conclusaoId} revisaoHash={aceite.revisao.hash} />
       </>}
@@ -59,7 +60,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
     {atual && <section className="space-y-3">
       <h2 className="text-xl">Condições verificadas agora</h2>
       <p>{atual.dados.regraTaxa === "CONFIRMACAO_PREVIA_EXIGIDA" ? "Taxa confirmada exigida antes da assinatura." : "A oferta permite assinatura antes do pagamento da taxa."}</p>
-      <p>Taxa: {atual.dados.taxa.valor} {atual.dados.taxa.moeda}. {atual.dados.taxa.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</p>
+      <p>Taxa: {formatarMoeda(atual.dados.taxa.valor, atual.dados.taxa.moeda)}. {atual.dados.taxa.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</p>
       <p>Reserva {atual.dados.reserva.status === "MANTIDA_PENDENCIA" ? "mantida por pendência" : "ativa"}, com {atual.dados.agenda.length} encontro(s) futuros conferidos. Prazo registrado: {textoInstanteAdministrativo(atual.dados.reserva.expiraEm, preferenciaFusoExibicao)}.</p>
       {atual.dados.agendaParticular && <p className="whitespace-pre-line">{atual.dados.agendaParticular}</p>}
       <h3 className="text-lg">Participantes</h3>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 export function PagarCliente({
   token,
@@ -46,7 +47,7 @@ export function PagarCliente({
     <div className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="text-sm text-gray-500">{descricao}</div>
       <div className="mt-1 text-2xl font-medium">
-        {moeda} {valor.toLocaleString("pt-BR")}
+        {formatarMoeda(valor, moeda)}
       </div>
       <div className="text-xs text-gray-400">
         Vencimento: {new Date(vencimentoISO).toLocaleDateString("pt-BR")}

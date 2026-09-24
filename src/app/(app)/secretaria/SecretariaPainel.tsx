@@ -10,6 +10,7 @@ import { assumirMatricula, solicitarCorrecaoCadastro, resolverCorrecaoCadastro, 
 import { concluirMatricula } from "@/server/matricula/acoes";
 import { conferirCoberturaInicial } from "@/server/secretaria/cobertura";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
 type Matricula = { exigeAssinaturaIntegrada: boolean; mensalidadesExibidas: { id: string; versao: number; valor: string; moeda: string; inicio: string | null; fim: string | null; vencimento: string }[]; cobertura: { cobrancaId: string | null; versao: number | null; vencimento: string | null; referencia: string | null; inicio: string | null; fim: string | null }; id: string; codigo: string | null; leadId: string | null; alunoId: string | null; nome: string; status: string; assumida: boolean; contratoConfirmado: boolean; documentos: { id: string; nome: string; categoria: string; matriculaId: string | null; url: string }[]; correcoes: { id: string; campo: string; valorProposto: string | null; motivo: string; status: string; motivoResolucao: string | null }[] };
 const campos = { primeiroNome: "Primeiro nome", sobrenome: "Sobrenome", nomePreferido: "Nome preferido", email: "E-mail", telefoneE164: "Telefone com DDI", documentos: "Documento (descreva a correção)" };
@@ -58,7 +59,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
         <label className="grid gap-1 text-xs">Motivo da conferência<input name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button disabled={ocupado} className="rounded border px-3 py-2 text-sm">Conferir cobertura inicial</button>
       </form>}
-      <p className="text-sm text-gray-500">{m.status} · {m.assumida ? "Cadastro sob responsabilidade da secretaria" : "Aguardando secretaria"} · {m.contratoConfirmado ? "Aceite contratual registrado" : "Aceite contratual pendente"}</p>
+      <p className="text-sm text-gray-500">{rotular(STATUS_MATRICULA_LABEL, m.status)} · {m.assumida ? "Cadastro sob responsabilidade da secretaria" : "Aguardando secretaria"} · {m.contratoConfirmado ? "Aceite contratual registrado" : "Aceite contratual pendente"}</p>
       {secretaria && !m.assumida && !["ENCERRADA", "CANCELADA"].includes(m.status) && <button disabled={ocupado} onClick={() => executar(() => assumirMatricula(m.id))} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Assumir matrícula</button>}
       {secretaria && m.assumida && ["RASCUNHO", "AGUARDANDO"].includes(m.status) && <div className="space-y-1"><button disabled={ocupado} onClick={() => executar(() => concluirMatricula(m.id))} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Concluir matrícula</button><p className="text-xs text-gray-500">Requer aceite contratual, disponibilidade e pagamentos exigidos nas condições da matrícula. A entrada pode exigir primeira mensalidade ou adiantamento das particulares.</p></div>}
       {secretaria && m.assumida && <div className="space-y-2 rounded bg-gray-50 p-3">

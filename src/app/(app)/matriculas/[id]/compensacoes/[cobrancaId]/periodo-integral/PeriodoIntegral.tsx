@@ -11,6 +11,7 @@ import {
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -40,22 +41,23 @@ function dataCivil(valor: string | null) {
 
 function MemoriaCalculo({ memoria }: { memoria: Memoria }) {
   const valores = memoria.valores;
+  const opcional = (valor?: string) => valor == null ? "—" : formatarMoeda(valor, memoria.moeda);
   return <section className="space-y-2 rounded bg-gray-50 p-3" aria-label="Memória de cálculo da proposta">
     <h3 className="font-medium">Memória de cálculo</h3>
     <p>Cobertura original: {dataCivil(memoria.coberturaOriginal.inicio)} a {dataCivil(memoria.coberturaOriginal.fim)} · moeda {memoria.moeda}.</p>
     <dl className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
-      <div><dt>Valor original</dt><dd>{memoria.moeda} {valores.valorOriginal}</dd></div>
-      <div><dt>Valor negociado</dt><dd>{memoria.moeda} {valores.valorNegociado}</dd></div>
-      <div><dt>Valor recebido</dt><dd>{memoria.moeda} {valores.valorRecebido}</dd></div>
-      <div><dt>Liquidado com crédito</dt><dd>{memoria.moeda} {valores.valorLiquidadoCredito}</dd></div>
-      <div><dt>Saldo reconciliado</dt><dd>{memoria.moeda} {valores.saldoReconciliado}</dd></div>
+      <div><dt>Valor original</dt><dd>{formatarMoeda(valores.valorOriginal, memoria.moeda)}</dd></div>
+      <div><dt>Valor negociado</dt><dd>{formatarMoeda(valores.valorNegociado, memoria.moeda)}</dd></div>
+      <div><dt>Valor recebido</dt><dd>{formatarMoeda(valores.valorRecebido, memoria.moeda)}</dd></div>
+      <div><dt>Liquidado com crédito</dt><dd>{formatarMoeda(valores.valorLiquidadoCredito, memoria.moeda)}</dd></div>
+      <div><dt>Saldo reconciliado</dt><dd>{formatarMoeda(valores.saldoReconciliado, memoria.moeda)}</dd></div>
     </dl>
     {memoria.escolha === "CREDITO" ? <dl className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
-      <div><dt>Saldo a desobrigar</dt><dd>{memoria.moeda} {memoria.saldoADesobrigar}</dd></div>
-      <div><dt>Crédito pelos recebimentos</dt><dd>{memoria.moeda} {memoria.creditoPorRecebimentos}</dd></div>
-      <div><dt>Crédito por liquidação prévia</dt><dd>{memoria.moeda} {memoria.creditoPorLiquidacaoPrevia}</dd></div>
-      <div><dt>Crédito a constituir</dt><dd>{memoria.moeda} {memoria.creditoAConstituir}</dd></div>
-    </dl> : <p>Saldo a conservar: {memoria.moeda} {memoria.saldoAConservar}. A transferência de cobertura permanece pendente.</p>}
+      <div><dt>Saldo a desobrigar</dt><dd>{opcional(memoria.saldoADesobrigar)}</dd></div>
+      <div><dt>Crédito pelos recebimentos</dt><dd>{opcional(memoria.creditoPorRecebimentos)}</dd></div>
+      <div><dt>Crédito por liquidação prévia</dt><dd>{opcional(memoria.creditoPorLiquidacaoPrevia)}</dd></div>
+      <div><dt>Crédito a constituir</dt><dd>{opcional(memoria.creditoAConstituir)}</dd></div>
+    </dl> : <p>Saldo a conservar: {opcional(memoria.saldoAConservar)}. A transferência de cobertura permanece pendente.</p>}
   </section>;
 }
 
@@ -154,7 +156,7 @@ export function PeriodoIntegral({
         <p className="whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         {proposta.memoria ? <MemoriaCalculo memoria={proposta.memoria} /> : <p role="alert">A memória de cálculo desta proposta não está disponível; ela não pode ser aprovada nesta tela.</p>}
         {proposta.decisao ? <><p>{proposta.decisao.aprovada ? "Proposta aprovada." : "Proposta rejeitada."}</p><p className="whitespace-pre-wrap">Justificativa da decisão: {proposta.decisao.motivo}</p>
-          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-gray-50 p-3"><p>Aplicada em {instanteAdministrativo(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? `${proposta.decisao.aplicacao.credito.moeda} ${proposta.decisao.aplicacao.credito.valor}` : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? `${proposta.memoria.moeda} ${proposta.memoria.saldoADesobrigar}` : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
+          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-gray-50 p-3"><p>Aplicada em {instanteAdministrativo(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? formatarMoeda(proposta.decisao.aplicacao.credito.valor, proposta.decisao.aplicacao.credito.moeda) : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? formatarMoeda(proposta.memoria.saldoADesobrigar, proposta.memoria.moeda) : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
         </> : <p role="status">Aguardando decisão independente.</p>}
         {proposta.podeDecidir && proposta.memoria && <form className="space-y-2" onSubmit={evento => {
           evento.preventDefault();
