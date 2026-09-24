@@ -41,20 +41,36 @@ function renderizacoesSemRegiao(variavel: RegExp) {
  * Só em telas cliente, onde o texto aparece depois de uma ação; conteúdo composto (prévias, listas) fica de fora.
  */
 function regioesPoliteMontadasComOTexto() {
-  const re = /\{\s*([\w.?]+)\s*&&\s*\(?\s*<(p|div|span)\b/g;
+  // `{x && …}` ou `{x ? … : …}`; o bloco inteiro é lido, então fragmento (`<>…</>`) e parênteses não escondem a região.
+  const re = /\{\s*([\w.?]+)\s*(?:&&|\?(?![.?]))/g;
   return telas
     .filter(({ conteudo }) => /^\s*["']use client["']/.test(conteudo))
     .flatMap(({ arquivo, conteudo }) =>
-      [...conteudo.matchAll(re)]
-        .filter((m) => {
-          const inicio = m.index! + m[0].lastIndexOf("<");
-          const tag = tagEm(conteudo, inicio);
-          if (!/role="status"|aria-live="polite"/.test(tag)) return false;
-          const corpo = conteudo.slice(inicio + tag.length, conteudo.indexOf(`</${m[2]}>`, inicio)).trim();
-          return corpo === `{${m[1]}}` || !/[<{}]/.test(corpo);
-        })
-        .map((m) => `${arquivo}:${conteudo.slice(0, m.index).split("\n").length} ${m[1]}`),
+      [...conteudo.matchAll(re)].flatMap((m) => {
+        const bloco = blocoEm(conteudo, m.index!);
+        const aposCondicao = m[0].length;
+        return [...bloco.matchAll(/<(p|div|span)\b/g)]
+          .filter((t) => {
+            const tag = tagEm(bloco, t.index!);
+            if (!/role="status"|aria-live="polite"/.test(tag)) return false;
+            const corpo = bloco.slice(t.index! + tag.length, bloco.indexOf(`</${t[1]}>`, t.index!)).trim();
+            // Texto fixo só conta como mensagem quando a região é o primeiro elemento do bloco condicional.
+            const primeira = /^[\s(]*(?:<>\s*)?$/.test(bloco.slice(aposCondicao, t.index));
+            return corpo === `{${m[1]}}` || (primeira && !/[<{}]/.test(corpo));
+          })
+          .map(() => `${arquivo}:${conteudo.slice(0, m.index).split("\n").length} ${m[1]}`);
+      }),
     );
+}
+
+/** Expressão `{…}` inteira a partir da chave de abertura, respeitando chaves aninhadas. */
+function blocoEm(fonte: string, inicio: number) {
+  let nivel = 0;
+  for (let i = inicio; i < fonte.length; i++) {
+    if (fonte[i] === "{") nivel++;
+    else if (fonte[i] === "}" && --nivel === 0) return fonte.slice(inicio, i + 1);
+  }
+  return fonte.slice(inicio);
 }
 
 describe("anúncio do resultado de ações", () => {
@@ -90,5 +106,18 @@ describe("MensagemStatus", () => {
   it("com texto: a região anuncia e a versão visível fica fora da leitura, para não repetir", () => {
     const html = renderToStaticMarkup(createElement(MensagemStatus, { texto: "Pagamento registrado.", className: "caixa" }));
     expect(html).toBe('<p role="status" class="sr-only">Pagamento registrado.</p><p aria-hidden="true" class="caixa">Pagamento registrado.</p>');
+  });
+
+  it("sem className: a versão visível sai sem atributo class", () => {
+    const html = renderToStaticMarkup(createElement(MensagemStatus, { texto: "Preferência salva." }));
+    expect(html).toBe('<p role="status" class="sr-only">Preferência salva.</p><p aria-hidden="true">Preferência salva.</p>');
+  });
+
+  it("progresso divide a mesma região com o resultado e tem prioridade no anúncio", () => {
+    const vazio = renderToStaticMarkup(createElement(MensagemStatus, { texto: null, progresso: null }));
+    expect(vazio).toBe('<p role="status" class="sr-only"></p>');
+    const html = renderToStaticMarkup(createElement(MensagemStatus, { texto: "Pausa registrada.", className: "ok", progresso: "Processando…" }));
+    expect(html.match(/role="status"/g)).toHaveLength(1);
+    expect(html).toBe('<p role="status" class="sr-only">Processando…</p><p aria-hidden="true" class="ok">Pausa registrada.</p><p aria-hidden="true">Processando…</p>');
   });
 });

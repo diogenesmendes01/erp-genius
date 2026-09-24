@@ -71,7 +71,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
       </fieldset>)}
       {base && <button type="button" className={campo} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}
     </fieldset>}
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} className="text-green-700" /><MensagemStatus texto={ocupado ? "Processando…" : null} />
+    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Processando…" : null} />
     {previa && <div className="space-y-3 border-t pt-3"><p>Fuso: {previa.fusoInstitucional ?? "A conferir"}. Cobertura e vencimentos serão aprovados juntos.</p>
       {previa.matriculas.map((m) => <div key={m.matriculaId}><h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
         <Pendencias itens={m.pendencias} />

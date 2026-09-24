@@ -53,8 +53,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
       <button type="button" className="rounded border px-3 py-2 text-sm disabled:opacity-50" disabled={!ids.length || !data || motivo.trim().length < 5} onClick={conferir}>Conferir impactos</button>
     </fieldset>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    <MensagemStatus texto={aviso} className="text-green-700" />
-    <MensagemStatus texto={ocupado ? "Processando…" : null} />
+    <MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Processando…" : null} />
     {previa && <div className="space-y-3 border-t pt-3">
       <p className="text-sm">Referência: {previa.fusoInstitucional ?? "Fuso a conferir"}. A prévia não aplica alterações.</p>
       {previa.matriculas.map((m) => <div key={m.matriculaId} className="text-sm">
