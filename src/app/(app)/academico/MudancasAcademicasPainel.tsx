@@ -9,6 +9,7 @@ import {
 } from "@/server/academico/acoes";
 import type { ContextoMudancaAcademica, SolicitacaoAcademicaView } from "@/server/academico/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = "rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50";
@@ -59,7 +60,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
   return <section className="space-y-5" aria-label="Mudanças acadêmicas">
     <p className="text-xs text-gray-500">Instantes administrativos exibidos em {fusoExibicao} (origem UTC).</p>
     {(erro || erroConsulta) && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro ?? erroConsulta}</p>}
-    {aviso && <p role="status" className="rounded-md bg-blue-50 p-3 text-sm text-blue-700">{aviso}</p>}
+    <MensagemStatus texto={aviso} className="rounded-md bg-blue-50 p-3 text-sm text-blue-700" />
     {contexto && <div className="space-y-3 rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="text-lg font-medium">Turma e nível do aluno</h2>
       <p className="text-sm">Turma atual: <strong>{contexto.origem?.label ?? "Sem alocação ativa"}</strong></p>

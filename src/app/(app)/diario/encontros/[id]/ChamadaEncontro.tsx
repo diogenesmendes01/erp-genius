@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarAulaDiario } from "@/server/diario/acoes";
 import { salvarDiarioParticular } from "@/server/diario/particular";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = { encontroId: string; turmaId: string | null; ocorridaEm: string; diarioId: string | null; conteudo: string; estadoAnterior: string | null;
   alunos: { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string | null; podeEditar: boolean; podeClassificar: boolean; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null }[] };
@@ -40,6 +41,6 @@ export function ChamadaEncontro({ dados }: { dados: Dados }) {
       <button disabled={ocupado} className="rounded bg-brand-solid px-4 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Salvando…" : dados.diarioId ? "Salvar lançamento pendente" : "Registrar diário"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    {salvo && <p role="status" className="text-green-700">Lançamento salvo.</p>}
+    <MensagemStatus texto={salvo ? "Lançamento salvo." : null} className="text-green-700" />
   </form>;
 }

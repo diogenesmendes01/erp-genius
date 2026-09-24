@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirSubstituicaoRecuperacao } from "@/server/avaliacoes/recuperacao-substituicao-proposta";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function DecidirSubstituicao({ propostaId, propostaHash, podeAprovar }: { propostaId: string; propostaHash: string; podeAprovar: boolean }) {
   const router = useRouter();
@@ -40,6 +41,6 @@ export function DecidirSubstituicao({ propostaId, propostaHash, podeAprovar }: {
     </fieldset>
     {!podeAprovar && <p role="status" className="text-sm">A aprovação não está disponível para esta versão. A rejeição pode registrar a necessidade de uma nova conferência.</p>}
     {erro && <p role="alert">{erro}</p>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

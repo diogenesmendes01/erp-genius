@@ -8,6 +8,7 @@ import {
   revisarResolucaoRevisaoProgressao,
 } from "@/server/avaliacoes/resolucao-revisao-progressao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -139,7 +140,7 @@ export function ResolucaoRevisaoProgressao({
 
   return <section className="space-y-4 rounded border p-4" aria-label="Resolução da revisão">
     <h2 className="text-xl font-medium">Resolução da revisão</h2>
-    {erro && <p role="alert">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {!permitirPreparacao && <p role="status">Este caso já possui resultado registrado. O histórico permanece disponível para consulta.</p>}
     {permitirPreparacao && statusSolicitacao === "APROVADA" && <p role="status">Para registrar uma resolução por cancelamento, cancele primeiro a solicitação no fluxo de mudanças acadêmicas. A correção não cancela a solicitação por si só.</p>}
     {permitirPreparacao && !acao && statusSolicitacao !== "APROVADA" && <p role="status">A situação atual da solicitação não permite preparar uma resolução.</p>}

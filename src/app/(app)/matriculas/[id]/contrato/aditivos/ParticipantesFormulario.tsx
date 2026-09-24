@@ -3,6 +3,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { conferirParticipantesAditivo, consultarFormularioParticipantesAditivo } from "@/server/contratos/aditivo-participantes";
 import { EvidenciaSeletor, type EvidenciaDisponivel } from "./EvidenciaSeletor";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -90,6 +91,6 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         <button className="rounded border px-4 py-2" disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>
     </>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </section>;
 }

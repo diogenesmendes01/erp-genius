@@ -7,6 +7,7 @@ import { CompensacoesEncerramento } from "./CompensacoesEncerramento";
 import { useOperacao } from "./useOperacao";
 import { RecomposicaoPainel } from "./RecomposicaoPainel";
 import { CumprimentoPainel } from "./CumprimentoPainel";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -39,7 +40,7 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
       <label className="grid gap-1">Justificativa da decisão<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={estilo}>Registrar decisão</button>
     </fieldset></form>}
-    {erro && <p role="alert">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
   </div>;
 }
 
@@ -67,7 +68,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
     <p>Registre dias de indisponibilidade em parte de um período. Aprovar os dias reconhece o direito; extensão de cobertura e acerto financeiro exigem seus próprios fluxos.</p>
     <label className="grid gap-1">Contrato para compensação<select className={estilo} disabled={ocupado} value={matriculaId} onChange={(e) => { selecao.current = e.target.value; setMatriculaId(e.target.value); setContexto(null); setCobrancaId(""); setDias([]); setErro(null); setAviso(null); chave.current = ""; }}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
     <button type="button" className={estilo} disabled={ocupado || !matriculaId} onClick={() => { void iniciar(async () => { setErro(null); try { await atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Carregar compensações</button>
-    {erro && <p role="alert" className="text-red-700">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
+    {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {contexto && <>
       <CompensacoesEncerramento compensacoes={contexto.compensacoes} />
       <RecomposicaoPainel key={contexto.matriculaId} contexto={contexto} usuarioId={usuarioId} podeAprovar={podeAprovar} atualizarContexto={atualizar} />

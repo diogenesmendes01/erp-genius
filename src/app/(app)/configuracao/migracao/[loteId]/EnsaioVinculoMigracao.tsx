@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Oferta = { produtoId: string; paisId: string; moeda: string; rotulo: string };
 type Turma = { id: string; rotulo: string };
@@ -24,7 +25,7 @@ export function EnsaioVinculoMigracao({ linhaId, origem, produtoOrigemId, turmaO
     {turmaOrigemId && <TurmaFormulario origem={origem} turmaOrigemId={turmaOrigemId} atual={turmaAtual} turmas={turmas} ocupado={ocupado} executar={executar} />}
     {statusOrigem && <StatusFormulario origem={origem} statusOrigem={statusOrigem} atual={statusAtual} ocupado={ocupado} executar={executar} />}
     <button type="button" className="rounded border px-2 py-1" disabled={ocupado} onClick={() => executar(async () => { const r = await ensaiarVinculoMigracao({ linhaId }); return r.ok ? { ok: true } : { ok: false, erro: r.erro }; }, "Ensaio registrado. O histórico abaixo foi atualizado.")}>{ocupado ? "Conferindo…" : "Ensaiar vínculo"}</button>
-    {mensagem && <p role="status">{mensagem}</p>}<Historico ensaios={ensaios} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>;
+    <MensagemStatus texto={mensagem} /><Historico ensaios={ensaios} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>;
 }
 
 function Produto({ origem, produtoOrigemId, atual, ofertas, ocupado, executar }: { origem: string; produtoOrigemId: string; atual: AtualProduto | null; ofertas: Oferta[]; ocupado: boolean; executar: (a: () => Promise<{ ok: boolean; erro?: string }>, s: string) => Promise<void> }) {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import type { NumeroConfig } from "@/server/whatsapp/consultas";
 import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -83,8 +84,8 @@ export function NumerosPainel({
         </button>
       </div>
 
-      {erro && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       {numeros.length === 0 && !form ? (
         <div className="mt-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
@@ -306,7 +307,7 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
             <p className="text-sm text-gray-400">{carregando ? "Gerando QR…" : "Sem QR — tente atualizar."}</p>
           )}
         </div>
-        {erro && <p className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{erro}</p>}
+        {erro && <p role="alert" className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700">{erro}</p>}
         <div className="mt-3 flex items-center justify-between">
           <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
           <button className={btnSec} disabled={carregando || estado === "CONECTADO"} onClick={pedirQr}>

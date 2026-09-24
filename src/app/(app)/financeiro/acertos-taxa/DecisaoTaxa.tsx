@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo, invalidarAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalidar = false }: { propostaId: string; podeDecidir: boolean; podeAplicar: boolean; podeInvalidar?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
@@ -31,5 +32,5 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
       <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("rejeitar")} className="rounded border px-3 py-2">Rejeitar acerto</button></>}
     {podeAplicar && <button type="button" onClick={() => enviar("aplicar")} className="rounded border px-3 py-2">Aplicar acerto aprovado</button>}
     {podeInvalidar && <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("invalidar")} className="rounded border px-3 py-2">Conferir e invalidar para repropor</button>}
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</div>;
+  </fieldset><MensagemStatus texto={mensagem} /></div>;
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { reconferirPendenciaAvisoAgenda } from "@/server/comunicacoes-agenda/reconferencia";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   const router = useRouter();
@@ -25,6 +26,6 @@ export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   return <form className="mt-3 space-y-2" onSubmit={enviar}>
     <label className="block text-sm">Motivo da reconferência<textarea className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} minLength={5} maxLength={2000} required disabled={ocupado} /></label>
     <button className="rounded border px-3 py-1 text-sm" disabled={ocupado}>{ocupado ? "Reconferindo…" : "Reconferir condição"}</button>
-    {resultado && <p role="status" className="text-sm">{resultado}</p>}
+    <MensagemStatus texto={resultado} className="text-sm" />
   </form>;
 }

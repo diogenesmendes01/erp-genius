@@ -9,6 +9,7 @@ import {
   sincronizarTemplatesMeta,
   submeterTemplateMeta,
 } from "@/server/whatsapp/acoes";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
 // - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
@@ -96,8 +97,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
         </div>
       </div>
 
-      {erro && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {erro && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <MensagemStatus texto={nota} className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
         {templates.map((t) => {

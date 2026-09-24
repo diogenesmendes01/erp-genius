@@ -118,7 +118,7 @@ export function CopilotoSugestoes({
         </button>
       </div>
 
-      {erro && <p className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-700">{erro}</p>}
 
       {sugestoes.length === 0 ? (
         <p className="mt-1 text-xs text-ai-600/80">Sem sugestões pendentes.</p>

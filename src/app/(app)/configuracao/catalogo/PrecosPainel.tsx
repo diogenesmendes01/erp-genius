@@ -109,7 +109,7 @@ export function PrecosPainel({
       <p className="mb-3 text-sm text-gray-500">
         País × produto × tipo de cobrança. Um novo preço substitui o ativo anterior (vira histórico).
       </p>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {aberto && (
         <div className="mb-4 rounded-lg border border-gray-200 bg-surface p-5">

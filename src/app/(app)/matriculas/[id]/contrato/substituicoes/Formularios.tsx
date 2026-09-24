@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararSubstituicaoContratual, decidirSubstituicaoContratual } from "@/server/contratos/substituicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
   matriculaId: string; fonte: { id: string; artefatoId: string; revisaoHash: string };
@@ -53,7 +54,7 @@ export function DecidirSubstituicao({ propostaId, propostaHash, superada }: { pr
       <option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option>
     </select></label>
     <label className="block">Justificativa<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

@@ -10,6 +10,7 @@ import {
 } from "@/server/matricula/periodo-integral";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -87,8 +88,8 @@ export function PeriodoIntegral({
     <p>Esta tela registra a proposta e a decisão. A aplicação financeira permanece em uma etapa posterior.</p>
     {d.motivoFonteIndisponivel && <p role="alert">{d.motivoFonteIndisponivel}</p>}
     {d.previaCredito && <section className="space-y-2 rounded border p-4"><h2 className="text-lg">Prévia da fonte atual</h2><p>Confira esta memória antes de preparar uma proposta de crédito. Ela não cria crédito nem altera a cobrança.</p><MemoriaCalculo memoria={d.previaCredito} /></section>}
-    {d.podeReconferir && <p role="status">A fonte ou a aprovação anterior exige reconferência. Revise a escolha, a cláusula, a evidência e o motivo antes de propor a nova versão.</p>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={d.podeReconferir ? "A fonte ou a aprovação anterior exige reconferência. Revise a escolha, a cláusula, a evidência e o motivo antes de propor a nova versão." : null} />
+    <MensagemStatus texto={mensagem} />
     {erro && <p role="alert">{erro}</p>}
 
     {d.podePropor && <form className="space-y-3 rounded border p-4" onChange={() => { chave.current = null; }} onSubmit={evento => {
@@ -145,7 +146,7 @@ export function PeriodoIntegral({
       {!d.propostas.length && <p>Nenhuma proposta registrada para esta mensalidade.</p>}
       {d.propostas.map(proposta => <article key={proposta.id} className="space-y-2 rounded border p-4">
         <h3 className="font-medium">Versão {proposta.versao}</h3>
-        {proposta.superada && <p role="status">Substituída por nova proposta.</p>}
+        <MensagemStatus texto={proposta.superada ? "Substituída por nova proposta." : null} />
         <p>Escolha registrada: {proposta.escolha === "CREDITO" ? "crédito a constituir" : "cobertura futura"}.</p>
         {proposta.coberturaFutura && <p>Cobertura futura proposta: {dataCivil(proposta.coberturaFutura.inicio)} a {dataCivil(proposta.coberturaFutura.fim)}.</p>}
         <p className="whitespace-pre-wrap">Cláusula contratual: {proposta.clausula}</p>

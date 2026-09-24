@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const destaques = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["US/Eastern", "Estados Unidos — Leste"]] as const;
 function todosOsFusos() { try { return typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : []; } catch { return []; } }
@@ -19,6 +20,6 @@ export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | nu
   return <form className="mt-5 space-y-3 rounded border bg-surface p-4" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
     <label className="block text-sm">Fuso de exibição<input name="fusoExibicao" value={fuso} disabled={ocupado} onChange={(e) => setFuso(e.target.value)} list="fusos-portal" placeholder="Usar fuso de origem" className="mt-1 block w-full rounded border p-2" /></label>
     <datalist id="fusos-portal"><option value="">Usar fuso de origem do encontro</option>{destaques.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}{fusos.filter((f) => !destaques.some(([valor]) => valor === f)).map((f) => <option key={f} value={f} />)}</datalist>
-    <p className="text-sm text-gray-600">Pesquise pelo local ou identificador IANA. Sem preferência, os horários continuam no fuso de origem.</p><button disabled={ocupado} className="rounded border px-3 py-2 text-sm">{ocupado ? "Salvando…" : "Salvar"}</button>{feito && <p role="status">{feito}</p>}{erro && <p role="alert" className="text-red-700">{erro}</p>}
+    <p className="text-sm text-gray-600">Pesquise pelo local ou identificador IANA. Sem preferência, os horários continuam no fuso de origem.</p><button disabled={ocupado} className="rounded border px-3 py-2 text-sm">{ocupado ? "Salvando…" : "Salvar"}</button><MensagemStatus texto={feito} />{erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;
 }

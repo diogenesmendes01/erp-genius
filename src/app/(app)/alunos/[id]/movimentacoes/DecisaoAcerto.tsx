@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { decidirAcertoEncerramento } from "@/server/matricula/encerramento-decisao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascunhoId: string }) {
   const [ocupado, setOcupado] = useState(false), [mensagem, setMensagem] = useState("");
   return <form onSubmit={async event => {
@@ -15,5 +16,5 @@ export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascun
     <label><input type="checkbox" name="retro" /> Autorizo a retroatividade identificada no pedido.</label>
     <label><input type="checkbox" name="multa" /> Autorizo as exceções de multa identificadas nesta versão.</label>
     <button>Registrar decisão</button>
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+  </fieldset><MensagemStatus texto={mensagem} /></form>;
 }

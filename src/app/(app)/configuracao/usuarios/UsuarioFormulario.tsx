@@ -139,7 +139,7 @@ export function UsuarioFormulario({
         {errors.papeis && <p className="mt-1 text-xs text-red-600">{errors.papeis.message}</p>}
       </div>
 
-      {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-4 text-sm text-red-600">{erro}</p>}
 
       <fieldset className="mt-4">
         <legend className="mb-2 text-xs text-gray-600">Permissões específicas</legend>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { confirmarRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-confirmacao";
 import { consultarRelatosIndisponibilidadeOferta, registrarRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-relato";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -27,7 +28,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
   const paginaAnterior = d.pagina > 1 ? d.pagina - 1 : null;
 
   return <div className="space-y-4">
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     {erro && <p role="alert">{erro}</p>}
     {d.podeRegistrar && <form className="space-y-3 rounded border p-4" onSubmit={evento => {
       evento.preventDefault();

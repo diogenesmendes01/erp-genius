@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { prepararImpactosTaxaAditivo } from "@/server/contratos/aditivo-taxa-impactos";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string };
 
@@ -39,6 +40,6 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
       <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={justificativas[c.id] ?? ""} onChange={e => setJustificativas(atual => ({ ...atual, [c.id]: e.target.value }))} /></label>
     </article>)}</fieldset>}
     <button type="button" disabled={!podePreparar || ocupado} onClick={preparar}>{ocupado ? "Preparando…" : "Preparar conjunto de impactos"}</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </section>;
 }

@@ -7,6 +7,7 @@ import { formatarMoeda, parseMoeda, formatarMoedaParaCampo } from "@/lib/dinheir
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import type { obterResumoComercialFinanceiro } from "@/server/ajustes/consultas";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   const router = useRouter(); const [mensagem, setMensagem] = useState(""); const [ocupado, setOcupado] = useState(false);
@@ -26,7 +27,7 @@ export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaite
   }
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Acompanhamento comercial · {dados.aluno.primeiroNome} {dados.aluno.sobrenome}</h1>
     <Link className="text-sm text-brand-700 underline" href="/comissoes">Consultar histórico de comissões</Link>
-    {mensagem && <p role="status" className="rounded bg-blue-50 p-3 text-sm">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} className="rounded bg-blue-50 p-3 text-sm" />
     {dados.matriculas.map((m) => <section key={m.id} className="space-y-3 rounded border p-4 text-sm">
       {m.precoAguardandoAprovacao && <p className="rounded bg-amber-50 p-3 text-amber-800">Os valores propostos foram encaminhados para aprovação independente. Os preços de referência permanecem vigentes até a decisão, e a ativação aguarda essa análise.</p>}
       <h2 className="font-medium">{m.codigo} · {m.produto}</h2><p>Pagamento inicial: {m.pagamentoInicialConfirmado ? "confirmado" : "aguardando confirmação"}</p>

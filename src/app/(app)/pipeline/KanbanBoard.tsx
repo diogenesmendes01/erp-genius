@@ -207,7 +207,7 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
       <p className="mb-3 text-xs text-gray-400">
         Arraste o card pela alça &quot;⠿ arrastar&quot; para mover de etapa. Soltar em <strong>Matriculado</strong> abre a matrícula; em <strong>Perdido</strong> pede o motivo.
       </p>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
         <span>Perdidos:</span>

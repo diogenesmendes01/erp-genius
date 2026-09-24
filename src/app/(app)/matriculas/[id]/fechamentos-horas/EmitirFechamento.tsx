@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { emitirFechamentoHoras } from "@/server/matricula/fechamento-horas-emissao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda }: {
   alunoId: string; matriculaId: string; decisaoId: string; valor: string; moeda: string;
@@ -17,6 +18,6 @@ export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda
         if (r.ok) router.refresh();
       } catch { setMensagem("Não foi possível confirmar o resultado. Atualize o histórico antes de repetir; a mesma decisão não gera outra cobrança."); }
     })}>{ocupado ? "Emitindo…" : "Emitir cobrança aprovada"}</button>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </div>;
 }

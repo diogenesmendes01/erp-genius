@@ -3,6 +3,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { solicitarIndisponibilidadeLocal } from "@/server/agenda/indisponibilidade";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
@@ -39,6 +40,6 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
     </fieldset>
     {professores.length === 0 && <p>Nenhum professor ativo disponível.</p>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    {mensagem && <p role="status" className="text-green-700">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} className="text-green-700" />
   </form>;
 }
