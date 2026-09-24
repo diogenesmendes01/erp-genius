@@ -16,7 +16,7 @@ function dataLocal(iso = new Date().toISOString()) {
 }
 type RegistroForm = { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string; podeEditar: boolean };
 
-export function DiarioAulas({ aulas, turmas }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[] }) {
+export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[]; /** Estado vazio de uma busca (a página diz o termo). */ mensagemVazio?: string }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [aberto, setAberto] = useState(false);
@@ -94,7 +94,7 @@ export function DiarioAulas({ aulas, turmas }: { aulas: AulaDiarioView[]; turmas
       </div>
       <div className="flex gap-3"><button className={botao} disabled={pendente || carregando || conferencia || !turmaId || !data || !conteudo.trim() || registros.length === 0} onClick={salvar}>{pendente ? "Salvando…" : "Salvar aula"}</button><button className={campo} disabled={pendente} onClick={() => { consulta.current++; setAberto(false); }}>Cancelar</button></div>
     </section>}
-    {aulas.length === 0 && <p className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">Nenhuma aula registrada neste histórico.</p>}
+    {aulas.length === 0 && <p className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">{mensagemVazio ?? "Nenhuma aula registrada neste histórico."}</p>}
     {aulas.map((a) => <article key={a.id} className="rounded-lg border border-gray-200 bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">{a.turma} · {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: a.fusoExibicao }).format(new Date(a.ocorridaEm))}</h2>{a.encontroParaEditar ? <Link className={campo} href={`/diario/encontros/${a.encontroParaEditar}`}>Completar diário do encontro</Link> : a.podeEditar ? <button className={campo} onClick={() => abrir(a)}>Editar registro</button> : <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">Somente leitura</span>}</div>
       <p className="mt-1 text-xs text-gray-500">Exibido em {a.fusoExibicao}</p>
