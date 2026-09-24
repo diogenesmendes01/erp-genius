@@ -196,7 +196,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("Créditos externos preservados nesta fotografia");
     expect(html).toContain("credito-externo");
     expect(html).toContain("BRL");
-    expect(html).toContain("17.00");
+    expect(html).toContain("R$ 17,00");
     expect(html).toContain("Comprovante não confere.");
     expect(html).toContain("Conclua a conferência do informe");
     expect(html).not.toContain('data-delta="preparar"');

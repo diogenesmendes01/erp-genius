@@ -25,7 +25,33 @@ vi.mock("@/server/alunos/consultas", () => ({ listarAlunos: mocks.listarAlunos }
 vi.mock("@/server/comercial/consultas", () => ({ listarLeads: mocks.listarLeads }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (f: (tx: unknown) => unknown) => f({}), lead: { count: mocks.contarLeads } } }));
 
+import ExcelJS from "exceljs";
 import { GET } from "./route";
+
+/** Linhas da planilha gerada (cabeçalho incluso), como texto. */
+async function linhas(res: Response) {
+  const livro = new ExcelJS.Workbook();
+  await livro.xlsx.load(await res.arrayBuffer());
+  const out: string[][] = [];
+  livro.worksheets[0].eachRow((row) => out.push((row.values as unknown[]).slice(1).map((v) => String(v ?? ""))));
+  return out;
+}
+
+describe("planilha com rótulos, não enums crus (E5)", () => {
+  it("alunos: situação rotulada (\"Ativo\", não \"ATIVO\")", async () => {
+    const res = await GET(new Request("http://localhost/api/exportacoes/alunos"), { params: Promise.resolve({ tipo: "alunos" }) });
+    expect(res.status).toBe(200);
+    expect((await linhas(res))[1]).toEqual(["A-1", "Ana Silva", "Ativo", "Costa Rica", ""]);
+  });
+
+  it("leads: etapa e temperatura rotuladas (\"Novo\", \"Morno\")", async () => {
+    mocks.listarLeads.mockResolvedValueOnce([{ id: "l1", codigo: "L-1", nome: "Ana", etapa: "NOVO", temperatura: "MORNO" }]);
+    mocks.contarLeads.mockResolvedValueOnce(1); // a linha continua na carteira na conferência final
+    const res = await GET(new Request("http://localhost/api/exportacoes/leads"), { params: Promise.resolve({ tipo: "leads" }) });
+    expect(res.status).toBe(200);
+    expect((await linhas(res))[1]).toEqual(["L-1", "Ana", "Novo", "Morno"]);
+  });
+});
 
 const exportar = (query: string) => GET(new Request(`http://localhost/api/exportacoes/alunos${query}`), { params: Promise.resolve({ tipo: "alunos" }) });
 

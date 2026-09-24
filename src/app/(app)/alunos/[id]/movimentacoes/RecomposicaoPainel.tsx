@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { z } from "zod";
+import { formatarMoeda } from "@/lib/dinheiro";
 import { EntradaRecomposicao } from "@/server/matricula/recomposicao-schema";
 import { preverRecomposicaoCobertura } from "@/server/matricula/recomposicao-previa";
 import { consultarRascunhoRecomposicao, salvarRascunhoRecomposicao } from "@/server/matricula/recomposicao-rascunho";
@@ -17,7 +18,7 @@ const resumo = z.object({ proposta: z.object({ quantidadeDias: z.number(), compe
 function Resumo({ dados }: { dados: unknown }) {
   const r = resumo.safeParse(dados);
   if (!r.success) return <p>Resumo indisponível para esta versão.</p>;
-  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {r.data.proposta.compensacao.inicio} a {r.data.proposta.compensacao.fim}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {p.cobertura.inicio} a {p.cobertura.fim}; valor {p.valor}; vencimento {p.vencimento}.</li>)}</ul></div>;
+  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {r.data.proposta.compensacao.inicio} a {r.data.proposta.compensacao.fim}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {p.cobertura.inicio} a {p.cobertura.fim}; valor {formatarMoeda(p.valor, "")}; vencimento {p.vencimento}.</li>)}</ul></div>;
 }
 
 export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizarContexto }: { contexto: Contexto; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void> }) {

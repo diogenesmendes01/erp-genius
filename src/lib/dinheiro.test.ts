@@ -20,8 +20,25 @@ describe("dinheiro — formatação por moeda", () => {
     expect(formatarMoeda(2500000, "CRC", { semSimbolo: true })).toBe("2.500.000");
   });
 
-  it("valor inválido vira 0 (não NaN)", () => {
-    expect(formatarMoeda(NaN, "USD")).toBe("US$ 0,00");
+  it("valor inválido ou ausente vira \"—\", nunca um zero monetário falso", () => {
+    expect(formatarMoeda(NaN, "USD")).toBe("—");
+    expect(formatarMoeda("", "CRC")).toBe("—");
+    expect(formatarMoeda("   ", "CRC")).toBe("—");
+    expect(formatarMoeda("abc", "USD")).toBe("—");
+    expect(formatarMoeda("1.250,00", "BRL")).toBe("—");
+    expect(formatarMoeda(undefined as unknown as string, "USD")).toBe("—");
+    expect(formatarMoeda(null as unknown as string, "USD")).toBe("—");
+    expect(formatarMoeda(Infinity, "USD")).toBe("—");
+    expect(formatarMoeda("0", "CRC")).toBe("₡ 0"); // zero de verdade continua zero
+  });
+
+  it("moeda sem centavos nunca esconde uma fração existente", () => {
+    expect(formatarMoeda("1250.50", "CRC")).toBe("₡ 1.250,50");
+    expect(formatarMoeda("0.40", "CRC")).toBe("₡ 0,40");
+    expect(formatarMoeda(1.67, "CRC")).toBe("₡ 1,67");
+    expect(formatarMoeda("1250.00", "CRC")).toBe("₡ 1.250");
+    expect(formatarMoeda(1250, "CLP")).toMatch(/ 1\.250$/);
+    expect(formatarMoeda(1250.5, "CLP")).toMatch(/ 1\.250,50$/);
   });
 });
 

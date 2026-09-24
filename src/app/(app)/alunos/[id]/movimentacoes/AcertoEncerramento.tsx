@@ -42,7 +42,7 @@ function Resumo({ snapshot }: { snapshot: unknown }) {
   return <div className="space-y-3">{resultado.data.contratos.map(({ calculo: c, propostaExcecaoMulta: excecao, origem, compensacaoFinanceira, horasAntecipadas, consolidacao }) => <div key={c.matriculaId} className="space-y-2 overflow-x-auto rounded bg-gray-50 p-3">
     <p className="font-medium">Matrícula {c.matriculaId} · {c.moeda}</p>
     <table className="w-full text-left text-sm"><caption className="text-left">Memória do componente mensal</caption><thead><tr><th>Cobrança</th><th>Base</th><th>Desconto</th><th>Dias cobertos</th><th>Devido</th><th>Saldo</th><th>Crédito apurado</th></tr></thead>
-      <tbody>{c.parcelas.map((p) => <tr key={p.cobrancaId}><td>{p.cobrancaId}</td><td>{p.memoria.base}</td><td>{p.memoria.desconto}</td><td>{p.diasCobertos}/{p.diasPeriodo}</td><td>{p.valorDevido}</td><td>{p.saldoDevido}</td><td>{p.creditoApurado}</td></tr>)}</tbody>
+      <tbody>{c.parcelas.map((p) => <tr key={p.cobrancaId}><td>{p.cobrancaId}</td><td>{formatarMoeda(p.memoria.base, c.moeda)}</td><td>{formatarMoeda(p.memoria.desconto, c.moeda)}</td><td>{p.diasCobertos}/{p.diasPeriodo}</td><td>{formatarMoeda(p.valorDevido, c.moeda)}</td><td>{formatarMoeda(p.saldoDevido, c.moeda)}</td><td>{formatarMoeda(p.creditoApurado, c.moeda)}</td></tr>)}</tbody>
     </table>
     <p>Serviço: {formatarMoeda(c.totalServico, c.moeda)} · Multa: {formatarMoeda(c.multa.valor, c.moeda)} · Saldo devido: {formatarMoeda(c.saldoDevidoSemCompensarCreditos, c.moeda)} · Crédito apurado: {formatarMoeda(c.creditoApuradoSemUtilizacao, c.moeda)}</p>
     <p>Crédito separado do saldo devido; nenhuma utilização ou devolução foi executada.</p>
@@ -138,7 +138,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
         {c.pendencias.map((p) => <p className="text-amber-800" key={p}>{p}</p>)}
         {c.condicoes && <p>Condições versão {c.condicoes.versao}: dia do encerramento {c.condicoes.regras.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"}; desconto {c.condicoes.regras.metodoDesconto === "ANTES_DO_PROPORCIONAL" ? "antes" : "depois"} do proporcional. {c.condicoes.regras.condicoesDescontos}</p>}
         {c.cobrancas.map((p) => <div key={p.id} className="space-y-2 border-t pt-2">
-          <p>{p.tipo === "MENSALIDADE" ? "Mensalidade" : p.tipo === "HORA_PARTICULAR" ? "Particulares por hora" : "Outra cobrança"} {p.id}: referência {p.valorOriginal}, negociado {p.valorNegociado}, recebido em dinheiro {p.valorRecebido ?? "não registrado"}, liquidado por crédito {p.valorLiquidadoCredito ?? "0.00"}.
+          <p>{p.tipo === "MENSALIDADE" ? "Mensalidade" : p.tipo === "HORA_PARTICULAR" ? "Particulares por hora" : "Outra cobrança"} {p.id}: referência {formatarMoeda(p.valorOriginal, c.moeda)}, negociado {formatarMoeda(p.valorNegociado, c.moeda)}, recebido em dinheiro {p.valorRecebido != null ? formatarMoeda(p.valorRecebido, c.moeda) : "não registrado"}, liquidado por crédito {formatarMoeda(p.valorLiquidadoCredito ?? "0", c.moeda)}.
             {p.tipo === "MENSALIDADE" && <> Cobertura: {p.coberturaInicio ?? "pendente"} a {p.coberturaFim ?? "pendente"}.</>}</p>
           {p.origemFaturamentoHoras && <p>Origem: fechamento aprovado com {p.origemFaturamentoHoras.itens.length} encontro(s) faturado(s). O valor original permanece no histórico; qualquer redução proposta depende da aprovação do acerto.</p>}
           {p.conferencias.map((msg) => <p key={msg} className="text-amber-800">{msg}</p>)}
