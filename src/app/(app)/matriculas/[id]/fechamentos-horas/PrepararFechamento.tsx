@@ -3,6 +3,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarFechamentosHoras } from "@/server/matricula/fechamento-horas-consulta";
 import { prepararFechamentoHoras } from "@/server/matricula/fechamento-horas-rascunho";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -48,6 +49,6 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
       <p>Os dados serão confrontados novamente ao salvar. Esta preparação não aprova o contrato nem emite cobrança.</p>
       <button className="rounded border p-2">{ocupado ? "Conferindo…" : preparado ? "Salvar rascunho do período conferido" : "Conferir período e versão"}</button>
     </fieldset>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

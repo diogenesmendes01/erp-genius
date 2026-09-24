@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { salvarAulaDiario } from "@/server/diario/acoes";
 import { listarAlunosParaChamada } from "@/server/diario/chamada";
 import type { AulaDiarioView, TurmaDiario } from "@/server/diario/consultas";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = "rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white disabled:opacity-50";
@@ -82,7 +83,7 @@ export function DiarioAulas({ aulas, turmas }: { aulas: AulaDiarioView[]; turmas
       </div>
       <label className="flex flex-col gap-1 text-sm">Conteúdo ministrado<textarea className={campo} rows={3} value={conteudo} maxLength={10000} onChange={(e) => setConteudo(e.target.value)} /></label>
       <div className="space-y-3">
-        {carregando && <p role="status">Carregando a chamada da data selecionada…</p>}
+        <MensagemStatus texto={carregando ? "Carregando a chamada da data selecionada…" : null} />
         {conferencia && <p role="alert" className="text-amber-700">Há vínculos com histórico incompleto. Solicite conferência à gestão antes de registrar esta chamada.</p>}
         {registros.map((r, i) => <div key={r.alunoId} className="grid gap-2 rounded-md border border-gray-100 p-3 sm:grid-cols-[1fr_160px_2fr]">
           <div className="text-sm font-medium">{r.nomeAluno}{!r.podeEditar && <p className="mt-1 text-xs font-normal text-gray-500">Histórico em leitura após saída da turma.</p>}</div>

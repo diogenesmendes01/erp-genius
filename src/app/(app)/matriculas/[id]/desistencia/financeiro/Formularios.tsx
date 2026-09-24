@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { proporCancelamentoFinanceiroDesistenciaPreparacao, decidirCancelamentoFinanceiroDesistenciaPreparacao } from "@/server/matricula/desistencia-financeira";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function PropostaFormulario({ pedidoId, estadoHash }: { pedidoId: string; estadoHash: string }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function PropostaFormulario({ pedidoId, estadoHash }: { pedidoId: string;
       <label className="block">Motivo<textarea className="block w-full rounded border p-2" name="motivo" required minLength={10} maxLength={3000} /></label>
       <label className="block">Condições e evidências que autorizam o cancelamento integral<textarea className="block w-full rounded border p-2" name="evidencia" required minLength={10} maxLength={3000} /></label>
       <button type="submit" className="rounded border px-3 py-2">{ocupado ? "Registrando…" : "Submeter proposta financeira"}</button>
-    </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+    </fieldset><MensagemStatus texto={mensagem} /></form>;
 }
 
 export function DecisaoFormulario({ propostaId, propostaHash, podeAprovar }: { propostaId: string; propostaHash: string; podeAprovar: boolean }) {
@@ -38,5 +39,5 @@ export function DecisaoFormulario({ propostaId, propostaHash, podeAprovar }: { p
     {!podeAprovar && <p>Esta versão não pode ser aprovada. É possível registrar sua rejeição.</p>}
     <label className="block">Justificativa<textarea name="motivo" required minLength={10} maxLength={3000} className="block w-full rounded border p-2" /></label>
     <button type="submit" className="rounded border px-3 py-2">{ocupado ? "Registrando…" : "Registrar decisão independente"}</button>
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+  </fieldset><MensagemStatus texto={mensagem} /></form>;
 }

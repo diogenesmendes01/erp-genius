@@ -8,6 +8,7 @@ import {
   decidirTerminoIndisponibilidadeOferta,
   proporTerminoIndisponibilidadeOferta,
 } from "@/server/matricula/indisponibilidade-oferta-termino";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -42,7 +43,7 @@ export function TerminoIndisponibilidadeOferta({
 
   return <div className="space-y-4">
     <p>Indisponibilidade relatada desde {dataCivil(inicio)}.</p>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
     {erro && <p role="alert">{erro}</p>}
 
     {d.podePropor && <form className="space-y-3 rounded border p-4" onSubmit={evento => {

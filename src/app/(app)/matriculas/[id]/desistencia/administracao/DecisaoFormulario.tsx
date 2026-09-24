@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { decidirDesistenciaAdministrativa } from "@/server/matricula/desistencia-administrativa";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedidoId: string; estadoHash: string; podeAprovar: boolean }) {
   const router = useRouter();
@@ -24,5 +25,5 @@ export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedid
     {!podeAprovar && <p>Esta versão não está disponível para aprovação. A rejeição pode ser registrada no histórico.</p>}
     <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={3000} className="block w-full rounded border p-2" /></label>
     <button type="submit" className="rounded border px-3 py-2">{ocupado ? "Registrando…" : "Registrar decisão administrativa"}</button>
-  </fieldset>{mensagem && <p role="status">{mensagem}</p>}</form>;
+  </fieldset><MensagemStatus texto={mensagem} /></form>;
 }

@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { conferirReservaSecretaria, conferirReservaParticularSecretaria } from "@/server/matricula/reserva-painel";
+import { MensagemStatus } from "@/components/MensagemStatus";
 export function ConferirReserva({ reservaId, particular = false }: { reservaId: string; particular?: boolean }) {
   const router = useRouter();
   const [mensagem, setMensagem] = useState("");
@@ -17,5 +18,5 @@ export function ConferirReserva({ reservaId, particular = false }: { reservaId: 
       } catch { setMensagem("Não foi possível confirmar a conferência. Tente novamente."); }
     });
   }
-  return <div className="space-y-2"><button disabled={ocupado} onClick={conferir} className="rounded border px-3 py-2">{ocupado ? "Conferindo…" : "Conferir vencimento"}</button>{mensagem && <p role="status">{mensagem}</p>}</div>;
+  return <div className="space-y-2"><button disabled={ocupado} onClick={conferir} className="rounded border px-3 py-2">{ocupado ? "Conferindo…" : "Conferir vencimento"}</button><MensagemStatus texto={mensagem} /></div>;
 }

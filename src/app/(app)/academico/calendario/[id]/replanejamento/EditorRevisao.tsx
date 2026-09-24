@@ -4,6 +4,7 @@ import { preverReplanejamentoCalendario } from "@/server/agenda/replanejamento-c
 import type { AjusteReplanejamento } from "@/server/agenda/replanejamento-ajustes";
 import { ConteudoRevisao } from "./ConteudoRevisao";
 import { SalvarRevisao } from "./SalvarRevisao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof preverReplanejamentoCalendario>>, { ok: true }>["dado"]>;
 export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { inicial: Revisao; preferenciaFusoExibicao?: string | null }) {
@@ -50,7 +51,7 @@ export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { ini
       </fieldset>
       {erro && <p role="alert">{erro}</p>}
     </form>
-    {alterado && <p role="status">Há ajustes ainda não conferidos. O resultado abaixo corresponde à última conferência; confira novamente para guardar a revisão.</p>}
+    <MensagemStatus texto={alterado ? "Há ajustes ainda não conferidos. O resultado abaixo corresponde à última conferência; confira novamente para guardar a revisão." : null} />
     <ConteudoRevisao r={revisao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     {!alterado && !ocupado && <SalvarRevisao key={`${revisao.estadoHash}:${revisao.versaoRascunho}`} calendarioId={revisao.calendarioId} estadoHash={revisao.estadoHash} versaoAnterior={revisao.versaoRascunho} ajustes={revisao.ajustes.length ? revisao.ajustes : undefined} />}
   </div>;

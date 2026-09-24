@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { registrarPedidoDesistenciaPreparacao } from "@/server/matricula/desistencia-preparacao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: string; estadoHash: string }) {
   const router = useRouter();
@@ -29,6 +30,6 @@ export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: str
       <label className="block">Referência da solicitação do cliente<textarea className="mt-1 block w-full rounded border p-2" name="evidenciaPedido" required minLength={10} maxLength={3000} placeholder="Informe quando e por qual canal o cliente pediu a desistência e onde a solicitação pode ser conferida." /></label>
       <button className="rounded border px-3 py-2" type="submit">{ocupado ? "Registrando…" : "Registrar pedido"}</button>
     </fieldset>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

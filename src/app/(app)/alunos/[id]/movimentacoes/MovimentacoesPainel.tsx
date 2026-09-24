@@ -9,6 +9,7 @@ import { decidirPropostaPausaMatriculas } from "@/server/matricula/pausa-propost
 import { decidirRetomadaMatriculas } from "@/server/matricula/retomada-proposta";
 import { identificacaoContrato } from "./identificacaoContrato";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -95,8 +96,8 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
       <button className={botao} disabled={ocupado} onClick={() => carregar()}>Consultar propostas</button>
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
-    {aviso && <p role="status" className="text-green-700">{aviso}</p>}
-    {ocupado && <p role="status">Carregando…</p>}
+    <MensagemStatus texto={aviso} className="text-green-700" />
+    <MensagemStatus texto={ocupado ? "Carregando…" : null} />
     {lista?.propostas.length === 0 && <p>Nenhuma proposta encontrada.</p>}
     {lista?.propostas.map((p) => <article key={p.id} className="space-y-2 rounded border p-4">
       <TituloMovimentacao estado={p.status} criadoEm={p.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />

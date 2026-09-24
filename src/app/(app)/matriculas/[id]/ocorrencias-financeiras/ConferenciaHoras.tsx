@@ -6,6 +6,7 @@ import { RegrasHorasSchema } from "@/server/matricula/condicoes-horas-schema";
 import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-financeira-consulta";
 import { preverConferenciaOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-previa";
 import { conferirOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-conferir";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 const rotulos: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Falta do aluno", FALTA_COBRAVEL: "Falta cobrável", CANCELAMENTO_ALUNO: "Cancelamento do aluno", CANCELAMENTO_ESCOLA: "Cancelamento da escola", CANCELAMENTO_NO_PRAZO: "Cancelamento dentro do prazo", CANCELAMENTO_TARDIO: "Cancelamento fora do prazo" };
@@ -62,6 +63,6 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
           <button className="mt-2 rounded border p-2" disabled={ocupado}>Registrar conferência</button></form>}
       </section>}
     </>}
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </article>;
 }

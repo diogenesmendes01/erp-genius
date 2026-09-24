@@ -7,6 +7,7 @@ import { cancelarReservaRecuperacaoPelaEscola } from "@/server/avaliacoes/recupe
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MensagemStatus } from "@/components/MensagemStatus";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -49,7 +50,7 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
 export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHistorica = false, fusoInstitucional }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[]; somenteHistorica?: boolean; fusoInstitucional: string | null }) {
   const [realizadaPorId, setRealizadaPorId] = useState("");
   return <Formulario titulo={somenteHistorica ? "Registrar realização histórica" : "Registrar realização"} executar={d => realizarRecuperacaoLocal({ itemReservaId, realizadaPorId: realizadaPorId || undefined, motivoRegularizacao: realizadaPorId ? campo(d, "motivoRegularizacao") : undefined, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), evidencia: campo(d, "evidencia") })}>
-    {somenteHistorica && <p role="status">Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente.</p>}
+    <MensagemStatus texto={somenteHistorica ? "Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente." : null} />
     <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} fusoInstitucional={fusoInstitucional} />
     {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<select value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2"><option value="">Eu realizei</option>{professoresHistoricos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>}
     {realizadaPorId && <label className="block">Motivo da regularização<textarea name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}

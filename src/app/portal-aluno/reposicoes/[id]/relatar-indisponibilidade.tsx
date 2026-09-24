@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Relato = { id: string; descricao: string; situacao: string; criadoEm: string; confirmadoEm: string | null };
 type Pausa = { id: string; inicio: string; fim: string | null };
@@ -44,7 +45,7 @@ export function RelatarIndisponibilidadePortalAluno({
       {relatos.map((relato) => <article key={relato.id} className="rounded border p-2"><p className="whitespace-pre-wrap">{relato.descricao}</p><p className="mt-1 text-gray-600">{relato.situacao} em {data(relato.criadoEm, fusoExibicao)}{relato.confirmadoEm ? ` · confirmado em ${data(relato.confirmadoEm, fusoExibicao)}` : ""}</p></article>)}
     </div></details>}
     {podeRelatar && <form onSubmit={relatar} className="space-y-2 border-t pt-3"><label className="block text-sm">Descreva o problema<textarea required minLength={5} maxLength={4000} name="descricao" className="mt-1 min-h-20 w-full rounded border p-2" /></label><button disabled={enviando} className="rounded border px-3 py-2 text-sm disabled:opacity-60">{enviando ? "Enviando…" : "Relatar indisponibilidade"}</button></form>}
-    {sucesso && <p role="status" className="text-sm text-green-700">{sucesso}</p>}
+    <MensagemStatus texto={sucesso} className="text-sm text-green-700" />
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
   </section>;
 }

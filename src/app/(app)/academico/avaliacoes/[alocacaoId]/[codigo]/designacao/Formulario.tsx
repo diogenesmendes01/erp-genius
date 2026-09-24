@@ -2,6 +2,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { designarAvaliador } from "@/server/avaliacoes/designacao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEsperada, atualId, professores }: {
   alocacaoId: string; codigoAvaliacao: string; versaoEsperada: number; atualId: string | null; professores: { id: string; nome: string }[];
@@ -30,6 +31,6 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
       <label className="block">Motivo<textarea required minLength={5} maxLength={2000} value={motivo} className="block w-full rounded border p-2" onChange={e => { setMotivo(e.target.value); chave.current = null; }} /></label>
       <button disabled={!professor} className="rounded border px-3 py-2">{pendente ? "Registrando…" : professor === "revogar" ? "Revogar designação" : "Registrar designação"}</button>
     </fieldset>
-    {mensagem && <p role="status">{mensagem}</p>}
+    <MensagemStatus texto={mensagem} />
   </form>;
 }

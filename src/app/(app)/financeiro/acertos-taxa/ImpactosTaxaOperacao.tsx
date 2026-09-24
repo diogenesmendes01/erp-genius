@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { completarImpactosTaxaAditivo, decidirImpactosTaxaAditivo, obsoletarImpactosTaxaAditivo, vincularImpactoTaxaAditivo } from "@/server/contratos/aditivo-taxa-impactos";
+import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Impacto = { cobrancaId: string; cobranca: { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string; status: string }; decisao: "AFETADA" | "PRESERVADA"; justificativa: string; propostaAcertoId: string | null; acertoStatus: string | null; aplicado: boolean };
 type Acerto = { id: string; cobrancaId: string; codigo: string; moeda: string; valorNovo: string; vencimentoNovo: string; status: string };
@@ -32,6 +33,6 @@ export function ImpactosTaxaOperacao({ conjunto, acertos, reprepararHref }: { co
     {conjunto.podeDecidir && <><button type="button" disabled={ocupado || motivo.trim().length < 5 || conjunto.pendencias.afetadasSemVinculo > 0} onClick={() => executar("aprovar")}>Aprovar conjunto</button>{" "}<button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("rejeitar")}>Rejeitar conjunto</button></>}
     {conjunto.podeConcluir && <button type="button" disabled={ocupado || conjunto.pendencias.afetadasSemAplicacao > 0} onClick={() => executar("concluir")}>Concluir impactos aplicados</button>}
     {conjunto.podeObsoletar && <><label className="block">Motivo para reconstruir o conjunto<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label><button type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("obsoletar")}>{conjunto.status === "APROVADO" ? "Confirmar fotografia divergente" : "Descartar conjunto pendente para reconferir"}</button></>}
-    {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <p role="status">Este conjunto preserva seu histórico e não pode ser reaberto. <Link className="underline" href={reprepararHref}>Reconferir todas as taxas e preparar novo conjunto</Link>.</p>}{mensagem && <p role="status">{mensagem}</p>}
+    {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <p role="status">Este conjunto preserva seu histórico e não pode ser reaberto. <Link className="underline" href={reprepararHref}>Reconferir todas as taxas e preparar novo conjunto</Link>.</p>}<MensagemStatus texto={mensagem} />
   </section>;
 }
