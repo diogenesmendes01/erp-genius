@@ -138,6 +138,8 @@ describe("InboxCliente — busca no servidor e lista cortada (E4)", () => {
   it("lista cortada: avisa que há mais antigas e como achá-las", () => {
     expect(render({ limitada: true })).toContain("Mostrando as 200 conversas mais recentes e todas com mensagens não lidas.");
     expect(render({ limitada: false })).not.toContain("Mostrando as 200");
+    // Com busca ativa, o corte é das que batem com a busca.
+    expect(render({ limitada: true, busca: "ana" })).toContain("Mostrando as 200 conversas mais recentes para “ana” e todas com mensagens não lidas. Refine a busca");
   });
 
   it("voltar para a lista (celular) mantém a busca", () => {
