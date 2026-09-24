@@ -202,8 +202,9 @@ export function InboxCliente({
             )}
             {limitada && (
               <p className="p-3 text-xs text-gray-500">
-                Mostrando as {LIMITE_CONVERSAS} conversas mais recentes e todas com mensagens não lidas. Busque pelo nome
-                ou telefone para encontrar as mais antigas.
+                {busca
+                  ? <>Mostrando as {LIMITE_CONVERSAS} conversas mais recentes para “{busca}” e todas com mensagens não lidas. Refine a busca para encontrar as mais antigas.</>
+                  : <>Mostrando as {LIMITE_CONVERSAS} conversas mais recentes e todas com mensagens não lidas. Busque pelo nome ou telefone para encontrar as mais antigas.</>}
               </p>
             )}
           </div>
