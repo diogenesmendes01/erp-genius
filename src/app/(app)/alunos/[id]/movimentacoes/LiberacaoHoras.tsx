@@ -5,6 +5,11 @@ import { proporLiberacaoHorasRemarcacao, decidirLiberacaoHorasRemarcacao } from 
 import { useOperacao } from "./useOperacao";
 import { formatarMoeda } from "@/lib/dinheiro";
 const estilo = "rounded border p-2 text-sm";
+/** Moeda registrada na memória de cálculo do crédito (texto vazio se ausente: número formatado sem símbolo). */
+const moedaDoCalculo = (calculo: unknown) => {
+  const moeda = (calculo as { moeda?: unknown } | null)?.moeda;
+  return typeof moeda === "string" ? moeda : "";
+};
 type Proposta = { id: string; destino: "REMARCACAO" | "CREDITO"; valorCredito: string | null; calculoCredito: unknown; motivo: string; evidenciaEscolhaRemarcacao: string; podeDecidir: boolean; decisao: { aprovada: boolean; motivo: string; credito: { id: string; valorInicial: string; moeda: string } | null } | null };
 export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { alunoId: string; reservaId: string; propostas: Proposta[]; aoSalvar: () => Promise<void> }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useOperacao(); const chave = useRef("");
@@ -28,7 +33,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
     {propostas.map(p => <article key={p.id} className="space-y-2 border p-2">
       <p>Destino: {p.destino === "CREDITO" ? "Crédito financeiro" : "Remarcação"}</p>
       <p>{p.evidenciaEscolhaRemarcacao}</p><p>{p.motivo}</p><p>{p.decisao ? p.decisao.aprovada ? p.destino === "CREDITO" ? "Horas convertidas em crédito" : "Horas liberadas" : "Proposta rejeitada" : "Aguardando decisão financeira independente"}</p>
-      {p.destino === "CREDITO" && <><p>Valor proposto: {p.valorCredito}. Usa o valor pago original e a proporção dos minutos, com arredondamento acumulado da compra.</p><MemoriaCredito calculo={p.calculoCredito} /></>}
+      {p.destino === "CREDITO" && <><p>Valor proposto: {p.valorCredito != null ? formatarMoeda(p.valorCredito, moedaDoCalculo(p.calculoCredito)) : "—"}. Usa o valor pago original e a proporção dos minutos, com arredondamento acumulado da compra.</p><MemoriaCredito calculo={p.calculoCredito} /></>}
       {p.decisao?.credito && <p>Crédito original apurado: {formatarMoeda(p.decisao.credito.valorInicial, p.decisao.credito.moeda)}. <Link className="underline" href={`/alunos/${alunoId}/creditos/${p.decisao.credito.id}`}>Consultar saldo e utilização do crédito</Link>. Devolução ainda não disponível.</p>}
       {p.decisao && <p>{p.decisao.motivo}</p>}
       {p.podeDecidir && <form onSubmit={e => {

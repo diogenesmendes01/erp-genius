@@ -6,6 +6,7 @@ import { prepararCondicoesEncerramento, decidirCondicoesEncerramento } from "@/s
 import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerramento-schema";
 import { montarAcertoDesistenciaPreparacao, type AlcanceAcerto, type TipoAcerto } from "./condicoes-encerramento-formulario";
 import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
 type Cobranca = { id: string; codigo: string | null; tipo: string };
@@ -28,7 +29,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
     return cobranca ? `${cobranca.codigo ?? rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)} (${rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)})` : cobrancaId;
   };
   const descreverAcerto = (acerto: NonNullable<ReturnType<typeof RegrasEncerramentoSchema.parse>["acertoDesistenciaPreparacao"]>) => {
-    const valor = acerto.tipo === "VALOR_FIXO" ? `${acerto.valor} fixo` : `${acerto.percentual}% do valor negociado`;
+    const valor = acerto.tipo === "VALOR_FIXO" ? `${formatarMoeda(acerto.valor, "")} fixo` : `${acerto.percentual}% do valor negociado`;
     const aplicacao = acerto.condicoesAplicacao;
     const alcance = aplicacao.unidade === "TOTAL_CONTRATACAO"
       ? `total da contratação: ${aplicacao.rateio.map((item) => `${rotuloCobranca(item.cobrancaId)} ${item.percentual}%`).join(", ")}`
@@ -63,7 +64,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
         {r ? <div className="space-y-1">
           <p>Dia do encerramento: {r.diaEncerramento === "INCLUIR" ? "incluído" : "excluído"} da cobertura.</p>
           <p>Desconto: {r.metodoDesconto === "ANTES_DO_PROPORCIONAL" ? "antes" : "depois"} do proporcional. Condições: {r.condicoesDescontos}</p>
-          {r.multa.tipo === "SEM_PREVISAO" ? <p>Sem previsão de multa: {r.multa.motivo}</p> : <><p>Multa: {r.multa.tipo === "VALOR_FIXO" ? `${r.multa.valor} na moeda contratada` : `${r.multa.percentual}% sobre ${r.multa.descricaoBase}`}</p><p>Cláusula: {r.multa.clausulaId}. Aplicação: {r.multa.condicoesAplicacao}</p></>}
+          {r.multa.tipo === "SEM_PREVISAO" ? <p>Sem previsão de multa: {r.multa.motivo}</p> : <><p>Multa: {r.multa.tipo === "VALOR_FIXO" ? `${formatarMoeda(r.multa.valor, "")} na moeda contratada` : `${r.multa.percentual}% sobre ${r.multa.descricaoBase}`}</p><p>Cláusula: {r.multa.clausulaId}. Aplicação: {r.multa.condicoesAplicacao}</p></>}
           {acerto ? <p>Acerto Q165 antes da ativação: {acerto.valor}; cláusula {acerto.clausulaId}; alcance {acerto.alcance}.</p> : <p>Sem regra Q165 estruturada nesta versão.</p>}
         </div> : <p role="alert">Regras incompletas; esta versão não pode ser aprovada.</p>}
         {v.decisor && <p>Decisão por {v.decisor.nome}: {v.motivoDecisao}</p>}

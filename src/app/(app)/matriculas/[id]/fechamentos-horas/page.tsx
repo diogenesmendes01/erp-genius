@@ -80,7 +80,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Total apurado: {formatarMoeda(m.data.apuracao.totalApurado, m.data.apuracao.moeda)} · {m.data.apuracao.minutosApurados} minutos.</p>
           <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-medium">Encontros incluídos na apuração</caption>
             <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
-            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{i.valorHoraContratado}</td><td>{i.valor}</td></tr>)}</tbody>
+            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{formatarMoeda(i.valorHoraContratado, m.data.apuracao.moeda)}</td><td>{formatarMoeda(i.valor, m.data.apuracao.moeda)}</td></tr>)}</tbody>
           </table></div>
           {!m.data.apuracao.itens.length && <p>Nenhum encontro incluído para cobrança nesta versão.</p>}
           <h3 className="font-medium">Pendências ({m.data.apuracao.pendencias.length})</h3>
