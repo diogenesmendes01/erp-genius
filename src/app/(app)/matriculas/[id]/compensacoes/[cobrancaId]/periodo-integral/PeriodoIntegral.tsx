@@ -13,6 +13,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -129,7 +130,7 @@ export function PeriodoIntegral({
             router.refresh();
           } else setErro(resultado.erro);
         } catch {
-          setErro("Atualize o histórico para conferir o resultado antes de repetir a proposta.");
+          setErro(MSG_RESULTADO_INCERTO);
         }
       });
     }}>
@@ -176,7 +177,7 @@ export function PeriodoIntegral({
                 router.refresh();
               } else setErro(resultado.erro);
             } catch {
-              setErro("Atualize o histórico para conferir a decisão antes de repetir.");
+              setErro(MSG_DECISAO_INCERTA);
             }
           });
         }}>
@@ -198,7 +199,7 @@ export function PeriodoIntegral({
                 router.refresh();
               } else setErro(resultado.erro);
             } catch {
-              setErro("Atualize o histórico para conferir a aplicação antes de repetir.");
+              setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
             }
           });
         }}>{ocupado ? "Aplicando…" : "Aplicar regularização aprovada"}</button>}

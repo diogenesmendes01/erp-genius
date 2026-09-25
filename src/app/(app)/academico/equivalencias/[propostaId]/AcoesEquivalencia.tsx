@@ -6,6 +6,7 @@ import { decidirEquivalenciaTransferencia } from "@/server/avaliacoes/equivalenc
 import { executarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-execucao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function AcoesEquivalencia({
   propostaId,
@@ -46,7 +47,7 @@ export function AcoesEquivalencia({
           router.refresh();
         }
       } catch {
-        setMensagem("O resultado não foi confirmado. Tente novamente com os mesmos dados.");
+        setMensagem(MSG_DECISAO_INCERTA);
       }
     });
   }
@@ -69,7 +70,7 @@ export function AcoesEquivalencia({
           router.refresh();
         }
       } catch {
-        setMensagem("O resultado não foi confirmado. Tente novamente com os mesmos dados.");
+        setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE);
       }
     });
   }

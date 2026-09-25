@@ -182,7 +182,7 @@ export function FilaCobranca({
         : "O navegador bloqueou a nova janela. Use o link no detalhe para abrir o WhatsApp; nenhum envio foi registrado.");
       return r.dado.url;
     } catch {
-      setErro("Não foi possível preparar o envio manual. Confira sua conexão e tente novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
       return null;
     }
   }

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { salvarPrazosEntregaReposicao } from "@/server/portal-aluno/configuracao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Valores = { prazoPrimeiraEntregaReposicaoMinutos: number | null; prazoRespostaCorrecaoReposicaoMinutos: number | null };
 
@@ -18,7 +19,7 @@ export function PrazosEntregaReposicaoFormulario({ valores }: { valores: Valores
         prazoRespostaCorrecaoReposicaoMinutos: Number(form.get("prazoRespostaCorrecaoReposicaoMinutos")),
       });
       setMensagem(resultado.ok ? "Prazos salvos para novas disponibilizações e novos pedidos de correção." : resultado.erro);
-    } catch { setMensagem("Não foi possível salvar os prazos."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setOcupado(false); }
   }
   return <form onSubmit={salvar} className="space-y-3 rounded border p-4"><h3 className="font-medium">Reposições por gravação</h3>

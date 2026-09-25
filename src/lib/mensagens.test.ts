@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "./mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "./mensagens";
 
 const RAIZES = ["src/app", "src/components"];
 const fontes = RAIZES.flatMap((raiz) =>
@@ -66,37 +66,48 @@ describe("mensagens de resultado incerto", () => {
   });
 });
 
-// Ganho rápido #20 (docs/42-auditoria-frontend-ux.md): o mesmo evento técnico dá a mesma instrução em
-// todas as telas. Num catch, o resultado incerto usa uma das três constantes — nunca texto à mão —
-// e a constante combina com a ação: "reenvie sem alterar" só onde o try manda chave de idempotência.
-const TEXTO_INCERTO = /resultado não confirmado|não foi possível confirmar/i;
+
+// Ganho rápido #20 (docs/42-auditoria-frontend-ux.md): o mesmo evento técnico — falha de transporte
+// numa ação que muda dados, com resultado desconhecido — dá a mesma instrução em todas as telas. Num
+// catch assim, a mensagem é uma das três constantes (nunca texto à mão), e a constante combina com a
+// ação: "reenvie sem alterar" só onde o try manda chave; "reenvie a mesma decisão" só em decisão.
+// Catches de leitura (listar/consultar/carregar/conferir…) e rotas de API ficam de fora: outro evento.
+
+/** Texto de resultado incerto (qualquer redação) ou de falha afirmada numa ação que muda dados. */
+const TEXTO_INCERTO =
+  /não foi confirmad|resultado não confirmad|não foi possível confirmar|resultado incerto|antes de repetir|antes de reenviar|antes de tentar novamente|com os mesmos dados|sem alterar|mesma decisão|precisa (de )?confer|precisa ser conferid|consulte novamente antes|confira o resultado antes/i;
+const FALHA_EM_MUTACAO =
+  /^não foi possível (registrar|salvar|publicar|aplicar|processar|revogar|concluir a operação|preparar a proposta|preparar o processo|preparar o envio|preparar os casos|reconferir|efetivar)/i;
+const LEITURA = /^(listar|consultar|carregar|buscar|conferir|calcular|prever|obter|ler|previa|previsualizar|revisar|simular)/i;
 const CHAVE_NO_TRY = /chaveIdempotencia|\bchave\b|chave\.current|chaves\.current|tentativa\.current|\bchaves\[/;
 
 type AchadoIncerto = { texto: string | null; constante: string | null; comChave: boolean; decisao: boolean };
 
-/** Cada catch do fonte: texto incerto à mão (se houver), constante usada e o que o try manda. */
+/** Cada catch de ação que muda dados: texto incerto à mão (se houver), constante usada e o que o try manda. */
 export function incertosDoFonte(fonte: string): AchadoIncerto[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const achados: AchadoIncerto[] = [];
+  const nomes = (e: ts.Expression): string[] =>
+    ts.isIdentifier(e) ? [e.text] : ts.isPropertyAccessExpression(e) ? [e.name.text] : ts.isParenthesizedExpression(e) ? nomes(e.expression) : ts.isConditionalExpression(e) ? [...nomes(e.whenTrue), ...nomes(e.whenFalse)] : [];
   const visitar = (n: ts.Node) => {
     if (ts.isTryStatement(n) && n.catchClause) {
-      const tryTxt = n.tryBlock.getText(sf);
       // Ações chamadas com await no try: nome da função, do método, ou dos dois ramos de (a ? b : c)(…).
       const chamadas: string[] = [];
-      const nomes = (e: ts.Expression): string[] =>
-        ts.isIdentifier(e) ? [e.text] : ts.isPropertyAccessExpression(e) ? [e.name.text] : ts.isParenthesizedExpression(e) ? nomes(e.expression) : ts.isConditionalExpression(e) ? [...nomes(e.whenTrue), ...nomes(e.whenFalse)] : [];
       const acharChamadas = (m: ts.Node) => {
-        if (ts.isAwaitExpression(m) && ts.isCallExpression(m.expression)) chamadas.push(...nomes(m.expression.expression).filter((c) => c !== "refresh"));
+        if (ts.isAwaitExpression(m) && ts.isCallExpression(m.expression)) chamadas.push(...nomes(m.expression.expression).filter((c) => c !== "refresh" && c !== "json"));
         ts.forEachChild(m, acharChamadas);
       };
       acharChamadas(n.tryBlock);
-      const base = { comChave: CHAVE_NO_TRY.test(tryTxt), decisao: chamadas.length > 0 && chamadas.every((c) => /^(decidir|oficializar)/.test(c)) };
-      const olhar = (m: ts.Node) => {
-        if ((ts.isStringLiteral(m) || ts.isNoSubstitutionTemplateLiteral(m)) && TEXTO_INCERTO.test(m.text)) achados.push({ ...base, texto: m.text, constante: null });
-        if (ts.isIdentifier(m) && /^MSG_(RESULTADO_INCERTO|DECISAO_INCERTA)/.test(m.text)) achados.push({ ...base, texto: null, constante: m.text });
-        ts.forEachChild(m, olhar);
-      };
-      olhar(n.catchClause.block);
+      const leitura = chamadas.length > 0 && chamadas.every((c) => LEITURA.test(c));
+      if (!leitura) {
+        const base = { comChave: CHAVE_NO_TRY.test(n.tryBlock.getText(sf)), decisao: chamadas.length > 0 && chamadas.every((c) => /^(decidir|oficializar)/.test(c)) };
+        const olhar = (m: ts.Node) => {
+          if ((ts.isStringLiteral(m) || ts.isNoSubstitutionTemplateLiteral(m)) && (TEXTO_INCERTO.test(m.text) || FALHA_EM_MUTACAO.test(m.text))) achados.push({ ...base, texto: m.text, constante: null });
+          if (ts.isIdentifier(m) && /^MSG_(RESULTADO_INCERTO|DECISAO_INCERTA)/.test(m.text)) achados.push({ ...base, texto: null, constante: m.text });
+          ts.forEachChild(m, olhar);
+        };
+        olhar(n.catchClause.block);
+      }
     }
     ts.forEachChild(n, visitar);
   };
@@ -104,26 +115,55 @@ export function incertosDoFonte(fonte: string): AchadoIncerto[] {
   return achados;
 }
 
-describe("resultado incerto: uma instrução por evento (ganho rápido #20)", () => {
-  const todos = fontes.flatMap(({ arquivo, conteudo }) => incertosDoFonte(conteudo).map((a) => ({ arquivo, ...a })));
+/** Fixtures do detector: await só é await dentro de função async. */
+const emAsync = (corpo: string) => `async function f() { ${corpo} }`;
 
-  it("nenhum catch escreve à mão \"resultado não confirmado\" / \"não foi possível confirmar\" (use as constantes)", () => {
+/** Usos de constante que não combinam com a ação do try. */
+export function incoerentes<T extends AchadoIncerto>(achados: T[]): T[] {
+  return achados.filter((a) => (a.constante === "MSG_RESULTADO_INCERTO" && !a.comChave) || (a.constante === "MSG_DECISAO_INCERTA" && !a.decisao && !a.comChave));
+}
+
+describe("resultado incerto: uma instrução por evento (ganho rápido #20)", () => {
+  const telas = fontes.filter(({ arquivo }) => !/[\\/]api[\\/]/.test(arquivo));
+  const todos = telas.flatMap(({ arquivo, conteudo }) => incertosDoFonte(conteudo).map((a) => ({ arquivo, ...a })));
+
+  it("nenhum catch de ação escreve à mão o resultado incerto ou afirma falha (use as constantes)", () => {
     expect(todos.filter((a) => a.texto).map((a) => `${a.arquivo}: ${a.texto}`)).toEqual([]);
   });
 
-  it("\"reenvie sem alterar\" (MSG_RESULTADO_INCERTO) só onde o try manda chave; decisão pode usar MSG_DECISAO_INCERTA", () => {
-    const incoerentes = todos.filter((a) =>
-      (a.constante === "MSG_RESULTADO_INCERTO" && !a.comChave) || (a.constante === "MSG_DECISAO_INCERTA" && !a.decisao && !a.comChave),
-    );
-    expect(incoerentes.map((a) => `${a.arquivo}: ${a.constante}`)).toEqual([]);
+  it("\"reenvie sem alterar\" só onde o try manda chave; \"reenvie a mesma decisão\" só em decisão (ou com chave)", () => {
+    expect(incoerentes(todos).map((a) => `${a.arquivo}: ${a.constante}`)).toEqual([]);
   });
 
-  it("o detector vê texto à mão, constante e se o try manda chave", () => {
-    const [semChave] = incertosDoFonte('try { await salvar(d); } catch { setErro("Não foi possível confirmar o envio."); }');
+  it("a instrução sem chave nunca manda reenviar: conferir antes de repetir", () => {
+    expect(MSG_RESULTADO_INCERTO_SEM_CHAVE).toMatch(/recarregue/i);
+    expect(MSG_RESULTADO_INCERTO_SEM_CHAVE).toMatch(/antes de repetir/i);
+    expect(MSG_RESULTADO_INCERTO_SEM_CHAVE).not.toMatch(/reenvi|sem alterar|mesm[ao]/i);
+  });
+
+  it("o detector vê as redações, a ação do try e a chave; leitura fica de fora", () => {
+    const [semChave] = incertosDoFonte(emAsync('try { await salvar(d); } catch { setErro("Não foi possível confirmar o envio."); }'));
     expect(semChave).toMatchObject({ texto: "Não foi possível confirmar o envio.", comChave: false, decisao: false });
-    const [comChave] = incertosDoFonte("try { await salvar({ ...d, chaveIdempotencia }); } catch { setErro(MSG_RESULTADO_INCERTO); }");
+    expect(incertosDoFonte(emAsync('try { await salvar(d); } catch { setErro("O resultado não foi confirmado. Consulte antes de repetir."); }'))).toHaveLength(1);
+    expect(incertosDoFonte(emAsync('try { await registrar(d); } catch { setErro("Não foi possível registrar a proposta."); }'))).toHaveLength(1);
+    expect(incertosDoFonte(emAsync('try { await carregarLista(); } catch { setErro("Não foi possível carregar. Tente novamente."); }'))).toEqual([]);
+    const [comChave] = incertosDoFonte(emAsync("try { await salvar({ ...d, chaveIdempotencia }); } catch { setErro(MSG_RESULTADO_INCERTO); }"));
     expect(comChave).toMatchObject({ texto: null, constante: "MSG_RESULTADO_INCERTO", comChave: true });
-    const [decisao] = incertosDoFonte("try { await decidirGrade(d); } catch { setErro(MSG_DECISAO_INCERTA); }");
+    const [decisao] = incertosDoFonte(emAsync("try { await (p ? decidirA : decidirB)(d); } catch { setErro(MSG_DECISAO_INCERTA); }"));
     expect(decisao).toMatchObject({ constante: "MSG_DECISAO_INCERTA", decisao: true, comChave: false });
+  });
+
+  it("a regra de coerência rejeita \"reenvie\" sem chave e decisão incerta fora de decisão", () => {
+    const proibidos = [
+      ...incertosDoFonte(emAsync("try { await salvar(d); } catch { setErro(MSG_RESULTADO_INCERTO); }")),
+      ...incertosDoFonte(emAsync("try { await registrar(d); } catch { setErro(MSG_DECISAO_INCERTA); }")),
+    ];
+    expect(incoerentes(proibidos)).toHaveLength(2);
+    const permitidos = [
+      ...incertosDoFonte(emAsync("try { await salvar({ ...d, chaveIdempotencia }); } catch { setErro(MSG_RESULTADO_INCERTO); }")),
+      ...incertosDoFonte(emAsync("try { await decidirGrade(d); } catch { setErro(MSG_DECISAO_INCERTA); }")),
+      ...incertosDoFonte(emAsync("try { await salvar(d); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }")),
+    ];
+    expect(incoerentes(permitidos)).toEqual([]);
   });
 });
