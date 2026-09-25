@@ -173,8 +173,11 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    - Clique em "Deploy" no Coolify.
    - O Traefik emite certificado TLS (Let's Encrypt) e roteia
      `https://erp.geniusidiomas.com` → serviço `app` porta 3000 (interna).
-   - O Coolify monitora o healthcheck do app (`/api/whatsapp/health` com header
-     `x-cron-secret`) e marca o deploy como bem-sucedido após 3 checks OK.
+   - O Coolify monitora o healthcheck do app (`/api/health`: liveness do container,
+     sem autenticação) e marca o deploy como bem-sucedido após 3 checks OK.
+   - **Nota**: `/api/whatsapp/health` (saúde do *canal* WhatsApp, protegido com
+     `x-cron-secret`) é para monitores externos (UptimeRobot etc.), não para liveness
+     do container Docker.
 
 5. **Deploy automático**:
    - Cada merge no branch `main` dispara um novo deploy (webhook Git do Coolify).
@@ -186,7 +189,8 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
 - **Banco da Evolution**: criado por serviço one-shot `db-init` (comando SQL inline),
   em vez de bind mount `./deploy/initdb`.
 - **Domínio**: vem da variável mágica `SERVICE_FQDN_APP_3000` (gerada pelo Coolify).
-- **Healthcheck**: endpoint `/api/whatsapp/health` (exige header `x-cron-secret`).
+- **Healthcheck**: endpoint `/api/health` (liveness do container, sem autenticação).
+  Diferente de `/api/whatsapp/health` (saúde do *canal* WhatsApp, protegido).
 
 ### Troubleshooting
 
