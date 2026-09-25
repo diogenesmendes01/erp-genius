@@ -17,11 +17,12 @@ import {
   temFiltroEmpresas,
   type FiltrosEmpresas,
 } from "@/server/empresas/filtros";
+import { botaoClasses } from "@/components/Botao";
 
 // Empresas representam o responsável financeiro. As matrículas permanecem contratos
 // individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
+const btnPri = botaoClasses();
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const campoFiltro = "rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
 
@@ -128,7 +129,7 @@ export function EmpresasCliente({
             <option value="">Todos os países</option>
             {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-          <button type="submit" disabled={lista.buscando} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+          <button type="submit" disabled={lista.buscando} className={botaoClasses({ variante: "secundario" })}>
             {lista.buscando ? "Buscando…" : "Buscar"}
           </button>
           {filtrando && <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}

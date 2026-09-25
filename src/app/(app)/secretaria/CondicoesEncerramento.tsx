@@ -7,6 +7,7 @@ import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerrame
 import { montarAcertoDesistenciaPreparacao, type AlcanceAcerto, type TipoAcerto } from "./condicoes-encerramento-formulario";
 import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { botaoClasses } from "@/components/Botao";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
 type Cobranca = { id: string; codigo: string | null; tipo: string };
@@ -74,7 +75,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
         }}>
           <label className="grid gap-1">Decisão<select name="decisao" required defaultValue="" className={campo}><option value="">Selecione</option><option value="aprovar" disabled={!r || (!!v.processoAssinatura && (v.processoAssinatura.estado !== "ENVIADO" || !v.processoAssinatura.envioConfirmado || v.processoAssinatura.conclusaoRegistrada))}>Aprovar regras conferidas</option><option value="rejeitar">Rejeitar proposta</option></select></label>
           <label className="grid gap-1">Motivo da decisão<input name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
-          <button disabled={ocupado} className={campo}>Registrar decisão</button>
+          <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </form> : <p>Aguardando decisão de outra pessoa da Administração.</p>)}
       </article>;
     })}

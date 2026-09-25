@@ -21,6 +21,7 @@ import {
 import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
 import { LeadFormulario } from "./LeadFormulario";
+import { botaoClasses } from "@/components/Botao";
 
 export interface LeadRow {
   id: string;
@@ -85,7 +86,7 @@ export function LeadsLista({
         {!novo && (
           <button
             onClick={() => setNovo(true)}
-            className="flex items-center gap-1.5 rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95"
+            className={botaoClasses({ tamanho: "lg" })}
           >
             <IconPlus className="h-4 w-4" /> Novo lead
           </button>
@@ -156,7 +157,7 @@ export function LeadsLista({
             ))}
           </select>
         )}
-        <button type="submit" disabled={buscando} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+        <button type="submit" disabled={buscando} className={botaoClasses({ variante: "secundario" })}>
           {buscando ? "Buscando…" : "Buscar"}
         </button>
         {filtrando && <Link href="/leads" onClick={aoClicar("/leads")} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}

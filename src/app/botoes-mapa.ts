@@ -580,4 +580,93 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Tentar novamente · Confirmar recebimento → primario/lg",
     "<button> Novo lançamento → secundario/lg",
   ],
+  "secretaria/CondicoesEncerramento.tsx": [
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "secretaria/SecretariaPainel.tsx": [
+    "<button> Conferir cobertura inicial → secundario/lg",
+    "<button> Assumir matrícula → primario/lg",
+    "<button> Concluir matrícula → primario/lg",
+    "<button> Registrar aceite → secundario/lg",
+    "<button> Solicitar correção → secundario/lg",
+    "<button> Concluir decisão → secundario/lg",
+  ],
+  "secretaria/avisos-agenda/ReconferirPendencia.tsx": [
+    "<button> Reconferindo… · Reconferir condição → secundario/sm",
+  ],
+  "secretaria/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "secretaria/reservas/ConferirReserva.tsx": [
+    "<button> Conferindo… · Conferir vencimento → secundario/lg",
+  ],
+  "secretaria/reservas/[id]/Formularios.tsx": [
+    "<button> Enviar proposta para revisão → secundario/lg",
+    "<button> Aprovar e aplicar → secundario/lg",
+    "<button> Rejeitar proposta → secundario/lg",
+  ],
+  "leads/LeadFormulario.tsx": [
+    "<button> Salvando… · Salvar lead → primario/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "leads/LeadsLista.tsx": [
+    "<button> Novo lead → primario/lg",
+    "<button> Buscando… · Buscar → secundario/md",
+  ],
+  "leads/[id]/FichaLead.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/md",
+    "<button> Marcar perdido → perigo/md",
+    "<button> Confirmar perda → perigo/md",
+  ],
+  "leads/[id]/contratacao/AgendaParticularFormulario.tsx": [
+    "<button> Buscar professores → secundario/lg",
+    "<button> Adicionar encontro → secundario/lg",
+    "<button> Conferir disponibilidade → secundario/lg",
+  ],
+  "leads/[id]/contratacao/PreparacaoFormulario.tsx": [
+    "<button> Conferindo e preparando… · Preparar contratação e reservar → secundario/lg",
+  ],
+  "empresas/EmpresasCliente.tsx": [
+    "const btnPri → primario/md",
+    "<button> Buscando… · Buscar → secundario/md",
+  ],
+  "empresas/[id]/FichaEmpresa.tsx": [
+    "const btnPri → primario/md",
+  ],
+  "inbox/AtendimentosPainel.tsx": [
+    "<button> Abrir atendimento → primario/lg",
+    "<button> Classificar esta mensagem → secundario/md",
+    "<button> Registrar revisão → secundario/md",
+  ],
+  "inbox/InboxCliente.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Retomar régua → secundario/sm",
+    "<button> Salvar nota → primario/sm",
+  ],
+  "pipeline/KanbanBoard.tsx": [
+    "<button> Confirmar perda → perigo/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "home/HomeProfessor.tsx": [
+    "<button> Compareceu → primario/sm",
+    "<button> Faltou → secundario/sm",
+  ],
+  "home/HomeVendedor.tsx": [
+    "<Link> Atender → primario/sm",
+    "<Link> Próximo lead → → secundario/sm",
+  ],
+  "carteiras/CoberturasPainel.tsx": [
+    "<button> Conceder cobertura → primario/lg",
+  ],
+  "comissoes/page.tsx": [
+    "<button> Filtrar → secundario/md",
+  ],
+  "preferencias/FusoExibicaoFormulario.tsx": [
+    "<button> Salvando… · Salvar preferência → secundario/lg",
+  ],
+  "acesso-negado/page.tsx": [
+    "<Link> Voltar ao início → primario/lg",
+  ],
 };

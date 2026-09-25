@@ -7,6 +7,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
 import { Paginacao } from "@/components/Paginacao";
 import { faixaDaPagina, hrefLista, lerOpcao, lerPagina, paginaAlemDoFim, type ParametrosUrl } from "@/lib/pagina-url";
+import { botaoClasses } from "@/components/Botao";
 
 /** Beneficiário histórico tem acesso à comissão sem recuperar a carteira transferida. */
 export default async function ComissoesPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
@@ -26,7 +27,7 @@ export default async function ComissoesPage({ searchParams }: { searchParams: Pr
         <option value="">Todas as situações</option>
         {Object.values(StatusComissao).map((s) => <option key={s} value={s}>{STATUS_COMISSAO_LABEL[s]}</option>)}
       </select>
-      <button type="submit" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Filtrar</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario" })}>Filtrar</button>
       {status && <Link href="/comissoes" className="text-sm text-brand-700 hover:underline">Limpar filtro</Link>}
     </form>
     {total > 0 && <p className="text-xs text-gray-500">{inicio}–{fim} de {total} {total === 1 ? "comissão" : "comissões"}</p>}
