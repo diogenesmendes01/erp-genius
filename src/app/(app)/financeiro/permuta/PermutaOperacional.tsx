@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -97,7 +98,7 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
     <fieldset disabled={ocupado} className="space-y-2">
       <legend className="font-medium">{legenda}</legend>
       {children}
-      <button type="submit" className="rounded border px-3 py-1">{ocupado ? "Enviando…" : "Registrar"}</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "sm" })}>{ocupado ? "Enviando…" : "Registrar"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-sm">{erro}</p>}
     <Mensagem mensagem={sucesso} />
