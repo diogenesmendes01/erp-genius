@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDecisaoAdministrativaDesistencia } from "@/server/matricula/desistencia-administrativa";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecisaoFormulario } from "./DecisaoFormulario";
+import { VoltarPara } from "@/components/VoltarPara";
 
 function textoInstanteAdministrativo(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -20,7 +20,7 @@ export default async function AdministracaoDesistenciaPage({ params }: { params:
   if (!resposta.ok || !resposta.dado) return <p role="alert">{resposta.ok ? "Consulta indisponível." : resposta.erro}</p>;
   const d = resposta.dado;
   return <section className="space-y-5">
-    <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Voltar ao pedido de desistência</Link>
+    <VoltarPara href={`/matriculas/${encodeURIComponent(id)}/desistencia`} para="Pedido de desistência" />
     <h1 className="text-2xl font-medium">Decisão administrativa · {d.matricula.codigo ?? "Matrícula em preparação"}</h1>
     <p>A Administração decide sobre o pedido registrado por outra pessoa. A aprovação não cancela cobranças ou assinaturas e não efetiva a desistência. Os tratamentos financeiros e documentais aplicáveis continuam necessários.</p>
     {!d.exigeAprovacaoAdministrativa && <p>Os registros consultados não exigem aprovação administrativa por avanço formal. Confira os demais requisitos no pedido.</p>}

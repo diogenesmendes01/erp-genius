@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -12,7 +13,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     prisma.versaoCalendarioEscolar.findFirst({ where: { decisao: { aprovada: true } }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }),
   ]);
   return <div className="space-y-4">
-    <Link className="underline" href="/academico">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" />
     <h1 className="text-2xl font-medium">Calendário da escola</h1>
     <p>Feriados, recessos e férias seguem um calendário único. As datas são interpretadas no fuso institucional de cada versão.</p>
     <p>{vigente ? `Calendário vigente: versão ${vigente.versao}` : "Ainda não há calendário publicado."}</p>

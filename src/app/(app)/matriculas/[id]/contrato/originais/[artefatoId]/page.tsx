@@ -9,6 +9,7 @@ import { ConferirAceite } from "../../ConferirAceite";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -32,7 +33,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
   const consultaAceite = processo?.conclusao ? await consultarAceiteOriginal({ matriculaId: id, conclusaoId: processo.conclusao.id }) : null;
   const aceite = consultaAceite?.ok ? consultaAceite.dado : null;
   return <div className="space-y-4">
-    <Link className="underline" href={`/matriculas/${id}/contrato`}>Voltar aos documentos da matrícula</Link>
+    <VoltarPara href={`/matriculas/${id}/contrato`} para="Documentos da matrícula" />
     <h1 className="text-2xl">Conferência para assinatura</h1>
     <a className="underline" href={`/api/matriculas/${id}/originais/${artefatoId}/pdf`} target="_blank" rel="noopener noreferrer">Abrir original preservado</a>
     <p>O envio ao serviço de assinatura ainda não está disponível. Esta conferência registra a revisão; não comprova envio, assinatura ou aceite.</p>

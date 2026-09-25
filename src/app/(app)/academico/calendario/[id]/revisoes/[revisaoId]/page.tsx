@@ -1,5 +1,4 @@
 import { conferirRevisaoParaDecisao } from "@/server/agenda/replanejamento-conferencia";
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRevisaoReplanejamento } from "@/server/agenda/replanejamento-historico";
@@ -7,6 +6,7 @@ import { ConteudoRevisao } from "../../replanejamento/ConteudoRevisao";
 import { DecidirReplanejamento } from "./DecidirReplanejamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function RevisaoPage({ params }: { params: Promise<{ id: string; revisaoId: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -15,13 +15,13 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
     consultarRevisaoReplanejamento({ calendarioId: id, revisaoId }),
     consultarPreferenciaFusoEquipe(),
   ]);
-  if (!resultado.ok || !resultado.dado) return <div><Link href={`/academico/calendario/${id}/revisoes`}>Voltar ao histórico</Link><p role="alert">{resultado.ok ? "Revisão indisponível." : resultado.erro}</p></div>;
+  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href={`/academico/calendario/${id}/revisoes`} para="Histórico" /><p role="alert">{resultado.ok ? "Revisão indisponível." : resultado.erro}</p></div>;
   const r = resultado.dado;
   const conferencia = await conferirRevisaoParaDecisao({ calendarioId: id, revisaoId });
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.calendario.fusoInstitucional);
   const data = (v: Date | string) => formatarInstanteExibicao(v, fusoExibicao, r.calendario.fusoInstitucional).texto;
   return <div className="space-y-5">
-    <Link className="underline" href={`/academico/calendario/${id}/revisoes`}>Voltar ao histórico</Link>
+    <VoltarPara href={`/academico/calendario/${id}/revisoes`} para="Histórico" />
     <h1 className="text-2xl font-medium">Revisão {r.versao} · Calendário {r.calendario.versao}</h1>
     <p>Registrada por {r.preparador.nome} em {data(r.criadoEm)} ({fusoExibicao}; origem {r.calendario.fusoInstitucional})</p>
     <p className="whitespace-pre-wrap">{r.motivo}</p>

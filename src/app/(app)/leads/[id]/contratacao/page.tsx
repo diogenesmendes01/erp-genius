@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCadastrosPreparacao, consultarOfertasPreparacao } from "@/server/matricula/preparacao-comercial";
 import { PreparacaoFormulario } from "./PreparacaoFormulario";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function PreparacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ofertaId?: string; ofertas?: string; cadastros?: string; turmas?: string }> }) {
   await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, f = await searchParams;
@@ -12,7 +13,7 @@ export default async function PreparacaoPage({ params, searchParams }: { params:
   const c = identidades.dado, o = ofertas.dado;
   const url = (chave: string, valor: string) => { const p = new URLSearchParams(); for (const [k, v] of Object.entries(f)) if (v) p.set(k, v); p.set(chave, valor); if (chave === "ofertaId") p.delete("turmas"); return `?${p}`; };
   if (c.matriculaId) return <div className="space-y-3"><p>Esta negociação já possui contratação.</p><Link className="underline" href={`/matriculas/${c.matriculaId}/preparacao`}>Consultar contratação e reserva</Link></div>;
-  return <div className="space-y-4"><Link className="underline" href={`/leads/${id}`}>Voltar à negociação</Link><h1 className="text-2xl font-medium">Preparar contratação · {c.lead.nome}</h1>
+  return <div className="space-y-4"><VoltarPara href={`/leads/${id}`} para="Negociação" /><h1 className="text-2xl font-medium">Preparar contratação · {c.lead.nome}</h1>
     <p>Confira a identidade antes de selecionar. Um telefone compartilhado pode corresponder a mais de uma pessoa.</p>
     {!c.contatoConferivel && <p role="alert">Confira o contato com a Secretaria antes de continuar.</p>}
     {!c.candidatos.length && <p>{c.podeCadastrarNovo ? "Não há cadastro com o contato da negociação. Você poderá preencher os dados básicos de pessoa nova após conferir a identidade." : "Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria."}</p>}

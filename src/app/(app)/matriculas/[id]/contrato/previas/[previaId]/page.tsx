@@ -9,6 +9,7 @@ import { PreservarOriginal } from "../../PreservarOriginal";
 import { consultarOriginaisContratuais } from "@/server/contratos/originais";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -25,7 +26,7 @@ export default async function PreviaPage({ params, searchParams }: { params: Pro
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const pagina = Number((await searchParams).pagina ?? "1");
   const originais = await consultarOriginaisContratuais({ previaId, pagina });
-  return <div className="space-y-4"><Link className="underline" href={`/matriculas/${id}/contrato`}>Voltar às prévias da matrícula</Link>
+  return <div className="space-y-4"><VoltarPara href={`/matriculas/${id}/contrato`} para="Prévias da matrícula" />
     <h1 className="text-2xl">Prévia contratual preservada</h1>
     <a className="underline" href={`/api/matriculas/${id}/previas/${previaId}/pdf`} target="_blank" rel="noopener noreferrer">Abrir PDF da prévia sem assinatura</a>
     <p>Registrada por {p.autor.nome}, em {textoInstanteAdministrativo(p.criadaEm, preferenciaFusoExibicao)}.</p>

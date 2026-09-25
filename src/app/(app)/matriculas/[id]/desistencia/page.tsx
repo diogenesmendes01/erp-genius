@@ -6,6 +6,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { EfetivacaoFormulario } from "./EfetivacaoFormulario";
 import { PedidoFormulario } from "./PedidoFormulario";
+import { VoltarPara } from "@/components/VoltarPara";
 
 function textoInstanteAdministrativo(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -21,7 +22,7 @@ export default async function DesistenciaPage({ params }: { params: Promise<{ id
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const { conferencia, estadoHash, pedidos, podeEfetivar, efetivacao, decisaoFinanceiraId } = resultado.dado;
   return <section className="space-y-5">
-    <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/preparacao`}>Voltar à preparação</Link>
+    <VoltarPara href={`/matriculas/${encodeURIComponent(id)}/preparacao`} para="Preparação" />
     <p><Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia/documentos`}>Conferir documentos e assinaturas</Link></p>
     <p><Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia/administracao`}>Consultar decisão administrativa</Link></p>
     <h1 className="text-2xl font-medium">Pedido de desistência · {conferencia.codigo ?? "Matrícula em preparação"}</h1>

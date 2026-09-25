@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCorrecoesRecuperacao } from "@/server/avaliacoes/recuperacao-correcao";
 import { Propor, Revisar } from "./Formularios";
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function Correcoes({ params, searchParams }: { params: Promise<{ notaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -12,7 +13,7 @@ export default async function Correcoes({ params, searchParams }: { params: Prom
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <section className="space-y-4">
-    <Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(d.realizacaoId)}`}>Voltar à recuperação</Link>
+    <VoltarPara href={`/academico/recuperacoes/${encodeURIComponent(d.realizacaoId)}`} para="Recuperação" />
     <h1 className="text-2xl font-medium">Correções da nota de recuperação</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Habilidade: {d.habilidade.replaceAll("_", " ")}.</p>

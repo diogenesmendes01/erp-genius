@@ -189,3 +189,23 @@ export function trilhaDoCaminho(caminho: string): ItemTrilha[] {
   }
   return itens;
 }
+
+/**
+ * Nome de um destino de navegação pelo mesmo mapa da trilha — só quando o caminho É uma página do
+ * mapa (o último elo da trilha é o próprio destino). Query string ignorada. Caso contrário, null.
+ */
+export function rotuloDoDestino(href: string): string | null {
+  const caminho = href.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  if (DESTINOS_FORA_DO_SHELL[caminho]) return DESTINOS_FORA_DO_SHELL[caminho];
+  const ultimo = trilhaDoCaminho(caminho).at(-1);
+  return ultimo && ultimo.atual && ultimo.href === caminho ? ultimo.rotulo : null;
+}
+
+/**
+ * Destinos de "voltar" fora do shell da equipe (o portal do aluno tem layout próprio e não mostra a
+ * trilha). Mesmo princípio do mapa: um destino, um nome. Um teste confere que cada um é uma página.
+ */
+export const DESTINOS_FORA_DO_SHELL: Record<string, string> = {
+  "/portal-aluno": "Área do aluno",
+  "/portal-aluno/entrar": "Acesso ao portal",
+};
