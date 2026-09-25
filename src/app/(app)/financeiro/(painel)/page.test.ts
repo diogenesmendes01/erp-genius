@@ -138,6 +138,8 @@ describe("/financeiro por rota (E8)", () => {
     expect(pagina).toContain("51–100 de 120 comissões");
     expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;pagina=3");
     expect(pagina).toContain('aria-label="Filtrar por situação"');
+    // Com filtro ativo, dá para limpá-lo (volta à aba sem parâmetros).
+    expect(pagina).toMatch(/<a[^>]*href="\/financeiro\/comissoes"[^>]*>Limpar filtro<\/a>/);
     const props = mocks.componente.mock.calls.at(-1)?.[0] as { comissoes: unknown[]; aPagar: unknown };
     expect(props.comissoes).toHaveLength(50);
     expect(props.aPagar).toEqual([{ moeda: "CRC", valor: 5000 }]);
