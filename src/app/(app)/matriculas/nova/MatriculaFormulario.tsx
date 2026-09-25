@@ -534,7 +534,7 @@ export function MatriculaFormulario({
             <button
               type="button"
               onClick={() => irParaPasso(1)}
-              className="ml-2 text-xs text-brand-700 hover:underline"
+              className={`${botaoClasses({ variante: "fantasma", tamanho: "sm" })} ml-2`}
             >
               editar
             </button>
@@ -569,7 +569,7 @@ export function MatriculaFormulario({
                   ))}
                 </select>
                 {!turmaId && (
-                  <button type="button" onClick={pedirAbertura} disabled={abertura.ocupado} className="mt-1 text-xs text-brand-700 hover:underline">
+                  <button type="button" onClick={pedirAbertura} disabled={abertura.ocupado} className={`${botaoClasses({ variante: "fantasma", tamanho: "sm" })} mt-1`}>
                     Sem turma compatível? Solicitar abertura ao Gerente Pedagógico
                   </button>
                 )}

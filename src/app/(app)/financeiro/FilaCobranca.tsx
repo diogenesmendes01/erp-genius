@@ -276,7 +276,7 @@ export function FilaCobranca({
       <p className="mb-3 text-xs text-gray-400">
         Cartões filtram a fila ·{" "}
         {filtro ? (
-          <button className="text-brand-700 hover:underline" onClick={() => setFiltro(null)}>
+          <button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={() => setFiltro(null)}>
             limpar filtro
           </button>
         ) : (

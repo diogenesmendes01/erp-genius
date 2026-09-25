@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { salvarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 const destaques = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["US/Eastern", "Estados Unidos — Leste"]] as const;
 function todosOsFusos() { try { return typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : []; } catch { return []; } }
@@ -24,6 +25,6 @@ export function FusoExibicaoFormulario({ atual }: { atual: string | null }) {
     <label className="block">Fuso de exibição<input name="fusoExibicao" value={fuso} disabled={ocupado} onChange={(e) => setFuso(e.target.value)} list="fusos-exibicao" placeholder="Usar fuso de origem" className="mt-1 block w-full rounded border p-2" /></label>
     <datalist id="fusos-exibicao"><option value="">Usar fuso de origem do encontro</option>{destaques.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}{fusos.filter((f) => !destaques.some(([valor]) => valor === f)).map((f) => <option key={f} value={f} />)}</datalist>
     <p className="text-sm text-gray-600">Pesquise pelo local ou identificador IANA. Sem preferência, cada encontro continua no fuso de origem. Isso não altera calendário, cobrança ou mensagens.</p>
-    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button disabled={ocupado} className="rounded border px-4 py-2">{ocupado ? "Salvando…" : "Salvar preferência"}</button>
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Salvando…" : "Salvar preferência"}</button>
   </form>;
 }

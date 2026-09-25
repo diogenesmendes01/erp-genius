@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { decidirAcertoEncerramento } from "@/server/matricula/encerramento-decisao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascunhoId: string }) {
   const [ocupado, setOcupado] = useState(false), [mensagem, setMensagem] = useState("");
@@ -16,6 +17,6 @@ export function DecisaoAcerto({ alunoId, rascunhoId }: { alunoId: string; rascun
     <label>Motivo<textarea name="motivo" required minLength={5} maxLength={2000} /></label>
     <label><input type="checkbox" name="retro" /> Autorizo a retroatividade identificada no pedido.</label>
     <label><input type="checkbox" name="multa" /> Autorizo as exceções de multa identificadas nesta versão.</label>
-    <button>Registrar decisão</button>
+    <button className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;
 }
