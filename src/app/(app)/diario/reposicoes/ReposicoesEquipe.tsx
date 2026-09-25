@@ -13,6 +13,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export type OrigemReposicao = {
   aulaOriginalId: string;
@@ -76,7 +77,7 @@ export function SolicitarReposicao({ origem }: { origem: OrigemReposicao }) {
         const r = await solicitarReposicaoIndividual({ aulaOriginalId: origem.aulaOriginalId, matriculaId: origem.matriculaId, modalidade: String(dados.get("modalidade")) as "PARTICULAR" | "GRAVACAO", motivo: String(dados.get("motivo") ?? ""), evidencia: String(dados.get("evidencia") ?? ""), chaveIdempotencia: chave.current! });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("O pedido não foi confirmado. Consulte as reposições antes de reenviar."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <h2 className="text-lg font-medium">Solicitar reposição individual</h2>
@@ -139,7 +140,7 @@ function AgendarParticular({ reposicaoId, opcoes, excecoes, preferenciaFusoExibi
     iniciar(async () => {
       setErro(""); setSucesso("");
       try { const r = await agendarReposicaoIndividual({ ...entrada, chaveIdempotencia }); if (!r.ok) { setErro(r.erro); return; } setSucesso("Agendamento confirmado. Atualizando a consulta."); router.refresh(); }
-      catch { setErro("O agendamento não foi confirmado. Consulte a agenda antes de reenviar."); }
+      catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><h3 className="font-medium">Agendar aula particular autorizada</h3>
@@ -160,7 +161,7 @@ function AgendarParticular({ reposicaoId, opcoes, excecoes, preferenciaFusoExibi
 function CicloAgenda({ agenda }: { agenda: NonNullable<ReposicaoEquipe["cicloAgenda"]> }) {
   const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const router = useRouter(); const periodo = useInicioDoPeriodo();
   if (agenda.encontroStatus !== "PREVISTO" || !["RESERVADA", "ISENTA_EXCECAO"].includes(agenda.statusBeneficio)) return <p role="status">A agenda está {agenda.encontroStatus.toLowerCase()} e não aceita cancelamento ou remarcação.</p>;
-  const executar = (acao: () => Promise<{ ok: boolean; erro?: string }>) => iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "A ação não foi confirmada."); return; } router.refresh(); } catch { setErro("A ação não foi confirmada. Consulte a agenda antes de reenviar."); } });
+  const executar = (acao: () => Promise<{ ok: boolean; erro?: string }>) => iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "A ação não foi confirmada."); return; } router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } });
   return <section className="space-y-3 border-t pt-3" aria-label="Ciclo da agenda particular">
     <h3 className="font-medium">Cancelar ou remarcar agenda particular</h3>
     <p className="text-sm">A decisão independente define se o benefício é devolvido ou consumido. Remarcar conserva a reserva e substitui somente o encontro deste pedido.</p>
@@ -191,7 +192,7 @@ function DecidirReposicao({ reposicaoId }: { reposicaoId: string }) {
     iniciar(async () => {
       setErro("");
       try { const r = await decidirReposicaoIndividual({ reposicaoId, aprovar: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") }); if (!r.ok) { setErro(r.erro); return; } router.refresh(); }
-      catch { setErro("O resultado não foi confirmado. Consulte a reposição antes de repetir."); }
+      catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Autorizar a reposição</option><option value="rejeitar">Rejeitar pedido</option></select></label>

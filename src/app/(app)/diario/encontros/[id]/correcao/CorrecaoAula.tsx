@@ -6,6 +6,7 @@ import { CorrecaoFonteGravacao } from "./CorrecaoFonteGravacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type RespostaHistorico = Awaited<ReturnType<typeof consultarHistoricoCorrecaoAula>>;
 type DadosRevisao = NonNullable<Extract<RespostaHistorico, { ok: true }> ["dado"]>;
@@ -278,7 +279,7 @@ export function CorrecaoAula({ encontroId, dados: dadosIniciais, podeConferirImp
       setImpactos(null);
       setMensagem(`Proposta registrada na versão ${resultado.dado.versao}. A correção ainda não foi publicada.`);
     } catch {
-      setErro("Não foi possível registrar a proposta. Atualize a conferência antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO);
     }
   });
 
@@ -309,7 +310,7 @@ export function CorrecaoAula({ encontroId, dados: dadosIniciais, podeConferirImp
       if (!resultado.ok || !resultado.dado) { setErro(resultado.ok ? "Não foi possível rejeitar a proposta." : resultado.erro); return; }
       await carregarFonte("Proposta rejeitada. A correção continua sem publicação.");
     } catch {
-      setErro("Não foi possível registrar a rejeição. Atualize a página para conferir a proposta antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     }
   });
 
@@ -327,7 +328,7 @@ export function CorrecaoAula({ encontroId, dados: dadosIniciais, podeConferirImp
       if (!resultado.ok || !resultado.dado) { setErro(resultado.ok ? "Não foi possível publicar a correção." : resultado.erro); return; }
       await carregarFonte("Correção publicada. A fonte e o histórico foram atualizados.");
     } catch {
-      setErro("Não foi possível publicar a correção. Atualize a conferência antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     }
   });
 

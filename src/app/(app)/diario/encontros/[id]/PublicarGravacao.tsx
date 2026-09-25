@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { registrarGravacaoAula } from "@/server/diario/gravacao-aula";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function PublicarGravacao({ encontroId }: { encontroId: string }) {
   const [arquivoOficialId, setArquivoOficialId] = useState("");
@@ -28,7 +29,7 @@ export function PublicarGravacao({ encontroId }: { encontroId: string }) {
         }
         setPublicada(true);
       } catch {
-        setErro("Não foi possível publicar a gravação. Tente novamente com o mesmo arquivo.");
+        setErro(MSG_RESULTADO_INCERTO);
       }
     });
   }

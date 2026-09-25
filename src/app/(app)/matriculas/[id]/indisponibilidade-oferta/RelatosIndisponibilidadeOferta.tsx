@@ -8,6 +8,7 @@ import { consultarRelatosIndisponibilidadeOferta, registrarRelatoIndisponibilida
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -53,7 +54,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
             elemento.reset(); chave.current = null; router.refresh();
           } else setErro(resultado.erro);
         } catch {
-          setErro("Atualize o histórico para conferir o resultado antes de repetir o relato.");
+          setErro(MSG_RESULTADO_INCERTO);
         }
       });
     }}>
@@ -92,7 +93,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
             if (resultado.ok) { setMensagem("Decisão registrada."); router.refresh(); }
             else setErro(resultado.erro);
           } catch {
-            setErro("Atualize o histórico para conferir a decisão antes de repetir.");
+            setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
           }
         });
       }}>

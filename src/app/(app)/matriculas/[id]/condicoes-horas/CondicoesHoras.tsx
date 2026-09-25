@@ -8,6 +8,7 @@ import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -32,7 +33,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
             clausulaPreco: String(f.get("preco")), clausulaCancelamento: String(f.get("cancelamento")),
           } });
           setMensagem(r.ok ? "Versão preparada para revisão independente." : r.erro); if (r.ok) router.refresh();
-        } catch (e) { setMensagem(e instanceof Error ? e.message : "Atualize o histórico para conferir o resultado antes de repetir."); }
+        } catch (e) { setMensagem(e instanceof Error ? e.message : MSG_RESULTADO_INCERTO_SEM_CHAVE); }
       });
     }}>
       <fieldset disabled={ocupado} className="space-y-3"><legend>Nova transcrição do contrato confirmado</legend>
@@ -61,7 +62,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         iniciar(async () => {
           try { const r = await decidirCondicoesHoras({ id: v.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) });
             setMensagem(r.ok ? "Decisão registrada." : r.erro); if (r.ok) router.refresh();
-          } catch { setMensagem("Atualize o histórico para conferir a decisão antes de repetir."); }
+          } catch { setMensagem(MSG_DECISAO_INCERTA); }
         });
       }}><fieldset disabled={ocupado} className="space-y-2"><legend>Revisão administrativa</legend>
         <label className="block">Decisão<select className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>

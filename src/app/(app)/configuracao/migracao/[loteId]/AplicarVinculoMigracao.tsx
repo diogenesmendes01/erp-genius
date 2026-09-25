@@ -14,6 +14,7 @@ import {
 } from "./formulario-aplicar-vinculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Props = {
   linhaId: string;
@@ -70,7 +71,7 @@ export function AplicarVinculoMigracao(props: Props) {
       setSucesso(resposta.dado.repetida ? "Esta aplicação já havia sido registrada." : "Aplicação do vínculo concluída.");
       router.refresh();
     } catch {
-      setErro("Não foi possível aplicar o vínculo.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       enviando.current = false;
       setOcupado(false);

@@ -13,6 +13,7 @@ import { useOperacao } from "./useOperacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoRecomposicao>>, { ok: true }>["dado"]>;
@@ -40,7 +41,7 @@ export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizar
     if (!r.ok) throw new Error(r.erro);
     setRascunho(r.dado ?? null); setCarregado(true);
   }
-  function executar(tarefa: () => Promise<void>) { void iniciar(async () => { setMensagem(null); try { await tarefa(); } catch (e) { setMensagem(e instanceof Error ? e.message : "Não foi possível concluir a operação. Consulte o estado antes de repetir."); } }); }
+  function executar(tarefa: () => Promise<void>) { void iniciar(async () => { setMensagem(null); try { await tarefa(); } catch (e) { setMensagem(e instanceof Error ? e.message : MSG_RESULTADO_INCERTO_SEM_CHAVE); } }); }
   return <section className="space-y-3 border-t pt-3" aria-label="Recomposição de cobertura">
     <h3 className="font-medium">Recomposição de cobertura</h3>
     <p>Revise a cobertura de todas as mensalidades. A proposta preserva valores e vencimentos; aprovação e aplicação permanecem identificadas separadamente.</p>

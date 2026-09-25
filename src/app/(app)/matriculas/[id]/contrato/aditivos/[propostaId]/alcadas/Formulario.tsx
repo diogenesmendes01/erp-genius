@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAlcadaAditivo } from "@/server/contratos/aditivo-alcadas";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 type Alcada = "FINANCEIRA" | "COMERCIAL" | "PEDAGOGICA";
 
@@ -14,7 +15,7 @@ export function FormularioAlcada({ matriculaId, propostaId, propostaHash, alcada
     iniciar(async () => { try {
       const resultado = await decidirAlcadaAditivo({ matriculaId, propostaId, propostaHash, alcada, aprovada: decisao === "aprovar", motivo: String(dados.get("motivo") ?? "") });
       if (!resultado.ok) setMensagem(resultado.erro); else { setMensagem("Decisão de alçada registrada."); router.refresh(); }
-    } catch { setMensagem("Não foi possível registrar a decisão. Confira o histórico antes de repetir a tentativa."); } });
+    } catch { setMensagem(MSG_DECISAO_INCERTA); } });
   }}>
     <h2 className="text-xl">Decisão da alçada</h2>
     <fieldset disabled={pendente} className="space-y-2"><legend>Decisão</legend>
