@@ -2,11 +2,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { MAPA_BOTOES } from "./botoes-mapa";
 
 // E1 (docs/42-auditoria-frontend-ux.md): o botão tem uma fonte só (botaoClasses / <Botao>, em
 // src/components/Botao.tsx). A migração é por ÁREA; nas áreas desta lista (que só cresce):
 // - nenhum literal de classe (string, template, concatenação) desenha um botão primário à mão;
-// - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses.
+// - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
+// - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
 const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico"];
 
@@ -49,6 +51,58 @@ export function botoesCrus(fonte: string): string[] {
   return achados;
 }
 
+/** Textos visíveis de um elemento JSX (texto e literais dos filhos), para localizar o botão no mapa. */
+function textosVisiveis(el: ts.JsxElement, sf: ts.SourceFile): string {
+  const partes: string[] = [];
+  const coletar = (n: ts.Node) => {
+    if (ts.isJsxAttributes(n)) return;
+    if (ts.isJsxText(n)) {
+      const t = n.getText(sf).replace(/\s+/g, " ").trim();
+      if (t) partes.push(t);
+    } else if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) partes.push(n.text);
+    ts.forEachChild(n, coletar);
+  };
+  for (const c of el.children) coletar(c);
+  return partes.join(" · ").slice(0, 60);
+}
+
+/**
+ * Cada chamada a botaoClasses(...) do fonte, em ordem: "<rótulo> → variante/tamanho". Rótulo é o
+ * texto visível do elemento (ou `const nome`); omitidos valem primario/md, como em Botao.tsx.
+ */
+export function mapaDeBotoes(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const itens: string[] = [];
+  const valor = (i: ts.Expression) =>
+    ts.isStringLiteral(i) ? i.text : ts.isConditionalExpression(i) && ts.isStringLiteral(i.whenTrue) && ts.isStringLiteral(i.whenFalse) ? `${i.whenTrue.text}|${i.whenFalse.text}` : "?";
+  const visitar = (n: ts.Node) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") {
+      let variante = "primario", tamanho = "md";
+      const arg = n.arguments[0];
+      if (arg && ts.isObjectLiteralExpression(arg)) {
+        for (const p of arg.properties) {
+          if (!ts.isPropertyAssignment(p)) continue;
+          if (p.name.getText(sf) === "variante") variante = valor(p.initializer);
+          if (p.name.getText(sf) === "tamanho") tamanho = valor(p.initializer);
+        }
+      } else if (arg) variante = tamanho = "?";
+      let rotulo = "?";
+      for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
+        if (ts.isVariableDeclaration(p)) { rotulo = `const ${p.name.getText(sf)}`; break; }
+        if (ts.isJsxAttribute(p)) {
+          const el = p.parent.parent;
+          rotulo = `<${el.tagName.getText(sf)}> ${ts.isJsxOpeningElement(el) ? textosVisiveis(el.parent, sf) : ""}`.trim();
+          break;
+        }
+      }
+      itens.push(`${rotulo} → ${variante}/${tamanho}`);
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return itens;
+}
+
 const arquivos = AREAS_MIGRADAS.flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
     .filter((f) => /\.tsx$/.test(f))
@@ -66,6 +120,23 @@ describe("botões nas áreas migradas", () => {
 
   it("a lista de áreas migradas só cresce (uma área não sai num rebase distraído)", () => {
     expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico"]));
+  });
+
+  it("variante e tamanho de cada botão migrado ficam como decididos (src/app/botoes-mapa.ts)", () => {
+    const real: Record<string, string[]> = {};
+    for (const { arquivo, conteudo } of arquivos) {
+      if (/\.test\./.test(arquivo)) continue;
+      const itens = mapaDeBotoes(conteudo);
+      if (itens.length) real[arquivo.replace("src/app/(app)/", "")] = itens;
+    }
+    expect(real).toEqual(MAPA_BOTOES);
+  });
+
+  it("o mapa localiza cada chamada: rótulo pelo texto do botão ou pela constante; omitidos valem primario/md", () => {
+    expect(mapaDeBotoes('<button className={botaoClasses({ variante: "perigo" })}>{ocupado ? "Rejeitando…" : "Rejeitar"}</button>')).toEqual(["<button> Rejeitando… · Rejeitar → perigo/md"]);
+    expect(mapaDeBotoes('const principal = botaoClasses({ tamanho: "lg" });')).toEqual(["const principal → primario/lg"]);
+    expect(mapaDeBotoes("<Link className={`${botaoClasses()} mt-2`} href=\"/x\">Propor</Link>")).toEqual(["<Link> Propor → primario/md"]);
+    expect(mapaDeBotoes('<button className={botaoClasses({ variante: on ? "perigo" : "secundario" })}>X</button>')).toEqual(["<button> X → perigo|secundario/md"]);
   });
 
   it("a lista de exceções não sobra", () => {
