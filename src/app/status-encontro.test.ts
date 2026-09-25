@@ -12,10 +12,31 @@ import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 export function mapasDeStatusEncontro(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const achados: string[] = [];
+  // Nome de uma chave em qualquer forma de membro: `PREVISTO:`, `"PREVISTO":`, `["PREVISTO"]:`,
+  // shorthand `{ PREVISTO }`, getter/método `get PREVISTO()`.
+  const nomeDaChave = (nome: ts.PropertyName | undefined): string | null => {
+    if (!nome) return null;
+    if (ts.isIdentifier(nome) || ts.isStringLiteral(nome) || ts.isNoSubstitutionTemplateLiteral(nome)) return nome.text;
+    if (ts.isComputedPropertyName(nome)) {
+      const e = nome.expression;
+      if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
+      if (ts.isPropertyAccessExpression(e)) return e.name.text; // [StatusEncontroAgenda.PREVISTO]
+    }
+    return null;
+  };
+  const doPar = (chaves: (string | null)[]) => chaves.includes("PREVISTO") && chaves.includes("MINISTRADO");
+  const texto = (n: ts.Node) => n.getText(sf).replace(/\s+/g, " ").slice(0, 90);
   const visitar = (n: ts.Node) => {
-    if (ts.isObjectLiteralExpression(n)) {
-      const chaves = n.properties.filter((p) => ts.isPropertyAssignment(p)).map((p) => p.name.getText(sf).replace(/["']/g, ""));
-      if (chaves.includes("PREVISTO") && chaves.includes("MINISTRADO")) achados.push(n.getText(sf).replace(/\s+/g, " ").slice(0, 90));
+    if (ts.isObjectLiteralExpression(n) && doPar(n.properties.map((p) => (ts.isSpreadAssignment(p) ? null : nomeDaChave(p.name))))) achados.push(texto(n));
+    // Pares em array — Object.fromEntries([["PREVISTO", …], …]), new Map([...]).
+    if (ts.isArrayLiteralExpression(n)) {
+      const primeiros = n.elements.map((e) => (ts.isArrayLiteralExpression(e) && e.elements[0] && (ts.isStringLiteral(e.elements[0]) || ts.isNoSubstitutionTemplateLiteral(e.elements[0])) ? e.elements[0].text : null));
+      if (doPar(primeiros)) achados.push(texto(n));
+    }
+    // switch (status) { case "PREVISTO": … case "MINISTRADO": … } também é um mapa de rótulos.
+    if (ts.isSwitchStatement(n)) {
+      const casos = n.caseBlock.clauses.map((c) => (ts.isCaseClause(c) ? (ts.isStringLiteral(c.expression) ? c.expression.text : ts.isPropertyAccessExpression(c.expression) ? c.expression.name.text : null) : null));
+      if (doPar(casos)) achados.push(texto(n));
     }
     ts.forEachChild(n, visitar);
   };
@@ -51,5 +72,13 @@ describe("status do encontro: um rótulo por estado, no masculino", () => {
     expect(mapasDeStatusEncontro('const r = { "PREVISTO": "Previsto", "MINISTRADO": "Ministrado" };')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = { RESERVADA: "Reservada", PREVISTO: "Previsto", MINISTRADO: "Ministrado" };')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = { RESERVADA: "Reservada", ...STATUS_ENCONTRO_LABEL };')).toEqual([]);
+    // R1 da #120: chaves computadas, shorthand, getters, enum como chave e pares em array também contam.
+    expect(mapasDeStatusEncontro('const r = { ["PREVISTO"]: "Prevista", ["MINISTRADO"]: "Ministrada" };')).toHaveLength(1);
+    expect(mapasDeStatusEncontro("const PREVISTO = \"Prevista\", MINISTRADO = \"Ministrada\"; const r = { PREVISTO, MINISTRADO };")).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = { get PREVISTO() { return "Prevista"; }, get MINISTRADO() { return "Ministrada"; } };')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = { [StatusEncontroAgenda.PREVISTO]: "Prevista", [StatusEncontroAgenda.MINISTRADO]: "Ministrada" };')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = Object.fromEntries([["PREVISTO", "Prevista"], ["MINISTRADO", "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = new Map([["PREVISTO", "Prevista"], ["MINISTRADO", "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('function r(s) { switch (s) { case "PREVISTO": return "Prevista"; case "MINISTRADO": return "Ministrada"; } }')).toHaveLength(1);
   });
 });
