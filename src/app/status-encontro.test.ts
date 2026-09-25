@@ -30,7 +30,10 @@ export function mapasDeStatusEncontro(fonte: string): string[] {
     if (ts.isObjectLiteralExpression(n) && doPar(n.properties.map((p) => (ts.isSpreadAssignment(p) ? null : nomeDaChave(p.name))))) achados.push(texto(n));
     // Pares em array — Object.fromEntries([["PREVISTO", …], …]), new Map([...]).
     if (ts.isArrayLiteralExpression(n)) {
-      const primeiros = n.elements.map((e) => (ts.isArrayLiteralExpression(e) && e.elements[0] && (ts.isStringLiteral(e.elements[0]) || ts.isNoSubstitutionTemplateLiteral(e.elements[0])) ? e.elements[0].text : null));
+      // A chave do par em qualquer forma: "PREVISTO", `PREVISTO` ou StatusEncontroAgenda.PREVISTO.
+      const chaveDoPar = (e: ts.Expression | undefined) =>
+        !e ? null : ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : null;
+      const primeiros = n.elements.map((e) => (ts.isArrayLiteralExpression(e) ? chaveDoPar(e.elements[0]) : null));
       if (doPar(primeiros)) achados.push(texto(n));
     }
     // switch (status) { case "PREVISTO": … case "MINISTRADO": … } também é um mapa de rótulos.
@@ -79,6 +82,8 @@ describe("status do encontro: um rótulo por estado, no masculino", () => {
     expect(mapasDeStatusEncontro('const r = { [StatusEncontroAgenda.PREVISTO]: "Prevista", [StatusEncontroAgenda.MINISTRADO]: "Ministrada" };')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = Object.fromEntries([["PREVISTO", "Prevista"], ["MINISTRADO", "Ministrada"]]);')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = new Map([["PREVISTO", "Prevista"], ["MINISTRADO", "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = Object.fromEntries([[StatusEncontroAgenda.PREVISTO, "Prevista"], [StatusEncontroAgenda.MINISTRADO, "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = new Map([[StatusEncontroAgenda.PREVISTO, "Prevista"], [StatusEncontroAgenda.MINISTRADO, "Ministrada"]]);')).toHaveLength(1);
     expect(mapasDeStatusEncontro('function r(s) { switch (s) { case "PREVISTO": return "Prevista"; case "MINISTRADO": return "Ministrada"; } }')).toHaveLength(1);
   });
 });
