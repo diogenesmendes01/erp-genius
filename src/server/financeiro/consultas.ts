@@ -21,16 +21,6 @@ const ORDEM_COMISSOES = [{ vendedor: { nome: "asc" as const } }, { criadoEm: "de
 
 export const COMISSOES_POR_PAGINA = 50;
 
-export async function listarComissoes() {
-  const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
-  const comissoes = await prisma.comissao.findMany({
-    where: escopoComissoes(usuario),
-    orderBy: ORDEM_COMISSOES,
-    include: { vendedor: { select: { nome: true } } },
-  });
-  return comissoes.map(resumirComissao);
-}
-
 /**
  * Lista de /comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
  * página. Filtro por situação (em AND com o escopo), 50 por página, total filtrado.
@@ -46,6 +36,21 @@ export async function listarComissoesPagina({ status, pagina }: { status: Status
     prisma.comissao.count({ where }),
   ]);
   return { itens: comissoes.map(resumirComissao), total };
+}
+
+/**
+ * "A pagar (aprovadas)" da aba de comissões do /financeiro, agregado no banco por moeda sobre TODO o
+ * escopo — com a lista paginada, somar só a página exibida daria um total errado.
+ */
+export async function totaisComissoesAPagar() {
+  const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
+  const grupos = await prisma.comissao.groupBy({
+    by: ["moeda"],
+    where: { AND: [escopoComissoes(usuario), { status: StatusComissao.APROVADA }] },
+    _sum: { valor: true },
+    orderBy: { moeda: "asc" },
+  });
+  return grupos.map((g) => ({ moeda: g.moeda, valor: numero(g._sum.valor ?? 0) }));
 }
 
 function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { select: { nome: true } } } }>) {
