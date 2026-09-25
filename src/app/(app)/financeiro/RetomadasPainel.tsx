@@ -10,14 +10,15 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarCompetencia } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
 type Parcela = Contexto["parcelas"][number];
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
-const botao = "rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50";
-const principal = "rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50";
+const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
+const principal = botaoClasses({ tamanho: "lg" });
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 

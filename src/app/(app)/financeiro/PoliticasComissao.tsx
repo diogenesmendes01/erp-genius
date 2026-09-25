@@ -9,6 +9,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
@@ -51,7 +52,7 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { d
         <label>Valor<CampoMoeda required value={valorFixo} onChange={setValorFixo} moeda={moedaSelecionada} className="block w-28 rounded border p-2" /></label>
       )}
       <label>Vigência (vazio = agora)<input name="vigencia" type="datetime-local" className="block rounded border p-2" /></label>
-      <button disabled={acao.ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">Publicar nova versão</button>
+      <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Publicar nova versão</button>
     </form>
     <FeedbackAcao erro={acao.erro} />
     <ul className="divide-y rounded border text-sm">{dados.politicas.map((p) => {
