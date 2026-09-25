@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { consultarEntregaGravacaoPortalAluno, exigirReposicaoDoPortalAluno, estadoEntregaPortalAluno, type ReposicaoPortalAluno } from "@/server/portal-aluno/reposicoes";
 import { EntregaGravacaoPortalAluno } from "./entrega-gravacao";
@@ -8,6 +7,7 @@ import { autorizarReproducaoGravacao } from "@/server/gravacoes/autorizacao";
 import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ErroAutenticacao, ErroPermissao } from "@/server/_shared";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +52,7 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
       // Histórico permanece visível; fonte e controles exigem autorização atual.
     }
   }
-  return <section className="mx-auto max-w-3xl p-6 sm:p-10"><Link href="/portal-aluno" className="text-sm text-brand-700 underline">Voltar às reposições</Link>
+  return <section className="mx-auto max-w-3xl p-6 sm:p-10"><VoltarPara href="/portal-aluno" />
     <h1 className="mt-5 text-2xl font-medium">Reposição {reposicao.modalidade === "GRAVACAO" ? "por gravação" : "particular"}</h1>
     <dl className="mt-6 grid gap-3 rounded-lg border bg-surface p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{reposicao.statusMatricula}</dd></div></dl>
     <p className="mt-3 text-xs text-gray-500">Instantes exibidos em {fusoExibicao}.</p>

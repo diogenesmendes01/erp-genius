@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarDesistenciasFinanceiras } from "@/server/matricula/desistencia-financeiro-consulta";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function Page({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { cursor } = await searchParams;
   const resultado = await listarDesistenciasFinanceiras({ cursor });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
-  return <section className="space-y-4"><Link className="underline" href="/financeiro">Voltar ao Financeiro</Link>
+  return <section className="space-y-4"><VoltarPara href="/financeiro" />
     <h1 className="text-2xl font-medium">Desistências para conferência financeira</h1>
     <p>Pedidos de matrículas em preparação com cobranças registradas. Cada caso exige conferência das condições antes de propor seu tratamento.</p>
     {!d.itens.length && <p>Nenhum pedido nesta página.</p>}

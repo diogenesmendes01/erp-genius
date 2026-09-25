@@ -15,6 +15,7 @@ import { ConferenciaFinalFormulario } from "../../../ConferenciaFinalFormulario"
 import { CondicoesFormalizadasFormulario } from "../../../CondicoesFormalizadasFormulario";
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
+import { VoltarPara } from "@/components/VoltarPara";
 type Processo = { fornecedor: string; ambiente: string; estado: string; tentativaAtual: number; referenciaExterna: string | null; criadoEm: Date; paginaTentativas: number; temMaisTentativas: boolean; tentativaObservacoes: number | null; paginaObservacoes: number; tentativas: { numero: number; iniciadaEm: Date; temMaisObservacoes: boolean; paginaObservacoes: number; observacoes: { id: string; resultado: string; referenciaExterna: string | null; observadaEm: Date }[] }[] };
 export default async function ConferenciaOriginalAditivoPage({ params, searchParams }: {
   params: Promise<{ id: string; propostaId: string; artefatoId: string }>;
@@ -49,7 +50,7 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
   if (!aplicacaoHistoricoResultado.ok) return <p role="alert">{aplicacaoHistoricoResultado.erro}</p>;
   const aplicacaoHistorica = aplicacaoHistoricoResultado.dado?.aplicacao ?? null;
   const atual = `${base}/originais/${encodeURIComponent(artefatoId)}`;
-  return <div className="space-y-4"><Link className="underline" href={base}>Voltar ao aditivo</Link>
+  return <div className="space-y-4"><VoltarPara href={base} para="Aditivo" />
     <h1 className="text-2xl">Conferência do original para assinatura</h1>
     <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(id)}/aditivos/${encodeURIComponent(propostaId)}/originais/${encodeURIComponent(artefatoId)}/pdf`}>Abrir PDF original preservado</a>
     <p>Esta conferência registra a revisão do documento. O envio para assinatura e as aprovações comerciais/financeiras aplicáveis ainda têm etapas próprias.</p>
