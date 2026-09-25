@@ -5,6 +5,7 @@ import { consultarFechamentosHoras } from "@/server/matricula/fechamento-horas-c
 import { prepararFechamentoHoras } from "@/server/matricula/fechamento-horas-rascunho";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -48,7 +49,7 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
       <label className="block">Se houver encontros pendentes<select className={classe} name="escolha" required defaultValue=""><option value="">Selecione</option><option value="AGUARDAR">Aguardar conferência</option><option value="PROPOR_PARCIAL">Propor emissão parcial para aprovação</option></select></label>
       <label className="block">Motivo<textarea className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
       <p>Os dados serão confrontados novamente ao salvar. Esta preparação não aprova o contrato nem emite cobrança.</p>
-      <button className="rounded border p-2">{ocupado ? "Conferindo…" : preparado ? "Salvar rascunho do período conferido" : "Conferir período e versão"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Conferindo…" : preparado ? "Salvar rascunho do período conferido" : "Conferir período e versão"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />
   </form>;

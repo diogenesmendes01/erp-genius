@@ -5,6 +5,7 @@ import { z } from "zod";
 import { conferirParticipantesContratuais, consultarFormularioParticipantes } from "@/server/contratos/participantes";
 import { ConferirParticipantesSchema } from "@/server/contratos/participantes-schema";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
+import { botaoClasses } from "@/components/Botao";
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantes>>;
 type Dados = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
 type Participante = z.infer<typeof ConferirParticipantesSchema>["participantes"][number];
@@ -46,7 +47,7 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
       </section>)}
       <label className="block">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
       <label className="block"><input name="conferido" type="checkbox" required /> Conferi as identidades, contatos e a representação aplicável a cada pessoa.</label>
-      <button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar conferência dos participantes"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar conferência dos participantes"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
   </form>;

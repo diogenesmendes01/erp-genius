@@ -5,6 +5,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { rotular, STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL } from "@/lib/labels";
 import { consultarFormularioNovaReserva, revisarNovaReservaParticular, confirmarNovaReservaParticular } from "@/server/matricula/nova-reserva-particular";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 type Base = NonNullable<Extract<Awaited<ReturnType<typeof consultarFormularioNovaReserva>>, { ok: true }>["dado"]>;
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarNovaReservaParticular>>, { ok: true }>["dado"]>;
 export function NovaReservaFormulario({ base }: { base: Base }) {
@@ -37,13 +38,13 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
   const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: revisao?.agenda.fuso ?? "UTC" }).format(new Date(v));
   return <div className="space-y-4"><fieldset disabled={ocupado} className="space-y-3">
     <legend>{base.formaAgenda === "PARTICULAR_GRADE_FIXA" ? "Informe todos os encontros recorrentes acordados" : "Reserve ao menos o primeiro encontro; os seguintes dependem de agendamento"}</legend>
-    <label className="block">Buscar professor<input value={busca} onChange={(e) => setBusca(e.target.value)} className="block border p-2" /></label><button type="button" onClick={() => buscar(1)} className="border p-2">Buscar</button>
-    <div>{pagina > 1 && <button type="button" onClick={() => buscar(pagina - 1)}>Professores anteriores</button>} {mais && <button type="button" onClick={() => buscar(pagina + 1)}>Mais professores</button>}</div>
+    <label className="block">Buscar professor<input value={busca} onChange={(e) => setBusca(e.target.value)} className="block border p-2" /></label><button type="button" onClick={() => buscar(1)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Buscar</button>
+    <div>{pagina > 1 && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina - 1)}>Professores anteriores</button>} {mais && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina + 1)}>Mais professores</button>}</div>
     <label className="block">Professor<select value={professorId} onChange={(e) => { setProfessor(e.target.value); invalidar(); }} className="block border p-2"><option value="">Selecione</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
     <label className="block">Fuso dos horários<input value={fuso} onChange={(e) => { setFuso(e.target.value); invalidar(); }} className="block border p-2" /><span>Exemplo: America/Sao_Paulo</span></label>
-    {encontros.map((e, i) => <fieldset key={i} className="flex flex-wrap gap-3 rounded border p-3"><legend>Encontro {i + 1}</legend>{(["data", "horario", "duracao"] as const).map((campo) => <label key={campo}>{campo === "data" ? "Data" : campo === "horario" ? "Horário" : "Duração em minutos"}<input type={campo === "data" ? "date" : campo === "horario" ? "time" : "number"} min={campo === "duracao" ? 1 : undefined} max={campo === "duracao" ? 1440 : undefined} value={e[campo]} onChange={(event) => { setEncontros(encontros.map((v, j) => j === i ? { ...v, [campo]: event.target.value } : v)); invalidar(); }} className="block border p-2" /></label>)}<button type="button" disabled={encontros.length === 1} onClick={() => { setEncontros(encontros.filter((_, j) => j !== i)); invalidar(); }}>Remover</button></fieldset>)}
-    <button type="button" disabled={encontros.length >= 1000} onClick={() => { setEncontros([...encontros, { data: "", horario: "", duracao: "" }]); invalidar(); }} className="border p-2">Adicionar encontro</button>
-    <button type="button" onClick={revisar} className="border p-2">Revisar horários e condições</button>
+    {encontros.map((e, i) => <fieldset key={i} className="flex flex-wrap gap-3 rounded border p-3"><legend>Encontro {i + 1}</legend>{(["data", "horario", "duracao"] as const).map((campo) => <label key={campo}>{campo === "data" ? "Data" : campo === "horario" ? "Horário" : "Duração em minutos"}<input type={campo === "data" ? "date" : campo === "horario" ? "time" : "number"} min={campo === "duracao" ? 1 : undefined} max={campo === "duracao" ? 1440 : undefined} value={e[campo]} onChange={(event) => { setEncontros(encontros.map((v, j) => j === i ? { ...v, [campo]: event.target.value } : v)); invalidar(); }} className="block border p-2" /></label>)}<button type="button" className={botaoClasses({ variante: "secundario" })} disabled={encontros.length === 1} onClick={() => { setEncontros(encontros.filter((_, j) => j !== i)); invalidar(); }}>Remover</button></fieldset>)}
+    <button type="button" disabled={encontros.length >= 1000} onClick={() => { setEncontros([...encontros, { data: "", horario: "", duracao: "" }]); invalidar(); }} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar encontro</button>
+    <button type="button" onClick={revisar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Revisar horários e condições</button>
     {revisao && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferência da retomada</h2>
       <p>{revisao.aluno.primeiroNome} {revisao.aluno.sobrenome} · Documento: {revisao.aluno.documento ?? "Não informado"}</p><p>{revisao.aluno.email} · {revisao.aluno.telefoneE164}</p><p>{[revisao.aluno.rua, revisao.aluno.numero, revisao.aluno.cidade, revisao.aluno.regiao, revisao.aluno.cep, revisao.aluno.paisResidencia].filter(Boolean).join(", ")}</p>
       <p>Pagador: {revisao.pagador.tipo} · versão {revisao.pagador.versao}. Condições: versão {revisao.versaoCondicoes}.</p>
@@ -53,7 +54,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
       <h3>Condições de entrada registradas</h3><ul>{revisao.plano.map((p) => <li key={p.tipo}>{rotular(TIPO_COBRANCA_LABEL, p.tipo)} · {formatarMoeda(p.valor, p.moeda)} · vencimento {formatarDataCivil(p.vencimento)}{p.cobertura ? ` · cobertura ${formatarDataCivil(p.cobertura.inicio)} a ${formatarDataCivil(p.cobertura.fim)}` : ""}</li>)}</ul>
       <label className="block">Motivo<textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = null; }} minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
       <label className="block"><input type="checkbox" checked={conferido} onChange={(e) => setConferido(e.target.checked)} /> Conferi cadastro, pagador, condições, cobranças e todos os horários acordados.</label>
-      <button type="button" disabled={!conferido || motivo.trim().length < 5} onClick={confirmar} className="border p-2">Confirmar nova reserva</button>
+      <button type="button" disabled={!conferido || motivo.trim().length < 5} onClick={confirmar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar nova reserva</button>
     </section>}
   </fieldset>{mensagem && <p role="alert">{mensagem}</p>}</div>;
 }
