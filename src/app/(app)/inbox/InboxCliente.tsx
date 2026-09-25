@@ -38,12 +38,13 @@ import { PagamentoModal } from "@/components/PagamentoModal";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 function horaCurta(iso: string, preferenciaFusoExibicao: string | null): string {
   return formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC").texto;
@@ -399,7 +400,7 @@ function Thread({
           </span>
           {podeCobranca && (
             <button
-              className="shrink-0 rounded-md border border-amber-200 px-2 py-0.5 text-amber-800 hover:bg-amber-100"
+              className={`${botaoClasses({ variante: "secundario", tamanho: "sm" })} shrink-0`}
               onClick={() =>
                 run(
                   marcarConversaTratada({ conversaId: thread.conversaId, motivo: "retomar_regua" }),
@@ -925,7 +926,7 @@ function CockpitLead({
           </span>
         )}
 
-        <button className={btnSec + " ml-auto"} onClick={() => setAbrirNotas((v) => !v)}>
+        <button className={`${btnSec} ml-auto`} onClick={() => setAbrirNotas((v) => !v)}>
           <span className="flex items-center gap-1">
             <IconLock className="h-3.5 w-3.5" />
             Notas internas{lead.notas.length > 0 ? ` (${lead.notas.length})` : ""}
@@ -951,7 +952,7 @@ function CockpitLead({
               className="flex-1 resize-none rounded-md border border-amber-200 bg-surface px-2 py-1 outline-none focus:border-amber-600"
             />
             <button
-              className={btnPri + " text-xs"}
+              className={botaoClasses({ tamanho: "sm" })}
               disabled={ocupado || texto.trim().length === 0}
               onClick={async () => {
                 // Limpa o campo SÓ no sucesso (review PR #58 P2): se o servidor recusa

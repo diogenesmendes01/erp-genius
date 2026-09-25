@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconLock } from "@tabler/icons-react";
+import { botaoClasses } from "@/components/Botao";
 
 // Destino dos guards de página quando o usuário está autenticado mas sem o papel
 // exigido. Nenhum dado sensível é consultado aqui (ver docs/07-papeis-permissoes).
@@ -16,7 +17,7 @@ export default function AcessoNegadoPage() {
       </p>
       <Link
         href="/home"
-        className="mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+        className={`${botaoClasses({ tamanho: "lg" })} mt-2`}
       >
         Voltar ao início
       </Link>

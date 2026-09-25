@@ -32,6 +32,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { botaoClasses } from "@/components/Botao";
 
 const TRILHA: EtapaLead[] = [
   EtapaLead.NOVO,
@@ -97,10 +98,8 @@ export interface EventoTimeline {
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-const btnPri =
-  "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec =
-  "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario" });
 
 function diasNoFunil(criadoEm: string): number {
   const ms = Date.now() - new Date(criadoEm).getTime();
@@ -413,7 +412,7 @@ function BarraAcoes({
         <button className={btnSec} disabled={acao.ocupado} onClick={() => executar("barra", () => enviarProposta(lead.id))}>
           Enviar proposta
         </button>
-        <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => alternar("perdido")}>
+        <button className={botaoClasses({ variante: "perigo" })} onClick={() => alternar("perdido")}>
           Marcar perdido
         </button>
         {lead.matricula ? (
@@ -500,7 +499,7 @@ function BarraAcoes({
           {feedback("perdido")}
           <div>
             <button
-              className={btnPri + " bg-danger hover:brightness-95"}
+              className={botaoClasses({ variante: "perigo" })}
               disabled={acao.ocupado}
               onClick={async () => {
                 if (await executar("perdido", () => marcarPerdido(lead.id, { motivoPerda: motivo, observacao: obs }))) setModal("none");

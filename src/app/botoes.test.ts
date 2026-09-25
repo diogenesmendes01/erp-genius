@@ -10,7 +10,7 @@ import { MAPA_BOTOES } from "./botoes-mapa";
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/pipeline", "src/app/(app)/home", "src/app/(app)/carteiras", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"];
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
@@ -20,6 +20,12 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
   "src/app/(app)/financeiro/FilaCobranca.tsx": 1, // cartão-indicador que filtra a fila (dashboard da régua)
+  // Inbox (chat): item da lista de conversas, contador de não lidas, barra "Conversas" do celular,
+  // pílula de link, 2 botões só de ícone (anexar, gravar), fichas de temperatura, lista de nomes.
+  "src/app/(app)/inbox/InboxCliente.tsx": 8,
+  "src/app/(app)/pipeline/KanbanBoard.tsx": 2, // alça "⠿ arrastar" do cartão e seletor de tipo (segmentado)
+  "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
+  "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
 };
 
 const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
@@ -125,7 +131,7 @@ describe("botões nas áreas migradas", () => {
   });
 
   it("a lista de áreas migradas só cresce (uma área não sai num rebase distraído)", () => {
-    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro"]));
+    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/pipeline", "src/app/(app)/home", "src/app/(app)/carteiras", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"]));
   });
 
   it("variante e tamanho de cada botão migrado ficam como decididos (src/app/botoes-mapa.ts)", () => {

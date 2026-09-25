@@ -11,6 +11,7 @@ import { ETAPA_LABEL } from "@/lib/labels";
 import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeVendedor } from "@/server/home/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeVendedor>>;
 
@@ -86,7 +87,7 @@ export function HomeVendedor({
                   <span className="ml-2 text-sm text-gray-500">{o.motivo}</span>
                   <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">Prioridade {FAIXA[o.prioridade]}</span>
                 </div>
-                <Link href={`/leads/${o.id}`} className="rounded-md bg-brand-solid px-3 py-1 text-xs font-medium text-white hover:brightness-95">Atender</Link>
+                <Link href={`/leads/${o.id}`} className={botaoClasses({ tamanho: "sm" })}>Atender</Link>
               </li>
             ))}
           </ul>
@@ -97,7 +98,7 @@ export function HomeVendedor({
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-medium">Fila de trabalho</h2>
           {fila.length > 0 && (
-            <Link href={`/leads/${fila[0].id}`} className="rounded-md border border-brand-300 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50">
+            <Link href={`/leads/${fila[0].id}`} className={botaoClasses({ variante: "secundario", tamanho: "sm" })}>
               Próximo lead →
             </Link>
           )}
