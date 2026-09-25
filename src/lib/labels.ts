@@ -12,6 +12,7 @@ import {
   Genero,
   Escolaridade,
   SituacaoRelatoMaterialReposicao,
+  StatusEncontroAgenda,
 } from "@prisma/client";
 
 // Rótulos legíveis (pt-BR) dos enums do domínio. Fonte única para a UI.
@@ -151,4 +152,18 @@ export const SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL: Record<SituacaoRelatoMate
   ABERTO: "Aguardando conferência da escola",
   CONFIRMADO: "Confirmado pela escola",
   DESCARTADO: "Não confirmado pela escola",
+};
+
+/**
+ * Status do encontro da agenda. Concorda com "encontro" (masculino) em todas as telas — o diário
+ * dizia "Prevista/Ministrada/Cancelada" (aula) e o acadêmico "Previsto/…"; decisão do responsável
+ * em 25/09/2026: masculino.
+ */
+export const STATUS_ENCONTRO_LABEL: Record<StatusEncontroAgenda, string> = {
+  RASCUNHO: "Rascunho",
+  PREVISTO: "Previsto",
+  MINISTRADO: "Ministrado",
+  CANCELADO: "Cancelado",
+  NAO_REALIZADO: "Não realizado",
+  IMPEDIDO_ESCOLA: "Impedido pela escola",
 };

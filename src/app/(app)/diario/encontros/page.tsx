@@ -3,12 +3,13 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarEncontrosDocente } from "@/server/agenda/encontros-docente";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
 export default async function EncontrosDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   const { cursor } = await searchParams;
   const r = await consultarEncontrosDocente({ cursor });
-  const rotulo = { PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada", NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho" };
+  const rotulo = STATUS_ENCONTRO_LABEL;
   return <div className="space-y-4">
     <VoltarPara href="/diario" />
     <h1 className="text-2xl font-medium">Encontros atribuídos</h1>

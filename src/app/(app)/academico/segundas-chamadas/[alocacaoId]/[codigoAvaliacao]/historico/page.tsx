@@ -5,12 +5,13 @@ import { consultarHistoricoReservasSegundaChamada } from "@/server/avaliacoes/se
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
 const rotulos: Record<string, string> = {
   RESERVADA: "Reservada", CONSUMIDA_REALIZACAO: "Realizada", CONSUMIDA_FALTA: "Falta registrada",
   CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelamento fora do prazo", LIBERADA_CANCELAMENTO_ESCOLA: "Cancelamento pela escola",
   LIBERADA_CANCELAMENTO_TEMPESTIVO: "Cancelamento dentro do prazo", PENDENCIA_ESCOLA: "Impedimento pela escola",
-  PREVISTO: "Previsto", MINISTRADO: "Ministrado", CANCELADO: "Cancelado", NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola",
+  ...STATUS_ENCONTRO_LABEL,
 };
 
 export default async function Page({ params, searchParams }: {
