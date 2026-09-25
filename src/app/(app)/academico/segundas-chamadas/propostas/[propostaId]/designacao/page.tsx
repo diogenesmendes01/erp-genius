@@ -6,6 +6,7 @@ import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { botaoClasses } from "@/components/Botao";
 
 export default async function Designacao({ params, searchParams }: {
   params: Promise<{ propostaId: string }>;
@@ -41,7 +42,7 @@ export default async function Designacao({ params, searchParams }: {
     </p> : <p>Nenhuma designação registrada.</p>}
     <form>
       <label>Buscar professor<input name="busca" defaultValue={d.busca} className="ml-2 rounded border p-2" /></label>
-      <button className="ml-2 rounded border p-2">Buscar</button>
+      <button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} ml-2`}>Buscar</button>
     </form>
     {d.refinarBusca && <p>Mostrando os primeiros 50 resultados. Refine a busca.</p>}
     {d.podeDesignar && <Formulario propostaId={d.propostaId} professores={d.professores} fusoInstitucional={fusoInstitucional} />}

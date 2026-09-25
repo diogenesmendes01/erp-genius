@@ -5,6 +5,7 @@ import { ProporSubstituicao } from "./ProporSubstituicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 type RespostaPreviaSubstituicao = Awaited<ReturnType<typeof preverSubstituicaoAvaliadorRecuperacao>>;
 type DadosPreviaSubstituicao = NonNullable<Extract<RespostaPreviaSubstituicao, { ok: true }>["dado"]>;
 
@@ -28,7 +29,7 @@ export function PreviaSubstituicao({ itemReservaId, atualId, professores, prefer
     <p>Esta tela confere a disponibilidade para o horário aprovado. O avaliador e a atribuição atuais permanecem em vigor.</p>
     <form onChange={() => { setResultado(null); acao.limpar(); }} onSubmit={async e => { e.preventDefault(); const substitutoId = String(new FormData(e.currentTarget).get("substituto") ?? ""); const d = await acao.executar(() => preverSubstituicaoAvaliadorRecuperacao({ itemReservaId, substitutoId })); if (d?.tipo === "ok") setResultado(d.dado ?? null); }} className="space-y-2">
       <label className="block">Professor substituto<select name="substituto" required defaultValue="" disabled={pendente} className="block rounded border p-2"><option value="" disabled>Selecione</option>{professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
-      <button type="submit" disabled={pendente} className="rounded border px-4 py-2">{pendente ? "Conferindo…" : "Conferir disponibilidade"}</button>
+      <button type="submit" disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{pendente ? "Conferindo…" : "Conferir disponibilidade"}</button>
     </form>
     <FeedbackAcao erro={acao.erro} />
     {resultado && <ResultadoPreviaSubstituicao dado={resultado} itemReservaId={itemReservaId} preferenciaFusoExibicao={preferenciaFusoExibicao} />}

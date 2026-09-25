@@ -8,6 +8,7 @@ import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -19,7 +20,7 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
     try { const r = await executar(data); if (!r.ok) setErro(r.erro); else router.refresh(); }
     catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setEnviando(false); }
-  }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className="rounded border px-4 py-2" type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
+  }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }
 export function Horario({ rotulo = "Data e horário efetivos", fusoInstitucional }: { rotulo?: string; fusoInstitucional: string | null }) {
   return <><label className="block">{rotulo}<input name="dataHora" type="datetime-local" step="0.001" required className="block rounded border p-2" /></label>
