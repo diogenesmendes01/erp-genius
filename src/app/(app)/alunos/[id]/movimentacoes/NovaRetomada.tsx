@@ -7,6 +7,7 @@ import { solicitarRetomadaMatriculas } from "@/server/matricula/retomada-propost
 import type { PreviaRetomadaMatriculasInput } from "@/server/matricula/retomada-schema";
 import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -66,7 +67,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
         <label className="block text-sm">Tratamento dos vencimentos <select className={campo} value={opcoes[m.matriculaId] ?? ""} onChange={(e) => { alterar(); setOpcoes((v) => ({ ...v, [m.matriculaId]: e.target.value as Opcao })); }}><option value="">Selecione</option><option value="MANTER_VENCIMENTOS">Manter vencimentos originais</option><option value="REPROGRAMAR_PARCELAS">Reprogramar vencimentos</option></select></label>
         {opcoes[m.matriculaId] === "MANTER_VENCIMENTOS" && <p className="text-sm">Vencimentos antigos podem continuar em atraso. Retomar não quita a dívida.</p>}
         {m.periodos.map((p) => <label key={p.cobrancaId} className="block text-sm">Período original {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)} · vencimento {data(p.vencimentoAnterior)}
-          {opcoes[m.matriculaId] === "REPROGRAMAR_PARCELAS" && <input aria-label={`Novo vencimento do período ${p.coberturaAnterior.inicio}`} type="date" className={`${campo} ml-2`} value={datas[p.cobrancaId] ?? p.vencimentoAnterior} onChange={(e) => { alterar(); setDatas((v) => ({ ...v, [p.cobrancaId]: e.target.value })); }} />}
+          {opcoes[m.matriculaId] === "REPROGRAMAR_PARCELAS" && <input aria-label={`Novo vencimento do período ${formatarDataCivil(p.coberturaAnterior.inicio)}`} type="date" className={`${campo} ml-2`} value={datas[p.cobrancaId] ?? p.vencimentoAnterior} onChange={(e) => { alterar(); setDatas((v) => ({ ...v, [p.cobrancaId]: e.target.value })); }} />}
         </label>)}
       </fieldset>)}
       {base && <button type="button" className={campo} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}

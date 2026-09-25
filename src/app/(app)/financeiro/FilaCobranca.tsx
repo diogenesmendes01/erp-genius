@@ -17,6 +17,7 @@ import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useDialogo } from "@/lib/dialogo";
+import { formatarCompetencia } from "@/lib/data-civil";
 
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
@@ -551,7 +552,7 @@ export function DetalheCobranca({
             <span className="text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
             <span className="text-xs text-gray-500">
               {TIPO_COBRANCA_LABEL[item.tipo as keyof typeof TIPO_COBRANCA_LABEL] ?? item.tipo}
-              {item.competencia ? ` ${item.competencia}` : ""} · {rotuloVencimento(item.vencimento)}
+              {item.competencia ? ` ${formatarCompetencia(item.competencia)}` : ""} · {rotuloVencimento(item.vencimento)}
             </span>
           </div>
         </div>

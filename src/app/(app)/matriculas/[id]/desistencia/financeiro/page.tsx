@@ -70,11 +70,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     </section>
     <section className="space-y-4 border-t pt-5">
       <h2 className="text-xl font-medium">Reconferência pós-aplicação</h2>
-      <p>Use este fluxo para um fato posterior à aplicação Q165. Ele calcula apenas a diferença e mantém recebimentos, créditos e origens anteriores preservados.</p>
+      <p>Use este fluxo para um fato posterior à aplicação do acerto antes da ativação. Ele calcula apenas a diferença e mantém recebimentos, créditos e origens anteriores preservados.</p>
       {!deltaResultado.ok || !deltaResultado.dado ? <p role="alert">{deltaResultado.ok ? "Consulta da reconferência indisponível." : deltaResultado.erro}</p> : (() => {
         const delta = deltaResultado.dado;
         return <>{delta.impedimento && <p role="status">{delta.impedimento}</p>}{delta.aplicacoesBase.map(base => <article key={base.id} className="space-y-3 rounded border p-4">
-          <h3 className="font-medium">Aplicação Q165 de {instanteAdministrativo(base.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
+          <h3 className="font-medium">Aplicação do acerto antes da ativação em {instanteAdministrativo(base.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
           {base.orientacaoPreparacao && <p role="status">{base.orientacaoPreparacao}</p>}
           {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
           {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}

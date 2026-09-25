@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPagamentosEntradaParticular } from "@/server/matricula/entrada-particular-consulta";
 import { nomeCompleto } from "@/lib/nome";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 const tipo = (s: string) => s === "MATRICULA" ? "Taxa de matrícula" : s === "MENSALIDADE" ? "Primeira mensalidade" : "Adiantamento por hora";
 
 export default async function EntradaParticular({ params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +22,7 @@ export default async function EntradaParticular({ params }: { params: Promise<{ 
       <p>{c.exigido ? "Pagamento exigido para ativar." : "Antecipação opcional; não condiciona a ativação."} {c.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</p>
       {c.pendencia && <p role="alert">{c.pendencia}</p>}
     </article>)}
-    {d.emitirNaAtivacao.length > 0 && <section><h2 className="text-xl font-medium">Emissão prevista na ativação</h2><ul>{d.emitirNaAtivacao.map(c => <li key={c.tipo}>{tipo(c.tipo)} · {formatarMoeda(Number(c.valor),c.moeda)} · vencimento {c.vencimento}.</li>)}</ul></section>}
+    {d.emitirNaAtivacao.length > 0 && <section><h2 className="text-xl font-medium">Emissão prevista na ativação</h2><ul>{d.emitirNaAtivacao.map(c => <li key={c.tipo}>{tipo(c.tipo)} · {formatarMoeda(Number(c.valor),c.moeda)} · vencimento {formatarDataCivil(c.vencimento)}.</li>)}</ul></section>}
     <Link className="underline" href="/financeiro">Acompanhar recebimentos no Financeiro</Link>
   </section>;
 }

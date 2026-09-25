@@ -68,12 +68,12 @@ describe("conferência financeira renderizada", () => {
       ...base,
       cobrancas: [{ id: "c", codigo: "C1", status: "PENDENTE", tipo: "MENSALIDADE", moeda: "CRC", valorNegociado: "100", valorRecebido: null, saldo: "100", versao: 1, vencimento: { estado: "CONFIRMADO", dataCivil: "2099-02-28", fuso: null, origem: "M01_HISTORICO" } }],
     } }));
-    expect(html).toContain("vence 28/02/2099 · origem M01_HISTORICO");
+    expect(html).toContain("vence 28/02/2099 · origem: histórico da migração");
     expect(html).not.toContain("27/02/2099");
   });
   it("impede preparar sem vínculo contratual", () => {
     const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: { ...base, linha: { ...base.linha, mapa: null } } }));
-    expect(html).toContain("ainda não possui vínculo M01");
+    expect(html).toContain("ainda não possui vínculo de migração");
     expect(html).not.toContain("Registrar proposta");
   });
 });

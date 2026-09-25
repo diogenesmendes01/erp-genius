@@ -6,6 +6,7 @@ import { consultarVencimentosAditivo } from "@/server/contratos/vencimento-aditi
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VencimentoFormulario } from "./Formulario";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export default async function Pagina({ params, searchParams }: {
  params: Promise<{ matriculaId: string; propostaId: string }>;
@@ -30,7 +31,7 @@ export default async function Pagina({ params, searchParams }: {
  <h1 className="text-2xl">Acerto do vencimento da primeira mensalidade</h1>
  <p>Matrícula {matriculaId} · versão contratual {d.versao}</p>
  <p>Vigência aprovada: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada). A aplicação fica disponível a partir desse momento.</p>
- <p>Novo vencimento contratado: {d.alvo.vencimentoProposto}. {d.alvo.pendencia}</p>
+ <p>Novo vencimento contratado: {formatarDataCivil(d.alvo.vencimentoProposto)}. {d.alvo.pendencia}</p>
  {d.alvo.podePreparar && <VencimentoFormulario modo="preparar" matriculaId={matriculaId} versaoCondicoesId={versao.id} revisaoHash={d.revisaoHash} />}
  <h2 className="text-xl">Histórico e decisões</h2>
  {!d.propostas.length && <p>Nenhuma proposta de acerto registrada.</p>}

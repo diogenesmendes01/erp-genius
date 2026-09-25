@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export const CompensacoesEncerramentoSchema = z.array(z.object({
   id: z.string(), status: z.enum(["PENDENTE", "APROVADA", "REJEITADA"]),
@@ -27,7 +28,7 @@ export function CompensacoesEncerramento({ compensacoes }: { compensacoes: z.inf
         {dia.diaOrigem}: {dia.estado === "PENDENTE" ? "Pendente" : dia.estado === "RECOMPOSTO" ? "Cobertura recomposta" : "Liquidado financeiramente"} · versão {dia.versao}
         {dia.destinacaoReferencia ? ` · referência ${dia.destinacaoReferencia}` : ""}
         {dia.destinadoEm ? ` · registrado em ${dia.destinadoEm}` : ""}
-        {dia.programacao && <span> · cobertura programada para {dia.programacao.dataCobertura}{dia.estado === "PENDENTE" ? " (cumprimento ainda não confirmado)" : ""}</span>}
+        {dia.programacao && <span> · cobertura programada para {formatarDataCivil(dia.programacao.dataCobertura)}{dia.estado === "PENDENTE" ? " (cumprimento ainda não confirmado)" : ""}</span>}
       </li>)}</ul>}
     </details>)}
   </div>;
