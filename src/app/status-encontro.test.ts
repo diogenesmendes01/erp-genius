@@ -12,35 +12,35 @@ import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 export function mapasDeStatusEncontro(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const achados: string[] = [];
-  // Nome de uma chave em qualquer forma de membro: `PREVISTO:`, `"PREVISTO":`, `["PREVISTO"]:`,
-  // shorthand `{ PREVISTO }`, getter/método `get PREVISTO()`.
+  /**
+   * Nome de uma chave escrita como expressão — o mesmo leitor para chave computada do objeto, chave
+   * de par em array e `case` de switch: "PREVISTO", `PREVISTO`, PREVISTO (identificador),
+   * StatusEncontroAgenda.PREVISTO e StatusEncontroAgenda["PREVISTO"].
+   */
+  const nomeDe = (e: ts.Expression | undefined): string | null => {
+    if (!e) return null;
+    if (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isSatisfiesExpression(e)) return nomeDe(e.expression);
+    if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) || ts.isIdentifier(e)) return e.text;
+    if (ts.isPropertyAccessExpression(e)) return e.name.text;
+    if (ts.isElementAccessExpression(e)) return nomeDe(e.argumentExpression);
+    return null;
+  };
+  // Nome de uma chave em qualquer forma de membro: `PREVISTO:`, `"PREVISTO":`, `[…]:` (qualquer forma
+  // de nomeDe), shorthand `{ PREVISTO }`, getter/método `get PREVISTO()`.
   const nomeDaChave = (nome: ts.PropertyName | undefined): string | null => {
     if (!nome) return null;
     if (ts.isIdentifier(nome) || ts.isStringLiteral(nome) || ts.isNoSubstitutionTemplateLiteral(nome)) return nome.text;
-    if (ts.isComputedPropertyName(nome)) {
-      const e = nome.expression;
-      if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
-      if (ts.isPropertyAccessExpression(e)) return e.name.text; // [StatusEncontroAgenda.PREVISTO]
-    }
+    if (ts.isComputedPropertyName(nome)) return nomeDe(nome.expression);
     return null;
   };
   const doPar = (chaves: (string | null)[]) => chaves.includes("PREVISTO") && chaves.includes("MINISTRADO");
   const texto = (n: ts.Node) => n.getText(sf).replace(/\s+/g, " ").slice(0, 90);
   const visitar = (n: ts.Node) => {
     if (ts.isObjectLiteralExpression(n) && doPar(n.properties.map((p) => (ts.isSpreadAssignment(p) ? null : nomeDaChave(p.name))))) achados.push(texto(n));
-    // Pares em array — Object.fromEntries([["PREVISTO", …], …]), new Map([...]).
-    if (ts.isArrayLiteralExpression(n)) {
-      // A chave do par em qualquer forma: "PREVISTO", `PREVISTO` ou StatusEncontroAgenda.PREVISTO.
-      const chaveDoPar = (e: ts.Expression | undefined) =>
-        !e ? null : ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : null;
-      const primeiros = n.elements.map((e) => (ts.isArrayLiteralExpression(e) ? chaveDoPar(e.elements[0]) : null));
-      if (doPar(primeiros)) achados.push(texto(n));
-    }
+    // Pares em array — Object.fromEntries([[…, …], …]), new Map([...]) — com a chave em qualquer forma.
+    if (ts.isArrayLiteralExpression(n) && doPar(n.elements.map((e) => (ts.isArrayLiteralExpression(e) ? nomeDe(e.elements[0]) : null)))) achados.push(texto(n));
     // switch (status) { case "PREVISTO": … case "MINISTRADO": … } também é um mapa de rótulos.
-    if (ts.isSwitchStatement(n)) {
-      const casos = n.caseBlock.clauses.map((c) => (ts.isCaseClause(c) ? (ts.isStringLiteral(c.expression) ? c.expression.text : ts.isPropertyAccessExpression(c.expression) ? c.expression.name.text : null) : null));
-      if (doPar(casos)) achados.push(texto(n));
-    }
+    if (ts.isSwitchStatement(n) && doPar(n.caseBlock.clauses.map((c) => (ts.isCaseClause(c) ? nomeDe(c.expression) : null)))) achados.push(texto(n));
     ts.forEachChild(n, visitar);
   };
   visitar(sf);
@@ -84,6 +84,11 @@ describe("status do encontro: um rótulo por estado, no masculino", () => {
     expect(mapasDeStatusEncontro('const r = new Map([["PREVISTO", "Prevista"], ["MINISTRADO", "Ministrada"]]);')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = Object.fromEntries([[StatusEncontroAgenda.PREVISTO, "Prevista"], [StatusEncontroAgenda.MINISTRADO, "Ministrada"]]);')).toHaveLength(1);
     expect(mapasDeStatusEncontro('const r = new Map([[StatusEncontroAgenda.PREVISTO, "Prevista"], [StatusEncontroAgenda.MINISTRADO, "Ministrada"]]);')).toHaveLength(1);
+    // R3 da #120: identificador como chave do par (B6) e acesso por colchetes (B7), no objeto e no par.
+    expect(mapasDeStatusEncontro('const PREVISTO = "PREVISTO", MINISTRADO = "MINISTRADO"; const r = Object.fromEntries([[PREVISTO, "Prevista"], [MINISTRADO, "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = { [StatusEncontroAgenda["PREVISTO"]]: "Prevista", [StatusEncontroAgenda["MINISTRADO"]]: "Ministrada" };')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('const r = Object.fromEntries([[StatusEncontroAgenda["PREVISTO"], "Prevista"], [StatusEncontroAgenda["MINISTRADO"], "Ministrada"]]);')).toHaveLength(1);
+    expect(mapasDeStatusEncontro('function r(s) { switch (s) { case StatusEncontroAgenda["PREVISTO"]: return "Prevista"; case MINISTRADO: return "Ministrada"; } }')).toHaveLength(1);
     expect(mapasDeStatusEncontro('function r(s) { switch (s) { case "PREVISTO": return "Prevista"; case "MINISTRADO": return "Ministrada"; } }')).toHaveLength(1);
   });
 });
