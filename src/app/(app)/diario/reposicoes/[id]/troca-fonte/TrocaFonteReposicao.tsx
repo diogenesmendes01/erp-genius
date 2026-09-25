@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao } from "@/server/gravacoes/troca-fonte-reposicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Proposta = {
   id: string;
@@ -69,7 +70,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
       <h2 className="font-medium">Propor adoção da publicação corrigida</h2>
       <p className="text-sm text-gray-700">A fonte publicada acima será fotografada pelo servidor. Esta tela não aceita identificador de arquivo, revisão ou URL.</p>
       {contexto.jaAdotaPublicacaoAtual ? <p>O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-      <button disabled={ocupado} className="rounded border px-3 py-2">Preparar para decisão independente</button></>}
+      <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar para decisão independente</button></>}
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
       <h2 className="font-medium">Histórico antes e depois</h2>
@@ -81,8 +82,8 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
           : !proposta.podeDecidir ? <p role="status" className="mt-2">Aguardando decisão de outra pessoa autorizada.</p>
             : <form className="mt-3 space-y-2" onSubmit={(evento) => { evento.preventDefault(); const motivo = String(new FormData(evento.currentTarget).get("motivo") ?? ""); const aprovar = String((evento.nativeEvent as SubmitEvent).submitter?.getAttribute("value")) === "aprovar"; executar(() => decidirTrocaFonteReposicaoGravacao({ propostaId: proposta.id, aprovar, motivo }), "Decisão registrada."); }}>
               <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
-              <button name="decisao" value="aprovar" disabled={ocupado} className="rounded border px-3 py-2">Aprovar adoção</button>
-              <button name="decisao" value="rejeitar" disabled={ocupado} className="ml-2 rounded border px-3 py-2">Rejeitar</button>
+              <button name="decisao" value="aprovar" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar adoção</button>
+              <button name="decisao" value="rejeitar" disabled={ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} ml-2`}>Rejeitar</button>
             </form>}
       </article>)}
     </section>
