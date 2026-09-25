@@ -32,6 +32,6 @@ export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajuste
       <label className="block">Motivo do registro<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
       <button disabled={motivo.trim().length < 5} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Guardar revisão"}</button>
     </fieldset>
-    {erro && <div role="alert"><p>{erro}</p><button type="button" disabled={ocupado} onClick={() => router.refresh()} className="underline">Consultar novamente a agenda</button></div>}
+    {erro && <div role="alert"><p>{erro}</p><button type="button" disabled={ocupado} onClick={() => router.refresh()} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Consultar novamente a agenda</button></div>}
   </form>;
 }

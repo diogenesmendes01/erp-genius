@@ -14,6 +14,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Salvando… · Salvar regras da oferta → secundario/md",
   ],
   "configuracao/catalogo/IdiomasPainel.tsx": [
+    "<button> Desativar · Ativar → fantasma/sm",
     "<button> Adicionar → primario/lg",
   ],
   "configuracao/catalogo/ModalidadeFormulario.tsx": [
@@ -22,6 +23,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/catalogo/ModalidadesPainel.tsx": [
     "<button> Nova modalidade → primario/md",
+    "<button> Editar → fantasma/sm",
   ],
   "configuracao/catalogo/NiveisPainel.tsx": [
     "<button> Adicionar nível → primario/lg",
@@ -30,6 +32,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Novo preço → primario/md",
     "<button> Salvando… · Salvar preço → primario/lg",
     "<button> Cancelar → secundario/lg",
+    "<button> Desativar · Reativar → fantasma/sm",
   ],
   "configuracao/catalogo/ProdutosPainel.tsx": [
     "<button> Adicionar produto → primario/lg",
@@ -38,8 +41,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar decisão → secundario/lg",
   ],
   "configuracao/contratos/ModeloFormulario.tsx": [
+    "<button> Remover campo → secundario/sm",
     "<button> Adicionar campo → secundario/sm",
+    "<button> Remover seção → secundario/sm",
     "<button> Adicionar seção → secundario/sm",
+    "<button> Remover regra → secundario/sm",
     "<button> Adicionar regra de assinatura → secundario/sm",
     "<button> Salvando proposta… · Salvar proposta para aprovação → primario/lg",
   ],
@@ -52,6 +58,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Processando… · Aplicar cadastros confirmados → primario/md",
   ],
   "configuracao/migracao/[loteId]/AplicarVinculoMigracao.tsx": [
+    "<button> Remover → secundario/md",
     "<button> Adicionar fato → secundario/sm",
     "<button> Aplicando… · Aplicar vínculo conferido → primario/sm",
   ],
@@ -78,11 +85,15 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Salvando… · Salvar avisos → secundario/md",
   ],
   "configuracao/paises/PaisFormulario.tsx": [
+    "<button> Adicionar → fantasma/sm",
     "<button> Salvando… · Salvar país → primario/lg",
     "<button> Cancelar → secundario/lg",
   ],
   "configuracao/paises/PaisesPainel.tsx": [
     "<button> Novo país → primario/lg",
+    "<button> Editar → fantasma/sm",
+    "<button> → fantasma/sm",
+    "<button> Catálogo → fantasma/sm",
   ],
   "configuracao/turmas/ImportarTurmasModal.tsx": [
     "const btnPri → primario/lg",
@@ -97,6 +108,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/turmas/TurmasPainel.tsx": [
     "<button> Nova turma → primario/lg",
+    "<button> Editar → fantasma/sm",
   ],
   "configuracao/usuarios/UsuarioFormulario.tsx": [
     "<button> Salvando… · Salvar usuário → primario/lg",
@@ -104,6 +116,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/usuarios/UsuariosPainel.tsx": [
     "<button> Novo usuário → primario/lg",
+    "<button> Editar → fantasma/sm",
+    "<button> Desativar · Ativar → fantasma/sm",
   ],
   "configuracao/whatsapp/AvisosAgendaPainel.tsx": [
     "<button> Salvando… · Salvar canal de agenda → primario/md",
@@ -200,6 +214,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Buscar → secundario/md",
   ],
   "diario/regularizacoes/GerirDesignacoes.tsx": [
+    "<button> Fechar designações · Ver designações · Gerir designações → fantasma/sm",
+    "<button> Atualizar responsáveis e histórico → fantasma/sm",
     "<button> Designar → primario/lg",
     "<button> Revogar designação → secundario/lg",
   ],
@@ -297,6 +313,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "academico/calendario/[id]/replanejamento/SalvarRevisao.tsx": [
     "<button> Registrando… · Guardar revisão → primario/lg",
+    "<button> Consultar novamente a agenda → fantasma/sm",
   ],
   "academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx": [
     "<button> Registrando… · Aprovar e aplicar conjunto → primario/lg",
@@ -410,6 +427,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "academico/regras/turmas/[turmaId]/historica/ConferenciaRegraHistorica.tsx": [
     "<button> Registrando… · Propor conferência → secundario/lg",
     "<button> Revisando… · Revisar → secundario/md",
+    "<button> Registrar decisão → primario/lg",
   ],
   "academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx": [
     "<button> Registrando… · Registrar proposta → secundario/lg",
@@ -530,6 +548,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar decisão de cumprimento → secundario/lg",
     "<button> Atualizar cumprimentos → secundario/lg",
   ],
+  "alunos/[id]/movimentacoes/DecisaoAcerto.tsx": [
+    "<button> Registrar decisão → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/EfetivarAcerto.tsx": [
+    "<button> Efetivando… · Efetivar encerramento aprovado → primario/lg",
+  ],
   "alunos/[id]/movimentacoes/LiberacaoHoras.tsx": [
     "<button> Preparar proposta para conferência → secundario/lg",
     "<button> Confirmar decisão → secundario/lg",
@@ -583,6 +607,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "financeiro/FilaCobranca.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> limpar filtro → fantasma/sm",
     "<button> Enviando… · Aprovar e enviar lote → btnPri",
     "<button> Limpar → btnSec",
     "<button> Consultar acesso → perigo/sm",
@@ -619,6 +644,15 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar proposta e retomar → principal",
     "<button> Rejeitar proposta → botao",
   ],
+  "financeiro/acertos-cobertura/ImpactosCoberturaFormulario.tsx": [
+    "<button> Preparando… · Preparar impactos de cobertura → primario/lg",
+  ],
+  "financeiro/acertos-cobertura/ImpactosCoberturaOperacao.tsx": [
+    "<button> Aprovar conjunto → primario/md",
+    "<button> Rejeitar conjunto → secundario/md",
+    "<button> Aplicar coberturas aprovadas → primario/md",
+    "<button> APROVADO · Confirmar divergência material · Descartar conjun → secundario/md",
+  ],
   "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
     "<button> Aprovar acerto → secundario/lg",
     "<button> Rejeitar acerto → secundario/lg",
@@ -627,6 +661,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx": [
     "<button> Vincular acerto → secundario/sm",
+    "<button> Aprovar conjunto → primario/md",
+    "<button> Rejeitar conjunto → secundario/md",
+    "<button> Concluir impactos aplicados → primario/md",
+    "<button> APROVADO · Confirmar fotografia divergente · Descartar conju → secundario/md",
   ],
   "financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx": [
     "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
@@ -643,6 +681,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviando… · Registrar → secundario/sm",
   ],
   "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
+    "<button> Destinar → fantasma/sm",
+    "<button> Remover → perigo/sm",
     "<button> Registrando… · Tentar novamente · Confirmar recebimento → primario/lg",
     "<button> Novo lançamento → secundario/lg",
   ],
@@ -814,6 +854,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/nova/MatriculaFormulario.tsx": [
     "<button> Próximo: curso e contrato → → primario/lg",
+    "<button> editar → fantasma/sm",
+    "<button> Sem turma compatível? Solicitar abertura ao Gerente Pedagógi → fantasma/sm",
     "<button> ← Voltar → secundario/lg",
     "<button> Processando… · Salvar matrícula → secundario/lg",
   ],
@@ -832,6 +874,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "secretaria/avisos-agenda/ReconferirPendencia.tsx": [
     "<button> Reconferindo… · Reconferir condição → secundario/sm",
+  ],
+  "secretaria/envios-portal/ConciliacaoEnvio.tsx": [
+    "<button> Registrar evidência → secundario/sm",
+    "<button> Autorizar nova emissão → primario/sm",
+    "<button> Não autorizar → secundario/sm",
   ],
   "secretaria/page.tsx": [
     "<button> Buscar → secundario/md",
@@ -864,6 +911,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Salvar interação → btnPri",
     "<button> Agendar → btnPri",
     "<button> Confirmar perda → perigo/md",
+    "<button> Cancelar · Editar → fantasma/sm",
     "<button> Salvar resumo → btnPri",
     "<button> Salvar datas → btnPri",
     "<Link> Preparar matrícula → btnSec",

@@ -125,14 +125,14 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                           },
                         })
                       }
-                      className="text-xs text-brand-700 hover:text-brand-800"
+                      className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => alternar(u.id, u.ativo ? "Usuário desativado." : "Usuário ativado.")}
                       disabled={acao.ocupado}
-                      className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-60"
+                      className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
                     </button>
