@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { confirmarFechamentoAcademico } from "@/server/avaliacoes/fechamento";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, podeFechar, resultadoSuficiente }: {
   alocacaoId: string;
@@ -52,6 +53,6 @@ export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, po
       <span>Revisei as fontes, notas, frequência e pendências exibidas neste estado.</span>
     </label>
     <FeedbackAcao erro={acao.erro} />
-    <button type="submit" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Confirmando…" : "Confirmar fechamento"}</button>
+    <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Confirmando…" : "Confirmar fechamento"}</button>
   </form>;
 }

@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 // - nenhum literal de classe (string, template, concatenação) desenha um botão primário à mão;
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses.
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/academico"];
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
