@@ -39,7 +39,7 @@ const PAPEIS: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
 function revalidar(id: string) {
   revalidatePath("/alunos");
   revalidatePath(`/alunos/${id}`);
-  revalidatePath("/financeiro");
+  revalidatePath("/financeiro", "layout");
 }
 
 /**

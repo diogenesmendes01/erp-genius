@@ -20,7 +20,7 @@ export async function aplicarMovimentacaoContratual(input: z.input<typeof schema
       return dados.tipo === "PAUSA" ? aplicarPausaMatriculasTx(tx, p.id, autor.id, agora) : aplicarRetomadaMatriculasTx(tx, p.id, autor.id, agora);
     });
     revalidatePath(`/alunos/${dados.alunoId}`, "layout");
-    revalidatePath("/financeiro"); revalidatePath("/academico"); revalidatePath("/diario");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/academico"); revalidatePath("/diario");
     return resultado;
   });
 }

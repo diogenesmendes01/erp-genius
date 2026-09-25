@@ -13,7 +13,7 @@ import { limitesAtuais, exigeAprovacaoComponente } from "@/server/financeiro/pol
 import { AjusteSchema, DecisaoSchema, type AjusteInput, type DecisaoInput } from "./schema";
 
 function revalidar() {
-  revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+  revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
 }
 
 const SnapshotSchema = z.object({

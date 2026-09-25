@@ -45,3 +45,6 @@ export function resolverAba(pedida: string | undefined, p: PermissoesFinanceiro)
   const visiveis = abasVisiveis(p);
   return (visiveis as string[]).includes(pedida ?? "") ? (pedida as AbaFinanceiro) : p.podeOperarCobranca ? "cobrancas" : "comissoes";
 }
+
+/** Rota da aba (E8 definitivo): cada aba é uma página própria sob /financeiro. */
+export const hrefAba = (aba: AbaFinanceiro) => `/financeiro/${aba}`;
