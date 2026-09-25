@@ -1,75 +1,81 @@
 import * as fs from "fs";
 import * as path from "path";
-import * as yaml from "yaml";
+import { beforeAll, describe, expect, it } from "vitest";
 
 // Trava o db-init do Coolify (review #124 B1): garante idempotência e production-safe.
 // Mutações cobradas:
 // - Remover \gexec → DEVE FALHAR
 // - Remover WHERE NOT EXISTS → DEVE FALHAR
-// - $$PGUSER → $PGUSER → DEVE FALHAR
+// - $$PGUSER → $PGUSER (no texto raw do YAML) → DEVE FALHAR
 // - Reintroduzir DO $$ → DEVE FALHAR
 // - Remover ON_ERROR_STOP=1 → DEVE FALHAR
 
-const composePath = path.join(__dirname, "../../../docker-compose.coolify.yml");
+const composePath = path.resolve(process.cwd(), "docker-compose.coolify.yml");
 
 describe("docker-compose.coolify.yml: db-init", () => {
-  let config: any;
-  let dbInitCommand: string;
+  let composeText: string;
+  let dbInitSection: string;
 
   beforeAll(() => {
-    const raw = fs.readFileSync(composePath, "utf8");
-    config = yaml.parse(raw);
+    composeText = fs.readFileSync(composePath, "utf8");
 
-    const cmd = config.services["db-init"].command;
-    // O comando é array: ['sh', '-c', '<script>']
-    expect(cmd).toBeInstanceOf(Array);
-    expect(cmd[0]).toBe("sh");
-    expect(cmd[1]).toBe("-c");
-    dbInitCommand = cmd[2];
+    // Extrair a seção db-init (entre "db-init:" e o próximo serviço de nível raiz)
+    // Procurar de "db-init:" até o próximo "^\w+:" (serviço de nível raiz)
+    const dbInitMatch = composeText.match(
+      /^  db-init:\s*\n((?:^[ \t]+.*\n)*)/m
+    );
+    if (!dbInitMatch) {
+      throw new Error("db-init service not found in compose file");
+    }
+    dbInitSection = dbInitMatch[0];
   });
 
   it("usa \\gexec na mesma linha do CREATE DATABASE evolution", () => {
-    // \gexec deve estar presente e próximo ao CREATE
-    expect(dbInitCommand).toContain("CREATE DATABASE evolution");
-    expect(dbInitCommand).toContain("\\gexec");
+    // \gexec deve estar presente
+    expect(dbInitSection).toContain("\\gexec");
+    expect(dbInitSection).toContain("CREATE DATABASE evolution");
 
-    // Verificar que estão na mesma linha (ou pelo menos conectados sem quebra significativa)
-    const lines = dbInitCommand.split("\n");
+    // Verificar que estão na mesma linha
+    const lines = dbInitSection.split("\n");
     const createLine = lines.find((l) => l.includes("CREATE DATABASE evolution"));
     expect(createLine).toBeDefined();
     expect(createLine).toContain("\\gexec");
   });
 
   it("usa WHERE NOT EXISTS para idempotência", () => {
-    expect(dbInitCommand).toContain("WHERE NOT EXISTS");
-    expect(dbInitCommand).toContain("pg_database");
-    expect(dbInitCommand).toContain("datname = 'evolution'");
+    expect(dbInitSection).toContain("WHERE NOT EXISTS");
+    expect(dbInitSection).toContain("pg_database");
+    expect(dbInitSection).toContain("datname = 'evolution'");
   });
 
   it("usa $$PGUSER (escape correto do Compose)", () => {
-    // Compose interpola $$ → $, então $$PGUSER vira $PGUSER no container
-    expect(dbInitCommand).toContain("$$PGUSER");
-    // Não deve usar $PGUSER (sem $$) porque o Compose interpolaria errado
-    expect(dbInitCommand).not.toMatch(/[^$]\$PGUSER/); // não $PGUSER sem duplo $
+    // No texto raw do YAML, deve aparecer $$PGUSER (dois cifrões)
+    expect(dbInitSection).toContain("$$PGUSER");
+
+    // Verificar que NÃO tem $PGUSER (um cifrão) sem o duplo
+    // Regex: $ seguido de PGUSER, mas não precedido por outro $
+    // Buscar literalmente "$PGUSER" que não seja "$$PGUSER"
+    const singleDollarPattern = /(?<!\$)\$PGUSER/;
+    expect(dbInitSection).not.toMatch(singleDollarPattern);
   });
 
   it("usa ON_ERROR_STOP=1", () => {
-    expect(dbInitCommand).toContain("ON_ERROR_STOP=1");
+    expect(dbInitSection).toContain("ON_ERROR_STOP=1");
   });
 
   it("usa heredoc <<'SQL' (sem expansão shell)", () => {
-    expect(dbInitCommand).toContain("<<'SQL'");
+    expect(dbInitSection).toContain("<<'SQL'");
   });
 
   it("NÃO usa DO $$ (CREATE DATABASE não pode rodar em função)", () => {
-    expect(dbInitCommand).not.toContain("DO $$");
-    expect(dbInitCommand).not.toContain("DO $");
+    expect(dbInitSection).not.toContain("DO $$");
+    expect(dbInitSection).not.toContain("DO $");
   });
 
   it("NÃO tem CREATE DATABASE dentro de BEGIN/END", () => {
     // Detectar padrão de DO/BEGIN ... CREATE DATABASE ... END
     const hasDoBlock = /DO\s+\$\$[\s\S]*BEGIN[\s\S]*CREATE DATABASE[\s\S]*END/i.test(
-      dbInitCommand
+      dbInitSection
     );
     expect(hasDoBlock).toBe(false);
   });
