@@ -13,6 +13,7 @@ import { EvidenciaParticipantes } from "./Evidencia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { botaoClasses } from "@/components/Botao";
 const Historico = z.object({ maioridade: ConferirParticipantesSchema.innerType().shape.maioridade,
   participantes: z.array(z.object({ papel: RegraAssinaturaSchema.shape.papel, identidade: IdentidadeSignatarioSchema,
     representacao: z.object({ descricao: z.string(), evidenciaDocumentoId: z.string() }).optional() })),
@@ -39,7 +40,7 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     <VoltarPara href={base} para="Conteúdo da prévia" /><h1 className="text-2xl">Conferir participantes do contrato</h1>
     <p>Identifique as pessoas exigidas pelo modelo e registre a representação aplicável. Esta conferência não envia convites nem comprova assinatura.</p>
     <nav className="flex gap-4"><Link className="underline" href={`/matriculas/${id}/pagador`}>Conferir cadastro do pagador</Link><Link className="underline" href="/secretaria">Cadastro e documentos na Secretaria</Link></nav>
-    <form className="flex flex-wrap items-end gap-3" method="get"><label>Classificação de maioridade conferida<select name="maioridade" defaultValue={maioridade ?? ""} className="block rounded border p-2"><option value="">Ainda não conferida / não exigida pelas regras</option><option value="MAIOR">Maior de idade</option><option value="MENOR">Menor de idade</option></select></label><button className="rounded border p-2">Atualizar papéis exigidos</button></form>
+    <form className="flex flex-wrap items-end gap-3" method="get"><label>Classificação de maioridade conferida<select name="maioridade" defaultValue={maioridade ?? ""} className="block rounded border p-2"><option value="">Ainda não conferida / não exigida pelas regras</option><option value="MAIOR">Maior de idade</option><option value="MENOR">Menor de idade</option></select></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Atualizar papéis exigidos</button></form>
     {formulario.ok && formulario.dado ? <>
       <EvidenciaParticipantes matriculaId={id} />
       <FormularioParticipantes key={`${formulario.dado.versaoEsperada}:${maioridade ?? "pendente"}`} dados={formulario.dado} />
