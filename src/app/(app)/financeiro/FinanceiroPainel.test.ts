@@ -1,8 +1,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { StatusComissao } from "@prisma/client";
-import { Comissoes, Aprovacoes } from "./FinanceiroPainel";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+
+import { Comissoes, ComissoesAba, Aprovacoes } from "./FinanceiroPainel";
 
 const comissoes = [
   { id: "c1", vendedor: "Bia", valor: 100, moeda: "BRL", percentual: 10, status: StatusComissao.APROVADA },
@@ -51,5 +53,22 @@ describe("Comissoes — total a pagar (E4: lista paginada)", () => {
       comissoes, aPagar: [{ moeda: "BRL", valor: 5000 }], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false,
     }));
     expect(html).toMatch(/A pagar \(aprovadas\): <strong>R\$\s5\.000,00<\/strong>/);
+  });
+});
+
+describe("Comissoes — lista vazia (E4: filtro sem resultado)", () => {
+  const base = { aPagar: [], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false };
+
+  it("mostra o texto de vazio recebido (filtro), não o genérico; sem ele, o genérico", () => {
+    const comFiltro = renderToStaticMarkup(createElement(Comissoes, { ...base, comissoes: [], vazio: "Nenhuma comissão nesta situação." }));
+    expect(comFiltro).toContain("Nenhuma comissão nesta situação.");
+    expect(comFiltro).not.toContain("Sem comissões.");
+    expect(renderToStaticMarkup(createElement(Comissoes, { ...base, comissoes: [] }))).toContain("Sem comissões.");
+  });
+
+  it("a aba repassa o vazio até a tabela", () => {
+    const html = renderToStaticMarkup(createElement(ComissoesAba, { comissoes: [], aPagar: [], podePagar: false, fechamentoAutomatico: false, vazio: "Nenhuma comissão nesta situação." }));
+    expect(html).toContain("Nenhuma comissão nesta situação.");
+    expect(html).not.toContain("Sem comissões.");
   });
 });
