@@ -21,6 +21,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
   "src/app/(app)/financeiro/FilaCobranca.tsx": 1, // cartão-indicador que filtra a fila (dashboard da régua)
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
+  "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
 };
 
 const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
@@ -48,9 +49,8 @@ export function botoesCrus(fonte: string): string[] {
       const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
       const texto = expr && ts.isIdentifier(expr) && constantes.has(expr.text) ? constantes.get(expr.text)! : ini ? ini.getText(sf) : "";
       // <button>: padding em qualquer forma (px-, py-, p-) com borda ou fundo é cara de botão.
-      // <Link>/<a>: px- E py- com borda ou fundo, e não `block` — link em bloco (ou com p-3) é card
-      // de lista, não botão.
-      const padding = tag === "button" ? /\bp[xy]?-\d/.test(texto) : /\bpx-\d/.test(texto) && /\bpy-\d/.test(texto) && !/(^|[\s"'`])block\b/.test(texto);
+      // <Link>/<a>: px- E py- com borda ou fundo (card de lista com p-3 não é botão).
+      const padding = tag === "button" ? /\bp[xy]?-\d/.test(texto) : /\bpx-\d/.test(texto) && /\bpy-\d/.test(texto);
       if (texto && !/botaoClasses|\bbtn[A-Z]\w*/.test(texto) && padding && /\b(border|bg-)/.test(texto)) achados.push(`<${tag}> à mão: ${texto.slice(0, 80)}`);
     }
     ts.forEachChild(n, visitar);
@@ -165,6 +165,7 @@ describe("botões nas áreas migradas", () => {
       'const campo = "rounded-md border px-3 py-2"; <button className={campo}>Cancelar</button>',
       '<Link href="/x" className="inline-block rounded border px-3 py-2">Preparar nova versão</Link>',
       '<a href="/x" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm">Abrir</a>',
+      '<Link href="/x" className="block rounded-md border px-4 py-2 text-center">Continuar</Link>',
     ];
     for (const c of casos) expect(botoesCrus(c).length, c).toBeGreaterThan(0);
     for (const ok of [
@@ -177,7 +178,6 @@ describe("botões nas áreas migradas", () => {
       '<input className="file:bg-brand-solid file:text-white text-sm" />',
       '<button className="text-sm text-brand-700 hover:underline">x</button>',
       '<Link href="/x" className="block rounded border p-3 underline">Card da lista</Link>',
-      '<Link href="/x" className="block rounded-md border bg-surface px-4 py-3 text-sm">Seção do registro</Link>',
       '<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Abrir</Link>',
     ]) expect(botoesCrus(ok), ok).toEqual([]);
   });

@@ -618,6 +618,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/RegistrarPrevia.tsx": [
     "<button> Registrando… · Preservar esta prévia → secundario/lg",
   ],
+  "matriculas/[id]/contrato/aditivos/AcertoTaxaFormulario.tsx": [
+    "<button> Registrando proposta… · Propor acerto → primario/lg",
+  ],
   "matriculas/[id]/contrato/aditivos/AssinaturaFormulario.tsx": [
     "<button> Registrando… · Registrar conferência → secundario/lg",
   ],
@@ -630,6 +633,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
     "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
     "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ImpactosTaxaFormulario.tsx": [
+    "<button> Preparando… · Preparar conjunto de impactos → primario/lg",
   ],
   "matriculas/[id]/contrato/aditivos/OriginalFormulario.tsx": [
     "<button> Gerando… · Gerar e preservar original do aditivo → secundario/lg",
@@ -688,6 +694,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/disponibilidade-oferta/DisponibilidadeOferta.tsx": [
     "<button> Enviar para conferência → secundario/lg",
     "<button> Registrar decisão → secundario/lg",
+    "<button> Anterior → secundario/md",
+    "<button> Próxima → secundario/md",
   ],
   "matriculas/[id]/emissao/ConfirmarEmissao.tsx": [
     "<button> Conferindo e emitindo… · Confirmar conferência e emitir cobr → secundario/lg",
@@ -711,6 +719,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/nova-reserva/Formulario.tsx": [
     "<button> Buscar → secundario/lg",
+    "<button> Professores anteriores → secundario/md",
+    "<button> Mais professores → secundario/md",
+    "<button> Remover → secundario/md",
     "<button> Adicionar encontro → secundario/lg",
     "<button> Revisar horários e condições → secundario/lg",
     "<button> Confirmar nova reserva → secundario/lg",
