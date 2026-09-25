@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { salvarAulaDiario } from "@/server/diario/acoes";
 import { salvarDiarioParticular } from "@/server/diario/particular";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = { encontroId: string; turmaId: string | null; ocorridaEm: string; diarioId: string | null; conteudo: string; estadoAnterior: string | null;
   alunos: { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string | null; podeEditar: boolean; podeClassificar: boolean; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null }[] };
@@ -38,7 +39,7 @@ export function ChamadaEncontro({ dados }: { dados: Dados }) {
         {!a.podeEditar && <p className="text-sm text-gray-500">Registro histórico em leitura.</p>}
       </div>)}
       <p className="text-sm text-gray-500">Salvar a chamada não conclui a aula. A gravação ou a exceção aprovada ainda precisa ser conferida.</p>
-      <button disabled={ocupado} className="rounded bg-brand-solid px-4 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Salvando…" : dados.diarioId ? "Salvar lançamento pendente" : "Registrar diário"}</button>
+      <button disabled={ocupado} className={botaoClasses({ tamanho: "lg" })} type="submit">{ocupado ? "Salvando…" : dados.diarioId ? "Salvar lançamento pendente" : "Registrar diário"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     <MensagemStatus texto={salvo ? "Lançamento salvo." : null} className="text-green-700" />

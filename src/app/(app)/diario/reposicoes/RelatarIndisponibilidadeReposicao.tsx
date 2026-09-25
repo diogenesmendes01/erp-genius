@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registrarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposicao-operacoes-relatos";
+import { botaoClasses } from "@/components/Botao";
 
 /** Formulário comum da equipe e do professor designado. A ação decide o
  * escopo atual; enviar um relato não confirma falha nem interrompe o prazo. */
@@ -27,7 +28,7 @@ export function RelatarIndisponibilidadeReposicao({ reposicaoId }: { reposicaoId
     <p className="font-medium">Relatar indisponibilidade do material</p>
     <label className="block">Descrição do problema<textarea name="descricao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <p className="text-sm text-gray-600">Registrar o relato não confirma a falha, não pausa o prazo e não altera a entrega.</p>
-    <button disabled={ocupado} className="rounded border px-3 py-2">{ocupado ? "Registrando…" : "Registrar relato"}</button>
+    <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar relato"}</button>
     {erro && <p role="alert">{erro}</p>}
   </form>;
 }
