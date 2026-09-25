@@ -6,18 +6,19 @@ const DATA_CIVIL = /^(\d{4})-(\d{2})-(\d{2})$/;
 const COMPETENCIA = /^(\d{4})-(\d{2})$/;
 
 /**
- * "2026-10-15" → "15/10/2026". Ausente → "—". Qualquer outro texto volta como está (nunca inventa
- * uma data a partir de um valor que não tem a forma de data civil).
+ * "2026-10-15" → "15/10/2026". Ausente → `ausente` ("—" por padrão; a tela pode dizer "pendente").
+ * Qualquer outro texto volta como está (nunca inventa uma data a partir de um valor que não tem a
+ * forma de data civil).
  */
-export function formatarDataCivil(valor: string | null | undefined): string {
-  if (valor == null || valor === "") return "—";
+export function formatarDataCivil(valor: string | null | undefined, ausente = "—"): string {
+  if (valor == null || valor === "") return ausente;
   const m = DATA_CIVIL.exec(valor);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : valor;
 }
 
-/** Competência "2026-10" → "10/2026". Ausente → "—". Outro texto volta como está. */
-export function formatarCompetencia(valor: string | null | undefined): string {
-  if (valor == null || valor === "") return "—";
+/** Competência "2026-10" → "10/2026". Ausente → `ausente` ("—" por padrão). Outro texto volta como está. */
+export function formatarCompetencia(valor: string | null | undefined, ausente = "—"): string {
+  if (valor == null || valor === "") return ausente;
   const m = COMPETENCIA.exec(valor);
   return m ? `${m[2]}/${m[1]}` : valor;
 }

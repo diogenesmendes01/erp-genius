@@ -18,6 +18,9 @@ describe("datas civis e competências (E5)", () => {
       expect(f("")).toBe("—");
       expect(f("pendente")).toBe("pendente");
     }
+    expect(formatarDataCivil(null, "pendente")).toBe("pendente");
+    expect(formatarCompetencia(undefined, "não informada")).toBe("não informada");
+    expect(formatarDataCivil("2026-10-15", "pendente")).toBe("15/10/2026");
     expect(formatarDataCivil("2026-10")).toBe("2026-10");
     expect(formatarCompetencia("2026-10-15")).toBe("2026-10-15");
     expect(formatarDataCivil("2026-10-15T03:00:00.000Z")).toBe("2026-10-15T03:00:00.000Z");
