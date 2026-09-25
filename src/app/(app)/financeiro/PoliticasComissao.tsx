@@ -58,7 +58,7 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { d
       const inicio = formatarInstanteExibicao(p.vigenteEm, preferenciaFusoExibicao, "UTC");
       const fim = p.encerraEm ? formatarInstanteExibicao(p.encerraEm, preferenciaFusoExibicao, "UTC") : null;
       return <li key={p.id} className="p-3">
-        {dados.paises.find((x) => x.id === p.paisId)?.nome ?? p.paisId} · {dados.produtos.find((x) => x.id === p.produtoId)?.nome ?? p.produtoId} · v{p.versao} · {p.tipo === "VALOR_FIXO" ? formatarMoeda(p.valorFixo ?? 0, p.moeda) : `${p.percentual}% da taxa`} · vigência desde {inicio.texto} (horário exibido em {inicio.fuso}){fim && ` até ${fim.texto} (horário exibido em ${fim.fuso})`}
+        {dados.paises.find((x) => x.id === p.paisId)?.nome ?? p.paisId} · {dados.produtos.find((x) => x.id === p.produtoId)?.nome ?? p.produtoId} · v{p.versao} · {p.tipo === "VALOR_FIXO" ? (p.valorFixo != null ? formatarMoeda(p.valorFixo, p.moeda) : "valor não informado") : `${p.percentual}% da taxa`} · vigência desde {inicio.texto} (horário exibido em {inicio.fuso}){fim && ` até ${fim.texto} (horário exibido em ${fim.fuso})`}
       </li>;
     })}</ul>
   </section>;

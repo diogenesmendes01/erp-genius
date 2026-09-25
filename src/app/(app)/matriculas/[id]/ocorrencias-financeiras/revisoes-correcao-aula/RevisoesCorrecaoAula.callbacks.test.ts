@@ -59,7 +59,7 @@ it("apresenta a fonte consumida, o preço preservado e as condições para a dec
     }],
   } as never }));
   expect(html).toContain("Reserva consumida reserva");
-  expect(html).toContain("valor preservado 1.67 CRC");
+  expect(html).toContain("valor preservado ₡ 1,67"); // fração existente não é arredondada (CRC)
   expect(html).toContain("Condições contratuais v1");
   expect(html).toContain("Aprovar sem alteração de valores");
 });

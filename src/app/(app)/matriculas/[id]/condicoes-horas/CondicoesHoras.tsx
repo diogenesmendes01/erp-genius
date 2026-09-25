@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { consultarCondicoesHoras, prepararCondicoesHoras, decidirCondicoesHoras } from "@/server/matricula/condicoes-horas";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { parseMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
@@ -51,7 +51,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
     {d.versoes.map(v => <article key={v.id} className="space-y-2 rounded border p-4">
       <h3>Versão {v.versao} · {v.status === "APROVADA" ? "Aprovada" : v.status === "REJEITADA" ? "Rejeitada" : "Aguardando revisão"}</h3>
       <p>{v.preparador.nome} · {instanteAdministrativo(v.criadaEm)} · Documento {v.documentoId}</p>
-      {v.regras ? <><p>{v.regras.valorHora} {v.regras.moeda} por 60 minutos · Antecedência: {v.regras.antecedenciaCancelamentoMinutos} minutos</p>
+      {v.regras ? <><p>{formatarMoeda(v.regras.valorHora, v.regras.moeda)} por 60 minutos · Antecedência: {v.regras.antecedenciaCancelamentoMinutos} minutos</p>
         <p>Vigência desde {vigencia(v.regras.vigenteDesde)}</p>
         <p className="whitespace-pre-wrap">Preço: {v.regras.clausulaPreco}</p><p className="whitespace-pre-wrap">Cancelamento: {v.regras.clausulaCancelamento}</p></> : <p role="alert">Regras precisam de conferência.</p>}
       <p>{v.motivo}</p>{v.decisor && <p>Decisão de {v.decisor.nome}: {v.motivoDecisao}{v.decididaEm && ` · ${instanteAdministrativo(v.decididaEm)}`}</p>}

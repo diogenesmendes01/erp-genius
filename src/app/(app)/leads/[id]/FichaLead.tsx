@@ -15,6 +15,8 @@ import {
   TEMPERATURA_LABEL,
   TEMPERATURA_CLS,
   MOTIVO_PERDA_LABEL,
+  STATUS_MATRICULA_LABEL,
+  rotular,
 } from "@/lib/labels";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import {
@@ -416,7 +418,7 @@ function BarraAcoes({
         </button>
         {lead.matricula ? (
           <span className="rounded-md bg-green-50 px-3 py-1.5 text-sm text-green-700">
-            Matrícula {lead.matricula.codigo ?? ""} ({lead.matricula.status})
+            Matrícula {lead.matricula.codigo ?? ""} ({rotular(STATUS_MATRICULA_LABEL, lead.matricula.status)})
           </span>
         ) : (
           <a href={`/matriculas/nova?lead=${lead.id}`} className={btnPri}>

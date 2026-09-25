@@ -87,7 +87,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
     <section className="rounded border p-4">
       <h2 className="text-lg font-medium">Situação para fechamento</h2>
       <p className="mt-2 font-medium">{elegibilidade.situacao === "SUFICIENTE" ? "Resultado suficiente na revisão" : elegibilidade.situacao === "INSUFICIENTE" ? "Resultado insuficiente na revisão" : "Há pendências a resolver"}.</p>
-      {elegibilidade.pendencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">{elegibilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendencias[pendencia] ?? "Pendência acadêmica em conferência"}.</li>)}</ul>}
+      {elegibilidade.pendencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">{elegibilidade.pendencias.map((pendencia) => <li key={pendencia}>{pendencias[pendencia] ?? "Pendência acadêmica"}.</li>)}</ul>}
       {elegibilidade.insuficiencias.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{elegibilidade.insuficiencias.map((insuficiencia) => <li key={insuficiencia}>{insuficiencias[insuficiencia] ?? "Insuficiência acadêmica"}.</li>)}</ul>}
       {!elegibilidade.podeProgredir && elegibilidade.podeFechar && <p className="mt-2 text-sm">A versão pode ser confirmada como insuficiente, mas não libera progressão.</p>}
     </section>
