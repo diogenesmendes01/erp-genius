@@ -3,8 +3,8 @@
 // visível do botão/link, ou o nome da constante) e a variante/tamanho decididos na migração.
 //
 // Regra aplicada na migração (preserva a intenção de cada botão):
-//   fundo da marca + texto branco → primario; borda neutra → secundario; borda/fundo vermelho →
-//   perigo; borda verde → primario; borda azul → secundario.
+//   fundo da marca (ou verde de sucesso) + texto branco → primario; borda neutra → secundario;
+//   borda/fundo vermelho → perigo; borda verde → primario; borda azul → secundario.
 //   py-1 → sm; py-1.5 ou sem py → md; py-2 / p-2 → lg.
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
@@ -527,5 +527,57 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Preparar validação → secundario/lg",
     "<button> Aprovar e aplicar → primario/sm",
     "<button> Rejeitar → secundario/sm",
+  ],
+  "financeiro/AcessoAulasPainel.tsx": [
+    "const botao → secundario/md",
+  ],
+  "financeiro/FilaCobranca.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Consultar acesso → perigo/sm",
+  ],
+  "financeiro/FinanceiroPainel.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Aprovar → primario/sm",
+    "<button> Rejeitar → secundario/sm",
+  ],
+  "financeiro/InformesPagamento.tsx": [
+    "<button> Confirmar recebimento → primario/md",
+    "<button> Rejeitar → secundario/md",
+  ],
+  "financeiro/PoliticasComissao.tsx": [
+    "<button> Publicar nova versão → primario/lg",
+  ],
+  "financeiro/RetomadasPainel.tsx": [
+    "const botao → secundario/lg",
+    "const principal → primario/lg",
+  ],
+  "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
+    "<button> Aprovar acerto → secundario/lg",
+    "<button> Rejeitar acerto → secundario/lg",
+    "<button> Aplicar acerto aprovado → secundario/lg",
+    "<button> Conferir e invalidar para repropor → secundario/lg",
+  ],
+  "financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx": [
+    "<button> Vincular acerto → secundario/sm",
+  ],
+  "financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
+  "financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx": [
+    "<button> Registrando… · Registrar proposta → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/sm",
+  ],
+  "financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx": [
+    "<button> Registrando… · Registrar proposta histórica → primario/lg",
+    "<button> Registrando… · Decidir → secundario/md",
+  ],
+  "financeiro/permuta/PermutaOperacional.tsx": [
+    "<button> Enviando… · Registrar → secundario/sm",
+  ],
+  "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
+    "<button> Registrando… · Tentar novamente · Confirmar recebimento → primario/lg",
+    "<button> Novo lançamento → secundario/lg",
   ],
 };

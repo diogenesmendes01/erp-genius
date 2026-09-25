@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { botaoClasses } from "@/components/Botao";
 
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -60,8 +61,8 @@ const VIGENCIA_LABEL: Record<Vigencia, string> = {
   CONTRATO_INTEIRO: "Contrato inteiro",
 };
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 // Abas do /financeiro como componentes independentes (E8 — uma rota por aba). Cada rota monta só a
 // sua aba; as que executam ações carregam o próprio executor (useAcaoCliente) e o próprio retorno.
@@ -266,14 +267,14 @@ export function Aprovacoes({
                   <button
                     onClick={() => onDecidir(a.id, true)}
                     disabled={isPending}
-                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95 disabled:opacity-60"
+                    className={botaoClasses({ tamanho: "sm" })}
                   >
                     Aprovar
                   </button>
                   <button
                     onClick={() => onDecidir(a.id, false)}
                     disabled={isPending}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                   >
                     Rejeitar
                   </button>
