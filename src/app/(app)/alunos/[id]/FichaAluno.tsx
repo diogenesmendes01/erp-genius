@@ -14,6 +14,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
@@ -87,8 +88,8 @@ interface PaisOpt {
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario" });
 
 export function FichaAluno({
   aluno,
@@ -212,13 +213,13 @@ export function FichaAluno({
           {podeMovimentarGlobal && aluno.status === StatusAluno.ATIVO && (
             <>
               <button className={btnSec} onClick={() => abrir("pausar")}>Pausar</button>
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => abrir("encerrar")}>Encerrar</button>
+              <button className={botaoClasses({ variante: "perigo" })} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
           {podeMovimentarGlobal && aluno.status === StatusAluno.PAUSADO && (
             <>
               {podeEditarCadastro ? <Link className={btnPri} href={`/alunos/${aluno.id}/financeiro#retomada`}>Propor retomada</Link> : <span className="self-center text-sm text-gray-500">A secretaria deve encaminhar uma proposta de retomada para aprovação financeira.</span>}
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => abrir("encerrar")}>Encerrar</button>
+              <button className={botaoClasses({ variante: "perigo" })} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
         </div>
@@ -449,7 +450,7 @@ export function FichaAluno({
           <input className={inputCls + " mb-3"} aria-label="Observação do encerramento" placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri + " bg-danger hover:brightness-95"} disabled={acao.ocupado} onClick={() => run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>{acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}</button>
+            <button className={botaoClasses({ variante: "perigo" })} disabled={acao.ocupado} onClick={() => run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>{acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}</button>
             <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
@@ -475,7 +476,7 @@ export function FichaAluno({
                   <div className="text-xs font-medium text-blue-700">Turma sugerida na ativação</div>
                   <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
                   {turmaSugerida.diasHorario && <div className="text-xs text-gray-500">{turmaSugerida.diasHorario}</div>}
-                  <Link className={btnPri + " mt-2 inline-block"} href={`/alunos/${aluno.id}/academico`}>
+                  <Link className={`${btnPri} mt-2`} href={`/alunos/${aluno.id}/academico`}>
                     Preparar alocação por matrícula
                   </Link>
                 </div>

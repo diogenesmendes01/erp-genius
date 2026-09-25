@@ -10,6 +10,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
+import { botaoClasses } from "@/components/Botao";
 
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Acompanhamento comercial · {dados.aluno.primeiroNome} {dados.aluno.sobrenome}</h1>
@@ -56,7 +57,7 @@ function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
       <CampoMoeda required name="valor" ariaLabel="Novo valor" moeda={moeda} value={valor} onChange={setValor} className="w-28 rounded border p-1.5" />
       <input required name="motivo" aria-label="Motivo do ajuste" placeholder="Motivo do ajuste" minLength={5} className="rounded border p-1.5" />
       {preco.tipo === "MENSALIDADE" && <label><input type="checkbox" name="futuras" /> Mensalidades futuras</label>}
-      <button disabled={acao.ocupado} className="rounded border px-3 py-1.5 disabled:opacity-50">{acao.ocupado ? "Enviando…" : "Solicitar desconto"}</button>
+      <button disabled={acao.ocupado} className={botaoClasses({ variante: "secundario" })}>{acao.ocupado ? "Enviando…" : "Solicitar desconto"}</button>
     </form>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
     </div>

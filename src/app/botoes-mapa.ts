@@ -281,6 +281,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Adicionar período → secundario/lg",
     "<button> Preparando… · Preparar calendário para revisão → primario/lg",
   ],
+  "academico/calendario/page.tsx": [
+    "<Link> Preparar nova versão → secundario/lg",
+  ],
   "academico/correcoes/PrepararCasosHistoricos.tsx": [
     "<button> Preparar casos de revisão → secundario/lg",
   ],
@@ -307,6 +310,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "academico/grades/nova/page.tsx": [
     "<button> Buscar turmas → secundario/lg",
+  ],
+  "academico/grades/page.tsx": [
+    "<Link> Preparar nova grade → secundario/lg",
   ],
   "academico/indisponibilidades/DecisaoAusencia.tsx": [
     "<button> Aprovar indisponibilidade → primario/lg",
@@ -417,6 +423,110 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "academico/segundas-chamadas/reservas/[reservaId]/substituicao/Formulario.tsx": [
     "<button> Salvando… · Registrar decisão · Enviar proposta → secundario/lg",
+  ],
+  "alunos/AlunosLista.tsx": [
+    "<Link> Cadastrar aluno → primario/lg",
+    "<button> Buscando… · Buscar → secundario/md",
+  ],
+  "alunos/ImportarAlunosModal.tsx": [
+    "const btnPri → primario/lg",
+    "const btnSec → secundario/lg",
+  ],
+  "alunos/[id]/FichaAluno.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/md",
+    "<button> Encerrar → perigo/md",
+    "<button> Encerrar → perigo/md",
+    "<button> Confirmando… · Confirmar encerramento → perigo/md",
+  ],
+  "alunos/[id]/creditos/[creditoId]/DevolucaoCredito.tsx": [
+    "<button> Guardar proposta → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+    "<button> Cancelar e liberar reserva → secundario/lg",
+    "<button> Registrar execução → secundario/lg",
+    "<button> Conciliar resultado → secundario/lg",
+  ],
+  "alunos/[id]/creditos/[creditoId]/PropostaUsoCredito.tsx": [
+    "<button> Guardar proposta para conferência → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "alunos/[id]/financeiro/ConcluirMatriculas.tsx": [
+    "<button> Concluindo… · Concluir matrícula → primario/lg",
+  ],
+  "alunos/[id]/financeiro/FichaFinanceira.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Cancelar → secundario/md",
+  ],
+  "alunos/[id]/financeiro/ResumoFinanceiroComercial.tsx": [
+    "<button> Enviando… · Solicitar desconto → secundario/md",
+  ],
+  "alunos/[id]/movimentacoes/AcertoEncerramento.tsx": [
+    "<button> Carregar / atualizar conferência → secundario/lg",
+    "<button> Conferir se o rascunho continua atual → secundario/lg",
+    "<button> Calcular componente mensal → secundario/lg",
+    "<button> Salvar rascunho financeiro → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/CompensacoesPainel.tsx": [
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Carregar compensações → secundario/lg",
+    "<button> Adicionar dia → secundario/lg",
+    "<button> Remover → secundario/lg",
+    "<button> Enviar proposta para aprovação → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/ComprasHorasPainel.tsx": [
+    "<button> Consultar compras de horas → secundario/lg",
+    "<button> Reservar horas → secundario/lg",
+    "<button> Registrar compra de horas → secundario/lg",
+    "<button> Conferir realização → secundario/lg",
+    "<button> Confirmar consumo pela realização → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/CumprimentoPainel.tsx": [
+    "<button> Enviar conferência de cumprimento → secundario/lg",
+    "<button> Registrar decisão de cumprimento → secundario/lg",
+    "<button> Atualizar cumprimentos → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/LiberacaoHoras.tsx": [
+    "<button> Preparar proposta para conferência → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/MovimentacoesPainel.tsx": [
+    "<button> Consultar propostas → secundario/lg",
+    "<button> Conferir impactos → secundario/lg",
+    "<button> Próximas propostas → secundario/lg",
+    "<button> Aprovar proposta → secundario/lg",
+    "<button> Rejeitar proposta → secundario/lg",
+    "<button> Aplicar proposta aprovada → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovaPausa.tsx": [
+    "<button> Conferir impactos → secundario/lg",
+    "<button> Registrar proposta para decisão independente → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovaRetomada.tsx": [
+    "<button> Consultar períodos suspensos → secundario/lg",
+    "<button> Conferir proposta completa → secundario/lg",
+    "<button> Registrar proposta para decisão independente → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovoEncerramento.tsx": [
+    "<button> Registrar pedido de encerramento → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/RecomposicaoPainel.tsx": [
+    "<button> Consultar rascunho de recomposição → secundario/lg",
+    "<button> Conferir atualidade → secundario/lg",
+    "<button> Aplicar programação aprovada → secundario/lg",
+    "<button> Registrar decisão da recomposição → secundario/lg",
+    "<button> Conferir proposta de recomposição → secundario/lg",
+    "<button> Salvar versão da recomposição → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/VinculosLegados.tsx": [
+    "<button> Consultar vínculos sem matrícula → secundario/lg",
+    "<button> Confirmar vínculo conferido → secundario/lg",
+  ],
+  "alunos/[id]/portal/painel.tsx": [
+    "<button> Preparar convite → primario/lg",
+    "<button> Preparar validação → secundario/lg",
+    "<button> Aprovar e aplicar → primario/sm",
+    "<button> Rejeitar → secundario/sm",
   ],
   "financeiro/AcessoAulasPainel.tsx": [
     "const botao → secundario/md",

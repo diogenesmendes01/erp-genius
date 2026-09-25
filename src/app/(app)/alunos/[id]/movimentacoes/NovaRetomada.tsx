@@ -8,6 +8,7 @@ import type { PreviaRetomadaMatriculasInput } from "@/server/matricula/retomada-
 import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -60,7 +61,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
       {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
       <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<textarea className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
-      <button type="button" className={campo} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
+      <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
       {base?.matriculas.map((m) => <fieldset key={m.matriculaId} className="space-y-2 border-t pt-3">
         <legend className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</legend>
         <Pendencias itens={m.pendencias} />
@@ -70,7 +71,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
           {opcoes[m.matriculaId] === "REPROGRAMAR_PARCELAS" && <input aria-label={`Novo vencimento do período ${formatarDataCivil(p.coberturaAnterior.inicio)}`} type="date" className={`${campo} ml-2`} value={datas[p.cobrancaId] ?? p.vencimentoAnterior} onChange={(e) => { alterar(); setDatas((v) => ({ ...v, [p.cobrancaId]: e.target.value })); }} />}
         </label>)}
       </fieldset>)}
-      {base && <button type="button" className={campo} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}
+      {base && <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}
     </fieldset>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Processando…" : null} />
     {previa && <div className="space-y-3 border-t pt-3"><p>Fuso: {previa.fusoInstitucional ?? "A conferir"}. Cobertura e vencimentos serão aprovados juntos.</p>
@@ -78,7 +79,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
         <Pendencias itens={m.pendencias} />
         {m.periodos.map((p) => <p key={p.cobrancaId} className="text-sm">Nova cobertura: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)} · vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p>)}
       </div>)}
-      <button type="button" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" onClick={enviar}>Registrar proposta para decisão independente</button>
+      <button type="button" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })} onClick={enviar}>Registrar proposta para decisão independente</button>
     </div>}
   </section>;
 }
