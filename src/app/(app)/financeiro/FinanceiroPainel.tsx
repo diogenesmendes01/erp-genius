@@ -80,13 +80,14 @@ function useExecutorFinanceiro() {
   return { acao, run, router };
 }
 
-export function ComissoesAba({ comissoes, podePagar, fechamentoAutomatico }: { comissoes: ComissaoRow[]; podePagar: boolean; fechamentoAutomatico: boolean }) {
+export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico }: { comissoes: ComissaoRow[]; aPagar: ValorMoeda[]; podePagar: boolean; fechamentoAutomatico: boolean }) {
   const { acao, run } = useExecutorFinanceiro();
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
       <Comissoes
         comissoes={comissoes}
+        aPagar={aPagar}
         podePagar={podePagar}
         onFechar={() => run(() => fecharMesComissoes())}
         fechamentoAutomatico={fechamentoAutomatico}
@@ -153,6 +154,7 @@ export function GeralAba({ kpis, cotacoes }: { kpis: Kpis; cotacoes: CotacaoVige
 
 export function Comissoes({
   comissoes,
+  aPagar,
   podePagar,
   onFechar,
   fechamentoAutomatico,
@@ -160,15 +162,14 @@ export function Comissoes({
   isPending,
 }: {
   comissoes: ComissaoRow[];
+  /** Total das aprovadas em TODO o escopo (servidor) — a lista é paginada. */
+  aPagar: ValorMoeda[];
   podePagar: boolean;
   onFechar: () => void;
   fechamentoAutomatico: boolean;
   onToggleAutomatico: (ligado: boolean) => void;
   isPending: boolean;
 }) {
-  const aPagar = somarPorMoeda(
-    comissoes.filter((c) => c.status === StatusComissao.APROVADA).map((c) => ({ moeda: c.moeda, valor: c.valor })),
-  );
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

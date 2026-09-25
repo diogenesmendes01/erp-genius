@@ -16,7 +16,7 @@ const aprovacoes = [{
 describe("Comissoes — botão de fechamento não permite duplo clique", () => {
   it("botão habilitado e com o rótulo padrão quando não há operação em andamento", () => {
     const html = renderToStaticMarkup(createElement(Comissoes, {
-      comissoes, podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false,
+      comissoes, aPagar: [], podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false,
     }));
     expect(html).toContain("Fechar mês e marcar pagas");
     expect(html).not.toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechar/);
@@ -24,7 +24,7 @@ describe("Comissoes — botão de fechamento não permite duplo clique", () => {
 
   it("botão e toggle desabilitados durante qualquer operação em andamento — sem trocar o texto para 'Fechando…', que mentiria se a operação em voo for o toggle, não o fechamento", () => {
     const html = renderToStaticMarkup(createElement(Comissoes, {
-      comissoes, podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: true,
+      comissoes, aPagar: [], podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: true,
     }));
     expect(html).toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechar mês e marcar pagas<\/button>/);
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*\sdisabled=""/);
@@ -41,5 +41,15 @@ describe("Aprovacoes — botões de decisão não permitem duplo clique", () => 
     const html = renderToStaticMarkup(createElement(Aprovacoes, { aprovacoes, onDecidir: () => {}, isPending: true }));
     const desabilitados = [...html.matchAll(/<button[^>]*\sdisabled=""[^>]*>/g)];
     expect(desabilitados).toHaveLength(2);
+  });
+});
+
+describe("Comissoes — total a pagar (E4: lista paginada)", () => {
+  it("mostra o total das aprovadas recebido do servidor, não a soma da página exibida", () => {
+    // A página tem uma aprovada de R$ 100; o escopo inteiro tem R$ 5.000 a pagar.
+    const html = renderToStaticMarkup(createElement(Comissoes, {
+      comissoes, aPagar: [{ moeda: "BRL", valor: 5000 }], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false,
+    }));
+    expect(html).toMatch(/A pagar \(aprovadas\): <strong>R\$\s5\.000,00<\/strong>/);
   });
 });
