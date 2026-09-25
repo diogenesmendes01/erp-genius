@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ItemFilaContinuidadeMensal } from "@/server/matricula/continuidade-fila";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 const ESTADO_LABEL: Record<ItemFilaContinuidadeMensal["estado"], string> = {
   AGUARDAR_PRAZO: "Aguardar prazo",
@@ -21,8 +22,8 @@ export function FilaContinuidadeMensal({ itens }: { itens: ItemFilaContinuidadeM
       return <article key={item.matriculaId} className="space-y-2 rounded border p-4">
         <h2 className="font-medium">{item.codigo ?? "Matrícula"} · {item.alunoNome}</h2>
         <p><strong>{ESTADO_LABEL[item.estado]}</strong>{item.motivo ? ` · ${item.motivo}` : ""}</p>
-        {item.cobertura && <p>Cobertura prevista: {item.cobertura.inicio} a {item.cobertura.fim}.</p>}
-        {item.vencimento && <p>Vencimento previsto: {item.vencimento}.</p>}
+        {item.cobertura && <p>Cobertura prevista: {formatarDataCivil(item.cobertura.inicio)} a {formatarDataCivil(item.cobertura.fim)}.</p>}
+        {item.vencimento && <p>Vencimento previsto: {formatarDataCivil(item.vencimento)}.</p>}
         <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <Link className="underline" href={`${matriculaUrl}/continuidade-mensal`}>Condições de continuidade</Link>
           <Link className="underline" href={`${matriculaUrl}/disponibilidade-oferta`}>Confirmação de oferta</Link>

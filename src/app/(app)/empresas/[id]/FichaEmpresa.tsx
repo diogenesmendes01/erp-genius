@@ -14,6 +14,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { formatarCompetencia } from "@/lib/data-civil";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -163,7 +164,7 @@ export function FichaEmpresa({
                 {faturas.map((f) => (
                   <tr key={f.id}>
                     <td className="px-3 py-2 font-medium text-gray-800">{f.codigo ?? "—"}</td>
-                    <td className="px-3 py-2 text-gray-600">{f.competencia}</td>
+                    <td className="px-3 py-2 text-gray-600">{formatarCompetencia(f.competencia)}</td>
                     <td className="px-3 py-2 text-gray-600">{f.cobrancas}</td>
                     <td className="px-3 py-2 text-gray-800">
                       {formatarMoeda(f.valorTotal, f.moeda)}

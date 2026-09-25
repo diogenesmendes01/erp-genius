@@ -28,6 +28,8 @@ it("mostra a revisão vigente sem oferecer preparação repetida", async () => {
   expect(html).toContain("aguarda publicação pedagógica");
   expect(html).not.toContain("Preparar revisão Q92");
   expect(html).toContain("/matriculas/matricula/1/ocorrencias-financeiras");
+  // A regra de cobrança por hora é nomeada e alcançável (antes: "regra Q92", sem destino).
+  expect(html).toMatch(/<a[^>]*href="\/matriculas\/matricula\/1\/condicoes-horas"[^>]*>condições por hora<\/a>/);
 });
 
 it("apresenta erro de consulta sem renderizar a operação", async () => {

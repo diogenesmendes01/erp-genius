@@ -11,6 +11,7 @@ import { aplicarRecomposicaoCobertura } from "@/server/matricula/recomposicao-ap
 import type { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { useOperacao } from "./useOperacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoRecomposicao>>, { ok: true }>["dado"]>;
@@ -18,7 +19,7 @@ const resumo = z.object({ proposta: z.object({ quantidadeDias: z.number(), compe
 function Resumo({ dados }: { dados: unknown }) {
   const r = resumo.safeParse(dados);
   if (!r.success) return <p>Resumo indisponível para esta versão.</p>;
-  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {r.data.proposta.compensacao.inicio} a {r.data.proposta.compensacao.fim}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {p.cobertura.inicio} a {p.cobertura.fim}; valor {formatarMoeda(p.valor, "")}; vencimento {p.vencimento}.</li>)}</ul></div>;
+  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {formatarDataCivil(r.data.proposta.compensacao.inicio)} a {formatarDataCivil(r.data.proposta.compensacao.fim)}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {formatarDataCivil(p.cobertura.inicio)} a {formatarDataCivil(p.cobertura.fim)}; valor {formatarMoeda(p.valor, "")}; vencimento {formatarDataCivil(p.vencimento)}.</li>)}</ul></div>;
 }
 
 export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizarContexto }: { contexto: Contexto; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void> }) {
@@ -59,7 +60,7 @@ export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizar
     }}><fieldset disabled={ocupado} className="space-y-2"><legend>Preparar nova versão</legend>
       {direitos.length ? direitos.map((d) => <label key={d.id} className="block"><input type="checkbox" name="direito" value={d.id} /> Dia devido de {d.diaOrigem}</label>) : <p>Nenhum direito disponível sem programação.</p>}
       <label className="grid">Retorno da oferta<input type="date" name="retorno" required className={estilo} /></label><label className="grid">Início dos dias de compensação<input type="date" name="inicio" required className={estilo} /></label>
-      {mensalidades.map((c) => <div key={c.id}><p>Mensalidade {c.id} · atual: {c.coberturaInicio ?? "pendente"} a {c.coberturaFim ?? "pendente"}</p><label className="grid">Início proposto — {c.id}<input type="date" name={`${c.id}:inicio`} defaultValue={c.coberturaInicio ?? ""} required className={estilo} /></label><label className="grid">Fim proposto — {c.id}<input type="date" name={`${c.id}:fim`} defaultValue={c.coberturaFim ?? ""} required className={estilo} /></label></div>)}
+      {mensalidades.map((c) => <div key={c.id}><p>Mensalidade {c.id} · atual: {formatarDataCivil(c.coberturaInicio, "pendente")} a {formatarDataCivil(c.coberturaFim, "pendente")}</p><label className="grid">Início proposto — {c.id}<input type="date" name={`${c.id}:inicio`} defaultValue={formatarDataCivil(c.coberturaInicio, "")} required className={estilo} /></label><label className="grid">Fim proposto — {c.id}<input type="date" name={`${c.id}:fim`} defaultValue={formatarDataCivil(c.coberturaFim, "")} required className={estilo} /></label></div>)}
       <label className="grid">Motivo da recomposição<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><label className="grid">Evidência das condições<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo} disabled={!direitos.length}>Conferir proposta de recomposição</button>
     </fieldset></form>}
     {previa != null && entrada && <div className="space-y-2"><Resumo dados={previa} /><button type="button" className={estilo} disabled={ocupado} onClick={() => executar(async () => { chave.current ||= crypto.randomUUID(); const r = await salvarRascunhoRecomposicao({ ...entrada, versaoAnterior: rascunho?.versao ?? 0, chaveIdempotencia: chave.current }); if (!r.ok) throw new Error(r.erro); setEntrada(null); setPrevia(null); chave.current = ""; await carregar(); setMensagem("Nova versão salva para decisão independente."); })}>Salvar versão da recomposição</button></div>}

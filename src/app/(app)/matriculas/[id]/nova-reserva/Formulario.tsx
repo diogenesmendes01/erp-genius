@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { rotular, STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL } from "@/lib/labels";
 import { consultarFormularioNovaReserva, revisarNovaReservaParticular, confirmarNovaReservaParticular } from "@/server/matricula/nova-reserva-particular";
+import { formatarDataCivil } from "@/lib/data-civil";
 type Base = NonNullable<Extract<Awaited<ReturnType<typeof consultarFormularioNovaReserva>>, { ok: true }>["dado"]>;
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarNovaReservaParticular>>, { ok: true }>["dado"]>;
 export function NovaReservaFormulario({ base }: { base: Base }) {
@@ -49,7 +50,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
       <p>{revisao.pagador.dados.nome} · {revisao.pagador.dados.documento ?? "Documento não informado"} · {revisao.pagador.dados.email} · {revisao.pagador.dados.telefoneE164}</p><p>{revisao.pagador.dados.endereco}</p>
       <ul>{revisao.agenda.encontros.map((e, i) => <li key={i}>{data(e.inicio)} — {data(e.fim)} · {revisao.agenda.fuso}</li>)}</ul>
       <h3>Cobranças existentes — não serão reemitidas</h3><ul>{revisao.cobrancas.map((c) => <li key={c.id}>{rotular(TIPO_COBRANCA_LABEL, c.tipo)} · {formatarMoeda(c.valorNegociado, c.moeda)} · saldo {c.saldo == null ? "a conferir" : formatarMoeda(c.saldo, c.moeda)} · {rotular(STATUS_COBRANCA_LABEL, c.status)} · {c.informesPendentes} comprovante(s) pendente(s)</li>)}</ul>
-      <h3>Condições de entrada registradas</h3><ul>{revisao.plano.map((p) => <li key={p.tipo}>{rotular(TIPO_COBRANCA_LABEL, p.tipo)} · {formatarMoeda(p.valor, p.moeda)} · vencimento {p.vencimento}{p.cobertura ? ` · cobertura ${p.cobertura.inicio} a ${p.cobertura.fim}` : ""}</li>)}</ul>
+      <h3>Condições de entrada registradas</h3><ul>{revisao.plano.map((p) => <li key={p.tipo}>{rotular(TIPO_COBRANCA_LABEL, p.tipo)} · {formatarMoeda(p.valor, p.moeda)} · vencimento {formatarDataCivil(p.vencimento)}{p.cobertura ? ` · cobertura ${formatarDataCivil(p.cobertura.inicio)} a ${formatarDataCivil(p.cobertura.fim)}` : ""}</li>)}</ul>
       <label className="block">Motivo<textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = null; }} minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
       <label className="block"><input type="checkbox" checked={conferido} onChange={(e) => setConferido(e.target.checked)} /> Conferi cadastro, pagador, condições, cobranças e todos os horários acordados.</label>
       <button type="button" disabled={!conferido || motivo.trim().length < 5} onClick={confirmar} className="border p-2">Confirmar nova reserva</button>
