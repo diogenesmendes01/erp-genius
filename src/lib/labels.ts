@@ -159,11 +159,11 @@ export const SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL: Record<SituacaoRelatoMate
  * dizia "Prevista/Ministrada/Cancelada" (aula) e o acadêmico "Previsto/…"; decisão do responsável
  * em 25/09/2026: masculino.
  */
-export const STATUS_ENCONTRO_LABEL: Record<StatusEncontroAgenda, string> = {
+export const STATUS_ENCONTRO_LABEL: Readonly<Record<StatusEncontroAgenda, string>> = Object.freeze({
   RASCUNHO: "Rascunho",
   PREVISTO: "Previsto",
   MINISTRADO: "Ministrado",
   CANCELADO: "Cancelado",
   NAO_REALIZADO: "Não realizado",
   IMPEDIDO_ESCOLA: "Impedido pela escola",
-};
+});
