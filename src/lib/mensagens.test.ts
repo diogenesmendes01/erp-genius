@@ -153,6 +153,24 @@ describe("resultado incerto: uma instrução por evento (ganho rápido #20)", ()
     expect(decisao).toMatchObject({ constante: "MSG_DECISAO_INCERTA", decisao: true, comChave: false });
   });
 
+  it("cada redação do evento é pega pelo próprio braço da regra (uma frase por braço; tirar um braço quebra)", () => {
+    // Cada frase aciona exatamente um braço de TEXTO_INCERTO / FALHA_EM_MUTACAO — nenhuma é pega por outro.
+    const frases = [
+      "O pedido não foi confirmado.", "Resultado não confirmado.", "Não foi possível confirmar o envio.", "Resultado incerto.",
+      "Consulte o histórico antes de repetir.", "Consulte a agenda antes de reenviar.", "Atualize a página antes de tentar novamente.",
+      "Tente de novo com os mesmos dados.", "Repita sem alterar.", "Repita a mesma decisão.", "O registro precisa de conferência.",
+      "O resultado precisa ser conferido.", "Consulte novamente antes.", "Confira o resultado antes.",
+      "Não foi possível registrar a proposta.", "Não foi possível salvar os prazos.", "Não foi possível publicar a gravação.",
+      "Não foi possível aplicar o vínculo.", "Não foi possível processar o lote.", "Não foi possível revogar a cobertura.",
+      "Não foi possível concluir a operação.", "Não foi possível preparar a proposta.", "Não foi possível preparar o processo.",
+      "Não foi possível preparar o envio manual.", "Não foi possível preparar os casos de revisão.", "Não foi possível reconferir a pendência.",
+      "Não foi possível efetivar.",
+    ];
+    for (const frase of frases) {
+      expect(incertosDoFonte(emAsync(`try { await salvar(d); } catch { setErro(${JSON.stringify(frase)}); }`)), frase).toHaveLength(1);
+    }
+  });
+
   it("a regra de coerência rejeita \"reenvie\" sem chave e decisão incerta fora de decisão", () => {
     const proibidos = [
       ...incertosDoFonte(emAsync("try { await salvar(d); } catch { setErro(MSG_RESULTADO_INCERTO); }")),
