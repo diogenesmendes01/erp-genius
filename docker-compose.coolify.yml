@@ -19,7 +19,7 @@ services:
   # Banco init: cria o banco "evolution" ANTES do serviço db subir de vez (one-shot).
   # Em VPS avulsa isso vinha de ./deploy/initdb (bind mount), mas no Coolify Git deploy
   # o bind mount relativo pode falhar. Solução: comando SQL inline via psql.
-  # Idempotente: CREATE DATABASE IF NOT EXISTS (Postgres 9.5+) ou ignore o erro de duplicado.
+  # Idempotente: SELECT + \gexec só executa CREATE se o banco não existe (testado real).
   db-init:
     image: postgres:16-alpine
     restart: "no"
@@ -28,22 +28,15 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
       PGHOST: db
       PGDATABASE: postgres
-    # Idempotente: SELECT 1 FROM pg_database WHERE datname='evolution' retorna vazio se não existe.
-    # O \gset armazena em var; se vazio, CREATE. Se banco já existe, o SELECT retorna 1 e não cria.
-    # Escape correto: aspas simples SQL protegidas com \' dentro do sh -c com aspas duplas.
+    # \gexec executa o SELECT como comando se WHERE retornar linha; se o banco já existe, nada roda.
+    # ON_ERROR_STOP=1 faz falhar em erro real (senha/host). Idempotente: exit 0 nas duas execuções.
     command:
       - sh
       - -c
       - |
-        until pg_isready -h db -U "$${POSTGRES_USER}"; do sleep 1; done
-        psql -h db -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 <<'SQL'
-        DO $$
-        BEGIN
-          IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'evolution') THEN
-            CREATE DATABASE evolution;
-          END IF;
-        END
-        $$;
+        until pg_isready -h db -U "$$PGUSER"; do sleep 1; done
+        psql -h db -U "$$PGUSER" -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+        SELECT 'CREATE DATABASE evolution' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'evolution')\gexec
         SQL
     depends_on:
       db:
