@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { consultarRemarcacoesParticular, proporRemarcacaoParticular, decidirRemarcacaoParticular } from "@/server/agenda/remarcacao-particular";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { botaoClasses } from "@/components/Botao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
@@ -24,7 +25,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       <label className="block">Evidência da escolha do aluno<textarea name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Justificativa de exceção em dia não letivo, se necessária<textarea name="excecao" minLength={5} maxLength={2000} className={estilo} /></label>
-      <button className={estilo}>Conferir e submeter proposta</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir e submeter proposta</button>
     </fieldset></form>}
     {dados.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-3">
       <p>{p.entrada.data} às {p.entrada.horario} · {p.entrada.fuso}</p><p>Professor: {dados.professores.find(x => x.id === p.entrada.professorId)?.nome ?? p.entrada.professorId}</p>
@@ -37,7 +38,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
         iniciar(() => executar(() => decidirRemarcacaoParticular({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) })));
       }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar" disabled={!!p.erroConferencia || !!p.conferencia?.pendencias.length}>Aprovar e publicar, incluindo a exceção indicada</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-        <label className="block">Justificativa da decisão<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo}>Confirmar decisão</button>
+        <label className="block">Justificativa da decisão<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </fieldset></form>}
     </article>)}
   </div>;
