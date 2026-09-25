@@ -18,9 +18,10 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -439,7 +440,7 @@ function AcaoRapida({
   if (item.precisaBloqueio) {
     if (!podeOperar) return <span className="text-[11px] text-gray-400">restrição devida</span>;
     return (
-      <button className="rounded-md border border-red-200 px-2.5 py-1 text-xs text-red-700 hover:bg-red-50" onClick={onAcesso}>
+      <button className={botaoClasses({ variante: "perigo", tamanho: "sm" })} onClick={onAcesso}>
         Consultar acesso
       </button>
     );
