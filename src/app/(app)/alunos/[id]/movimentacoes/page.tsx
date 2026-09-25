@@ -16,6 +16,7 @@ import { dataCivilInstitucional, FusoInstitucionalSchema } from "@/server/operac
 import { identificacaoContrato } from "./identificacaoContrato";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { listarPedidosEncerramentoParaUsuario, paginaPedidosEncerramento } from "@/server/matricula/encerramento-pedidos-consulta";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function MovimentacoesPage({
   params,
@@ -40,7 +41,7 @@ export default async function MovimentacoesPage({
   const permissoes = financeiro ? await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { permissoes: true } }) : null;
   const pedidos = await listarPedidosEncerramentoParaUsuario({ alunoId: id, pagina: paginaPedidos }, usuario);
   return <section className="space-y-5">
-    <Link className="text-brand-700 hover:underline" href={`/alunos/${id}`}>Voltar à ficha do aluno</Link>
+    <VoltarPara href={`/alunos/${id}`} para="Ficha do aluno" />
     <h1 className="text-2xl font-medium">Pausa, retomada e encerramento</h1>
     <p className="text-sm text-gray-600">Confira os contratos e os impactos registrados em cada proposta. Aprovação e aplicação são etapas distintas.</p>
     <NovaPausa alunoId={id} contratos={contratos.filter((m) => m.status === "ATIVA").map((m) => ({ id: m.id, identificacao: identificacaoContrato(m.codigo, m.id), produto: { nome: `${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` } }))} hoje={fuso.success ? dataCivilInstitucional(new Date(), fuso.data) : null} />

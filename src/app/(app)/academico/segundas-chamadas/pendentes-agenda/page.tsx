@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarSegundasChamadasSemAgenda } from "@/server/avaliacoes/segunda-chamada-fila-agenda";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const situacao = (valor: { pendente: boolean; saldo: number; statusMatricula: string; alocacaoAtiva: boolean; possuiReservaTerminal: boolean; possuiPendenciaEscola: boolean }) => {
   if (valor.possuiPendenciaEscola) return "Impedimento da escola pendente de revisão";
@@ -26,13 +27,13 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { cursor: cursorBruto } = await searchParams;
   const cursor = lerCursor(cursorBruto);
-  if (cursor === null) return <section className="space-y-3"><Link className="underline" href="/academico">Voltar ao acadêmico</Link><p role="alert">Cursor de fila inválido.</p></section>;
+  if (cursor === null) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">Cursor de fila inválido.</p></section>;
   const [r, preferencia] = await Promise.all([listarSegundasChamadasSemAgenda(cursor ? { cursor } : {}), consultarPreferenciaFusoEquipe()]);
-  if (!r.ok || !r.dado) return <section className="space-y-3"><Link className="underline" href="/academico">Voltar ao acadêmico</Link><p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></section>;
+  if (!r.ok || !r.dado) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></section>;
   const d = r.dado;
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
-    <Link className="underline" href="/academico">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" />
     {cursorBruto && <Link className="underline" href="/academico/segundas-chamadas/pendentes-agenda">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Segundas chamadas pendentes de agenda</h1><p>Prepare a prévia antes de propor uma agenda. A listagem não confirma disponibilidade de professor ou horário.</p></header>
     {!d.itens.length && <p>Nenhuma segunda chamada pendente de agenda foi encontrada.</p>}

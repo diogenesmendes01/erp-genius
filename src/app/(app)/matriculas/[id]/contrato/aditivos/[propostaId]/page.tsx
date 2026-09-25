@@ -15,6 +15,7 @@ import { consultarAcertoTaxaPorProposta } from "@/server/contratos/aditivo-acert
 import { AcertoTaxaFormulario } from "../AcertoTaxaFormulario";
 import { ImpactosTaxaFormulario } from "../ImpactosTaxaFormulario";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { VoltarPara } from "@/components/VoltarPara";
 const dominios = { CADASTRO: "Dados deste contrato", CONTRATUAL: "Condições contratadas", CONDICOES_FUTURAS: "Próximas cobranças", COBRANCA_EMITIDA: "Cobranças existentes", AGENDA: "Agenda" };
 export default async function PropostaAditivoPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ paginaConferencias?: string; paginaOriginais?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA); const { id, propostaId } = await params;
@@ -28,7 +29,7 @@ export default async function PropostaAditivoPage({ params, searchParams }: { pa
   const pagina = Number.isInteger(paginaInformada) && paginaInformada >= 1 && paginaInformada <= 100000 ? paginaInformada : 1;
   const paginaOriginalInformada = Number((await searchParams).paginaOriginais ?? 1);
   const paginaOriginais = Number.isInteger(paginaOriginalInformada) && paginaOriginalInformada >= 1 && paginaOriginalInformada <= 100000 ? paginaOriginalInformada : 1;
-  return <div className="space-y-5"><Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos`}>Voltar às propostas</Link><h1 className="text-2xl">Proposta de aditivo · versão {d.versao}</h1><p>Preparada por {d.preparadaPor} em {data(d.criadaEm)}.</p><p className="whitespace-pre-wrap">{d.motivo}</p>{d.ambiente === "SANDBOX" && <p role="status">Ambiente de teste: esta fonte não comprova formalização em produção.</p>}
+  return <div className="space-y-5"><VoltarPara href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos`} para="Propostas" /><h1 className="text-2xl">Proposta de aditivo · versão {d.versao}</h1><p>Preparada por {d.preparadaPor} em {data(d.criadaEm)}.</p><p className="whitespace-pre-wrap">{d.motivo}</p>{d.ambiente === "SANDBOX" && <p role="status">Ambiente de teste: esta fonte não comprova formalização em produção.</p>}
     <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/originais/${encodeURIComponent(d.artefatoOriginalId)}/pdf`} target="_blank" rel="noopener noreferrer">Abrir PDF do original preservado</a>
     <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(d.conclusaoOriginalId)}/pdf`} target="_blank" rel="noopener noreferrer">Abrir documento assinado e preservado</a>
     <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/aditivos/${encodeURIComponent(d.id)}/previa-pdf`} target="_blank" rel="noopener noreferrer">Abrir prévia do aditivo em PDF (sem assinatura)</a>

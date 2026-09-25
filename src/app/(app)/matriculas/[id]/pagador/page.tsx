@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarTelaPagador, consultarHistoricoPagador } from "@/server/secretaria/pagador-preparacao";
 import { PagadorFormulario } from "./PagadorFormulario";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function PagadorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, busca = await searchParams;
@@ -10,7 +11,7 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
   const [r, h] = await Promise.all([consultarTelaPagador(id), consultarHistoricoPagador({ matriculaId: id, pagina })]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, p = d.registro;
-  return <div className="space-y-4"><Link href="/secretaria" className="underline">Voltar à Secretaria</Link>
+  return <div className="space-y-4"><VoltarPara href="/secretaria" />
     <h1 className="text-2xl">Pagador da contratação · {d.matricula.codigo ?? "Em preparação"}</h1>
     <p>Aluno: {d.matricula.aluno.primeiroNome} {d.matricula.aluno.sobrenome}</p>
     <p>Este cadastro pertence somente a esta matrícula. Ser pagador não concede acesso acadêmico nem define quem deve assinar o contrato.</p>

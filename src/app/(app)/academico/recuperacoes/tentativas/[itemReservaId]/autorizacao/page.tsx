@@ -7,6 +7,7 @@ import { IdentificacaoAvaliacao } from "@/app/(app)/academico/avaliacoes/Identif
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function AutorizacaoEspecialRecuperacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -23,7 +24,7 @@ export default async function AutorizacaoEspecialRecuperacao({ params, searchPar
   const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
 
   return <section className="space-y-4">
-    <Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`}>Voltar para a tentativa</Link>
+    <VoltarPara href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`} para="Tentativa" />
     <h1 className="text-2xl font-medium">Autorização especial de realização</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Habilidade: {d.habilidade.replaceAll("_", " ")} · situação da matrícula: {d.statusMatricula}.</p>

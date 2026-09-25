@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { EstadoEnvioAssinatura, Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDocumentosDesistenciaPreparacao } from "@/server/matricula/desistencia-documental";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const estados: Record<EstadoEnvioAssinatura, string> = {
   PREPARADO: "Preparado para envio", ENVIANDO: "Envio em andamento", ENVIO_INCERTO: "Resultado do envio incerto",
@@ -21,7 +21,7 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
   if (!resposta.ok || !resposta.dado) return <p role="alert">{resposta.ok ? "Conferência indisponível." : resposta.erro}</p>;
   const d = resposta.dado;
   return <section className="space-y-5">
-    <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Voltar ao pedido de desistência</Link>
+    <VoltarPara href={`/matriculas/${encodeURIComponent(id)}/desistencia`} para="Pedido de desistência" />
     <h1 className="text-2xl font-medium">Conferência documental · {d.matricula.codigo ?? "Matrícula em preparação"}</h1>
     <p>Confira os documentos e processos desta contratação. Esta consulta não cancela assinaturas, não efetiva a desistência e não autoriza devolução de valores.</p>
     <p>{d.pedido ? `Pedido mais recente: versão ${d.pedido.versao}.` : "Ainda não existe pedido de desistência registrado."}</p>

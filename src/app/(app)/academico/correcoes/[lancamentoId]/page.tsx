@@ -6,6 +6,7 @@ import { ProporCorrecao } from "./Formularios";
 import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 export default async function CorrecoesPage({ params, searchParams }: { params: Promise<{ lancamentoId: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -17,7 +18,7 @@ export default async function CorrecoesPage({ params, searchParams }: { params: 
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
-  return <section className="space-y-5"><Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(d.alocacaoId)}/${encodeURIComponent(d.codigoAvaliacao)}`}>Voltar à avaliação</Link>
+  return <section className="space-y-5"><VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(d.alocacaoId)}/${encodeURIComponent(d.codigoAvaliacao)}`} para="Avaliação" />
     <h1 className="text-2xl font-medium">Correções — {d.titulo}</h1><p>Escala: {d.escala.minimo} a {d.escala.maximo}. A correção pode reduzir uma nota registrada incorretamente; o histórico permanece preservado.</p>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     {d.pagina === 1 && <ProporCorrecao key={`${d.versaoEsperada}:${d.vigente.origemHash}`} lancamentoId={lancamentoId} origemHash={d.vigente.origemHash} versaoEsperada={d.versaoEsperada} notas={d.vigente.notas} />}

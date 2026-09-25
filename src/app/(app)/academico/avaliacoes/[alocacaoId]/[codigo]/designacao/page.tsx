@@ -6,6 +6,7 @@ import { IdentificacaoAvaliacao } from "../../../Identificacao";
 import { FormularioDesignacao } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function DesignacaoPage({ params, searchParams }: {
   params: Promise<{ alocacaoId: string; codigo: string }>; searchParams: Promise<{ pagina?: string; busca?: string }>;
@@ -20,7 +21,7 @@ export default async function DesignacaoPage({ params, searchParams }: {
   const d = r.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
-    <Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigo)}`}>Voltar à avaliação</Link>
+    <VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigo)}`} para="Avaliação" />
     <h1 className="text-2xl font-medium">Avaliador designado — {d.titulo}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>{d.atual?.professor ? `Último professor designado: ${d.atual.professor.nome}${d.atual.professor.ativo ? "" : " (usuário inativo)"}.` : "Sem designação vigente."}</p>
