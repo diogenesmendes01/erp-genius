@@ -49,6 +49,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Adicionar regra de assinatura → secundario/sm",
     "<button> Salvando proposta… · Salvar proposta para aprovação → primario/lg",
   ],
+  "configuracao/contratos/page.tsx": [
+    "<Link> Preparar novo modelo → secundario/md",
+  ],
   "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
     "<button> Lendo… · Ler arquivo → secundario/md",
     "<button> Preparando… · Preparar lote → primario/lg",

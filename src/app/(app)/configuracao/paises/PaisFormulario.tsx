@@ -9,6 +9,7 @@ import { criarPais, editarPais } from "@/server/paises/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -122,9 +123,9 @@ export function PaisFormulario({
         </div>
 
         {fields.length === 0 && (
-          <p className="text-xs text-gray-400">
+          <EstadoVazio>
             Nenhum documento. Adicione ao menos um para poder ativar o país.
-          </p>
+          </EstadoVazio>
         )}
 
         <div className="flex flex-col gap-2">

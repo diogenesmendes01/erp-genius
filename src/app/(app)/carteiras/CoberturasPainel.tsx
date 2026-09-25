@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibicao = null }: { vendedores: { id: string; nome: string }[]; coberturas: { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string }[]; preferenciaFusoExibicao?: string | null }) {
   const [erro, setErro] = useState<string | null>(null);
@@ -33,6 +34,6 @@ export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibic
     </form>
     {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
     <ul className="space-y-2">{coberturas.map((c) => { const inicio = formatarInstanteExibicao(c.inicio, preferenciaFusoExibicao, "UTC"); const fim = formatarInstanteExibicao(c.fim, preferenciaFusoExibicao, "UTC"); return <li key={c.id} className="rounded border p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{c.substituto} atende a carteira de {c.titular}</strong>{!c.revogada && <button disabled={ocupado} onClick={() => revogar(c.id)} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Revogar</button>}</div><p>{inicio.texto} até {fim.texto} (horário exibido em {inicio.fuso}; origem UTC){c.revogada ? " · Revogada" : ""}</p><p className="text-gray-500">{c.motivo}</p></li>; })}</ul>
-    {!coberturas.length && <p className="text-sm text-gray-500">Nenhuma cobertura cadastrada.</p>}
+    {!coberturas.length && <EstadoVazio>Nenhuma cobertura cadastrada.</EstadoVazio>}
   </div>;
 }

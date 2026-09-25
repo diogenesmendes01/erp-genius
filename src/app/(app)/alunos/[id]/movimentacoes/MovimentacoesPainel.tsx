@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -99,7 +100,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     <MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Carregando…" : null} />
-    {lista?.propostas.length === 0 && <p>Nenhuma proposta encontrada.</p>}
+    {lista?.propostas.length === 0 && <EstadoVazio>Nenhuma proposta encontrada.</EstadoVazio>}
     {lista?.propostas.map((p) => <article key={p.id} className="space-y-2 rounded border p-4">
       <TituloMovimentacao estado={p.status} criadoEm={p.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
       <p className="text-sm">Solicitante: {p.solicitante.nome}</p>
@@ -121,7 +122,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
           {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-gray-50 p-3 text-sm">
             {"cobertura" in p ? <><p>Cobertura anterior: {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)}</p><p>Cobertura proposta: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)}</p><p>Vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p></> : <><p>{p.codigo ?? "Mensalidade"}: {efeito[p.efeito]}</p><p>Cobertura: {p.inicio && p.fim ? `${data(p.inicio)} a ${data(p.fim)}` : "A conferir"}</p><p>Vencimento: {data(p.vencimento)}</p></>}
           </div>)}
-          {m.periodos.length === 0 && <p className="text-sm">Nenhum período calculado nesta proposta.</p>}
+          {m.periodos.length === 0 && <EstadoVazio>Nenhum período calculado nesta proposta.</EstadoVazio>}
         </div>)}
       </>}
       {podeDecidir && <div className="space-y-3 border-t pt-4">

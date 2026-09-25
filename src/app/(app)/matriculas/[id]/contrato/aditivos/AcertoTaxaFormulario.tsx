@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -58,7 +59,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
   return <section className="space-y-3 rounded border p-4">
     <h2 className="text-xl">Acerto da taxa emitida</h2>
     <p>Selecione a cobrança e confira os efeitos do aditivo. A proposta não confirma pagamentos nem devolve dinheiro.</p>
-    {!cobrancas.length && <p role="status">Nenhuma cobrança de taxa disponível para conferência.</p>}
+    {!cobrancas.length && <EstadoVazio role="status">Nenhuma cobrança de taxa disponível para conferência.</EstadoVazio>}
     <fieldset disabled={ocupado} className="space-y-3">
       <label className="block">Cobrança de taxa
         <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>

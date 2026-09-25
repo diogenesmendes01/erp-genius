@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export const CompensacoesEncerramentoSchema = z.array(z.object({
   id: z.string(), status: z.enum(["PENDENTE", "APROVADA", "REJEITADA"]),
@@ -15,7 +16,7 @@ export const CompensacoesEncerramentoSchema = z.array(z.object({
 }));
 
 export function CompensacoesEncerramento({ compensacoes }: { compensacoes: z.infer<typeof CompensacoesEncerramentoSchema> }) {
-  if (!compensacoes.length) return <p>Nenhuma compensação registrada nesta consulta.</p>;
+  if (!compensacoes.length) return <EstadoVazio>Nenhuma compensação registrada nesta consulta.</EstadoVazio>;
   return <div className="space-y-2 rounded border p-3">
     <h4 className="font-medium">Compensações de cobertura</h4>
     <p>Os valores de compensação ainda precisam compor o acerto completo; não estão incluídos no total mensal apresentado.</p>

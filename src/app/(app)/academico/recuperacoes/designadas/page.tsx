@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarTentativasRecuperacaoDesignadas } from "@/server/avaliacoes/recuperacao-fila-docente";
 import { AgendaPublicada } from "../AgendaPublicada";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Designadas({ searchParams }: { searchParams: Promise<{ depoisId?: string; modo?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
@@ -18,7 +19,7 @@ export default async function Designadas({ searchParams }: { searchParams: Promi
       <AgendaPublicada agenda={i.agenda} />
       {r.dado!.modo === "historico" && i.realizacaoId ? <Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacaoId)}`}>Consultar registros desta recuperação</Link> : <><p>{i.realizada ? "Realização registrada; nota ou conferência pendente." : "Realização ainda não registrada."}</p><Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}`}>Abrir tentativa atribuída</Link></>}
     </article>)}
-    {!r.dado.itens.length && <p>Nenhuma tentativa disponível nesta página.</p>}
+    {!r.dado.itens.length && <EstadoVazio bloco>Nenhuma tentativa disponível nesta página.</EstadoVazio>}
     {r.dado.proximoId && <Link className="underline" href={`?${new URLSearchParams({ depoisId: r.dado.proximoId, modo: r.dado.modo })}`}>Próximas tentativas</Link>}
   </section>;
 }

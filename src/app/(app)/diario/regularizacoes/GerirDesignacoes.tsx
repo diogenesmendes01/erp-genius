@@ -6,6 +6,7 @@ import { consultarDesignacoesAula } from "@/server/diario/regularizacao-consulta
 import { designarRegularizacaoAula, revogarRegularizacaoAula } from "@/server/diario/regularizacao-designacao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type DadosDesignacoes = {
   podeGerir: boolean;
@@ -126,7 +127,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
         </form>}
         <div className="space-y-3 border-t pt-4">
           <h3 className="font-medium">Histórico</h3>
-          {!dados.historico.length && <p className="text-sm text-gray-600">Nenhuma designação registrada.</p>}
+          {!dados.historico.length && <EstadoVazio>Nenhuma designação registrada.</EstadoVazio>}
           {dados.historico.map((designacao) => <article key={designacao.id} className="space-y-2 rounded border p-3 text-sm">
             <p><strong>{designacao.responsavel}</strong> · designado por {designacao.designador}</p>
             <p>{designacao.motivo}</p>

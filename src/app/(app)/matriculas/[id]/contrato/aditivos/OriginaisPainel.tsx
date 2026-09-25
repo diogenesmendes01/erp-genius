@@ -2,6 +2,7 @@ import Link from "next/link";
 import { consultarOriginaisAditivo } from "@/server/contratos/aditivo-originais";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { OriginalFormulario } from "./OriginalFormulario";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export async function OriginaisPainel({ matriculaId, propostaId, podeGerar, pagina, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; podeGerar: boolean; pagina: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarOriginaisAditivo({ matriculaId, propostaId, pagina });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Originais indisponíveis." : r.erro}</p>;
@@ -12,7 +13,7 @@ export async function OriginaisPainel({ matriculaId, propostaId, podeGerar, pagi
     <p>O PDF preservado é o documento anterior à assinatura. Sua geração não aplica as condições do aditivo.</p>
     {podeGerar && d.conferencia && !d.preservada && <OriginalFormulario matriculaId={matriculaId} propostaId={propostaId} conferencia={d.conferencia} />}
     {podeGerar && !d.conferencia && <p>Confira os signatários antes de gerar o original.</p>}
-    {!d.registros.length && <p>Nenhum original nesta página.</p>}
+    {!d.registros.length && <EstadoVazio>Nenhum original nesta página.</EstadoVazio>}
     {d.registros.map(a => <article className="space-y-1 rounded border p-3" key={a.id}><p>{a.autor.nome} · {data(a.criadoEm)} · {a.paginas} página(s)</p><p className="whitespace-pre-wrap">{a.motivo}</p>
       <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(matriculaId)}/aditivos/${encodeURIComponent(propostaId)}/originais/${encodeURIComponent(a.id)}/pdf`}>Abrir PDF original preservado</a>
       <Link className="block underline" href={`${base}/originais/${encodeURIComponent(a.id)}`}>Conferir original e consultar histórico</Link>

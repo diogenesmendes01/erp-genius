@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { botaoClasses } from "@/components/Botao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -19,7 +20,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     <p>Feriados, recessos e férias seguem um calendário único. As datas são interpretadas no fuso institucional de cada versão.</p>
     <p>{vigente ? `Calendário vigente: versão ${vigente.versao}` : "Ainda não há calendário publicado."}</p>
     <Link href="/academico/calendario/novo" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar nova versão</Link>
-    {!versoes.length && <p>Nenhuma proposta encontrada.</p>}
+    {!versoes.length && <EstadoVazio bloco>Nenhuma proposta encontrada.</EstadoVazio>}
     {versoes.slice(0, 30).map((v) => <article key={v.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
       <h2 className="font-medium">Versão {v.versao} · {v.id === vigente?.id ? "Vigente" : v.decisao ? v.decisao.aprovada ? "Publicada anteriormente" : "Rejeitada" : "Aguardando decisão"}</h2>
       <p>{v.fusoInstitucional}</p><p className="whitespace-pre-wrap">{v.motivo}</p>

@@ -11,6 +11,7 @@ import {
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -86,7 +87,7 @@ export function TerminoIndisponibilidadeOferta({
     </form>}
 
     <h2 className="text-lg">Histórico de propostas</h2>
-    {!d.propostas.length && <p>Nenhuma proposta registrada nesta página.</p>}
+    {!d.propostas.length && <EstadoVazio>Nenhuma proposta registrada nesta página.</EstadoVazio>}
     {d.propostas.map(proposta => <article key={proposta.id} className="space-y-2 rounded border p-4">
       <h3>Último dia indisponível: {dataCivil(proposta.fim)}</h3>
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>

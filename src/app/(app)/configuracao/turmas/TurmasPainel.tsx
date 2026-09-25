@@ -14,6 +14,7 @@ import {
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
 import { useDialogo } from "@/lib/dialogo";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export interface TurmaRow {
   id: string;
@@ -131,9 +132,7 @@ export function TurmasPainel({
       )}
 
       {turmas.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-          Nenhuma turma cadastrada.
-        </div>
+        <EstadoVazio bloco>Nenhuma turma cadastrada.</EstadoVazio>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full min-w-[640px] text-sm">

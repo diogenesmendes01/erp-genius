@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
@@ -82,7 +83,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
             {contexto.destinos.filter((t) => t.tipo === "EXCECAO").map((t) => <option key={t.id} value={t.id}>{t.label} · {t.vagas} vagas · exige aprovação</option>)}
           </select>
         </label>
-        {contexto.destinos.length === 0 && <p className="text-sm text-gray-500">Não há turma de destino disponível no mesmo idioma, modalidade e formato.</p>}
+        {contexto.destinos.length === 0 && <EstadoVazio>Não há turma de destino disponível no mesmo idioma, modalidade e formato.</EstadoVazio>}
         {destino && <div className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
           <p>Horário de destino: <strong>{destino.diasHorario ?? "A definir — confirme a disponibilidade com a escola"}</strong></p>
           <p>Mudança de nível: exige parecer docente ou dispensa justificada, decisão de outra pessoa da gestão pedagógica e execução pela secretaria.</p>
@@ -106,7 +107,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
       {p.impedimento && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">{p.impedimento}</p>}
       <div className="space-y-2"><h3 className="text-sm font-medium">Parecer docente</h3>
-        {p.pareceres.length === 0 ? <p className="text-sm text-gray-500">Nenhum parecer registrado.</p> : p.pareceres.map((parecer) => <blockquote key={parecer.id} className="border-l-2 border-gray-300 pl-3 text-sm"><p className="whitespace-pre-wrap">{parecer.conteudo}</p><footer className="mt-1 text-xs text-gray-500">{parecer.autorNome} · {data(parecer.criadoEm)}</footer></blockquote>)}
+        {p.pareceres.length === 0 ? <EstadoVazio>Nenhum parecer registrado.</EstadoVazio> : p.pareceres.map((parecer) => <blockquote key={parecer.id} className="border-l-2 border-gray-300 pl-3 text-sm"><p className="whitespace-pre-wrap">{parecer.conteudo}</p><footer className="mt-1 text-xs text-gray-500">{parecer.autorNome} · {data(parecer.criadoEm)}</footer></blockquote>)}
         {p.podeDarParecer && <div className="space-y-2"><label className="block text-sm">Registrar parecer<textarea className={`${campo} mt-1`} rows={3} maxLength={2000} disabled={ocupado} value={valor(p.id, "parecer")} onChange={(e) => escrever(p.id, "parecer", e.target.value)} /></label><button className={botao} disabled={ocupado || valor(p.id, "parecer").trim().length < 5} onClick={() => void executar(() => registrarParecerMudanca(p.id, { conteudo: valor(p.id, "parecer") }), "Parecer registrado para análise da gestão pedagógica.")}>Registrar parecer docente</button></div>}
       </div>
       {p.aprovador && <p className="text-sm">Decisão de <strong>{p.aprovador.nome}</strong>{p.decididoEm ? ` em ${data(p.decididoEm)}` : ""}: {p.motivoDecisao}</p>}

@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type RespostaHistorico = Awaited<ReturnType<typeof consultarHistoricoCorrecaoAula>>;
 type DadosRevisao = NonNullable<Extract<RespostaHistorico, { ok: true }> ["dado"]>;
@@ -139,7 +140,7 @@ function Impactos({ dados }: { dados: DadosImpactos }) {
 
     <section className="space-y-2">
       <h3 className="font-medium">Simulação de frequência</h3>
-      {dados.simulacoes.length === 0 && <p className="text-sm text-gray-600">Não há simulações disponíveis para esta proposta.</p>}
+      {dados.simulacoes.length === 0 && <EstadoVazio>Não há simulações disponíveis para esta proposta.</EstadoVazio>}
       {dados.simulacoes.map((simulacao) => <article key={`${simulacao.matriculaId}:${simulacao.nivelId}`} className="rounded border bg-surface p-3">
         <h4 className="font-medium">{nomes.get(simulacao.matriculaId) ?? "Registro da chamada"}</h4>
         {simulacao.pendencia

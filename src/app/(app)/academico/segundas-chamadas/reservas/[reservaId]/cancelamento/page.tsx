@@ -7,6 +7,7 @@ import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { EstadoVazio } from "@/components/EstadoVazio";
 const fonte = z.object({ reserva: z.object({ codigoAvaliacao: z.string(), status: z.string(), regraCancelamentoMinutos: z.number() }), encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string(), status: z.string() }).nullable() });
 function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
  const r = fonte.safeParse(valor);
@@ -43,7 +44,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
  {p.decisao ? <p role="status">{p.decisao.aprovada ? "Aprovado e aplicado" : "Rejeitado"} por {p.decisao.decisorNome}: {p.decisao.motivo}</p> : <p>Aguardando decisão de outra pessoa autorizada. Alterações posteriores na agenda exigem nova proposta.</p>}
  {p.podeDecidir && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} proposta={{ id: p.id, hash: p.entradaHash }} fusoInstitucional={fusoInstitucional} />}
  </article>)}
- {!d.propostas.length && <p>Nenhuma proposta registrada.</p>}
+ {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
  {d.proximoId && <Link className="underline" href={`?beforeId=${encodeURIComponent(d.proximoId)}`}>Propostas anteriores</Link>}
  {beforeId && <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(reservaId)}/cancelamento`}>Propostas mais recentes</Link>}
  </section>;

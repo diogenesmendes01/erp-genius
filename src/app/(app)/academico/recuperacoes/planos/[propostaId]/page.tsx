@@ -9,6 +9,7 @@ import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { Disponibilizar, Reservar, Realizar, CancelarPelaEscola } from "./Formularios";
 import { PreviaAgenda } from "./PreviaAgenda";
 import { AgendaPublicada } from "../../AgendaPublicada";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function Operacao({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
@@ -64,7 +65,7 @@ export default async function Operacao({ params, searchParams }: { params: Promi
       {reserva.podeCancelarPelaEscola && <CancelarPelaEscola reservaId={reserva.id} />}
       {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/reservas/${encodeURIComponent(reserva.id)}/cancelamento`}>Propor ou revisar cancelamento de recuperação agendada</Link>}
     </article>)}
-    {!d.reservas.length && <p>Nenhuma reserva nesta página.</p>}
+    {!d.reservas.length && <EstadoVazio bloco>Nenhuma reserva nesta página.</EstadoVazio>}
     {d.proximoId && <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}?${new URLSearchParams({ depoisId: d.proximoId })}`}>Próximas reservas</Link>}
   </section>;
 }

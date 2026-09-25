@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { botaoClasses } from "@/components/Botao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function GradesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -18,7 +19,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     <p>Confira os encontros e a disponibilidade antes da aprovação independente.</p>
     <Link href="/academico/grades/nova" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar nova grade</Link>
     <nav aria-label="Situação das grades" className="flex gap-4"><Link href="/academico/grades">Pendentes</Link><Link href="/academico/grades?historico=todos">Incluir histórico</Link></nav>
-    {!itens.length && <p>Nenhuma proposta encontrada.</p>}
+    {!itens.length && <EstadoVazio bloco>Nenhuma proposta encontrada.</EstadoVazio>}
     {itens.slice(0, 30).map((p) => <article key={p.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
       <h2 className="font-medium">{p.turma.codigo} · Versão {p.versao}</h2>
       <p>{p.decisao ? p.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando decisão"} · {p.fusoOrigem}</p>

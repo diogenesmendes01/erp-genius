@@ -9,6 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { PaisFormulario, type PaisParaEditar } from "./PaisFormulario";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export interface PaisRow {
   id: string;
@@ -107,9 +108,7 @@ export function PaisesPainel({
       )}
 
       {paises.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-          Nenhum país cadastrado ainda.
-        </div>
+        <EstadoVazio bloco>Nenhum país cadastrado ainda.</EstadoVazio>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full min-w-[640px] text-sm">

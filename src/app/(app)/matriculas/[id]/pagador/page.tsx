@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarTelaPagador, consultarHistoricoPagador } from "@/server/secretaria/pagador-preparacao";
 import { PagadorFormulario } from "./PagadorFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function PagadorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, busca = await searchParams;
@@ -27,7 +28,7 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
           <p>Registrada em {v.criadaEm.toISOString()} (UTC). Tipo: {v.tipo}.</p>
           <p>Documento: {v.dados.documento || "Não informado"}</p><p>E-mail: {v.dados.email || "Não informado"}</p><p>Telefone: {v.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {v.dados.endereco || "Não informado"}</p><p>Motivo: {v.motivo}</p>
         </details>)}
-        {!h.dado.registros.length && <p>Nenhum registro nesta página.</p>}
+        {!h.dado.registros.length && <EstadoVazio>Nenhum registro nesta página.</EstadoVazio>}
         <nav aria-label="Páginas do histórico" className="flex gap-4">{pagina > 1 && <Link className="underline" href={`?pagina=${pagina - 1}`}>Anterior</Link>}<span>Página {pagina}</span>{h.dado.temProxima && <Link className="underline" href={`?pagina=${pagina + 1}`}>Próxima</Link>}</nav>
       </>}
     </section>

@@ -7,6 +7,7 @@ import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function PropostaUsoCredito({ dados }: { dados: Dados }) {
@@ -14,7 +15,7 @@ export function PropostaUsoCredito({ dados }: { dados: Dados }) {
   const [valor, setValor] = useState("");
   return <div className="space-y-4"><p>Crédito disponível após utilizações aprovadas: {formatarMoeda(dados.valorCredito, dados.moeda)}.</p>
     {erro && <p role="alert">{erro}</p>}
-    {!dados.cobrancas.length ? <p>Nenhuma cobrança em aberto disponível nesta matrícula.</p> : <form onChange={() => { chave.current = ""; }} onSubmit={e => {
+    {!dados.cobrancas.length ? <EstadoVazio>Nenhuma cobrança em aberto disponível nesta matrícula.</EstadoVazio> : <form onChange={() => { chave.current = ""; }} onSubmit={e => {
       e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const chaveIdempotencia = chave.current;
       iniciar(async () => { setErro(""); try {
         const numero = parseMoeda(valor); if (numero === null) { setErro("Informe um valor válido, com no máximo duas casas decimais."); return; }

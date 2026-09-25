@@ -8,6 +8,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario" });
@@ -72,7 +73,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
     <p className="text-xs text-gray-500">Atraso de 30 dias gera restrição automática. Pedidos manuais exigem motivo e aprovação de outra pessoa da administração.</p>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
     {!dados && !erro && <p className="text-sm text-gray-500">Carregando solicitações…</p>}
-    {dados?.matriculas.length === 0 && <p className="text-sm text-gray-500">Nenhuma restrição ou solicitação pendente.</p>}
+    {dados?.matriculas.length === 0 && <EstadoVazio>Nenhuma restrição ou solicitação pendente.</EstadoVazio>}
     {dados?.matriculas.map((m) => <article key={m.id} className="space-y-3 border-t border-gray-100 pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-medium">{m.aluno} · {m.codigo ?? "Matrícula"}</h3>

@@ -11,6 +11,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -175,7 +176,7 @@ export function ResolucaoRevisaoProgressao({
 
     <section className="space-y-3" aria-label="Histórico de propostas de resolução">
       <h3 className="text-lg font-medium">Histórico de propostas</h3>
-      {!propostas.length && <p>Nenhuma proposta de resolução foi registrada.</p>}
+      {!propostas.length && <EstadoVazio>Nenhuma proposta de resolução foi registrada.</EstadoVazio>}
       {propostas.map((proposta) => <article key={proposta.id} className="space-y-2 rounded border p-3">
         <p><strong>Versão {proposta.versao}:</strong> {rotulosAcao[proposta.acao]}.</p>
         <p>{proposta.casos.length} {proposta.casos.length === 1 ? "caso" : "casos"} incluído(s). Proposta de {proposta.preparador.nome} em {dataAdministrativa(proposta.criadaEm, preferenciaFusoExibicao).texto} ({fusoExibicao}; origem UTC).</p>

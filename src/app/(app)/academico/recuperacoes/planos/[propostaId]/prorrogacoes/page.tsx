@@ -7,6 +7,7 @@ import { ProporProrrogacao, ConferirProrrogacao } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Prorrogacoes({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -37,7 +38,7 @@ export default async function Prorrogacoes({ params, searchParams }: { params: P
       {p.podeDecidir && !p.podeAprovar && <p>Aprovação indisponível. Confira a versão mais recente, prazo vigente, data proposta e situação da matrícula.</p>}
       {p.podeDecidir && p.propostaHash && <ConferirProrrogacao propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}
     </article>)}
-    {!d.propostas.length && <p>Nenhuma proposta nesta página.</p>}
+    {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}/prorrogacoes?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}/prorrogacoes`}>Propostas recentes</Link>}
   </section>;

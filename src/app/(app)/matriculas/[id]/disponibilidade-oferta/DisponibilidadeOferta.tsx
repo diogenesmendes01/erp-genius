@@ -4,6 +4,7 @@ import { consultarDisponibilidadesOferta, proporDisponibilidadeOferta, decidirDi
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarDisponibilidadesOferta>>, { ok: true }>["dado"]>;
 const campo = "block w-full rounded border p-2";
@@ -43,7 +44,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">Enviar para conferência</button>
       </fieldset>
     </form>}
-    {dados.propostas.length === 0 && <p>Nenhuma proposta registrada.</p>}
+    {dados.propostas.length === 0 && <EstadoVazio>Nenhuma proposta registrada.</EstadoVazio>}
     {dados.propostas.map(p => <section key={p.id} className="space-y-2 rounded border p-4">
       <h2>Período {p.inicio} a {p.fim} · versão {p.versao}</h2>
       <p className="whitespace-pre-wrap">{p.motivo}</p><p className="whitespace-pre-wrap">Evidências: {p.evidenciaTexto}</p>
