@@ -9,6 +9,7 @@ import {
 } from "@/server/avaliacoes/resolucao-revisao-progressao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -153,7 +154,7 @@ export function ResolucaoRevisaoProgressao({
         <option value="ENCAMINHAR_REGULARIZACAO">{rotulosAcao.ENCAMINHAR_REGULARIZACAO}</option>
       </select></label>}
       <p>{efeitoAcao[acao]}</p>
-      <button type="button" disabled={ocupado} onClick={conferirPrevia} className="rounded border px-3 py-2">Conferir prévia atual</button>
+      <button type="button" disabled={ocupado} onClick={conferirPrevia} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir prévia atual</button>
 
       {previa && <form onSubmit={propor} className="space-y-3 rounded border p-3">
         <h3 className="font-medium">Prévia conferida</h3>
@@ -167,7 +168,7 @@ export function ResolucaoRevisaoProgressao({
           setMotivo(evento.target.value); tentativa.current = null;
         }} className="mt-1 block w-full rounded border p-2" /></label>
         <p className="text-sm">Confira o motivo antes de enviar. A prévia continua válida apenas enquanto a ação e o estado consultado não mudarem.</p>
-        <button disabled={ocupado || !motivo.trim()} className="rounded bg-brand-solid px-3 py-2 text-white">Propor resolução</button>
+        <button disabled={ocupado || !motivo.trim()} className={botaoClasses({ tamanho: "lg" })}>Propor resolução</button>
       </form>}
     </div>}
 
@@ -184,7 +185,7 @@ export function ResolucaoRevisaoProgressao({
         {proposta.podeDecidir && !proposta.decisao && <form onSubmit={(evento) => decidir(evento, proposta)} className="space-y-2 border-t pt-3">
           <p className="text-sm">A rejeição registra a recusa desta proposta histórica e não atesta o estado atual.</p>
           <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className="rounded border px-3 py-2">Rejeitar proposta</button></div>
+          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar proposta</button></div>
         </form>}
       </article>)}
     </section>

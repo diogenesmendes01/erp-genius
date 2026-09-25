@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarLancamentoAvaliacaoLocal, oficializarLancamentoAvaliacao } from "@/server/avaliacoes/lancamentos";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 export const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -46,7 +47,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
         <label className="block">Comentário para o aluno — {nomes[h]}<textarea name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
       <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
-      <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar versão"}</button>
+      <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar versão"}</button>
     </fieldset><MensagemStatus texto={mensagem} />
   </form>;
 }
@@ -65,7 +66,7 @@ export function ConferirNotas({ lancamentoId, conteudoHash, podeAprovar }: { lan
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Oficializar notas desta versão</option>}<option value="devolver">Devolver para revisão</option></select></label>
       <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi data, habilidades, notas e comentários desta versão.</label>
-      <button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset><MensagemStatus texto={mensagem} />
   </form>;
 }

@@ -9,6 +9,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { IdentificacaoAvaliacao } from "../../Identificacao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { botaoClasses } from "@/components/Botao";
 
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 export default async function LancamentoPage({ params, searchParams }: {
@@ -36,7 +37,7 @@ export default async function LancamentoPage({ params, searchParams }: {
     <form method="get" className="space-y-2 rounded border p-3"><label className="block">Fuso para informar horários<input name="fuso" list="fusos-avaliacao" required maxLength={100} defaultValue={fusoEntrada} className="block rounded border p-2" /></label>
       <datalist id="fusos-avaliacao"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
       <p>Use uma referência de região, como America/Sao_Paulo. Esse fuso define a entrada de data e horário. Salve o rascunho antes de trocar o fuso.</p>
-      <button className="rounded border px-3 py-2">Aplicar fuso</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aplicar fuso</button>
     </form>
     <p>Regra {c.regraVersao ?? "não vinculada"}. Oficializar uma avaliação não fecha o nível nem autoriza a progressão.</p>
     {!c.avaliacao && <p role="alert">Avaliação não encontrada na regra vinculada. Confira a configuração antes de lançar.</p>}

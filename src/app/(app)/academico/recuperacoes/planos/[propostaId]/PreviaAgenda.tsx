@@ -4,6 +4,7 @@ import { preverAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda"
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { botaoClasses } from "@/components/Botao";
 
 type RespostaPreviaAgenda = Awaited<ReturnType<typeof preverAgendaRecuperacao>>;
 type DadosPreviaAgenda = NonNullable<Extract<RespostaPreviaAgenda, { ok: true }>["dado"]>;
@@ -37,7 +38,7 @@ export function PreviaAgenda({ itemReservaId, preferenciaFusoExibicao, fusoInsti
       <label className="block">Fim<input type="datetime-local" name="fim" required min={periodo.min} className="block rounded border p-2" /></label>
       <label className="block">Fuso dos horários<CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Exemplo: America/Sao_Paulo. Informe a data final correta se atravessar a meia-noite.</p>
-      <button type="submit" className="rounded border px-4 py-2">{consultando ? "Conferindo…" : "Conferir horário"}</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{consultando ? "Conferindo…" : "Conferir horário"}</button>
     </fieldset>
     {resposta && !resposta.ok && <p role="alert">{resposta.erro}</p>}
     {resposta?.ok && resposta.dado && <ResultadoPreviaAgenda dado={resposta.dado} preferenciaFusoExibicao={preferenciaFusoExibicao} />}

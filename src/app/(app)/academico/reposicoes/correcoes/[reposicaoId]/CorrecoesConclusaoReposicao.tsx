@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Fonte = {
   concluida: boolean;
@@ -135,7 +136,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
     {modalidade === "GRAVACAO" && !dados.fontesDisponiveis.entregas.length && <p role="status">Não há entrega completa disponível para esta correção.</p>}
     <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <label className="block">Evidência da correção<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
-    <button disabled={ocupado} className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
+    <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
   </form>;
@@ -160,6 +161,6 @@ function DecidirCorrecao({ correcao }: { correcao: Dados["correcoes"][number] })
     <MensagemStatus texto={correcao.impedimentoAprovacao} />
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{correcao.podeAprovar && correcao.impactosHash && <option value="aprovar">Aprovar correção</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>
     {(!correcao.podeAprovar || !correcao.impactosHash) && <p role="status">Esta proposta não pode ser aprovada no estado atual, mas ainda pode ser rejeitada.</p>}
-    <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+    <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
   </fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }

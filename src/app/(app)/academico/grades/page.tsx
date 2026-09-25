@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { botaoClasses } from "@/components/Botao";
 import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function GradesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
@@ -15,7 +16,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     <VoltarPara href="/academico" />
     <h1 className="text-2xl font-medium">Grades das turmas</h1>
     <p>Confira os encontros e a disponibilidade antes da aprovação independente.</p>
-    <Link href="/academico/grades/nova" className="inline-block rounded border px-3 py-2">Preparar nova grade</Link>
+    <Link href="/academico/grades/nova" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar nova grade</Link>
     <nav aria-label="Situação das grades" className="flex gap-4"><Link href="/academico/grades">Pendentes</Link><Link href="/academico/grades?historico=todos">Incluir histórico</Link></nav>
     {!itens.length && <p>Nenhuma proposta encontrada.</p>}
     {itens.slice(0, 30).map((p) => <article key={p.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
