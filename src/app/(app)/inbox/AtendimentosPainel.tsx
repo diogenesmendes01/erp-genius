@@ -6,6 +6,7 @@ import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, revisarFalh
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 // Nenhuma das três actions recebe chave de idempotência (server/whatsapp/operacoes-atendimento.ts):
 // abrirAtendimentoInstitucional (:103) grava um evento novo a cada chamada; classificarMensagemWhatsApp
@@ -36,7 +37,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
           {opcoes.numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>
       </label>
-      <button disabled={acao.ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50">Abrir atendimento</button>
+      <button disabled={acao.ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className={botaoClasses({ tamanho: "lg" })}>Abrir atendimento</button>
       {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
@@ -76,7 +77,7 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
     <label className="grid gap-1">Motivo da classificação
       <input required minLength={12} maxLength={1000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="rounded border p-1.5" />
     </label>
-    <button disabled={acao.ocupado || !item.atendimentos.length} className="rounded border px-3 py-1.5 disabled:opacity-50">Classificar esta mensagem</button>
+    <button disabled={acao.ocupado || !item.atendimentos.length} className={botaoClasses({ variante: "secundario" })}>Classificar esta mensagem</button>
     <FeedbackAcao erro={acao.erro} />
   </form>;
 }
@@ -103,7 +104,7 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
     <label className="grid gap-1">Evidência da conferência
       <input required minLength={12} maxLength={1000} value={evidencia} onChange={(e) => setEvidencia(e.target.value)} className="rounded border p-1.5" />
     </label>
-    <button disabled={acao.ocupado} className="rounded border px-3 py-1.5 disabled:opacity-50">Registrar revisão</button>
+    <button disabled={acao.ocupado} className={botaoClasses({ variante: "secundario" })}>Registrar revisão</button>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
 }

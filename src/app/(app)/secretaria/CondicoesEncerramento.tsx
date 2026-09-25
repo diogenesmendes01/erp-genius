@@ -7,6 +7,7 @@ import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerrame
 import { montarAcertoDesistenciaPreparacao, type AlcanceAcerto, type TipoAcerto } from "./condicoes-encerramento-formulario";
 import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
@@ -75,7 +76,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
         }}>
           <label className="grid gap-1">Decisão<select name="decisao" required defaultValue="" className={campo}><option value="">Selecione</option><option value="aprovar" disabled={!r || (!!v.processoAssinatura && (v.processoAssinatura.estado !== "ENVIADO" || !v.processoAssinatura.envioConfirmado || v.processoAssinatura.conclusaoRegistrada))}>Aprovar regras conferidas</option><option value="rejeitar">Rejeitar proposta</option></select></label>
           <label className="grid gap-1">Motivo da decisão<input name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
-          <button disabled={ocupado} className={campo}>Registrar decisão</button>
+          <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </form> : <p>Aguardando decisão de outra pessoa da Administração.</p>)}
       </article>;
     })}
@@ -108,7 +109,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
           {alcanceAcerto === "TIPOS_COBRANCA" && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>Tipos alcançados</legend>{["MULTA_ENCERRAMENTO", "MATRICULA", "MENSALIDADE", "HORA_PARTICULAR", "MATERIAL", "CERTIFICADO"].map((tipo) => <label key={tipo}><input type="checkbox" name="tiposAcerto" value={tipo} /> {rotular(TIPO_COBRANCA_LABEL, tipo)}</label>)}</fieldset>}
           {["COBRANCAS_IDENTIFICADAS", "TOTAL_CONTRATACAO"].includes(alcanceAcerto) && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>{alcanceAcerto === "TOTAL_CONTRATACAO" ? "Cobranças e rateio do total" : "Cobranças alcançadas"}</legend>{cobrancas.map((cobranca) => <div key={cobranca.id} className="flex flex-wrap items-center gap-2"><label><input type="checkbox" name="cobrancasAcerto" value={cobranca.id} checked={cobrancasAcerto.includes(cobranca.id)} onChange={() => setCobrancasAcerto((atuais) => atuais.includes(cobranca.id) ? atuais.filter((id) => id !== cobranca.id) : [...atuais, cobranca.id])} /> {rotuloCobranca(cobranca.id)}</label>{alcanceAcerto === "TOTAL_CONTRATACAO" && cobrancasAcerto.includes(cobranca.id) && <label>Rateio %<input name={`rateio:${cobranca.id}`} inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" required className={campo} /></label>}</div>)}</fieldset>}</>}
         <label className="grid gap-1 text-sm">Motivo e referência da conferência<textarea name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
-        <button disabled={ocupado} className={`${campo} self-end`}>Enviar para aprovação administrativa</button>
+        <button disabled={ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} self-end`}>Enviar para aprovação administrativa</button>
       </form>
     </details>}
   </section>;

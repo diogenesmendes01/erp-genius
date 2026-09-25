@@ -7,6 +7,7 @@ import { checkinExperimental } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 interface Turma {
   id: string;
@@ -103,14 +104,14 @@ export function HomeProfessor({
                   <button
                     onClick={() => checkin(e.id, true)}
                     disabled={acao.ocupado}
-                    className="rounded-md bg-success px-3 py-1 text-xs font-medium text-white hover:brightness-95 disabled:opacity-60"
+                    className={botaoClasses({ tamanho: "sm" })}
                   >
                     Compareceu
                   </button>
                   <button
                     onClick={() => checkin(e.id, false)}
                     disabled={acao.ocupado}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                   >
                     Faltou
                   </button>

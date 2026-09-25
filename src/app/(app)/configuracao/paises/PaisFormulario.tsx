@@ -115,7 +115,7 @@ export function PaisFormulario({
           <button
             type="button"
             onClick={() => append({ nome: "", validador: "cpf" })}
-            className="flex items-center gap-1 text-xs text-brand-700 hover:text-brand-800"
+            className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
           >
             <IconPlus className="h-3.5 w-3.5" /> Adicionar
           </button>
