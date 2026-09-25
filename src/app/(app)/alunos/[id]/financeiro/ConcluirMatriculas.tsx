@@ -6,6 +6,7 @@ import { concluirMatricula } from "@/server/matricula/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function ConcluirMatriculas({ matriculas }: { matriculas: { id: string; nome: string }[] }) {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function ConcluirMatriculas({ matriculas }: { matriculas: { id: string; n
     {matriculas.map((m) => <div key={m.id} className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <span>{m.nome}</span>
-        <button disabled={acao.ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" onClick={async () => {
+        <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })} onClick={async () => {
           setAlvo(m.id);
           const desfecho = await acao.executar(() => concluirMatricula(m.id), `Matrícula de ${m.nome} concluída.`);
           if (desfecho?.tipo === "ok") router.refresh();

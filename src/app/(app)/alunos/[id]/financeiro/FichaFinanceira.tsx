@@ -19,10 +19,11 @@ import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 const TIPO_AJUSTE_LABEL: Record<TipoAjuste, string> = {
   DESCONTO: "Desconto",
@@ -370,7 +371,7 @@ function RenegociarModal({
       <FeedbackAcao erro={acao.erro} className="mb-3" />
       <div className="flex gap-2">
         <button className={btnPri} disabled={acao.ocupado} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Aplicar ajuste"}</button>
-        <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={onClose}>Cancelar</button>
+        <button className={botaoClasses({ variante: "secundario" })} onClick={onClose}>Cancelar</button>
       </div>
     </Modal>
   );

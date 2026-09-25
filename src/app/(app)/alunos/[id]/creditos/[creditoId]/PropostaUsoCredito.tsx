@@ -5,6 +5,7 @@ import { consultarPropostasUsoCredito, proporUtilizacaoCredito } from "@/server/
 import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { botaoClasses } from "@/components/Botao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function PropostaUsoCredito({ dados }: { dados: Dados }) {
@@ -23,13 +24,13 @@ export function PropostaUsoCredito({ dados }: { dados: Dados }) {
       <label className="block">Cobrança da mesma matrícula<select name="cobranca" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option>{dados.cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? c.id} · saldo {formatarMoeda(c.saldo, dados.moeda)}</option>)}</select></label>
       <label className="block">Valor a utilizar<CampoMoeda name="valor" moeda={dados.moeda} value={valor} onChange={setValor} required className={estilo} /></label>
       <label className="block">Evidência da concordância do aluno<textarea name="concordancia" required minLength={5} maxLength={2000} className={estilo} /></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo}>Guardar proposta para conferência</button>
+      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Guardar proposta para conferência</button>
     </fieldset></form>}
     {dados.propostas.map(p => <article key={p.id} className="space-y-1 rounded border p-3"><h2>Proposta {p.versao} · {p.decisao ? p.decisao.aprovada ? "aplicada" : "rejeitada" : "aguardando decisão"}</h2><p>Cobrança: {dados.cobrancas.find(c => c.id === p.cobrancaId)?.codigo ?? p.cobrancaId}</p><p>{formatarMoeda(p.valor, dados.moeda)}</p><p>{p.concordancia}</p><p>{p.motivo}</p>
       {p.decisao && <p>Decisão: {p.decisao.motivo}</p>}
       {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
         iniciar(async () => { setErro(""); try { const r = await decidirUtilizacaoCredito({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } router.refresh(); } catch { setErro("Confira o resultado antes de repetir."); } });
-      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e aplicar o abatimento</option><option value="rejeitar">Rejeitar proposta</option></select></label><label className="block">Justificativa<textarea required name="motivo" minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo}>Confirmar decisão</button></fieldset></form>}
+      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e aplicar o abatimento</option><option value="rejeitar">Rejeitar proposta</option></select></label><label className="block">Justificativa<textarea required name="motivo" minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button></fieldset></form>}
     </article>)}
   </div>;
 }
