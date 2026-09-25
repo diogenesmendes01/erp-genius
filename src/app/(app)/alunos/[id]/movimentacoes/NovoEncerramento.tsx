@@ -7,6 +7,7 @@ import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 export function NovoEncerramento({ alunoId, contratos, hoje }: {
@@ -46,12 +47,12 @@ export function NovoEncerramento({ alunoId, contratos, hoje }: {
         {contratos.map((m) => <label className="flex gap-2 text-sm" key={m.id}><input type="checkbox" name="matricula" value={m.id} />{m.nome}</label>)}
         {!contratos.length && <EstadoVazio>Nenhum contrato disponível.</EstadoVazio>}
         <label className="block text-sm">Data de encerramento solicitada<input type="date" required className={estilo} value={data} onChange={(e) => setData(e.target.value)} /></label>
-        <label className="block text-sm">Motivo do pedido<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
-        <label className="block text-sm">Referência da evidência do pedido do aluno<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} placeholder="Identifique a mensagem, atendimento ou documento que comprova o pedido." /></label>
+        <label className="block text-sm">Motivo do pedido<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
+        <label className="block text-sm">Referência da evidência do pedido do aluno<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className={estilo} placeholder="Identifique a mensagem, atendimento ou documento que comprova o pedido." /></label>
         {hoje && data && data < hoje && <div className="space-y-2 rounded bg-amber-50 p-3">
           <p className="text-sm">A retroatividade dependerá de aprovação explícita no acerto.</p>
-          <label className="block text-sm">Motivo da retroatividade<textarea name="motivoRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
-          <label className="block text-sm">Evidência para a data anterior<textarea name="evidenciaRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
+          <label className="block text-sm">Motivo da retroatividade<CampoTexto name="motivoRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
+          <label className="block text-sm">Evidência para a data anterior<CampoTexto name="evidenciaRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
         </div>}
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar pedido de encerramento</button>
       </fieldset>

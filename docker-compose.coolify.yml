@@ -28,7 +28,7 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
       PGHOST: db
       PGDATABASE: postgres
-    # \gexec executa o SELECT como comando se WHERE retornar linha; se o banco já existe, nada roda.
+    # \gexec executa o resultado do SELECT como comando; se o banco já existe, nada roda.
     # ON_ERROR_STOP=1 faz falhar em erro real (senha/host). Idempotente: exit 0 nas duas execuções.
     command:
       - sh

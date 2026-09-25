@@ -8,6 +8,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
@@ -84,7 +85,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
       {m.status !== "ATIVA" && <p className="text-xs text-gray-600">A liberação financeira não autoriza aulas regulares enquanto este contrato não estiver ativo. Os outros contratos têm suas próprias condições de acesso.</p>}
       {!m.solicitacoes.some((p) => p.status === "PENDENTE") && (m.status === "ATIVA" || m.manual) && <button className={botao} disabled={acao.ocupado} onClick={() => { setForm({ matriculaId: m.id, bloquear: !m.manual }); setMotivo(""); acao.limpar(); }}>{m.manual ? "Solicitar liberação manual" : "Solicitar restrição manual"}</button>}
       {form?.matriculaId === m.id && <div className="space-y-2">
-        <label className="block text-sm">Motivo da {form.bloquear ? "restrição" : "liberação"}<textarea className={campo} rows={2} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label>
+        <label className="block text-sm">Motivo da {form.bloquear ? "restrição" : "liberação"}<CampoTexto className={campo} rows={2} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label>
         <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || motivo.trim().length < 5} onClick={solicitar}>Enviar solicitação</button><button className={botao} disabled={acao.ocupado} onClick={() => setForm(null)}>Cancelar</button></div>
       </div>}
       {/* Fora do formulário: no sucesso ele fecha, e a confirmação continua visível no lugar do botão. */}
@@ -94,7 +95,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
         <p>{p.motivo}</p>
         <HistoricoSolicitacaoAcessoAulas solicitacao={p} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         {p.podeDecidir && <div className="space-y-2">
-          <label className="block text-xs">Motivo da decisão<textarea className={campo} rows={2} maxLength={2000} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
+          <label className="block text-xs">Motivo da decisão<CampoTexto className={campo} rows={2} maxLength={2000} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
           <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar</button><button className={botao} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar</button></div>
         </div>}
         <FeedbackAcao erro={alvo === `decisao:${p.id}` ? acao.erro : null} sucesso={alvo === `decisao:${p.id}` ? acao.sucesso : undefined} />

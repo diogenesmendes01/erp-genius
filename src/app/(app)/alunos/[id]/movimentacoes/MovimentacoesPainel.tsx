@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
@@ -127,7 +128,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
       </>}
       {podeDecidir && <div className="space-y-3 border-t pt-4">
         <p className="text-sm">A decisão exige outra pessoa autorizada. Aprovar registra a decisão; a aplicação da movimentação é uma etapa distinta.</p>
-        <label className="block text-sm">Motivo da decisão<textarea className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} disabled={ocupado} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} /></label>
+        <label className="block text-sm">Motivo da decisão<CampoTexto className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} disabled={ocupado} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} /></label>
         <div className="flex flex-wrap gap-3">
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !podeAprovar || motivoDecisao.trim().length < 5} onClick={() => decidir(true)}>Aprovar proposta</button>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivoDecisao.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>

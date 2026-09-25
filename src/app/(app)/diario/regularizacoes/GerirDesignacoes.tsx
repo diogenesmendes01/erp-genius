@@ -6,6 +6,7 @@ import { consultarDesignacoesAula } from "@/server/diario/regularizacao-consulta
 import { designarRegularizacaoAula, revogarRegularizacaoAula } from "@/server/diario/regularizacao-designacao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type DadosDesignacoes = {
@@ -121,7 +122,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
             </select>
           </label>
           <label className="block text-sm">Motivo
-            <textarea className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(evento) => setMotivo(evento.target.value)} minLength={5} maxLength={2000} disabled={ocupado} required />
+            <CampoTexto className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(evento) => setMotivo(evento.target.value)} minLength={5} maxLength={2000} disabled={ocupado} required />
           </label>
           <button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado || carregando || dados.historico.some(h => !h.revogacao) || !responsavelId || motivo.trim().length < 5 || motivo.trim().length > 2000}>Designar</button>
         </form>}
@@ -134,7 +135,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
             <p className="text-gray-600">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao }).format(new Date(designacao.criadaEm))} ({fusoExibicao})</p>
             {designacao.revogacao ? <p className="text-gray-700">Revogada por {designacao.revogacao.revogador}: {designacao.revogacao.motivo} ({new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoExibicao }).format(new Date(designacao.revogacao.criadaEm))})</p> : somenteLeitura || !dados.podeGerir ? <p className="text-gray-700">Registro preservado; regularização encerrada.</p> : <div className="space-y-2 border-t pt-2">
               <label className="block">Motivo da revogação
-                <textarea className="mt-1 block w-full rounded border p-2" value={motivosRevogacao[designacao.id] ?? ""} onChange={(evento) => setMotivosRevogacao((anterior) => ({ ...anterior, [designacao.id]: evento.target.value }))} minLength={5} maxLength={2000} disabled={ocupado} />
+                <CampoTexto className="mt-1 block w-full rounded border p-2" value={motivosRevogacao[designacao.id] ?? ""} onChange={(evento) => setMotivosRevogacao((anterior) => ({ ...anterior, [designacao.id]: evento.target.value }))} minLength={5} maxLength={2000} disabled={ocupado} />
               </label>
               <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || (motivosRevogacao[designacao.id]?.trim().length ?? 0) < 5} onClick={() => void revogar(designacao.id)}>Revogar designação</button>
             </div>}

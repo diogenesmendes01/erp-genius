@@ -8,6 +8,7 @@ import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Habilidade = typeof HABILIDADES[number];
 
@@ -46,7 +47,7 @@ export function AutorizarReservaEspecial({ propostaId, habilidades, fusoInstituc
       <label className="block" htmlFor="prazo-local">Prazo para reservar<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
       <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. A data e a hora são convertidas no servidor; horários ambíguos ou inexistentes precisam de correção.</p>
-      <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block" htmlFor="motivo">Motivo da autorização<CampoTexto id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{ocupado ? "Autorizando…" : "Autorizar pré-reserva"}</button>
     </fieldset>
     <Mensagem mensagem={mensagem} />
@@ -75,7 +76,7 @@ export function ReservarComAutorizacao({ propostaId, propostaHash, autorizacaoId
     });
   }}>
     <fieldset disabled={ocupado} className="space-y-2">
-      <label className="block" htmlFor={`motivo-reserva-${autorizacaoId}`}>Motivo da reserva<textarea id={`motivo-reserva-${autorizacaoId}`} name="motivoReserva" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block" htmlFor={`motivo-reserva-${autorizacaoId}`}>Motivo da reserva<CampoTexto id={`motivo-reserva-${autorizacaoId}`} name="motivoReserva" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{ocupado ? "Reservando…" : "Reservar tentativa autorizada"}</button>
     </fieldset>
     <Mensagem mensagem={mensagem} />

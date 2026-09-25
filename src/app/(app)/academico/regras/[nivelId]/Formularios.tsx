@@ -6,6 +6,7 @@ import { decidirRegraAvaliacao, prepararRegraAvaliacao } from "@/server/avaliaco
 import { nomesHabilidades, type ConteudoRegra } from "./ResumoRegra";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 const habilidades = Object.keys(nomesHabilidades) as (keyof typeof nomesHabilidades)[];
 const campo = "block w-full rounded border p-2";
@@ -40,7 +41,7 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
       <legend className="text-lg font-medium">Preparar versão {versaoEsperada + 1}</legend>
       <p>Preencha todos os parâmetros. Outra pessoa da Gestão Pedagógica/Administração precisará conferir e publicar.</p>
       <label className="block">Título<input className={campo} name="titulo" required minLength={3} maxLength={200} defaultValue={inicial?.titulo} /></label>
-      <label className="block">Condições de aplicação<textarea className={campo} name="aplicacao" required minLength={5} maxLength={2000} defaultValue={inicial?.aplicacao} /></label>
+      <label className="block">Condições de aplicação<CampoTexto className={campo} name="aplicacao" required minLength={5} maxLength={2000} defaultValue={inicial?.aplicacao} /></label>
       <div className="grid gap-3 sm:grid-cols-2">
         {[{ nome: "escalaMin", titulo: "Menor nota da escala", valor: inicial?.escala.minimo }, { nome: "escalaMax", titulo: "Maior nota da escala", valor: inicial?.escala.maximo }, { nome: "minimoGeral", titulo: "Mínimo da média geral", valor: inicial?.minimoGeral }, { nome: "frequencia", titulo: "Frequência mínima (%)", valor: inicial?.frequenciaMinimaPercentual }].map(c => <label key={c.nome}>{c.titulo}<input className={campo} name={c.nome} required maxLength={100} inputMode="decimal" defaultValue={c.valor} /></label>)}
       </div>
@@ -65,7 +66,7 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
         <label>Prazo desde a disponibilização (minutos)<input className={campo} name={`${c.chave}-prazo`} type="number" min={1} max={2147483647} step={1} required defaultValue={c.valor?.prazoRealizacaoMinutos} /></label>
         <label>Antecedência para cancelamento (minutos)<input className={campo} name={`${c.chave}-antecedencia`} type="number" min={0} max={2147483647} step={1} required defaultValue={c.valor?.antecedenciaCancelamentoMinutos} /></label>
       </fieldset>)}
-      <label className="block">Motivo da proposta<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
+      <label className="block">Motivo da proposta<CampoTexto className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado}>{ocupado ? "Salvando…" : "Enviar proposta para conferência"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
@@ -85,7 +86,7 @@ export function DecidirRegra({ regraId, conteudoHash, podeAprovar }: { regraId: 
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão sobre esta versão</legend>
       <label className="block">Decisão<select className={campo} name="decisao" required defaultValue=""><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e publicar</option>}<option value="rejeitar">Rejeitar para revisão</option></select></label>
       {!podeAprovar && <p>Existe proposta mais recente; esta versão pode ser rejeitada, mas não publicada.</p>}
-      <label className="block">Justificativa<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
+      <label className="block">Justificativa<CampoTexto className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <label className="block"><input type="checkbox" required /> Conferi todos os critérios desta versão.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert" className="text-red-700">{erro}</p>}

@@ -7,6 +7,7 @@ import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamad
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Item = {
@@ -83,8 +84,8 @@ export function SegundaChamadaPainel({
       void executar(() => proporSegundaChamada({ ...entrada, chaveIdempotencia }));
     }}>
       <h2 className="font-medium">Propor segunda chamada</h2>
-      <label className="block">Motivo<textarea required minLength={5} maxLength={4000} name="motivo" className="block w-full border" /></label>
-      <label className="block">Evidências<textarea required minLength={5} maxLength={4000} name="evidencias" className="block w-full border" /></label>
+      <label className="block">Motivo<CampoTexto required minLength={5} maxLength={4000} name="motivo" className="block w-full border" /></label>
+      <label className="block">Evidências<CampoTexto required minLength={5} maxLength={4000} name="evidencias" className="block w-full border" /></label>
       <button disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Enviar proposta</button>
     </form>}
 
@@ -114,7 +115,7 @@ export function SegundaChamadaPainel({
               <option value="nao">Rejeitar</option>
             </select>
           </label>
-          <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
+          <label className="block">Motivo da decisão<CampoTexto name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
           <button disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
         </form>}
         {item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao && <form className="space-y-2" onSubmit={evento => {
@@ -137,8 +138,8 @@ export function SegundaChamadaPainel({
             evidenciaComunicacao: String(formulario.get("evidencia")),
           }));
         }}>
-          <label className="block">Condições disponíveis<textarea required minLength={5} maxLength={4000} name="condicoes" className="block w-full border" /></label>
-          <label className="block">Evidência da comunicação<textarea required minLength={5} maxLength={4000} name="evidencia" className="block w-full border" /></label>
+          <label className="block">Condições disponíveis<CampoTexto required minLength={5} maxLength={4000} name="condicoes" className="block w-full border" /></label>
+          <label className="block">Evidência da comunicação<CampoTexto required minLength={5} maxLength={4000} name="evidencia" className="block w-full border" /></label>
           <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Disponibilizar e iniciar prazo</button>
         </form>}
         {item.disponibilizacao && <p role="status">Disponibilizada. Prazo atual: {data(item.disponibilizacao.prazoAte, fuso)} ({fuso}).</p>}

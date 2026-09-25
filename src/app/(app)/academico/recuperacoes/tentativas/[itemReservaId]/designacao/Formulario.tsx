@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { designarProfessorRecuperacao } from "@/server/avaliacoes/recuperacao-designacao";
 import { Formulario } from "../../../planos/[propostaId]/Formularios";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function Designar({ itemReservaId, versaoEsperada, atualId, professores }: { itemReservaId: string; versaoEsperada: number; atualId: string | null; professores: { id: string; nome: string }[] }) {
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
@@ -19,6 +20,6 @@ export function Designar({ itemReservaId, versaoEsperada, atualId, professores }
     return { ok: true };
   }}>
     <label className="block">Professor ou revogação<select name="professor" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{atualId && <option value="revogar">Revogar designação atual</option>}{professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
-    <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

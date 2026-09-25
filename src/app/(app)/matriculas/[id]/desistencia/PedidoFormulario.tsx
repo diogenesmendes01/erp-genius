@@ -5,6 +5,7 @@ import { registrarPedidoDesistenciaPreparacao } from "@/server/matricula/desiste
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: string; estadoHash: string }) {
   const router = useRouter();
@@ -28,8 +29,8 @@ export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: str
     <h2 className="text-lg font-medium">Registrar pedido do cliente</h2>
     <p className="text-sm">O registro inicia o acompanhamento. A matrícula e a reserva permanecem na situação atual até a efetivação da desistência.</p>
     <fieldset disabled={ocupado || registrado} className="space-y-3">
-      <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={3000} /></label>
-      <label className="block">Referência da solicitação do cliente<textarea className="mt-1 block w-full rounded border p-2" name="evidenciaPedido" required minLength={10} maxLength={3000} placeholder="Informe quando e por qual canal o cliente pediu a desistência e onde a solicitação pode ser conferida." /></label>
+      <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={3000} /></label>
+      <label className="block">Referência da solicitação do cliente<CampoTexto className="mt-1 block w-full rounded border p-2" name="evidenciaPedido" required minLength={10} maxLength={3000} placeholder="Informe quando e por qual canal o cliente pediu a desistência e onde a solicitação pode ser conferida." /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{ocupado ? "Registrando…" : "Registrar pedido"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />

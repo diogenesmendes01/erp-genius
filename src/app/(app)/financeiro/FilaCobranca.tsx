@@ -20,6 +20,7 @@ import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const btnPri = botaoClasses();
@@ -584,7 +585,7 @@ export function DetalheCobranca({
                 O contato respondeu em {textoInstanteOperacional(item.respondeuEm, preferenciaFusoExibicao)} — trate a conversa antes de cobrar de novo.
               </div>
             )}
-            <textarea
+            <CampoTexto
               aria-label="Mensagem de cobrança"
               className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:border-brand-500"
               rows={3}

@@ -7,6 +7,7 @@ import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function Formulario({ propostaId, professores, fusoInstitucional }: {
   propostaId: string;
@@ -65,7 +66,7 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
         <CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" />
       </label>
       <label className="block">Motivo
-        <textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
+        <CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Designando…" : "Designar professor"}</button>
     </fieldset>

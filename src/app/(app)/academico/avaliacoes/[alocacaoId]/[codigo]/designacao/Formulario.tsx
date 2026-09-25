@@ -5,6 +5,7 @@ import { designarAvaliador } from "@/server/avaliacoes/designacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEsperada, atualId, professores }: {
   alocacaoId: string; codigoAvaliacao: string; versaoEsperada: number; atualId: string | null; professores: { id: string; nome: string }[];
@@ -30,7 +31,7 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
         {atualId && <option value="revogar">Revogar a designação atual</option>}
         {professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
       </select></label>
-      <label className="block">Motivo<textarea required minLength={5} maxLength={2000} value={motivo} className="block w-full rounded border p-2" onChange={e => { setMotivo(e.target.value); chave.current = null; }} /></label>
+      <label className="block">Motivo<CampoTexto required minLength={5} maxLength={2000} value={motivo} className="block w-full rounded border p-2" onChange={e => { setMotivo(e.target.value); chave.current = null; }} /></label>
       <button disabled={!professor} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{pendente ? "Registrando…" : professor === "revogar" ? "Revogar designação" : "Registrar designação"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />

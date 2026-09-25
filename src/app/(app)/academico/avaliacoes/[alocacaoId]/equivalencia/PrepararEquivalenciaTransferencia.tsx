@@ -7,6 +7,7 @@ import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Habilidade = typeof HABILIDADES[number];
@@ -200,7 +201,7 @@ export function PrepararEquivalenciaTransferencia({
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">4. Encaminhar para decisão independente</h2>
       <label className="block">Motivo da proposta
-        <textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || registrada} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || registrada} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={ocupado || registrada} /> Conferi a prévia e compreendo que a decisão e a execução são etapas separadas.</label>
       <button disabled={ocupado || registrada || !revisao} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>

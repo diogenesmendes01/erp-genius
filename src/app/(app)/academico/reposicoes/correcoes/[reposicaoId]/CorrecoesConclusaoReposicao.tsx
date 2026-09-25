@@ -6,6 +6,7 @@ import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } f
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Fonte = {
@@ -136,8 +137,8 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
     {modalidade === "GRAVACAO" && escolhaAtual !== "RETIRAR" && <><label className="block">Horário da validação (UTC)<input name="validadaEm" type="datetime-local" required className="block rounded border p-2" /></label><div className="space-y-2">{dados.fontesDisponiveis.entregas.map((entrega) => <details key={entrega.id} className="rounded bg-gray-50 p-3"><summary>Material da entrega versão {entrega.versao}</summary><p className="whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>)}</div></>}
     {modalidade === "PARTICULAR" && !dados.fontesDisponiveis.encontros.length && <p role="status">Não há encontro próprio ministrado com presença disponível para esta correção.</p>}
     {modalidade === "GRAVACAO" && !dados.fontesDisponiveis.entregas.length && <p role="status">Não há entrega completa disponível para esta correção.</p>}
-    <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
-    <label className="block">Evidência da correção<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Evidência da correção<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
@@ -163,6 +164,6 @@ function DecidirCorrecao({ correcao }: { correcao: Dados["correcoes"][number] })
     <MensagemStatus texto={correcao.impedimentoAprovacao} />
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{correcao.podeAprovar && correcao.impactosHash && <option value="aprovar">Aprovar correção</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>
     {(!correcao.podeAprovar || !correcao.impactosHash) && <p role="status">Esta proposta não pode ser aprovada no estado atual, mas ainda pode ser rejeitada.</p>}
-    <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+    <label className="block">Motivo da decisão<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
   </fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }
