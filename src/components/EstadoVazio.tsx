@@ -41,13 +41,18 @@ export function EstadoVazio({ children, acao, bloco = false, className, ...atrib
   );
 }
 
-/** Estado vazio dentro de uma tabela: uma linha que ocupa todas as colunas. */
-export function EstadoVazioLinha({ colSpan, children, acao }: { colSpan: number; children: ReactNode; acao?: ReactNode }) {
+/**
+ * Estado vazio dentro de uma tabela: uma linha que ocupa todas as colunas. `role`/`aria-busy` vão
+ * num bloco dentro da célula — na <tr>/<td> trocariam a semântica da tabela.
+ */
+export function EstadoVazioLinha({ colSpan, children, acao, ...atributos }: { colSpan: number; children: ReactNode; acao?: ReactNode; role?: "status"; "aria-busy"?: boolean }) {
   return (
     <tr>
       <td colSpan={colSpan} data-estado-vazio="" className="px-4 py-8 text-center text-sm text-gray-500">
-        <p>{children}</p>
-        {acao && <div className="mt-3 flex flex-wrap justify-center gap-2">{acao}</div>}
+        <div {...atributos}>
+          <p>{children}</p>
+          {acao && <div className="mt-3 flex flex-wrap justify-center gap-2">{acao}</div>}
+        </div>
       </td>
     </tr>
   );

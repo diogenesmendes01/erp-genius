@@ -115,7 +115,7 @@ function ResumoPropostaHistorica({ proposta }: { proposta: PropostaHistorica }) 
     <div className="mt-2 space-y-2">
       {proposta.snapshotAnterior.conteudo !== proposta.snapshotNovo.conteudo && <div><p className="font-medium">Conteúdo ministrado</p><p className="whitespace-pre-wrap text-gray-600">Antes: {proposta.snapshotAnterior.conteudo}</p><p className="whitespace-pre-wrap">Proposto: {proposta.snapshotNovo.conteudo}</p></div>}
       {mudancas.map((mudanca) => <div key={mudanca.antes.registroId}><p className="font-medium">{mudanca.nome}</p>{mudanca.antes.participacao !== mudanca.depois.participacao && <p>Participação: {rotuloParticipacao[mudanca.antes.participacao]} → {rotuloParticipacao[mudanca.depois.participacao]}.</p>}{mudanca.antes.observacao !== mudanca.depois.observacao && <><p className="text-gray-600">Observação anterior: {mudanca.antes.observacao || "Sem observação."}</p><p>Observação proposta: {mudanca.depois.observacao || "Sem observação."}</p></>}</div>)}
-      {!mudancas.length && proposta.snapshotAnterior.conteudo === proposta.snapshotNovo.conteudo && <p>Esta proposta não registrou diferenças legíveis.</p>}
+      {!mudancas.length && proposta.snapshotAnterior.conteudo === proposta.snapshotNovo.conteudo && <EstadoVazio>Esta proposta não registrou diferenças legíveis.</EstadoVazio>}
     </div>
   </details>;
 }

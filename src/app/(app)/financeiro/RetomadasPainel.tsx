@@ -97,7 +97,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     {/* Fora do formulário: no sucesso ele some (proposta pendente), e a confirmação continua visível. */}
     <FeedbackAcao erro={alvo === "proposta" ? acao.erro : null} sucesso={alvo === "proposta" ? acao.sucesso : undefined} />
 
-    {propostas.length === 0 && !podePropor && !erroConsulta && <p className="text-sm text-gray-500">Nenhuma proposta de retomada.</p>}
+    {propostas.length === 0 && !podePropor && !erroConsulta && <EstadoVazio>Nenhuma proposta de retomada.</EstadoVazio>}
     {propostas.map((p) => <article key={p.id} className="space-y-3 border-t border-gray-200 pt-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
