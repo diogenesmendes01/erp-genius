@@ -7,6 +7,7 @@ import { ALUNOS_POR_PAGINA, camposDosFiltros, filtrosParaQuery, hrefDosCampos, t
 import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
+import { botaoClasses } from "@/components/Botao";
 
 export interface AlunoRow {
   id: string;
@@ -73,7 +74,7 @@ export function AlunosLista({
           {podeCadastrar && (
             <Link
               href="/matriculas/nova"
-              className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+              className={botaoClasses({ tamanho: "lg" })}
             >
               Cadastrar aluno
             </Link>
@@ -115,7 +116,7 @@ export function AlunosLista({
             <option key={t.id} value={t.id}>{t.label}</option>
           ))}
         </select>
-        <button type="submit" disabled={buscando} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+        <button type="submit" disabled={buscando} className={botaoClasses({ variante: "secundario" })}>
           {buscando ? "Buscando…" : "Buscar"}
         </button>
         {filtrando && <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}

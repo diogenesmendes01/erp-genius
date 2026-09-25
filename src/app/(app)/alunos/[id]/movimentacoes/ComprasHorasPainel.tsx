@@ -9,6 +9,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -27,7 +28,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
     setDados(r.dado);
   }
   return <div className="space-y-3">
-    <button type="button" disabled={ocupado} className={estilo} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Consultar compras de horas</button>
+    <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Consultar compras de horas</button>
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {dados && <>
       {dados.compras.length === 0 && <p>Nenhuma compra de horas registrada nesta matrícula.</p>}
@@ -51,7 +52,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
           });
         }}><fieldset disabled={ocupado} className="space-y-2"><legend>Vincular horas a encontro já agendado</legend>
           <label className="grid gap-1">Encontro<select name="encontro" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.encontros.map(e => <option key={e.id} value={e.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(e.inicio))} · {e.fusoOrigem} · {(Date.parse(e.fim) - Date.parse(e.inicio)) / 60000} minutos</option>)}</select></label>
-          <label className="grid gap-1">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={estilo}>Reservar horas</button>
+          <label className="grid gap-1">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reservar horas</button>
         </fieldset></form>}
       </details>)}
       {!dados.cobrancas.length ? <p>Nenhuma cobrança de particular por hora paga e sem compra vinculada.</p> : <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
@@ -73,7 +74,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
         <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.vencimento)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Minutos comprados<input name="minutos" type="number" required min={1} max={5256000} step={1} className={estilo} /></label>
         <label className="grid gap-1">Evidência das condições da compra<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
-        <button className={estilo}>Registrar compra de horas</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar compra de horas</button>
       </fieldset></form>}
     </>}
   </div>;
@@ -92,7 +93,7 @@ function ConsumoHoras({ reservaId, aoSalvar }: { reservaId: string; aoSalvar: ()
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useOperacao();
   return <div className="space-y-2">
-    <button className={estilo} disabled={ocupado} onClick={() => { void iniciar(async () => {
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => { void iniciar(async () => {
       setErro(""); setRevisao(null);
       try { const r = await conferirRealizacaoHoras({ reservaId }); if (!r.ok || !r.dado) { setErro(r.ok ? "Consulta indisponível" : r.erro); return; } if (r.dado.consumoId) { await aoSalvar(); return; } if (!r.dado.estadoDiario) { setErro("A realização ainda não tem estado de diário conferível."); return; } setRevisao({ estadoDiario: r.dado.estadoDiario, minutos: r.dado.minutos }); }
       catch { setErro("Não foi possível conferir a realização."); }
@@ -101,7 +102,7 @@ function ConsumoHoras({ reservaId, aoSalvar }: { reservaId: string; aoSalvar: ()
       setErro("");
       try { const r = await conferirRealizacaoHoras({ reservaId, estadoDiario: revisao.estadoDiario, motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } setRevisao(null); await aoSalvar(); }
       catch { setErro("Consulte o resultado antes de repetir."); }
-    }); }}><fieldset disabled={ocupado} className="space-y-2"><p>Diário com conteúdo e presença registrados: consumir {revisao.minutos} minutos da compra. A pendência de gravação permanece separada.</p><label className="grid gap-1">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo}>Confirmar consumo pela realização</button></fieldset></form>}
+    }); }}><fieldset disabled={ocupado} className="space-y-2"><p>Diário com conteúdo e presença registrados: consumir {revisao.minutos} minutos da compra. A pendência de gravação permanece separada.</p><label className="grid gap-1">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar consumo pela realização</button></fieldset></form>}
     {erro && <p role="alert">{erro}</p>}
   </div>;
 }
