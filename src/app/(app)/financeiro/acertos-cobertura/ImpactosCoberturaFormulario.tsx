@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { prepararImpactosCoberturaAditivo } from "@/server/contratos/aditivo-cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; vencimento: string; coberturaInicio: string | null; coberturaFim: string | null };
 type Politica = { escolha: "PRESERVAR_REFERENCIA" } | { escolha: "MUDAR_REFERENCIA"; referencia: "MES_CIVIL" | "CICLO_MATRICULA"; dataReferencia: string };
@@ -30,7 +31,7 @@ export function ImpactosCoberturaFormulario({ matriculaId, propostaId, conclusao
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
     setOcupado(true); setMensagem("");
     try { const r = await prepararImpactosCoberturaAditivo({ ...dados, chaveIdempotencia: tentativa.current.chave }); if (!r.ok) { setMensagem(r.erro); return; } tentativa.current = null; setMensagem("Conjunto de cobertura preparado para aprovação independente."); router.refresh(); }
-    catch { setMensagem("Não foi possível confirmar o preparo. Repita a mesma tentativa para consultar o resultado."); }
+    catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Impactos de cobertura das mensalidades</h2><p>Política formalizada no aditivo assinado: {descreverPolitica(politica)}</p><p>Classifique todas as mensalidades. Para cada afetada, informe os limites corrigidos; uma preservada não recebe novos limites.</p>

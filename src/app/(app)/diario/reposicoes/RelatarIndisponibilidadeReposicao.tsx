@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registrarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposicao-operacoes-relatos";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 /** Formulário comum da equipe e do professor designado. A ação decide o
  * escopo atual; enviar um relato não confirma falha nem interrompe o prazo. */
@@ -22,7 +23,7 @@ export function RelatarIndisponibilidadeReposicao({ reposicaoId }: { reposicaoId
         if (!resultado.ok) { setErro(resultado.erro); return; }
         formulario.reset();
         router.refresh();
-      } catch { setErro("Não foi possível confirmar o relato. Consulte a reposição antes de tentar novamente."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }}>
     <p className="font-medium">Relatar indisponibilidade do material</p>

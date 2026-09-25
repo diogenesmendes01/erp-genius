@@ -11,6 +11,7 @@ import { identificacaoContrato } from "./identificacaoContrato";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -70,7 +71,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         // Remove a possibilidade de decidir de novo sem depender do recarregamento.
         setLista((atual) => atual ? { ...atual, propostas: atual.propostas.map((p) => p.id === id ? { ...p, status: estado, podeDecidir: false } : p) } : atual);
         setAviso(aprovar ? "Aprovação registrada. A aplicação da movimentação permanece pendente." : "Proposta rejeitada. Os contratos e cobranças foram preservados.");
-      } catch { setErro("Não foi possível confirmar o resultado. Consulte a proposta antes de tentar novamente."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }
   function aplicar() {
@@ -85,7 +86,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         setDetalhe((v) => v?.id === id ? { ...v, status: "APLICADA" } : v);
         setLista((v) => v ? { ...v, propostas: v.propostas.map((p) => p.id === id ? { ...p, status: "APLICADA", podeDecidir: false } : p) } : v);
         setAviso("Movimentação aplicada aos contratos da proposta."); router.refresh();
-      } catch { setErro("Resultado não confirmado. Consulte a proposta; repetir a aplicação não duplica uma operação já concluída."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }
   const impactos = detalhe?.detalhes?.impactos;

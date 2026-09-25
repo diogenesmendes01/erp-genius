@@ -5,6 +5,7 @@ import { emitirFechamentoHoras } from "@/server/matricula/fechamento-horas-emiss
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda }: {
   alunoId: string; matriculaId: string; decisaoId: string; valor: string; moeda: string;
@@ -18,7 +19,7 @@ export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda
         const r = await emitirFechamentoHoras({ alunoId, matriculaId, decisaoId });
         setMensagem(r.ok ? "Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento." : r.erro);
         if (r.ok) router.refresh();
-      } catch { setMensagem("Não foi possível confirmar o resultado. Atualize o histórico antes de repetir; a mesma decisão não gera outra cobrança."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     })}>{ocupado ? "Emitindo…" : "Emitir cobrança aprovada"}</button>
     <MensagemStatus texto={mensagem} />
   </div>;

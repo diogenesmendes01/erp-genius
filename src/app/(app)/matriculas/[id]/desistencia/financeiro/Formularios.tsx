@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { proporCancelamentoFinanceiroDesistenciaPreparacao, decidirCancelamentoFinanceiroDesistenciaPreparacao } from "@/server/matricula/desistencia-financeira";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function PropostaFormulario({ pedidoId, estadoHash }: { pedidoId: string; estadoHash: string }) {
   const router = useRouter();
@@ -14,7 +15,7 @@ export function PropostaFormulario({ pedidoId, estadoHash }: { pedidoId: string;
     try {
       const r = await proporCancelamentoFinanceiroDesistenciaPreparacao({ pedidoId, estadoHash, motivo: String(dados.get("motivo") ?? ""), evidenciaCondicoes: String(dados.get("evidencia") ?? ""), chaveIdempotencia: chave });
       if (r.ok) { setConcluido(true); setMensagem("Proposta registrada. Outra pessoa autorizada deve decidir."); router.refresh(); } else setMensagem(r.erro);
-    } catch { setMensagem("Não foi possível confirmar. Reenvie os mesmos dados para conferir o registro."); } finally { setOcupado(false); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); } finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4"><h2 className="text-lg font-medium">Propor cancelamento das cobranças</h2>
     <p>A proposta abrange todas as cobranças pendentes ou atrasadas listadas. Valores e saldo históricos serão preservados; não haverá registro de pagamento.</p>
@@ -33,7 +34,7 @@ export function DecisaoFormulario({ propostaId, propostaHash, podeAprovar }: { p
     try {
       const r = await decidirCancelamentoFinanceiroDesistenciaPreparacao({ propostaId, propostaHash, aprovada: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") });
       if (r.ok) { setConcluido(true); setMensagem("Decisão registrada. A Secretaria efetiva a desistência após nova conferência."); router.refresh(); } else setMensagem(r.erro);
-    } catch { setMensagem("Não foi possível confirmar a decisão. Reenvie os mesmos dados para conferir o resultado."); } finally { setOcupado(false); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); } finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} className="space-y-3"><fieldset disabled={ocupado || concluido} className="space-y-3">
     <label className="block">Decisão<select name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar cancelamento integral</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>

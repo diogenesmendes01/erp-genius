@@ -8,6 +8,7 @@ import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { CicloCoberturaFuturoAditivoSchema } from "@/server/contratos/aditivo-schema";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
@@ -51,7 +52,7 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
       const r = await prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
         modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual });
       if (!r.ok) setMensagem(r.erro); else if (r.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(r.dado.id)}`);
-      } catch { setMensagem("Não foi possível confirmar o registro. Tente novamente sem alterar os dados para consultar o resultado da mesma tentativa."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
@@ -80,7 +81,7 @@ export function DecidirAditivo({ propostaId, propostaHash, superada }: { propost
     try {
     const r = await decidirAditivoContratual({ propostaId, propostaHashEsperado: propostaHash, aprovada: decisao === "aprovar", motivo: String(dados.get("motivo") ?? "") });
     if (!r.ok) setMensagem(r.erro); else { setMensagem("Decisão registrada."); router.refresh(); }
-    } catch { setMensagem("Não foi possível confirmar a decisão. Confira o histórico ou repita a mesma decisão."); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); }
   }); }}>
     <h2 className="text-xl">Decisão administrativa</h2><label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o original, as alterações e a vigência desta proposta.</label>
     <label className="block">Decisão<select className="mt-1 block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}><option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>

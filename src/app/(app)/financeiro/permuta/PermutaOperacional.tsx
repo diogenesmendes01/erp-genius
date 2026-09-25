@@ -13,6 +13,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -87,7 +88,7 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
         router.refresh();
         chave.current = novaChave();
       } catch {
-        setErro("Não foi possível confirmar o resultado. Repita a mesma operação com os mesmos dados.");
+        setErro(MSG_RESULTADO_INCERTO);
       } finally {
         pendente.current = false;
       }

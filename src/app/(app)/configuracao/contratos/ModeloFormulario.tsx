@@ -9,6 +9,7 @@ import { prepararModeloContratual } from "@/server/contratos/modelos";
 type Conteudo = z.infer<typeof ConteudoModeloSchema>;
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "./labels";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 const campo = "block w-full rounded border p-2";
 const vazio: Conteudo = { titulo: "", finalidade: "CONTRATO", regimes: [], aplicacao: "", campos: [], secoes: [{ titulo: "", texto: "" }], assinaturas: [] };
 export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?: string; versaoEsperada: number; inicial?: Conteudo }) {
@@ -26,7 +27,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       const r = await prepararModeloContratual({ ...d, chaveIdempotencia: tentativa.current.chave });
       if (!r.ok) { setErro(r.erro); if (r.erro !== "Erro inesperado. Tente novamente.") tentativa.current = null; }
       else { router.push(`/configuracao/contratos/${d.codigo}`); router.refresh(); }
-    } catch { setErro("Resultado não confirmado. Consulte o histórico ou reenvie a mesma proposta."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <p>O conteúdo será enviado para aprovação de outra pessoa da Administração. Use as cláusulas e condições definidas pela escola.</p>

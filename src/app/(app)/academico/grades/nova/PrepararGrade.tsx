@@ -3,6 +3,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Turma = { id: string; codigo: string; versao: number; dataInicio: string | null; horario: string | null;
   dias: number[]; quantidade: number | null; duracao: number; frequencia: string; professor: string | null };
@@ -29,7 +30,7 @@ export function PrepararGrade({ turmas, turmaInicialId }: { turmas: Turma[]; tur
         const r = await prepararGradeInicialTurma({ ...dados, chaveIdempotencia });
         if (!r.ok || !r.dado) { setErro(r.ok ? "Proposta não confirmada." : r.erro); return; }
         router.push(`/academico/grades/${r.dado.id}`);
-      } catch { setErro("Não foi possível confirmar o envio. Tente novamente com os mesmos dados para conferir o resultado."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   const campo = "mt-1 block w-full rounded border bg-[var(--surface)] p-2";

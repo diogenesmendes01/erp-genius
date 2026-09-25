@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { decidirFechamentoHoras } from "@/server/matricula/fechamento-horas-decisao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoId: string; matriculaId: string; rascunhoId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState(""), [decisao, setDecisao] = useState("");
@@ -16,7 +17,7 @@ export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoI
           confirmaReferenciaContratual: f.get("referencia") === "on", motivo: String(f.get("motivo")) });
         setMensagem(r.ok ? "Decisão registrada. Nenhuma cobrança emitida." : r.erro);
         if (r.ok) router.refresh();
-      } catch { setMensagem("Resultado não confirmado. Atualize o histórico antes de repetir a decisão."); }
+      } catch { setMensagem(MSG_DECISAO_INCERTA); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend>
     <label className="block">Decisão<select className="block w-full rounded border p-2" required value={decisao} onChange={e => setDecisao(e.target.value)}>

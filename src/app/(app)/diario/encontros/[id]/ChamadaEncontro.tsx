@@ -5,6 +5,7 @@ import { salvarAulaDiario } from "@/server/diario/acoes";
 import { salvarDiarioParticular } from "@/server/diario/particular";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = { encontroId: string; turmaId: string | null; ocorridaEm: string; diarioId: string | null; conteudo: string; estadoAnterior: string | null;
   alunos: { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string | null; podeEditar: boolean; podeClassificar: boolean; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null }[] };
@@ -28,7 +29,7 @@ export function ChamadaEncontro({ dados }: { dados: Dados }) {
         const resultado = dados.turmaId ? await salvarAulaDiario({ ...entrada, turmaId: dados.turmaId }) : await salvarDiarioParticular(entrada);
         if (!resultado.ok) { setErro(resultado.erro); return; }
         setSalvo(true); router.refresh();
-      } catch { setErro("Não foi possível confirmar o lançamento. Atualize a página para conferir antes de tentar novamente."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }}>
     <fieldset disabled={ocupado} className="space-y-4">

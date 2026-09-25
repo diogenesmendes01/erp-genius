@@ -6,6 +6,7 @@ import { conferirParticipantesContratuais, consultarFormularioParticipantes } fr
 import { ConferirParticipantesSchema } from "@/server/contratos/participantes-schema";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantes>>;
 type Dados = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
 type Participante = z.infer<typeof ConferirParticipantesSchema>["participantes"][number];
@@ -27,7 +28,7 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
     if (!input.success) { setErro(input.error.issues[0]?.message ?? "Confira os dados."); return; }
     setOcupado(true); setErro("");
     try { const r = await conferirParticipantesContratuais(input.data); if (!r.ok) setErro(r.erro); else router.refresh(); }
-    catch { setErro("Resultado não confirmado. Consulte o histórico ou reenvie os mesmos dados."); }
+    catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setOcupado(false); }
   }}>
     {dados.plano.pendencias.map((p) => <p key={p} role="status">{p}</p>)}

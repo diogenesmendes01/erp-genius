@@ -5,6 +5,7 @@ import { solicitarIndisponibilidadeLocal } from "@/server/agenda/indisponibilida
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
         if (!r.ok) { setErro(r.erro); return; }
         form.reset(); tentativa.current = null;
         setMensagem("Solicitação registrada. Aguarde a decisão da gestão."); router.refresh();
-      } catch { setErro("Não foi possível confirmar o registro. Você pode tentar novamente com os mesmos dados."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <h2 className="font-medium">Solicitar indisponibilidade</h2>

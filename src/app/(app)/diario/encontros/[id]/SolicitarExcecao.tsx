@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { solicitarConclusaoSemGravacao } from "@/server/diario/excecao-gravacao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function SolicitarExcecao({ encontroId }: { encontroId: string }) {
   const [motivo, setMotivo] = useState("");
@@ -24,7 +25,7 @@ export function SolicitarExcecao({ encontroId }: { encontroId: string }) {
             const r = await solicitarConclusaoSemGravacao({ encontroId, motivo, chaveIdempotencia });
             if (!r.ok) { setErro(r.erro); return; }
             setEnviado(true);
-          } catch { setErro("Não foi possível confirmar o pedido. Tente novamente com os mesmos dados."); }
+          } catch { setErro(MSG_RESULTADO_INCERTO); }
         });
       }}>Solicitar conclusão excepcional</button>
     </>}

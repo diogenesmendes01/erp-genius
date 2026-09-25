@@ -6,7 +6,7 @@ import { realizarSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada
 import { salvarNotaOriginalSegundaChamada } from "@/server/avaliacoes/segunda-chamada-realizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { CampoFuso } from "@/components/CampoFuso";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
@@ -27,7 +27,7 @@ export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reserva
       const resultado = await realizarSegundaChamadaLocal({ reservaId, dataHora: String(dados.get("dataHora") ?? ""), fuso: String(dados.get("fuso") ?? ""), evidencia: String(dados.get("evidencia") ?? "") });
       if (resultado.ok) router.refresh(); else setMensagem(resultado.erro);
     } catch {
-      setMensagem(MSG_RESULTADO_INCERTO);
+      setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setOcupado(false);
     }
