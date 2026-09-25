@@ -98,7 +98,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
       <p className="text-xs text-gray-500">Este fluxo preserva idioma, modalidade, formato, contrato e pagamentos. Mudanças de curso ou condições comerciais precisam do fluxo correspondente. A conferência de horário é humana; a vaga é revalidada na execução.</p>
     </div>}
 
-    {solicitacoes.length === 0 && !erroConsulta && <p className="rounded-lg border border-gray-200 bg-surface p-4 text-sm text-gray-500">Nenhuma solicitação acadêmica neste filtro.</p>}
+    {solicitacoes.length === 0 && !erroConsulta && <EstadoVazio bloco>Nenhuma solicitação acadêmica neste filtro.</EstadoVazio>}
     {solicitacoes.map((p) => <article key={p.id} className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4" aria-labelledby={`pedido-${p.id}`}>
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div><h2 id={`pedido-${p.id}`} className="font-medium"><Link className="text-brand-700 hover:underline" href={`/alunos/${p.alunoId}/academico`}>{p.alunoNome}</Link></h2><p className="text-xs text-gray-500">Solicitado por {p.solicitante.nome} em {data(p.criadoEm)}</p></div>

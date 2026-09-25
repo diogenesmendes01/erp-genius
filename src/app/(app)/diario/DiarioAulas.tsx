@@ -93,7 +93,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
           <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<select className={campo} disabled={!r.podeEditar} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))}><option value="">Não informada</option><option value="sim">Presente</option><option value="nao">Ausente</option></select></label>
           <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<CampoTexto className={campo} disabled={!r.podeEditar} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
         </div>)}
-        {turmaId && !carregando && !erro && registros.length === 0 && <p className="text-sm text-gray-500">Nenhum aluno elegível na data selecionada.</p>}
+        {turmaId && !carregando && !erro && registros.length === 0 && <EstadoVazio>Nenhum aluno elegível na data selecionada.</EstadoVazio>}
       </div>
       <div className="flex gap-3"><button className={botao} disabled={pendente || carregando || conferencia || !turmaId || !data || !conteudo.trim() || registros.length === 0} onClick={salvar}>{pendente ? "Salvando…" : "Salvar aula"}</button><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => { consulta.current++; setAberto(false); }}>Cancelar</button></div>
     </section>}
