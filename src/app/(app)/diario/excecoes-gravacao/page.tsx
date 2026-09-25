@@ -12,7 +12,7 @@ export default async function ExcecoesPage({ searchParams }: { searchParams: Pro
   const q = await searchParams, historico = q.historico === "todos";
   const [r, preferencia] = await Promise.all([listarExcecoesGravacao({ apenasPendentes: !historico, cursor: q.cursor }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
-    <VoltarPara href="/diario" para="Diário" />
+    <VoltarPara href="/diario" />
     <h1 className="text-2xl font-medium">Exceções de gravação</h1>
     <nav className="flex gap-4"><Link href="/diario/excecoes-gravacao">Pendentes</Link><Link href="/diario/excecoes-gravacao?historico=todos">Incluir histórico</Link></nav>
     {!r.ok && <p role="alert">{r.erro}</p>}

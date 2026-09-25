@@ -27,7 +27,7 @@ export default async function ContratoPage({ params, searchParams }: { params: P
   const revisao = d.podePreparar && s.modelo ? await consultarPreenchimentoContratual({ matriculaId: id, modeloId: s.modelo }) : null;
   const texto = revisao?.ok && revisao.dado ? TextoPreviaSchema.safeParse(revisao.dado.snapshot) : null;
   return <div className="space-y-5">
-    <VoltarPara href="/secretaria" para="Secretaria" />
+    <VoltarPara href="/secretaria" />
     <h1 className="text-2xl">Prévia contratual · {d.matricula.aluno}</h1>
     <Link className="underline" href={`${base}/substituicoes`}>Revisar substituição de contrato enviado</Link>
     <Link className="underline" href={`${base}/aditivos`}>Preparar aditivo após assinatura completa</Link>

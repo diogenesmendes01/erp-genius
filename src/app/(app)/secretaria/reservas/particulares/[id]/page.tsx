@@ -12,7 +12,7 @@ export default async function ResolucaoPage({ params, searchParams }: { params: 
   const r = resultado.dado, fuso = r.reserva.horarios[0]?.fusoOrigem ?? "UTC";
   const estados = { ATIVA: "Reserva ativa", MANTIDA_PENDENCIA: "Horários mantidos por pendência", EXPIRADA: "Reserva expirada", UTILIZADA: "Reserva utilizada", LIBERADA: "Horários liberados" };
   const data = (d: Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(d);
-  return <div className="space-y-4"><VoltarPara href="/secretaria/reservas?tipo=particular" para="Reservas" /><h1 className="text-2xl font-medium">Resolução da reserva particular</h1>
+  return <div className="space-y-4"><VoltarPara href="/secretaria/reservas?tipo=particular" /><h1 className="text-2xl font-medium">Resolução da reserva particular</h1>
     <p role="status">Estado atual: {estados[r.reserva.status]}</p>
     <p>Prazo atual: {data(r.reserva.expiraEm)} · {fuso}</p>
     {r.pendenciaProrrogacao && <p role="alert">Prorrogação pendente: {r.pendenciaProrrogacao}</p>}

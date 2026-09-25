@@ -12,7 +12,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     select: { id: true, versao: true, fusoOrigem: true, turma: { select: { codigo: true } },
       decisao: { select: { aprovada: true } }, preparador: { select: { nome: true } } } });
   return <div className="space-y-4">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     <h1 className="text-2xl font-medium">Grades das turmas</h1>
     <p>Confira os encontros e a disponibilidade antes da aprovação independente.</p>
     <Link href="/academico/grades/nova" className="inline-block rounded border px-3 py-2">Preparar nova grade</Link>

@@ -11,7 +11,7 @@ export default async function TrocaFonteReposicaoPage({ params }: { params: Prom
   const { id } = await params;
   const [dados, preferencia] = await Promise.all([consultarTrocaFonteReposicaoGravacao({ reposicaoId: id }), consultarPreferenciaFusoEquipe()]);
   return <section className="mx-auto max-w-3xl space-y-5 p-6">
-    <VoltarPara href="/diario/reposicoes" para="Reposições" />
+    <VoltarPara href="/diario/reposicoes" />
     <header><h1 className="text-2xl font-medium">Adotar publicação corrigida na reposição</h1><p className="mt-1 text-sm text-gray-700">A gestão escolhe apenas o material desta reposição; a publicação e suas revisões são resolvidas no servidor.</p></header>
     <TrocaFonteReposicao contexto={dados.contexto} propostas={dados.propostas.map((proposta) => ({
       ...proposta,

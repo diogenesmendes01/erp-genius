@@ -9,7 +9,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   const resultado = await listarDesistenciasFinanceiras({ cursor });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
-  return <section className="space-y-4"><VoltarPara href="/financeiro" para="Financeiro" />
+  return <section className="space-y-4"><VoltarPara href="/financeiro" />
     <h1 className="text-2xl font-medium">Desistências para conferência financeira</h1>
     <p>Pedidos de matrículas em preparação com cobranças registradas. Cada caso exige conferência das condições antes de propor seu tratamento.</p>
     {!d.itens.length && <p>Nenhum pedido nesta página.</p>}

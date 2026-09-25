@@ -10,14 +10,14 @@ export default async function GradePage({ params }: { params: Promise<{ id: stri
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params;
   const [r, preferencia] = await Promise.all([consultarPropostaGradeTurma({ propostaId: id }), consultarPreferenciaFusoEquipe()]);
-  if (!r.ok || !r.dado) return <div><VoltarPara href="/academico/grades" para="Grades" /><p role="alert">{r.ok ? "Proposta indisponível." : r.erro}</p></div>;
+  if (!r.ok || !r.dado) return <div><VoltarPara href="/academico/grades" /><p role="alert">{r.ok ? "Proposta indisponível." : r.erro}</p></div>;
   const p = r.dado, g = p.exibicao.grade, d = p.disponibilidade;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem);
   const data = (v: string) => formatarInstanteExibicao(v, fusoExibicao, p.fusoOrigem).texto;
   const futuros = p.encontrosFuturos;
   const podePublicar = !p.necessitaNovaProposta && futuros && !!d?.professorApto && !d.reservas.length && !d.conflitos.length && !d.conflitosInternos.length && !d.indisponibilidades.length;
   return <div className="space-y-5">
-    <VoltarPara href="/academico/grades" para="Grades" />
+    <VoltarPara href="/academico/grades" />
     <header><h1 className="text-2xl font-medium">{p.turmaCodigo} · Grade versão {p.versao}</h1><p>{p.decisao ? p.publicada ? "Publicada" : "Rejeitada" : "Aguardando decisão"}</p></header>
     <p className="whitespace-pre-wrap">{p.motivo}</p>
     <dl className="space-y-1">

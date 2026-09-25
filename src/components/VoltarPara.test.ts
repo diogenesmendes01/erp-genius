@@ -22,7 +22,7 @@ describe("VoltarPara (E2)", () => {
 
   it("destino fora do mapa usa `para`; sem nenhum, \"página anterior\"", () => {
     expect(render({ href: "/matriculas/cm0xyz9/preparacao", para: "Preparação" })).toContain('aria-label="Voltar para Preparação"');
-    expect(render({ href: "/portal-aluno" })).toContain('aria-label="Voltar para página anterior"');
+    expect(render({ href: "/rota-desconhecida" })).toContain('aria-label="Voltar para página anterior"');
   });
 
   it("rotuloDoDestino: só quando o caminho É uma página do mapa (query ignorada)", () => {

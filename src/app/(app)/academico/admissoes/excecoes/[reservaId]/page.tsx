@@ -20,7 +20,7 @@ export default async function ExcecaoAdmissaoPage({ params, searchParams }: { pa
   const r = await consultarExcecoesAdmissao({ reservaId, pagina });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
-  return <div className="space-y-4"><VoltarPara href="/academico/admissoes" para="Admissões" /><h1 className="text-2xl">Exceção de ingresso após o limite</h1>
+  return <div className="space-y-4"><VoltarPara href="/academico/admissoes" /><h1 className="text-2xl">Exceção de ingresso após o limite</h1>
     <p>A decisão vale somente para esta matrícula e reserva. Não ativa a matrícula, confirma pagamento ou amplia a janela das demais contratações.</p>
     {d.pendencia && <p role="alert">{d.pendencia}</p>}
     {d.revisao && <section><h2 className="text-xl">Cenário atual</h2><Cenario snapshot={d.revisao.snapshot} /><FormularioExcecao key={d.revisao.estadoHash} reservaId={reservaId} estadoHash={d.revisao.estadoHash} /></section>}

@@ -132,7 +132,7 @@ export default async function ResultadosPortalAlunoPage() {
   ]);
   const fusoExibicao = resolverFusoExibicao(preferencia.fusoExibicao, "UTC");
   return <section className="mx-auto max-w-3xl space-y-6 p-6 sm:p-10">
-    <VoltarPara href="/portal-aluno" para="Área do aluno" />
+    <VoltarPara href="/portal-aluno" />
     <header><p className="text-sm text-brand-700">Frente acadêmica</p><h1 className="mt-1 text-2xl font-medium">Avaliações, habilidades e frequência</h1><p className="mt-2 text-sm text-gray-600">Mostramos avaliações já oficializadas, o acompanhamento do seu vínculo e, quando houver, a confirmação de fechamento acadêmico.</p></header>
     <p className="text-sm text-gray-600">Valores marcados como “aprox.” foram arredondados somente para esta visualização.</p>
     {!resultado.matriculas.length && <p className="rounded border bg-surface p-4 text-sm text-gray-700">Não há vínculo acadêmico com resultados disponíveis neste acesso.</p>}

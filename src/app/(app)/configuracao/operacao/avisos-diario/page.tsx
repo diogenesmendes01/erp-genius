@@ -8,7 +8,7 @@ export default async function AvisosDiarioPage() {
   await exigirSessaoPagina(Papel.ADMINISTRADOR);
   const resultado = await consultarConfiguracaoAvisosDiario();
   return <section className="max-w-2xl space-y-5">
-    <VoltarPara href="/configuracao/operacao" para="Configuração operacional" />
+    <VoltarPara href="/configuracao/operacao" />
     <div><h1 className="text-2xl font-medium">Avisos do diário</h1><p className="mt-1 text-sm text-gray-600">Configure prazos explícitos; a ausência de valor não recebe prazo implícito.</p></div>
     {!resultado.ok && <p role="alert" className="text-red-700">{resultado.erro}</p>}
     {resultado.ok && resultado.dado && <AvisosDiarioFormulario valores={resultado.dado} />}

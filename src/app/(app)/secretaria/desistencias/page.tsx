@@ -11,7 +11,7 @@ export default async function DesistenciasAdministrativasPage({ searchParams }: 
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
   return <section className="space-y-4">
-    <VoltarPara href="/secretaria" para="Matrículas" />
+    <VoltarPara href="/secretaria" />
     <h1 className="text-2xl font-medium">Desistências pendentes de decisão administrativa</h1>
     <p>Confira o pedido mais recente de cada matrícula. A Secretaria acompanha; outra pessoa da Administração decide. A decisão não substitui os tratamentos financeiros e documentais nem efetiva a desistência.</p>
     {!d.itens.length && <p>Nenhum pedido pendente nesta página.</p>}

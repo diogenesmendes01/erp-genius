@@ -21,7 +21,7 @@ export default async function VersaoCalendarioPage({ params }: { params: Promise
   const podeDecidir = !versao.decisao && usuario.id !== versao.preparadorId && usuario.papeis.some((p) => ["GERENTE_PEDAGOGICO", "ADMINISTRADOR"].includes(p));
   const atual = ultima?.id === id, fusoConfere = config?.fusoInstitucional === versao.fusoInstitucional;
   return <div className="space-y-5">
-    <VoltarPara href="/academico/calendario" para="Calendário" />
+    <VoltarPara href="/academico/calendario" />
     <h1 className="text-2xl font-medium">Calendário · Versão {versao.versao}</h1>
     <p>{versao.decisao ? versao.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando decisão"} · {versao.fusoInstitucional}</p>
     <Link className="text-brand-700 underline" href={`/academico/calendario/novo?base=${encodeURIComponent(id)}`}>Usar esta versão como base de uma nova proposta</Link>

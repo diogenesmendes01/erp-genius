@@ -10,7 +10,7 @@ export default async function EncontrosDocentePage({ searchParams }: { searchPar
   const r = await consultarEncontrosDocente({ cursor });
   const rotulo = { PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada", NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho" };
   return <div className="space-y-4">
-    <VoltarPara href="/diario" para="Diário" />
+    <VoltarPara href="/diario" />
     <h1 className="text-2xl font-medium">Encontros atribuídos</h1>
     <p className="text-sm text-gray-500">Consulte os horários e o professor responsável por cada encontro.</p>
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}

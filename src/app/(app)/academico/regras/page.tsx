@@ -12,7 +12,7 @@ export default async function RegrasPage({ searchParams }: { searchParams: Promi
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <section className="space-y-4">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     <h1 className="text-2xl font-medium">Regras de avaliação</h1>
     <p>Selecione o idioma e o nível para preparar ou conferir os critérios institucionais.</p>
     <form className="flex flex-wrap items-end gap-3"><label>Idioma ou nível<input name="busca" maxLength={100} defaultValue={d.busca} className="block rounded border p-2" /></label><button className="rounded border px-4 py-2">Buscar</button></form>

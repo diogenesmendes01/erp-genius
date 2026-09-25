@@ -81,7 +81,7 @@ export default async function PropostaEquivalenciaPage({ params }: { params: Pro
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "America/Sao_Paulo");
 
   return <section className="space-y-5">
-    <VoltarPara href="/academico" para="Acompanhamento acadêmico" />
+    <VoltarPara href="/academico" />
     <header className="space-y-2">
       <h1 className="text-2xl font-medium">Proposta de aproveitamento em transferência</h1>
       <p>{proposta.matricula.codigo ?? "Matrícula sem código"} · {textoTurma(proposta.turmaOrigem)} → {textoTurma(proposta.turmaDestino)}</p>

@@ -9,14 +9,14 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
   const filtros = await searchParams;
   const particular = filtros.tipo === "particular";
   const resultado = await (particular ? listarReservasParticularesSecretaria : listarReservasSecretaria)({ pagina: Number(filtros.pagina ?? 1), matriculaId: filtros.matriculaId || undefined, historico: filtros.historico === "todos" });
-  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href="/secretaria" para="Secretaria" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
+  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href="/secretaria" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
   const r = resultado.dado;
   const params = new URLSearchParams(); if (filtros.matriculaId) params.set("matriculaId", filtros.matriculaId);
   if (particular) params.set("tipo", "particular");
   const porTipo = (tipo: string) => { const p = new URLSearchParams(params); p.set("tipo", tipo); return `?${p}`; };
   const url = (pagina: number, todos = filtros.historico === "todos") => { const p = new URLSearchParams(params); p.set("pagina", String(pagina)); if (todos) p.set("historico", "todos"); return `?${p}`; };
   const estados = { ATIVA: "Reserva ativa", MANTIDA_PENDENCIA: "Reserva mantida por pendência", EXPIRADA: "Expirada", UTILIZADA: "Utilizada", LIBERADA: "Liberada" };
-  return <div className="space-y-4"><VoltarPara href="/secretaria" para="Secretaria" /><h1 className="text-2xl font-medium">Reservas de matrícula</h1>
+  return <div className="space-y-4"><VoltarPara href="/secretaria" /><h1 className="text-2xl font-medium">Reservas de matrícula</h1>
     <nav className="flex gap-4" aria-label="Tipo de reserva"><Link href={porTipo("turma")} aria-current={!particular ? "page" : undefined}>Turmas</Link><Link href={porTipo("particular")} aria-current={particular ? "page" : undefined}>Particulares</Link></nav>
     <p>Reservas ativas e mantidas por pendência ocupam vagas ou horários. Nas particulares, a conferência pode expirar a reserva sem avanço formal. Pagamentos, documentos e pendências exigem o tratamento aplicável; não há devolução ou cancelamento da contratação por esta conferência.</p>
     <nav className="flex gap-4"><Link href={url(1, false)}>Ocupantes</Link><Link href={url(1, true)}>Incluir histórico</Link></nav>

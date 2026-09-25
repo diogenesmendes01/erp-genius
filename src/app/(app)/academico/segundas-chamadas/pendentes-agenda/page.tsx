@@ -27,13 +27,13 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { cursor: cursorBruto } = await searchParams;
   const cursor = lerCursor(cursorBruto);
-  if (cursor === null) return <section className="space-y-3"><VoltarPara href="/academico" para="Acadêmico" /><p role="alert">Cursor de fila inválido.</p></section>;
+  if (cursor === null) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">Cursor de fila inválido.</p></section>;
   const [r, preferencia] = await Promise.all([listarSegundasChamadasSemAgenda(cursor ? { cursor } : {}), consultarPreferenciaFusoEquipe()]);
-  if (!r.ok || !r.dado) return <section className="space-y-3"><VoltarPara href="/academico" para="Acadêmico" /><p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></section>;
+  if (!r.ok || !r.dado) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></section>;
   const d = r.dado;
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     {cursorBruto && <Link className="underline" href="/academico/segundas-chamadas/pendentes-agenda">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Segundas chamadas pendentes de agenda</h1><p>Prepare a prévia antes de propor uma agenda. A listagem não confirma disponibilidade de professor ou horário.</p></header>
     {!d.itens.length && <p>Nenhuma segunda chamada pendente de agenda foi encontrada.</p>}

@@ -15,7 +15,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
   const modo = modoParam === "HISTORICO" ? "HISTORICO" : "PENDENTES";
   const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ cursor, modo }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
-    <VoltarPara href="/diario" para="Diário" />
+    <VoltarPara href="/diario" />
     <div>
       <h1 className="text-2xl font-medium">Regularizações de aula</h1>
       <p className="mt-1 text-sm text-gray-600">A designação é limitada à aula escolhida e preserva o professor original.</p>

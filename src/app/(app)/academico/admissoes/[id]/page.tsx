@@ -9,9 +9,9 @@ export default async function JanelaPage({ params, searchParams }: { params: Pro
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params, filtros = await searchParams;
   const resultado = await consultarJanelasAdmissao({ turmaId: id, pagina: Number(filtros.pagina ?? 1) });
-  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href="/academico/admissoes" para="Turmas" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
+  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href="/academico/admissoes" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
   const r = resultado.dado;
-  return <div className="space-y-5"><VoltarPara href="/academico/admissoes" para="Turmas" />
+  return <div className="space-y-5"><VoltarPara href="/academico/admissoes" />
     <h1 className="text-2xl font-medium">Janela de admissão · {r.turma.codigo ?? r.turma.nome ?? "Turma sem código"}</h1>
     <p>Configurar a janela não confirma vaga nem ativa matrícula. Reservas e contratação ainda precisam da integração deste fluxo.</p>
     <section className="rounded border p-4"><h2 className="font-medium">Regra vigente</h2>
