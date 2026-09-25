@@ -6,6 +6,7 @@ import { preverPausaMatriculas } from "@/server/matricula/pausa-previa";
 import { solicitarPausaMatriculas } from "@/server/matricula/pausa-proposta";
 import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverPausaMatriculas>>, { ok: true }>["dado"]>;
 export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; identificacao: string; produto: { nome: string } }[]; hoje: string | null }) {
@@ -50,7 +51,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
       {contratos.map((m) => <label key={m.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(); setIds((atual) => e.target.checked ? [...atual, m.id] : atual.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.produto.nome}</label>)}
       <label className="block text-sm">Data efetiva proposta<input type="date" className="ml-2 rounded border p-2" required value={data} onChange={(e) => { alterar(); setData(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<textarea className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
-      <button type="button" className="rounded border px-3 py-2 text-sm disabled:opacity-50" disabled={!ids.length || !data || motivo.trim().length < 5} onClick={conferir}>Conferir impactos</button>
+      <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!ids.length || !data || motivo.trim().length < 5} onClick={conferir}>Conferir impactos</button>
     </fieldset>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     <MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Processando…" : null} />
@@ -61,7 +62,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
         <p>{m.periodos.filter((p) => p.efeito === "SUSPENDER_PERIODO_FUTURO").length} período(s) futuro(s) a suspender; {m.periodos.filter((p) => p.efeito === "MANTER_PERIODO_INICIADO_INTEGRAL").length} período(s) iniciado(s) mantido(s) integralmente.</p>
         <Pendencias itens={m.pendencias} />
       </div>)}
-      <button type="button" className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50" disabled={ocupado} onClick={enviar}>Registrar proposta para decisão independente</button>
+      <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={ocupado} onClick={enviar}>Registrar proposta para decisão independente</button>
     </div>}
   </section>;
 }

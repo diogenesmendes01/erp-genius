@@ -20,6 +20,7 @@ import { PreviaMensalPedidoEncerramentoSchema, type PreviaMensalPedidoEncerramen
 import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
@@ -107,10 +108,10 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
   return <section className="space-y-3 border-t pt-3">
     <h3 className="font-medium">Preparação financeira do encerramento</h3>
     <p>Conferência das mensalidades e multa. Taxas, compensações, horas antecipadas e demais ajustes precisam compor o acerto completo antes da aprovação.</p>
-    <button type="button" disabled={ocupado} onClick={carregar} className={estilo}>Carregar / atualizar conferência</button>
+    <button type="button" disabled={ocupado} onClick={carregar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Carregar / atualizar conferência</button>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {rascunho && <details><summary>Rascunho salvo · versão {rascunho.versao} · {rascunho.preparador.nome}</summary><p>{rascunho.motivo}</p><Resumo snapshot={rascunho.snapshot} /><LancamentosEncerramento snapshot={rascunho.snapshot} /><ImpactosAcademicosAcerto snapshot={rascunho.snapshot} />{rascunho.decisao && <p>{rascunho.decisao.aprovada ? "Acerto aprovado, aguardando efetivação" : "Versão rejeitada"}: {rascunho.decisao.motivo}</p>}{rascunho.podeEfetivar && rascunho.decisao && <EfetivarAcerto alunoId={alunoId} decisaoId={rascunho.decisao.id} atualizar={carregar} />}{rascunho.podeDecidir && <DecisaoAcerto alunoId={alunoId} rascunhoId={rascunho.id} />}<OutrasCobrancasResumo snapshot={rascunho.snapshot} />
-      <button type="button" disabled={ocupado} className={estilo} onClick={() => { void iniciar(async () => {
+      <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { void iniciar(async () => {
         setErro(null); setValidade(null);
         try {
           const r = await conferirValidadeRascunhoEncerramento({ alunoId, solicitacaoId, rascunhoId: rascunho.id });
@@ -164,11 +165,11 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
           {excecoes[c.matriculaId] && <><p>A exceção será registrada como proposta e dependerá de autorização independente.</p><label className="grid gap-1">Justificativa da exceção<textarea name={`${c.matriculaId}:motivoExcecao`} required minLength={5} maxLength={2000} className={estilo} /></label>{excecoes[c.matriculaId] === "ALTERAR" && <label className="grid gap-1">Valor de multa proposto<input name={`${c.matriculaId}:valorExcecao`} required inputMode="decimal" className={estilo} /></label>}</>}
         </div>}
       </div>)}
-      <button className={estilo}>Calcular componente mensal</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Calcular componente mensal</button>
     </fieldset></form>}
     {previa != null && <div className="space-y-3"><Resumo snapshot={previa} /><ImpactosAcademicosAcerto snapshot={previa} /><OutrasCobrancasResumo snapshot={previa} />
       <label className="grid gap-1">Motivo desta versão<textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = ""; }} disabled={ocupado} minLength={5} maxLength={2000} className={estilo} /></label>
-      <button disabled={ocupado || !entrada || motivo.trim().length < 5} className={estilo} onClick={() => { if (!entrada) return; void iniciar(async () => {
+      <button disabled={ocupado || !entrada || motivo.trim().length < 5} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { if (!entrada) return; void iniciar(async () => {
         setErro(null); chave.current ||= crypto.randomUUID();
         try {
           const r = await salvarRascunhoAcertoEncerramento({ ...entrada, motivo, chaveIdempotencia: chave.current, versaoAnterior: rascunho?.versao ?? 0 });

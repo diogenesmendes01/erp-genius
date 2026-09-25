@@ -6,6 +6,7 @@ import { useOperacao } from "./useOperacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -53,7 +54,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       <p>A conferência só pode ser preparada após terminar o dia no fuso da escola.</p>
       <label className="grid gap-1">Motivo da conferência<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <label className="grid gap-1">Evidência da oferta efetiva<textarea className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
-      <button className={estilo}>Enviar conferência de cumprimento</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Enviar conferência de cumprimento</button>
     </fieldset></form>}
     {pendente && (pendente.preparadorId === usuarioId ? <p>Outra pessoa precisa decidir esta conferência.</p> : !podeAprovar ? <p>A decisão exige permissão de aprovação financeira ou Administração.</p> : <form className="space-y-2" onSubmit={(e) => {
       e.preventDefault(); const f = new FormData(e.currentTarget);
@@ -63,7 +64,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       <label className="grid gap-1">Decisão de cumprimento<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar cumprimento</option><option value="rejeitar">Rejeitar conferência</option></select></label>
       {aprovar && <label className="flex gap-2"><input type="checkbox" name="evidenciaConferida" required />Conferi a evidência de que a escola efetivamente ofereceu esta cobertura.</label>}
       <label className="grid gap-1">Justificativa da decisão de cumprimento<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <button className={estilo}>Registrar decisão de cumprimento</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão de cumprimento</button>
     </fieldset></form>)}
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
   </article>;
@@ -81,7 +82,7 @@ export function CumprimentoPainel(props: Props) {
   return <section className="space-y-3" aria-label="Cumprimento da cobertura compensatória">
     <h3 className="font-medium">Conferir cumprimento da cobertura</h3>
     <p>Os dias programados continuam devidos até a conferência independente do serviço oferecido.</p>
-    <button type="button" className={estilo} disabled={ocupado} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Atualizar cumprimentos</button>
+    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Atualizar cumprimentos</button>
     {erro && <p role="alert">{erro}</p>}
     {dias?.length === 0 && <p>Nenhum dia de compensação programado para esta matrícula.</p>}
     {dias?.map((dia) => <Dia key={dia.id} {...props} dia={dia} atualizar={async () => { await carregar(); await props.atualizarContexto(); }} />)}
