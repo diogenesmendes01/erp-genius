@@ -20,6 +20,7 @@ import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
@@ -327,9 +328,7 @@ export function FilaCobranca({
 
       {/* Lista magra */}
       {filtrados.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-          Nada nesta visão.
-        </div>
+        <EstadoVazio bloco>Nada nesta visão.</EstadoVazio>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200">
           {filtrados.map((item) => (

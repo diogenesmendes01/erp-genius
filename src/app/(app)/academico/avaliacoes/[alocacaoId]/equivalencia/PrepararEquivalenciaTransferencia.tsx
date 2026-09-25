@@ -7,6 +7,7 @@ import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
@@ -175,7 +176,7 @@ export function PrepararEquivalenciaTransferencia({
               {fontes.map((fonte) => <option key={fonte.referenciaId} value={fonte.referenciaId}>{fonte.rotulo}</option>)}
             </select>
           </label>
-          {!fontes.length && <p role="status">Nenhum registro oficial desta habilidade está disponível para indicar.</p>}
+          {!fontes.length && <EstadoVazio role="status">Nenhum registro oficial desta habilidade está disponível para indicar.</EstadoVazio>}
         </fieldset>;
       })}
       <button type="button" disabled={ocupado || registrada} onClick={() => void revisar()} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>

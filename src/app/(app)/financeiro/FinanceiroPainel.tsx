@@ -13,6 +13,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio, EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
@@ -205,7 +206,7 @@ export function Comissoes({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {comissoes.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">Sem comissões.</td></tr>
+              <EstadoVazioLinha colSpan={4}>Sem comissões.</EstadoVazioLinha>
             ) : (
               comissoes.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
@@ -242,9 +243,7 @@ export function Aprovacoes({
         <span>Impacto anual: <strong>{formatarValores(impactoAnual)}</strong></span>
       </div>
       {aprovacoes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-          Nenhum pedido pendente.
-        </div>
+        <EstadoVazio bloco>Nenhum pedido pendente.</EstadoVazio>
       ) : (
         <ul className="flex flex-col gap-2">
           {aprovacoes.map((a) => (
@@ -463,9 +462,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
   const vazio = descontoPorMoeda.length === 0 && comissoesPorStatus.length === 0;
   if (vazio) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
-        Ainda não há descontos nem comissões registrados.
-      </div>
+      <EstadoVazio bloco>Ainda não há descontos nem comissões registrados.</EstadoVazio>
     );
   }
   return (
@@ -473,7 +470,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
       <section>
         <h2 className="mb-2 text-sm font-medium text-gray-700">Desconto concedido por moeda</h2>
         {descontoPorMoeda.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem descontos.</p>
+          <EstadoVazio>Sem descontos.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
@@ -502,7 +499,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         {/* Fase 2 (doc 03 §Comissão): apuração POR VENDEDOR (moeda × status). */}
         <h2 className="mb-2 text-sm font-medium text-gray-700">Comissão por vendedor</h2>
         {comissoesPorVendedor.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem comissões.</p>
+          <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[640px] text-sm">
@@ -532,7 +529,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
 
         <h2 className="mb-2 text-sm font-medium text-gray-700">Desconto por vendedor</h2>
         {descontoPorVendedor.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem descontos por vendedor.</p>
+          <EstadoVazio>Sem descontos por vendedor.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
@@ -562,7 +559,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
       <section>
         <h2 className="mb-2 text-sm font-medium text-gray-700">Comissão por moeda e status</h2>
         {comissoesPorStatus.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem comissões.</p>
+          <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">

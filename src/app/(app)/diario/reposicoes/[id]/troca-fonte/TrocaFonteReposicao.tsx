@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Proposta = {
   id: string;
@@ -75,7 +76,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
       <h2 className="font-medium">Histórico antes e depois</h2>
-      {propostas.length === 0 ? <p className="text-sm">Nenhuma troca de fonte foi proposta para esta reposição.</p> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-surface p-4 text-sm">
+      {propostas.length === 0 ? <EstadoVazio>Nenhuma troca de fonte foi proposta para esta reposição.</EstadoVazio> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-surface p-4 text-sm">
         <p className="font-medium">Material v{proposta.fonteMaterialAnterior.versao} ({proposta.fonteMaterialAnterior.driveRevisionId}) → publicação v{proposta.fontePublicacao.versao} ({proposta.fontePublicacao.driveRevisionId})</p>
         <p className="mt-1 whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         <p className="mt-1 text-gray-600">Preparada por {proposta.preparador.nome ?? "Usuário"} em {formatarInstanteExibicao(proposta.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}).</p>

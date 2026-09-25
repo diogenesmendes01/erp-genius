@@ -29,6 +29,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export interface KanbanLead {
   id: string;
@@ -243,9 +244,7 @@ function Coluna({ etapa, leads, agora, bloqueado, aoMover }: {
         {leads.map((l) => (
           <Card key={l.id} lead={l} agora={agora} bloqueado={bloqueado} aoMover={aoMover} />
         ))}
-        {leads.length === 0 && (
-          <div className="rounded-lg border border-dashed border-gray-200 p-3 text-center text-xs text-gray-300">vazio</div>
-        )}
+        {leads.length === 0 && <EstadoVazio>Nenhum lead nesta etapa.</EstadoVazio>}
       </div>
     </div>
   );

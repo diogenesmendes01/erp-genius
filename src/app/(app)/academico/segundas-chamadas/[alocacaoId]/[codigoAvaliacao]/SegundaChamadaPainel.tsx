@@ -7,6 +7,7 @@ import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamad
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Item = {
   id: string;
@@ -149,7 +150,7 @@ export function SegundaChamadaPainel({
           {item.reserva.status === "RESERVADA" && <FormularioOcorrencia reservaId={item.reserva.id} fuso={fusoEntrada} />}
         </div>}
       </article>)}
-      {!itens.length && <p>Nenhuma proposta nesta avaliação.</p>}
+      {!itens.length && <EstadoVazio>Nenhuma proposta nesta avaliação.</EstadoVazio>}
     </section>
   </div>;
 }

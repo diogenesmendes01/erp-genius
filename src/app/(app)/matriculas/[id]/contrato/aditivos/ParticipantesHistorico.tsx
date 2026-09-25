@@ -3,6 +3,7 @@ import { consultarConferenciasParticipantesAditivo } from "@/server/contratos/ad
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; pagina: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarConferenciasParticipantesAditivo({ matriculaId, propostaId, pagina });
@@ -12,7 +13,7 @@ export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, 
   const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Histórico de conferências dos signatários</h2>
     <p>Identificações e evidências preservadas em cada conferência. As assinaturas serão coletadas em etapa própria.</p>
-    {!d.registros.length && <p>Nenhuma conferência nesta página.</p>}
+    {!d.registros.length && <EstadoVazio>Nenhuma conferência nesta página.</EstadoVazio>}
     {d.registros.map(c => <details key={c.id} className="space-y-2 rounded border p-3"><summary>Versão {c.versao} · {c.autor} · {data(c.criadaEm)}</summary>
       <p className="whitespace-pre-wrap">{c.motivo}</p>
       {c.maioridade && <div><p>Maioridade: {c.maioridade.classificacao === "MAIOR" ? "Maior" : "Menor"}</p><p className="whitespace-pre-wrap">Critério: {c.maioridade.criterio}</p><p>Evidência: {c.maioridade.evidencia.nome}</p></div>}

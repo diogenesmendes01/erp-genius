@@ -7,6 +7,7 @@ import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export function NovoEncerramento({ alunoId, contratos, hoje }: {
   alunoId: string; contratos: { id: string; nome: string }[]; hoje: string | null;
@@ -43,7 +44,7 @@ export function NovoEncerramento({ alunoId, contratos, hoje }: {
       <fieldset disabled={ocupado || !hoje || !contratos.length} className="space-y-3">
         <legend className="mb-2 text-sm font-medium">Contratos ativos ou pausados</legend>
         {contratos.map((m) => <label className="flex gap-2 text-sm" key={m.id}><input type="checkbox" name="matricula" value={m.id} />{m.nome}</label>)}
-        {!contratos.length && <p>Nenhum contrato disponível.</p>}
+        {!contratos.length && <EstadoVazio>Nenhum contrato disponível.</EstadoVazio>}
         <label className="block text-sm">Data de encerramento solicitada<input type="date" required className={estilo} value={data} onChange={(e) => setData(e.target.value)} /></label>
         <label className="block text-sm">Motivo do pedido<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
         <label className="block text-sm">Referência da evidência do pedido do aluno<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} placeholder="Identifique a mensagem, atendimento ou documento que comprova o pedido." /></label>

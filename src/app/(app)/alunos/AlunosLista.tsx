@@ -8,6 +8,7 @@ import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export interface AlunoRow {
   id: string;
@@ -141,16 +142,14 @@ export function AlunosLista({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {alunos.length === 0 ? (
-              <tr>
-                <td colSpan={exibirFinanceiro ? 5 : 4} className="px-4 py-6 text-center text-sm text-gray-500">
+              <EstadoVazioLinha colSpan={exibirFinanceiro ? 5 : 4}>
                   {/* Estado vazio duplo: base vazia × filtro sem resultado (este oferece a saída). */}
                   {totalBase === 0 ? "Nenhum aluno cadastrado no seu alcance." : filtrando ? (
                     <>Nenhum aluno com esses filtros. <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-brand-700 hover:underline">Limpar filtros</Link></>
                   ) : (
                     <>Nenhum aluno nesta página. <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
                   )}
-                </td>
-              </tr>
+                </EstadoVazioLinha>
             ) : (
               alunos.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50">

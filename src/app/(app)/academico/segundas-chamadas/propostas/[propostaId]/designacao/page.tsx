@@ -7,6 +7,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Designacao({ params, searchParams }: {
   params: Promise<{ propostaId: string }>;
@@ -52,7 +53,7 @@ export default async function Designacao({ params, searchParams }: {
       <p>Vigência: {data(h.inicio)} até {h.fim ? data(h.fim) : "sem término"} ({fusoExibicao}; origem UTC).</p>
       <p>{h.motivo}</p>
     </article>)}
-    {!d.historico.length && <p>Nenhuma designação registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma designação registrada.</EstadoVazio>}
     <nav className="flex gap-4" aria-label="Paginação do histórico">
       {depoisVersao && <Link className="underline" href={busca ? `?busca=${encodeURIComponent(busca)}` : "?"}>Primeira página</Link>}
       {d.proximaVersao && <Link className="underline" href={`?depoisVersao=${d.proximaVersao}${busca ? `&busca=${encodeURIComponent(busca)}` : ""}`}>Designações anteriores</Link>}

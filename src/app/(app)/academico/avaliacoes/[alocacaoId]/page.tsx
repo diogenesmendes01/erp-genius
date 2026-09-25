@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { listarAvaliacoesAlocacao } from "@/server/avaliacoes/lancamentos";
 import { consultarConsolidadoAvaliacoes } from "@/server/avaliacoes/consolidado";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -96,6 +97,6 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
     <nav aria-label="Avaliações da matrícula" className="space-y-3">{r.dado.avaliacoes.map(a => <Link key={a.codigo} className="block rounded border p-3 underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(a.codigo)}`}>
       {a.titulo} — {a.etapa === "FINAL" ? "Final" : "Intermediária"}
     </Link>)}</nav>
-    {!r.dado.avaliacoes.length && <p>Nenhuma avaliação disponível para este acesso.</p>}
+    {!r.dado.avaliacoes.length && <EstadoVazio bloco>Nenhuma avaliação disponível para este acesso.</EstadoVazio>}
   </section>;
 }

@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarResolucoesParticulares } from "@/server/matricula/reserva-particular-resolucao";
 import { PrepararResolucao, DecidirResolucao } from "../../[id]/Formularios";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function ResolucaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, filtros = await searchParams;
@@ -20,7 +21,7 @@ export default async function ResolucaoPage({ params, searchParams }: { params: 
     <Link href={`/secretaria?matriculaId=${r.reserva.matriculaId}`} className="underline">Conferir contratação</Link>
     <p>A proposta exige decisão de outra pessoa da Administração. Confira o tratamento da contratação antes de aprovar.</p>
     {r.podePreparar && <PrepararResolucao key={r.versaoAtual} reservaId={id} versao={r.versaoAtual} fuso={fuso} particular />}
-    <h2 className="text-xl">Histórico de propostas</h2>{!r.registros.length && <p>Nenhuma proposta registrada.</p>}
+    <h2 className="text-xl">Histórico de propostas</h2>{!r.registros.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {r.registros.map((p) => <section key={p.id} className="space-y-2 rounded border p-4"><h3 className="font-medium">Versão {p.versao} · {p.tipo === "PRORROGAR" ? "Prorrogar" : "Liberar horários"}</h3>
       <p>Preparada por {p.preparador.nome} em {data(p.criadaEm)}</p>{p.novoPrazo && <p>Novo prazo proposto: {data(p.novoPrazo)} · {fuso}</p>}
       <p className="whitespace-pre-wrap">Motivo: {p.motivo}</p><p className="whitespace-pre-wrap">Tratamento previsto: {p.tratamentoContratacao}</p>

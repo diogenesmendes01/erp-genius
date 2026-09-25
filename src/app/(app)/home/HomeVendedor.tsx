@@ -12,6 +12,7 @@ import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeVendedor } from "@/server/home/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeVendedor>>;
 
@@ -134,7 +135,7 @@ export function HomeVendedor({
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-3 font-medium">Agenda de hoje</h2>
           {agenda.length === 0 ? (
-            <p className="text-sm text-gray-400">Sem experimentais hoje.</p>
+            <EstadoVazio>Sem experimentais hoje.</EstadoVazio>
           ) : (
             <ul className="flex flex-col gap-1 text-sm">
               {agenda.map((a) => (

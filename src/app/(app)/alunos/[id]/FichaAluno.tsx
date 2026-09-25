@@ -16,6 +16,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
   MATRICULA: "Matrícula",
@@ -467,12 +468,11 @@ export function FichaAluno({
               <div className="text-gray-500">Professor: {turma.professor ?? "—"}</div>
             </div>
           )) : (
-            <>
-              <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
-              {turmaSugerida && podeMovimentar && (
+            <EstadoVazio
+              acao={turmaSugerida && podeMovimentar ? (
                 // C4 (doc 08 §auto-alocação híbrida): o sistema SUGERIU na ativação;
                 // alocar de verdade é decisão do consultor — 1 clique aqui.
-                <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 p-2">
+                <div className="rounded-md border border-blue-200 bg-blue-50 p-2">
                   <div className="text-xs font-medium text-blue-700">Turma sugerida na ativação</div>
                   <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
                   {turmaSugerida.diasHorario && <div className="text-xs text-gray-500">{turmaSugerida.diasHorario}</div>}
@@ -480,8 +480,10 @@ export function FichaAluno({
                     Preparar alocação por matrícula
                   </Link>
                 </div>
-              )}
-            </>
+              ) : undefined}
+            >
+              Sem turma (lista de espera).
+            </EstadoVazio>
           )}
 
           {podeEditarCadastro && <>
@@ -549,7 +551,7 @@ export function FichaAluno({
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de movimentações</h2>
         {aluno.movimentacoes.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem movimentações.</p>
+          <EstadoVazio>Sem movimentações.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-3">
             {aluno.movimentacoes.map((m) => (

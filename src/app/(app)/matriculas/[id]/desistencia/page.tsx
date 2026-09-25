@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { EfetivacaoFormulario } from "./EfetivacaoFormulario";
 import { PedidoFormulario } from "./PedidoFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function textoInstanteAdministrativo(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -42,7 +43,7 @@ export default async function DesistenciaPage({ params }: { params: Promise<{ id
     {!efetivacao && !podeEfetivar && pedidos.length > 0 && conferencia.podeRegistrar && <p>Este caso permanece em conferência. Cobranças sem pagamento podem seguir para a conferência financeira. Casos com pagamento ou assinatura ainda precisam do fluxo de acerto específico.</p>}
     {conferencia.podeRegistrar && <PedidoFormulario key={estadoHash} matriculaId={id} estadoHash={estadoHash} />}
     <section className="space-y-3"><h2 className="text-lg font-medium">Últimos pedidos registrados</h2>
-      {!pedidos.length && <p>Nenhum pedido registrado.</p>}
+      {!pedidos.length && <EstadoVazio>Nenhum pedido registrado.</EstadoVazio>}
       {pedidos.map(p => <article key={p.id} className="space-y-1 rounded border p-3">
         <h3 className="font-medium">Versão {p.versao} · {p.registradorNome}</h3>
         <p>{textoInstanteAdministrativo(p.criadaEmISO, fusoExibicao)}</p>

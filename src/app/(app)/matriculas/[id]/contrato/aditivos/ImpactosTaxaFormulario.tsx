@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string };
 
@@ -38,7 +39,7 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
 
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Impactos de todas as taxas</h2>
     <p>Classifique cada cobrança de taxa. Cobranças preservadas também exigem justificativa; a assinatura não altera valores sozinha.</p>
-    {!cobrancas.length ? <p role="status">Nenhuma cobrança de taxa foi encontrada para esta matrícula.</p> : <fieldset disabled={ocupado} className="space-y-3">{cobrancas.map(c => <article className="space-y-2 rounded border p-3" key={c.id}>
+    {!cobrancas.length ? <EstadoVazio role="status">Nenhuma cobrança de taxa foi encontrada para esta matrícula.</EstadoVazio> : <fieldset disabled={ocupado} className="space-y-3">{cobrancas.map(c => <article className="space-y-2 rounded border p-3" key={c.id}>
       <p className="font-medium">{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · vencimento {formatarDataCivil(c.vencimento.slice(0, 10))}</p>
       <label className="block">Tratamento<select className="ml-2 rounded border p-1" value={decisoes[c.id] ?? "AFETADA"} onChange={e => setDecisoes(atual => ({ ...atual, [c.id]: e.target.value as "AFETADA" | "PRESERVADA" }))}><option value="AFETADA">Afetada pelo aditivo</option><option value="PRESERVADA">Preservada</option></select></label>
       <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={justificativas[c.id] ?? ""} onChange={e => setJustificativas(atual => ({ ...atual, [c.id]: e.target.value }))} /></label>

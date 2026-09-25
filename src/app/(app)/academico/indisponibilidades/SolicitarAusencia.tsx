@@ -6,6 +6,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
@@ -40,7 +41,7 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
       <label className="text-sm sm:col-span-2">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ tamanho: "lg" })} type="submit">{ocupado ? "Registrando…" : "Enviar solicitação"}</button>
     </fieldset>
-    {professores.length === 0 && <p>Nenhum professor ativo disponível.</p>}
+    {professores.length === 0 && <EstadoVazio>Nenhum professor ativo disponível.</EstadoVazio>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     <MensagemStatus texto={mensagem} className="text-green-700" />
   </form>;

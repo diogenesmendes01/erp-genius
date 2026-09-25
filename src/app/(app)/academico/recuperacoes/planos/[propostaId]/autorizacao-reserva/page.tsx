@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -38,7 +39,7 @@ export default async function AutorizacaoReserva({ params, searchParams }: { par
       {autorizacao.reserva ? <p role="status">Reserva registrada. <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Voltar ao plano para conferir a tentativa e autorizar sua realização.</Link></p> : autorizacao.podeReservar ? <ReservarComAutorizacao propostaId={d.propostaId} propostaHash={d.propostaHash} autorizacaoId={autorizacao.id} habilidade={autorizacao.habilidade} /> : <p role="status">Esta autorização não está disponível para reserva nas condições atuais.</p>}
       <p>A realização durante pausa ou encerramento ainda exige a autorização específica de realização.</p>
     </article>)}
-    {!d.historico.length && <p>Nenhuma autorização especial registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização especial registrada.</EstadoVazio>}
     {d.proximoId && <Link className="underline" href={`?depoisId=${encodeURIComponent(d.proximoId)}`}>Próximas autorizações</Link>}
   </section>;
 }

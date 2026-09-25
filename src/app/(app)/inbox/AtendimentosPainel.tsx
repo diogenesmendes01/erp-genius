@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // Nenhuma das três actions recebe chave de idempotência (server/whatsapp/operacoes-atendimento.ts):
 // abrirAtendimentoInstitucional (:103) grava um evento novo a cada chamada; classificarMensagemWhatsApp
@@ -38,7 +39,7 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
         </select>
       </label>
       <button disabled={acao.ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className={botaoClasses({ tamanho: "lg" })}>Abrir atendimento</button>
-      {!opcoes.numeros.length && <p className="text-xs text-gray-500">A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</p>}
+      {!opcoes.numeros.length && <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
     <FeedbackAcao erro={acao.erro} />

@@ -5,6 +5,7 @@ import { consultarTelaEmissao } from "@/server/secretaria/conferencia-emissao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ConfirmarEmissao } from "./ConfirmarEmissao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function EmissaoPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, r = await consultarTelaEmissao(id);
@@ -19,7 +20,7 @@ export default async function EmissaoPage({ params }: { params: Promise<{ id: st
   return <div className="space-y-5">{links}<h1 className="text-2xl">Conferência para emissão inicial</h1>
     <section className="rounded border p-4"><h2 className="text-xl">Aluno</h2><p>{a.primeiroNome} {a.sobrenome}</p><p>Documento: {a.documento || "Não informado"}</p><p>{a.email || "E-mail não informado"} · {a.telefoneE164 || "Telefone não informado"}</p><p>{[a.rua, a.numero, a.cidade, a.regiao, a.cep, a.paisResidencia].filter(Boolean).join(", ") || "Endereço não informado"}</p></section>
     <section className="rounded border p-4"><h2 className="text-xl">Pagador · versão {p.versao}</h2><p>{p.dados.nome} · {p.tipo === "ALUNO" ? "Próprio aluno" : p.tipo === "EMPRESA" ? "Empresa" : "Responsável"}</p><p>Documento: {p.dados.documento || "Não informado"}</p><p>{p.dados.email || "E-mail não informado"} · {p.dados.telefoneE164 || "Telefone não informado"}</p><p>{p.dados.endereco || "Endereço não informado"}</p></section>
-    <section><h2 className="text-xl">Documentos anexados à matrícula</h2>{v.dados.documentos.length ? <ul>{v.dados.documentos.map((d) => <li key={d.id}>{d.url.startsWith("/api/files/") || /^https?:\/\//.test(d.url) ? <a href={d.url} target="_blank" rel="noopener noreferrer" className="underline">{d.nome}</a> : d.nome}</li>)}</ul> : <p>Nenhum documento anexado. Confira os dados e documentos necessários antes de confirmar.</p>}</section>
+    <section><h2 className="text-xl">Documentos anexados à matrícula</h2>{v.dados.documentos.length ? <ul>{v.dados.documentos.map((d) => <li key={d.id}>{d.url.startsWith("/api/files/") || /^https?:\/\//.test(d.url) ? <a href={d.url} target="_blank" rel="noopener noreferrer" className="underline">{d.nome}</a> : d.nome}</li>)}</ul> : <EstadoVazio>Nenhum documento anexado. Confira os dados e documentos necessários antes de confirmar.</EstadoVazio>}</section>
     {v.dados.agendaParticular && <section className="rounded border p-4"><h2 className="text-xl">Horários particulares reservados</h2><p className="whitespace-pre-line">{v.dados.agendaParticular}</p></section>}
     {!!v.avisos.length && <ul className="list-disc pl-5" aria-label="Avisos de conferência">{v.avisos.map((aviso) => <li key={aviso}>{aviso}</li>)}</ul>}
     <section><h2 className="text-xl">Cobranças previstas · condições versão {v.dados.versaoCondicoes}</h2><ul>{v.plano.map((c) => <li key={c.tipo}>{tipo(c.tipo)} · {formatarMoeda(Number(c.valor), c.moeda)} · Vencimento {formatarDataCivil(c.vencimento)} · {c.etapa === "CONFERENCIA_SECRETARIA" ? "Será emitida nesta confirmação" : "Será emitida na ativação"}{c.cobertura ? ` · Cobertura ${formatarDataCivil(c.cobertura.inicio)} a ${formatarDataCivil(c.cobertura.fim)}` : ""}{c.minutos ? ` · ${c.minutos} minutos` : ""}</li>)}</ul></section>

@@ -33,6 +33,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const TRILHA: EtapaLead[] = [
   EtapaLead.NOVO,
@@ -271,7 +272,7 @@ function Documentos({
       </div>
       <FeedbackAcao erro={alvo === "anexar" ? acao.erro : null} className="mb-3" />
       {documentos.length === 0 ? (
-        <p className="text-sm text-gray-400">Nenhum documento anexado.</p>
+        <EstadoVazio>Nenhum documento anexado.</EstadoVazio>
       ) : (
         <ul className="flex flex-col gap-1 text-sm">
           {documentos.map((d) => (
@@ -332,7 +333,7 @@ function HistoricoDono({ timeline, preferenciaFusoExibicao }: { timeline: Evento
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="mb-3 font-medium">Histórico de dono</h2>
       {itens.length === 0 ? (
-        <p className="text-sm text-gray-400">Sem transferências de dono.</p>
+        <EstadoVazio>Sem transferências de dono.</EstadoVazio>
       ) : (
         <ul className="flex flex-col gap-2 text-sm">
           {itens.map((ev) => {
@@ -722,7 +723,7 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <h2 className="mb-3 font-medium">Linha do tempo</h2>
       {timeline.length === 0 ? (
-        <p className="text-sm text-gray-400">Sem eventos ainda.</p>
+        <EstadoVazio>Sem eventos ainda.</EstadoVazio>
       ) : (
         <ul className="flex flex-col gap-3">
           {timeline.map((ev) => {

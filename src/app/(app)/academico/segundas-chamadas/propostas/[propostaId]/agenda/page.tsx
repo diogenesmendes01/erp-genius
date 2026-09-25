@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAgendasIniciaisSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agenda-inicial";
 import { Formulario } from "./Formulario";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short", timeStyle: "short", timeZone: fuso,
@@ -31,7 +32,7 @@ export default async function AgendaInicial({ params, searchParams }: {
     <p>O encontro e a reserva só são criados na aprovação independente da agenda concreta.</p>
     <Formulario propostaSegundaChamadaId={propostaId} professores={d.professores} podePropor={d.podePropor} />
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
-    {!d.itens.length && <p>Nenhuma agenda inicial foi preparada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma agenda inicial foi preparada.</EstadoVazio>}
     {d.itens.map(item => <article key={item.id} className="space-y-2 rounded border p-4">
       <p>Versão {item.versao} · Proposta de {item.autorNome} em {data(item.criadaEm, item.fusoOrigem)} ({item.fusoOrigem}).</p>
       <p>Professor: {item.professorNome}.</p>

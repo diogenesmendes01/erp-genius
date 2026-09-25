@@ -8,6 +8,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -85,7 +86,7 @@ export function CumprimentoPainel(props: Props) {
     <p>Os dias programados continuam devidos até a conferência independente do serviço oferecido.</p>
     <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Atualizar cumprimentos</button>
     {erro && <p role="alert">{erro}</p>}
-    {dias?.length === 0 && <p>Nenhum dia de compensação programado para esta matrícula.</p>}
+    {dias?.length === 0 && <EstadoVazio>Nenhum dia de compensação programado para esta matrícula.</EstadoVazio>}
     {dias?.map((dia) => <Dia key={dia.id} {...props} dia={dia} atualizar={async () => { await carregar(); await props.atualizarContexto(); }} />)}
   </section>;
 }

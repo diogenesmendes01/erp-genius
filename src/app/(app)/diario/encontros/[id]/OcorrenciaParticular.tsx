@@ -6,6 +6,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasParticular>>, { ok: true }>["dado"]>;
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
@@ -44,7 +45,7 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
     </form> : <p>{dados.conferidaFinanceiramente ? "Informe conferido pelo Financeiro. Alterações exigem revisão dos efeitos financeiros." : "O informe fica disponível após o término da aula ou a aprovação do cancelamento."}</p>}
     <MensagemStatus texto={mensagem} />
     <h3 className="font-medium">Histórico de informes</h3>
-    {!dados.historico.length && <p>Nenhum informe registrado.</p>}
+    {!dados.historico.length && <EstadoVazio>Nenhum informe registrado.</EstadoVazio>}
     {dados.historico.map(o => <article key={o.id} className="rounded border p-3">
       <p>Versão {o.versao} · {nomes[o.tipo] ?? o.tipo} · {o.autor.nome}</p>
       <p>Registrado em {formato.format(new Date(o.criadoEm))} (exibido em {fusoExibicao}; origem {dados.fuso}).</p>

@@ -6,6 +6,7 @@ import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } f
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Fonte = {
   concluida: boolean;
@@ -80,7 +81,7 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExib
     {mostrarPreparacao && dados.podePropor && <ProporCorrecao dados={dados} />}
     <section className="space-y-3">
       <h2 className="text-xl font-medium">Histórico de correções</h2>
-      {!dados.correcoes.length && <p>Não há correções nesta página.</p>}
+      {!dados.correcoes.length && <EstadoVazio>Não há correções nesta página.</EstadoVazio>}
       {dados.correcoes.map((correcao) => <article key={correcao.id} className="space-y-3 rounded border p-4">
         <h3 className="font-medium">Proposta versão {correcao.versao}</h3>
         <p>Preparada por {correcao.autor} em {dataHora(correcao.criadaEm, fusoExibicao)}.</p>

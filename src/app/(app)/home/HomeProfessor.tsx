@@ -8,6 +8,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 interface Turma {
   id: string;
@@ -78,7 +79,7 @@ export function HomeProfessor({
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Experimentais para check-in</h2>
         {experimentais.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhuma experimental agendada.</p>
+          <EstadoVazio>Nenhuma experimental agendada.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-2">
             {experimentais.map((e) => (
@@ -127,7 +128,7 @@ export function HomeProfessor({
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Minhas turmas</h2>
         {turmas.length === 0 ? (
-          <p className="text-sm text-gray-400">Você não tem turmas atribuídas.</p>
+          <EstadoVazio>Você não tem turmas atribuídas.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-2">
             {turmas.map((t) => (

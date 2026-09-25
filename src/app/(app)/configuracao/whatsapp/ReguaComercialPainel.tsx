@@ -15,6 +15,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { criarBuscaMaisRecente } from "@/lib/busca-recente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // RÉGUA COMERCIAL "lead novo sem resposta" (doc 27 C1). Nasce desligada; a ordem dos passos
 // é fixa (lei de código), a UI edita offset/ativo/template + estado + remetente + janela.
@@ -305,7 +306,7 @@ function EnsaioComercialLista({ ensaio, preferenciaFusoExibicao = null }: { ensa
     <div>
       <div className="mb-1 text-sm font-medium">Ensaio — últimos follow-ups simulados</div>
       {ensaio.length === 0 ? (
-        <p className="text-sm text-gray-500">Nada simulado ainda. Em ensaio, cada degrau devido registra aqui o que teria sido enviado.</p>
+        <EstadoVazio>Nada simulado ainda. Em ensaio, cada degrau devido registra aqui o que teria sido enviado.</EstadoVazio>
       ) : (
         <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-surface">
           {ensaio.map((e) => (

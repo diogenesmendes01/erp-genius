@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-financeira-consulta";
 import { ConferenciaHoras } from "./ConferenciaHoras";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO);
@@ -18,7 +19,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <Link href={`/matriculas/${id}/condicoes-horas`} className="underline">Condições contratuais por hora</Link>
     <p><Link href={`/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`} className="underline">Histórico de fechamentos por hora</Link></p>
     <p><Link href={`/matriculas/${id}/ocorrencias-financeiras/revisoes-correcao-aula`} className="underline">Revisões financeiras de correções de aula</Link></p>
-    {!d.encontros.length && <p>Nenhum encontro particular nesta página.</p>}
+    {!d.encontros.length && <EstadoVazio bloco>Nenhum encontro particular nesta página.</EstadoVazio>}
     {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} />)}
     {d.proximoCursor && <Link href={`/matriculas/${id}/ocorrencias-financeiras?cursor=${encodeURIComponent(d.proximoCursor)}`} className="underline">Próximos encontros</Link>}
   </div>;

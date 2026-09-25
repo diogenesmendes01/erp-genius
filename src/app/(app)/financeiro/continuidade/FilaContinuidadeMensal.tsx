@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ItemFilaContinuidadeMensal } from "@/server/matricula/continuidade-fila";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const ESTADO_LABEL: Record<ItemFilaContinuidadeMensal["estado"], string> = {
   AGUARDAR_PRAZO: "Aguardar prazo",
@@ -13,7 +14,7 @@ const ESTADO_LABEL: Record<ItemFilaContinuidadeMensal["estado"], string> = {
 
 export function FilaContinuidadeMensal({ itens }: { itens: ItemFilaContinuidadeMensal[] }) {
   if (itens.length === 0) {
-    return <p>Nenhuma matrícula precisa de acompanhamento nesta página.</p>;
+    return <EstadoVazio bloco>Nenhuma matrícula precisa de acompanhamento nesta página.</EstadoVazio>;
   }
 
   return <div className="space-y-3">

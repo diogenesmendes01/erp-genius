@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function DesignacaoPage({ params, searchParams }: {
   params: Promise<{ alocacaoId: string; codigo: string }>; searchParams: Promise<{ pagina?: string; busca?: string }>;
@@ -33,7 +34,7 @@ export default async function DesignacaoPage({ params, searchParams }: {
       <FormularioDesignacao key={`${d.versaoEsperada}:${d.busca}`} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} atualId={d.atual?.professor?.id ?? null} professores={d.professores} />
     </> : <p role="status">Avaliação oficializada: a designação da pendência foi encerrada. O histórico permanece disponível.</p>}
     <h2 className="text-xl font-medium">Histórico de designações</h2>
-    {!d.historico.length && <p>Nenhuma designação registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma designação registrada.</EstadoVazio>}
     {d.historico.map(h => <article key={h.id} className="space-y-2 rounded border p-3"><h3 className="font-medium">Versão {h.versao} — {h.professor?.nome ?? "Designação revogada"}</h3><p>Registrada por {h.gestor.nome} em {formatarInstanteExibicao(h.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{h.motivo}</p></article>)}
     <nav aria-label="Páginas de designações" className="flex gap-4">{d.pagina > 1 && <Link href={`?busca=${encodeURIComponent(d.busca)}&pagina=${d.pagina - 1}`}>Anterior</Link>}<span>Página {d.pagina}</span>{d.temProxima && <Link href={`?busca=${encodeURIComponent(d.busca)}&pagina=${d.pagina + 1}`}>Próxima</Link>}</nav>
   </section>;

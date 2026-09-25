@@ -20,6 +20,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = botaoClasses();
@@ -210,7 +211,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de negociação</h2>
         {dados.ajustes.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem ajustes.</p>
+          <EstadoVazio>Sem ajustes.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-2 text-sm">
             {dados.ajustes.map((a) => (
@@ -230,7 +231,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Comissão</h2>
         {dados.comissoes.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem comissão.</p>
+          <EstadoVazio>Sem comissão.</EstadoVazio>
         ) : (
           <ul className="text-sm text-gray-700">
             {dados.comissoes.map((c) => (
@@ -244,7 +245,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null }: { dad
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de cobrança</h2>
         {dados.historico.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem movimentações de cobrança.</p>
+          <EstadoVazio>Sem movimentações de cobrança.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-2 text-sm">
             {dados.historico.map((h) => (
