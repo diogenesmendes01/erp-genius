@@ -8,6 +8,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -92,7 +93,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
           setMensagem(resultado.ok ? "Versão preparada para revisão independente." : resultado.erro);
           if (resultado.ok) router.refresh();
         } catch (erro) {
-          setMensagem(erro instanceof Error ? erro.message : "Atualize o histórico para conferir o resultado antes de repetir.");
+          setMensagem(erro instanceof Error ? erro.message : MSG_RESULTADO_INCERTO_SEM_CHAVE);
         }
       });
     }}>
@@ -167,7 +168,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
             setMensagem(resultado.ok ? "Decisão registrada." : resultado.erro);
             if (resultado.ok) router.refresh();
           } catch {
-            setMensagem("Atualize o histórico para conferir a decisão antes de repetir.");
+            setMensagem(MSG_DECISAO_INCERTA);
           }
         });
       }}>

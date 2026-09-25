@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { decidirModeloContratual } from "@/server/contratos/modelos";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 export function DecidirModelo({ modeloId, conteudoHash }: { modeloId: string; conteudoHash: string }) {
   const router = useRouter(), [ocupado, setOcupado] = useState(false), [erro, setErro] = useState("");
   return <form className="space-y-3 border-t pt-3" onSubmit={async (e) => {
@@ -10,7 +11,7 @@ export function DecidirModelo({ modeloId, conteudoHash }: { modeloId: string; co
     try {
       const r = await decidirModeloContratual({ modeloId, conteudoHash, aprovada: d.get("decisao") === "aprovar", motivo: String(d.get("motivo") ?? "") });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Não foi possível confirmar o resultado. Atualize a consulta antes de uma nova decisão."); }
+    } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3">

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function EntregaGravacaoPortalAluno({ reposicaoId, podeEntregar, motivoBloqueio }: { reposicaoId: string; podeEntregar: boolean; motivoBloqueio: string | null }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function EntregaGravacaoPortalAluno({ reposicaoId, podeEntregar, motivoBl
       });
       if (!resposta.ok) { setErro("A entrega não foi registrada. Confira o prazo, a situação da matrícula e a pendência atual."); return; }
       formulario.reset(); router.refresh();
-    } catch { setErro("Não foi possível registrar a entrega agora."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setEnviando(false); }
   }
   if (!podeEntregar) return <p className="mt-5 rounded border bg-surface p-4 text-sm text-gray-700">{motivoBloqueio ?? "Não há uma entrega aberta neste momento."}</p>;

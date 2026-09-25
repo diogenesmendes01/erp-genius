@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { efetivarAcertoEncerramento } from "@/server/matricula/encerramento-efetivar";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: string; decisaoId: string; atualizar: () => void }) {
   const [ocupado, setOcupado] = useState(false), [mensagem, setMensagem] = useState("");
@@ -16,7 +17,7 @@ export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: str
         const r = await efetivarAcertoEncerramento({ alunoId, decisaoId });
         if (!r.ok) { setMensagem(r.erro); return; }
         setMensagem("Encerramento efetivado."); atualizar(); router.refresh();
-      } catch { setMensagem("Não foi possível confirmar o resultado. Atualize a conferência antes de repetir."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
       finally { setOcupado(false); }
     }}>{ocupado ? "Efetivando…" : "Efetivar encerramento aprovado"}</button>
     <MensagemStatus texto={mensagem} />

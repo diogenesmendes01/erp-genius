@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { consultarRemarcacoesParticular, proporRemarcacaoParticular, decidirRemarcacaoParticular } from "@/server/agenda/remarcacao-particular";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const router = useRouter();
   async function executar(acao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "Operação não aplicada."); return; } chave.current = ""; router.refresh(); }
-    catch { setErro("Consulte novamente antes de repetir: resultado precisa de conferência."); }
+    catch { setErro(MSG_RESULTADO_INCERTO); }
   }
   return <div className="space-y-4"><p>Duração preservada: {dados.duracaoMinutos} minutos.</p>{erro && <p role="alert">{erro}</p>}
     {dados.podePropor && <form onChange={() => { chave.current = ""; }} onSubmit={e => {

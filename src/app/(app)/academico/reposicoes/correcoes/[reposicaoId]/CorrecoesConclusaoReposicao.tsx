@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Fonte = {
   concluida: boolean;
@@ -125,7 +126,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
         const resultado = await proporCorrecaoConclusaoReposicao({ ...comum, ...fonte });
         if (!resultado.ok) { setErro(resultado.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a correção. Confira o histórico antes de reenviar."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3">
     <h2 className="text-xl font-medium">Propor correção</h2>
@@ -154,7 +155,7 @@ function DecidirCorrecao({ correcao }: { correcao: Dados["correcoes"][number] })
         const resultado = await decidirCorrecaoConclusaoReposicao({ correcaoId: correcao.id, propostaHash: correcao.propostaHash, aprovar: escolha === "aprovar", motivo: String(formulario.get("motivo") ?? ""), ...(escolha === "aprovar" && correcao.impactosHash ? { impactosHash: correcao.impactosHash } : {}) });
         if (!resultado.ok) { setErro(resultado.erro); return; }
         router.refresh();
-      } catch { setErro("A decisão não foi confirmada. Consulte a proposta antes de repetir."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend><p className="text-sm">Rejeitar não atesta que a fonte atual esteja correta. Aprovar exige que esta seja a proposta mais recente e que a fonte ainda seja válida.</p>
     <div className="space-y-2 rounded bg-gray-50 p-3"><p className="font-medium">Dependências acadêmicas</p><p>A correção não desfaz movimentações acadêmicas. {correcao.impactos.length ? "As mudanças abaixo exigem conferência pedagógica após a aprovação." : "Não há mudança acadêmica vinculada para revisar."}</p>{!!correcao.impactos.length && <ul className="list-disc pl-5">{correcao.impactos.map((impacto) => <li key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}.</li>)}</ul>}</div>

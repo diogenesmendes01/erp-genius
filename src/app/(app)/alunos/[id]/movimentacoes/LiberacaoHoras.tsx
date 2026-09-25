@@ -5,6 +5,7 @@ import { proporLiberacaoHorasRemarcacao, decidirLiberacaoHorasRemarcacao } from 
 import { useOperacao } from "./useOperacao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 const estilo = "rounded border p-2 text-sm";
 /** Moeda registrada na memória de cálculo do crédito (texto vazio se ausente: número formatado sem símbolo). */
 const moedaDoCalculo = (calculo: unknown) => {
@@ -17,7 +18,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
   async function executar(operacao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro("");
     try { const r = await operacao(); if (!r.ok) { setErro(r.erro ?? "Operação não aplicada."); return; } chave.current = ""; await aoSalvar(); }
-    catch { setErro("Consulte novamente antes de repetir: o resultado precisa ser conferido."); }
+    catch { setErro(MSG_RESULTADO_INCERTO); }
   }
   return <div className="space-y-2">
     <p>Registre a escolha do aluno entre remarcação e crédito do valor pago. Outra pessoa aprova. Crédito retira essas horas da disponibilidade, preserva o recebimento e não significa devolução de dinheiro.</p>

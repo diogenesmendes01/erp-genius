@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { consultarDesignacoesAula } from "@/server/diario/regularizacao-consultas";
 import { designarRegularizacaoAula, revogarRegularizacaoAula } from "@/server/diario/regularizacao-designacao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type DadosDesignacoes = {
   podeGerir: boolean;
@@ -73,7 +74,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
       await carregar();
       router.refresh();
     } catch {
-      setErro("Não foi possível registrar a designação. Tente novamente.");
+      setErro(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }
@@ -94,7 +95,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
       await carregar();
       router.refresh();
     } catch {
-      setErro("Não foi possível registrar a revogação. Tente novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setOcupado(false);
     }

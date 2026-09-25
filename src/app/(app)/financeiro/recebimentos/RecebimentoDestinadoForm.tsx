@@ -9,6 +9,7 @@ import { UploadArquivo } from "@/components/UploadArquivo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { rotuloVencimento, type VencimentoVisivel } from "./vencimento";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Contexto = { matriculaId: string; identificacaoMatricula: string; status: string; aluno: string; moeda: string; cobrancas: { id: string; codigo: string | null; tipo: string; vencimento: VencimentoVisivel; saldo: number }[]; pagadores: { id: string; rotulo: string }[] };
 type Linha = { cobrancaId: string; valor: string; evidencia: string };
@@ -43,7 +44,7 @@ export function RecebimentoDestinadoForm({ contextos }: { contextos: Contexto[] 
       ...((centavos(credito) ?? 0) > 0 ? [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: centavos(credito)! / 100, evidencia: evidenciaCredito, chaveIdempotencia: "credito-sem-destino" }] : []),
     ];
     emEnvio.current = true; setOcupado(true);
-    try { const r = await registrarRecebimentoDestinado({ titularMatriculaId: contexto.matriculaId, pagadorId: pagadorId || null, chaveIdempotencia: chave.current, valorRecebido: total, moeda: contexto.moeda, forma, dataPagamento: new Date(`${data}T12:00:00`).toISOString(), comentario: comentario || null, comprovanteUrl: comprovanteUrl || null, comprovanteNome: comprovanteNome || null, destinos }); if (!r.ok) { setErro(r.erro ?? "Não foi possível registrar o recebimento."); emEnvio.current = false; } else { setOperacaoIncerta(false); setSucesso("Recebimento confirmado."); } } catch { setErro("Não foi possível confirmar o recebimento. Os dados foram preservados para repetir esta mesma operação."); setOperacaoIncerta(true); emEnvio.current = false; } finally { setOcupado(false); }
+    try { const r = await registrarRecebimentoDestinado({ titularMatriculaId: contexto.matriculaId, pagadorId: pagadorId || null, chaveIdempotencia: chave.current, valorRecebido: total, moeda: contexto.moeda, forma, dataPagamento: new Date(`${data}T12:00:00`).toISOString(), comentario: comentario || null, comprovanteUrl: comprovanteUrl || null, comprovanteNome: comprovanteNome || null, destinos }); if (!r.ok) { setErro(r.erro ?? "Não foi possível registrar o recebimento."); emEnvio.current = false; } else { setOperacaoIncerta(false); setSucesso("Recebimento confirmado."); } } catch { setErro(MSG_RESULTADO_INCERTO); setOperacaoIncerta(true); emEnvio.current = false; } finally { setOcupado(false); }
   }
   function novoLancamento() { chave.current = crypto.randomUUID(); emEnvio.current = false; setMatriculaId(""); setLinhas([]); setCredito(""); setValor(""); setPagadorId(""); setForma(FormaPagamento.DINHEIRO); setData(""); setEvidenciaCredito(""); setComentario(""); setComprovanteUrl(""); setComprovanteNome(""); setErro(null); setSucesso(null); setOperacaoIncerta(false); }
   if (!contextos.length) return <p className="rounded border p-4 text-sm text-gray-600">Não há contratos disponíveis para recebimento.</p>;

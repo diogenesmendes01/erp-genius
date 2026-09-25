@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { materializarCasosHistoricosCorrecao } from "@/server/avaliacoes/casos-historicos";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function PrepararCasosHistoricos({ tipo, decisaoId }: { tipo: "REGULAR" | "RECUPERACAO"; decisaoId: string }) {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function PrepararCasosHistoricos({ tipo, decisaoId }: { tipo: "REGULAR" |
           : "Os casos de revisão já estavam preparados.");
         router.refresh();
       } catch {
-        setErro("Não foi possível preparar os casos de revisão. Atualize a fila e tente novamente.");
+        setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
       }
     });
   }

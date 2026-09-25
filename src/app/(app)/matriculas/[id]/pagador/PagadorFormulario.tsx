@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarPagadorPreparacao } from "@/server/secretaria/pagador-preparacao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Dados = { nome: string; paisId: string; documento?: string | null; email?: string | null; telefoneE164?: string | null; endereco?: string | null };
 export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matriculaId: string; versao: number; paises: { id: string; nome: string }[]; atual: { tipo: string; dados: Dados } | null }) {
   const [tipo, setTipo] = useState(atual?.tipo ?? ""), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
@@ -16,7 +17,7 @@ export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matr
       const pagador = tipo === "ALUNO" ? { tipo: "ALUNO" as const } : { tipo: tipo as "RESPONSAVEL" | "EMPRESA", dados: { nome: texto("nome"), paisId: texto("paisId"), documento: texto("documento") || undefined, email: texto("email") || undefined, telefoneE164: texto("telefoneE164") || undefined, endereco: texto("endereco") || undefined } };
       const r = await registrarPagadorPreparacao({ matriculaId, versaoEsperada: versao, pagador, motivo: texto("motivo"), chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Reenvie os mesmos dados ou atualize para conferir o registro."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <label className="block">Quem pagará<select required value={tipo} onChange={(e) => setTipo(e.target.value)} className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="ALUNO">Próprio aluno</option><option value="RESPONSAVEL">Responsável</option><option value="EMPRESA">Empresa</option></select></label>

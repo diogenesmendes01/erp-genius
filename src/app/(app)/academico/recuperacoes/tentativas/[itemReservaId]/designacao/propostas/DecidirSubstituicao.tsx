@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirSubstituicaoRecuperacao } from "@/server/avaliacoes/recuperacao-substituicao-proposta";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecidirSubstituicao({ propostaId, propostaHash, podeAprovar }: { propostaId: string; propostaHash: string; podeAprovar: boolean }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function DecidirSubstituicao({ propostaId, propostaHash, podeAprovar }: {
         setMensagem(aprovar ? "Substituição aprovada e aplicada conjuntamente à agenda e à designação." : "Proposta rejeitada; o histórico foi preservado.");
         router.refresh();
       } catch {
-        setErro("O resultado não foi confirmado. Consulte a proposta antes de repetir a decisão.");
+        setErro(MSG_DECISAO_INCERTA);
       }
     });
   }}>

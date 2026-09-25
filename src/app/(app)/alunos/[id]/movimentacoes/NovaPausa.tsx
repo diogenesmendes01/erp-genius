@@ -7,6 +7,7 @@ import { solicitarPausaMatriculas } from "@/server/matricula/pausa-proposta";
 import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverPausaMatriculas>>, { ok: true }>["dado"]>;
 export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; identificacao: string; produto: { nome: string } }[]; hoje: string | null }) {
@@ -39,7 +40,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
         if (!r.ok) { setErro(r.erro); return; }
         setPrevia(null); setIds([]); setMotivo(""); chave.current = "";
         setAviso("Proposta registrada. Consulte as propostas abaixo para acompanhar a decisão de outra pessoa autorizada. A pausa ainda não foi aplicada.");
-      } catch { setErro("Não foi possível confirmar o envio. Tente novamente sem alterar os dados para consultar o mesmo pedido."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   return <section className="space-y-4 rounded border p-4" aria-label="Solicitar pausa por contrato">

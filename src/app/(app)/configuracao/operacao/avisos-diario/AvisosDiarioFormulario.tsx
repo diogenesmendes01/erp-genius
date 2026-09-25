@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { salvarConfiguracaoAvisosDiario } from "@/server/diario/avisos-pendencias-diario";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Valores = { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
 
@@ -21,7 +22,7 @@ export function AvisosDiarioFormulario({ valores }: { valores: Valores }) {
       });
       setMensagem(resultado.ok ? "Avisos do diário configurados." : resultado.erro);
     } catch {
-      setMensagem("Não foi possível salvar os avisos do diário.");
+      setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally { setOcupado(false); }
   }
   return <form onSubmit={salvar} className="space-y-3 rounded border p-4">

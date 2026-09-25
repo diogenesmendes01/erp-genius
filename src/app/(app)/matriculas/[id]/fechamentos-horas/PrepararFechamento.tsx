@@ -6,6 +6,7 @@ import { prepararFechamentoHoras } from "@/server/matricula/fechamento-horas-ras
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -36,7 +37,7 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
         if (chave.current?.entrada !== serializada) chave.current = { entrada: serializada, valor: crypto.randomUUID() };
         setPreparado({ ...entrada, chaveIdempotencia: chave.current.valor });
         setMensagem(`Período de ${formatarDataCivil(contexto.periodo.inicio)} a ${formatarDataCivil(contexto.periodo.fim)}, em ${contexto.periodo.fuso}. Vencimento: ${formatarDataCivil(contexto.periodo.vencimento)}. Será criada a versão ${contexto.versaoAnterior + 1}. Confira antes de salvar.`);
-      } catch { setMensagem("Não foi possível confirmar o resultado. Consulte o histórico antes de repetir; a mesma entrada conserva sua chave de solicitação."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Preparar apuração mensal</legend>

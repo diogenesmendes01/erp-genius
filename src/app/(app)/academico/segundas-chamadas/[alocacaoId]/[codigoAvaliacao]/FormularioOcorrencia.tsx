@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarOcorrenciaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-ocorrencia-local";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 const tipos = [
   ["FALTA", "Falta"],
@@ -34,7 +35,7 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
       if (r.ok) router.refresh();
       else setMensagem(r.erro);
     } catch {
-      setMensagem("Resultado não confirmado. Reenvie sem alterar os dados.");
+      setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setOcupado(false);
     }

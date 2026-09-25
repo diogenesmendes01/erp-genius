@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirRegraAvaliacao, prepararRegraAvaliacao } from "@/server/avaliacoes/regras";
 import { nomesHabilidades, type ConteudoRegra } from "./ResumoRegra";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 const habilidades = Object.keys(nomesHabilidades) as (keyof typeof nomesHabilidades)[];
 const campo = "block w-full rounded border p-2";
@@ -32,7 +33,7 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
     try {
       const r = await prepararRegraAvaliacao({ nivelId, versaoEsperada, conteudo, motivo: texto("motivo"), chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Não foi possível confirmar o resultado. Tente novamente com os mesmos dados."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-4">
@@ -78,7 +79,7 @@ export function DecidirRegra({ regraId, conteudoHash, podeAprovar }: { regraId: 
     try {
       const r = await decidirRegraAvaliacao({ regraId, conteudoHash, aprovada: f.get("decisao") === "aprovar", motivo: String(f.get("motivo") ?? "") });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Tente novamente com a mesma decisão."); }
+    } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }} className="space-y-3">
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão sobre esta versão</legend>

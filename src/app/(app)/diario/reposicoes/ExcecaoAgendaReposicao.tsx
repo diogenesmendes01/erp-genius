@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { montarPropostaExcecaoAgenda, type HorarioExcecaoConferido } from "./ExcecaoAgendaControle";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export type ExcecaoAgenda = {
   id: string; professor: string; inicio: string; fim: string; fuso: string; motivo: string; evidencia: string;
@@ -39,7 +40,7 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, prefer
         const r = await proporExcecaoAgendaReposicaoIndividual(entrada);
         if (!r.ok) { setErro(r.erro); return; }
         setSucesso("Exceção proposta para decisão independente. A agenda não foi criada."); router.refresh();
-      } catch { setErro("A proposta não foi confirmada. Consulte a agenda antes de reenviar."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   };
   const decidir = (form: HTMLFormElement, excecaoId: string) => {
@@ -50,7 +51,7 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, prefer
         const r = await decidirExcecaoAgendaReposicaoIndividual({ excecaoId, aprovar: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") });
         if (!r.ok) { setErro(r.erro); return; }
         setSucesso("Decisão registrada. A aprovação não agenda a reposição."); router.refresh();
-      } catch { setErro("A decisão não foi confirmada. Consulte a fila antes de repetir."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   };
   return <section className="space-y-3 border-t pt-3" aria-label="Exceções de agenda da reposição">

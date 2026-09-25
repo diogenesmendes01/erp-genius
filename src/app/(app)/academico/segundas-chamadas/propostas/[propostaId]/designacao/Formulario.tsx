@@ -6,6 +6,7 @@ import { designarProfessorSegundaChamadaLocal } from "@/server/avaliacoes/segund
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function Formulario({ propostaId, professores, fusoInstitucional }: {
   propostaId: string;
@@ -40,7 +41,7 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
       if (r.ok) router.refresh();
       else setMensagem(r.erro);
     } catch {
-      setMensagem("Resultado não confirmado. Reenvie sem alterar os dados.");
+      setMensagem(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }

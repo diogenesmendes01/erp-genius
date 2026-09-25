@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo, invalidarAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalidar = false }: { propostaId: string; podeDecidir: boolean; podeAplicar: boolean; podeInvalidar?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
@@ -24,7 +25,7 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
       if (!r.ok) { setMensagem(r.erro); return; }
       setMensagem(operacao === "aplicar" ? "Acerto aplicado." : operacao === "invalidar" ? "Acerto invalidado; prepare uma nova proposta." : "Decisão registrada.");
       tentativa.current = null; router.refresh();
-    } catch { setMensagem("Não foi possível confirmar o resultado. Tente novamente para conferir a mesma operação."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { enviando.current = false; setOcupado(false); }
   }
   return <div className="space-y-2"><fieldset disabled={ocupado} className="space-y-2">

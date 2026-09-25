@@ -6,6 +6,7 @@ import { decidirTrocaFonteReposicaoGravacao, proporTrocaFonteReposicaoGravacao }
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Proposta = {
   id: string;
@@ -47,7 +48,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
       const resultado = await acao();
       if (!resultado.ok) { setErro(resultado.erro ?? "A operação não foi confirmada."); return; }
       setFeito(sucesso); router.refresh();
-    } catch { setErro("A operação não foi confirmada. Atualize a página antes de tentar novamente."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
   });
   const propor = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { proporPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-proposta";
 import { decidirPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-decisao";
-import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 type Habilidade = typeof HABILIDADES[number];
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -20,7 +20,7 @@ export function PrepararPlano({ alocacaoId, versaoEsperada, obrigatorias, seleci
       const r = await proporPlanoRecuperacao({ alocacaoId, versaoEsperada, chaveIdempotencia: chave.current, motivo: String(data.get("motivo") ?? ""), autorizacaoPreparacaoId,
         atividades: selecionadas.map(habilidade => ({ habilidade, estrategia: String(data.get(`estrategia-${habilidade}`) ?? ""), avaliacaoProposta: String(data.get(`avaliacao-${habilidade}`) ?? "") })) });
       if (!r.ok) setErro(r.erro); else { chave.current = null; router.refresh(); }
-    } catch { setErro("Resultado não confirmado. Reenvie sem alterar os dados para conferir a mesma proposta."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setEnviando(false); }
   }}>
     <h2 className="text-xl font-medium">Preparar plano de recuperação</h2>

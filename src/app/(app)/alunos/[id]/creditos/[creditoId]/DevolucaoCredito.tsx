@@ -7,6 +7,7 @@ import type { consultarPropostasUsoCredito } from "@/server/financeiro/uso-credi
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
@@ -14,7 +15,7 @@ const estilo = "block rounded border p-2";
 export function DevolucaoCredito({ dados }: { dados: Dados }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const chavesExecucao = useRef(new Map<string, string>()); const router = useRouter();
   const [valor, setValor] = useState("");
-  function enviar(acao: () => Promise<{ ok: boolean; erro?: string }>) { iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "Não foi possível concluir."); return; } router.refresh(); } catch { setErro("Resultado incerto. Consulte a reserva antes de repetir."); } }); }
+  function enviar(acao: () => Promise<{ ok: boolean; erro?: string }>) { iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "Não foi possível concluir."); return; } router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } }); }
   return <section className="space-y-4 border-t pt-4"><h2 className="text-xl font-medium">Devolução de crédito</h2><p>Disponível: {formatarMoeda(dados.valorCredito, dados.moeda)} · reservado: {formatarMoeda(dados.reservaDevolucao, dados.moeda)} · saída confirmada: {formatarMoeda(dados.devolvido, dados.moeda)}. Registrar a operação manualmente não cria recebimento. A aprovação reserva o valor; uma resposta incerta só é encerrada por conciliação com evidência.</p>
     {erro && <p role="alert">{erro}</p>}
     <form onChange={() => { chave.current = ""; }} onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const k = chave.current; enviar(async () => { const numero = parseMoeda(valor); if (numero === null) return { ok: false, erro: "Informe um valor válido, com no máximo duas casas decimais." }; const r = await proporDevolucaoCredito({ creditoId: dados.creditoId, valor: numero.toFixed(2), pedidoAluno: String(f.get("pedidoAluno")), evidenciaPedido: String(f.get("evidenciaPedido")), destino: String(f.get("destino")), motivo: String(f.get("motivo")), chaveIdempotencia: k }); if (r.ok) { chave.current = ""; setValor(""); } return r; }); }}><fieldset disabled={ocupado} className="space-y-2"><legend>Nova proposta de devolução</legend>

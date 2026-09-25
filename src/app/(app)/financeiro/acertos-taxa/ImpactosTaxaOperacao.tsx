@@ -9,6 +9,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Impacto = { cobrancaId: string; cobranca: { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string; status: string }; decisao: "AFETADA" | "PRESERVADA"; justificativa: string; propostaAcertoId: string | null; acertoStatus: string | null; aplicado: boolean };
 type Acerto = { id: string; cobrancaId: string; codigo: string; moeda: string; valorNovo: string; vencimentoNovo: string; status: string };
@@ -25,7 +26,7 @@ export function ImpactosTaxaOperacao({ conjunto, acertos, reprepararHref }: { co
       const r = operacao === "vincular" ? await vincularImpactoTaxaAditivo({ conjuntoId: conjunto.id, cobrancaId: cobrancaId!, propostaAcertoId: propostaAcertoId! }) : operacao === "concluir" ? await completarImpactosTaxaAditivo({ conjuntoId: conjunto.id }) : operacao === "obsoletar" ? await obsoletarImpactosTaxaAditivo({ conjuntoId: conjunto.id, motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave }) : await decidirImpactosTaxaAditivo({ conjuntoId: conjunto.id, aprovada: operacao === "aprovar", motivo: motivo.trim(), chaveIdempotencia: tentativa.current.chave });
       if (!r.ok) { setMensagem(r.erro); return; }
       setMensagem(operacao === "vincular" ? "Acerto vinculado à taxa afetada." : operacao === "concluir" ? "Conjunto completo registrado." : "Decisão do conjunto registrada."); tentativa.current = null; router.refresh();
-    } catch { setMensagem("Não foi possível confirmar a operação. Tente novamente para conferir a mesma tentativa."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }
   if (!conjunto) return <section className="rounded border p-4"><h2 className="text-xl">Impactos de taxa</h2><p role="status">O conjunto ainda não foi preparado na proposta do aditivo.</p></section>;
