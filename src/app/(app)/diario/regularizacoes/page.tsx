@@ -6,8 +6,9 @@ import { GerirDesignacoes } from "./GerirDesignacoes";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
-const ROTULO_STATUS: Record<string, string> = { NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho", PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada" };
+const ROTULO_STATUS: Record<string, string> = STATUS_ENCONTRO_LABEL;
 
 export default async function RegularizacoesAulaPage({ searchParams }: { searchParams: Promise<{ cursor?: string; modo?: "PENDENTES" | "HISTORICO" }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
