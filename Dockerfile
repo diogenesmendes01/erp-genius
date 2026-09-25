@@ -34,8 +34,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
-# HOSTNAME=0.0.0.0: Next standalone server.js precisa bind em todas as interfaces.
-# Sem isso, bind no container id (HOSTNAME padrão do Docker) e localhost:3000 é refused.
+# HOSTNAME=0.0.0.0: Next standalone server.js precisa bind em todas as interfaces IPv4.
+# Sem isso, bind no container id (HOSTNAME padrão do Docker) e o healthcheck local é refused.
+# Só IPv4: o healthcheck do compose usa 127.0.0.1 (o wget do BusyBox resolve localhost para ::1).
 ENV HOSTNAME=0.0.0.0
 
 # Usuário sem privilégio; data/uploads é volume (mídia WhatsApp + comprovantes).

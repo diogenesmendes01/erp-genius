@@ -120,7 +120,9 @@ services:
       # Readiness check: valida que o app está pronto (DB acessível, Prisma funcional).
       # Endpoint /api/ready faz SELECT 1 via Prisma — falha se engine errado ou DB down.
       # node:22-alpine tem wget; curl não vem instalado por padrão.
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/ready"]
+      # 127.0.0.1, NUNCA localhost: o wget do BusyBox resolve localhost para ::1 (IPv6) e não tenta o
+      # IPv4; o Next com HOSTNAME=0.0.0.0 escuta só IPv4 → "connection refused" sempre (visto na VPS).
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/ready"]
       interval: 30s
       timeout: 10s
       retries: 3

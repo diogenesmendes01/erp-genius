@@ -174,7 +174,7 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
     });
   });
 
-  it("runner escuta em todas as interfaces (HOSTNAME=0.0.0.0) para o healthcheck em localhost", () => {
+  it("runner escuta em todas as interfaces IPv4 (HOSTNAME=0.0.0.0) para o healthcheck local", () => {
     const envs = estagio("runner").instrucoes.filter((i) => i.op === "ENV").map((i) => i.args);
     expect(envs).toContain("HOSTNAME=0.0.0.0");
   });
@@ -188,6 +188,16 @@ describe("docker-compose.coolify.yml: healthcheck do app", () => {
       .replace(/\r\n/g, "\n");
     const app = compose.match(/^ {2}app:\s*\n((?:^(?: {4}.*)?\n)*)/m)?.[0] ?? "";
     const teste = app.split("\n").find((l) => /^\s*test:/.test(l)) ?? "";
-    expect(teste).toContain("http://localhost:3000/api/ready");
+    expect(teste).toContain("/api/ready");
+  });
+
+  it("chama 127.0.0.1, não localhost (wget do BusyBox resolve localhost para ::1 e o Next escuta só IPv4)", () => {
+    const compose = fs
+      .readFileSync(path.resolve(process.cwd(), "docker-compose.coolify.yml"), "utf8")
+      .replace(/\r\n/g, "\n");
+    const app = compose.match(/^ {2}app:\s*\n((?:^(?: {4}.*)?\n)*)/m)?.[0] ?? "";
+    const teste = app.split("\n").find((l) => /^\s*test:/.test(l)) ?? "";
+    expect(teste).toContain("http://127.0.0.1:3000/api/ready");
+    expect(teste).not.toMatch(/localhost|\[::1\]/);
   });
 });
