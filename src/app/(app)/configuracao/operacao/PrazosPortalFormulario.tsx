@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { salvarPrazosPortalAluno } from "@/server/portal-aluno/configuracao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 const campos = {
   prazoSessaoPortalAlunoMinutos: "Duração da sessão",
@@ -25,7 +26,7 @@ export function PrazosPortalFormulario({ valores }: { valores: Prazos }) {
         prazoValidacaoEmailPortalAlunoMinutos: Number(form.get("prazoValidacaoEmailPortalAlunoMinutos")),
       });
       setMensagem(resultado.ok ? "Prazos salvos para novas sessões e novos links." : resultado.erro);
-    } catch { setMensagem("Não foi possível salvar. Tente novamente."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setOcupado(false); }
   }
   return <form onSubmit={salvar} className="space-y-3 rounded border p-4">

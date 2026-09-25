@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirMigracaoRegra, proporMigracaoRegra } from "@/server/avaliacoes/migracao-regra";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada }: {
   turmaId: string; destinoId: string; estadoHash: string; versaoEsperada: number;
@@ -17,7 +18,7 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
     try {
       const r = await proporMigracaoRegra({ turmaId, destinoId, estadoHash, versaoEsperada, motivo: String(form.get("motivo") ?? ""), chaveIdempotencia: chave.current });
       if (!r.ok) setMensagem(r.erro); else { setMensagem("Proposta registrada. Outra pessoa autorizada poderá conferir e decidir."); router.refresh(); }
-    } catch { setMensagem("O resultado não foi confirmado. Tente novamente com os mesmos dados."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Encaminhar para decisão independente</legend>
@@ -35,7 +36,7 @@ export function DecidirMigracao({ propostaId, estadoHash, podeAprovar }: { propo
     try {
       const r = await decidirMigracaoRegra({ propostaId, estadoHash, aprovada: form.get("decisao") === "aprovar", motivo: String(form.get("motivo") ?? "") });
       if (!r.ok) setMensagem(r.erro); else { setMensagem(r.dado?.aplicada ? "Mudança aprovada e aplicada." : "Proposta rejeitada."); router.refresh(); }
-    } catch { setMensagem("O resultado não foi confirmado. Tente novamente com a mesma decisão."); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão desta proposta</legend>

@@ -3,6 +3,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Periodo = { id: string; nome: string; tipo: "FERIADO" | "RECESSO" | "FERIAS"; inicio: string; fim: string };
 export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConferido }: { periodosIniciais: Periodo[]; versaoAnterior: number; fusoConferido: string }) {
@@ -24,7 +25,7 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
         const r = await prepararCalendarioEscolar({ ...dados, chaveIdempotencia });
         if (!r.ok || !r.dado) { setErro(r.ok ? "Proposta não confirmada." : r.erro); return; }
         router.push(`/academico/calendario/${r.dado.id}`);
-      } catch { setErro("Não foi possível confirmar o envio. Reenvie os mesmos dados para conferir o resultado."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   const campo = "mt-1 block w-full rounded border bg-[var(--surface)] p-2";

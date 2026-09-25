@@ -7,6 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -47,7 +48,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       setCobrancaId(""); setMotivo(""); setEvidencia(""); tentativa.current = null;
       router.refresh();
     } catch {
-      setMensagem("Não foi possível confirmar o resultado. Tente novamente com os mesmos dados para conferir esta tentativa.");
+      setMensagem(MSG_RESULTADO_INCERTO);
     } finally {
       emEnvio.current = false;
       setOcupado(false);

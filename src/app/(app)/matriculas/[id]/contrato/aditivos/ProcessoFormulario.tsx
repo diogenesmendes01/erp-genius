@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararProcessoAssinaturaAditivo } from "@/server/contratos/aditivo-envio";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, conferenciaId, ambiente }: {
   matriculaId: string; propostaId: string; artefatoId: string; conferenciaId: string; ambiente: "SANDBOX" | "PRODUCAO";
@@ -12,7 +13,7 @@ export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, confer
   return <form className="space-y-3 rounded border p-4" onSubmit={event => { event.preventDefault(); if (fornecedor !== "ZAPSIGN" && fornecedor !== "CLICKSIGN" && fornecedor !== "DOCUSIGN") { setMensagem("Selecione o fornecedor."); return; }
     iniciar(async () => { try { const resultado = await prepararProcessoAssinaturaAditivo({ matriculaId, propostaId, artefatoId, conferenciaId, fornecedor, ambiente });
       if (!resultado.ok) setMensagem(resultado.erro); else { setMensagem("Processo preparado internamente."); router.refresh(); }
-    } catch { setMensagem("Não foi possível preparar o processo. Confira os registros antes de repetir a tentativa."); } });
+    } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); } });
   }}>
     <h2 className="text-xl">Preparar processo de assinatura</h2>
     <p>Esta preparação não envia o documento ao fornecedor e não conclui assinaturas.</p>

@@ -7,6 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -71,7 +72,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
             const r = await conferirParticipantesAditivo({ ...dados, chaveIdempotencia });
             if (!r.ok) { setMensagem(r.erro); return; }
             setMensagem(`Conferência registrada · versão ${r.dado?.versao}.`); setFormulario(null); setEvidencias({}); tentativa.current = null; router.refresh();
-          } catch { setMensagem("Não foi possível confirmar o registro. Repita sem alterar os dados para consultar a mesma tentativa ou confira o histórico."); }
+          } catch { setMensagem(MSG_RESULTADO_INCERTO); }
         });
       }}>
         {maioridade && <fieldset className="space-y-3 rounded border p-3" disabled={pendente}><legend>Critério de maioridade</legend>

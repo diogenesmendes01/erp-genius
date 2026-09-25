@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { designarAvaliador } from "@/server/avaliacoes/designacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEsperada, atualId, professores }: {
   alocacaoId: string; codigoAvaliacao: string; versaoEsperada: number; atualId: string | null; professores: { id: string; nome: string }[];
@@ -19,7 +20,7 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
         const r = await designarAvaliador({ alocacaoId, codigoAvaliacao, versaoEsperada, professorId: professor === "revogar" ? null : professor, motivo, chaveIdempotencia: chave.current });
         if (!r.ok) { setMensagem(r.erro); return; }
         setMensagem("Designação registrada."); router.refresh();
-      } catch { setMensagem("Não foi possível confirmar o resultado. Tente novamente para conferir a mesma solicitação."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <fieldset disabled={pendente} className="space-y-3">

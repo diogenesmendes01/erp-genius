@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirCalendarioEscolar } from "@/server/agenda/calendario-decisao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecidirCalendario({ id, podePublicar }: { id: string; podePublicar: boolean }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function DecidirCalendario({ id, podePublicar }: { id: string; podePublic
         const r = await decidirCalendarioEscolar({ calendarioId: id, aprovar, motivo });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a decisão. Atualize a versão antes de tentar novamente."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }
   return <section className="space-y-3 border-t pt-4">

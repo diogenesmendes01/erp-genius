@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { proporCorrecaoNota, decidirCorrecaoNota } from "@/server/avaliacoes/correcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; nota: string | null; comentarioAluno: string };
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -16,7 +17,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
       const r = await proporCorrecaoNota({ lancamentoId, origemHash, versaoEsperada, chaveIdempotencia: chave.current, motivo: String(f.get("motivo") ?? ""),
         notas: notas.map(n => ({ habilidade: n.habilidade, nota: String(f.get(`nota-${n.habilidade}`) ?? "").trim().replace(",", ".") || null, comentarioAluno: String(f.get(`comentario-${n.habilidade}`) ?? "") })) });
       if (!r.ok) setMensagem(r.erro); else { setMensagem("Proposta registrada. As notas permanecem vigentes até aprovação independente."); router.refresh(); }
-    } catch { setMensagem("Resultado não confirmado. Tente novamente com os mesmos dados."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Propor correção</legend>
     {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{nomes[n.habilidade]} — nota vigente: {n.nota}</p>
@@ -36,7 +37,7 @@ export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAp
     try {
       const r = await decidirCorrecaoNota({ propostaId, propostaHash, impactosHash, aprovada: f.get("decisao") === "aprovar", motivo: String(f.get("motivo") ?? "") });
       if (!r.ok) setMensagem(r.erro); else { setMensagem(r.dado?.aplicada ? "Correção aprovada e aplicada." : "Proposta rejeitada."); router.refresh(); }
-    } catch { setMensagem("Resultado não confirmado. Tente novamente com a mesma decisão."); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar</option>}<option value="rejeitar">Rejeitar</option></select></label>

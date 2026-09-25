@@ -6,6 +6,7 @@ import { concederCobertura, revogarCobertura } from "@/server/acesso/coberturas"
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibicao = null }: { vendedores: { id: string; nome: string }[]; coberturas: { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string }[]; preferenciaFusoExibicao?: string | null }) {
   const [erro, setErro] = useState<string | null>(null);
@@ -18,9 +19,9 @@ export function CoberturasPainel({ vendedores, coberturas, preferenciaFusoExibic
     try {
       const resultado = await concederCobertura({ titularId: String(dados.get("titularId")), substitutoId: String(dados.get("substitutoId")), inicio: new Date(String(dados.get("inicio"))).toISOString(), fim: new Date(String(dados.get("fim"))).toISOString(), motivo: String(dados.get("motivo")) });
       if (!resultado.ok) setErro(resultado.erro); else { form.reset(); router.refresh(); }
-    } catch { setErro("Não foi possível registrar a cobertura. Confira o período."); } finally { setOcupado(false); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } finally { setOcupado(false); }
   }
-  async function revogar(id: string) { setErro(null); setOcupado(true); try { const r = await revogarCobertura(id); if (!r.ok) setErro(r.erro); else router.refresh(); } catch { setErro("Não foi possível revogar a cobertura. Tente novamente."); } finally { setOcupado(false); } }
+  async function revogar(id: string) { setErro(null); setOcupado(true); try { const r = await revogarCobertura(id); if (!r.ok) setErro(r.erro); else router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } finally { setOcupado(false); } }
   const estilo = "rounded border border-gray-300 p-2 text-sm";
   return <div className="space-y-5">
     <form onSubmit={salvar} className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">

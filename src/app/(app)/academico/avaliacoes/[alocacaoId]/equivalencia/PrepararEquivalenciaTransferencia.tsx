@@ -6,6 +6,7 @@ import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } fro
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
@@ -127,7 +128,7 @@ export function PrepararEquivalenciaTransferencia({
       setMensagem("Proposta registrada para decisão independente. Nenhuma transferência ou lançamento foi aplicado.");
       router.push(`/academico/equivalencias/${encodeURIComponent(r.dado!.id)}`);
     } catch {
-      setErro("O resultado não foi confirmado. Tente novamente com os mesmos dados.");
+      setErro(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }

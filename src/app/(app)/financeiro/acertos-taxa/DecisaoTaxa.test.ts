@@ -4,6 +4,7 @@ vi.mock("react", async original => ({ ...await original<typeof import("react")>(
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ decidirAcertoTaxaAditivo: m.decidir, aplicarAcertoTaxaAditivo: m.aplicar, invalidarAcertoTaxaAditivo: m.invalidar }));
 import { DecisaoTaxa } from "./DecisaoTaxa";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 function buttons(node: unknown): Array<{ onClick: () => Promise<void>; children: string }> {
   if (Array.isArray(node)) return node.flatMap(buttons);
   if (!node || typeof node !== "object") return [];
@@ -36,7 +37,7 @@ it("uma decisão diferente recebe outra chave", async () => {
 });
 it("aplicação incerta permite conferir a mesma tentativa", async () => {
   const c = mount(false, true); m.aplicar.mockRejectedValueOnce(new Error("Rede")); await c.botoes[0].onClick();
-  expect(c.mensagem).toHaveBeenCalledWith(expect.stringContaining("Não foi possível confirmar")); expect(m.refresh).not.toHaveBeenCalled();
+  expect(c.mensagem).toHaveBeenCalledWith(MSG_RESULTADO_INCERTO); expect(m.refresh).not.toHaveBeenCalled();
   m.aplicar.mockResolvedValueOnce({ ok: true }); await c.botoes[0].onClick();
   expect(m.aplicar.mock.calls[0][0]).toEqual(m.aplicar.mock.calls[1][0]); expect(m.refresh).toHaveBeenCalledTimes(1);
 });

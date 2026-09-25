@@ -13,6 +13,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Matricula = { exigeAssinaturaIntegrada: boolean; mensalidadesExibidas: { id: string; versao: number; valor: string; moeda: string; inicio: string | null; fim: string | null; vencimento: string }[]; cobertura: { cobrancaId: string | null; versao: number | null; vencimento: string | null; referencia: string | null; inicio: string | null; fim: string | null }; id: string; codigo: string | null; leadId: string | null; alunoId: string | null; nome: string; status: string; assumida: boolean; contratoConfirmado: boolean; documentos: { id: string; nome: string; categoria: string; matriculaId: string | null; url: string }[]; correcoes: { id: string; campo: string; valorProposto: string | null; motivo: string; status: string; motivoResolucao: string | null }[] };
 const campos = { primeiroNome: "Primeiro nome", sobrenome: "Sobrenome", nomePreferido: "Nome preferido", email: "E-mail", telefoneE164: "Telefone com DDI", documentos: "Documento (descreva a correção)" };
@@ -24,7 +25,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [categorias, setCategorias] = useState<Record<string, CategoriaDocumento>>({});
-  async function executar(operacao: () => Promise<{ ok: boolean; erro?: string }>) { setErro(null); setOcupado(true); try { const r = await operacao(); if (!r.ok) setErro(r.erro ?? "Operação não concluída."); else router.refresh(); } catch { setErro("Não foi possível concluir a operação."); } finally { setOcupado(false); } }
+  async function executar(operacao: () => Promise<{ ok: boolean; erro?: string }>) { setErro(null); setOcupado(true); try { const r = await operacao(); if (!r.ok) setErro(r.erro ?? "Operação não concluída."); else router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } finally { setOcupado(false); } }
   function pedir(e: FormEvent<HTMLFormElement>, matriculaId: string) { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => solicitarCorrecaoCadastro({ matriculaId, campo: String(f.get("campo")) as Campo, valorProposto: String(f.get("valor")), motivo: String(f.get("motivo")) })); }
   function resolver(e: FormEvent<HTMLFormElement>, id: string) { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => resolverCorrecaoCadastro(id, { aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")), documentoId: String(f.get("documentoId") ?? "") || undefined })); }
   function confirmar(e: FormEvent<HTMLFormElement>, id: string) { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => confirmarContratoMatricula(id, String(f.get("documentoId")), matriculas.find((m) => m.id === id)!.mensalidadesExibidas.map(({ id, versao }) => ({ id, versao })))); }

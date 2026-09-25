@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarPreviaContratual } from "@/server/contratos/previas";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function RegistrarPrevia({ matriculaId, modeloId, revisaoHash }: { matriculaId: string; modeloId: string; revisaoHash: string }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -13,7 +14,7 @@ export function RegistrarPrevia({ matriculaId, modeloId, revisaoHash }: { matric
       const r = await registrarPreviaContratual({ matriculaId, modeloId, revisaoHash, aplicacaoConferida: true, motivo: String(d.get("motivo") ?? ""), chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro);
       else if (r.dado) { router.push(`/matriculas/${matriculaId}/contrato/previas/${r.dado.id}`); router.refresh(); }
-    } catch { setErro("Resultado não confirmado. Consulte o histórico ou reenvie os mesmos dados."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3">

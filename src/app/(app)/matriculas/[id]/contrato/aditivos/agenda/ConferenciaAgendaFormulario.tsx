@@ -5,6 +5,7 @@ import { consultarConferenciaAgendaAditivo, registrarPropostaAgendaAditivo } fro
 import Link from "next/link";
 import { alternarEncontro, montarAlteracoesAgenda, professorSelecionado } from "./controle";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Encontro = { id: string; inicio: string; fim: string; fusoOrigem: string; professorId: string | null; professor: string };
 type Professor = { id: string; nome: string };
@@ -34,7 +35,7 @@ export function RegistrarFotografia({ matriculaId, resultado }: { matriculaId: s
     try { const r = await registrarPropostaAgendaAditivo({ matriculaId, encontros: resultado.proposta.encontros.map(e => ({ encontroId: e.encontroId, professorNovoId: e.professorNovoId, inicioNovo: e.inicioNovo, fimNovo: e.fimNovo, duracaoMinutos: e.duracaoMinutos, fusoOrigem: e.fusoNovo })), chaveIdempotencia: chave });
       if (!r.ok || !r.dado) { setMensagem(r.ok ? "Fotografia indisponível. Repita sem editar para consultar a mesma tentativa." : r.erro); return; }
       setId(r.dado.id); setMensagem("Fotografia registrada. A Secretaria deve vinculá-la à proposta contratual.");
-    } catch { setMensagem("Não foi possível confirmar o registro. Repita sem editar para consultar a mesma tentativa."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
   });
   if (id) return <section className="rounded border p-3"><p role="status">{mensagem}</p><Link className="underline" href={`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos?agenda=${encodeURIComponent(id)}`}>Vincular esta fotografia à proposta de aditivo</Link></section>;
   return <section className="rounded border p-3"><p>Nenhuma pendência identificada nesta conferência. Registrar preserva a fotografia e não cria nem aprova o aditivo.</p>{mensagem && <p role="alert">{mensagem}</p>}<button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={registrar} disabled={pendente}>{pendente ? "Registrando…" : "Registrar fotografia da agenda"}</button></section>;

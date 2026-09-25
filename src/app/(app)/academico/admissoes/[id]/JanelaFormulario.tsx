@@ -2,7 +2,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararJanelaAdmissao, decidirJanelaAdmissao } from "@/server/matricula/janela-admissao";
-import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 
 export function JanelaFormulario({ turmaId, versaoAnterior, fusoConferido }: { turmaId: string; versaoAnterior: number; fusoConferido: string }) {
@@ -22,7 +22,7 @@ export function JanelaFormulario({ turmaId, versaoAnterior, fusoConferido }: { t
         const r = await prepararJanelaAdmissao({ ...dados, chaveIdempotencia });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a preparação. Reenvie os mesmos dados para conferir o resultado."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4"><h2 className="font-medium">Preparar nova janela</h2>

@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -32,7 +33,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       if (!r.ok) { setErro(r.erro ?? "Não foi possível registrar."); return; }
       setAviso(sucesso);
       try { await atualizar(); } catch { setErro("Registro salvo, mas a consulta falhou. Atualize os cumprimentos antes de continuar."); }
-    } catch { setErro("Resultado incerto. Atualize os cumprimentos ou repita sem alterar os dados."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
   }
   return <article className="space-y-2 rounded border p-3" aria-label={`Cobertura de ${formatarDataCivil(dia.dataCobertura)}`}>
     <h4 className="font-medium">Cobertura de {formatarDataCivil(dia.dataCobertura)} · {estados[dia.estado]}</h4>

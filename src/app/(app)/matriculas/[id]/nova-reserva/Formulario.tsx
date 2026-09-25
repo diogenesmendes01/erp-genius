@@ -6,6 +6,7 @@ import { rotular, STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL } from "@/lib/label
 import { consultarFormularioNovaReserva, revisarNovaReservaParticular, confirmarNovaReservaParticular } from "@/server/matricula/nova-reserva-particular";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Base = NonNullable<Extract<Awaited<ReturnType<typeof consultarFormularioNovaReserva>>, { ok: true }>["dado"]>;
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarNovaReservaParticular>>, { ok: true }>["dado"]>;
 export function NovaReservaFormulario({ base }: { base: Base }) {
@@ -34,7 +35,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
     const r = await confirmarNovaReservaParticular({ ...entrada(), revisaoHash: revisao.revisaoHash, motivo, chaveIdempotencia: chave.current, dadosConferidos: true });
     if (!r.ok) { setMensagem(r.erro); return; }
     router.push(`/matriculas/${base.matriculaId}/preparacao`); router.refresh();
-  } catch { setMensagem("Resultado não confirmado. Repita com os mesmos dados para conferir a tentativa."); } }); }
+  } catch { setMensagem(MSG_RESULTADO_INCERTO); } }); }
   const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: revisao?.agenda.fuso ?? "UTC" }).format(new Date(v));
   return <div className="space-y-4"><fieldset disabled={ocupado} className="space-y-3">
     <legend>{base.formaAgenda === "PARTICULAR_GRADE_FIXA" ? "Informe todos os encontros recorrentes acordados" : "Reserve ao menos o primeiro encontro; os seguintes dependem de agendamento"}</legend>

@@ -21,6 +21,7 @@ import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
@@ -178,7 +179,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
           if (!salvo.ok) { setErro(salvo.erro); return; }
           setRascunho(salvo.dado ?? null); setValidade(null); limparPrevia(); setAviso(`Rascunho versão ${r.dado.versao} salvo. Acerto ainda não aprovado nem efetivado.`);
           router.refresh();
-        } catch { setErro("Resultado incerto. Repita sem alterar a conferência para recuperar o mesmo rascunho."); }
+        } catch { setErro(MSG_RESULTADO_INCERTO); }
       }); }}>Salvar rascunho financeiro</button>
     </div>}
   </section>;

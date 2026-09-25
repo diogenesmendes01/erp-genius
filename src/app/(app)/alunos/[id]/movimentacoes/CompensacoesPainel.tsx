@@ -11,6 +11,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -36,7 +37,7 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
           if (!r.ok) { setErro(r.erro); return; }
           setAviso(aprovar ? "Dias aprovados. Recomposição e acerto financeiro continuam em etapas próprias." : "Proposta rejeitada.");
           try { await atualizar(); } catch { setErro("Decisão registrada, mas a consulta não foi atualizada. Carregue as compensações novamente."); }
-        } catch { setErro("Resultado incerto. Atualize a consulta antes de repetir a decisão."); }
+        } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
       });
     }}><fieldset disabled={ocupado} className="space-y-2">
       <label className="grid gap-1">Decisão<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar dias de compensação</option><option value="rejeitar">Rejeitar proposta</option></select></label>
@@ -87,7 +88,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
             if (!r.ok) { setErro(r.erro); return; }
             setAviso("Proposta registrada para decisão de outra pessoa autorizada."); form.reset(); setDias([]); chave.current = "";
             try { await atualizar(); } catch { setErro("Proposta registrada, mas a consulta não foi atualizada. Carregue as compensações novamente."); }
-          } catch { setErro("Resultado incerto. Repita sem alterar os dados para recuperar a mesma proposta."); }
+          } catch { setErro(MSG_RESULTADO_INCERTO); }
         });
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Preparar proposta</legend>

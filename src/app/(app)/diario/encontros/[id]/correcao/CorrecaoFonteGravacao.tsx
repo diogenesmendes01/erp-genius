@@ -4,6 +4,7 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { proporRegularizacaoFonteGravacao } from "@/server/gravacoes/regularizacao-fonte";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacaoId: string | null; podePropor: boolean }) {
   const [ocupado, iniciar] = useTransition();
@@ -29,7 +30,7 @@ export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacao
         if (!resultado.ok || !resultado.dado) { setErro(resultado.ok ? "Não foi possível preparar a proposta." : resultado.erro); return; }
         setFeito("Proposta registrada para decisão independente. A gravação atual continua vigente até aprovação.");
       } catch {
-        setErro("Não foi possível preparar a proposta. Recarregue a aula para conferir sua autorização.");
+        setErro(MSG_RESULTADO_INCERTO);
       }
     });
   };

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { registrarConferenciaAssinaturaAditivo } from "@/server/contratos/aditivo-assinatura";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revisaoHash }: { matriculaId: string; propostaId: string; artefatoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
   const tentativa = useRef<{ dados: string; chave: string } | null>(null);
@@ -15,7 +16,7 @@ export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revi
     iniciar(async () => { try {
       const r = await registrarConferenciaAssinaturaAditivo({ ...dados, chaveIdempotencia });
       if (!r.ok) { setMensagem(r.erro); return; } setMensagem("Conferência do original registrada."); router.refresh();
-    } catch { setMensagem("Não foi possível confirmar o registro. Confira o histórico ou repita sem alterar os dados para consultar a mesma tentativa."); } });
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); } });
   }}>
     <h2 className="text-xl">Registrar conferência do original</h2>
     <label className="block"><input type="checkbox" required disabled={pendente} /> Abri o PDF preservado e conferi o documento, a vigência e os signatários apresentados.</label>

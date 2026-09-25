@@ -10,6 +10,7 @@ import {
 } from "@/server/matricula/indisponibilidade-oferta-termino";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -70,7 +71,7 @@ export function TerminoIndisponibilidadeOferta({
             router.refresh();
           } else setErro(resultado.erro);
         } catch {
-          setErro("Atualize o histórico para conferir o resultado antes de repetir a proposta.");
+          setErro(MSG_RESULTADO_INCERTO);
         }
       });
     }}>
@@ -110,7 +111,7 @@ export function TerminoIndisponibilidadeOferta({
               router.refresh();
             } else setErro(resultado.erro);
           } catch {
-            setErro("Atualize o histórico para conferir a decisão antes de repetir.");
+            setErro(MSG_DECISAO_INCERTA);
           }
         });
       }}>

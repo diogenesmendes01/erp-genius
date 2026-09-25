@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { consultarDisponibilidadesOferta, proporDisponibilidadeOferta, decidirDisponibilidadeOferta } from "@/server/matricula/disponibilidade-oferta";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarDisponibilidadesOferta>>, { ok: true }>["dado"]>;
 const campo = "block w-full rounded border p-2";
@@ -19,7 +20,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
   }
   async function executar(acao: () => Promise<void>) {
     setOcupado(true); setErro(null);
-    try { await acao(); } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível confirmar o resultado. Confira o histórico antes de repetir."); }
+    try { await acao(); } catch (e) { setErro(e instanceof Error ? e.message : MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setOcupado(false); }
   }
   return <div className="space-y-4">
