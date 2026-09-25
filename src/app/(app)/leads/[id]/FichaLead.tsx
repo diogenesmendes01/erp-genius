@@ -543,7 +543,7 @@ function Resumo({
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-medium">Resumo executivo</h2>
-        <button className="text-xs text-brand-700 hover:text-brand-800" onClick={() => { acao.limpar(); setEditar(!editar); }}>
+        <button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={() => { acao.limpar(); setEditar(!editar); }}>
           {editar ? "Cancelar" : "Editar"}
         </button>
       </div>

@@ -30,6 +30,48 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
 };
 
+/**
+ * <button> que não passam por botaoClasses porque não são ação (o Botao não tem papel para eles):
+ * botão só de ícone, ficha/chip de seleção, card ou item de lista, aba segmentada, alça de arrastar.
+ * Contados por arquivo — qualquer outro <button> das áreas migradas precisa de botaoClasses.
+ */
+const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, number> = {
+  "src/app/(app)/financeiro/FilaCobranca.tsx": 3, // cartão-indicador, linha da fila, ✕ de fechar
+  "src/app/(app)/inbox/InboxCliente.tsx": 6, // item de conversa, 3 ícones (anexar, gravar, fechar), fichas de temperatura, item de nome
+  "src/app/(app)/pipeline/KanbanBoard.tsx": 2, // alça de arrastar, seletor de tipo (segmentado)
+  "src/app/(app)/configuracao/paises/PaisFormulario.tsx": 1, // ícone de lixeira
+  "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 1, // chip de dia da semana
+  "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": 1, // ícone de fechar
+  "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 1, // chip de dia da semana
+  "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": 2, // × de remover item, item da lista suspensa
+  "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": 1, // ícone de fechar
+  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // etapa do assistente
+};
+
+/** Rótulo de cada <button> do fonte cujo className não passa por botaoClasses (direto ou por constante). */
+export function botoesForaDoDesign(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const chama = (n: ts.Node): boolean =>
+    (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") || (ts.forEachChild(n, chama) ?? false);
+  const deBotao = new Set<string>();
+  const coletar = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && chama(n.initializer)) deBotao.add(n.name.text);
+    ts.forEachChild(n, coletar);
+  };
+  coletar(sf);
+  const usa = (n: ts.Node): boolean => chama(n) || (ts.isIdentifier(n) && deBotao.has(n.text)) || (ts.forEachChild(n, usa) ?? false);
+  const achados: string[] = [];
+  const visitar = (n: ts.Node) => {
+    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
+      const attr = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
+      if (!attr?.initializer || !usa(attr.initializer)) achados.push(ts.isJsxOpeningElement(n) ? textosVisiveis(n.parent, sf) || "(ícone)" : "(ícone)");
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return achados;
+}
+
 const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
 
 /** Ofensas num fonte TSX: literais de botão primário e <button>/<Link>/<a> com classes de botão à mão. */
@@ -197,6 +239,29 @@ describe("botões nas áreas migradas", () => {
     // Botão que usa uma constante de botão: registrado com o nome dela (trocar btnPri por btnSec quebra).
     expect(mapaDeBotoes('const btnPri = botaoClasses(); <button className={btnPri}>Registrar pagamento</button><button className={`${btnPri} mt-3`}>Ok</button>'))
       .toEqual(["const btnPri → primario/md", "<button> Registrar pagamento → btnPri", "<button> Ok → btnPri"]);
+  });
+
+  it("todo <button> das áreas migradas passa por botaoClasses (sem classe ou com cara de texto também); controles que não são ação, contados", () => {
+    const ofensores = arquivos.flatMap(({ arquivo, conteudo }) => {
+      if (/\.test\./.test(arquivo)) return [];
+      const achados = botoesForaDoDesign(conteudo);
+      return achados.length > (CONTROLES_QUE_NAO_SAO_BOTAO[arquivo] ?? 0) ? [`${arquivo}: ${achados.join(" | ")}`] : [];
+    });
+    expect(ofensores).toEqual([]);
+  });
+
+  it("a lista de controles que não são botão não sobra", () => {
+    const sobrando = Object.entries(CONTROLES_QUE_NAO_SAO_BOTAO).filter(([a, n]) => botoesForaDoDesign(arquivos.find((x) => x.arquivo === a)?.conteudo ?? "").length < n);
+    expect(sobrando).toEqual([]);
+  });
+
+  it("botoesForaDoDesign pega botão sem classe e com cara de texto; aceita botaoClasses direto ou por constante", () => {
+    expect(botoesForaDoDesign("<button onClick={f}>Registrar decisão</button>")).toEqual(["Registrar decisão"]);
+    expect(botoesForaDoDesign('<button className="underline">Registrar evidência</button>')).toEqual(["Registrar evidência"]);
+    expect(botoesForaDoDesign('<button className="text-gray-400"><IconX /></button>')).toEqual(["(ícone)"]);
+    expect(botoesForaDoDesign('<button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Editar</button>')).toEqual([]);
+    expect(botoesForaDoDesign("const btnSec = botaoClasses(); <button className={`${btnSec} mt-3`}>Ok</button>")).toEqual([]);
+    expect(botoesForaDoDesign('const btnSec = "underline"; <button className={btnSec}>Ok</button>')).toEqual(["Ok"]);
   });
 
   it("a lista de exceções não sobra", () => {
