@@ -176,7 +176,7 @@ export async function enfileirarCobrancaWhatsApp(cobrancaId: string): Promise<Re
     });
     if (intencao) await despacharFila(new Date(), { intencaoId: intencao.id });
     const final = intencao ? await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id } }) : null;
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return { passo, status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
   });
 }
@@ -214,7 +214,7 @@ export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Res
       const r = await despacharFila(new Date(), { intencaoId: i.id });
       despacho.despachadas += r.despachadas; despacho.simuladas += r.simuladas; despacho.falhas += r.falhas;
     }
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return {
       enfileiradas,
       puladas,
@@ -920,7 +920,7 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
     });
 
     revalidatePath("/configuracao/whatsapp", "layout");
-    revalidatePath("/financeiro"); // timeline do drawer lê a política do banco (E2)
+    revalidatePath("/financeiro", "layout"); // timeline do drawer lê a política do banco (E2)
   });
 }
 
@@ -946,6 +946,6 @@ export async function acionarKillSwitchRegua(ligado: boolean): Promise<Resultado
       });
     });
     revalidatePath("/configuracao/whatsapp", "layout");
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
   });
 }

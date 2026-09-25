@@ -13,7 +13,7 @@ export async function emitirFechamentoHoras(input: z.input<typeof Entrada>) {
     const resultado = await prisma.$transaction(tx => emitirFechamentoHorasTx(tx, { ...d, executorId: autor.id }));
     revalidatePath(`/matriculas/${d.matriculaId}/fechamentos-horas`);
     revalidatePath(`/alunos/${d.alunoId}/financeiro`);
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return resultado;
   });
 }

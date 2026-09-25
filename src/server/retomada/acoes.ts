@@ -15,7 +15,7 @@ const SOLICITANTES: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO, Pap
 const APROVADORES: Papel[] = [Papel.FINANCEIRO, Papel.ADMINISTRADOR];
 
 function revalidar(alunoId: string) {
-  revalidatePath("/financeiro"); revalidatePath("/secretaria"); revalidatePath("/alunos", "layout");
+  revalidatePath("/financeiro", "layout"); revalidatePath("/secretaria"); revalidatePath("/alunos", "layout");
   revalidatePath(`/alunos/${alunoId}/financeiro`);
 }
 
