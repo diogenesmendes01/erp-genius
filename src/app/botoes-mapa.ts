@@ -58,7 +58,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Processando… · Aplicar cadastros confirmados → primario/md",
   ],
   "configuracao/migracao/[loteId]/AplicarVinculoMigracao.tsx": [
-    "<button> Remover → secundario/md",
+    "<button> Remover → secundario/sm",
     "<button> Adicionar fato → secundario/sm",
     "<button> Aplicando… · Aplicar vínculo conferido → primario/sm",
   ],
@@ -92,7 +92,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/paises/PaisesPainel.tsx": [
     "<button> Novo país → primario/lg",
     "<button> Editar → fantasma/sm",
-    "<button> → fantasma/sm",
+    "<button> key a.alvo → fantasma/sm",
     "<button> Catálogo → fantasma/sm",
   ],
   "configuracao/turmas/ImportarTurmasModal.tsx": [
@@ -958,7 +958,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar pagamento → btnSec",
     "<button> Promessa de pagamento → btnSec",
     "<button> Registrar → btnSec",
-    "<button> → btnPri",
+    "<button> Enviar → btnPri",
     "<button> → → btnSec",
     "<button> Notas internas · → btnSec",
     "<button> Salvar nota → primario/sm",

@@ -28,27 +28,53 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/pipeline/KanbanBoard.tsx": 2, // alça "⠿ arrastar" do cartão e seletor de tipo (segmentado)
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
+  "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
 };
 
 /**
  * <button> que não passam por botaoClasses porque não são ação (o Botao não tem papel para eles):
  * botão só de ícone, ficha/chip de seleção, card ou item de lista, aba segmentada, alça de arrastar.
- * Contados por arquivo — qualquer outro <button> das áreas migradas precisa de botaoClasses.
+ * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
-const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, number> = {
-  "src/app/(app)/financeiro/FilaCobranca.tsx": 3, // cartão-indicador, linha da fila, ✕ de fechar
-  "src/app/(app)/inbox/InboxCliente.tsx": 6, // item de conversa, 3 ícones (anexar, gravar, fechar), fichas de temperatura, item de nome
-  "src/app/(app)/pipeline/KanbanBoard.tsx": 2, // alça de arrastar, seletor de tipo (segmentado)
-  "src/app/(app)/configuracao/paises/PaisFormulario.tsx": 1, // ícone de lixeira
-  "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 1, // chip de dia da semana
-  "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": 1, // ícone de fechar
-  "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 1, // chip de dia da semana
-  "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": 2, // × de remover item, item da lista suspensa
-  "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": 1, // ícone de fechar
-  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // etapa do assistente
+const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/configuracao/paises/PaisFormulario.tsx": ["Remover documento"], // ícone de lixeira
+  "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": ["key d.n"], // chip de dia da semana
+  "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": ["Fechar"], // ícone de fechar
+  "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": ["key d"], // chip de dia da semana
+  "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": ["×", "(sem nome)"], // × de remover do piloto, item da lista suspensa
+  "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": ["Fechar"], // ícone de fechar
+  "src/app/(app)/financeiro/FilaCobranca.tsx": ["key d.label", "(sem nome)", "✕"], // cartão-indicador, linha da fila, ✕ do detalhe
+  // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, fichas de temperatura, item de nome.
+  "src/app/(app)/inbox/InboxCliente.tsx": ["— · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", 't === temperatura ? "Temperatura atual" : `Marcar como ${TEM', "key i.id"],
+  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
+  "src/app/(app)/pipeline/KanbanBoard.tsx": ["⠿ arrastar", "pf · Pessoa Física · Empresa (B2B)"], // alça de arrastar, seletor de tipo
 };
 
-/** Rótulo de cada <button> do fonte cujo className não passa por botaoClasses (direto ou por constante). */
+/** Classes que podem acompanhar botaoClasses num className: só layout (margem, alinhamento, largura). */
+const SO_LAYOUT = /^(-?m[trblxy]?-\S+|self-\S+|justify-self-\S+|w-fit|w-full|shrink-0|ml-auto|flex-1)$/;
+
+/**
+ * Nome de um elemento para localizá-lo: texto visível; senão aria-label/title (botão de ícone);
+ * senão a expressão do `key` (item gerado por map, texto dinâmico); senão null.
+ */
+function nomeDoElemento(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile): string | null {
+  const texto = ts.isJsxOpeningElement(n) ? textosVisiveis(n.parent, sf) : "";
+  if (texto) return texto;
+  for (const nome of ["aria-label", "title", "key"]) {
+    const a = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+    const ini = a?.initializer;
+    if (ini && ts.isStringLiteral(ini)) return ini.text;
+    if (ini && ts.isJsxExpression(ini) && ini.expression) return `${nome === "key" ? "key " : ""}${ini.expression.getText(sf).replace(/\s+/g, " ").slice(0, 60)}`;
+  }
+  return null;
+}
+
+/**
+ * Rótulo de cada <button> do fonte cujo className não é, em todos os estados, botaoClasses (direto
+ * ou por constante montada com ele) mais, no máximo, classes de layout. Avalia as folhas: ternário e
+ * `||`/`??` — os dois lados; `&&` — o lado direito; template e `+` — ao menos uma parte é botão e o
+ * resto é só layout (`${botaoClasses()} underline px-0` não passa).
+ */
 export function botoesForaDoDesign(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const chama = (n: ts.Node): boolean =>
@@ -59,12 +85,37 @@ export function botoesForaDoDesign(fonte: string): string[] {
     ts.forEachChild(n, coletar);
   };
   coletar(sf);
-  const usa = (n: ts.Node): boolean => chama(n) || (ts.isIdentifier(n) && deBotao.has(n.text)) || (ts.forEachChild(n, usa) ?? false);
+  const soLayout = (t: string) => t.split(/\s+/).filter(Boolean).every((c) => SO_LAYOUT.test(c));
+  const literal = (e: ts.Node) => (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) ? e.text : null);
+  const partesDaSoma = (e: ts.Expression): ts.Expression[] =>
+    ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken ? [...partesDaSoma(e.left), ...partesDaSoma(e.right)] : ts.isParenthesizedExpression(e) ? partesDaSoma(e.expression) : [e];
+  const passa = (e: ts.Node): boolean => {
+    if (ts.isJsxExpression(e)) return !!e.expression && passa(e.expression);
+    if (ts.isParenthesizedExpression(e)) return passa(e.expression);
+    if (ts.isCallExpression(e) && ts.isIdentifier(e.expression) && e.expression.text === "botaoClasses") return true;
+    if (ts.isIdentifier(e)) return deBotao.has(e.text);
+    if (ts.isConditionalExpression(e)) return passa(e.whenTrue) && passa(e.whenFalse);
+    if (ts.isBinaryExpression(e)) {
+      const op = e.operatorToken.kind;
+      if (op === ts.SyntaxKind.BarBarToken || op === ts.SyntaxKind.QuestionQuestionToken) return passa(e.left) && passa(e.right);
+      if (op === ts.SyntaxKind.AmpersandAmpersandToken) return passa(e.right);
+      if (op === ts.SyntaxKind.PlusToken) {
+        const partes = partesDaSoma(e);
+        return partes.some(passa) && partes.every((p) => passa(p) || (literal(p) !== null && soLayout(literal(p)!)));
+      }
+    }
+    if (ts.isTemplateExpression(e)) {
+      const exprs = e.templateSpans.map((s) => s.expression);
+      const textos = [e.head.text, ...e.templateSpans.map((s) => s.literal.text)];
+      return exprs.some(passa) && exprs.every((x) => passa(x) || (literal(x) !== null && soLayout(literal(x)!))) && textos.every(soLayout);
+    }
+    return false;
+  };
   const achados: string[] = [];
   const visitar = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
       const attr = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
-      if (!attr?.initializer || !usa(attr.initializer)) achados.push(ts.isJsxOpeningElement(n) ? textosVisiveis(n.parent, sf) || "(ícone)" : "(ícone)");
+      if (!attr?.initializer || !passa(attr.initializer)) achados.push(nomeDoElemento(n, sf) ?? "(sem nome)");
     }
     ts.forEachChild(n, visitar);
   };
@@ -170,7 +221,7 @@ export function mapaDeBotoes(fonte: string): string[] {
       if (ts.isJsxAttribute(p)) {
         if (p.name.getText(sf) !== "className") return null;
         const el = p.parent.parent;
-        return `<${el.tagName.getText(sf)}> ${ts.isJsxOpeningElement(el) ? textosVisiveis(el.parent, sf) : ""}`.trim();
+        return `<${el.tagName.getText(sf)}> ${nomeDoElemento(el, sf) ?? ""}`.trim();
       }
     }
     return null;
@@ -197,11 +248,17 @@ export function mapaDeBotoes(fonte: string): string[] {
   return itens;
 }
 
-const arquivos = AREAS_MIGRADAS.flatMap((raiz) =>
-  (readdirSync(raiz, { recursive: true }) as string[])
-    .filter((f) => /\.tsx$/.test(f))
-    .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
-);
+const arquivos = [
+  ...AREAS_MIGRADAS.flatMap((raiz) =>
+    (readdirSync(raiz, { recursive: true }) as string[])
+      .filter((f) => /\.tsx$/.test(f))
+      .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
+  ),
+  // Raiz do painel (layout, error, not-found, loading): sem recursão — as áreas cobrem o resto.
+  ...(readdirSync("src/app/(app)", { withFileTypes: true }) as Dirent[])
+    .filter((d) => d.isFile() && /\.tsx$/.test(d.name))
+    .map((d) => ({ arquivo: `src/app/(app)/${d.name}`, conteudo: readFileSync(join("src/app/(app)", d.name), "utf-8") })),
+];
 
 describe("botões nas áreas migradas", () => {
   it("nenhum botão de ação montado à mão (use botaoClasses ou <Botao>); exceções contadas", () => {
@@ -241,27 +298,32 @@ describe("botões nas áreas migradas", () => {
       .toEqual(["const btnPri → primario/md", "<button> Registrar pagamento → btnPri", "<button> Ok → btnPri"]);
   });
 
-  it("todo <button> das áreas migradas passa por botaoClasses (sem classe ou com cara de texto também); controles que não são ação, contados", () => {
-    const ofensores = arquivos.flatMap(({ arquivo, conteudo }) => {
-      if (/\.test\./.test(arquivo)) return [];
+  it("todo <button> do painel passa por botaoClasses; os controles que não são ação são exatamente os listados, por nome", () => {
+    const real: Record<string, string[]> = {};
+    for (const { arquivo, conteudo } of arquivos) {
+      if (/\.test\./.test(arquivo)) continue;
       const achados = botoesForaDoDesign(conteudo);
-      return achados.length > (CONTROLES_QUE_NAO_SAO_BOTAO[arquivo] ?? 0) ? [`${arquivo}: ${achados.join(" | ")}`] : [];
-    });
-    expect(ofensores).toEqual([]);
+      if (achados.length) real[arquivo] = achados;
+    }
+    // Por nome, não por contagem: trocar um controle isento por uma ação crua no mesmo arquivo quebra.
+    expect(real).toEqual(CONTROLES_QUE_NAO_SAO_BOTAO);
   });
 
-  it("a lista de controles que não são botão não sobra", () => {
-    const sobrando = Object.entries(CONTROLES_QUE_NAO_SAO_BOTAO).filter(([a, n]) => botoesForaDoDesign(arquivos.find((x) => x.arquivo === a)?.conteudo ?? "").length < n);
-    expect(sobrando).toEqual([]);
-  });
-
-  it("botoesForaDoDesign pega botão sem classe e com cara de texto; aceita botaoClasses direto ou por constante", () => {
+  it("botoesForaDoDesign: sem classe, cara de texto e estados crus acusam; botaoClasses (+ layout) passa", () => {
     expect(botoesForaDoDesign("<button onClick={f}>Registrar decisão</button>")).toEqual(["Registrar decisão"]);
     expect(botoesForaDoDesign('<button className="underline">Registrar evidência</button>')).toEqual(["Registrar evidência"]);
-    expect(botoesForaDoDesign('<button className="text-gray-400"><IconX /></button>')).toEqual(["(ícone)"]);
-    expect(botoesForaDoDesign('<button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Editar</button>')).toEqual([]);
-    expect(botoesForaDoDesign("const btnSec = botaoClasses(); <button className={`${btnSec} mt-3`}>Ok</button>")).toEqual([]);
+    expect(botoesForaDoDesign('<button className="text-gray-400" aria-label="Fechar"><IconX /></button>')).toEqual(["Fechar"]);
     expect(botoesForaDoDesign('const btnSec = "underline"; <button className={btnSec}>Ok</button>')).toEqual(["Ok"]);
+    // Um estado cru basta para acusar (R4 da #117: e3, e3b, e4).
+    expect(botoesForaDoDesign('<button className={ocupado ? "underline" : botaoClasses({ variante: "secundario" })}>A</button>')).toEqual(["A"]);
+    expect(botoesForaDoDesign('<button className={botaoClasses() && "underline"}>B</button>')).toEqual(["B"]);
+    expect(botoesForaDoDesign("<button className={`${botaoClasses()} underline border-0 bg-transparent px-0 py-0`}>C</button>")).toEqual(["C"]);
+    expect(botoesForaDoDesign('<button className={botaoClasses() + " underline"}>D</button>')).toEqual(["D"]);
+    // Passa: direto, por constante, com layout em template ou soma, e ternário entre dois botões.
+    expect(botoesForaDoDesign('<button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Editar</button>')).toEqual([]);
+    expect(botoesForaDoDesign("const btnSec = botaoClasses(); <button className={`${btnSec} ml-3`}>Ok</button>")).toEqual([]);
+    expect(botoesForaDoDesign('const btnSec = botaoClasses(); <button className={btnSec + " mt-3 self-end"}>Ok</button>')).toEqual([]);
+    expect(botoesForaDoDesign('<button className={on ? botaoClasses() : botaoClasses({ variante: "secundario" })}>Ok</button>')).toEqual([]);
   });
 
   it("a lista de exceções não sobra", () => {
