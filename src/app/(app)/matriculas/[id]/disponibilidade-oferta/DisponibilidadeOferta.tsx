@@ -61,6 +61,6 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
         </fieldset>
       </form>}
     </section>)}
-    <div className="flex gap-3"><button disabled={ocupado || dados.pagina <= 1} onClick={() => void executar(() => carregar(dados.pagina - 1))}>Anterior</button><span>Página {dados.pagina}</span><button disabled={ocupado || !dados.temProxima} onClick={() => void executar(() => carregar(dados.pagina + 1))}>Próxima</button></div>
+    <div className="flex gap-3"><button className={botaoClasses({ variante: "secundario" })} disabled={ocupado || dados.pagina <= 1} onClick={() => void executar(() => carregar(dados.pagina - 1))}>Anterior</button><span>Página {dados.pagina}</span><button className={botaoClasses({ variante: "secundario" })} disabled={ocupado || !dados.temProxima} onClick={() => void executar(() => carregar(dados.pagina + 1))}>Próxima</button></div>
   </div>;
 }
