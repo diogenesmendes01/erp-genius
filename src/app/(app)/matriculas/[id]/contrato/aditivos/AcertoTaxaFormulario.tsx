@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -75,8 +76,8 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
         <div><dt>Novo crédito apurado</dt><dd>{formatarMoeda(atual.creditoNovo, atual.moeda)}</dd></div>
       </dl>}
       {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {formatarMoeda(atual.pendencia.valor, atual.moeda)}.</p>}
-      <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
-      <label className="block">Evidência conferida<textarea className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
+      <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
+      <label className="block">Evidência conferida<CampoTexto className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
       <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={!podeEnviar || ocupado} onClick={propor}>{ocupado ? "Registrando proposta…" : "Propor acerto"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />

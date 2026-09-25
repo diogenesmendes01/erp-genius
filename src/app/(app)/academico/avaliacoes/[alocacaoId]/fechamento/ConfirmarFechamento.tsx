@@ -6,6 +6,7 @@ import { confirmarFechamentoAcademico } from "@/server/avaliacoes/fechamento";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, podeFechar, resultadoSuficiente }: {
   alocacaoId: string;
@@ -47,7 +48,7 @@ export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, po
       ? "O resultado atual é suficiente. Esta confirmação não executa progressão nem muda a turma."
       : "O resultado atual pode ser confirmado como insuficiente. Esta confirmação não autoriza progressão."}</p>
     <label className="block text-sm">Motivo da confirmação
-      <textarea name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" />
+      <CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" />
     </label>
     <label className="flex items-start gap-2 text-sm"><input name="conferido" type="checkbox" required disabled={ocupado} />
       <span>Revisei as fontes, notas, frequência e pendências exibidas neste estado.</span>

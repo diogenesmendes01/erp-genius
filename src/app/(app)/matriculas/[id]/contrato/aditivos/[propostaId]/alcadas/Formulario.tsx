@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirAlcadaAditivo } from "@/server/contratos/aditivo-alcadas";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Alcada = "FINANCEIRA" | "COMERCIAL" | "PEDAGOGICA";
 
@@ -22,7 +23,7 @@ export function FormularioAlcada({ matriculaId, propostaId, propostaHash, alcada
       <label className="block"><input type="radio" name="decisao" value="aprovar" /> Aprovar para a etapa seguinte</label>
       <label className="block"><input type="radio" name="decisao" value="rejeitar" /> Rejeitar</label>
     </fieldset>
-    <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={2000} required disabled={pendente} /></label>
+    <label className="block">Justificativa<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={2000} required disabled={pendente} /></label>
     {mensagem && <p role="alert">{mensagem}</p>}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

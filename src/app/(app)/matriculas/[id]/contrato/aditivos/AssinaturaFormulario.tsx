@@ -5,6 +5,7 @@ import { registrarConferenciaAssinaturaAditivo } from "@/server/contratos/aditiv
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revisaoHash }: { matriculaId: string; propostaId: string; artefatoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
   const tentativa = useRef<{ dados: string; chave: string } | null>(null);
@@ -20,7 +21,7 @@ export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revi
   }}>
     <h2 className="text-xl">Registrar conferência do original</h2>
     <label className="block"><input type="checkbox" required disabled={pendente} /> Abri o PDF preservado e conferi o documento, a vigência e os signatários apresentados.</label>
-    <label className="block">Motivo<textarea className="mt-1 block w-full rounded border p-2" required minLength={5} maxLength={2000} name="motivo" disabled={pendente} /></label>
+    <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" required minLength={5} maxLength={2000} name="motivo" disabled={pendente} /></label>
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar conferência"}</button>
     <MensagemStatus texto={mensagem} />
   </form>;

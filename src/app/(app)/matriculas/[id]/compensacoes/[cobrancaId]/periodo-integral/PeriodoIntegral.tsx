@@ -14,6 +14,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -138,9 +139,9 @@ export function PeriodoIntegral({
         <legend>{d.podeReconferir ? "Reconferir escolha do aluno" : "Escolha do aluno"}</legend>
         <label className="block" htmlFor="escolha">Tratamento escolhido<select id="escolha" className={classe} name="escolha" value={escolha} onChange={evento => setEscolha(evento.target.value as Escolha)} required><option value="" disabled>Selecione</option><option value="CREDITO">Crédito a constituir em etapa posterior</option><option value="COBERTURA_FUTURA">Cobertura futura a definir</option></select></label>
         {escolha === "COBERTURA_FUTURA" && <fieldset className="space-y-2 rounded border p-3"><legend>Período de cobertura futura</legend><label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" defaultValue={baseReconferencia?.coberturaFutura?.inicio ?? ""} {...periodo.propsInicio} required /></label><label className="block" htmlFor="fim">Fim civil<input id="fim" className={classe} name="fim" type="date" defaultValue={baseReconferencia?.coberturaFutura?.fim ?? ""} min={periodo.min} required /></label></fieldset>}
-        <label className="block" htmlFor="clausula">Cláusula contratual aplicável<textarea id="clausula" className={classe} name="clausula" defaultValue={baseReconferencia?.clausula ?? ""} minLength={5} maxLength={2000} required /></label>
-        <label className="block" htmlFor="evidenciaEscolha">Evidência da escolha do aluno<textarea id="evidenciaEscolha" className={classe} name="evidenciaEscolha" defaultValue={baseReconferencia?.evidenciaEscolha ?? ""} minLength={5} maxLength={2000} required /></label>
-        <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" defaultValue={baseReconferencia?.motivo ?? ""} minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="clausula">Cláusula contratual aplicável<CampoTexto id="clausula" className={classe} name="clausula" defaultValue={baseReconferencia?.clausula ?? ""} minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="evidenciaEscolha">Evidência da escolha do aluno<CampoTexto id="evidenciaEscolha" className={classe} name="evidenciaEscolha" defaultValue={baseReconferencia?.evidenciaEscolha ?? ""} minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" defaultValue={baseReconferencia?.motivo ?? ""} minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Enviando…" : "Propor regularização"}</button>
       </fieldset>
     </form>}
@@ -184,7 +185,7 @@ export function PeriodoIntegral({
           <fieldset disabled={ocupado} className="space-y-2">
             <legend>Decisão independente</legend>
             <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-            <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<textarea id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+            <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<CampoTexto id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
             <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
           </fieldset>
         </form>}

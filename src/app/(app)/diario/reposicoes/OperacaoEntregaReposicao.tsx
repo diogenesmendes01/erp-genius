@@ -16,6 +16,7 @@ import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeRep
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export type OperacaoEntrega = {
   reposicaoId: string;
@@ -60,7 +61,7 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
       <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
       {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, fusoExibicao)} (origem {operacao.fuso}). As avaliações anteriores permanecem atribuídas ao autor original.</p>}
       <label className="block">Professor avaliador<select name="professorId" required defaultValue="" disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || !!tentativaDesignacao.current} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{tentativaDesignacao.current ? "Repetir substituição" : operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
     </form>
     {!operacao.material && <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => executar(() => publicarMaterialOperacional({ reposicaoId: operacao.reposicaoId, usarGravacaoAulaOriginal: true }))}>Usar gravação da aula original e abrir prazo</button>}
@@ -74,25 +75,25 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
     {operacao.material && operacao.etapa.prazoAte && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => prorrogarEtapaOperacional({ reposicaoId: operacao.reposicaoId, solicitacaoCorrecaoId: operacao.etapa.correcaoId, prazoAnterior: operacao.etapa.prazoAte, novoPrazo: new Date(String(dados.get("novoPrazo") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Prorrogar etapa vigente</p>
       <label className="block">Novo prazo (horário local)<input name="novoPrazo" type="datetime-local" required className="block rounded border p-2" /></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Prorrogar prazo conferido</button>
     </form>}
     {operacao.liberacao.podeLiberar && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => liberarEntregaOperacional({ reposicaoId: operacao.reposicaoId, expiraEm: new Date(String(dados.get("expiraEm") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Liberação específica para matrícula {operacao.matriculaStatus.toLowerCase()}</p>
       {operacao.liberacao.expiraEm && <p className="text-sm">Liberação vigente até {data(operacao.liberacao.expiraEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>}
       <label className="block">Expira em (horário local)<input name="expiraEm" type="datetime-local" required className="block rounded border p-2" /></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Liberar entrega específica</button>
     </form>}
     {operacao.material && <RelatarIndisponibilidadeReposicao reposicaoId={operacao.reposicaoId} />}
     {operacao.relatosAbertos.map((relato) => <form key={relato.id} className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); const motivo = String(dados.get("motivo") ?? ""); executar(() => dados.get("decisao") === "DESCARTAR" ? descartarRelatoIndisponibilidadeEquipe({ reposicaoId: operacao.reposicaoId, relatoId: relato.id, motivo }) : confirmarIndisponibilidadeOperacional({ reposicaoId: operacao.reposicaoId, relatoId: relato.id, motivo })); }}>
       <p className="font-medium">Relato de indisponibilidade em {data(relato.criadaEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{relato.descricao}</p>
-      <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo da decisão<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <div className="flex flex-wrap gap-2"><button name="decisao" value="CONFIRMAR" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar indisponibilidade e pausar prazo</button><button name="decisao" value="DESCARTAR" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Descartar relato sem pausar</button></div>
     </form>)}
     {operacao.indisponibilidade && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => retomarIndisponibilidadeOperacional({ reposicaoId: operacao.reposicaoId, indisponibilidadeId: operacao.indisponibilidade!.id, motivo: String(dados.get("motivo") ?? "") })); }}>
       <p className="font-medium">Prazo pausado desde {data(operacao.indisponibilidade.inicio, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso})</p><p className="whitespace-pre-wrap text-sm">{operacao.indisponibilidade.motivo}</p>
-      <label className="block">Motivo da retomada<textarea name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo da retomada<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Retomar material e prazo</button>
     </form>}
     {erro && <p role="alert">{erro}</p>}

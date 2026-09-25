@@ -5,6 +5,7 @@ import { salvarLancamentoAvaliacaoLocal, oficializarLancamentoAvaliacao } from "
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 export const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -38,14 +39,14 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
       <label className="block">Data e horário da realização ({fuso})<input type="datetime-local" name="realizadaEm" step="0.001" required defaultValue={anterior?.realizadaEm} className="block rounded border p-2" /></label>
       {!!realizadores.length && <label className="block">Quem realizou a avaliação?<select required value={realizador} onChange={e => setRealizador(e.target.value)} className="block rounded border p-2"><option value="">Selecione o professor</option>{realizadores.map(p => <option key={p.id} value={p.id}>{p.nome}{p.id === registradorId ? " (eu)" : ""}</option>)}</select></label>}
       {realizador && realizador !== registradorId && <>
-        <label className="block">Motivo da regularização<textarea name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-        <label className="block">Evidências utilizadas<textarea name="evidenciasRegularizacao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+        <label className="block">Motivo da regularização<CampoTexto name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+        <label className="block">Evidências utilizadas<CampoTexto name="evidenciasRegularizacao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
         <p>Identifique os registros utilizados para conferir a avaliação e as notas. Seu nome ficará registrado como responsável pelo lançamento.</p>
       </>}
       <p>Escala: {escala.minimo} a {escala.maximo}. Campo de nota vazio permanece pendente no rascunho.</p>
       {habilidades.map(h => { const n = anterior?.notas.find(n => n.habilidade === h); return <div key={h} className="space-y-2 rounded border p-3">
         <label className="block">Nota de {nomes[h]}<input name={`nota-${h}`} inputMode="decimal" maxLength={100} defaultValue={n?.nota ?? ""} className="block rounded border p-2" /></label>
-        <label className="block">Comentário para o aluno — {nomes[h]}<textarea name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
+        <label className="block">Comentário para o aluno — {nomes[h]}<CampoTexto name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
       <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
       <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar versão"}</button>
@@ -65,7 +66,7 @@ export function ConferirNotas({ lancamentoId, conteudoHash, podeAprovar }: { lan
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Conferência independente</legend>
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Oficializar notas desta versão</option>}<option value="devolver">Devolver para revisão</option></select></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi data, habilidades, notas e comentários desta versão.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset><MensagemStatus texto={mensagem} />
