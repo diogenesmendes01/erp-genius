@@ -9,7 +9,7 @@ export default async function NovaGradePage({ searchParams }: { searchParams: Pr
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const q = await searchParams;
   const busca = (q.busca ?? "").trim().slice(0, 100);
-  if (Array.isArray(q.turmaId)) return <div className="space-y-4"><VoltarPara href="/academico/grades/nova" para="Preparação de grades" /><p role="alert">Seleção de turma inválida.</p></div>;
+  if (Array.isArray(q.turmaId)) return <div className="space-y-4"><VoltarPara href="/academico/grades/nova" /><p role="alert">Seleção de turma inválida.</p></div>;
   const turmaId = (q.turmaId ?? "").trim().slice(0, 100);
   const turmas = await prisma.turma.findMany({
     where: { status: "PLANEJADA", ...(turmaId ? { id: turmaId } : busca ? { codigo: { contains: busca, mode: "insensitive" as const } } : {}), aulasDiario: { none: {} }, encontrosAgenda: { none: { status: { not: "RASCUNHO" } } } },
@@ -19,7 +19,7 @@ export default async function NovaGradePage({ searchParams }: { searchParams: Pr
       propostasGrade: { orderBy: { versao: "desc" }, take: 1, select: { versao: true } } },
   });
   return <div className="space-y-5">
-    <VoltarPara href="/academico/grades" para="Grades" />
+    <VoltarPara href="/academico/grades" />
     <h1 className="text-2xl font-medium">Preparar grade inicial</h1>
     <p>Selecione uma turma planejada. O calendário institucional precisa estar aprovado e os parâmetros da modalidade completos.</p>
     <Link href="/academico/calendario" className="text-brand-700 underline">Conferir calendário institucional</Link>

@@ -9,7 +9,7 @@ export default async function FilaConciliacaoPage({ searchParams }: { searchPara
   const { cursor } = await searchParams;
   const resultado = await listarLinhasConciliacaoFinanceira({ cursor });
   return <section className="max-w-5xl space-y-4">
-    <VoltarPara href="/financeiro" para="Financeiro" />
+    <VoltarPara href="/financeiro" />
     <h1 className="text-xl font-medium">Conciliação financeira da migração</h1>
     <p>Confira as fontes históricas e proponha sua conciliação com o contrato correspondente. A proposta exige aprovação independente.</p>
     {!resultado.ok || !resultado.dado ? <p role="alert">{resultado.ok ? "Consulta sem resultado." : resultado.erro}</p> : <>

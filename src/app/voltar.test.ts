@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { DESTINOS_FORA_DO_SHELL, rotuloDoDestino } from "@/lib/trilha";
 
 // E2 (docs/42-auditoria-frontend-ux.md): link de volta é <VoltarPara/> — formato e nome únicos.
 // Nenhum <Link>/<a> com texto "Voltar…" escrito à mão, fora das exceções contadas abaixo, que não
@@ -50,6 +51,36 @@ describe("links de volta", () => {
   it("a lista de exceções não sobra", () => {
     const sobrando = Object.entries(EXCECOES).filter(([a, n]) => voltasAMao(telas.find((t) => t.arquivo === a)?.conteudo ?? "").length < n);
     expect(sobrando).toEqual([]);
+  });
+
+  it("`para` é nome de destino de verdade, e só onde o mapa não nomeia o destino", () => {
+    const problemas = telas.flatMap(({ arquivo, conteudo }) => {
+      const sf = ts.createSourceFile("x.tsx", conteudo, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const achados: string[] = [];
+      const visitar = (n: ts.Node) => {
+        if (ts.isJsxSelfClosingElement(n) && n.tagName.getText(sf) === "VoltarPara") {
+          const attr = (nome: string) => n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+          const href = attr("href")?.initializer, para = attr("para")?.initializer;
+          const textoPara = para && ts.isStringLiteral(para) ? para.text : null;
+          // "Voltar para Voltar": o nome do destino não pode ser o próprio verbo.
+          if (textoPara !== null && /^voltar\b/i.test(textoPara)) achados.push(`${arquivo}: para="${textoPara}"`);
+          // Destino que o mapa nomeia: `para` seria ignorado e só confundiria quem lê.
+          if (para && href && ts.isStringLiteral(href) && rotuloDoDestino(href.text)) achados.push(`${arquivo}: para redundante em ${href.text}`);
+        }
+        ts.forEachChild(n, visitar);
+      };
+      visitar(sf);
+      return achados;
+    });
+    expect(problemas).toEqual([]);
+  });
+
+  it("destinos fora do shell (portal do aluno) são páginas que existem; mesmo destino, mesmo nome", () => {
+    for (const destino of Object.keys(DESTINOS_FORA_DO_SHELL)) {
+      expect(existsSync(join("src/app", destino, "page.tsx")), destino).toBe(true);
+    }
+    expect(rotuloDoDestino("/portal-aluno")).toBe("Área do aluno");
+    expect(rotuloDoDestino("/portal-aluno?x=1")).toBe("Área do aluno");
   });
 
   it("o detector pega Link e <a>, com ou sem seta", () => {

@@ -13,7 +13,7 @@ export default async function ReposicoesDocentePage({ searchParams }: { searchPa
   const { cursor, correcoesAntes } = await searchParams;
   const [r, concluidas, preferencia] = await Promise.all([consultarFilaReposicoesDocente({ cursor }), listarReposicoesConcluidasDesignadas({ antesId: correcoesAntes }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
-    <VoltarPara href="/diario" para="Diário" />
+    <VoltarPara href="/diario" />
     <header><h1 className="text-2xl font-medium">Fila de reposições individuais</h1><p className="mt-1 text-sm text-gray-600">Mostra apenas reposições atribuídas a você. Não há dados pessoais, contrato comercial ou cobrança nesta fila.</p></header>
     {!r.ok && <p role="alert">{r.erro}</p>}
     {r.ok && r.dado?.itens.length === 0 && <p>Nenhuma reposição pendente para sua atuação.</p>}

@@ -18,6 +18,6 @@ export default function RecuperarPortalAlunoPage() {
       <label className="block text-sm">E-mail<input required name="email" type="email" autoComplete="email" className="mt-1 w-full rounded border px-3 py-2" /></label>
       <button disabled={enviando} className="w-full rounded bg-brand-solid px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{enviando ? "Solicitando…" : "Solicitar recuperação"}</button>
     </form>}
-    <VoltarPara href="/portal-aluno/entrar" para="Acesso" />
+    <VoltarPara href="/portal-aluno/entrar" />
   </div></section>;
 }

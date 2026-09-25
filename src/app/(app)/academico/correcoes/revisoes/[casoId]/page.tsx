@@ -35,7 +35,7 @@ export default async function DetalheRevisaoProgressaoPage({ params, searchParam
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!resultado.ok || !resultado.dado) {
-    return <section className="space-y-4"><VoltarPara href="/academico/correcoes" para="Revisões" /><p role="alert">{resultado.ok ? "Caso indisponível." : resultado.erro}</p></section>;
+    return <section className="space-y-4"><VoltarPara href="/academico/correcoes" /><p role="alert">{resultado.ok ? "Caso indisponível." : resultado.erro}</p></section>;
   }
 
   const caso = resultado.dado;
@@ -48,7 +48,7 @@ export default async function DetalheRevisaoProgressaoPage({ params, searchParam
   const historico = await listarPropostasResolucaoRevisaoProgressao({ solicitacaoId: caso.solicitacao.id, pagina });
 
   return <section className="space-y-5">
-    <VoltarPara href="/academico/correcoes" para="Revisões" />
+    <VoltarPara href="/academico/correcoes" />
     <header className="space-y-2"><h1 className="text-2xl font-medium">Revisão de impacto da correção</h1>
       <p>{nomeCompleto(caso.matricula.aluno)} · {caso.matricula.codigo ?? "Matrícula sem código"}</p>
     </header>

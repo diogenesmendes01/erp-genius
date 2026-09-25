@@ -19,11 +19,11 @@ export default async function PermutaPage({ searchParams }: { searchParams: Prom
   const opcoes = admin || usuario.papeis.includes(Papel.FINANCEIRO) ? await listarCobrancasParaPermuta() : null;
   const resultado = await consultarPermutas(pagina);
   if (!resultado.ok) {
-    return <section><VoltarPara href={retorno} para="Voltar" /><p role="alert">{resultado.erro}</p></section>;
+    return <section><VoltarPara href={retorno} /><p role="alert">{resultado.erro}</p></section>;
   }
   if (!resultado.dado) return null;
   return <section className="mx-auto max-w-4xl space-y-4">
-    <VoltarPara href={retorno} para="Voltar" />
+    <VoltarPara href={retorno} />
     <h1 className="text-2xl font-medium">Permutas por serviço comprovado</h1>
     <p>Página {pagina} · até 50 acordos por página</p>
     {resultado.dado.length === 0 && <p>Nenhum acordo nesta página.</p>}

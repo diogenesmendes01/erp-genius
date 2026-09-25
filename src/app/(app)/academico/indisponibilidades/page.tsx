@@ -20,7 +20,7 @@ export default async function IndisponibilidadesPage({ searchParams }: { searchP
   const { cursor } = await searchParams;
   const r = await consultarIndisponibilidadesDocentes({ cursor });
   return <div className="space-y-5">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     <header><h1 className="text-2xl font-medium">Indisponibilidades docentes</h1><p className="mt-1 text-sm text-gray-600">A aprovação registra a ausência. Aulas e reservas particulares afetadas precisam de solução aprovada e permanecem na agenda até lá.</p></header>
     <SolicitarAusencia professores={professores} fusoInicial={config?.fusoInstitucional ?? ""} />
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}

@@ -9,7 +9,7 @@ export default async function ExcecoesPage({ searchParams }: { searchParams: Pro
   const reservas = await prisma.reservaVagaMatricula.findMany({ where: { OR: [{ status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } }, { excecoesAdmissao: { some: {} } }] },
     orderBy: [{ criadaEm: "desc" }, { id: "desc" }], skip: (pagina - 1) * 30, take: 31,
     select: { id: true, turma: { select: { codigo: true, nome: true } }, matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } } });
-  return <div className="space-y-4"><VoltarPara href="/academico/admissoes" para="Admissões" /><h1 className="text-2xl">Exceções de ingresso por reserva</h1>
+  return <div className="space-y-4"><VoltarPara href="/academico/admissoes" /><h1 className="text-2xl">Exceções de ingresso por reserva</h1>
     <p>Selecione a reserva para revisar a necessidade de exceção ou consultar decisões anteriores.</p>
     {!reservas.length && <p>Nenhuma reserva encontrada.</p>}
     <ul>{reservas.slice(0, 30).map((r) => <li className="rounded border p-3" key={r.id}><Link className="underline" href={`/academico/admissoes/excecoes/${r.id}`}>{[r.matricula.aluno.primeiroNome, r.matricula.aluno.sobrenome].filter(Boolean).join(" ")} · {r.matricula.codigo ?? "Matrícula em preparação"} · {r.turma.codigo ?? r.turma.nome ?? "Turma"}</Link></li>)}</ul>

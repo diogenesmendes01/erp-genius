@@ -17,7 +17,7 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
   return <div className="space-y-5">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     {!matriculaId && <><h1 className="text-2xl font-medium">Reposições individuais</h1><p role="status">Abra esta tela pelo contexto da matrícula para consultar a ausência de origem e o histórico acadêmico.</p></>}
     {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
   </div>;

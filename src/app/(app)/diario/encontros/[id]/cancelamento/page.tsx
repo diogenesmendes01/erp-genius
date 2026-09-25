@@ -12,7 +12,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   const [r, preferencia] = await Promise.all([consultarCancelamentoParticular({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
-    <VoltarPara href="/diario/encontros" para="Encontros" />
+    <VoltarPara href="/diario/encontros" />
     <h1 className="text-2xl font-medium">Cancelamento de particular</h1>
     {r.ok && r.dado?.status === "CANCELADO" && (temPapel(usuario, Papel.SECRETARIA_ACADEMICA) || temPapel(usuario, Papel.GERENTE_PEDAGOGICO)) && <Link href={`/diario/encontros/${id}/remarcacao`} className="block underline">Propor ou acompanhar remarcação</Link>}
     <p>A gestão pedagógica ou Administração decide a solicitação de outra pessoa. A aprovação cancela o encontro na agenda.</p>

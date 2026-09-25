@@ -13,7 +13,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     prisma.versaoCalendarioEscolar.findFirst({ where: { decisao: { aprovada: true } }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }),
   ]);
   return <div className="space-y-4">
-    <VoltarPara href="/academico" para="Acadêmico" />
+    <VoltarPara href="/academico" />
     <h1 className="text-2xl font-medium">Calendário da escola</h1>
     <p>Feriados, recessos e férias seguem um calendário único. As datas são interpretadas no fuso institucional de cada versão.</p>
     <p>{vigente ? `Calendário vigente: versão ${vigente.versao}` : "Ainda não há calendário publicado."}</p>

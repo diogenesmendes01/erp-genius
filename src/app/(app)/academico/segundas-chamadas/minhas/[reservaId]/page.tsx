@@ -18,7 +18,7 @@ export default async function MinhaSegundaChamada({ params }: { params: Promise<
   const fusoAdministrativo = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
 
   return <section className="space-y-4">
-    <VoltarPara href="/academico/segundas-chamadas/minhas" para="Minhas segundas chamadas" />
+    <VoltarPara href="/academico/segundas-chamadas/minhas" />
     <h1 className="text-2xl font-medium">Segunda chamada designada · {d.codigoAvaliacao}</h1>
     <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.turma} · nível {d.identificacao.nivel}.</p>
     <p>Horário reservado: {formatarInstanteExibicao(d.horario.inicio, fuso, d.horario.fusoOrigem).texto} a {formatarInstanteExibicao(d.horario.fim, fuso, d.horario.fusoOrigem).texto} ({fuso}; origem {d.horario.fusoOrigem}).</p>

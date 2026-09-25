@@ -15,7 +15,7 @@ export default async function FilaContinuidadeMensalPage({ searchParams }: { sea
 
   const { itens, proximoCursor } = resultado.dado;
   return <section className="space-y-4">
-    <VoltarPara href="/financeiro" para="Financeiro" />
+    <VoltarPara href="/financeiro" />
     <h1 className="text-2xl font-medium">Fila de continuidade mensal</h1>
     <p>Consulte as condições de cada matrícula antes de qualquer providência. Esta tela não emite cobranças nem atesta que o processamento recorrente esteja ativo.</p>
     <FilaContinuidadeMensal itens={itens} />

@@ -16,7 +16,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
   const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ cursor }), consultarPreferenciaFusoEquipe()]);
 
   return <section className="space-y-5">
-    <VoltarPara href="/diario" para="Diário" />
+    <VoltarPara href="/diario" />
     <div>
       <h1 className="text-2xl font-medium">Pendências do diário</h1>
       <p className="mt-1 text-sm text-gray-600">Os horários seguem sua preferência de fuso; sem preferência, usam o fuso de origem do encontro. Os avisos são atualizados ao consultar este painel. A regularização da aula acontece no diário.</p>

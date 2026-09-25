@@ -27,7 +27,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const instanteAdministrativo = (valor: Date | string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
   return <section className="space-y-5">
-    <VoltarPara href="/financeiro/desistencias" para="Pedidos de desistência" />
+    <VoltarPara href="/financeiro/desistencias" />
     <h1 className="text-2xl font-medium">Conferência financeira da desistência · {d.matricula.codigo ?? "Matrícula"}</h1>
     <p>Proposta, aprovação e efetivação são etapas distintas. A aprovação financeira autoriza o tratamento descrito; a Secretaria ainda precisa conferir e efetivar a desistência.</p>
     {d.impedimento && <p role="status">{d.impedimento}</p>}
