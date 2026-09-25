@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { GET, HEAD } from "./route";
 
 // Mock do Prisma client antes de importar o route
@@ -15,14 +15,24 @@ import { prisma } from "@/lib/prisma";
 // - Alterar status 200 → 503 quando DB funciona → deve falhar
 // - Remover a query SELECT 1 → deve falhar
 // - Remover HEAD exportado → deve falhar
+// - Devolver a mensagem do erro na resposta pública → deve falhar
+// - Não limpar o timer do timeout → deve falhar
+
+// Erro no formato do Prisma: a mensagem carrega host/porta do banco.
+const ERRO_BANCO = new Error("Can't reach database server at `db:5432`");
 
 describe("GET /api/ready", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("responde 200 quando SELECT 1 funciona", async () => {
-    // Mock: query retorna sucesso
     vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ result: 1 }]);
 
     const res = await GET();
@@ -30,75 +40,76 @@ describe("GET /api/ready", () => {
 
     const body = await res.json();
     expect(body).toHaveProperty("ready", true);
-    expect(body).toHaveProperty("timestamp");
-    expect(typeof body.timestamp).toBe("string");
     expect(body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-
-    // Deve ter chamado o Prisma
     expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
-  it("responde 503 quando o banco está inacessível", async () => {
-    // Mock: query lança erro (banco inacessível)
-    vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(
-      new Error("Connection refused")
-    );
+  it("limpa o timer do timeout quando o banco responde", async () => {
+    vi.useFakeTimers();
+    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ result: 1 }]);
+
+    await GET();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("responde 503 sem expor o detalhe do erro quando o banco está inacessível", async () => {
+    vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(ERRO_BANCO);
 
     const res = await GET();
     expect(res.status).toBe(503);
 
     const body = await res.json();
-    expect(body).toHaveProperty("ready", false);
-    expect(body).toHaveProperty("error");
-    expect(body.error).toContain("Connection refused");
+    expect(body).toEqual({ ready: false });
+    // O detalhe vai para o log do servidor, não para a resposta pública.
+    expect(console.error).toHaveBeenCalledWith(expect.any(String), ERRO_BANCO);
   });
 
   it("responde 503 em timeout (banco lento)", async () => {
-    // Mock: query nunca resolve (simula timeout)
+    vi.useFakeTimers();
     vi.mocked(prisma.$queryRaw).mockImplementationOnce(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => {}) as never // nunca resolve
     );
 
-    const res = await GET();
-    expect(res.status).toBe(503);
+    const pendente = GET();
+    await vi.advanceTimersByTimeAsync(3000);
+    const res = await pendente;
 
-    const body = await res.json();
-    expect(body).toHaveProperty("ready", false);
-    expect(body).toHaveProperty("error");
-    expect(body.error).toContain("Timeout");
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ ready: false });
   });
 
   it("responde 503 se SELECT 1 retorna resultado inesperado", async () => {
-    // Mock: query retorna algo diferente de [{ result: 1 }]
     vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([]);
 
     const res = await GET();
     expect(res.status).toBe(503);
-
-    const body = await res.json();
-    expect(body).toHaveProperty("ready", false);
-    expect(body).toHaveProperty("error", "Unexpected DB response");
+    expect(await res.json()).toEqual({ ready: false });
   });
 });
 
 describe("HEAD /api/ready", () => {
-  it("está exportado (wget --spider usa HEAD)", () => {
-    // Trava: HEAD deve existir e ser o mesmo handler do GET (ou funcionar equivalente).
-    expect(HEAD).toBeDefined();
-    expect(typeof HEAD).toBe("function");
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  it("responde 200 equivalente ao GET quando DB funciona", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("é o mesmo handler do GET (wget --spider usa HEAD)", () => {
+    expect(HEAD).toBe(GET);
+  });
+
+  it("responde 200 quando DB funciona", async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ result: 1 }]);
 
     const res = await HEAD();
     expect(res.status).toBe(200);
   });
 
-  it("responde 503 equivalente ao GET quando DB falha", async () => {
-    vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(
-      new Error("Connection refused")
-    );
+  it("responde 503 quando DB falha", async () => {
+    vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(ERRO_BANCO);
 
     const res = await HEAD();
     expect(res.status).toBe(503);

@@ -19,9 +19,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Client Prisma gerado no build (não precisa de conexão com banco).
 RUN npx prisma generate
-# Build-time engine check: falha o build se engine errado foi gerado.
-RUN npx prisma --version | grep -q linux-musl-openssl-3.0.x || \
-    (echo "ERRO: engine Prisma incorreto detectado" && exit 1)
+# Checagem REAL do schema engine (é ele que o serviço `migrate` usa): executa o engine contra
+# uma porta sem banco. P1001 ("can't reach database server") só aparece se o engine carregou;
+# engine errado/libssl ausente dá outro erro e derruba o build em vez da produção.
+RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" npx prisma migrate status 2>&1 | grep -q P1001 \
+  || (echo "ERRO: schema engine do Prisma não carregou (o serviço migrate quebraria)" && exit 1)
 # Next 16 standalone (next.config.mjs `output: "standalone"`).
 # DATABASE_URL de placeholder: páginas são dinâmicas (auth), o build não conecta.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -45,9 +47,15 @@ RUN addgroup -S nodejs && adduser -S nextjs -G nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Build-time engine check no runner: falha se o query engine não carrega (libssl missing).
-RUN node -e "require('@prisma/client')" || \
-    (echo "ERRO: Prisma client falhou ao carregar no runner" && exit 1)
+# Checagem REAL do query engine no runner: `require('@prisma/client')` sozinho não carrega o
+# engine nativo (ele só sobe no primeiro $connect). Conecta numa porta sem banco e exige P1001,
+# que prova que o .so.node do standalone carregou com a libssl desta imagem.
+RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" node -e ' \
+  const { PrismaClient } = require("@prisma/client"); \
+  new PrismaClient().$connect().then( \
+    () => { console.error("ERRO: conectou num banco que não existe"); process.exit(1); }, \
+    (e) => { if (e.errorCode === "P1001") process.exit(0); \
+             console.error("ERRO: query engine do Prisma não carregou:", e.message); process.exit(1); });'
 
 USER nextjs
 EXPOSE 3000
