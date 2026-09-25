@@ -15,12 +15,13 @@ import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
 
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60";
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario" });
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 interface EmpresaFicha {
@@ -176,7 +177,7 @@ export function FichaEmpresa({
                         <span className="flex gap-1">
                           {podePagar && (
                             <button
-                              className={btnSec + " border-green-200 text-green-700"}
+                              className={btnPri}
                               disabled={ocupado}
                               onClick={() => run("faturas", () => pagarFaturaB2B(f.id), "Fatura paga — cobranças baixadas em lote.")}
                             >
@@ -184,7 +185,7 @@ export function FichaEmpresa({
                             </button>
                           )}
                           <button
-                            className={btnSec + " border-red-200 text-red-600"}
+                            className={botaoClasses({ variante: "perigo" })}
                             disabled={ocupado}
                             onClick={() => run("faturas", () => cancelarFaturaB2B(f.id), "Fatura cancelada.")}
                           >
@@ -211,7 +212,7 @@ export function FichaEmpresa({
           <div className="md:col-span-2"><dt className="inline text-gray-500">Observações: </dt><dd className="inline">{empresa.observacoes ?? "—"}</dd></div>
         </dl>
         <button
-          className={btnSec + " mt-3"}
+          className={`${btnSec} mt-3`}
           disabled={ocupado}
           onClick={() =>
             run("contrato", () =>

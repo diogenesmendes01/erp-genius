@@ -84,7 +84,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
                         },
                       })
                     }
-                    className="text-xs text-brand-700 hover:text-brand-800"
+                    className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                   >
                     Editar
                   </button>

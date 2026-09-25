@@ -78,7 +78,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                   <button
                     onClick={() => alternar(i.id, i.ativo ? "Idioma desativado." : "Idioma ativado.")}
                     disabled={acao.ocupado}
-                    className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
+                    className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
                   </button>
