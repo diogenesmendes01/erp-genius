@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { salvarLancamentoAvaliacaoLocal, oficializarLancamentoAvaliacao } from "@/server/avaliacoes/lancamentos";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 export const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -30,7 +31,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
         notas: habilidades.map(habilidade => ({ habilidade, nota: String(form.get(`nota-${habilidade}`) ?? "").trim().replace(",", ".") || null, comentarioAluno: String(form.get(`comentario-${habilidade}`) ?? "") })),
       });
       if (!r.ok) setMensagem(r.erro); else { setMensagem("Versão registrada. A submissão exige conferência de outra pessoa da gestão."); router.refresh(); }
-    } catch { setMensagem("Resultado não confirmado. Confira a data e tente novamente com os mesmos dados."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-4"><legend className="font-medium">Registrar avaliação realizada</legend>
@@ -59,7 +60,7 @@ export function ConferirNotas({ lancamentoId, conteudoHash, podeAprovar }: { lan
     try {
       const r = await oficializarLancamentoAvaliacao({ lancamentoId, conteudoHash, aprovada: f.get("decisao") === "aprovar", motivo: String(f.get("motivo") ?? "") });
       if (!r.ok) setMensagem(r.erro); else { setMensagem("Decisão registrada."); router.refresh(); }
-    } catch { setMensagem("Resultado não confirmado. Tente novamente com a mesma decisão."); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Conferência independente</legend>

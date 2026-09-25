@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { registrarRascunhoReplanejamento } from "@/server/agenda/replanejamento-rascunho";
 import type { AjusteReplanejamento } from "@/server/agenda/replanejamento-ajustes";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajustes }: { calendarioId: string; estadoHash: string; versaoAnterior: number; ajustes?: AjusteReplanejamento[] }) {
   const router = useRouter();
@@ -22,7 +23,7 @@ export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajuste
         const r = await registrarRascunhoReplanejamento({ ...dados, chaveIdempotencia });
         if (!r.ok || !r.dado) { setErro(r.ok ? "Registro não confirmado." : r.erro); return; }
         router.push(`/academico/calendario/${encodeURIComponent(calendarioId)}/revisoes`);
-      } catch { setErro("Não foi possível confirmar o registro. Reenvie os mesmos dados para conferir o resultado."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4">

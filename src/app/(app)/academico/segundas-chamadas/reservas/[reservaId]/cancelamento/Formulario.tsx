@@ -5,6 +5,7 @@ import { proporCancelamentoAgendaSegundaChamadaLocal } from "@/server/avaliacoes
 import { decidirCancelamentoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-cancelamento";
 import { CampoFuso } from "@/components/CampoFuso";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string }; fusoInstitucional: string | null };
 export function Formulario({ reservaId, estadoConferido, proposta, fusoInstitucional }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
@@ -23,7 +24,7 @@ export function Formulario({ reservaId, estadoConferido, proposta, fusoInstituci
     resultado = await proporCancelamentoAgendaSegundaChamadaLocal({ ...dados, chaveIdempotencia: tentativa.current.chave });
    }
    if (!resultado.ok) setErro(resultado.erro); else router.refresh();
-  } catch { setErro("Resultado não confirmado. Confira o histórico antes de tentar novamente."); }
+  } catch { setErro(MSG_RESULTADO_INCERTO); }
   finally { trava.current = false; setOcupado(false); }
  }}>
  <fieldset disabled={ocupado} className="space-y-3">

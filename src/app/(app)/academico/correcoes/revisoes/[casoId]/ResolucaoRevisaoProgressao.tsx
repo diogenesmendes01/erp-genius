@@ -10,6 +10,7 @@ import {
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -112,7 +113,7 @@ export function ResolucaoRevisaoProgressao({
         setAviso("Proposta registrada para decisão independente. Atualizando o histórico.");
         router.refresh();
       } catch {
-        setErro("Não foi possível registrar a proposta. Confira a prévia atual e tente novamente.");
+        setErro(MSG_RESULTADO_INCERTO);
       }
     });
   }
@@ -134,7 +135,7 @@ export function ResolucaoRevisaoProgressao({
         setAviso("Decisão registrada. Atualizando o histórico e a situação do caso.");
         router.refresh();
       } catch {
-        setErro("Não foi possível registrar a decisão. Atualize a página e confira a proposta novamente.");
+        setErro(MSG_DECISAO_INCERTA);
       }
     });
   }

@@ -15,6 +15,7 @@ import { descartarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposica
 import { RelatarIndisponibilidadeReposicao } from "./RelatarIndisponibilidadeReposicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export type OperacaoEntrega = {
   reposicaoId: string;
@@ -50,7 +51,7 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
       const resultado = await acao();
       if (!resultado.ok) { setErro(resultado.erro ?? "A operação não foi confirmada. Atualize a consulta antes de tentar novamente."); return; }
       router.refresh();
-    } catch { setErro("A operação não foi confirmada. Atualize a consulta antes de tentar novamente."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
   });
   return <section className="space-y-3 border-t pt-4" aria-label="Material e entregas da reposição gravada">
     <h3 className="font-medium">Material e entregas gravadas</h3>

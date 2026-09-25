@@ -19,6 +19,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
@@ -123,7 +124,7 @@ export function FilaCobranca({
         router.refresh();
       }
     } catch {
-      setErro("Não foi possível confirmar o resultado. Atualize e confira o histórico antes de repetir a ação.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     }
   }
 
@@ -147,7 +148,7 @@ export function FilaCobranca({
       router.refresh();
       setAberta(null);
     } catch {
-      setErro("Não foi possível confirmar o resultado do envio. Atualize e confira a fila antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     }
   }
 
@@ -181,7 +182,7 @@ export function FilaCobranca({
         : "O navegador bloqueou a nova janela. Use o link no detalhe para abrir o WhatsApp; nenhum envio foi registrado.");
       return r.dado.url;
     } catch {
-      setErro("Não foi possível preparar o envio manual. Confira sua conexão e tente novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
       return null;
     }
   }
@@ -201,7 +202,7 @@ export function FilaCobranca({
       router.refresh();
       return true;
     } catch {
-      setErro("Não foi possível confirmar o registro. Atualize e confira o histórico antes de repetir a confirmação.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
       return false;
     }
   }

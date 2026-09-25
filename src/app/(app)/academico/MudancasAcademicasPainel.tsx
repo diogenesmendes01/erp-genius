@@ -11,6 +11,7 @@ import type { ContextoMudancaAcademica, SolicitacaoAcademicaView } from "@/serve
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
@@ -48,7 +49,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
       setDestinoId(""); setMotivo(""); setHorarioCompativel(false); setEntradas({}); setHorariosExecucao({});
       router.refresh();
     } catch {
-      setErro("Não foi possível confirmar a resposta. Atualize a página para conferir o estado antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally { setOcupado(false); }
   }
 

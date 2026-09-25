@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAditivo } from "@/server/contratos/vencimento-aditivo";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 export function VencimentoFormulario(props: Props) {
@@ -25,7 +26,7 @@ export function VencimentoFormulario(props: Props) {
    if (r.ok) { setConcluido(true); setMensagem("Operação registrada."); router.refresh(); }
    else if (r.podeRevisar) { tentativa.current = null; setMensagem(r.erro + " Corrija os dados antes de tentar novamente."); }
    else setMensagem(r.erro + " A tentativa foi preservada; confira o histórico antes de iniciar outra operação.");
-  } catch { setMensagem("Resultado não confirmado. Repita para consultar a mesma tentativa."); }
+  } catch { setMensagem(MSG_RESULTADO_INCERTO); }
   finally { emEnvio.current = false; setOcupado(false); }
  }}>
  <fieldset disabled={ocupado || !!tentativa.current} className="space-y-2">

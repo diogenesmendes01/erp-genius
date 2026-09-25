@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirSubstituicaoAgendaSegundaChamada, proporSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-substituicao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 type Props = {
   reservaId: string;
@@ -39,7 +40,7 @@ export function Formulario({ reservaId, base, professores = [], selecionado, pre
           return proporSubstituicaoAgendaSegundaChamada({ ...dados, chaveIdempotencia: tentativa.current.chave });
         })();
       if (!resultado.ok) setErro(resultado.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Confira o histórico antes de repetir."); }
+    } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { trava.current = false; setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3">

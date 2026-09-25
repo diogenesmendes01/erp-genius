@@ -6,6 +6,7 @@ import { decidirSegundaChamada, proporSegundaChamada } from "@/server/avaliacoes
 import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamada-disponibilizacao";
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Item = {
   id: string;
@@ -57,7 +58,7 @@ export function SegundaChamadaPainel({
       }
       window.location.reload();
     } catch {
-      setErro("Resultado não confirmado. Confira a atualização antes de tentar novamente.");
+      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       ocupadoRef.current = false;
       setOcupado(false);

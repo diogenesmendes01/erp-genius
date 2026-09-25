@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirConclusaoSemGravacao } from "@/server/diario/excecao-gravacao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecidirExcecao({ id, diarioCorresponde }: { id: string; diarioCorresponde: boolean }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function DecidirExcecao({ id, diarioCorresponde }: { id: string; diarioCo
         const r = await decidirConclusaoSemGravacao({ excecaoId: id, aprovar, motivo });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a decisão. Atualize a lista antes de tentar novamente."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }
   return <div className="space-y-3 border-t pt-3">

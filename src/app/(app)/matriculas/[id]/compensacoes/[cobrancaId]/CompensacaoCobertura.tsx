@@ -7,6 +7,7 @@ import { decidirCompensacaoCobertura, prepararCompensacaoCobertura } from "@/ser
 import { consultarCompensacoesCobertura } from "@/server/matricula/compensacao-cobertura-consulta";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCompensacoesCobertura>>, { ok: true }>["dado"]>;
 
@@ -72,7 +73,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
             router.refresh();
           } else setErro(resultado.erro);
         } catch {
-          setErro("Atualize a consulta para conferir o resultado antes de repetir a proposta.");
+          setErro(MSG_RESULTADO_INCERTO);
         }
       });
     }}>
@@ -113,7 +114,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
                 router.refresh();
               } else setErro(resultado.erro);
             } catch {
-              setErro("Atualize a consulta para conferir a decisão antes de repetir.");
+              setErro(MSG_DECISAO_INCERTA);
             }
           });
         }}>

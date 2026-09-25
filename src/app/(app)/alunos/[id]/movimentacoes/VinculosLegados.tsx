@@ -5,6 +5,7 @@ import { consultarVinculosLegados, vincularAlocacaoLegada } from "@/server/matri
 import { useOperacao } from "./useOperacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Vinculos = NonNullable<Extract<Awaited<ReturnType<typeof consultarVinculosLegados>>, { ok: true }>["dado"]>;
 export function VinculosLegados({ alunoId }: { alunoId: string }) {
@@ -32,7 +33,7 @@ export function VinculosLegados({ alunoId }: { alunoId: string }) {
         if (!r.ok) { setErro(r.erro); return; }
         setVinculos((v) => v?.filter((a) => a.alocacaoId !== alocacaoId) ?? null);
         setAviso("Vínculo registrado. Confira novamente os impactos das propostas pendentes."); router.refresh();
-      } catch { setErro("Resultado não confirmado. Consulte os vínculos antes de repetir a conferência."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }
   return <section className="space-y-3 rounded border p-4" aria-busy={ocupado}>

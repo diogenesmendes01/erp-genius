@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { prepararContratacao, prepararContratacaoNovaPessoa } from "@/server/matricula/preparacao-comercial";
 import { parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaPessoa, paises }: { novaPessoa: boolean; paises: { id: string; nome: string }[]; leadId: string; oferta: { id: string; versaoEntrada: number; formaAgenda: string | null; produtoId: string; paisId: string; moeda: string }; candidatos: { id: string; primeiroNome: string; sobrenome: string | null }[]; turmas: { id: string; nome: string }[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const particular = oferta.formaAgenda?.startsWith("PARTICULAR_") ?? false;
@@ -22,7 +23,7 @@ export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaP
       const r = novaPessoa ? await prepararContratacaoNovaPessoa({ ...comum, cadastroNovoConferido: true, novoCadastro: { primeiroNome: String(f.get("primeiroNome")), sobrenome: String(f.get("sobrenome") ?? "").trim() || undefined, email: String(f.get("email") ?? "").trim() || undefined, paisId: String(f.get("paisCadastro")) } }) : await prepararContratacao({ ...comum, alunoId: String(f.get("aluno")), identidadeConferida: true });
       if (!r.ok || !r.dado) { setErro(r.ok ? "Preparação não confirmada." : r.erro); return; }
       router.push(`/matriculas/${r.dado.matriculaId}/preparacao`);
-    } catch { setErro("Resultado não confirmado. Reenvie os mesmos dados para conferir a tentativa."); } }); }}>
+    } catch { setErro(MSG_RESULTADO_INCERTO); } }); }}>
     <fieldset disabled={ocupado} className="space-y-4">
     {novaPessoa ? <fieldset className="space-y-3"><legend>Cadastro básico de pessoa nova</legend>
       <label className="block">Primeiro nome<input name="primeiroNome" required maxLength={100} className="block rounded border p-2" /></label>
