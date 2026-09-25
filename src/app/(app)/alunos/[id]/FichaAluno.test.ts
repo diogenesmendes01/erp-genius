@@ -33,7 +33,7 @@ it("mostra o vencimento civil confirmado e a movimentação no fuso pessoal", ()
     paises: [], preferenciaFusoExibicao: "America/Costa_Rica",
   }));
 
-  expect(html).toContain("próximo venc. 2099-10-05");
+  expect(html).toContain("próximo venc. 05/10/2099");
   expect(html).toContain("31/12/2025, 20:30 (horário exibido em America/Costa_Rica; origem UTC)");
   expect(html).toContain("2012-03-02");
 });
