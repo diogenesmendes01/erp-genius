@@ -10,6 +10,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -48,7 +49,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
               const r = await reservarHorasCompradasParaEncontro({ compraId: c.id, encontroId: String(valores.get("encontro")), motivo: String(valores.get("motivo")), chaveIdempotencia: chave.current });
               if (!r.ok) { setErro(r.erro); return; }
               chave.current = ""; form.reset(); setAviso("Horas reservadas. Nenhum novo recebimento ou consumo registrado."); await carregar();
-            } catch { setErro("Confira a consulta antes de repetir a reserva."); }
+            } catch { setErro(MSG_RESULTADO_INCERTO); }
           });
         }}><fieldset disabled={ocupado} className="space-y-2"><legend>Vincular horas a encontro já agendado</legend>
           <label className="grid gap-1">Encontro<select name="encontro" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.encontros.map(e => <option key={e.id} value={e.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(e.inicio))} · {e.fusoOrigem} · {(Date.parse(e.fim) - Date.parse(e.inicio)) / 60000} minutos</option>)}</select></label>
@@ -66,7 +67,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
             if (!r.ok) { setErro(r.erro); return; }
             setAviso("Compra registrada. Nenhum novo recebimento foi criado."); form.reset(); chave.current = "";
             try { await carregar(); } catch { setErro("Compra salva, mas a consulta falhou. Consulte novamente antes de continuar."); }
-          } catch { setErro("Resultado incerto. Repita sem alterar os dados ou consulte as compras."); }
+          } catch { setErro(MSG_RESULTADO_INCERTO); }
         });
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Identificar compra já paga</legend>
@@ -101,7 +102,7 @@ function ConsumoHoras({ reservaId, aoSalvar }: { reservaId: string; aoSalvar: ()
     {revisao && <form onSubmit={event => { event.preventDefault(); const f = new FormData(event.currentTarget); void iniciar(async () => {
       setErro("");
       try { const r = await conferirRealizacaoHoras({ reservaId, estadoDiario: revisao.estadoDiario, motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } setRevisao(null); await aoSalvar(); }
-      catch { setErro("Consulte o resultado antes de repetir."); }
+      catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     }); }}><fieldset disabled={ocupado} className="space-y-2"><p>Diário com conteúdo e presença registrados: consumir {revisao.minutos} minutos da compra. A pendência de gravação permanece separada.</p><label className="grid gap-1">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar consumo pela realização</button></fieldset></form>}
     {erro && <p role="alert">{erro}</p>}
   </div>;

@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirIndisponibilidadeDocente } from "@/server/agenda/indisponibilidade";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecisaoAusencia({ id, impactoHash }: { id: string; impactoHash: string | null }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function DecisaoAusencia({ id, impactoHash }: { id: string; impactoHash: 
         const r = await decidirIndisponibilidadeDocente({ indisponibilidadeId: id, aprovar, motivo, impactoHash: aprovar ? impactoHash ?? undefined : undefined });
         if (!r.ok) { setErro(r.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a decisão. Atualize a lista antes de tentar novamente."); }
+      } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }
   return <div className="space-y-2 border-t pt-3">

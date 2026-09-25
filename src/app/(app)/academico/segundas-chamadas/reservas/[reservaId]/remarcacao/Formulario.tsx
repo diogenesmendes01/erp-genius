@@ -5,6 +5,7 @@ import { proporRemarcacaoAgendaSegundaChamadaLocal } from "@/server/avaliacoes/s
 import { decidirRemarcacaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Props = {
  reservaId: string;
  estadoConferido: string;
@@ -34,7 +35,7 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
     resultado = await proporRemarcacaoAgendaSegundaChamadaLocal({ ...dados, chaveIdempotencia: tentativa.current.chave });
    }
    if (!resultado.ok) setErro(resultado.erro); else router.refresh();
-  } catch { setErro("Resultado não confirmado. Confira o histórico antes de tentar novamente."); }
+  } catch { setErro(MSG_RESULTADO_INCERTO); }
   finally { trava.current = false; setOcupado(false); }
  }}>
  <fieldset disabled={ocupado} className="space-y-3">

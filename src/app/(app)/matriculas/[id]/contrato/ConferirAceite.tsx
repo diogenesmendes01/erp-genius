@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { confirmarAceiteOriginal } from "@/server/contratos/aceite";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matriculaId: string; conclusaoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -15,7 +16,7 @@ export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matr
       try {
         const r = await confirmarAceiteOriginal({ matriculaId, conclusaoId, revisaoHash, evidenciasConferidas: true, motivo: String(d.get("motivo") ?? ""), chaveIdempotencia: chave });
         if (!r.ok) setMensagem(r.erro); else { setMensagem("Aceite registrado. A ativação continua sujeita aos demais requisitos da matrícula."); router.refresh(); }
-      } catch { setMensagem("Não foi possível confirmar o resultado. Atualize a consulta antes de tentar novamente."); }
+      } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     });
   }}>
     <label className="block"><input type="checkbox" name="conferido" required disabled={pendente} /> Conferi o original, o PDF assinado, a auditoria, todas as assinaturas exigidas e as condições desta matrícula.</label>

@@ -4,6 +4,7 @@ vi.mock("react", async original => ({ ...await original<typeof import("react")>(
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ proporAcertoTaxaAditivo: mocks.propor }));
 import { AcertoTaxaFormulario } from "./AcertoTaxaFormulario";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 function find(node: unknown, type: string): { props: Record<string, unknown> } | undefined {
   if (Array.isArray(node)) return node.map(n => find(n, type)).find(Boolean);
   if (!node || typeof node !== "object") return;
@@ -41,6 +42,6 @@ it("preserva chave após falha e não envia duas vezes enquanto aguarda", async 
 it("permite conferir a mesma tentativa após falha de comunicação", async () => {
   const c = mount(); mocks.propor.mockRejectedValueOnce(new Error("Rede"));
   await (c.botao.onClick as () => Promise<void>)();
-  expect(c.mensagem).toHaveBeenCalledWith(expect.stringContaining("Não foi possível confirmar"));
+  expect(c.mensagem).toHaveBeenCalledWith(MSG_RESULTADO_INCERTO);
   expect(mocks.refresh).not.toHaveBeenCalled();
 });

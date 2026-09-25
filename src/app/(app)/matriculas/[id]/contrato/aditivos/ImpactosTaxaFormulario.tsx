@@ -7,6 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string };
 
@@ -31,7 +32,7 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
       if (!r.ok) { setMensagem(r.erro); return; }
       setMensagem("Conjunto preparado. O Financeiro deve vincular os acertos das taxas afetadas antes da aprovação independente.");
       tentativa.current = null; router.refresh();
-    } catch { setMensagem("Não foi possível confirmar o preparo. Tente novamente com os mesmos dados."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { aplicarReconferenciaDeltaDesistencia, decidirAdministrativamenteReconferenciaDeltaDesistencia, decidirReconferenciaDeltaDesistencia, prepararReconferenciaDeltaDesistencia } from "@/server/matricula/desistencia-reconferencia-delta";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type ResultadoAcao = { ok: boolean; erro?: string };
 type Tentativa = { acao: () => Promise<ResultadoAcao>; sucesso: string };
@@ -39,7 +40,7 @@ function useOperacaoDelta() {
       router.refresh();
     } catch {
       setIncerta(true);
-      setMensagem("Não foi possível confirmar o resultado. Os dados foram congelados; reconcilie a mesma tentativa antes de alterá-los.");
+      setMensagem(MSG_RESULTADO_INCERTO);
     } finally {
       setOcupado(false);
     }

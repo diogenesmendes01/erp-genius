@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL, rotular } from "@/lib/labels";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Relato = { id: string; descricao: string; situacao: string; criadoEm: string; confirmadoEm: string | null };
 type Pausa = { id: string; inicio: string; fim: string | null };
@@ -29,7 +30,7 @@ export function RelatarIndisponibilidadePortalAluno({
       });
       if (!resposta.ok) { setErro("Não foi possível registrar o relato agora. Tente novamente ou procure a escola."); return; }
       formulario.reset(); setSucesso("Relato enviado para conferência da escola."); router.refresh();
-    } catch { setErro("Não foi possível registrar o relato agora. Tente novamente ou procure a escola."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setEnviando(false); }
   }
 

@@ -6,6 +6,7 @@ import { solicitarEncerramentoMatriculas } from "@/server/matricula/encerramento
 import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function NovoEncerramento({ alunoId, contratos, hoje }: {
   alunoId: string; contratos: { id: string; nome: string }[]; hoje: string | null;
@@ -36,7 +37,7 @@ export function NovoEncerramento({ alunoId, contratos, hoje }: {
           if (!r.ok) { setErro(r.erro); return; }
           setAviso("Pedido registrado e aguardando acerto. As matrículas continuam com sua situação atual.");
           form.reset(); setData(""); chave.current = ""; router.refresh();
-        } catch { setErro("Não foi possível confirmar o envio. Repita sem alterar os campos para consultar o mesmo pedido."); }
+        } catch { setErro(MSG_RESULTADO_INCERTO); }
       });
     }}>
       <fieldset disabled={ocupado || !hoje || !contratos.length} className="space-y-3">

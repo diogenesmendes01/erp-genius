@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { reconferirPendenciaAvisoAgenda } from "@/server/comunicacoes-agenda/reconferencia";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
       if (!r.dado) return setResultado("Não foi possível reconferir a pendência.");
       setResultado(r.dado.explicacao); if (r.dado.resolvida) router.refresh();
     } catch {
-      setResultado("Não foi possível reconferir a pendência.");
+      setResultado(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setOcupado(false);
     }

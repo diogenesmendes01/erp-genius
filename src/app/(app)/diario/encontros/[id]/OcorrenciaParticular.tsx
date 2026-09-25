@@ -5,6 +5,7 @@ import { consultarOcorrenciasParticular, registrarOcorrenciaParticular } from "@
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasParticular>>, { ok: true }>["dado"]>;
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
@@ -28,7 +29,7 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
           const r = await registrarOcorrenciaParticular({ ...entrada, chaveIdempotencia: chave.current.valor });
           if (!r.ok) { setMensagem(r.erro); return; }
           setMensagem("Informe registrado. A conferência financeira permanece separada."); router.refresh();
-        } catch (erro) { setMensagem(erro instanceof Error ? erro.message : "Não foi possível confirmar o registro. Atualize o histórico antes de repetir."); }
+        } catch (erro) { setMensagem(erro instanceof Error ? erro.message : MSG_RESULTADO_INCERTO); }
       });
     }}>
       <label className="block">Ocorrência<select name="tipo" required disabled={ocupado} className="ml-2 rounded border p-2">

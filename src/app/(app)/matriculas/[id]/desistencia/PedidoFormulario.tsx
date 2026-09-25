@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { registrarPedidoDesistenciaPreparacao } from "@/server/matricula/desistencia-preparacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: string; estadoHash: string }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function PedidoFormulario({ matriculaId, estadoHash }: { matriculaId: str
         motivo: String(dados.get("motivo") ?? ""), evidenciaPedido: String(dados.get("evidenciaPedido") ?? ""), chaveIdempotencia: chave });
       if (r.ok) { setRegistrado(true); setMensagem("Pedido registrado para tratamento pela equipe."); router.refresh(); }
       else setMensagem(r.erro);
-    } catch { setMensagem("Não foi possível confirmar o registro. Tente novamente para conferir o mesmo pedido."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4">

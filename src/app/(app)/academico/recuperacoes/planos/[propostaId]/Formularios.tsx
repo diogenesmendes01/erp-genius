@@ -6,7 +6,7 @@ import { reservarTentativaRecuperacao } from "@/server/avaliacoes/recuperacao-re
 import { cancelarReservaRecuperacaoPelaEscola } from "@/server/avaliacoes/recuperacao-cancelamento";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { CampoFuso } from "@/components/CampoFuso";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 type Habilidade = typeof HABILIDADES[number];
@@ -18,7 +18,7 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
     e.preventDefault(); if (enviando) return;
     const data = new FormData(e.currentTarget); setEnviando(true); setErro("");
     try { const r = await executar(data); if (!r.ok) setErro(r.erro); else router.refresh(); }
-    catch { setErro(MSG_RESULTADO_INCERTO); }
+    catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setEnviando(false); }
   }}><h3 className="font-medium">{titulo}</h3><fieldset disabled={enviando} className="space-y-3">{children}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{enviando ? "Registrando…" : titulo}</button></fieldset>{erro && <p role="alert">{erro}</p>}</form>;
 }

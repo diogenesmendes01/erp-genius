@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { efetivarPedidoDesistenciaPreparacao } from "@/server/matricula/desistencia-efetivacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId }: { pedidoId: string; estadoHash: string; decisaoFinanceiraId?: string }) {
   const router = useRouter();
@@ -19,7 +20,7 @@ export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId
       const resposta = await efetivarPedidoDesistenciaPreparacao({ pedidoId, estadoHash, ...(decisaoFinanceiraId ? { decisaoFinanceiraId } : {}), motivo: String(dados.get("motivo") ?? "") });
       if (resposta.ok) { setConcluido(true); setMensagem("Desistência efetivada. As reservas disponíveis desta contratação foram liberadas."); router.refresh(); }
       else setMensagem(resposta.erro);
-    } catch { setMensagem("Não foi possível confirmar a efetivação. Reenvie os mesmos dados para conferir o resultado."); }
+    } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4">

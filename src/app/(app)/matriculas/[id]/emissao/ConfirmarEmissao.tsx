@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { conferirEEmitirEntrada } from "@/server/secretaria/conferencia-emissao";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function ConfirmarEmissao({ matriculaId, revisaoHash }: { matriculaId: string; revisaoHash: string }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -13,7 +14,7 @@ export function ConfirmarEmissao({ matriculaId, revisaoHash }: { matriculaId: st
       chave.current ??= crypto.randomUUID();
       const r = await conferirEEmitirEntrada({ matriculaId, revisaoHash, cadastroDocumentosConferidos: true, condicoesConferidas: true, motivo: String(f.get("motivo") ?? ""), chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Consulte esta página ou reenvie os mesmos dados para verificar a emissão."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <label className="block"><input name="cadastro" type="checkbox" required /> Conferi o cadastro, a identificação do pagador e os documentos necessários, incluindo os avisos apresentados.</label>

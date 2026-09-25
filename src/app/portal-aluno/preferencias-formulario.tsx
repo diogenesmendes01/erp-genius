@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { salvarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 const destaques = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["US/Eastern", "Estados Unidos — Leste"]] as const;
 function todosOsFusos() { try { return typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : []; } catch { return []; } }
@@ -15,7 +16,7 @@ export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | nu
   function enviar() {
     const fusoExibicao = fuso.trim(); setErro(""); setFeito("");
     if (!valido(fusoExibicao)) { setErro("Escolha um fuso IANA válido, como America/Costa_Rica."); return; }
-    iniciar(async () => { try { await salvarPreferenciaFusoPortalAluno({ fusoExibicao }); setFeito("Preferência salva."); router.refresh(); } catch { setErro("Não foi possível salvar a preferência. Confira sua sessão e o fuso informado."); } });
+    iniciar(async () => { try { await salvarPreferenciaFusoPortalAluno({ fusoExibicao }); setFeito("Preferência salva."); router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } });
   }
   return <form className="mt-5 space-y-3 rounded border bg-surface p-4" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
     <label className="block text-sm">Fuso de exibição<input name="fusoExibicao" value={fuso} disabled={ocupado} onChange={(e) => setFuso(e.target.value)} list="fusos-portal" placeholder="Usar fuso de origem" className="mt-1 block w-full rounded border p-2" /></label>

@@ -9,6 +9,7 @@ import { identificacaoContrato } from "./identificacaoContrato";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -50,7 +51,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
         if (!r.ok) { setErro(r.erro); return; }
         setBase(null); setPrevia(null); setIds([]); setMotivo(""); chave.current = "";
         setAviso("Proposta registrada para decisão independente. A retomada ainda não foi aplicada; consulte a lista abaixo.");
-      } catch { setErro("Resultado do envio não confirmado. Repita sem alterar os dados para consultar o mesmo pedido."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO); }
     });
   }
   const escolhasCompletas = ids.length > 0 && ids.every((id) => !!opcoes[id]);
