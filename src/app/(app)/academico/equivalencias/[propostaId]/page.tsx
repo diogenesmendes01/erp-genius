@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaEquivalencia } from "@/server/avaliacoes/equivalencia-consulta";
@@ -6,6 +5,7 @@ import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
 import { AcoesEquivalencia } from "./AcoesEquivalencia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomesHabilidade: Record<Habilidade, string> = {
@@ -81,7 +81,7 @@ export default async function PropostaEquivalenciaPage({ params }: { params: Pro
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "America/Sao_Paulo");
 
   return <section className="space-y-5">
-    <Link className="underline" href="/academico">Voltar ao acompanhamento acadêmico</Link>
+    <VoltarPara href="/academico" para="Acompanhamento acadêmico" />
     <header className="space-y-2">
       <h1 className="text-2xl font-medium">Proposta de aproveitamento em transferência</h1>
       <p>{proposta.matricula.codigo ?? "Matrícula sem código"} · {textoTurma(proposta.turmaOrigem)} → {textoTurma(proposta.turmaDestino)}</p>

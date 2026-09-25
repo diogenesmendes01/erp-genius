@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { consultarHistoricoCorrecaoAula } from "@/server/diario/correcao-aula";
 import { CorrecaoAula } from "./CorrecaoAula";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function CorrecaoAulaPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -12,7 +12,7 @@ export default async function CorrecaoAulaPage({ params }: { params: Promise<{ i
   const [revisao, preferencia] = await Promise.all([consultarHistoricoCorrecaoAula({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
 
   return <main className="space-y-5">
-    <Link href="/diario" className="text-brand-700 underline">Voltar ao histórico do diário</Link>
+    <VoltarPara href="/diario" para="Histórico do diário" />
     <header className="space-y-2">
       <h1 className="text-2xl font-medium">{revisao.ok && revisao.dado && !revisao.dado.podePropor ? "Histórico de correções da aula" : "Preparar correção da aula"}</h1>
       <p className="text-sm text-gray-700">As propostas preservam o diário vigente. Elas não publicam a correção, não alteram frequência e não confirmam nenhum resultado acadêmico.</p>

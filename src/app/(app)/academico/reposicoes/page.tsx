@@ -7,6 +7,7 @@ import { ReposicoesEquipe, SolicitarReposicao } from "@/app/(app)/diario/reposic
 import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntregaReposicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
@@ -16,7 +17,7 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
   return <div className="space-y-5">
-    <Link className="text-sm text-brand-700 underline" href="/academico">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" para="Acadêmico" />
     {!matriculaId && <><h1 className="text-2xl font-medium">Reposições individuais</h1><p role="status">Abra esta tela pelo contexto da matrícula para consultar a ausência de origem e o histórico acadêmico.</p></>}
     {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
   </div>;

@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAgendasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agendas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const rotulosReserva = {
   RESERVADA: "Reservada",
@@ -45,12 +46,12 @@ export default async function AgendasSegundaChamadaPage({
   const { cursor } = await searchParams;
   const [resultado, preferencia] = await Promise.all([listarAgendasSegundaChamada(cursor ? { cursor } : {}), consultarPreferenciaFusoEquipe()]);
   if (!resultado.ok || !resultado.dado) {
-    return <section className="space-y-3"><Link className="underline" href="/academico">Voltar ao acadêmico</Link><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
+    return <section className="space-y-3"><VoltarPara href="/academico" para="Acadêmico" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
   const d = resultado.dado;
 
   return <section className="space-y-4">
-    <Link className="underline" href="/academico">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" para="Acadêmico" />
     {cursor && <Link className="underline" href="/academico/segundas-chamadas/agendas">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Agendas de segunda chamada</h1><p>Consulte as reservas agendadas e abra a remarcação da oportunidade correspondente.</p></header>
     {!d.itens.length && <p>Nenhuma agenda de segunda chamada foi encontrada.</p>}

@@ -5,13 +5,14 @@ import { consultarCancelamentoParticular } from "@/server/agenda/cancelamento-pa
 import { CancelamentoParticular } from "./CancelamentoParticular";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params;
   const [r, preferencia] = await Promise.all([consultarCancelamentoParticular({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
-    <Link href="/diario/encontros" className="underline">Voltar aos encontros</Link>
+    <VoltarPara href="/diario/encontros" para="Encontros" />
     <h1 className="text-2xl font-medium">Cancelamento de particular</h1>
     {r.ok && r.dado?.status === "CANCELADO" && (temPapel(usuario, Papel.SECRETARIA_ACADEMICA) || temPapel(usuario, Papel.GERENTE_PEDAGOGICO)) && <Link href={`/diario/encontros/${id}/remarcacao`} className="block underline">Propor ou acompanhar remarcação</Link>}
     <p>A gestão pedagógica ou Administração decide a solicitação de outra pessoa. A aprovação cancela o encontro na agenda.</p>

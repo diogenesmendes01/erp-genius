@@ -6,6 +6,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreparacaoContratacao } from "@/server/matricula/preparacao-consulta";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function PreparacaoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
@@ -15,7 +16,7 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   const tipos: Record<string, string> = { MATRICULA: "Taxa de matrícula", MENSALIDADE: "Mensalidade", HORA_PARTICULAR: "Hora particular (60 minutos)" };
   const estados = { ATIVA: "Ativa", MANTIDA_PENDENCIA: "Mantida por pendência", EXPIRADA: "Expirada", UTILIZADA: "Utilizada", LIBERADA: "Liberada" };
   const data = (d: Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: p?.reserva?.janela.fusoAdmissao ?? p?.reservaParticular?.horarios[0]?.fusoOrigem ?? "UTC" }).format(d);
-  return <div className="space-y-4"><Link className="underline" href={`/secretaria?matriculaId=${id}`}>Voltar à contratação</Link><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
+  return <div className="space-y-4"><VoltarPara href={`/secretaria?matriculaId=${id}`} para="Contratação" /><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
     <p>{m.aluno.primeiroNome} {m.aluno.sobrenome} · {m.produto.idioma.nome} · {m.produto.modalidade.nome} · {m.pais.nome}</p>
     {prontidao && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Pedido de desistência da preparação</Link>}
     {prontidao && <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Pendências para conferência da Secretaria</h2>

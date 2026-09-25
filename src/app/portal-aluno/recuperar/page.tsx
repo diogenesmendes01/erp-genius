@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default function RecuperarPortalAlunoPage() {
   const [enviado, setEnviado] = useState(false); const [enviando, setEnviando] = useState(false);
@@ -18,6 +18,6 @@ export default function RecuperarPortalAlunoPage() {
       <label className="block text-sm">E-mail<input required name="email" type="email" autoComplete="email" className="mt-1 w-full rounded border px-3 py-2" /></label>
       <button disabled={enviando} className="w-full rounded bg-brand-solid px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{enviando ? "Solicitando…" : "Solicitar recuperação"}</button>
     </form>}
-    <Link href="/portal-aluno/entrar" className="mt-5 block text-sm text-brand-700 underline">Voltar ao acesso</Link>
+    <VoltarPara href="/portal-aluno/entrar" para="Acesso" />
   </div></section>;
 }

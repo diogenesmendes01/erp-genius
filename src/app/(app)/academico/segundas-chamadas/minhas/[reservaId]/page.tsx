@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarSegundaChamadaDocente } from "@/server/avaliacoes/segunda-chamada-docente";
@@ -6,6 +5,7 @@ import { FormularioNota, FormularioRealizacao } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { VoltarPara } from "@/components/VoltarPara";
 
 
 export default async function MinhaSegundaChamada({ params }: { params: Promise<{ reservaId: string }> }) {
@@ -18,7 +18,7 @@ export default async function MinhaSegundaChamada({ params }: { params: Promise<
   const fusoAdministrativo = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
 
   return <section className="space-y-4">
-    <Link className="underline" href="/academico/segundas-chamadas/minhas">Voltar para minhas segundas chamadas</Link>
+    <VoltarPara href="/academico/segundas-chamadas/minhas" para="Minhas segundas chamadas" />
     <h1 className="text-2xl font-medium">Segunda chamada designada · {d.codigoAvaliacao}</h1>
     <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.turma} · nível {d.identificacao.nivel}.</p>
     <p>Horário reservado: {formatarInstanteExibicao(d.horario.inicio, fuso, d.horario.fusoOrigem).texto} a {formatarInstanteExibicao(d.horario.fim, fuso, d.horario.fusoOrigem).texto} ({fuso}; origem {d.horario.fusoOrigem}).</p>

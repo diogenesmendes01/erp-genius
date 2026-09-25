@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPropostaSubstituicao } from "@/server/contratos/substituicao";
@@ -8,6 +7,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { TextoPrevia } from "../../TextoPrevia";
 import { DecidirSubstituicao } from "../Formularios";
 import { AndamentoSubstituicao } from "../Andamento";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function PropostaPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ retornos?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
@@ -23,7 +23,7 @@ export default async function PropostaPage({ params, searchParams }: { params: P
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <div className="space-y-5">
-    <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/substituicoes`}>Voltar às propostas</Link>
+    <VoltarPara href={`/matriculas/${encodeURIComponent(id)}/contrato/substituicoes`} para="Propostas" />
     <h1 className="text-2xl">Proposta de substituição · versão {d.versao}</h1>
     <p>Preparada por {d.preparadaPor} em {data(d.criadaEm)}.</p>
     <p className="whitespace-pre-wrap">{d.motivo}</p>

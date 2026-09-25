@@ -189,3 +189,13 @@ export function trilhaDoCaminho(caminho: string): ItemTrilha[] {
   }
   return itens;
 }
+
+/**
+ * Nome de um destino de navegação pelo mesmo mapa da trilha — só quando o caminho É uma página do
+ * mapa (o último elo da trilha é o próprio destino). Query string ignorada. Caso contrário, null.
+ */
+export function rotuloDoDestino(href: string): string | null {
+  const caminho = href.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  const ultimo = trilhaDoCaminho(caminho).at(-1);
+  return ultimo && ultimo.atual && ultimo.href === caminho ? ultimo.rotulo : null;
+}

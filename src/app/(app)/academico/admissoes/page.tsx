@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function AdmissoesPage({ searchParams }: { searchParams: Promise<{ busca?: string; pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -9,7 +10,7 @@ export default async function AdmissoesPage({ searchParams }: { searchParams: Pr
   const numero = Number(filtros.pagina ?? 1), pagina = Number.isInteger(numero) && numero >= 1 && numero <= 100000 ? numero : 1;
   const turmas = await prisma.turma.findMany({ where: busca ? { OR: [{ codigo: { contains: busca, mode: "insensitive" } }, { nome: { contains: busca, mode: "insensitive" } }] } : {},
     orderBy: { id: "desc" }, skip: (pagina - 1) * 30, take: 31, select: { id: true, codigo: true, nome: true, status: true } });
-  return <div className="space-y-4"><Link href="/academico" className="underline">Voltar ao acadêmico</Link>
+  return <div className="space-y-4"><VoltarPara href="/academico" para="Acadêmico" />
     <h1 className="text-2xl font-medium">Janelas de admissão</h1>
     <Link className="underline" href="/academico/admissoes/excecoes">Exceções de ingresso por reserva</Link>
     <form><label>Buscar turma<input name="busca" defaultValue={busca} maxLength={100} className="mx-2 rounded border bg-[var(--surface)] p-2" /></label><button className="rounded border p-2">Buscar</button></form>

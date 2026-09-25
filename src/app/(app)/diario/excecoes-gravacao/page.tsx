@@ -5,13 +5,14 @@ import { listarExcecoesGravacao } from "@/server/diario/excecao-consulta";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecidirExcecao } from "./DecidirExcecao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function ExcecoesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const q = await searchParams, historico = q.historico === "todos";
   const [r, preferencia] = await Promise.all([listarExcecoesGravacao({ apenasPendentes: !historico, cursor: q.cursor }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
-    <Link href="/diario" className="text-brand-700 underline">Voltar ao diário</Link>
+    <VoltarPara href="/diario" para="Diário" />
     <h1 className="text-2xl font-medium">Exceções de gravação</h1>
     <nav className="flex gap-4"><Link href="/diario/excecoes-gravacao">Pendentes</Link><Link href="/diario/excecoes-gravacao?historico=todos">Incluir histórico</Link></nav>
     {!r.ok && <p role="alert">{r.erro}</p>}

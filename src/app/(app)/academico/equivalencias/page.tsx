@@ -4,6 +4,7 @@ import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { listarPropostasEquivalencia } from "@/server/avaliacoes/equivalencia-consulta";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const turma = (dado: { codigo: string | null; nome: string | null }) => dado.codigo ?? dado.nome ?? "Turma sem identificação";
 const nomesEstado = { PENDENTE: "Aguardando decisão", APROVADA: "Autorizada para execução", REJEITADA: "Rejeitada", APLICADA: "Transferência efetivada" } as const;
@@ -12,12 +13,12 @@ const nomeEstado = (estado: string) => estado in nomesEstado ? nomesEstado[estad
 export default async function EquivalenciasPage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   const { matriculaId, cursor } = await searchParams;
-  if (!matriculaId) return <section className="space-y-3"><Link className="underline" href="/academico">Voltar ao acompanhamento acadêmico</Link><p role="alert">Selecione uma matrícula para consultar propostas de aproveitamento.</p></section>;
+  if (!matriculaId) return <section className="space-y-3"><VoltarPara href="/academico" para="Acompanhamento acadêmico" /><p role="alert">Selecione uma matrícula para consultar propostas de aproveitamento.</p></section>;
   const [resultado, preferencia] = await Promise.all([
     listarPropostasEquivalencia({ matriculaId, ...(cursor ? { cursor } : {}) }),
     consultarPreferenciaFusoEquipe(),
   ]);
-  if (!resultado.ok || !resultado.dado) return <section className="space-y-3"><Link className="underline" href="/academico">Voltar ao acompanhamento acadêmico</Link><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
+  if (!resultado.ok || !resultado.dado) return <section className="space-y-3"><VoltarPara href="/academico" para="Acompanhamento acadêmico" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   const itens = resultado.dado.itens;
   const autorizadas = itens.filter((item) => item.estado === "APROVADA");
   const historico = itens.filter((item) => item.estado !== "APROVADA");
@@ -33,7 +34,7 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   </article>)}</div>;
 
   return <section className="space-y-5">
-    <Link className="underline" href="/academico">Voltar ao acompanhamento acadêmico</Link>
+    <VoltarPara href="/academico" para="Acompanhamento acadêmico" />
     <header className="space-y-2"><h1 className="text-2xl font-medium">Propostas de aproveitamento</h1><p>{secretaria ? "Fila de autorizações da matrícula. A execução é conferida novamente ao abrir cada proposta." : "Histórico e fila de propostas de aproveitamento desta matrícula."}</p></header>
     <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : <p>Nenhuma proposta autorizada aguarda execução nesta página.</p>}</section>
     {historico.length > 0 && <section className="space-y-3"><h2 className="text-xl font-medium">Outras propostas</h2>{lista(historico)}</section>}

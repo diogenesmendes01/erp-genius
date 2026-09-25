@@ -6,13 +6,14 @@ import { ReposicaoDocente } from "./ReposicaoDocente";
 import { listarReposicoesConcluidasDesignadas } from "@/server/diario/correcao-reposicao-consulta";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function ReposicoesDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string; correcoesAntes?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
   const { cursor, correcoesAntes } = await searchParams;
   const [r, concluidas, preferencia] = await Promise.all([consultarFilaReposicoesDocente({ cursor }), listarReposicoesConcluidasDesignadas({ antesId: correcoesAntes }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
-    <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
+    <VoltarPara href="/diario" para="Diário" />
     <header><h1 className="text-2xl font-medium">Fila de reposições individuais</h1><p className="mt-1 text-sm text-gray-600">Mostra apenas reposições atribuídas a você. Não há dados pessoais, contrato comercial ou cobrança nesta fila.</p></header>
     {!r.ok && <p role="alert">{r.erro}</p>}
     {r.ok && r.dado?.itens.length === 0 && <p>Nenhuma reposição pendente para sua atuação.</p>}

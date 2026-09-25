@@ -5,6 +5,7 @@ import { consultarCorrecoesConclusaoReposicao } from "@/server/diario/correcao-r
 import { CorrecoesConclusaoReposicao } from "./CorrecoesConclusaoReposicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function CorrecoesReposicao({
   params, searchParams,
@@ -35,7 +36,7 @@ export default async function CorrecoesReposicao({
     return texto ? `?${texto}` : `/academico/reposicoes/correcoes/${encodeURIComponent(reposicaoId)}`;
   };
   return <section className="space-y-5">
-    <Link className="underline" href={professorSomente ? "/diario/reposicoes" : "/academico/reposicoes"}>Voltar às reposições</Link>
+    <VoltarPara href={professorSomente ? "/diario/reposicoes" : "/academico/reposicoes"} para="Reposições" />
     <h1 className="text-2xl font-medium">Correções da conclusão de reposição</h1>
     <p>Uma proposta não altera a conclusão vigente. A alteração só produz efeito depois de aprovação independente e nova conferência no servidor.</p>
     <CorrecoesConclusaoReposicao key={`${dado.reposicao.id}:${dado.conclusao.id}:${dado.versaoEsperada}`} dados={dado} mostrarPreparacao={!dado.consultaHistorica && !antesVersao} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, dado.reposicao.origem.fuso)} />
