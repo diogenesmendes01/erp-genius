@@ -23,12 +23,17 @@ function assinaturaDaProjecaoAlunos(alunos: Awaited<ReturnType<typeof listarAlun
     .sort((a, b) => a.id.localeCompare(b.id)));
 }
 
-/** Filtros aplicados, para a trilha de auditoria — só os preenchidos. */
+/**
+ * Filtros aplicados, para a trilha de auditoria — só os preenchidos. A busca é texto livre (pode ser
+ * nome, e-mail ou telefone de alguém): a trilha registra só que houve busca e o tamanho dela, nunca o
+ * conteúdo (LGPD, minimização — decisão do responsável em 25/09/2026).
+ */
 function filtrosRegistrados(f: ReturnType<typeof lerFiltrosAlunos> | ReturnType<typeof lerFiltrosLeads> | null) {
   if (!f) return {};
+  const busca = f.busca ? { aplicada: true, caracteres: f.busca.length } : null;
   const campos = "status" in f
-    ? { busca: f.busca, status: f.status, paisId: f.paisId, turmaId: f.turmaId }
-    : { busca: f.busca, tipo: f.tipo, etapa: f.etapa, segmento: f.segmento, temperatura: f.temperatura, donoId: f.donoId };
+    ? { busca, status: f.status, paisId: f.paisId, turmaId: f.turmaId }
+    : { busca, tipo: f.tipo, etapa: f.etapa, segmento: f.segmento, temperatura: f.temperatura, donoId: f.donoId };
   return Object.fromEntries(Object.entries(campos).filter(([, v]) => v));
 }
 

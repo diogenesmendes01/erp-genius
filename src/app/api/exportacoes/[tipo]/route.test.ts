@@ -80,6 +80,17 @@ describe("exportação de alunos com os filtros da tela", () => {
     expect(payload).toMatchObject({ conjunto: "alunos", filtros: { status: "ATIVO" } });
   });
 
+  it("LGPD: a trilha registra que houve busca e o tamanho dela, nunca o texto digitado", async () => {
+    await exportar("?status=ATIVO&busca=ana.souza%40email.com");
+    const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
+    // Forma exata: nenhuma chave a mais pode carregar o texto (nem codificado) — nem em filtros, nem no evento.
+    expect(payload.filtros).toStrictEqual({ status: "ATIVO", busca: { aplicada: true, caracteres: "ana.souza@email.com".length } });
+    expect(Object.keys(payload).sort()).toEqual(["colunas", "conjunto", "filtros", "finalidade", "quantidade"]);
+    expect(JSON.stringify(payload)).not.toContain("ana.souza");
+    // A busca continua valendo para o recorte exportado — só a trilha não guarda o conteúdo.
+    expect((mocks.listarAlunos.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ busca: "ana.souza@email.com" });
+  });
+
   it("sem filtros na URL: comportamento de antes (filtros vazios no evento)", async () => {
     await exportar("");
     const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
@@ -106,5 +117,16 @@ describe("exportação de leads com os filtros da tela", () => {
     await exportarLeads("?temperatura=MORNO");
     const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
     expect(payload).toMatchObject({ conjunto: "leads", colunas: ["Código", "Nome", "Tipo", "Segmento", "Etapa", "Temperatura", "País", "Dono"], filtros: { temperatura: "MORNO" } });
+  });
+
+  it("LGPD: busca de leads entra na trilha só como tamanho, sem o texto (um telefone, por exemplo)", async () => {
+    await exportarLeads("?busca=%2B50688887777");
+    const payload = ((mocks.registrarEvento.mock.calls[0] as unknown[])[1] as { payload: Record<string, unknown> }).payload;
+    expect(payload).toMatchObject({ conjunto: "leads" });
+    // Forma exata: nenhuma chave a mais pode carregar o texto (nem codificado).
+    expect(payload.filtros).toStrictEqual({ busca: { aplicada: true, caracteres: "+50688887777".length } });
+    expect(JSON.stringify(payload)).not.toContain("88887777");
+    // A busca continua valendo para o recorte exportado — só a trilha não guarda o conteúdo.
+    expect((mocks.listarLeads.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ busca: "+50688887777" });
   });
 });
