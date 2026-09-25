@@ -6,6 +6,7 @@ import { prepararImpactosTaxaAditivo } from "@/server/contratos/aditivo-taxa-imp
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string };
 
@@ -41,7 +42,7 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
       <label className="block">Tratamento<select className="ml-2 rounded border p-1" value={decisoes[c.id] ?? "AFETADA"} onChange={e => setDecisoes(atual => ({ ...atual, [c.id]: e.target.value as "AFETADA" | "PRESERVADA" }))}><option value="AFETADA">Afetada pelo aditivo</option><option value="PRESERVADA">Preservada</option></select></label>
       <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={justificativas[c.id] ?? ""} onChange={e => setJustificativas(atual => ({ ...atual, [c.id]: e.target.value }))} /></label>
     </article>)}</fieldset>}
-    <button type="button" disabled={!podePreparar || ocupado} onClick={preparar}>{ocupado ? "Preparando…" : "Preparar conjunto de impactos"}</button>
+    <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={!podePreparar || ocupado} onClick={preparar}>{ocupado ? "Preparando…" : "Preparar conjunto de impactos"}</button>
     <MensagemStatus texto={mensagem} />
   </section>;
 }

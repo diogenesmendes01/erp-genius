@@ -646,6 +646,177 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Tentar novamente · Confirmar recebimento → primario/lg",
     "<button> Novo lançamento → secundario/lg",
   ],
+  "matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
+    "<button> Registrando… · Registrar autorização → secundario/lg",
+    "<button> Revogar autorização → secundario/lg",
+  ],
+  "matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx": [
+    "<button> Enviando… · Propor direito de compensação → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/compensacoes/[cobrancaId]/periodo-integral/PeriodoIntegral.tsx": [
+    "<button> Enviando… · Propor regularização → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Aplicando… · Aplicar regularização aprovada → secundario/lg",
+  ],
+  "matriculas/[id]/condicoes-horas/CondicoesHoras.tsx": [
+    "<button> Registrando… · Preparar para revisão → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/condicoes/CondicoesFormulario.tsx": [
+    "<button> Registrando… · Registrar condições de entrada → secundario/lg",
+  ],
+  "matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx": [
+    "<button> Remover → secundario/md",
+    "<button> Adicionar feriado → secundario/lg",
+    "<button> Registrando… · Preparar para revisão → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/ConferirAceite.tsx": [
+    "<button> Registrando… · Confirmar aceite do original assinado → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/ConferirAssinatura.tsx": [
+    "<button> Registrando… · Registrar conferência para assinatura → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/PreservarOriginal.tsx": [
+    "<button> Gerando e preservando… · Gerar e preservar original → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/RegistrarPrevia.tsx": [
+    "<button> Registrando… · Preservar esta prévia → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/AcertoTaxaFormulario.tsx": [
+    "<button> Registrando proposta… · Propor acerto → primario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/AssinaturaFormulario.tsx": [
+    "<button> Registrando… · Registrar conferência → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/CondicoesFormalizadasFormulario.tsx": [
+    "<button> Registrando… → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ConferenciaFinalFormulario.tsx": [
+    "<button> Registrando… · Registrar conferência interna → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ImpactosTaxaFormulario.tsx": [
+    "<button> Preparando… · Preparar conjunto de impactos → primario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/OriginalFormulario.tsx": [
+    "<button> Gerando… · Gerar e preservar original do aditivo → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx": [
+    "<button> Consultar exigências e participantes → secundario/lg",
+    "<button> Reabrir formulário e descartar preenchimento → secundario/lg",
+    "<button> Documentos anteriores → secundario/lg",
+    "<button> Próximos documentos → secundario/lg",
+    "<button> Aguarde… · Registrar conferência dos signatários → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ProcessoFormulario.tsx": [
+    "<button> Preparando… · Preparar processo de assinatura → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/[propostaId]/alcadas/Formulario.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx": [
+    "<button> Conferindo… · Conferir alterações → secundario/lg",
+    "<button> Registrando… · Registrar fotografia da agenda → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/previas/[previaId]/participantes/Formulario.tsx": [
+    "<button> Registrando… · Registrar conferência dos participantes → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx": [
+    "<button> Atualizar papéis exigidos → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/substituicoes/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta de substituição → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/EfetivacaoFormulario.tsx": [
+    "<button> Efetivando… · Confirmar desistência e liberar reservas → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/PedidoFormulario.tsx": [
+    "<button> Registrando… · Registrar pedido → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx": [
+    "<button> Registrando… · Registrar decisão administrativa → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
+    "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",
+    "<button> Registrando… · Registrar decisão independente → secundario/lg",
+    "<button> Aplicando… · Aplicar acerto aprovado → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/Formularios.tsx": [
+    "<button> Registrando… · Submeter proposta financeira → secundario/lg",
+    "<button> Registrando… · Registrar decisão independente → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx": [
+    "<button> Reconciliando… · Reconciliar mesma tentativa → secundario/lg",
+    "<button> Preparando… · Preparar reconferência → secundario/lg",
+    "<button> Registrando… · Registrar decisão administrativa · Registrar → secundario/lg",
+    "<button> Aplicando… · Aplicar reconferência → secundario/lg",
+  ],
+  "matriculas/[id]/disponibilidade-oferta/DisponibilidadeOferta.tsx": [
+    "<button> Enviar para conferência → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Anterior → secundario/md",
+    "<button> Próxima → secundario/md",
+  ],
+  "matriculas/[id]/emissao/ConfirmarEmissao.tsx": [
+    "<button> Conferindo e emitindo… · Confirmar conferência e emitir cobr → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/DecidirFechamento.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx": [
+    "<button> Emitindo… · Emitir cobrança aprovada → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx": [
+    "<button> Conferindo… · Salvar rascunho do período conferido · Conferi → secundario/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
+    "<button> Registrando… · Registrar relato → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
+    "<button> Registrando… · Propor último dia → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/nova-reserva/Formulario.tsx": [
+    "<button> Buscar → secundario/lg",
+    "<button> Professores anteriores → secundario/md",
+    "<button> Mais professores → secundario/md",
+    "<button> Remover → secundario/md",
+    "<button> Adicionar encontro → secundario/lg",
+    "<button> Revisar horários e condições → secundario/lg",
+    "<button> Confirmar nova reserva → secundario/lg",
+  ],
+  "matriculas/[id]/ocorrencias-financeiras/ConferenciaHoras.tsx": [
+    "<button> Conferir prévia → secundario/lg",
+    "<button> Registrar conferência → secundario/lg",
+  ],
+  "matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx": [
+    "<button> Preparar revisão financeira → secundario/lg",
+    "<button> Rejeitar revisão incompleta → secundario/lg",
+    "<button> Aprovar sem alteração de valores → secundario/lg",
+    "<button> Rejeitar → secundario/lg",
+  ],
+  "matriculas/[id]/pagador/PagadorFormulario.tsx": [
+    "<button> Registrando… · Registrar pagador desta matrícula → secundario/lg",
+  ],
+  "matriculas/[id]/preparacao/DecidirPreco.tsx": [
+    "<button> Aprovar exceção de preço → secundario/lg",
+    "<button> Rejeitar exceção → secundario/lg",
+  ],
+  "matriculas/[id]/reserva/ReservarFormulario.tsx": [
+    "<button> Conferindo e reservando… · Confirmar reserva de vaga → secundario/lg",
+  ],
+  "matriculas/nova/MatriculaFormulario.tsx": [
+    "<button> Próximo: curso e contrato → → primario/lg",
+    "<button> ← Voltar → secundario/lg",
+    "<button> Processando… · Salvar matrícula → secundario/lg",
+  ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",
     "<button> Enviar para aprovação administrativa → secundario/lg",
