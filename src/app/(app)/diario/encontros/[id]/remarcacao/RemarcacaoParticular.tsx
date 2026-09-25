@@ -6,6 +6,7 @@ import { consultarRemarcacoesParticular, proporRemarcacaoParticular, decidirRema
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
@@ -23,9 +24,9 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       <label className="block">Data no fuso informado<input type="date" name="data" required className={estilo} /></label>
       <label className="block">Horário<input type="time" name="horario" required className={estilo} /></label>
       <label className="block">Fuso do encontro<input name="fuso" required defaultValue={dados.fuso} className={estilo} /></label>
-      <label className="block">Evidência da escolha do aluno<textarea name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
-      <label className="block">Justificativa de exceção em dia não letivo, se necessária<textarea name="excecao" minLength={5} maxLength={2000} className={estilo} /></label>
+      <label className="block">Evidência da escolha do aluno<CampoTexto name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
+      <label className="block">Justificativa de exceção em dia não letivo, se necessária<CampoTexto name="excecao" minLength={5} maxLength={2000} className={estilo} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir e submeter proposta</button>
     </fieldset></form>}
     {dados.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-3">
@@ -39,7 +40,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
         iniciar(() => executar(() => decidirRemarcacaoParticular({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) })));
       }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar" disabled={!!p.erroConferencia || !!p.conferencia?.pendencias.length}>Aprovar e publicar, incluindo a exceção indicada</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-        <label className="block">Justificativa da decisão<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
+        <label className="block">Justificativa da decisão<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </fieldset></form>}
     </article>)}
   </div>;

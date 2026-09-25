@@ -8,6 +8,7 @@ import { montarPropostaExcecaoAgenda, type HorarioExcecaoConferido } from "./Exc
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export type ExcecaoAgenda = {
   id: string; professor: string; inicio: string; fim: string; fuso: string; motivo: string; evidencia: string;
@@ -58,8 +59,8 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, prefer
     {proposta && <form className="space-y-2 rounded border p-3" onSubmit={e => { e.preventDefault(); propor(e.currentTarget); }}>
       <h3 className="font-medium">Propor exceção de agenda</h3>
       <p role="status">O horário não letivo conferido é {proposta.inicioLocal} a {proposta.fimLocal}, no fuso {proposta.fuso}, com {proposta.professor}. A aprovação será de outra pessoa e não agenda a aula.</p>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Enviando…" : "Propor exceção"}</button>
     </form>}
     {excecoes.length > 0 && <div className="space-y-3"><h3 className="font-medium">Histórico de exceções de agenda</h3>{excecoes.map(excecao => {
@@ -70,7 +71,7 @@ export function ExcecaoAgendaReposicao({ reposicaoId, proposta, excecoes, prefer
       return <article key={excecao.id} className="space-y-2 rounded border p-3">
       <p><strong>Versão {excecao.versao}:</strong> {excecao.professor}, {inicio.texto} a {fim.texto} (exibido em {inicio.fuso}; origem {excecao.fuso}).</p>
       <p>Proposta por {excecao.solicitante} em {criadaEm.texto} (horário exibido em {criadaEm.fuso}): {excecao.motivo}</p><p className="whitespace-pre-wrap">Evidência: {excecao.evidencia}</p>
-      {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {decididaEm!.texto} (horário exibido em {decididaEm!.fuso}): {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
+      {excecao.decisao ? <p role="status">{excecao.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {excecao.decisao.decisor} em {decididaEm!.texto} (horário exibido em {decididaEm!.fuso}): {excecao.decisao.motivo}. A decisão não cria agenda.</p> : excecao.podeDecidir ? <form className="space-y-2" onSubmit={e => { e.preventDefault(); decidir(e.currentTarget, excecao.id); }}><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar exceção pontual</option><option value="rejeitar">Rejeitar exceção</option></select></label><label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button></form> : <p role="status">Aguardando decisão de outra pessoa da gestão.</p>}
     </article>})}</div>}
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={sucesso} />
   </section>;

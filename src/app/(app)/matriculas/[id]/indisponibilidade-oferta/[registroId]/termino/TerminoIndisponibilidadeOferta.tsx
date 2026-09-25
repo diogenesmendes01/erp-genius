@@ -11,6 +11,7 @@ import {
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -79,8 +80,8 @@ export function TerminoIndisponibilidadeOferta({
         <legend>Propor término</legend>
         <p className="text-sm">Informe o último dia de indisponibilidade; não informe a data de retorno.</p>
         <label className="block" htmlFor="fim">Último dia indisponível<input id="fim" className={classe} name="fim" type="date" min={inicio.slice(0, 10)} required /></label>
-        <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-        <label className="block" htmlFor="evidencia">Evidência<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
+        <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="evidencia">Evidência<CampoTexto id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Propor último dia"}</button>
       </fieldset>
     </form>}
@@ -118,8 +119,8 @@ export function TerminoIndisponibilidadeOferta({
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Decisão independente</legend>
           <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar término</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-          <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<textarea id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-          <label className="block" htmlFor={`evidencia-${proposta.id}`}>Evidência da decisão<textarea id={`evidencia-${proposta.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
+          <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<CampoTexto id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+          <label className="block" htmlFor={`evidencia-${proposta.id}`}>Evidência da decisão<CampoTexto id={`evidencia-${proposta.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}

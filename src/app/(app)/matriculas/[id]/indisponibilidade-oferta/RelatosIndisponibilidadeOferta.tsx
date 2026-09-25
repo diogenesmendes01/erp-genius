@@ -9,6 +9,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -62,8 +63,8 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
         <legend>Novo relato</legend>
         <label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" required {...periodo.propsInicio} /></label>
         <label className="block" htmlFor="fim">Fim civil, se já conhecido<input id="fim" className={classe} name="fim" type="date" min={periodo.min} /></label>
-        <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-        <label className="block" htmlFor="evidencia">Evidência do relato<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
+        <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="evidencia">Evidência do relato<CampoTexto id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar relato"}</button>
       </fieldset>
     </form>}
@@ -99,8 +100,8 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       }}>
         <fieldset disabled={ocupado} className="space-y-2"><legend>Confirmação independente</legend>
           <label className="block" htmlFor={`decisao-${relato.id}`}>Decisão<select id={`decisao-${relato.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="confirmar">Confirmar indisponibilidade</option><option value="recusar">Recusar relato</option></select></label>
-          <label className="block" htmlFor={`motivo-${relato.id}`}>Justificativa<textarea id={`motivo-${relato.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-          <label className="block" htmlFor={`evidencia-${relato.id}`}>Evidência da decisão<textarea id={`evidencia-${relato.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
+          <label className="block" htmlFor={`motivo-${relato.id}`}>Justificativa<CampoTexto id={`motivo-${relato.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+          <label className="block" htmlFor={`evidencia-${relato.id}`}>Evidência da decisão<CampoTexto id={`evidencia-${relato.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}

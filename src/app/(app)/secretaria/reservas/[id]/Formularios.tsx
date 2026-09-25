@@ -6,6 +6,7 @@ import { prepararResolucaoParticular, decidirResolucaoParticular } from "@/serve
 import { prepararResolucaoReserva, decidirResolucaoReserva } from "@/server/matricula/reserva-resolucao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 export function PrepararResolucao({ reservaId, versao, fuso, particular = false }: { reservaId: string; versao: number; fuso: string; particular?: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [tipo, setTipo] = useState<"PRORROGAR" | "LIBERAR">("PRORROGAR");
@@ -20,8 +21,8 @@ export function PrepararResolucao({ reservaId, versao, fuso, particular = false 
     <h2 className="font-medium">Preparar resolução</h2>
     <label className="block">Decisão proposta<select className="block rounded border p-2" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} disabled={ocupado}><option value="PRORROGAR">Prorrogar reserva</option><option value="LIBERAR">{particular ? "Liberar horários" : "Liberar vaga"}</option></select></label>
     {tipo === "PRORROGAR" && <div><p>Novo prazo no fuso {fuso}</p><label className="block">Data<input className="block rounded border p-2" type="date" name="data" required /></label><label className="block">Horário<input className="block rounded border p-2" type="time" name="horario" required /></label></div>}
-    <label className="block">Motivo<textarea className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} /></label>
-    <label className="block">Tratamento previsto para contratação, documentos e valores<textarea className="block w-full rounded border p-2" name="tratamento" required minLength={10} maxLength={4000} /></label>
+    <label className="block">Motivo<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} /></label>
+    <label className="block">Tratamento previsto para contratação, documentos e valores<CampoTexto className="block w-full rounded border p-2" name="tratamento" required minLength={10} maxLength={4000} /></label>
     <p>A decisão da reserva não executa o tratamento financeiro ou documental. Esses processos conservam suas próprias aprovações.</p>
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado}>Enviar proposta para revisão</button>{mensagem && <p role="alert">{mensagem}</p>}
   </form>;
@@ -32,7 +33,7 @@ export function DecidirResolucao({ propostaId, podeAprovar, particular = false }
     const r = await (particular ? decidirResolucaoParticular : decidirResolucaoReserva)({ propostaId, aprovar, motivo });
     if (!r.ok) { setMensagem(r.erro); return; } router.refresh();
   } catch { setMensagem(MSG_DECISAO_INCERTA); } }); }
-  return <div className="space-y-2"><label className="block">Motivo da decisão<textarea className="block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} /></label>
+  return <div className="space-y-2"><label className="block">Motivo da decisão<CampoTexto className="block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} /></label>
     <div className="flex gap-3"><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5 || !podeAprovar} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button></div>
     {!podeAprovar && <p>A aprovação exige a proposta mais recente, estado conferido e prazo válido. Prepare uma nova proposta se necessário.</p>}{mensagem && <p role="alert">{mensagem}</p>}
   </div>;

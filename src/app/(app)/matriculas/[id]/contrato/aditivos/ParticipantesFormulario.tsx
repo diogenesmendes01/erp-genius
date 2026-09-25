@@ -8,6 +8,7 @@ import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -76,7 +77,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         });
       }}>
         {maioridade && <fieldset className="space-y-3 rounded border p-3" disabled={pendente}><legend>Critério de maioridade</legend>
-          <label className="block">Regra e conferência realizadas<textarea className={campo} name="criterio" required minLength={5} maxLength={2000} /></label>
+          <label className="block">Regra e conferência realizadas<CampoTexto className={campo} name="criterio" required minLength={5} maxLength={2000} /></label>
           {evidencia("maioridade", "Documento que sustenta a classificação")}
         </fieldset>}
         {formulario.participantesSugeridos.map(p => <fieldset key={p.papel} className="space-y-3 rounded border p-3" disabled={pendente}>
@@ -86,10 +87,10 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
             : <><label className="block">Nome completo<input className={campo} name={`${p.papel}:nome`} required maxLength={200} /></label>
               <label className="block">E-mail<input className={campo} type="email" name={`${p.papel}:email`} required maxLength={254} /></label>
               <label className="block">Documento<input className={campo} name={`${p.papel}:documento`} required maxLength={100} /></label>
-              <label className="block">Fundamento da representação<textarea className={campo} name={`${p.papel}:descricao`} required minLength={5} maxLength={2000} /></label>
+              <label className="block">Fundamento da representação<CampoTexto className={campo} name={`${p.papel}:descricao`} required minLength={5} maxLength={2000} /></label>
               {evidencia(p.papel, "Evidência da representação")}</>}
         </fieldset>)}
-        <label className="block">Motivo da conferência<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} disabled={pendente} /></label>
+        <label className="block">Motivo da conferência<CampoTexto className={campo} name="motivo" required minLength={5} maxLength={2000} disabled={pendente} /></label>
         <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi as identificações, os papéis e as evidências para este aditivo.</label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>

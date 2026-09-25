@@ -6,6 +6,7 @@ import { decidirMigracaoRegra, proporMigracaoRegra } from "@/server/avaliacoes/m
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada }: {
   turmaId: string; destinoId: string; estadoHash: string; versaoEsperada: number;
@@ -22,7 +23,7 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
     finally { setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Encaminhar para decisão independente</legend>
-      <label className="block">Motivo da mudança<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo da mudança<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi as versões e os impactos apresentados.</label>
       <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta"}</button>
     </fieldset><MensagemStatus texto={mensagem} />
@@ -41,7 +42,7 @@ export function DecidirMigracao({ propostaId, estadoHash, podeAprovar }: { propo
   }}>
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão desta proposta</legend>
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar a mudança</option>}<option value="rejeitar">Rejeitar para revisão</option></select></label>
-      <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" required /> Conferi a proposta e seus impactos.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset><MensagemStatus texto={mensagem} />

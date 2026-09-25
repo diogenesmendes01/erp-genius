@@ -7,6 +7,7 @@ import { ConferirParticipantesSchema } from "@/server/contratos/participantes-sc
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantes>>;
 type Dados = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
 type Participante = z.infer<typeof ConferirParticipantesSchema>["participantes"][number];
@@ -34,7 +35,7 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
     {dados.plano.pendencias.map((p) => <p key={p} role="status">{p}</p>)}
     <fieldset disabled={ocupado || incompleto} className="space-y-4"><legend className="font-medium">Conferência versão {dados.versaoEsperada + 1}</legend>
       {dados.maioridade && <section className="space-y-2 rounded border p-3"><h2>Fundamento da classificação de maioridade</h2>
-        <label className="block">Critério aplicável conferido<textarea name="criterio" required minLength={5} maxLength={2000} className={campo} /></label>
+        <label className="block">Critério aplicável conferido<CampoTexto name="criterio" required minLength={5} maxLength={2000} className={campo} /></label>
         <label className="block">Documento conferido<select name="evidenciaMaioridade" required defaultValue="" className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {d.categoria}</option>)}</select></label>
       </section>}
       {dados.participantes.map((p) => <section key={p.papel} className="space-y-2 rounded border p-3"><h2 className="font-medium">{PAPEIS_MODELO[p.papel]} · {p.etapa === "CLIENTE" ? "primeira etapa" : "após assinaturas do cliente"}</h2>
@@ -42,11 +43,11 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
           <label className="block">Nome da pessoa<input name={`${p.papel}_nome`} required maxLength={200} className={campo} /></label>
           <label className="block">E-mail individual<input name={`${p.papel}_email`} type="email" required maxLength={254} className={campo} /></label>
           <label className="block">Documento da pessoa<input name={`${p.papel}_documento`} required maxLength={100} className={campo} /></label>
-          <label className="block">Representação conferida<textarea name={`${p.papel}_representacao`} required minLength={5} maxLength={2000} className={campo} /></label>
+          <label className="block">Representação conferida<CampoTexto name={`${p.papel}_representacao`} required minLength={5} maxLength={2000} className={campo} /></label>
           <label className="block">Evidência da representação<select name={`${p.papel}_evidencia`} required defaultValue="" className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {d.categoria}</option>)}</select></label>
         </>}
       </section>)}
-      <label className="block">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
+      <label className="block">Motivo da conferência<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
       <label className="block"><input name="conferido" type="checkbox" required /> Conferi as identidades, contatos e a representação aplicável a cada pessoa.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar conferência dos participantes"}</button>
     </fieldset>

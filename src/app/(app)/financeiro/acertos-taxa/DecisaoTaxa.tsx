@@ -5,6 +5,7 @@ import { decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo, invalidarAcertoTaxa
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalidar = false }: { propostaId: string; podeDecidir: boolean; podeAplicar: boolean; podeInvalidar?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
@@ -29,7 +30,7 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
     finally { enviando.current = false; setOcupado(false); }
   }
   return <div className="space-y-2"><fieldset disabled={ocupado} className="space-y-2">
-    {(podeDecidir || podeInvalidar) && <label className="block">{podeInvalidar ? "Motivo da invalidação" : "Motivo da decisão"}<textarea className="block w-full rounded border p-2" value={motivo} onChange={e => setMotivo(e.target.value)} minLength={5} maxLength={2000} /></label>}
+    {(podeDecidir || podeInvalidar) && <label className="block">{podeInvalidar ? "Motivo da invalidação" : "Motivo da decisão"}<CampoTexto className="block w-full rounded border p-2" value={motivo} onChange={e => setMotivo(e.target.value)} minLength={5} maxLength={2000} /></label>}
     {podeDecidir && <><button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("aprovar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar acerto</button>{" "}
       <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("rejeitar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar acerto</button></>}
     {podeAplicar && <button type="button" onClick={() => enviar("aplicar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aplicar acerto aprovado</button>}

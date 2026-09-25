@@ -6,6 +6,7 @@ import { reconferirPendenciaAvisoAgenda } from "@/server/comunicacoes-agenda/rec
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
   const router = useRouter();
@@ -26,7 +27,7 @@ export function ReconferirPendencia({ pendenciaId }: { pendenciaId: string }) {
     }
   }
   return <form className="mt-3 space-y-2" onSubmit={enviar}>
-    <label className="block text-sm">Motivo da reconferência<textarea className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} minLength={5} maxLength={2000} required disabled={ocupado} /></label>
+    <label className="block text-sm">Motivo da reconferência<CampoTexto className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} minLength={5} maxLength={2000} required disabled={ocupado} /></label>
     <button className={botaoClasses({ variante: "secundario", tamanho: "sm" })} disabled={ocupado}>{ocupado ? "Reconferindo…" : "Reconferir condição"}</button>
     <MensagemStatus texto={resultado} className="text-sm" />
   </form>;

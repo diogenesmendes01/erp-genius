@@ -9,6 +9,7 @@ import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -30,8 +31,8 @@ const campo = (d: FormData, nome: string) => String(d.get(nome) ?? "");
 export function Disponibilizar({ propostaId, propostaHash, autorizacaoPreparacaoId, fusoInstitucional }: { propostaId: string; propostaHash: string; autorizacaoPreparacaoId?: string; fusoInstitucional: string | null }) {
   return <Formulario titulo="Registrar disponibilização" executar={d => disponibilizarRecuperacaoLocal({ propostaId, propostaHash, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), condicoes: campo(d, "condicoes"), evidenciaComunicacao: campo(d, "evidencia"), autorizacaoPreparacaoId })}>
     <Horario fusoInstitucional={fusoInstitucional} />
-    <label className="block">Condições disponibilizadas ao aluno<textarea name="condicoes" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
-    <label className="block">Evidência de comunicação ao aluno<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Condições disponibilizadas ao aluno<CampoTexto name="condicoes" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Evidência de comunicação ao aluno<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
 export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: string; propostaHash: string; saldo: { habilidade: Habilidade; disponiveis: number }[] }) {
@@ -45,7 +46,7 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
     return r;
   }}>
     {saldo.map(h => <label key={h.habilidade} className="block"><input type="checkbox" name={h.habilidade} disabled={h.disponiveis === 0} /> {h.habilidade.replaceAll("_", " ")} — {h.disponiveis} disponíveis</label>)}
-    <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
 export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHistorica = false, fusoInstitucional }: { itemReservaId: string; professoresHistoricos?: { id: string; nome: string }[]; somenteHistorica?: boolean; fusoInstitucional: string | null }) {
@@ -54,14 +55,14 @@ export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHis
     <MensagemStatus texto={somenteHistorica ? "Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente." : null} />
     <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} fusoInstitucional={fusoInstitucional} />
     {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<select value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2"><option value="">Eu realizei</option>{professoresHistoricos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>}
-    {realizadaPorId && <label className="block">Motivo da regularização<textarea name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}
-    <label className="block">Evidência da avaliação realizada<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    {realizadaPorId && <label className="block">Motivo da regularização<CampoTexto name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}
+    <label className="block">Evidência da avaliação realizada<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
 export function CancelarPelaEscola({ reservaId }: { reservaId: string }) {
   return <Formulario titulo="Registrar cancelamento pela escola" executar={d => cancelarReservaRecuperacaoPelaEscola({ reservaId, motivo: campo(d, "motivo"), evidencia: campo(d, "evidencia") })}>
     <p>Libera somente habilidades ainda não realizadas. Use esta operação para cancelamento pela escola, não para falta ou cancelamento do aluno.</p>
-    <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-    <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

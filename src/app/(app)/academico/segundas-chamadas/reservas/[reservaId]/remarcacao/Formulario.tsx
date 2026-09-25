@@ -6,6 +6,7 @@ import { decidirRemarcacaoAgendaSegundaChamada } from "@/server/avaliacoes/segun
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 type Props = {
  reservaId: string;
  estadoConferido: string;
@@ -48,10 +49,10 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
  <label className="block">Novo início<input name="inicioLocal" type="datetime-local" required {...periodo.propsInicio} className="block border p-2" /></label>
  <label className="block">Novo término<input name="fimLocal" type="datetime-local" required min={periodo.min} className="block border p-2" /></label>
  <label className="block">Fuso dos horários<input name="fusoOrigem" required maxLength={100} placeholder="America/Sao_Paulo" className="block border p-2" /><span className="text-sm">Informe o fuso em que preencheu início e término.</span></label>
- <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
- <label className="block">Justificativa de exceção não letiva, se o horário a atingir<textarea name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>
+ <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
+ <label className="block">Justificativa de exceção não letiva, se o horário a atingir<CampoTexto name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>
  </>}
- <label className="block">{proposta ? "Motivo da decisão" : "Motivo da remarcação"}<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
+ <label className="block">{proposta ? "Motivo da decisão" : "Motivo da remarcação"}<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
  <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
  </fieldset>{erro && <p role="alert">{erro}</p>}
  </form>;

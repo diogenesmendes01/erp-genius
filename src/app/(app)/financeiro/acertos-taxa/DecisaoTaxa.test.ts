@@ -5,6 +5,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ decidirAcertoTaxaAditivo: m.decidir, aplicarAcertoTaxaAditivo: m.aplicar, invalidarAcertoTaxaAditivo: m.invalidar }));
 import { DecisaoTaxa } from "./DecisaoTaxa";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 function buttons(node: unknown): Array<{ onClick: () => Promise<void>; children: string }> {
   if (Array.isArray(node)) return node.flatMap(buttons);
   if (!node || typeof node !== "object") return [];
@@ -66,8 +67,8 @@ it("oferece campo de motivo quando só a invalidação está disponível", () =>
   function localizar(node: unknown): Array<{ onChange: (e: { target: { value: string } }) => void }> {
     if (Array.isArray(node)) return node.flatMap(localizar);
     if (!node || typeof node !== "object") return [];
-    const n = node as { type?: string; props?: { children?: unknown; onChange?: (e: { target: { value: string } }) => void } };
-    return n.type === "textarea" && n.props?.onChange ? [{ onChange: n.props.onChange }] : localizar(n.props?.children);
+    const n = node as { type?: unknown; props?: { children?: unknown; onChange?: (e: { target: { value: string } }) => void } };
+    return (n.type === "textarea" || n.type === CampoTexto) && n.props?.onChange ? [{ onChange: n.props.onChange }] : localizar(n.props?.children);
   }
   const campos = localizar(c.elemento);
   expect(campos).toHaveLength(1);

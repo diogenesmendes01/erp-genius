@@ -39,6 +39,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -719,7 +720,7 @@ function Composer({
         >
           {gravando ? <IconPlayerStopFilled className="h-4 w-4" /> : <IconMicrophone className="h-4 w-4" />}
         </button>
-        <textarea
+        <CampoTexto
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => {
@@ -941,7 +942,7 @@ function CockpitLead({
             Só a equipe vê — nada aqui é enviado ao contato.
           </p>
           <div className="flex items-start gap-1.5">
-            <textarea
+            <CampoTexto
               rows={2}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
