@@ -46,7 +46,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
       <p>Escala: {escala.minimo} a {escala.maximo}. Campo de nota vazio permanece pendente no rascunho.</p>
       {habilidades.map(h => { const n = anterior?.notas.find(n => n.habilidade === h); return <div key={h} className="space-y-2 rounded border p-3">
         <label className="block">Nota de {nomes[h]}<input name={`nota-${h}`} inputMode="decimal" maxLength={100} defaultValue={n?.nota ?? ""} className="block rounded border p-2" /></label>
-        <label className="block">Comentário para o aluno — {nomes[h]}<textarea name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
+        <label className="block">Comentário para o aluno — {nomes[h]}<CampoTexto name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
       <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
       <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar versão"}</button>

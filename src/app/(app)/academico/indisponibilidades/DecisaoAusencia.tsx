@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { decidirIndisponibilidadeDocente } from "@/server/agenda/indisponibilidade";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function DecisaoAusencia({ id, impactoHash }: { id: string; impactoHash: string | null }) {
   const router = useRouter();
@@ -21,7 +22,7 @@ export function DecisaoAusencia({ id, impactoHash }: { id: string; impactoHash: 
     });
   }
   return <div className="space-y-2 border-t pt-3">
-    <label className="block text-sm">Motivo da decisão<textarea className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} disabled={ocupado} /></label>
+    <label className="block text-sm">Motivo da decisão<CampoTexto className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} disabled={ocupado} /></label>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
     <div className="flex gap-3"><button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado || !impactoHash || motivo.trim().length < 5} onClick={() => decidir(true)}>Aprovar indisponibilidade</button>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar</button></div>

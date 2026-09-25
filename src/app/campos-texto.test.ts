@@ -1,51 +1,50 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 // E1/E7 (docs/42-auditoria-frontend-ux.md): 266 <textarea minLength> escondiam o mínimo até o envio.
-// Campo de texto longo com mínimo usa <CampoTexto> (src/components/CampoTexto.tsx), que mostra o
-// mínimo e a contagem ligados por aria-describedby. <textarea> cru só sem minLength.
+// Todo campo de texto longo das telas é <CampoTexto> (src/components/CampoTexto.tsx), que mostra o
+// mínimo e a contagem ligados por aria-describedby.
+//
+// A trava não depende da sintaxe (R1 da #121): em vez de reconhecer cada forma de escrever o elemento
+// (JSX, createElement, tag em variável, membro, atributo minúsculo…), a PALAVRA "textarea", em qualquer
+// caixa, simplesmente não aparece no código das telas — só em CampoTexto.tsx. A única exceção é o tipo
+// HTMLTextAreaElement (tipo do TypeScript, não cria elemento). Em comentário, escreva "campo de texto".
 
-/** <textarea> com minLength (em qualquer forma: atributo ou spread que o traga não é aceito). */
-export function textareasComMinimo(fonte: string): number {
-  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  let n = 0;
-  const visitar = (no: ts.Node) => {
-    if ((ts.isJsxSelfClosingElement(no) || ts.isJsxOpeningElement(no)) && no.tagName.getText(sf) === "textarea") {
-      const props = no.attributes.properties;
-      if (props.some((p) => ts.isJsxSpreadAttribute(p) || (ts.isJsxAttribute(p) && p.name.getText(sf) === "minLength"))) n++;
-    }
-    ts.forEachChild(no, visitar);
-  };
-  visitar(sf);
-  return n;
+const TIPO_PERMITIDO = /HTMLTextAreaElement/g;
+
+/** Ocorrências da palavra textarea (qualquer caixa) num fonte, fora do tipo HTMLTextAreaElement. */
+export function mencoesDeTextarea(fonte: string): number {
+  return fonte.replace(TIPO_PERMITIDO, "").match(/textarea/gi)?.length ?? 0;
 }
 
 const fontes = ["src/app", "src/components"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
-    .filter((f) => /\.(t|j)sx$/.test(f) && !/\.test\./.test(f))
+    .filter((f) => /\.(t|j)sx?$/.test(f) && !/\.test\./.test(f))
     .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
 );
 
-describe("mínimo de caracteres visível", () => {
-  it("nenhum <textarea minLength> cru nas telas (use <CampoTexto>) — o próprio CampoTexto é a exceção", () => {
+describe("campo de texto longo só pelo CampoTexto", () => {
+  it("a palavra \"textarea\" (qualquer caixa, qualquer sintaxe) só aparece em src/components/CampoTexto.tsx", () => {
     const ofensores = fontes
       .filter(({ arquivo }) => arquivo !== "src/components/CampoTexto.tsx")
-      .filter(({ conteudo }) => textareasComMinimo(conteudo) > 0)
-      .map(({ arquivo, conteudo }) => `${arquivo}: ${textareasComMinimo(conteudo)}`);
+      .filter(({ conteudo }) => mencoesDeTextarea(conteudo) > 0)
+      .map(({ arquivo, conteudo }) => `${arquivo}: ${mencoesDeTextarea(conteudo)}`);
     expect(ofensores).toEqual([]);
   });
 
-  it("os campos de texto com mínimo estão todos no CampoTexto (a migração não perdeu nenhum)", () => {
+  it("todos os campos de texto longo estão no CampoTexto (a migração não perdeu nenhum)", () => {
     const usos = fontes.reduce((s, { conteudo }) => s + (conteudo.match(/<CampoTexto\b/g)?.length ?? 0), 0);
-    expect(usos).toBeGreaterThanOrEqual(266);
+    expect(usos).toBeGreaterThanOrEqual(319); // 266 com mínimo + 53 sem
   });
 
-  it("o detector pega minLength e spread, e aceita textarea sem mínimo", () => {
-    expect(textareasComMinimo('<textarea name="m" minLength={5} />')).toBe(1);
-    expect(textareasComMinimo("<textarea {...props} />")).toBe(1);
-    expect(textareasComMinimo('<textarea name="m" maxLength={200} />')).toBe(0);
-    expect(textareasComMinimo('<CampoTexto name="m" minLength={5} />')).toBe(0);
+  it("o detector pega JSX, createElement, tag em variável, membro e atributo minúsculo; aceita o tipo", () => {
+    expect(mencoesDeTextarea('<textarea name="m" minLength={5} />')).toBe(1);
+    expect(mencoesDeTextarea('createElement("textarea", { minLength: 5 })')).toBe(1);
+    expect(mencoesDeTextarea('const Tag = "textarea"; <Tag minLength={5} />')).toBe(1);
+    expect(mencoesDeTextarea("<foo.textarea minLength={5} />")).toBe(1);
+    expect(mencoesDeTextarea("<TEXTAREA minlength={5} />")).toBe(1);
+    expect(mencoesDeTextarea("(e.target as HTMLTextAreaElement).name")).toBe(0);
+    expect(mencoesDeTextarea('<CampoTexto name="m" minLength={5} />')).toBe(0);
   });
 });

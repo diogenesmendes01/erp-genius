@@ -8,6 +8,7 @@ import { listarAlunosParaChamada } from "@/server/diario/chamada";
 import type { AulaDiarioView, TurmaDiario } from "@/server/diario/consultas";
 import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { CampoTexto } from "@/components/CampoTexto";
 
 const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = botaoClasses({ tamanho: "lg" });
@@ -82,14 +83,14 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
           <input className={campo} type="datetime-local" value={data} disabled={!!edicao} max={dataLocal()} onChange={(e) => { setData(e.target.value); escolherTurma(turmaId, e.target.value); }} />
         </label>
       </div>
-      <label className="flex flex-col gap-1 text-sm">Conteúdo ministrado<textarea className={campo} rows={3} value={conteudo} maxLength={10000} onChange={(e) => setConteudo(e.target.value)} /></label>
+      <label className="flex flex-col gap-1 text-sm">Conteúdo ministrado<CampoTexto className={campo} rows={3} value={conteudo} maxLength={10000} onChange={(e) => setConteudo(e.target.value)} /></label>
       <div className="space-y-3">
         <MensagemStatus texto={carregando ? "Carregando a chamada da data selecionada…" : null} />
         {conferencia && <p role="alert" className="text-amber-700">Há vínculos com histórico incompleto. Solicite conferência à gestão antes de registrar esta chamada.</p>}
         {registros.map((r, i) => <div key={r.alunoId} className="grid gap-2 rounded-md border border-gray-100 p-3 sm:grid-cols-[1fr_160px_2fr]">
           <div className="text-sm font-medium">{r.nomeAluno}{!r.podeEditar && <p className="mt-1 text-xs font-normal text-gray-500">Histórico em leitura após saída da turma.</p>}</div>
           <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<select className={campo} disabled={!r.podeEditar} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))}><option value="">Não informada</option><option value="sim">Presente</option><option value="nao">Ausente</option></select></label>
-          <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<textarea className={campo} disabled={!r.podeEditar} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
+          <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<CampoTexto className={campo} disabled={!r.podeEditar} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
         </div>)}
         {turmaId && !carregando && !erro && registros.length === 0 && <p className="text-sm text-gray-500">Nenhum aluno elegível na data selecionada.</p>}
       </div>

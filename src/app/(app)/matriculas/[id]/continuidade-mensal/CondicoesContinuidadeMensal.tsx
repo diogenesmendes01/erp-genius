@@ -101,7 +101,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Nova transcrição do contrato confirmado</legend>
         <p>Documento de evidência: contrato confirmado desta matrícula. A evidência é vinculada automaticamente e não pode ser alterada aqui.</p>
-        <label className="block" htmlFor="clausula">Cláusula de continuidade contratada<textarea id="clausula" className={classe} name="clausula" maxLength={4000} required /></label>
+        <label className="block" htmlFor="clausula">Cláusula de continuidade contratada<CampoTexto id="clausula" className={classe} name="clausula" maxLength={4000} required /></label>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block" htmlFor="valor-original">Preço original ({d.moeda})<input id="valor-original" className={classe} name="valorOriginal" inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:[.][0-9]{1,2})?" required /></label>
           <label className="block" htmlFor="valor-negociado">Preço negociado ({d.moeda})<input id="valor-negociado" className={classe} name="valorNegociado" inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:[.][0-9]{1,2})?" required /></label>

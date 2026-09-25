@@ -22,7 +22,7 @@ export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno
     <h2 className="text-xl font-medium">Lançar nota</h2>
     <fieldset disabled={enviando} className="space-y-3">
       <label className="block">Nota (use ponto para decimais)<input name="nota" defaultValue={nota ?? ""} inputMode="decimal" maxLength={100} pattern="-?[0-9]+(\.[0-9]+)?" className="block rounded border p-2" /></label>
-      <label className="block">Comentário destinado ao aluno<textarea name="comentario" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Comentário destinado ao aluno<CampoTexto name="comentario" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block"><input type="checkbox" name="submetida" /> Submeter para conferência independente</label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Salvando…" : "Salvar versão"}</button>
     </fieldset>

@@ -28,7 +28,7 @@ export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matr
       <label className="block">Documento<input name="documento" maxLength={100} defaultValue={dados?.documento ?? ""} className="ml-2 rounded border p-2" /></label>
       <label className="block">E-mail<input name="email" type="email" maxLength={254} defaultValue={dados?.email ?? ""} className="ml-2 rounded border p-2" /></label>
       <label className="block">Telefone internacional<input name="telefoneE164" placeholder="+50688887777" pattern="\+[1-9][0-9]{7,14}" defaultValue={dados?.telefoneE164 ?? ""} className="ml-2 rounded border p-2" /></label>
-      <label className="block">Endereço<textarea name="endereco" maxLength={1000} defaultValue={dados?.endereco ?? ""} className="block rounded border p-2" /></label>
+      <label className="block">Endereço<CampoTexto name="endereco" maxLength={1000} defaultValue={dados?.endereco ?? ""} className="block rounded border p-2" /></label>
     </fieldset>}
     <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block rounded border p-2" /></label>
     <button disabled={ocupado || !tipo} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar pagador desta matrícula"}</button>{erro && <p role="alert">{erro}</p>}

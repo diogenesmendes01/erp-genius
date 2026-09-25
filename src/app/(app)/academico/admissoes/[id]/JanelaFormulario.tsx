@@ -51,7 +51,7 @@ export function DecidirJanela({ propostaId, podeAprovar }: { propostaId: string;
     });
   }
   return <fieldset disabled={ocupado} className="space-y-2 rounded border p-3"><legend>Decisão desta versão</legend>
-    <label className="block">Motivo da decisão<textarea value={motivo} maxLength={2000} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
+    <label className="block">Motivo da decisão<CampoTexto value={motivo} maxLength={2000} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
     <div className="flex gap-3"><button disabled={!podeAprovar || motivo.trim().length < 5} onClick={() => decidir(true)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar janela</button>
       <button disabled={motivo.trim().length < 5} onClick={() => decidir(false)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar janela</button></div>
     {!podeAprovar && <p>Confira a versão mais recente, o fuso e a situação da turma antes de aprovar.</p>}
