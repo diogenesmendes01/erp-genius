@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { autorizarRecuperacaoEspecialLocal } from "@/server/avaliacoes/recuperacao-autorizacao-local";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { botaoClasses } from "@/components/Botao";
 
 export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId
       <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. Exemplos: America/Sao_Paulo e America/Costa_Rica. Horários ambíguos ou inexistentes exigem correção.</p>
       <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <button className="rounded border px-4 py-2" type="submit">{ocupado ? "Autorizando…" : "Autorizar realização especial"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{ocupado ? "Autorizando…" : "Autorizar realização especial"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}
   </form>;

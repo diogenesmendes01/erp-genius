@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporCorrecaoNota, decidirCorrecaoNota } from "@/server/avaliacoes/correcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; nota: string | null; comentarioAluno: string };
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -24,7 +25,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
     </div>)}
     <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi os valores vigentes e as alterações propostas.</label>
-    <button className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta"}</button>
+    <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;
 }
 
@@ -41,6 +42,6 @@ export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAp
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar</option>}<option value="rejeitar">Rejeitar</option></select></label>
     <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi notas, comentários e impactos apresentados.</label>
-    <button className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;
 }
