@@ -5,6 +5,7 @@ import { listarRegularizacoesAula } from "@/server/diario/regularizacao-consulta
 import { GerirDesignacoes } from "./GerirDesignacoes";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const ROTULO_STATUS: Record<string, string> = { NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho", PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada" };
 
@@ -14,7 +15,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
   const modo = modoParam === "HISTORICO" ? "HISTORICO" : "PENDENTES";
   const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ cursor, modo }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
-    <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
+    <VoltarPara href="/diario" para="Diário" />
     <div>
       <h1 className="text-2xl font-medium">Regularizações de aula</h1>
       <p className="mt-1 text-sm text-gray-600">A designação é limitada à aula escolhida e preserva o professor original.</p>

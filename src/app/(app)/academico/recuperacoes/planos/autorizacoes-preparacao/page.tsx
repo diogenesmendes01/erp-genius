@@ -5,6 +5,7 @@ import { consultarHistoricoPreparacaoRecuperacao } from "@/server/avaliacoes/rec
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function HistoricoPreparacao({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -21,7 +22,7 @@ export default async function HistoricoPreparacao({ searchParams }: { searchPara
   const caminhoHistorico = `/academico/recuperacoes/planos/autorizacoes-preparacao?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`;
 
   return <section className="space-y-4">
-    <Link className="underline" href={caminhoPlanos}>Voltar para os planos de recuperação</Link>
+    <VoltarPara href={caminhoPlanos} para="Planos de recuperação" />
     <h1 className="text-2xl font-medium">Histórico de autorizações de preparação</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3">

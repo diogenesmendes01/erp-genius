@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function GradesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -11,7 +12,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     select: { id: true, versao: true, fusoOrigem: true, turma: { select: { codigo: true } },
       decisao: { select: { aprovada: true } }, preparador: { select: { nome: true } } } });
   return <div className="space-y-4">
-    <Link href="/academico" className="underline">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" para="Acadêmico" />
     <h1 className="text-2xl font-medium">Grades das turmas</h1>
     <p>Confira os encontros e a disponibilidade antes da aprovação independente.</p>
     <Link href="/academico/grades/nova" className="inline-block rounded border px-3 py-2">Preparar nova grade</Link>

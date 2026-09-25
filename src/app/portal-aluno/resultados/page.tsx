@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { consultarResultadosPortalAluno, type ResultadoPortalAluno } from "@/server/portal-aluno/resultados";
 import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechamentos";
@@ -6,6 +5,7 @@ import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/prefe
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ErroAutenticacao } from "@/server/_shared";
 import { rotular } from "@/lib/labels";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +132,7 @@ export default async function ResultadosPortalAlunoPage() {
   ]);
   const fusoExibicao = resolverFusoExibicao(preferencia.fusoExibicao, "UTC");
   return <section className="mx-auto max-w-3xl space-y-6 p-6 sm:p-10">
-    <Link href="/portal-aluno" className="text-sm text-brand-700 underline">Voltar à área do aluno</Link>
+    <VoltarPara href="/portal-aluno" para="Área do aluno" />
     <header><p className="text-sm text-brand-700">Frente acadêmica</p><h1 className="mt-1 text-2xl font-medium">Avaliações, habilidades e frequência</h1><p className="mt-2 text-sm text-gray-600">Mostramos avaliações já oficializadas, o acompanhamento do seu vínculo e, quando houver, a confirmação de fechamento acadêmico.</p></header>
     <p className="text-sm text-gray-600">Valores marcados como “aprox.” foram arredondados somente para esta visualização.</p>
     {!resultado.matriculas.length && <p className="rounded border bg-surface p-4 text-sm text-gray-700">Não há vínculo acadêmico com resultados disponíveis neste acesso.</p>}

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAcertoTaxaPorProposta, listarHistoricoAcertosTaxa } from "@/server/contratos/aditivo-acerto-taxa-consulta";
@@ -9,11 +8,12 @@ import { consultarImpactosTaxaAditivo } from "@/server/contratos/aditivo-taxa-im
 import { ImpactosTaxaOperacao } from "../../ImpactosTaxaOperacao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function AcertoTaxaDetalhe({ params }: { params: Promise<{ matriculaId: string; propostaId: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO); const d = await params;
   const [previa, historico, impactos] = await Promise.all([consultarAcertoTaxaPorProposta(d), listarHistoricoAcertosTaxa(d), consultarImpactosTaxaAditivo(d)]);
   const podePreparar = impactos.ok && (!impactos.dado || ["REJEITADO", "OBSOLETO"].includes(impactos.dado.status));
-  return <main className="space-y-5"><Link className="underline" href="/financeiro/acertos-taxa">Voltar aos acertos de taxa</Link><h1 className="text-2xl">Acerto da taxa · matrícula {d.matriculaId}</h1>
+  return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-taxa" para="Acertos de taxa" /><h1 className="text-2xl">Acerto da taxa · matrícula {d.matriculaId}</h1>
     {!previa.ok ? <p role="alert">{previa.erro}</p> : previa.dado?.estado === "PRONTA_PARA_SELECAO" ? <>{podePreparar && <section id="preparar-impactos"><ImpactosTaxaFormulario matriculaId={d.matriculaId} propostaId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></section>}<AcertoTaxaFormulario matriculaId={d.matriculaId} propostaAditivoId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></> : <p>{previa.dado?.mensagem}</p>}
     {!impactos.ok && <p role="alert">{impactos.erro}</p>}
     {impactos.ok && <ImpactosTaxaOperacao conjunto={impactos.ok ? impactos.dado ?? null : null} acertos={historico.ok ? (historico.dado ?? []).map(p => ({ id: p.id, cobrancaId: p.cobrancaId, codigo: p.codigo, moeda: p.moeda, valorNovo: p.valorNovo, vencimentoNovo: p.vencimentoNovo, status: p.status })) : []} reprepararHref={`/financeiro/acertos-taxa/${encodeURIComponent(d.matriculaId)}/${encodeURIComponent(d.propostaId)}#preparar-impactos`} />}

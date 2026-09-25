@@ -4,12 +4,13 @@ import { consultarCondicoesEntrada } from "@/server/secretaria/condicoes-entrada
 import { CondicoesFormulario } from "./CondicoesFormulario";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function CondicoesPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, r = await consultarCondicoesEntrada(id);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, p = d.registro;
-  return <div className="space-y-4"><Link href="/secretaria" className="underline">Voltar à Secretaria</Link><h1 className="text-2xl">Condições de entrada · {d.codigo ?? "Em preparação"}</h1>
+  return <div className="space-y-4"><VoltarPara href="/secretaria" para="Secretaria" /><h1 className="text-2xl">Condições de entrada · {d.codigo ?? "Em preparação"}</h1>
     <p>Estas condições preparam a contratação. Registrar não emite cobranças nem confirma recebimento ou assinatura.</p>
     <Link href={`/matriculas/${id}/pagador`} className="underline">Conferir pagador</Link>
     {d.regime === "HORA_PARTICULAR" && <Link href={`/matriculas/${id}/condicoes-horas`} className="block underline">Condições por hora do contrato confirmado</Link>}

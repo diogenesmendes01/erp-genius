@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarEncontrosDocente } from "@/server/agenda/encontros-docente";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function EncontrosDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
@@ -9,7 +10,7 @@ export default async function EncontrosDocentePage({ searchParams }: { searchPar
   const r = await consultarEncontrosDocente({ cursor });
   const rotulo = { PREVISTO: "Prevista", MINISTRADO: "Ministrada", CANCELADO: "Cancelada", NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho" };
   return <div className="space-y-4">
-    <Link className="text-brand-700 underline" href="/diario">Voltar ao diário</Link>
+    <VoltarPara href="/diario" para="Diário" />
     <h1 className="text-2xl font-medium">Encontros atribuídos</h1>
     <p className="text-sm text-gray-500">Consulte os horários e o professor responsável por cada encontro.</p>
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}

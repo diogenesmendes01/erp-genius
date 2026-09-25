@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarPendenciasAdministrativasDesistencia } from "@/server/matricula/desistencia-administrativa-fila";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function DesistenciasAdministrativasPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
@@ -10,7 +11,7 @@ export default async function DesistenciasAdministrativasPage({ searchParams }: 
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
   return <section className="space-y-4">
-    <Link className="underline" href="/secretaria">Voltar às matrículas</Link>
+    <VoltarPara href="/secretaria" para="Matrículas" />
     <h1 className="text-2xl font-medium">Desistências pendentes de decisão administrativa</h1>
     <p>Confira o pedido mais recente de cada matrícula. A Secretaria acompanha; outra pessoa da Administração decide. A decisão não substitui os tratamentos financeiros e documentais nem efetiva a desistência.</p>
     {!d.itens.length && <p>Nenhum pedido pendente nesta página.</p>}
