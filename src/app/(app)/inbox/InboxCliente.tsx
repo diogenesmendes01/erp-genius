@@ -37,6 +37,7 @@ import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -421,7 +422,7 @@ function Thread({
               thread.cobrancaAtiva.saldo > 0 ? thread.cobrancaAtiva.saldo : thread.cobrancaAtiva.valorNegociado,
               thread.cobrancaAtiva.moeda,
             )}{" "}
-            · vence {thread.cobrancaAtiva.vencimento.estado === "CONFIRMADO" ? thread.cobrancaAtiva.vencimento.dataCivil : "em conferência"}
+            · vence {thread.cobrancaAtiva.vencimento.estado === "CONFIRMADO" ? formatarDataCivil(thread.cobrancaAtiva.vencimento.dataCivil) : "em conferência"}
           </span>
           <button className={btnSec} onClick={() => setPagar(true)}>
             Registrar pagamento

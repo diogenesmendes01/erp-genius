@@ -5,6 +5,7 @@ import { consultarCumprimentosRecomposicao, prepararCumprimentoRecomposicao, dec
 import { useOperacao } from "./useOperacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -32,8 +33,8 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       try { await atualizar(); } catch { setErro("Registro salvo, mas a consulta falhou. Atualize os cumprimentos antes de continuar."); }
     } catch { setErro("Resultado incerto. Atualize os cumprimentos ou repita sem alterar os dados."); }
   }
-  return <article className="space-y-2 rounded border p-3" aria-label={`Cobertura de ${dia.dataCobertura}`}>
-    <h4 className="font-medium">Cobertura de {dia.dataCobertura} · {estados[dia.estado]}</h4>
+  return <article className="space-y-2 rounded border p-3" aria-label={`Cobertura de ${formatarDataCivil(dia.dataCobertura)}`}>
+    <h4 className="font-medium">Cobertura de {formatarDataCivil(dia.dataCobertura)} · {estados[dia.estado]}</h4>
     <p>Compensa o dia {dia.diaOrigem} sem oferta da escola.</p>
     {dia.conferencias.map((c) => <div key={c.id} className="border-l pl-3">
       <p>Preparação: {c.preparador.nome} · {c.status === "PENDENTE" ? "Aguardando decisão" : c.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</p>

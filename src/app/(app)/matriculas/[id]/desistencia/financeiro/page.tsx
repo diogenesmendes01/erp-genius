@@ -12,6 +12,7 @@ import { AplicarReconferenciaDeltaFormulario, DecidirReconferenciaDeltaFormulari
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -33,7 +34,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     {d.impedimento && <p role="status">{d.impedimento}</p>}
     <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-medium">Cobranças desta matrícula</caption>
       <thead><tr><th>Tipo / situação</th><th>Vencimento</th><th>Original</th><th>Contratado</th><th>Saldo histórico</th></tr></thead>
-      <tbody>{d.cobrancas.map(c => <tr key={c.id}><td>{TIPO_COBRANCA_LABEL[c.tipo]} · {STATUS_COBRANCA_LABEL[c.status]}</td><td>{c.vencimento.slice(0,10)}</td><td>{formatarMoeda(c.valorOriginal, c.moeda)}</td><td>{formatarMoeda(c.valorNegociado, c.moeda)}</td><td>{c.saldo == null ? "A conferir" : formatarMoeda(c.saldo, c.moeda)}</td></tr>)}</tbody>
+      <tbody>{d.cobrancas.map(c => <tr key={c.id}><td>{TIPO_COBRANCA_LABEL[c.tipo]} · {STATUS_COBRANCA_LABEL[c.status]}</td><td>{formatarDataCivil(c.vencimento.slice(0,10))}</td><td>{formatarMoeda(c.valorOriginal, c.moeda)}</td><td>{formatarMoeda(c.valorNegociado, c.moeda)}</td><td>{c.saldo == null ? "A conferir" : formatarMoeda(c.saldo, c.moeda)}</td></tr>)}</tbody>
     </table></div>
     {d.podePropor && d.pedido && <PropostaFormulario key={d.pedido.estadoHash} pedidoId={d.pedido.id} estadoHash={d.pedido.estadoHash} />}
     <h2 className="text-lg font-medium">Últimas propostas financeiras</h2>
@@ -71,11 +72,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     </section>
     <section className="space-y-4 border-t pt-5">
       <h2 className="text-xl font-medium">Reconferência pós-aplicação</h2>
-      <p>Use este fluxo para um fato posterior à aplicação Q165. Ele calcula apenas a diferença e mantém recebimentos, créditos e origens anteriores preservados.</p>
+      <p>Use este fluxo para um fato posterior à aplicação do acerto antes da ativação. Ele calcula apenas a diferença e mantém recebimentos, créditos e origens anteriores preservados.</p>
       {!deltaResultado.ok || !deltaResultado.dado ? <p role="alert">{deltaResultado.ok ? "Consulta da reconferência indisponível." : deltaResultado.erro}</p> : (() => {
         const delta = deltaResultado.dado;
         return <>{delta.impedimento && <p role="status">{delta.impedimento}</p>}{delta.aplicacoesBase.map(base => <article key={base.id} className="space-y-3 rounded border p-4">
-          <h3 className="font-medium">Aplicação Q165 de {instanteAdministrativo(base.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
+          <h3 className="font-medium">Aplicação do acerto antes da ativação em {instanteAdministrativo(base.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
           {base.orientacaoPreparacao && <p role="status">{base.orientacaoPreparacao}</p>}
           {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
           {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}

@@ -9,6 +9,7 @@ import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/r
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { formatarCompetencia } from "@/lib/data-civil";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
@@ -80,7 +81,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       {opcao === "MANTER_VENCIMENTOS" && <p className="text-sm text-gray-500">Manter os vencimentos pode conservar parcelas em atraso e a restrição automática após 30 dias.</p>}
       {opcao === "REPROGRAMAR_PARCELAS" && <p className="text-sm text-gray-500">Defina o novo vencimento de cada parcela. Os valores contratados e os pagamentos já registrados serão preservados.</p>}
       {contexto.parcelas.length > 0 ? <TabelaParcelas parcelas={contexto.parcelas} novaData={(p) => opcao === "REPROGRAMAR_PARCELAS" ? <input
-        aria-label={`Novo vencimento ${p.codigo ?? p.competencia ?? "da parcela"}`}
+        aria-label={`Novo vencimento ${p.codigo ?? formatarCompetencia(p.competencia, "da parcela")}`}
         type="date" className={campo} required min={hoje} disabled={ocupado}
         value={datas[p.cobrancaId] ?? p.vencimento.slice(0, 10)}
         onChange={(e) => setDatas((atual) => ({ ...atual, [p.cobrancaId]: e.target.value }))}
@@ -125,7 +126,7 @@ function TabelaParcelas<T extends Parcela>({ parcelas, novaData }: { parcelas: T
       <caption className="sr-only">Comparação do calendário atual com o calendário proposto</caption>
       <thead className="bg-gray-50 text-xs text-gray-600"><tr>{["Parcela", "Contratado", "Recebido", "Saldo restante", "Vencimento atual", "Vencimento proposto"].map((nome) => <th key={nome} className="whitespace-nowrap px-3 py-2 font-medium" scope="col">{nome}</th>)}</tr></thead>
       <tbody>{parcelas.map((p) => <tr key={p.cobrancaId} className="border-t border-gray-100">
-        <th scope="row" className="px-3 py-2 font-normal"><span className="block">{p.codigo ?? `Mensalidade ${p.competencia ?? ""}`}</span><span className="block text-xs text-gray-500">{p.matriculaCodigo ?? "Matrícula"}{p.restaurar ? " · suspensa pela pausa" : ""}</span></th>
+        <th scope="row" className="px-3 py-2 font-normal"><span className="block">{p.codigo ?? `Mensalidade ${formatarCompetencia(p.competencia, "")}`}</span><span className="block text-xs text-gray-500">{p.matriculaCodigo ?? "Matrícula"}{p.restaurar ? " · suspensa pela pausa" : ""}</span></th>
         <td className="whitespace-nowrap px-3 py-2">{formatarMoeda(p.valorNegociado, p.moeda)}</td>
         <td className="whitespace-nowrap px-3 py-2">{formatarMoeda(p.valorRecebido, p.moeda)}</td>
         <td className="whitespace-nowrap px-3 py-2 font-medium">{formatarMoeda(p.saldo, p.moeda)}</td>

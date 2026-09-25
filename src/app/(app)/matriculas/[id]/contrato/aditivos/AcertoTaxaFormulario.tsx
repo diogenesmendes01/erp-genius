@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -60,7 +61,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       <label className="block">Cobrança de taxa
         <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
           <option value="">Selecione a cobrança</option>
-          {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.vencimento.slice(0, 10)}</option>)}
+          {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · {formatarDataCivil(c.vencimento.slice(0, 10))}</option>)}
         </select>
       </label>
       {atual && <dl className="grid gap-2 rounded bg-gray-50 p-3 sm:grid-cols-2">
@@ -68,7 +69,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
         <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.valorRecebido != null ? formatarMoeda(atual.valorRecebido, atual.moeda) : "não registrado"} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
         <div><dt>Saldo atual / após acerto</dt><dd>{atual.saldo == null ? "Não informado" : formatarMoeda(atual.saldo, atual.moeda)} / {formatarMoeda(atual.saldoAposAcerto, atual.moeda)}</dd></div>
         <div><dt>Valor após acerto</dt><dd>{formatarMoeda(atual.valorNovo, atual.moeda)}</dd></div>
-        <div><dt>Vencimento atual / proposto</dt><dd>{atual.vencimento.slice(0, 10)} / {atual.vencimentoNovo.slice(0, 10)}</dd></div>
+        <div><dt>Vencimento atual / proposto</dt><dd>{formatarDataCivil(atual.vencimento.slice(0, 10))} / {formatarDataCivil(atual.vencimentoNovo.slice(0, 10))}</dd></div>
         <div><dt>Novo crédito apurado</dt><dd>{formatarMoeda(atual.creditoNovo, atual.moeda)}</dd></div>
       </dl>}
       {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {formatarMoeda(atual.pendencia.valor, atual.moeda)}.</p>}

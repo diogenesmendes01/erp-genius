@@ -9,6 +9,7 @@ import { RecomposicaoPainel } from "./RecomposicaoPainel";
 import { CumprimentoPainel } from "./CumprimentoPainel";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -89,7 +90,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
         });
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Preparar proposta</legend>
-        <label className="grid gap-1">Mensalidade de origem<select className={estilo} required value={cobrancaId} onChange={(e) => { setCobrancaId(e.target.value); setDias([]); }}><option value="">Selecione</option>{contexto.cobrancas.filter((c) => c.tipo === "MENSALIDADE" && c.status !== "CANCELADA" && c.coberturaInicio && c.coberturaFim).map((c) => <option key={c.id} value={c.id}>{c.coberturaInicio} a {c.coberturaFim} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
+        <label className="grid gap-1">Mensalidade de origem<select className={estilo} required value={cobrancaId} onChange={(e) => { setCobrancaId(e.target.value); setDias([]); }}><option value="">Selecione</option>{contexto.cobrancas.filter((c) => c.tipo === "MENSALIDADE" && c.status !== "CANCELADA" && c.coberturaInicio && c.coberturaFim).map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.coberturaInicio)} a {formatarDataCivil(c.coberturaFim)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Dia sem oferta<input type="date" className={estilo} value={dia} min={cobranca?.coberturaInicio ?? undefined} max={cobranca?.coberturaFim ?? undefined} onChange={(e) => setDia(e.target.value)} /></label>
         <button type="button" className={estilo} onClick={() => { if (!dia || !cobranca?.coberturaInicio || !cobranca.coberturaFim || dia < cobranca.coberturaInicio || dia > cobranca.coberturaFim) { setErro("Selecione um dia da cobertura original."); return; } setDias((atual) => [...new Set([...atual, dia])].sort()); chave.current = ""; setErro(null); }}>Adicionar dia</button>
         <ul>{dias.map((d) => <li key={d}>{d} <button type="button" className={estilo} onClick={() => { setDias((atual) => atual.filter((v) => v !== d)); chave.current = ""; }}>Remover {d}</button></li>)}</ul>
