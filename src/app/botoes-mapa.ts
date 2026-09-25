@@ -599,6 +599,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar e aplicar → primario/sm",
     "<button> Rejeitar → secundario/sm",
   ],
+  "financeiro/(painel)/comissoes/page.tsx": [
+    "<button> Filtrar → secundario/md",
+  ],
   "financeiro/AcessoAulasPainel.tsx": [
     "const botao → secundario/md",
     "<button> Solicitar liberação manual · Solicitar restrição manual → botao",

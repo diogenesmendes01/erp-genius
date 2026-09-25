@@ -5,6 +5,7 @@ import { decidirDesistenciaAdministrativa } from "@/server/matricula/desistencia
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedidoId: string; estadoHash: string; podeAprovar: boolean }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedid
       {podeAprovar && <option value="aprovar">Aprovar o pedido</option>}<option value="rejeitar">Rejeitar o pedido</option>
     </select></label>
     {!podeAprovar && <p>Esta versão não está disponível para aprovação. A rejeição pode ser registrada no histórico.</p>}
-    <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={3000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={3000} className="block w-full rounded border p-2" /></label>
     <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão administrativa"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;
 }

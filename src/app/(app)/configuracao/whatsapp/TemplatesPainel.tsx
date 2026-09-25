@@ -13,6 +13,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
@@ -201,7 +202,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           </div>
           <label className="mt-3 block text-xs text-gray-600">
             Corpo — variáveis: {"{nome} {valor} {vencimento} {link}"}
-            <textarea
+            <CampoTexto
               className={inputCls + " mt-1"}
               rows={3}
               value={form.corpo}

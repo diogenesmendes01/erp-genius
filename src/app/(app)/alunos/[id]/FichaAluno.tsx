@@ -16,6 +16,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
@@ -408,13 +409,13 @@ export function FichaAluno({
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="ficha-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
-            <textarea id="ficha-observacoes" className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
+            <CampoTexto id="ficha-observacoes" className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
           </div>
 
           {/* Auditoria */}
           <div className="sm:col-span-2">
             <label htmlFor="ficha-motivo" className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
-            <textarea id="ficha-motivo" aria-describedby="ficha-motivo-ajuda" aria-required="true"
+            <CampoTexto id="ficha-motivo" aria-describedby="ficha-motivo-ajuda" aria-required="true"
               className={inputCls}
               rows={2}
               placeholder="Ex.: correção de documento informado pelo aluno"

@@ -9,6 +9,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
@@ -43,9 +44,9 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         <p>Início de vigência conforme contrato · horário de {d.fuso}</p>
         <label className="block">Data<input className={classe} name="data" type="date" required /></label>
         <label className="block">Hora<input className={classe} name="hora" type="time" required /></label>
-        <label className="block">Referência e condições da cláusula de preço<textarea className={classe} name="preco" maxLength={2000} required /></label>
-        <label className="block">Referência e condições da cláusula de cancelamento<textarea className={classe} name="cancelamento" maxLength={2000} required /></label>
-        <label className="block">Motivo da transcrição<textarea className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+        <label className="block">Referência e condições da cláusula de preço<CampoTexto className={classe} name="preco" maxLength={2000} required /></label>
+        <label className="block">Referência e condições da cláusula de cancelamento<CampoTexto className={classe} name="cancelamento" maxLength={2000} required /></label>
+        <label className="block">Motivo da transcrição<CampoTexto className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Preparar para revisão"}</button>
       </fieldset>
     </form>}
@@ -67,7 +68,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         });
       }}><fieldset disabled={ocupado} className="space-y-2"><legend>Revisão administrativa</legend>
         <label className="block">Decisão<select className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>
-        <label className="block">Justificativa<textarea className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+        <label className="block">Justificativa<CampoTexto className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
       </fieldset></form>}
     </article>)}

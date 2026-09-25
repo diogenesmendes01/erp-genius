@@ -11,6 +11,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
@@ -166,7 +167,7 @@ export function ResolucaoRevisaoProgressao({
           : <p role="status">A prévia não aponta pendência acadêmica nesta etapa. A decisão ainda revalida o estado no servidor.</p>)}
         {!previa.snapshot.base && <p role="status">Esta ação registra o cancelamento já realizado e não recalcula notas ou frequência.</p>}
         <p>{efeitoAcao[acao]}</p>
-        <label className="block">Motivo da proposta<textarea value={motivo} required minLength={5} maxLength={3000} disabled={ocupado} onChange={(evento) => {
+        <label className="block">Motivo da proposta<CampoTexto value={motivo} required minLength={5} maxLength={3000} disabled={ocupado} onChange={(evento) => {
           setMotivo(evento.target.value); tentativa.current = null;
         }} className="mt-1 block w-full rounded border p-2" /></label>
         <p className="text-sm">Confira o motivo antes de enviar. A prévia continua válida apenas enquanto a ação e o estado consultado não mudarem.</p>
@@ -186,7 +187,7 @@ export function ResolucaoRevisaoProgressao({
           : <p role="status">{proposta.superada ? "Substituída por uma proposta mais recente." : "Aguardando decisão independente."}</p>}
         {proposta.podeDecidir && !proposta.decisao && <form onSubmit={(evento) => decidir(evento, proposta)} className="space-y-2 border-t pt-3">
           <p className="text-sm">A rejeição registra a recusa desta proposta histórica e não atesta o estado atual.</p>
-          <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
+          <label className="block">Motivo da decisão<CampoTexto name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
           <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar proposta</button></div>
         </form>}
       </article>)}

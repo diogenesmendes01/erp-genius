@@ -8,6 +8,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
@@ -54,8 +55,8 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
     }}><fieldset disabled={ocupado} className="space-y-2">
       <legend>Registrar cobertura efetivamente oferecida</legend>
       <p>A conferência só pode ser preparada após terminar o dia no fuso da escola.</p>
-      <label className="grid gap-1">Motivo da conferência<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <label className="grid gap-1">Evidência da oferta efetiva<textarea className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
+      <label className="grid gap-1">Motivo da conferência<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
+      <label className="grid gap-1">Evidência da oferta efetiva<CampoTexto className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Enviar conferência de cumprimento</button>
     </fieldset></form>}
     {pendente && (pendente.preparadorId === usuarioId ? <p>Outra pessoa precisa decidir esta conferência.</p> : !podeAprovar ? <p>A decisão exige permissão de aprovação financeira ou Administração.</p> : <form className="space-y-2" onSubmit={(e) => {
@@ -65,7 +66,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
     }}><fieldset disabled={ocupado} className="space-y-2">
       <label className="grid gap-1">Decisão de cumprimento<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar cumprimento</option><option value="rejeitar">Rejeitar conferência</option></select></label>
       {aprovar && <label className="flex gap-2"><input type="checkbox" name="evidenciaConferida" required />Conferi a evidência de que a escola efetivamente ofereceu esta cobertura.</label>}
-      <label className="grid gap-1">Justificativa da decisão de cumprimento<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
+      <label className="grid gap-1">Justificativa da decisão de cumprimento<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão de cumprimento</button>
     </fieldset></form>)}
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />

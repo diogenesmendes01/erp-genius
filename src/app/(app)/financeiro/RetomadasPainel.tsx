@@ -11,6 +11,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
@@ -89,7 +90,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
         onChange={(e) => setDatas((atual) => ({ ...atual, [p.cobrancaId]: e.target.value }))}
       /> : data(p.vencimento)} /> : <EstadoVazio>Não há mensalidades remanescentes para alterar. A retomada ainda exige aprovação.</EstadoVazio>}
       <label className="block text-sm font-medium">Motivo da proposta
-        <textarea className={`${campo} mt-1 font-normal`} rows={3} required minLength={5} maxLength={2000} disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        <CampoTexto className={`${campo} mt-1 font-normal`} rows={3} required minLength={5} maxLength={2000} disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       </label>
       <button className={principal} type="submit" disabled={ocupado || !opcao || motivo.trim().length < 5}>Enviar proposta para aprovação</button>
     </form>}
@@ -109,7 +110,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       {p.parcelas.length > 0 && <TabelaParcelas parcelas={p.parcelas} novaData={(parcela) => data(parcela.novoVencimento)} />}
       {p.aprovador && <p className="text-sm text-gray-600">Decisão de {p.aprovador.nome}{p.decididoEm ? ` em ${instanteAdministrativo(p.decididoEm)}` : ""}: {p.motivoDecisao}</p>}
       {p.podeDecidir && <div className="space-y-2">
-        <label className="block text-sm">Motivo da decisão<textarea className={`${campo} mt-1`} rows={2} minLength={5} maxLength={2000} disabled={ocupado} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
+        <label className="block text-sm">Motivo da decisão<CampoTexto className={`${campo} mt-1`} rows={2} minLength={5} maxLength={2000} disabled={ocupado} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
         <div className="flex gap-2">
           {!p.impedimentoAprovacao && <button className={principal} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar proposta e retomar</button>}
           <button className={botao} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar proposta</button>

@@ -12,6 +12,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -488,7 +489,7 @@ export function MatriculaFormulario({
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
               <label htmlFor="matricula-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
-              <textarea id="matricula-observacoes" className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+              <CampoTexto id="matricula-observacoes" className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
             </div>
           </section>
 
@@ -667,7 +668,7 @@ export function MatriculaFormulario({
                 <label htmlFor="matricula-justificativa-sem-preco" className="mb-1 block text-xs text-gray-600">
                   Justificativa da exceção (sem tabela de preço) <span className="text-red-500">*</span>
                 </label>
-                <textarea
+                <CampoTexto
                   id="matricula-justificativa-sem-preco"
                   aria-required="true"
                   className={inputCls}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Periodo = { id: string; nome: string; tipo: "FERIADO" | "RECESSO" | "FERIAS"; inicio: string; fim: string };
 export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConferido }: { periodosIniciais: Periodo[]; versaoAnterior: number; fusoConferido: string }) {
@@ -43,7 +44,7 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
       </fieldset>)}
       <button type="button" disabled={periodos.length >= 10000} onClick={() => setPeriodos((anteriores) => [...anteriores, { id: crypto.randomUUID(), nome: "", tipo: "FERIADO", inicio: "", fim: "" }])} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar período</button>
       <p className="text-sm">As datas inicial e final estão incluídas. Remover um período altera apenas esta proposta; versões anteriores permanecem preservadas.</p>
-      <label className="block">Motivo da nova versão<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className={campo} /></label>
+      <label className="block">Motivo da nova versão<CampoTexto required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className={campo} /></label>
       <button disabled={motivo.trim().length < 5} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Preparando…" : "Preparar calendário para revisão"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}

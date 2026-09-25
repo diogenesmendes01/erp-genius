@@ -9,6 +9,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
@@ -101,7 +102,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Nova transcrição do contrato confirmado</legend>
         <p>Documento de evidência: contrato confirmado desta matrícula. A evidência é vinculada automaticamente e não pode ser alterada aqui.</p>
-        <label className="block" htmlFor="clausula">Cláusula de continuidade contratada<textarea id="clausula" className={classe} name="clausula" maxLength={4000} required /></label>
+        <label className="block" htmlFor="clausula">Cláusula de continuidade contratada<CampoTexto id="clausula" className={classe} name="clausula" maxLength={4000} required /></label>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block" htmlFor="valor-original">Preço original ({d.moeda})<input id="valor-original" className={classe} name="valorOriginal" inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:[.][0-9]{1,2})?" required /></label>
           <label className="block" htmlFor="valor-negociado">Preço negociado ({d.moeda})<input id="valor-negociado" className={classe} name="valorNegociado" inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:[.][0-9]{1,2})?" required /></label>
@@ -140,7 +141,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
           <label className="block" htmlFor="referencia-vencimento">Quando o vencimento se relaciona à cobertura<select id="referencia-vencimento" className={classe} value={referenciaVencimento} onChange={evento => setReferenciaVencimento(evento.target.value as ReferenciaVencimento)} required><option value="" disabled>Selecione</option><option value="MES_COBERTURA">No mês da cobertura</option><option value="MES_ANTERIOR">No mês anterior à cobertura</option><option value="MES_SEGUINTE">No mês seguinte à cobertura</option></select></label>
           <p>Informe a regra contratada. Esta escolha não é presumida para versões novas nem para o histórico.</p>
         </fieldset>
-        <label className="block" htmlFor="motivo">Motivo da transcrição<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+        <label className="block" htmlFor="motivo">Motivo da transcrição<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Preparar para revisão"}</button>
       </fieldset>
     </form>}
@@ -176,7 +177,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Revisão administrativa independente</legend>
           <label className="block" htmlFor={`decisao-${versao.id}`}>Decisão<select id={`decisao-${versao.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>
-          <label className="block" htmlFor={`motivo-${versao.id}`}>Justificativa<textarea id={`motivo-${versao.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
+          <label className="block" htmlFor={`motivo-${versao.id}`}>Justificativa<CampoTexto id={`motivo-${versao.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}

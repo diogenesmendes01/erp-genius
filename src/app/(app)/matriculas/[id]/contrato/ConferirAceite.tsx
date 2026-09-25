@@ -5,6 +5,7 @@ import { confirmarAceiteOriginal } from "@/server/contratos/aceite";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matriculaId: string; conclusaoId: string; revisaoHash: string }) {
   const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -20,7 +21,7 @@ export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matr
     });
   }}>
     <label className="block"><input type="checkbox" name="conferido" required disabled={pendente} /> Conferi o original, o PDF assinado, a auditoria, todas as assinaturas exigidas e as condições desta matrícula.</label>
-    <label className="block">Registro da conferência<textarea name="motivo" className="block w-full rounded border p-2" required minLength={5} maxLength={2000} disabled={pendente} /></label>
+    <label className="block">Registro da conferência<CampoTexto name="motivo" className="block w-full rounded border p-2" required minLength={5} maxLength={2000} disabled={pendente} /></label>
     <MensagemStatus texto={mensagem} />
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Confirmar aceite do original assinado"}</button>
   </form>;

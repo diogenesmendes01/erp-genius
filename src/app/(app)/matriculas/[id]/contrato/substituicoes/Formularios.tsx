@@ -5,6 +5,7 @@ import { prepararSubstituicaoContratual, decidirSubstituicaoContratual } from "@
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
   matriculaId: string; fonte: { id: string; artefatoId: string; revisaoHash: string };
@@ -33,7 +34,7 @@ export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
     </select></label>
     <nav className="flex flex-wrap gap-4"><a className="underline" href={pdf(fonte.artefatoId)} target="_blank" rel="noopener noreferrer">Abrir original enviado</a>
       {destino && <a className="underline" href={pdf(destino.artefatoId)} target="_blank" rel="noopener noreferrer">Abrir documento substituto</a>}</nav>
-    <label className="block">Motivo e alterações propostas<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
+    <label className="block">Motivo e alterações propostas<CampoTexto className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <p>A proposta será encaminhada para decisão de outra pessoa da Administração. As condições do substituto serão conferidas novamente ao registrar.</p>
     <FeedbackAcao erro={acao.erro} />
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !destino}>{pendente ? "Registrando…" : "Registrar proposta de substituição"}</button>
@@ -58,7 +59,7 @@ export function DecidirSubstituicao({ propostaId, propostaHash, superada }: { pr
     <label className="block">Decisão<select className="block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}>
       <option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option>
     </select></label>
-    <label className="block">Justificativa<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
+    <label className="block">Justificativa<CampoTexto className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;

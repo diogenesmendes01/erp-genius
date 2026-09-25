@@ -7,6 +7,7 @@ import { parseMoeda } from "@/lib/dinheiro";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaPessoa, paises }: { novaPessoa: boolean; paises: { id: string; nome: string }[]; leadId: string; oferta: { id: string; versaoEntrada: number; formaAgenda: string | null; produtoId: string; paisId: string; moeda: string }; candidatos: { id: string; primeiroNome: string; sobrenome: string | null }[]; turmas: { id: string; nome: string }[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const particular = oferta.formaAgenda?.startsWith("PARTICULAR_") ?? false;
@@ -40,7 +41,7 @@ export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaP
     <label className="block">Taxa de matrícula proposta ({oferta.moeda})<CampoMoeda value={taxa} onChange={setTaxa} moeda={oferta.moeda} required className="block rounded border p-2" /></label>
     <label className="block">Valor proposto por mensalidade ou hora ({oferta.moeda})<CampoMoeda value={servico} onChange={setServico} moeda={oferta.moeda} required className="block rounded border p-2" /></label>
     {regime === "HORA_PARTICULAR" && <label className="block">Minutos contratados para antecipação inicial<input name="minutosAdiantamento" type="number" min="1" step="1" max="2147483647" className="block rounded border p-2" /><span>Obrigatório quando a oferta exige adiantamento. Valor calculado pelo preço por hora informado, sem arredondar o tempo para cima.</span></label>}
-    <label className="block">Condições propostas e motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Condições propostas e motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>Valores propostos ficam sujeitos à conferência e às aprovações aplicáveis. Este envio reserva a vaga ou os horários conferidos e não emite cobrança ou contrato para assinatura.</p>
     <button disabled={ocupado || (!novaPessoa && !candidatos.length) || (particular ? !agendaParticular : !turmas.length)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Conferindo e preparando…" : "Preparar contratação e reservar"}</button>{erro && <p role="alert">{erro}</p>}
     </fieldset>

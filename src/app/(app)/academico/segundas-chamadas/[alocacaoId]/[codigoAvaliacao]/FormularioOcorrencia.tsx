@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { registrarOcorrenciaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-ocorrencia-local";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 const tipos = [
   ["FALTA", "Falta"],
@@ -62,10 +63,10 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
         <option value="America/Rio_Branco" />
       </datalist>
       <label className="block">Motivo
-        <textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
+        <CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>
       <label className="block">Evidência
-        <textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" />
+        <CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" />
       </label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar ocorrência"}</button>
     </fieldset>

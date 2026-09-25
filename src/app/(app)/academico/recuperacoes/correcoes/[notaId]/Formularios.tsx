@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { Formulario } from "../../planos/[propostaId]/Formularios";
 import { proporCorrecaoRecuperacao, revisarCorrecaoRecuperacao, decidirCorrecaoRecuperacao } from "@/server/avaliacoes/recuperacao-correcao";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarCorrecaoRecuperacao>>, { ok: true }>["dado"]>;
 const campo = (d: FormData, n: string) => String(d.get(n) ?? "");
 
@@ -16,8 +17,8 @@ export function Propor({ notaId, origemId, nota, comentarioAluno, versaoEsperada
     return r;
   }}>
     <label className="block">Nota corrigida<input name="nota" defaultValue={nota} required inputMode="decimal" maxLength={100} className="block rounded border p-2" /></label>
-    <label className="block">Comentário ao aluno<textarea name="comentarioAluno" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
-    <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Comentário ao aluno<CampoTexto name="comentarioAluno" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
 
@@ -37,7 +38,7 @@ export function Revisar({ propostaId }: { propostaId: string }) {
       {!revisao.podeAprovar && <p>Esta proposta não pode ser aprovada no estado atual. Confira a versão vigente.</p>}
       <Formulario titulo="Registrar decisão" executar={d => decidirCorrecaoRecuperacao({ propostaId, propostaHash: revisao.propostaHash, impactosHash: revisao.impactosHash, aprovada: campo(d,"decisao") === "aprovar", motivo: campo(d,"motivo") })}>
         <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar" disabled={!revisao.podeAprovar}>Aprovar e aplicar</option><option value="rejeitar">Rejeitar</option></select></label>
-        <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+        <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       </Formulario></>}
   </div>;
 }

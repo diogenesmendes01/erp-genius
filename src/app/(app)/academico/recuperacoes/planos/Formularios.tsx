@@ -6,6 +6,7 @@ import { proporPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-proposta
 import { decidirPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-decisao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 type Habilidade = typeof HABILIDADES[number];
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -29,11 +30,11 @@ export function PrepararPlano({ alocacaoId, versaoEsperada, obrigatorias, seleci
       {selecionaveis.map(h => <div key={h} className="space-y-2 rounded border p-3">
         <label><input type="checkbox" checked={selecionadas.includes(h)} disabled={obrigatorias.includes(h)} onChange={e => setSelecionadas(s => e.target.checked ? [...s, h] : s.filter(v => v !== h))} /> {nomes[h]}{obrigatorias.includes(h) ? " (obrigatória)" : ""}</label>
         {selecionadas.includes(h) && <>
-          <label className="block">Estratégia pedagógica<textarea name={`estrategia-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-          <label className="block">Avaliação proposta<textarea name={`avaliacao-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+          <label className="block">Estratégia pedagógica<CampoTexto name={`estrategia-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+          <label className="block">Avaliação proposta<CampoTexto name={`avaliacao-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
         </>}
       </div>)}
-      <label className="block">Justificativa do plano<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Justificativa do plano<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" disabled={!selecionadas.length} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Enviando…" : "Propor plano"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}
   </form>;
@@ -52,7 +53,7 @@ export function DecidirPlano({ propostaId, propostaHash, podeAprovar }: { propos
   }}>
     <fieldset disabled={enviando} className="space-y-2">
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar plano</option>}<option value="rejeitar">Rejeitar plano</option></select></label>
-      <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}
   </form>;

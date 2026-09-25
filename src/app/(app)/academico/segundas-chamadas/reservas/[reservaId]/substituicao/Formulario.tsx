@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirSubstituicaoAgendaSegundaChamada, proporSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-substituicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Props = {
   reservaId: string;
@@ -47,9 +48,9 @@ export function Formulario({ reservaId, base, professores = [], selecionado, pre
       {proposta ? <><label className="block">Decisão<select className="block border p-2" name="decisao" defaultValue="" required><option value="" disabled>Selecione</option>{proposta.podeAprovar && <option value="aprovar">Aprovar substituição</option>}<option value="rejeitar">Rejeitar</option></select></label>{!proposta.podeAprovar && <p className="text-sm" role="status">{proposta.impedimentoAprovacao ?? "A aprovação exige uma nova proposta; esta versão ainda pode ser rejeitada."}</p>}</> : <>
         <label className="block">Professor substituto<select className="block border p-2" value={escolhido} onChange={(evento) => { const proximo = evento.target.value; setEscolhido(proximo); router.replace(proximo ? `${base}?substitutoId=${encodeURIComponent(proximo)}` : base); }}><option value="">Selecione para conferir</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
         {!escolhido ? <p>Selecione um professor para conferir a disponibilidade.</p> : !disponibilidadeConferida ? <p>Atualizando a conferência de disponibilidade do professor selecionado.</p> : <><p>Substituto em conferência: {previa.substituto!.nome}.</p>{previa.pendencias.length ? <ul className="list-disc pl-5">{previa.pendencias.map((pendencia) => <li key={pendencia}>{pendencia}</li>)}</ul> : <p>Não há pendência apontada nesta conferência.</p>}</>}
-        <label className="block">Evidência<textarea className="block w-full border p-2" name="evidencia" minLength={5} maxLength={4000} required /></label>
+        <label className="block">Evidência<CampoTexto className="block w-full border p-2" name="evidencia" minLength={5} maxLength={4000} required /></label>
       </>}
-      <label className="block">{proposta ? "Motivo da decisão" : "Motivo da substituição"}<textarea className="block w-full border p-2" name="motivo" minLength={5} maxLength={2000} required /></label>
+      <label className="block">{proposta ? "Motivo da decisão" : "Motivo da substituição"}<CampoTexto className="block w-full border p-2" name="motivo" minLength={5} maxLength={2000} required /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || (!proposta && !podeEnviar)}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}

@@ -4,6 +4,7 @@ import { Formulario } from "../../../recuperacoes/planos/[propostaId]/Formulario
 import { proporExtraRecuperacao, decidirExtraRecuperacao } from "@/server/avaliacoes/extra-recuperacao";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
+import { CampoTexto } from "@/components/CampoTexto";
 type Habilidade = typeof HABILIDADES[number];
 const texto = (d: FormData, campo: string) => String(d.get(campo) ?? "");
 // O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }: executarAcaoCliente decide a
@@ -21,8 +22,8 @@ export function ProporExtra({ alocacaoId, habilidades }: { alocacaoId: string; h
   }}>
     <label className="block">Habilidade<select name="habilidade" required className="block rounded border p-2">{habilidades.map(h => <option key={h} value={h}>{h.replaceAll("_", " ")}</option>)}</select></label>
     <label className="block">Quantidade adicional<input type="number" name="quantidade" min={1} max={2147483647} step={1} required className="block rounded border p-2" /></label>
-    <label className="block">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>
-    <label className="block">Evidências para a análise<textarea name="evidencias" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>
+    <label className="block">Evidências para a análise<CampoTexto name="evidencias" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
 
@@ -30,6 +31,6 @@ export function DecidirExtra({ propostaId, entradaHash, podeAprovar }: { propost
   // Decisão sem chave de idempotência no contrato (server/avaliacoes/extra-recuperacao.ts:42): a falha não manda reenviar.
   return <Formulario titulo="Registrar decisão" executar={async d => resposta(await executarAcaoCliente(() => decidirExtraRecuperacao({ propostaId, entradaHash, aprovada: texto(d, "decisao") === "aprovar", motivo: texto(d, "motivo") }), { idempotente: false }))}>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar a quantidade proposta</option>}<option value="rejeitar">Rejeitar</option></select></label>
-    <label className="block">Justificativa da decisão<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Justificativa da decisão<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

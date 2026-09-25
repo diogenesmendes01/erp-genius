@@ -33,6 +33,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const TRILHA: EtapaLead[] = [
@@ -431,7 +432,7 @@ function BarraAcoes({
       {modal === "interacao" && (
         <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
           <input aria-label="Canal da interação" className={inputCls} placeholder="Canal (WhatsApp, ligação…)" value={canal} onChange={(e) => setCanal(e.target.value)} />
-          <textarea aria-label="Nota da interação" className={inputCls} placeholder="O que aconteceu na conversa?" value={nota} onChange={(e) => setNota(e.target.value)} />
+          <CampoTexto aria-label="Nota da interação" className={inputCls} placeholder="O que aconteceu na conversa?" value={nota} onChange={(e) => setNota(e.target.value)} />
           {feedback("interacao")}
           <div>
             <button

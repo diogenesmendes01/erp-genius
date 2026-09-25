@@ -10,6 +10,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
@@ -62,7 +63,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
       <legend className="mb-2 font-medium">Contratos pausados</legend>
       {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
       <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
-      <label className="block text-sm">Motivo<textarea className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
+      <label className="block text-sm">Motivo<CampoTexto className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
       <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
       {base?.matriculas.map((m) => <fieldset key={m.matriculaId} className="space-y-2 border-t pt-3">
         <legend className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</legend>

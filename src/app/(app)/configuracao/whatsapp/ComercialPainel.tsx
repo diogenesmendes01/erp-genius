@@ -9,6 +9,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
@@ -117,7 +118,7 @@ export function ComercialPainel({
 
         <div>
           <label htmlFor="comercial-saudacao-texto" className="mb-1 block text-xs font-medium text-gray-600">Texto da saudação</label>
-          <textarea
+          <CampoTexto
             id="comercial-saudacao-texto"
             className={inputCls}
             rows={3}

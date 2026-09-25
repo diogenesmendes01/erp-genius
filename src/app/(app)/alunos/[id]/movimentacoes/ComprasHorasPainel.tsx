@@ -11,6 +11,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -54,7 +55,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
           });
         }}><fieldset disabled={ocupado} className="space-y-2"><legend>Vincular horas a encontro já agendado</legend>
           <label className="grid gap-1">Encontro<select name="encontro" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.encontros.map(e => <option key={e.id} value={e.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(e.inicio))} · {e.fusoOrigem} · {(Date.parse(e.fim) - Date.parse(e.inicio)) / 60000} minutos</option>)}</select></label>
-          <label className="grid gap-1">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reservar horas</button>
+          <label className="grid gap-1">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reservar horas</button>
         </fieldset></form>}
       </details>)}
       {!dados.cobrancas.length ? <EstadoVazio>Nenhuma cobrança de particular por hora paga e sem compra vinculada.</EstadoVazio> : <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
@@ -75,7 +76,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
         <p>O registro confere contrato, recebimentos e utilizações de crédito aprovadas. Informe a quantidade total de minutos prevista na compra.</p>
         <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.vencimento)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Minutos comprados<input name="minutos" type="number" required min={1} max={5256000} step={1} className={estilo} /></label>
-        <label className="grid gap-1">Evidência das condições da compra<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
+        <label className="grid gap-1">Evidência das condições da compra<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar compra de horas</button>
       </fieldset></form>}
     </>}
@@ -104,7 +105,7 @@ function ConsumoHoras({ reservaId, aoSalvar }: { reservaId: string; aoSalvar: ()
       setErro("");
       try { const r = await conferirRealizacaoHoras({ reservaId, estadoDiario: revisao.estadoDiario, motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } setRevisao(null); await aoSalvar(); }
       catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
-    }); }}><fieldset disabled={ocupado} className="space-y-2"><p>Diário com conteúdo e presença registrados: consumir {revisao.minutos} minutos da compra. A pendência de gravação permanece separada.</p><label className="grid gap-1">Motivo da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar consumo pela realização</button></fieldset></form>}
+    }); }}><fieldset disabled={ocupado} className="space-y-2"><p>Diário com conteúdo e presença registrados: consumir {revisao.minutos} minutos da compra. A pendência de gravação permanece separada.</p><label className="grid gap-1">Motivo da conferência<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar consumo pela realização</button></fieldset></form>}
     {erro && <p role="alert">{erro}</p>}
   </div>;
 }
