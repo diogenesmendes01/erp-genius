@@ -5,6 +5,7 @@ import { useOperacao } from "./useOperacao";
 import { solicitarEncerramentoMatriculas } from "@/server/matricula/encerramento-solicitacao";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 export function NovoEncerramento({ alunoId, contratos, hoje }: {
   alunoId: string; contratos: { id: string; nome: string }[]; hoje: string | null;
@@ -50,7 +51,7 @@ export function NovoEncerramento({ alunoId, contratos, hoje }: {
           <label className="block text-sm">Motivo da retroatividade<textarea name="motivoRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
           <label className="block text-sm">Evidência para a data anterior<textarea name="evidenciaRetro" required minLength={5} maxLength={2000} className={estilo} /></label>
         </div>}
-        <button className="rounded border px-3 py-2 text-sm">Registrar pedido de encerramento</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar pedido de encerramento</button>
       </fieldset>
     </form>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}

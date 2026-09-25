@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { proporLiberacaoHorasRemarcacao, decidirLiberacaoHorasRemarcacao } from "@/server/matricula/liberacao-horas";
 import { useOperacao } from "./useOperacao";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { botaoClasses } from "@/components/Botao";
 const estilo = "rounded border p-2 text-sm";
 /** Moeda registrada na memória de cálculo do crédito (texto vazio se ausente: número formatado sem símbolo). */
 const moedaDoCalculo = (calculo: unknown) => {
@@ -28,7 +29,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
       <label className="grid gap-1">Escolha<select name="destino" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="REMARCACAO">Liberar horas para remarcação</option><option value="CREDITO">Converter horas em crédito do valor pago</option></select></label>
       <label className="grid gap-1">Evidência da escolha do aluno<textarea name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="grid gap-1">Motivo financeiro<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
-      <button className={estilo}>Preparar proposta para conferência</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar proposta para conferência</button>
     </fieldset></form>}
     {propostas.map(p => <article key={p.id} className="space-y-2 border p-2">
       <p>Destino: {p.destino === "CREDITO" ? "Crédito financeiro" : "Remarcação"}</p>
@@ -41,7 +42,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
         void iniciar(() => executar(() => decidirLiberacaoHorasRemarcacao({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) })));
       }}><fieldset disabled={ocupado} className="space-y-2">
         <label className="grid gap-1">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">{p.destino === "CREDITO" ? "Aprovar conversão em crédito" : "Aprovar liberação para remarcação"}</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-        <label className="grid gap-1">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={estilo}>Confirmar decisão</button>
+        <label className="grid gap-1">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </fieldset></form>}
     </article>)}
   </div>;

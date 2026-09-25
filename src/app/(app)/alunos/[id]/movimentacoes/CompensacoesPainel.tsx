@@ -10,6 +10,7 @@ import { CumprimentoPainel } from "./CumprimentoPainel";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -40,7 +41,7 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
     }}><fieldset disabled={ocupado} className="space-y-2">
       <label className="grid gap-1">Decisão<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar dias de compensação</option><option value="rejeitar">Rejeitar proposta</option></select></label>
       <label className="grid gap-1">Justificativa da decisão<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <button className={estilo}>Registrar decisão</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
     </fieldset></form>}
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
   </div>;
@@ -69,7 +70,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
     <h2 className="text-lg font-medium">Compensações por falta de oferta da escola</h2>
     <p>Registre dias de indisponibilidade em parte de um período. Aprovar os dias reconhece o direito; extensão de cobertura e acerto financeiro exigem seus próprios fluxos.</p>
     <label className="grid gap-1">Contrato para compensação<select className={estilo} disabled={ocupado} value={matriculaId} onChange={(e) => { selecao.current = e.target.value; setMatriculaId(e.target.value); setContexto(null); setCobrancaId(""); setDias([]); setErro(null); setAviso(null); chave.current = ""; }}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
-    <button type="button" className={estilo} disabled={ocupado || !matriculaId} onClick={() => { void iniciar(async () => { setErro(null); try { await atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Carregar compensações</button>
+    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !matriculaId} onClick={() => { void iniciar(async () => { setErro(null); try { await atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Carregar compensações</button>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {contexto && <>
       <CompensacoesEncerramento compensacoes={contexto.compensacoes} />
@@ -92,11 +93,11 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
         <legend className="font-medium">Preparar proposta</legend>
         <label className="grid gap-1">Mensalidade de origem<select className={estilo} required value={cobrancaId} onChange={(e) => { setCobrancaId(e.target.value); setDias([]); }}><option value="">Selecione</option>{contexto.cobrancas.filter((c) => c.tipo === "MENSALIDADE" && c.status !== "CANCELADA" && c.coberturaInicio && c.coberturaFim).map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.coberturaInicio)} a {formatarDataCivil(c.coberturaFim)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Dia sem oferta<input type="date" className={estilo} value={dia} min={cobranca?.coberturaInicio ?? undefined} max={cobranca?.coberturaFim ?? undefined} onChange={(e) => setDia(e.target.value)} /></label>
-        <button type="button" className={estilo} onClick={() => { if (!dia || !cobranca?.coberturaInicio || !cobranca.coberturaFim || dia < cobranca.coberturaInicio || dia > cobranca.coberturaFim) { setErro("Selecione um dia da cobertura original."); return; } setDias((atual) => [...new Set([...atual, dia])].sort()); chave.current = ""; setErro(null); }}>Adicionar dia</button>
-        <ul>{dias.map((d) => <li key={d}>{d} <button type="button" className={estilo} onClick={() => { setDias((atual) => atual.filter((v) => v !== d)); chave.current = ""; }}>Remover {d}</button></li>)}</ul>
+        <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { if (!dia || !cobranca?.coberturaInicio || !cobranca.coberturaFim || dia < cobranca.coberturaInicio || dia > cobranca.coberturaFim) { setErro("Selecione um dia da cobertura original."); return; } setDias((atual) => [...new Set([...atual, dia])].sort()); chave.current = ""; setErro(null); }}>Adicionar dia</button>
+        <ul>{dias.map((d) => <li key={d}>{d} <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { setDias((atual) => atual.filter((v) => v !== d)); chave.current = ""; }}>Remover {d}</button></li>)}</ul>
         <label className="grid gap-1">Motivo da indisponibilidade<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
         <label className="grid gap-1">Evidência das condições de compensação<textarea className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
-        <button className={estilo}>Enviar proposta para aprovação</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Enviar proposta para aprovação</button>
       </fieldset></form>
     </>}
   </section>;

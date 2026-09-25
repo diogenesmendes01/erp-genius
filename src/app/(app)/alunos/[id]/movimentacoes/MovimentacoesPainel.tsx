@@ -10,6 +10,7 @@ import { decidirRetomadaMatriculas } from "@/server/matricula/retomada-proposta"
 import { identificacaoContrato } from "./identificacaoContrato";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -93,7 +94,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
   return <div className="space-y-4" aria-busy={ocupado}>
     <div className="flex flex-wrap gap-3">
       <label className="text-sm">Tipo de proposta <select className={botao} disabled={ocupado} value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); setLista(null); setDetalhe(null); setErro(null); }}><option value="PAUSA">Pausa</option><option value="RETOMADA">Retomada</option></select></label>
-      <button className={botao} disabled={ocupado} onClick={() => carregar()}>Consultar propostas</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => carregar()}>Consultar propostas</button>
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
     <MensagemStatus texto={aviso} className="text-green-700" progresso={ocupado ? "Carregando…" : null} />
@@ -104,9 +105,9 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
       <p className="text-sm">Contratos: {p.matriculas.map((m) => identificacaoContrato(m.codigo, m.id)).join(", ")}</p>
       {p.decisor && <p className="text-sm">Decisão de {p.decisor.nome}: {p.motivoDecisao}</p>}
-      <button className={botao} disabled={ocupado} onClick={() => abrir(p.id)}>Conferir impactos</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => abrir(p.id)}>Conferir impactos</button>
     </article>)}
-    {lista?.proximo && <button className={botao} disabled={ocupado} onClick={() => carregar(true)}>Próximas propostas</button>}
+    {lista?.proximo && <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => carregar(true)}>Próximas propostas</button>}
     {detalhe && <section className="space-y-3 rounded border p-4" aria-label="Impactos da proposta">
       <h2 className="font-medium">Impactos registrados · {status[detalhe.status]}</h2>
       <p>{detalhe.motivo}</p>
@@ -126,14 +127,14 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         <p className="text-sm">A decisão exige outra pessoa autorizada. Aprovar registra a decisão; a aplicação da movimentação é uma etapa distinta.</p>
         <label className="block text-sm">Motivo da decisão<textarea className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} disabled={ocupado} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} /></label>
         <div className="flex flex-wrap gap-3">
-          <button className={botao} disabled={ocupado || !podeAprovar || motivoDecisao.trim().length < 5} onClick={() => decidir(true)}>Aprovar proposta</button>
-          <button className={botao} disabled={ocupado || motivoDecisao.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !podeAprovar || motivoDecisao.trim().length < 5} onClick={() => decidir(true)}>Aprovar proposta</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivoDecisao.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
         </div>
         {!podeAprovar && <p className="text-sm text-amber-700">Resolva as pendências ou rejeite esta proposta para uma nova conferência.</p>}
       </div>}
       {detalhe.status === "APROVADA" && <div className="space-y-2 border-t pt-4">
         <p className="text-sm">Aplicar efetiva a pausa ou retomada dos contratos identificados. O servidor confere a data e se os impactos aprovados continuam válidos.</p>
-        <button type="button" className={botao} disabled={ocupado || !podeAprovar} onClick={aplicar}>Aplicar proposta aprovada</button>
+        <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !podeAprovar} onClick={aplicar}>Aplicar proposta aprovada</button>
       </div>}
     </section>}
   </div>;
