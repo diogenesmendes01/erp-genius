@@ -5,11 +5,13 @@
 # (prisma migrate deploy roda ANTES do app subir — nunca dentro do app).
 
 FROM node:22-alpine AS deps
+RUN apk add --no-cache openssl
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM node:22-alpine AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -21,6 +23,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
