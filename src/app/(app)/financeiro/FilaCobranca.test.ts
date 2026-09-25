@@ -51,7 +51,7 @@ describe("DetalheCobranca", () => {
     expect(html).toContain("31/12/2025, 20:30");
     expect(html).toContain("31/12/2025, 21:30");
     expect(html).toContain("horário exibido em America/Costa_Rica; origem UTC");
-    expect(html).toContain("2026-01");
+    expect(html).toContain(" 01/2026"); // competência formatada, sem deslocar o mês
     expect(html).toContain("vence 15/01/2026");
   });
 

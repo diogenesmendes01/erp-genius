@@ -6,6 +6,7 @@ import { consultarCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensa
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -147,7 +148,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       <p>{versao.preparador.nome} · {data(versao.criadaEm)} · contrato vinculado</p>
       {versao.regras ? <>
         <p>Vigente desde {data(versao.regras.vigenteDesde)} · {formatarMoeda(versao.regras.valorOriginal, versao.regras.moeda)} original · {formatarMoeda(versao.regras.valorNegociado, versao.regras.moeda)} negociado</p>
-        <p>{versao.regras.regraCobertura.referencia === "MES_CIVIL" ? "Cobertura por mês civil" : `Cobertura por ciclo desde ${versao.regras.regraCobertura.dataReferencia}`} · vencimento no dia {versao.regras.diaVencimento} · antecedência de {versao.regras.antecedenciaDias} dias</p>
+        <p>{versao.regras.regraCobertura.referencia === "MES_CIVIL" ? "Cobertura por mês civil" : `Cobertura por ciclo desde ${formatarDataCivil(versao.regras.regraCobertura.dataReferencia)}`} · vencimento no dia {versao.regras.diaVencimento} · antecedência de {versao.regras.antecedenciaDias} dias</p>
         <p>Referência do vencimento: {rotuloReferenciaVencimento[versao.regras.referenciaVencimento]}</p>
         {typeof versao.regras.ajusteVencimento === "string"
           ? <p>Ajuste de vencimento: {versao.regras.ajusteVencimento === "MANTER_DATA" ? "manter a data calculada" : versao.regras.ajusteVencimento}</p>

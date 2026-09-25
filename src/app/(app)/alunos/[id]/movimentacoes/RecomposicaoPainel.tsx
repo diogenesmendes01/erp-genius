@@ -11,6 +11,7 @@ import { aplicarRecomposicaoCobertura } from "@/server/matricula/recomposicao-ap
 import type { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { useOperacao } from "./useOperacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoRecomposicao>>, { ok: true }>["dado"]>;
@@ -18,7 +19,7 @@ const resumo = z.object({ proposta: z.object({ quantidadeDias: z.number(), compe
 function Resumo({ dados }: { dados: unknown }) {
   const r = resumo.safeParse(dados);
   if (!r.success) return <p>Resumo indisponível para esta versão.</p>;
-  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {r.data.proposta.compensacao.inicio} a {r.data.proposta.compensacao.fim}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {p.cobertura.inicio} a {p.cobertura.fim}; valor {formatarMoeda(p.valor, "")}; vencimento {p.vencimento}.</li>)}</ul></div>;
+  return <div><p>{r.data.proposta.quantidadeDias} dias de compensação: {formatarDataCivil(r.data.proposta.compensacao.inicio)} a {formatarDataCivil(r.data.proposta.compensacao.fim)}, sem cobrança adicional.</p><ul>{r.data.proposta.periodos.map((p) => <li key={p.cobrancaId}>Mensalidade {p.cobrancaId}: {formatarDataCivil(p.cobertura.inicio)} a {formatarDataCivil(p.cobertura.fim)}; valor {formatarMoeda(p.valor, "")}; vencimento {formatarDataCivil(p.vencimento)}.</li>)}</ul></div>;
 }
 
 export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizarContexto }: { contexto: Contexto; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void> }) {

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { aplicarImpactosCoberturaAditivo, decidirImpactosCoberturaAditivo, obsoletarImpactosCoberturaAditivo } from "@/server/contratos/aditivo-cobertura";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Politica = { escolha: "PRESERVAR_REFERENCIA" } | { escolha: "MUDAR_REFERENCIA"; referencia: "MES_CIVIL" | "CICLO_MATRICULA"; dataReferencia: string };
 type Conjunto = { id: string; status: string; politica: Politica; motivo: string; evidencia: string; decisao: { aprovada: boolean; motivo: string } | null; podeDecidir: boolean; podeAplicar: boolean; podeObsoletar: boolean; pendencias: { afetadasSemAplicacao: number }; impactos: { cobrancaId: string; classificacao: string; justificativa: string; aplicado: boolean; coberturaInicioAnterior: string | null; coberturaFimAnterior: string | null; coberturaInicioNova: string | null; coberturaFimNova: string | null; cobranca: { codigo: string | null; moeda: string; coberturaInicio: string | null; coberturaFim: string | null; vencimento: string; status: string } }[] };
@@ -11,7 +12,7 @@ type Conjunto = { id: string; status: string; politica: Politica; motivo: string
 function descreverPolitica(politica: Politica) {
   return politica.escolha === "PRESERVAR_REFERENCIA"
     ? "Preservar a referência contratual vigente para os ciclos futuros."
-    : `Alterar a referência dos ciclos futuros para ${politica.referencia === "MES_CIVIL" ? "mês civil" : "ciclo mensal da matrícula"}, a partir de ${politica.dataReferencia}.`;
+    : `Alterar a referência dos ciclos futuros para ${politica.referencia === "MES_CIVIL" ? "mês civil" : "ciclo mensal da matrícula"}, a partir de ${formatarDataCivil(politica.dataReferencia)}.`;
 }
 
 export function ImpactosCoberturaOperacao({ conjunto, reprepararHref }: { conjunto: Conjunto | null; reprepararHref: string }) {

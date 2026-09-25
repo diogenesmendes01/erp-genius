@@ -11,6 +11,7 @@ import { concluirMatricula } from "@/server/matricula/acoes";
 import { conferirCoberturaInicial } from "@/server/secretaria/cobertura";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Matricula = { exigeAssinaturaIntegrada: boolean; mensalidadesExibidas: { id: string; versao: number; valor: string; moeda: string; inicio: string | null; fim: string | null; vencimento: string }[]; cobertura: { cobrancaId: string | null; versao: number | null; vencimento: string | null; referencia: string | null; inicio: string | null; fim: string | null }; id: string; codigo: string | null; leadId: string | null; alunoId: string | null; nome: string; status: string; assumida: boolean; contratoConfirmado: boolean; documentos: { id: string; nome: string; categoria: string; matriculaId: string | null; url: string }[]; correcoes: { id: string; campo: string; valorProposto: string | null; motivo: string; status: string; motivoResolucao: string | null }[] };
 const campos = { primeiroNome: "Primeiro nome", sobrenome: "Sobrenome", nomePreferido: "Nome preferido", email: "E-mail", telefoneE164: "Telefone com DDI", documentos: "Documento (descreva a correção)" };
@@ -44,7 +45,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
         <table className="w-full text-left text-sm">
           <caption className="pb-2 text-left font-medium">Mensalidades para conferência contratual</caption>
           <thead><tr><th scope="col" className="p-2">Período coberto</th><th scope="col" className="p-2">Vencimento</th><th scope="col" className="p-2">Valor contratado</th></tr></thead>
-          <tbody>{m.mensalidadesExibidas.map((c) => <tr key={c.id} className="border-t"><td className="p-2">{c.inicio && c.fim ? `${c.inicio} até ${c.fim}` : "Cobertura pendente de conferência"}</td><td className="p-2">{c.vencimento}</td><td className="p-2">{formatarMoeda(Number(c.valor), c.moeda)}</td></tr>)}</tbody>
+          <tbody>{m.mensalidadesExibidas.map((c) => <tr key={c.id} className="border-t"><td className="p-2">{c.inicio && c.fim ? `${c.inicio} até ${c.fim}` : "Cobertura pendente de conferência"}</td><td className="p-2">{formatarDataCivil(c.vencimento)}</td><td className="p-2">{formatarMoeda(Number(c.valor), c.moeda)}</td></tr>)}</tbody>
         </table>
         {!m.mensalidadesExibidas.length && <p className="text-sm">Nenhuma mensalidade registrada.</p>}
       </div>}
