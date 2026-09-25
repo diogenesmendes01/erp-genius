@@ -52,7 +52,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       <fieldset className="space-y-3"><legend className="font-medium">Seções do documento</legend>
         {valor.secoes.map((s, i) => <div key={i} className="space-y-2 rounded border p-3">
           <label className="block">Título da seção {i + 1}<input required maxLength={200} value={s.titulo} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, titulo: e.target.value } : v) })} className={campo} /></label>
-          <label className="block">Texto<textarea required rows={6} maxLength={20000} value={s.texto} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, texto: e.target.value } : v) })} className={campo} /></label>
+          <label className="block">Texto<CampoTexto required rows={6} maxLength={20000} value={s.texto} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, texto: e.target.value } : v) })} className={campo} /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "sm" })} type="button" disabled={valor.secoes.length === 1} onClick={() => setValor({ ...valor, secoes: valor.secoes.filter((_, j) => j !== i) })}>Remover seção {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.secoes.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, secoes: [...valor.secoes, { titulo: "", texto: "" }] })}>Adicionar seção</button>

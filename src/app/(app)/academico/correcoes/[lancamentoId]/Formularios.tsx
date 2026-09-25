@@ -23,7 +23,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Propor correção</legend>
     {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{nomes[n.habilidade]} — nota vigente: {n.nota}</p>
       <label className="block">Nova nota<input name={`nota-${n.habilidade}`} required maxLength={100} inputMode="decimal" defaultValue={n.nota ?? ""} className="block rounded border p-2" /></label>
-      <label className="block">Comentário para o aluno<textarea name={`comentario-${n.habilidade}`} maxLength={2000} defaultValue={n.comentarioAluno} className="block w-full rounded border p-2" /></label>
+      <label className="block">Comentário para o aluno<CampoTexto name={`comentario-${n.habilidade}`} maxLength={2000} defaultValue={n.comentarioAluno} className="block w-full rounded border p-2" /></label>
     </div>)}
     <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi os valores vigentes e as alterações propostas.</label>

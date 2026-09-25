@@ -17,7 +17,7 @@ export function Propor({ notaId, origemId, nota, comentarioAluno, versaoEsperada
     return r;
   }}>
     <label className="block">Nota corrigida<input name="nota" defaultValue={nota} required inputMode="decimal" maxLength={100} className="block rounded border p-2" /></label>
-    <label className="block">Comentário ao aluno<textarea name="comentarioAluno" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Comentário ao aluno<CampoTexto name="comentarioAluno" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

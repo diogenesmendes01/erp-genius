@@ -47,9 +47,10 @@ export const CampoTexto = forwardRef<HTMLTextAreaElement, Props>(function CampoT
   useEffect(() => {
     const form = interno.current?.form;
     if (!form || controlado) return;
-    const aoResetar = () => setTimeout(() => setDigitados(interno.current?.value.length ?? 0));
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const aoResetar = () => { espera = setTimeout(() => setDigitados(interno.current?.value.length ?? 0)); };
     form.addEventListener("reset", aoResetar);
-    return () => form.removeEventListener("reset", aoResetar);
+    return () => { form.removeEventListener("reset", aoResetar); clearTimeout(espera); };
   }, [controlado]);
 
   return (

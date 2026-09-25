@@ -351,7 +351,7 @@ export function CorrecaoAula({ encontroId, dados: dadosIniciais, podeConferirImp
           const edicao = registros.find((item) => item.registroId === registro.registroId)!;
           return <fieldset key={registro.registroId} className="space-y-2 rounded border p-3"><legend className="px-1 font-medium">{registro.nomeAluno}</legend>
             <label className="block">Participação<select value={edicao.participacao} onChange={(evento) => atualizarRegistro(registro.registroId, { participacao: evento.target.value as Participacao })} className="mt-1 block rounded border p-2"><option value="PRESENTE">Presente</option><option value="FALTA">Falta</option><option value="IMPEDIDO_POR_RESTRICAO">Impedido por restrição</option></select></label>
-            <label className="block text-sm">Observação<textarea value={edicao.observacao} onChange={(evento) => atualizarRegistro(registro.registroId, { observacao: evento.target.value })} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label>
+            <label className="block text-sm">Observação<CampoTexto value={edicao.observacao} onChange={(evento) => atualizarRegistro(registro.registroId, { observacao: evento.target.value })} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label>
           </fieldset>;
         })}</div>
         <label className="block">Motivo da correção<CampoTexto value={motivo} onChange={(evento) => { setMotivo(evento.target.value); idempotencia.current = null; setProposta(null); setImpactos(null); }} required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label>
