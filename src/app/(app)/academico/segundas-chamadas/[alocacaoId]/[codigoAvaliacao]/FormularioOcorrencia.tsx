@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarOcorrenciaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-ocorrencia-local";
+import { botaoClasses } from "@/components/Botao";
 
 const tipos = [
   ["FALTA", "Falta"],
@@ -65,7 +66,7 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
       <label className="block">Evidência
         <textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" />
       </label>
-      <button className="rounded border px-3 py-2">{ocupado ? "Registrando…" : "Registrar ocorrência"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar ocorrência"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}
   </form>;

@@ -5,6 +5,7 @@ import { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { proporPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-proposta";
 import { decidirPlanoRecuperacao } from "@/server/avaliacoes/recuperacao-decisao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { botaoClasses } from "@/components/Botao";
 type Habilidade = typeof HABILIDADES[number];
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -33,7 +34,7 @@ export function PrepararPlano({ alocacaoId, versaoEsperada, obrigatorias, seleci
         </>}
       </div>)}
       <label className="block">Justificativa do plano<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <button type="submit" disabled={!selecionadas.length} className="rounded border px-4 py-2">{enviando ? "Enviando…" : "Propor plano"}</button>
+      <button type="submit" disabled={!selecionadas.length} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Enviando…" : "Propor plano"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}
   </form>;
 }
@@ -52,7 +53,7 @@ export function DecidirPlano({ propostaId, propostaHash, podeAprovar }: { propos
     <fieldset disabled={enviando} className="space-y-2">
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar plano</option>}<option value="rejeitar">Rejeitar plano</option></select></label>
       <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <button type="submit" className="rounded border px-4 py-2">{enviando ? "Registrando…" : "Registrar decisão"}</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}
   </form>;
 }

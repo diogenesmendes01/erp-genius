@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { designarProfessorSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-designacao-local";
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { botaoClasses } from "@/components/Botao";
 
 export function Formulario({ propostaId, professores, fusoInstitucional }: {
   propostaId: string;
@@ -65,7 +66,7 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
       <label className="block">Motivo
         <textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>
-      <button className="rounded border px-4 py-2">{ocupado ? "Designando…" : "Designar professor"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Designando…" : "Designar professor"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}
   </form>;

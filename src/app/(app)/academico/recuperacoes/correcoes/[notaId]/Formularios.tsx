@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { Formulario } from "../../planos/[propostaId]/Formularios";
 import { proporCorrecaoRecuperacao, revisarCorrecaoRecuperacao, decidirCorrecaoRecuperacao } from "@/server/avaliacoes/recuperacao-correcao";
+import { botaoClasses } from "@/components/Botao";
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarCorrecaoRecuperacao>>, { ok: true }>["dado"]>;
 const campo = (d: FormData, n: string) => String(d.get(n) ?? "");
 
@@ -22,7 +23,7 @@ export function Propor({ notaId, origemId, nota, comentarioAluno, versaoEsperada
 
 export function Revisar({ propostaId }: { propostaId: string }) {
   const [revisao, setRevisao] = useState<Revisao | null>(null), [erro, setErro] = useState(""), [carregando, setCarregando] = useState(false);
-  return <div className="space-y-3"><button disabled={carregando} className="rounded border p-2" onClick={async () => {
+  return <div className="space-y-3"><button disabled={carregando} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={async () => {
     setCarregando(true); setErro(""); setRevisao(null);
     try { const r = await revisarCorrecaoRecuperacao(propostaId); if (r.ok && r.dado) setRevisao(r.dado); else setErro(r.ok ? "Consulta indisponível." : r.erro); }
     catch { setErro("Não foi possível conferir os impactos. Tente novamente."); }

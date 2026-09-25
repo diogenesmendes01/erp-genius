@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirExcecaoFrequencia, proporExcecaoFrequencia } from "@/server/avaliacoes/excecao-frequencia";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type PropostaExcecao = {
   id: string;
@@ -132,7 +133,7 @@ export function ExcecaoFrequencia({
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
         <span>Reconheço que a proposta não altera a frequência real nem dispensa os mínimos de nota.</span>
       </label>
-      <button type="submit" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Registrando…" : proposta ? "Registrar nova proposta" : "Registrar proposta"}</button>
+      <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : proposta ? "Registrar nova proposta" : "Registrar proposta"}</button>
     </form>}
 
     {podeDecidir && proposta && <form className="space-y-3" onSubmit={decidir}>
@@ -151,7 +152,7 @@ export function ExcecaoFrequencia({
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
         <span>Conferi a frequência real, as evidências e a independência desta decisão.</span>
       </label>
-      <button type="submit" disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+      <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </form>}
 
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}

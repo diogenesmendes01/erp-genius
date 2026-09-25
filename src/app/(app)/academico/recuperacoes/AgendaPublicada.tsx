@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { AgendaRecuperacaoConsulta } from "@/server/avaliacoes/recuperacao-agenda-consulta-tx";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { botaoClasses } from "@/components/Botao";
 
 export function AgendaPublicada({ agenda, preferenciaFusoExibicao }: { agenda: AgendaRecuperacaoConsulta | null; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
@@ -27,6 +28,6 @@ export function AgendaPublicada({ agenda, preferenciaFusoExibicao }: { agenda: A
     {intervalo ? <p><time dateTime={agenda.inicio}>{intervalo.inicio}</time> até <time dateTime={agenda.fim}>{intervalo.fim}</time> — {resolverFusoExibicao(fuso.trim(), agenda.fusoOrigem)}.</p> : <p role="alert">Informe um fuso válido, como America/Sao_Paulo ou America/Costa_Rica.</p>}
     <p>Fuso de origem: {agenda.fusoOrigem}. A escolha acima muda apenas a exibição.</p>
     {agenda.excecaoDiaNaoLetivo && <p>Este encontro tem exceção aprovada para dia não letivo.</p>}
-    <button type="button" className="rounded border px-3 py-2" onClick={() => router.refresh()}>Atualizar situação</button>
+    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => router.refresh()}>Atualizar situação</button>
   </div>;
 }

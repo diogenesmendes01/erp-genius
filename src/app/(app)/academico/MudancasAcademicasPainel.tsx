@@ -9,11 +9,12 @@ import {
 } from "@/server/academico/acoes";
 import type { ContextoMudancaAcademica, SolicitacaoAcademicaView } from "@/server/academico/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
-const botao = "rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50";
-const principal = "rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50";
+const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
+const principal = botaoClasses({ tamanho: "lg" });
 const nomesStatus = { PENDENTE: "Aguardando decisão pedagógica", APROVADA: "Aprovada · aguardando execução", REJEITADA: "Rejeitada", EXECUTADA: "Executada", CANCELADA: "Cancelada" };
 
 export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta, podeExecutarEquivalencia, fusoExibicao = "America/Sao_Paulo" }: {

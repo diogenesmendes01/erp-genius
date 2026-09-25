@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { proporCancelamentoAgendaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-cancelamento-local";
 import { decidirCancelamentoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-cancelamento";
 import { CampoFuso } from "@/components/CampoFuso";
+import { botaoClasses } from "@/components/Botao";
 type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string }; fusoInstitucional: string | null };
 export function Formulario({ reservaId, estadoConferido, proposta, fusoInstitucional }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
@@ -34,7 +35,7 @@ export function Formulario({ reservaId, estadoConferido, proposta, fusoInstituci
  <label className="block">Evidência<textarea name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
  </>}
  <label className="block">{proposta ? "Motivo da decisão" : "Motivo do cancelamento"}<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
- <button disabled={ocupado} className="rounded border px-3 py-2">{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
+ <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
  </fieldset>{erro && <p role="alert">{erro}</p>}
  </form>;
 }

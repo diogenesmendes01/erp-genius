@@ -7,6 +7,7 @@ import { salvarNotaOriginalSegundaChamada } from "@/server/avaliacoes/segunda-ch
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { botaoClasses } from "@/components/Botao";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
@@ -37,7 +38,7 @@ export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reserva
       <label className="block" htmlFor="fuso">Fuso da realização<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Informe o fuso explicitamente. A data efetiva deve pertencer ao encontro; histórico e autorização aplicável são conferidos ao enviar. Horários ambíguos ou inexistentes precisam de correção.</p>
       <label className="block" htmlFor="evidencia">Evidência da realização<textarea id="evidencia" name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
-      <button type="submit" className="rounded border px-4 py-2">{ocupado ? "Registrando…" : "Registrar realização"}</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar realização"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}
   </form>;
@@ -76,7 +77,7 @@ export function FormularioNota({ realizacaoId, alocacaoId, codigoAvaliacao, real
     <fieldset disabled={ocupado} className="space-y-3">
       {regularizacao && <><p>Você está regularizando a nota de uma realização registrada por outro professor. Informe a justificativa e as evidências da conferência.</p><label className="block" htmlFor="motivo-regularizacao">Motivo da regularização<textarea id="motivo-regularizacao" name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label><label className="block" htmlFor="evidencias-regularizacao">Evidências da regularização<textarea id="evidencias-regularizacao" name="evidenciasRegularizacao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label></>}
       {habilidadesValidas.map(habilidade => <div key={habilidade} className="space-y-2 rounded border p-3"><label className="block" htmlFor={`nota-${habilidade}`}>Nota de {nomes[habilidade]}<input id={`nota-${habilidade}`} name={`nota-${habilidade}`} inputMode="decimal" required className="block rounded border p-2" /></label><label className="block" htmlFor={`comentario-${habilidade}`}>Comentário para o aluno<textarea id={`comentario-${habilidade}`} name={`comentario-${habilidade}`} maxLength={2000} className="block w-full rounded border p-2" /></label></div>)}
-      <button type="submit" className="rounded border px-4 py-2">{ocupado ? "Submetendo…" : "Submeter nota para conferência"}</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Submetendo…" : "Submeter nota para conferência"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}
   </form>;

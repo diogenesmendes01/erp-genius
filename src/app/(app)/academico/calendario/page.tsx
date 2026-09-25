@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { botaoClasses } from "@/components/Botao";
 import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
@@ -17,7 +18,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     <h1 className="text-2xl font-medium">Calendário da escola</h1>
     <p>Feriados, recessos e férias seguem um calendário único. As datas são interpretadas no fuso institucional de cada versão.</p>
     <p>{vigente ? `Calendário vigente: versão ${vigente.versao}` : "Ainda não há calendário publicado."}</p>
-    <Link href="/academico/calendario/novo" className="inline-block rounded border px-3 py-2">Preparar nova versão</Link>
+    <Link href="/academico/calendario/novo" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar nova versão</Link>
     {!versoes.length && <p>Nenhuma proposta encontrada.</p>}
     {versoes.slice(0, 30).map((v) => <article key={v.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
       <h2 className="font-medium">Versão {v.versao} · {v.id === vigente?.id ? "Vigente" : v.decisao ? v.decisao.aprovada ? "Publicada anteriormente" : "Rejeitada" : "Aguardando decisão"}</h2>

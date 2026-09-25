@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { prepararExcecaoAdmissao, decidirExcecaoAdmissao } from "@/server/matricula/excecao-admissao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function FormularioExcecao({ reservaId, estadoHash, propostaId, podeAprovar = true }: { reservaId: string; estadoHash: string; propostaId?: string; podeAprovar?: boolean }) {
   const router = useRouter();
@@ -23,6 +24,6 @@ export function FormularioExcecao({ reservaId, estadoHash, propostaId, podeAprov
     <label className="block">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required disabled={pendente} className="block w-full rounded border p-2" /></label>
     {propostaId && <label className="block">Decisão<select name="decisao" className="mx-2 rounded border p-2" disabled={pendente} defaultValue="rejeitar"><option value="rejeitar">Rejeitar</option>{podeAprovar && <option value="aprovar">Aprovar exceção para esta reserva</option>}</select></label>}
     <FeedbackAcao erro={acao.erro} />
-    <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : propostaId ? "Registrar decisão" : "Propor exceção"}</button>
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : propostaId ? "Registrar decisão" : "Propor exceção"}</button>
   </form>;
 }

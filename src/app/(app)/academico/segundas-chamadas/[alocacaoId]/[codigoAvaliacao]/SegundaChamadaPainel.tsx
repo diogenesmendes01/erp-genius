@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { decidirSegundaChamada, proporSegundaChamada } from "@/server/avaliacoes/segunda-chamada";
 import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamada-disponibilizacao";
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
+import { botaoClasses } from "@/components/Botao";
 
 type Item = {
   id: string;
@@ -82,7 +83,7 @@ export function SegundaChamadaPainel({
       <h2 className="font-medium">Propor segunda chamada</h2>
       <label className="block">Motivo<textarea required minLength={5} maxLength={4000} name="motivo" className="block w-full border" /></label>
       <label className="block">Evidências<textarea required minLength={5} maxLength={4000} name="evidencias" className="block w-full border" /></label>
-      <button disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Enviar proposta</button>
+      <button disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Enviar proposta</button>
     </form>}
 
     <section className="space-y-3" aria-label="Histórico da segunda chamada">
@@ -112,7 +113,7 @@ export function SegundaChamadaPainel({
             </select>
           </label>
           <label className="block">Motivo da decisão<textarea name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
-          <button disabled={ocupado} className="rounded bg-brand-solid px-3 py-2 text-white">Registrar decisão</button>
+          <button disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
         </form>}
         {item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao && <form className="space-y-2" onSubmit={evento => {
           evento.preventDefault();
@@ -136,7 +137,7 @@ export function SegundaChamadaPainel({
         }}>
           <label className="block">Condições disponíveis<textarea required minLength={5} maxLength={4000} name="condicoes" className="block w-full border" /></label>
           <label className="block">Evidência da comunicação<textarea required minLength={5} maxLength={4000} name="evidencia" className="block w-full border" /></label>
-          <button disabled={ocupado} className="rounded border px-3 py-2">Disponibilizar e iniciar prazo</button>
+          <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Disponibilizar e iniciar prazo</button>
         </form>}
         {item.disponibilizacao && <p role="status">Disponibilizada. Prazo atual: {data(item.disponibilizacao.prazoAte, fuso)} ({fuso}).</p>}
         {item.podeOperar && item.disponibilizacao && !item.reserva && <Link className="block underline" href={`/academico/segundas-chamadas/propostas/${encodeURIComponent(item.id)}/agenda`}>Preparar e revisar agenda inicial</Link>}

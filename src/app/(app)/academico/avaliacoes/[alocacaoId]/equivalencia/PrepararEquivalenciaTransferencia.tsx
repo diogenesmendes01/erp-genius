@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-proposta";
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
@@ -154,7 +155,7 @@ export function PrepararEquivalenciaTransferencia({
           {destinos.map((destino) => <option key={destino.id} value={destino.id}>{destino.label}{destino.diasHorario ? ` · ${destino.diasHorario}` : ""} · {destino.vagas} vaga(s)</option>)}
         </select>
       </label>
-      <button type="button" disabled={ocupado || registrada || !turmaDestinoId} onClick={() => void revisar()} className="rounded border px-3 py-2">
+      <button type="button" disabled={ocupado || registrada || !turmaDestinoId} onClick={() => void revisar()} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>
         {ocupado ? "Conferindo…" : base ? "Atualizar requisitos" : "Carregar requisitos e fontes"}
       </button>
     </section>
@@ -176,7 +177,7 @@ export function PrepararEquivalenciaTransferencia({
           {!fontes.length && <p role="status">Nenhum registro oficial desta habilidade está disponível para indicar.</p>}
         </fieldset>;
       })}
-      <button type="button" disabled={ocupado || registrada} onClick={() => void revisar()} className="rounded border px-3 py-2">
+      <button type="button" disabled={ocupado || registrada} onClick={() => void revisar()} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>
         {ocupado ? "Conferindo…" : "Revisar mapeamento selecionado"}
       </button>
       {!revisao && <p role="status">Depois de alterar uma seleção, revise o mapeamento antes de encaminhar a proposta.</p>}
@@ -200,7 +201,7 @@ export function PrepararEquivalenciaTransferencia({
         <textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || registrada} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={ocupado || registrada} /> Conferi a prévia e compreendo que a decisão e a execução são etapas separadas.</label>
-      <button disabled={ocupado || registrada || !revisao} className="rounded bg-brand-solid px-4 py-2 text-white">{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
+      <button disabled={ocupado || registrada || !revisao} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
     </section>
     {erro && <p role="alert">{erro}</p>}
     <MensagemStatus texto={mensagem} />

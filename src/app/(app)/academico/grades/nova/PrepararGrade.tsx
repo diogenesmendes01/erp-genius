@@ -2,6 +2,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
+import { botaoClasses } from "@/components/Botao";
 
 type Turma = { id: string; codigo: string; versao: number; dataInicio: string | null; horario: string | null;
   dias: number[]; quantidade: number | null; duracao: number; frequencia: string; professor: string | null };
@@ -46,7 +47,7 @@ export function PrepararGrade({ turmas, turmaInicialId }: { turmas: Turma[]; tur
       <datalist id="fusos-grade"><option value="America/Sao_Paulo"/><option value="America/Costa_Rica"/><option value="UTC"/></datalist>
       <p className="text-sm">O horário cadastrado será interpretado neste fuso. Confira a primeira aula e o término na proposta antes da aprovação.</p>
       <label className="block">Motivo da proposta<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className={campo} /></label>
-      <button disabled={!turma || !fuso.trim() || motivo.trim().length < 5} className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50">{ocupado ? "Preparando…" : "Preparar para revisão"}</button>
+      <button disabled={!turma || !fuso.trim() || motivo.trim().length < 5} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Preparando…" : "Preparar para revisão"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;
