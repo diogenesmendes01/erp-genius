@@ -1,0 +1,179 @@
+# Deploy do ERP Genius no Coolify (v4.3.23+)
+# Build pack: Docker Compose · repo Git · deploy automático no merge do main.
+#
+# Coolify cuida do domínio e TLS via Traefik (porta 80/443 ocupadas por ele), portanto
+# o Caddy é OMITIDO. Nenhum serviço publica porta no host — o Traefik roteia o app na
+# porta interna 3000 usando a variável mágica SERVICE_FQDN_APP_3000 (doc oficial Coolify).
+#
+# Uso no Coolify:
+#   1. Criar "Resource" → Docker Compose (Git) → apontar este repo + branch main.
+#   2. Arquivo: docker-compose.coolify.yml
+#   3. Preencher variáveis de ambiente (veja lista no SETUP.md §Coolify).
+#   4. Domínio do app: https://erp.geniusidiomas.com:3000 (campo "Domains for app").
+#   5. DNS: criar registro A apontando erp.geniusidiomas.com para o IP da VPS.
+#   6. Deploy — o Traefik emite TLS automático e roteia https://erp.geniusidiomas.com → app:3000.
+
+name: erp-genius
+
+services:
+  # Banco init: cria o banco "evolution" ANTES do serviço db subir de vez (one-shot).
+  # Em VPS avulsa isso vinha de ./deploy/initdb (bind mount), mas no Coolify Git deploy
+  # o bind mount relativo pode falhar. Solução: comando SQL inline via psql.
+  # Idempotente: CREATE DATABASE IF NOT EXISTS (Postgres 9.5+) ou ignore o erro de duplicado.
+  db-init:
+    image: postgres:16-alpine
+    restart: "no"
+    environment:
+      PGUSER: ${POSTGRES_USER:?defina no Coolify}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
+      PGHOST: db
+      PGDATABASE: postgres
+    # Idempotente: SELECT 1 FROM pg_database WHERE datname='evolution' retorna vazio se não existe.
+    # O \gset armazena em var; se vazio, CREATE. Se banco já existe, o SELECT retorna 1 e não cria.
+    # Escape correto: aspas simples SQL protegidas com \' dentro do sh -c com aspas duplas.
+    command:
+      - sh
+      - -c
+      - |
+        until pg_isready -h db -U "$${POSTGRES_USER}"; do sleep 1; done
+        psql -h db -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'evolution') THEN
+            CREATE DATABASE evolution;
+          END IF;
+        END
+        $$;
+        SQL
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?defina no Coolify}
+      # ATENÇÃO: senha URL-safe (openssl rand -hex 32), sem / + = (base64 quebra URLs).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
+      POSTGRES_DB: erp
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # SEM ports: banco na rede interna, nunca internet pública.
+
+  # Migrações ANTES do app (prisma migrate deploy — aditivo e idempotente).
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      # Coolify gera SERVICE_FQDN_APP_3000 a partir do domínio configurado no painel.
+      # Quando você preenche o campo "Domains for app" com https://erp.geniusidiomas.com:3000,
+      # o Coolify gera SERVICE_FQDN_APP_3000=erp.geniusidiomas.com (apenas hostname).
+      # O Traefik roteia HTTPS público → app:3000 internamente (porta NÃO publicada no host).
+      SERVICE_FQDN_APP_3000: /
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?defina no Coolify}
+      # NEXTAUTH_URL: usar a variável DOMINIO_APP preenchida manualmente (ex.: erp.geniusidiomas.com).
+      # Ou usar ${SERVICE_FQDN_APP_3000} se o Coolify gerar corretamente.
+      NEXTAUTH_URL: https://${DOMINIO_APP:?defina no Coolify}
+      AUTH_TRUST_HOST: "true"
+      CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
+      # Go-live: só ativar após piloto (doc 31 §rollout).
+      WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
+      # C3 — copiloto IA (vazio = heurística local "simulado").
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      IA_MODELO: ${IA_MODELO:-}
+      # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
+      PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
+      # Driver Meta Cloud API.
+      META_WA_TOKEN: ${META_WA_TOKEN:-}
+      META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
+      META_WA_VERIFY_TOKEN: ${META_WA_VERIFY_TOKEN:-}
+      META_WA_WABA_ID: ${META_WA_WABA_ID:-}
+      # Driver Baileys (Evolution na rede interna).
+      EVOLUTION_URL: http://evolution:8080
+      EVOLUTION_APIKEY: ${EVOLUTION_APIKEY:-}
+      EVOLUTION_WEBHOOK_TOKEN: ${EVOLUTION_WEBHOOK_TOKEN:-}
+      EVOLUTION_WEBHOOK_PUBLIC_URL: http://app:3000
+    volumes:
+      # Mídia WhatsApp + comprovantes (entra no backup).
+      - uploads:/app/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # Healthcheck que o Coolify usa para decidir se o deploy deu certo.
+      # Endpoint /api/health: liveness simples, sem segredo, sem dependências externas.
+      # node:22-alpine tem wget; curl não vem instalado por padrão.
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # SEM ports: só o Traefik do Coolify fala com o app.
+
+  # Baileys via Evolution API — self-hosted, FORA da internet pública (rede interna).
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8080"
+      AUTHENTICATION_API_KEY: ${EVOLUTION_APIKEY:?defina no Coolify}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      CACHE_LOCAL_ENABLED: "true"
+      CACHE_REDIS_ENABLED: "false"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      LOG_LEVEL: ERROR
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    # SEM ports: Evolution não sai para a internet.
+
+  # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min.
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    # Comando em uma linha só (sem quebras) — o bloco >- mantém \n nas linhas indentadas.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron -o /dev/null -w "cron tick %{http_code}\n" || true; sleep 300; done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
+    depends_on:
+      - app
+
+volumes:
+  db_data:
+  uploads:
+  evolution_instances:

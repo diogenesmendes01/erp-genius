@@ -118,3 +118,83 @@ Rotas públicas novas: `/pagar/[token]` (link de pagamento do gateway simulado) 
 (`POST /api/whatsapp/cron`, header `x-cron-secret`) agora roda também: cadências C4,
 check-in vencido (B9), copiloto (quietude), gestão (C5) e fechamento mensal de comissões
 — em produção o serviço `cron` do `docker-compose.prod.yml` bate a cada 5 minutos.
+
+---
+
+## Deploy no Coolify (v4.3.23+)
+
+O ERP Genius pode ser implantado no **Coolify** (VPS com Traefik como proxy reverso).
+Use o arquivo **`docker-compose.coolify.yml`** — ele não usa Caddy (o Traefik do Coolify
+cuida de TLS e domínio) e nenhum serviço publica porta no host.
+
+### Pré-requisitos
+
+1. **Coolify** v4.3.23+ instalado na VPS (Traefik ocupando portas 80/443).
+2. **DNS**: registro A apontando `erp.geniusidiomas.com` para o IP da VPS.
+3. **Portas 80 e 443** liberadas no firewall (Traefik escuta HTTPS público).
+
+### Passo a passo
+
+1. **Criar Resource** no Coolify:
+   - Tipo: **Docker Compose** (Source: Git).
+   - **Repository**: apontar para este repo (branch `main`).
+   - **Compose File**: `docker-compose.coolify.yml`.
+
+2. **Domínio do serviço `app`**:
+   - No painel do Coolify, aba "Configuration" → "Domains for app":
+   - Preencher: **`https://erp.geniusidiomas.com:3000`** (a porta `:3000` é interna;
+     o Coolify gera os labels do Traefik automaticamente).
+   - O público acessa **`https://erp.geniusidiomas.com`** (porta 443 padrão).
+
+3. **Variáveis de ambiente** (aba "Environment Variables"):
+
+   | Variável | Obrigatória | O que é | Exemplo / como obter |
+   |---|---|---|---|
+   | `DOMINIO_APP` | ✅ | Domínio público do app (sem https://) | `erp.geniusidiomas.com` |
+   | `POSTGRES_USER` | ✅ | Usuário do banco | `erp` |
+   | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
+   | `AUTH_SECRET` | ✅ | Segredo do Auth.js (sessão) | `npx auth secret` ou `openssl rand -base64 32` |
+   | `CRON_SECRET` | ✅ | Segredo do cron (header `x-cron-secret`) | `openssl rand -hex 32` |
+   | `EVOLUTION_APIKEY` | ✅ | API key da Evolution (Baileys self-hosted) | `openssl rand -hex 32` |
+   | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
+   | `ANTHROPIC_API_KEY` | | Copiloto IA (opcional; sem ele roda heurística local) | chave da API Anthropic |
+   | `IA_MODELO` | | Modelo do copiloto | `claude-sonnet-5` (default) |
+   | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
+   | `META_WA_TOKEN` | | Token da Meta Cloud API (driver oficial) | painel Meta Developers |
+   | `META_WA_APP_SECRET` | | App Secret da Meta Cloud API | painel Meta Developers |
+   | `META_WA_VERIFY_TOKEN` | | Token de verificação do webhook Meta | escolha aleatória |
+   | `META_WA_WABA_ID` | | ID da conta WhatsApp Business (WABA) | painel Meta Developers |
+   | `EVOLUTION_WEBHOOK_TOKEN` | | Token do webhook da Evolution | `openssl rand -hex 32` |
+
+   > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
+   > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
+
+4. **Deploy**:
+   - Clique em "Deploy" no Coolify.
+   - O Traefik emite certificado TLS (Let's Encrypt) e roteia
+     `https://erp.geniusidiomas.com` → serviço `app` porta 3000 (interna).
+   - O Coolify monitora o healthcheck do app (`/api/whatsapp/health` com header
+     `x-cron-secret`) e marca o deploy como bem-sucedido após 3 checks OK.
+
+5. **Deploy automático**:
+   - Cada merge no branch `main` dispara um novo deploy (webhook Git do Coolify).
+
+### Diferenças em relação ao docker-compose.prod.yml
+
+- **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
+- **Sem portas publicadas**: nenhum serviço tem `ports:` no compose.
+- **Banco da Evolution**: criado por serviço one-shot `db-init` (comando SQL inline),
+  em vez de bind mount `./deploy/initdb`.
+- **Domínio**: vem da variável mágica `SERVICE_FQDN_APP_3000` (gerada pelo Coolify).
+- **Healthcheck**: endpoint `/api/whatsapp/health` (exige header `x-cron-secret`).
+
+### Troubleshooting
+
+- **`no available server` no Traefik**: confira se o domínio foi preenchido com a porta
+  interna `:3000` no campo "Domains for app" (ex.: `https://erp.geniusidiomas.com:3000`).
+- **Certificado TLS não gerado**: aguarde alguns minutos (Let's Encrypt pode demorar).
+  Se persistir, verifique se o DNS aponta para a VPS e se as portas 80/443 estão abertas.
+- **App não sobe**: veja os logs do Coolify (aba "Logs" do Resource). Variáveis obrigatórias
+  ausentes bloqueiam o deploy com erro claro.
+- **Evolution sem conexão**: o serviço `evolution` só é acessível na rede interna do
+  compose. O app se comunica via `http://evolution:8080` (nunca HTTPS público).
