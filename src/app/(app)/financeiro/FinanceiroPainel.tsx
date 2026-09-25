@@ -1,28 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
-import type { FilaCobranca as FilaCobrancaDados } from "@/server/cobrancas/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
-import { InformesPagamento } from "./InformesPagamento";
-import { PoliticasComissao } from "./PoliticasComissao";
-import type { listarInformesPagamento, configuracaoComissoes } from "@/server/financeiro/consultas";
-import { FilaCobranca } from "./FilaCobranca";
-import { RetomadasPainel } from "./RetomadasPainel";
-import type { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
-import { abasVisiveis, ROTULO_ABA, type AbaFinanceiro } from "./abas";
 
-type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
+export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
 
 export interface ComissaoRow {
@@ -72,53 +63,73 @@ const VIGENCIA_LABEL: Record<Vigencia, string> = {
 const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
 const btnSec = "rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50";
 
-export function FinanceiroPainel({
-  aba,
-  podeConfigurarPoliticas,
-  fila,
-  informes,
-  politicas,
-  retomadas,
-  erroRetomadas,
-  comissoes,
-  kpis,
-  aprovacoes,
-  podeAprovar,
-  podeOperarCobranca,
-  cotacoes,
-  relatorio,
-  configFinanceiro,
-  podeGerenciarCambio,
-  preferenciaFusoExibicao = null,
-}: {
-  /** Aba ativa, já validada pela página contra o papel (resolverAba). Os dados das outras abas vêm vazios. */
-  aba: AbaFinanceiro;
-  podeConfigurarPoliticas: boolean;
-  fila: FilaCobrancaDados;
-  informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
-  politicas: Awaited<ReturnType<typeof configuracaoComissoes>>;
-  retomadas: NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
-  erroRetomadas?: string | null;
-  comissoes: ComissaoRow[];
-  kpis: Kpis;
-  aprovacoes: AprovacaoRow[];
-  podeAprovar: boolean;
-  podeOperarCobranca: boolean;
-  cotacoes: CotacaoVigente[];
-  relatorio: RelatorioDados | null;
-  configFinanceiro: { fechamentoComissaoAutomatico: boolean };
-  podeGerenciarCambio: boolean;
-  preferenciaFusoExibicao?: string | null;
-}) {
-  const router = useRouter();
-  // Câmbio, fechamento de comissões, configuração e aprovações: nenhuma action recebe chave de
-  // idempotência — resultado incerto manda conferir antes de repetir. A trava de duplo clique que
-  // antes era manual (ocupadoRef) é a do executor.
-  const acao = useAcaoCliente({ idempotente: false });
-  const ocupado = acao.ocupado;
+// Abas do /financeiro como componentes independentes (E8 — uma rota por aba). Cada rota monta só a
+// sua aba; as que executam ações carregam o próprio executor (useAcaoCliente) e o próprio retorno.
+// Câmbio, fechamento de comissões, configuração e aprovações: nenhuma action recebe chave de
+// idempotência — resultado incerto manda conferir antes de repetir.
 
-  // Seletor de moeda de consolidação (Fase B). Default USD; preferência salva no navegador
-  // (sem coluna nova). `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
+function useExecutorFinanceiro() {
+  const router = useRouter();
+  const acao = useAcaoCliente({ idempotente: false });
+  // Recebe uma fábrica, não a promise já criada: com a trava do executor fechada, a action nem começa.
+  async function run<T>(disparar: () => Promise<Resultado<T>>) {
+    const d = await acao.executar(disparar);
+    if (d?.tipo === "ok") router.refresh();
+  }
+  return { acao, run, router };
+}
+
+export function ComissoesAba({ comissoes, podePagar, fechamentoAutomatico }: { comissoes: ComissaoRow[]; podePagar: boolean; fechamentoAutomatico: boolean }) {
+  const { acao, run } = useExecutorFinanceiro();
+  return (
+    <>
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
+      <Comissoes
+        comissoes={comissoes}
+        podePagar={podePagar}
+        onFechar={() => run(() => fecharMesComissoes())}
+        fechamentoAutomatico={fechamentoAutomatico}
+        onToggleAutomatico={(ligado) => run(() => salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
+        isPending={acao.ocupado}
+      />
+    </>
+  );
+}
+
+export function AprovacoesAba({ aprovacoes }: { aprovacoes: AprovacaoRow[] }) {
+  const { acao, run } = useExecutorFinanceiro();
+  return (
+    <>
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
+      <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={acao.ocupado} />
+    </>
+  );
+}
+
+export function CambioAba({ cotacoes, preferenciaFusoExibicao = null }: { cotacoes: CotacaoVigente[]; preferenciaFusoExibicao?: string | null }) {
+  const { acao, router } = useExecutorFinanceiro();
+  async function salvarCambio(entradas: { moeda: string; unidadesPorUsd: number }[]) {
+    const d = await acao.executar(() => salvarTaxasCambio({ entradas }), "Cotações salvas.");
+    if (d?.tipo === "ok") router.refresh();
+  }
+  async function atualizarCambioAuto() {
+    const d = await acao.executar(() => atualizarCotacoesAutomatico(), (dado) => {
+      const semCot = dado?.semCotacao ?? [];
+      return `Cotações atualizadas pela fonte pública: ${dado?.atualizadas ?? 0}` + (semCot.length ? ` · sem cotação na fonte: ${semCot.join(", ")}` : "");
+    });
+    if (d?.tipo === "ok") router.refresh();
+  }
+  return (
+    <>
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
+      <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+    </>
+  );
+}
+
+/** Visão geral com o seletor de moeda de consolidação (Fase B): preferência salva no navegador. */
+export function GeralAba({ kpis, cotacoes }: { kpis: Kpis; cotacoes: CotacaoVigente[] }) {
+  // `taxas` = moeda→unidadesPorUsd para o pivô USD em `consolidar`.
   const taxas = useMemo(() => {
     const r: Record<string, number> = {};
     for (const c of cotacoes) if (c.unidadesPorUsd != null) r[c.moeda] = c.unidadesPorUsd;
@@ -127,103 +138,16 @@ export function FinanceiroPainel({
   const opcoesMoeda = useMemo(() => cotacoes.map((c) => c.moeda), [cotacoes]);
   const [moedaCons, setMoedaCons] = useState("USD");
   useEffect(() => {
-    const saved = window.localStorage.getItem(MOEDA_CONS_KEY);
-    if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);
+    try {
+      const saved = window.localStorage.getItem(MOEDA_CONS_KEY);
+      if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);
+    } catch { /* storage indisponível */ }
   }, [cotacoes]);
   function escolherMoeda(m: string) {
     setMoedaCons(m);
     try { window.localStorage.setItem(MOEDA_CONS_KEY, m); } catch { /* storage indisponível */ }
   }
-
-  async function salvarCambio(entradas: { moeda: string; unidadesPorUsd: number }[]) {
-    const d = await acao.executar(() => salvarTaxasCambio({ entradas }), "Cotações salvas.");
-    if (d?.tipo === "ok") router.refresh();
-  }
-
-  async function atualizarCambioAuto() {
-    const d = await acao.executar(() => atualizarCotacoesAutomatico(), (dado) => {
-      const semCot = dado?.semCotacao ?? [];
-      return `Cotações atualizadas pela fonte pública: ${dado?.atualizadas ?? 0}` + (semCot.length ? ` · sem cotação na fonte: ${semCot.join(", ")}` : "");
-    });
-    if (d?.tipo === "ok") router.refresh();
-  }
-
-  // Recebe uma fábrica, não a promise já criada: com a trava do executor fechada, a action nem começa.
-  async function run<T>(disparar: () => Promise<Resultado<T>>) {
-    const d = await acao.executar(disparar);
-    if (d?.tipo === "ok") router.refresh();
-  }
-
-  // As contagens vêm das três filas pendentes, que a página carrega em qualquer aba.
-  const contagem: Partial<Record<AbaFinanceiro, number>> = {
-    informes: informes.length,
-    retomadas: retomadas.filter((p) => p.status === "PENDENTE").length,
-    aprovacoes: aprovacoes.length,
-  };
-  const rotulo = (a: AbaFinanceiro) =>
-    a === "informes" || a === "retomadas" ? `${ROTULO_ABA[a]} (${contagem[a]})`
-    : a === "aprovacoes" && contagem.aprovacoes ? `${ROTULO_ABA[a]} (${contagem.aprovacoes})`
-    : ROTULO_ABA[a];
-  const abas = abasVisiveis({ podeOperarCobranca, podeAprovar, podeGerenciarCambio, podeConfigurarPoliticas });
-
-  return (
-    <div>
-      <h1 className="mb-3 text-2xl font-medium">Financeiro</h1>
-      {/* Aba na URL: linkável, sobrevive a voltar/F5 e a página só consulta os dados dela. */}
-      <nav aria-label="Seções do financeiro" className="mb-5 flex flex-wrap gap-1">
-        {abas.map((a) => (
-          <Link
-            key={a}
-            href={`/financeiro?aba=${a}`}
-            scroll={false}
-            aria-current={aba === a ? "page" : undefined}
-            className={"rounded-md px-3 py-1.5 text-sm " + (aba === a ? "bg-brand-600 font-medium text-white" : "text-gray-600 hover:bg-gray-100")}
-          >
-            {rotulo(a)}
-          </Link>
-        ))}
-      </nav>
-
-      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
-
-      {aba === "informes" && podeOperarCobranca && <InformesPagamento informes={informes} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
-      {aba === "retomadas" && podeOperarCobranca && <RetomadasPainel propostas={retomadas} erroConsulta={erroRetomadas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
-      {aba === "politicas" && politicas && <PoliticasComissao dados={politicas} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
-      {aba === "cobrancas" && podeOperarCobranca && (
-        <FilaCobranca
-          itens={fila.itens}
-          dashs={fila.dashs}
-          regua={fila.regua}
-          podeOperar={podeOperarCobranca}
-          podeBloquear={podeAprovar}
-          preferenciaFusoExibicao={preferenciaFusoExibicao}
-        />
-      )}
-
-      {aba === "comissoes" && (
-        <Comissoes
-          comissoes={comissoes}
-          podePagar={podeOperarCobranca}
-          onFechar={() => run(() => fecharMesComissoes())}
-          fechamentoAutomatico={configFinanceiro.fechamentoComissaoAutomatico}
-          onToggleAutomatico={(ligado) => run(() => salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
-          isPending={ocupado}
-        />
-      )}
-
-      {aba === "descontos" && relatorio && <Descontos relatorio={relatorio} />}
-
-      {aba === "geral" && (
-        <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />
-      )}
-
-      {aba === "aprovacoes" && <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={ocupado} />}
-
-      {aba === "cambio" && (
-        <CambioPainel cotacoes={cotacoes} onSalvar={salvarCambio} onAtualizarAuto={atualizarCambioAuto} preferenciaFusoExibicao={preferenciaFusoExibicao} />
-      )}
-    </div>
-  );
+  return <VisaoGeral kpis={kpis} opcoes={opcoesMoeda} taxas={taxas} moedaCons={moedaCons} onMoeda={escolherMoeda} />;
 }
 
 export function Comissoes({
@@ -374,7 +298,7 @@ function ValoresEmpilhados({ valores }: { valores: ValorMoeda[] }) {
   );
 }
 
-function VisaoGeral({
+export function VisaoGeral({
   kpis,
   opcoes,
   taxas,
@@ -533,7 +457,7 @@ export function CambioPainel({
   );
 }
 
-function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
+export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
   const { descontoPorMoeda, descontoPorVendedor, comissoesPorStatus, comissoesPorVendedor } = relatorio;
   const vazio = descontoPorMoeda.length === 0 && comissoesPorStatus.length === 0;
   if (vazio) {

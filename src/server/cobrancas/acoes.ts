@@ -58,7 +58,7 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
         payload: { ate: ateData.toISOString() },
       });
     });
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
   });
 }
 
@@ -89,7 +89,7 @@ async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: 
       });
       return pedido.id;
     });
-    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
     return { solicitacaoId };
   });
 }
@@ -138,6 +138,6 @@ export async function decidirSolicitacaoAcessoAulas(solicitacaoId: string, input
         payload: { solicitacaoId: pedido.id, status, bloquear: pedido.bloquear, solicitanteId: pedido.solicitanteId, motivo: pedido.motivo, motivoDecisao: dados.motivo },
       });
     });
-    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
   });
 }

@@ -7,6 +7,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VencimentoFormulario } from "./Formulario";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function Pagina({ params, searchParams }: {
  params: Promise<{ matriculaId: string; propostaId: string }>;
@@ -27,7 +28,7 @@ export default async function Pagina({ params, searchParams }: {
  const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short" }).format(new Date(valor));
  const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, fusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; };
  const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, "UTC");
- return <main className="space-y-5"><Link href="/financeiro" className="underline">Voltar ao Financeiro</Link>
+ return <main className="space-y-5"><VoltarPara href="/financeiro" />
  <h1 className="text-2xl">Acerto do vencimento da primeira mensalidade</h1>
  <p>Matrícula {matriculaId} · versão contratual {d.versao}</p>
  <p>Vigência aprovada: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada). A aplicação fica disponível a partir desse momento.</p>

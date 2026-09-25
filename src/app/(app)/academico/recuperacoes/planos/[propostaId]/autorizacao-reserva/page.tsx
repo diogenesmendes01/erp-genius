@@ -7,6 +7,7 @@ import { AutorizarReservaEspecial, ReservarComAutorizacao } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -23,7 +24,7 @@ export default async function AutorizacaoReserva({ params, searchParams }: { par
   const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
 
   return <section className="space-y-4">
-    <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Voltar para a operação do plano</Link>
+    <VoltarPara href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`} para="Operação do plano" />
     <h1 className="text-2xl font-medium">Autorizações especiais para reservar recuperação</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Situação da matrícula: {d.statusMatricula}.</p>

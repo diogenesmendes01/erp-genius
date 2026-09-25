@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarChamadaEncontro } from "@/server/diario/chamada-encontro";
@@ -9,13 +8,14 @@ import { consultarOcorrenciasParticular } from "@/server/matricula/ocorrencia-pa
 import { OcorrenciaParticular } from "./OcorrenciaParticular";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function ChamadaPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params;
   const [r, ocorrencias, preferencia] = await Promise.all([listarChamadaEncontro({ encontroId: id }), consultarOcorrenciasParticular({ encontroId: id }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
-    <Link href="/diario/encontros" className="text-brand-700 underline">Voltar aos encontros</Link>
+    <VoltarPara href="/diario/encontros" />
     <h1 className="text-2xl font-medium">Diário do encontro</h1>
     {!r.ok && <p role={ocorrencias.ok && ocorrencias.dado ? undefined : "alert"} className={ocorrencias.ok && ocorrencias.dado ? "text-gray-600" : "text-red-700"}>{r.erro}</p>}
     {r.ok && r.dado && <>

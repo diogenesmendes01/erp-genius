@@ -34,7 +34,7 @@ const PAPEIS_B2B: Papel[] = [Papel.FINANCEIRO];
 
 function revalidar() {
   revalidatePath("/empresas");
-  revalidatePath("/financeiro");
+  revalidatePath("/financeiro", "layout");
   revalidatePath("/alunos");
 }
 

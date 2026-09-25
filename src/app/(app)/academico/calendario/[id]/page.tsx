@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { DecidirCalendario } from "./DecidirCalendario";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function VersaoCalendarioPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -20,7 +21,7 @@ export default async function VersaoCalendarioPage({ params }: { params: Promise
   const podeDecidir = !versao.decisao && usuario.id !== versao.preparadorId && usuario.papeis.some((p) => ["GERENTE_PEDAGOGICO", "ADMINISTRADOR"].includes(p));
   const atual = ultima?.id === id, fusoConfere = config?.fusoInstitucional === versao.fusoInstitucional;
   return <div className="space-y-5">
-    <Link className="underline" href="/academico/calendario">Voltar ao calendário</Link>
+    <VoltarPara href="/academico/calendario" />
     <h1 className="text-2xl font-medium">Calendário · Versão {versao.versao}</h1>
     <p>{versao.decisao ? versao.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando decisão"} · {versao.fusoInstitucional}</p>
     <Link className="text-brand-700 underline" href={`/academico/calendario/novo?base=${encodeURIComponent(id)}`}>Usar esta versão como base de uma nova proposta</Link>
