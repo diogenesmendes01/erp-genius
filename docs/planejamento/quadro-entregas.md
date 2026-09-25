@@ -1189,3 +1189,57 @@ Cenário composto ainda faltante: persistir `INCERTO` do portal, reiniciar expli
 
 
 21/09/2026 — A pedido do usuário, Q161 transferida para codex/consolidacao-specs-20260916 por cherry-pick552b86e7/be99b3ca, resultando0914a7a1/a9d97763. Conflito exclusivamente documental resolvido preservando ambos os históricos. Verificação principal: cadeia-calendario-oferta.test.ts e oferta-continuidade-agenda-tx.test.ts19/19, saída0 1ee694; TypeScript sessão71029/186590 saída0. Tentativa replanejamento-sem-remarcacoes.int.test.ts não iniciou: setup do banco descartável integracao falhou, saída1 498efc; nenhum teste integrado aprovado nesta tentativa. A revisão anterior continua aberta: comparação rígida de status pode exigir confirmação indevida após evolução legítima PREVISTO→MINISTRADO; alterações individuais posteriores aprovadas também precisam de suporte. Integrado não significa Q161 integralmente concluída. Sem push nesta operação.
+
+## Infraestrutura — correção Prisma/OpenSSL em Alpine 3.24 (25/09/2026)
+
+**PR #127** — `cursor/fix-prisma-openssl-alpine-99a4`
+
+### Problema identificado
+A imagem `node:22-alpine` flutuante resolveu para Alpine 3.24 que vem com `libssl.so.3` mas sem o binário `openssl`. Isso causou:
+- Falha na detecção do OpenSSL pelo Prisma 5.22 (warning e fallback para openssl-1.1.x)
+- Engine errado gerado (`linux-musl` em vez de `linux-musl-openssl-3.0.x`)
+- Serviço `migrate` falhando com exit 1
+- Queries no runtime falhando (mas `/api/health` permanecia verde)
+
+Verificado em produção no servidor Coolify.
+
+### Solução implementada
+1. **Dockerfile**:
+   - Pin da imagem base com digest: `node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402`
+   - Base stage comum com `apk add --no-cache openssl` (evita repetição)
+   - `ENV HOSTNAME=0.0.0.0` no runner (Next standalone precisa bind em todas as interfaces)
+   - Build-time engine checks no builder e runner (falha o build se engine errado)
+
+2. **Endpoint `/api/ready`**: 
+   - Readiness check com `SELECT 1` via Prisma (detecta DB inacessível ou engine quebrado)
+   - Retorna 200 em sucesso, 503 em falha
+   - Timeout de 3s
+   - Testes unitários com mock do Prisma client (200 em sucesso, 503 em erro/timeout/resultado inesperado)
+
+3. **Healthcheck atualizado**:
+   - `docker-compose.coolify.yml` usa `/api/ready` (valida DB + Prisma)
+   - `/api/health` mantido como pure liveness (sem dependências externas)
+   - `SETUP.md` atualizado com a distinção
+
+### Verificação local (commit 318989f4 rebased sobre fe100ea)
+- ✅ Build completo: builder e runner concluídos
+- ✅ Prisma detecta `linux-musl-openssl-3.0.x` sem warnings
+- ✅ Migrate: 436 migrações aplicadas de banco vazio (exit 0); segunda execução no-op (exit 0)
+- ✅ Runtime: `/api/health` 200, `/api/ready` 200, query `SELECT 1` funciona
+- ✅ `/api/ready` retorna 503 após parar o Postgres (validado localmente)
+- ✅ Testes unitários `/api/ready`: 200 em sucesso, 503 em erro/timeout/resultado inesperado
+
+### Testes de mutação confirmados
+| Cenário | Build | Runtime |
+|---------|-------|---------|
+| ✅ Completo (com apk + pin + HOSTNAME + checks) | ✅ OK | ✅ Funciona |
+| ❌ Sem `apk add openssl` | ❌ **Falha no build-time check** | N/A |
+| ❌ Sem `ENV HOSTNAME=0.0.0.0` | ✅ OK | ❌ **wget localhost falha (Connection refused)** |
+| ❌ `/api/ready` sempre 200 (sem query) | ✅ OK | ⚠️ **Teste unitário falha** |
+
+### Pendências
+- **Confirmar redeploy no Coolify**: validar migrate + /api/ready + HTTPS em produção
+- Testes unitários rodam via vitest (não executados no ambiente Cloud Agent por restrição do AGENTS.md)
+
+**Estado**: Implementado e validado localmente; pronto para merge e auto-deploy em produção via Coolify.
+
