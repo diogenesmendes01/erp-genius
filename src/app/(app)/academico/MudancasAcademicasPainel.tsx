@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
@@ -88,7 +89,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
           <p>Mudança de nível: exige parecer docente ou dispensa justificada, decisão de outra pessoa da gestão pedagógica e execução pela secretaria.</p>
         </div>}
         <label className="block text-sm font-medium">Motivo da mudança
-          <textarea className={`${campo} mt-1 font-normal`} rows={3} minLength={5} maxLength={2000} required disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+          <CampoTexto className={`${campo} mt-1 font-normal`} rows={3} minLength={5} maxLength={2000} required disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         </label>
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={horarioCompativel} required disabled={ocupado || !destino} onChange={(e) => setHorarioCompativel(e.target.checked)} />Conferi o horário de destino com o aluno ou responsável e confirmei a compatibilidade.</label>
         <button type="submit" className={principal} disabled={ocupado || !destino || !horarioCompativel || motivo.trim().length < 5}>Enviar para aprovação pedagógica</button>

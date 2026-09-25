@@ -7,6 +7,7 @@ import { executarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalen
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function AcoesEquivalencia({
   propostaId,
@@ -87,7 +88,7 @@ export function AcoesEquivalencia({
         </select>
       </label>
       <label className="block">Motivo da decisão
-        <textarea name="motivo" required minLength={5} maxLength={2000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="motivo" required minLength={5} maxLength={2000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o mapeamento e seus efeitos antes de registrar a decisão.</label>
       <button disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
@@ -97,7 +98,7 @@ export function AcoesEquivalencia({
       <h2 className="text-xl font-medium">Efetivar transferência autorizada</h2>
       <p>Esta etapa encerra o vínculo na turma de origem e cria o vínculo na turma de destino. O serviço volta a conferir autorização, vaga, regras e fontes antes de efetivar.</p>
       <label className="block">Motivo da execução
-        <textarea name="motivoExecucao" required minLength={5} maxLength={4000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="motivoExecucao" required minLength={5} maxLength={4000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block"><input type="checkbox" required disabled={pendente} /> Confirmei a compatibilidade de horário com o aluno.</label>
       <button disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{pendente ? "Efetivando…" : "Efetivar transferência"}</button>

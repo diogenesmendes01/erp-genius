@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { registrarRelatoIndisponibilidadeEquipe } from "@/server/diario/reposicao-operacoes-relatos";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 /** Formulário comum da equipe e do professor designado. A ação decide o
  * escopo atual; enviar um relato não confirma falha nem interrompe o prazo. */
@@ -27,7 +28,7 @@ export function RelatarIndisponibilidadeReposicao({ reposicaoId }: { reposicaoId
     });
   }}>
     <p className="font-medium">Relatar indisponibilidade do material</p>
-    <label className="block">Descrição do problema<textarea name="descricao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Descrição do problema<CampoTexto name="descricao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
     <p className="text-sm text-gray-600">Registrar o relato não confirma a falha, não pausa o prazo e não altera a entrega.</p>
     <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar relato"}</button>
     {erro && <p role="alert">{erro}</p>}

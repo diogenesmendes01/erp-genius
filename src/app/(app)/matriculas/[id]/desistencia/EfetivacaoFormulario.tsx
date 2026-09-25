@@ -5,6 +5,7 @@ import { efetivarPedidoDesistenciaPreparacao } from "@/server/matricula/desisten
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId }: { pedidoId: string; estadoHash: string; decisaoFinanceiraId?: string }) {
   const router = useRouter();
@@ -28,7 +29,7 @@ export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId
     <p>Esta ação cancela somente a matrícula em preparação e libera suas reservas de vaga e horário. Confira também os canais externos antes de confirmar.</p>
     {decisaoFinanceiraId && <p>O cancelamento das cobranças tem aprovação financeira. A confirmação aplicará esse tratamento junto com a desistência.</p>}
     <fieldset disabled={ocupado || concluido} className="space-y-3">
-      <label className="block">Conferência final e motivo<textarea name="motivo" required minLength={10} maxLength={3000} className="mt-1 block w-full rounded border p-2" placeholder="Registre como conferiu a solicitação e a ausência de pagamento ou assinatura fora do ERP." /></label>
+      <label className="block">Conferência final e motivo<CampoTexto name="motivo" required minLength={10} maxLength={3000} className="mt-1 block w-full rounded border p-2" placeholder="Registre como conferiu a solicitação e a ausência de pagamento ou assinatura fora do ERP." /></label>
       <label className="block"><input type="checkbox" name="conferencia" value="confirmada" required /> Confirmei que não há pagamento, comprovante ou assinatura pendente de registro para esta contratação.</label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Efetivando…" : "Confirmar desistência e liberar reservas"}</button>
     </fieldset>

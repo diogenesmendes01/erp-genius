@@ -22,6 +22,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoAcertoEncerramento>>, { ok: true }>["dado"]>;
@@ -149,27 +150,27 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
           {p.tipo === "MENSALIDADE" ? <div className="grid gap-2 md:grid-cols-3">
             <label className="grid gap-1">Base conferida<input name={`${p.id}:base`} inputMode="decimal" required className={estilo} /></label>
             <label className="grid gap-1">Desconto válido no encerramento<input name={`${p.id}:desconto`} inputMode="decimal" required className={estilo} /></label>
-            <label className="grid gap-1">Evidência das condições<textarea name={`${p.id}:evidencia`} required minLength={5} maxLength={2000} className={estilo} /></label>
+            <label className="grid gap-1">Evidência das condições<CampoTexto name={`${p.id}:evidencia`} required minLength={5} maxLength={2000} className={estilo} /></label>
           </div> : <div className="grid gap-2 md:grid-cols-3">
             <label className="grid gap-1">Valor devido proposto no encerramento<input name={`${p.id}:devido`} defaultValue={p.valorNegociado} inputMode="decimal" required className={estilo} /></label>
-            <label className="grid gap-1">Motivo do tratamento da cobrança<textarea name={`${p.id}:motivo`} required minLength={5} maxLength={2000} className={estilo} /></label>
-            <label className="grid gap-1">Evidência contratual da cobrança<textarea name={`${p.id}:contrato`} required minLength={5} maxLength={2000} className={estilo} /></label>
+            <label className="grid gap-1">Motivo do tratamento da cobrança<CampoTexto name={`${p.id}:motivo`} required minLength={5} maxLength={2000} className={estilo} /></label>
+            <label className="grid gap-1">Evidência contratual da cobrança<CampoTexto name={`${p.id}:contrato`} required minLength={5} maxLength={2000} className={estilo} /></label>
           </div>}
         </div>)}
         {c.ajustes.length > 0 && <details><summary>Ajustes anteriores</summary>{c.ajustes.map((a) => <p key={a.id}>{a.tipo}: {formatarMoeda(a.valorDe, a.moeda)} para {formatarMoeda(a.valorPara, a.moeda)}. {a.motivo}</p>)}</details>}
         <CompensacoesEncerramento compensacoes={c.compensacoes} />
         {c.condicoes?.regras.multa.tipo === "SEM_PREVISAO" ? <p>Sem previsão de multa: {c.condicoes.regras.multa.motivo}</p> : c.condicoes && <div className="space-y-2">
           <p>Cláusula {c.condicoes.regras.multa.clausulaId}: {c.condicoes.regras.multa.condicoesAplicacao}. {c.condicoes.regras.multa.tipo === "VALOR_FIXO" ? `Valor fixo: ${formatarMoeda(c.condicoes.regras.multa.valor, c.moeda)}` : `${c.condicoes.regras.multa.percentual}% sobre ${c.condicoes.regras.multa.descricaoBase}`}</p>
-          <label className="grid gap-1">Vencimento proposto da multa<input type="date" name={`${c.matriculaId}:vencimentoMulta`} className={estilo} /></label><p>Obrigatório para aprovar multa com valor a cobrar. Dispensa integral não emite cobrança.</p><label className="grid gap-1">Evidência de aplicabilidade da multa<textarea name={`${c.matriculaId}:multa`} required minLength={5} maxLength={2000} className={estilo} /></label>
+          <label className="grid gap-1">Vencimento proposto da multa<input type="date" name={`${c.matriculaId}:vencimentoMulta`} className={estilo} /></label><p>Obrigatório para aprovar multa com valor a cobrar. Dispensa integral não emite cobrança.</p><label className="grid gap-1">Evidência de aplicabilidade da multa<CampoTexto name={`${c.matriculaId}:multa`} required minLength={5} maxLength={2000} className={estilo} /></label>
           {c.condicoes.regras.multa.tipo === "PERCENTUAL" && <label className="grid gap-1">Valor conferido da base percentual<input name={`${c.matriculaId}:baseMulta`} required inputMode="decimal" className={estilo} /></label>}
           <label className="grid gap-1">Tratamento proposto da multa<select value={excecoes[c.matriculaId] ?? ""} onChange={(e) => setExcecoes((atual) => ({ ...atual, [c.matriculaId]: e.target.value }))} className={estilo}><option value="">Manter previsão contratual</option><option value="DISPENSAR">Propor dispensa</option><option value="ALTERAR">Propor outro valor</option></select></label>
-          {excecoes[c.matriculaId] && <><p>A exceção será registrada como proposta e dependerá de autorização independente.</p><label className="grid gap-1">Justificativa da exceção<textarea name={`${c.matriculaId}:motivoExcecao`} required minLength={5} maxLength={2000} className={estilo} /></label>{excecoes[c.matriculaId] === "ALTERAR" && <label className="grid gap-1">Valor de multa proposto<input name={`${c.matriculaId}:valorExcecao`} required inputMode="decimal" className={estilo} /></label>}</>}
+          {excecoes[c.matriculaId] && <><p>A exceção será registrada como proposta e dependerá de autorização independente.</p><label className="grid gap-1">Justificativa da exceção<CampoTexto name={`${c.matriculaId}:motivoExcecao`} required minLength={5} maxLength={2000} className={estilo} /></label>{excecoes[c.matriculaId] === "ALTERAR" && <label className="grid gap-1">Valor de multa proposto<input name={`${c.matriculaId}:valorExcecao`} required inputMode="decimal" className={estilo} /></label>}</>}
         </div>}
       </div>)}
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Calcular componente mensal</button>
     </fieldset></form>}
     {previa != null && <div className="space-y-3"><Resumo snapshot={previa} /><ImpactosAcademicosAcerto snapshot={previa} /><OutrasCobrancasResumo snapshot={previa} />
-      <label className="grid gap-1">Motivo desta versão<textarea value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = ""; }} disabled={ocupado} minLength={5} maxLength={2000} className={estilo} /></label>
+      <label className="grid gap-1">Motivo desta versão<CampoTexto value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = ""; }} disabled={ocupado} minLength={5} maxLength={2000} className={estilo} /></label>
       <button disabled={ocupado || !entrada || motivo.trim().length < 5} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { if (!entrada) return; void iniciar(async () => {
         setErro(null); chave.current ||= crypto.randomUUID();
         try {

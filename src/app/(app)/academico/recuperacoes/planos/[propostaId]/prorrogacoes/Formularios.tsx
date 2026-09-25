@@ -4,6 +4,7 @@ import { Formulario, Horario } from "../Formularios";
 import { proporProrrogacaoRecuperacaoLocal } from "@/server/avaliacoes/recuperacao-operacao-local";
 import { decidirProrrogacaoRecuperacao } from "@/server/avaliacoes/recuperacao-prorrogacao";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
+import { CampoTexto } from "@/components/CampoTexto";
 const campo = (d: FormData, nome: string) => String(d.get(nome) ?? "");
 // O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }: executarAcaoCliente decide a
 // mensagem de resultado incerto conforme a idempotência desta action, e o desfecho volta nesse formato.
@@ -21,7 +22,7 @@ export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsp
     return resposta(r);
   }}>
     <Horario rotulo="Novo prazo proposto" fusoInstitucional={fusoInstitucional} />
-    <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>O prazo só muda após aprovação por outra pessoa da gestão. A proposta não concede nova tentativa.</p>
   </Formulario>;
 }
@@ -30,6 +31,6 @@ export function ConferirProrrogacao({ propostaId, propostaHash, podeAprovar }: {
   // Decisão sem chave de idempotência no contrato (server/avaliacoes/recuperacao-prorrogacao.ts:43): a falha não manda reenviar.
   return <Formulario titulo="Registrar decisão" executar={async d => resposta(await executarAcaoCliente(() => decidirProrrogacaoRecuperacao({ propostaId, propostaHash, aprovada: campo(d, "decisao") === "aprovar", motivo: campo(d, "motivo") }), { idempotente: false }))}>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar prorrogação</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>
-    <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

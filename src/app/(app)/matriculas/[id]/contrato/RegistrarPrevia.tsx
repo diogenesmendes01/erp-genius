@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { registrarPreviaContratual } from "@/server/contratos/previas";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 export function RegistrarPrevia({ matriculaId, modeloId, revisaoHash }: { matriculaId: string; modeloId: string; revisaoHash: string }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -20,7 +21,7 @@ export function RegistrarPrevia({ matriculaId, modeloId, revisaoHash }: { matric
     <fieldset disabled={ocupado} className="space-y-3">
       <legend className="font-medium">Registrar o conteúdo revisado</legend>
       <label className="block"><input name="aplicacao" type="checkbox" required /> Conferi a aplicação deste modelo à matrícula e os dados preenchidos.</label>
-      <label className="block">Motivo ou registro da conferência<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Motivo ou registro da conferência<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Preservar esta prévia"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}

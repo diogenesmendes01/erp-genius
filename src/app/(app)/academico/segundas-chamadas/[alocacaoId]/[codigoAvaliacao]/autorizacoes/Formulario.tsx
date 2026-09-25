@@ -6,6 +6,7 @@ import { autorizarSegundaChamadaEspecialLocal } from "@/server/avaliacoes/segund
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function Formulario({ alocacaoId, codigoAvaliacao, fusoInstitucional }: { alocacaoId: string; codigoAvaliacao: string; fusoInstitucional: string | null }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function Formulario({ alocacaoId, codigoAvaliacao, fusoInstitucional }: {
       <label className="block" htmlFor="prazo-local">Prazo para realização<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
       <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. A data e a hora são convertidas no servidor; horários ambíguos ou inexistentes exigem correção.</p>
-      <label className="block" htmlFor="motivo">Motivo da autorização<textarea id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block" htmlFor="motivo">Motivo da autorização<CampoTexto id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Autorizando…" : "Autorizar realização especial"}</button>
     </fieldset>
     {mensagem && <p role="alert">{mensagem}</p>}

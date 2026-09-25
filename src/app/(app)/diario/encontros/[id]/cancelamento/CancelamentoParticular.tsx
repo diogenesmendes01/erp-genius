@@ -6,6 +6,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
@@ -29,7 +30,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
       const d = await proposta.executar(() => proporCancelamentoParticular({ encontroId, motivo, origem, chaveIdempotencia }));
       if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
     }}>
-      <label className="block">Motivo do cancelamento<textarea name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} onChange={() => { chave.current = null; }} /></label>
+      <label className="block">Motivo do cancelamento<CampoTexto name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} onChange={() => { chave.current = null; }} /></label>
       <label className="block">Quem cancelou?<select name="origem" required defaultValue="" className="block border p-2" onChange={() => { chave.current = null; }}><option value="" disabled>Selecione</option><option value="ESCOLA">Escola</option><option value="ALUNO">Aluno</option></select></label>
       <FeedbackAcao erro={proposta.erro} />
       <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Solicitar cancelamento</button>
@@ -45,7 +46,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
         if (d?.tipo === "ok") router.refresh();
       }}>
         <label className="block">Decisão<select name="decisao" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar cancelamento</option><option value="rejeitar">Rejeitar solicitação</option></select></label>
-        <label className="block">Justificativa da decisão<textarea name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} /></label>
+        <label className="block">Justificativa da decisão<CampoTexto name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} /></label>
         <FeedbackAcao erro={alvo === p.id ? decisao.erro : null} />
         <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </form>}

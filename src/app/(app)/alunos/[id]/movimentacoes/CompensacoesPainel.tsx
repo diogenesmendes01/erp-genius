@@ -12,6 +12,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -41,7 +42,7 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
       });
     }}><fieldset disabled={ocupado} className="space-y-2">
       <label className="grid gap-1">Decisão<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar dias de compensação</option><option value="rejeitar">Rejeitar proposta</option></select></label>
-      <label className="grid gap-1">Justificativa da decisão<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
+      <label className="grid gap-1">Justificativa da decisão<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
     </fieldset></form>}
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
@@ -96,8 +97,8 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
         <label className="grid gap-1">Dia sem oferta<input type="date" className={estilo} value={dia} min={cobranca?.coberturaInicio ?? undefined} max={cobranca?.coberturaFim ?? undefined} onChange={(e) => setDia(e.target.value)} /></label>
         <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { if (!dia || !cobranca?.coberturaInicio || !cobranca.coberturaFim || dia < cobranca.coberturaInicio || dia > cobranca.coberturaFim) { setErro("Selecione um dia da cobertura original."); return; } setDias((atual) => [...new Set([...atual, dia])].sort()); chave.current = ""; setErro(null); }}>Adicionar dia</button>
         <ul>{dias.map((d) => <li key={d}>{d} <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { setDias((atual) => atual.filter((v) => v !== d)); chave.current = ""; }}>Remover {d}</button></li>)}</ul>
-        <label className="grid gap-1">Motivo da indisponibilidade<textarea className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
-        <label className="grid gap-1">Evidência das condições de compensação<textarea className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
+        <label className="grid gap-1">Motivo da indisponibilidade<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
+        <label className="grid gap-1">Evidência das condições de compensação<CampoTexto className={estilo} name="evidencia" required minLength={5} maxLength={2000} /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Enviar proposta para aprovação</button>
       </fieldset></form>
     </>}

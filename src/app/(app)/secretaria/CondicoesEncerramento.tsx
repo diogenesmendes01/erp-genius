@@ -9,6 +9,7 @@ import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
 type Cobranca = { id: string; codigo: string | null; tipo: string };
@@ -108,7 +109,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
         {tipoAcerto && <><label className="grid gap-1 text-sm">Cláusula do acerto<input name="clausulaAcerto" required className={campo} /></label><label className="grid gap-1 text-sm">{tipoAcerto === "VALOR_FIXO" ? "Valor do acerto" : "Percentual do acerto"}<input name="valorAcerto" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" required className={campo} /></label><label className="grid gap-1 text-sm md:col-span-2">Alcance da regra<select value={alcanceAcerto} onChange={(e) => { setAlcanceAcerto(e.target.value as AlcanceAcerto); setCobrancasAcerto([]); }} className={campo}><option value="TODAS_COBRANCAS_MATRICULA">Todas as cobranças da matrícula</option><option value="TIPOS_COBRANCA">Tipos de cobrança selecionados</option><option value="COBRANCAS_IDENTIFICADAS">Cobranças identificadas</option><option value="TOTAL_CONTRATACAO">Total da contratação com rateio</option></select></label>
           {alcanceAcerto === "TIPOS_COBRANCA" && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>Tipos alcançados</legend>{["MULTA_ENCERRAMENTO", "MATRICULA", "MENSALIDADE", "HORA_PARTICULAR", "MATERIAL", "CERTIFICADO"].map((tipo) => <label key={tipo}><input type="checkbox" name="tiposAcerto" value={tipo} /> {rotular(TIPO_COBRANCA_LABEL, tipo)}</label>)}</fieldset>}
           {["COBRANCAS_IDENTIFICADAS", "TOTAL_CONTRATACAO"].includes(alcanceAcerto) && <fieldset className="grid gap-1 text-sm md:col-span-2"><legend>{alcanceAcerto === "TOTAL_CONTRATACAO" ? "Cobranças e rateio do total" : "Cobranças alcançadas"}</legend>{cobrancas.map((cobranca) => <div key={cobranca.id} className="flex flex-wrap items-center gap-2"><label><input type="checkbox" name="cobrancasAcerto" value={cobranca.id} checked={cobrancasAcerto.includes(cobranca.id)} onChange={() => setCobrancasAcerto((atuais) => atuais.includes(cobranca.id) ? atuais.filter((id) => id !== cobranca.id) : [...atuais, cobranca.id])} /> {rotuloCobranca(cobranca.id)}</label>{alcanceAcerto === "TOTAL_CONTRATACAO" && cobrancasAcerto.includes(cobranca.id) && <label>Rateio %<input name={`rateio:${cobranca.id}`} inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" required className={campo} /></label>}</div>)}</fieldset>}</>}
-        <label className="grid gap-1 text-sm">Motivo e referência da conferência<textarea name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
+        <label className="grid gap-1 text-sm">Motivo e referência da conferência<CampoTexto name="motivo" minLength={5} maxLength={2000} required className={campo} /></label>
         <button disabled={ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} self-end`}>Enviar para aprovação administrativa</button>
       </form>
     </details>}

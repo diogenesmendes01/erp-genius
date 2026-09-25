@@ -5,6 +5,7 @@ import { registrarRascunhoReplanejamento } from "@/server/agenda/replanejamento-
 import type { AjusteReplanejamento } from "@/server/agenda/replanejamento-ajustes";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajustes }: { calendarioId: string; estadoHash: string; versaoAnterior: number; ajustes?: AjusteReplanejamento[] }) {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function SalvarRevisao({ calendarioId, estadoHash, versaoAnterior, ajuste
     <h2 className="font-medium">Guardar esta revisão</h2>
     <p>O registro conserva as datas e pendências mostradas nesta consulta. A agenda permanece como está até a aprovação e aplicação do conjunto.</p>
     <fieldset disabled={ocupado} className="space-y-3">
-      <label className="block">Motivo do registro<textarea required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
+      <label className="block">Motivo do registro<CampoTexto required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
       <button disabled={motivo.trim().length < 5} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Guardar revisão"}</button>
     </fieldset>
     {erro && <div role="alert"><p>{erro}</p><button type="button" disabled={ocupado} onClick={() => router.refresh()} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>Consultar novamente a agenda</button></div>}
