@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAcertoTaxaAditivo, aplicarAcertoTaxaAditivo, invalidarAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalidar = false }: { propostaId: string; podeDecidir: boolean; podeAplicar: boolean; podeInvalidar?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
@@ -28,9 +29,9 @@ export function DecisaoTaxa({ propostaId, podeDecidir, podeAplicar, podeInvalida
   }
   return <div className="space-y-2"><fieldset disabled={ocupado} className="space-y-2">
     {(podeDecidir || podeInvalidar) && <label className="block">{podeInvalidar ? "Motivo da invalidação" : "Motivo da decisão"}<textarea className="block w-full rounded border p-2" value={motivo} onChange={e => setMotivo(e.target.value)} minLength={5} maxLength={2000} /></label>}
-    {podeDecidir && <><button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("aprovar")} className="rounded border px-3 py-2">Aprovar acerto</button>{" "}
-      <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("rejeitar")} className="rounded border px-3 py-2">Rejeitar acerto</button></>}
-    {podeAplicar && <button type="button" onClick={() => enviar("aplicar")} className="rounded border px-3 py-2">Aplicar acerto aprovado</button>}
-    {podeInvalidar && <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("invalidar")} className="rounded border px-3 py-2">Conferir e invalidar para repropor</button>}
+    {podeDecidir && <><button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("aprovar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar acerto</button>{" "}
+      <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("rejeitar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar acerto</button></>}
+    {podeAplicar && <button type="button" onClick={() => enviar("aplicar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aplicar acerto aprovado</button>}
+    {podeInvalidar && <button type="button" disabled={motivo.trim().length < 5} onClick={() => enviar("invalidar")} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir e invalidar para repropor</button>}
   </fieldset><MensagemStatus texto={mensagem} /></div>;
 }

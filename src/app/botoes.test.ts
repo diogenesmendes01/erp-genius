@@ -10,13 +10,15 @@ import { MAPA_BOTOES } from "./botoes-mapa";
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/financeiro"];
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": 1, // item de lista suspensa
+  "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 1, // aba ativa da barra de seções (marca = selecionada)
+  "src/app/(app)/financeiro/FilaCobranca.tsx": 1, // cartão-indicador que filtra a fila (dashboard da régua)
 };
 
 const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
@@ -119,7 +121,7 @@ describe("botões nas áreas migradas", () => {
   });
 
   it("a lista de áreas migradas só cresce (uma área não sai num rebase distraído)", () => {
-    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico"]));
+    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/financeiro"]));
   });
 
   it("variante e tamanho de cada botão migrado ficam como decididos (src/app/botoes-mapa.ts)", () => {

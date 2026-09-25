@@ -9,6 +9,7 @@ import type { listarInformesPagamento } from "@/server/financeiro/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -41,8 +42,8 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
       {i.motivoConferencia && <p>Motivo: {i.motivoConferencia}</p>}
       {i.podeConferir && <div className="flex flex-wrap items-center gap-2">
         <input aria-label="Motivo da decisão" className="rounded border px-2 py-1" placeholder="Motivo (obrigatório para rejeitar)" value={motivos[i.id] ?? ""} onChange={(e) => setMotivos({ ...motivos, [i.id]: e.target.value })} />
-        <button disabled={acao.ocupado} className="rounded bg-brand-solid px-3 py-1.5 text-white disabled:opacity-50" onClick={() => decidir(i.id, i.versao, true)}>Confirmar recebimento</button>
-        <button disabled={acao.ocupado || !motivos[i.id]?.trim()} className="rounded border px-3 py-1.5 disabled:opacity-50" onClick={() => decidir(i.id, i.versao, false)}>Rejeitar</button>
+        <button disabled={acao.ocupado} className={botaoClasses()} onClick={() => decidir(i.id, i.versao, true)}>Confirmar recebimento</button>
+        <button disabled={acao.ocupado || !motivos[i.id]?.trim()} className={botaoClasses({ variante: "secundario" })} onClick={() => decidir(i.id, i.versao, false)}>Rejeitar</button>
       </div>}
       <FeedbackAcao erro={alvo === i.id ? acao.erro : null} />
     </article>)}
