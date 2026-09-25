@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarHistoricoReservasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-historico";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const rotulos: Record<string, string> = {
   RESERVADA: "Reservada", CONSUMIDA_REALIZACAO: "Realizada", CONSUMIDA_FALTA: "Falta registrada",
@@ -29,7 +30,7 @@ export default async function Page({ params, searchParams }: {
   const data = (valor: string) => formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, d.fusoExibicao).texto;
   const base = `/academico/segundas-chamadas/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigoAvaliacao)}`;
   return <section className="space-y-4">
-    <Link className="underline" href={base}>Voltar à segunda chamada</Link>
+    <VoltarPara href={base} para="Segunda chamada" />
     <h1 className="text-2xl font-medium">Histórico de reservas · {codigoAvaliacao}</h1>
     <p>Instantes exibidos em {fusoExibicao} (referência institucional {d.fusoExibicao}).</p>
     {d.itens.map((item) => <article key={item.id} className="space-y-2 rounded border p-4">

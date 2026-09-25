@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarHistoricoReplanejamento } from "@/server/agenda/replanejamento-historico";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function RevisoesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -13,12 +14,12 @@ export default async function RevisoesPage({ params, searchParams }: { params: P
     consultarHistoricoReplanejamento({ calendarioId: id, pagina }),
     consultarPreferenciaFusoEquipe(),
   ]);
-  if (!resultado.ok || !resultado.dado) return <div><Link href={`/academico/calendario/${id}`}>Voltar ao calendário</Link><p role="alert">{resultado.ok ? "Histórico indisponível." : resultado.erro}</p></div>;
+  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href={`/academico/calendario/${id}`} para="Calendário" /><p role="alert">{resultado.ok ? "Histórico indisponível." : resultado.erro}</p></div>;
   const r = resultado.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.calendario.fusoInstitucional);
   const data = (v: Date) => formatarInstanteExibicao(v, fusoExibicao, r.calendario.fusoInstitucional).texto;
   return <div className="space-y-4">
-    <Link className="underline" href={`/academico/calendario/${id}`}>Voltar ao calendário</Link>
+    <VoltarPara href={`/academico/calendario/${id}`} para="Calendário" />
     <h1 className="text-2xl font-medium">Revisões registradas · Calendário {r.calendario.versao}</h1>
     <p>Histórico de autoria e motivos das revisões. Guardar uma revisão não publica mudanças. Instantes administrativos exibidos em {fusoExibicao}; origem {r.calendario.fusoInstitucional}.</p>
     {!r.registros.length && <p>Nenhuma revisão nesta página.</p>}

@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarExtrasRecuperacao } from "@/server/avaliacoes/extra-recuperacao";
 import { ProporExtra, DecidirExtra } from "./Formularios";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function ExtrasPage({ params, searchParams }: { params: Promise<{ alocacaoId: string }>; searchParams: Promise<{ antesId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -11,7 +12,7 @@ export default async function ExtrasPage({ params, searchParams }: { params: Pro
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <section className="space-y-4">
-    <Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`}>Voltar às avaliações</Link>
+    <VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`} para="Avaliações" />
     <h1 className="text-2xl font-medium">Oportunidades extras de recuperação</h1>
     <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.oferta} · {d.identificacao.nivel}</p>
     <p>Quando o saldo estiver esgotado, professor ou gestão pode propor uma quantidade adicional. Outra pessoa da Gestão Pedagógica/Administração decide. A autorização não dispensa notas mínimas, plano aprovado ou prazo de realização.</p>

@@ -3,14 +3,15 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarJanelasAdmissao } from "@/server/matricula/janela-admissao-consulta";
 import { JanelaFormulario, DecidirJanela } from "./JanelaFormulario";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function JanelaPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const { id } = await params, filtros = await searchParams;
   const resultado = await consultarJanelasAdmissao({ turmaId: id, pagina: Number(filtros.pagina ?? 1) });
-  if (!resultado.ok || !resultado.dado) return <div><Link href="/academico/admissoes">Voltar às turmas</Link><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
+  if (!resultado.ok || !resultado.dado) return <div><VoltarPara href="/academico/admissoes" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></div>;
   const r = resultado.dado;
-  return <div className="space-y-5"><Link className="underline" href="/academico/admissoes">Voltar às turmas</Link>
+  return <div className="space-y-5"><VoltarPara href="/academico/admissoes" />
     <h1 className="text-2xl font-medium">Janela de admissão · {r.turma.codigo ?? r.turma.nome ?? "Turma sem código"}</h1>
     <p>Configurar a janela não confirma vaga nem ativa matrícula. Reservas e contratação ainda precisam da integração deste fluxo.</p>
     <section className="rounded border p-4"><h2 className="font-medium">Regra vigente</h2>

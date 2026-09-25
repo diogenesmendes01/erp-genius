@@ -7,6 +7,7 @@ import { SolicitarAusencia } from "./SolicitarAusencia";
 import { prisma } from "@/lib/prisma";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function IndisponibilidadesPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -19,7 +20,7 @@ export default async function IndisponibilidadesPage({ searchParams }: { searchP
   const { cursor } = await searchParams;
   const r = await consultarIndisponibilidadesDocentes({ cursor });
   return <div className="space-y-5">
-    <Link className="text-brand-700 underline" href="/academico">Voltar ao acadêmico</Link>
+    <VoltarPara href="/academico" />
     <header><h1 className="text-2xl font-medium">Indisponibilidades docentes</h1><p className="mt-1 text-sm text-gray-600">A aprovação registra a ausência. Aulas e reservas particulares afetadas precisam de solução aprovada e permanecem na agenda até lá.</p></header>
     <SolicitarAusencia professores={professores} fusoInicial={config?.fusoInstitucional ?? ""} />
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}
