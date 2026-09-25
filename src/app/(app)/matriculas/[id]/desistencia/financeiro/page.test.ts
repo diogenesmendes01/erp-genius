@@ -109,7 +109,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("30/09/2026, 23:30");
     expect(html).toContain("01/10/2026, 00:30");
     expect(html).toContain("America/Costa_Rica; origem UTC");
-    expect(html).toContain("2026-10-15");
+    expect(html).toContain("15/10/2026");
     expect(html).toContain("₡ 100");
     expect(html).toContain("₡ 90");
     expect(html).toContain("Extrato e condições revisados");
@@ -148,7 +148,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "matricula/a?" });
     expect(html).toContain("₡ 100");
     expect(html).toContain("₡ 90");
-    expect(html).toContain("2026-10-15");
+    expect(html).toContain("15/10/2026");
     expect(html).toContain('data-formulario="proposta"');
     expect(html).toContain('data-formulario="decisao"');
     expect(html).toContain('data-aprovar="true"');

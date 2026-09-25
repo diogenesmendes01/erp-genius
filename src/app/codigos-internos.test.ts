@@ -24,6 +24,23 @@ export function codigosNaTela(fonte: string): string[] {
   return achados;
 }
 
+/** <Link href=…>texto</Link> de um fonte: href como escrito (literal ou template) e o texto. */
+function linksDaTela(fonte: string): { href: string; texto: string }[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const links: { href: string; texto: string }[] = [];
+  const visitar = (n: ts.Node) => {
+    if (ts.isJsxElement(n) && n.openingElement.tagName.getText(sf) === "Link") {
+      const href = n.openingElement.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "href") as ts.JsxAttribute | undefined;
+      const ini = href?.initializer;
+      const valor = ini && ts.isJsxExpression(ini) && ini.expression ? ini.expression.getText(sf) : ini?.getText(sf) ?? "";
+      links.push({ href: valor, texto: n.children.map((c) => c.getText(sf)).join("").trim() });
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return links;
+}
+
 const telas = ["src/app", "src/components"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
     .filter((f) => /\.tsx$/.test(f) && !/\.test\./.test(f))
@@ -40,6 +57,12 @@ describe("códigos internos de especificação fora da tela", () => {
     for (const rotulo of Object.values(ORIGEM_VENCIMENTO_LABEL)) expect(rotulo, rotulo).not.toMatch(CODIGO);
     const texto = rotuloVencimento({ estado: "CONFIRMADO", dataCivil: "2099-02-28", fuso: null, origem: "M01_HISTORICO" });
     expect(texto).toBe("vence 28/02/2099 · origem: histórico da migração");
+  });
+
+  it("onde o código virou nome de fluxo com destino, o link para o destino existe (Q23 → diário; Q92 → condições por hora)", () => {
+    const fonte = (arquivo: string) => telas.find((t) => t.arquivo === arquivo)?.conteudo ?? "";
+    expect(linksDaTela(fonte("src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx"))).toContainEqual({ href: '"/diario"', texto: "diário de aulas" });
+    expect(linksDaTela(fonte("src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/page.tsx"))).toContainEqual({ href: "`/matriculas/${id}/condicoes-horas`", texto: "condições por hora" });
   });
 
   it("o detector pega texto JSX e literais, e ignora comentários", () => {
