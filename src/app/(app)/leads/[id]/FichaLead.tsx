@@ -284,7 +284,7 @@ function Documentos({
               <button
                 disabled={acao.ocupado}
                 onClick={() => { setAlvo(d.id); run(() => arquivarDocumentoLead(d.id)); }}
-                className="text-xs text-gray-400 hover:text-red-600"
+                className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
               >
                 arquivar
               </button>

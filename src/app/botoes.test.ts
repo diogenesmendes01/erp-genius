@@ -34,13 +34,37 @@ const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
 export function botoesCrus(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const achados: string[] = [];
-  // className={campo}: a classe pode estar numa constante string do arquivo — o detector a resolve.
+  // A classe pode vir de constantes do arquivo, em qualquer forma (className={campo},
+  // `${campo} self-end`, btnSec + " mt-3", ternário). Constante string é expandida; constante
+  // montada com botaoClasses(...) conta como botão do design system — pelo valor, não pelo nome.
   const constantes = new Map<string, string>();
+  const constantesDeBotao = new Set<string>();
+  const chamaBotaoClasses = (n: ts.Node): boolean =>
+    (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") || (ts.forEachChild(n, chamaBotaoClasses) ?? false);
   const coletar = (n: ts.Node) => {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && (ts.isStringLiteral(n.initializer) || ts.isNoSubstitutionTemplateLiteral(n.initializer))) constantes.set(n.name.text, n.initializer.text);
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      if (ts.isStringLiteral(n.initializer) || ts.isNoSubstitutionTemplateLiteral(n.initializer)) constantes.set(n.name.text, n.initializer.text);
+      else if (chamaBotaoClasses(n.initializer)) constantesDeBotao.add(n.name.text);
+    }
     ts.forEachChild(n, coletar);
   };
   coletar(sf);
+  /** Classes de uma expressão de className: literais e constantes expandidas; se passa por botaoClasses. */
+  const classesDe = (raiz: ts.Node) => {
+    const partes: string[] = [];
+    let usaBotao = false;
+    const andar = (n: ts.Node) => {
+      if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) partes.push(n.text);
+      else if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") { usaBotao = true; return; }
+      else if (ts.isIdentifier(n) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
+        if (constantes.has(n.text)) partes.push(constantes.get(n.text)!);
+        if (constantesDeBotao.has(n.text)) usaBotao = true;
+      }
+      ts.forEachChild(n, andar);
+    };
+    andar(raiz);
+    return { texto: partes.join(" ").trim(), usaBotao };
+  };
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
       const t = n.text.split(/\s+/);
@@ -50,12 +74,11 @@ export function botoesCrus(fonte: string): string[] {
       const tag = n.tagName.getText(sf);
       const attr = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className");
       const ini = attr && ts.isJsxAttribute(attr) ? attr.initializer : undefined;
-      const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
-      const texto = expr && ts.isIdentifier(expr) && constantes.has(expr.text) ? constantes.get(expr.text)! : ini ? ini.getText(sf) : "";
+      const { texto, usaBotao } = ini ? classesDe(ini) : { texto: "", usaBotao: false };
       // <button>: padding em qualquer forma (px-, py-, p-) com borda ou fundo é cara de botão.
       // <Link>/<a>: px- E py- com borda ou fundo (card de lista com p-3 não é botão).
       const padding = tag === "button" ? /\bp[xy]?-\d/.test(texto) : /\bpx-\d/.test(texto) && /\bpy-\d/.test(texto);
-      if (texto && !/botaoClasses|\bbtn[A-Z]\w*/.test(texto) && padding && /\b(border|bg-)/.test(texto)) achados.push(`<${tag}> à mão: ${texto.slice(0, 80)}`);
+      if (texto && !usaBotao && padding && /\b(border|bg-)/.test(texto)) achados.push(`<${tag}> à mão: ${texto.slice(0, 80)}`);
     }
     ts.forEachChild(n, visitar);
   };
@@ -87,6 +110,27 @@ export function mapaDeBotoes(fonte: string): string[] {
   const itens: string[] = [];
   const valor = (i: ts.Expression) =>
     ts.isStringLiteral(i) ? i.text : ts.isConditionalExpression(i) && ts.isStringLiteral(i.whenTrue) && ts.isStringLiteral(i.whenFalse) ? `${i.whenTrue.text}|${i.whenFalse.text}` : "?";
+  const chamaBotao = (n: ts.Node): boolean =>
+    (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") || (ts.forEachChild(n, chamaBotao) ?? false);
+  // Constantes montadas com botaoClasses: o botão que usa uma delas fica registrado com o nome dela.
+  const constantesDeBotao = new Set<string>();
+  const coletar = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && chamaBotao(n.initializer)) constantesDeBotao.add(n.name.text);
+    ts.forEachChild(n, coletar);
+  };
+  coletar(sf);
+  /** "const nome" dentro de uma declaração; "<tag> texto" dentro de um className; senão null. */
+  const rotuloDe = (n: ts.Node): string | null => {
+    for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
+      if (ts.isVariableDeclaration(p)) return `const ${p.name.getText(sf)}`;
+      if (ts.isJsxAttribute(p)) {
+        if (p.name.getText(sf) !== "className") return null;
+        const el = p.parent.parent;
+        return `<${el.tagName.getText(sf)}> ${ts.isJsxOpeningElement(el) ? textosVisiveis(el.parent, sf) : ""}`.trim();
+      }
+    }
+    return null;
+  };
   const visitar = (n: ts.Node) => {
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses") {
       let variante = "primario", tamanho = "md";
@@ -98,16 +142,10 @@ export function mapaDeBotoes(fonte: string): string[] {
           if (p.name.getText(sf) === "tamanho") tamanho = valor(p.initializer);
         }
       } else if (arg) variante = tamanho = "?";
-      let rotulo = "?";
-      for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
-        if (ts.isVariableDeclaration(p)) { rotulo = `const ${p.name.getText(sf)}`; break; }
-        if (ts.isJsxAttribute(p)) {
-          const el = p.parent.parent;
-          rotulo = `<${el.tagName.getText(sf)}> ${ts.isJsxOpeningElement(el) ? textosVisiveis(el.parent, sf) : ""}`.trim();
-          break;
-        }
-      }
-      itens.push(`${rotulo} → ${variante}/${tamanho}`);
+      itens.push(`${rotuloDe(n) ?? "?"} → ${variante}/${tamanho}`);
+    } else if (ts.isIdentifier(n) && constantesDeBotao.has(n.text) && !ts.isVariableDeclaration(n.parent) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
+      const rotulo = rotuloDe(n);
+      if (rotulo && !rotulo.startsWith("const ")) itens.push(`${rotulo} → ${n.text}`);
     }
     ts.forEachChild(n, visitar);
   };
@@ -149,6 +187,9 @@ describe("botões nas áreas migradas", () => {
     expect(mapaDeBotoes('const principal = botaoClasses({ tamanho: "lg" });')).toEqual(["const principal → primario/lg"]);
     expect(mapaDeBotoes("<Link className={`${botaoClasses()} mt-2`} href=\"/x\">Propor</Link>")).toEqual(["<Link> Propor → primario/md"]);
     expect(mapaDeBotoes('<button className={botaoClasses({ variante: on ? "perigo" : "secundario" })}>X</button>')).toEqual(["<button> X → perigo|secundario/md"]);
+    // Botão que usa uma constante de botão: registrado com o nome dela (trocar btnPri por btnSec quebra).
+    expect(mapaDeBotoes('const btnPri = botaoClasses(); <button className={btnPri}>Registrar pagamento</button><button className={`${btnPri} mt-3`}>Ok</button>'))
+      .toEqual(["const btnPri → primario/md", "<button> Registrar pagamento → btnPri", "<button> Ok → btnPri"]);
   });
 
   it("a lista de exceções não sobra", () => {
@@ -168,6 +209,9 @@ describe("botões nas áreas migradas", () => {
       'const c = "rounded bg-black px-4 py-2 text-white";',
       'const campo = "rounded-md border px-3 py-2"; <button className={campo}>Cancelar</button>',
       '<Link href="/x" className="inline-block rounded border px-3 py-2">Preparar nova versão</Link>',
+      'const btnSec = "rounded border px-3 py-2"; <button className={btnSec + " mt-3"}>x</button>',
+      'const campo = "rounded border p-2"; <button className={`${campo} self-end`}>x</button>',
+      'const campo = "rounded border p-2"; <button className={ok ? campo : "text-sm"}>x</button>',
       '<a href="/x" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm">Abrir</a>',
     ];
     for (const c of casos) expect(botoesCrus(c).length, c).toBeGreaterThan(0);
@@ -177,6 +221,8 @@ describe("botões nas áreas migradas", () => {
       "<button className={btnSec}>x</button>",
       'const campo = "rounded border p-2"; <input className={campo} />',
       "const botao = botaoClasses(); <button className={botao}>x</button>",
+      "const btnSec = botaoClasses(); <button className={`${btnSec} ml-auto`}>x</button>",
+      'const btnSec = botaoClasses({ variante: "secundario" }); <button className={btnSec + " mt-3"}>x</button>',
       '<input className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />',
       '<input className="file:bg-brand-solid file:text-white text-sm" />',
       '<button className="text-sm text-brand-700 hover:underline">x</button>',
