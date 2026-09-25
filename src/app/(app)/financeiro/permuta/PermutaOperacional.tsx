@@ -11,6 +11,7 @@ import {
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -127,7 +128,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
     })}>
       <label>Matrícula <select required name="matriculaId" value={matriculaSelecionada} onChange={e => selecionarMatricula(e.target.value)}><option value="">Selecione</option>{matriculas.map(c => <option key={c.matriculaId} value={c.matriculaId}>{c.aluno} · {c.matricula}</option>)}</select></label><CamposPeriodo nomeInicio="vigenciaInicio" nomeFim="vigenciaFim" /><label>Moeda <input required name="moeda" readOnly value={elegiveis[0]?.moeda ?? ""} /></label>
       <label>Unidade <select name="unidade"><option value="HORA">Hora</option><option value="AULA">Aula</option><option value="UNIDADE">Unidade</option></select></label><label>Quantidade <input required name="quantidadePactuada" inputMode="decimal" /></label><label>Valor por unidade <input required name="valorPorUnidade" inputMode="decimal" /></label>
-      <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><fieldset key={matriculaSelecionada}><legend>Mensalidades elegíveis: informe o limite apenas nas escolhidas</legend>{elegiveis.map(c => <label key={c.id} className="block">{c.codigo} · {c.vencimento} · saldo {formatarMoeda(c.saldo, c.moeda)}<input name={`limite:${c.id}`} inputMode="decimal" aria-label={`Limite ${c.codigo} ${c.vencimento}`} /></label>)}</fieldset>
+      <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><fieldset key={matriculaSelecionada}><legend>Mensalidades elegíveis: informe o limite apenas nas escolhidas</legend>{elegiveis.map(c => <label key={c.id} className="block">{c.codigo} · {formatarDataCivil(c.vencimento)} · saldo {formatarMoeda(c.saldo, c.moeda)}<input name={`limite:${c.id}`} inputMode="decimal" aria-label={`Limite ${c.codigo} ${formatarDataCivil(c.vencimento)}`} /></label>)}</fieldset>
     </Acao>}
     {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
       <h2 className="font-medium">{acordo.matricula} · {acordo.moeda}</h2>

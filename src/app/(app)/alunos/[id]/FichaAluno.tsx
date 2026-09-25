@@ -14,6 +14,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
   MATRICULA: "Matrícula",
@@ -532,7 +533,7 @@ export function FichaAluno({
               {aluno.financeiro.proximoVencimento && (
                 <span className="ml-2 text-gray-500">
                   · próximo venc. {aluno.financeiro.proximoVencimento.estado === "CONFIRMADO"
-                    ? aluno.financeiro.proximoVencimento.dataCivil
+                    ? formatarDataCivil(aluno.financeiro.proximoVencimento.dataCivil)
                     : "a conferir"}
                 </span>
               )}

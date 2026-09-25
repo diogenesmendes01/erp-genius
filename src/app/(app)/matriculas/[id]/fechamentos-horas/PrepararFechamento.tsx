@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { consultarFechamentosHoras } from "@/server/matricula/fechamento-horas-consulta";
 import { prepararFechamentoHoras } from "@/server/matricula/fechamento-horas-rascunho";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -33,7 +34,7 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
         const serializada = JSON.stringify(entrada);
         if (chave.current?.entrada !== serializada) chave.current = { entrada: serializada, valor: crypto.randomUUID() };
         setPreparado({ ...entrada, chaveIdempotencia: chave.current.valor });
-        setMensagem(`Período de ${contexto.periodo.inicio} a ${contexto.periodo.fim}, em ${contexto.periodo.fuso}. Vencimento: ${contexto.periodo.vencimento}. Será criada a versão ${contexto.versaoAnterior + 1}. Confira antes de salvar.`);
+        setMensagem(`Período de ${formatarDataCivil(contexto.periodo.inicio)} a ${formatarDataCivil(contexto.periodo.fim)}, em ${contexto.periodo.fuso}. Vencimento: ${formatarDataCivil(contexto.periodo.vencimento)}. Será criada a versão ${contexto.versaoAnterior + 1}. Confira antes de salvar.`);
       } catch { setMensagem("Não foi possível confirmar o resultado. Consulte o histórico antes de repetir; a mesma entrada conserva sua chave de solicitação."); }
     });
   }}>

@@ -303,7 +303,7 @@ export function PoliticaPainel({
                             ))}
                           </select>
                           {precisaAprovado && !templateOk && (
-                            <span title="Número oficial: degrau armado exige template aprovado na Meta (S15)">
+                            <span title="Número oficial: degrau armado exige template aprovado na Meta">
                               <IconAlertTriangle className="h-3.5 w-3.5 text-amber-600" />
                             </span>
                           )}
