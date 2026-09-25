@@ -11,6 +11,7 @@ import { concluirMatricula } from "@/server/matricula/acoes";
 import { conferirCoberturaInicial } from "@/server/secretaria/cobertura";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Matricula = { exigeAssinaturaIntegrada: boolean; mensalidadesExibidas: { id: string; versao: number; valor: string; moeda: string; inicio: string | null; fim: string | null; vencimento: string }[]; cobertura: { cobrancaId: string | null; versao: number | null; vencimento: string | null; referencia: string | null; inicio: string | null; fim: string | null }; id: string; codigo: string | null; leadId: string | null; alunoId: string | null; nome: string; status: string; assumida: boolean; contratoConfirmado: boolean; documentos: { id: string; nome: string; categoria: string; matriculaId: string | null; url: string }[]; correcoes: { id: string; campo: string; valorProposto: string | null; motivo: string; status: string; motivoResolucao: string | null }[] };
 const campos = { primeiroNome: "Primeiro nome", sobrenome: "Sobrenome", nomePreferido: "Nome preferido", email: "E-mail", telefoneE164: "Telefone com DDI", documentos: "Documento (descreva a correção)" };
@@ -44,17 +45,17 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
         <table className="w-full text-left text-sm">
           <caption className="pb-2 text-left font-medium">Mensalidades para conferência contratual</caption>
           <thead><tr><th scope="col" className="p-2">Período coberto</th><th scope="col" className="p-2">Vencimento</th><th scope="col" className="p-2">Valor contratado</th></tr></thead>
-          <tbody>{m.mensalidadesExibidas.map((c) => <tr key={c.id} className="border-t"><td className="p-2">{c.inicio && c.fim ? `${c.inicio} até ${c.fim}` : "Cobertura pendente de conferência"}</td><td className="p-2">{c.vencimento}</td><td className="p-2">{formatarMoeda(Number(c.valor), c.moeda)}</td></tr>)}</tbody>
+          <tbody>{m.mensalidadesExibidas.map((c) => <tr key={c.id} className="border-t"><td className="p-2">{c.inicio && c.fim ? `${formatarDataCivil(c.inicio)} até ${formatarDataCivil(c.fim)}` : "Cobertura pendente de conferência"}</td><td className="p-2">{formatarDataCivil(c.vencimento)}</td><td className="p-2">{formatarMoeda(Number(c.valor), c.moeda)}</td></tr>)}</tbody>
         </table>
         {!m.mensalidadesExibidas.length && <p className="text-sm">Nenhuma mensalidade registrada.</p>}
       </div>}
-      <p className="text-sm">Cobertura: {m.cobertura.referencia === "MES_CIVIL" ? "Mês civil" : m.cobertura.referencia === "CICLO_MATRICULA" ? "Ciclo mensal da matrícula" : "Referência pendente"} · {m.cobertura.inicio ?? "Início pendente"} até {m.cobertura.fim ?? "Fim pendente"}. Vencimento e cobertura são independentes.</p>
+      <p className="text-sm">Cobertura: {m.cobertura.referencia === "MES_CIVIL" ? "Mês civil" : m.cobertura.referencia === "CICLO_MATRICULA" ? "Ciclo mensal da matrícula" : "Referência pendente"} · {formatarDataCivil(m.cobertura.inicio, "Início pendente")} até {formatarDataCivil(m.cobertura.fim, "Fim pendente")}. Vencimento e cobertura são independentes.</p>
       {secretaria && m.assumida && !m.contratoConfirmado && ["RASCUNHO", "AGUARDANDO"].includes(m.status) && <form key={`${m.cobertura.cobrancaId}-${m.cobertura.versao}`} className="flex flex-wrap items-end gap-2 rounded border p-3" onSubmit={(e) => {
         e.preventDefault(); const f = new FormData(e.currentTarget);
         void executar(() => conferirCoberturaInicial({ matriculaId: m.id, cobrancaId: m.cobertura.cobrancaId ?? "", versaoEsperada: m.cobertura.versao ?? -1, primeiroVencimento: String(f.get("vencimento")), cobertura: { referencia: String(f.get("referencia")) as "MES_CIVIL" | "CICLO_MATRICULA", inicio: String(f.get("inicio")) }, motivo: String(f.get("motivo")) }));
       }}>
         <label className="grid gap-1 text-xs">Referência contratual<select name="referencia" required defaultValue={m.cobertura.referencia ?? ""} className={estilo}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option></select></label>
-        <label className="grid gap-1 text-xs">Início do primeiro período<input name="inicio" type="date" required defaultValue={m.cobertura.inicio ?? ""} className={estilo} /></label>
+        <label className="grid gap-1 text-xs">Início do primeiro período<input name="inicio" type="date" required defaultValue={formatarDataCivil(m.cobertura.inicio, "")} className={estilo} /></label>
         <label className="grid gap-1 text-xs">Primeiro vencimento acordado<input name="vencimento" type="date" required defaultValue={m.cobertura.vencimento ?? ""} className={estilo} /></label>
         <label className="grid gap-1 text-xs">Motivo da conferência<input name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button disabled={ocupado} className="rounded border px-3 py-2 text-sm">Conferir cobertura inicial</button>

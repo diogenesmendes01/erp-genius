@@ -43,7 +43,7 @@ describe("Condições de encerramento", () => {
     expect(html).toContain("Original enviado com confirmação externa");
     expect(html).toContain('value="processo-enviado"');
     expect(html).toContain("Regra de acerto por desistência antes da ativação");
-    expect(html).toContain("Selecione a regra Q165");
+    expect(html).toContain("Selecione a regra de acerto antes da ativação");
     expect(html).not.toContain("Confirme o contrato antes");
   });
 
@@ -53,6 +53,6 @@ describe("Condições de encerramento", () => {
     ] });
 
     expect(html).toContain("Original enviado foi cancelado; a versão aprovada permanece como evidência do acerto.");
-    expect(html).toContain("Acerto Q165 antes da ativação: 80,00 fixo; cláusula 7.2; alcance cobranças: MEN-001 (Mensalidade).");
+    expect(html).toContain("Acerto financeiro antes da ativação: 80,00 fixo; cláusula 7.2; alcance cobranças: MEN-001 (Mensalidade).");
   });
 });

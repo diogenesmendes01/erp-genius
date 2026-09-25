@@ -4,6 +4,7 @@ import { consultarPropostaGradeTurma } from "@/server/agenda/grade-consulta";
 import { DecidirGrade } from "./DecidirGrade";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
 
 export default async function GradePage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,7 @@ export default async function GradePage({ params }: { params: Promise<{ id: stri
     <p className="whitespace-pre-wrap">{p.motivo}</p>
     <dl className="space-y-1">
       <div><dt className="inline font-medium">Horários exibidos em: </dt><dd className="inline">{fusoExibicao}; origem {p.fusoOrigem}</dd></div>
-      <div><dt className="inline font-medium">Data inicial informada: </dt><dd className="inline">{g.dataInicialInformada}</dd></div>
+      <div><dt className="inline font-medium">Data inicial informada: </dt><dd className="inline">{formatarDataCivil(g.dataInicialInformada)}</dd></div>
       <div><dt className="inline font-medium">Primeira aula: </dt><dd className="inline">{data(g.primeiraAula)}</dd></div>
       <div><dt className="inline font-medium">Previsão de término: </dt><dd className="inline">{data(g.previsaoTermino)}</dd></div>
       <div><dt className="inline font-medium">Encontros: </dt><dd className="inline">{p.exibicao.origem.quantidadeAulas}, com {p.exibicao.origem.duracaoMinutos} minutos cada</dd></div>
