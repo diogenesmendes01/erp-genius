@@ -103,7 +103,7 @@ export async function registrarPagamento(cobrancaId: string, input: PagamentoInp
           suspenderLembretesAte: suspenderLembretesAte?.toISOString() ?? null } });
     });
     await reavaliarAcessoAposCommit(cobrancaId);
-    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
     return { informado: !financeiro };
   });
 }
@@ -119,7 +119,7 @@ export async function registrarRecebimentoDestinado(input: unknown): Promise<Res
       return r.id;
     });
     for (const cobrancaId of [...new Set(dados.destinos.flatMap((d) => d.cobrancaId ? [d.cobrancaId] : []))]) await reavaliarAcessoAposCommit(cobrancaId);
-    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
     return { recebimentoId: resultado };
   });
 }
@@ -162,7 +162,7 @@ export async function conferirPagamento(informeId: string, input: { versao: numb
       return informe.cobrancaId;
     });
     await reavaliarAcessoAposCommit(cobrancaId);
-    revalidatePath("/financeiro"); revalidatePath("/alunos", "layout");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
   });
 }
 
@@ -188,7 +188,7 @@ export async function publicarPoliticaComissao(input: PoliticaComissaoInput): Pr
       await registrarEvento(tx, { tipo: "PoliticaComissaoPublicada", agregadoTipo: "PoliticaComissao", agregadoId: politica.id,
         autorId: autor.id, payload: { versao: politica.versao, tipo: politica.tipo, vigenteEm: politica.vigenteEm.toISOString() } });
     });
-    revalidatePath("/financeiro"); revalidatePath("/matriculas/nova");
+    revalidatePath("/financeiro", "layout"); revalidatePath("/matriculas/nova");
   });
 }
 
@@ -227,7 +227,7 @@ export async function registrarCobrancaWhatsApp(
         autorId: autor.id,
       });
     });
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
   });
 }
 
@@ -237,7 +237,7 @@ export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
     const pagas = await prisma.$transaction((tx) => fecharComissoesAprovadasTx(tx, autor.id));
     if (pagas === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return { pagas };
   });
 }
@@ -306,7 +306,7 @@ export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomati
         payload: { antes: antes?.fechamentoComissaoAutomatico ?? false, depois: ligado },
       });
     });
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
   });
 }
 
@@ -337,7 +337,7 @@ export async function salvarTaxasCambio(
         payload: { entradas, vigenteEm: agora.toISOString() },
       });
     });
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return { salvas: entradas.length };
   });
 }
@@ -398,7 +398,7 @@ export async function atualizarCotacoesAutomatico(): Promise<
         payload: { fonte: "open.er-api.com", entradas, vigenteEm: agora.toISOString() },
       });
     });
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return { atualizadas: entradas.length, semCotacao };
   });
 }

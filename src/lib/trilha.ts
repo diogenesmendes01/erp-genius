@@ -111,6 +111,15 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/leads/*/contratacao": "Contratação",
 
   // Financeiro
+  "/financeiro/cobrancas": "Cobranças",
+  "/financeiro/informes": "A conferir",
+  "/financeiro/retomadas": "Retomadas",
+  "/financeiro/comissoes": "Comissões",
+  "/financeiro/descontos": "Descontos",
+  "/financeiro/geral": "Visão geral",
+  "/financeiro/politicas": "Política de comissão",
+  "/financeiro/aprovacoes": "Aprovações",
+  "/financeiro/cambio": "Câmbio",
   "/financeiro/acertos-cobertura": "Correções de cobertura",
   "/financeiro/acertos-taxa": "Acertos de taxa",
   "/financeiro/continuidade": "Continuidade mensal",

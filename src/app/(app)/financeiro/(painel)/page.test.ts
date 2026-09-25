@@ -3,13 +3,22 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
+// /financeiro por rota (E8): índice → aba padrão; layout com a barra e as contagens; cada aba com o
+// PRÓPRIO guard antes das consultas e só as consultas dela.
 const mocks = vi.hoisted(() => ({
   guard: vi.fn(), preferencia: vi.fn(), fila: vi.fn(), comissoes: vi.fn(), kpis: vi.fn(),
   aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
-  podeConfigurar: vi.fn(), painel: vi.fn(),
+  podeConfigurar: vi.fn(),
+  redirect: vi.fn((d: string) => { throw new Error(`REDIRECT ${d}`); }),
+  componente: vi.fn(),
+}));
+/** Cada componente de aba vira um marcador com o nome e o fuso recebido (hoisted: usado nos vi.mock). */
+const { marcador } = vi.hoisted(() => ({
+  marcador: (nome: string) => (props: { preferenciaFusoExibicao?: string | null }) => `[${nome}|${props.preferenciaFusoExibicao ?? "UTC"}]`,
 }));
 
 vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: mocks.guard }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => createElement("p", null, "Acesso negado") }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
@@ -21,93 +30,126 @@ vi.mock("@/server/financeiro/consultas", () => ({
   configuracaoComissoes: mocks.politicas, carregarConfigFinanceiro: mocks.configFinanceiro,
   podeConfigurarComissoes: mocks.podeConfigurar,
 }));
+vi.mock("../FilaCobranca", () => ({ FilaCobranca: marcador("fila") }));
+vi.mock("../InformesPagamento", () => ({ InformesPagamento: marcador("informes") }));
+vi.mock("../RetomadasPainel", () => ({ RetomadasPainel: marcador("retomadas") }));
+vi.mock("../PoliticasComissao", () => ({ PoliticasComissao: marcador("politicas") }));
 vi.mock("../FinanceiroPainel", () => ({
-  FinanceiroPainel: (props: { preferenciaFusoExibicao: string | null; aba: string }) => {
-    mocks.painel(props);
-    return createElement("div", { "data-fuso": props.preferenciaFusoExibicao ?? "UTC", "data-aba": props.aba });
-  },
+  ComissoesAba: marcador("comissoes"), Descontos: marcador("descontos"), GeralAba: marcador("geral"),
+  AprovacoesAba: marcador("aprovacoes"), CambioAba: marcador("cambio"),
+}));
+vi.mock("../BarraAbasFinanceiro", () => ({
+  BarraAbasFinanceiro: (props: { abas: string[]; contagem: Record<string, number> }) =>
+    createElement("nav", { "data-abas": props.abas.join(","), "data-contagem": JSON.stringify(props.contagem) }),
 }));
 
-import Page from "./page";
+import Indice from "./page";
+import Layout from "./layout";
+import Cobrancas from "./cobrancas/page";
+import Informes from "./informes/page";
+import Retomadas from "./retomadas/page";
+import Comissoes from "./comissoes/page";
+import Descontos from "./descontos/page";
+import Geral from "./geral/page";
+import Politicas from "./politicas/page";
+import Aprovacoes from "./aprovacoes/page";
+import Cambio from "./cambio/page";
 
-const pagina = (aba?: string) => Page({ searchParams: Promise.resolve(aba === undefined ? {} : { aba }) });
+const html = async (el: Promise<React.ReactElement | null>) => renderToStaticMarkup((await el) ?? createElement("span"));
 /** Consultas pesadas, cada uma só da sua aba. */
 const pesadas = () => ({
   fila: mocks.fila.mock.calls.length, comissoes: mocks.comissoes.mock.calls.length, kpis: mocks.kpis.mock.calls.length,
   cotacoes: mocks.cotacoes.mock.calls.length, relatorio: mocks.relatorio.mock.calls.length, politicas: mocks.politicas.mock.calls.length,
   configFinanceiro: mocks.configFinanceiro.mock.calls.length,
 });
+const nenhuma = { fila: 0, comissoes: 0, kpis: 0, cotacoes: 0, relatorio: 0, politicas: 0, configFinanceiro: 0 };
 
-describe("FinanceiroPage", () => {
+describe("/financeiro por rota (E8)", () => {
   beforeEach(() => {
     mocks.guard.mockResolvedValue([Papel.FINANCEIRO]);
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     mocks.fila.mockResolvedValue({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] });
     mocks.comissoes.mockResolvedValue([]); mocks.kpis.mockResolvedValue({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 });
     mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({}); mocks.informes.mockResolvedValue([]);
-    mocks.politicas.mockResolvedValue(null); mocks.podeConfigurar.mockResolvedValue(false); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
+    mocks.politicas.mockResolvedValue({}); mocks.podeConfigurar.mockResolvedValue(false); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
   });
-
   afterEach(() => vi.clearAllMocks());
 
-  it("lê a preferência depois da guarda e a entrega à fila e aos informes", async () => {
-    const html = renderToStaticMarkup(await pagina());
-
-    expect(mocks.guard).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
-    expect(mocks.preferencia).toHaveBeenCalledTimes(1);
-    expect(html).toContain('data-fuso="America/Costa_Rica"');
+  it("índice leva à aba padrão do papel e respeita ?aba= antigo visível — sem consultar dados", async () => {
+    await expect(Indice({ searchParams: Promise.resolve({}) })).rejects.toThrow("REDIRECT /financeiro/cobrancas");
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "geral" }) })).rejects.toThrow("REDIRECT /financeiro/geral");
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "politicas" }) })).rejects.toThrow("REDIRECT /financeiro/cobrancas"); // sem permissão
+    mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "cobrancas" }) })).rejects.toThrow("REDIRECT /financeiro/comissoes");
+    expect(pesadas()).toEqual(nenhuma);
   });
 
-  it("não consulta preferência nem dados financeiros quando a guarda recusa", async () => {
-    mocks.guard.mockResolvedValueOnce(null);
-
-    const html = renderToStaticMarkup(await pagina());
-
-    expect(html).toContain("Acesso negado");
+  it("guard recusa: índice, layout e abas negam sem consultar nada", async () => {
+    mocks.guard.mockResolvedValue(null);
+    expect(await html(Indice({ searchParams: Promise.resolve({}) }))).toContain("Acesso negado");
+    expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain("Acesso negado");
+    for (const aba of [Cobrancas, Informes, Retomadas, Comissoes, Descontos, Geral, Politicas, Aprovacoes, Cambio]) {
+      expect(await html(aba())).toContain("Acesso negado");
+    }
+    expect(mocks.guard).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
+    expect(pesadas()).toEqual(nenhuma);
     expect(mocks.preferencia).not.toHaveBeenCalled();
-    expect(mocks.fila).not.toHaveBeenCalled();
     expect(mocks.informes).not.toHaveBeenCalled();
   });
 
-  it("sem ?aba=, Financeiro abre em Cobranças e consulta só a fila (mais as filas pendentes das contagens)", async () => {
-    const html = renderToStaticMarkup(await pagina());
-    expect(html).toContain('data-aba="cobrancas"');
-    expect(pesadas()).toEqual({ fila: 1, comissoes: 0, kpis: 0, cotacoes: 0, relatorio: 0, politicas: 0, configFinanceiro: 0 });
-    expect(mocks.informes).toHaveBeenCalledTimes(1);
-    expect(mocks.retomadas).toHaveBeenCalledTimes(1);
-    expect(mocks.aprovacoes).not.toHaveBeenCalled(); // Financeiro não aprova: nem a contagem é consultada
+  it("layout: barra com as abas do papel e contagens das filas; Financeiro não consulta aprovações", async () => {
+    mocks.informes.mockResolvedValue([{}, {}]);
+    mocks.retomadas.mockResolvedValue({ ok: true, dado: [{ status: "PENDENTE" }, { status: "APLICADA" }] });
+    const pagina = await html(Layout({ children: createElement("p", null, "filho") }));
+    expect(pagina).toContain('data-abas="cobrancas,informes,retomadas,comissoes,descontos,geral,cambio"');
+    expect(pagina).toContain(`data-contagem="${JSON.stringify({ informes: 2, retomadas: 1, aprovacoes: 0 }).replaceAll('"', "&quot;")}"`);
+    expect(pagina).toContain("<p>filho</p>");
+    expect(mocks.aprovacoes).not.toHaveBeenCalled();
+    expect(pesadas()).toEqual(nenhuma); // o layout não consulta nada das abas
+  });
+
+  it("cobranças: só a fila; preferência de fuso entregue", async () => {
+    const pagina = await html(Cobrancas());
+    expect(pagina).toContain('[fila|');
+    expect(pagina).toContain('|America/Costa_Rica]');
+    expect(pesadas()).toEqual({ ...nenhuma, fila: 1 });
   });
 
   it.each([
-    ["comissoes", { fila: 0, comissoes: 1, kpis: 0, cotacoes: 0, relatorio: 0, politicas: 0, configFinanceiro: 1 }],
-    ["descontos", { fila: 0, comissoes: 0, kpis: 0, cotacoes: 0, relatorio: 1, politicas: 0, configFinanceiro: 0 }],
-    ["geral", { fila: 0, comissoes: 0, kpis: 1, cotacoes: 1, relatorio: 0, politicas: 0, configFinanceiro: 0 }],
-    ["cambio", { fila: 0, comissoes: 0, kpis: 0, cotacoes: 1, relatorio: 0, politicas: 0, configFinanceiro: 0 }],
-  ])("?aba=%s consulta só o que a aba mostra", async (aba, esperado) => {
-    const html = renderToStaticMarkup(await pagina(aba));
-    expect(html).toContain(`data-aba="${aba}"`);
+    ["comissoes", Comissoes, { ...nenhuma, comissoes: 1, configFinanceiro: 1 }],
+    ["descontos", Descontos, { ...nenhuma, relatorio: 1 }],
+    ["geral", Geral, { ...nenhuma, kpis: 1, cotacoes: 1 }],
+    ["cambio", Cambio, { ...nenhuma, cotacoes: 1 }],
+  ] as const)("%s consulta só o que a aba mostra", async (nome, Aba, esperado) => {
+    expect(await html(Aba())).toContain(`[${nome}|`);
     expect(pesadas()).toEqual(esperado);
   });
 
-  it("Política de comissão só com permissão; consulta a configuração apenas na própria aba", async () => {
-    mocks.podeConfigurar.mockResolvedValue(true);
-    renderToStaticMarkup(await pagina("politicas"));
-    expect(mocks.politicas).toHaveBeenCalledTimes(1);
-    expect(mocks.painel).toHaveBeenLastCalledWith(expect.objectContaining({ aba: "politicas", podeConfigurarPoliticas: true }));
+  it("informes e retomadas vêm das filas pendentes (uma consulta), com o fuso", async () => {
+    expect(await html(Informes())).toContain('[informes|');
+    expect(await html(Retomadas())).toContain('|America/Costa_Rica]');
+    expect(pesadas()).toEqual(nenhuma);
   });
 
-  it("aba proibida para o papel cai na padrão sem disparar a consulta dela (Gerente pedindo Cobranças)", async () => {
+  it("Gerente pedindo uma aba de cobrança direto: acesso negado, sem consultar a fila nem os informes", async () => {
     mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
-    const html = renderToStaticMarkup(await pagina("cobrancas"));
-    expect(html).toContain('data-aba="comissoes"');
-    expect(mocks.fila).not.toHaveBeenCalled();
+    for (const aba of [Cobrancas, Informes, Retomadas, Geral, Cambio]) expect(await html(aba())).toContain("Acesso negado");
+    expect(pesadas()).toEqual(nenhuma);
     expect(mocks.informes).not.toHaveBeenCalled();
-    expect(mocks.aprovacoes).toHaveBeenCalledTimes(1); // Gerente aprova: a contagem da aba aparece
+    expect(await html(Aprovacoes())).toContain('[aprovacoes|'); // Gerente aprova
+    expect(mocks.aprovacoes).toHaveBeenCalledTimes(1);
   });
 
-  it("aba sem permissão de configuração também cai na padrão (Financeiro pedindo Política)", async () => {
-    const html = renderToStaticMarkup(await pagina("politicas"));
-    expect(html).toContain('data-aba="cobrancas"');
+  it("Política de comissão só com permissão; consulta a configuração apenas na própria aba", async () => {
+    expect(await html(Politicas())).toContain("Acesso negado");
     expect(mocks.politicas).not.toHaveBeenCalled();
+    mocks.podeConfigurar.mockResolvedValue(true);
+    expect(await html(Politicas())).toContain('[politicas|');
+    expect(mocks.politicas).toHaveBeenCalledTimes(1);
+  });
+
+  it("Financeiro não abre Aprovações (não aprova): acesso negado, sem consultar", async () => {
+    expect(await html(Aprovacoes())).toContain("Acesso negado");
+    expect(mocks.aprovacoes).not.toHaveBeenCalled();
   });
 });
