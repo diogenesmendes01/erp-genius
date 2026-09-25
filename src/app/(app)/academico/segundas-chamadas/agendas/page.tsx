@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Papel, StatusEncontroAgenda, StatusReservaSegundaChamada } from "@prisma/client";
+import { Papel, StatusReservaSegundaChamada } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAgendasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agendas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
 const rotulosReserva = {
   RESERVADA: "Reservada",
@@ -15,14 +16,7 @@ const rotulosReserva = {
   CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelada fora do prazo",
   PENDENCIA_ESCOLA: "Pendência da escola",
 } satisfies Record<StatusReservaSegundaChamada, string>;
-const rotulosEncontro = {
-  RASCUNHO: "Rascunho",
-  PREVISTO: "Previsto",
-  MINISTRADO: "Ministrado",
-  CANCELADO: "Cancelado",
-  NAO_REALIZADO: "Não realizado",
-  IMPEDIDO_ESCOLA: "Impedido pela escola",
-} satisfies Record<StatusEncontroAgenda, string>;
+const rotulosEncontro = STATUS_ENCONTRO_LABEL;
 const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? valor;
 
 function dataHora(valor: string, fuso: string) {

@@ -1,5 +1,6 @@
 import type { ReplanejamentoSnapshot } from "@/server/agenda/replanejamento-snapshot";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
 type Conteudo = Pick<ReplanejamentoSnapshot, "revisoes" | "recursos" | "pendencias"> & { particulares: readonly unknown[]; recuperacoes?: readonly unknown[] };
 export function ConteudoRevisao({ r, historico = false, preferenciaFusoExibicao = null }: { r: Conteudo; historico?: boolean; preferenciaFusoExibicao?: string | null }) {
@@ -39,7 +40,7 @@ export function ConteudoRevisao({ r, historico = false, preferenciaFusoExibicao 
             {r.recursos.semDocenteApto.includes(p.encontroId) && <p className="text-red-700">É necessário conferir a atribuição de um professor ativo.</p>}
           </li>;
         })}</ol>
-        <details><summary>Registros preservados</summary><ul>{t.previsao.preservados.map((e) => <li key={e.id}>{data(e.inicio, fusoOrigem)} a {data(e.fim, fusoOrigem)} · {({ PREVISTO: "Previsto", MINISTRADO: "Ministrado", CANCELADO: "Cancelado", NAO_REALIZADO: "Não realizado", IMPEDIDO_ESCOLA: "Impedido pela escola", RASCUNHO: "Rascunho" })[e.status]}</li>)}</ul></details>
+        <details><summary>Registros preservados</summary><ul>{t.previsao.preservados.map((e) => <li key={e.id}>{data(e.inicio, fusoOrigem)} a {data(e.fim, fusoOrigem)} · {STATUS_ENCONTRO_LABEL[e.status]}</li>)}</ul></details>
       </>}
     </section>; })}
     {!!r.particulares.length && <section className="space-y-2 rounded border p-4"><h2 className="font-medium">Particulares para conferência</h2>
