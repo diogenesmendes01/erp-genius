@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirSubstituicaoAgendaSegundaChamada, proporSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-substituicao";
+import { botaoClasses } from "@/components/Botao";
 
 type Props = {
   reservaId: string;
@@ -48,7 +49,7 @@ export function Formulario({ reservaId, base, professores = [], selecionado, pre
         <label className="block">Evidência<textarea className="block w-full border p-2" name="evidencia" minLength={5} maxLength={4000} required /></label>
       </>}
       <label className="block">{proposta ? "Motivo da decisão" : "Motivo da substituição"}<textarea className="block w-full border p-2" name="motivo" minLength={5} maxLength={2000} required /></label>
-      <button className="rounded border px-3 py-2" disabled={ocupado || (!proposta && !podeEnviar)}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || (!proposta && !podeEnviar)}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
   </form>;

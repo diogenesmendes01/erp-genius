@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { proporRemarcacaoAgendaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-remarcacao-local";
 import { decidirRemarcacaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { botaoClasses } from "@/components/Botao";
 type Props = {
  reservaId: string;
  estadoConferido: string;
@@ -50,7 +51,7 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
  <label className="block">Justificativa de exceção não letiva, se o horário a atingir<textarea name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>
  </>}
  <label className="block">{proposta ? "Motivo da decisão" : "Motivo da remarcação"}<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
- <button disabled={ocupado} className="rounded border px-3 py-2">{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
+ <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Salvando…" : proposta ? "Registrar decisão" : "Enviar proposta"}</button>
  </fieldset>{erro && <p role="alert">{erro}</p>}
  </form>;
 }

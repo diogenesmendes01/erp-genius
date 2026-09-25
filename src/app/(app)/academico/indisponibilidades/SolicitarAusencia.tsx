@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { solicitarIndisponibilidadeLocal } from "@/server/agenda/indisponibilidade";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
@@ -36,7 +37,7 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
       <label className="text-sm">Início da indisponibilidade<input name="inicio" required type="datetime-local" {...periodo.propsInicio} className="mt-1 block w-full rounded border p-2" /></label>
       <label className="text-sm">Fim da indisponibilidade<input name="fim" required type="datetime-local" min={periodo.min} className="mt-1 block w-full rounded border p-2" /></label>
       <label className="text-sm sm:col-span-2">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
-      <button className="rounded bg-brand-solid px-3 py-2 text-white disabled:opacity-50" type="submit">{ocupado ? "Registrando…" : "Enviar solicitação"}</button>
+      <button className={botaoClasses({ tamanho: "lg" })} type="submit">{ocupado ? "Registrando…" : "Enviar solicitação"}</button>
     </fieldset>
     {professores.length === 0 && <p>Nenhum professor ativo disponível.</p>}
     {erro && <p role="alert" className="text-red-700">{erro}</p>}

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirRegraAvaliacao, prepararRegraAvaliacao } from "@/server/avaliacoes/regras";
 import { nomesHabilidades, type ConteudoRegra } from "./ResumoRegra";
+import { botaoClasses } from "@/components/Botao";
 
 const habilidades = Object.keys(nomesHabilidades) as (keyof typeof nomesHabilidades)[];
 const campo = "block w-full rounded border p-2";
@@ -58,13 +59,13 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
         </div>
         <div className="flex flex-wrap gap-4">{habilidades.map(h => <label key={h}><input type="checkbox" name={`a${i}-${h}`} defaultChecked={a?.habilidades.includes(h)} /> {nomesHabilidades[h]}</label>)}</div>
       </fieldset>; })}
-      <div className="flex gap-3"><button type="button" className="rounded border p-2" disabled={quantidade >= 1000} onClick={() => { mudou(); setQuantidade(q => q + 1); }}>Adicionar avaliação</button><button type="button" className="rounded border p-2" disabled={quantidade <= 2} onClick={() => { mudou(); setQuantidade(q => q - 1); }}>Remover última avaliação</button></div>
+      <div className="flex gap-3"><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={quantidade >= 1000} onClick={() => { mudou(); setQuantidade(q => q + 1); }}>Adicionar avaliação</button><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={quantidade <= 2} onClick={() => { mudou(); setQuantidade(q => q - 1); }}>Remover última avaliação</button></div>
       {[{ chave: "rec", titulo: "Recuperação", valor: inicial?.recuperacao }, { chave: "seg", titulo: "Segunda chamada", valor: inicial?.segundaChamada }].map(c => <fieldset key={c.chave} className="grid gap-3 rounded border p-3 sm:grid-cols-2"><legend>{c.titulo}</legend>
         <label>Prazo desde a disponibilização (minutos)<input className={campo} name={`${c.chave}-prazo`} type="number" min={1} max={2147483647} step={1} required defaultValue={c.valor?.prazoRealizacaoMinutos} /></label>
         <label>Antecedência para cancelamento (minutos)<input className={campo} name={`${c.chave}-antecedencia`} type="number" min={0} max={2147483647} step={1} required defaultValue={c.valor?.antecedenciaCancelamentoMinutos} /></label>
       </fieldset>)}
       <label className="block">Motivo da proposta<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <button className="rounded bg-brand-solid px-4 py-2 text-white" disabled={ocupado}>{ocupado ? "Salvando…" : "Enviar proposta para conferência"}</button>
+      <button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado}>{ocupado ? "Salvando…" : "Enviar proposta para conferência"}</button>
     </fieldset>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;
@@ -85,7 +86,7 @@ export function DecidirRegra({ regraId, conteudoHash, podeAprovar }: { regraId: 
       {!podeAprovar && <p>Existe proposta mais recente; esta versão pode ser rejeitada, mas não publicada.</p>}
       <label className="block">Justificativa<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <label className="block"><input type="checkbox" required /> Conferi todos os critérios desta versão.</label>
-      <button className="rounded border p-2">{ocupado ? "Registrando…" : "Registrar decisão"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;
 }
