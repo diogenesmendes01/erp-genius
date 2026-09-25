@@ -14,7 +14,7 @@ export async function efetivarAcertoEncerramento(input: { alunoId: string; decis
     revalidatePath(`/alunos/${d.alunoId}/movimentacoes`);
     revalidatePath(`/alunos/${d.alunoId}`);
     revalidatePath(`/alunos/${d.alunoId}/financeiro`);
-    revalidatePath("/financeiro");
+    revalidatePath("/financeiro", "layout");
     return r;
   });
 }

@@ -69,7 +69,7 @@ function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
   revalidatePath("/pipeline");
   revalidatePath("/alunos");
-  revalidatePath("/financeiro");
+  revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");
   revalidatePath("/comissoes");
   if (leadId) revalidatePath(`/leads/${leadId}`);
