@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { proporRegularizacaoFonteGravacao } from "@/server/gravacoes/regularizacao-fonte";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacaoId: string | null; podePropor: boolean }) {
   const [ocupado, iniciar] = useTransition();
@@ -38,7 +39,7 @@ export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacao
     <form className="space-y-3" onSubmit={propor}>
       <label className="block text-sm">ID do arquivo institucional<input name="arquivoOficialId" required minLength={3} maxLength={500} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
       <label className="block text-sm">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-      <button type="submit" disabled={ocupado} className="rounded border px-3 py-2 disabled:opacity-50">{ocupado ? "Preparando…" : "Propor nova fonte para revisão"}</button>
+      <button type="submit" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Preparando…" : "Propor nova fonte para revisão"}</button>
     </form>
     <MensagemStatus texto={feito} className="text-green-700" />
     {erro && <p role="alert" className="text-red-700">{erro}</p>}

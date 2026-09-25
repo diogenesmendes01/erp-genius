@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAulasDiario, listarTurmasParaDiario } from "@/server/diario/consultas";
 import { DiarioAulas } from "./DiarioAulas";
 import { hrefDiario, lerBuscaDiario } from "@/server/diario/busca-diario";
+import { botaoClasses } from "@/components/Botao";
 
 export default async function DiarioPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -22,7 +23,7 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
     {usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR) && <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/regularizacoes-gravacao">Regularizações de gravação</Link>}
     <form method="get" action="/diario" role="search" aria-label="Buscar no histórico do diário" className="flex flex-wrap items-center gap-2">
       <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
-      <button type="submit" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Buscar</button>
+      <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
       {busca && <Link href="/diario" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
     </form>
     <DiarioAulas aulas={historico.aulas} turmas={turmas} mensagemVazio={busca ? `Nenhuma aula para “${busca}”${antes ? " nesta página" : ""}.` : undefined} />
