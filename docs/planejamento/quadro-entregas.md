@@ -1256,6 +1256,19 @@ check" foi obtida com o check antigo (`prisma --version | grep`), não com os ch
   no Alpine: isso exige `docker build`.
 - Digest `sha256:0a7108bf…e402` conferido no registry do Docker Hub: é o de `node:22-alpine3.24`
   (e também o de `node:22-alpine` nesta data).
+- Trava unitária do Dockerfile (R2 B1), `src/deploy/dockerfile-prisma.test.ts`: lê o Dockerfile como o
+  Docker (sem comentários, continuações juntadas, por estágio) e EXECUTA o JS da checagem do runner
+  contra um `@prisma/client` falso. Rodada com ready+health: 3 arquivos, 21/21, saída 0.
+  13 mutações, todas detectadas (saída 1): remover/comentar/`echo` no `apk add`; base sem pin; runner
+  fora de `base`; remover a checagem do builder ou trocá-la por `|| true`; runner com `process.exit(0)`,
+  com comentário imitando a checagem, aceitando qualquer erro ou rodando antes do COPY do standalone;
+  sem `ENV HOSTNAME`; healthcheck do Coolify de volta para `/api/health`.
+- `binaryTargets` (R2 B2) continua fora por decisão do usuário: a garantia passou a ser a checagem que
+  CARREGA os engines no build (se a detecção falhar, o build quebra), travada pelo teste acima.
+- Suíte unitária completa neste ambiente: 473 arquivos, 2476 passaram e 14 testes falharam em 18 arquivos, todos
+  alheios ao PR (pacotes ausentes no `node_modules` do checkout principal: `pdfkit`, `google-auth-library`;
+  enums de um client Prisma de outro schema; `coolify-db-init.test.ts` falha em checkout Windows com
+  `core.autocrlf=true` porque o compose vem em CRLF). Nenhum arquivo que falhou referencia os arquivos do PR.
 - TypeScript global NÃO validado: o `tsc` com o `node_modules` do checkout principal usa um client
   Prisma de outro schema e gera erros alheios; nenhum erro em `api/ready`/`api/health`.
 
