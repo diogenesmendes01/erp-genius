@@ -8,6 +8,7 @@ import { preverConferenciaOcorrenciaHoras } from "@/server/matricula/ocorrencia-
 import { conferirOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-conferir";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { botaoClasses } from "@/components/Botao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 const rotulos: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Falta do aluno", FALTA_COBRAVEL: "Falta cobrável", CANCELAMENTO_ALUNO: "Cancelamento do aluno", CANCELAMENTO_ESCOLA: "Cancelamento da escola", CANCELAMENTO_NO_PRAZO: "Cancelamento dentro do prazo", CANCELAMENTO_TARDIO: "Cancelamento fora do prazo" };
@@ -39,7 +40,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
         <option value="">Selecione a versão aplicável</option>
         {condicoes.filter(c => !!c.regras).map(c => <option key={c.id} value={c.id}>Versão {c.versao} · desde {data(c.regras!.vigenteDesde)} · {formatarMoeda(c.regras!.valorHora, c.regras!.moeda)}/hora</option>)}
       </select></label>
-      <button className="rounded border p-2" disabled={ocupado || !condicoesId} onClick={() => iniciar(async () => {
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !condicoesId} onClick={() => iniciar(async () => {
         setMensagem(""); setPrevia(null);
         try { const r = await preverConferenciaOcorrenciaHoras(origem); if (!r.ok) setMensagem(r.erro); else setPrevia(r.dado ?? null); }
         catch { setMensagem("Não foi possível carregar a prévia."); }
@@ -61,7 +62,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
             catch { setMensagem("Atualize o histórico para conferir o resultado antes de repetir."); }
           });
         }}><label className="block">Justificativa da conferência<textarea className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} disabled={ocupado} /></label>
-          <button className="mt-2 rounded border p-2" disabled={ocupado}>Registrar conferência</button></form>}
+          <button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-2`} disabled={ocupado}>Registrar conferência</button></form>}
       </section>}
     </>}
     <MensagemStatus texto={mensagem} />

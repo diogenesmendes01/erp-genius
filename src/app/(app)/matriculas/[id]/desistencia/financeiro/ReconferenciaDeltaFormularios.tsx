@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { aplicarReconferenciaDeltaDesistencia, decidirAdministrativamenteReconferenciaDeltaDesistencia, decidirReconferenciaDeltaDesistencia, prepararReconferenciaDeltaDesistencia } from "@/server/matricula/desistencia-reconferencia-delta";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type ResultadoAcao = { ok: boolean; erro?: string };
 type Tentativa = { acao: () => Promise<ResultadoAcao>; sucesso: string };
@@ -48,7 +49,7 @@ function useOperacaoDelta() {
 }
 
 function ReconciliarTentativaDelta({ op }: { op: ReturnType<typeof useOperacaoDelta> }) {
-  return op.incerta && <button type="button" disabled={op.ocupado} className="rounded border px-3 py-2" onClick={() => void op.reconciliar()}>
+  return op.incerta && <button type="button" disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => void op.reconciliar()}>
     {op.ocupado ? "Reconciliando…" : "Reconciliar mesma tentativa"}
   </button>;
 }
@@ -62,7 +63,7 @@ export function PrepararReconferenciaDeltaFormulario({ aplicacaoBaseId }: { apli
     void op.iniciar({ acao: () => prepararReconferenciaDeltaDesistencia(entrada), sucesso: "Reconferência preparada. As decisões financeira e administrativa são independentes." });
   }}>
     <h3 className="font-medium">Reconferir somente a diferença</h3><p>O servidor relê caixa, origens, créditos e saldo disponível. Esta etapa não remove recebimentos nem recria créditos externos.</p>
-    <fieldset disabled={op.ocupado || op.incerta}><label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className="mt-3 rounded border px-3 py-2">{op.ocupado ? "Preparando…" : "Preparar reconferência"}</button></fieldset><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} />
+    <fieldset disabled={op.ocupado || op.incerta}><label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{op.ocupado ? "Preparando…" : "Preparar reconferência"}</button></fieldset><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} />
   </form>;
 }
 
@@ -75,11 +76,11 @@ export function DecidirReconferenciaDeltaFormulario({ propostaId, fotografiaHash
     const entrada = { propostaId, fotografiaHash, aprovada: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: op.chave.current };
     void op.iniciar({ acao: () => decidir(entrada), sucesso: "Decisão independente registrada." });
   }}>
-    <fieldset disabled={op.ocupado || op.incerta}><label>Decisão<select name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label><label className="mt-2 block">Justificativa<textarea name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className="mt-3 rounded border px-3 py-2">{op.ocupado ? "Registrando…" : administrativo ? "Registrar decisão administrativa" : "Registrar decisão financeira"}</button></fieldset><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} />
+    <fieldset disabled={op.ocupado || op.incerta}><label>Decisão<select name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label><label className="mt-2 block">Justificativa<textarea name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{op.ocupado ? "Registrando…" : administrativo ? "Registrar decisão administrativa" : "Registrar decisão financeira"}</button></fieldset><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} />
   </form>;
 }
 
 export function AplicarReconferenciaDeltaFormulario({ decisaoFinanceiraId }: { decisaoFinanceiraId: string }) {
   const op = useOperacaoDelta();
-  return <div className="space-y-2"><p>Aplica somente os ajustes calculados. Uma reconferência sem diferença é concluída sem criar novo crédito.</p><button disabled={op.ocupado || op.incerta} className="rounded border px-3 py-2" onClick={() => void op.iniciar({ acao: () => aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId, chaveIdempotencia: op.chave.current }), sucesso: "Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência." })}>{op.ocupado ? "Aplicando…" : "Aplicar reconferência"}</button><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} /></div>;
+  return <div className="space-y-2"><p>Aplica somente os ajustes calculados. Uma reconferência sem diferença é concluída sem criar novo crédito.</p><button disabled={op.ocupado || op.incerta} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => void op.iniciar({ acao: () => aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId, chaveIdempotencia: op.chave.current }), sucesso: "Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência." })}>{op.ocupado ? "Aplicando…" : "Aplicar reconferência"}</button><ReconciliarTentativaDelta op={op} /><MensagemStatus texto={op.mensagem} /></div>;
 }

@@ -6,6 +6,7 @@ import { EvidenciaSeletor, type EvidenciaDisponivel } from "./EvidenciaSeletor";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
+import { botaoClasses } from "@/components/Botao";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -45,13 +46,13 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         <option value="">Não informada — verificar exigências do modelo</option><option value="MAIOR">Maior</option><option value="MENOR">Menor</option>
       </select>
     </label>
-    {!formulario ? <button type="button" className="rounded border px-4 py-2" disabled={pendente} onClick={() => carregar()}>Consultar exigências e participantes</button>
-      : <button type="button" className="rounded border px-4 py-2" disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); setMensagem(""); }}>Reabrir formulário e descartar preenchimento</button>}
+    {!formulario ? <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => carregar()}>Consultar exigências e participantes</button>
+      : <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); setMensagem(""); }}>Reabrir formulário e descartar preenchimento</button>}
     {formulario && <>
       <p>Conferência atual: versão {formulario.versaoEsperada}. Este registro produzirá uma nova versão.</p>
       {formulario.plano.pendencias.map(p => <p role="alert" key={p}>{p}</p>)}
       <p>Documentos disponíveis · página {formulario.paginaDocumentos}. A seleção permanece ao mudar de página; a disponibilidade será conferida novamente ao registrar.</p>
-      <div className="flex gap-3"><button type="button" className="rounded border p-2" disabled={pendente || formulario.paginaDocumentos <= 1} onClick={() => carregar(formulario.paginaDocumentos - 1)}>Documentos anteriores</button><button type="button" className="rounded border p-2" disabled={pendente || !formulario.temProxima} onClick={() => carregar(formulario.paginaDocumentos + 1)}>Próximos documentos</button></div>
+      <div className="flex gap-3"><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.paginaDocumentos <= 1} onClick={() => carregar(formulario.paginaDocumentos - 1)}>Documentos anteriores</button><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !formulario.temProxima} onClick={() => carregar(formulario.paginaDocumentos + 1)}>Próximos documentos</button></div>
       {!formulario.documentos.length && <p>Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes de concluir.</p>}
       <form className="space-y-4" onSubmit={e => {
         e.preventDefault(); const fd = new FormData(e.currentTarget), texto = (chave: string) => String(fd.get(chave) ?? "").trim();
@@ -89,7 +90,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         </fieldset>)}
         <label className="block">Motivo da conferência<textarea className={campo} name="motivo" required minLength={5} maxLength={2000} disabled={pendente} /></label>
         <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi as identificações, os papéis e as evidências para este aditivo.</label>
-        <button className="rounded border px-4 py-2" disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>
     </>}
     <MensagemStatus texto={mensagem} />

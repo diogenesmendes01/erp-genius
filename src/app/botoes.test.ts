@@ -10,7 +10,7 @@ import { MAPA_BOTOES } from "./botoes-mapa";
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/matriculas"];
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
@@ -18,6 +18,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": 1, // item de lista suspensa
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
+  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
 };
 
 const PRIMARIO = /\bbg-(brand-solid|brand-600|brand-700|black|danger)\b/;
@@ -45,8 +46,9 @@ export function botoesCrus(fonte: string): string[] {
       const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
       const texto = expr && ts.isIdentifier(expr) && constantes.has(expr.text) ? constantes.get(expr.text)! : ini ? ini.getText(sf) : "";
       // <button>: padding em qualquer forma (px-, py-, p-) com borda ou fundo é cara de botão.
-      // <Link>/<a>: px- E py- com borda ou fundo (card de lista com p-3 não é botão).
-      const padding = tag === "button" ? /\bp[xy]?-\d/.test(texto) : /\bpx-\d/.test(texto) && /\bpy-\d/.test(texto);
+      // <Link>/<a>: px- E py- com borda ou fundo, e não `block` — link em bloco (ou com p-3) é card
+      // de lista, não botão.
+      const padding = tag === "button" ? /\bp[xy]?-\d/.test(texto) : /\bpx-\d/.test(texto) && /\bpy-\d/.test(texto) && !/(^|[\s"'`])block\b/.test(texto);
       if (texto && !/botaoClasses|\bbtn[A-Z]\w*/.test(texto) && padding && /\b(border|bg-)/.test(texto)) achados.push(`<${tag}> à mão: ${texto.slice(0, 80)}`);
     }
     ts.forEachChild(n, visitar);
@@ -123,7 +125,7 @@ describe("botões nas áreas migradas", () => {
   });
 
   it("a lista de áreas migradas só cresce (uma área não sai num rebase distraído)", () => {
-    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos"]));
+    expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/matriculas"]));
   });
 
   it("variante e tamanho de cada botão migrado ficam como decididos (src/app/botoes-mapa.ts)", () => {
@@ -173,6 +175,7 @@ describe("botões nas áreas migradas", () => {
       '<input className="file:bg-brand-solid file:text-white text-sm" />',
       '<button className="text-sm text-brand-700 hover:underline">x</button>',
       '<Link href="/x" className="block rounded border p-3 underline">Card da lista</Link>',
+      '<Link href="/x" className="block rounded-md border bg-surface px-4 py-3 text-sm">Seção do registro</Link>',
       '<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Abrir</Link>',
     ]) expect(botoesCrus(ok), ok).toEqual([]);
   });
