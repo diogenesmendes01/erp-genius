@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { prepararSubstituicaoContratual, decidirSubstituicaoContratual } from "@/server/contratos/substituicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
   matriculaId: string; fonte: { id: string; artefatoId: string; revisaoHash: string };
@@ -35,7 +36,7 @@ export function PrepararSubstituicao({ matriculaId, fonte, conferencias }: {
     <label className="block">Motivo e alterações propostas<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <p>A proposta será encaminhada para decisão de outra pessoa da Administração. As condições do substituto serão conferidas novamente ao registrar.</p>
     <FeedbackAcao erro={acao.erro} />
-    <button className="rounded border px-4 py-2" disabled={pendente || !destino}>{pendente ? "Registrando…" : "Registrar proposta de substituição"}</button>
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !destino}>{pendente ? "Registrando…" : "Registrar proposta de substituição"}</button>
   </form>;
 }
 
@@ -59,6 +60,6 @@ export function DecidirSubstituicao({ propostaId, propostaHash, superada }: { pr
     </select></label>
     <label className="block">Justificativa<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
-    <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

@@ -9,6 +9,7 @@ import {
   proporTerminoIndisponibilidadeOferta,
 } from "@/server/matricula/indisponibilidade-oferta-termino";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -79,7 +80,7 @@ export function TerminoIndisponibilidadeOferta({
         <label className="block" htmlFor="fim">Último dia indisponível<input id="fim" className={classe} name="fim" type="date" min={inicio.slice(0, 10)} required /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
-        <button className="rounded border p-2">{ocupado ? "Registrando…" : "Propor último dia"}</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Propor último dia"}</button>
       </fieldset>
     </form>}
 
@@ -118,7 +119,7 @@ export function TerminoIndisponibilidadeOferta({
           <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar término</option><option value="rejeitar">Rejeitar proposta</option></select></label>
           <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<textarea id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <label className="block" htmlFor={`evidencia-${proposta.id}`}>Evidência da decisão<textarea id={`evidencia-${proposta.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
-          <button className="rounded border p-2">Registrar decisão</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}
     </article>)}

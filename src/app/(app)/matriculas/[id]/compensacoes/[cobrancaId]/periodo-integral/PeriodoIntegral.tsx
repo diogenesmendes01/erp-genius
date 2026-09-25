@@ -12,6 +12,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -139,7 +140,7 @@ export function PeriodoIntegral({
         <label className="block" htmlFor="clausula">Cláusula contratual aplicável<textarea id="clausula" className={classe} name="clausula" defaultValue={baseReconferencia?.clausula ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidenciaEscolha">Evidência da escolha do aluno<textarea id="evidenciaEscolha" className={classe} name="evidenciaEscolha" defaultValue={baseReconferencia?.evidenciaEscolha ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" defaultValue={baseReconferencia?.motivo ?? ""} minLength={5} maxLength={2000} required /></label>
-        <button className="rounded border p-2">{ocupado ? "Enviando…" : "Propor regularização"}</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Enviando…" : "Propor regularização"}</button>
       </fieldset>
     </form>}
 
@@ -183,10 +184,10 @@ export function PeriodoIntegral({
             <legend>Decisão independente</legend>
             <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
             <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<textarea id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-            <button className="rounded border p-2">Registrar decisão</button>
+            <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
           </fieldset>
         </form>}
-        {proposta.podeAplicar && proposta.decisao && <button type="button" disabled={ocupado} className="rounded border p-2" onClick={() => {
+        {proposta.podeAplicar && proposta.decisao && <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => {
           iniciar(async () => {
             setMensagem("");
             setErro("");

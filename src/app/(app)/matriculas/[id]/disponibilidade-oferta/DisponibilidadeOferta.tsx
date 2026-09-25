@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { consultarDisponibilidadesOferta, proporDisponibilidadeOferta, decidirDisponibilidadeOferta } from "@/server/matricula/disponibilidade-oferta";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarDisponibilidadesOferta>>, { ok: true }>["dado"]>;
 const campo = "block w-full rounded border p-2";
@@ -38,7 +39,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
         <label className="block">Fim do período<input type="date" name="fim" required min={periodo.min} className={campo} /></label>
         <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
         <label className="block">Evidências da oferta<textarea name="evidencia" required minLength={5} maxLength={4000} className={campo} /></label>
-        <button className="rounded border p-2" type="submit">Enviar para conferência</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">Enviar para conferência</button>
       </fieldset>
     </form>}
     {dados.propostas.length === 0 && <p>Nenhuma proposta registrada.</p>}
@@ -56,7 +57,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
           <label>Decisão<select name="decisao" required className={campo}><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>
           <label>Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
           <label>Evidências conferidas<textarea name="evidencia" required minLength={5} maxLength={4000} className={campo} /></label>
-          <button className="rounded border p-2" type="submit">Registrar decisão</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">Registrar decisão</button>
         </fieldset>
       </form>}
     </section>)}

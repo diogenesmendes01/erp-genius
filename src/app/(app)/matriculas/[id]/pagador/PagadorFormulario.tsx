@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarPagadorPreparacao } from "@/server/secretaria/pagador-preparacao";
+import { botaoClasses } from "@/components/Botao";
 type Dados = { nome: string; paisId: string; documento?: string | null; email?: string | null; telefoneE164?: string | null; endereco?: string | null };
 export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matriculaId: string; versao: number; paises: { id: string; nome: string }[]; atual: { tipo: string; dados: Dados } | null }) {
   const [tipo, setTipo] = useState(atual?.tipo ?? ""), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
@@ -28,6 +29,6 @@ export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matr
       <label className="block">Endereço<textarea name="endereco" maxLength={1000} defaultValue={dados?.endereco ?? ""} className="block rounded border p-2" /></label>
     </fieldset>}
     <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block rounded border p-2" /></label>
-    <button disabled={ocupado || !tipo} className="rounded border p-2">{ocupado ? "Registrando…" : "Registrar pagador desta matrícula"}</button>{erro && <p role="alert">{erro}</p>}
+    <button disabled={ocupado || !tipo} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar pagador desta matrícula"}</button>{erro && <p role="alert">{erro}</p>}
   </form>;
 }

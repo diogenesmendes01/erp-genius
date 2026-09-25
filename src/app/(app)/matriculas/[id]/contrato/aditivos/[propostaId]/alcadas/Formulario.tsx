@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAlcadaAditivo } from "@/server/contratos/aditivo-alcadas";
+import { botaoClasses } from "@/components/Botao";
 
 type Alcada = "FINANCEIRA" | "COMERCIAL" | "PEDAGOGICA";
 
@@ -21,6 +22,6 @@ export function FormularioAlcada({ matriculaId, propostaId, propostaHash, alcada
       <label className="block"><input type="radio" name="decisao" value="rejeitar" /> Rejeitar</label>
     </fieldset>
     <label className="block">Justificativa<textarea className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={2000} required disabled={pendente} /></label>
-    {mensagem && <p role="alert">{mensagem}</p>}<button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
+    {mensagem && <p role="alert">{mensagem}</p>}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

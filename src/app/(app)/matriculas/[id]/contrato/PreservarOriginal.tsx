@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { preservarOriginalContratual } from "@/server/contratos/originais";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export function PreservarOriginal({ previaId, conferenciaId }: { previaId: string; conferenciaId: string }) {
   const router = useRouter();
@@ -21,6 +22,6 @@ export function PreservarOriginal({ previaId, conferenciaId }: { previaId: strin
     <label className="block"><input type="checkbox" name="conferido" required disabled={pendente} /> Conferi o conteúdo desta prévia e a identificação dos participantes.</label>
     <label className="block">Motivo do registro<textarea className="block w-full rounded border p-2" name="motivo" minLength={5} maxLength={2000} required disabled={pendente} /></label>
     <FeedbackAcao erro={acao.erro} />
-    <button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Gerando e preservando…" : "Gerar e preservar original"}</button>
+    <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Gerando e preservando…" : "Gerar e preservar original"}</button>
   </form>;
 }

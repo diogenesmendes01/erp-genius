@@ -7,6 +7,7 @@ import { confirmarRelatoIndisponibilidadeOferta } from "@/server/matricula/indis
 import { consultarRelatosIndisponibilidadeOferta, registrarRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-relato";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -62,7 +63,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
         <label className="block" htmlFor="fim">Fim civil, se já conhecido<input id="fim" className={classe} name="fim" type="date" min={periodo.min} /></label>
         <label className="block" htmlFor="motivo">Motivo<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência do relato<textarea id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
-        <button className="rounded border p-2">{ocupado ? "Registrando…" : "Registrar relato"}</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar relato"}</button>
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico de relatos</h2>
@@ -99,7 +100,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
           <label className="block" htmlFor={`decisao-${relato.id}`}>Decisão<select id={`decisao-${relato.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="confirmar">Confirmar indisponibilidade</option><option value="recusar">Recusar relato</option></select></label>
           <label className="block" htmlFor={`motivo-${relato.id}`}>Justificativa<textarea id={`motivo-${relato.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <label className="block" htmlFor={`evidencia-${relato.id}`}>Evidência da decisão<textarea id={`evidencia-${relato.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
-          <button className="rounded border p-2">Registrar decisão</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}
     </article>)}

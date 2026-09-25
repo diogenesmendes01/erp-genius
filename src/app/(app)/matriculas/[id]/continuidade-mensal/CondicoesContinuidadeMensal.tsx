@@ -7,6 +7,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { botaoClasses } from "@/components/Botao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -129,7 +130,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
               <label className="block" htmlFor="calendario-fim">Fim da vigência<input id="calendario-fim" className={classe} name="calendarioFimVigencia" type="date" required min={periodo.min} /></label>
             </div>
             <fieldset className="space-y-1"><legend>Dias da semana considerados úteis</legend>{diasDaSemana.map(([dia, nome]) => <label key={dia} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={diasSemanaUteis.includes(dia)} onChange={evento => setDiasSemanaUteis(atual => evento.target.checked ? [...atual, dia] : atual.filter(valor => valor !== dia))} />{nome}</label>)}</fieldset>
-            <fieldset className="space-y-2"><legend>Feriados do calendário</legend>{feriados.map((feriado, indice) => <div key={indice} className="flex gap-2"><input className={classe} type="date" value={feriado} aria-label={`Feriado ${indice + 1}`} onChange={evento => setFeriados(atual => atual.map((valor, posicao) => posicao === indice ? evento.target.value : valor))} required /><button type="button" className="rounded border px-2" onClick={() => setFeriados(atual => atual.filter((_, posicao) => posicao !== indice))}>Remover</button></div>)}<button type="button" className="rounded border p-2" onClick={() => setFeriados(atual => [...atual, ""])}>Adicionar feriado</button></fieldset>
+            <fieldset className="space-y-2"><legend>Feriados do calendário</legend>{feriados.map((feriado, indice) => <div key={indice} className="flex gap-2"><input className={classe} type="date" value={feriado} aria-label={`Feriado ${indice + 1}`} onChange={evento => setFeriados(atual => atual.map((valor, posicao) => posicao === indice ? evento.target.value : valor))} required /><button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => setFeriados(atual => atual.filter((_, posicao) => posicao !== indice))}>Remover</button></div>)}<button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => setFeriados(atual => [...atual, ""])}>Adicionar feriado</button></fieldset>
           </div>}
         </fieldset>
         <fieldset className="space-y-2 rounded border p-3">
@@ -138,7 +139,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
           <p>Informe a regra contratada. Esta escolha não é presumida para versões novas nem para o histórico.</p>
         </fieldset>
         <label className="block" htmlFor="motivo">Motivo da transcrição<textarea id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-        <button className="rounded border p-2">{ocupado ? "Registrando…" : "Preparar para revisão"}</button>
+        <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Preparar para revisão"}</button>
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico das condições</h2>
@@ -174,7 +175,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
           <legend>Revisão administrativa independente</legend>
           <label className="block" htmlFor={`decisao-${versao.id}`}>Decisão<select id={`decisao-${versao.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>
           <label className="block" htmlFor={`motivo-${versao.id}`}>Justificativa<textarea id={`motivo-${versao.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
-          <button className="rounded border p-2">Registrar decisão</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}
     </article>)}
