@@ -8,6 +8,7 @@ import { LiberacaoHoras } from "./LiberacaoHoras";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarDataCivil } from "@/lib/data-civil";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -69,7 +70,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Identificar compra já paga</legend>
         <p>O registro confere contrato, recebimentos e utilizações de crédito aprovadas. Informe a quantidade total de minutos prevista na compra.</p>
-        <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{c.vencimento} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
+        <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.vencimento)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Minutos comprados<input name="minutos" type="number" required min={1} max={5256000} step={1} className={estilo} /></label>
         <label className="grid gap-1">Evidência das condições da compra<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button className={estilo}>Registrar compra de horas</button>
