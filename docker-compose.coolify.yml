@@ -117,10 +117,12 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      # Healthcheck que o Coolify usa para decidir se o deploy deu certo.
-      # Endpoint /api/health: liveness simples, sem segredo, sem dependências externas.
+      # Readiness check: valida que o app está pronto (DB acessível, Prisma funcional).
+      # Endpoint /api/ready faz SELECT 1 via Prisma — falha se engine errado ou DB down.
       # node:22-alpine tem wget; curl não vem instalado por padrão.
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      # 127.0.0.1, NUNCA localhost: o wget do BusyBox resolve localhost para ::1 (IPv6) e não tenta o
+      # IPv4; o Next com HOSTNAME=0.0.0.0 escuta só IPv4 → "connection refused" sempre (visto na VPS).
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
