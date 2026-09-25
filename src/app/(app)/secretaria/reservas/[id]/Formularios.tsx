@@ -4,7 +4,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { useRouter } from "next/navigation";
 import { prepararResolucaoParticular, decidirResolucaoParticular } from "@/server/matricula/reserva-particular-resolucao";
 import { prepararResolucaoReserva, decidirResolucaoReserva } from "@/server/matricula/reserva-resolucao";
-import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function PrepararResolucao({ reservaId, versao, fuso, particular = false }: { reservaId: string; versao: number; fuso: string; particular?: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [tipo, setTipo] = useState<"PRORROGAR" | "LIBERAR">("PRORROGAR");
@@ -15,7 +15,7 @@ export function PrepararResolucao({ reservaId, versao, fuso, particular = false 
       const r = await (particular ? prepararResolucaoParticular : prepararResolucaoReserva)({ reservaId, versaoAnterior: versao, tipo,
         ...(tipo === "PRORROGAR" ? { novoPrazo: instanteDaGrade(String(dados.get("data")), String(dados.get("horario")), fuso).toISOString() } : {}), motivo: String(dados.get("motivo")), tratamentoContratacao: String(dados.get("tratamento")), chaveIdempotencia: chave.current });
       if (!r.ok) { setMensagem(r.erro); return; } router.refresh();
-    } catch { setMensagem("Não foi possível confirmar. Reenvie os mesmos dados para conferir a tentativa."); } }); }}>
+    } catch { setMensagem(MSG_RESULTADO_INCERTO); } }); }}>
     <h2 className="font-medium">Preparar resolução</h2>
     <label className="block">Decisão proposta<select className="block rounded border p-2" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} disabled={ocupado}><option value="PRORROGAR">Prorrogar reserva</option><option value="LIBERAR">{particular ? "Liberar horários" : "Liberar vaga"}</option></select></label>
     {tipo === "PRORROGAR" && <div><p>Novo prazo no fuso {fuso}</p><label className="block">Data<input className="block rounded border p-2" type="date" name="data" required /></label><label className="block">Horário<input className="block rounded border p-2" type="time" name="horario" required /></label></div>}

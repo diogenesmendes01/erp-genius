@@ -6,6 +6,7 @@ import { prepararAcertoDesistenciaContratual, decidirAcertoDesistenciaContratual
 import { aplicarAcertoDesistenciaContratual } from "@/server/matricula/desistencia-acerto-aplicacao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 function useOperacao() {
   const router = useRouter(), chave = useRef(crypto.randomUUID());
@@ -13,7 +14,7 @@ function useOperacao() {
   return { ocupado, mensagem, async executar(acao: () => Promise<{ ok: boolean; erro?: string }>, sucesso: string) {
     setOcupado(true); setMensagem("");
     try { const r = await acao(); if (!r.ok) setMensagem(r.erro ?? "Não foi possível concluir a operação."); else { setMensagem(sucesso); chave.current = crypto.randomUUID(); router.refresh(); } }
-    catch { setMensagem("Não foi possível confirmar o resultado. Reenvie os mesmos dados para conferir a operação."); }
+    catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }, chave };
 }

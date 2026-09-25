@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarCondicoesEntrada } from "@/server/secretaria/condicoes-entrada";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, temAdiantamento }: { matriculaId: string; pagadorId: string; versao: number; regime: string; temAdiantamento: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -12,7 +13,7 @@ export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, te
       const aulas = regime === "MENSALIDADE" ? { regime: "MENSALIDADE" as const, cobertura: { referencia: texto("referencia") as "MES_CIVIL" | "CICLO_MATRICULA", inicio: texto("inicio") }, primeiroVencimento: texto("primeiro"), diaVencimentoContratado: Number(texto("dia")) } : { regime: "HORA_PARTICULAR" as const, ...(temAdiantamento ? { vencimentoAdiantamento: texto("adiantamento") } : {}) };
       const r = await registrarCondicoesEntrada({ matriculaId, pagadorRegistroId: pagadorId, versaoEsperada: versao, taxaVencimento: texto("taxa"), aulas, motivo: texto("motivo"), chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Resultado não confirmado. Reenvie os mesmos dados ou consulte o registro antes de alterar."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
     <h2 className="text-xl">Registrar condições</h2>

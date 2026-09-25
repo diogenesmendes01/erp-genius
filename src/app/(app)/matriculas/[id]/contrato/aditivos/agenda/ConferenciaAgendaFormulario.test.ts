@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({ consultar: vi.fn(), registrar: vi.fn(), useSta
 vi.mock("react", async importOriginal => ({ ...(await importOriginal<typeof import("react")>()), useState: mocks.useState, useTransition: mocks.useTransition }));
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarConferenciaAgendaAditivo: mocks.consultar, registrarPropostaAgendaAditivo: mocks.registrar }));
 import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaAgendaFormulario";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 
 type No = { props?: Record<string, unknown> };
 const encontrar = (no: unknown, tipo: string): No | undefined => {
@@ -67,5 +68,5 @@ it("preserva a chave ao falhar para que a repetição consulte a mesma tentativa
   expect(botao.disabled).toBe(true);
   await (botao.onClick as () => void)(); await Promise.resolve();
   expect(mocks.registrar).toHaveBeenCalledWith(expect.objectContaining({ chaveIdempotencia: "chave-q117" }));
-  expect(setMensagem).toHaveBeenCalledWith("Não foi possível confirmar o registro. Repita sem editar para consultar a mesma tentativa.");
+  expect(setMensagem).toHaveBeenCalledWith(MSG_RESULTADO_INCERTO);
 });

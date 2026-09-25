@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarNotaRecuperacao, decidirNotaRecuperacao } from "@/server/avaliacoes/recuperacao-nota";
-import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 
 export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno }: { realizacaoId: string; versaoEsperada: number; nota: string | null; comentarioAluno: string }) {
@@ -15,7 +15,7 @@ export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno
     try {
       const r = await salvarNotaRecuperacao({ realizacaoId, versaoEsperada, nota: String(data.get("nota") ?? "").trim() || null, comentarioAluno: String(data.get("comentario") ?? ""), submetida, chaveIdempotencia: chave.current });
       if (!r.ok) setErro(r.erro); else { chave.current = null; router.refresh(); }
-    } catch { setErro("Não foi possível confirmar o resultado. Tente novamente sem alterar os dados."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setEnviando(false); }
   }}>
     <h2 className="text-xl font-medium">Lançar nota</h2>

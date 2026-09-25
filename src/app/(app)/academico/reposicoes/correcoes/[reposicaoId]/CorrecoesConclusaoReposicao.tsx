@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirCorrecaoConclusaoReposicao, proporCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Fonte = {
   concluida: boolean;
@@ -125,7 +126,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
         const resultado = await proporCorrecaoConclusaoReposicao({ ...comum, ...fonte });
         if (!resultado.ok) { setErro(resultado.erro); return; }
         router.refresh();
-      } catch { setErro("Não foi possível confirmar a correção. Confira o histórico antes de reenviar."); }
+      } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3">
     <h2 className="text-xl font-medium">Propor correção</h2>

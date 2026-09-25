@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { configurarEntradaOferta, consultarEntradasOfertas } from "@/server/catalogo/entrada-oferta";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type Oferta = Awaited<ReturnType<typeof consultarEntradasOfertas>>[number];
 function Formulario({ oferta }: { oferta: Oferta }) {
@@ -16,7 +17,7 @@ function Formulario({ oferta }: { oferta: Oferta }) {
       const r = await configurarEntradaOferta({ ofertaId: oferta.id, versaoEsperada: oferta.versaoEntrada,
         formaAgenda: (String(f.get("agenda") ?? "") || null) as FormaAgendaOferta | null, taxaPreviaAssinatura: f.get("taxa") === "sim", adiantamentoHoraExigido: f.get("hora") === "" ? null : f.get("hora") === "sim", motivo: String(f.get("motivo") ?? "") });
       if (!r.ok) setErro(r.erro); else router.refresh();
-    } catch { setErro("Não foi possível confirmar o resultado. Atualize a tela antes de tentar novamente."); }
+    } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { setPendente(false); }
   }}>
     <h3 className="font-medium">{oferta.produto.idioma.nome} · {oferta.produto.modalidade.nome} · {oferta.pais.nome}</h3>

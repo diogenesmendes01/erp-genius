@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { decidirDesistenciaAdministrativa } from "@/server/matricula/desistencia-administrativa";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 
 export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedidoId: string; estadoHash: string; podeAprovar: boolean }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function DecisaoFormulario({ pedidoId, estadoHash, podeAprovar }: { pedid
       const r = await decidirDesistenciaAdministrativa({ pedidoId, estadoHash, aprovada: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") });
       if (r.ok) { setConcluido(true); setMensagem("Decisão registrada. A efetivação ainda depende das conferências e dos tratamentos aplicáveis."); router.refresh(); }
       else setMensagem(r.erro);
-    } catch { setMensagem("Não foi possível confirmar o registro. Reenvie os mesmos dados para conferir a decisão."); }
+    } catch { setMensagem(MSG_DECISAO_INCERTA); }
     finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} className="space-y-3"><fieldset disabled={ocupado || concluido} className="space-y-3">

@@ -7,6 +7,7 @@ import { RegrasEncerramentoSchema } from "@/server/matricula/condicoes-encerrame
 import { montarAcertoDesistenciaPreparacao, type AlcanceAcerto, type TipoAcerto } from "./condicoes-encerramento-formulario";
 import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 type FonteOriginalEnviado = { processoAssinaturaId: string; artefatoContratualId: string };
 type Cobranca = { id: string; codigo: string | null; tipo: string };
@@ -42,7 +43,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
     if (trava.current) return;
     trava.current = true; setOcupado(true); setErro(null);
     try { const r = await acao(); if (!r.ok) setErro(r.erro ?? "Operação não concluída."); else router.refresh(); }
-    catch { setErro("Não foi possível confirmar o resultado. Atualize a página antes de tentar novamente."); }
+    catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     finally { trava.current = false; setOcupado(false); }
   }
   return <section className="space-y-3 rounded border p-4">
