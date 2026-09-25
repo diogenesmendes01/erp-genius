@@ -1272,11 +1272,25 @@ check" foi obtida com o check antigo (`prisma --version | grep`), não com os ch
 - TypeScript global NÃO validado: o `tsc` com o `node_modules` do checkout principal usa um client
   Prisma de outro schema e gera erros alheios; nenhum erro em `api/ready`/`api/health`.
 
-### Pendências
-- **`docker build` do commit final** (builder e runner) com os checks atuais: não executado, Docker
-  indisponível na máquina da revisão. Obrigatório antes do merge, porque o merge dispara o auto-deploy.
-- **TypeScript** no ambiente preparado pelo integrador.
-- **Confirmar redeploy no Coolify**: validar migrate + `/api/ready` 200 + HTTPS em produção.
+### Verificação na VPS (25/09/2026, relatada pelo usuário, não reexecutada pelo agente)
+- Imagem com digest, openssl no estágio `base`, `HOSTNAME=0.0.0.0` no runner e `binaryTargets` fora
+  do schema conferidos.
+- `docker build`: as duas checagens de engine passaram (builder `migrate status` e runner `$connect`).
+- 436 migrations aplicadas num Postgres 16 vazio; a segunda rodada deu "No pending migrations".
+- Testes de `/api/ready` e `/api/health`: 11/11.
+- `/api/ready` via 127.0.0.1: 200 com o banco no ar; banco derrubado → 503 em 3s sem expor o erro;
+  volta a 200 quando o banco retorna.
+- **Defeito encontrado:** o healthcheck do compose (`wget http://localhost:3000/api/ready`) falhava
+  SEMPRE com "connection refused". O wget do BusyBox resolve `localhost` para `::1` (IPv6) e não tenta
+  o IPv4, e o Next com `HOSTNAME=0.0.0.0` escuta só IPv4. O mesmo comando com `127.0.0.1` passa.
+  Correção: healthcheck em `http://127.0.0.1:3000/api/ready`, travado em
+  `src/deploy/dockerfile-prisma.test.ts` (falha com `localhost` ou `[::1]`). Após a correção: 22/22,
+  saída 0; 15 mutações detectadas, entre elas a volta para `localhost`.
 
-**Estado**: Implementado; aguardando `docker build` do commit final e redeploy. Não concluído.
+### Pendências
+- **Confirmar redeploy no Coolify** com o healthcheck em 127.0.0.1: container `healthy`, migrate com
+  saída 0, `/api/ready` 200 e HTTPS em produção.
+- **TypeScript** (`tsc --noEmit`) no ambiente preparado pelo integrador.
+
+**Estado**: Implementado e validado na VPS (relato do usuário); aguardando o redeploy no Coolify. Não concluído.
 
