@@ -1,6 +1,7 @@
 // Mapeamento travado da migração E1 (docs/42-auditoria-frontend-ux.md): para cada tela das áreas
 // migradas, cada chamada a botaoClasses(...) — na ordem do fonte — com o rótulo que a localiza (texto
-// visível do botão/link, ou o nome da constante) e a variante/tamanho decididos na migração.
+// visível do botão/link, ou o nome da constante) e a variante/tamanho decididos na migração. O
+// botão que usa uma constante de botão (btnPri, principal…) aparece com o nome dela.
 //
 // Regra aplicada na migração (preserva a intenção de cada botão):
 //   fundo da marca (ou verde de sucesso) + texto branco → primario; borda neutra → secundario;
@@ -86,6 +87,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/turmas/ImportarTurmasModal.tsx": [
     "const btnPri → primario/lg",
     "const btnSec → secundario/lg",
+    "<button> Importar turmas → btnSec",
+    "<button> Fechar · Cancelar → btnSec",
+    "<button> Enviando… · Importar → btnPri",
   ],
   "configuracao/turmas/TurmaFormulario.tsx": [
     "<button> Salvando… · Salvar turma → primario/lg",
@@ -106,24 +110,40 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/whatsapp/ComercialPainel.tsx": [
     "const btnPri → primario/md",
+    "<button> Salvando… · Salvar configuração comercial → btnPri",
   ],
   "configuracao/whatsapp/NumerosPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Novo número → btnPri",
+    "<button> Conectar QR → btnSec",
+    "<button> Editar → btnSec",
+    "<button> Salvando… · Salvar número → btnPri",
+    "<button> Fechar → btnSec",
+    "<button> Atualizar QR → btnSec",
   ],
   "configuracao/whatsapp/PoliticaPainel.tsx": [
     "const btnPri → primario/md",
     "<button> Kill switch LIGADO — destravar · Kill switch → perigo|secundario/md",
+    "<button> salvar · Salvando… · Salvar política → btnPri",
   ],
   "configuracao/whatsapp/ReguaComercialPainel.tsx": [
     "const btnPri → primario/md",
+    "<button> Salvando… → btnPri",
   ],
   "configuracao/whatsapp/TemplatesPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Sincronizar com a Meta → btnSec",
+    "<button> Novo template → btnPri",
+    "<button> Submeter à Meta → btnSec",
+    "<button> Editar → btnSec",
+    "<button> Salvando… · Salvar template → btnPri",
   ],
   "diario/DiarioAulas.tsx": [
     "const botao → primario/lg",
+    "<button> Registrar aula → botao",
+    "<button> Salvando… · Salvar aula → botao",
     "<button> Cancelar → secundario/lg",
     "<Link> Completar diário do encontro → secundario/lg",
     "<button> Editar registro → secundario/lg",
@@ -223,6 +243,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "academico/MudancasAcademicasPainel.tsx": [
     "const botao → secundario/lg",
     "const principal → primario/lg",
+    "<button> Enviar para aprovação pedagógica → principal",
+    "<button> Registrar parecer docente → botao",
+    "<button> Aprovar mudança → principal",
+    "<button> Rejeitar solicitação → botao",
+    "<button> Executar mudança aprovada → principal",
+    "<button> Confirmar cancelamento da solicitação → botao",
   ],
   "academico/admissoes/[id]/JanelaFormulario.tsx": [
     "<button> Preparando… · Preparar para decisão → primario/lg",
@@ -431,13 +457,26 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "alunos/ImportarAlunosModal.tsx": [
     "const btnPri → primario/lg",
     "const btnSec → secundario/lg",
+    "<button> Cadastrar por lote → btnSec",
+    "<button> Fechar · Cancelar → btnSec",
+    "<button> Enviando… · Importar → btnPri",
   ],
   "alunos/[id]/FichaAluno.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/md",
+    "<button> Editar dados → btnSec",
+    "<button> Pausar → btnSec",
     "<button> Encerrar → perigo/md",
+    "<Link> Propor retomada → btnPri",
     "<button> Encerrar → perigo/md",
+    "<Link> Turma, nível e solicitações acadêmicas · Consultar solicitaç → btnSec",
+    "<button> Cancelar → btnSec",
+    "<button> Salvando… · Salvar alterações → btnPri",
+    "<button> Confirmando… · Confirmar pausa → btnPri",
+    "<button> Cancelar → btnSec",
     "<button> Confirmando… · Confirmar encerramento → perigo/md",
+    "<button> Cancelar → btnSec",
+    "<Link> Preparar alocação por matrícula → btnPri",
   ],
   "alunos/[id]/creditos/[creditoId]/DevolucaoCredito.tsx": [
     "<button> Guardar proposta → secundario/lg",
@@ -456,6 +495,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "alunos/[id]/financeiro/FichaFinanceira.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<Link> Compensar dias sem oferta → btnSec",
+    "<Link> Histórico da regularização → btnSec",
+    "<button> Informar pagamento · Registrar recebimento → btnSec",
+    "<button> Renegociar / ajustar → btnSec",
+    "<button> Salvando… · Aplicar ajuste → btnPri",
     "<button> Cancelar → secundario/md",
   ],
   "alunos/[id]/financeiro/ResumoFinanceiroComercial.tsx": [
@@ -530,17 +574,36 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "financeiro/AcessoAulasPainel.tsx": [
     "const botao → secundario/md",
+    "<button> Solicitar liberação manual · Solicitar restrição manual → botao",
+    "<button> Enviar solicitação → botao",
+    "<button> Cancelar → botao",
+    "<button> Aprovar → botao",
+    "<button> Rejeitar → botao",
   ],
   "financeiro/FilaCobranca.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Enviando… · Aprovar e enviar lote → btnPri",
+    "<button> Limpar → btnSec",
     "<button> Consultar acesso → perigo/sm",
+    "<button> → btnSec",
+    "<button> Abrir WhatsApp manual → btnSec",
+    "<button> Enviar via WhatsApp (API) → btnPri",
+    "<button> Preparando… · Abrir WhatsApp manual → btnSec",
+    "<a> Abrir WhatsApp novamente → btnSec",
+    "<button> Confirmando… · Confirmar envio realizado → btnSec",
+    "<button> Registrar pagamento → btnSec",
+    "<button> Promessa de pagamento → btnSec",
+    "<button> Registrar promessa → btnPri",
   ],
   "financeiro/FinanceiroPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Fechar mês e marcar pagas → btnPri",
     "<button> Aprovar → primario/sm",
     "<button> Rejeitar → secundario/sm",
+    "<button> Salvando… · Salvar cotações → btnPri",
+    "<button> Atualizando… · Atualizar automaticamente → btnSec",
   ],
   "financeiro/InformesPagamento.tsx": [
     "<button> Confirmar recebimento → primario/md",
@@ -552,6 +615,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "financeiro/RetomadasPainel.tsx": [
     "const botao → secundario/lg",
     "const principal → primario/lg",
+    "<button> Enviar proposta para aprovação → principal",
+    "<button> Aprovar proposta e retomar → principal",
+    "<button> Rejeitar proposta → botao",
   ],
   "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
     "<button> Aprovar acerto → secundario/lg",
@@ -582,11 +648,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",
+    "<button> Enviar para aprovação administrativa → secundario/lg",
   ],
   "secretaria/SecretariaPainel.tsx": [
     "<button> Conferir cobertura inicial → secundario/lg",
     "<button> Assumir matrícula → primario/lg",
     "<button> Concluir matrícula → primario/lg",
+    "<button> Arquivar → fantasma/sm",
     "<button> Registrar aceite → secundario/lg",
     "<button> Solicitar correção → secundario/lg",
     "<button> Concluir decisão → secundario/lg",
@@ -616,11 +684,26 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "leads/[id]/FichaLead.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/md",
+    "<button> arquivar → fantasma/sm",
+    "<button> Registrar interação → btnSec",
+    "<button> Agendar experimental → btnSec",
+    "<button> Enviar proposta → btnSec",
     "<button> Marcar perdido → perigo/md",
+    "<a> Converter em matrícula → btnPri",
+    "<button> Salvar interação → btnPri",
+    "<button> Agendar → btnPri",
     "<button> Confirmar perda → perigo/md",
+    "<button> Salvar resumo → btnPri",
+    "<button> Salvar datas → btnPri",
+    "<Link> Preparar matrícula → btnSec",
+    "<Link> Gerenciar documentos do contrato → btnSec",
+    "<button> Reenviar link · Registrar link → btnSec",
   ],
   "leads/[id]/contratacao/AgendaParticularFormulario.tsx": [
     "<button> Buscar professores → secundario/lg",
+    "<button> Professores anteriores → secundario/md",
+    "<button> Mais professores → secundario/md",
+    "<button> Remover encontro → secundario/md",
     "<button> Adicionar encontro → secundario/lg",
     "<button> Conferir disponibilidade → secundario/lg",
   ],
@@ -629,10 +712,17 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "empresas/EmpresasCliente.tsx": [
     "const btnPri → primario/md",
+    "<button> Nova empresa → btnPri",
+    "<button> Criando… · Criar → btnPri",
     "<button> Buscando… · Buscar → secundario/md",
   ],
   "empresas/[id]/FichaEmpresa.tsx": [
     "const btnPri → primario/md",
+    "const btnSec → secundario/md",
+    "<Link> Preparar matrícula individual → btnPri",
+    "<button> Registrar pagamento → btnPri",
+    "<button> Cancelar → perigo/md",
+    "<button> Inativar empresa · Reativar empresa → btnSec",
   ],
   "inbox/AtendimentosPainel.tsx": [
     "<button> Abrir atendimento → primario/lg",
@@ -642,7 +732,16 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/InboxCliente.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Vincular → btnSec",
+    "<button> Remover opt-out → btnSec",
+    "<button> Registrar opt-out → btnSec",
     "<button> Retomar régua → secundario/sm",
+    "<button> Registrar pagamento → btnSec",
+    "<button> Promessa de pagamento → btnSec",
+    "<button> Registrar → btnSec",
+    "<button> → btnPri",
+    "<button> → → btnSec",
+    "<button> Notas internas · → btnSec",
     "<button> Salvar nota → primario/sm",
   ],
   "pipeline/KanbanBoard.tsx": [
@@ -659,6 +758,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "carteiras/CoberturasPainel.tsx": [
     "<button> Conceder cobertura → primario/lg",
+    "<button> Revogar → fantasma/sm",
   ],
   "comissoes/page.tsx": [
     "<button> Filtrar → secundario/md",
