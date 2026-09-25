@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
@@ -80,13 +80,15 @@ function useExecutorFinanceiro() {
   return { acao, run, router };
 }
 
-export function ComissoesAba({ comissoes, podePagar, fechamentoAutomatico }: { comissoes: ComissaoRow[]; podePagar: boolean; fechamentoAutomatico: boolean }) {
+export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio }: { comissoes: ComissaoRow[]; aPagar: ValorMoeda[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode }) {
   const { acao, run } = useExecutorFinanceiro();
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
       <Comissoes
         comissoes={comissoes}
+        aPagar={aPagar}
+        vazio={vazio}
         podePagar={podePagar}
         onFechar={() => run(() => fecharMesComissoes())}
         fechamentoAutomatico={fechamentoAutomatico}
@@ -153,6 +155,8 @@ export function GeralAba({ kpis, cotacoes }: { kpis: Kpis; cotacoes: CotacaoVige
 
 export function Comissoes({
   comissoes,
+  aPagar,
+  vazio,
   podePagar,
   onFechar,
   fechamentoAutomatico,
@@ -160,15 +164,16 @@ export function Comissoes({
   isPending,
 }: {
   comissoes: ComissaoRow[];
+  /** Total das aprovadas em TODO o escopo (servidor) — a lista é paginada. */
+  aPagar: ValorMoeda[];
   podePagar: boolean;
   onFechar: () => void;
   fechamentoAutomatico: boolean;
   onToggleAutomatico: (ligado: boolean) => void;
   isPending: boolean;
+  /** Texto da lista vazia — com filtro ativo, a página diz que não há nesta situação e oferece ver todas. */
+  vazio?: ReactNode;
 }) {
-  const aPagar = somarPorMoeda(
-    comissoes.filter((c) => c.status === StatusComissao.APROVADA).map((c) => ({ moeda: c.moeda, valor: c.valor })),
-  );
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -205,7 +210,7 @@ export function Comissoes({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {comissoes.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">Sem comissões.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">{vazio ?? "Sem comissões."}</td></tr>
             ) : (
               comissoes.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
