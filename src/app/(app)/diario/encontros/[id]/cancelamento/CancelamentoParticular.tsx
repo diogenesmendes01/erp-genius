@@ -5,6 +5,7 @@ import { consultarCancelamentoParticular, proporCancelamentoParticular, decidirC
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
@@ -31,7 +32,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
       <label className="block">Motivo do cancelamento<textarea name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} onChange={() => { chave.current = null; }} /></label>
       <label className="block">Quem cancelou?<select name="origem" required defaultValue="" className="block border p-2" onChange={() => { chave.current = null; }}><option value="" disabled>Selecione</option><option value="ESCOLA">Escola</option><option value="ALUNO">Aluno</option></select></label>
       <FeedbackAcao erro={proposta.erro} />
-      <button disabled={pendente} className="rounded border p-2">Solicitar cancelamento</button>
+      <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Solicitar cancelamento</button>
     </form>}
     {dados.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-4">
       <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}.</p><p>{p.motivo}</p><p>{p.decisao ? p.decisao.aprovada ? "Cancelamento aprovado" : "Solicitação rejeitada" : "Aguardando decisão de outra pessoa"}</p>
@@ -46,7 +47,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
         <label className="block">Decisão<select name="decisao" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar cancelamento</option><option value="rejeitar">Rejeitar solicitação</option></select></label>
         <label className="block">Justificativa da decisão<textarea name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} /></label>
         <FeedbackAcao erro={alvo === p.id ? decisao.erro : null} />
-        <button disabled={pendente} className="rounded border p-2">Confirmar decisão</button>
+        <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </form>}
     </article>)}
   </div>;
