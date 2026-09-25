@@ -1208,20 +1208,29 @@ Verificado em produção no servidor Coolify.
    - Pin da imagem base com digest: `node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402`
    - Base stage comum com `apk add --no-cache openssl` (evita repetição)
    - `ENV HOSTNAME=0.0.0.0` no runner (Next standalone precisa bind em todas as interfaces)
-   - Build-time engine checks no builder e runner (falha o build se engine errado)
+   - Checagens REAIS dos engines no build (engine errado quebra o build, não a produção):
+     - builder: `prisma migrate status` contra `127.0.0.1:1` tem de devolver `P1001`, o que só acontece
+       se o schema engine (o do serviço `migrate`) executou;
+     - runner: `new PrismaClient().$connect()` contra `127.0.0.1:1` tem de falhar com `errorCode P1001`,
+       o que só acontece se o query engine nativo do standalone carregou. A versão anterior
+       (`require('@prisma/client')`) não carregava o engine e deixaria passar um engine errado.
 
 2. **Endpoint `/api/ready`**: 
    - Readiness check com `SELECT 1` via Prisma (detecta DB inacessível ou engine quebrado)
-   - Retorna 200 em sucesso, 503 em falha
-   - Timeout de 3s
-   - Testes unitários com mock do Prisma client (200 em sucesso, 503 em erro/timeout/resultado inesperado)
+   - Retorna 200 em sucesso, 503 (`{ ready: false }`) em falha
+   - Timeout de 3s, com o timer limpo ao final de cada chamada
+   - Rota pública: o detalhe do erro (host/porta do banco, mensagem do engine) vai só para o log
+   - Testes unitários com mock do Prisma client (200 em sucesso; 503 em erro/timeout/resultado
+     inesperado; erro não exposto; timer limpo; HEAD = GET)
 
 3. **Healthcheck atualizado**:
    - `docker-compose.coolify.yml` usa `/api/ready` (valida DB + Prisma)
    - `/api/health` mantido como pure liveness (sem dependências externas)
    - `SETUP.md` atualizado com a distinção
 
-### Verificação local (commit 318989f4 rebased sobre fe100ea)
+### Verificação relatada pelo Cursor Agent (commits 318989f4/af60eb96, NÃO reexecutada na revisão)
+Vale para a versão anterior dos checks de build; a linha "sem `apk add openssl` falha no build-time
+check" foi obtida com o check antigo (`prisma --version | grep`), não com os checks atuais.
 - ✅ Build completo: builder e runner concluídos
 - ✅ Prisma detecta `linux-musl-openssl-3.0.x` sem warnings
 - ✅ Migrate: 436 migrações aplicadas de banco vazio (exit 0); segunda execução no-op (exit 0)
@@ -1237,9 +1246,24 @@ Verificado em produção no servidor Coolify.
 | ❌ Sem `ENV HOSTNAME=0.0.0.0` | ✅ OK | ❌ **wget localhost falha (Connection refused)** |
 | ❌ `/api/ready` sempre 200 (sem query) | ✅ OK | ⚠️ **Teste unitário falha** |
 
-### Pendências
-- **Confirmar redeploy no Coolify**: validar migrate + /api/ready + HTTPS em produção
-- Testes unitários rodam via vitest (não executados no ambiente Cloud Agent por restrição do AGENTS.md)
+### Verificação da revisão (25/09/2026, Windows, sem Docker)
+- `vitest run src/app/api/ready src/app/api/health`: 2 arquivos, 11/11 testes, saída 0 (vitest 4.1.9 do
+  `node_modules` do checkout principal, resolvido por Node, sem junction; não é o ambiente do integrador).
+- Mutações em `/api/ready`: sem `clearTimeout` → 1 teste falha; devolvendo o erro na resposta → 2 falham.
+- Checks do Dockerfile, com o texto exato após a junção de linhas do Docker, rodados em `sh` com os
+  engines Windows: engine OK → saída 0; `PRISMA_SCHEMA_ENGINE_BINARY` inválido → saída 1;
+  `PRISMA_QUERY_ENGINE_LIBRARY` inválido → saída 1 ("Unable to require"). Não prova o comportamento
+  no Alpine: isso exige `docker build`.
+- Digest `sha256:0a7108bf…e402` conferido no registry do Docker Hub: é o de `node:22-alpine3.24`
+  (e também o de `node:22-alpine` nesta data).
+- TypeScript global NÃO validado: o `tsc` com o `node_modules` do checkout principal usa um client
+  Prisma de outro schema e gera erros alheios; nenhum erro em `api/ready`/`api/health`.
 
-**Estado**: Implementado e validado localmente; pronto para merge e auto-deploy em produção via Coolify.
+### Pendências
+- **`docker build` do commit final** (builder e runner) com os checks atuais: não executado, Docker
+  indisponível na máquina da revisão. Obrigatório antes do merge, porque o merge dispara o auto-deploy.
+- **TypeScript** no ambiente preparado pelo integrador.
+- **Confirmar redeploy no Coolify**: validar migrate + `/api/ready` 200 + HTTPS em produção.
+
+**Estado**: Implementado; aguardando `docker build` do commit final e redeploy. Não concluído.
 
