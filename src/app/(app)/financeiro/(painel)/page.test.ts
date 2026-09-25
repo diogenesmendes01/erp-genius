@@ -143,9 +143,20 @@ describe("/financeiro por rota (E8)", () => {
     expect(props.aPagar).toEqual([{ moeda: "CRC", valor: 5000 }]);
   });
 
-  it("comissões: página além do fim volta para a última", async () => {
+  it("comissões: página além do fim volta para a última, sem perder a situação filtrada", async () => {
     mocks.comissoes.mockResolvedValue({ itens: [], total: 60 });
     await expect(Comissoes({ pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?pagina=2");
+    await expect(Comissoes({ status: "APROVADA", pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?status=APROVADA&pagina=2");
+  });
+
+  it("comissões: filtro sem resultado diz que não há nesta situação e oferece ver todas; sem filtro, nada", async () => {
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 0 });
+    await html(Comissoes({ status: "PAGA" }));
+    const comFiltro = renderToStaticMarkup(createElement("div", null, (mocks.componente.mock.calls.at(-1)?.[0] as { vazio: React.ReactNode }).vazio));
+    expect(comFiltro).toContain("Nenhuma comissão nesta situação.");
+    expect(comFiltro).toContain('href="/financeiro/comissoes"');
+    await html(Comissoes());
+    expect((mocks.componente.mock.calls.at(-1)?.[0] as { vazio?: unknown }).vazio).toBeUndefined();
   });
 
   it("informes e retomadas vêm das filas pendentes (uma consulta), com o fuso", async () => {
