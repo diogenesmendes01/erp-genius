@@ -151,10 +151,11 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | Variável | Obrigatória | O que é | Exemplo / como obter |
    |---|---|---|---|
    | `DOMINIO_APP` | ✅ | Domínio público do app (sem https://) | `erp.geniusidiomas.com` |
-   | `POSTGRES_USER` | ✅ | Usuário do banco | `postgres` |
+   | `POSTGRES_USER` | ✅ | Usuário do banco | `erp` |
    | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
    | `AUTH_SECRET` | ✅ | Segredo do Auth.js (sessão) | `npx auth secret` ou `openssl rand -base64 32` |
    | `CRON_SECRET` | ✅ | Segredo do cron (header `x-cron-secret`) | `openssl rand -hex 32` |
+   | `EVOLUTION_APIKEY` | ✅ | API key da Evolution (Baileys self-hosted) | `openssl rand -hex 32` |
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
    | `ANTHROPIC_API_KEY` | | Copiloto IA (opcional; sem ele roda heurística local) | chave da API Anthropic |
    | `IA_MODELO` | | Modelo do copiloto | `claude-sonnet-5` (default) |
@@ -163,7 +164,6 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `META_WA_APP_SECRET` | | App Secret da Meta Cloud API | painel Meta Developers |
    | `META_WA_VERIFY_TOKEN` | | Token de verificação do webhook Meta | escolha aleatória |
    | `META_WA_WABA_ID` | | ID da conta WhatsApp Business (WABA) | painel Meta Developers |
-   | `EVOLUTION_APIKEY` | | API key da Evolution (Baileys self-hosted) | `openssl rand -hex 32` |
    | `EVOLUTION_WEBHOOK_TOKEN` | | Token do webhook da Evolution | `openssl rand -hex 32` |
 
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).

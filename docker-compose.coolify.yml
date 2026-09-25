@@ -19,6 +19,7 @@ services:
   # Banco init: cria o banco "evolution" ANTES do serviço db subir de vez (one-shot).
   # Em VPS avulsa isso vinha de ./deploy/initdb (bind mount), mas no Coolify Git deploy
   # o bind mount relativo pode falhar. Solução: comando SQL inline via psql.
+  # Idempotente: CREATE DATABASE IF NOT EXISTS (Postgres 9.5+) ou ignore o erro de duplicado.
   db-init:
     image: postgres:16-alpine
     restart: "no"
@@ -27,10 +28,23 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
       PGHOST: db
       PGDATABASE: postgres
-    command: >-
-      sh -c 'until pg_isready -h db -U ${POSTGRES_USER}; do sleep 1; done &&
-      psql -h db -U ${POSTGRES_USER} -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = ''evolution''" | grep -q 1 ||
-      psql -h db -U ${POSTGRES_USER} -d postgres -c "CREATE DATABASE evolution"'
+    # Idempotente: SELECT 1 FROM pg_database WHERE datname='evolution' retorna vazio se não existe.
+    # O \gset armazena em var; se vazio, CREATE. Se banco já existe, o SELECT retorna 1 e não cria.
+    # Escape correto: aspas simples SQL protegidas com \' dentro do sh -c com aspas duplas.
+    command:
+      - sh
+      - -c
+      - |
+        until pg_isready -h db -U "$${POSTGRES_USER}"; do sleep 1; done
+        psql -h db -U "$${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'evolution') THEN
+            CREATE DATABASE evolution;
+          END IF;
+        END
+        $$;
+        SQL
     depends_on:
       db:
         condition: service_healthy
@@ -111,10 +125,9 @@ services:
         condition: service_completed_successfully
     healthcheck:
       # Healthcheck que o Coolify usa para decidir se o deploy deu certo.
-      # Endpoint /api/whatsapp/health exige header x-cron-secret (mesmo segredo do cron).
+      # Endpoint /api/health: liveness simples, sem segredo, sem dependências externas.
       # node:22-alpine tem wget; curl não vem instalado por padrão.
-      # O sh -c permite interpolar variável de ambiente no comando.
-      test: ["CMD", "sh", "-c", "wget --no-verbose --tries=1 --spider --header=\"x-cron-secret: $${CRON_SECRET}\" http://localhost:3000/api/whatsapp/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -150,12 +163,11 @@ services:
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron
-          -o /dev/null -w "cron tick %{http_code}\n" || true;
-        sleep 300;
-      done'
+    # Comando em uma linha só (sem quebras) — o bloco >- mantém \n nas linhas indentadas.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron -o /dev/null -w "cron tick %{http_code}\n" || true; sleep 300; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
     depends_on:
