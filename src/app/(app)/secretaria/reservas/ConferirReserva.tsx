@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { conferirReservaSecretaria, conferirReservaParticularSecretaria } from "@/server/matricula/reserva-painel";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 export function ConferirReserva({ reservaId, particular = false }: { reservaId: string; particular?: boolean }) {
   const router = useRouter();
@@ -19,5 +20,5 @@ export function ConferirReserva({ reservaId, particular = false }: { reservaId: 
       } catch { setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
     });
   }
-  return <div className="space-y-2"><button disabled={ocupado} onClick={conferir} className="rounded border px-3 py-2">{ocupado ? "Conferindo…" : "Conferir vencimento"}</button><MensagemStatus texto={mensagem} /></div>;
+  return <div className="space-y-2"><button disabled={ocupado} onClick={conferir} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Conferindo…" : "Conferir vencimento"}</button><MensagemStatus texto={mensagem} /></div>;
 }

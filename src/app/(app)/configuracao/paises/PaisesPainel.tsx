@@ -164,7 +164,7 @@ export function PaisesPainel({
                             },
                           })
                         }
-                        className="text-xs text-brand-700 hover:text-brand-800"
+                        className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                       >
                         Editar
                       </button>
@@ -173,14 +173,14 @@ export function PaisesPainel({
                           key={a.alvo}
                           onClick={() => mudarStatus(p.id, a.alvo)}
                           disabled={acao.ocupado}
-                          className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
+                          className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                         >
                           {a.label}
                         </button>
                       ))}
                       <button
                         onClick={() => setCatalogo(catalogo === p.id ? null : p.id)}
-                        className="text-xs text-gray-500 hover:text-gray-800"
+                        className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                       >
                         Catálogo
                       </button>

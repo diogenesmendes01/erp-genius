@@ -102,13 +102,13 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
   }
 
   return <section className="rounded border bg-[var(--surface)] p-4">
-    <button type="button" className="text-sm text-brand-700 underline" onClick={alternar} aria-expanded={aberto}>
+    <button type="button" className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={alternar} aria-expanded={aberto}>
       {aberto ? "Fechar designações" : somenteLeitura ? "Ver designações" : "Gerir designações"}
     </button>
     {aberto && <div className="mt-4 space-y-4">
       {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
       {carregando && <p className="text-sm text-gray-600">Carregando responsáveis e histórico…</p>}
-      <button type="button" className="text-sm text-brand-700 underline" disabled={ocupado || carregando} onClick={() => void carregar()}>Atualizar responsáveis e histórico</button>
+      <button type="button" className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} disabled={ocupado || carregando} onClick={() => void carregar()}>Atualizar responsáveis e histórico</button>
       {dados && <>
         {!somenteLeitura && dados.podeGerir && dados.historico.some(h => !h.revogacao) && <p className="text-sm">Revogue a designação vigente antes de atribuir outro responsável.</p>}
         {!somenteLeitura && dados.podeGerir && <form onSubmit={designar} className="space-y-3 border-t pt-4">

@@ -28,6 +28,7 @@ import { moverEtapa, marcarPerdido } from "@/server/comercial/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 export interface KanbanLead {
   id: string;
@@ -412,10 +413,10 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
           />
           <FeedbackAcao erro={acaoPerda.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60">
+            <button onClick={confirmarPerda} disabled={acaoPerda.ocupado} className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>
               Confirmar perda
             </button>
-            <button type="button" onClick={fecharPerda} disabled={acaoPerda.ocupado} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60">
+            <button type="button" onClick={fecharPerda} disabled={acaoPerda.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>
               Cancelar
             </button>
           </div>

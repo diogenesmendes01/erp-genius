@@ -44,7 +44,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
           <label>Chave<input required pattern="[a-z][a-z0-9_]{0,59}" maxLength={60} value={c.chave} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, chave: e.target.value } : v) })} className={campo} /></label>
           <label>Descrição<input required maxLength={500} value={c.descricao} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, descricao: e.target.value } : v) })} className={campo} /></label>
           <label>Origem do preenchimento<select value={c.origem ?? ""} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, origem: (e.target.value || undefined) as OrigemCampo | undefined } : v) })} className={campo}><option value="">Pendente de definição</option>{Object.entries(ROTULOS_ORIGEM).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
-          <button type="button" onClick={() => setValor({ ...valor, campos: valor.campos.filter((_, j) => j !== i) })}>Remover campo {i + 1}</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "sm" })} type="button" onClick={() => setValor({ ...valor, campos: valor.campos.filter((_, j) => j !== i) })}>Remover campo {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.campos.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, campos: [...valor.campos, { chave: "", descricao: "" }] })}>Adicionar campo</button>
       </fieldset>
@@ -52,7 +52,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
         {valor.secoes.map((s, i) => <div key={i} className="space-y-2 rounded border p-3">
           <label className="block">Título da seção {i + 1}<input required maxLength={200} value={s.titulo} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, titulo: e.target.value } : v) })} className={campo} /></label>
           <label className="block">Texto<textarea required rows={6} maxLength={20000} value={s.texto} onChange={(e) => setValor({ ...valor, secoes: valor.secoes.map((v, j) => j === i ? { ...v, texto: e.target.value } : v) })} className={campo} /></label>
-          <button type="button" disabled={valor.secoes.length === 1} onClick={() => setValor({ ...valor, secoes: valor.secoes.filter((_, j) => j !== i) })}>Remover seção {i + 1}</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "sm" })} type="button" disabled={valor.secoes.length === 1} onClick={() => setValor({ ...valor, secoes: valor.secoes.filter((_, j) => j !== i) })}>Remover seção {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.secoes.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, secoes: [...valor.secoes, { titulo: "", texto: "" }] })}>Adicionar seção</button>
       </fieldset>
@@ -60,7 +60,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
         {valor.assinaturas.map((a, i) => <div key={i} className="grid gap-2 rounded border p-3 sm:grid-cols-3">
           <label>Papel<select className={campo} value={a.papel} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, papel: e.target.value as typeof a.papel } : v) })}>{Object.entries(PAPEIS_MODELO).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
           <label>Quando exigir<select className={campo} value={a.condicao} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, condicao: e.target.value as typeof a.condicao } : v) })}>{Object.entries(CONDICOES_MODELO).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
-          <button type="button" onClick={() => setValor({ ...valor, assinaturas: valor.assinaturas.filter((_, j) => j !== i) })}>Remover regra {i + 1}</button>
+          <button className={botaoClasses({ variante: "secundario", tamanho: "sm" })} type="button" onClick={() => setValor({ ...valor, assinaturas: valor.assinaturas.filter((_, j) => j !== i) })}>Remover regra {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.assinaturas.length >= 20} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>
       </fieldset>
