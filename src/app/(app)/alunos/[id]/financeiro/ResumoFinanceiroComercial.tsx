@@ -9,6 +9,7 @@ import type { obterResumoComercialFinanceiro } from "@/server/ajustes/consultas"
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Acompanhamento comercial · {dados.aluno.primeiroNome} {dados.aluno.sobrenome}</h1>
@@ -17,7 +18,7 @@ export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaite
       {m.precoAguardandoAprovacao && <p className="rounded bg-amber-50 p-3 text-amber-800">Os valores propostos foram encaminhados para aprovação independente. Os preços de referência permanecem vigentes até a decisão, e a ativação aguarda essa análise.</p>}
       <h2 className="font-medium">{m.codigo} · {m.produto}</h2><p>Pagamento inicial: {m.pagamentoInicialConfirmado ? "confirmado" : "aguardando confirmação"}</p>
       {m.precos.map((p) => <LinhaAjustePreco key={p.id} preco={p} moeda={m.moeda} />)}
-      {m.comissoes.map((c) => <p key={c.id}>Comissão: {formatarMoeda(c.valor, c.moeda)} · {c.tipo === "VALOR_FIXO" ? "valor fixo" : `${c.percentual}% da taxa`} · {c.status}</p>)}
+      {m.comissoes.map((c) => <p key={c.id}>Comissão: {formatarMoeda(c.valor, c.moeda)} · {c.tipo === "VALOR_FIXO" ? "valor fixo" : `${c.percentual}% da taxa`} · {rotular(STATUS_COMISSAO_LABEL, c.status)}</p>)}
     </section>)}
   </div>;
 }

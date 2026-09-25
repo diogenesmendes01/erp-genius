@@ -67,7 +67,7 @@ describe("DesistenciaFinanceiraPage", () => {
       }],
     } });
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "contrato" }) }));
-    expect(html).toContain("BRL 50.00");
+    expect(html).toContain("R$ 50,00");
     expect(html).toContain('/alunos/aluno/creditos/credito-q165');
     expect(html).toContain("efetivação pendente");
     expect(html).not.toContain("data-acerto=");
@@ -110,8 +110,8 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("01/10/2026, 00:30");
     expect(html).toContain("America/Costa_Rica; origem UTC");
     expect(html).toContain("2026-10-15");
-    expect(html).toContain("CRC 100.00");
-    expect(html).toContain("CRC 90.00");
+    expect(html).toContain("₡ 100");
+    expect(html).toContain("₡ 90");
     expect(html).toContain("Extrato e condições revisados");
   });
 
@@ -146,8 +146,8 @@ describe("DesistenciaFinanceiraPage", () => {
 
     expect(mocks.sessao).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
     expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "matricula/a?" });
-    expect(html).toContain("CRC 100.00");
-    expect(html).toContain("CRC 90.00");
+    expect(html).toContain("₡ 100");
+    expect(html).toContain("₡ 90");
     expect(html).toContain("2026-10-15");
     expect(html).toContain('data-formulario="proposta"');
     expect(html).toContain('data-formulario="decisao"');
@@ -196,7 +196,7 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("Créditos externos preservados nesta fotografia");
     expect(html).toContain("credito-externo");
     expect(html).toContain("BRL");
-    expect(html).toContain("17.00");
+    expect(html).toContain("R$ 17,00");
     expect(html).toContain("Comprovante não confere.");
     expect(html).toContain("Conclua a conferência do informe");
     expect(html).not.toContain('data-delta="preparar"');

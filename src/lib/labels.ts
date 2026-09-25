@@ -11,9 +11,25 @@ import {
   FormaPagamento,
   Genero,
   Escolaridade,
+  SituacaoRelatoMaterialReposicao,
 } from "@prisma/client";
 
 // Rótulos legíveis (pt-BR) dos enums do domínio. Fonte única para a UI.
+
+/**
+ * Rótulo de um valor de enum pelo mapa do domínio (E5, docs/42-auditoria-frontend-ux.md). Valor sem
+ * rótulo devolve o PRÓPRIO valor — nunca uma frase de negócio inventada (o antigo `?? "Em
+ * conferência"` mostrava um estado que ninguém registrou). Em desenvolvimento, avisa no console.
+ * Mapas tipados como Record<Enum, string> já fazem o build falhar quando falta um valor; este
+ * helper cobre dados que chegam como texto (snapshots, JSON) e podem trazer um valor antigo.
+ */
+export function rotular<K extends string>(mapa: Record<K, string>, valor: K | string | null | undefined): string {
+  if (valor == null || valor === "") return "—";
+  const rotulo = (mapa as Record<string, string>)[valor];
+  if (rotulo !== undefined) return rotulo;
+  if (process.env.NODE_ENV === "development") console.warn(`rotular: valor sem rótulo "${valor}"`);
+  return valor;
+}
 
 export const ETAPA_LABEL: Record<EtapaLead, string> = {
   NOVO: "Novo",
@@ -125,4 +141,14 @@ export const ESCOLARIDADE_LABEL: Record<Escolaridade, string> = {
   POS_GRADUACAO: "Pós-graduação",
   MESTRADO: "Mestrado",
   DOUTORADO: "Doutorado",
+};
+
+// Relato de indisponibilidade do material de reposição (Q57/Q58) — exibido ao ALUNO no portal.
+// ABERTO: aguarda a conferência da escola; CONFIRMADO: a escola confirmou a indisponibilidade
+// (server/portal-aluno/entregas-reposicao.ts); DESCARTADO: a gestão não confirmou o relato
+// (server/diario/reposicao-operacoes-relatos.ts), sem pausa de prazo.
+export const SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL: Record<SituacaoRelatoMaterialReposicao, string> = {
+  ABERTO: "Aguardando conferência da escola",
+  CONFIRMADO: "Confirmado pela escola",
+  DESCARTADO: "Não confirmado pela escola",
 };

@@ -7,6 +7,7 @@ import { conferirRealizacaoHoras } from "@/server/matricula/consumo-horas";
 import { LiberacaoHoras } from "./LiberacaoHoras";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarMoeda } from "@/lib/dinheiro";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -29,9 +30,9 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {dados && <>
       {dados.compras.length === 0 && <p>Nenhuma compra de horas registrada nesta matrícula.</p>}
-      {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {c.valorPagoAlocado} {c.moeda}</summary>
+      {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</summary>
         <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
-        <p>{c.liquidacao ? `Quitação: ${c.liquidacao.valorEmDinheiro} ${c.moeda} em dinheiro e ${c.liquidacao.valorEmCredito} ${c.moeda} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {c.valorOriginal}. Desconto original: {c.descontoOriginal}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
+        <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. Desconto original: {formatarMoeda(c.descontoOriginal, c.moeda)}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{c.minutosReservados} minutos reservados · {c.minutosConsumidos} consumidos · {c.minutosConvertidosCredito} convertidos em crédito · {c.minutosDisponiveis} ainda não reservados.</p>
         {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${r.consumo.conferenciaOcorrencia.desfecho}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
           {!r.consumo && !r.liberada && r.statusEncontro !== "CANCELADO" && <ConsumoHoras reservaId={r.id} aoSalvar={carregar} />}
@@ -68,7 +69,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Identificar compra já paga</legend>
         <p>O registro confere contrato, recebimentos e utilizações de crédito aprovadas. Informe a quantidade total de minutos prevista na compra.</p>
-        <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{c.vencimento} · {c.valorNegociado} {c.moeda} · {c.id}</option>)}</select></label>
+        <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{c.vencimento} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
         <label className="grid gap-1">Minutos comprados<input name="minutos" type="number" required min={1} max={5256000} step={1} className={estilo} /></label>
         <label className="grid gap-1">Evidência das condições da compra<textarea name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button className={estilo}>Registrar compra de horas</button>

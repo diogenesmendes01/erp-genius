@@ -8,6 +8,7 @@ import { DecidirFechamento } from "./DecidirFechamento";
 import { EmitirFechamento } from "./EmitirFechamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string(), fuso: z.string(), vencimento: z.string() }),
   apuracao: z.object({ moeda: z.string(), estado: z.enum(["AGUARDANDO_CONFERENCIA", "PROPOSTA_PARCIAL", "APURACAO_COMPLETA", "SEM_ITENS_A_FATURAR"]),
@@ -67,7 +68,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         {v.emissao && <div className="rounded border p-3">
           <h3 className="font-medium">Cobrança emitida · {v.emissao.cobranca.codigo ?? v.emissao.cobranca.id}</h3>
           <p>Emitida por {v.emissao.executor.nome} em {instanteAdministrativo(v.emissao.criadaEm)}.</p>
-          <p>Valor original: {v.emissao.cobranca.moeda} {v.emissao.cobranca.valorOriginal}. Valor atual: {v.emissao.cobranca.valorNegociado}. Saldo: {v.emissao.cobranca.saldo ?? "a conferir"}.</p>
+          <p>Valor original: {formatarMoeda(v.emissao.cobranca.valorOriginal, v.emissao.cobranca.moeda)}. Valor atual: {formatarMoeda(v.emissao.cobranca.valorNegociado, v.emissao.cobranca.moeda)}. Saldo: {v.emissao.cobranca.saldo == null ? "a conferir" : formatarMoeda(v.emissao.cobranca.saldo, v.emissao.cobranca.moeda)}.</p>
           <Link className="underline" href={`/alunos/${d.matricula.alunoId}/financeiro`}>Consultar cobrança e recebimentos na ficha financeira</Link>
         </div>}
         {!q.versao && <><p>Intervalo: {v.periodoInicio} até {v.periodoFimExclusivo} (limite final exclusivo).</p>
@@ -76,10 +77,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         {m?.success && <>
           <p>Período: {data(m.data.periodo.inicio)} a {data(m.data.periodo.fim)} · Fuso: {m.data.periodo.fuso} · Vencimento: {data(m.data.periodo.vencimento)}</p>
           <p>Estado da apuração quando preparada: {estados[m.data.apuracao.estado]}</p>
-          <p>Total apurado: {m.data.apuracao.moeda} {m.data.apuracao.totalApurado} · {m.data.apuracao.minutosApurados} minutos.</p>
+          <p>Total apurado: {formatarMoeda(m.data.apuracao.totalApurado, m.data.apuracao.moeda)} · {m.data.apuracao.minutosApurados} minutos.</p>
           <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-medium">Encontros incluídos na apuração</caption>
             <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
-            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{i.valorHoraContratado}</td><td>{i.valor}</td></tr>)}</tbody>
+            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{formatarMoeda(i.valorHoraContratado, m.data.apuracao.moeda)}</td><td>{formatarMoeda(i.valor, m.data.apuracao.moeda)}</td></tr>)}</tbody>
           </table></div>
           {!m.data.apuracao.itens.length && <p>Nenhum encontro incluído para cobrança nesta versão.</p>}
           <h3 className="font-medium">Pendências ({m.data.apuracao.pendencias.length})</h3>

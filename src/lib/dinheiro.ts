@@ -56,14 +56,26 @@ export function casasDecimais(moeda: string): number {
  * Formata um valor na sua moeda, com símbolo e casas decimais corretos. O agrupamento
  * de milhar segue pt-BR (1.234.567,89) — padrão da matriz e consistente em toda a LATAM.
  * `semSimbolo` devolve só o número (quando o símbolo já é exibido à parte).
+ * Aceita também o texto decimal que vem do servidor ("1250.00", Decimal serializado): várias
+ * telas imprimiam esse texto cru ao lado do código da moeda ("1250.00 CRC") — E5 da auditoria.
  */
-export function formatarMoeda(valor: number, moeda: string, opts?: { semSimbolo?: boolean }): string {
+export function formatarMoeda(valor: number | string, moeda: string, opts?: { semSimbolo?: boolean }): string {
   const m = normalizar(moeda);
-  const casas = SEM_DECIMAIS.has(m) ? 0 : 2;
+  // Texto vazio, ilegível ("1.250,00"), NaN ou ausente (snapshot/JSON com cast) nunca vira um zero
+  // monetário falso: sai "—", e em desenvolvimento um aviso aponta o valor.
+  const n = typeof valor === "number" ? valor : typeof valor === "string" && valor.trim() !== "" ? Number(valor) : NaN;
+  if (!Number.isFinite(n)) {
+    if (process.env.NODE_ENV === "development") console.warn(`formatarMoeda: valor inválido ${JSON.stringify(valor)} (${m || "sem moeda"})`);
+    return "—";
+  }
+  // Moedas sem centavos (CRC, CLP…) exibem 0 casas — mas uma fração existente nunca é escondida:
+  // "₡ 1.250,50" e não "₡ 1.251" (o servidor compara valores exatos; o operador digitaria o
+  // arredondado e seria recusado).
+  const casas = SEM_DECIMAIS.has(m) && Number.isInteger(n) ? 0 : 2;
   const numero = new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas,
-  }).format(Number.isFinite(valor) ? valor : 0);
+  }).format(n);
   if (opts?.semSimbolo) return numero;
   const simbolo = SIMBOLO_MOEDA[m] ?? m;
   return simbolo ? `${simbolo} ${numero}` : numero;

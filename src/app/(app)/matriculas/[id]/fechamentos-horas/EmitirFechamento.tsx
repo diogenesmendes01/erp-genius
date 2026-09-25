@@ -3,13 +3,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { emitirFechamentoHoras } from "@/server/matricula/fechamento-horas-emissao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda }: {
   alunoId: string; matriculaId: string; decisaoId: string; valor: string; moeda: string;
 }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
   return <div className="space-y-2 rounded border p-4">
-    <p>Emitir cobrança de {moeda} {valor} referente aos itens desta versão aprovada. O sistema verificará novamente as origens antes da emissão.</p>
+    <p>Emitir cobrança de {formatarMoeda(valor, moeda)} referente aos itens desta versão aprovada. O sistema verificará novamente as origens antes da emissão.</p>
     <button disabled={ocupado} className="rounded border p-2" onClick={() => iniciar(async () => {
       setMensagem("");
       try {

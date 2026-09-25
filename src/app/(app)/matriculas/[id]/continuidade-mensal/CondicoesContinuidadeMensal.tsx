@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { consultarCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensal, prepararCondicoesContinuidadeMensal } from "@/server/matricula/condicoes-continuidade-mensal";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { formatarMoeda } from "@/lib/dinheiro";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -145,7 +146,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       <h3>Versão {versao.versao} · {versao.status === "APROVADA" ? "Aprovada" : versao.status === "REJEITADA" ? "Rejeitada" : "Aguardando revisão"}</h3>
       <p>{versao.preparador.nome} · {data(versao.criadaEm)} · contrato vinculado</p>
       {versao.regras ? <>
-        <p>Vigente desde {data(versao.regras.vigenteDesde)} · {versao.regras.valorOriginal} {versao.regras.moeda} original · {versao.regras.valorNegociado} {versao.regras.moeda} negociado</p>
+        <p>Vigente desde {data(versao.regras.vigenteDesde)} · {formatarMoeda(versao.regras.valorOriginal, versao.regras.moeda)} original · {formatarMoeda(versao.regras.valorNegociado, versao.regras.moeda)} negociado</p>
         <p>{versao.regras.regraCobertura.referencia === "MES_CIVIL" ? "Cobertura por mês civil" : `Cobertura por ciclo desde ${versao.regras.regraCobertura.dataReferencia}`} · vencimento no dia {versao.regras.diaVencimento} · antecedência de {versao.regras.antecedenciaDias} dias</p>
         <p>Referência do vencimento: {rotuloReferenciaVencimento[versao.regras.referenciaVencimento]}</p>
         {typeof versao.regras.ajusteVencimento === "string"
