@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { consultarDesignacoesAula } from "@/server/diario/regularizacao-consultas";
 import { designarRegularizacaoAula, revogarRegularizacaoAula } from "@/server/diario/regularizacao-designacao";
+import { botaoClasses } from "@/components/Botao";
 
 type DadosDesignacoes = {
   podeGerir: boolean;
@@ -120,7 +121,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
           <label className="block text-sm">Motivo
             <textarea className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(evento) => setMotivo(evento.target.value)} minLength={5} maxLength={2000} disabled={ocupado} required />
           </label>
-          <button className="rounded bg-brand-solid px-3 py-2 text-sm text-white disabled:opacity-50" disabled={ocupado || carregando || dados.historico.some(h => !h.revogacao) || !responsavelId || motivo.trim().length < 5 || motivo.trim().length > 2000}>Designar</button>
+          <button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado || carregando || dados.historico.some(h => !h.revogacao) || !responsavelId || motivo.trim().length < 5 || motivo.trim().length > 2000}>Designar</button>
         </form>}
         <div className="space-y-3 border-t pt-4">
           <h3 className="font-medium">Histórico</h3>
@@ -133,7 +134,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
               <label className="block">Motivo da revogação
                 <textarea className="mt-1 block w-full rounded border p-2" value={motivosRevogacao[designacao.id] ?? ""} onChange={(evento) => setMotivosRevogacao((anterior) => ({ ...anterior, [designacao.id]: evento.target.value }))} minLength={5} maxLength={2000} disabled={ocupado} />
               </label>
-              <button type="button" className="rounded border px-3 py-2 disabled:opacity-50" disabled={ocupado || (motivosRevogacao[designacao.id]?.trim().length ?? 0) < 5} onClick={() => void revogar(designacao.id)}>Revogar designação</button>
+              <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || (motivosRevogacao[designacao.id]?.trim().length ?? 0) < 5} onClick={() => void revogar(designacao.id)}>Revogar designação</button>
             </div>}
           </article>)}
         </div>
