@@ -5,6 +5,7 @@ import { decidirFechamentoHoras } from "@/server/matricula/fechamento-horas-deci
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoId: string; matriculaId: string; rascunhoId: string }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState(""), [decisao, setDecisao] = useState("");
@@ -24,7 +25,7 @@ export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoI
       <option value="">Selecione</option><option value="APROVAR">Aprovar a proposta apresentada</option><option value="REJEITAR">Rejeitar a proposta</option>
     </select></label>
     {decisao === "APROVAR" && <label className="block"><input name="referencia" type="checkbox" required /> Conferi no contrato a referência, o período, o fuso e o vencimento propostos, além da escolha de aguardar ou propor emissão parcial.</label>}
-    <label className="block">Justificativa<textarea className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} /></label>
+    <label className="block">Justificativa<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} /></label>
     <p>Aprovar revalida as origens. Se mudaram, prepare nova versão. A decisão não emite cobrança.</p>
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;

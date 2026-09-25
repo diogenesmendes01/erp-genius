@@ -5,6 +5,7 @@ import { proporRegularizacaoFonteGravacao } from "@/server/gravacoes/regularizac
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacaoId: string | null; podePropor: boolean }) {
   const [ocupado, iniciar] = useTransition();
@@ -39,7 +40,7 @@ export function CorrecaoFonteGravacao({ publicacaoId, podePropor }: { publicacao
     <header><h2 className="text-lg font-medium">Correção da gravação oficial</h2><p className="text-sm text-gray-700">A proposta fixa uma revisão institucional e depende de decisão de outra pessoa da gestão. Ela não altera a chamada nem substitui a gravação atual agora.</p></header>
     <form className="space-y-3" onSubmit={propor}>
       <label className="block text-sm">ID do arquivo institucional<input name="arquivoOficialId" required minLength={3} maxLength={500} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-      <label className="block text-sm">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
+      <label className="block text-sm">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
       <button type="submit" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Preparando…" : "Propor nova fonte para revisão"}</button>
     </form>
     <MensagemStatus texto={feito} className="text-green-700" />

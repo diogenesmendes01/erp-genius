@@ -9,6 +9,7 @@ import { conferirOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeir
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 const rotulos: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Falta do aluno", FALTA_COBRAVEL: "Falta cobrável", CANCELAMENTO_ALUNO: "Cancelamento do aluno", CANCELAMENTO_ESCOLA: "Cancelamento da escola", CANCELAMENTO_NO_PRAZO: "Cancelamento dentro do prazo", CANCELAMENTO_TARDIO: "Cancelamento fora do prazo" };
@@ -61,7 +62,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
             try { const r = await conferirOcorrenciaHoras({ ...entrada, chaveIdempotencia: chave.current.valor }); setMensagem(r.ok ? "Conferência registrada." : r.erro); if (r.ok) { setPrevia(null); router.refresh(); } }
             catch { setMensagem("Atualize o histórico para conferir o resultado antes de repetir."); }
           });
-        }}><label className="block">Justificativa da conferência<textarea className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} disabled={ocupado} /></label>
+        }}><label className="block">Justificativa da conferência<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} disabled={ocupado} /></label>
           <button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-2`} disabled={ocupado}>Registrar conferência</button></form>}
       </section>}
     </>}

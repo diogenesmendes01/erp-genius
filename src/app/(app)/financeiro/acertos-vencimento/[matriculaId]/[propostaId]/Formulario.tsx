@@ -5,6 +5,7 @@ import { proporVencimentoAditivo, decidirVencimentoAditivo, aplicarVencimentoAdi
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 export function VencimentoFormulario(props: Props) {
@@ -30,8 +31,8 @@ export function VencimentoFormulario(props: Props) {
   finally { emEnvio.current = false; setOcupado(false); }
  }}>
  <fieldset disabled={ocupado || !!tentativa.current} className="space-y-2">
- {props.modo !== "aplicar" && <label className="block">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
- {props.modo === "preparar" && <label className="block">Evidência conferida<textarea name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>}
+ {props.modo !== "aplicar" && <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
+ {props.modo === "preparar" && <label className="block">Evidência conferida<CampoTexto name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>}
  {props.modo === "decidir" && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
  </fieldset>
  <button disabled={ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : tentativa.current ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Preparar acerto" : props.modo === "decidir" ? "Registrar decisão" : "Aplicar vencimento aprovado"}</button>

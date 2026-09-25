@@ -72,8 +72,11 @@ const repassadores = new Set(
 );
 
 function camposSemRotulo() {
-  const campo = new RegExp(String.raw`<(select|input|textarea|${[...repassadores].join("|")})\b`, "g");
+  // CampoTexto é um <textarea> (com o mínimo visível): cada uso é conferido como campo.
+  const campo = new RegExp(String.raw`<(select|input|textarea|CampoTexto|${[...repassadores].join("|")})\b`, "g");
   return telas.flatMap(({ arquivo, conteudo }) => {
+    // CampoTexto repassa todos os atributos ao seu <textarea>: o rótulo vem de cada uso, conferido acima.
+    if (arquivo.split("\\").join("/") === "src/components/CampoTexto.tsx") return [];
     const alvos = valores(conteudo, "htmlFor");
     return [...conteudo.matchAll(campo)]
       .filter((m) => {

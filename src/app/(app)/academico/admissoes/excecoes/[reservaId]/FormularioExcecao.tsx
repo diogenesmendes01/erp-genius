@@ -5,6 +5,7 @@ import { prepararExcecaoAdmissao, decidirExcecaoAdmissao } from "@/server/matric
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function FormularioExcecao({ reservaId, estadoHash, propostaId, podeAprovar = true }: { reservaId: string; estadoHash: string; propostaId?: string; podeAprovar?: boolean }) {
   const router = useRouter();
@@ -20,8 +21,8 @@ export function FormularioExcecao({ reservaId, estadoHash, propostaId, podeAprov
       : await acao.executar(() => prepararExcecaoAdmissao({ reservaId, estadoHash, motivo, parecerViabilidade: String(d.get("parecer") ?? ""), chaveIdempotencia: chave }));
     if (r?.tipo === "ok") router.refresh();
   }}>
-    {!propostaId && <label className="block">Viabilidade pedagógica do ingresso<textarea name="parecer" minLength={10} maxLength={6000} required disabled={pendente} className="block w-full rounded border p-2" /></label>}
-    <label className="block">Motivo<textarea name="motivo" minLength={5} maxLength={2000} required disabled={pendente} className="block w-full rounded border p-2" /></label>
+    {!propostaId && <label className="block">Viabilidade pedagógica do ingresso<CampoTexto name="parecer" minLength={10} maxLength={6000} required disabled={pendente} className="block w-full rounded border p-2" /></label>}
+    <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required disabled={pendente} className="block w-full rounded border p-2" /></label>
     {propostaId && <label className="block">Decisão<select name="decisao" className="mx-2 rounded border p-2" disabled={pendente} defaultValue="rejeitar"><option value="rejeitar">Rejeitar</option>{podeAprovar && <option value="aprovar">Aprovar exceção para esta reserva</option>}</select></label>}
     <FeedbackAcao erro={acao.erro} />
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : propostaId ? "Registrar decisão" : "Propor exceção"}</button>

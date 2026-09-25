@@ -6,6 +6,7 @@ import { decidirExcecaoFrequencia, proporExcecaoFrequencia } from "@/server/aval
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type PropostaExcecao = {
   id: string;
@@ -125,10 +126,10 @@ export function ExcecaoFrequencia({
       <h3 className="font-medium">Encaminhar para decisão independente</h3>
       <p className="text-sm">Use somente quando a frequência real está abaixo do mínimo e não há chamada ou histórico pendente.</p>
       <label className="block text-sm">Motivo da proposta
-        <textarea name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="block text-sm">Evidências
-        <textarea name="evidencias" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="evidencias" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
         <span>Reconheço que a proposta não altera a frequência real nem dispensa os mínimos de nota.</span>
@@ -147,7 +148,7 @@ export function ExcecaoFrequencia({
         </select>
       </label>
       <label className="block text-sm">Motivo da decisão
-        <textarea name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
+        <CampoTexto name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
         <span>Conferi a frequência real, as evidências e a independência desta decisão.</span>

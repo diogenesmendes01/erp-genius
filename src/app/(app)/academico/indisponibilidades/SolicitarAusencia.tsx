@@ -6,6 +6,7 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 export function SolicitarAusencia({ professores, fusoInicial }: { professores: { id: string; nome: string }[]; fusoInicial: string }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function SolicitarAusencia({ professores, fusoInicial }: { professores: {
       <label className="text-sm">Fuso dos horários<input name="fuso" required defaultValue={fusoInicial} placeholder="America/Sao_Paulo" className="mt-1 block w-full rounded border p-2" /></label>
       <label className="text-sm">Início da indisponibilidade<input name="inicio" required type="datetime-local" {...periodo.propsInicio} className="mt-1 block w-full rounded border p-2" /></label>
       <label className="text-sm">Fim da indisponibilidade<input name="fim" required type="datetime-local" min={periodo.min} className="mt-1 block w-full rounded border p-2" /></label>
-      <label className="text-sm sm:col-span-2">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
+      <label className="text-sm sm:col-span-2">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ tamanho: "lg" })} type="submit">{ocupado ? "Registrando…" : "Enviar solicitação"}</button>
     </fieldset>
     {professores.length === 0 && <p>Nenhum professor ativo disponível.</p>}

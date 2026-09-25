@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 
 type Proposta = {
   id: string;
@@ -70,7 +71,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     <form className="space-y-3 rounded border bg-surface p-4" onSubmit={propor}>
       <h2 className="font-medium">Propor adoção da publicação corrigida</h2>
       <p className="text-sm text-gray-700">A fonte publicada acima será fotografada pelo servidor. Esta tela não aceita identificador de arquivo, revisão ou URL.</p>
-      {contexto.jaAdotaPublicacaoAtual ? <p>O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
+      {contexto.jaAdotaPublicacaoAtual ? <p>O material já adota esta publicação. Aguarde outra publicação corrigida antes de preparar nova troca.</p> : <><label className="block text-sm">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar para decisão independente</button></>}
     </form>
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
@@ -82,7 +83,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
         {proposta.decisao ? <p role="status" className="mt-2">{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisor.nome ?? "Usuário"}: {proposta.decisao.motivo}{proposta.fonteMaterial ? ` Fonte MATERIAL v${proposta.fonteMaterial.versao} fixada.` : ""}</p>
           : !proposta.podeDecidir ? <p role="status" className="mt-2">Aguardando decisão de outra pessoa autorizada.</p>
             : <form className="mt-3 space-y-2" onSubmit={(evento) => { evento.preventDefault(); const motivo = String(new FormData(evento.currentTarget).get("motivo") ?? ""); const aprovar = String((evento.nativeEvent as SubmitEvent).submitter?.getAttribute("value")) === "aprovar"; executar(() => decidirTrocaFonteReposicaoGravacao({ propostaId: proposta.id, aprovar, motivo }), "Decisão registrada."); }}>
-              <label className="block">Motivo da decisão<textarea name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
+              <label className="block">Motivo da decisão<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
               <button name="decisao" value="aprovar" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar adoção</button>
               <button name="decisao" value="rejeitar" disabled={ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} ml-2`}>Rejeitar</button>
             </form>}

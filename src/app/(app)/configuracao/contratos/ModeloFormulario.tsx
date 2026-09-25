@@ -10,6 +10,7 @@ type Conteudo = z.infer<typeof ConteudoModeloSchema>;
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "./labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 const campo = "block w-full rounded border p-2";
 const vazio: Conteudo = { titulo: "", finalidade: "CONTRATO", regimes: [], aplicacao: "", campos: [], secoes: [{ titulo: "", texto: "" }], assinaturas: [] };
 export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?: string; versaoEsperada: number; inicial?: Conteudo }) {
@@ -37,7 +38,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       <label className="block">Título<input required maxLength={200} value={valor.titulo} onChange={(e) => setValor({ ...valor, titulo: e.target.value })} className={campo} /></label>
       <label className="block">Finalidade<select className={campo} value={valor.finalidade} onChange={(e) => setValor({ ...valor, finalidade: e.target.value as Conteudo["finalidade"] })}><option value="CONTRATO">Contrato</option><option value="ADITIVO">Aditivo</option></select></label>
       <fieldset><legend>Regimes atendidos</legend>{(["MENSALIDADE", "HORA_PARTICULAR"] as const).map((r) => <label key={r} className="mr-5"><input type="checkbox" checked={valor.regimes.includes(r)} onChange={(e) => setValor({ ...valor, regimes: e.target.checked ? [...valor.regimes, r] : valor.regimes.filter((v) => v !== r) })} /> {r === "MENSALIDADE" ? "Mensalidade" : "Particular por hora"}</label>)}</fieldset>
-      <label className="block">Quando usar este modelo<textarea required minLength={5} maxLength={4000} value={valor.aplicacao} onChange={(e) => setValor({ ...valor, aplicacao: e.target.value })} className={campo} /><small>Descreva as condições e os casos em que a equipe deve aplicar o modelo.</small></label>
+      <label className="block">Quando usar este modelo<CampoTexto required minLength={5} maxLength={4000} value={valor.aplicacao} onChange={(e) => setValor({ ...valor, aplicacao: e.target.value })} className={campo} /><small>Descreva as condições e os casos em que a equipe deve aplicar o modelo.</small></label>
       <fieldset className="space-y-3"><legend className="font-medium">Campos a preencher no documento</legend>
         <p>Declare os campos variáveis. Nas seções, use a chave entre duas chaves, por exemplo: {"{{aluno_nome}}"}.</p>
         {valor.campos.map((c, i) => <div className="grid gap-2 rounded border p-3 sm:grid-cols-3" key={i}>
@@ -64,7 +65,7 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
         </div>)}
         <button type="button" disabled={valor.assinaturas.length >= 20} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>
       </fieldset>
-      <label className="block">Motivo da proposta<textarea name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
+      <label className="block">Motivo da proposta<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
       <button type="submit" className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Salvando proposta…" : "Salvar proposta para aprovação"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}

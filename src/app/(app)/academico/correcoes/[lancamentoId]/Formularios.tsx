@@ -5,6 +5,7 @@ import { proporCorrecaoNota, decidirCorrecaoNota } from "@/server/avaliacoes/cor
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; nota: string | null; comentarioAluno: string };
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
@@ -24,7 +25,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
       <label className="block">Nova nota<input name={`nota-${n.habilidade}`} required maxLength={100} inputMode="decimal" defaultValue={n.nota ?? ""} className="block rounded border p-2" /></label>
       <label className="block">Comentário para o aluno<textarea name={`comentario-${n.habilidade}`} maxLength={2000} defaultValue={n.comentarioAluno} className="block w-full rounded border p-2" /></label>
     </div>)}
-    <label className="block">Motivo da correção<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi os valores vigentes e as alterações propostas.</label>
     <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;
@@ -41,7 +42,7 @@ export function DecidirCorrecao({ propostaId, propostaHash, impactosHash, podeAp
     finally { setOcupado(false); }
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend>
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar</option>}<option value="rejeitar">Rejeitar</option></select></label>
-    <label className="block">Justificativa<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <label className="block"><input type="checkbox" required /> Conferi notas, comentários e impactos apresentados.</label>
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
   </fieldset><MensagemStatus texto={mensagem} /></form>;

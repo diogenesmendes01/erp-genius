@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { reservarVagaContratacao } from "@/server/matricula/reserva-comercial";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
 export function ReservarFormulario({ matriculaId, turmas }: { matriculaId: string; turmas: { id: string; nome: string }[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition();
@@ -13,7 +14,7 @@ export function ReservarFormulario({ matriculaId, turmas }: { matriculaId: strin
       if (!r.ok) { setErro(r.erro); return; } router.refresh();
     } catch { setErro(MSG_RESULTADO_INCERTO); } }); }}>
     <label className="block">Turma<select required name="turma" className="block w-full rounded border p-2" defaultValue=""><option value="" disabled>Selecione uma turma disponível nesta página</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></label>
-    <label className="block">Motivo da reserva<textarea name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+    <label className="block">Motivo da reserva<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <button disabled={ocupado || !turmas.length} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Conferindo e reservando…" : "Confirmar reserva de vaga"}</button>{erro && <p role="alert">{erro}</p>}
   </form>;
 }
