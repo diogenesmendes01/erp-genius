@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GET, HEAD } from "./route";
 
-// Trava o contrato de liveness (/api/health): usado pelo healthcheck do Docker/Coolify
-// (sem autenticação, sem dependências externas). Mutações cobradas (review #123 B4):
+// Trava o contrato de liveness (/api/health): Next de pé, sem autenticação e sem dependências
+// externas. O healthcheck do Coolify usa /api/ready (readiness com banco), não este endpoint. Mutações cobradas (review #123 B4):
 // - Alterar status 200 → 503 → deve falhar
 // - Remover HEAD exportado → deve falhar
 

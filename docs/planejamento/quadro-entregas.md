@@ -1189,3 +1189,108 @@ Cenário composto ainda faltante: persistir `INCERTO` do portal, reiniciar expli
 
 
 21/09/2026 — A pedido do usuário, Q161 transferida para codex/consolidacao-specs-20260916 por cherry-pick552b86e7/be99b3ca, resultando0914a7a1/a9d97763. Conflito exclusivamente documental resolvido preservando ambos os históricos. Verificação principal: cadeia-calendario-oferta.test.ts e oferta-continuidade-agenda-tx.test.ts19/19, saída0 1ee694; TypeScript sessão71029/186590 saída0. Tentativa replanejamento-sem-remarcacoes.int.test.ts não iniciou: setup do banco descartável integracao falhou, saída1 498efc; nenhum teste integrado aprovado nesta tentativa. A revisão anterior continua aberta: comparação rígida de status pode exigir confirmação indevida após evolução legítima PREVISTO→MINISTRADO; alterações individuais posteriores aprovadas também precisam de suporte. Integrado não significa Q161 integralmente concluída. Sem push nesta operação.
+
+## Infraestrutura — correção Prisma/OpenSSL em Alpine 3.24 (25/09/2026)
+
+**PR #127** — `cursor/fix-prisma-openssl-alpine-99a4`
+
+### Problema identificado
+A imagem `node:22-alpine` flutuante resolveu para Alpine 3.24 que vem com `libssl.so.3` mas sem o binário `openssl`. Isso causou:
+- Falha na detecção do OpenSSL pelo Prisma 5.22 (warning e fallback para openssl-1.1.x)
+- Engine errado gerado (`linux-musl` em vez de `linux-musl-openssl-3.0.x`)
+- Serviço `migrate` falhando com exit 1
+- Queries no runtime falhando (mas `/api/health` permanecia verde)
+
+Verificado em produção no servidor Coolify.
+
+### Solução implementada
+1. **Dockerfile**:
+   - Pin da imagem base com digest: `node:22-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402`
+   - Base stage comum com `apk add --no-cache openssl` (evita repetição)
+   - `ENV HOSTNAME=0.0.0.0` no runner (Next standalone precisa bind em todas as interfaces)
+   - Checagens REAIS dos engines no build (engine errado quebra o build, não a produção):
+     - builder: `prisma migrate status` contra `127.0.0.1:1` tem de devolver `P1001`, o que só acontece
+       se o schema engine (o do serviço `migrate`) executou;
+     - runner: `new PrismaClient().$connect()` contra `127.0.0.1:1` tem de falhar com `errorCode P1001`,
+       o que só acontece se o query engine nativo do standalone carregou. A versão anterior
+       (`require('@prisma/client')`) não carregava o engine e deixaria passar um engine errado.
+
+2. **Endpoint `/api/ready`**: 
+   - Readiness check com `SELECT 1` via Prisma (detecta DB inacessível ou engine quebrado)
+   - Retorna 200 em sucesso, 503 (`{ ready: false }`) em falha
+   - Timeout de 3s, com o timer limpo ao final de cada chamada
+   - Rota pública: o detalhe do erro (host/porta do banco, mensagem do engine) vai só para o log
+   - Testes unitários com mock do Prisma client (200 em sucesso; 503 em erro/timeout/resultado
+     inesperado; erro não exposto; timer limpo; HEAD = GET)
+
+3. **Healthcheck atualizado**:
+   - `docker-compose.coolify.yml` usa `/api/ready` (valida DB + Prisma)
+   - `/api/health` mantido como pure liveness (sem dependências externas)
+   - `SETUP.md` atualizado com a distinção
+
+### Verificação relatada pelo Cursor Agent (commits 318989f4/af60eb96, NÃO reexecutada na revisão)
+Vale para a versão anterior dos checks de build; a linha "sem `apk add openssl` falha no build-time
+check" foi obtida com o check antigo (`prisma --version | grep`), não com os checks atuais.
+- ✅ Build completo: builder e runner concluídos
+- ✅ Prisma detecta `linux-musl-openssl-3.0.x` sem warnings
+- ✅ Migrate: 436 migrações aplicadas de banco vazio (exit 0); segunda execução no-op (exit 0)
+- ✅ Runtime: `/api/health` 200, `/api/ready` 200, query `SELECT 1` funciona
+- ✅ `/api/ready` retorna 503 após parar o Postgres (validado localmente)
+- ✅ Testes unitários `/api/ready`: 200 em sucesso, 503 em erro/timeout/resultado inesperado
+
+### Testes de mutação confirmados
+| Cenário | Build | Runtime |
+|---------|-------|---------|
+| ✅ Completo (com apk + pin + HOSTNAME + checks) | ✅ OK | ✅ Funciona |
+| ❌ Sem `apk add openssl` | ❌ **Falha no build-time check** | N/A |
+| ❌ Sem `ENV HOSTNAME=0.0.0.0` | ✅ OK | ❌ **wget localhost falha (Connection refused)** |
+| ❌ `/api/ready` sempre 200 (sem query) | ✅ OK | ⚠️ **Teste unitário falha** |
+
+### Verificação da revisão (25/09/2026, Windows, sem Docker)
+- `vitest run src/app/api/ready src/app/api/health`: 2 arquivos, 11/11 testes, saída 0 (vitest 4.1.9 do
+  `node_modules` do checkout principal, resolvido por Node, sem junction; não é o ambiente do integrador).
+- Mutações em `/api/ready`: sem `clearTimeout` → 1 teste falha; devolvendo o erro na resposta → 2 falham.
+- Checks do Dockerfile, com o texto exato após a junção de linhas do Docker, rodados em `sh` com os
+  engines Windows: engine OK → saída 0; `PRISMA_SCHEMA_ENGINE_BINARY` inválido → saída 1;
+  `PRISMA_QUERY_ENGINE_LIBRARY` inválido → saída 1 ("Unable to require"). Não prova o comportamento
+  no Alpine: isso exige `docker build`.
+- Digest `sha256:0a7108bf…e402` conferido no registry do Docker Hub: é o de `node:22-alpine3.24`
+  (e também o de `node:22-alpine` nesta data).
+- Trava unitária do Dockerfile (R2 B1), `src/deploy/dockerfile-prisma.test.ts`: lê o Dockerfile como o
+  Docker (sem comentários, continuações juntadas, por estágio) e EXECUTA o JS da checagem do runner
+  contra um `@prisma/client` falso. Rodada com ready+health: 3 arquivos, 21/21, saída 0.
+  13 mutações, todas detectadas (saída 1): remover/comentar/`echo` no `apk add`; base sem pin; runner
+  fora de `base`; remover a checagem do builder ou trocá-la por `|| true`; runner com `process.exit(0)`,
+  com comentário imitando a checagem, aceitando qualquer erro ou rodando antes do COPY do standalone;
+  sem `ENV HOSTNAME`; healthcheck do Coolify de volta para `/api/health`.
+- `binaryTargets` (R2 B2) continua fora por decisão do usuário: a garantia passou a ser a checagem que
+  CARREGA os engines no build (se a detecção falhar, o build quebra), travada pelo teste acima.
+- Suíte unitária completa neste ambiente: 473 arquivos, 2476 passaram e 14 testes falharam em 18 arquivos, todos
+  alheios ao PR (pacotes ausentes no `node_modules` do checkout principal: `pdfkit`, `google-auth-library`;
+  enums de um client Prisma de outro schema; `coolify-db-init.test.ts` falha em checkout Windows com
+  `core.autocrlf=true` porque o compose vem em CRLF). Nenhum arquivo que falhou referencia os arquivos do PR.
+- TypeScript global NÃO validado: o `tsc` com o `node_modules` do checkout principal usa um client
+  Prisma de outro schema e gera erros alheios; nenhum erro em `api/ready`/`api/health`.
+
+### Verificação na VPS (25/09/2026, relatada pelo usuário, não reexecutada pelo agente)
+- Imagem com digest, openssl no estágio `base`, `HOSTNAME=0.0.0.0` no runner e `binaryTargets` fora
+  do schema conferidos.
+- `docker build`: as duas checagens de engine passaram (builder `migrate status` e runner `$connect`).
+- 436 migrations aplicadas num Postgres 16 vazio; a segunda rodada deu "No pending migrations".
+- Testes de `/api/ready` e `/api/health`: 11/11.
+- `/api/ready` via 127.0.0.1: 200 com o banco no ar; banco derrubado → 503 em 3s sem expor o erro;
+  volta a 200 quando o banco retorna.
+- **Defeito encontrado:** o healthcheck do compose (`wget http://localhost:3000/api/ready`) falhava
+  SEMPRE com "connection refused". O wget do BusyBox resolve `localhost` para `::1` (IPv6) e não tenta
+  o IPv4, e o Next com `HOSTNAME=0.0.0.0` escuta só IPv4. O mesmo comando com `127.0.0.1` passa.
+  Correção: healthcheck em `http://127.0.0.1:3000/api/ready`, travado em
+  `src/deploy/dockerfile-prisma.test.ts` (falha com `localhost` ou `[::1]`). Após a correção: 22/22,
+  saída 0; 15 mutações detectadas, entre elas a volta para `localhost`.
+
+### Pendências
+- **Confirmar redeploy no Coolify** com o healthcheck em 127.0.0.1: container `healthy`, migrate com
+  saída 0, `/api/ready` 200 e HTTPS em produção.
+- **TypeScript** (`tsc --noEmit`) no ambiente preparado pelo integrador.
+
+**Estado**: Implementado e validado na VPS (relato do usuário); aguardando o redeploy no Coolify. Não concluído.
+
