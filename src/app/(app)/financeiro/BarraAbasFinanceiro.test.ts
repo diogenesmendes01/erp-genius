@@ -28,6 +28,10 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
 
   it("a aba ativa segue o caminho (inclusive subcaminho da aba); fora das abas, nenhuma ativa", () => {
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
+    // Subcaminho da aba (ex.: um detalhe futuro sob a aba) mantém a aba ativa.
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas/detalhe")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
+    // Prefixo de texto não é subcaminho: /financeiro/cobrancasx não ativa Cobranças.
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancasx")).not.toContain('aria-current="page"');
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/permuta")).not.toContain('aria-current="page"');
   });
 

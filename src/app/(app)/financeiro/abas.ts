@@ -1,6 +1,6 @@
-// Abas do /financeiro (docs/42-auditoria-frontend-ux.md, E8 — passo barato). A aba ativa vem da URL
-// (`?aba=`), então é linkável, sobrevive ao voltar/F5 e a página só consulta o que a aba mostra.
-// Módulo puro: a página (servidor) valida a aba pedida e o painel (cliente) monta a barra com as mesmas regras.
+// Abas do /financeiro (docs/42-auditoria-frontend-ux.md, E8). Cada aba é uma rota (/financeiro/<aba>,
+// hrefAba) com o próprio guard e as próprias consultas. Módulo puro: quais abas o papel enxerga
+// (abasVisiveis), a padrão do papel e a compatibilidade dos links antigos com ?aba= (resolverAba).
 
 export type AbaFinanceiro = "cobrancas" | "informes" | "retomadas" | "comissoes" | "descontos" | "geral" | "politicas" | "aprovacoes" | "cambio";
 
