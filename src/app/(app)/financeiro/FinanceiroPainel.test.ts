@@ -58,12 +58,25 @@ describe("Comissoes — total a pagar (E4: lista paginada)", () => {
 
 describe("Comissoes — lista vazia (E4: filtro sem resultado)", () => {
   const base = { aPagar: [], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false };
+  // A forma real vinda da página: um nó React com texto e o link "Ver todas" (não só string).
+  const vazioReal = createElement("span", null, "Nenhuma comissão nesta situação. ", createElement("a", { href: "/financeiro/comissoes" }, "Ver todas"));
 
   it("mostra o texto de vazio recebido (filtro), não o genérico; sem ele, o genérico", () => {
     const comFiltro = renderToStaticMarkup(createElement(Comissoes, { ...base, comissoes: [], vazio: "Nenhuma comissão nesta situação." }));
     expect(comFiltro).toContain("Nenhuma comissão nesta situação.");
     expect(comFiltro).not.toContain("Sem comissões.");
     expect(renderToStaticMarkup(createElement(Comissoes, { ...base, comissoes: [] }))).toContain("Sem comissões.");
+  });
+
+  it("o vazio em forma de nó React (texto + link Ver todas) chega à tabela, na lista e na aba", () => {
+    for (const html of [
+      renderToStaticMarkup(createElement(Comissoes, { ...base, comissoes: [], vazio: vazioReal })),
+      renderToStaticMarkup(createElement(ComissoesAba, { comissoes: [], aPagar: [], podePagar: false, fechamentoAutomatico: false, vazio: vazioReal })),
+    ]) {
+      expect(html).toContain("Nenhuma comissão nesta situação.");
+      expect(html).toContain('<a href="/financeiro/comissoes">Ver todas</a>');
+      expect(html).not.toContain("Sem comissões.");
+    }
   });
 
   it("a aba repassa o vazio até a tabela", () => {
