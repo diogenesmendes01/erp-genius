@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarCondicoesEntrada } from "@/server/secretaria/condicoes-entrada";
+import { botaoClasses } from "@/components/Botao";
 export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, temAdiantamento }: { matriculaId: string; pagadorId: string; versao: number; regime: string; temAdiantamento: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -24,6 +25,6 @@ export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, te
       <label className="block">Dia de vencimento contratado<input name="dia" type="number" min="1" max="31" step="1" required className="ml-2 rounded border p-2" /></label>
     </> : temAdiantamento ? <label className="block">Vencimento do adiantamento<input name="adiantamento" type="date" required className="ml-2 rounded border p-2" /></label> : <p>Particular por hora sem antecipação: não será registrada uma mensalidade.</p>}
     <label className="block">Motivo<textarea name="motivo" required minLength={5} maxLength={2000} className="block rounded border p-2" /></label>
-    <button disabled={ocupado} className="rounded border p-2">{ocupado ? "Registrando…" : "Registrar condições de entrada"}</button>{erro && <p role="alert">{erro}</p>}
+    <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar condições de entrada"}</button>{erro && <p role="alert">{erro}</p>}
   </form>;
 }

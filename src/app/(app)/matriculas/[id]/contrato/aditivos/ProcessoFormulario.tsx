@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { prepararProcessoAssinaturaAditivo } from "@/server/contratos/aditivo-envio";
+import { botaoClasses } from "@/components/Botao";
 
 export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, conferenciaId, ambiente }: {
   matriculaId: string; propostaId: string; artefatoId: string; conferenciaId: string; ambiente: "SANDBOX" | "PRODUCAO";
@@ -17,6 +18,6 @@ export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, confer
     <p>Esta preparação não envia o documento ao fornecedor e não conclui assinaturas.</p>
     <div><label htmlFor="fornecedor-aditivo">Fornecedor</label><select id="fornecedor-aditivo" className="mt-1 block rounded border p-2" value={fornecedor} onChange={event => setFornecedor(event.target.value)} required disabled={pendente}><option value="">Selecione o fornecedor</option><option value="ZAPSIGN">ZapSign</option><option value="CLICKSIGN">Clicksign</option><option value="DOCUSIGN">DocuSign</option></select></div>
     <div><span className="font-medium">Ambiente da fonte</span><p>{ambiente === "PRODUCAO" ? "Produção" : "Sandbox"}</p></div>
-    {mensagem && <p role="alert">{mensagem}</p>}<button className="rounded border px-4 py-2" disabled={pendente}>{pendente ? "Preparando…" : "Preparar processo de assinatura"}</button>
+    {mensagem && <p role="alert">{mensagem}</p>}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Preparando…" : "Preparar processo de assinatura"}</button>
   </form>;
 }

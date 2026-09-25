@@ -11,6 +11,7 @@ import { solicitarAberturaTurma } from "@/server/turmas/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -517,7 +518,7 @@ export function MatriculaFormulario({
             <button
               type="button"
               onClick={() => irParaPasso(2)}
-              className="rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+              className={botaoClasses({ tamanho: "lg" })}
             >
               Próximo: curso e contrato →
             </button>
@@ -688,7 +689,7 @@ export function MatriculaFormulario({
               type="button"
               onClick={() => irParaPasso(1)}
               disabled={salvando}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
             >
               ← Voltar
             </button>
@@ -697,7 +698,7 @@ export function MatriculaFormulario({
                 <button
                   onClick={() => salvar()}
                   disabled={salvando}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
                 >
                   {salvando ? "Processando…" : "Salvar matrícula"}
                 </button>
