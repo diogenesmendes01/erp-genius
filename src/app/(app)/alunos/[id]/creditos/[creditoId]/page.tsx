@@ -5,10 +5,11 @@ import { consultarPropostasUsoCredito } from "@/server/financeiro/uso-credito-pr
 import { PropostaUsoCredito } from "./PropostaUsoCredito";
 import { DevolucaoCredito } from "./DevolucaoCredito";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { VoltarPara } from "@/components/VoltarPara";
 export default async function Page({ params }: { params: Promise<{ id: string; creditoId: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
   const { id, creditoId } = await params, r = await consultarPropostasUsoCredito({ alunoId: id, creditoId });
-  return <div className="space-y-4"><Link className="underline" href={`/alunos/${id}`}>Voltar à ficha do aluno</Link>
+  return <div className="space-y-4"><VoltarPara href={`/alunos/${id}`} para="Ficha do aluno" />
     <h1 className="text-2xl font-medium">Proposta de utilização de crédito</h1>
     <p>Identifique a cobrança e a concordância do aluno. A proposta não reserva saldo. Outra pessoa do Financeiro com permissão de aprovação ou da Administração confere e aplica o abatimento, preservando os recebimentos em dinheiro.</p>
     {!r.ok && <p role="alert">{r.erro}</p>}{r.ok && r.dado && <>

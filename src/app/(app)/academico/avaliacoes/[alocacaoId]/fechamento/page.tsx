@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { revisarFechamentoAcademico } from "@/server/avaliacoes/fechamento";
@@ -6,6 +5,7 @@ import { ConfirmarFechamento } from "./ConfirmarFechamento";
 import { ExcecaoFrequencia } from "./ExcecaoFrequencia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 const pendencias: Record<string, string> = {
   NOTAS_INCOMPLETAS: "Notas obrigatórias ainda não estão completas e oficializadas",
@@ -50,7 +50,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
     revisarFechamentoAcademico({ alocacaoId }),
     consultarPreferenciaFusoEquipe(),
   ]);
-  if (!revisao.ok || !revisao.dado) return <section className="space-y-3"><Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`}>Voltar às avaliações</Link><p role="alert">{revisao.ok ? "A revisão não está disponível." : revisao.erro}</p></section>;
+  if (!revisao.ok || !revisao.dado) return <section className="space-y-3"><VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`} para="Avaliações" /><p role="alert">{revisao.ok ? "A revisão não está disponível." : revisao.erro}</p></section>;
 
   const estado = revisao.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
@@ -60,7 +60,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
   const ultimo = estado.ultimo;
   return <section className="mx-auto max-w-4xl space-y-5">
     <header className="space-y-2">
-      <Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`}>Voltar às avaliações</Link>
+      <VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`} para="Avaliações" />
       <h1 className="text-2xl font-medium">Fechamento acadêmico do nível</h1>
       <p className="text-sm text-gray-700">Esta revisão consolida o vínculo mais recente da matrícula neste nível. Confirmar cria uma nova versão histórica; não aprova nem executa progressão.</p>
     </header>

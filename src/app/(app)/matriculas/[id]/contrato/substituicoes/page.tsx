@@ -5,6 +5,7 @@ import { consultarSubstituicoesContratuais } from "@/server/contratos/substituic
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { PrepararSubstituicao } from "./Formularios";
+import { VoltarPara } from "@/components/VoltarPara";
 const pagina = (v?: string) => { const n = Number(v ?? 1); return Number.isInteger(n) && n > 0 && n <= 100000 ? n : 1; };
 export default async function SubstituicoesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string; conferencias?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
@@ -18,7 +19,7 @@ export default async function SubstituicoesPage({ params, searchParams }: { para
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <div className="space-y-5">
-    <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/contrato`}>Voltar aos documentos</Link>
+    <VoltarPara href={`/matriculas/${encodeURIComponent(id)}/contrato`} para="Documentos" />
     <h1 className="text-2xl">Substituição contratual · {d.matricula.aluno}</h1>
     <p>Revise a substituição de um contrato enviado antes da conclusão de todas as assinaturas. Documentos, pagamentos e assinaturas anteriores permanecem no histórico.</p>
     <p role="status">Esta etapa registra a proposta e a decisão. O cancelamento no serviço de assinatura e o envio do novo documento ainda não estão disponíveis.</p>

@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAvisosDiario } from "@/server/diario/avisos-pendencias-diario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 
 function dataNoFuso(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
@@ -15,7 +16,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
   const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ cursor }), consultarPreferenciaFusoEquipe()]);
 
   return <section className="space-y-5">
-    <Link className="text-sm text-brand-700 underline" href="/diario">Voltar ao diário</Link>
+    <VoltarPara href="/diario" />
     <div>
       <h1 className="text-2xl font-medium">Pendências do diário</h1>
       <p className="mt-1 text-sm text-gray-600">Os horários seguem sua preferência de fuso; sem preferência, usam o fuso de origem do encontro. Os avisos são atualizados ao consultar este painel. A regularização da aula acontece no diário.</p>

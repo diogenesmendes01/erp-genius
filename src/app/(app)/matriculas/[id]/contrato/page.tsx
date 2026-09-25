@@ -7,6 +7,7 @@ import { TextoPrevia } from "./TextoPrevia";
 import { RegistrarPrevia } from "./RegistrarPrevia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
 const pagina = (v?: string) => { const n = Number(v ?? 1); return Number.isInteger(n) && n > 0 && n <= 100000 ? n : 1; };
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -26,7 +27,7 @@ export default async function ContratoPage({ params, searchParams }: { params: P
   const revisao = d.podePreparar && s.modelo ? await consultarPreenchimentoContratual({ matriculaId: id, modeloId: s.modelo }) : null;
   const texto = revisao?.ok && revisao.dado ? TextoPreviaSchema.safeParse(revisao.dado.snapshot) : null;
   return <div className="space-y-5">
-    <Link href="/secretaria" className="underline">Voltar à Secretaria</Link>
+    <VoltarPara href="/secretaria" />
     <h1 className="text-2xl">Prévia contratual · {d.matricula.aluno}</h1>
     <Link className="underline" href={`${base}/substituicoes`}>Revisar substituição de contrato enviado</Link>
     <Link className="underline" href={`${base}/aditivos`}>Preparar aditivo após assinatura completa</Link>

@@ -38,7 +38,7 @@ describe("rota de conciliação financeira", () => {
 
   it("lê a preferência depois da guarda e a encaminha ao histórico financeiro", async () => {
     const html = renderToStaticMarkup(await Pagina({ params: Promise.resolve({ linhaId: "l" }), searchParams: Promise.resolve({}) }));
-    expect(html).toContain("Voltar ao financeiro");
+    expect(html).toContain('aria-label="Voltar para Financeiro"');
     expect(html).toContain("formulário financeiro em America/Adak");
     expect(html).toContain("entrada histórica da linha l");
     expect(mocks.chamadas).toEqual(["guarda", "preferencia"]);

@@ -7,6 +7,7 @@ import { IdentificacaoAvaliacao } from "@/app/(app)/academico/avaliacoes/Identif
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { VoltarPara } from "@/components/VoltarPara";
 
 
 export default async function AutorizacoesSegundaChamada({ params, searchParams }: { params: Promise<{ alocacaoId: string; codigoAvaliacao: string }>; searchParams: Promise<{ depoisId?: string }> }) {
@@ -20,7 +21,7 @@ export default async function AutorizacoesSegundaChamada({ params, searchParams 
   const voltar = `/academico/segundas-chamadas/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigoAvaliacao)}`;
 
   return <section className="space-y-4">
-    <Link className="underline" href={voltar}>Voltar para a segunda chamada</Link>
+    <VoltarPara href={voltar} para="Segunda chamada" />
     <h1 className="text-2xl font-medium">Autorizações especiais de segunda chamada</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Avaliação: {d.codigoAvaliacao}.</p>

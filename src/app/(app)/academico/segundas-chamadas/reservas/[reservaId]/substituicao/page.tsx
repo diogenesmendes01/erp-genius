@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-substituicao";
 import { Formulario } from "./Formulario";
+import { VoltarPara } from "@/components/VoltarPara";
 
 function periodo(inicio: string, fim: string, fuso: string) {
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
@@ -32,12 +33,12 @@ export default async function Page({
     ...(versao ? { antesVersao: versao } : {}),
   });
   if (!resultado.ok || !resultado.dado) {
-    return <section className="space-y-3"><Link className="underline" href="/academico/segundas-chamadas/agendas">Voltar às agendas</Link><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
+    return <section className="space-y-3"><VoltarPara href="/academico/segundas-chamadas/agendas" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
   const d = resultado.dado;
   const base = `/academico/segundas-chamadas/reservas/${encodeURIComponent(reservaId)}/substituicao`;
   return <section className="space-y-4">
-    <Link className="underline" href="/academico/segundas-chamadas/agendas">Voltar às agendas</Link>
+    <VoltarPara href="/academico/segundas-chamadas/agendas" />
     <h1 className="text-2xl font-medium">Substituir professor da segunda chamada</h1>
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · avaliação {d.identificacao.codigoAvaliacao}.</p>
     <section className="rounded border p-4"><h2 className="font-medium">Agenda preservada</h2><p>Professor atual: {d.encontro.professorNome}.</p><p>Horário: {periodo(d.encontro.inicio, d.encontro.fim, d.encontro.fusoOrigem)}.</p><p>Situação: {d.encontro.status}.</p></section>
