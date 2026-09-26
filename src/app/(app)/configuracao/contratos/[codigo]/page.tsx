@@ -8,6 +8,7 @@ import { ConteudoModeloSchema, PrepararModeloSchema } from "@/server/contratos/m
 import { ModeloFormulario } from "../ModeloFormulario";
 import { DecidirModelo } from "../DecidirModelo";
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "../labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function ModeloPage({ params, searchParams }: { params: Promise<{ codigo: string }>; searchParams: Promise<{ pagina?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
@@ -37,7 +38,7 @@ export default async function ModeloPage({ params, searchParams }: { params: Pro
             <h4 className="text-lg font-medium">{c.data.titulo}</h4>
             <p>{c.data.finalidade === "CONTRATO" ? "Contrato" : "Aditivo"} · {c.data.regimes.map((r) => r === "MENSALIDADE" ? "Mensalidade" : "Particular por hora").join(", ")}</p>
             <div><h5 className="font-medium">Aplicação</h5><p className="whitespace-pre-wrap">{c.data.aplicacao}</p></div>
-            <div><h5 className="font-medium">Campos declarados</h5>{c.data.campos.length ? <dl>{c.data.campos.map((campo) => <div key={campo.chave} className="my-2"><dt className="font-mono">{`{{${campo.chave}}}`}</dt><dd>{campo.descricao} — {campo.origem ? ROTULOS_ORIGEM[campo.origem] : "Origem pendente: geração indisponível para este campo"}</dd></div>)}</dl> : <p>Sem campos variáveis.</p>}</div>
+            <div><h5 className="font-medium">Campos declarados</h5>{c.data.campos.length ? <dl>{c.data.campos.map((campo) => <div key={campo.chave} className="my-2"><dt className="font-mono">{`{{${campo.chave}}}`}</dt><dd>{campo.descricao} — {campo.origem ? ROTULOS_ORIGEM[campo.origem] : "Origem pendente: geração indisponível para este campo"}</dd></div>)}</dl> : <EstadoVazio>Sem campos variáveis.</EstadoVazio>}</div>
             {c.data.secoes.map((s, j) => <article key={j} className="rounded bg-gray-50 p-4"><h5 className="font-medium">{j + 1}. {s.titulo}</h5><p className="mt-2 whitespace-pre-wrap break-words">{s.texto}</p></article>)}
             <div><h5 className="font-medium">Assinaturas exigidas</h5><ul>{c.data.assinaturas.map((a, j) => <li key={j}>{PAPEIS_MODELO[a.papel]} — {CONDICOES_MODELO[a.condicao]}</li>)}</ul></div>
           </>}

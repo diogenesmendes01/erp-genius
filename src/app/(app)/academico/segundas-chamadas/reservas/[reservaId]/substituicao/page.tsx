@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-substituicao";
 import { Formulario } from "./Formulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function periodo(inicio: string, fim: string, fuso: string) {
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
@@ -45,7 +46,7 @@ export default async function Page({
     <p>A aprovação atualiza o responsável por esta avaliação, preservando turma, horário, contrato e oportunidade. Outra pessoa da gestão precisa decidir.</p>
     {(d.podePropor || d.previa) && <Formulario key={substitutoId ?? "sem-substituto"} reservaId={reservaId} base={base} professores={d.professores} selecionado={substitutoId} previa={d.previa} />}
     <h2 className="font-medium">Propostas e decisões</h2>
-    {!d.itens.length && <p>Nenhuma proposta de substituição foi registrada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta de substituição foi registrada.</EstadoVazio>}
     {d.itens.map((item) => <article key={item.id} className="space-y-2 rounded border p-4">
       <p>Versão {item.versao} · proposta de {item.autorNome}.</p>
       <p>{resumoConferido(item.snapshot)}</p><p>Substituto proposto: {item.substitutoNome}.</p><p>Motivo: {item.motivo}</p><p>Evidência: {item.evidencia}</p>

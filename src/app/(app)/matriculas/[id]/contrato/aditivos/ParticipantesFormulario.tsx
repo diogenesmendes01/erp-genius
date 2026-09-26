@@ -9,6 +9,7 @@ import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -55,7 +56,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
       {formulario.plano.pendencias.map(p => <p role="alert" key={p}>{p}</p>)}
       <p>Documentos disponíveis · página {formulario.paginaDocumentos}. A seleção permanece ao mudar de página; a disponibilidade será conferida novamente ao registrar.</p>
       <div className="flex gap-3"><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.paginaDocumentos <= 1} onClick={() => carregar(formulario.paginaDocumentos - 1)}>Documentos anteriores</button><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !formulario.temProxima} onClick={() => carregar(formulario.paginaDocumentos + 1)}>Próximos documentos</button></div>
-      {!formulario.documentos.length && <p>Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes de concluir.</p>}
+      {!formulario.documentos.length && <EstadoVazio>Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes de concluir.</EstadoVazio>}
       <form className="space-y-4" onSubmit={e => {
         e.preventDefault(); const fd = new FormData(e.currentTarget), texto = (chave: string) => String(fd.get(chave) ?? "").trim();
         const participantes = formulario.participantesSugeridos.map(p => ({ papel: p.papel,

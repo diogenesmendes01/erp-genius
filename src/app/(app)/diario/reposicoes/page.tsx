@@ -7,6 +7,7 @@ import { listarReposicoesConcluidasDesignadas } from "@/server/diario/correcao-r
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function ReposicoesDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string; correcoesAntes?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
@@ -16,14 +17,14 @@ export default async function ReposicoesDocentePage({ searchParams }: { searchPa
     <VoltarPara href="/diario" />
     <header><h1 className="text-2xl font-medium">Fila de reposições individuais</h1><p className="mt-1 text-sm text-gray-600">Mostra apenas reposições atribuídas a você. Não há dados pessoais, contrato comercial ou cobrança nesta fila.</p></header>
     {!r.ok && <p role="alert">{r.erro}</p>}
-    {r.ok && r.dado?.itens.length === 0 && <p>Nenhuma reposição pendente para sua atuação.</p>}
+    {r.ok && r.dado?.itens.length === 0 && <EstadoVazio bloco>Nenhuma reposição pendente para sua atuação.</EstadoVazio>}
     {r.ok && r.dado?.itens.map((item) => <ReposicaoDocente key={item.id} reposicaoId={item.id} versaoAnterior={item.versaoAnterior} modalidade={item.modalidade} origem={item.origem} entrega={item.entrega} encontros={item.encontros} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.origem.fuso)} />)}
     {r.ok && r.dado?.proximoCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/reposicoes?cursor=${encodeURIComponent(r.dado.proximoCursor)}`}>Próximas reposições</Link>}
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">Histórico e correções</h2>
       <p>Reposições com conclusão registrada que continuam sob sua atribuição. Uma correção exige aprovação da gestão.</p>
       {!concluidas.ok && <p role="alert">{concluidas.erro}</p>}
-      {concluidas.ok && !concluidas.dado?.itens.length && <p>Nenhuma conclusão disponível para sua consulta.</p>}
+      {concluidas.ok && !concluidas.dado?.itens.length && <EstadoVazio>Nenhuma conclusão disponível para sua consulta.</EstadoVazio>}
       {concluidas.ok && concluidas.dado?.itens.map(item => <div key={item.id}>
         <Link className="underline" href={`/academico/reposicoes/correcoes/${encodeURIComponent(item.id)}`}>
           {item.modalidade === "GRAVACAO" ? "Gravação" : "Particular"} — aula de {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.origem.fuso) }).format(new Date(item.origem.inicio))} (origem {item.origem.fuso}): consultar e propor correção

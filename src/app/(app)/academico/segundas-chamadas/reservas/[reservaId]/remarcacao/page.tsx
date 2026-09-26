@@ -6,6 +6,7 @@ import { consultarRemarcacoesAgendaSegundaChamada } from "@/server/avaliacoes/se
 import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const agendaSchema = z.object({ encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string() }).nullable() });
 function periodo(inicio: string, fim: string, fuso: string) {
@@ -58,7 +59,7 @@ export default async function Page({
     <Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
     {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoHash} />}
     <h2 className="font-medium">Propostas e decisões</h2>
-    {!d.itens.length && <p>Nenhuma proposta registrada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.itens.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
       <p>Versão {p.versao} · Proposta de {p.autorNome}</p>
       <p>Horário anterior:</p><Agenda valor={p.snapshot} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />

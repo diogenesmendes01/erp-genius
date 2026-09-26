@@ -9,6 +9,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverPausaMatriculas>>, { ok: true }>["dado"]>;
 export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contratos: { id: string; identificacao: string; produto: { nome: string } }[]; hoje: string | null }) {
@@ -48,7 +49,7 @@ export function NovaPausa({ alunoId, contratos, hoje }: { alunoId: string; contr
     <h2 className="text-lg font-medium">Nova proposta de pausa</h2>
     <p className="text-sm">Escolha somente os contratos que devem ser pausados. Os demais permanecem fora desta solicitação.</p>
     {!hoje && <p className="text-amber-700">O fuso institucional precisa ser configurado para conferir as datas da escola.</p>}
-    {contratos.length === 0 ? <p>Nenhum contrato ativo disponível para seleção.</p> : <fieldset disabled={ocupado} className="space-y-3">
+    {contratos.length === 0 ? <EstadoVazio>Nenhum contrato ativo disponível para seleção.</EstadoVazio> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos ativos</legend>
       {contratos.map((m) => <label key={m.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(); setIds((atual) => e.target.checked ? [...atual, m.id] : atual.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.produto.nome}</label>)}
       <label className="block text-sm">Data efetiva proposta<input type="date" className="ml-2 rounded border p-2" required value={data} onChange={(e) => { alterar(); setData(e.target.value); }} /></label>

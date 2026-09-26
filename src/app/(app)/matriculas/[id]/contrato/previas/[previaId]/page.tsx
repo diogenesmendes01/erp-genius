@@ -10,6 +10,7 @@ import { consultarOriginaisContratuais } from "@/server/contratos/originais";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -38,7 +39,7 @@ export default async function PreviaPage({ params, searchParams }: { params: Pro
       {originais.dado.conferencia && !originais.dado.conferenciaJaPreservada
         ? <PreservarOriginal previaId={previaId} conferenciaId={originais.dado.conferencia.id} /> : null}
       <h2 className="text-xl">Originais preservados</h2>
-      {!originais.dado.registros.length && <p>Ainda não há original preservado. A geração exige uma conferência atual dos participantes.</p>}
+      {!originais.dado.registros.length && <EstadoVazio>Ainda não há original preservado. A geração exige uma conferência atual dos participantes.</EstadoVazio>}
       {originais.dado.registros.map((a) => <article key={a.id} className="rounded border p-3">
         <a className="underline" href={`/api/matriculas/${id}/originais/${a.id}/pdf`} target="_blank" rel="noopener noreferrer">Abrir original registrado em {textoInstanteAdministrativo(a.criadoEm, preferenciaFusoExibicao)}</a>
         <p>{a.paginas} página(s). {a.motivo}</p><p>Arquivo anterior à assinatura; geração não comprova aceite.</p>

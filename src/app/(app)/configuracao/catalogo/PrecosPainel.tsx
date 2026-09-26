@@ -10,6 +10,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export interface PrecoRow {
   id: string;
@@ -196,11 +197,9 @@ export function PrecosPainel({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {precos.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-400">
+              <EstadoVazioLinha colSpan={6}>
                   Nenhum preço cadastrado.
-                </td>
-              </tr>
+                </EstadoVazioLinha>
             ) : (
               precos.map((p) => (
                 <tr key={p.id} className={"hover:bg-gray-50 " + (p.ativo ? "" : "text-gray-400")}>

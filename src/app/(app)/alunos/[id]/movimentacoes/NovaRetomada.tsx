@@ -11,6 +11,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -58,7 +59,7 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
   const escolhasCompletas = ids.length > 0 && ids.every((id) => !!opcoes[id]);
   return <section className="space-y-4 rounded border p-4" aria-label="Solicitar retomada por contrato">
     <h2 className="text-lg font-medium">Nova proposta de retomada</h2>
-    {contratos.length === 0 ? <p>Nenhum contrato pausado disponível.</p> : <fieldset disabled={ocupado} className="space-y-3">
+    {contratos.length === 0 ? <EstadoVazio>Nenhum contrato pausado disponível.</EstadoVazio> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos pausados</legend>
       {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
       <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>

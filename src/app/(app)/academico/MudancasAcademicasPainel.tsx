@@ -13,6 +13,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
@@ -83,7 +84,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
             {contexto.destinos.filter((t) => t.tipo === "EXCECAO").map((t) => <option key={t.id} value={t.id}>{t.label} · {t.vagas} vagas · exige aprovação</option>)}
           </select>
         </label>
-        {contexto.destinos.length === 0 && <p className="text-sm text-gray-500">Não há turma de destino disponível no mesmo idioma, modalidade e formato.</p>}
+        {contexto.destinos.length === 0 && <EstadoVazio>Não há turma de destino disponível no mesmo idioma, modalidade e formato.</EstadoVazio>}
         {destino && <div className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
           <p>Horário de destino: <strong>{destino.diasHorario ?? "A definir — confirme a disponibilidade com a escola"}</strong></p>
           <p>Mudança de nível: exige parecer docente ou dispensa justificada, decisão de outra pessoa da gestão pedagógica e execução pela secretaria.</p>
@@ -97,7 +98,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
       <p className="text-xs text-gray-500">Este fluxo preserva idioma, modalidade, formato, contrato e pagamentos. Mudanças de curso ou condições comerciais precisam do fluxo correspondente. A conferência de horário é humana; a vaga é revalidada na execução.</p>
     </div>}
 
-    {solicitacoes.length === 0 && !erroConsulta && <p className="rounded-lg border border-gray-200 bg-surface p-4 text-sm text-gray-500">Nenhuma solicitação acadêmica neste filtro.</p>}
+    {solicitacoes.length === 0 && !erroConsulta && <EstadoVazio bloco>Nenhuma solicitação acadêmica neste filtro.</EstadoVazio>}
     {solicitacoes.map((p) => <article key={p.id} className="space-y-4 rounded-lg border border-gray-200 bg-surface p-4" aria-labelledby={`pedido-${p.id}`}>
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div><h2 id={`pedido-${p.id}`} className="font-medium"><Link className="text-brand-700 hover:underline" href={`/alunos/${p.alunoId}/academico`}>{p.alunoNome}</Link></h2><p className="text-xs text-gray-500">Solicitado por {p.solicitante.nome} em {data(p.criadoEm)}</p></div>
@@ -107,7 +108,7 @@ export function MudancasAcademicasPainel({ contexto, solicitacoes, erroConsulta,
       <p className="whitespace-pre-wrap text-sm">{p.motivo}</p>
       {p.impedimento && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">{p.impedimento}</p>}
       <div className="space-y-2"><h3 className="text-sm font-medium">Parecer docente</h3>
-        {p.pareceres.length === 0 ? <p className="text-sm text-gray-500">Nenhum parecer registrado.</p> : p.pareceres.map((parecer) => <blockquote key={parecer.id} className="border-l-2 border-gray-300 pl-3 text-sm"><p className="whitespace-pre-wrap">{parecer.conteudo}</p><footer className="mt-1 text-xs text-gray-500">{parecer.autorNome} · {data(parecer.criadoEm)}</footer></blockquote>)}
+        {p.pareceres.length === 0 ? <EstadoVazio>Nenhum parecer registrado.</EstadoVazio> : p.pareceres.map((parecer) => <blockquote key={parecer.id} className="border-l-2 border-gray-300 pl-3 text-sm"><p className="whitespace-pre-wrap">{parecer.conteudo}</p><footer className="mt-1 text-xs text-gray-500">{parecer.autorNome} · {data(parecer.criadoEm)}</footer></blockquote>)}
         {p.podeDarParecer && <div className="space-y-2"><label className="block text-sm">Registrar parecer<CampoTexto className={`${campo} mt-1`} rows={3} maxLength={2000} disabled={ocupado} value={valor(p.id, "parecer")} onChange={(e) => escrever(p.id, "parecer", e.target.value)} /></label><button className={botao} disabled={ocupado || valor(p.id, "parecer").trim().length < 5} onClick={() => void executar(() => registrarParecerMudanca(p.id, { conteudo: valor(p.id, "parecer") }), "Parecer registrado para análise da gestão pedagógica.")}>Registrar parecer docente</button></div>}
       </div>
       {p.aprovador && <p className="text-sm">Decisão de <strong>{p.aprovador.nome}</strong>{p.decididoEm ? ` em ${data(p.decididoEm)}` : ""}: {p.motivoDecisao}</p>}

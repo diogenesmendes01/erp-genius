@@ -5,6 +5,7 @@ import { consultarHistoricoReplanejamento } from "@/server/agenda/replanejamento
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function RevisoesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -22,7 +23,7 @@ export default async function RevisoesPage({ params, searchParams }: { params: P
     <VoltarPara href={`/academico/calendario/${id}`} para="Calendário" />
     <h1 className="text-2xl font-medium">Revisões registradas · Calendário {r.calendario.versao}</h1>
     <p>Histórico de autoria e motivos das revisões. Guardar uma revisão não publica mudanças. Instantes administrativos exibidos em {fusoExibicao}; origem {r.calendario.fusoInstitucional}.</p>
-    {!r.registros.length && <p>Nenhuma revisão nesta página.</p>}
+    {!r.registros.length && <EstadoVazio bloco>Nenhuma revisão nesta página.</EstadoVazio>}
     <ol className="space-y-3">{r.registros.map((v) => <li key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium"><Link className="underline" href={`/academico/calendario/${id}/revisoes/${v.id}`}>Revisão {v.versao} · Consultar conteúdo</Link></h2><p>{v.preparador.nome} · {data(v.criadoEm)} ({fusoExibicao}; origem {r.calendario.fusoInstitucional})</p>
       <p className="whitespace-pre-wrap">{v.motivo}</p>

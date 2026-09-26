@@ -1,6 +1,7 @@
 import type { ReplanejamentoSnapshot } from "@/server/agenda/replanejamento-snapshot";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Conteudo = Pick<ReplanejamentoSnapshot, "revisoes" | "recursos" | "pendencias"> & { particulares: readonly unknown[]; recuperacoes?: readonly unknown[] };
 export function ConteudoRevisao({ r, historico = false, preferenciaFusoExibicao = null }: { r: Conteudo; historico?: boolean; preferenciaFusoExibicao?: string | null }) {
@@ -18,7 +19,7 @@ export function ConteudoRevisao({ r, historico = false, preferenciaFusoExibicao 
       {r.pendencias.map((p) => <p key={p}>{p}</p>)}
       <p>{r.recursos.internos.length} conflitos entre propostas · {r.recursos.externos.length} conflitos com encontros existentes · {r.recursos.indisponibilidades.length} indisponibilidades · {r.recursos.semDocenteApto.length} encontros sem docente apto</p>
     </section>
-    {!r.revisoes.length && <p>Nenhuma turma com encontro previsto futuro encontrada.</p>}
+    {!r.revisoes.length && <EstadoVazio>Nenhuma turma com encontro previsto futuro encontrada.</EstadoVazio>}
     {r.revisoes.map((t) => { const fusoOrigem = t.fusoOrigem; return <section key={t.turmaId} className="space-y-3 rounded border bg-[var(--surface)] p-4">
       <h2 className="text-lg font-medium">{t.codigo ?? "Turma sem código"}</h2>
       {fusoOrigem && <p>Fuso de origem: {fusoOrigem} · horários exibidos em {resolverFusoExibicao(preferenciaFusoExibicao, fusoOrigem)}</p>}

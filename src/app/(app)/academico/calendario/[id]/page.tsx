@@ -6,6 +6,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { DecidirCalendario } from "./DecidirCalendario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function VersaoCalendarioPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -28,7 +29,7 @@ export default async function VersaoCalendarioPage({ params }: { params: Promise
     <p>Preparado por {versao.preparador.nome}</p><p className="whitespace-pre-wrap">{versao.motivo}</p>
     <Link className="underline" href={`/academico/calendario/${id}/revisoes`}>Histórico das revisões de agenda</Link>
     <section className="space-y-2"><h2 className="font-medium">Períodos não letivos</h2>
-      {!periodos.length && <p>Nenhum feriado, recesso ou férias nesta versão.</p>}
+      {!periodos.length && <EstadoVazio>Nenhum feriado, recesso ou férias nesta versão.</EstadoVazio>}
       <ul className="space-y-2">{periodos.map((p) => <li key={p.id} className="rounded border p-3"><strong>{p.nome}</strong> · {({ FERIADO: "Feriado", RECESSO: "Recesso", FERIAS: "Férias" })[p.tipo]}<p>{p.inicio} a {p.fim}, incluindo as duas datas</p></li>)}</ul>
     </section>
     {!versao.decisao && <Link className="text-brand-700 underline" href={`/academico/calendario/${id}/replanejamento`}>Conferir proposta de novas datas e conflitos</Link>}

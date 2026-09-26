@@ -6,6 +6,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const rotulos: Record<string, string> = {
   RESERVADA: "Reservada", CONSUMIDA_REALIZACAO: "Realizada", CONSUMIDA_FALTA: "Falta registrada",
@@ -40,7 +41,7 @@ export default async function Page({ params, searchParams }: {
       {item.ocorrencia && <div><p>Ocorrência: {rotulos[item.ocorrencia.status] ?? item.ocorrencia.status} em {data(item.ocorrencia.ocorridaEm)} · {item.ocorrencia.registradaPor}</p><p>Registro: {data(item.ocorrencia.criadaEm)}</p><p>Motivo: {item.ocorrencia.motivo}</p><p>Evidência: {item.ocorrencia.evidencia}</p></div>}
       {item.realizacao && <div><p>Realização: {data(item.realizacao.realizadaEm)} · {item.realizacao.professor} · {item.realizacao.registradaPor}</p><p>Evidência: {item.realizacao.evidencia}</p></div>}
     </article>)}
-    {!d.itens.length && <p>Nenhuma reserva registrada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma reserva registrada.</EstadoVazio>}
     <nav className="flex gap-4">{antesId && <Link className="underline" href={`${base}/historico`}>Primeira página</Link>}{d.proximoId && <Link className="underline" href={`${base}/historico?antesId=${encodeURIComponent(d.proximoId)}`}>Reservas anteriores</Link>}</nav>
   </section>;
 }

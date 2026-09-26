@@ -8,6 +8,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { VencimentoFormulario } from "./Formulario";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Pagina({ params, searchParams }: {
  params: Promise<{ matriculaId: string; propostaId: string }>;
@@ -35,7 +36,7 @@ export default async function Pagina({ params, searchParams }: {
  <p>Novo vencimento contratado: {formatarDataCivil(d.alvo.vencimentoProposto)}. {d.alvo.pendencia}</p>
  {d.alvo.podePreparar && <VencimentoFormulario modo="preparar" matriculaId={matriculaId} versaoCondicoesId={versao.id} revisaoHash={d.revisaoHash} />}
  <h2 className="text-xl">Histórico e decisões</h2>
- {!d.propostas.length && <p>Nenhuma proposta de acerto registrada.</p>}
+ {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta de acerto registrada.</EstadoVazio>}
  {d.propostas.map(p => <section key={p.id} className="space-y-2 rounded border p-4">
  <h3>Proposta {p.id} · {p.estado}</h3><p>{data(p.vencimentoAnterior,p.fuso)} → {data(p.vencimentoNovo,p.fuso)} ({p.fuso})</p>
  <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p>

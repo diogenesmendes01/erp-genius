@@ -6,6 +6,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ResumoRegra, type ConteudoRegra } from "../../../[nivelId]/ResumoRegra";
 import { DecidirConferenciaRegraHistorica, PrepararConferenciaRegraHistorica } from "./ConferenciaRegraHistorica";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Fotografia = {
   turma: { nome: string | null; codigo: string | null; status: string; dataInicio: string | null; dataFim: string | null };
@@ -67,7 +68,7 @@ export default async function ConferenciaRegraHistoricaPage({ params, searchPara
     <h1 className="text-2xl font-medium">Conferência da regra histórica</h1>
     <p>{d.turma.nivel.idioma.nome} — {d.turma.nivel.codigo}. {d.turma.regraAvaliacaoId ? "A regra já foi vinculada; o histórico permanece disponível." : "A turma não possui regra vinculada."}</p>
     {d.pendencia ? <p role="status" className="rounded border p-3">{d.pendencia}</p> : <PrepararConferenciaRegraHistorica turmaId={turmaId} destinos={d.destinos.map(regra => ({ id: regra.id, versao: regra.versao }))} />}
-    <section className="space-y-4"><h2 className="text-xl font-medium">Histórico de conferências</h2>{!h.itens.length ? <p>Nenhuma conferência registrada.</p> : h.itens.map(item => <Registro key={item.id} item={item} preferenciaFusoExibicao={preferenciaFusoExibicao} />)}</section>
+    <section className="space-y-4"><h2 className="text-xl font-medium">Histórico de conferências</h2>{!h.itens.length ? <EstadoVazio>Nenhuma conferência registrada.</EstadoVazio> : h.itens.map(item => <Registro key={item.id} item={item} preferenciaFusoExibicao={preferenciaFusoExibicao} />)}</section>
     <nav aria-label="Páginas de conferências" className="flex gap-4">{h.pagina > 1 && <Link href={`?pagina=${h.pagina - 1}`}>Anterior</Link>}<span>Página {h.pagina}</span>{h.temProxima && <Link href={`?pagina=${h.pagina + 1}`}>Próxima</Link>}</nav>
   </section>;
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { carregarAndamentoSubstituicao } from "@/server/contratos/substituicao-andamento";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = Awaited<ReturnType<typeof carregarAndamentoSubstituicao>>;
 const etapas: Record<Dados["etapa"], { titulo: string; descricao: string }> = {
@@ -28,7 +29,7 @@ export function AndamentoSubstituicao({ dados, matriculaId, propostaId, preferen
     {dados.intencao && <p>Intenção registrada por {dados.intencao.executor} em {data(dados.intencao.criadaEm)}.</p>}
     {dados.aplicacao && <p>Aplicação registrada por {dados.aplicacao.executor} em {data(dados.aplicacao.aplicadaEm)}. <Link className="underline" href={`/matriculas/${encodeURIComponent(matriculaId)}/contrato/originais/${encodeURIComponent(dados.aplicacao.artefatoSubstitutoId)}`}>Consultar o novo original e suas assinaturas</Link></p>}
     {dados.intencao && <section className="space-y-2"><h3 className="font-medium">Retornos preservados do cancelamento</h3>
-      {dados.observacoes.length ? <ol className="list-inside list-decimal space-y-1">{dados.observacoes.map(o => <li key={o.id}>{data(o.registradaEm)} · {o.resultado === "CONFIRMADO" ? "Cancelamento confirmado" : "Resultado incerto"}</li>)}</ol> : <p>Nenhum retorno nesta página.</p>}
+      {dados.observacoes.length ? <ol className="list-inside list-decimal space-y-1">{dados.observacoes.map(o => <li key={o.id}>{data(o.registradaEm)} · {o.resultado === "CONFIRMADO" ? "Cancelamento confirmado" : "Resultado incerto"}</li>)}</ol> : <EstadoVazio>Nenhum retorno nesta página.</EstadoVazio>}
       <nav className="flex gap-4" aria-label="Páginas dos retornos">{dados.pagina > 1 && <Link href={`${base}?retornos=${dados.pagina - 1}`}>Retornos mais recentes</Link>}<span>Página {dados.pagina}</span>{dados.temProxima && <Link href={`${base}?retornos=${dados.pagina + 1}`}>Retornos anteriores</Link>}</nav>
     </section>}
   </section>;

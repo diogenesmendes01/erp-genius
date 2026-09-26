@@ -7,6 +7,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const ROTULO_STATUS: Record<string, string> = STATUS_ENCONTRO_LABEL;
 
@@ -27,7 +28,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
         <Link className={modo === "PENDENTES" ? "font-medium underline" : "underline"} href="/diario/regularizacoes?modo=PENDENTES">Pendências</Link>
         <Link className={modo === "HISTORICO" ? "font-medium underline" : "underline"} href="/diario/regularizacoes?modo=HISTORICO">Histórico</Link>
       </nav>}
-      {!resultado.dado.itens.length && <p>{modo === "HISTORICO" ? "Nenhuma designação encontrada no histórico." : "Nenhuma regularização pendente."}</p>}
+      {!resultado.dado.itens.length && <EstadoVazio>{modo === "HISTORICO" ? "Nenhuma designação encontrada no histórico." : "Nenhuma regularização pendente."}</EstadoVazio>}
       {resultado.dado.itens.map((item) => {
         const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem);
         const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));

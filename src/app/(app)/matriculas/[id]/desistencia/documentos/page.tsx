@@ -2,6 +2,7 @@ import { EstadoEnvioAssinatura, Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDocumentosDesistenciaPreparacao } from "@/server/matricula/desistencia-documental";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const estados: Record<EstadoEnvioAssinatura, string> = {
   PREPARADO: "Preparado para envio", ENVIANDO: "Envio em andamento", ENVIO_INCERTO: "Resultado do envio incerto",
@@ -30,10 +31,10 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
         : <p>Nenhuma pendência documental identificada nos registros consultados. A equipe ainda deve conferir os canais externos e os demais requisitos da desistência.</p>}
     </section>
     <section className="space-y-2"><h2 className="text-lg font-medium">Documentos registrados</h2>
-      {!d.documentos.length ? <p>Nenhum documento registrado nesta matrícula.</p> : <ul className="list-disc pl-5">{d.documentos.map(doc => <li key={doc.id}>{doc.nome}</li>)}</ul>}
+      {!d.documentos.length ? <EstadoVazio>Nenhum documento registrado nesta matrícula.</EstadoVazio> : <ul className="list-disc pl-5">{d.documentos.map(doc => <li key={doc.id}>{doc.nome}</li>)}</ul>}
     </section>
     <section className="space-y-3"><h2 className="text-lg font-medium">Processos de assinatura</h2>
-      {!d.processos.length && <p>Nenhum processo de assinatura registrado nesta matrícula.</p>}
+      {!d.processos.length && <EstadoVazio>Nenhum processo de assinatura registrado nesta matrícula.</EstadoVazio>}
       {d.processos.map((p, i) => <article key={p.id} className="space-y-2 rounded border p-4">
         <h3 className="font-medium">Processo {i + 1} · {estados[p.estado]}</h3>
         <p>Serviço: {p.fornecedor} · Ambiente: {p.ambiente === "SANDBOX" ? "Teste" : p.ambiente === "PRODUCAO" ? "Produção" : p.ambiente}</p>

@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarEncontrosDocente } from "@/server/agenda/encontros-docente";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function EncontrosDocentePage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
@@ -15,7 +16,7 @@ export default async function EncontrosDocentePage({ searchParams }: { searchPar
     <h1 className="text-2xl font-medium">Encontros atribuídos</h1>
     <p className="text-sm text-gray-500">Consulte os horários e o professor responsável por cada encontro.</p>
     {!r.ok && <p role="alert" className="text-red-700">{r.erro}</p>}
-    {r.ok && r.dado?.encontros.length === 0 && <p>Nenhum encontro disponível.</p>}
+    {r.ok && r.dado?.encontros.length === 0 && <EstadoVazio bloco>Nenhum encontro disponível.</EstadoVazio>}
     {r.ok && r.dado?.encontros.map((e) => {
       const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoExibicao }).format(new Date(v));
       return <article key={e.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">

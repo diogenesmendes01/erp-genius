@@ -5,6 +5,7 @@ import { listarRecuperacoesRealizadas } from "@/server/avaliacoes/recuperacao-co
 import { IdentificacaoAvaliacao } from "../avaliacoes/Identificacao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Recuperacoes({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -21,7 +22,7 @@ export default async function Recuperacoes({ searchParams }: { searchParams: Pro
     <IdentificacaoAvaliacao dados={r.dado.identificacao} />
     <p>Recuperações realizadas neste vínculo. Lançar a nota não dispensa a conferência independente.</p>
     {r.dado.realizacoes.map(item => <Link key={item.id} className="block rounded border p-3 underline" href={`/academico/recuperacoes/${encodeURIComponent(item.id)}`}>{item.habilidade.replaceAll("_", " ")} · {formatarInstanteExibicao(item.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC) · {item.estado}</Link>)}
-    {!r.dado.realizacoes.length && <p>Nenhuma realização disponível nesta página.</p>}
+    {!r.dado.realizacoes.length && <EstadoVazio bloco>Nenhuma realização disponível nesta página.</EstadoVazio>}
     {r.dado.proximoId && <Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId, depoisId: r.dado.proximoId })}`}>Próximas realizações</Link>}
   </section>;
 }

@@ -8,6 +8,7 @@ import { PreviaSubstituicao } from "./PreviaSubstituicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Designacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ buscaProfessor?: string; antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -37,7 +38,7 @@ export default async function Designacao({ params, searchParams }: { params: Pro
     </>}
     <h2 className="text-xl font-medium">Histórico de designações</h2>
     {d.historico.map(h => <article key={h.id} className="rounded border p-3"><p>Versão {h.versao}: {h.professor?.nome ?? "Designação revogada"} — registrada por {h.gestor.nome}, em {formatarInstanteExibicao(h.criadaEm, preferenciaFuso, "UTC").texto} ({administrativo}; origem UTC).</p><p className="whitespace-pre-wrap">{h.motivo}</p></article>)}
-    {!d.historico.length && <p>Nenhuma designação nesta página.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma designação nesta página.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Designações anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`}>Designação atual</Link>}
   </section>;

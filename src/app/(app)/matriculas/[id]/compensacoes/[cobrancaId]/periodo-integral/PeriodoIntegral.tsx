@@ -15,6 +15,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -148,7 +149,7 @@ export function PeriodoIntegral({
 
     <section className="space-y-3">
       <h2 className="text-lg">Histórico de propostas</h2>
-      {!d.propostas.length && <p>Nenhuma proposta registrada para esta mensalidade.</p>}
+      {!d.propostas.length && <EstadoVazio>Nenhuma proposta registrada para esta mensalidade.</EstadoVazio>}
       {d.propostas.map(proposta => <article key={proposta.id} className="space-y-2 rounded border p-4">
         <h3 className="font-medium">Versão {proposta.versao}</h3>
         <MensagemStatus texto={proposta.superada ? "Substituída por nova proposta." : null} />
