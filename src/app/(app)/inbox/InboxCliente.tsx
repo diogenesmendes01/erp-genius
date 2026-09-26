@@ -14,15 +14,17 @@ import {
   IconSend2,
   IconLink,
   IconLock,
+  IconUserPlus,
   IconX,
 } from "@tabler/icons-react";
 import type { EtapaLead, Temperatura } from "@prisma/client";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
-import type { ConversaResumo, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
-import { LIMITE_CONVERSAS, hrefInbox } from "@/server/whatsapp/busca-inbox";
+import type { ConversaResumo, LinhaDoUsuario, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
+import { LIMITE_CONVERSAS, hrefInbox, type CanalInbox } from "@/server/whatsapp/busca-inbox";
 import {
   buscarVinculosInbox,
+  criarLeadDaConversa,
   enviarMidiaInbox,
   enviarTextoInbox,
   marcarConversaLida,
@@ -40,6 +42,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -62,12 +65,21 @@ function diaInstante(iso: string, preferenciaFusoExibicao: string | null): strin
   }).format(new Date(iso));
 }
 
+const FILTROS_CANAL: { valor: CanalInbox | ""; label: string }[] = [
+  { valor: "", label: "Todas" },
+  { valor: "linha", label: "Linha comercial" },
+  { valor: "institucional", label: "Institucional" },
+];
+
 export function InboxCliente({
   conversas,
   thread,
   podeCobranca,
   preferenciaFusoExibicao,
   busca = "",
+  canal = "",
+  filtroCanal = false,
+  linhas = [],
   limitada = false,
 }: {
   conversas: ConversaResumo[];
@@ -76,6 +88,12 @@ export function InboxCliente({
   preferenciaFusoExibicao: string | null;
   /** Busca aplicada no servidor (?busca=), mantida ao abrir uma conversa. */
   busca?: string;
+  /** Filtro por tipo de canal (?canal=) — SPEC-ERP-005 §5.5. */
+  canal?: CanalInbox | "";
+  /** Mostra o filtro de canal (quem vê linhas comerciais E atendimentos institucionais). */
+  filtroCanal?: boolean;
+  /** Linhas comerciais de que o usuário é dono, com o estado da sessão (só leitura). */
+  linhas?: LinhaDoUsuario[];
   /** A lista foi cortada nas mais recentes (as com não lidas vêm sempre). */
   limitada?: boolean;
 }) {
@@ -128,6 +146,7 @@ export function InboxCliente({
     <div>
       {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
+      {linhas.length > 0 && <EstadoLinhas linhas={linhas} />}
 
       {/* Master-detail (E6): abaixo de md cabe um painel por vez — sem conversa aberta, a lista ocupa a
           largura toda; com `?c=`, a thread ocupa a tela e "Conversas" volta à lista. A partir de md, as
@@ -140,9 +159,24 @@ export function InboxCliente({
             action="/inbox"
             role="search"
             aria-label="Buscar conversas"
-            onSubmit={(e) => { e.preventDefault(); router.push(hrefInbox({ busca: campoBusca.trim(), c: thread?.conversaId })); }}
+            onSubmit={(e) => { e.preventDefault(); router.push(hrefInbox({ busca: campoBusca.trim(), canal, c: thread?.conversaId })); }}
             className="border-b border-gray-100 p-2"
           >
+            {filtroCanal && (
+              <nav aria-label="Filtrar por tipo de canal" className="mb-2 flex gap-1">
+                {FILTROS_CANAL.map((f) => (
+                  <Link
+                    key={f.valor || "todas"}
+                    href={hrefInbox({ busca, canal: f.valor })}
+                    aria-current={canal === f.valor ? "page" : undefined}
+                    className={"rounded-full px-2.5 py-1 text-xs " + (canal === f.valor ? "bg-brand-50 font-medium text-brand-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
+                  >
+                    {f.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
+            {canal && <input type="hidden" name="canal" value={canal} />}
             <input
               name="busca"
               value={campoBusca}
@@ -158,8 +192,9 @@ export function InboxCliente({
             {conversas.length === 0 ? (
               <p className="p-4 text-sm text-gray-500">
                 {busca ? (
-                  <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ c: thread?.conversaId })} className="text-brand-700 hover:underline">Limpar busca</Link></>
-                ) : "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."}
+                  <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId })} className="text-brand-700 hover:underline">Limpar busca</Link></>
+                ) : linhas.length ? "Nenhuma conversa ainda — as conversas da sua linha aparecem aqui assim que chegam ou são enviadas."
+                  : "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."}
               </p>
             ) : (
               conversas.map((c) => (
@@ -167,7 +202,7 @@ export function InboxCliente({
                   key={c.id}
                   type="button"
                   aria-current={thread?.conversaId === c.id ? "true" : undefined}
-                  onClick={() => router.push(hrefInbox({ busca, c: c.id }))}
+                  onClick={() => router.push(hrefInbox({ busca, canal, c: c.id }))}
                   className={
                     "block w-full border-b border-gray-100 px-3 py-2.5 text-left hover:bg-gray-50 " +
                     (thread?.conversaId === c.id ? "bg-brand-50" : "")
@@ -193,6 +228,9 @@ export function InboxCliente({
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1">
                     <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">{c.numeroRotulo}</span>
+                    {c.linhaComercial && !c.vinculo && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">sem lead</span>
+                    )}
                     {c.vinculo && (
                       <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">{c.vinculo}</span>
                     )}
@@ -216,7 +254,7 @@ export function InboxCliente({
         {/* Thread */}
         {thread ? (
           <section aria-label={`Conversa com ${thread.contato.nome}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <Link href={hrefInbox({ busca })} className="flex min-h-10 items-center gap-1 border-b border-gray-200 px-3 py-2 text-sm text-brand-700 md:hidden">
+            <Link href={hrefInbox({ busca, canal })} className="flex min-h-10 items-center gap-1 border-b border-gray-200 px-3 py-2 text-sm text-brand-700 md:hidden">
               <IconArrowLeft className="h-5 w-5" aria-hidden /> Conversas
             </Link>
             <Thread
@@ -271,7 +309,25 @@ function Thread({
   const [promessaData, setPromessaData] = useState("");
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
   const [evidenciaOptIn, setEvidenciaOptIn] = useState("");
+  const [criandoLead, setCriandoLead] = useState(false);
   const optOut = !!thread.contato.optOutEm;
+
+  async function criarLead() {
+    onErro(null);
+    onNota(null);
+    setCriandoLead(true);
+    try {
+      const r = await criarLeadDaConversa(thread.conversaId);
+      if (!r.ok) return onErro(r.erro);
+      onNota(r.dado?.criado ? "Lead criado e vinculado à conversa." : "O contato já era lead — a conversa foi vinculada a ele.");
+      router.refresh();
+    } catch {
+      // criarLeadDaConversa não tem chave de idempotência: resultado incerto manda conferir antes de repetir.
+      onErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    } finally {
+      setCriandoLead(false);
+    }
+  }
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
@@ -346,6 +402,14 @@ function Thread({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {/* Linha comercial sem lead (SPEC-ERP-005 LC-D05): o vendedor decide o que vira prospecto. */}
+            {thread.podeCriarLead && (
+              <button className={btnSec} disabled={criandoLead} onClick={criarLead}>
+                <span className="flex items-center gap-1">
+                  <IconUserPlus className="h-3.5 w-3.5" /> {criandoLead ? "Criando…" : "Criar lead"}
+                </span>
+              </button>
+            )}
             {thread.podeVincular && <button className={btnSec} onClick={() => setVincular((v) => !v)}>
               <span className="flex items-center gap-1">
                 <IconLink className="h-3.5 w-3.5" /> Vincular
@@ -1007,6 +1071,43 @@ function GrupoVinculo({
             {i.nome}
           </button>
         ))
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Estado da linha comercial (SPEC-ERP-005 §5.5) — só leitura: conectar/reconectar é da gestão (LC-D06).
+// ---------------------------------------------------------------------------
+
+const SESSAO_LINHA: Record<string, { label: string; cls: string }> = {
+  CONECTADO: { label: "conectada", cls: "bg-green-100 text-green-700" },
+  AGUARDANDO_QR: { label: "aguardando QR", cls: "bg-amber-100 text-amber-800" },
+  CAIU: { label: "sessão caiu", cls: "bg-red-100 text-red-700" },
+  DESCONECTADO: { label: "desconectada", cls: "bg-gray-100 text-gray-600" },
+};
+
+function EstadoLinhas({ linhas }: { linhas: LinhaDoUsuario[] }) {
+  // Número oficial (Meta) não tem sessão de aparelho: está sempre disponível enquanto ativo.
+  const foraDoAr = linhas.filter((l) => l.driver === "BAILEYS" && l.sessao !== "CONECTADO");
+  return (
+    <div className={"mb-3 rounded-md px-3 py-2 text-xs " + (foraDoAr.length ? "bg-amber-50 text-amber-800" : "bg-surface-muted text-gray-600")}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{linhas.length > 1 ? "Suas linhas" : "Sua linha"}:</span>
+        {linhas.map((l) => {
+          const estado = l.driver === "BAILEYS" ? SESSAO_LINHA[l.sessao] ?? SESSAO_LINHA.DESCONECTADO : SESSAO_LINHA.CONECTADO;
+          return (
+            <span key={l.id} className="flex items-center gap-1">
+              {l.rotulo} <span className="text-gray-400">{l.telefoneE164}</span>
+              <span className={"rounded-full px-1.5 py-0.5 text-[10px] " + estado.cls}>{estado.label}</span>
+            </span>
+          );
+        })}
+      </div>
+      {foraDoAr.length > 0 && (
+        <p className="mt-1">
+          Enquanto a linha não estiver conectada, mensagens novas não chegam aqui. Peça à administração para reconectar pelo QR.
+        </p>
       )}
     </div>
   );

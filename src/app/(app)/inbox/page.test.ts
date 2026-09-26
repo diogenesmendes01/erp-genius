@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), conversas: vi.fn(), thread: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), conversas: vi.fn(), thread: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), linhas: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: () => false }));
-vi.mock("@/server/whatsapp/consultas", () => ({ listarConversasInbox: mocks.conversas, carregarThread: mocks.thread }));
+vi.mock("@/server/whatsapp/consultas", () => ({ listarConversasInbox: mocks.conversas, carregarThread: mocks.thread, listarLinhasDoUsuario: mocks.linhas }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./InboxCliente", () => ({ InboxCliente: ({ preferenciaFusoExibicao, busca, limitada }: { preferenciaFusoExibicao: string | null; busca: string; limitada: boolean }) => `inbox:${preferenciaFusoExibicao}|busca:${busca}|limitada:${limitada}` }));
+vi.mock("./InboxCliente", () => ({ InboxCliente: ({ preferenciaFusoExibicao, busca, limitada, canal }: { preferenciaFusoExibicao: string | null; busca: string; limitada: boolean; canal: string }) => `inbox:${preferenciaFusoExibicao}|busca:${busca}|limitada:${limitada}|canal:${canal}` }));
 vi.mock("./AtendimentosPainel", () => ({ AtendimentosPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `triagem:${preferenciaFusoExibicao}` }));
 
 import Page from "./page";
@@ -15,7 +15,7 @@ describe("InboxPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
-    mocks.conversas.mockResolvedValue({ itens: [], limitada: false }); mocks.thread.mockResolvedValue(null); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
+    mocks.conversas.mockResolvedValue({ itens: [], limitada: false }); mocks.thread.mockResolvedValue(null); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] }); mocks.linhas.mockResolvedValue([]);
   });
 
   it("encaminha a preferência somente depois da guarda", async () => {
@@ -42,5 +42,15 @@ describe("InboxPage", () => {
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "  ana  ", c: "x" }) }));
     expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "ana" });
     expect(html).toContain("busca:ana|limitada:true");
+  });
+
+  it("filtro de canal da URL restringe a consulta e chega à tela; valor desconhecido é ignorado (SPEC-ERP-005)", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ canal: "linha" }) }));
+    expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "", canal: "linha" });
+    expect(html).toContain("canal:linha");
+    mocks.conversas.mockClear();
+    await Page({ searchParams: Promise.resolve({ canal: "qualquer" }) });
+    expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "" });
   });
 });
