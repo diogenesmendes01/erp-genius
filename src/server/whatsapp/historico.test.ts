@@ -28,7 +28,9 @@ function txEstrito() {
     contatoWhatsApp: {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
-      update: vi.fn(),
+      update: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
+      upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({ id: "contato", ...create })),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     conversaWhatsApp: { upsert: vi.fn().mockResolvedValue({ id: "conversa" }), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     mensagemWhatsApp: { createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({ count: data.length })) },
@@ -37,6 +39,17 @@ function txEstrito() {
 }
 
 let tx: ReturnType<typeof txEstrito>;
+
+/** Os dados de TODA escrita no contato (create, update, upsert — create e update —, updateMany). */
+function escritasNoContato(): Record<string, unknown>[] {
+  const c = tx.contatoWhatsApp;
+  return [
+    ...c.create.mock.calls.map(([a]) => a.data),
+    ...c.update.mock.calls.map(([a]) => a.data),
+    ...c.upsert.mock.calls.flatMap(([a]) => [a.create, a.update]),
+    ...c.updateMany.mock.calls.map(([a]) => a.data),
+  ];
+}
 beforeEach(() => {
   vi.resetAllMocks();
   tx = txEstrito();
@@ -80,6 +93,26 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     expect(JSON.stringify([tx.conversaWhatsApp.updateMany.mock.calls, tx.atendimentoWhatsApp.updateMany.mock.calls])).not.toMatch(/naoLidas|ultimoInboundEm/);
     // Contato criado sem opt-out mesmo com a palavra "sair" no histórico.
     expect(tx.contatoWhatsApp.create.mock.calls[0][0].data).not.toHaveProperty("optOutEm");
+  });
+
+  it("LC-10: nenhuma escrita no contato toca o opt-out — contato novo (corpo 'sair')", async () => {
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1), msg("H-2", 2, { corpo: "parar" })], agora);
+    expect(escritasNoContato()).not.toHaveLength(0); // o contato foi gravado (senão a trava passaria vazia)
+    for (const dados of escritasNoContato()) expect(dados).not.toHaveProperty("optOutEm");
+    // Contato novo nasce por create; nenhuma escrita posterior (onde um opt-out caberia).
+    expect(tx.contatoWhatsApp.update).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.upsert).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("LC-10: contato existente só tem vínculos preservados — nem grava nem limpa opt-out", async () => {
+    tx.contatoWhatsApp.findUnique.mockResolvedValue({ id: "contato", telefoneE164: "+50670001111", waId: null, nomeExibicao: null,
+      alunoId: null, responsavelId: null, leadId: null, optOutEm: new Date("2026-01-01T00:00:00Z") });
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1)], agora);
+    expect(tx.contatoWhatsApp.update).toHaveBeenCalledTimes(1); // garantirContato preserva vínculos
+    for (const dados of escritasNoContato()) expect(dados).not.toHaveProperty("optOutEm");
+    expect(tx.contatoWhatsApp.upsert).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.updateMany).not.toHaveBeenCalled();
   });
 
   it("canal institucional ou linha inativa: nada é gravado", async () => {
