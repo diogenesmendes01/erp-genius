@@ -29,7 +29,9 @@ const sessao = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id
 async function comercial() {
   const vendedor = await criarUsuario([Papel.VENDEDOR]);
   const outro = await criarUsuario([Papel.VENDEDOR]);
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: "BAILEYS", finalidade: "VENDAS", donoId: outro.id } });
+  // Linha SEM dono: aqui o acesso vem só da carteira. Dono da linha vê a conversa (SPEC-ERP-005
+  // LC-D01) — coberto em linha-comercial.int.test.ts.
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: "BAILEYS", finalidade: "VENDAS", donoId: null } });
   const lead = await prisma.lead.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
@@ -69,7 +71,7 @@ describe("D02: atendimento comercial segue carteira/equipe/cobertura atual", () 
     expect(titular?.lead?.copilotoAtivo).toBe(true);
     expect(titular?.lead?.sugestoesIA?.map(s => s.id)).toEqual([sugestao.id]);
   });
-  it("dono do número não herda o lead; transferência revoga anterior e mensagem humana pendente", async () => {
+  it("transferência da carteira revoga o anterior e a mensagem humana pendente", async () => {
     const c = await comercial();
     expect((await listarConversas(sessao(c.vendedor))).map((a) => a.id)).toContain(c.a.id);
     expect(await carregarThread(sessao(c.outro), c.a.id)).toBeNull();

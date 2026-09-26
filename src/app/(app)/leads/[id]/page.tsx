@@ -44,7 +44,7 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
     capturadoViaWhatsApp: timeline.some(
       (ev) =>
         ev.tipo === "LeadCriado" &&
-        (ev.payload as { origem?: string } | null)?.origem === "whatsapp_inbound",
+        ["whatsapp_inbound", "whatsapp_linha"].includes((ev.payload as { origem?: string } | null)?.origem ?? ""),
     ),
     interesse: lead.interesse,
     objetivo: lead.objetivo,

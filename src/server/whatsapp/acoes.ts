@@ -24,6 +24,8 @@ import { buscarPessoasVinculo, conversaVisivel, type PessoasVinculo } from "./co
 import { despacharFila } from "./despachante";
 import { escopoConversas } from "./escopo";
 import { garantirAtendimento } from "./atendimentos";
+import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
+import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
 import {
@@ -361,6 +363,68 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
   });
 }
 
+/**
+ * "Criar lead" numa conversa de linha comercial (SPEC-ERP-005 §5.3, LC-D05). Mesmo miolo da
+ * auto-captura (código, LeadCriado, LeadAtribuido), com autor = sessão e dono = dono atual da linha.
+ * Dedupe (gap 17): telefone que já é lead só vincula; aluno/responsável não vira lead por aqui.
+ */
+export async function criarLeadDaConversa(atendimentoId: string): Promise<Resultado<{ leadId: string; criado: boolean }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR);
+    const alcance = await conversaVisivel(autor, atendimentoId);
+    if (!alcance || alcance.finalidade !== "COMERCIAL" || !ehLinhaComercial(alcance.numero)) {
+      throw new ErroRegra("Conversa fora de uma linha comercial do seu escopo.");
+    }
+    const resultado = await prisma.$transaction(async (tx) => {
+      const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({
+        where: { id: alcance.id }, include: { conversa: { include: { contato: true, numero: true } } },
+      });
+      if (atual.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
+      if (atual.leadId) throw new ErroRegra("Esta conversa já tem lead.");
+      const contato = atual.conversa.contato;
+      let leadId = contato.leadId;
+      let criado = false;
+      if (!leadId) {
+        const pessoa = await resolverPessoaPorTelefone(tx, contato.telefoneE164);
+        if (pessoa.leadId) leadId = pessoa.leadId;
+        else if (pessoa.alunoId || pessoa.responsavelId) {
+          throw new ErroRegra("Este telefone já pertence a um aluno ou responsável. Cadastre o lead pela tela de Leads, conferindo o cadastro.");
+        } else {
+          leadId = await criarLeadDeInboundWhatsApp(tx, {
+            telefoneE164: contato.telefoneE164,
+            nomeExibicao: contato.nomeExibicao,
+            // Linha sem dono: quem cria assume se for vendedor; gestão cria sem dono (atribui depois).
+            // `papeis.includes`, não temPapel: o administrador "tem" todo papel e viraria dono do lead.
+            donoId: atual.conversa.numero.donoId ?? (autor.papeis.includes(Papel.VENDEDOR) ? autor.id : null),
+            autorId: autor.id,
+            origem: "whatsapp_linha",
+          });
+          criado = true;
+        }
+        await tx.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId } });
+      }
+      // Condicional: dois cliques concorrentes não gravam dois leads na mesma conversa.
+      const marcado = await tx.atendimentoWhatsApp.updateMany({ where: { id: atual.id, leadId: null }, data: { leadId } });
+      if (!marcado.count) throw new ErroRegra("Esta conversa já tem lead.");
+      await registrarEvento(tx, {
+        tipo: "ContatoVinculado",
+        agregadoTipo: "ContatoWhatsApp",
+        agregadoId: contato.id,
+        autorId: autor.id,
+        payload: {
+          alvo: { tipo: "lead", id: leadId },
+          via: criado ? "criar_lead_linha" : "lead_existente_linha",
+          antes: { alunoId: contato.alunoId, responsavelId: contato.responsavelId, leadId: contato.leadId },
+        },
+      });
+      return { leadId, criado };
+    });
+    revalidatePath("/inbox");
+    revalidatePath("/leads");
+    return resultado;
+  });
+}
+
 /** Busca de pessoas para o vínculo (client-side da inbox — respeita escopoLeads). */
 export async function buscarVinculosInbox(q: string, atendimentoId?: string): Promise<Resultado<PessoasVinculo>> {
   return executarAcao(async () => {
@@ -595,6 +659,16 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       return criado.id;
     });
 
+    // Linha comercial (SPEC-ERP-005 LC-15): conversas desta linha que estavam na triagem passam já
+    // para a inbox do dono. O cron repete o backfill; falha aqui não desfaz o número salvo.
+    if (dados.finalidade === "VENDAS" && dados.ativo) {
+      try {
+        await adotarMensagensOrfasDaLinha({ numeroId: id, limiteConversas: 500 });
+      } catch (e) {
+        console.error("[salvarNumeroWhatsApp] adoção das conversas da linha fica para o cron:", e);
+      }
+      revalidatePath("/inbox");
+    }
     revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
   });

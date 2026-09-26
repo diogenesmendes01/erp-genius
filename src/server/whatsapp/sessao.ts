@@ -112,8 +112,9 @@ export interface ResultadoConexao {
 }
 
 // Eventos que a instância manda para o nosso webhook (base64: true poupa a chamada de
-// download de mídia — ver midia.ts).
-const EVENTOS_WEBHOOK = ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE", "QRCODE_UPDATED"];
+// download de mídia — ver midia.ts). MESSAGES_SET = histórico enviado pelo aparelho ao vincular
+// (SPEC-ERP-005 §5.4); a rota só o grava para linhas comerciais, nos últimos 30 dias.
+const EVENTOS_WEBHOOK = ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "MESSAGES_SET", "CONNECTION_UPDATE", "QRCODE_UPDATED"];
 
 function urlWebhookEvolution(): string | null {
   const base = process.env.EVOLUTION_WEBHOOK_PUBLIC_URL ?? process.env.NEXTAUTH_URL;

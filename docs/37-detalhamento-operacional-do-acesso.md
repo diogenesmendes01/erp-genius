@@ -230,6 +230,8 @@ Fim do prazo ou revogação deve valer no próximo acesso, download e operação
 
 Separar canal de transporte, contato e atendimento. A conversa atual é única por número/contato e sua [autorização acompanha o número](C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/whatsapp/escopo.ts). Adicionar somente um novo dono a essa conversa não resolve o caso de histórico misto comercial, financeiro e pedagógico.
 
+Exceção aprovada em 26/09/2026 — números de finalidade VENDAS são **linhas comerciais** ([SPEC-ERP-005](specs/whatsapp-linha-comercial.md)): o dono atual da linha, o gerente comercial da equipe dele e a administração veem todas as conversas da linha, com ou sem lead. A exceção cobre só o conteúdo da conversa; ficha de aluno, financeiro, matrícula e painel de lead de outra carteira continuam nas regras desta seção. Canais institucionais (COBRANCA, AGENDA) não mudam.
+
 Modelar contexto de atendimento com finalidade, fila, responsável, participantes e associação das mensagens/anexos ao contexto. O sucessor recebe o histórico necessário à continuidade na mesma finalidade. Conteúdo financeiro anterior não passa para professor ou vendedor só porque é do mesmo aluno. Histórico legado sem classificação exige migração/revisão ou restrição, não compartilhamento integral por padrão.
 
 Professor envia pelo canal institucional para destinatário vinculado à sua turma/experimental, com identificador interno. D04 não autoriza conceder ao professor toda a inbox da secretaria. Mensagem e anexo também precisam respeitar o contexto; não basta esconder a coluna telefone.

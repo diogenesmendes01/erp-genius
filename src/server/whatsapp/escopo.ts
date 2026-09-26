@@ -3,6 +3,7 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { prisma } from "@/lib/prisma";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
+import { donosDeLinhaVisiveis, whereLinhasDosDonos } from "./linha-comercial";
 
 // Doc 36/37: transporte e acesso são dimensões diferentes. Escopo de número só serve
 // para listagens operacionais do canal. Mensagens/arquivos exigem escopoAtendimentos.
@@ -51,9 +52,16 @@ export async function escopoAtendimentos(
   if (usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL)) {
     ors.push({ finalidade: "COMERCIAL", OR: [
       { lead: { is: await escopoComercialAtual({ ...usuario, nome: "" }) } },
-      { leadId: null, responsavelId: usuario.id },
+      // Numa linha comercial o acesso sem lead vem da POSSE ATUAL da linha (abaixo): o responsável
+      // gravado na criação não pode manter acesso depois de troca de dono ou linha desativada.
+      { leadId: null, responsavelId: usuario.id, conversa: { numero: { finalidade: { not: "VENDAS" } } } },
       participante,
     ] });
+    // Linha comercial (SPEC-ERP-005, LC-D02): dono atual da linha e gerente da equipe do dono veem
+    // TODAS as conversas da linha, com ou sem lead. Só o conteúdo da conversa — painel do lead,
+    // ficha de aluno e financeiro seguem as próprias regras (LC-L01/LC-L02).
+    const donos = await donosDeLinhaVisiveis(usuario);
+    if (donos.length) ors.push(whereLinhasDosDonos(donos));
   }
   if (usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
     ors.push({ finalidade: "FINANCEIRO", alunoId: { not: null } });

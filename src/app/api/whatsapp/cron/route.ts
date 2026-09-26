@@ -12,6 +12,7 @@ import {
   rodarPreExperimental,
 } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { adotarMensagensOrfasDaLinha } from "@/server/whatsapp/linha-comercial";
 import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 import { rodarCopilotoQuietude } from "@/server/ia/copiloto";
 import { rodarGestao } from "@/server/whatsapp/cron-gestao";
@@ -73,6 +74,9 @@ export async function POST(req: Request): Promise<NextResponse> {
   // C4 backfill (review PR #60): matrículas que ficaram completas com a automação
   // desligada ativam no primeiro tick após ligar (idempotente).
   const fechamentosPendentes = await seguro("fechamentos_pendentes", () => rodarFechamentosPendentes());
+  // SPEC-ERP-005 (LC-15): mensagens de linha comercial paradas na triagem vão para o atendimento
+  // da linha — backfill idempotente e em lote, sem migração de dados.
+  const linhaComercial = await seguro("linha_comercial_orfas", () => adotarMensagensOrfasDaLinha());
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
@@ -87,6 +91,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     gestao,
     comissoes,
     fechamentosPendentes,
+    linhaComercial,
     despacho,
   });
 }
