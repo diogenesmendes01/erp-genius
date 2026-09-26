@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hrefInbox, lerBuscaInbox, mesclarPorRecencia, whereBuscaConversas } from "./busca-inbox";
+import { hrefInbox, lerBuscaInbox, lerCanalInbox, mesclarPorRecencia, whereBuscaConversas, whereCanalInbox } from "./busca-inbox";
 
 const d = (iso: string) => new Date(iso);
 
@@ -53,5 +53,25 @@ describe("teto da busca da inbox", () => {
     const where = whereBuscaConversas("a b c d e f g") as { AND: unknown[] };
     expect(where.AND).toHaveLength(6);
     expect(JSON.stringify(where)).not.toContain('"g"');
+  });
+});
+
+describe("filtro de canal da inbox (SPEC-ERP-005 §5.5)", () => {
+  it("lê só valores conhecidos da URL", () => {
+    expect(lerCanalInbox({ canal: "linha" })).toBe("linha");
+    expect(lerCanalInbox({ canal: ["institucional", "linha"] })).toBe("institucional");
+    expect(lerCanalInbox({ canal: "tudo" })).toBe("");
+    expect(lerCanalInbox({})).toBe("");
+  });
+
+  it("linha = comercial em número de VENDAS; institucional = o complemento; vazio não filtra", () => {
+    const linha = { finalidade: "COMERCIAL", conversa: { numero: { finalidade: "VENDAS" } } };
+    expect(whereCanalInbox("linha")).toEqual(linha);
+    expect(whereCanalInbox("institucional")).toEqual({ NOT: linha });
+    expect(whereCanalInbox("")).toEqual({});
+  });
+
+  it("links preservam o canal", () => {
+    expect(hrefInbox({ busca: "ana", canal: "linha", c: "c1" })).toBe("/inbox?busca=ana&canal=linha&c=c1");
   });
 });

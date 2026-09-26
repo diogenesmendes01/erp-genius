@@ -957,6 +957,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/InboxCliente.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "<button> Criando… · Criar lead → btnSec",
     "<button> Vincular → btnSec",
     "<button> Remover opt-out → btnSec",
     "<button> Registrar opt-out → btnSec",

@@ -92,6 +92,8 @@
   receber E enviar** áudio/imagem/documento (gravação de áudio no navegador) · vincular
   contato → aluno/lead · ação rápida contextual (cobrança ativa → registrar promessa/pagamento).
 - **Dono da conversa = dono do número** (1 vendedor/número hoje; sem transferência na V1).
+  Detalhado em 26/09/2026 pela [SPEC-ERP-005 — Linha comercial](specs/whatsapp-linha-comercial.md):
+  toda conversa do número de vendas aparece na inbox do dono, com ou sem lead.
 - Se o cronograma apertar: **envio de mídia é o primeiro item que desliza** — nunca a
   fundação ou o braço da cobrança.
 

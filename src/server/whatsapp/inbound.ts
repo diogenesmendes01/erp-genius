@@ -239,7 +239,7 @@ export async function processarStatusNormalizado(s: StatusNormalizado): Promise<
 // Evolution são namespaces distintos) — o lookup filtra por driver e o schema garante
 // @@unique([driver, providerRef]) (review PR #51 P2-6: sem isso, dois números com a mesma
 // referência roteariam mensagens para a conversa/dono errados).
-async function acharNumero(ref: {
+export async function acharNumero(ref: {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
   driver: DriverWhatsApp;

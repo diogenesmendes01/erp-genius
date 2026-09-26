@@ -52,6 +52,10 @@ export interface LeadDeInbound {
   donoId: string | null;
   paisId?: string | null;
   referral?: ReferralInbound | null;
+  /** Quem pediu a criação ("Criar lead" na linha comercial — SPEC-ERP-005 §5.3). null = sistema. */
+  autorId?: string | null;
+  /** Origem registrada no LeadCriado. Padrão: auto-captura do 1º inbound. */
+  origem?: "whatsapp_inbound" | "whatsapp_linha";
 }
 
 /**
@@ -86,16 +90,16 @@ export async function criarLeadDeInboundWhatsApp(
     tipo: "LeadCriado",
     agregadoTipo: "Lead",
     agregadoId: lead.id,
-    autorId: null, // sistema (auto-captura via WhatsApp)
-    payload: { codigo, nome: lead.nome, origem: "whatsapp_inbound", b2b: false },
+    autorId: dados.autorId ?? null, // null = sistema (auto-captura via WhatsApp)
+    payload: { codigo, nome: lead.nome, origem: dados.origem ?? "whatsapp_inbound", b2b: false },
   });
   if (dados.donoId) {
     await registrarEvento(tx, {
       tipo: "LeadAtribuido",
       agregadoTipo: "Lead",
       agregadoId: lead.id,
-      autorId: null,
-      payload: { de: null, para: dados.donoId, via: "whatsapp_inbound" },
+      autorId: dados.autorId ?? null,
+      payload: { de: null, para: dados.donoId, via: dados.origem ?? "whatsapp_inbound" },
     });
   }
   return lead.id;
