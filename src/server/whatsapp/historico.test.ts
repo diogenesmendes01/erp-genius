@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ acharNumero: vi.fn(), linha: vi.fn(), transacao: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: m.transacao } }));
+const m = vi.hoisted(() => ({
+  acharNumero: vi.fn(), linha: vi.fn(), transacao: vi.fn(),
+  // Cliente do módulo: as escritas no contato e o SQL cru são espionados também FORA da transação
+  // (preenchidos no beforeEach — o objeto é o mesmo que o módulo importa).
+  cliente: {} as Record<string, unknown>,
+}));
+vi.mock("@/lib/prisma", () => ({ prisma: m.cliente }));
 vi.mock("./inbound", () => ({ acharNumero: m.acharNumero }));
 vi.mock("./linha-comercial", () => ({
   atendimentoDaLinhaParaInbound: m.linha,
@@ -23,16 +28,25 @@ const msg = (id: string, diasAtras: number, over: Partial<MensagemHistorica> = {
  * Transação com SÓ os modelos que a importação pode tocar. Lead, intenção, config comercial, evento
  * (captura, saudação, cancelamento, opt-out auditado) não existem aqui: se o código tocar, o teste quebra.
  */
+/** Todas as formas de escrita no contato do Prisma Client — espionadas, para a falha ser a trava LC-10. */
+function escritasDeContato() {
+  const devolve = async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data });
+  return {
+    create: vi.fn().mockImplementation(devolve),
+    createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    createManyAndReturn: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockImplementation(devolve),
+    upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({ id: "contato", ...create })),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+  };
+}
+type EscritasDeContato = ReturnType<typeof escritasDeContato>;
+const sqlCru = () => ({ $executeRaw: vi.fn().mockResolvedValue(0), $executeRawUnsafe: vi.fn().mockResolvedValue(0) });
+
 function txEstrito() {
   return {
-    contatoWhatsApp: {
-      findUnique: vi.fn().mockResolvedValue(null),
-      create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
-      update: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
-      upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({ id: "contato", ...create })),
-      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      createMany: vi.fn().mockResolvedValue({ count: 1 }),
-    },
+    ...sqlCru(),
+    contatoWhatsApp: { findUnique: vi.fn().mockResolvedValue(null), ...escritasDeContato() },
     conversaWhatsApp: { upsert: vi.fn().mockResolvedValue({ id: "conversa" }), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     mensagemWhatsApp: { createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({ count: data.length })) },
     atendimentoWhatsApp: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
@@ -40,21 +54,25 @@ function txEstrito() {
 }
 
 let tx: ReturnType<typeof txEstrito>;
+let cliente: EscritasDeContato & ReturnType<typeof sqlCru>;
 
-/** Os dados de TODA escrita no contato (create, createMany, update, upsert — create e update —, updateMany). */
+/** Os dados de TODA escrita no contato, dentro da transação E pelo cliente do módulo. */
 function escritasNoContato(): Record<string, unknown>[] {
-  const c = tx.contatoWhatsApp;
-  return [
+  return [tx.contatoWhatsApp, cliente].flatMap((c: EscritasDeContato) => [
     ...c.create.mock.calls.map(([a]) => a.data),
     ...c.createMany.mock.calls.flatMap(([a]) => [a.data].flat()),
+    ...c.createManyAndReturn.mock.calls.flatMap(([a]) => [a.data].flat()),
     ...c.update.mock.calls.map(([a]) => a.data),
     ...c.upsert.mock.calls.flatMap(([a]) => [a.create, a.update]),
     ...c.updateMany.mock.calls.map(([a]) => a.data),
-  ];
+  ]);
 }
+
 beforeEach(() => {
   vi.resetAllMocks();
   tx = txEstrito();
+  cliente = { ...escritasDeContato(), ...sqlCru() };
+  Object.assign(m.cliente, { $transaction: m.transacao, contatoWhatsApp: cliente, $executeRaw: cliente.$executeRaw, $executeRawUnsafe: cliente.$executeRawUnsafe });
   m.transacao.mockImplementation(async (fn: (t: unknown) => unknown) => fn(tx));
   m.acharNumero.mockResolvedValue({ id: "linha", finalidade: "VENDAS", ativo: true });
   m.linha.mockResolvedValue("atendimento-linha");
@@ -80,6 +98,12 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
   // legenda, lotes, canal recusado): nenhuma escrita no contato pode tocar o opt-out.
   afterEach(() => {
     for (const dados of escritasNoContato()) expect(dados, "histórico não grava nem limpa opt-out").not.toHaveProperty("optOutEm");
+    // SQL cru escaparia da inspeção por chave: a importação não usa, dentro nem fora da transação.
+    for (const f of [tx.$executeRaw, tx.$executeRawUnsafe, cliente.$executeRaw, cliente.$executeRawUnsafe]) {
+      expect(f, "histórico não usa SQL cru").not.toHaveBeenCalled();
+    }
+    // Fora da transação nada escreve no contato: toda escrita da importação é atômica com as mensagens.
+    for (const f of Object.values(cliente)) expect(f, "escrita no contato fora da transação").not.toHaveBeenCalled();
   });
 
   it("grava só a janela, no atendimento da linha, sem duplicar e sem não lidas", async () => {
