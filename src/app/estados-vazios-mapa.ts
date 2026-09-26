@@ -544,9 +544,10 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/inbox/AtendimentosPainel.tsx": [
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
+    "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
   ],
   "src/app/(app)/inbox/InboxCliente.tsx": [
-    "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ c: thread?.conversaId })} clas",
+    "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId }",
     "compacto · Nenhum.",
   ],
   "src/app/(app)/leads/LeadsLista.tsx": [

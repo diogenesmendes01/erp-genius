@@ -20,6 +20,9 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
   const [numero, setNumero] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
   const destinoSelecionado = opcoes.destinos.find((item) => item.chave === destino);
+  // SPEC-ERP-005 §5.5: assunto comercial sai só pelas linhas comerciais do usuário.
+  const numeros = destinoSelecionado?.finalidade === "COMERCIAL" ? opcoes.numeros.filter((n) => n.comercial) : opcoes.numeros;
+  const semLinha = destinoSelecionado?.finalidade === "COMERCIAL" && !numeros.length;
   return <div className="space-y-3">
     <form className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-3" onSubmit={async (e) => {
       e.preventDefault();
@@ -27,7 +30,12 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
       if (d?.tipo === "ok") { router.push(`/inbox?c=${d.dado!.id}`); router.refresh(); }
     }}>
       <label className="grid gap-1 text-sm">Finalidade e destinatário
-        <select required value={destino} onChange={(e) => setDestino(e.target.value)} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="max-w-sm rounded border p-2">
+        <select required value={destino} onChange={(e) => {
+          const novo = opcoes.destinos.find((item) => item.chave === e.target.value);
+          setDestino(e.target.value);
+          // Canal escolhido que não serve ao novo assunto (ex.: cobrança para um lead) é limpo.
+          if (novo?.finalidade === "COMERCIAL" && !opcoes.numeros.some((n) => n.id === numero && n.comercial)) setNumero("");
+        }} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="max-w-sm rounded border p-2">
           <option value="">Selecione o atendimento</option>
           {opcoes.destinos.map((d) => <option key={d.chave} value={d.chave} disabled={d.disponivel === false}>{d.nome}{d.disponivel === false ? " · indisponível" : ""}</option>)}
         </select>
@@ -35,11 +43,12 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
       <label className="grid gap-1 text-sm">Canal da escola
         <select required value={numero} onChange={(e) => setNumero(e.target.value)} className="rounded border p-2">
           <option value="">Selecione o canal</option>
-          {opcoes.numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
+          {numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>
       </label>
-      <button disabled={acao.ocupado || !opcoes.destinos.length || !opcoes.numeros.length} className={botaoClasses({ tamanho: "lg" })}>Abrir atendimento</button>
+      <button disabled={acao.ocupado || !opcoes.destinos.length || !numeros.length} className={botaoClasses({ tamanho: "lg" })}>Abrir atendimento</button>
       {!opcoes.numeros.length && <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio>}
+      {opcoes.numeros.length > 0 && semLinha && <EstadoVazio>Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a você.</EstadoVazio>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>
     <FeedbackAcao erro={acao.erro} />

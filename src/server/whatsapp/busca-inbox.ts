@@ -51,10 +51,30 @@ export function mesclarPorRecencia<T extends ComRecencia>(recentes: T[], naoLida
   return todas.sort((a, b) => t(b.ultimaMensagemEm) - t(a.ultimaMensagemEm) || b.criadoEm.getTime() - a.criadoEm.getTime());
 }
 
-/** Link da inbox mantendo a busca e, se houver, a conversa aberta. */
-export function hrefInbox({ busca, c }: { busca?: string; c?: string | null }): string {
+/**
+ * Filtro por tipo de canal (SPEC-ERP-005 §5.5): "linha" = conversas das linhas comerciais (números
+ * de VENDAS); "institucional" = o resto. Só restringe o escopo — quem não vê um tipo continua sem vê-lo.
+ */
+export type CanalInbox = "linha" | "institucional";
+
+export function lerCanalInbox(p: Parametros): CanalInbox | "" {
+  const v = Array.isArray(p.canal) ? p.canal[0] : p.canal;
+  return v === "linha" || v === "institucional" ? v : "";
+}
+
+const DE_LINHA: Prisma.AtendimentoWhatsAppWhereInput = { finalidade: "COMERCIAL", conversa: { numero: { finalidade: "VENDAS" } } };
+
+export function whereCanalInbox(canal: CanalInbox | ""): Prisma.AtendimentoWhatsAppWhereInput {
+  if (canal === "linha") return DE_LINHA;
+  if (canal === "institucional") return { NOT: DE_LINHA };
+  return {};
+}
+
+/** Link da inbox mantendo a busca, o filtro de canal e, se houver, a conversa aberta. */
+export function hrefInbox({ busca, c, canal }: { busca?: string; c?: string | null; canal?: CanalInbox | "" }): string {
   const q = new URLSearchParams();
   if (busca) q.set("busca", busca);
+  if (canal) q.set("canal", canal);
   if (c) q.set("c", c);
   const s = q.toString();
   return s ? `/inbox?${s}` : "/inbox";
