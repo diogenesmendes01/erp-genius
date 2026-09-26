@@ -205,6 +205,14 @@ sem install; `DATABASE_URL` forçado para endereço inalcançável durante os te
   já estourava o tempo antes desta entrega (rotinas sem mock tentavam o banco); agora todas estão
   mockadas.
 
+Travas unitárias no `npm test` comum (revisão R1 da PR #128, B1): `linha-comercial.test.ts`,
+`escopo-atendimentos.test.ts` e `historico.test.ts` prendem, com Prisma mockado, o escopo da linha
+(LC-D02/L03/L03b/L05), o roteamento (§5.1–5.2, LC-I01), o backfill (LC-15) e o histórico sem efeitos
+(LC-10/LC-11). Treze mutações dessas garantias (ramo da linha, `ativo`, exclusão do responsável em
+VENDAS, equipe do gerente, filtros e não lidas do backfill, ramo institucional, linha inativa,
+janela, `skipDuplicates`, `ultimoInboundEm` e `naoLidas` no histórico) foram aplicadas uma a uma:
+todas derrubaram a suíte unitária com teste nomeado; fontes restaurados.
+
 Verificação a cargo do integrador e do tester (não há código pendente — tudo está na entrega):
 
 - **Integração** (`vitest run -c vitest.integration.config.ts`): `linha-comercial.int.test.ts` e as
