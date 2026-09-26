@@ -5,6 +5,7 @@ import { listarPropostasEquivalencia } from "@/server/avaliacoes/equivalencia-co
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const turma = (dado: { codigo: string | null; nome: string | null }) => dado.codigo ?? dado.nome ?? "Turma sem identificação";
 const nomesEstado = { PENDENTE: "Aguardando decisão", APROVADA: "Autorizada para execução", REJEITADA: "Rejeitada", APLICADA: "Transferência efetivada" } as const;
@@ -36,9 +37,9 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   return <section className="space-y-5">
     <VoltarPara href="/academico" />
     <header className="space-y-2"><h1 className="text-2xl font-medium">Propostas de aproveitamento</h1><p>{secretaria ? "Fila de autorizações da matrícula. A execução é conferida novamente ao abrir cada proposta." : "Histórico e fila de propostas de aproveitamento desta matrícula."}</p></header>
-    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : <p>Nenhuma proposta autorizada aguarda execução nesta página.</p>}</section>
+    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : <EstadoVazio>Nenhuma proposta autorizada aguarda execução nesta página.</EstadoVazio>}</section>
     {historico.length > 0 && <section className="space-y-3"><h2 className="text-xl font-medium">Outras propostas</h2>{lista(historico)}</section>}
-    {!itens.length && <p>Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.</p>}
+    {!itens.length && <EstadoVazio bloco>Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.</EstadoVazio>}
     {resultado.dado.proximoCursor && <Link className="inline-block underline" href={`/academico/equivalencias?${new URLSearchParams({ matriculaId, cursor: resultado.dado.proximoCursor })}`}>Próximas propostas</Link>}
   </section>;
 }

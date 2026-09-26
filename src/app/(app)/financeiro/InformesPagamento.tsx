@@ -10,6 +10,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -32,7 +33,7 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
   return <section className="space-y-3">
     <h2 className="text-lg font-medium">Pagamentos informados</h2>
     <p className="text-sm text-gray-600">Informes a conferir preservam o saldo até a confirmação de outra pessoa do Financeiro.</p>
-    {!informes.length && <p className="text-sm text-gray-500">Nenhum informe neste atendimento.</p>}
+    {!informes.length && <EstadoVazio>Nenhum informe neste atendimento.</EstadoVazio>}
     {informes.map((i) => <article key={i.id} className="space-y-2 rounded-md border p-3 text-sm">
       <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {new Date(i.dataPagamento).toLocaleDateString("pt-BR")}</p>
       <p>{i.status === "A_CONFERIR" ? "A conferir" : i.status === "CONFIRMADO" ? "Confirmado" : "Rejeitado"} · {rotular(FORMA_PAGAMENTO_LABEL, i.forma)}</p>

@@ -5,6 +5,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { PrepararGrade } from "./PrepararGrade";
 import { VoltarPara } from "@/components/VoltarPara";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function NovaGradePage({ searchParams }: { searchParams: Promise<{ busca?: string; cursor?: string; turmaId?: string | string[] }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -25,7 +26,7 @@ export default async function NovaGradePage({ searchParams }: { searchParams: Pr
     <p>Selecione uma turma planejada. O calendário institucional precisa estar aprovado e os parâmetros da modalidade completos.</p>
     <Link href="/academico/calendario" className="text-brand-700 underline">Conferir calendário institucional</Link>
     <form className="flex flex-wrap items-end gap-3"><label>Buscar pelo código<input name="busca" defaultValue={busca} maxLength={100} className="ml-2 rounded border bg-[var(--surface)] p-2" /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Buscar turmas</button></form>
-    {!turmas.length ? <p>Nenhuma turma planejada sem histórico ou agenda publicada foi encontrada.</p> : <PrepararGrade key={turmaId || busca + (q.cursor ?? "")} turmaInicialId={turmaId || null} turmas={turmas.slice(0, 30).map((t) => ({ id: t.id, codigo: t.codigo ?? `Turma sem código (${t.id})`, versao: t.propostasGrade[0]?.versao ?? 0,
+    {!turmas.length ? <EstadoVazio bloco>Nenhuma turma planejada sem histórico ou agenda publicada foi encontrada.</EstadoVazio> : <PrepararGrade key={turmaId || busca + (q.cursor ?? "")} turmaInicialId={turmaId || null} turmas={turmas.slice(0, 30).map((t) => ({ id: t.id, codigo: t.codigo ?? `Turma sem código (${t.id})`, versao: t.propostasGrade[0]?.versao ?? 0,
       dataInicio: t.dataInicio?.toISOString().slice(0, 10) ?? null, horario: t.horarioInicio, dias: t.diasSemana,
       quantidade: t.modalidade.aulasPorNivel, duracao: t.modalidade.horasAula * 60, frequencia: t.modalidade.frequencia, professor: t.professor?.nome ?? null }))} />}
     {turmas.length > 30 && <Link href={`/academico/grades/nova?busca=${encodeURIComponent(busca)}&cursor=${encodeURIComponent(turmas[29].id)}`}>Próximas turmas</Link>}

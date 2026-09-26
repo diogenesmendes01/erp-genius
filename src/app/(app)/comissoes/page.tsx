@@ -8,6 +8,7 @@ import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
 import { Paginacao } from "@/components/Paginacao";
 import { faixaDaPagina, hrefLista, lerOpcao, lerPagina, paginaAlemDoFim, type ParametrosUrl } from "@/lib/pagina-url";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 /** Beneficiário histórico tem acesso à comissão sem recuperar a carteira transferida. */
 export default async function ComissoesPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
@@ -35,7 +36,7 @@ export default async function ComissoesPage({ searchParams }: { searchParams: Pr
       <thead><tr className="bg-gray-50"><th className="p-3">Beneficiário</th><th className="p-3">Cálculo</th><th className="p-3">Valor</th><th className="p-3">Situação</th></tr></thead>
       <tbody>{comissoes.map((c) => <tr key={c.id} className="border-t"><td className="p-3">{c.vendedor}</td><td className="p-3">{c.tipo === "VALOR_FIXO" ? "Valor fixo" : `${c.percentual}% da taxa`}</td><td className="p-3">{formatarMoeda(c.valor, c.moeda)}</td><td className="p-3">{STATUS_COMISSAO_LABEL[c.status]}</td></tr>)}</tbody>
     </table></div>
-    {!comissoes.length && <p className="text-sm text-gray-500">{status ? <>Nenhuma comissão nesta situação. <Link href="/comissoes" className="text-brand-700 hover:underline">Ver todas</Link></> : "Nenhuma comissão no seu escopo."}</p>}
+    {!comissoes.length && <EstadoVazio bloco>{status ? <>Nenhuma comissão nesta situação. <Link href="/comissoes" className="text-brand-700 hover:underline">Ver todas</Link></> : "Nenhuma comissão no seu escopo."}</EstadoVazio>}
     <Paginacao pagina={pagina} temProxima={temProxima} href={(p) => hrefLista("/comissoes", { status, pagina: p })} rotulo="Páginas de comissões" />
   </div>;
 }

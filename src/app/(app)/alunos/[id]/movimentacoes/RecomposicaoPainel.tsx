@@ -15,6 +15,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 type Rascunho = NonNullable<Extract<Awaited<ReturnType<typeof consultarRascunhoRecomposicao>>, { ok: true }>["dado"]>;
@@ -61,7 +62,7 @@ export function RecomposicaoPainel({ contexto, usuarioId, podeAprovar, atualizar
       if (!r.success) { setMensagem("Confira as datas, selecione os direitos e preencha motivo e evidência com ao menos cinco caracteres."); return; }
       executar(async () => { const p = await preverRecomposicaoCobertura(r.data); if (!p.ok) throw new Error(p.erro); setEntrada(r.data); setPrevia(p.dado); });
     }}><fieldset disabled={ocupado} className="space-y-2"><legend>Preparar nova versão</legend>
-      {direitos.length ? direitos.map((d) => <label key={d.id} className="block"><input type="checkbox" name="direito" value={d.id} /> Dia devido de {d.diaOrigem}</label>) : <p>Nenhum direito disponível sem programação.</p>}
+      {direitos.length ? direitos.map((d) => <label key={d.id} className="block"><input type="checkbox" name="direito" value={d.id} /> Dia devido de {d.diaOrigem}</label>) : <EstadoVazio>Nenhum direito disponível sem programação.</EstadoVazio>}
       <label className="grid">Retorno da oferta<input type="date" name="retorno" required className={estilo} /></label><label className="grid">Início dos dias de compensação<input type="date" name="inicio" required className={estilo} /></label>
       {mensalidades.map((c) => <div key={c.id}><p>Mensalidade {c.id} · atual: {formatarDataCivil(c.coberturaInicio, "pendente")} a {formatarDataCivil(c.coberturaFim, "pendente")}</p><label className="grid">Início proposto — {c.id}<input type="date" name={`${c.id}:inicio`} defaultValue={formatarDataCivil(c.coberturaInicio, "")} required className={estilo} /></label><label className="grid">Fim proposto — {c.id}<input type="date" name={`${c.id}:fim`} defaultValue={formatarDataCivil(c.coberturaFim, "")} required className={estilo} /></label></div>)}
       <label className="grid">Motivo da recomposição<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><label className="grid">Evidência das condições<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!direitos.length}>Conferir proposta de recomposição</button>

@@ -10,6 +10,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(), [ocupado, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
@@ -50,7 +51,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico das condições</h2>
-    {!d.versoes.length && <p>Nenhuma versão registrada.</p>}
+    {!d.versoes.length && <EstadoVazio>Nenhuma versão registrada.</EstadoVazio>}
     {d.versoes.map(v => <article key={v.id} className="space-y-2 rounded border p-4">
       <h3>Versão {v.versao} · {v.status === "APROVADA" ? "Aprovada" : v.status === "REJEITADA" ? "Rejeitada" : "Aguardando revisão"}</h3>
       <p>{v.preparador.nome} · {instanteAdministrativo(v.criadaEm)} · Documento {v.documentoId}</p>

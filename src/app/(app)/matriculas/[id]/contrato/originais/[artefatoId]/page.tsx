@@ -10,6 +10,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -69,7 +70,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
       <ConferirAssinatura key={atual.hash} matriculaId={id} artefatoId={artefatoId} revisaoHash={atual.hash} />
     </section>}
     <section className="space-y-3"><h2 className="text-xl">Histórico de conferências</h2>
-      {!d.historico.length && <p>Nenhuma conferência registrada.</p>}
+      {!d.historico.length && <EstadoVazio>Nenhuma conferência registrada.</EstadoVazio>}
       {d.historico.map((h) => <article className="rounded border p-3" key={h.id}>
         <p>{h.autor.nome}, {textoInstanteAdministrativo(h.criadaEm, preferenciaFusoExibicao)}.</p><p>{h.motivo}</p>
         <p>{atual?.hash === h.revisaoHash ? "Corresponde à revisão atual." : "Registro histórico; exige nova conferência antes de avançar."}</p>

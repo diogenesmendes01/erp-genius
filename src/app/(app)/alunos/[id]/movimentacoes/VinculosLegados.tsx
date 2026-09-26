@@ -7,6 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Vinculos = NonNullable<Extract<Awaited<ReturnType<typeof consultarVinculosLegados>>, { ok: true }>["dado"]>;
 export function VinculosLegados({ alunoId }: { alunoId: string }) {
@@ -42,10 +43,10 @@ export function VinculosLegados({ alunoId }: { alunoId: string }) {
     <p className="text-sm">Identifique o contrato que já corresponde a cada vínculo. Confira os registros da escola antes de confirmar; esta operação preserva a turma e as datas.</p>
     <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={consultar}>Consultar vínculos sem matrícula</button>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
-    {vinculos?.length === 0 && <p>Nenhum vínculo ativo sem matrícula identificado.</p>}
+    {vinculos?.length === 0 && <EstadoVazio>Nenhum vínculo ativo sem matrícula identificado.</EstadoVazio>}
     {vinculos?.map((v) => <fieldset key={v.alocacaoId} disabled={ocupado} className="space-y-2 border-t pt-3">
       <legend className="font-medium">{v.turma}</legend>
-      {v.contratos.length === 0 ? <p>Não há contrato ativo compatível. Confira o cadastro contratual antes de associar.</p> : <>
+      {v.contratos.length === 0 ? <EstadoVazio>Não há contrato ativo compatível. Confira o cadastro contratual antes de associar.</EstadoVazio> : <>
         <label className="block text-sm">Matrícula correspondente<select className="ml-2 rounded border p-2" value={escolhas[v.alocacaoId] ?? ""} onChange={(e) => setEscolhas((a) => ({ ...a, [v.alocacaoId]: e.target.value }))}><option value="">Selecione após conferir</option>{v.contratos.map((m) => <option key={m.id} value={m.id}>{m.codigo ?? "Sem código"} · {m.nome}</option>)}</select></label>
         <label className="block text-sm">Motivo e referência da conferência<CampoTexto className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivos[v.alocacaoId] ?? ""} onChange={(e) => setMotivos((a) => ({ ...a, [v.alocacaoId]: e.target.value }))} /></label>
         <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!escolhas[v.alocacaoId] || (motivos[v.alocacaoId] ?? "").trim().length < 5} onClick={() => vincular(v.alocacaoId)}>Confirmar vínculo conferido</button>

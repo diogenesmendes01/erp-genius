@@ -6,6 +6,7 @@ import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function HistoricoPreparacao({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -31,7 +32,7 @@ export default async function HistoricoPreparacao({ searchParams }: { searchPara
       <p>Propostas preparadas com esta autorização: {autorizacao.quantidadePropostas}.</p>
       <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
     </article>)}
-    {!d.historico.length && <p>Nenhuma autorização de preparação registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização de preparação registrada.</EstadoVazio>}
     {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ alocacaoId: d.alocacaoId, depoisId: d.proximoId })}`}>Próximas autorizações</Link>}
     {depoisId && <Link className="block underline" href={caminhoHistorico}>Primeira página do histórico</Link>}
   </section>;

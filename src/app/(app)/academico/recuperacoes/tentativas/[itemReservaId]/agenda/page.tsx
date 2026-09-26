@@ -7,6 +7,7 @@ import { ProporAgenda, DecidirAgenda } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Agenda({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -36,7 +37,7 @@ export default async function Agenda({ params, searchParams }: { params: Promise
       {p.estadoMudou && <p role="status">A conferência mudou desde a preparação. {p.impedimentoAtual ?? "Prepare uma nova versão com as condições atuais."}</p>}
       {p.estadoConferido && <DecidirAgenda propostaId={p.id} estadoConferido={p.estadoConferido} podeAprovar={p.versaoAtual && !p.estadoMudou && !p.impedimentoAtual} />}
     </article>)}
-    {!d.propostas.length && <p>Nenhuma proposta registrada.</p>}
+    {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
   </section>;
 }

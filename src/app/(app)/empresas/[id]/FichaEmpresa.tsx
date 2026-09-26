@@ -16,6 +16,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -98,7 +99,7 @@ export function FichaEmpresa({
         <p className="mb-4 text-sm text-gray-500">A empresa pode ser o responsável financeiro, mas cada colaborador é preparado e contratado individualmente.</p>
 
         {colaboradores.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum contrato individual vinculado a esta empresa ainda.</p>
+          <EstadoVazio>Nenhum contrato individual vinculado a esta empresa ainda.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -144,9 +145,9 @@ export function FichaEmpresa({
         <h2 className="mb-3 font-medium">Faturas históricas</h2>
 
         {faturas.length === 0 ? (
-          <p className="text-sm text-gray-400">
+          <EstadoVazio>
             Nenhuma fatura histórica vinculada a esta empresa.
-          </p>
+          </EstadoVazio>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

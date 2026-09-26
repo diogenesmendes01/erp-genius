@@ -18,6 +18,7 @@ import {
   type FiltrosEmpresas,
 } from "@/server/empresas/filtros";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // Empresas representam o responsável financeiro. As matrículas permanecem contratos
 // individuais; a ficha conserva o cadastro e o histórico financeiro da empresa.
@@ -142,14 +143,14 @@ export function EmpresasCliente({
         </p>
 
         {empresas.length === 0 ? (
-          <div aria-busy={lista.buscando} className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
+          <EstadoVazio bloco aria-busy={lista.buscando}>
             {/* Estado vazio duplo: nenhuma cadastrada × filtro sem resultado (este oferece a saída). */}
             {totalBase === 0 ? "Nenhuma empresa ainda. Crie a primeira para registrar o responsável financeiro de contratos individuais." : filtrando ? (
               <>Nenhuma empresa com esses filtros. <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-brand-700 hover:underline">Limpar filtros</Link></>
             ) : (
               <>Nenhuma empresa nesta página. <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
             )}
-          </div>
+          </EstadoVazio>
         ) : (
           <div aria-busy={lista.buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
             <table className="w-full min-w-[640px] text-sm">

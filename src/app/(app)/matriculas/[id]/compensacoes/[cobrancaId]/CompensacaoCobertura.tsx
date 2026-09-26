@@ -9,6 +9,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCompensacoesCobertura>>, { ok: true }>["dado"]>;
 
@@ -91,7 +92,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
     {erro && <p role="alert">{erro}</p>}
     <section className="space-y-3">
       <h2 className="text-lg">Últimas propostas</h2>
-      {!d.propostas.length && <p>Nenhuma proposta de compensação para esta mensalidade.</p>}
+      {!d.propostas.length && <EstadoVazio>Nenhuma proposta de compensação para esta mensalidade.</EstadoVazio>}
       {d.propostas.map((proposta) => <article key={proposta.id} className="space-y-2 rounded border p-4">
         <p>{proposta.status === "PENDENTE" ? "Aguardando decisão" : proposta.status === "APROVADA" ? "Direito aprovado" : "Proposta rejeitada"}.</p>
         <p>Dias propostos: {proposta.dias.map(dataCivil).join(", ")}.</p>

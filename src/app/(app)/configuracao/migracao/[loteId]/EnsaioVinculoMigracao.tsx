@@ -6,6 +6,7 @@ import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarC
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Oferta = { produtoId: string; paisId: string; moeda: string; rotulo: string };
 type Turma = { id: string; rotulo: string };
@@ -51,4 +52,4 @@ function Historico({ ensaios, preferenciaFusoExibicao }: { ensaios: Ensaio[]; pr
     const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
     return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
   };
-  return <div><strong>Histórico de ensaios</strong>{ensaios.length === 0 ? <p className="mt-1">Ainda não há ensaio registrado para esta fotografia.</p> : <ul className="mt-1 space-y-2">{ensaios.map((e, i) => <li key={`${e.criadoEm.toISOString()}-${i}`} className="rounded border bg-surface p-2"><p>{resultado[e.resultado]} por {e.ensaiadoPor.nome} em {instanteAdministrativo(e.criadoEm)}</p>{e.requisitos.length > 0 && <ul className="mt-1 list-disc pl-4">{e.requisitos.map((codigo) => <li key={codigo}>{textoRequisito(codigo)}</li>)}</ul>}</li>)}</ul>}</div>; }
+  return <div><strong>Histórico de ensaios</strong>{ensaios.length === 0 ? <EstadoVazio className="mt-1">Ainda não há ensaio registrado para esta fotografia.</EstadoVazio> : <ul className="mt-1 space-y-2">{ensaios.map((e, i) => <li key={`${e.criadoEm.toISOString()}-${i}`} className="rounded border bg-surface p-2"><p>{resultado[e.resultado]} por {e.ensaiadoPor.nome} em {instanteAdministrativo(e.criadoEm)}</p>{e.requisitos.length > 0 && <ul className="mt-1 list-disc pl-4">{e.requisitos.map((codigo) => <li key={codigo}>{textoRequisito(codigo)}</li>)}</ul>}</li>)}</ul>}</div>; }

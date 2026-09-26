@@ -6,6 +6,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const rotulosReserva = {
   RESERVADA: "Reservada",
@@ -48,7 +49,7 @@ export default async function AgendasSegundaChamadaPage({
     <VoltarPara href="/academico" />
     {cursor && <Link className="underline" href="/academico/segundas-chamadas/agendas">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Agendas de segunda chamada</h1><p>Consulte as reservas agendadas e abra a remarcação da oportunidade correspondente.</p></header>
-    {!d.itens.length && <p>Nenhuma agenda de segunda chamada foi encontrada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma agenda de segunda chamada foi encontrada.</EstadoVazio>}
     {d.itens.map((item) => <article key={item.reservaId} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{item.aluno} · avaliação {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matricula.codigo ?? "sem código"} · Turma {item.turma.codigo ?? item.turma.nome ?? "sem identificação"}.</p>

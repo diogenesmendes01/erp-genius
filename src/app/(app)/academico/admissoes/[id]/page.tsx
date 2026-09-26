@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarJanelasAdmissao } from "@/server/matricula/janela-admissao-consulta";
 import { JanelaFormulario, DecidirJanela } from "./JanelaFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function JanelaPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -19,7 +20,7 @@ export default async function JanelaPage({ params, searchParams }: { params: Pro
     </section>
     {r.turma.status !== "CONCLUIDA" && r.fusoInstitucional ? <JanelaFormulario key={`${r.ultimaVersao}:${r.fusoInstitucional}`} turmaId={id} versaoAnterior={r.ultimaVersao} fusoConferido={r.fusoInstitucional} /> : <p>Preparação indisponível: confira o fuso institucional e se a turma está concluída.</p>}
     <h2 className="text-lg font-medium">Histórico de versões</h2>
-    {!r.registros.length && <p>Nenhuma versão nesta página.</p>}
+    {!r.registros.length && <EstadoVazio bloco>Nenhuma versão nesta página.</EstadoVazio>}
     {r.registros.map((v) => <section key={v.id} className="space-y-3 rounded border p-4">
       <h3 className="font-medium">Versão {v.versao} · {v.decisao ? v.decisao.aprovada ? "Aprovada" : "Rejeitada" : "Aguardando decisão"}</h3>
       <p>Limite incluído: {v.limiteEntrada} · {v.fusoAdmissao} · Preparada por {v.preparador.nome}</p><p className="whitespace-pre-wrap">{v.motivo}</p>

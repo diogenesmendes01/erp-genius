@@ -53,7 +53,7 @@ describe("EmpresasCliente (filtros na URL)", () => {
       expect(html).toMatch(/<button type="submit" disabled=""[^>]*>Buscando…<\/button>/);
       expect(html).toContain('aria-busy="true"');
       // Também no estado vazio: o leitor de tela ouve que a região está carregando.
-      expect(render({ totalBase: 5, filtros: lerFiltrosEmpresas({ situacao: "inativas" }) })).toMatch(/<div aria-busy="true"[^>]*>Nenhuma empresa com esses filtros/);
+      expect(render({ totalBase: 5, filtros: lerFiltrosEmpresas({ situacao: "inativas" }) })).toMatch(/<div[^>]*aria-busy="true"[^>]*><p>Nenhuma empresa com esses filtros/);
     } finally {
       pendente.valor = false;
     }
