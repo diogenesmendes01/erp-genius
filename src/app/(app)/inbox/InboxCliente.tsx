@@ -406,7 +406,7 @@ function Thread({
             {thread.podeCriarLead && (
               <button className={btnSec} disabled={criandoLead} onClick={criarLead}>
                 <span className="flex items-center gap-1">
-                  <IconUserPlus className="h-3.5 w-3.5" /> {criandoLead ? "Criando…" : "Criar lead"}
+                  <IconUserPlus className="h-3.5 w-3.5" aria-hidden /> {criandoLead ? "Criando…" : "Criar lead"}
                 </span>
               </button>
             )}
