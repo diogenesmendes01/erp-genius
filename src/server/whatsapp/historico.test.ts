@@ -41,7 +41,10 @@ function escritasDeContato() {
   };
 }
 type EscritasDeContato = ReturnType<typeof escritasDeContato>;
-const sqlCru = () => ({ $executeRaw: vi.fn().mockResolvedValue(0), $executeRawUnsafe: vi.fn().mockResolvedValue(0) });
+// SQL cru escaparia da inspeção por chave. $queryRaw* entra junto: é "de leitura", mas aceita UPDATE.
+const METODOS_SQL_CRU = ["$executeRaw", "$executeRawUnsafe", "$queryRaw", "$queryRawUnsafe"] as const;
+const sqlCru = () => Object.fromEntries(METODOS_SQL_CRU.map((nome) => [nome, vi.fn().mockResolvedValue(0)])) as
+  Record<(typeof METODOS_SQL_CRU)[number], ReturnType<typeof vi.fn>>;
 
 function txEstrito() {
   return {
@@ -72,7 +75,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   tx = txEstrito();
   cliente = { ...escritasDeContato(), ...sqlCru() };
-  Object.assign(m.cliente, { $transaction: m.transacao, contatoWhatsApp: cliente, $executeRaw: cliente.$executeRaw, $executeRawUnsafe: cliente.$executeRawUnsafe });
+  Object.assign(m.cliente, { $transaction: m.transacao, contatoWhatsApp: cliente },
+    Object.fromEntries(METODOS_SQL_CRU.map((nome) => [nome, cliente[nome]])));
   m.transacao.mockImplementation(async (fn: (t: unknown) => unknown) => fn(tx));
   m.acharNumero.mockResolvedValue({ id: "linha", finalidade: "VENDAS", ativo: true });
   m.linha.mockResolvedValue("atendimento-linha");
@@ -99,8 +103,9 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
   afterEach(() => {
     for (const dados of escritasNoContato()) expect(dados, "histórico não grava nem limpa opt-out").not.toHaveProperty("optOutEm");
     // SQL cru escaparia da inspeção por chave: a importação não usa, dentro nem fora da transação.
-    for (const f of [tx.$executeRaw, tx.$executeRawUnsafe, cliente.$executeRaw, cliente.$executeRawUnsafe]) {
-      expect(f, "histórico não usa SQL cru").not.toHaveBeenCalled();
+    for (const nome of METODOS_SQL_CRU) {
+      expect(tx[nome], `histórico não usa SQL cru (${nome}, transação)`).not.toHaveBeenCalled();
+      expect(cliente[nome], `histórico não usa SQL cru (${nome}, cliente)`).not.toHaveBeenCalled();
     }
     // Fora da transação nada escreve no contato: toda escrita da importação é atômica com as mensagens.
     for (const f of Object.values(cliente)) expect(f, "escrita no contato fora da transação").not.toHaveBeenCalled();
