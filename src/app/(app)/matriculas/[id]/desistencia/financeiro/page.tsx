@@ -13,6 +13,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
@@ -38,7 +39,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     </table></div>
     {d.podePropor && d.pedido && <PropostaFormulario key={d.pedido.estadoHash} pedidoId={d.pedido.id} estadoHash={d.pedido.estadoHash} />}
     <h2 className="text-lg font-medium">Últimas propostas financeiras</h2>
-    {!d.propostas.length && <p>Nenhuma proposta registrada.</p>}
+    {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
       <h3 className="font-medium">Versão {p.versao} · {p.preparadorNome}</h3>
       <p>Preparada em {instanteAdministrativo(p.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>
@@ -55,7 +56,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         return <>
           {acerto.impedimento && <p role="status">{acerto.impedimento}</p>}
           {acerto.podePreparar && acerto.pedido && acerto.condicoes && <PrepararAcertoContratualFormulario pedidoId={acerto.pedido.id} condicoesId={acerto.condicoes.id} reapresentacao={acerto.reapresentacao} />}
-          {!acerto.propostas.length && <p>Nenhuma memória contratual preparada.</p>}
+          {!acerto.propostas.length && <EstadoVazio bloco>Nenhuma memória contratual preparada.</EstadoVazio>}
           {acerto.propostas.map(proposta => <article key={proposta.id} className="space-y-3 rounded border p-4">
             <h3 className="font-medium">Memória versão {proposta.versao} de {proposta.preparadorNome} · {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
             {proposta.anteriorId && <p>Reapresentada da versão anterior: {proposta.motivoReapresentacao}</p>}
@@ -80,7 +81,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {base.orientacaoPreparacao && <p role="status">{base.orientacaoPreparacao}</p>}
           {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
           {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}
-          {!base.propostas.length && <p>Nenhuma reconferência registrada.</p>}
+          {!base.propostas.length && <EstadoVazio bloco>Nenhuma reconferência registrada.</EstadoVazio>}
           {base.propostas.map(proposta => <div key={proposta.id} className="space-y-3 border-t pt-3"><h4>Delta {proposta.versao} · {proposta.preparadorNome} · {proposta.estado}</h4><p>Preparada em {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>
             {proposta.pendencia && <p role="status">{proposta.pendencia}</p>}
             <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Ajuste devido</th><th>Ajuste saldo</th><th>Crédito novo</th><th>Redução bloqueada</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{formatarMoeda(item.ajusteDevido, item.moeda)}</td><td>{formatarMoeda(item.ajusteSaldo, item.moeda)}</td><td>{formatarMoeda(item.creditoDelta, item.moeda)}</td><td>{formatarMoeda(item.reducaoCredito, item.moeda)}</td></tr>)}</tbody></table>

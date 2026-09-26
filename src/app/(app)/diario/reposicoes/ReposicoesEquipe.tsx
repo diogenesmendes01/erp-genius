@@ -15,6 +15,7 @@ import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export type OrigemReposicao = {
   aulaOriginalId: string;
@@ -96,7 +97,7 @@ export function ReposicoesEquipe({ reposicoes, operacoes = {}, mostrarRelatoEqui
   return <section className="space-y-4">
     <h1 className="text-2xl font-medium">Reposições individuais por matrícula</h1>
     <p>Esta lista mostra apenas a origem acadêmica e o estado da reposição. Não expõe dados pessoais nem financeiros do aluno.</p>
-    {!reposicoes.length && <p>Nenhuma reposição encontrada no escopo consultado.</p>}
+    {!reposicoes.length && <EstadoVazio>Nenhuma reposição encontrada no escopo consultado.</EstadoVazio>}
     {reposicoes.map(reposicao => <article key={reposicao.id} className="space-y-3 rounded border p-4">
       <h2 className="text-lg font-medium">{reposicao.modalidade === "PARTICULAR" ? "Particular de reposição" : "Gravação de reposição"}</h2>
       <p>Origem: {descreverParticipacaoOrigem(reposicao.origem.participacao)}, de {formato(reposicao.origem.inicio, fusoExibicao)} a {formato(reposicao.origem.fim, fusoExibicao)} (exibido em {fusoExibicao}; origem {reposicao.origem.fuso}).</p>

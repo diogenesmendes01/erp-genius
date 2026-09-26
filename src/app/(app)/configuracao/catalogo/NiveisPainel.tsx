@@ -8,6 +8,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { IdiomaRow } from "./IdiomasPainel";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const inputCls =
   "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
@@ -39,7 +40,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
           <div key={i.id} className="rounded-lg border border-gray-200 p-4">
             <div className="mb-2 text-sm font-medium text-gray-700">{i.nome}</div>
             {i.niveis.length === 0 ? (
-              <p className="text-xs text-gray-400">Sem níveis.</p>
+              <EstadoVazio>Sem níveis.</EstadoVazio>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {i.niveis.map((n) => (

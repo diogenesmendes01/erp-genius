@@ -10,6 +10,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -69,7 +70,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico de relatos</h2>
-    {!d.relatos.length && <p>Nenhum relato registrado nesta página.</p>}
+    {!d.relatos.length && <EstadoVazio>Nenhum relato registrado nesta página.</EstadoVazio>}
     {d.relatos.map(relato => <article key={relato.id} className="space-y-2 rounded border p-4">
       <h3>{dataCivil(relato.inicio)}{relato.fim ? ` a ${dataCivil(relato.fim)}` : relato.terminoAprovado ? ` a ${dataCivil(relato.terminoAprovado.fim)}` : " em aberto"}</h3>
       {relato.terminoAprovado && <p role="status">Último dia de indisponibilidade aprovado: {dataCivil(relato.terminoAprovado.fim)}.</p>}

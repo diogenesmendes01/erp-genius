@@ -8,6 +8,7 @@ import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { PrepararPlano, DecidirPlano } from "./Formularios";
 import { AutorizarPreparacao } from "./AutorizarPreparacao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -52,7 +53,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       {p.podeDecidir && !p.podeAprovar && <p>Aprovação indisponível: confira versão, vínculo, fontes das notas e limites configurados.</p>}
       {p.podeDecidir && p.propostaHash && <DecidirPlano propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}
     </article>)}
-    {!d.planos.length && <p>Nenhuma proposta nesta página.</p>}
+    {!d.planos.length && <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId, antesVersao: String(d.proximaAntesVersao) })}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId })}`}>Propostas recentes</Link>}
     <Link className="block underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId })}`}>Notas das recuperações realizadas</Link>

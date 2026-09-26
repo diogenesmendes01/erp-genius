@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function AutorizacaoEspecialRecuperacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -36,7 +37,7 @@ export default async function AutorizacaoEspecialRecuperacao({ params, searchPar
       <p>Prazo até {dataHora(autorizacao.prazoAte)} ({fuso}; origem UTC).</p>
       <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
     </article>)}
-    {!d.historico.length && <p>Nenhuma autorização especial registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização especial registrada.</EstadoVazio>}
     {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ depoisId: d.proximoId })}`}>Autorizações mais antigas</Link>}
     {depoisId && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/autorizacao`}>Primeira página do histórico</Link>}
   </section>;

@@ -6,6 +6,7 @@ import { IdentificacaoAvaliacao } from "../../../../avaliacoes/Identificacao";
 import { Propor, Decidir } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 type Item = { id: string; habilidade: string; realizacaoId: string | null; inicio: string | null; fim: string | null; status: string | null; fusoOrigem: string | null };
 function Alcance({ itens, preferencia, cancelada = false }: { itens: Item[]; preferencia: string | null; cancelada?: boolean }) {
   return <ul className="list-disc pl-5">{itens.map(i => <li key={i.id}>{i.habilidade.replaceAll("_", " ")}: {i.realizacaoId ? "realização preservada, tentativa permanece consumida" : cancelada ? "tentativa liberada sem consumo" : "tentativa pendente nesta conferência"}.
@@ -39,6 +40,7 @@ export default async function Cancelamento({ params, searchParams }: { params: P
         {p.estadoConferido ? <Decidir propostaId={p.id} estadoConferido={p.estadoConferido} podeAprovar={!p.estadoMudou && d.podePropor} /> : <p>Outra pessoa da gestão precisa decidir esta proposta.</p>}
       </>}
     </article>)}
+    {!d.propostas.length && <EstadoVazio>Nenhuma proposta de cancelamento registrada.</EstadoVazio>}
     {d.proximoAntesId && <Link className="underline" href={`?${new URLSearchParams({ antesId: d.proximoAntesId })}`}>Propostas anteriores</Link>}
   </section>;
 }

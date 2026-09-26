@@ -14,6 +14,7 @@ import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Matricula = { exigeAssinaturaIntegrada: boolean; mensalidadesExibidas: { id: string; versao: number; valor: string; moeda: string; inicio: string | null; fim: string | null; vencimento: string }[]; cobertura: { cobrancaId: string | null; versao: number | null; vencimento: string | null; referencia: string | null; inicio: string | null; fim: string | null }; id: string; codigo: string | null; leadId: string | null; alunoId: string | null; nome: string; status: string; assumida: boolean; contratoConfirmado: boolean; documentos: { id: string; nome: string; categoria: string; matriculaId: string | null; url: string }[]; correcoes: { id: string; campo: string; valorProposto: string | null; motivo: string; status: string; motivoResolucao: string | null }[] };
 const campos = { primeiroNome: "Primeiro nome", sobrenome: "Sobrenome", nomePreferido: "Nome preferido", email: "E-mail", telefoneE164: "Telefone com DDI", documentos: "Documento (descreva a correção)" };
@@ -31,7 +32,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
   function confirmar(e: FormEvent<HTMLFormElement>, id: string) { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => confirmarContratoMatricula(id, String(f.get("documentoId")), matriculas.find((m) => m.id === id)!.mensalidadesExibidas.map(({ id, versao }) => ({ id, versao })))); }
   return <div className="space-y-4">
     {erro && <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
-    {!matriculas.length && <p className="text-sm text-gray-500">Nenhuma matrícula no seu escopo.</p>}
+    {!matriculas.length && <EstadoVazio>Nenhuma matrícula no seu escopo.</EstadoVazio>}
     {matriculas.map((m) => <article key={m.id} className="space-y-3 rounded-lg border p-4">
       <Link className="text-sm underline" href={`/matriculas/${m.id}/preparacao`}>Revisar proposta comercial</Link>
       {secretaria && <>
@@ -49,7 +50,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
           <thead><tr><th scope="col" className="p-2">Período coberto</th><th scope="col" className="p-2">Vencimento</th><th scope="col" className="p-2">Valor contratado</th></tr></thead>
           <tbody>{m.mensalidadesExibidas.map((c) => <tr key={c.id} className="border-t"><td className="p-2">{c.inicio && c.fim ? `${formatarDataCivil(c.inicio)} até ${formatarDataCivil(c.fim)}` : "Cobertura pendente de conferência"}</td><td className="p-2">{formatarDataCivil(c.vencimento)}</td><td className="p-2">{formatarMoeda(Number(c.valor), c.moeda)}</td></tr>)}</tbody>
         </table>
-        {!m.mensalidadesExibidas.length && <p className="text-sm">Nenhuma mensalidade registrada.</p>}
+        {!m.mensalidadesExibidas.length && <EstadoVazio>Nenhuma mensalidade registrada.</EstadoVazio>}
       </div>}
       <p className="text-sm">Cobertura: {m.cobertura.referencia === "MES_CIVIL" ? "Mês civil" : m.cobertura.referencia === "CICLO_MATRICULA" ? "Ciclo mensal da matrícula" : "Referência pendente"} · {formatarDataCivil(m.cobertura.inicio, "Início pendente")} até {formatarDataCivil(m.cobertura.fim, "Fim pendente")}. Vencimento e cobertura são independentes.</p>
       {secretaria && m.assumida && !m.contratoConfirmado && ["RASCUNHO", "AGUARDANDO"].includes(m.status) && <form key={`${m.cobertura.cobrancaId}-${m.cobertura.versao}`} className="flex flex-wrap items-end gap-2 rounded border p-3" onSubmit={(e) => {

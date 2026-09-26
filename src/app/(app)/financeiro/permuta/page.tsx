@@ -6,6 +6,7 @@ import { PermutaOperacional } from "./PermutaOperacional";
 import { consultarPermutas, listarCobrancasParaPermuta } from "@/server/financeiro/permuta-servico";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function PermutaPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   const pagina = Number((await searchParams).pagina ?? 1);
@@ -26,7 +27,7 @@ export default async function PermutaPage({ searchParams }: { searchParams: Prom
     <VoltarPara href={retorno} />
     <h1 className="text-2xl font-medium">Permutas por serviço comprovado</h1>
     <p>Página {pagina} · até 50 acordos por página</p>
-    {resultado.dado.length === 0 && <p>Nenhum acordo nesta página.</p>}
+    {resultado.dado.length === 0 && <EstadoVazio bloco>Nenhum acordo nesta página.</EstadoVazio>}
     <nav aria-label="Páginas de permutas" className="flex gap-4">
       {pagina > 1 && <Link href={`/financeiro/permuta?pagina=${pagina - 1}`} className="underline">Anterior</Link>}
       {resultado.dado.length === 50 && <Link href={`/financeiro/permuta?pagina=${pagina + 1}`} className="underline">Próxima</Link>}

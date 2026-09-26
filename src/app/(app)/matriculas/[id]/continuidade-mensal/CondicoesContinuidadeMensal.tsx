@@ -10,6 +10,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -145,7 +146,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico das condições</h2>
-    {!d.versoes.length && <p>Nenhuma versão registrada.</p>}
+    {!d.versoes.length && <EstadoVazio>Nenhuma versão registrada.</EstadoVazio>}
     {d.versoes.map(versao => <article key={versao.id} className="space-y-2 rounded border p-4">
       <h3>Versão {versao.versao} · {versao.status === "APROVADA" ? "Aprovada" : versao.status === "REJEITADA" ? "Rejeitada" : "Aguardando revisão"}</h3>
       <p>{versao.preparador.nome} · {data(versao.criadaEm)} · contrato vinculado</p>

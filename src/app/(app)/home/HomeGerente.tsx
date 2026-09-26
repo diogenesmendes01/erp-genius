@@ -2,6 +2,7 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
 import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeGerente } from "@/server/home/consultas";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeGerente>>;
 
@@ -50,7 +51,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-3 font-medium">Ranking de vendedores</h2>
           {ranking.length === 0 ? (
-            <p className="text-sm text-gray-400">Sem vendedores.</p>
+            <EstadoVazio>Sem vendedores.</EstadoVazio>
           ) : (
             <ol className="flex flex-col gap-1 text-sm">
               {ranking.map((r, i) => (
@@ -82,7 +83,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Equipe</h2>
         {dados.equipe.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem vendedores ativos.</p>
+          <EstadoVazio>Sem vendedores ativos.</EstadoVazio>
         ) : (
           <div className="flex flex-wrap gap-2">
             {dados.equipe.map((nome) => (

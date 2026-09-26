@@ -10,6 +10,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -291,9 +292,9 @@ export function ComercialPainel({
       <div className="mt-4">
         <div className="mb-1 text-sm font-medium">Ensaio — últimas saudações simuladas</div>
         {simuladas.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <EstadoVazio>
             Nada simulado ainda. Em ensaio (shadow), cada 1º inbound registra aqui a saudação que teria sido enviada.
-          </p>
+          </EstadoVazio>
         ) : (
           <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-surface">
             {simuladas.map((s) => (

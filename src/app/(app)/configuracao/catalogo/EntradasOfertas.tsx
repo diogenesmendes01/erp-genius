@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { configurarEntradaOferta, consultarEntradasOfertas } from "@/server/catalogo/entrada-oferta";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Oferta = Awaited<ReturnType<typeof consultarEntradasOfertas>>[number];
 function Formulario({ oferta }: { oferta: Oferta }) {
@@ -48,6 +49,6 @@ export function EntradasOfertas({ ofertas }: { ofertas: Oferta[] }) {
   return <section className="space-y-4"><h2 className="text-lg font-medium">Regras de entrada por oferta</h2>
     <p>Dispensar taxa antes da assinatura não dispensa seu pagamento para ativar. O adiantamento por hora terá valor e horas explicitados no contrato. Alterações valem para novas preparações; condições já registradas precisam de revisão própria.</p>
     {ofertas.map((o) => <Formulario key={`${o.id}:${o.versaoEntrada}`} oferta={o} />)}
-    {!ofertas.length && <p>Cadastre a oferta do produto no país para configurar sua entrada.</p>}
+    {!ofertas.length && <EstadoVazio>Cadastre a oferta do produto no país para configurar sua entrada.</EstadoVazio>}
   </section>;
 }

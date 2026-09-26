@@ -5,6 +5,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecisaoFormulario } from "./DecisaoFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function textoInstanteAdministrativo(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
@@ -26,7 +27,7 @@ export default async function AdministracaoDesistenciaPage({ params }: { params:
     {!d.exigeAprovacaoAdministrativa && <p>Os registros consultados não exigem aprovação administrativa por avanço formal. Confira os demais requisitos no pedido.</p>}
     {!!d.pendencias.length && <section className="space-y-2 rounded border p-4"><h2 className="text-lg font-medium">Condições para conferência</h2><ul className="list-disc pl-5">{d.pendencias.map((p, i) => <li key={i}>{p}</li>)}</ul></section>}
     <section className="space-y-3"><h2 className="text-lg font-medium">Pedidos e decisões</h2>
-      {!d.pedidos.length && <p>Nenhum pedido de desistência registrado.</p>}
+      {!d.pedidos.length && <EstadoVazio>Nenhum pedido de desistência registrado.</EstadoVazio>}
       {d.pedidos.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
         <h3 className="font-medium">Versão {p.versao} · {p.registradorNome}</h3>
         <p className="whitespace-pre-wrap">{p.motivo}</p><p className="whitespace-pre-wrap">{p.evidenciaPedido}</p>

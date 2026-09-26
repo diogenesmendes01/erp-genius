@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { carregarCabecalho } from "./carregar-cabecalho";
 import { secoesParaPapeis } from "./secoes";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // Hub da matrícula (E2): antes /matriculas/[id] dava 404 — encurtar a URL de qualquer uma das 33
 // telas caía na página padrão do Next. Código, aluno, estado e produto já estão no cabeçalho do
@@ -16,7 +17,7 @@ export default async function MatriculaHubPage({ params }: { params: Promise<{ i
     <div className="space-y-4">
       <h1 className="text-2xl font-medium">Seções da matrícula</h1>
       {secoes.length === 0 ? (
-        <p className="text-sm text-gray-600">Nenhuma seção desta matrícula está disponível para a sua função.</p>
+        <EstadoVazio bloco>Nenhuma seção desta matrícula está disponível para a sua função.</EstadoVazio>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {secoes.map((s) => (

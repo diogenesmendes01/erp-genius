@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarReservasSecretaria, listarReservasParticularesSecretaria } from "@/server/matricula/reserva-painel";
 import { ConferirReserva } from "./ConferirReserva";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function ReservasPage({ searchParams }: { searchParams: Promise<{ pagina?: string; matriculaId?: string; historico?: string; tipo?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const filtros = await searchParams;
@@ -20,7 +21,7 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
     <nav className="flex gap-4" aria-label="Tipo de reserva"><Link href={porTipo("turma")} aria-current={!particular ? "page" : undefined}>Turmas</Link><Link href={porTipo("particular")} aria-current={particular ? "page" : undefined}>Particulares</Link></nav>
     <p>Reservas ativas e mantidas por pendência ocupam vagas ou horários. Nas particulares, a conferência pode expirar a reserva sem avanço formal. Pagamentos, documentos e pendências exigem o tratamento aplicável; não há devolução ou cancelamento da contratação por esta conferência.</p>
     <nav className="flex gap-4"><Link href={url(1, false)}>Ocupantes</Link><Link href={url(1, true)}>Incluir histórico</Link></nav>
-    {!r.registros.length && <p>Nenhuma reserva nesta consulta.</p>}
+    {!r.registros.length && <EstadoVazio bloco>Nenhuma reserva nesta consulta.</EstadoVazio>}
     {r.registros.map((v) => <section key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{v.matricula.codigo ?? "Matrícula sem código"} · {[v.matricula.aluno.primeiroNome, v.matricula.aluno.sobrenome].filter(Boolean).join(" ")}</h2>
       <p>{v.referencia} · {estados[v.status]}</p>

@@ -5,6 +5,7 @@ import { listarSegundasChamadasSemAgenda } from "@/server/avaliacoes/segunda-cha
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const situacao = (valor: { pendente: boolean; saldo: number; statusMatricula: string; alocacaoAtiva: boolean; possuiReservaTerminal: boolean; possuiPendenciaEscola: boolean }) => {
   if (valor.possuiPendenciaEscola) return "Impedimento da escola pendente de revisão";
@@ -36,7 +37,7 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
     <VoltarPara href="/academico" />
     {cursorBruto && <Link className="underline" href="/academico/segundas-chamadas/pendentes-agenda">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Segundas chamadas pendentes de agenda</h1><p>Prepare a prévia antes de propor uma agenda. A listagem não confirma disponibilidade de professor ou horário.</p></header>
-    {!d.itens.length && <p>Nenhuma segunda chamada pendente de agenda foi encontrada.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma segunda chamada pendente de agenda foi encontrada.</EstadoVazio>}
     {d.itens.map(item => <article key={item.propostaSegundaChamadaId} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{item.aluno} · avaliação {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matriculaCodigo ?? "sem código"} · Turma {item.turma}.</p>

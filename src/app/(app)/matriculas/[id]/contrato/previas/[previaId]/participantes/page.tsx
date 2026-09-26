@@ -14,6 +14,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 const Historico = z.object({ maioridade: ConferirParticipantesSchema.innerType().shape.maioridade,
   participantes: z.array(z.object({ papel: RegraAssinaturaSchema.shape.papel, identidade: IdentidadeSignatarioSchema,
     representacao: z.object({ descricao: z.string(), evidenciaDocumentoId: z.string() }).optional() })),
@@ -47,7 +48,7 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     </> : <p role="status">{formulario.ok ? "Conferência indisponível." : formulario.erro}</p>}
     <section className="space-y-3"><h2 className="text-xl">Histórico das conferências</h2>
       {!historico.ok ? <p role="alert">{historico.erro}</p> : historico.dado && <>
-        {!historico.dado.registros.length && <p>Nenhuma conferência registrada nesta página.</p>}
+        {!historico.dado.registros.length && <EstadoVazio>Nenhuma conferência registrada nesta página.</EstadoVazio>}
         {historico.dado.registros.map((r) => {
           const conteudo = Historico.safeParse(r.snapshot);
           return <details className="rounded border p-3" key={r.id}><summary>Versão {r.versao} · {r.autor.nome} · {textoInstanteAdministrativo(r.criadaEm, preferenciaFusoExibicao)}</summary><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>

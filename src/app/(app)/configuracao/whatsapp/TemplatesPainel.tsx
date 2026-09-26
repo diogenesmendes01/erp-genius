@@ -14,6 +14,7 @@ import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
 // - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
@@ -156,7 +157,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
           );
         })}
         {templates.length === 0 && (
-          <p className="p-6 text-center text-sm text-gray-400">Nenhum template — rode o seed ou crie o primeiro.</p>
+          <EstadoVazio bloco>Nenhum template — rode o seed ou crie o primeiro.</EstadoVazio>
         )}
       </div>
 
