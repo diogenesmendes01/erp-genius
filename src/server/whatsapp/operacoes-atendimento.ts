@@ -9,6 +9,7 @@ import { ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, 
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { garantirContato } from "./identidade";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
+import { donosDeLinhaVisiveis, ehLinhaComercial } from "./linha-comercial";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 import { snapshotCobranca } from "./elegibilidade";
@@ -21,7 +22,8 @@ export interface OpcaoAtendimento {
   disponivel?: boolean;
   impedimento?: string | null;
 }
-export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string }[] }
+/** `comercial`: o número aceita atendimento COMERCIAL deste usuário (só linhas acessíveis — SPEC-ERP-005 §5.5). */
+export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string; comercial: boolean }[] }
 
 export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   const u = await exigirSessao();
@@ -92,9 +94,12 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
     }
   }
   if (!destinos.length) return { destinos: [], numeros: [] };
-  const numeros = await prisma.numeroWhatsApp.findMany({ where: { ativo: true }, select: { id: true, rotulo: true }, orderBy: { criadoEm: "asc" } });
+  const numeros = await prisma.numeroWhatsApp.findMany({ where: { ativo: true }, select: { id: true, rotulo: true, finalidade: true, donoId: true }, orderBy: { criadoEm: "asc" } });
   const soPedagogico = destinos.every((d) => d.finalidade === "PEDAGOGICO");
-  return { destinos, numeros: numeros.map((n, i) => ({ id: n.id, nome: soPedagogico ? `Canal institucional ${i + 1}` : n.rotulo })) };
+  // Assunto comercial sai só pelas linhas que o usuário enxerga; o institucional segue como antes.
+  const donos = new Set(comercial ? await donosDeLinhaVisiveis(u) : []);
+  return { destinos, numeros: numeros.map((n, i) => ({ id: n.id, nome: soPedagogico ? `Canal institucional ${i + 1}` : n.rotulo,
+    comercial: ehLinhaComercial(n) && (temPapel(u, Papel.ADMINISTRADOR) || (!!n.donoId && donos.has(n.donoId))) })) };
 }
 
 const AbrirSchema = z.object({ numeroId: z.string().min(1), destinoChave: z.string().min(1) });
@@ -106,7 +111,9 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     const dados = AbrirSchema.parse(input);
     const opcoes = await listarOpcoesAtendimento();
     const destino = opcoes.destinos.find((d) => d.chave === dados.destinoChave);
-    if (!destino || destino.disponivel === false || !opcoes.numeros.some((n) => n.id === dados.numeroId)) throw new ErroRegra(destino?.impedimento ?? "Destinatário ou canal fora do seu escopo atual.");
+    const canal = opcoes.numeros.find((n) => n.id === dados.numeroId);
+    if (!destino || destino.disponivel === false || !canal) throw new ErroRegra(destino?.impedimento ?? "Destinatário ou canal fora do seu escopo atual.");
+    if (destino.finalidade === "COMERCIAL" && !canal.comercial) throw new ErroRegra("Atendimento comercial sai somente por uma linha comercial à qual você tem acesso.");
     let telefone: string | null = null;
     let nome = "Contato institucional";
     let responsavelId: string | null = null;
