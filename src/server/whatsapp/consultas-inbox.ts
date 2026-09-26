@@ -7,7 +7,8 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { escopoAtendimentos } from "./escopo";
-import { LIMITE_CONVERSAS, LIMITE_NAO_LIDAS_FORA, mesclarPorRecencia, whereBuscaConversas } from "./busca-inbox";
+import { LIMITE_CONVERSAS, LIMITE_NAO_LIDAS_FORA, mesclarPorRecencia, whereBuscaConversas, whereCanalInbox, type CanalInbox } from "./busca-inbox";
+import { ehLinhaComercial } from "./linha-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
@@ -18,6 +19,8 @@ export interface ConversaResumo {
   id: string; numeroId: string; numeroRotulo: string; finalidade: string; driver: string;
   contatoId: string; contatoNome: string; contatoTelefone: string; optOut: boolean;
   vinculo: string | null; naoLidas: number; ultimaMensagemEm: string | null; preview: string | null;
+  /** Conversa de linha comercial (SPEC-ERP-005): espelho do WhatsApp do vendedor. */
+  linhaComercial: boolean;
 }
 export interface MensagemThread {
   id: string; direcao: "ENTRADA" | "SAIDA"; tipo: string; corpo: string | null; midiaPath: string | null;
@@ -35,6 +38,8 @@ export interface LeadNaThread {
 }
 export interface ThreadConversa {
   conversaId: string; finalidade: string; matricula: { id: string; codigo: string | null } | null; podeEnviar: boolean; podeVincular: boolean; podeReautorizar: boolean;
+  /** Conversa de linha comercial; `podeCriarLead` = botão "Criar lead" (LC-D05). */
+  linhaComercial: boolean; podeCriarLead: boolean;
   pendenciaDestinatario: string | null;
   numero: { id: string; rotulo: string; driver: string; finalidade: string; sessao: string; ativo: boolean };
   contato: { id: string; nome: string; telefone: string; optOutEm: string | null;
@@ -66,10 +71,11 @@ export async function listarConversas(usuario: UsuarioSessao): Promise<ConversaR
  * que têm não lidas — nenhuma conversa com mensagem por ler fica fora da lista. `busca` filtra no
  * servidor (nome do contato/aluno/lead ou telefone). `limitada` avisa a tela de que há mais antigas.
  */
-export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "" }: { busca?: string } = {}): Promise<{ itens: ConversaResumo[]; limitada: boolean }> {
+export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "", canal = "" }: { busca?: string; canal?: CanalInbox | "" } = {}): Promise<{ itens: ConversaResumo[]; limitada: boolean }> {
   const escopo = await escopoAtendimentos(usuario);
-  const filtroBusca = whereBuscaConversas(busca);
-  const where: Prisma.AtendimentoWhatsAppWhereInput = Object.keys(filtroBusca).length ? { AND: [escopo, filtroBusca] } : escopo;
+  // O filtro opcional só restringe o escopo obrigatório; nunca o substitui (doc 37).
+  const filtros = [whereBuscaConversas(busca), whereCanalInbox(canal)].filter((f) => Object.keys(f).length);
+  const where: Prisma.AtendimentoWhatsAppWhereInput = filtros.length ? { AND: [escopo, ...filtros] } : escopo;
   const orderBy = [{ ultimaMensagemEm: "desc" as const }, { criadoEm: "desc" as const }];
   const include = { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
   const recentes = await prisma.atendimentoWhatsApp.findMany({ where, take: LIMITE_CONVERSAS + 1, orderBy, include });
@@ -104,7 +110,8 @@ function resumirConversa(a: AtendimentoDaLista): ConversaResumo {
       : pedag ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Pedagógico legado · matrícula não identificada")
         : a.alunoId ? `aluno · ${nome}` : a.leadId ? `lead · ${nome}` : null,
     naoLidas: a.naoLidas, ultimaMensagemEm: a.ultimaMensagemEm?.toISOString() ?? null,
-    preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null };
+    preview: m ? m.tipo === "TEXTO" ? (m.corpo ?? "").slice(0, 90) : `[${m.tipo.toLowerCase()}]` : null,
+    linhaComercial: a.finalidade === "COMERCIAL" && ehLinhaComercial(a.conversa.numero) };
 }
 
 export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
@@ -130,8 +137,13 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const silencioAte = a.ultimoInboundEm && politica ? new Date(a.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000) : null;
   const silencio = !!silencioAte && agora < silencioAte.getTime() && (!a.inboundTratadoEm || a.inboundTratadoEm < a.ultimoInboundEm!);
   const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
+  const linhaComercial = comercial && ehLinhaComercial(c.numero);
+  // LC-L02: ver a conversa pela linha não abre o lead de outra carteira (etapa, notas, copiloto).
+  const verLead = comercial && !!a.leadId && await podeVerLeadNaThread(usuario, a.id, a.leadId, agora);
   return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro || pedag ? a.matricula : null,
-    podeEnviar,
+    podeEnviar, linhaComercial,
+    podeCriarLead: linhaComercial && !a.leadId && !a.encerradoEm
+      && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
     podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
     pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
@@ -140,14 +152,40 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
     contato: { id: c.contatoId, nome, telefone: pedag ? "" : c.contato.telefoneE164,
       optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
-      leadId: comercial ? a.leadId : null, leadNome: comercial ? a.lead?.nome ?? null : null },
+      leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contatoId) : null,
-    lead: comercial && a.lead ? await leadNaThread(usuario, a.lead) : null,
+    lead: verLead && a.lead ? await leadNaThread(usuario, a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString() })) };
+}
+
+/**
+ * Quem já via o lead antes da SPEC-ERP-005 continua vendo: administração, carteira/equipe/cobertura
+ * atual e participante vigente do atendimento. Só o acesso "pela linha" não mostra o painel.
+ */
+async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number): Promise<boolean> {
+  if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
+  if (temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
+    && await prisma.lead.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario)] } })) return true;
+  const instante = new Date(agora);
+  return !!await prisma.participanteAtendimentoWhatsApp.count({ where: {
+    atendimentoId, usuarioId: usuario.id, inicio: { lte: instante }, fim: { gt: instante }, revogadoEm: null,
+  } });
+}
+
+/** Linhas comerciais de que o usuário é dono — estado da sessão em leitura (LC §5.5, doc 37). */
+export interface LinhaDoUsuario { id: string; rotulo: string; telefoneE164: string; driver: string; sessao: string }
+
+export async function listarLinhasDoUsuario(usuario: UsuarioSessao): Promise<LinhaDoUsuario[]> {
+  if (!temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) return [];
+  return prisma.numeroWhatsApp.findMany({
+    where: { donoId: usuario.id, finalidade: "VENDAS", ativo: true },
+    orderBy: { criadoEm: "asc" },
+    select: { id: true, rotulo: true, telefoneE164: true, driver: true, sessao: true },
+  });
 }
 
 async function leadNaThread(usuario: UsuarioSessao, lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {

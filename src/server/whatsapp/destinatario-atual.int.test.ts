@@ -165,8 +165,28 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     expect((await eventosDo("AtendimentoWhatsApp", a.id))[0].autorId).toBe(sec.id);
   });
 
-  it.each(["COMERCIAL", "FINANCEIRO"] as const)("inbound não reabre contexto %s encerrado e fica na triagem administrativa", async (finalidade) => {
-    const c = finalidade === "COMERCIAL" ? await comercial() : await financeiro();
+  it("linha comercial: inbound não reabre o atendimento encerrado — abre outro da linha, sem misturar o histórico (SPEC-ERP-005)", async () => {
+    const c = await comercial();
+    const historica = await mensagemHistorica(c.atendimento);
+    entrar(adm.id);
+    expect((await encerrarAtendimentoWhatsApp(c.atendimento.id)).ok).toBe(true);
+    const antes = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
+    expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() })).toBe("gravada");
+    const inbound = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "inbound-apos-encerramento" } });
+    expect(inbound.atendimentoId).not.toBeNull();
+    expect(inbound.atendimentoId).not.toBe(c.atendimento.id);
+    const depois = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
+    expect(depois.encerradoEm).toEqual(antes.encerradoEm); expect(depois.naoLidas).toBe(antes.naoLidas);
+    const novo = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: inbound.atendimentoId! } });
+    expect(novo).toMatchObject({ finalidade: "COMERCIAL", encerradoEm: null, leadId: c.lead.id, naoLidas: 1 });
+    expect((await listarTriagemWhatsApp()).map((m) => m.id)).not.toContain(inbound.id);
+    expect((await carregarThread(adm, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([historica.id]);
+    expect((await carregarThread(adm, novo.id))?.mensagens.map((m) => m.id)).toEqual([inbound.id]);
+    expect(enviarMock).not.toHaveBeenCalled();
+  });
+
+  it("inbound não reabre contexto FINANCEIRO encerrado e fica na triagem administrativa", async () => {
+    const c = await financeiro();
     const historica = await mensagemHistorica(c.atendimento);
     entrar(adm.id);
     expect((await encerrarAtendimentoWhatsApp(c.atendimento.id)).ok).toBe(true);
