@@ -9,6 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -85,9 +86,7 @@ export function NumerosPainel({
       </div>
 
       {numeros.length === 0 && !form ? (
-        <div className="mt-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
-          Nenhum número cadastrado — o canal começa aqui.
-        </div>
+        <EstadoVazio bloco className="mt-4">Nenhum número cadastrado — o canal começa aqui.</EstadoVazio>
       ) : (
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
           {numeros.map((n) => {

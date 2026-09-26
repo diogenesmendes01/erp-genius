@@ -5,6 +5,7 @@ import { consultarCorrecoesRecuperacao } from "@/server/avaliacoes/recuperacao-c
 import { Propor, Revisar } from "./Formularios";
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Correcoes({ params, searchParams }: { params: Promise<{ notaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -27,7 +28,7 @@ export default async function Correcoes({ params, searchParams }: { params: Prom
       {p.decisao && <p className="whitespace-pre-wrap">Decisão de {p.decisao.decisor.nome}: {p.decisao.motivo}</p>}
       {p.podeRevisar && <Revisar propostaId={p.id} />}
     </article>)}
-    {!d.propostas.length && <p>Sem propostas nesta página.</p>}
+    {!d.propostas.length && <EstadoVazio bloco>Sem propostas nesta página.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/correcoes/${encodeURIComponent(notaId)}`}>Versão atual</Link>}
   </section>;

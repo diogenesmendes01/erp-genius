@@ -12,6 +12,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof listarContextoRetomada>>, { ok: true }>["dado"]>;
 type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRetomada>>, { ok: true }>["dado"]>;
@@ -87,7 +88,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
         type="date" className={campo} required min={hoje} disabled={ocupado}
         value={datas[p.cobrancaId] ?? p.vencimento.slice(0, 10)}
         onChange={(e) => setDatas((atual) => ({ ...atual, [p.cobrancaId]: e.target.value }))}
-      /> : data(p.vencimento)} /> : <p className="text-sm text-gray-500">Não há mensalidades remanescentes para alterar. A retomada ainda exige aprovação.</p>}
+      /> : data(p.vencimento)} /> : <EstadoVazio>Não há mensalidades remanescentes para alterar. A retomada ainda exige aprovação.</EstadoVazio>}
       <label className="block text-sm font-medium">Motivo da proposta
         <CampoTexto className={`${campo} mt-1 font-normal`} rows={3} required minLength={5} maxLength={2000} disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       </label>
@@ -96,7 +97,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     {/* Fora do formulário: no sucesso ele some (proposta pendente), e a confirmação continua visível. */}
     <FeedbackAcao erro={alvo === "proposta" ? acao.erro : null} sucesso={alvo === "proposta" ? acao.sucesso : undefined} />
 
-    {propostas.length === 0 && !podePropor && !erroConsulta && <p className="text-sm text-gray-500">Nenhuma proposta de retomada.</p>}
+    {propostas.length === 0 && !podePropor && !erroConsulta && <EstadoVazio>Nenhuma proposta de retomada.</EstadoVazio>}
     {propostas.map((p) => <article key={p.id} className="space-y-3 border-t border-gray-200 pt-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>

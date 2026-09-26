@@ -6,6 +6,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { ErroAutenticacao } from "@/server/_shared";
 import { rotular } from "@/lib/labels";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export const dynamic = "force-dynamic";
 
@@ -135,7 +136,7 @@ export default async function ResultadosPortalAlunoPage() {
     <VoltarPara href="/portal-aluno" />
     <header><p className="text-sm text-brand-700">Frente acadêmica</p><h1 className="mt-1 text-2xl font-medium">Avaliações, habilidades e frequência</h1><p className="mt-2 text-sm text-gray-600">Mostramos avaliações já oficializadas, o acompanhamento do seu vínculo e, quando houver, a confirmação de fechamento acadêmico.</p></header>
     <p className="text-sm text-gray-600">Valores marcados como “aprox.” foram arredondados somente para esta visualização.</p>
-    {!resultado.matriculas.length && <p className="rounded border bg-surface p-4 text-sm text-gray-700">Não há vínculo acadêmico com resultados disponíveis neste acesso.</p>}
+    {!resultado.matriculas.length && <EstadoVazio bloco>Não há vínculo acadêmico com resultados disponíveis neste acesso.</EstadoVazio>}
     {resultado.matriculas.map((matricula, indiceMatricula) => <section key={matricula.matriculaId} className="space-y-4 rounded-lg border bg-surface p-5" aria-label={`Vínculo acadêmico ${indiceMatricula + 1}`}>
       <h2 className="text-xl font-medium">{matricula.codigo ? `Matrícula ${matricula.codigo}` : `Vínculo acadêmico ${indiceMatricula + 1}`}</h2>
       {(() => {
@@ -146,7 +147,7 @@ export default async function ResultadosPortalAlunoPage() {
           {destaMatricula.map((fechamento) => <FechamentoNivel key={`${fechamento.matriculaId}-${fechamento.nivelId}`} fechamento={fechamento} nivel={niveis.get(fechamento.nivelId) ?? "Nível acadêmico"} fusoExibicao={fusoExibicao} />)}
         </section>;
       })()}
-      {!matricula.alocacoes.length && <p className="text-sm text-gray-600">Não há alocação acadêmica disponível neste vínculo.</p>}
+      {!matricula.alocacoes.length && <EstadoVazio bloco>Não há alocação acadêmica disponível neste vínculo.</EstadoVazio>}
       {matricula.alocacoes.map((alocacao) => <article key={alocacao.alocacaoId} className="space-y-4 border-t pt-4 first:border-t-0 first:pt-0">
         <header><h3 className="font-medium">Acompanhamento: {alocacao.idioma} · nível {alocacao.nivel}{alocacao.turma ? ` · turma ${alocacao.turma}` : ""}{alocacao.regraVersao !== null ? ` · regra de avaliação versão ${alocacao.regraVersao}` : ""}</h3>
           {alocacao.situacao === "PENDENTE_REGRA" && <p role="status" className="mt-1 text-sm text-amber-800">A regra de avaliação deste vínculo ainda não está disponível para consolidar notas e frequência.</p>}
@@ -163,6 +164,6 @@ export default async function ResultadosPortalAlunoPage() {
 
 function Pendencias({ pendencias }: { pendencias: ResultadoPortalAluno["matriculas"][number]["alocacoes"][number]["pendencias"] }) {
   const itens = (Object.entries(pendencias) as Array<[keyof typeof pendencias, number]>).filter(([, quantidade]) => quantidade > 0);
-  if (!itens.length) return <p role="status" className="text-sm text-gray-600">Não há pendências operacionais identificadas nesta consulta.</p>;
+  if (!itens.length) return <EstadoVazio role="status">Não há pendências operacionais identificadas nesta consulta.</EstadoVazio>;
   return <section aria-label="Pendências acadêmicas"><h4 className="font-medium">Pendências</h4><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">{itens.map(([tipo, quantidade]) => <li key={tipo}>{rotulosPendencia[tipo]}: {quantidade}.</li>)}</ul></section>;
 }

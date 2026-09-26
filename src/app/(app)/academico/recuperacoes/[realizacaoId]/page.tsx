@@ -6,6 +6,7 @@ import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { LancarNota, ConferirNota } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Nota({ params, searchParams }: { params: Promise<{ realizacaoId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -38,7 +39,7 @@ export default async function Nota({ params, searchParams }: { params: Promise<{
       {n.podeCorrigir && <Link className="block underline" href={`/academico/recuperacoes/correcoes/${encodeURIComponent(n.id)}`}>Propor ou conferir correção</Link>}
       {n.podeDecidir && n.entradaHash && <ConferirNota notaId={n.id} entradaHash={n.entradaHash} podeAprovar={n.podeAprovar} />}
     </article>)}
-    {!d.notas.length && <p>Nenhuma versão de nota registrada nesta página.</p>}
+    {!d.notas.length && <EstadoVazio bloco>Nenhuma versão de nota registrada nesta página.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(realizacaoId)}?antesVersao=${d.proximaAntesVersao}`}>Versões anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/${encodeURIComponent(realizacaoId)}`}>Versão atual</Link>}
   </section>;

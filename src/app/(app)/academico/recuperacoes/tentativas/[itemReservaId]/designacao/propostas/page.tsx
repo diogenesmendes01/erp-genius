@@ -6,6 +6,7 @@ import { IdentificacaoAvaliacao } from "../../../../../avaliacoes/Identificacao"
 import { DecidirSubstituicao } from "./DecidirSubstituicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function Propostas({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -29,7 +30,7 @@ export default async function Propostas({ params, searchParams }: { params: Prom
       {p.conferenciaOriginal.pendencias.length > 0 ? <><p className="font-medium">Pendências na conferência de origem</p><ul className="list-disc pl-5">{p.conferenciaOriginal.pendencias.map(x => <li key={x}>{x}</li>)}</ul></> : <p>Conferência de origem sem pendências registradas.</p>}
       {p.decisao ? <div className="space-y-1 rounded bg-gray-50 p-3"><p className="font-medium">{p.decisao.aprovada ? p.aplicada ? "Aprovada e aplicada" : "Aprovação registrada; consulte o estado atual" : "Rejeitada"}</p><p>Decisão de {p.decisao.decisor} em {formatarInstanteExibicao(p.decisao.decididaEm, preferenciaFuso, "UTC").texto} ({administrativo}; origem UTC).</p><p className="whitespace-pre-wrap">{p.decisao.motivo}</p>{p.aplicada && <p>Professor aplicado no encontro: {p.avaliadorAplicado?.nome ?? "Registro do avaliador indisponível"}.</p>}</div> : <><p>{p.revisaoIndependente ? "Preparada por outra pessoa; você pode revisar e decidir." : "Você preparou esta proposta. A decisão exige outra pessoa autorizada."}</p>{p.versaoAtual ? p.estadoMudou ? <p role="alert">A situação atual divergiu da conferência preservada. {p.impedimentoAtual ?? "A aprovação foi bloqueada; faça uma nova conferência."}</p> : <p role="status">Estado atual compatível com a conferência preservada.</p> : <p className="text-sm">Versão histórica: o estado atual é avaliado somente para a proposta mais recente.</p>}{p.podeDecidir && <DecidirSubstituicao propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}</>}
     </article>)}
-    {!d.propostas.length && <p>Nenhuma proposta registrada.</p>}
+    {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
   </section>;
 }

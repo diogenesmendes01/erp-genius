@@ -12,6 +12,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -33,7 +34,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
     <button type="button" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { void iniciar(async () => { setErro(null); try { await carregar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Consultar compras de horas</button>
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {dados && <>
-      {dados.compras.length === 0 && <p>Nenhuma compra de horas registrada nesta matrícula.</p>}
+      {dados.compras.length === 0 && <EstadoVazio>Nenhuma compra de horas registrada nesta matrícula.</EstadoVazio>}
       {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</summary>
         <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. Desconto original: {formatarMoeda(c.descontoOriginal, c.moeda)}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
@@ -57,7 +58,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
           <label className="grid gap-1">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reservar horas</button>
         </fieldset></form>}
       </details>)}
-      {!dados.cobrancas.length ? <p>Nenhuma cobrança de particular por hora paga e sem compra vinculada.</p> : <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
+      {!dados.cobrancas.length ? <EstadoVazio>Nenhuma cobrança de particular por hora paga e sem compra vinculada.</EstadoVazio> : <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
         e.preventDefault(); const form = e.currentTarget, f = new FormData(form);
         const c = dados.cobrancas.find((c) => c.id === f.get("cobranca"));
         if (!c) { setErro("Escolha a cobrança desta matrícula."); return; }

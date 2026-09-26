@@ -8,6 +8,7 @@ import { nomeCompleto } from "@/lib/nome";
 import { diarioDaTurma, progressaoDaTurma } from "@/server/academico/consultas-legado";
 import { temPapel } from "@/server/_shared";
 import { TurmaAcademico } from "./TurmaAcademico";
+import { EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,11 +60,9 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
           </thead>
           <tbody className="divide-y divide-gray-100">
             {turma.alocacoes.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-400">
+              <EstadoVazioLinha colSpan={3}>
                   Nenhum aluno alocado.
-                </td>
-              </tr>
+                </EstadoVazioLinha>
             ) : (
               turma.alocacoes.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50">

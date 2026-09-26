@@ -43,6 +43,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -190,12 +191,12 @@ export function InboxCliente({
           </form>
           <div className="flex-1 overflow-y-auto">
             {conversas.length === 0 ? (
-              <p className="p-4 text-sm text-gray-500">
+              <EstadoVazio bloco>
                 {busca ? (
                   <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId })} className="text-brand-700 hover:underline">Limpar busca</Link></>
                 ) : linhas.length ? "Nenhuma conversa ainda — as conversas da sua linha aparecem aqui assim que chegam ou são enviadas."
                   : "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."}
-              </p>
+              </EstadoVazio>
             ) : (
               conversas.map((c) => (
                 <button
@@ -1060,7 +1061,7 @@ function GrupoVinculo({
     <div>
       <div className="mb-1 font-medium text-gray-600">{titulo}</div>
       {itens.length === 0 ? (
-        <p className="text-gray-400">Nenhum.</p>
+        <EstadoVazio>Nenhum.</EstadoVazio>
       ) : (
         itens.map((i) => (
           <button

@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 
 export default async function AutorizacoesSegundaChamada({ params, searchParams }: { params: Promise<{ alocacaoId: string; codigoAvaliacao: string }>; searchParams: Promise<{ depoisId?: string }> }) {
@@ -29,7 +30,7 @@ export default async function AutorizacoesSegundaChamada({ params, searchParams 
     {d.podeAutorizar ? <Formulario alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} fusoInstitucional={fusoInstitucional} /> : <p role="status">Não há pendência elegível para autorização especial nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3"><p>Autorizada por {autorizacao.autorizador.nome}, em {formatarInstanteExibicao(autorizacao.criadaEm, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p>Prazo até {formatarInstanteExibicao(autorizacao.prazoAte, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p className="whitespace-pre-wrap">{autorizacao.motivo}</p></article>)}
-    {!d.historico.length && <p>Nenhuma autorização especial registrada.</p>}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização especial registrada.</EstadoVazio>}
     {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ depoisId: d.proximoId })}`}>Autorizações mais antigas</Link>}
     {depoisId && <Link className="block underline" href={voltar + "/autorizacoes"}>Primeira página do histórico</Link>}
   </section>;

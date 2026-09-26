@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarCadastrosPreparacao, consultarOfertasPreparacao } from "@/server/matricula/preparacao-comercial";
 import { PreparacaoFormulario } from "./PreparacaoFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function PreparacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ofertaId?: string; ofertas?: string; cadastros?: string; turmas?: string }> }) {
   await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, f = await searchParams;
@@ -16,7 +17,7 @@ export default async function PreparacaoPage({ params, searchParams }: { params:
   return <div className="space-y-4"><VoltarPara href={`/leads/${id}`} para="Negociação" /><h1 className="text-2xl font-medium">Preparar contratação · {c.lead.nome}</h1>
     <p>Confira a identidade antes de selecionar. Um telefone compartilhado pode corresponder a mais de uma pessoa.</p>
     {!c.contatoConferivel && <p role="alert">Confira o contato com a Secretaria antes de continuar.</p>}
-    {!c.candidatos.length && <p>{c.podeCadastrarNovo ? "Não há cadastro com o contato da negociação. Você poderá preencher os dados básicos de pessoa nova após conferir a identidade." : "Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria."}</p>}
+    {!c.candidatos.length && <EstadoVazio bloco>{c.podeCadastrarNovo ? "Não há cadastro com o contato da negociação. Você poderá preencher os dados básicos de pessoa nova após conferir a identidade." : "Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria."}</EstadoVazio>}
     <nav className="flex gap-4" aria-label="Páginas dos cadastros">{c.pagina > 1 && <Link href={url("cadastros", String(c.pagina - 1))}>Cadastros anteriores</Link>}{c.possuiMais && <Link href={url("cadastros", String(c.pagina + 1))}>Mais cadastros</Link>}</nav>
     <h2 className="text-xl">Escolha a oferta</h2><div className="space-y-2">{o.ofertas.map((v) => <div key={v.id}><Link className="underline" href={url("ofertaId", v.id)}>{v.nome} · {v.moeda}</Link></div>)}</div>
     <nav className="flex gap-4" aria-label="Páginas das ofertas">{o.pagina > 1 && <Link href={url("ofertas", String(o.pagina - 1))}>Ofertas anteriores</Link>}{o.possuiMais && <Link href={url("ofertas", String(o.pagina + 1))}>Mais ofertas</Link>}</nav>

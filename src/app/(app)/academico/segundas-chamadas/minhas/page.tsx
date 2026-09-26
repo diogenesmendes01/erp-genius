@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarSegundasChamadasDocente } from "@/server/avaliacoes/segunda-chamada-docente";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 
 export default async function MinhasSegundasChamadas({ searchParams }: { searchParams: Promise<{ depoisId?: string }> }) {
@@ -25,7 +26,7 @@ export default async function MinhasSegundasChamadas({ searchParams }: { searchP
       <p>{item.realizacao ? `Realização registrada em ${formatarInstanteExibicao(item.realizacao.realizadaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto}.` : item.podeRealizar ? "O registro será revalidado ao enviar: a data efetiva precisa pertencer ao encontro e o histórico e a autorização aplicável serão conferidos." : "A realização ainda não está disponível nas condições atuais."}</p>
       <Link className="underline" href={`/academico/segundas-chamadas/minhas/${encodeURIComponent(item.reservaId)}`}>Abrir segunda chamada designada</Link>
     </article>)}
-    {!d.itens.length && <p>Nenhuma segunda chamada designada está disponível.</p>}
+    {!d.itens.length && <EstadoVazio bloco>Nenhuma segunda chamada designada está disponível.</EstadoVazio>}
     {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ depoisId: d.proximoId })}`}>Próximas segundas chamadas</Link>}
   </section>;
 }

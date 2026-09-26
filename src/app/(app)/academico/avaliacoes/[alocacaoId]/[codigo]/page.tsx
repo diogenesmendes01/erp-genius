@@ -10,6 +10,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { IdentificacaoAvaliacao } from "../../Identificacao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 export default async function LancamentoPage({ params, searchParams }: {
@@ -47,7 +48,7 @@ export default async function LancamentoPage({ params, searchParams }: {
       anterior={anterior ? { realizadaEm: dataHoraAvaliacaoLocal(anterior.realizadaEm, fusoEntrada), notas: anterior.notas } : null} />}
     <h2 className="text-xl font-medium">Histórico de lançamentos</h2>
     <p className="text-sm">Fuso de exibição do histórico: {fusoExibicaoHistorico} (origem UTC).</p>
-    {!d.versoes.length && <p>Nenhuma nota registrada.</p>}
+    {!d.versoes.length && <EstadoVazio bloco>Nenhuma nota registrada.</EstadoVazio>}
     {d.versoes.map(v => <article key={v.id} className="space-y-3 rounded border p-4">
       <h3 className="font-medium">Versão {v.versao} — {v.decisao ? v.decisao.aprovada ? "Oficializada" : "Devolvida" : v.submetida ? "Aguardando conferência" : "Rascunho"}</h3>
       <p>Realizada em {dataHistorico(v.realizadaEm)}. Registrada por {v.autor.nome} em {dataHistorico(v.criadaEm)}.</p>

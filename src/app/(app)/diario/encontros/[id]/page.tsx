@@ -9,6 +9,7 @@ import { OcorrenciaParticular } from "./OcorrenciaParticular";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function ChamadaPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -21,7 +22,7 @@ export default async function ChamadaPage({ params }: { params: Promise<{ id: st
     {r.ok && r.dado && <>
       <p>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.dado.fusoOrigem) }).format(new Date(r.dado.ocorridaEm))} · origem {r.dado.fusoOrigem}</p>
       {r.dado.exigeConferencia ? <p role="alert">Há vínculos que precisam de conferência da gestão antes do lançamento.</p>
-        : r.dado.alunos.length === 0 ? <p>Nenhum aluno elegível identificado para esta chamada.</p>
+        : r.dado.alunos.length === 0 ? <EstadoVazio>Nenhum aluno elegível identificado para esta chamada.</EstadoVazio>
         : <ChamadaEncontro key={r.dado.estadoAnterior ?? "novo"} dados={r.dado} />}
       {r.dado.diarioId && !r.dado.exigeConferencia && <>
         <PublicarGravacao encontroId={id} />

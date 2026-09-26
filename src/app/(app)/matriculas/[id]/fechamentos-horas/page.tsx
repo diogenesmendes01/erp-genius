@@ -9,6 +9,7 @@ import { EmitirFechamento } from "./EmitirFechamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string(), fuso: z.string(), vencimento: z.string() }),
   apuracao: z.object({ moeda: z.string(), estado: z.enum(["AGUARDANDO_CONFERENCIA", "PROPOSTA_PARCIAL", "APURACAO_COMPLETA", "SEM_ITENS_A_FATURAR"]),
@@ -45,7 +46,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <p>Histórico dos rascunhos de apuração. Salvar uma versão não aprova condições, emite cobrança ou confirma pagamento.</p>
     {!q.versao && <PrepararFechamento alunoId={d.matricula.alunoId} matriculaId={id} />}
     {q.versao && <Link href={base} className="underline">Todas as versões</Link>}
-    {!d.versoes.length && <p>Nenhum rascunho salvo nesta página.</p>}
+    {!d.versoes.length && <EstadoVazio bloco>Nenhum rascunho salvo nesta página.</EstadoVazio>}
     {d.versoes.map(v => {
       const m = v.memoria ? Memoria.safeParse(v.memoria) : null;
       const instanteEncontro = (valor: string) => {
@@ -82,7 +83,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
             <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
             <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{formatarMoeda(i.valorHoraContratado, m.data.apuracao.moeda)}</td><td>{formatarMoeda(i.valor, m.data.apuracao.moeda)}</td></tr>)}</tbody>
           </table></div>
-          {!m.data.apuracao.itens.length && <p>Nenhum encontro incluído para cobrança nesta versão.</p>}
+          {!m.data.apuracao.itens.length && <EstadoVazio>Nenhum encontro incluído para cobrança nesta versão.</EstadoVazio>}
           <h3 className="font-medium">Pendências ({m.data.apuracao.pendencias.length})</h3>
           <ul>{m.data.apuracao.pendencias.map(p => <li key={p.encontroId}>{encontro(p.encontroId)}: {p.motivo}</li>)}</ul>
           <p>Encontros com destinação preservada: {m.data.apuracao.preservados.length}. Encontros sem cobrança: {m.data.apuracao.semCobranca.length}.</p>

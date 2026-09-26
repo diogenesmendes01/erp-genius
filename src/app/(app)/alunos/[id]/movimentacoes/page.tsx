@@ -17,6 +17,7 @@ import { identificacaoContrato } from "./identificacaoContrato";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { listarPedidosEncerramentoParaUsuario, paginaPedidosEncerramento } from "@/server/matricula/encerramento-pedidos-consulta";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function MovimentacoesPage({
   params,
@@ -52,7 +53,7 @@ export default async function MovimentacoesPage({
     {usuario.papeis.some((p) => p === "SECRETARIA_ACADEMICA" || p === "ADMINISTRADOR") && <NovoEncerramento alunoId={id} hoje={fuso.success ? dataCivilInstitucional(new Date(), fuso.data) : null} contratos={contratos.map((m) => ({ id: m.id, nome: `${identificacaoContrato(m.codigo, m.id)} · ${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} />}
     <section className="space-y-3" aria-label="Pedidos de encerramento">
       <h2 className="text-lg font-medium">Pedidos de encerramento</h2>
-      {!pedidos.pedidos.length && <p>Nenhum pedido registrado nesta página.</p>}
+      {!pedidos.pedidos.length && <EstadoVazio>Nenhum pedido registrado nesta página.</EstadoVazio>}
       {pedidos.pedidos.map((p) => <article key={p.id} className="space-y-1 rounded border p-3 text-sm">
         <p>{p.itens.map((i) => identificacaoContrato(i.matricula.codigo, i.matricula.id)).join(", ")} · {({ ABERTA: "Aguardando acerto", EM_ACERTO: "Acerto em preparação", CONCLUIDA: "Concluído", CANCELADA: "Cancelado" })[p.status]}</p>
         <p>Registrado por {p.registrador.nome} em {p.dataPedido.toISOString().slice(0, 10)}. Encerramento solicitado para {p.dataSolicitada.toISOString().slice(0, 10)}.</p>

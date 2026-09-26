@@ -5,6 +5,7 @@ import { consultarAvisosDiario } from "@/server/diario/avisos-pendencias-diario"
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 function dataNoFuso(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
@@ -25,7 +26,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
     {resultado.ok && resultado.dado && <>
       {!resultado.dado.configurada && <p role="alert" className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Os prazos de regularização e lembrete do diário ainda não foram configurados.{usuario.papeis.includes(Papel.ADMINISTRADOR) && <> <Link className="underline" href="/configuracao/operacao/avisos-diario">Configurar avisos</Link>.</>}</p>}
       {resultado.dado.gestao && <p className="text-sm text-gray-600">Acompanhamento da gestão: alertas começam somente depois do prazo de regularização.</p>}
-      {!resultado.dado.itens.length && <p>Nenhuma pendência de diário encontrada.</p>}
+      {!resultado.dado.itens.length && <EstadoVazio>Nenhuma pendência de diário encontrada.</EstadoVazio>}
       {resultado.dado.itens.map((item) => {
         const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem);
         return <article key={item.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">

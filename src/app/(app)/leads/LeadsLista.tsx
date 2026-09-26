@@ -22,6 +22,7 @@ import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
 import { LeadFormulario } from "./LeadFormulario";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazioLinha } from "@/components/EstadoVazio";
 
 export interface LeadRow {
   id: string;
@@ -183,16 +184,14 @@ export function LeadsLista({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {leads.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
+              <EstadoVazioLinha colSpan={6}>
                   {/* Estado vazio duplo: carteira vazia × filtro sem resultado (este oferece a saída). */}
                   {totalBase === 0 ? "Nenhum lead na sua carteira." : filtrando ? (
                     <>Nenhum lead com esses filtros. <Link href="/leads" onClick={aoClicar("/leads")} className="text-brand-700 hover:underline">Limpar filtros</Link></>
                   ) : (
                     <>Nenhum lead nesta página. <Link href="/leads" onClick={aoClicar("/leads")} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
                   )}
-                </td>
-              </tr>
+                </EstadoVazioLinha>
             ) : (
               leads.map((l) => (
                 <tr key={l.id} className="hover:bg-gray-50">

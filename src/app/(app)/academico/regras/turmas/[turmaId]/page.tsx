@@ -6,6 +6,7 @@ import { ResumoRegra, type ConteudoRegra } from "../../[nivelId]/ResumoRegra";
 import { DecidirMigracao, ProporMigracao } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 const nomesCampos: Record<keyof ConteudoRegra, string> = {
   titulo: "Título", aplicacao: "Condições de aplicação", escala: "Escala de notas", minimoGeral: "Mínimo da média geral",
@@ -48,7 +49,7 @@ export default async function MigracaoPage({ params, searchParams }: { params: P
     </section>}
     <Link className="underline" href={`/academico/regras/turmas/${turmaId}/historica`}>Conferência e histórico de regra legada</Link>
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
-    {!h.propostas.length && <p>Nenhuma mudança proposta.</p>}
+    {!h.propostas.length && <EstadoVazio bloco>Nenhuma mudança proposta.</EstadoVazio>}
     {h.propostas.map(v => <article key={v.id} className="space-y-4 rounded border p-4">
       <h3 className="text-lg font-medium">Proposta {v.versao} — {v.decisao ? v.decisao.aprovada ? "Aplicada" : "Rejeitada" : "Aguardando decisão"}</h3>
       <p>Preparada por {v.preparador.nome} em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{v.motivo}</p>
