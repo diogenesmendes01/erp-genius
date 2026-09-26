@@ -1,7 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ acharNumero: vi.fn(), linha: vi.fn(), transacao: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: m.transacao } }));
+const m = vi.hoisted(() => ({
+  acharNumero: vi.fn(), linha: vi.fn(), transacao: vi.fn(),
+  // Cliente do módulo: as escritas no contato e o SQL cru são espionados também FORA da transação
+  // (preenchidos no beforeEach — o objeto é o mesmo que o módulo importa).
+  cliente: {} as Record<string, unknown>,
+}));
+vi.mock("@/lib/prisma", () => ({ prisma: m.cliente }));
 vi.mock("./inbound", () => ({ acharNumero: m.acharNumero }));
 vi.mock("./linha-comercial", () => ({
   atendimentoDaLinhaParaInbound: m.linha,
@@ -23,13 +28,28 @@ const msg = (id: string, diasAtras: number, over: Partial<MensagemHistorica> = {
  * Transação com SÓ os modelos que a importação pode tocar. Lead, intenção, config comercial, evento
  * (captura, saudação, cancelamento, opt-out auditado) não existem aqui: se o código tocar, o teste quebra.
  */
+/** Todas as formas de escrita no contato do Prisma Client — espionadas, para a falha ser a trava LC-10. */
+function escritasDeContato() {
+  const devolve = async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data });
+  return {
+    create: vi.fn().mockImplementation(devolve),
+    createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    createManyAndReturn: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockImplementation(devolve),
+    upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({ id: "contato", ...create })),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+  };
+}
+type EscritasDeContato = ReturnType<typeof escritasDeContato>;
+// SQL cru escaparia da inspeção por chave. $queryRaw* entra junto: é "de leitura", mas aceita UPDATE.
+const METODOS_SQL_CRU = ["$executeRaw", "$executeRawUnsafe", "$queryRaw", "$queryRawUnsafe"] as const;
+const sqlCru = () => Object.fromEntries(METODOS_SQL_CRU.map((nome) => [nome, vi.fn().mockResolvedValue(0)])) as
+  Record<(typeof METODOS_SQL_CRU)[number], ReturnType<typeof vi.fn>>;
+
 function txEstrito() {
   return {
-    contatoWhatsApp: {
-      findUnique: vi.fn().mockResolvedValue(null),
-      create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
-      update: vi.fn(),
-    },
+    ...sqlCru(),
+    contatoWhatsApp: { findUnique: vi.fn().mockResolvedValue(null), ...escritasDeContato() },
     conversaWhatsApp: { upsert: vi.fn().mockResolvedValue({ id: "conversa" }), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     mensagemWhatsApp: { createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({ count: data.length })) },
     atendimentoWhatsApp: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
@@ -37,9 +57,26 @@ function txEstrito() {
 }
 
 let tx: ReturnType<typeof txEstrito>;
+let cliente: EscritasDeContato & ReturnType<typeof sqlCru>;
+
+/** Os dados de TODA escrita no contato, dentro da transação E pelo cliente do módulo. */
+function escritasNoContato(): Record<string, unknown>[] {
+  return [tx.contatoWhatsApp, cliente].flatMap((c: EscritasDeContato) => [
+    ...c.create.mock.calls.map(([a]) => a.data),
+    ...c.createMany.mock.calls.flatMap(([a]) => [a.data].flat()),
+    ...c.createManyAndReturn.mock.calls.flatMap(([a]) => [a.data].flat()),
+    ...c.update.mock.calls.map(([a]) => a.data),
+    ...c.upsert.mock.calls.flatMap(([a]) => [a.create, a.update]),
+    ...c.updateMany.mock.calls.map(([a]) => a.data),
+  ]);
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   tx = txEstrito();
+  cliente = { ...escritasDeContato(), ...sqlCru() };
+  Object.assign(m.cliente, { $transaction: m.transacao, contatoWhatsApp: cliente },
+    Object.fromEntries(METODOS_SQL_CRU.map((nome) => [nome, cliente[nome]])));
   m.transacao.mockImplementation(async (fn: (t: unknown) => unknown) => fn(tx));
   m.acharNumero.mockResolvedValue({ id: "linha", finalidade: "VENDAS", ativo: true });
   m.linha.mockResolvedValue("atendimento-linha");
@@ -61,6 +98,19 @@ describe("dentroDaJanelaHistorico", () => {
 });
 
 describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
+  // LC-10 vale para TODO cenário de importação deste bloco (saída pelo celular, triagem, mídia sem
+  // legenda, lotes, canal recusado): nenhuma escrita no contato pode tocar o opt-out.
+  afterEach(() => {
+    for (const dados of escritasNoContato()) expect(dados, "histórico não grava nem limpa opt-out").not.toHaveProperty("optOutEm");
+    // SQL cru escaparia da inspeção por chave: a importação não usa, dentro nem fora da transação.
+    for (const nome of METODOS_SQL_CRU) {
+      expect(tx[nome], `histórico não usa SQL cru (${nome}, transação)`).not.toHaveBeenCalled();
+      expect(cliente[nome], `histórico não usa SQL cru (${nome}, cliente)`).not.toHaveBeenCalled();
+    }
+    // Fora da transação nada escreve no contato: toda escrita da importação é atômica com as mensagens.
+    for (const f of Object.values(cliente)) expect(f, "escrita no contato fora da transação").not.toHaveBeenCalled();
+  });
+
   it("grava só a janela, no atendimento da linha, sem duplicar e sem não lidas", async () => {
     const r = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-90", 90), msg("H-10", 10), msg("H-9", 9, { fromMe: true, corpo: "resposta" })], agora);
     expect(r).toEqual({ gravadas: 2, ignoradas: 1, motivo: null });
@@ -82,6 +132,29 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     expect(tx.contatoWhatsApp.create.mock.calls[0][0].data).not.toHaveProperty("optOutEm");
   });
 
+  it("LC-10: nenhuma escrita no contato toca o opt-out — contato novo (palavra-chave, saída pelo celular, mídia sem legenda)", async () => {
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [
+      msg("H-1", 1), msg("H-2", 2, { corpo: "parar" }), msg("H-3", 3, { fromMe: true, corpo: "sair" }),
+      msg("H-4", 4, { corpo: null, tipo: "IMAGEM" }), msg("H-5", 5, { corpo: "" }),
+    ], agora);
+    expect(escritasNoContato()).not.toHaveLength(0); // o contato foi gravado (senão a trava passaria vazia)
+    for (const dados of escritasNoContato()) expect(dados).not.toHaveProperty("optOutEm");
+    // Contato novo nasce por create; nenhuma escrita posterior (onde um opt-out caberia).
+    expect(tx.contatoWhatsApp.update).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.upsert).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("LC-10: contato existente só tem vínculos preservados — nem grava nem limpa opt-out", async () => {
+    tx.contatoWhatsApp.findUnique.mockResolvedValue({ id: "contato", telefoneE164: "+50670001111", waId: null, nomeExibicao: null,
+      alunoId: null, responsavelId: null, leadId: null, optOutEm: new Date("2026-01-01T00:00:00Z") });
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1)], agora);
+    expect(tx.contatoWhatsApp.update).toHaveBeenCalledTimes(1); // garantirContato preserva vínculos
+    for (const dados of escritasNoContato()) expect(dados).not.toHaveProperty("optOutEm");
+    expect(tx.contatoWhatsApp.upsert).not.toHaveBeenCalled();
+    expect(tx.contatoWhatsApp.updateMany).not.toHaveBeenCalled();
+  });
+
   it("canal institucional ou linha inativa: nada é gravado", async () => {
     m.acharNumero.mockResolvedValueOnce({ id: "cob", finalidade: "COBRANCA", ativo: true });
     expect(await importarHistoricoLinha({ numeroProviderRef: "cob" }, [msg("H-1", 1)], agora)).toMatchObject({ gravadas: 0, motivo: "nao_e_linha_comercial" });
@@ -97,6 +170,7 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1)], agora);
     expect(tx.mensagemWhatsApp.createMany.mock.calls[0][0].data[0].atendimentoId).toBeNull();
     expect(tx.atendimentoWhatsApp.updateMany).not.toHaveBeenCalled();
+    expect(escritasNoContato()).not.toHaveLength(0); // houve escrita no contato: a trava do afterEach não passa vazia
   });
 
   it("lotes de até 200 mensagens por transação, por contato", async () => {
