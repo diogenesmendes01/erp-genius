@@ -47,7 +47,15 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
         </select>
       </label>
       <button disabled={acao.ocupado || !opcoes.destinos.length || !numeros.length} className={botaoClasses({ tamanho: "lg" })}>Abrir atendimento</button>
-      {!opcoes.numeros.length && <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio>}
+      {/* Sem destinatário no escopo o servidor nem lista canais: dizer "falta canal" aqui culpava a
+          administração quando o que falta é o lead/aluno (ex.: vendedor sem lead na carteira). */}
+      {!opcoes.destinos.length ? (
+        <EstadoVazio>
+          {opcoes.comercial
+            ? "Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads; as conversas que chegam na sua linha já aparecem na lista abaixo."
+            : "Nenhum destinatário no seu escopo para abrir um atendimento agora. As conversas recebidas continuam na lista abaixo."}
+        </EstadoVazio>
+      ) : !opcoes.numeros.length && <EstadoVazio>A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.</EstadoVazio>}
       {opcoes.numeros.length > 0 && semLinha && <EstadoVazio>Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a você.</EstadoVazio>}
       {destinoSelecionado?.impedimento && <p id="impedimento-destino" role="status" className="basis-full text-xs text-amber-800">{destinoSelecionado.impedimento}</p>}
     </form>

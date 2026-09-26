@@ -18,4 +18,28 @@ describe("AtendimentosPainel", () => {
     expect(html).toContain('minLength="12"');
     expect(html).toContain("Classificar esta mensagem");
   });
+
+  const painel = (opcoes: object) => renderToStaticMarkup(createElement(AtendimentosPainel, {
+    opcoes, revisoes: null, triagem: null, preferenciaFusoExibicao: null,
+  } as never));
+  const FALTA_CANAL = "A administração precisa disponibilizar um canal ativo";
+
+  it("vendedor sem lead na carteira: orienta a cadastrar o lead — não culpa a falta de canal", () => {
+    const html = painel({ destinos: [], numeros: [], comercial: true });
+    expect(html).toContain("Nenhum lead na sua carteira para iniciar uma conversa");
+    expect(html).not.toContain(FALTA_CANAL);
+  });
+
+  it("papel não comercial sem destinatário: mensagem de escopo, sem falar em canal", () => {
+    const html = painel({ destinos: [], numeros: [], comercial: false });
+    expect(html).toContain("Nenhum destinatário no seu escopo");
+    expect(html).not.toContain(FALTA_CANAL);
+    expect(html).not.toContain("Nenhum lead na sua carteira");
+  });
+
+  it("há destinatário mas nenhum canal ativo: aí sim a administração precisa disponibilizar o canal", () => {
+    const html = painel({ destinos: [{ chave: "SECRETARIA:a1", nome: "Secretaria · Ana", finalidade: "SECRETARIA", alunoId: "a1" }], numeros: [], comercial: false });
+    expect(html).toContain(FALTA_CANAL);
+    expect(html).not.toContain("Nenhum destinatário no seu escopo");
+  });
 });
