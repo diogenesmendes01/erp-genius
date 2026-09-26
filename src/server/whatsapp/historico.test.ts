@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({ acharNumero: vi.fn(), linha: vi.fn(), transacao: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: m.transacao } }));
@@ -31,6 +31,7 @@ function txEstrito() {
       update: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "contato", ...data })),
       upsert: vi.fn().mockImplementation(async ({ create }: { create: Record<string, unknown> }) => ({ id: "contato", ...create })),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     conversaWhatsApp: { upsert: vi.fn().mockResolvedValue({ id: "conversa" }), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     mensagemWhatsApp: { createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({ count: data.length })) },
@@ -40,11 +41,12 @@ function txEstrito() {
 
 let tx: ReturnType<typeof txEstrito>;
 
-/** Os dados de TODA escrita no contato (create, update, upsert — create e update —, updateMany). */
+/** Os dados de TODA escrita no contato (create, createMany, update, upsert — create e update —, updateMany). */
 function escritasNoContato(): Record<string, unknown>[] {
   const c = tx.contatoWhatsApp;
   return [
     ...c.create.mock.calls.map(([a]) => a.data),
+    ...c.createMany.mock.calls.flatMap(([a]) => [a.data].flat()),
     ...c.update.mock.calls.map(([a]) => a.data),
     ...c.upsert.mock.calls.flatMap(([a]) => [a.create, a.update]),
     ...c.updateMany.mock.calls.map(([a]) => a.data),
@@ -74,6 +76,12 @@ describe("dentroDaJanelaHistorico", () => {
 });
 
 describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
+  // LC-10 vale para TODO cenário de importação deste bloco (saída pelo celular, triagem, mídia sem
+  // legenda, lotes, canal recusado): nenhuma escrita no contato pode tocar o opt-out.
+  afterEach(() => {
+    for (const dados of escritasNoContato()) expect(dados, "histórico não grava nem limpa opt-out").not.toHaveProperty("optOutEm");
+  });
+
   it("grava só a janela, no atendimento da linha, sem duplicar e sem não lidas", async () => {
     const r = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-90", 90), msg("H-10", 10), msg("H-9", 9, { fromMe: true, corpo: "resposta" })], agora);
     expect(r).toEqual({ gravadas: 2, ignoradas: 1, motivo: null });
@@ -95,8 +103,11 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     expect(tx.contatoWhatsApp.create.mock.calls[0][0].data).not.toHaveProperty("optOutEm");
   });
 
-  it("LC-10: nenhuma escrita no contato toca o opt-out — contato novo (corpo 'sair')", async () => {
-    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1), msg("H-2", 2, { corpo: "parar" })], agora);
+  it("LC-10: nenhuma escrita no contato toca o opt-out — contato novo (palavra-chave, saída pelo celular, mídia sem legenda)", async () => {
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [
+      msg("H-1", 1), msg("H-2", 2, { corpo: "parar" }), msg("H-3", 3, { fromMe: true, corpo: "sair" }),
+      msg("H-4", 4, { corpo: null, tipo: "IMAGEM" }), msg("H-5", 5, { corpo: "" }),
+    ], agora);
     expect(escritasNoContato()).not.toHaveLength(0); // o contato foi gravado (senão a trava passaria vazia)
     for (const dados of escritasNoContato()) expect(dados).not.toHaveProperty("optOutEm");
     // Contato novo nasce por create; nenhuma escrita posterior (onde um opt-out caberia).
@@ -130,6 +141,7 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-1", 1)], agora);
     expect(tx.mensagemWhatsApp.createMany.mock.calls[0][0].data[0].atendimentoId).toBeNull();
     expect(tx.atendimentoWhatsApp.updateMany).not.toHaveBeenCalled();
+    expect(escritasNoContato()).not.toHaveLength(0); // houve escrita no contato: a trava do afterEach não passa vazia
   });
 
   it("lotes de até 200 mensagens por transação, por contato", async () => {
