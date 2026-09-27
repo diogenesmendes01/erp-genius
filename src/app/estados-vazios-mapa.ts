@@ -543,6 +543,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Sem experimentais hoje.",
   ],
   "src/app/(app)/inbox/AtendimentosPainel.tsx": [
+    "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
   ],
