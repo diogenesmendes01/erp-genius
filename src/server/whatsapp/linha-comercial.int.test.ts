@@ -429,6 +429,12 @@ describe("abrir atendimento comercial e estado da linha (§5.5)", () => {
     expect((await abrirAtendimentoInstitucional({ numeroId: linha.id, destinoChave: `COMERCIAL:${lead.id}` })).ok).toBe(false);
   });
 
+  it("vendedor com linha conectada e sem lead: sem destino, sem canais, sinalizado como comercial", async () => {
+    await linhaDe(vendedorA);
+    entrar(vendedorA);
+    expect(await listarOpcoesAtendimento()).toEqual({ destinos: [], numeros: [], comercial: true });
+  });
+
   it("dono vê o estado das próprias linhas; outros não", async () => {
     await linhaDe(vendedorA);
     expect(await listarLinhasDoUsuario(sessao(vendedorA))).toEqual([expect.objectContaining({ rotulo: "Vendas — A", sessao: "DESCONECTADO", driver: "BAILEYS" })]);

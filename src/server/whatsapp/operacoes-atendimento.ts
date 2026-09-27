@@ -22,8 +22,11 @@ export interface OpcaoAtendimento {
   disponivel?: boolean;
   impedimento?: string | null;
 }
-/** `comercial`: o número aceita atendimento COMERCIAL deste usuário (só linhas acessíveis — SPEC-ERP-005 §5.5). */
-export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string; comercial: boolean }[] }
+/**
+ * `numeros[].comercial`: o número aceita atendimento COMERCIAL deste usuário (só linhas acessíveis — SPEC-ERP-005 §5.5).
+ * `comercial`: o usuário abre atendimento comercial — a tela orienta a cadastrar o lead quando não há destino.
+ */
+export interface OpcoesAtendimento { destinos: OpcaoAtendimento[]; numeros: { id: string; nome: string; comercial: boolean }[]; comercial: boolean }
 
 export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   const u = await exigirSessao();
@@ -93,13 +96,14 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
       });
     }
   }
-  if (!destinos.length) return { destinos: [], numeros: [] };
+  // Sem destino no escopo não há o que abrir: os canais não são listados (a tela explica o motivo).
+  if (!destinos.length) return { destinos: [], numeros: [], comercial };
   const numeros = await prisma.numeroWhatsApp.findMany({ where: { ativo: true }, select: { id: true, rotulo: true, finalidade: true, donoId: true }, orderBy: { criadoEm: "asc" } });
   const soPedagogico = destinos.every((d) => d.finalidade === "PEDAGOGICO");
   // Assunto comercial sai só pelas linhas que o usuário enxerga; o institucional segue como antes.
   const donos = new Set(comercial ? await donosDeLinhaVisiveis(u) : []);
   return { destinos, numeros: numeros.map((n, i) => ({ id: n.id, nome: soPedagogico ? `Canal institucional ${i + 1}` : n.rotulo,
-    comercial: ehLinhaComercial(n) && (temPapel(u, Papel.ADMINISTRADOR) || (!!n.donoId && donos.has(n.donoId))) })) };
+    comercial: ehLinhaComercial(n) && (temPapel(u, Papel.ADMINISTRADOR) || (!!n.donoId && donos.has(n.donoId))) })), comercial };
 }
 
 const AbrirSchema = z.object({ numeroId: z.string().min(1), destinoChave: z.string().min(1) });
