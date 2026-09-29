@@ -1295,3 +1295,38 @@ check" foi obtida com o check antigo (`prisma --version | grep`), não com os ch
 
 **Estado**: Implementado e validado na VPS (relato do usuário); aguardando o redeploy no Coolify. Não concluído.
 
+
+## Inbox WhatsApp — nome do contato com o perfil da própria linha (29/09/2026)
+
+### Problema identificado (produção)
+Várias conversas da linha Baileys apareciam com o nome do dono da linha ("Diogenes Mendes"). Causa: o
+`messages.upsert` com `fromMe: true` (mensagem enviada pelo app do celular) traz no `pushName` o
+perfil de QUEM ENVIOU. O webhook repassava esse nome sem olhar `fromMe`, e o `garantirContato`
+guardava o primeiro nome para sempre. Toda conversa iniciada pelo celular ficava com o nome da linha.
+O caminho de histórico (`historico.ts`) já ignorava `fromMe`; só o tempo real estava sem a trava.
+Um nome contaminado também podia virar nome de lead (auto-captura e "Criar lead" usam o nome do contato).
+
+### Solução implementada
+- **Ingestão:** `processarMensagemNormalizada` só usa o `pushName` de mensagem recebida (`nomePerfil`).
+  O nome de perfil atualiza o contato sem vínculo no ERP; o contato vinculado mantém o nome do cadastro.
+- **Exibição (lista e thread):** cadastro no ERP (aluno do atendimento → lead → responsável do contato)
+  → nome de perfil → número. Sai o rótulo genérico "Contato institucional"; o pedagógico sem cadastro
+  continua "Atendimento pedagógico" (não expõe telefone). O cabeçalho não repete o número quando o nome já é o número.
+- **Reparo dos dados:** `scripts/reparar-nome-contato-whatsapp.ts` (somente leitura por padrão; `--aplicar`
+  grava `NomeContatoReparado`). Ele limpa o nome dos contatos sem vínculo que têm o perfil da linha, e o
+  nome real volta na próxima mensagem do contato. Leads com o mesmo nome só são listados.
+
+### Verificação (Windows, worktree sem node_modules; executáveis do checkout principal)
+- Unitários: `nome-contato.test.ts` (novo), `consultas-inbox`, `historico`, `webhook/evolution/route`,
+  `InboxCliente`: 5 arquivos, 41/41, saída 0. Filtro por arquivo, não é a suíte completa.
+- `inbound.test.ts` NÃO roda neste ambiente: o Prisma Client gerado no checkout principal está atrás do
+  schema (falta `MotivoPendenciaAvisoAgenda`). A falha já existia e não vem desta mudança.
+- **TypeScript não aprovado aqui:** pelo mesmo client desatualizado, `tsc --noEmit` sai com 2 e mais de
+  9 mil linhas de erro pré-existentes. Nas linhas novas não há erro próprio.
+
+### Pendências
+- `tsc --noEmit` e o unitário `inbound.test.ts` no ambiente preparado pelo integrador (client regenerado).
+- Rodar o reparo em produção: primeiro somente leitura, conferência da lista pelo usuário, depois `--aplicar`.
+- Renomear na tela de Leads os leads que o script listar com o nome da linha.
+
+**Estado**: Implementado; aguardando TypeScript no ambiente do integrador e o reparo em produção. Não concluído.

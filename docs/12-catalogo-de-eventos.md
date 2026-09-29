@@ -106,6 +106,7 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `OptOutRegistrado` | Contato pediu para não receber: keyword exata no inbound (sair/parar/stop/baja…) ou botão da thread (S10) | Sistema · quem vê a conversa | `{ via: "keyword"\|"botao", palavra? }` |
 | `OptOutRemovido` | Reativação manual (contato pediu para voltar) | Quem vê a conversa | `{}` |
 | `ContatoVinculado` | Vínculo contato → aluno/responsável/lead na inbox (D26) | Quem vê a conversa (lead respeita `escopoLeads`) | `{ alvo: {tipo, id}, antes }` |
+| `NomeContatoReparado` | Reparo único (`scripts/reparar-nome-contato-whatsapp.ts`): nome do contato sem vínculo que veio do perfil da própria linha (pushName de mensagem fromMe) volta a vazio | Sistema (script operado pelo admin) | `{ motivo, nomeAnterior }` |
 | `ReguaRetomada` | "Retomar régua" na thread — libera o silêncio pós-inbound (S4) sem promessa/pagamento | Financeiro/Secretaria | `{ conversaId }` |
 | `NumeroWhatsAppCriado` | Cadastro de número na config | Admin | `{ telefoneE164, driver, finalidade }` |
 | `NumeroWhatsAppAlterado` | Edição do número — inclui **troca de driver** (D26) | Admin | `{ antes, depois }` |
