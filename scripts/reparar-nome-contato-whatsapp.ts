@@ -10,14 +10,15 @@ import { registrarEvento } from "../src/server/_shared/evento";
 // Uso (DATABASE_URL do banco alvo):
 //   tsx scripts/reparar-nome-contato-whatsapp.ts --nome "Diogenes Mendes"            # só lista
 //   tsx scripts/reparar-nome-contato-whatsapp.ts --nome "Diogenes Mendes" --aplicar  # grava
-// `--nome` pode repetir (um por perfil de linha); `--manter +55...` exclui um telefone do reparo.
+// `--nome` pode repetir (um por perfil de linha); `--manter 0554` exclui do reparo o telefone que
+// termina nesses dígitos (os mesmos que aparecem na lista mascarada).
 
 function argumentos(argv: string[]) {
-  const nomes: string[] = [], manter = new Set<string>();
+  const nomes: string[] = [], manter: string[] = [];
   let aplicar = false;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--nome" && argv[i + 1]) nomes.push(argv[++i].trim());
-    else if (argv[i] === "--manter" && argv[i + 1]) manter.add(argv[++i].trim());
+    else if (argv[i] === "--manter" && argv[i + 1]) manter.push(argv[++i].replace(/\D/g, ""));
     else if (argv[i] === "--aplicar") aplicar = true;
     else throw new Error(`Argumento desconhecido: ${argv[i]}`);
   }
@@ -39,7 +40,8 @@ async function main() {
       where: { OR: [...porNome("nomeExibicao"), ...porNome("nomePerfil")], conversas: { some: { numero: { driver: "BAILEYS" } } } },
       select: { id: true, telefoneE164: true, nomeExibicao: true, nomePerfil: true, alunoId: true, responsavelId: true, leadId: true },
     });
-    const reparar = candidatos.filter((c) => !linhas.has(c.telefoneE164) && !manter.has(c.telefoneE164));
+    const mantido = (t: string) => manter.some((d) => !!d && t.replace(/\D/g, "").endsWith(d));
+    const reparar = candidatos.filter((c) => !linhas.has(c.telefoneE164) && !mantido(c.telefoneE164));
     console.log(`Candidatos: ${candidatos.length} · a reparar: ${reparar.length} · modo: ${aplicar ? "APLICAR" : "somente leitura"}`);
 
     for (const c of reparar) {

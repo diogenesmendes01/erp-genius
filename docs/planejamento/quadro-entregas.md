@@ -1341,3 +1341,31 @@ também podia virar nome de lead (auto-captura e "Criar lead").
   usuário, `--aplicar`. Renomear na tela de Leads os leads listados com o nome da linha.
 
 **Estado**: Implementado; aguardando o integrador (migração, TypeScript, integrações) e o reparo em produção. Não concluído.
+
+## Inbox WhatsApp — editar o nome do contato (29/09/2026)
+
+### Pedido
+O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe precisa salvar o nome certo na própria conversa.
+
+### Solução implementada
+- **Ação** `editarNomeContatoWhatsApp` (`acoes.ts`): grava o nome salvo (`ContatoWhatsApp.nomeExibicao`, até
+  80 caracteres). Vazio limpa o nome e a tela volta ao perfil do WhatsApp ou ao número. O alcance é o de quem
+  responde o atendimento (`conversaVisivel` com envio), nunca no pedagógico. A gravação é condicional ao nome
+  lido (duas edições não se sobrescrevem) e auditada como `ContatoRenomeado` (doc 12). Capacidade
+  `whatsapp.editar_contato` registrada no doc 37.
+- **Tela:** botão "Editar nome" no cabeçalho da conversa, com painel que mostra o perfil do WhatsApp como
+  referência. Quando o nome exibido vem do cadastro (aluno, lead ou responsável), o painel avisa e leva até o
+  cadastro, porque esse nome não é editado aqui. A thread passa a informar `nomeSalvo`, `nomePerfil` e `fonteNome`.
+- Telefone não é editável: é a identidade do contato no WhatsApp.
+- **Script de reparo:** `--manter` passa a aceitar os últimos dígitos, os mesmos da lista mascarada.
+
+### Verificação (executáveis do checkout principal; client Prisma desatualizado)
+- Unitários por arquivo (não é a suíte completa): `editar-nome-contato` (novo, 5), `InboxCliente` (novo caso do
+  botão), `nome-contato`, `consultas-inbox`, `busca-inbox`, `operacoes-atendimento`, `AtendimentosPainel`,
+  `page`: 8 arquivos, 56/56, saída 0. `botoes.test.ts` 9/9 com o mapa atualizado.
+- TypeScript não aprovado pelo mesmo motivo da entrada anterior (client desatualizado).
+
+### Pendências
+- Integrador: `tsc --noEmit` com o client regenerado.
+
+**Estado**: Implementado; aguardando o TypeScript no ambiente do integrador. Não concluído.

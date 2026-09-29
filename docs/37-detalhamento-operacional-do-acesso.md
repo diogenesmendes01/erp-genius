@@ -127,6 +127,7 @@ Referências: [ações WhatsApp](C:/Users/Mendes/.codex/worktrees/de19/erp-geniu
 | `whatsapp.enviar` | `enviarTextoInbox`, `enviarMidiaInbox` | Atendimento autorizado, destinatário válido e condições atuais; PRO usa contexto pedagógico institucional, ainda inexistente na inbox atual. |
 | `whatsapp.organizar_atendimento` | `marcarConversaLida`, `marcarConversaTratada` | Mesma autorização do atendimento; leitura não autoriza encerramento indiscriminado. |
 | `whatsapp.vincular` | `buscarVinculosInbox`, `buscarPessoasVinculo`, `vincularContatoWhatsApp` | Validar acesso ao atendimento e à pessoa de destino; busca não revela outra carteira/finalidade. |
+| `whatsapp.editar_contato` | `editarNomeContatoWhatsApp` | Mesma autorização de quem responde o atendimento (`conversaVisivel` com envio); nunca no pedagógico. Edita só o nome salvo do contato; cadastro de aluno/lead/responsável segue na tela de cada um. Auditado (`ContatoRenomeado`). |
 | `cobranca.enviar`, `cobranca.aprovar_lote` | `enfileirarCobrancaWhatsApp`, `aprovarLoteCobranca` | Capacidade financeira correspondente; cada item e destinatário precisam continuar elegíveis no envio. |
 | `comunicacao.registrar_recusa`, `comunicacao.reautorizar` | `registrarOptOutContato`, `removerOptOutContato` | Atendente no contato autorizado registra recusa; remover exige evidência de nova autorização e capacidade própria. |
 | `canal.configurar` | `salvarNumeroWhatsApp`, `conectarNumeroQr`, `consultarSessaoNumero` | ADM técnico autorizado. Equipes consultam disponibilidade do canal sem credenciais/QR de vinculação. |

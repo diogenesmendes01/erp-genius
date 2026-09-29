@@ -46,6 +46,7 @@ import {
   TemplateWhatsAppSchema,
   TratarConversaSchema,
   VincularContatoSchema,
+  EditarNomeContatoSchema,
   type EnviarMidiaInboxInput,
   type EnviarTextoInboxInput,
   type LoteCobrancaInput,
@@ -56,6 +57,7 @@ import {
   type TemplateWhatsAppInput,
   type TratarConversaInput,
   type VincularContatoInput,
+  type EditarNomeContatoInput,
 } from "./schema";
 import {
   conectarInstanciaEvolution,
@@ -489,6 +491,37 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
           alvo,
           antes: { alunoId: contato.alunoId, responsavelId: contato.responsavelId, leadId: contato.leadId },
         },
+      });
+    });
+    revalidatePath("/inbox");
+  });
+}
+
+/**
+ * Editar o nome salvo do contato pela thread: corrige o nome que a pessoa usa no perfil ou o que
+ * veio errado. Vale o mesmo alcance de quem responde a conversa; o pedagógico não expõe o contato.
+ * Vazio limpa o nome salvo (a tela volta ao perfil do WhatsApp ou ao número). Cadastro de aluno,
+ * lead e responsável não é editado aqui: continua no cadastro de cada um.
+ */
+export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    const { atendimentoId, nome } = EditarNomeContatoSchema.parse(input);
+    const alcance = await conversaVisivel(autor, atendimentoId, true);
+    if (!alcance || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para editar o contato.");
+    const antes = alcance.contato.nomeExibicao;
+    const depois = nome || null;
+    if (antes === depois) return;
+    await prisma.$transaction(async (tx) => {
+      // Condicional: duas edições simultâneas não se sobrescrevem às cegas.
+      const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: antes }, data: { nomeExibicao: depois } });
+      if (count === 0) throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
+      await registrarEvento(tx, {
+        tipo: "ContatoRenomeado",
+        agregadoTipo: "ContatoWhatsApp",
+        agregadoId: alcance.contatoId,
+        autorId: autor.id,
+        payload: { antes, depois },
       });
     });
     revalidatePath("/inbox");

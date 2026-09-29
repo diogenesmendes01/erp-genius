@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
-vi.mock("@/server/whatsapp/acoes", () => ({ buscarVinculosInbox: vi.fn(), enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn(), marcarConversaLida: vi.fn(), marcarConversaTratada: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn(), vincularContatoWhatsApp: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes", () => ({ buscarVinculosInbox: vi.fn(), criarLeadDaConversa: vi.fn(), editarNomeContatoWhatsApp: vi.fn(), enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn(), marcarConversaLida: vi.fn(), marcarConversaTratada: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn(), vincularContatoWhatsApp: vi.fn() }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
 vi.mock("@/server/comercial/acoes", () => ({ definirTemperatura: vi.fn(), moverEtapa: vi.fn(), registrarNotaInterna: vi.fn() }));
 
@@ -15,15 +15,23 @@ const mensagens = [
 ];
 
 const thread = {
-  conversaId: "atendimento", finalidade: "COMERCIAL", matricula: null, podeEnviar: true, podeVincular: false, podeReautorizar: false, pendenciaDestinatario: null,
+  conversaId: "atendimento", finalidade: "COMERCIAL", matricula: null, podeEnviar: true, podeVincular: false, podeReautorizar: false, podeEditarNome: false, pendenciaDestinatario: null,
   numero: { id: "numero", rotulo: "Escola", driver: "META_CLOUD", finalidade: "COMERCIAL", sessao: "s", ativo: true },
-  contato: { id: "contato", nome: "Ana", telefone: "+506", optOutEm: "2026-10-01T02:30:00.000Z", alunoId: null, alunoNome: null, responsavelId: null, responsavelNome: null, leadId: "lead", leadNome: "Ana" },
+  contato: { id: "contato", nome: "Ana", telefone: "+506", optOutEm: "2026-10-01T02:30:00.000Z", alunoId: null, alunoNome: null, responsavelId: null, responsavelNome: null, leadId: "lead", leadNome: "Ana", nomeSalvo: null, nomePerfil: "Aninha", fonteNome: "lead" },
   janela24h: { aberta: true, fechaEm: "2026-10-01T04:30:00.000Z" }, silencio: { ativo: false, ate: null }, cobrancaAtiva: null,
   lead: { id: "lead", nome: "Ana", etapa: "EXPERIMENTAL_AGENDADA", temperatura: "MORNO", dataExperimental: "2026-10-01T02:30:00.000Z", etapasPermitidas: [], notas: [{ id: "nota", nota: "ligar", autorNome: "Equipe", criadoEm: "2026-10-01T03:30:00.000Z" }] },
   mensagens,
 };
 
 describe("InboxCliente", () => {
+  it("\"Editar nome\" só aparece para quem pode editar o contato", () => {
+    const render = (podeEditarNome: boolean) => renderToStaticMarkup(createElement(InboxCliente, {
+      conversas: [], thread: { ...thread, podeEditarNome }, podeCobranca: false, preferenciaFusoExibicao: null,
+    } as never));
+    expect(render(true)).toContain("Editar nome");
+    expect(render(false)).not.toContain("Editar nome");
+  });
+
   it("usa a preferência nos instantes e agrupa mensagens pela mesma data local", () => {
     const html = renderToStaticMarkup(createElement(InboxCliente, {
       conversas: [{ id: "atendimento", numeroId: "numero", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: "contato", contatoNome: "Ana", contatoTelefone: "+506", optOut: true, vinculo: null, naoLidas: 0, ultimaMensagemEm: mensagens[1].criadoEm, preview: "Olá" }],
