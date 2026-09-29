@@ -14,6 +14,7 @@ import {
   IconSend2,
   IconLink,
   IconLock,
+  IconPencil,
   IconUserPlus,
   IconX,
 } from "@tabler/icons-react";
@@ -25,6 +26,7 @@ import { LIMITE_CONVERSAS, hrefInbox, type CanalInbox } from "@/server/whatsapp/
 import {
   buscarVinculosInbox,
   criarLeadDaConversa,
+  editarNomeContatoWhatsApp,
   enviarMidiaInbox,
   enviarTextoInbox,
   marcarConversaLida,
@@ -311,6 +313,7 @@ function Thread({
   const [mostrarPromessa, setMostrarPromessa] = useState(false);
   const [evidenciaOptIn, setEvidenciaOptIn] = useState("");
   const [criandoLead, setCriandoLead] = useState(false);
+  const [editarNome, setEditarNome] = useState(false);
   const optOut = !!thread.contato.optOutEm;
 
   async function criarLead() {
@@ -411,6 +414,13 @@ function Thread({
                 </span>
               </button>
             )}
+            {thread.podeEditarNome && (
+              <button className={btnSec} onClick={() => setEditarNome((v) => !v)}>
+                <span className="flex items-center gap-1">
+                  <IconPencil className="h-3.5 w-3.5" aria-hidden /> Editar nome
+                </span>
+              </button>
+            )}
             {thread.podeVincular && <button className={btnSec} onClick={() => setVincular((v) => !v)}>
               <span className="flex items-center gap-1">
                 <IconLink className="h-3.5 w-3.5" /> Vincular
@@ -437,6 +447,19 @@ function Thread({
           </div>
         </div>
       </div>
+
+      {editarNome && (
+        <EditarNomePainel
+          key={thread.conversaId}
+          thread={thread}
+          onFechar={() => setEditarNome(false)}
+          onFeito={(msg) => {
+            setEditarNome(false);
+            void run(Promise.resolve({ ok: true }), msg);
+          }}
+          onErro={onErro}
+        />
+      )}
 
       {vincular && (
         <VincularPainel
@@ -816,6 +839,78 @@ function Composer({
 // ---------------------------------------------------------------------------
 // Painel de vínculo contato → aluno / responsável / lead
 // ---------------------------------------------------------------------------
+
+// Nome salvo do contato (o que a escola chama a pessoa). O cadastro de aluno/lead/responsável, quando
+// é ele que aparece na conversa, tem tela própria: o painel explica e leva até lá em vez de editar.
+const CADASTRO_DO_NOME: Partial<Record<ThreadConversa["contato"]["fonteNome"], string>> = {
+  aluno: "do aluno", lead: "do lead", responsavel: "do responsável",
+};
+
+function EditarNomePainel({
+  thread,
+  onFechar,
+  onFeito,
+  onErro,
+}: {
+  thread: ThreadConversa;
+  onFechar: () => void;
+  onFeito: (msg: string) => void;
+  onErro: (m: string | null) => void;
+}) {
+  const [nome, setNome] = useState(thread.contato.nomeSalvo ?? "");
+  const [salvando, setSalvando] = useState(false);
+  const cadastro = CADASTRO_DO_NOME[thread.contato.fonteNome];
+  const hrefCadastro = thread.contato.fonteNome === "aluno" && thread.contato.alunoId ? `/alunos/${thread.contato.alunoId}`
+    : thread.contato.fonteNome === "lead" && thread.contato.leadId ? `/leads/${thread.contato.leadId}` : null;
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    onErro(null);
+    setSalvando(true);
+    try {
+      const r = await editarNomeContatoWhatsApp({ atendimentoId: thread.conversaId, nome });
+      if (!r.ok) return onErro(r.erro ?? "Erro ao salvar o nome.");
+      onFeito(nome.trim() ? `Contato salvo como ${nome.trim()}.` : "Nome salvo removido — a conversa volta a mostrar o perfil do WhatsApp ou o número.");
+    } catch {
+      // Salvar de novo é seguro: a gravação é condicional ao nome lido e não duplica nada.
+      onErro("Não foi possível confirmar se o nome foi salvo. Recarregue a conversa e confira.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <form onSubmit={salvar} className="border-b border-gray-200 bg-surface-muted px-4 py-3 text-sm">
+      {cadastro && (
+        <p className="mb-2 text-xs text-gray-600">
+          Nesta conversa aparece o nome do cadastro {cadastro}.{" "}
+          {hrefCadastro ? <Link href={hrefCadastro} className="text-brand-700 underline">Corrigir no cadastro →</Link> : "Corrija-o no cadastro."}
+          {" "}O nome salvo abaixo vale para as telas que não usam esse cadastro.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          autoFocus
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          maxLength={80}
+          aria-label="Nome salvo do contato"
+          placeholder={thread.contato.nomePerfil ?? thread.contato.telefone}
+          className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 outline-none focus:border-brand-500"
+        />
+        <button type="submit" disabled={salvando || nome.trim() === (thread.contato.nomeSalvo ?? "")} className={botaoClasses({ tamanho: "sm" })}>
+          {salvando ? "Salvando…" : "Salvar"}
+        </button>
+        <button type="button" className="text-gray-400 hover:text-gray-700" onClick={onFechar} aria-label="Fechar">
+          <IconX className="h-4 w-4" />
+        </button>
+      </div>
+      <p className="mt-1.5 text-xs text-gray-500">
+        {thread.contato.nomePerfil ? `Perfil no WhatsApp: ${thread.contato.nomePerfil}. ` : ""}Deixe em branco para voltar ao perfil do WhatsApp ou ao número.
+      </p>
+    </form>
+  );
+}
 
 function VincularPainel({
   contatoId,
