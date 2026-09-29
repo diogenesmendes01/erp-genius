@@ -17,9 +17,9 @@ import { nomeConhecidoDoContato, nomeDoAtendimento, nomeDoContato } from "./nome
 // (`nomeExibicao`) e o perfil do contato (`nomePerfil`) moram em colunas separadas.
 
 type ContatoGravado = { id: string; telefoneE164: string; waId: string | null; nomeExibicao: string | null;
-  nomePerfil: string | null; alunoId: string | null; responsavelId: string | null; leadId: string | null };
+  nomePerfil: string | null; nomeEditadoEm?: Date | null; alunoId: string | null; responsavelId: string | null; leadId: string | null };
 const contaminado: ContatoGravado = { id: "contato", telefoneE164: "+5511911600554", waId: "5511911600554", nomeExibicao: null,
-  nomePerfil: "Diogenes Mendes", alunoId: null, responsavelId: null, leadId: null };
+  nomePerfil: "Diogenes Mendes", nomeEditadoEm: null, alunoId: null, responsavelId: null, leadId: null };
 
 function txContato(existente: ContatoGravado | null) {
   return {
@@ -42,6 +42,14 @@ describe("garantirContato — nome do ERP × nome de perfil", () => {
     await garantirContato({ contatoWhatsApp } as never, { telefoneE164: contaminado.telefoneE164, nomeExibicao: "Gestor comercial", nomePerfil: "  " });
     expect(contatoWhatsApp.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ nomeExibicao: "Gestor comercial", nomePerfil: undefined }) }));
+  });
+});
+
+describe("garantirContato — nome limpo pela equipe", () => {
+  it("fluxo do ERP não repõe nome que a equipe limpou em \"Editar nome\"", async () => {
+    const contatoWhatsApp = txContato({ ...contaminado, nomeEditadoEm: new Date("2026-09-29T12:00:00Z") });
+    await garantirContato({ contatoWhatsApp } as never, { telefoneE164: contaminado.telefoneE164, nomeExibicao: "Pedro" });
+    expect(contatoWhatsApp.update.mock.calls[0][0].data.nomeExibicao).toBeUndefined();
   });
 });
 
