@@ -41,6 +41,15 @@ export const VincularContatoSchema = z.object({
 });
 export type VincularContatoInput = z.input<typeof VincularContatoSchema>;
 
+/** Nome salvo do contato (edição na thread). Vazio = volta ao nome de perfil do WhatsApp / número. */
+export const EditarNomeContatoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  nome: z.string().trim().max(80, "Nome longo demais (até 80 caracteres)."),
+  /** Nome salvo que a tela carregou: a gravação só vale se ele ainda for o atual (edições concorrentes). */
+  nomeAnterior: z.string().nullable(),
+});
+export type EditarNomeContatoInput = z.input<typeof EditarNomeContatoSchema>;
+
 export const TratarConversaSchema = z.object({
   conversaId: z.string().min(1),
   motivo: z.enum(["retomar_regua", "promessa", "pagamento"]),

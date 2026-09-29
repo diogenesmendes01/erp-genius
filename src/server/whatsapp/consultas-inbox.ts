@@ -12,7 +12,7 @@ import { ehLinhaComercial } from "./linha-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
-import { nomeDoAtendimento } from "./nome-contato";
+import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 export interface ConversaResumo {
@@ -39,11 +39,15 @@ export interface LeadNaThread {
 }
 export interface ThreadConversa {
   conversaId: string; finalidade: string; matricula: { id: string; codigo: string | null } | null; podeEnviar: boolean; podeVincular: boolean; podeReautorizar: boolean;
+  /** Editar o nome salvo do contato: fora do pedagógico e só se o usuário vê todos os atendimentos do contato. */
+  podeEditarNome: boolean;
   /** Conversa de linha comercial; `podeCriarLead` = botão "Criar lead" (LC-D05). */
   linhaComercial: boolean; podeCriarLead: boolean;
   pendenciaDestinatario: string | null;
   numero: { id: string; rotulo: string; driver: string; finalidade: string; sessao: string; ativo: boolean };
   contato: { id: string; nome: string; telefone: string; optOutEm: string | null;
+    /** Nome salvo no ERP e nome de perfil do WhatsApp; `fonteNome` diz qual dos cadastros está na tela. */
+    nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
     alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
     leadId: string | null; leadNome: string | null };
   janela24h: { aberta: boolean; fechaEm: string | null } | null;
@@ -131,7 +135,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const comercial = a.finalidade === "COMERCIAL";
   const financeiro = a.finalidade === "FINANCEIRO" && temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
   const c = a.conversa;
-  const nome = nomeDoAtendimento(a);
+  const { nome, fonte: fonteNome } = nomeEFonteDoAtendimento(a);
   const agora = Date.now();
   const fechaEm = c.ultimoInboundEm ? new Date(c.ultimoInboundEm.getTime() + 24 * 3600_000) : null;
   const politica = financeiro ? await carregarPoliticaRegua() : null;
@@ -147,10 +151,12 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
     podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
+    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contatoId),
     pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
     numero: { id: c.numeroId, rotulo: pedag ? "Canal institucional" : c.numero.rotulo, driver: c.numero.driver,
       finalidade: a.finalidade, sessao: c.numero.sessao, ativo: c.numero.ativo },
     contato: { id: c.contatoId, nome, telefone: pedag ? "" : c.contato.telefoneE164,
+      nomeSalvo: pedag ? null : c.contato.nomeExibicao, nomePerfil: pedag ? null : c.contato.nomePerfil, fonteNome,
       optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
@@ -237,3 +243,13 @@ export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, at
 }
 
 export const conversaVisivel = atendimentoVisivel;
+
+/**
+ * O contato é compartilhado entre linhas e finalidades: alterá-lo (ex.: o nome salvo) só cabe a quem
+ * enxerga TODOS os atendimentos dele — senão a mudança apareceria na área de outra equipe.
+ */
+export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: string): Promise<boolean> {
+  if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
+  const fora = await prisma.atendimentoWhatsApp.count({ where: { conversa: { contatoId }, NOT: await escopoAtendimentos(usuario) } });
+  return fora === 0;
+}

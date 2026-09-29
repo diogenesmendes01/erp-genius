@@ -1341,3 +1341,44 @@ também podia virar nome de lead (auto-captura e "Criar lead").
   usuário, `--aplicar`. Renomear na tela de Leads os leads listados com o nome da linha.
 
 **Estado**: Implementado; aguardando o integrador (migração, TypeScript, integrações) e o reparo em produção. Não concluído.
+
+## Inbox WhatsApp — editar o nome do contato (29/09/2026)
+
+### Pedido
+O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe precisa salvar o nome certo na própria conversa.
+
+### Solução implementada (PR #132, com as correções da revisão)
+- **Ação** `editarNomeContatoWhatsApp`: grava o nome salvo (`nomeExibicao`, até 80 caracteres). Vazio limpa o
+  nome e a tela volta ao perfil do WhatsApp ou ao número.
+  - **Alcance:** quem vê o atendimento (renomear não envia nada, então vale também para atendimento encerrado ou
+    com pagador trocado), nunca no pedagógico, e só se o usuário enxerga TODOS os atendimentos do contato
+    (`contatoSoNoAlcance`; ADM sempre). Assim um vendedor não renomeia o contato que o Financeiro também atende.
+  - **Concorrência:** a gravação só vale se o nome atual ainda for o que a tela carregou (`nomeAnterior`);
+    se outra pessoa salvou antes, a ação recusa.
+  - **Auditoria:** `ContatoRenomeado` (doc 12). Capacidade `whatsapp.editar_contato` registrada no doc 37.
+- **Schema:** coluna `ContatoWhatsApp.nomeEditadoEm` (migração aditiva `20260929130000_contato_whatsapp_nome_editado`).
+  Depois de a equipe editar ou limpar o nome, os fluxos do ERP (cobrança, aviso de agenda, abrir atendimento)
+  não o preenchem mais, então a limpeza não se desfaz sozinha.
+- **Aviso de agenda:** o contato nasce com o nome do destinatário real (responsável autorizado ou aluno), não
+  mais com o primeiro nome do aluno no telefone do responsável.
+- **Tela:** botão "Editar nome" no cabeçalho, com painel que mostra o perfil do WhatsApp como referência. Quando
+  o nome exibido vem de um cadastro, o painel avisa: aluno ou lead próprio têm link para a ficha; lead de outra
+  carteira, pedir a correção a quem cuida dele; responsável, a correção é da Secretaria. Os links de ficha saem
+  de um único helper (`hrefCadastro`).
+- Telefone não é editável: é a identidade do contato no WhatsApp.
+- **Script de reparo:** `--manter` aceita os últimos dígitos e lista o que cada um exclui, avisando quando pega
+  mais de um contato.
+
+### Verificação (executáveis do checkout principal; client Prisma desatualizado)
+- Unitários por arquivo (não é a suíte completa): `editar-nome-contato`, `nome-contato`, `InboxCliente`,
+  `consultas-inbox`, `busca-inbox`, `operacoes-atendimento`, `botoes`, `AtendimentosPainel`, `page`, `historico`:
+  10 arquivos, 75/75, saída 0.
+- `comunicacoes-agenda/quantidade-transporte.test.ts` não carrega neste ambiente (enum ausente no client
+  desatualizado, mesma falha já existente do `inbound.test.ts`).
+- TypeScript não aprovado. Os únicos erros novos são sobre `nomeEditadoEm`, coluna que o client antigo não conhece.
+
+### Pendências
+- Integrador: confirmar o ID de migração `20260929130000`, regenerar o client, rodar `tsc --noEmit`,
+  `quantidade-transporte` e as integrações WhatsApp num perfil isolado.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
