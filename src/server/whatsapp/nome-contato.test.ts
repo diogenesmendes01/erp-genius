@@ -7,77 +7,111 @@ vi.mock("@/lib/prisma", () => ({ prisma: {
 } }));
 vi.mock("./despachante", () => ({ despacharFila: vi.fn() }));
 
-import { nomeExibicaoAtualizado } from "./identidade";
+import { garantirContato } from "./identidade";
 import { processarMensagemNormalizada } from "./inbound";
-import { nomeDoAtendimento } from "./consultas-inbox";
+import { nomeConhecidoDoContato, nomeDoAtendimento, nomeDoContato } from "./nome-contato";
 
-// Nome do contato na inbox (bug de produção 29/09/2026): a mensagem enviada pelo celular da linha
-// (fromMe) traz no pushName o perfil de QUEM ENVIOU. Gravado como nome do contato, todas as
-// conversas iniciadas pelo celular apareciam com o nome do dono da linha.
+// Nome do contato (bug de produção 29/09/2026): a mensagem enviada pelo celular da linha (fromMe)
+// traz no pushName o perfil de QUEM ENVIOU. Gravado como nome do contato, todas as conversas
+// iniciadas pelo celular apareciam com o nome do dono da linha. Agora o nome dado pelo ERP
+// (`nomeExibicao`) e o perfil do contato (`nomePerfil`) moram em colunas separadas.
 
-const semVinculo = { nomeExibicao: null, alunoId: null, responsavelId: null, leadId: null };
+type ContatoGravado = { id: string; telefoneE164: string; waId: string | null; nomeExibicao: string | null;
+  nomePerfil: string | null; alunoId: string | null; responsavelId: string | null; leadId: string | null };
+const contaminado: ContatoGravado = { id: "contato", telefoneE164: "+5511911600554", waId: "5511911600554", nomeExibicao: null,
+  nomePerfil: "Diogenes Mendes", alunoId: null, responsavelId: null, leadId: null };
 
-describe("nomeExibicaoAtualizado", () => {
-  it("perfil do contato preenche nome vazio e atualiza contato sem vínculo", () => {
-    expect(nomeExibicaoAtualizado(semVinculo, { nomePerfil: "Victor" })).toBe("Victor");
-    expect(nomeExibicaoAtualizado({ ...semVinculo, nomeExibicao: "Diogenes Mendes" }, { nomePerfil: "Victor" })).toBe("Victor");
+function txContato(existente: ContatoGravado | null) {
+  return {
+    findUnique: vi.fn().mockResolvedValue(existente),
+    create: vi.fn().mockImplementation(async ({ data }) => ({ id: "contato", ...data })),
+    update: vi.fn().mockImplementation(async ({ data }) => ({ ...existente, ...data })),
+  };
+}
+
+describe("garantirContato — nome do ERP × nome de perfil", () => {
+  it("perfil recebido substitui o perfil anterior; nome do ERP não é tocado", async () => {
+    const contatoWhatsApp = txContato({ ...contaminado, nomeExibicao: "Financeiro ACME" });
+    await garantirContato({ contatoWhatsApp } as never, { telefoneE164: contaminado.telefoneE164, nomePerfil: " Victor " });
+    expect(contatoWhatsApp.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ nomeExibicao: "Financeiro ACME", nomePerfil: "Victor" }) }));
   });
 
-  it("contato vinculado no ERP mantém o nome do cadastro", () => {
-    expect(nomeExibicaoAtualizado({ ...semVinculo, nomeExibicao: "Ana Souza", responsavelId: "r1" }, { nomePerfil: "Aninha" })).toBe("Ana Souza");
-    expect(nomeExibicaoAtualizado({ ...semVinculo, leadId: "l1" }, { nomePerfil: "Aninha" })).toBe("Aninha");
-  });
-
-  it("sem perfil, nome do cadastro só preenche vazio; perfil em branco não conta", () => {
-    expect(nomeExibicaoAtualizado({ ...semVinculo, nomeExibicao: "Antigo" }, { nomeExibicao: "Novo" })).toBe("Antigo");
-    expect(nomeExibicaoAtualizado(semVinculo, { nomeExibicao: "Novo" })).toBe("Novo");
-    expect(nomeExibicaoAtualizado({ ...semVinculo, nomeExibicao: "Antigo" }, { nomePerfil: "  " })).toBe("Antigo");
+  it("sem perfil (ou em branco), o perfil gravado fica; nome do ERP só preenche vazio", async () => {
+    const contatoWhatsApp = txContato(contaminado);
+    await garantirContato({ contatoWhatsApp } as never, { telefoneE164: contaminado.telefoneE164, nomeExibicao: "Gestor comercial", nomePerfil: "  " });
+    expect(contatoWhatsApp.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ nomeExibicao: "Gestor comercial", nomePerfil: undefined }) }));
   });
 });
 
 describe("processarMensagemNormalizada — pushName", () => {
+  // O recorte termina logo depois do contato (upsert da conversa rejeita): o resto da ingestão
+  // tem cobertura própria; aqui só interessa o que foi gravado no contato.
   const parar = new Error("fim do recorte");
-  beforeEach(() => {
-    m.tx = {
-      contatoWhatsApp: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({ id: "contato" }), update: vi.fn() },
-      // O recorte termina depois do contato: o resto da ingestão não interessa aqui.
-      conversaWhatsApp: { upsert: vi.fn().mockRejectedValue(parar) },
-    };
-  });
-  const mensagem = (fromMe: boolean) => processarMensagemNormalizada({
-    numeroProviderRef: "linha", contatoWaId: "5511911600554", nomeExibicao: "Diogenes Mendes",
+  const preparar = (existente: ContatoGravado | null) => {
+    m.tx = { contatoWhatsApp: txContato(existente), conversaWhatsApp: { upsert: vi.fn().mockRejectedValue(parar) } };
+  };
+  const mensagem = (fromMe: boolean, nome = "Diogenes Mendes") => processarMensagemNormalizada({
+    numeroProviderRef: "linha", contatoWaId: "5511911600554", nomeExibicao: nome,
     providerMessageId: "M1", corpo: "Bom dia", tipo: "TEXTO", driver: "BAILEYS", fromMe, quando: new Date(),
   });
+  beforeEach(() => preparar(null));
 
-  it("mensagem enviada pelo celular da linha (fromMe) não dá nome ao contato", async () => {
+  it("fromMe em contato novo: nem nome do ERP nem perfil", async () => {
     await expect(mensagem(true)).rejects.toBe(parar);
-    expect(m.tx.contatoWhatsApp.create).toHaveBeenCalledWith({ data: expect.objectContaining({ nomeExibicao: null }) });
+    expect(m.tx.contatoWhatsApp.create).toHaveBeenCalledWith({ data: expect.objectContaining({ nomeExibicao: null, nomePerfil: null }) });
   });
 
-  it("mensagem recebida do contato usa o nome de perfil dele", async () => {
-    await expect(mensagem(false)).rejects.toBe(parar);
-    expect(m.tx.contatoWhatsApp.create).toHaveBeenCalledWith({ data: expect.objectContaining({ nomeExibicao: "Diogenes Mendes" }) });
+  it("fromMe em contato existente não mexe no perfil", async () => {
+    preparar({ ...contaminado, nomePerfil: "Victor" });
+    await expect(mensagem(true)).rejects.toBe(parar);
+    const { data } = m.tx.contatoWhatsApp.update.mock.calls[0][0];
+    expect(data.nomePerfil).toBeUndefined();
+    expect(data.nomeExibicao).toBeUndefined();
+  });
+
+  it("mensagem recebida corrige o perfil contaminado do contato existente", async () => {
+    preparar(contaminado);
+    await expect(mensagem(false, "Victor Maruyama")).rejects.toBe(parar);
+    expect(m.tx.contatoWhatsApp.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ nomePerfil: "Victor Maruyama" }) }));
+  });
+});
+
+describe("nomeDoContato / nomeConhecidoDoContato", () => {
+  const c = { nomeExibicao: null as string | null, nomePerfil: null as string | null, telefoneE164: "+5511911600554" };
+  it("nome do ERP → perfil → número", () => {
+    expect(nomeDoContato({ ...c, nomeExibicao: "Financeiro ACME", nomePerfil: "Joca" })).toBe("Financeiro ACME");
+    expect(nomeDoContato({ ...c, nomeExibicao: " ", nomePerfil: "Joca" })).toBe("Joca");
+    expect(nomeDoContato(c)).toBe("+5511911600554");
+    expect(nomeConhecidoDoContato(c)).toBeNull();
+    expect(nomeConhecidoDoContato({ ...c, nomePerfil: "Joca" })).toBe("Joca");
   });
 });
 
 describe("nomeDoAtendimento", () => {
-  const contato = { nomeExibicao: null as string | null, telefoneE164: "+5511911600554", responsavel: null as { nome: string } | null };
+  const contato = { nomeExibicao: null as string | null, nomePerfil: null as string | null, telefoneE164: "+5511911600554",
+    responsavel: null as { nome: string } | null };
   const at = (over: Partial<Parameters<typeof nomeDoAtendimento>[0]> = {}, c: Partial<typeof contato> = {}) =>
-    nomeDoAtendimento({ finalidade: "COMERCIAL", aluno: null, lead: null, conversa: { contato: { ...contato, ...c } }, ...over });
+    nomeDoAtendimento({ finalidade: "SECRETARIA", aluno: null, lead: null, conversa: { contato: { ...contato, ...c } }, ...over });
 
   it("cadastro do ERP primeiro: aluno, lead, responsável do contato", () => {
-    expect(at({ aluno: { primeiroNome: "Ana", sobrenome: "Souza" }, lead: { nome: "Lead" } }, { nomeExibicao: "Perfil" })).toBe("Ana Souza");
-    expect(at({ lead: { nome: "Lead" } }, { nomeExibicao: "Perfil", responsavel: { nome: "Resp" } })).toBe("Lead");
-    expect(at({}, { nomeExibicao: "Perfil", responsavel: { nome: "Resp" } })).toBe("Resp");
+    expect(at({ aluno: { primeiroNome: "Ana", sobrenome: "Souza" }, lead: { nome: "Lead" } }, { nomePerfil: "Perfil" })).toBe("Ana Souza");
+    expect(at({ lead: { nome: "Lead" } }, { nomePerfil: "Perfil", responsavel: { nome: "Resp" } })).toBe("Lead");
+    expect(at({}, { nomePerfil: "Perfil", responsavel: { nome: "Resp" } })).toBe("Resp");
   });
 
-  it("sem cadastro: nome de perfil; sem perfil: o número — nunca um rótulo genérico", () => {
-    expect(at({}, { nomeExibicao: "Victor" })).toBe("Victor");
+  it("comercial não mostra o nome do responsável do cadastro", () => {
+    expect(at({ finalidade: "COMERCIAL" }, { nomePerfil: "Perfil", responsavel: { nome: "Resp" } })).toBe("Perfil");
+  });
+
+  it("sem cadastro: perfil; sem perfil: o número — nunca um rótulo genérico", () => {
+    expect(at({}, { nomePerfil: "Victor" })).toBe("Victor");
     expect(at()).toBe("+5511911600554");
-    expect(at({}, { nomeExibicao: "  " })).toBe("+5511911600554");
   });
 
   it("pedagógico sem cadastro não expõe perfil nem telefone", () => {
-    expect(at({ finalidade: "PEDAGOGICO" }, { nomeExibicao: "Perfil" })).toBe("Atendimento pedagógico");
+    expect(at({ finalidade: "PEDAGOGICO" }, { nomePerfil: "Perfil" })).toBe("Atendimento pedagógico");
   });
 });

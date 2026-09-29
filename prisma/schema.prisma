@@ -2306,7 +2306,8 @@ model ContatoWhatsApp {
   id           String  @id @default(cuid())
   telefoneE164 String  @unique // 1ª unicidade de telefone do sistema (doc 29) — embrião da entidade Pessoa (comentário do topo)
   waId         String? @unique
-  nomeExibicao String?
+  nomeExibicao String? // nome dado pelo ERP (cadastro); webhook nunca escreve aqui
+  nomePerfil   String? // nome de perfil do WhatsApp (pushName) — só de mensagem RECEBIDA do contato
 
   // Vínculos opcionais — um contato pode ser responsável E lead ao mesmo tempo.
   alunoId       String?

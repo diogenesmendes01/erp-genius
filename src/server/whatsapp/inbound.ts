@@ -10,6 +10,7 @@ import {
 import { despacharFila } from "./despachante";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 import { atendimentoDoInbound } from "./atendimentos";
+import { nomeConhecidoDoContato } from "./nome-contato";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -24,6 +25,7 @@ export interface InboundNormalizado {
   numeroTelefoneE164?: string | null;
   /** wa_id/remoteJid do contato (sem "+" — normalizado aqui). */
   contatoWaId: string;
+  /** pushName/perfil do REMETENTE. Em fromMe é o perfil da própria linha: descartado aqui. */
   nomeExibicao?: string | null;
   providerMessageId: string;
   corpo: string | null;
@@ -149,7 +151,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           contato: {
             id: contato.id,
             telefoneE164: contato.telefoneE164,
-            nomeExibicao: contato.nomeExibicao,
+            nomeExibicao: nomeConhecidoDoContato(contato),
             alunoId: contato.alunoId,
             responsavelId: contato.responsavelId,
             leadId: contato.leadId,

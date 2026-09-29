@@ -12,6 +12,7 @@ import { ehLinhaComercial } from "./linha-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
+import { nomeDoAtendimento } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
 export interface ConversaResumo {
@@ -95,24 +96,6 @@ export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "",
   // ordem já vem estável do banco (orderBy ultimaMensagemEm desc); o badge de não lidas
   // continua visível por linha, só não pula mais a lista inteira.
   return { itens: mesclarPorRecencia(lista, naoLidasFora).map(resumirConversa), limitada };
-}
-
-/**
- * Nome do contato na inbox, nesta ordem: cadastro no ERP (aluno do atendimento, lead, responsável do
- * contato), nome de perfil do WhatsApp e, sem nenhum deles, o próprio número. O pedagógico não expõe
- * telefone nem perfil fora do cadastro.
- */
-export function nomeDoAtendimento(a: {
-  finalidade: string;
-  aluno: { primeiroNome: string; sobrenome: string | null } | null;
-  lead: { nome: string } | null;
-  conversa: { contato: { nomeExibicao: string | null; telefoneE164: string; responsavel?: { nome: string } | null } };
-}): string {
-  if (a.aluno) return nomeCompleto(a.aluno);
-  if (a.lead?.nome) return a.lead.nome;
-  if (a.finalidade === "PEDAGOGICO") return "Atendimento pedagógico";
-  const contato = a.conversa.contato;
-  return contato.responsavel?.nome || contato.nomeExibicao?.trim() || contato.telefoneE164;
 }
 
 type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;

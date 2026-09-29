@@ -16,6 +16,7 @@ const LOTE = 200;
 
 export interface MensagemHistorica {
   contatoWaId: string;
+  /** pushName do remetente (em fromMe, o perfil da própria linha — ignorado). */
   nomeExibicao?: string | null;
   providerMessageId: string;
   corpo: string | null;
@@ -58,8 +59,10 @@ export async function importarHistoricoLinha(
     for (let i = 0; i < doContato.length; i += LOTE) {
       const lote = doContato.slice(i, i + LOTE);
       gravadas += await prisma.$transaction(async (tx) => {
-        const nome = lote.find((m) => !m.fromMe && m.nomeExibicao)?.nomeExibicao ?? null;
-        const contato = await garantirContato(tx, { telefoneE164: telefoneDeWaId(waId), waId, nomeExibicao: nome });
+        // Perfil mais recente do PRÓPRIO contato no lote (fromMe traz o perfil da linha).
+        const nomePerfil = lote.filter((m) => !m.fromMe && m.nomeExibicao?.trim())
+          .reduce<MensagemHistorica | null>((ultima, m) => (!ultima || m.quando > ultima.quando ? m : ultima), null)?.nomeExibicao ?? null;
+        const contato = await garantirContato(tx, { telefoneE164: telefoneDeWaId(waId), waId, nomePerfil });
         const conversa = await tx.conversaWhatsApp.upsert({
           where: { numeroId_contatoId: { numeroId: numero.id, contatoId: contato.id } },
           create: { numeroId: numero.id, contatoId: contato.id },
