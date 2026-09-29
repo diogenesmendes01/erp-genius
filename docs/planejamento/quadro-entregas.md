@@ -1303,30 +1303,41 @@ Várias conversas da linha Baileys apareciam com o nome do dono da linha ("Dioge
 `messages.upsert` com `fromMe: true` (mensagem enviada pelo app do celular) traz no `pushName` o
 perfil de QUEM ENVIOU. O webhook repassava esse nome sem olhar `fromMe`, e o `garantirContato`
 guardava o primeiro nome para sempre. Toda conversa iniciada pelo celular ficava com o nome da linha.
-O caminho de histórico (`historico.ts`) já ignorava `fromMe`; só o tempo real estava sem a trava.
-Um nome contaminado também podia virar nome de lead (auto-captura e "Criar lead" usam o nome do contato).
+O caminho de histórico já ignorava `fromMe`; só o tempo real estava sem a trava. Um nome contaminado
+também podia virar nome de lead (auto-captura e "Criar lead").
 
-### Solução implementada
-- **Ingestão:** `processarMensagemNormalizada` só usa o `pushName` de mensagem recebida (`nomePerfil`).
-  O nome de perfil atualiza o contato sem vínculo no ERP; o contato vinculado mantém o nome do cadastro.
-- **Exibição (lista e thread):** cadastro no ERP (aluno do atendimento → lead → responsável do contato)
-  → nome de perfil → número. Sai o rótulo genérico "Contato institucional"; o pedagógico sem cadastro
-  continua "Atendimento pedagógico" (não expõe telefone). O cabeçalho não repete o número quando o nome já é o número.
-- **Reparo dos dados:** `scripts/reparar-nome-contato-whatsapp.ts` (somente leitura por padrão; `--aplicar`
-  grava `NomeContatoReparado`). Ele limpa o nome dos contatos sem vínculo que têm o perfil da linha, e o
-  nome real volta na próxima mensagem do contato. Leads com o mesmo nome só são listados.
+### Solução implementada (PR #131, com as correções da revisão)
+- **Schema:** nova coluna `ContatoWhatsApp.nomePerfil` (migração `20260929120000_contato_whatsapp_nome_perfil`,
+  aditiva). `nomeExibicao` passa a ser só o nome dado pelo ERP; webhooks escrevem apenas `nomePerfil`.
+  Legado: contato sem vínculo e sem nenhuma intenção originada pelo ERP tem o nome movido para `nomePerfil`.
+- **Ingestão:** `processarMensagemNormalizada` descarta o pushName de `fromMe`; mensagem recebida atualiza
+  `nomePerfil` (o mais recente vale). O histórico usa o perfil mais recente do próprio contato no lote.
+  Nome dado pelo ERP (pagador empresa, "Gestor comercial") não é mais sobrescrito por pushName.
+- **Exibição** (`nome-contato.ts`, único ponto): aluno do atendimento → lead → responsável do contato (fora
+  do COMERCIAL) → nome do ERP → nome de perfil → número. Sem "Contato institucional"; o pedagógico sem
+  cadastro continua "Atendimento pedagógico". O mesmo helper serve a triagem, as revisões de envio e as
+  saudações simuladas. Criação de lead usa nome do ERP → perfil.
+- **Busca:** também em `nomePerfil` e no nome do responsável (fora do COMERCIAL, como na exibição).
+- **Reparo:** `scripts/reparar-nome-contato-whatsapp.ts`, somente leitura por padrão. Com `--aplicar`, usa
+  uma transação por contato e limpa o nome igual ao perfil da linha nas duas colunas (`NomeContatoReparado`).
+  Leads com o mesmo nome só são listados.
 
 ### Verificação (Windows, worktree sem node_modules; executáveis do checkout principal)
-- Unitários: `nome-contato.test.ts` (novo), `consultas-inbox`, `historico`, `webhook/evolution/route`,
-  `InboxCliente`: 5 arquivos, 41/41, saída 0. Filtro por arquivo, não é a suíte completa.
+- Unitários por arquivo (não é a suíte completa): `nome-contato`, `busca-inbox`, `consultas-inbox`, `historico`,
+  `webhook/evolution/route`, `InboxCliente`, `operacoes-atendimento`, `comercial/consultas`: 8 arquivos,
+  65/65, saída 0.
 - `inbound.test.ts` NÃO roda neste ambiente: o Prisma Client gerado no checkout principal está atrás do
-  schema (falta `MotivoPendenciaAvisoAgenda`). A falha já existia e não vem desta mudança.
-- **TypeScript não aprovado aqui:** pelo mesmo client desatualizado, `tsc --noEmit` sai com 2 e mais de
-  9 mil linhas de erro pré-existentes. Nas linhas novas não há erro próprio.
+  schema (falta `MotivoPendenciaAvisoAgenda`). A falha já existia.
+- 3 falhas em `financeiro/consultas-saldo-taxas` e `financeiro/operacoes` se repetem idênticas no commit
+  base `9059924c`: não vêm desta mudança.
+- **TypeScript não aprovado:** com o client desatualizado, `tsc --noEmit` sai com 2. Nos arquivos desta
+  entrega, os únicos erros novos são sobre `nomePerfil`, coluna que o client antigo não conhece.
+- Migração não aplicada em banco nenhum: não há `.erp-test-profile` neste worktree.
 
 ### Pendências
-- `tsc --noEmit` e o unitário `inbound.test.ts` no ambiente preparado pelo integrador (client regenerado).
-- Rodar o reparo em produção: primeiro somente leitura, conferência da lista pelo usuário, depois `--aplicar`.
-- Renomear na tela de Leads os leads que o script listar com o nome da linha.
+- Integrador: confirmar o ID de migração `20260929120000`, regenerar o client, rodar `tsc --noEmit`,
+  `inbound.test.ts` e as integrações WhatsApp (`linha-comercial`, `inbox`, `acesso-atendimento`) num perfil isolado.
+- Produção: aplicar a migração e rodar o reparo, primeiro somente leitura; depois da conferência pelo
+  usuário, `--aplicar`. Renomear na tela de Leads os leads listados com o nome da linha.
 
-**Estado**: Implementado; aguardando TypeScript no ambiente do integrador e o reparo em produção. Não concluído.
+**Estado**: Implementado; aguardando o integrador (migração, TypeScript, integrações) e o reparo em produção. Não concluído.

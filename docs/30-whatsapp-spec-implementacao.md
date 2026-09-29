@@ -33,7 +33,7 @@ Enums: `DriverWhatsApp (META_CLOUD, BAILEYS)` · `FinalidadeNumero (COBRANCA, VE
 
 Modelos: `NumeroWhatsApp` (telefoneE164 @unique, driver, finalidade, sessao, donoId?→Usuario,
 credencialRef) · `ContatoWhatsApp` (telefoneE164 @unique, waId? @unique, alunoId?/responsavelId?/leadId?,
-optOutEm?, nomeExibicao?) · `ConversaWhatsApp` (@@unique numeroId+contatoId, ultimaMensagemEm,
+optOutEm?, nomeExibicao? — nome dado pelo ERP, nomePerfil? — pushName de mensagem recebida, nunca de fromMe) · `ConversaWhatsApp` (@@unique numeroId+contatoId, ultimaMensagemEm,
 naoLidas) · `MensagemWhatsApp` (conversaId, direcao, tipo, corpo, midiaPath?, status, driver,
 origem?, providerMessageId? — @@unique numeroId+providerMessageId, autorId?, templateId?,
 timestamps) · `IntencaoMensagem` (numeroId, contatoId, corpoRenderizado, status,

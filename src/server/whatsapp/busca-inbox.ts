@@ -19,8 +19,9 @@ export function lerBuscaInbox(p: Parametros): string {
 }
 
 /**
- * Condição da busca: cada palavra (até 6) precisa aparecer no nome do contato, do aluno ou do lead
- * — ou, com 3+ dígitos, no telefone (guardado em E.164: compara só os dígitos).
+ * Condição da busca: cada palavra (até 6) precisa aparecer num nome que a inbox mostra (cadastro ou
+ * perfil do contato, aluno, lead, responsável fora do comercial — ver nomeDoAtendimento) — ou, com 3+
+ * dígitos, no telefone (guardado em E.164: compara só os dígitos).
  */
 export function whereBuscaConversas(busca: string): Prisma.AtendimentoWhatsAppWhereInput {
   const palavras = busca.split(/\s+/).filter(Boolean).slice(0, 6);
@@ -32,6 +33,8 @@ export function whereBuscaConversas(busca: string): Prisma.AtendimentoWhatsAppWh
       return {
         OR: [
           { conversa: { contato: { nomeExibicao: contem } } },
+          { conversa: { contato: { nomePerfil: contem } } },
+          { finalidade: { not: "COMERCIAL" as const }, conversa: { contato: { responsavel: { nome: contem } } } },
           { aluno: { OR: [{ primeiroNome: contem }, { sobrenome: contem }] } },
           { lead: { nome: contem } },
           ...(digitos.length >= 3 ? [{ conversa: { contato: { telefoneE164: { contains: digitos } } } }] : []),

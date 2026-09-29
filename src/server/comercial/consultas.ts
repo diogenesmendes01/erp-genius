@@ -4,6 +4,7 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { exigirSessaoComPapel } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
+import { nomeDoContato } from "@/server/whatsapp/nome-contato";
 import { LEADS_POR_PAGINA, filtrosDaConsultaLeads, whereFiltrosLead, type FiltrosLead, type FiltrosLeads } from "./filtros";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
@@ -210,11 +211,11 @@ export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoS
     where: { reativa: true, status: "SIMULADA", ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { lead: { is: await escopoComercialAtual(usuario) } }) },
     orderBy: { criadaEm: "desc" },
     take: Math.max(1, Math.min(100, Math.floor(limite))),
-    include: { contato: { select: { nomeExibicao: true, telefoneE164: true } } },
+    include: { contato: { select: { nomeExibicao: true, nomePerfil: true, telefoneE164: true } } },
   });
   return intencoes.map((i) => ({
     id: i.id,
-    contato: i.contato.nomeExibicao ?? i.contato.telefoneE164,
+    contato: nomeDoContato(i.contato),
     texto: i.corpoRenderizado,
     quando: (i.despachadaEm ?? i.criadaEm).toISOString(),
   }));

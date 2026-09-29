@@ -155,6 +155,15 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
     expect(tx.contatoWhatsApp.updateMany).not.toHaveBeenCalled();
   });
 
+  it("nome de perfil: o mais recente do PRÓPRIO contato; fromMe (perfil da linha) nunca vira nome", async () => {
+    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [
+      msg("H-1", 3, { nomeExibicao: "Victor antigo" }),
+      msg("H-2", 1, { nomeExibicao: "Dono da linha", fromMe: true }),
+      msg("H-3", 2, { nomeExibicao: "Victor" }),
+    ], agora);
+    expect(tx.contatoWhatsApp.create).toHaveBeenCalledWith({ data: expect.objectContaining({ nomeExibicao: null, nomePerfil: "Victor" }) });
+  });
+
   it("canal institucional ou linha inativa: nada é gravado", async () => {
     m.acharNumero.mockResolvedValueOnce({ id: "cob", finalidade: "COBRANCA", ativo: true });
     expect(await importarHistoricoLinha({ numeroProviderRef: "cob" }, [msg("H-1", 1)], agora)).toMatchObject({ gravadas: 0, motivo: "nao_e_linha_comercial" });
