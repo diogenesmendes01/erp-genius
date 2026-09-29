@@ -372,7 +372,7 @@ function Thread({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-medium text-gray-800">{thread.contato.nome}</span>
-              <span className="text-xs text-gray-400">{thread.contato.telefone}</span>
+              {thread.contato.telefone !== thread.contato.nome && <span className="text-xs text-gray-400">{thread.contato.telefone}</span>}
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
               <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-gray-600">

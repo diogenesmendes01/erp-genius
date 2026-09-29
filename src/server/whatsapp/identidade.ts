@@ -18,12 +18,16 @@ export async function garantirContato(
   dados: {
     telefoneE164: string;
     waId?: string | null;
+    /** Nome dado pelo ERP (cadastro): só preenche vazio. */
     nomeExibicao?: string | null;
+    /** pushName de mensagem RECEBIDA do contato (nunca de fromMe): o mais recente vale. */
+    nomePerfil?: string | null;
     alunoId?: string | null;
     responsavelId?: string | null;
     leadId?: string | null;
   },
 ) {
+  const nomePerfil = dados.nomePerfil?.trim() || null;
   const existente = await tx.contatoWhatsApp.findUnique({ where: { telefoneE164: dados.telefoneE164 } });
   if (existente) {
     return tx.contatoWhatsApp.update({
@@ -31,6 +35,7 @@ export async function garantirContato(
       data: {
         waId: existente.waId ?? dados.waId ?? undefined,
         nomeExibicao: existente.nomeExibicao ?? dados.nomeExibicao ?? undefined,
+        nomePerfil: nomePerfil ?? undefined,
         alunoId: existente.alunoId ?? dados.alunoId ?? undefined,
         responsavelId: existente.responsavelId ?? dados.responsavelId ?? undefined,
         leadId: existente.leadId ?? dados.leadId ?? undefined,
@@ -42,6 +47,7 @@ export async function garantirContato(
       telefoneE164: dados.telefoneE164,
       waId: dados.waId ?? null,
       nomeExibicao: dados.nomeExibicao ?? null,
+      nomePerfil,
       alunoId: dados.alunoId ?? null,
       responsavelId: dados.responsavelId ?? null,
       leadId: dados.leadId ?? null,

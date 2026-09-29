@@ -14,6 +14,7 @@ import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 import { snapshotCobranca } from "./elegibilidade";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
+import { nomeDoContato } from "./nome-contato";
 
 export interface OpcaoAtendimento {
   chave: string; nome: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -193,7 +194,7 @@ export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
     include: { conversa: { include: { contato: true, atendimentos: { include: {
       aluno: true, lead: true, matricula: { select: { id: true, codigo: true } },
     } } } } } });
-  return mensagens.map((m) => ({ id: m.id, conversaId: m.conversaId, nome: m.conversa.contato.nomeExibicao ?? m.conversa.contato.telefoneE164,
+  return mensagens.map((m) => ({ id: m.id, conversaId: m.conversaId, nome: nomeDoContato(m.conversa.contato),
     corpo: m.corpo, tipo: m.tipo, midiaPath: m.midiaPath, criadoEm: m.criadoEm.toISOString(), atendimentos: m.conversa.atendimentos
       // Um contexto financeiro legado/encerrado é histórico consultável, mas
       // não é destino de uma nova classificação manual.
@@ -244,7 +245,7 @@ export async function listarRevisoesEnvio(): Promise<RevisaoEnvio[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
   const itens = await prisma.intencaoMensagem.findMany({ where: { status: "FALHOU" }, take: 100, orderBy: { atualizadoEm: "desc" }, include: { contato: true } });
   return itens.map((i) => ({ id: i.id, corpo: i.corpoRenderizado, motivo: i.motivoFalha,
-    criadoEm: i.criadaEm.toISOString(), contato: i.contato.nomeExibicao ?? i.contato.telefoneE164 }));
+    criadoEm: i.criadaEm.toISOString(), contato: nomeDoContato(i.contato) }));
 }
 
 /** Só uma revisão explícita pode liberar um envio cujo resultado foi incerto. */
