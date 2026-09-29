@@ -20,7 +20,7 @@ import { POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabri
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
-import { buscarPessoasVinculo, conversaVisivel, type PessoasVinculo } from "./consultas";
+import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
 import { escopoConversas } from "./escopo";
 import { garantirAtendimento } from "./atendimentos";
@@ -506,22 +506,27 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
 export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    const { atendimentoId, nome } = EditarNomeContatoSchema.parse(input);
-    const alcance = await conversaVisivel(autor, atendimentoId, true);
+    const { atendimentoId, nome, nomeAnterior } = EditarNomeContatoSchema.parse(input);
+    // Corrigir um rótulo não envia nada: basta ver o atendimento (encerrado ou com pagador trocado inclusive).
+    const alcance = await conversaVisivel(autor, atendimentoId);
     if (!alcance || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para editar o contato.");
-    const antes = alcance.contato.nomeExibicao;
+    // O contato é um só para todas as linhas e áreas: quem não vê todos os atendimentos dele não o renomeia.
+    if (!await contatoSoNoAlcance(autor, alcance.contatoId)) {
+      throw new ErroRegra("Este contato também é atendido por outra área. Peça à administração para corrigir o nome.");
+    }
     const depois = nome || null;
-    if (antes === depois) return;
+    if (nomeAnterior === depois) return;
     await prisma.$transaction(async (tx) => {
-      // Condicional: duas edições simultâneas não se sobrescrevem às cegas.
-      const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: antes }, data: { nomeExibicao: depois } });
+      // Condicional ao nome que a tela carregou: quem editou antes não é sobrescrito às cegas.
+      const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: nomeAnterior },
+        data: { nomeExibicao: depois, nomeEditadoEm: new Date() } });
       if (count === 0) throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
       await registrarEvento(tx, {
         tipo: "ContatoRenomeado",
         agregadoTipo: "ContatoWhatsApp",
         agregadoId: alcance.contatoId,
         autorId: autor.id,
-        payload: { antes, depois },
+        payload: { antes: nomeAnterior, depois },
       });
     });
     revalidatePath("/inbox");

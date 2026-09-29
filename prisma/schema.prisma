@@ -2308,6 +2308,7 @@ model ContatoWhatsApp {
   waId         String? @unique
   nomeExibicao String? // nome dado pelo ERP (cadastro); webhook nunca escreve aqui
   nomePerfil   String? // nome de perfil do WhatsApp (pushName) — só de mensagem RECEBIDA do contato
+  nomeEditadoEm DateTime? // equipe definiu/limpou o nome salvo ("Editar nome"): fluxos do ERP não o preenchem mais
 
   // Vínculos opcionais — um contato pode ser responsável E lead ao mesmo tempo.
   alunoId       String?

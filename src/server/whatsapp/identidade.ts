@@ -18,7 +18,7 @@ export async function garantirContato(
   dados: {
     telefoneE164: string;
     waId?: string | null;
-    /** Nome dado pelo ERP (cadastro): só preenche vazio. */
+    /** Nome dado pelo ERP (cadastro): só preenche vazio — e nunca depois de a equipe editar o nome. */
     nomeExibicao?: string | null;
     /** pushName de mensagem RECEBIDA do contato (nunca de fromMe): o mais recente vale. */
     nomePerfil?: string | null;
@@ -34,7 +34,7 @@ export async function garantirContato(
       where: { id: existente.id },
       data: {
         waId: existente.waId ?? dados.waId ?? undefined,
-        nomeExibicao: existente.nomeExibicao ?? dados.nomeExibicao ?? undefined,
+        nomeExibicao: existente.nomeExibicao ?? (existente.nomeEditadoEm ? undefined : dados.nomeExibicao) ?? undefined,
         nomePerfil: nomePerfil ?? undefined,
         alunoId: existente.alunoId ?? dados.alunoId ?? undefined,
         responsavelId: existente.responsavelId ?? dados.responsavelId ?? undefined,
