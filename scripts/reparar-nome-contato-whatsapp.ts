@@ -43,6 +43,11 @@ async function main() {
     const mantido = (t: string) => manter.some((d) => !!d && t.replace(/\D/g, "").endsWith(d));
     const reparar = candidatos.filter((c) => !linhas.has(c.telefoneE164) && !mantido(c.telefoneE164));
     console.log(`Candidatos: ${candidatos.length} · a reparar: ${reparar.length} · modo: ${aplicar ? "APLICAR" : "somente leitura"}`);
+    // Os mantidos aparecem: um final de telefone curto pode pegar mais de um contato.
+    for (const d of manter) {
+      const pegos = candidatos.filter((c) => !linhas.has(c.telefoneE164) && c.telefoneE164.replace(/\D/g, "").endsWith(d));
+      console.log(`  --manter ${d}: ${pegos.length ? pegos.map((c) => mascarar(c.telefoneE164)).join(", ") : "nenhum candidato"}${pegos.length > 1 ? "  ⚠ mais de um — use mais dígitos" : ""}`);
+    }
 
     for (const c of reparar) {
       const daConversa = { conversa: { contatoId: c.id } };

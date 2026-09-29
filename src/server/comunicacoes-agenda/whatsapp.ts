@@ -5,6 +5,7 @@ import { confirmarTransacao } from "@/lib/transacao-confirmada";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-atual";
 import { garantirContato } from "@/server/whatsapp/identidade";
+import { nomeCompleto } from "@/lib/nome";
 import { renderizarHorariosReplanejamento, validarFonteReplanejamentoConjuntoTx } from "./fonte-replanejamento";
 import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
@@ -119,8 +120,8 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   if (!aviso || aviso.canal !== "WHATSAPP" || aviso.situacao !== "PREPARADO" || !aviso.matricula || aviso.matricula.status !== "ATIVA" || !fonte) return "ignorado" as const;
   const registrarPendencia = (motivo: MotivoPendenciaAvisoAgenda) => registrarPendenciaAvisoAgendaTx(tx, { eventoId: aviso.eventoId!, matriculaId: aviso.matriculaId!, motivo });
   const destino = aviso.destinatarioResponsavelId
-    ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, responsavelId: a.responsavelId, autorizacaoComunicacaoAcademicaId: a.id } : null)
-    : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, responsavelId: null } : null;
+    ? await tx.autorizacaoComunicacaoAcademica.findFirst({ where: { id: aviso.autorizacaoComunicacaoAcademicaId ?? "", matriculaId: aviso.matriculaId!, responsavelId: aviso.destinatarioResponsavelId, vigenteEm: { lte: new Date() }, revogadaEm: null }, include: { responsavel: { select: { telefoneE164: true, nome: true } } } }).then((a) => a?.responsavel.telefoneE164 ? { telefone: a.responsavel.telefoneE164, nome: a.responsavel.nome, responsavelId: a.responsavelId, autorizacaoComunicacaoAcademicaId: a.id } : null)
+    : aviso.destinatarioAlunoId === aviso.alunoId && aviso.aluno.whatsapp && aviso.aluno.telefoneE164 ? { telefone: aviso.aluno.telefoneE164, nome: nomeCompleto(aviso.aluno), responsavelId: null } : null;
   const telefone = destino?.telefone ?? null;
   const idioma = aviso.aluno.pais?.idioma ?? "es";
   const config = await configuracaoAgenda(tx);
@@ -132,7 +133,7 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
   if (!horarios) return "pendente" as const;
   const renderizado = renderizarTemplateAgenda(config!.templateAvisosAgenda!.corpo, { nome: aviso.aluno.primeiroNome, horarios });
   if (!renderizado) return "pendente" as const;
-  const contato = await garantirContato(tx, { telefoneE164: telefone, alunoId: destino!.responsavelId ? null : aviso.alunoId, responsavelId: destino!.responsavelId, nomeExibicao: aviso.aluno.primeiroNome });
+  const contato = await garantirContato(tx, { telefoneE164: telefone, alunoId: destino!.responsavelId ? null : aviso.alunoId, responsavelId: destino!.responsavelId, nomeExibicao: destino!.nome });
   const atendimento = await garantirAtendimento(tx, {
     numeroId: config!.numeroAvisosAgendaId!, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aviso.alunoId, matriculaId: aviso.matriculaId,
     autorizacaoComunicacaoAcademicaId: "autorizacaoComunicacaoAcademicaId" in destino! ? destino!.autorizacaoComunicacaoAcademicaId : null,

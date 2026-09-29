@@ -39,7 +39,7 @@ export interface LeadNaThread {
 }
 export interface ThreadConversa {
   conversaId: string; finalidade: string; matricula: { id: string; codigo: string | null } | null; podeEnviar: boolean; podeVincular: boolean; podeReautorizar: boolean;
-  /** Editar o nome salvo do contato (fora do pedagógico, para quem responde a conversa). */
+  /** Editar o nome salvo do contato: fora do pedagógico e só se o usuário vê todos os atendimentos do contato. */
   podeEditarNome: boolean;
   /** Conversa de linha comercial; `podeCriarLead` = botão "Criar lead" (LC-D05). */
   linhaComercial: boolean; podeCriarLead: boolean;
@@ -151,7 +151,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
     podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
-    podeEditarNome: !pedag && podeEnviar,
+    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contatoId),
     pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
     numero: { id: c.numeroId, rotulo: pedag ? "Canal institucional" : c.numero.rotulo, driver: c.numero.driver,
       finalidade: a.finalidade, sessao: c.numero.sessao, ativo: c.numero.ativo },
@@ -243,3 +243,13 @@ export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, at
 }
 
 export const conversaVisivel = atendimentoVisivel;
+
+/**
+ * O contato é compartilhado entre linhas e finalidades: alterá-lo (ex.: o nome salvo) só cabe a quem
+ * enxerga TODOS os atendimentos dele — senão a mudança apareceria na área de outra equipe.
+ */
+export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: string): Promise<boolean> {
+  if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
+  const fora = await prisma.atendimentoWhatsApp.count({ where: { conversa: { contatoId }, NOT: await escopoAtendimentos(usuario) } });
+  return fora === 0;
+}

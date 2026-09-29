@@ -45,6 +45,8 @@ export type VincularContatoInput = z.input<typeof VincularContatoSchema>;
 export const EditarNomeContatoSchema = z.object({
   atendimentoId: z.string().min(1),
   nome: z.string().trim().max(80, "Nome longo demais (até 80 caracteres)."),
+  /** Nome salvo que a tela carregou: a gravação só vale se ele ainda for o atual (edições concorrentes). */
+  nomeAnterior: z.string().nullable(),
 });
 export type EditarNomeContatoInput = z.input<typeof EditarNomeContatoSchema>;
 
