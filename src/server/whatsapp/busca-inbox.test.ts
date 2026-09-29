@@ -11,11 +11,14 @@ describe("busca da inbox", () => {
     expect(lerBuscaInbox({ busca: "a".repeat(300) })).toHaveLength(100);
   });
 
-  it("cada palavra em nome do contato, do aluno ou do lead; telefone só com 3+ dígitos", () => {
+  it("cada palavra em nome do contato (cadastro ou perfil), do aluno, do lead ou do responsável; telefone só com 3+ dígitos", () => {
     const where = whereBuscaConversas("Ana 8888-7777") as { AND: { OR: object[] }[] };
     expect(where.AND).toHaveLength(2);
     expect(where.AND[0].OR).toEqual([
       { conversa: { contato: { nomeExibicao: { contains: "Ana", mode: "insensitive" } } } },
+      { conversa: { contato: { nomePerfil: { contains: "Ana", mode: "insensitive" } } } },
+      // Mesmo recorte da exibição: o responsável não é buscável no comercial (nomeDoAtendimento).
+      { finalidade: { not: "COMERCIAL" }, conversa: { contato: { responsavel: { nome: { contains: "Ana", mode: "insensitive" } } } } },
       { aluno: { OR: [{ primeiroNome: { contains: "Ana", mode: "insensitive" } }, { sobrenome: { contains: "Ana", mode: "insensitive" } }] } },
       { lead: { nome: { contains: "Ana", mode: "insensitive" } } },
     ]);

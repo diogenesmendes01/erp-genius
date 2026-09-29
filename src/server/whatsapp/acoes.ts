@@ -36,6 +36,7 @@ import {
 } from "./meta-templates";
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
+import { nomeConhecidoDoContato } from "./nome-contato";
 import {
   LoteCobrancaSchema,
   EnviarMidiaInboxSchema,
@@ -392,7 +393,7 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
         } else {
           leadId = await criarLeadDeInboundWhatsApp(tx, {
             telefoneE164: contato.telefoneE164,
-            nomeExibicao: contato.nomeExibicao,
+            nomeExibicao: nomeConhecidoDoContato(contato),
             // Linha sem dono: quem cria assume se for vendedor; gestão cria sem dono (atribui depois).
             // `papeis.includes`, não temPapel: o administrador "tem" todo papel e viraria dono do lead.
             donoId: atual.conversa.numero.donoId ?? (autor.papeis.includes(Papel.VENDEDOR) ? autor.id : null),
