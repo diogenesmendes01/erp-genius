@@ -57,7 +57,7 @@ export interface PessoasVinculo {
 
 const contextoInclude = {
   matricula: { select: { id: true, codigo: true } },
-  conversa: { include: { numero: true, contato: true } },
+  conversa: { include: { numero: true, contato: { include: { responsavel: { select: { nome: true } } } } } },
   aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
   lead: { select: { id: true, nome: true, etapa: true, temperatura: true, dataExperimental: true } },
 } as const;
@@ -97,11 +97,29 @@ export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "",
   return { itens: mesclarPorRecencia(lista, naoLidasFora).map(resumirConversa), limitada };
 }
 
+/**
+ * Nome do contato na inbox, nesta ordem: cadastro no ERP (aluno do atendimento, lead, responsável do
+ * contato), nome de perfil do WhatsApp e, sem nenhum deles, o próprio número. O pedagógico não expõe
+ * telefone nem perfil fora do cadastro.
+ */
+export function nomeDoAtendimento(a: {
+  finalidade: string;
+  aluno: { primeiroNome: string; sobrenome: string | null } | null;
+  lead: { nome: string } | null;
+  conversa: { contato: { nomeExibicao: string | null; telefoneE164: string; responsavel?: { nome: string } | null } };
+}): string {
+  if (a.aluno) return nomeCompleto(a.aluno);
+  if (a.lead?.nome) return a.lead.nome;
+  if (a.finalidade === "PEDAGOGICO") return "Atendimento pedagógico";
+  const contato = a.conversa.contato;
+  return contato.responsavel?.nome || contato.nomeExibicao?.trim() || contato.telefoneE164;
+}
+
 type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
 
 function resumirConversa(a: AtendimentoDaLista): ConversaResumo {
   const pedag = a.finalidade === "PEDAGOGICO";
-  const nome = a.aluno ? nomeCompleto(a.aluno) : a.lead?.nome ?? (pedag ? "Atendimento pedagógico" : a.conversa.contato.nomeExibicao ?? "Contato institucional");
+  const nome = nomeDoAtendimento(a);
   const m = a.mensagens[0];
   return { id: a.id, numeroId: a.conversa.numeroId, numeroRotulo: pedag ? "Canal institucional" : a.conversa.numero.rotulo,
     finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contatoId,
@@ -130,7 +148,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const comercial = a.finalidade === "COMERCIAL";
   const financeiro = a.finalidade === "FINANCEIRO" && temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
   const c = a.conversa;
-  const nome = a.aluno ? nomeCompleto(a.aluno) : a.lead?.nome ?? (pedag ? "Atendimento pedagógico" : c.contato.nomeExibicao ?? "Contato institucional");
+  const nome = nomeDoAtendimento(a);
   const agora = Date.now();
   const fechaEm = c.ultimoInboundEm ? new Date(c.ultimoInboundEm.getTime() + 24 * 3600_000) : null;
   const politica = financeiro ? await carregarPoliticaRegua() : null;

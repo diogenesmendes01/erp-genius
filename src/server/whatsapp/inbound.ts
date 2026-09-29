@@ -62,7 +62,8 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
       const contato = await garantirContato(tx, {
         telefoneE164: telefoneContato,
         waId: m.contatoWaId.replace(/\D/g, ""),
-        nomeExibicao: m.nomeExibicao ?? null,
+        // fromMe: o pushName é o perfil de quem ENVIOU (a própria linha), não o do contato.
+        nomePerfil: m.fromMe ? null : m.nomeExibicao ?? null,
       });
 
       const conversa = await tx.conversaWhatsApp.upsert({
