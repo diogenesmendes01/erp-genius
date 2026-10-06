@@ -11,7 +11,8 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 // isto o teste pegaria esse bug ou não conforme a máquina (revisão R1 da #137, B1).
 const tzAnterior = process.env.TZ;
 process.env.TZ = "America/Sao_Paulo";
-afterAll(() => { process.env.TZ = tzAnterior; });
+// Sem TZ antes, restaurar com a string "undefined" deixaria um fuso inválido (tratado como UTC).
+afterAll(() => { if (tzAnterior === undefined) delete process.env.TZ; else process.env.TZ = tzAnterior; });
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
 vi.mock("@/server/comercial/acoes", () => ({ arquivarDocumentoLead: vi.fn() }));
@@ -39,6 +40,14 @@ const ISO = /\d{4}-\d{2}-\d{2}/;
 const foraDosCamposDeData = (html: string) => html.replace(/(<input[^>]*type="date"[^>]*?)\svalue="[^"]*"/g, "$1");
 
 describe("SecretariaPainel — datas civis da tela inteira", () => {
+  // A atribuição de TZ só reconfigura o fuso quando o arquivo roda num processo próprio (pool "forks",
+  // o padrão); em worker threads vira no-op. Sem fuso negativo em vigor, a prova contra
+  // `new Date(...).toLocaleDateString()` não vale — então falha alto aqui, em vez de passar em silêncio
+  // (revisão R2 da #137, B1).
+  it("o fuso negativo está mesmo em vigor (senão a prova contra new Date não vale)", () => {
+    expect(new Date("2026-03-01").getDate()).toBe(28);
+  });
+
   it("mensalidade: período e vencimento em dd/mm/aaaa, nenhuma ISO no painel", () => {
     const html = render([mensalidade("2026-03-01", "2026-03-31")]);
     expect(html).toContain("01/03/2026 até 31/03/2026");
