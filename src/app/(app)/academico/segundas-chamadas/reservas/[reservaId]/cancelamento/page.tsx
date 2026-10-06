@@ -8,13 +8,14 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_ENCONTRO_LABEL, STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 const fonte = z.object({ reserva: z.object({ codigoAvaliacao: z.string(), status: z.string(), regraCancelamentoMinutos: z.number() }), encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string(), status: z.string() }).nullable() });
 function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
  const r = fonte.safeParse(valor);
  if (!r.success || !r.data.encontro) return <p role="alert">Agenda sem informação suficiente para conferência.</p>;
  const e = r.data.encontro;
  const fuso=resolverFusoExibicao(preferencia,e.fusoOrigem), data=(v:string)=>formatarInstanteExibicao(/[zZ]|[+-]\d\d:\d\d$/.test(v) ? v : `${v}Z`,fuso,e.fusoOrigem).texto;
- return <p>Avaliação {r.data.reserva.codigoAvaliacao} · {data(e.inicio)} até {data(e.fim)} ({fuso}; origem {e.fusoOrigem}). Encontro: {e.status}. Reserva: {r.data.reserva.status}. Antecedência de cancelamento: {r.data.reserva.regraCancelamentoMinutos} minutos.</p>;
+ return <p>Avaliação {r.data.reserva.codigoAvaliacao} · {data(e.inicio)} até {data(e.fim)} ({fuso}; origem {e.fusoOrigem}). Encontro: {rotular(STATUS_ENCONTRO_LABEL, e.status)}. Reserva: {rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, r.data.reserva.status)}. Antecedência de cancelamento: {r.data.reserva.regraCancelamentoMinutos} minutos.</p>;
 }
 function Efeito({ snapshot, origem, ocorridaEm }: { snapshot: unknown; origem: string; ocorridaEm: string }) {
  const r = fonte.safeParse(snapshot);

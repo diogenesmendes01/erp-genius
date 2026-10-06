@@ -1,7 +1,8 @@
 import type { z } from "zod";
 import type { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 export type ConteudoRegra = z.output<typeof ConteudoRegraAvaliacaoSchema>;
-export const nomesHabilidades = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
+export const nomesHabilidades = HABILIDADE_LABEL;
 
 export function ResumoRegra({ conteudo: c }: { conteudo: ConteudoRegra }) {
   return <div className="space-y-3">

@@ -9,25 +9,19 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
 type Fonte = Revisao["fontes"][number];
 type Destino = { id: string; label: string; diasHorario: string | null; vagas: number };
 
-const nomesHabilidade: Record<Habilidade, string> = {
-  FALA: "Comunicação oral",
-  COMPREENSAO_ORAL: "Compreensão oral",
-  LEITURA: "Leitura",
-  ESCRITA: "Escrita",
-};
-
 const chaveRequisito = (codigoAvaliacao: string, habilidade: Habilidade) => `${codigoAvaliacao}\u0000${habilidade}`;
 const nota = (valor: string) => valor.replace(".", ",");
 function rotuloFonte(fonte: Fonte) {
-  if (fonte.tipoFonte === "RECUPERACAO") return `Recuperação de ${nomesHabilidade[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
-  if (fonte.tipoFonte === "APROVEITAMENTO") return `Aproveitamento anterior ${fonte.codigoAvaliacao} · ${nomesHabilidade[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
-  return `Avaliação regular ${fonte.codigoAvaliacao} · ${nomesHabilidade[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
+  if (fonte.tipoFonte === "RECUPERACAO") return `Recuperação de ${HABILIDADE_LABEL[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
+  if (fonte.tipoFonte === "APROVEITAMENTO") return `Aproveitamento anterior ${fonte.codigoAvaliacao} · ${HABILIDADE_LABEL[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
+  return `Avaliação regular ${fonte.codigoAvaliacao} · ${HABILIDADE_LABEL[fonte.habilidade]} · nota ${nota(fonte.nota)}`;
 }
 
 export function PrepararEquivalenciaTransferencia({
@@ -170,7 +164,7 @@ export function PrepararEquivalenciaTransferencia({
         const chave = chaveRequisito(requisito.codigoAvaliacao, requisito.habilidade);
         const fontes = fontesPorHabilidade.get(requisito.habilidade) ?? [];
         return <fieldset key={chave} className="space-y-2 rounded border p-3" disabled={ocupado || registrada}>
-          <legend className="font-medium">Avaliação de destino {requisito.codigoAvaliacao} · {nomesHabilidade[requisito.habilidade]} · peso {nota(requisito.pesoAvaliacao)}</legend>
+          <legend className="font-medium">Avaliação de destino {requisito.codigoAvaliacao} · {HABILIDADE_LABEL[requisito.habilidade]} · peso {nota(requisito.pesoAvaliacao)}</legend>
           <label className="block">Fonte oficial da mesma habilidade
             <select value={selecoes[chave] ?? ""} onChange={(e) => alterarSelecao(chave, e.target.value)} className="mt-1 block w-full rounded border p-2">
               <option value="">Manter pendente</option>
@@ -191,7 +185,7 @@ export function PrepararEquivalenciaTransferencia({
       <p>{revisao.projecao.itens.filter((item) => item.situacao === "APROVEITADO").length} requisito(s) com fonte indicada e {revisao.projecao.pendencias.length} pendência(s) explícita(s).</p>
       <ul className="list-disc space-y-1 pl-5">{revisao.projecao.itens.map((item) => {
         const fonte = item.fonte ? base?.fontes.find((atual) => atual.referenciaId === item.fonte!.referenciaId) : null;
-        return <li key={chaveRequisito(item.codigoAvaliacao, item.habilidade)}>Avaliação de destino {item.codigoAvaliacao} · {nomesHabilidade[item.habilidade]} · peso {nota(item.pesoAvaliacao)}: {fonte ? rotuloFonte(fonte) : "pendente"}.</li>;
+        return <li key={chaveRequisito(item.codigoAvaliacao, item.habilidade)}>Avaliação de destino {item.codigoAvaliacao} · {HABILIDADE_LABEL[item.habilidade]} · peso {nota(item.pesoAvaliacao)}: {fonte ? rotuloFonte(fonte) : "pendente"}.</li>;
       })}</ul>
       {revisao.projecao.pendencias.length > 0 && <p role="status">Os requisitos pendentes não receberão aproveitamento nesta proposta; eles permanecem para acompanhamento na turma de destino.</p>}
       {revisao.projecao.fontesReutilizadas.length > 0 && <p role="status">Uma mesma fonte foi indicada para mais de um requisito. A decisão independente avaliará esse impacto.</p>}

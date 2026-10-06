@@ -18,6 +18,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { listarPedidosEncerramentoParaUsuario, paginaPedidosEncerramento } from "@/server/matricula/encerramento-pedidos-consulta";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_SOLICITACAO_ENCERRAMENTO_LABEL } from "@/lib/labels";
 
 export default async function MovimentacoesPage({
   params,
@@ -57,7 +58,7 @@ export default async function MovimentacoesPage({
         ? <EstadoVazio acao={<Link className="text-brand-700 underline" href={`/alunos/${id}/movimentacoes`}>Ir para a primeira página</Link>}>Nenhum pedido registrado nesta página.</EstadoVazio>
         : <EstadoVazio>Nenhum pedido de encerramento registrado para este aluno.</EstadoVazio>)}
       {pedidos.pedidos.map((p) => <article key={p.id} className="space-y-1 rounded border p-3 text-sm">
-        <p>{p.itens.map((i) => identificacaoContrato(i.matricula.codigo, i.matricula.id)).join(", ")} · {({ ABERTA: "Aguardando acerto", EM_ACERTO: "Acerto em preparação", CONCLUIDA: "Concluído", CANCELADA: "Cancelado" })[p.status]}</p>
+        <p>{p.itens.map((i) => identificacaoContrato(i.matricula.codigo, i.matricula.id)).join(", ")} · {STATUS_SOLICITACAO_ENCERRAMENTO_LABEL[p.status]}</p>
         <p>Registrado por {p.registrador.nome} em {p.dataPedido.toISOString().slice(0, 10)}. Encerramento solicitado para {p.dataSolicitada.toISOString().slice(0, 10)}.</p>
         <p>{p.motivo}</p><p>Evidência do pedido: {p.evidenciaPedido}</p>
         {p.motivoRetroatividade && <p>Retroatividade solicitada: {p.motivoRetroatividade}. Evidência: {p.evidenciaRetroatividade}</p>}

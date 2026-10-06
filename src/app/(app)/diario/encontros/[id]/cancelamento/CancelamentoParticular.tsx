@@ -7,6 +7,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
@@ -23,7 +24,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
   const chave = useRef<string | null>(null);
   const router = useRouter();
   return <div className="space-y-4">
-    <p>{formatarInstanteExibicao(dados.inicio, fusoExibicao, dados.fuso).texto} · {fusoExibicao} · {dados.status}</p>
+    <p>{formatarInstanteExibicao(dados.inicio, fusoExibicao, dados.fuso).texto} · {fusoExibicao} · {rotular(STATUS_ENCONTRO_LABEL, dados.status)}</p>
     {dados.podePropor && <form className="space-y-2" onSubmit={async e => {
       e.preventDefault(); const form = new FormData(e.currentTarget), motivo = String(form.get("motivo") ?? ""), origem = String(form.get("origem")) as "ESCOLA" | "ALUNO";
       chave.current ??= crypto.randomUUID(); const chaveIdempotencia = chave.current;

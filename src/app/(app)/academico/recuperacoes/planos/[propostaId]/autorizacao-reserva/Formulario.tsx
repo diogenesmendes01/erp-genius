@@ -9,6 +9,7 @@ import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 type Habilidade = typeof HABILIDADES[number];
 
@@ -43,7 +44,7 @@ export function AutorizarReservaEspecial({ propostaId, habilidades, fusoInstituc
   }}>
     <h2 className="text-xl font-medium">Autorizar pré-reserva especial</h2>
     <fieldset disabled={ocupado} className="space-y-3">
-      <label className="block" htmlFor="habilidade">Habilidade<select id="habilidade" value={habilidade} onChange={evento => setHabilidade(evento.target.value)} required className="block rounded border p-2"><option value="" disabled>Selecione</option>{habilidades.map(item => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}</select></label>
+      <label className="block" htmlFor="habilidade">Habilidade<select id="habilidade" value={habilidade} onChange={evento => setHabilidade(evento.target.value)} required className="block rounded border p-2"><option value="" disabled>Selecione</option>{habilidades.map(item => <option key={item} value={item}>{rotular(HABILIDADE_LABEL, item)}</option>)}</select></label>
       <label className="block" htmlFor="prazo-local">Prazo para reservar<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
       <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. A data e a hora são convertidas no servidor; horários ambíguos ou inexistentes precisam de correção.</p>

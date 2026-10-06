@@ -11,6 +11,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
+import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 
 export interface PrecoRow {
   id: string;
@@ -30,15 +31,6 @@ export interface ProdutoOpcao {
 
 const inputCls =
   "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-
-export const TIPO_LABEL: Record<TipoCobranca, string> = {
-  MATRICULA: "Taxa de matrícula",
-  MENSALIDADE: "Mensalidade",
-  HORA_PARTICULAR: "Hora particular",
-  MATERIAL: "Material",
-  CERTIFICADO: "Certificado",
-  MULTA_ENCERRAMENTO: "Multa de encerramento",
-};
 
 export function PrecosPainel({
   precos,
@@ -144,7 +136,7 @@ export function PrecosPainel({
               >
                 {Object.values(TipoCobranca).filter(t => t !== TipoCobranca.MULTA_ENCERRAMENTO).map((t) => (
                   <option key={t} value={t}>
-                    {TIPO_LABEL[t]}
+                    {TIPO_COBRANCA_LABEL[t]}
                   </option>
                 ))}
               </select>
@@ -207,7 +199,7 @@ export function PrecosPainel({
                   <td className="px-4 py-3">
                     {p.produto.idioma.nome} · {p.produto.modalidade.nome}
                   </td>
-                  <td className="px-4 py-3">{TIPO_LABEL[p.tipoCobranca]}</td>
+                  <td className="px-4 py-3">{TIPO_COBRANCA_LABEL[p.tipoCobranca]}</td>
                   <td className="px-4 py-3">
                     {formatarMoeda(p.valor, p.moeda)}
                   </td>

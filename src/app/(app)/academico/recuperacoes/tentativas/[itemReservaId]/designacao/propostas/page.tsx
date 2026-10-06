@@ -7,6 +7,7 @@ import { DecidirSubstituicao } from "./DecidirSubstituicao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 export default async function Propostas({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -20,7 +21,7 @@ export default async function Propostas({ params, searchParams }: { params: Prom
   const preferenciaFuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const administrativo = resolverFusoExibicao(preferenciaFuso, "UTC");
   return <section className="space-y-4"><Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`}>Conferir nova substituição</Link>
-    <h1 className="text-2xl font-medium">Propostas de substituição — {d.habilidade.replaceAll("_", " ")}</h1><IdentificacaoAvaliacao dados={d.identificacao} />
+    <h1 className="text-2xl font-medium">Propostas de substituição — {rotular(HABILIDADE_LABEL, d.habilidade)}</h1><IdentificacaoAvaliacao dados={d.identificacao} />
     <p>As propostas preservam a conferência e o histórico. Só uma aprovação independente aplica a troca conjuntamente à agenda e à designação.</p>
     {d.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-4"><h2 className="text-xl">Versão {p.versao}{p.versaoAtual ? " — mais recente" : " — histórica"}</h2>
       <p>Preparada por {p.autor} em {formatarInstanteExibicao(p.criadaEm, preferenciaFuso, "UTC").texto} ({administrativo}; origem UTC).</p><p className="whitespace-pre-wrap">Motivo da proposta: {p.motivo}</p>

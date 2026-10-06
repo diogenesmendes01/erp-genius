@@ -5,16 +5,16 @@ import { consultarResolucoesReserva } from "@/server/matricula/reserva-resolucao
 import { PrepararResolucao, DecidirResolucao } from "./Formularios";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_RESERVA_VAGA_LABEL } from "@/lib/labels";
 export default async function ResolucaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, filtros = await searchParams;
   const resultado = await consultarResolucoesReserva({ reservaId: id, pagina: Number(filtros.pagina ?? 1) });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const r = resultado.dado, fuso = r.reserva.janela.fusoAdmissao;
-  const estados = { ATIVA: "Reserva ativa", MANTIDA_PENDENCIA: "Vaga mantida por pendência", EXPIRADA: "Reserva expirada", UTILIZADA: "Reserva utilizada", LIBERADA: "Vaga liberada" };
   const data = (d: Date) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(d);
   return <div className="space-y-4"><VoltarPara href="/secretaria/reservas" /><h1 className="text-2xl font-medium">Resolução da reserva</h1>
-    <p role="status">Estado atual: {estados[r.reserva.status]}</p>
+    <p role="status">Estado atual: {STATUS_RESERVA_VAGA_LABEL[r.reserva.status]}</p>
     <p>Turma: {r.reserva.turma.codigo ?? r.reserva.turma.nome} · Prazo atual: {data(r.reserva.expiraEm)} · {fuso}</p>
     <Link href={`/secretaria?matriculaId=${r.reserva.matriculaId}`} className="underline">Conferir contratação</Link>
     <p>A proposta exige decisão de outra pessoa da Administração. Confira o tratamento da contratação antes de aprovar.</p>

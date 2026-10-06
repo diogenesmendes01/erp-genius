@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular, STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 
 export default async function Agenda({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -22,7 +23,7 @@ export default async function Agenda({ params, searchParams }: { params: Promise
   const preferenciaFuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const administrativo = resolverFusoExibicao(preferenciaFuso, "UTC");
   return <section className="space-y-4">
-    <h1 className="text-2xl font-medium">Propostas de horário — {d.habilidade.replaceAll("_", " ")}</h1>
+    <h1 className="text-2xl font-medium">Propostas de horário — {rotular(HABILIDADE_LABEL, d.habilidade)}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     {!d.agendaPublicada && <ProporAgenda itemReservaId={itemReservaId} versaoEsperada={d.versaoEsperada} fusoInstitucional={fusoInstitucional} />}
     {d.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-4">
@@ -32,7 +33,7 @@ export default async function Agenda({ params, searchParams }: { params: Promise
       <p>Avaliador na conferência: {p.conferenciaOriginal.professor?.nome ?? "Pendente"}.</p>
       {p.decisao ? <div><p>{p.decisao.aprovada ? "Aprovada — horário publicado" : "Proposta rejeitada"} por {p.decisao.decisor} em {formatarInstanteExibicao(p.decisao.criadaEm, preferenciaFuso, "UTC").texto} ({administrativo}; origem UTC).</p>
         <p className="whitespace-pre-wrap">{p.decisao.motivo}</p>{p.decisao.autorizarDiaNaoLetivo && <p>Exceção de dia não letivo autorizada para este encontro.</p>}
-        {p.encontro && <p>Estado do encontro: {p.encontro.status}.</p>}</div> : <p>{p.revisaoIndependente ? "Você pode conferir a proposta de outra pessoa." : "A proposta precisa da revisão de outra pessoa."} Horário ainda não agendado.</p>}
+        {p.encontro && <p>Estado do encontro: {rotular(STATUS_ENCONTRO_LABEL, p.encontro.status)}.</p>}</div> : <p>{p.revisaoIndependente ? "Você pode conferir a proposta de outra pessoa." : "A proposta precisa da revisão de outra pessoa."} Horário ainda não agendado.</p>}
       {p.conferenciaOriginal.pendencias.length > 0 && <ul className="list-disc pl-5">{p.conferenciaOriginal.pendencias.map(x => <li key={x}>{x}</li>)}</ul>}
       {p.estadoMudou && <p role="status">A conferência mudou desde a preparação. {p.impedimentoAtual ?? "Prepare uma nova versão com as condições atuais."}</p>}
       {p.estadoConferido && <DecidirAgenda propostaId={p.id} estadoConferido={p.estadoConferido} podeAprovar={p.versaoAtual && !p.estadoMudou && !p.impedimentoAtual} />}

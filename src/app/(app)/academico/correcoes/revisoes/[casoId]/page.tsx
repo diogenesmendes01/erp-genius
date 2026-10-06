@@ -8,14 +8,7 @@ import { ResolucaoRevisaoProgressao } from "./ResolucaoRevisaoProgressao";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-
-const statusMudanca = {
-  PENDENTE: "Pendente",
-  APROVADA: "Aprovada",
-  EXECUTADA: "Executada",
-  CANCELADA: "Cancelada",
-  REJEITADA: "Rejeitada",
-};
+import { STATUS_MUDANCA_ACADEMICA_LABEL } from "@/lib/labels";
 
 const acoesResolucao = {
   REGISTRAR_CANCELAMENTO: "Cancelamento da solicitação registrado",
@@ -55,14 +48,14 @@ export default async function DetalheRevisaoProgressaoPage({ params, searchParam
 
     <article className="space-y-2 rounded border p-4"><h2 className="text-lg font-medium">Histórico</h2>
       <p>{origem}. Caso registrado em {dataLegivel(caso.criadaEm, fusoExibicao)} ({fusoExibicao}; origem UTC).</p>
-      <p>Na data da correção, a mudança acadêmica estava {statusMudanca[caso.statusNaCorrecao].toLowerCase()}.</p>
+      <p>Na data da correção, a mudança acadêmica estava {STATUS_MUDANCA_ACADEMICA_LABEL[caso.statusNaCorrecao].toLowerCase()}.</p>
       <p>Trajeto informado: {turmaOrigem} para {turmaDestino}.</p>
       {caso.origem.tipo === "REPOSICAO" && caso.origem.reposicaoId && caso.origem.conclusaoVersao && <Link className="inline-block underline" href={`/academico/reposicoes/correcoes/${encodeURIComponent(caso.origem.reposicaoId)}?conclusaoVersao=${encodeURIComponent(String(caso.origem.conclusaoVersao))}`}>Conferir a conclusão de reposição corrigida</Link>}
       {caso.origem.tipo === "AULA" && caso.origem.encontroId && <Link className="inline-block underline" href={`/diario/encontros/${encodeURIComponent(caso.origem.encontroId)}/correcao`}>Conferir o histórico da aula corrigida</Link>}
     </article>
 
     <article className="space-y-2 rounded border p-4"><h2 className="text-lg font-medium">Situação atual</h2>
-      <p>A solicitação de mudança está {statusMudanca[caso.solicitacao.status].toLowerCase()}.</p>
+      <p>A solicitação de mudança está {STATUS_MUDANCA_ACADEMICA_LABEL[caso.solicitacao.status].toLowerCase()}.</p>
       {caso.situacao === "PENDENTE_REVISAO" && <p role="status">A revisão pedagógica ainda está pendente. A correção não desfaz automaticamente uma mudança acadêmica já registrada.</p>}
     </article>
 

@@ -16,6 +16,7 @@ import {
   TEMPERATURA_CLS,
   MOTIVO_PERDA_LABEL,
   STATUS_MATRICULA_LABEL,
+  CATEGORIA_DOCUMENTO_LABEL,
   rotular,
 } from "@/lib/labels";
 import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
@@ -237,14 +238,6 @@ function useAcaoSecao() {
   return { acao, run };
 }
 
-const CATEGORIA_LABEL: Record<CategoriaDocumento, string> = {
-  PROPOSTA: "Proposta",
-  CONTRATO: "Contrato",
-  COMPROVANTE: "Comprovante",
-  TESTE_NIVEL: "Teste de nível",
-  OUTRO: "Outro",
-};
-
 function Documentos({
   leadId,
   documentos,
@@ -263,7 +256,7 @@ function Documentos({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select aria-label="Categoria do documento" className={inputCls + " w-auto"} value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
           {Object.values(CategoriaDocumento).map((c) => (
-            <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
+            <option key={c} value={c}>{CATEGORIA_DOCUMENTO_LABEL[c]}</option>
           ))}
         </select>
         <UploadArquivo
@@ -280,7 +273,7 @@ function Documentos({
             <Fragment key={d.id}>
             <li className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
               <a href={d.url} target="_blank" className="text-brand-700 hover:underline">
-                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">{CATEGORIA_LABEL[d.categoria as CategoriaDocumento]}</span>{" "}
+                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">{CATEGORIA_DOCUMENTO_LABEL[d.categoria as CategoriaDocumento]}</span>{" "}
                 {d.nome}
               </a>
               <button
@@ -732,7 +725,7 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
             const detalhe = detalheEvento(ev.tipo, p, preferenciaFusoExibicao);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
+                <div className="text-sm text-gray-800">{rotular(EVENTO_LABEL, ev.tipo)}</div>
                 {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}

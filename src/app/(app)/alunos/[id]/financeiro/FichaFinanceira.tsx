@@ -8,6 +8,7 @@ import {
   TIPO_COBRANCA_LABEL,
   STATUS_COBRANCA_LABEL,
   STATUS_COMISSAO_LABEL,
+  TIPO_AJUSTE_LABEL,
 } from "@/lib/labels";
 import { formatarMoeda, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
@@ -26,13 +27,6 @@ const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm out
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
-const TIPO_AJUSTE_LABEL: Record<TipoAjuste, string> = {
-  DESCONTO: "Desconto",
-  BOLSA: "Bolsa",
-  ALTERACAO_VALOR: "Alteração de valor",
-  PERDAO: "Perdão de dívida",
-  RENEGOCIACAO: "Renegociação",
-};
 const VIGENCIA_INFO: Record<Vigencia, { label: string; cls: string }> = {
   ESTA_COBRANCA: { label: "Apenas esta cobrança", cls: "text-green-700" },
   PROXIMOS_MESES: { label: "Próximos meses", cls: "text-amber-700" },

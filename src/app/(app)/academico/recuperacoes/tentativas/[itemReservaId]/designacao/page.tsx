@@ -9,6 +9,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 export default async function Designacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ buscaProfessor?: string; antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -23,7 +24,7 @@ export default async function Designacao({ params, searchParams }: { params: Pro
   const administrativo = resolverFusoExibicao(preferenciaFuso, "UTC");
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(d.propostaId)}`}>Operação do plano</Link>
-    <h1 className="text-2xl font-medium">Avaliador da recuperação — {d.habilidade.replaceAll("_", " ")}</h1>
+    <h1 className="text-2xl font-medium">Avaliador da recuperação — {rotular(HABILIDADE_LABEL, d.habilidade)}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Designação atual: {d.atual?.nome ?? "Sem professor designado"}.{d.atual && !d.atual.habilitado ? " Este usuário não está habilitado como professor ativo." : ""}</p>
     {d.realizadaPor && <p>Professor que realizou a avaliação: {d.realizadaPor}. A designação preserva essa autoria.</p>}

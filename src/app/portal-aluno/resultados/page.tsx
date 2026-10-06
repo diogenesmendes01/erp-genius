@@ -4,7 +4,7 @@ import { consultarFechamentosPortalAluno } from "@/server/portal-aluno/fechament
 import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/preferencia-fuso";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ErroAutenticacao } from "@/server/_shared";
-import { rotular } from "@/lib/labels";
+import { rotular, HABILIDADE_LABEL } from "@/lib/labels";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -32,13 +32,6 @@ function razao(valor: { numerador: string; denominador: string } | null) {
   return `${formatadorNumero.format(resultado)}${Math.abs(resultado * 100 - Math.round(resultado * 100)) > 1e-9 ? " (aprox.)" : ""}`;
 }
 
-const habilidades: Record<string, string> = {
-  FALA: "Comunicação oral",
-  COMPREENSAO_ORAL: "Compreensão oral",
-  LEITURA: "Leitura",
-  ESCRITA: "Escrita",
-};
-
 const pendenciasHabilidade: Record<string, string> = {
   NOTA_AUSENTE: "Há uma nota ainda não registrada.",
   AGUARDANDO_OFICIALIZACAO: "Há uma nota aguardando oficialização.",
@@ -48,7 +41,7 @@ const pendenciasHabilidade: Record<string, string> = {
 
 // Sem rótulo: mostra o próprio código (rotular avisa em desenvolvimento) — "Habilidade em conferência"
 // dizia ao ALUNO que havia uma conferência em andamento, o que ninguém registrou (E5).
-const habilidade = (valor: string) => rotular(habilidades, valor);
+const habilidade = (valor: string) => rotular(HABILIDADE_LABEL, valor);
 
 type FechamentoPortalAluno = Awaited<ReturnType<typeof consultarFechamentosPortalAluno>>[number];
 

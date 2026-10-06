@@ -9,6 +9,7 @@ import { IdentificacaoAvaliacao } from "../../avaliacoes/Identificacao";
 import { PrepararPlano, DecidirPlano } from "./Formularios";
 import { AutorizarPreparacao } from "./AutorizarPreparacao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -32,7 +33,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
     <h1 className="text-2xl font-medium">Planos de recuperação</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Média atual: {valor(d.atual.geral)}. Mínimo geral: {d.atual.minimoGeral}. Valores exibidos com duas casas; os mínimos são conferidos sem arredondamento.</p>
-    {d.atual.habilidades.map(h => <p key={h.habilidade}>{h.habilidade.replaceAll("_", " ")}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}
+    {d.atual.habilidades.map(h => <p key={h.habilidade}>{rotular(HABILIDADE_LABEL, h.habilidade)}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}
     {d.impedimentoProposta && <p role="status">{d.impedimentoProposta}</p>}
     {d.autorizacaoPreparacao && <p role="status">Autorização especial de preparação vigente até {formatarInstanteExibicao(d.autorizacaoPreparacao.prazoAte, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p>}
     {!d.autorizacaoPreparacao && <p>Não há autorização especial de preparação vigente.</p>}
@@ -45,8 +46,8 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       <h3 className="font-medium">Proposta {p.versao} — {p.preparador}</h3>
       <p>{p.decisao ? p.decisao.aprovada ? "Aprovada" : "Rejeitada" : "Aguardando decisão"}. {formatarInstanteExibicao(p.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC)</p>
       <p className="whitespace-pre-wrap">{p.motivo}</p>
-      {p.atividades.map(a => <div key={a.habilidade}><h4 className="font-medium">{a.habilidade.replaceAll("_", " ")}</h4><p className="whitespace-pre-wrap">Estratégia: {a.estrategia}</p><p className="whitespace-pre-wrap">Avaliação: {a.avaliacaoProposta}</p></div>)}
-      <details><summary>Notas que fundamentaram esta proposta</summary><p>Média: {valor(p.base.geral)} · mínimo {p.base.minimoGeral}.</p>{p.base.habilidades.map(h => <p key={h.habilidade}>{h.habilidade.replaceAll("_", " ")}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}</details>
+      {p.atividades.map(a => <div key={a.habilidade}><h4 className="font-medium">{rotular(HABILIDADE_LABEL, a.habilidade)}</h4><p className="whitespace-pre-wrap">Estratégia: {a.estrategia}</p><p className="whitespace-pre-wrap">Avaliação: {a.avaliacaoProposta}</p></div>)}
+      <details><summary>Notas que fundamentaram esta proposta</summary><p>Média: {valor(p.base.geral)} · mínimo {p.base.minimoGeral}.</p>{p.base.habilidades.map(h => <p key={h.habilidade}>{rotular(HABILIDADE_LABEL, h.habilidade)}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}</details>
       {p.fontesMudaram && <p>As notas ou suas fontes mudaram desde esta proposta. Uma decisão anterior permanece no histórico; novos avanços exigem conferência.</p>}
       {p.decisao && <p className="whitespace-pre-wrap">Decisão de {p.decisao.decisor.nome}: {p.decisao.motivo}</p>}
       {p.decisao?.aprovada && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(p.id)}`}>Disponibilização, tentativas e realizações</Link>}

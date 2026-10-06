@@ -8,6 +8,7 @@ import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { Realizar } from "../../planos/[propostaId]/Formularios";
 import { AgendaPublicada } from "../../AgendaPublicada";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 export default async function Tentativa({ params }: { params: Promise<{ itemReservaId: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
   const { itemReservaId } = await params;
@@ -22,7 +23,7 @@ export default async function Tentativa({ params }: { params: Promise<{ itemRese
   const horario = (instante: string) => formatarInstanteExibicao(instante, fusoExibicao, "UTC").texto;
   return <section className="space-y-4">
     <Link className="underline" href="/academico/recuperacoes/designadas">Minhas recuperações atribuídas</Link>
-    <h1 className="text-2xl font-medium">Recuperação de {d.atividade.habilidade.replaceAll("_", " ")}</h1>
+    <h1 className="text-2xl font-medium">Recuperação de {rotular(HABILIDADE_LABEL, d.atividade.habilidade)}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <AgendaPublicada agenda={d.agenda} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
     <p className="whitespace-pre-wrap">Estratégia: {d.atividade.estrategia}</p><p className="whitespace-pre-wrap">Avaliação proposta: {d.atividade.avaliacaoProposta}</p>

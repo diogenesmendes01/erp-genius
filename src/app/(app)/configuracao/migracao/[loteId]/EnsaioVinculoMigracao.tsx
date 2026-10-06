@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { RESULTADO_ENSAIO_VINCULO_MIGRACAO_LABEL, STATUS_MATRICULA_LABEL } from "@/lib/labels";
 
 type Oferta = { produtoId: string; paisId: string; moeda: string; rotulo: string };
 type Turma = { id: string; rotulo: string };
@@ -14,9 +15,9 @@ type AtualProduto = Oferta & { id: string; versao: number; ativa: boolean };
 type AtualTurma = { id: string; turmaId: string; versao: number; ativa: boolean; rotulo: string };
 type AtualStatus = { id: string; versao: number; ativa: boolean; destino: string };
 type Ensaio = { resultado: "REQUISITO_AUSENTE" | "PRONTO_PARA_REVISAO" | "DIVERGENTE"; requisitos: string[]; criadoEm: Date; ensaiadoPor: { nome: string } };
-const resultado: Record<Ensaio["resultado"], string> = { REQUISITO_AUSENTE: "Requisitos pendentes", PRONTO_PARA_REVISAO: "Pronto para revisão", DIVERGENTE: "Divergência encontrada" };
+const resultado: Readonly<Record<Ensaio["resultado"], string>> = RESULTADO_ENSAIO_VINCULO_MIGRACAO_LABEL;
 const requisito: Record<string, string> = { MAPA_ALUNO_AUSENTE: "o aluno da origem ainda não está associado a um cadastro", CORRESPONDENCIA_PRODUTO_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de produto", PAIS_OU_MOEDA_DIVERGENTE: "o país ou a moeda da oferta não confere", CORRESPONDENCIA_TURMA_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de turma", CORRESPONDENCIA_STATUS_AUSENTE_OU_REVOGADA: "falta uma correspondência ativa de situação", CONTRATO_HISTORICO_EXIGE_EVIDENCIA: "o contrato histórico ainda precisa de evidência", PAGAMENTO_HISTORICO_EXIGE_EVIDENCIA: "o pagamento histórico ainda precisa de evidência" };
-const status = { RASCUNHO: "Rascunho", AGUARDANDO: "Aguardando", ATIVA: "Ativa", PAUSADA: "Pausada", ENCERRADA: "Encerrada", CANCELADA: "Cancelada" };
+const status = STATUS_MATRICULA_LABEL;
 const textoRequisito = (codigo: string) => requisito[codigo] ?? (codigo.startsWith("PENDENCIA_PREPARACAO_") ? "há uma pendência na fotografia de origem" : "há um requisito pendente nesta conferência");
 
 export function EnsaioVinculoMigracao({ linhaId, origem, produtoOrigemId, turmaOrigemId, statusOrigem, produtoAtual, turmaAtual, statusAtual, ofertasProduto, turmas, ensaios, preferenciaFusoExibicao = null }: { linhaId: string; origem: string; produtoOrigemId: string | null; turmaOrigemId: string | null; statusOrigem: string | null; produtoAtual: AtualProduto | null; turmaAtual: AtualTurma | null; statusAtual: AtualStatus | null; ofertasProduto: Oferta[]; turmas: Turma[]; ensaios: Ensaio[]; preferenciaFusoExibicao?: string | null }) {
