@@ -289,6 +289,50 @@ export function enumsCrus(fonte: string, arquivo = "x.tsx"): EnumCru[] {
   return achados;
 }
 
+/**
+ * Código de enum escrito como TEXTO na tela (revisão R2/R3 da #138, B10): `"PAGAMENTO_COMPROVADO"` no lugar de
+ * "Pagamento comprovado". Procura, nas posições de texto (filho de JSX, texto solto do JSX, atributo e prop
+ * de texto), literais que chegam ao texto — ramos de ternário, `??`/`||`/`+`, `&&` à direita, partes de
+ * template, itens de lista, argumentos de função que não rotula — e acusa cada palavra com cara de código
+ * (MAIÚSCULAS com "_"). Com `codigos`, só os códigos dessa lista; sem ela (`null`), qualquer código — também
+ * os de domínio que não estão no schema (`PAGAMENTO_COMPROVADO` é situação da conciliação de migração).
+ */
+export function codigosEmTexto(fonte: string, codigos: ReadonlySet<string> | null, arquivo = "x.tsx"): { codigo: string; linha: number }[] {
+  const sf = arvore(fonte, arquivo);
+  const achados: { codigo: string; linha: number }[] = [];
+  const palavras = (texto: string, no: ts.Node) => {
+    for (const p of texto.match(/[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+/g) ?? []) if (!codigos || codigos.has(p)) achados.push({ codigo: p, linha: linhaDe(sf, no) });
+  };
+  const literais = (e: ts.Expression) => {
+    const x = semEmbrulho(e);
+    if (ts.isStringLiteralLike(x)) return palavras(x.text, x);
+    if (ts.isTemplateExpression(x)) { palavras(x.head.text, x); for (const s of x.templateSpans) { literais(s.expression); palavras(s.literal.text, s); } return; }
+    if (ts.isConditionalExpression(x)) { literais(x.whenTrue); literais(x.whenFalse); return; }
+    if (ts.isBinaryExpression(x)) {
+      const op = x.operatorToken.kind;
+      if (OPS_QUE_CARREGAM_TEXTO.has(op)) { literais(x.left); literais(x.right); }
+      if (op === ts.SyntaxKind.AmpersandAmpersandToken) literais(x.right);
+      return;
+    }
+    if (ts.isArrayLiteralExpression(x)) { for (const el of x.elements) literais(ts.isSpreadElement(el) ? el.expression : el); return; }
+    if (ts.isCallExpression(x) && !(ts.isIdentifier(x.expression) && ROTULADORES.has(x.expression.text))) for (const a of x.arguments) literais(a);
+  };
+  visitar(sf, (n) => {
+    if (ts.isJsxText(n)) palavras(n.text, n);
+    if (ts.isJsxExpression(n) && n.expression) {
+      const emTexto = ts.isJsxElement(n.parent) || ts.isJsxFragment(n.parent) || (ts.isJsxAttribute(n.parent) && atributoDeTexto(n.parent));
+      if (emTexto) literais(n.expression);
+    }
+    if (ts.isJsxAttribute(n) && n.initializer && ts.isStringLiteral(n.initializer) && atributoDeTexto(n)) palavras(n.initializer.text, n);
+  });
+  return achados;
+}
+
+/** Código que a tela mostra de propósito (não é enum a rotular). Cada um casa com exatamente um achado. */
+const CODIGOS_EM_TEXTO: { arquivo: string; codigo: string; motivo: string }[] = [
+  { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", codigo: "ANTHROPIC_API_KEY", motivo: "nome da variável de ambiente que a Administração precisa configurar" },
+];
+
 /** Campos com nome de enum que já chegam como texto (o servidor rotulou) ou não são enum. Cada um casa com
  * exatamente `vezes` achados (1, se omitido). */
 const TEXTO_JA_ROTULADO: { arquivo: string; trecho: string; motivo: string; vezes?: number }[] = [
@@ -318,6 +362,26 @@ describe("(i) enum cru na tela — AST", () => {
     for (const e of TEXTO_JA_ROTULADO) {
       expect(achados.filter((a) => a.tipo === "texto" && a.arquivo === e.arquivo && a.trecho === e.trecho), `${e.arquivo} ${e.trecho}`).toHaveLength(e.vezes ?? 1);
     }
+  });
+
+  it("nenhuma tela escreve código de enum como texto (\"PAGAMENTO_COMPROVADO\" no lugar do rótulo)", () => {
+    // Qualquer palavra com cara de código (MAIÚSCULAS com "_"), do schema ou de domínio, salvo as exceções.
+    const escritos = fontes.flatMap(({ arquivo, conteudo }) => codigosEmTexto(conteudo, null, arquivo).map((a) => ({ arquivo, ...a })));
+    expect(escritos.filter((a) => !CODIGOS_EM_TEXTO.some((e) => e.arquivo === a.arquivo && e.codigo === a.codigo)).map((a) => `${a.arquivo}:${a.linha} ${a.codigo}`)).toEqual([]);
+    for (const e of CODIGOS_EM_TEXTO) expect(escritos.filter((a) => a.arquivo === e.arquivo && a.codigo === e.codigo), `${e.arquivo} ${e.codigo}`).toHaveLength(1);
+  });
+
+  it("autoteste (R3 da #138, B10): código de enum em texto solto, literal, template, ternário e atributo", () => {
+    const codigos = new Set(["PAGAMENTO_COMPROVADO", "EM_ANDAMENTO"]);
+    const achar = (fonte: string) => codigosEmTexto(fonte, codigos).map((a) => a.codigo);
+    expect(achar("const r = <p>Proposto: PAGAMENTO_COMPROVADO</p>;")).toEqual(["PAGAMENTO_COMPROVADO"]);
+    expect(achar('const r = <p>{x ? "PAGAMENTO_COMPROVADO" : "—"} {`Situação: EM_ANDAMENTO`}</p>;')).toEqual(["PAGAMENTO_COMPROVADO", "EM_ANDAMENTO"]);
+    expect(achar('const r = <p title="EM_ANDAMENTO" aria-label={"Estado " + "PAGAMENTO_COMPROVADO"} />;')).toEqual(["EM_ANDAMENTO", "PAGAMENTO_COMPROVADO"]);
+    // Não acusa: código em comparação, em valor/key/className, no argumento do rotular, ou que não é enum.
+    expect(achar([
+      'const r = <p className="EM_ANDAMENTO" key="PAGAMENTO_COMPROVADO">{s === "EM_ANDAMENTO" ? "Em andamento" : rotular(M, "PAGAMENTO_COMPROVADO")}</p>;',
+      'const s = <><input value="EM_ANDAMENTO" /><p>OUTRO_CODIGO</p></>;',
+    ].join("\n"))).toEqual([]);
   });
 
   it("autoteste: o detector pega as formas conhecidas em fontes virtuais", () => {
@@ -672,7 +736,10 @@ export function mapasDeRotulo(fonte: string, enums: Map<string, string[]>, arqui
     }
     // Ternários: cadeia sobre o MESMO sujeito, com todas as folhas texto de rótulo (duas ou mais comparações),
     // ou "override" de um valor antes do mapa central (`s === "ATIVA" ? "Em vigor" : rotular(MAPA, s)`).
-    if (ts.isConditionalExpression(n) && !ts.isConditionalExpression(semPai(n))) {
+    // Cabeça da cadeia: sem ternário acima, ou com um ternário acima cuja condição não é comparação de código
+    // (`i.status ? (i.status === "A" ? … : …) : "—"` — a guarda de existência não esconde o mapa; R3 da #138, B7).
+    const acima = semPai(n);
+    if (ts.isConditionalExpression(n) && (!ts.isConditionalExpression(acima) || !comparacao(acima.condition))) {
       const codigos: string[] = [], folhasTexto: (string | null)[] = [], folhasNos: ts.Expression[] = [], sujeitos = new Set<string>();
       let ok = true;
       const percorrer = (e: ts.Expression) => {
@@ -739,6 +806,7 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/diario/encontros/[id]/correcao/CorrecaoAula.tsx", nome: "ternário reposicao.agendaParticular.statusBeneficio", motivo: "fragmento minúsculo no meio da frase do benefício (\"benefício reservado\", \"isenção excepcional registrada\")" },
   { arquivo: "src/app/(app)/diario/encontros/[id]/OcorrenciaParticular.tsx", nome: "nomes", motivo: "opção do informe docente, na voz do professor (\"Aluno faltou\", \"Cancelada pela escola\")" },
   { arquivo: "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx", nome: "override item.reserva.status", motivo: "frase explicativa das reservas consumidas/liberadas (\"consumida por falta; encontro não realizado\"); as demais vêm do mapa central" },
+  { arquivo: "src/app/(app)/financeiro/AcessoAulasPainel.tsx", nome: "ternário m.status", motivo: "frase do acesso às aulas sob a guarda da liberação (\"Contrato pausado\", \"Contrato não ativo…\")" },
   { arquivo: "src/app/(app)/leads/[id]/FichaLead.tsx", nome: "ternário lead.temperatura", motivo: "faixa de prioridade derivada da temperatura (Alta/Média/Baixa, doc 09), não o nome da temperatura" },
 ];
 
@@ -802,6 +870,8 @@ describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
     expect(nomes('const g = ok && s === "ATIVA" ? "Ativa" : ok && s === "PAUSADA" ? "Pausada" : "—";')).toEqual(["ternário s"]);
     expect(nomes('const j = <p>{s === "ATIVA" && "Ativa"}{s === "PAUSADA" && "Pausada"}</p>;')).toEqual(["série && s"]);
     expect(nomes('const o = s === "ATIVA" ? "Em vigor" : rotular(STATUS_X_LABEL, s);')).toEqual(["override s"]);
+    // R3 da #138 (B7): a guarda de existência por cima não esconde o mapa.
+    expect(nomes('const v = s ? (s === "ATIVA" ? "Ativa" : s === "PAUSADA" ? "Pausada" : "Encerrada") : "—";')).toEqual(["ternário s"]);
     // Não acusa: um && só, condição booleana, chave fora de enum, valor não texto.
     expect(nomes([
       'const a = <p>{s === "ATIVA" && "Ativa"}</p>;',
