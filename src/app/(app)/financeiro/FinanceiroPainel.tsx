@@ -14,9 +14,20 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio, EstadoVazioLinha } from "@/components/EstadoVazio";
+import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
+import type { Ordenacao } from "@/lib/ordenacao";
+import type { OrdemComissoes } from "@/server/financeiro/ordem-comissoes";
 
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
+
+/** Ordem da lista de comissões (vinda da URL, no servidor) e onde os links dos cabeçalhos apontam. */
+export interface OrdenacaoComissoes {
+  atual: Ordenacao<OrdemComissoes>;
+  rota: string;
+  /** Filtros atuais preservados nos links (ex.: situação). */
+  parametros: Record<string, string>;
+}
 
 export interface ComissaoRow {
   id: string;
@@ -81,7 +92,7 @@ function useExecutorFinanceiro() {
   return { acao, run, router };
 }
 
-export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio }: { comissoes: ComissaoRow[]; aPagar: ValorMoeda[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode }) {
+export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio, ordenacao }: { comissoes: ComissaoRow[]; aPagar: ValorMoeda[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode; ordenacao?: OrdenacaoComissoes }) {
   const { acao, run } = useExecutorFinanceiro();
   return (
     <>
@@ -90,6 +101,7 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
         comissoes={comissoes}
         aPagar={aPagar}
         vazio={vazio}
+        ordenacao={ordenacao}
         podePagar={podePagar}
         onFechar={() => run(() => fecharMesComissoes())}
         fechamentoAutomatico={fechamentoAutomatico}
@@ -163,6 +175,7 @@ export function Comissoes({
   fechamentoAutomatico,
   onToggleAutomatico,
   isPending,
+  ordenacao,
 }: {
   comissoes: ComissaoRow[];
   /** Total das aprovadas em TODO o escopo (servidor) — a lista é paginada. */
@@ -174,7 +187,12 @@ export function Comissoes({
   isPending: boolean;
   /** Texto da lista vazia — com filtro ativo, a página diz que não há nesta situação e oferece ver todas. */
   vazio?: ReactNode;
+  /** Ordem atual da lista paginada (E1): cabeçalhos ordenáveis por link; sem ela, cabeçalhos simples. */
+  ordenacao?: OrdenacaoComissoes;
 }) {
+  const coluna = ordenacao ? { ordenacao: ordenacao.atual, rota: ordenacao.rota, parametros: ordenacao.parametros } : null;
+  const cabecalho = (campo: OrdemComissoes, rotulo: string, direcaoInicial?: "asc" | "desc") =>
+    coluna ? <ColunaOrdenavel campo={campo} rotulo={rotulo} direcaoInicial={direcaoInicial} {...coluna} /> : <th className="px-4 py-2 font-medium">{rotulo}</th>;
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -203,10 +221,10 @@ export function Comissoes({
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs text-gray-500">
             <tr>
-              <th className="px-4 py-2 font-medium">Vendedor</th>
+              {cabecalho("vendedor", "Vendedor")}
               <th className="px-4 py-2 font-medium">%</th>
-              <th className="px-4 py-2 font-medium">Valor</th>
-              <th className="px-4 py-2 font-medium">Status</th>
+              {cabecalho("valor", "Valor", "desc")}
+              {cabecalho("status", "Status")}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

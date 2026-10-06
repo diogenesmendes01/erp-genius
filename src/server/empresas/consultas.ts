@@ -1,7 +1,7 @@
 import { Papel, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { numero, numeroOuNull, exigirSessaoComPapel } from "@/server/_shared";
-import { EMPRESAS_POR_PAGINA, whereFiltrosEmpresas, type FiltrosEmpresas } from "./filtros";
+import { EMPRESAS_POR_PAGINA, orderByEmpresas, whereFiltrosEmpresas, type FiltrosEmpresas } from "./filtros";
 
 // B2B — consultas (Fase 2, doc 03): lista de empresas, ficha (colaboradores + faturas) e
 // o RELATÓRIO POR COLABORADOR (status da matrícula + mensalidades pagas/abertas/atrasadas).
@@ -34,8 +34,9 @@ export async function listarEmpresasPagina(filtros: FiltrosEmpresas) {
   const [empresas, total, totalBase] = await Promise.all([
     prisma.empresa.findMany({
       where,
-      // id como desempate: empresas criadas no mesmo instante não trocam de página entre consultas.
-      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      // Ordem da URL (E1), no banco e antes da página; sem ordem, cadastro mais recente primeiro. O id
+      // desempata sempre: empresas empatadas não trocam de página entre consultas.
+      orderBy: orderByEmpresas(filtros.ordem),
       skip: (filtros.pagina - 1) * EMPRESAS_POR_PAGINA,
       take: EMPRESAS_POR_PAGINA,
       include: {
