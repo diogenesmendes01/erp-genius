@@ -6,10 +6,9 @@ import { GerirDesignacoes } from "./GerirDesignacoes";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-const ROTULO_STATUS: Record<string, string> = STATUS_ENCONTRO_LABEL;
 
 export default async function RegularizacoesAulaPage({ searchParams }: { searchParams: Promise<{ cursor?: string; modo?: "PENDENTES" | "HISTORICO" }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -36,7 +35,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
           <div>
             <h2 className="font-medium">{item.turma}</h2>
             <p className="text-sm">{formatar(item.inicio)} — {formatar(item.fim)} · exibido em {fuso}; origem {item.fusoOrigem}</p>
-            <p className="text-sm text-gray-600">Status: {ROTULO_STATUS[item.status] ?? item.status}</p>
+            <p className="text-sm text-gray-600">Status: {rotular(STATUS_ENCONTRO_LABEL, item.status)}</p>
             <p className="text-sm text-gray-600">Professor original: {item.professor}</p>
             <p className="text-sm">{item.designacao ? `Responsável designado: ${item.designacao.responsavel}` : "Sem responsável designado."}</p>
           </div>
