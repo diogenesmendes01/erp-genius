@@ -9,10 +9,11 @@ import { UploadArquivo } from "@/components/UploadArquivo";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
+import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
-const btnPri = "rounded-md bg-brand-solid px-3 py-1.5 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60";
+const btnPri = botaoClasses();
 
 // Formas em que o comprovante é essencial pro fluxo (doc 09 §Registrar pagamento:
 // "Essencial pro fluxo de transferência — anexa a prova"). GreenPay também gera prova.
@@ -157,7 +158,7 @@ export function PagamentoModal({
         <button className={btnPri} disabled={acao.ocupado || faltaComprovante || faltaEvidencia} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : somenteInformar ? "Enviar para conferência" : "Registrar recebimento"}
         </button>
-        <button type="button" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60" disabled={acao.ocupado} onClick={onClose}>Cancelar</button>
+        <button type="button" className={botaoClasses({ variante: "secundario" })} disabled={acao.ocupado} onClick={onClose}>Cancelar</button>
       </div>
     </Modal>
   );

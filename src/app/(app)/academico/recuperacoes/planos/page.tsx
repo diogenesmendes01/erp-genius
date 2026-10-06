@@ -54,7 +54,9 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       {p.podeDecidir && !p.podeAprovar && <p>Aprovação indisponível: confira versão, vínculo, fontes das notas e limites configurados.</p>}
       {p.podeDecidir && p.propostaHash && <DecidirPlano propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}
     </article>)}
-    {!d.planos.length && <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>}
+    {!d.planos.length && (antesVersao
+      ? <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhum plano de recuperação proposto para esta matrícula.</EstadoVazio>)}
     {d.proximaAntesVersao && <Link className="underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId, antesVersao: String(d.proximaAntesVersao) })}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId })}`}>Propostas recentes</Link>}
     <Link className="block underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId })}`}>Notas das recuperações realizadas</Link>

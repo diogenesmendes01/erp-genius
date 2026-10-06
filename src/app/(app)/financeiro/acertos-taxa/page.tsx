@@ -11,7 +11,9 @@ export default async function AcertosTaxaPage({ searchParams }: { searchParams: 
   return <main className="space-y-4"><VoltarPara href="/financeiro" /><h1 className="text-2xl">Acertos de taxa por aditivo</h1>
     <p>Confira a cobrança e as condições formalizadas. Preparação, aprovação independente e aplicação ficam registradas separadamente.</p>
     {!r.ok ? <p role="alert">{r.erro}</p> : <><ul className="space-y-3">{r.dado?.itens.map(v => <li key={v.propostaId}><Link className="underline" href={`/financeiro/acertos-taxa/${encodeURIComponent(v.matriculaId)}/${encodeURIComponent(v.propostaId)}`}>Matrícula {v.matriculaId} · condições versão {v.versao}</Link></li>)}</ul>
-    {!r.dado?.itens.length && <EstadoVazio>Nenhum aditivo com condições de taxa nesta página.</EstadoVazio>}
+    {!r.dado?.itens.length && (pagina > 1
+      ? <EstadoVazio acao={<Link href="?pagina=1">Ir para a primeira página</Link>}>Nenhum aditivo com condições de taxa nesta página.</EstadoVazio>
+      : <EstadoVazio>Nenhum aditivo formaliza condições de taxa.</EstadoVazio>)}
     <nav className="flex gap-4">{pagina > 1 && <Link href={`?pagina=${pagina - 1}`}>Anterior</Link>}{r.dado?.temProxima && <Link href={`?pagina=${pagina + 1}`}>Próxima</Link>}</nav></>}
   </main>;
 }

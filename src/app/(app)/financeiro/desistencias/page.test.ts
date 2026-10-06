@@ -37,9 +37,15 @@ describe("FilaDesistenciasFinanceirasPage", () => {
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain("Nenhum pedido nesta página.");
+    // Sem cursor (primeira página): fila zerada, não "nesta página" (docs/42).
+    expect(html).toContain("Nenhum pedido de desistência aguardando conferência financeira.");
+    expect(html).not.toContain("nesta página");
     expect(html).not.toContain("Próxima página");
     expect(html).not.toContain("Voltar ao início");
+
+    const seguinte = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ cursor: "anterior" }) }));
+    expect(seguinte).toContain("Nenhum pedido nesta página.");
+    expect(seguinte).toContain("Voltar ao início");
   });
 
   it("mostra somente erro quando a consulta falha", async () => {

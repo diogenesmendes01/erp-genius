@@ -37,4 +37,17 @@ describe("recuperações realizadas", () => {
     expect(mocks.listar).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
+
+  // Revisão R1 da #134 (B5): página 1 × página seguinte, com o href exato da volta.
+  it("vazio: página 1 diz que não há realização; página seguinte oferece a volta preservando a alocação", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    mocks.listar.mockResolvedValue({ ok: true, dado: { ...dado, realizacoes: [] } });
+    const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ alocacaoId: "aloc-1" }) }));
+    expect(primeira).toContain("Nenhuma recuperação realizada neste vínculo.");
+    expect(primeira).not.toContain("nesta página");
+    expect(primeira).not.toContain("Ir para a primeira página");
+    const seguinte = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ alocacaoId: "aloc-1", depoisId: "r9" }) }));
+    expect(seguinte).toContain("Nenhuma realização disponível nesta página.");
+    expect(seguinte).toContain('<a class="underline" href="/academico/recuperacoes?alocacaoId=aloc-1">Ir para a primeira página</a>');
+  });
 });

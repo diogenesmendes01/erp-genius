@@ -1,6 +1,6 @@
 import { StatusAluno } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { camposDosFiltros, destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, sanearFiltrosAlunos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
+import { camposDosFiltros, destinoPaginaAlunos, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, orderByAlunos, parametrosFiltrosAlunos, sanearFiltrosAlunos, temFiltroAlunos, whereFiltrosAlunos } from "./filtros";
 import { sincronizarCamposFiltro } from "@/lib/filtros-url";
 
 // A lista usa a sincronização genérica (useFiltrosUrl) sobre os campos derivados destes filtros.
@@ -10,12 +10,12 @@ const sincronizarCampos = (atuais: ReturnType<typeof camposDosFiltros>, antes: R
 describe("lerFiltrosAlunos", () => {
   it("lê, apara e valida os filtros da URL", () => {
     expect(lerFiltrosAlunos({ busca: "  ana ", status: "PAUSADO", pais: "p1", turma: "t-9", pagina: "3" }))
-      .toEqual({ busca: "ana", status: StatusAluno.PAUSADO, paisId: "p1", turmaId: "t-9", pagina: 3 });
+      .toEqual({ busca: "ana", status: StatusAluno.PAUSADO, paisId: "p1", turmaId: "t-9", pagina: 3, ordem: { campo: "nome", dir: "asc" } });
   });
 
   it("descarta o que não é válido e ignora chaves desconhecidas", () => {
     expect(lerFiltrosAlunos({ status: "APAGADO", pais: "x'; drop", turma: "a".repeat(65), pagina: "0", colunas: "cpf", ids: "1" }))
-      .toEqual({ busca: "", status: null, paisId: null, turmaId: null, pagina: 1 });
+      .toEqual({ busca: "", status: null, paisId: null, turmaId: null, pagina: 1, ordem: { campo: "nome", dir: "asc" } });
     expect(lerFiltrosAlunos({ pagina: "2.5" }).pagina).toBe(1);
     expect(lerFiltrosAlunos({ pagina: "100001" }).pagina).toBe(1);
     expect(lerFiltrosAlunos({ busca: "x".repeat(150) }).busca).toHaveLength(100);
@@ -112,5 +112,48 @@ describe("teto da busca", () => {
     const where = whereFiltrosAlunos(lerFiltrosAlunos({ busca: "a b c d e f g" })) as { AND: unknown[] };
     expect(where.AND).toHaveLength(6);
     expect(JSON.stringify(where)).not.toContain('"g"');
+  });
+});
+
+describe("ordenação da lista (E1 — ColunaOrdenavel)", () => {
+  it("lista fechada: nome, país e status; fora dela (ou sem ordem) → nome crescente, a ordem de sempre", () => {
+    expect(lerFiltrosAlunos({ ordem: "pais", dir: "desc" }).ordem).toEqual({ campo: "pais", dir: "desc" });
+    expect(lerFiltrosAlunos({ ordem: "status" }).ordem).toEqual({ campo: "status", dir: "asc" });
+    for (const ordem of ["turma", "financeiro", "cpf", "id", "criadoEm"]) {
+      expect(lerFiltrosAlunos({ ordem, dir: "desc" }).ordem).toEqual({ campo: "nome", dir: "asc" });
+    }
+  });
+
+  it("orderBy: padrão idêntico ao de antes; cada coluna termina no desempate por id", () => {
+    expect(orderByAlunos()).toEqual([{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos(lerFiltrosAlunos({}).ordem)).toEqual([{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    // Decrescente por nome é o inverso exato da crescente (inclusive o desempate).
+    expect(orderByAlunos({ campo: "nome", dir: "desc" })).toEqual([{ primeiroNome: "desc" }, { sobrenome: "desc" }, { id: "desc" }]);
+    expect(orderByAlunos({ campo: "pais", dir: "desc" })).toEqual([{ pais: { nome: "desc" } }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos({ campo: "status", dir: "asc" })).toEqual([{ status: "asc" }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+  });
+
+  it("a ordem vai na query (paginação, exportação, redirecionamento) só quando não é a padrão", () => {
+    const f = lerFiltrosAlunos({ status: "ATIVO", ordem: "pais", dir: "desc", pagina: "2" });
+    expect(filtrosParaQuery(f)).toBe("status=ATIVO&ordem=pais&dir=desc&pagina=2");
+    expect(filtrosParaQuery(f, { semPagina: true })).toBe("status=ATIVO&ordem=pais&dir=desc");
+    expect(lerFiltrosAlunos(new URLSearchParams(filtrosParaQuery(f)))).toEqual(f);
+    expect(filtrosParaQuery(lerFiltrosAlunos({ status: "ATIVO", ordem: "nome", dir: "asc" }))).toBe("status=ATIVO");
+    expect(destinoPaginaAlunos(lerFiltrosAlunos({ ordem: "status", dir: "desc", pagina: "9" }), 120)).toBe("/alunos?ordem=status&dir=desc&pagina=3");
+  });
+
+  it("ordem não é filtro; buscar mantém a ordem atual; os cabeçalhos recebem só busca e filtros", () => {
+    const f = lerFiltrosAlunos({ busca: "ana", ordem: "pais", dir: "desc", pagina: "3" });
+    expect(temFiltroAlunos(lerFiltrosAlunos({ ordem: "pais" }))).toBe(false);
+    expect(hrefDosCampos({ busca: "mar", status: "", pais: "", turma: "" }, f.ordem)).toBe("/alunos?busca=mar&ordem=pais&dir=desc");
+    expect(hrefDosCampos({ busca: "mar", status: "", pais: "", turma: "" })).toBe("/alunos?busca=mar");
+    expect(parametrosFiltrosAlunos(f)).toEqual({ busca: "ana" });
+  });
+});
+
+// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão (e não vai para a URL).
+describe("ordem de /alunos: chave herdada de Object", () => {
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
+    expect(lerFiltrosAlunos({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosAlunos({}).ordem);
   });
 });

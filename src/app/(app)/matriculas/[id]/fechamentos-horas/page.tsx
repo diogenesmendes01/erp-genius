@@ -47,7 +47,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <p>Histórico dos rascunhos de apuração. Salvar uma versão não aprova condições, emite cobrança ou confirma pagamento.</p>
     {!q.versao && <PrepararFechamento alunoId={d.matricula.alunoId} matriculaId={id} />}
     {q.versao && <Link href={base} className="underline">Todas as versões</Link>}
-    {!d.versoes.length && <EstadoVazio bloco>Nenhum rascunho salvo nesta página.</EstadoVazio>}
+    {!d.versoes.length && (q.cursor
+      ? <EstadoVazio bloco acao={<Link href={base} className="underline">Ir para a primeira página</Link>}>Nenhum rascunho salvo nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhum rascunho de fechamento salvo para esta matrícula.</EstadoVazio>)}
     {d.versoes.map(v => {
       const m = v.memoria ? Memoria.safeParse(v.memoria) : null;
       const instanteEncontro = (valor: string) => {

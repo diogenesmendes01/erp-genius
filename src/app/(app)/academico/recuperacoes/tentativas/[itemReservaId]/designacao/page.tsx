@@ -39,7 +39,9 @@ export default async function Designacao({ params, searchParams }: { params: Pro
     </>}
     <h2 className="text-xl font-medium">Histórico de designações</h2>
     {d.historico.map(h => <article key={h.id} className="rounded border p-3"><p>Versão {h.versao}: {h.professor?.nome ?? "Designação revogada"} — registrada por {h.gestor.nome}, em {formatarInstanteExibicao(h.criadaEm, preferenciaFuso, "UTC").texto} ({administrativo}; origem UTC).</p><p className="whitespace-pre-wrap">{h.motivo}</p></article>)}
-    {!d.historico.length && <EstadoVazio bloco>Nenhuma designação nesta página.</EstadoVazio>}
+    {!d.historico.length && (antesVersao
+      ? <EstadoVazio bloco>Nenhuma designação nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma designação registrada para esta tentativa.</EstadoVazio>)}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Designações anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`}>Designação atual</Link>}
   </section>;

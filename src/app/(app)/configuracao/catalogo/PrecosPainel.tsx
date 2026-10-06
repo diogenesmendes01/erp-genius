@@ -214,7 +214,7 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => alternar(p.id, p.ativo ? "Preço desativado." : "Preço reativado.")} disabled={acao.ocupado} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>
+                    <button onClick={() => alternar(p.id, p.ativo ? "Preço desativado." : "Preço reativado.")} disabled={acao.ocupado} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
                     <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />

@@ -63,8 +63,16 @@ describe("exportação de alunos com os filtros da tela", () => {
     expect(res.status).toBe(200);
     expect(mocks.listarAlunos).toHaveBeenCalledTimes(2);
     for (const [, filtros] of mocks.listarAlunos.mock.calls as unknown as [unknown, Record<string, unknown>][]) {
-      expect(filtros).toEqual({ busca: "ana", status: "ATIVO", paisId: null, turmaId: null, pagina: 1 });
+      expect(filtros).toEqual({ busca: "ana", status: "ATIVO", paisId: null, turmaId: null, pagina: 1, ordem: { campo: "nome", dir: "asc" } });
     }
+  });
+
+  it("a planilha sai na mesma ordem da tela (E1): `ordem`/`dir` da lista fechada chegam à consulta; fora dela, a padrão", async () => {
+    await exportar("?status=ATIVO&ordem=pais&dir=desc");
+    expect((mocks.listarAlunos.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ ordem: { campo: "pais", dir: "desc" } });
+    mocks.listarAlunos.mockClear();
+    await exportar("?ordem=cpf&dir=desc");
+    expect((mocks.listarAlunos.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1]).toMatchObject({ ordem: { campo: "nome", dir: "asc" } });
   });
 
   it("recorte inteiro (sem paginação) e chaves estranhas ignoradas", async () => {

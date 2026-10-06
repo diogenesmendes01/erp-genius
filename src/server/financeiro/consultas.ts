@@ -4,6 +4,8 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, numeroOuNull, semDecimais } from "@/server/_shared/decimal";
 import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 import { saldoAtual } from "./regras";
+import { orderByComissoes, type OrdemComissoes } from "./ordem-comissoes";
+import type { Ordenacao } from "@/lib/ordenacao";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "./vencimento-civil";
 
 function inicioDoMes() {
@@ -17,20 +19,19 @@ function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.Comis
     usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: usuario.id }, { vendedor: { gerenteComercialId: usuario.id } }] } : { vendedorId: usuario.id };
 }
 
-const ORDEM_COMISSOES = [{ vendedor: { nome: "asc" as const } }, { criadoEm: "desc" as const }, { id: "desc" as const }];
-
 export const COMISSOES_POR_PAGINA = 50;
 
 /**
  * Lista de /comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
- * página. Filtro por situação (em AND com o escopo), 50 por página, total filtrado.
+ * página. Filtro por situação (em AND com o escopo), 50 por página, total filtrado. Ordem pelo
+ * cabeçalho (E1) feita no banco, antes da página, com desempate por id; sem ordem, beneficiário crescente.
  */
-export async function listarComissoesPagina({ status, pagina }: { status: StatusComissao | null; pagina: number }) {
+export async function listarComissoesPagina({ status, pagina, ordem }: { status: StatusComissao | null; pagina: number; ordem?: Ordenacao<OrdemComissoes> }) {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
   const where: Prisma.ComissaoWhereInput = { AND: [escopoComissoes(usuario), status ? { status } : {}] };
   const [comissoes, total] = await Promise.all([
     prisma.comissao.findMany({
-      where, orderBy: ORDEM_COMISSOES, skip: (pagina - 1) * COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA,
+      where, orderBy: orderByComissoes(ordem), skip: (pagina - 1) * COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA,
       include: { vendedor: { select: { nome: true } } },
     }),
     prisma.comissao.count({ where }),

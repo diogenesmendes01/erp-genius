@@ -23,6 +23,8 @@ it("página vazia conserva retorno e não oferece próxima", async () => {
   mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
   expect(html).toContain("Nenhum acordo nesta página");
+  // Revisão R1 da #134 (B5): a volta ao início faz parte do vazio da página seguinte.
+  expect(html).toContain('<a class="underline" href="/financeiro/permuta">Ir para a primeira página</a>');
   expect(html).toContain("Anterior");
   expect(html).not.toContain("Próxima");
 });
@@ -31,6 +33,8 @@ it("inicia na primeira página sem link anterior", async () => {
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
   expect(mocks.consultar).toHaveBeenCalledWith(1);
   expect(html).not.toContain("Anterior");
+  expect(html).toContain("Nenhum acordo de permuta registrado.");
+  expect(html).not.toContain("nesta página");
 });
 
 it("lê a preferência somente depois da guarda e a encaminha à saída histórica", async () => {

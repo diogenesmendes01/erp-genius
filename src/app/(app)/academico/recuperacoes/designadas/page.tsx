@@ -20,7 +20,9 @@ export default async function Designadas({ searchParams }: { searchParams: Promi
       <AgendaPublicada agenda={i.agenda} />
       {r.dado!.modo === "historico" && i.realizacaoId ? <Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacaoId)}`}>Consultar registros desta recuperação</Link> : <><p>{i.realizada ? "Realização registrada; nota ou conferência pendente." : "Realização ainda não registrada."}</p><Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}`}>Abrir tentativa atribuída</Link></>}
     </article>)}
-    {!r.dado.itens.length && <EstadoVazio bloco>Nenhuma tentativa disponível nesta página.</EstadoVazio>}
+    {!r.dado.itens.length && (depoisId
+      ? <EstadoVazio bloco acao={<Link className="underline" href={`?${new URLSearchParams({ modo: r.dado.modo })}`}>Ir para a primeira página</Link>}>Nenhuma tentativa disponível nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>{r.dado.modo === "historico" ? "Nenhuma avaliação de recuperação no seu histórico." : "Nenhuma tentativa pendente atribuída a você."}</EstadoVazio>)}
     {r.dado.proximoId && <Link className="underline" href={`?${new URLSearchParams({ depoisId: r.dado.proximoId, modo: r.dado.modo })}`}>Próximas tentativas</Link>}
   </section>;
 }

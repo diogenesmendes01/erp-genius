@@ -71,4 +71,23 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(html).toContain("tentativaObservacoes=3&amp;paginaObservacoes=1");
     expect(html).toContain("pagina=7&amp;paginaTentativas=2");
   });
+
+  // Revisão R1 da #134 (B2/B5): a volta ao início das conferências preserva tentativas e observações.
+  it("conferências vazias numa página seguinte: a volta ao início preserva tentativas e observações", async () => {
+    mocks.sessao.mockResolvedValue({});
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    mocks.assinatura.mockResolvedValue({ ok: true, dado: { revisao: null, historico: [], pendencia: null, temProxima: false } });
+    mocks.processo.mockResolvedValue({ ok: true, dado: null });
+    mocks.conclusao.mockResolvedValue({ ok: true, dado: null });
+    mocks.final.mockResolvedValue({ ok: true, dado: null });
+    mocks.aplicacao.mockResolvedValue({ ok: true, dado: null });
+    const render = async (sp: Record<string, string>) => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m", propostaId: "p", artefatoId: "a" }), searchParams: Promise.resolve(sp) }));
+
+    const primeira = await render({});
+    expect(primeira).not.toContain("Nenhum registro nesta página.");
+    const seguinte = await render({ pagina: "3", paginaTentativas: "2", tentativaObservacoes: "5", paginaObservacoes: "4" });
+    expect(seguinte).toContain("Nenhum registro nesta página.");
+    expect(seguinte).toContain('href="/matriculas/m/contrato/aditivos/p/originais/a?pagina=1&amp;paginaTentativas=2&amp;tentativaObservacoes=5&amp;paginaObservacoes=4">Ir para a primeira página</a>');
+    expect(seguinte).toContain('href="/matriculas/m/contrato/aditivos/p/originais/a?pagina=2&amp;paginaTentativas=2&amp;tentativaObservacoes=5&amp;paginaObservacoes=4">Anteriores</a>');
+  });
 });

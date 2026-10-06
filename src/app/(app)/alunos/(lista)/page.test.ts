@@ -46,6 +46,20 @@ describe("/alunos (página)", () => {
     expect(mocks.exportar.mock.calls[0][0]).toMatchObject({ tipo: "alunos", query: "busca=ana&status=ATIVO" });
   });
 
+  it("ordem da URL (E1) vai para a consulta, para a lista (cabeçalho marcado) e para a exportação", async () => {
+    await pagina({ status: "ATIVO", ordem: "pais", dir: "desc", pagina: "2" });
+    expect(mocks.pagina).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ ordem: { campo: "pais", dir: "desc" }, pagina: 2 }));
+    expect((mocks.lista.mock.calls[0][0] as { filtros: { ordem: unknown } }).filtros.ordem).toEqual({ campo: "pais", dir: "desc" });
+    expect(mocks.exportar.mock.calls[0][0]).toMatchObject({ tipo: "alunos", query: "status=ATIVO&ordem=pais&dir=desc" });
+  });
+
+  it("ordem fora da lista fechada: a padrão (nome crescente), sem parâmetro na exportação nem no redirecionamento", async () => {
+    await pagina({ ordem: "financeiro", dir: "desc" });
+    expect(mocks.pagina).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ ordem: { campo: "nome", dir: "asc" } }));
+    expect(mocks.exportar.mock.calls[0][0]).toMatchObject({ query: "" });
+    await expect(pagina({ ordem: "status", dir: "desc", pagina: "9" })).rejects.toThrow("REDIRECT /alunos?ordem=status&dir=desc&pagina=3");
+  });
+
   it("sem papel de alunos: acesso negado, sem consultar", async () => {
     mocks.papeis.mockResolvedValueOnce(null);
     expect(await pagina({})).toContain("Acesso negado");
