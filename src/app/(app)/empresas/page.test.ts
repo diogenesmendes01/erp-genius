@@ -31,6 +31,15 @@ describe("/empresas (página)", () => {
     await expect(pagina({ situacao: "ativas", pagina: "9" })).rejects.toThrow("REDIRECT /empresas?situacao=ativas&pagina=3");
   });
 
+  it("ordem da URL (E1) vai para a consulta e para a lista (cabeçalho marcado); fora da lista fechada, nenhuma", async () => {
+    await pagina({ ordem: "nome", dir: "desc", situacao: "ativas" });
+    expect(mocks.pagina).toHaveBeenCalledWith(expect.objectContaining({ ordem: { campo: "nome", dir: "desc" }, situacao: "ativas" }));
+    expect((mocks.lista.mock.calls[0][0] as { filtros: { ordem: unknown } }).filtros.ordem).toEqual({ campo: "nome", dir: "desc" });
+    await pagina({ ordem: "pais", dir: "asc" });
+    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.objectContaining({ ordem: null }));
+    await expect(pagina({ ordem: "colaboradores", dir: "desc", pagina: "9" })).rejects.toThrow("REDIRECT /empresas?ordem=colaboradores&dir=desc&pagina=3");
+  });
+
   it("sem papel: acesso negado, sem consultar", async () => {
     mocks.papeis.mockResolvedValueOnce(null);
     expect(await pagina({})).toContain("Acesso negado");

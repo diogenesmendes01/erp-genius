@@ -46,6 +46,29 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html).toContain('href="/empresas?situacao=ativas&amp;pagina=3"');
   });
 
+  it("cabeçalhos ordenáveis (E1): sem ordem na URL nenhum marcado; links levam os filtros e voltam à página 1", () => {
+    const html = render({ empresas: [empresa(1)], total: 60, totalBase: 60, filtros: lerFiltrosEmpresas({ situacao: "ativas", pagina: "2" }) });
+    expect(html.match(/aria-sort="none"/g)).toHaveLength(4);
+    expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=codigo&amp;dir=asc"[^>]*>Código</);
+    expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=nome&amp;dir=asc"[^>]*>Empresa</);
+    // Contagem começa do maior no primeiro clique.
+    expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=colaboradores&amp;dir=desc"[^>]*>Colaboradores</);
+    expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=situacao&amp;dir=asc"[^>]*>Status</);
+    // País (sem relação para ordenar) e faturas a receber (contagem filtrada) não ordenam.
+    expect(html).toContain('<th class="px-4 py-2 font-medium">País</th>');
+    expect(html).not.toContain('type="hidden"');
+  });
+
+  it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {
+    const empresas = Array.from({ length: EMPRESAS_POR_PAGINA }, (_, i) => empresa(i));
+    const html = render({ empresas, total: 120, totalBase: 300, filtros: lerFiltrosEmpresas({ busca: "acme", ordem: "colaboradores", dir: "desc", pagina: "2" }) });
+    expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/empresas\?busca=acme&amp;ordem=colaboradores&amp;dir=asc"[^>]*>Colaboradores</);
+    expect(html.match(/aria-sort="none"/g)).toHaveLength(3);
+    expect(html).toContain('href="/empresas?busca=acme&amp;ordem=colaboradores&amp;dir=desc&amp;pagina=3"');
+    expect(html).toMatch(/<a[^>]*href="\/empresas\?ordem=colaboradores&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toContain('<input type="hidden" name="ordem" value="colaboradores"/>');
+  });
+
   it("enquanto navega: botão desabilitado com \"Buscando…\" e tabela aria-busy", () => {
     pendente.valor = true;
     try {

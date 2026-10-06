@@ -79,6 +79,31 @@ describe("AlunosLista (filtros na URL)", () => {
     expect(html).toContain("51–100 de 120 alunos");
   });
 
+  it("cabeçalhos ordenáveis (E1): Aluno, País e Status; padrão = Aluno crescente; links com os filtros e sem a página", () => {
+    const html = render({ alunos: [aluno(1)], total: 120, totalBase: 120, filtros: lerFiltrosAlunos({ status: "ATIVO", pagina: "2" }), exibirFinanceiro: true });
+    expect(html.match(/aria-sort="/g)).toHaveLength(3);
+    expect(html).toMatch(/aria-sort="ascending"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=nome&amp;dir=desc"[^>]*>Aluno</);
+    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
+    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
+    // Turma (várias por aluno) e Financeiro (calculado em memória) não ordenam.
+    expect(html).toContain('<th class="px-4 py-2 font-medium">Turma</th>');
+    expect(html).toContain('<th class="px-4 py-2 font-medium">Financeiro</th>');
+    expect(html).not.toContain('type="hidden"');
+  });
+
+  it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {
+    const html = render({
+      alunos: Array.from({ length: 50 }, (_, i) => aluno(i)), total: 120, totalBase: 120,
+      filtros: lerFiltrosAlunos({ busca: "ana", ordem: "pais", dir: "desc", pagina: "2" }),
+    });
+    expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
+    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=nome&amp;dir=asc"[^>]*>Aluno</);
+    expect(html).toContain('href="/alunos?busca=ana&amp;ordem=pais&amp;dir=desc&amp;pagina=3"');
+    expect(html).toMatch(/<a[^>]*href="\/alunos\?ordem=pais&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toContain('<input type="hidden" name="ordem" value="pais"/>');
+    expect(html).toContain('<input type="hidden" name="dir" value="desc"/>');
+  });
+
   it("coluna Financeiro segue a permissão, não os dados da página", () => {
     expect(render({ exibirFinanceiro: true })).toContain(">Financeiro<");
     expect(render({ exibirFinanceiro: false })).not.toContain(">Financeiro<");

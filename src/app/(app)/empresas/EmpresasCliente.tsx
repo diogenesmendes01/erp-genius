@@ -9,11 +9,15 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
+import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import {
   EMPRESAS_POR_PAGINA,
   camposDosFiltrosEmpresas,
   filtrosEmpresasParaQuery,
   hrefDosCamposEmpresas,
+  hrefEmpresas,
+  lerFiltrosEmpresas,
+  parametrosFiltrosEmpresas,
   temFiltroEmpresas,
   type FiltrosEmpresas,
 } from "@/server/empresas/filtros";
@@ -53,7 +57,10 @@ export function EmpresasCliente({
   const filtrando = temFiltroEmpresas(filtros);
   const inicio = total ? (filtros.pagina - 1) * EMPRESAS_POR_PAGINA + 1 : 0;
   const fim = (filtros.pagina - 1) * EMPRESAS_POR_PAGINA + empresas.length;
-  const lista = useFiltrosUrl({ campos: camposDosFiltrosEmpresas(filtros), hrefDosCampos: hrefDosCamposEmpresas });
+  // A ordem escolhida no cabeçalho (E1) não é campo do formulário: buscar/filtrar/limpar a mantém.
+  const lista = useFiltrosUrl({ campos: camposDosFiltrosEmpresas(filtros), hrefDosCampos: (c) => hrefDosCamposEmpresas(c, filtros.ordem) });
+  const limpar = hrefEmpresas({ ...lerFiltrosEmpresas({}), ordem: filtros.ordem });
+  const coluna = { ordenacao: filtros.ordem, rota: "/empresas", parametros: parametrosFiltrosEmpresas(filtros), aoClicar: lista.aoClicar };
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState("");
   const [paisId, setPaisId] = useState("");
@@ -130,10 +137,15 @@ export function EmpresasCliente({
             <option value="">Todos os países</option>
             {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
+          {/* Sem JavaScript, o formulário GET também leva a ordem escolhida (sem ordem na URL, vale a padrão). */}
+          {filtros.ordem && <>
+            <input type="hidden" name="ordem" value={filtros.ordem.campo} />
+            <input type="hidden" name="dir" value={filtros.ordem.dir} />
+          </>}
           <button type="submit" disabled={lista.buscando} className={botaoClasses({ variante: "secundario" })}>
             {lista.buscando ? "Buscando…" : "Buscar"}
           </button>
-          {filtrando && <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
+          {filtrando && <Link href={limpar} onClick={lista.aoClicar(limpar)} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
         </form>
 
         <p className="mb-2 text-xs text-gray-500" aria-live="polite">
@@ -146,9 +158,9 @@ export function EmpresasCliente({
           <EstadoVazio bloco aria-busy={lista.buscando}>
             {/* Estado vazio duplo: nenhuma cadastrada × filtro sem resultado (este oferece a saída). */}
             {totalBase === 0 ? "Nenhuma empresa ainda. Crie a primeira para registrar o responsável financeiro de contratos individuais." : filtrando ? (
-              <>Nenhuma empresa com esses filtros. <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-brand-700 hover:underline">Limpar filtros</Link></>
+              <>Nenhuma empresa com esses filtros. <Link href={limpar} onClick={lista.aoClicar(limpar)} className="text-brand-700 hover:underline">Limpar filtros</Link></>
             ) : (
-              <>Nenhuma empresa nesta página. <Link href="/empresas" onClick={lista.aoClicar("/empresas")} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
+              <>Nenhuma empresa nesta página. <Link href={limpar} onClick={lista.aoClicar(limpar)} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
             )}
           </EstadoVazio>
         ) : (
@@ -156,13 +168,14 @@ export function EmpresasCliente({
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-gray-50 text-left text-xs text-gray-500">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Código</th>
-                  <th className="px-4 py-2 font-medium">Empresa</th>
+                  {/* Ordenação no servidor (E1); País e Faturas a receber não têm ordem no banco. */}
+                  <ColunaOrdenavel campo="codigo" rotulo="Código" {...coluna} />
+                  <ColunaOrdenavel campo="nome" rotulo="Empresa" {...coluna} />
                   <th className="px-4 py-2 font-medium">País</th>
-                  <th className="px-4 py-2 font-medium">Colaboradores</th>
+                  <ColunaOrdenavel campo="colaboradores" rotulo="Colaboradores" direcaoInicial="desc" {...coluna} />
                   {/* Faturas FECHADAS = emitidas e aguardando pagamento (StatusFaturaB2B). */}
                   <th className="px-4 py-2 font-medium">Faturas a receber</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
+                  <ColunaOrdenavel campo="situacao" rotulo="Status" {...coluna} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
