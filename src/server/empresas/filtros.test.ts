@@ -90,3 +90,10 @@ describe("teto da busca de empresas", () => {
     expect(JSON.stringify(where)).not.toContain('"g"');
   });
 });
+
+// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão.
+describe("ordem de /empresas: chave herdada de Object", () => {
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
+    expect(lerFiltrosEmpresas({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosEmpresas({}).ordem);
+  });
+});

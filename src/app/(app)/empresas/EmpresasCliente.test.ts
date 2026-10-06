@@ -11,6 +11,14 @@ vi.mock("react", async (original) => {
   return { ...react, useTransition: () => [pendente.valor, (f: () => void) => f()] as const };
 });
 
+// Captura as opções passadas a useFiltrosUrl (o caminho com JavaScript: buscar/filtrar navega pelo
+// hrefDosCampos da tela) — revisão R1 da #136, B5.
+const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
+vi.mock("@/lib/filtros-url", async (original) => {
+  const real = await original<typeof import("@/lib/filtros-url")>();
+  return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => { capturado.opcoes.push(o as never); return real.useFiltrosUrl(o); } };
+});
+
 import { EmpresasCliente } from "./EmpresasCliente";
 import { EMPRESAS_POR_PAGINA, lerFiltrosEmpresas } from "@/server/empresas/filtros";
 
@@ -48,7 +56,7 @@ describe("EmpresasCliente (filtros na URL)", () => {
 
   it("cabeçalhos ordenáveis (E1): sem ordem na URL nenhum marcado; links levam os filtros e voltam à página 1", () => {
     const html = render({ empresas: [empresa(1)], total: 60, totalBase: 60, filtros: lerFiltrosEmpresas({ situacao: "ativas", pagina: "2" }) });
-    expect(html.match(/aria-sort="none"/g)).toHaveLength(4);
+    expect(html).not.toContain("aria-sort"); // nenhuma coluna ordenada: a ordem padrão é "mais recentes primeiro"
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=codigo&amp;dir=asc"[^>]*>Código</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=nome&amp;dir=asc"[^>]*>Empresa</);
     // Contagem começa do maior no primeiro clique.
@@ -63,7 +71,7 @@ describe("EmpresasCliente (filtros na URL)", () => {
     const empresas = Array.from({ length: EMPRESAS_POR_PAGINA }, (_, i) => empresa(i));
     const html = render({ empresas, total: 120, totalBase: 300, filtros: lerFiltrosEmpresas({ busca: "acme", ordem: "colaboradores", dir: "desc", pagina: "2" }) });
     expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/empresas\?busca=acme&amp;ordem=colaboradores&amp;dir=asc"[^>]*>Colaboradores</);
-    expect(html.match(/aria-sort="none"/g)).toHaveLength(3);
+    expect(html.match(/aria-sort="/g)).toHaveLength(1);
     expect(html).toContain('href="/empresas?busca=acme&amp;ordem=colaboradores&amp;dir=desc&amp;pagina=3"');
     expect(html).toMatch(/<a[^>]*href="\/empresas\?ordem=colaboradores&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
     expect(html).toContain('<input type="hidden" name="ordem" value="colaboradores"/>');
@@ -80,5 +88,26 @@ describe("EmpresasCliente (filtros na URL)", () => {
     } finally {
       pendente.valor = false;
     }
+  });
+});
+
+describe("EmpresasCliente: a ordem escolhida sobrevive à busca, ao formulário sem JS e à volta ao início (R1 da #136, B5)", () => {
+  it("buscar/filtrar com JavaScript leva ordem e direção", () => {
+    render({ empresas: [empresa(1)], total: 1, totalBase: 1, filtros: lerFiltrosEmpresas({ ordem: "colaboradores", dir: "desc" }) });
+    const o = capturado.opcoes.at(-1)!;
+    const href = o.hrefDosCampos({ ...o.campos, busca: "acme" });
+    expect(href).toContain("busca=acme");
+    expect(href).toContain("ordem=colaboradores&dir=desc");
+  });
+
+  it("formulário sem JavaScript: ordem e direção em campos ocultos (decrescente não vira crescente)", () => {
+    const html = render({ empresas: [empresa(1)], total: 1, totalBase: 1, filtros: lerFiltrosEmpresas({ ordem: "colaboradores", dir: "desc" }) });
+    expect(html).toContain('<input type="hidden" name="ordem" value="colaboradores"/>');
+    expect(html).toContain('<input type="hidden" name="dir" value="desc"/>');
+  });
+
+  it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
+    const html = render({ empresas: [], total: 5, totalBase: 5, filtros: lerFiltrosEmpresas({ ordem: "nome", dir: "desc", pagina: "3" }) });
+    expect(html).toMatch(new RegExp('<a[^>]*href="/empresas[?][^"]*ordem=nome&amp;dir=desc[^"]*"[^>]*>Ir para a primeira página</a>'));
   });
 });

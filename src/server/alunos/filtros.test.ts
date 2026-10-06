@@ -150,3 +150,10 @@ describe("ordenação da lista (E1 — ColunaOrdenavel)", () => {
     expect(parametrosFiltrosAlunos(f)).toEqual({ busca: "ana" });
   });
 });
+
+// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão (e não vai para a URL).
+describe("ordem de /alunos: chave herdada de Object", () => {
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
+    expect(lerFiltrosAlunos({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosAlunos({}).ordem);
+  });
+});

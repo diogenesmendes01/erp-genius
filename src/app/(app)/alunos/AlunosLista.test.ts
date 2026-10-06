@@ -11,6 +11,14 @@ vi.mock("react", async (original) => {
   return { ...react, useTransition: () => [pendente.valor, (f: () => void) => f()] as const };
 });
 vi.mock("./ImportarAlunosModal", () => ({ ImportarAlunosModal: () => null }));
+// Captura as opções passadas a useFiltrosUrl (o caminho com JavaScript: buscar/filtrar navega pelo
+// hrefDosCampos da tela) — revisão R1 da #136, B5.
+const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
+vi.mock("@/lib/filtros-url", async (original) => {
+  const real = await original<typeof import("@/lib/filtros-url")>();
+  return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => { capturado.opcoes.push(o as never); return real.useFiltrosUrl(o); } };
+});
+
 
 import { AlunosLista, type AlunoRow } from "./AlunosLista";
 import { lerFiltrosAlunos } from "@/server/alunos/filtros";
@@ -81,10 +89,10 @@ describe("AlunosLista (filtros na URL)", () => {
 
   it("cabeçalhos ordenáveis (E1): Aluno, País e Status; padrão = Aluno crescente; links com os filtros e sem a página", () => {
     const html = render({ alunos: [aluno(1)], total: 120, totalBase: 120, filtros: lerFiltrosAlunos({ status: "ATIVO", pagina: "2" }), exibirFinanceiro: true });
-    expect(html.match(/aria-sort="/g)).toHaveLength(3);
+    expect(html.match(/aria-sort="/g)).toHaveLength(1);
     expect(html).toMatch(/aria-sort="ascending"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=nome&amp;dir=desc"[^>]*>Aluno</);
-    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
-    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
     // Turma (várias por aluno) e Financeiro (calculado em memória) não ordenam.
     expect(html).toContain('<th class="px-4 py-2 font-medium">Turma</th>');
     expect(html).toContain('<th class="px-4 py-2 font-medium">Financeiro</th>');
@@ -97,7 +105,7 @@ describe("AlunosLista (filtros na URL)", () => {
       filtros: lerFiltrosAlunos({ busca: "ana", ordem: "pais", dir: "desc", pagina: "2" }),
     });
     expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
-    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=nome&amp;dir=asc"[^>]*>Aluno</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=nome&amp;dir=asc"[^>]*>Aluno</);
     expect(html).toContain('href="/alunos?busca=ana&amp;ordem=pais&amp;dir=desc&amp;pagina=3"');
     expect(html).toMatch(/<a[^>]*href="\/alunos\?ordem=pais&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
     expect(html).toContain('<input type="hidden" name="ordem" value="pais"/>');
@@ -107,5 +115,20 @@ describe("AlunosLista (filtros na URL)", () => {
   it("coluna Financeiro segue a permissão, não os dados da página", () => {
     expect(render({ exibirFinanceiro: true })).toContain(">Financeiro<");
     expect(render({ exibirFinanceiro: false })).not.toContain(">Financeiro<");
+  });
+});
+
+describe("AlunosLista: a ordem escolhida sobrevive à busca com JavaScript e à volta ao início (R1 da #136, B5)", () => {
+  it("buscar/filtrar com JavaScript leva ordem e direção", () => {
+    render({ alunos: [aluno(1)], total: 1, totalBase: 1, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc" }) });
+    const o = capturado.opcoes.at(-1)!;
+    const href = o.hrefDosCampos({ ...o.campos, busca: "maria" });
+    expect(href).toContain("busca=maria");
+    expect(href).toContain("ordem=pais&dir=desc");
+  });
+
+  it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
+    const html = render({ alunos: [], total: 5, totalBase: 5, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc", pagina: "3" }) });
+    expect(html).toMatch(new RegExp('<a[^>]*href="/alunos[?][^"]*ordem=pais&amp;dir=desc[^"]*"[^>]*>Ir para a primeira página</a>'));
   });
 });
