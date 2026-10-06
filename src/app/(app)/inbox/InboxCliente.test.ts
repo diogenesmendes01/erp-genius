@@ -7,7 +7,7 @@ vi.mock("@/server/whatsapp/acoes", () => ({ buscarVinculosInbox: vi.fn(), criarL
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
 vi.mock("@/server/comercial/acoes", () => ({ definirTemperatura: vi.fn(), moverEtapa: vi.fn(), registrarNotaInterna: vi.fn() }));
 
-import { InboxCliente } from "./InboxCliente";
+import { InboxCliente, EditarNomePainel } from "./InboxCliente";
 
 const mensagens = [
   { id: "m1", direcao: "ENTRADA", tipo: "TEXTO", corpo: "Oi", midiaPath: null, status: "RECEBIDA", origem: null, autorNome: null, templateNome: null, criadoEm: "2026-10-01T02:30:00.000Z" },
@@ -152,5 +152,34 @@ describe("InboxCliente — busca no servidor e lista cortada (E4)", () => {
 
   it("voltar para a lista (celular) mantém a busca", () => {
     expect(render({ busca: "ana", thread })).toMatch(/<a[^>]*href="\/inbox\?busca=ana"[^>]*>(?:(?!<\/a>).)*Conversas<\/a>/);
+  });
+});
+
+describe("EditarNomePainel — nota e dica chegam ao leitor de tela (o campo abre com foco)", () => {
+  const painel = (contato: Record<string, unknown>) => renderToStaticMarkup(createElement(EditarNomePainel, {
+    thread: { ...thread, contato: { ...thread.contato, ...contato } } as never, onFechar: () => {}, onFeito: () => {}, onErro: () => {},
+  }));
+  const descritos = (html: string) => {
+    const ids = html.match(/<input[^>]*aria-describedby="([^"]+)"/)?.[1].split(" ") ?? [];
+    // Busca literal: o id do useId tem ":" (ex.: ":R0:-nota").
+    return ids.map((id) => {
+      const inicio = html.indexOf(`id="${id}"`);
+      if (inicio < 0) return `(id ${id} sem elemento)`;
+      const corpo = html.indexOf(">", inicio) + 1;
+      return html.slice(corpo, html.indexOf("</p>", corpo));
+    });
+  };
+
+  it("com cadastro dando o nome: o campo descreve a nota e a dica", () => {
+    const textos = descritos(painel({ fonteNome: "aluno", alunoId: "a1", alunoNome: "Ana" }));
+    expect(textos).toHaveLength(2);
+    expect(textos[0]).toContain("Nesta conversa aparece o nome do cadastro do aluno.");
+    expect(textos[1]).toContain("Deixe em branco para voltar ao perfil do WhatsApp ou ao número.");
+  });
+
+  it("sem cadastro dando o nome: só a dica (nenhum id apontando para nada)", () => {
+    const textos = descritos(painel({ fonteNome: "contato", leadId: null }));
+    expect(textos).toHaveLength(1);
+    expect(textos[0]).toContain("Deixe em branco");
   });
 });
