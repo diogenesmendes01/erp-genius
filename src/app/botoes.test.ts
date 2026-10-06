@@ -5,12 +5,20 @@ import { describe, expect, it } from "vitest";
 import { MAPA_BOTOES } from "./botoes-mapa";
 
 // E1 (docs/42-auditoria-frontend-ux.md): o botão tem uma fonte só (botaoClasses / <Botao>, em
-// src/components/Botao.tsx). A migração é por ÁREA; nas áreas desta lista (que só cresce):
+// src/components/Botao.tsx). A migração é por ÁREA; nas áreas desta lista (que só cresce) e em
+// src/components:
 // - nenhum literal de classe (string, template, concatenação) desenha um botão primário à mão;
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
 const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/pipeline", "src/app/(app)/home", "src/app/(app)/carteiras", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"];
+
+/**
+ * Componentes compartilhados (src/components, com subpastas) seguem a mesma regra das áreas. Fica
+ * de fora só Botao.tsx: é a fonte das classes (os literais das variantes moram lá).
+ */
+const COMPONENTES = "src/components";
+const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
@@ -30,6 +38,9 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
+  "src/components/BarraMobile.tsx": 2, // botões só de ícone da barra do celular (menu, sair)
+  "src/components/Sidebar.tsx": 2, // item da navegação principal (ativo = fundo da marca) e contador de não lidas
+  "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: bg-brand-600 é seleção, não ação): o literal e o <Link>
 };
 
 /**
@@ -49,6 +60,13 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", 't === temperatura ? "Temperatura atual" : `Marcar como ${TEM', "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/app/(app)/pipeline/KanbanBoard.tsx": ["⠿ arrastar", "pf · Pessoa Física · Empresa (B2B)"], // alça de arrastar, seletor de tipo
+  "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
+  // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
+  // aplicar sugestão) como o único sinal de "gerado por IA"; nenhuma variante do Botao tem essa cor.
+  // Base e tamanho vêm do design system (BASE_BOTAO + TAMANHOS_BOTAO.sm); só a cor é própria.
+  "src/components/CopilotoSugestoes.tsx": ["gerar · Analisando… · Gerar sugestões", "Aplicar corrigido"],
+  "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
+  "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };
 
 /** Classes que podem acompanhar botaoClasses num className: só layout (margem, alinhamento, largura). */
@@ -259,6 +277,11 @@ const arquivos = [
   ...(readdirSync("src/app/(app)", { withFileTypes: true }) as Dirent[])
     .filter((d) => d.isFile() && /\.tsx$/.test(d.name))
     .map((d) => ({ arquivo: `src/app/(app)/${d.name}`, conteudo: readFileSync(join("src/app/(app)", d.name), "utf-8") })),
+  // Componentes compartilhados, com subpastas (um componente novo já nasce sob a trava).
+  ...(readdirSync(COMPONENTES, { recursive: true }) as string[])
+    .filter((f) => /\.tsx$/.test(f))
+    .map((f) => ({ arquivo: join(COMPONENTES, f).split("\\").join("/"), conteudo: readFileSync(join(COMPONENTES, f), "utf-8") }))
+    .filter(({ arquivo }) => arquivo !== FONTE_DO_BOTAO),
 ];
 
 describe("botões nas áreas migradas", () => {
@@ -268,6 +291,12 @@ describe("botões nas áreas migradas", () => {
       return achados.length > (NAO_SAO_BOTOES_DE_ACAO[arquivo] ?? 0) ? [`${arquivo}: ${achados.join(" | ")}`] : [];
     });
     expect(ofensores).toEqual([]);
+  });
+
+  it("src/components está sob a trava (menos a fonte das classes, Botao.tsx)", () => {
+    const componentes = arquivos.filter(({ arquivo }) => arquivo.startsWith(`${COMPONENTES}/`)).map(({ arquivo }) => arquivo);
+    expect(componentes).toEqual(expect.arrayContaining(["src/components/CopilotoSugestoes.tsx", "src/components/PagamentoModal.tsx", "src/components/EstadoRota.tsx", "src/components/ExportarPlanilha.tsx"]));
+    expect(componentes).not.toContain(FONTE_DO_BOTAO);
   });
 
   it("todo o painel está migrado: cada área de src/app/(app) está na lista (área nova já nasce sob a trava)", () => {
