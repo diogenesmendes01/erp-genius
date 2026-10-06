@@ -10,6 +10,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 
 const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario" });
@@ -91,7 +92,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
       {/* Fora do formulário: no sucesso ele fecha, e a confirmação continua visível no lugar do botão. */}
       <FeedbackAcao erro={alvo === `form:${m.id}` ? acao.erro : null} sucesso={alvo === `form:${m.id}` ? acao.sucesso : undefined} />
       {m.solicitacoes.map((p) => <div key={p.id} className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
-        <p className="font-medium">{p.bloquear ? "Restrição manual" : "Liberação manual"} · {p.status === "PENDENTE" ? "Aguardando decisão" : p.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</p>
+        <p className="font-medium">{p.bloquear ? "Restrição manual" : "Liberação manual"} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, p.status)}</p>
         <p>{p.motivo}</p>
         <HistoricoSolicitacaoAcessoAulas solicitacao={p} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         {p.podeDecidir && <div className="space-y-2">

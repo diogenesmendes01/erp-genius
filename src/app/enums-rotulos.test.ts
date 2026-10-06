@@ -13,12 +13,15 @@ import {
   StatusPropostaConciliacaoFinanceiraMigracao, StatusPropostaEntradaFinanceiraHistoricaMigracao,
   StatusPropostaPresencaHistoricaMigracao, StatusReservaSegundaChamada, StatusReservaVaga, StatusSolicitacaoEncerramento,
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
-  TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda,
+  TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
+  FinalidadeNumero, FormaAgendaOferta,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { PagadorEntradaFinanceiraHistoricaSchema } from "@/server/migracao/entrada-financeira-historica-schema";
+import { OcorrenciaHorasSchema } from "@/server/matricula/ocorrencia-horas";
+import { SaldoCompraHorasSchema } from "@/server/matricula/saldo-horas";
 
 // E5 (docs/42-auditoria-frontend-ux.md §5.7): enum cru na tela ("Estado: PREVISTO", "COMPREENSAO ORAL",
 // "PENDENTE_DECISAO") e mapas de rótulo soltos em telas (30 ad-hoc em 23 arquivos). A trava tem três
@@ -68,13 +71,57 @@ const CAMPOS_ENUM = new Set([
   "statusMatricula", "matriculaStatus", "encontroStatus", "statusReserva", "statusBeneficio", "statusMeta",
   "alcance", "classificacao", "categoria", "modalidade", "unidade", "etapa", "forma", "temperatura", "segmento", "vigencia",
 ]);
+/** Nomes exatos que também carregam enum (revisão R1 da #138, B1). */
+const CAMPOS_ENUM_EXATOS = new Set(["decisao", "ambiente", "destino", "desfecho"]);
+/** Bases que nomeiam enum também com complemento (`estadoEnvio`, `ocorrenciaHistoricaTipo`). */
+const BASES_COMPOSTAS = ["status", "situacao", "estado", "tipo", "participacao", "desfecho", "finalidade", "classificacao"];
+/** Complemento que faz do campo um identificador, data ou texto — não o enum (`statusId`, `estadoEm`, `tipoNome`). */
+const COMPLEMENTO_NAO_ENUM = /(Id|Ids|Em|Hash|Nome|Codigo|Texto|Rotulo|Label|Versao|Conferido)$/;
+/** Nome de campo de enum: o nome da lista (`status`, `decisao`), a base com complemento
+ * (`estadoEnvio`, `participacaoAnterior`) ou o complemento com a base no fim (`ocorrenciaHistoricaTipo`). */
+export const nomeDeEnum = (nome: string) => CAMPOS_ENUM.has(nome) || CAMPOS_ENUM_EXATOS.has(nome)
+  || (!COMPLEMENTO_NAO_ENUM.test(nome) && BASES_COMPOSTAS.some((b) => (nome.startsWith(b) && /^[A-Z]/.test(nome.slice(b.length)))
+    || (nome.length > b.length && nome.endsWith(b[0].toUpperCase() + b.slice(1)))));
 /** Atributos JSX que são texto lido pela pessoa (os demais — key, href, name, value… — não são). */
 const ATRIBUTOS_TEXTO = new Set(["title", "aria-label", "placeholder", "alt", "aria-description"]);
 
 const semEmbrulho = (e: ts.Expression): ts.Expression => {
   let atual = e;
-  while (ts.isParenthesizedExpression(atual) || ts.isNonNullExpression(atual) || ts.isAsExpression(atual)) atual = atual.expression;
+  while (ts.isParenthesizedExpression(atual) || ts.isNonNullExpression(atual) || ts.isAsExpression(atual) || ts.isSatisfiesExpression(atual)) atual = atual.expression;
   return atual;
+};
+/** Tira embrulhos que não mudam o texto: `String(x)`, `x.toString()`, `` `${x}` `` sozinho. */
+const semConversao = (e: ts.Expression): ts.Expression => {
+  let x = semEmbrulho(e);
+  for (;;) {
+    if (ts.isCallExpression(x) && ts.isIdentifier(x.expression) && x.expression.text === "String" && x.arguments.length === 1) x = semEmbrulho(x.arguments[0]);
+    else if (ts.isCallExpression(x) && ts.isPropertyAccessExpression(x.expression) && x.expression.name.text === "toString" && !x.arguments.length) x = semEmbrulho(x.expression.expression);
+    else if (ts.isTemplateExpression(x) && !x.head.text && x.templateSpans.length === 1 && !x.templateSpans[0].literal.text) x = semEmbrulho(x.templateSpans[0].expression);
+    else return x;
+  }
+};
+/** Valores de texto das constantes do arquivo (`const SEP = "_"`), por nome — para argumento passado por nome. */
+function constantesDeTexto(sf: ts.SourceFile): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  visitar(sf, (n) => {
+    if (!ts.isVariableDeclaration(n) || !ts.isIdentifier(n.name) || !n.initializer) return;
+    const i = semEmbrulho(n.initializer);
+    if (ts.isStringLiteralLike(i)) m.set(n.name.text, [...(m.get(n.name.text) ?? []), i.text]);
+  });
+  return m;
+}
+/** Os textos que a expressão pode ser: literal, ou constante do arquivo com esse nome. */
+const textosDe = (e: ts.Expression | undefined, consts: Map<string, string[]>): string[] => {
+  if (!e) return [];
+  const x = semEmbrulho(e);
+  if (ts.isStringLiteralLike(x)) return [x.text];
+  return ts.isIdentifier(x) ? consts.get(x.text) ?? [] : [];
+};
+/** Regex que pega "_" e não pega letra nem dígito (`/_/g`, `/_+/g`, `/[_]/g`, `/[_-]+/g`…). */
+const regexDeSublinhado = (literal: string) => {
+  const m = /^\/(.*)\/([a-z]*)$/s.exec(literal);
+  if (!m) return false;
+  try { const re = new RegExp(m[1], m[2].replace(/[gy]/g, "")); return re.test("_") && !re.test("a") && !re.test("A") && !re.test("0"); } catch { return false; }
 };
 /** Expressões que podem chegar ao texto: ramos do ternário e lados de ??/||/&&. */
 function folhas(e: ts.Expression): ts.Expression[] {
@@ -87,10 +134,39 @@ function folhas(e: ts.Expression): ts.Expression[] {
   }
   return [x];
 }
-const campoEnum = (e: ts.Expression) => {
-  const x = semEmbrulho(e);
-  return ts.isPropertyAccessExpression(x) && CAMPOS_ENUM.has(x.name.text) ? x : null;
-};
+/** Campo de enum: `x.status`, `x["status"]`, sob `String()`/`toString()`, ou nome local que guarda um
+ * (`const s = d.status`, `const { status } = d`, `({ status }) =>`). O escopo é o arquivo: um nome que
+ * em algum lugar do arquivo guarda enum conta em todo ele (falha fechada). */
+function detectorDeCampo(sf: ts.SourceFile) {
+  const aliases = new Set<string>();
+  const campo = (e: ts.Expression): ts.Expression | null => {
+    const x = semConversao(e);
+    if (ts.isPropertyAccessExpression(x) && nomeDeEnum(x.name.text)) return x;
+    if (ts.isElementAccessExpression(x) && ts.isStringLiteralLike(x.argumentExpression) && nomeDeEnum(x.argumentExpression.text)) return x;
+    if (ts.isIdentifier(x) && aliases.has(x.text)) return x;
+    // Lista de enums em texto: `itens.map((i) => i.status).join(", ")` ou só o `.map(...)` no JSX.
+    if (ts.isCallExpression(x) && ts.isPropertyAccessExpression(x.expression)) {
+      const metodo = x.expression.name.text, [fn] = x.arguments;
+      if (metodo === "join") return campo(x.expression.expression);
+      if ((metodo === "map" || metodo === "flatMap") && fn && ts.isArrowFunction(fn) && !ts.isBlock(fn.body)) return campo(fn.body);
+    }
+    return null;
+  };
+  // Ponto fixo: um alias pode guardar outro (`const a = d.status; const b = a;`).
+  for (let mudou = true; mudou;) {
+    mudou = false;
+    visitar(sf, (n) => {
+      let nome: string | null = null;
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && campo(n.initializer)) nome = n.name.text;
+      if (ts.isBindingElement(n) && ts.isIdentifier(n.name) && !n.dotDotDotToken) {
+        const chave = n.propertyName ? (ts.isIdentifier(n.propertyName) || ts.isStringLiteral(n.propertyName) ? n.propertyName.text : null) : n.name.text;
+        if (chave && ts.isObjectBindingPattern(n.parent) && nomeDeEnum(chave)) nome = n.name.text;
+      }
+      if (nome && !aliases.has(nome)) { aliases.add(nome); mudou = true; }
+    });
+  }
+  return campo;
+}
 /** O template está em posição de texto? (filho de JSX ou atributo de texto, atravessando ternário e ??). */
 function templateEmTexto(t: ts.TemplateExpression): boolean {
   let no: ts.Node = t;
@@ -108,13 +184,15 @@ export function enumsCrus(fonte: string, arquivo = "x.tsx"): EnumCru[] {
   const sf = arvore(fonte, arquivo);
   const achados: EnumCru[] = [];
   const achar = (tipo: EnumCru["tipo"], no: ts.Node) => achados.push({ tipo, trecho: no.getText(sf).replace(/\s+/g, " ").slice(0, 90), linha: linhaDe(sf, no) });
+  const consts = constantesDeTexto(sf), campoEnum = detectorDeCampo(sf);
   visitar(sf, (n) => {
     if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)) {
       const metodo = n.expression.name.text, [a, b] = n.arguments;
-      // x.replaceAll("_", " "), x.replace(/_/g, " "), x.replace("_", " "), x.split("_").join(" ")
-      const sublinhado = (arg?: ts.Expression) => !!arg && ((ts.isStringLiteralLike(arg) && arg.text === "_") || (ts.isRegularExpressionLiteral(arg) && /^\/_\/[gimsuy]*$/.test(arg.text)));
-      if ((metodo === "replaceAll" || metodo === "replace") && sublinhado(a) && !!b && ts.isStringLiteralLike(b) && b.text === " ") achar("sublinhado", n);
-      if (metodo === "join" && a && ts.isStringLiteralLike(a) && a.text === " ") {
+      // x.replaceAll("_", " "), x.replace(/_+/g, " "), x.replace(SEP, " "), x.split("_").join(" ")
+      const sublinhado = (arg?: ts.Expression) => !!arg && (textosDe(arg, consts).includes("_") || (ts.isRegularExpressionLiteral(semEmbrulho(arg)) && regexDeSublinhado(semEmbrulho(arg).getText(sf))));
+      const espaco = (arg?: ts.Expression) => textosDe(arg, consts).includes(" ");
+      if ((metodo === "replaceAll" || metodo === "replace") && sublinhado(a) && espaco(b)) achar("sublinhado", n);
+      if (metodo === "join" && espaco(a)) {
         const alvo = semEmbrulho(n.expression.expression);
         if (ts.isCallExpression(alvo) && ts.isPropertyAccessExpression(alvo.expression) && alvo.expression.name.text === "split" && sublinhado(alvo.arguments[0])) achar("sublinhado", n);
       }
@@ -123,7 +201,8 @@ export function enumsCrus(fonte: string, arquivo = "x.tsx"): EnumCru[] {
     }
     // {x.status} (ou {cond ? x.status : …}, {x.status ?? "—"}) como texto do JSX
     if (ts.isJsxExpression(n) && n.expression && (ts.isJsxElement(n.parent) || ts.isJsxFragment(n.parent))) {
-      for (const folha of folhas(n.expression)) if (campoEnum(folha)) achar("texto", folha);
+      // Template fica com o detector de template abaixo (um achado só).
+      for (const folha of folhas(n.expression)) if (!ts.isTemplateExpression(semEmbrulho(folha)) && campoEnum(folha)) achar("texto", folha);
     }
     // `Situação: ${x.status}` em texto do JSX
     if (ts.isTemplateExpression(n) && templateEmTexto(n)) {
@@ -133,12 +212,17 @@ export function enumsCrus(fonte: string, arquivo = "x.tsx"): EnumCru[] {
   return achados;
 }
 
-/** Campos com nome de enum que já chegam como texto (o servidor rotulou) ou não são enum. Cada um casa com UM achado. */
-const TEXTO_JA_ROTULADO: { arquivo: string; trecho: string; motivo: string }[] = [
+/** Campos com nome de enum que já chegam como texto (o servidor rotulou) ou não são enum. Cada um casa com
+ * exatamente `vezes` achados (1, se omitido). */
+const TEXTO_JA_ROTULADO: { arquivo: string; trecho: string; motivo: string; vezes?: number }[] = [
   { arquivo: "src/app/(app)/academico/recuperacoes/page.tsx", trecho: "item.estado", motivo: "o servidor já devolve o texto (\"Sem nota\", \"Oficializada\"…), server/avaliacoes/recuperacao-consulta.ts" },
   { arquivo: "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx", trecho: "c.tipo", motivo: "tipo de comissão já rotulado no servidor (\"Fixa\"/\"Percentual\"), server/contratos/aditivo-acerto-taxa-consulta.ts" },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", trecho: "acerto.alcance", motivo: "frase montada por descreverAcerto (\"todas as cobranças da matrícula\"…)" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", trecho: "t.categoria", motivo: "categoria do template na Meta (utility/marketing), texto livre e não enum do schema" },
+  { arquivo: "src/app/(app)/diario/regularizacoes-gravacao/RegularizacoesGravacao.tsx", trecho: "p.destino", motivo: "frase montada pela página (\"Aula T-01 — …\" / \"Reposição M-1 — Ana\"), regularizacoes-gravacao/page.tsx" },
+  { arquivo: "src/app/(app)/alunos/[id]/creditos/[creditoId]/DevolucaoCredito.tsx", trecho: "p.destino", motivo: "destino da devolução digitado pela pessoa (texto livre), server/financeiro/devolucao-credito.ts" },
+  { arquivo: "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx", trecho: "impacto.destino", vezes: 2, motivo: "código ou nome da turma de destino, resolvido no servidor (diario/correcao-reposicao-consulta.ts)" },
+  { arquivo: "src/app/(app)/configuracao/migracao/[loteId]/EnsaioVinculoMigracao.tsx", trecho: "statusOrigem", motivo: "situação no sistema de origem, texto do legado preservado (CorrespondenciaStatusMatriculaMigracao.statusOrigem é String)" },
 ];
 
 describe("(i) enum cru na tela — AST", () => {
@@ -153,9 +237,9 @@ describe("(i) enum cru na tela — AST", () => {
     expect(sobra.map((a) => `${a.arquivo}:${a.linha} ${a.trecho}`)).toEqual([]);
   });
 
-  it("cada exceção casa com exatamente um achado (exceção sem caso sai da lista)", () => {
+  it("cada exceção casa com exatamente os seus achados (exceção sem caso sai da lista)", () => {
     for (const e of TEXTO_JA_ROTULADO) {
-      expect(achados.filter((a) => a.tipo === "texto" && a.arquivo === e.arquivo && a.trecho === e.trecho), `${e.arquivo} ${e.trecho}`).toHaveLength(1);
+      expect(achados.filter((a) => a.tipo === "texto" && a.arquivo === e.arquivo && a.trecho === e.trecho), `${e.arquivo} ${e.trecho}`).toHaveLength(e.vezes ?? 1);
     }
   });
 
@@ -179,6 +263,30 @@ describe("(i) enum cru na tela — AST", () => {
       "const s = <input name={`nota-${n.habilidade}`} value={c.tipo} />;",
       'const t = i.status === "PREVISTO" ? 1 : 2; const u = f.get(`${p.papel}_nome`);',
       "const v = <p>{rotular(MAPA, x.tipo).toLowerCase()} {busca.trim().toLowerCase()}</p>;",
+    ].join("\n"))).toEqual([]);
+  });
+
+  it("autoteste (R1 da #138, B1): alias, desestruturação, String(), colchete, campo composto, regex e constante", () => {
+    const tipos = (fonte: string) => enumsCrus(fonte).map((a) => `${a.tipo}:${a.trecho}`);
+    expect(tipos("const s = d.status; const r = <p>{s}</p>;")).toEqual(["texto:s"]);
+    expect(tipos("const a = d.status; const b = a; const r = <p>{b}</p>;")).toEqual(["texto:b"]);
+    expect(tipos("const { situacao } = d; const r = <p>{situacao}</p>;")).toEqual(["texto:situacao"]);
+    expect(tipos("const { status: s } = d; const r = <p>{s}</p>;")).toEqual(["texto:s"]);
+    expect(tipos("function B({ estado }: P) { return <p>{estado}</p>; }")).toEqual(["texto:estado"]);
+    expect(tipos("const r = <p>{String(d.status)} {d.tipo.toString()}</p>;")).toEqual(["texto:String(d.status)", "texto:d.tipo.toString()"]);
+    expect(tipos("const r = <p>{`${d.status}`}</p>;")).toEqual(["texto:d.status"]);
+    expect(tipos('const r = <p>{d["status"]}</p>;')).toEqual(['texto:d["status"]']);
+    expect(tipos("const r = <p>{processo.estadoEnvio} {i.decisao} {f.participacaoAnterior} {o.ocorrenciaHistoricaTipo} {p.ambiente}</p>;")).toEqual([
+      "texto:processo.estadoEnvio", "texto:i.decisao", "texto:f.participacaoAnterior", "texto:o.ocorrenciaHistoricaTipo", "texto:p.ambiente",
+    ]);
+    expect(tipos('const r = <p>{xs.map((i) => i.status).join(", ")} {ys.map((y) => y.tipo)}</p>;')).toEqual(['texto:xs.map((i) => i.status).join(", ")', "texto:ys.map((y) => y.tipo)"]);
+    expect(tipos('const r = h.habilidade.replace(/_+/g, " ");')).toEqual(['sublinhado:h.habilidade.replace(/_+/g, " ")']);
+    expect(tipos('const r = x.replace(/[_]/g, " ");')).toEqual(['sublinhado:x.replace(/[_]/g, " ")']);
+    expect(tipos('const SEP = "_", ESP = " "; const r = x.replaceAll(SEP, ESP);')).toEqual(["sublinhado:x.replaceAll(SEP, ESP)"]);
+    // Não acusa: id/data/nome/texto de campo de enum, motivo da decisão, rótulo de produto, regex que não pega "_" sozinho.
+    expect(tipos([
+      "const r = <p>{d.statusId} {d.estadoEm} {d.tipoNome} {d.motivoDecisao} {d.decisaoId} {p.produtoDestino}</p>;",
+      'const s = x.replace(/a_b/g, " ");',
     ].join("\n"))).toEqual([]);
   });
 });
@@ -324,32 +432,84 @@ const CLASSE = /(^|\s)(bg|text|border|ring|from|to)-[a-z]/;
 export function mapasDeRotulo(fonte: string, enums: Map<string, string[]>, arquivo = "x.tsx"): MapaLocal[] {
   const sf = arvore(fonte, arquivo);
   const mapas: MapaLocal[] = [];
-  visitar(sf, (n) => {
-    if (!ts.isObjectLiteralExpression(n) || n.properties.length < 2) return;
-    const pares = n.properties.map((p) => {
-      if (!ts.isPropertyAssignment(p)) return null;
-      const chave = ts.isIdentifier(p.name) || ts.isStringLiteral(p.name) ? p.name.text : null;
-      const valor = ts.isStringLiteralLike(p.initializer) ? p.initializer.text : null;
-      return chave !== null && valor !== null ? { chave, valor } : null;
-    });
-    if (pares.some((p) => p === null)) return;
-    const validos = pares as { chave: string; valor: string }[];
-    if (!validos.every((p) => CODIGO.test(p.chave))) return;
-    // Rótulo: há texto com letra, e os valores não são códigos (de-para entre enums) nem classes CSS.
-    if (!validos.some((p) => /[A-Za-zÀ-ú]/.test(p.valor)) || validos.every((p) => CODIGO.test(p.valor)) || validos.some((p) => CLASSE.test(p.valor))) return;
-    const chaves = validos.map((p) => p.chave);
-    const donos = [...enums].filter(([, valores]) => chaves.every((c) => valores.includes(c))).map(([nome]) => nome);
-    if (!donos.length) return;
+  const consts = constantesDeTexto(sf);
+  // Nomes que vêm de src/lib/labels.ts (import nomeado ou namespace) — espalhar um deles num objeto da tela
+  // é reabrir o mapa central com outra redação.
+  const deLabels = new Set<string>();
+  for (const d of sf.statements) {
+    if (!ts.isImportDeclaration(d) || !ts.isStringLiteral(d.moduleSpecifier) || !/(^|\/)labels$/.test(d.moduleSpecifier.text)) continue;
+    const b = d.importClause?.namedBindings;
+    if (b && ts.isNamedImports(b)) for (const e of b.elements) deLabels.add(e.name.text);
+    if (b && ts.isNamespaceImport(b)) deLabels.add(b.name.text);
+  }
+  const ehMapaCentral = (e: ts.Expression): boolean => {
+    const x = semEmbrulho(e);
+    if (ts.isIdentifier(x)) return deLabels.has(x.text) || /_LABEL$/.test(x.text);
+    return ts.isPropertyAccessExpression(x) && (/_LABEL$/.test(x.name.text) || (ts.isIdentifier(x.expression) && deLabels.has(x.expression.text)));
+  };
+  const nomeDoLiteral = (n: ts.Node) => {
     // Nome da constante só quando o literal É o valor dela (parênteses, as/satisfies, Object.freeze);
     // literal dentro de JSX ou de expressão maior é "inline".
     let no: ts.Node = n.parent;
     while (no && (ts.isParenthesizedExpression(no) || ts.isAsExpression(no) || ts.isSatisfiesExpression(no)
       || (ts.isCallExpression(no) && no.expression.getText(sf) === "Object.freeze"))) no = no.parent;
-    const nome = no && ts.isVariableDeclaration(no) && ts.isIdentifier(no.name) ? no.name.text : `(literal na linha ${linhaDe(sf, n)})`;
-    mapas.push({ nome, enums: donos, linha: linhaDe(sf, n) });
+    return no && ts.isVariableDeclaration(no) && ts.isIdentifier(no.name) ? no.name.text : `(literal na linha ${linhaDe(sf, n)})`;
+  };
+  /** O texto do valor: literal ou constante de texto do arquivo (um só valor possível). */
+  const valorDeTexto = (e: ts.Expression) => { const v = textosDe(e, consts); return v.length === 1 ? v[0] : null; };
+  const ehRotulo = (valores: string[]) => valores.some((v) => /[A-Za-zÀ-ú]/.test(v)) && !valores.every((v) => CODIGO.test(v)) && !valores.some((v) => CLASSE.test(v));
+  const donosDe = (chaves: string[]) => [...enums].filter(([, valores]) => chaves.every((c) => valores.includes(c))).map(([nome]) => nome);
+  visitar(sf, (n) => {
+    if (ts.isObjectLiteralExpression(n)) {
+      // { ...STATUS_X_LABEL, CODIGO: "Outra redação" }: espalha o mapa central e sobrescreve rótulo.
+      const espalhados = n.properties.filter((p): p is ts.SpreadAssignment => ts.isSpreadAssignment(p) && ehMapaCentral(p.expression));
+      if (espalhados.length) {
+        const proprios = n.properties.filter(ts.isPropertyAssignment);
+        if (proprios.some((p) => valorDeTexto(p.initializer) !== null)) mapas.push({ nome: nomeDoLiteral(n), enums: espalhados.map((p) => `...${p.expression.getText(sf)}`), linha: linhaDe(sf, n) });
+        return;
+      }
+      if (n.properties.length < 2) return;
+      const pares = n.properties.map((p) => {
+        if (!ts.isPropertyAssignment(p)) return null;
+        const chave = ts.isIdentifier(p.name) || ts.isStringLiteral(p.name) ? p.name.text : null;
+        const valor = valorDeTexto(p.initializer);
+        return chave !== null && valor !== null ? { chave, valor } : null;
+      });
+      if (pares.some((p) => p === null)) return;
+      const validos = pares as { chave: string; valor: string }[];
+      if (!validos.every((p) => CODIGO.test(p.chave))) return;
+      // Rótulo: há texto com letra, e os valores não são códigos (de-para entre enums) nem classes CSS.
+      if (!ehRotulo(validos.map((p) => p.valor))) return;
+      const donos = donosDe(validos.map((p) => p.chave));
+      if (donos.length) mapas.push({ nome: nomeDoLiteral(n), enums: donos, linha: linhaDe(sf, n) });
+      return;
+    }
+    // Mapa em ternário: x === "ATIVA" ? "Ativa" : x === "PAUSADA" ? "Pausada" : "Encerrada". Só a cabeça da
+    // cadeia; cada condição compara o MESMO sujeito com um código, e todas as folhas são texto de rótulo. Uma
+    // comparação só (dois valores) é frase de sim/não, não mapa: a cadeia precisa de duas ou mais.
+    if (ts.isConditionalExpression(n) && !(ts.isConditionalExpression(semPai(n)) )) {
+      const codigos: string[] = [], folhasTexto: (string | null)[] = [], sujeitos = new Set<string>();
+      let ok = true;
+      const percorrer = (e: ts.Expression) => {
+        const x = semEmbrulho(e);
+        if (!ts.isConditionalExpression(x)) { folhasTexto.push(valorDeTexto(x)); return; }
+        const c = semEmbrulho(x.condition);
+        if (!ts.isBinaryExpression(c) || ![ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken].includes(c.operatorToken.kind)) { ok = false; return; }
+        const [lado, literal] = ts.isStringLiteralLike(semEmbrulho(c.right)) ? [c.left, semEmbrulho(c.right)] : [c.right, semEmbrulho(c.left)];
+        if (!ts.isStringLiteralLike(literal) || !CODIGO.test(literal.text)) { ok = false; return; }
+        codigos.push(literal.text); sujeitos.add(semConversao(lado).getText(sf));
+        percorrer(x.whenTrue); percorrer(x.whenFalse);
+      };
+      percorrer(n);
+      if (!ok || codigos.length < 2 || sujeitos.size !== 1 || folhasTexto.some((v) => v === null) || !ehRotulo(folhasTexto as string[])) return;
+      const donos = donosDe(codigos);
+      if (donos.length) mapas.push({ nome: `ternário ${[...sujeitos][0]}`, enums: donos, linha: linhaDe(sf, n) });
+    }
   });
   return mapas;
 }
+/** Pai sem parênteses (para saber se o ternário é ramo de outro). */
+const semPai = (n: ts.Node): ts.Node => { let p = n.parent; while (p && ts.isParenthesizedExpression(p)) p = p.parent; return p; };
 
 /** Mapas que ficam na tela: frases do fluxo (próximo passo, confirmação, dica), não o nome do valor. */
 const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
@@ -365,6 +525,17 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "NOTA_POR_STATUS", motivo: "mensagem de resultado do envio (\"Mensagem enviada.\")" },
   { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "ORIGEM_LABEL", motivo: "fragmento minúsculo ao lado da hora da mensagem; envio humano fica sem marca (\"\")" },
   { arquivo: "src/app/(app)/matriculas/[id]/preparacao/page.tsx", nome: "tipos", motivo: "rotula também o regime da preparação, com a duração da hora (\"Hora particular (60 minutos)\")" },
+  // Ternários (revisão R1 da #138, B2): os que eram só rótulo foram para labels.ts; ficam as frases do fluxo.
+  { arquivo: "src/app/(app)/financeiro/RetomadasPainel.tsx", nome: "ternário p.status", motivo: "fila de retomada: \"Aguardando aprovação\" diz quem age (o Financeiro aprova)" },
+  { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", nome: "ternário v.status", motivo: "versão das condições de encerramento: \"Aguardando aprovação\" diz quem age" },
+  { arquivo: "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx", nome: "ternário v.status", motivo: "versão das condições de horas aguarda REVISÃO da gestão (\"Aguardando revisão\")" },
+  { arquivo: "src/app/(app)/matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx", nome: "ternário versao.status", motivo: "versão das condições de continuidade aguarda REVISÃO da gestão (\"Aguardando revisão\")" },
+  { arquivo: "src/app/(app)/matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx", nome: "ternário proposta.status", motivo: "frase do direito à compensação (\"Direito aprovado\", \"Proposta rejeitada\")" },
+  { arquivo: "src/app/(app)/academico/equivalencias/[propostaId]/page.tsx", nome: "ternário proposta.estado", motivo: "frases do fluxo de equivalência (\"Autorizada para execução\"), as mesmas de nomesEstado na lista" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/AgendaPublicada.tsx", nome: "ternário agenda.status", motivo: "frase do encontro publicado (\"Realização registrada\", \"Encontro previsto\")" },
+  { arquivo: "src/app/(app)/academico/correcoes/page.tsx", nome: "ternário i.tipo", motivo: "texto do link de ação por destino (\"Conferir histórico da aula\")" },
+  { arquivo: "src/app/(app)/diario/encontros/[id]/correcao/CorrecaoAula.tsx", nome: "ternário reposicao.agendaParticular.statusBeneficio", motivo: "fragmento minúsculo no meio da frase do benefício (\"benefício reservado\", \"isenção excepcional registrada\")" },
+  { arquivo: "src/app/(app)/leads/[id]/FichaLead.tsx", nome: "ternário lead.temperatura", motivo: "faixa de prioridade derivada da temperatura (Alta/Média/Baixa, doc 09), não o nome da temperatura" },
 ];
 
 describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
@@ -392,6 +563,24 @@ describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
     expect(nomes('const m = { ATIVA: { label: "Ativa" }, PAUSADA: { label: "Pausada" } };')).toEqual([]);
   });
 
+  it("autoteste (R1 da #138, B2): spread do mapa central, valor por constante e mapa em ternário", () => {
+    const enums = new Map([["StatusX", ["ATIVA", "PAUSADA", "ENCERRADA"]]]);
+    const nomes = (fonte: string) => mapasDeRotulo(fonte, enums).map((m) => `${m.nome}:${m.enums.join("|")}`);
+    expect(nomes('import { STATUS_X_LABEL } from "@/lib/labels"; const m = { ...STATUS_X_LABEL, ATIVA: "Em vigor" };')).toEqual(["m:...STATUS_X_LABEL"]);
+    expect(nomes('import * as L from "@/lib/labels"; const m = { ...L.ROTULOS, PAUSADA: "Parada" };')).toEqual(["m:...L.ROTULOS"]);
+    expect(nomes('const A = "Ativa", P = "Pausada"; const m = { ATIVA: A, PAUSADA: P };')).toEqual(["m:StatusX"]);
+    expect(nomes('const r = <p>{s === "ATIVA" ? "Ativa" : s === "PAUSADA" ? "Pausada" : "Encerrada"}</p>;')).toEqual(["ternário s:StatusX"]);
+    expect(nomes('const r = <p>{(d.status === "ATIVA") ? "Ativa" : (d.status === "PAUSADA" ? "Pausada" : "Encerrada")}</p>;')).toEqual(["ternário d.status:StatusX"]);
+    // Não acusa: sim/não (uma comparação), sujeitos diferentes, classes, folha que não é texto, spread sem sobrescrever.
+    expect(nomes([
+      'const a = s === "ATIVA" ? "Ativa" : "Inativa";',
+      'const b = s === "ATIVA" ? "Ativa" : t === "PAUSADA" ? "Pausada" : "Encerrada";',
+      'const c = s === "ATIVA" ? "bg-green-50" : s === "PAUSADA" ? "bg-amber-50" : "bg-gray-50";',
+      'const d = s === "ATIVA" ? rotulo : s === "PAUSADA" ? "Pausada" : "Encerrada";',
+      'import { X_LABEL } from "@/lib/labels"; const e = { ...X_LABEL };',
+    ].join("\n"))).toEqual([]);
+  });
+
   it("os mapas que as telas tinham soltos continuam fora delas (movidos para labels.ts)", () => {
     const fonte = (arquivo: string) => fontes.find((f) => f.arquivo === arquivo)?.conteudo ?? "";
     const MOVIDOS: [arquivo: string, trecho: string][] = [
@@ -412,6 +601,13 @@ describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
 // ---------------------------------------------------------------------------------------------------
 // (iii) os mapas novos de labels.ts cobrem o enum inteiro, em texto de gente
 // ---------------------------------------------------------------------------------------------------
+
+/** Siglas que ficam em maiúscula dentro de um rótulo. */
+const SIGLAS = new Set(["PIX", "B2B", "CPF", "CNPJ", "PDF", "IA", "UTC", "ID", "API", "ERP"]);
+export const palavrasEmCaixaAlta = (rotulo: string) => rotulo.split(/[^A-Za-zÀ-ÿ0-9]+/).filter((p) => /^[A-ZÀ-Þ]{2,}$/.test(p) && !SIGLAS.has(p));
+/** Objeto não vazio só com valores de texto, e não de classes CSS — a forma de um mapa de rótulo. */
+const ehMapaDeTexto = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).length > 0
+  && Object.values(v).every((x) => typeof x === "string") && !Object.values(v).some((x) => CLASSE.test(x as string));
 
 const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valores: readonly string[]][] = [
   ["HABILIDADE_LABEL", L.HABILIDADE_LABEL, HABILIDADES],
@@ -461,6 +657,15 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["ESTADO_RESERVA_DEVOLUCAO_CREDITO_LABEL", L.ESTADO_RESERVA_DEVOLUCAO_CREDITO_LABEL, Object.values(EstadoReservaDevolucaoCredito)],
   ["ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL", L.ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL, Object.values(EstadoReconferenciaDeltaDesistencia)],
   ["UNIDADE_PERMUTA_SERVICO_LABEL", L.UNIDADE_PERMUTA_SERVICO_LABEL, Object.values(UnidadePermutaServico)],
+  // Revisão R1 da #138 (B2/B4): mapas que viviam em ternário ou faltavam.
+  ["STATUS_PAGAMENTO_INFORMADO_LABEL", L.STATUS_PAGAMENTO_INFORMADO_LABEL, Object.values(StatusPagamentoInformado)],
+  ["AMBIENTE_ASSINATURA_LABEL", L.AMBIENTE_ASSINATURA_LABEL, ["SANDBOX", "PRODUCAO"]],
+  ["TIPO_OCORRENCIA_HORAS_LABEL", L.TIPO_OCORRENCIA_HORAS_LABEL, OcorrenciaHorasSchema.innerType().shape.ocorrencia.options.map((o) => o.shape.tipo.value)],
+  ["DESFECHO_OCORRENCIA_HORAS_LABEL", L.DESFECHO_OCORRENCIA_HORAS_LABEL, SaldoCompraHorasSchema.innerType().shape.reservas.element.shape.desfecho.options.filter((d) => d !== "PENDENTE")],
+  ["TIPO_COBRANCA_ENTRADA_LABEL", L.TIPO_COBRANCA_ENTRADA_LABEL, ["MATRICULA", "MENSALIDADE", "HORA_PARTICULAR"]],
+  ["REFERENCIA_COBERTURA_MENSAL_LABEL", L.REFERENCIA_COBERTURA_MENSAL_LABEL, Object.values(ReferenciaCoberturaMensal)],
+  ["FINALIDADE_NUMERO_LABEL", L.FINALIDADE_NUMERO_LABEL, Object.values(FinalidadeNumero)],
+  ["FORMA_AGENDA_OFERTA_LABEL", L.FORMA_AGENDA_OFERTA_LABEL, Object.values(FormaAgendaOferta)],
 ];
 
 describe("(iii) mapas novos de labels.ts", () => {
@@ -470,7 +675,11 @@ describe("(iii) mapas novos de labels.ts", () => {
       for (const [valor, rotulo] of Object.entries(mapa)) {
         expect(rotulo.trim(), `${nome}.${valor}`).not.toBe("");
         expect(rotulo, `${nome}.${valor} repete o código`).not.toBe(valor);
-        expect(rotulo, `${nome}.${valor} em CAIXA_ALTA`).not.toMatch(/^[A-Z0-9_ ]+$/);
+        // Caixa alta disfarçada (revisão R1 da #138, B3): "EM ANDAMENTO.", "CONCLUÍDA" — exige minúscula e
+        // nenhuma palavra toda em maiúscula fora das siglas; rótulo é nome, sem pontuação final.
+        expect(rotulo, `${nome}.${valor} sem minúscula`).toMatch(/[a-zà-ÿ]/);
+        expect(palavrasEmCaixaAlta(rotulo), `${nome}.${valor} com palavra em CAIXA ALTA`).toEqual([]);
+        expect(rotulo, `${nome}.${valor} com pontuação final`).not.toMatch(/[.;:!?,]$/);
         expect(rotulo, `${nome}.${valor} com "_"`).not.toContain("_");
         expect(rotulo, `${nome}.${valor} sem maiúscula inicial (sentence case)`).toMatch(/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/);
       }
@@ -478,12 +687,19 @@ describe("(iii) mapas novos de labels.ts", () => {
     });
   }
 
-  it("todo mapa *_LABEL novo de labels.ts está nesta lista (mapa novo sem trava não passa)", () => {
+  it("todo mapa de texto novo de labels.ts está nesta lista, com ou sem _LABEL (mapa novo sem trava não passa)", () => {
     const ANTIGOS = new Set(["ETAPA_LABEL", "TEMPERATURA_LABEL", "SEGMENTO_LABEL", "MOTIVO_PERDA_LABEL", "STATUS_MATRICULA_LABEL", "STATUS_COBRANCA_LABEL",
       "STATUS_COMISSAO_LABEL", "STATUS_ALUNO_LABEL", "TIPO_COBRANCA_LABEL", "FORMA_PAGAMENTO_LABEL", "GENERO_LABEL", "ESCOLARIDADE_LABEL",
       "SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL", "STATUS_ENCONTRO_LABEL"]);
-    const exportados = Object.keys(L).filter((k) => k.endsWith("_LABEL") && !ANTIGOS.has(k));
+    // Todo mapa de texto exportado, com ou sem o sufixo _LABEL (revisão R1 da #138: `ROTULOS_TURMA` passava).
+    const exportados = Object.entries(L).filter(([k, v]) => ehMapaDeTexto(v) && !ANTIGOS.has(k)).map(([k]) => k);
     expect(exportados.filter((k) => !MAPAS_NOVOS.some(([nome]) => nome === k))).toEqual([]);
+  });
+
+  it("autoteste (R1 da #138, B3): caixa alta disfarçada com pontuação ou acento; siglas passam", () => {
+    expect(palavrasEmCaixaAlta("EM ANDAMENTO.")).toEqual(["EM", "ANDAMENTO"]);
+    expect(palavrasEmCaixaAlta("CONCLUÍDA")).toEqual(["CONCLUÍDA"]);
+    expect(palavrasEmCaixaAlta("Concluída via API, com PIX")).toEqual([]);
   });
 
   it("rotular devolve o rótulo e, para valor sem rótulo, o próprio valor (nunca frase inventada)", () => {

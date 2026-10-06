@@ -6,6 +6,7 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
+import { TIPO_COBRANCA_ENTRADA_LABEL, rotular } from "@/lib/labels";
 export default async function CondicoesPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, r = await consultarCondicoesEntrada(id);
@@ -20,7 +21,7 @@ export default async function CondicoesPage({ params }: { params: Promise<{ id: 
       {p.dados.aulas.regime === "MENSALIDADE" ? <><p>Primeiro vencimento: {formatarDataCivil(p.dados.aulas.primeiroVencimento)} · Dia contratual: {p.dados.aulas.diaVencimentoContratado}</p><p>Cobertura: {formatarDataCivil(p.dados.coberturaCalculada?.inicio)} a {formatarDataCivil(p.dados.coberturaCalculada?.fim)}</p></> : <p>Vencimento do adiantamento: {formatarDataCivil(p.dados.aulas.vencimentoAdiantamento, "Sem adiantamento")}</p>}
       <p>Motivo: {p.motivo}</p></section>}
     {p && <section className="space-y-2"><h2 className="text-xl">Prévia das cobranças iniciais</h2><p>Previsão conforme as condições registradas. Nenhuma cobrança é criada por esta consulta.</p>
-      {d.pendenciaPrevia ? <p role="alert">{d.pendenciaPrevia}</p> : <ul>{d.previaCobrancas.map((c) => <li key={c.tipo}>{c.tipo === "MATRICULA" ? "Taxa de matrícula" : c.tipo === "MENSALIDADE" ? "Primeira mensalidade" : "Adiantamento por hora"} · {formatarMoeda(Number(c.valor), c.moeda)} · Vencimento {formatarDataCivil(c.vencimento)} · {c.etapa === "ATIVACAO" ? "Emitir na ativação" : "Emitir após conferência da Secretaria"}{c.cobertura ? ` · Cobertura ${formatarDataCivil(c.cobertura.inicio)} a ${formatarDataCivil(c.cobertura.fim)}` : ""}{c.minutos ? ` · ${c.minutos} minutos` : ""}</li>)}</ul>}
+      {d.pendenciaPrevia ? <p role="alert">{d.pendenciaPrevia}</p> : <ul>{d.previaCobrancas.map((c) => <li key={c.tipo}>{rotular(TIPO_COBRANCA_ENTRADA_LABEL, c.tipo)} · {formatarMoeda(Number(c.valor), c.moeda)} · Vencimento {formatarDataCivil(c.vencimento)} · {c.etapa === "ATIVACAO" ? "Emitir na ativação" : "Emitir após conferência da Secretaria"}{c.cobertura ? ` · Cobertura ${formatarDataCivil(c.cobertura.inicio)} a ${formatarDataCivil(c.cobertura.fim)}` : ""}{c.minutos ? ` · ${c.minutos} minutos` : ""}</li>)}</ul>}
     </section>}
     {d.pagadorAlterado && <p role="alert">O pagador mudou após este registro. Confira e registre uma nova versão das condições.</p>}
     {d.impedimento && <p role="status">{d.impedimento}</p>}

@@ -9,6 +9,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 
 export default async function IndisponibilidadesPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -29,7 +30,7 @@ export default async function IndisponibilidadesPage({ searchParams }: { searchP
     {r.ok && r.dado?.itens.map((a) => {
       const exibicao = (v: string) => formatarInstanteExibicao(v, preferencia.ok ? preferencia.dado?.fusoExibicao : null, a.fusoOrigem);
       return <article key={a.id} className="space-y-3 rounded-lg border bg-[var(--surface)] p-4">
-        <h2 className="font-medium">{a.professorNome} · {a.situacao === "PENDENTE" ? "Aguardando decisão" : a.situacao === "APROVADA" ? "Aprovada" : "Rejeitada"}</h2>
+        <h2 className="font-medium">{a.professorNome} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, a.situacao)}</h2>
         <p>{exibicao(a.inicio).texto} — {exibicao(a.fim).texto} <span className="text-sm text-gray-500">({exibicao(a.inicio).fuso}; origem {a.fusoOrigem})</span></p>
         <p className="whitespace-pre-wrap text-sm">{a.motivo}</p>
         {a.decisao && <p className="text-sm">Decisão: {a.decisao.motivo}</p>}

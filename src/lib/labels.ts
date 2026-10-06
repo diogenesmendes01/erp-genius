@@ -42,6 +42,10 @@ import {
   Vigencia,
   TipoAjuste,
   TipoDestinacaoRecebimento,
+  StatusPagamentoInformado,
+  ReferenciaCoberturaMensal,
+  FinalidadeNumero,
+  FormaAgendaOferta,
   StatusPropostaAcertoTaxaAditivo,
   StatusConjuntoImpactosTaxaAditivo,
   StatusConjuntoImpactosCoberturaAditivo,
@@ -358,8 +362,8 @@ export const TIPO_PAGADOR_LABEL: Readonly<Record<TipoPagador, string>> = Object.
 export const STATUS_SOLICITACAO_ENCERRAMENTO_LABEL: Readonly<Record<StatusSolicitacaoEncerramento, string>> = Object.freeze({
   ABERTA: "Aguardando acerto",
   EM_ACERTO: "Acerto em preparação",
-  CONCLUIDA: "Concluído",
-  CANCELADA: "Cancelado",
+  CONCLUIDA: "Concluída",
+  CANCELADA: "Cancelada",
 });
 
 export const ESTADO_DIA_COMPENSACAO_LABEL: Readonly<Record<EstadoDiaCompensacao, string>> = Object.freeze({
@@ -404,6 +408,13 @@ export const SITUACAO_APLICACAO_CADASTRO_MIGRACAO_LABEL: Readonly<Record<Situaca
 });
 
 // Comercial e atendimento.
+/** Finalidade de um número de WhatsApp da escola. */
+export const FINALIDADE_NUMERO_LABEL: Readonly<Record<FinalidadeNumero, string>> = Object.freeze({
+  COBRANCA: "Cobrança",
+  VENDAS: "Vendas",
+  AGENDA: "Agenda",
+});
+
 export const CATEGORIA_DOCUMENTO_LABEL: Readonly<Record<CategoriaDocumento, string>> = Object.freeze({
   PROPOSTA: "Proposta",
   CONTRATO: "Contrato",
@@ -480,6 +491,59 @@ export const TIPO_AJUSTE_LABEL: Readonly<Record<TipoAjuste, string>> = Object.fr
 export const TIPO_DESTINACAO_RECEBIMENTO_LABEL: Readonly<Record<TipoDestinacaoRecebimento, string>> = Object.freeze({
   COBRANCA: "Cobrança",
   CREDITO_SEM_DESTINO: "Crédito sem destino",
+});
+
+/** Referência da cobertura de uma mensalidade (o que conta como "um mês"). */
+export const REFERENCIA_COBERTURA_MENSAL_LABEL: Readonly<Record<ReferenciaCoberturaMensal, string>> = Object.freeze({
+  MES_CIVIL: "Mês civil",
+  CICLO_MATRICULA: "Ciclo mensal da matrícula",
+});
+
+/** Forma de agenda da oferta registrada na preparação da matrícula. */
+export const FORMA_AGENDA_OFERTA_LABEL: Readonly<Record<FormaAgendaOferta, string>> = Object.freeze({
+  TURMA: "Turma",
+  PARTICULAR_GRADE_FIXA: "Particular com grade fixa",
+  PARTICULAR_FLEXIVEL: "Particular com agenda flexível",
+});
+
+/** Parcela da cobrança de entrada da matrícula (prévia das condições, emissão e entrada particular). */
+export type TipoCobrancaEntrada = Extract<TipoCobranca, "MATRICULA" | "MENSALIDADE" | "HORA_PARTICULAR">;
+export const TIPO_COBRANCA_ENTRADA_LABEL: Readonly<Record<TipoCobrancaEntrada, string>> = Object.freeze({
+  MATRICULA: "Taxa de matrícula",
+  MENSALIDADE: "Primeira mensalidade",
+  HORA_PARTICULAR: "Adiantamento por hora",
+});
+
+export const STATUS_PAGAMENTO_INFORMADO_LABEL: Readonly<Record<StatusPagamentoInformado, string>> = Object.freeze({
+  A_CONFERIR: "A conferir",
+  CONFIRMADO: "Confirmado",
+  REJEITADO: "Rejeitado",
+});
+
+/** Ambiente do serviço de assinatura do processo (o de teste não comprova assinatura em produção). */
+export type AmbienteAssinatura = "SANDBOX" | "PRODUCAO";
+export const AMBIENTE_ASSINATURA_LABEL: Readonly<Record<AmbienteAssinatura, string>> = Object.freeze({
+  SANDBOX: "Teste",
+  PRODUCAO: "Produção",
+});
+
+/** Ocorrência de aula particular informada pelo professor (server/matricula/ocorrencia-horas.ts). */
+export type TipoOcorrenciaHoras = "REALIZADA" | "FALTA_ALUNO" | "CANCELAMENTO_ALUNO" | "CANCELAMENTO_ESCOLA";
+export const TIPO_OCORRENCIA_HORAS_LABEL: Readonly<Record<TipoOcorrenciaHoras, string>> = Object.freeze({
+  REALIZADA: "Aula realizada",
+  FALTA_ALUNO: "Falta do aluno",
+  CANCELAMENTO_ALUNO: "Cancelamento do aluno",
+  CANCELAMENTO_ESCOLA: "Cancelamento da escola",
+});
+
+/** Desfecho financeiro da conferência dessa ocorrência (classificarOcorrenciaHoras). */
+export type DesfechoOcorrenciaHoras = "REALIZADA" | "FALTA_COBRAVEL" | "CANCELAMENTO_ESCOLA" | "CANCELAMENTO_NO_PRAZO" | "CANCELAMENTO_TARDIO";
+export const DESFECHO_OCORRENCIA_HORAS_LABEL: Readonly<Record<DesfechoOcorrenciaHoras, string>> = Object.freeze({
+  REALIZADA: "Aula realizada",
+  FALTA_COBRAVEL: "Falta cobrável",
+  CANCELAMENTO_ESCOLA: "Cancelamento da escola",
+  CANCELAMENTO_NO_PRAZO: "Cancelamento do aluno dentro do prazo",
+  CANCELAMENTO_TARDIO: "Cancelamento do aluno fora do prazo",
 });
 
 /** Situação de uma proposta que outra pessoa decide e depois se aplica — a mesma redação para os

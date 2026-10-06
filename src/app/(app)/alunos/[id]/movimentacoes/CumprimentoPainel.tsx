@@ -10,7 +10,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { ESTADO_DIA_COMPENSACAO_LABEL } from "@/lib/labels";
+import { ESTADO_DIA_COMPENSACAO_LABEL, ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -41,7 +41,7 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
     <h4 className="font-medium">Cobertura de {formatarDataCivil(dia.dataCobertura)} · {ESTADO_DIA_COMPENSACAO_LABEL[dia.estado]}</h4>
     <p>Compensa o dia {dia.diaOrigem} sem oferta da escola.</p>
     {dia.conferencias.map((c) => <div key={c.id} className="border-l pl-3">
-      <p>Preparação: {c.preparador.nome} · {c.status === "PENDENTE" ? "Aguardando decisão" : c.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</p>
+      <p>Preparação: {c.preparador.nome} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, c.status)}</p>
       <p>Motivo: {c.motivo}</p><p>Evidência: {c.evidencia}</p>
       {c.decididaEm && <DecisaoCumprimentoHistorico decisor={c.decisor?.nome} motivo={c.motivoDecisao} decididaEm={c.decididaEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
     </div>)}
