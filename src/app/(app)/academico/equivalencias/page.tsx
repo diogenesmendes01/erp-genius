@@ -26,6 +26,7 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   const secretaria = temPapel(usuario, Papel.SECRETARIA_ACADEMICA) && !temPapel(usuario, Papel.GERENTE_PEDAGOGICO);
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "America/Sao_Paulo");
+  const primeiraPagina = `/academico/equivalencias?${new URLSearchParams({ matriculaId })}`;
 
   const lista = (propostas: typeof itens) => <div className="space-y-3">{propostas.map((proposta) => <article key={proposta.id} className="space-y-2 rounded border p-4">
     <header className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">Versão {proposta.versao}</h2><p className="text-sm">{turma(proposta.turmaOrigem)} → {turma(proposta.turmaDestino)}</p></div><span className="rounded bg-gray-100 px-2 py-1 text-xs">{nomeEstado(proposta.estado)}</span></header>
@@ -37,9 +38,13 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   return <section className="space-y-5">
     <VoltarPara href="/academico" />
     <header className="space-y-2"><h1 className="text-2xl font-medium">Propostas de aproveitamento</h1><p>{secretaria ? "Fila de autorizações da matrícula. A execução é conferida novamente ao abrir cada proposta." : "Histórico e fila de propostas de aproveitamento desta matrícula."}</p></header>
-    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : cursor ? <EstadoVazio acao={<Link className="inline-block underline" href={`/academico/equivalencias?${new URLSearchParams({ matriculaId })}`}>Ir para a primeira página</Link>}>Nenhuma proposta autorizada aguarda execução nesta página.</EstadoVazio> : <EstadoVazio>Nenhuma proposta autorizada aguarda execução nesta matrícula.</EstadoVazio>}</section>
+    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{/* A fila de autorizadas é recortada da página atual (o servidor pagina todas as propostas):
+      só dá para afirmar "nenhuma nesta matrícula" quando a lista inteira coube nesta página. */}
+      {autorizadas.length ? lista(autorizadas) : !itens.length ? null : cursor ? <EstadoVazio acao={<Link className="inline-block underline" href={primeiraPagina}>Ir para a primeira página</Link>}>Nenhuma proposta autorizada aguarda execução nesta página.</EstadoVazio> : resultado.dado.proximoCursor ? <EstadoVazio>Nenhuma proposta autorizada entre as mais recentes. Confira as próximas propostas.</EstadoVazio> : <EstadoVazio>Nenhuma proposta autorizada aguarda execução nesta matrícula.</EstadoVazio>}</section>
     {historico.length > 0 && <section className="space-y-3"><h2 className="text-xl font-medium">Outras propostas</h2>{lista(historico)}</section>}
-    {!itens.length && <EstadoVazio bloco>Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.</EstadoVazio>}
+    {!itens.length && (cursor
+      ? <EstadoVazio bloco acao={<Link className="inline-block underline" href={primeiraPagina}>Ir para a primeira página</Link>}>Nenhuma proposta de aproveitamento nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.</EstadoVazio>)}
     {resultado.dado.proximoCursor && <Link className="inline-block underline" href={`/academico/equivalencias?${new URLSearchParams({ matriculaId, cursor: resultado.dado.proximoCursor })}`}>Próximas propostas</Link>}
   </section>;
 }

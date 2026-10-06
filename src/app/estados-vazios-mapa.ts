@@ -209,7 +209,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/equivalencias/page.tsx": [
     "compacto · Nenhuma proposta autorizada aguarda execução nesta página.",
+    "compacto · Nenhuma proposta autorizada entre as mais recentes. Confira as próximas propostas.",
     "compacto · Nenhuma proposta autorizada aguarda execução nesta matrícula.",
+    "bloco · Nenhuma proposta de aproveitamento nesta página.",
     "bloco · Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.",
   ],
   "src/app/(app)/academico/grades/nova/page.tsx": [
