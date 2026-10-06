@@ -881,8 +881,9 @@ function EditarNomePainel({
       if (!r.ok) return onErro(r.erro ?? "Erro ao salvar o nome.");
       onFeito(nome.trim() ? `Contato salvo como ${nome.trim()}.` : "Nome salvo removido — a conversa volta a mostrar o perfil do WhatsApp ou o número.");
     } catch {
-      // Salvar de novo é seguro: a gravação é condicional ao nome lido e não duplica nada.
-      onErro("Não foi possível confirmar se o nome foi salvo. Recarregue a conversa e confira.");
+      // A gravação é condicional ao nome lido: depois de um sucesso, reenviar não devolve o mesmo
+      // registro (o nome lido já mudou) — então a instrução é conferir antes de repetir.
+      onErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setSalvando(false);
     }
@@ -890,8 +891,9 @@ function EditarNomePainel({
 
   return (
     <form onSubmit={salvar} className="border-b border-gray-200 bg-surface-muted px-4 py-3 text-sm">
+      {/* Nota fixa sobre o cadastro (não é resultado de ação): role="note", não região viva. */}
       {aviso && (
-        <p className="mb-2 text-xs text-gray-600">
+        <p role="note" className="mb-2 text-xs text-gray-600">
           {aviso.texto}{" "}
           {aviso.href && <><Link href={aviso.href} className="text-brand-700 underline">Corrigir no cadastro →</Link>{" "}</>}
           O nome salvo abaixo vale para as telas que não usam esse cadastro.
