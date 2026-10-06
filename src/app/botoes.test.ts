@@ -361,6 +361,72 @@ export function destrutivosSemPerigo(fonte: string): string[] {
   return variantesDosBotoes(fonte).filter((b) => rotuloDestrutivo(b.rotulo) && !b.variantes.includes("perigo")).map((b) => b.rotulo);
 }
 
+/**
+ * Ramo a ramo: quando a variante e o rótulo do mesmo botão dependem da MESMA condição
+ * (`variante: ativo ? "perigo" : "fantasma"` com `{ativo ? "Desativar" : "Ativar"}`), o rótulo destrutivo
+ * tem de cair no ramo `perigo` — "perigo entre as possíveis" não basta (o ramo invertido pintaria de
+ * vermelho o "Ativar" e deixaria o "Desativar" neutro). `!cond` conta como a mesma condição invertida.
+ */
+export function ramosDestrutivosDesalinhados(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const semParenteses = (e: ts.Expression): ts.Expression => (ts.isParenthesizedExpression(e) ? semParenteses(e.expression) : e);
+  /** Condição normalizada e se veio negada (`!x` → ["x", true]). */
+  const chave = (e: ts.Expression): [string, boolean] => {
+    e = semParenteses(e);
+    if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) { const [c, neg] = chave(e.operand); return [c, !neg]; }
+    return [e.getText(sf).replace(/\s+/g, ""), false];
+  };
+  const textos = (e: ts.Expression): string[] => {
+    e = semParenteses(e);
+    if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return [e.text];
+    if (ts.isConditionalExpression(e)) return [...textos(e.whenTrue), ...textos(e.whenFalse)];
+    return [];
+  };
+  /** Ternários de variante dentro do className (botaoClasses({ variante: c ? a : b })) ou em <Botao variante={…}>. */
+  const ternariosDeVariante = (abertura: ts.JsxOpeningElement | ts.JsxSelfClosingElement): ts.ConditionalExpression[] => {
+    const achados: ts.ConditionalExpression[] = [];
+    for (const p of abertura.attributes.properties) {
+      if (!ts.isJsxAttribute(p) || !p.initializer || !ts.isJsxExpression(p.initializer) || !p.initializer.expression) continue;
+      const nome = p.name.getText(sf);
+      if (nome === "variante") { const e = semParenteses(p.initializer.expression); if (ts.isConditionalExpression(e)) achados.push(e); }
+      if (nome === "className") {
+        const andar = (n: ts.Node) => {
+          if (ts.isPropertyAssignment(n) && n.name.getText(sf) === "variante") { const e = semParenteses(n.initializer); if (ts.isConditionalExpression(e)) achados.push(e); }
+          ts.forEachChild(n, andar);
+        };
+        andar(p.initializer.expression);
+      }
+    }
+    return achados;
+  };
+  const desalinhados: string[] = [];
+  const visitar = (n: ts.Node) => {
+    if (ts.isJsxElement(n)) {
+      for (const tv of ternariosDeVariante(n.openingElement)) {
+        const [cv, negV] = chave(tv.condition);
+        const variante = (e: ts.Expression) => (ts.isStringLiteral(semParenteses(e)) ? (semParenteses(e) as ts.StringLiteral).text : "?");
+        const [vSim, vNao] = negV ? [variante(tv.whenFalse), variante(tv.whenTrue)] : [variante(tv.whenTrue), variante(tv.whenFalse)];
+        const rotulos = (m: ts.Node) => {
+          if (ts.isConditionalExpression(m)) {
+            const [cr, negR] = chave(m.condition);
+            if (cr === cv) {
+              const [rSim, rNao] = negR ? [m.whenFalse, m.whenTrue] : [m.whenTrue, m.whenFalse];
+              for (const [ramo, v] of [[rSim, vSim], [rNao, vNao]] as const) {
+                for (const t of textos(ramo)) if (rotuloDestrutivo(t) && v !== "perigo") desalinhados.push(`${t} → ${v}`);
+              }
+            }
+          }
+          ts.forEachChild(m, rotulos);
+        };
+        for (const filho of n.children) rotulos(filho);
+      }
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return desalinhados;
+}
+
 type Achado = { arquivo: string; rotulo: string };
 /**
  * Confere exceções ancoradas (arquivo + rótulo exato): o achado sem exceção fica em `semExcecao`; a
@@ -591,6 +657,26 @@ describe("hierarquia: ação destrutiva ou de recusa é perigo", () => {
       .flatMap(({ arquivo, conteudo }) => destrutivosSemPerigo(conteudo).map((rotulo) => ({ arquivo, rotulo })));
     expect(conferirExcecoes(achados, DESTRUTIVOS_SEM_PERIGO)).toEqual({ semExcecao: [], soltas: [] });
     for (const e of DESTRUTIVOS_SEM_PERIGO) expect(e.motivo.trim().length, `${e.arquivo}: ${e.rotulo}`).toBeGreaterThan(20);
+  });
+
+  it("variante e rótulo na mesma condição: o rótulo destrutivo cai no ramo perigo (ramo invertido falha)", () => {
+    const desalinhados = arquivos
+      .filter(({ arquivo }) => !/\.test\./.test(arquivo))
+      .flatMap(({ arquivo, conteudo }) => ramosDestrutivosDesalinhados(conteudo).map((r) => `${arquivo}: ${r}`));
+    expect(desalinhados).toEqual([]);
+  });
+
+  it("ramosDestrutivosDesalinhados (autoteste): alinhado passa; invertido, negado e <Botao> invertidos acusam", () => {
+    const b = (variante: string, rotulo: string) => `<button className={botaoClasses({ variante: ${variante}, tamanho: "sm" })}>{${rotulo}}</button>`;
+    expect(ramosDestrutivosDesalinhados(b('ativo ? "perigo" : "fantasma"', 'ativo ? "Desativar" : "Ativar"'))).toEqual([]);
+    expect(ramosDestrutivosDesalinhados(b('!ativo ? "fantasma" : "perigo"', 'ativo ? "Desativar" : "Ativar"'))).toEqual([]);
+    expect(ramosDestrutivosDesalinhados(b('ativo ? "perigo" : "fantasma"', '!ativo ? "Ativar" : "Desativar"'))).toEqual([]);
+    expect(ramosDestrutivosDesalinhados(b('ativo ? "fantasma" : "perigo"', 'ativo ? "Desativar" : "Ativar"'))).toEqual(["Desativar → fantasma"]);
+    expect(ramosDestrutivosDesalinhados(b('!ativo ? "perigo" : "fantasma"', 'ativo ? "Desativar" : "Ativar"'))).toEqual(["Desativar → fantasma"]);
+    expect(ramosDestrutivosDesalinhados('<Botao variante={e.ativo ? "secundario" : "perigo"}>{e.ativo ? "Inativar empresa" : "Reativar empresa"}</Botao>')).toEqual(["Inativar empresa → secundario"]);
+    expect(ramosDestrutivosDesalinhados('<button className={`${botaoClasses({ variante: x === "revogar" ? "secundario" : "perigo" })} mt-2`}>{x === "revogar" ? "Revogar designação" : "Registrar"}</button>')).toEqual(["Revogar designação → secundario"]);
+    // Condições diferentes: fora do alcance desta regra (a de "perigo entre as possíveis" segue valendo).
+    expect(ramosDestrutivosDesalinhados(b('ativo ? "perigo" : "fantasma"', 'ocupado ? "Desativando…" : "Desativar"'))).toEqual([]);
   });
 
   it("rotuloDestrutivo: lista fechada de verbos; Cancelar sozinho (fechar) não conta; Cancelar <algo> e Confirmar <destruição> contam", () => {
