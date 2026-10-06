@@ -7,6 +7,7 @@ import { LancarNota, ConferirNota } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 export default async function Nota({ params, searchParams }: { params: Promise<{ realizacaoId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -21,7 +22,7 @@ export default async function Nota({ params, searchParams }: { params: Promise<{
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
     <Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`}>Recuperações da matrícula</Link>
-    <h1 className="text-2xl font-medium">Recuperação — {d.habilidade.replaceAll("_", " ")}</h1>
+    <h1 className="text-2xl font-medium">Recuperação — {rotular(HABILIDADE_LABEL, d.habilidade)}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Realizada em {formatarInstanteExibicao(d.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC). Escala: {d.escala.minimo} a {d.escala.maximo}.</p>
     <p>Professor que realizou a avaliação: {d.realizadaPor}. Registro por: {d.registradaPor}.</p>

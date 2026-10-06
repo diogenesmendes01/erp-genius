@@ -9,6 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
+import { STATUS_TEMPLATE_LABEL, rotular } from "@/lib/labels";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
@@ -299,7 +300,7 @@ export function PoliticaPainel({
                             <option value="">— texto de fábrica —</option>
                             {templates.map((t) => (
                               <option key={t.id} value={t.id}>
-                                {t.nome} {t.statusMeta === "APROVADO" ? "✓" : `(${t.statusMeta.toLowerCase().replace("_", " ")})`}
+                                {t.nome} {t.statusMeta === "APROVADO" ? "✓" : `(${rotular(STATUS_TEMPLATE_LABEL, t.statusMeta).toLowerCase()})`}
                               </option>
                             ))}
                           </select>

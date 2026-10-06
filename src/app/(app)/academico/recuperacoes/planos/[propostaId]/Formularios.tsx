@@ -10,6 +10,7 @@ import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -45,7 +46,7 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
     if (r.ok) tentativa.current = null;
     return r;
   }}>
-    {saldo.map(h => <label key={h.habilidade} className="block"><input type="checkbox" name={h.habilidade} disabled={h.disponiveis === 0} /> {h.habilidade.replaceAll("_", " ")} — {h.disponiveis} disponíveis</label>)}
+    {saldo.map(h => <label key={h.habilidade} className="block"><input type="checkbox" name={h.habilidade} disabled={h.disponiveis === 0} /> {rotular(HABILIDADE_LABEL, h.habilidade)} — {h.disponiveis} disponíveis</label>)}
     <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

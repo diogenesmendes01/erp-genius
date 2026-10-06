@@ -5,6 +5,7 @@ import { proporExtraRecuperacao, decidirExtraRecuperacao } from "@/server/avalia
 import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 type Habilidade = typeof HABILIDADES[number];
 const texto = (d: FormData, campo: string) => String(d.get(campo) ?? "");
 // O <Formulario> compartilhado guarda ocupado/erro e só entende { ok, erro }: executarAcaoCliente decide a
@@ -20,7 +21,7 @@ export function ProporExtra({ alocacaoId, habilidades }: { alocacaoId: string; h
     // Chave estável por entrada; o servidor devolve a proposta já criada com a mesma chave (server/avaliacoes/extra-recuperacao.ts:24-27).
     return resposta(await executarAcaoCliente(() => proporExtraRecuperacao({ ...entrada, chaveIdempotencia: chaves.current.get(assinatura)! }), { idempotente: true }));
   }}>
-    <label className="block">Habilidade<select name="habilidade" required className="block rounded border p-2">{habilidades.map(h => <option key={h} value={h}>{h.replaceAll("_", " ")}</option>)}</select></label>
+    <label className="block">Habilidade<select name="habilidade" required className="block rounded border p-2">{habilidades.map(h => <option key={h} value={h}>{rotular(HABILIDADE_LABEL, h)}</option>)}</select></label>
     <label className="block">Quantidade adicional<input type="number" name="quantidade" min={1} max={2147483647} step={1} required className="block rounded border p-2" /></label>
     <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>
     <label className="block">Evidências para a análise<CampoTexto name="evidencias" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>

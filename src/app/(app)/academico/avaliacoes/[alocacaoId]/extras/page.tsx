@@ -5,6 +5,7 @@ import { consultarExtrasRecuperacao } from "@/server/avaliacoes/extra-recuperaca
 import { ProporExtra, DecidirExtra } from "./Formularios";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 export default async function ExtrasPage({ params, searchParams }: { params: Promise<{ alocacaoId: string }>; searchParams: Promise<{ antesId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -21,7 +22,7 @@ export default async function ExtrasPage({ params, searchParams }: { params: Pro
     <h2 className="text-xl font-medium">Propostas e decisões</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.itens.map(p => <article className="space-y-2 rounded border p-4" key={p.id}>
-      <h3 className="font-medium">{p.habilidade.replaceAll("_", " ")} — {p.quantidade} oportunidade(s) adicional(is)</h3>
+      <h3 className="font-medium">{rotular(HABILIDADE_LABEL, p.habilidade)} — {p.quantidade} oportunidade(s) adicional(is)</h3>
       <p>Na solicitação: limite da regra {p.base.limiteBase}; extras já aprovadas {p.base.extrasAprovados}; oportunidades ocupadas {p.base.ocupadas}.</p>
       <p className="whitespace-pre-wrap">Motivo: {p.motivo}</p><p className="whitespace-pre-wrap">Evidências: {p.evidencias}</p>
       {p.decisao ? <p className="whitespace-pre-wrap">{p.decisao.aprovada ? "Aprovada" : "Rejeitada"}: {p.decisao.motivo}</p> : <p>Aguardando decisão independente.</p>}

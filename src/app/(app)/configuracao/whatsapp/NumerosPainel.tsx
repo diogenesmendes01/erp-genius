@@ -10,6 +10,7 @@ import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { FINALIDADE_NUMERO_LABEL, rotular } from "@/lib/labels";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -104,7 +105,7 @@ export function NumerosPainel({
                       {n.driver === "META_CLOUD" ? "oficial (Meta Cloud)" : "baileys (Evolution)"}
                     </span>
                     <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">
-                      {n.finalidade === "COBRANCA" ? "cobrança" : n.finalidade === "VENDAS" ? "vendas" : "agenda"}
+                      {rotular(FINALIDADE_NUMERO_LABEL, n.finalidade).toLowerCase()}
                     </span>
                     {n.driver === "BAILEYS" && (
                       <span className={"rounded-full px-1.5 py-0.5 " + badge.cls}>{badge.label}</span>

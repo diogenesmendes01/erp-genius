@@ -2,7 +2,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { rotular, STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL } from "@/lib/labels";
+import { rotular, STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL, TIPO_PAGADOR_LABEL } from "@/lib/labels";
 import { consultarFormularioNovaReserva, revisarNovaReservaParticular, confirmarNovaReservaParticular } from "@/server/matricula/nova-reserva-particular";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
@@ -49,7 +49,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
     <button type="button" onClick={revisar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Revisar horários e condições</button>
     {revisao && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferência da retomada</h2>
       <p>{revisao.aluno.primeiroNome} {revisao.aluno.sobrenome} · Documento: {revisao.aluno.documento ?? "Não informado"}</p><p>{revisao.aluno.email} · {revisao.aluno.telefoneE164}</p><p>{[revisao.aluno.rua, revisao.aluno.numero, revisao.aluno.cidade, revisao.aluno.regiao, revisao.aluno.cep, revisao.aluno.paisResidencia].filter(Boolean).join(", ")}</p>
-      <p>Pagador: {revisao.pagador.tipo} · versão {revisao.pagador.versao}. Condições: versão {revisao.versaoCondicoes}.</p>
+      <p>Pagador: {rotular(TIPO_PAGADOR_LABEL, revisao.pagador.tipo)} · versão {revisao.pagador.versao}. Condições: versão {revisao.versaoCondicoes}.</p>
       <p>{revisao.pagador.dados.nome} · {revisao.pagador.dados.documento ?? "Documento não informado"} · {revisao.pagador.dados.email} · {revisao.pagador.dados.telefoneE164}</p><p>{revisao.pagador.dados.endereco}</p>
       <ul>{revisao.agenda.encontros.map((e, i) => <li key={i}>{data(e.inicio)} — {data(e.fim)} · {revisao.agenda.fuso}</li>)}</ul>
       <h3>Cobranças existentes — não serão reemitidas</h3><ul>{revisao.cobrancas.map((c) => <li key={c.id}>{rotular(TIPO_COBRANCA_LABEL, c.tipo)} · {formatarMoeda(c.valorNegociado, c.moeda)} · saldo {c.saldo == null ? "a conferir" : formatarMoeda(c.saldo, c.moeda)} · {rotular(STATUS_COBRANCA_LABEL, c.status)} · {c.informesPendentes} comprovante(s) pendente(s)</li>)}</ul>

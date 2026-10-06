@@ -1,24 +1,15 @@
 import Link from "next/link";
-import { Papel, StatusReservaSegundaChamada } from "@prisma/client";
+import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAgendasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agendas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { STATUS_ENCONTRO_LABEL, STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-const rotulosReserva = {
-  RESERVADA: "Reservada",
-  CONSUMIDA_REALIZACAO: "Realizada",
-  CONSUMIDA_FALTA: "Falta",
-  LIBERADA_CANCELAMENTO_ESCOLA: "Cancelada pela escola",
-  LIBERADA_CANCELAMENTO_TEMPESTIVO: "Cancelada dentro do prazo",
-  CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelada fora do prazo",
-  PENDENCIA_ESCOLA: "Pendência da escola",
-} satisfies Record<StatusReservaSegundaChamada, string>;
+const rotulosReserva = STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL;
 const rotulosEncontro = STATUS_ENCONTRO_LABEL;
-const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? valor;
 
 function dataHora(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -54,7 +45,7 @@ export default async function AgendasSegundaChamadaPage({
       <h2 className="font-medium">{item.aluno} · avaliação {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matricula.codigo ?? "sem código"} · Turma {item.turma.codigo ?? item.turma.nome ?? "sem identificação"}.</p>
       {item.agenda && (() => { const fuso=resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null,item.agenda.fusoOrigem); return <p>Horário: {dataHora(item.agenda.inicio,fuso)} até {dataHora(item.agenda.fim,fuso)} ({fuso}; origem {item.agenda.fusoOrigem}).</p>; })()}
-      <p>Situação da reserva: {rotulo(rotulosReserva, item.statusReserva)}. Situação do encontro: {item.agenda ? rotulo(rotulosEncontro, item.agenda.status) : "Sem agenda"}.</p>
+      <p>Situação da reserva: {rotular(rotulosReserva, item.statusReserva)}. Situação do encontro: {item.agenda ? rotular(rotulosEncontro, item.agenda.status) : "Sem agenda"}.</p>
       <div className="flex gap-4"><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/remarcacao`}>Abrir remarcação</Link><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/substituicao`}>Substituir professor</Link></div>
     </article>)}
     {d.proximoCursor && <Link className="inline-block underline" href={`/academico/segundas-chamadas/agendas?cursor=${encodeURIComponent(d.proximoCursor)}`}>Próximas agendas</Link>}

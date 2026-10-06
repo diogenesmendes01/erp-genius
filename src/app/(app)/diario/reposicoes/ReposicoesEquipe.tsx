@@ -16,6 +16,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 
 export type OrigemReposicao = {
   aulaOriginalId: string;
@@ -162,7 +163,7 @@ function AgendarParticular({ reposicaoId, opcoes, excecoes, preferenciaFusoExibi
 
 function CicloAgenda({ agenda }: { agenda: NonNullable<ReposicaoEquipe["cicloAgenda"]> }) {
   const [ocupado, iniciar] = useTransition(); const [erro, setErro] = useState(""); const router = useRouter(); const periodo = useInicioDoPeriodo();
-  if (agenda.encontroStatus !== "PREVISTO" || !["RESERVADA", "ISENTA_EXCECAO"].includes(agenda.statusBeneficio)) return <p role="status">A agenda está {agenda.encontroStatus.toLowerCase()} e não aceita cancelamento ou remarcação.</p>;
+  if (agenda.encontroStatus !== "PREVISTO" || !["RESERVADA", "ISENTA_EXCECAO"].includes(agenda.statusBeneficio)) return <p role="status">Situação do encontro: {rotular(STATUS_ENCONTRO_LABEL, agenda.encontroStatus)}. A agenda não aceita cancelamento ou remarcação.</p>;
   const executar = (acao: () => Promise<{ ok: boolean; erro?: string }>) => iniciar(async () => { setErro(""); try { const r = await acao(); if (!r.ok) { setErro(r.erro ?? "A ação não foi confirmada."); return; } router.refresh(); } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); } });
   return <section className="space-y-3 border-t pt-3" aria-label="Ciclo da agenda particular">
     <h3 className="font-medium">Cancelar ou remarcar agenda particular</h3>
@@ -183,7 +184,7 @@ function CicloAgenda({ agenda }: { agenda: NonNullable<ReposicaoEquipe["cicloAge
 
 function DecidirCiclo({ tipo, propostaId, executar, ocupado }: { tipo: "cancelamento" | "remarcacao"; propostaId: string; executar: (acao: () => Promise<{ ok: boolean; erro?: string }>) => void; ocupado: boolean }) {
   return <form className="space-y-2 rounded border p-3" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); const aprovar = f.get("decisao") === "aprovar"; executar(() => tipo === "cancelamento" ? decidirCancelamentoReposicaoIndividual({ propostaId, aprovar, motivo: String(f.get("motivo") ?? "") }) : decidirRemarcacaoReposicaoIndividual({ propostaId, aprovar, motivo: String(f.get("motivo") ?? "") })); }}>
-    <p className="font-medium">Decidir {tipo} proposto</p><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label><label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
+    <p className="font-medium">Decidir {tipo === "cancelamento" ? "cancelamento proposto" : "remarcação proposta"}</p><label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label><label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
   </form>;
 }
 

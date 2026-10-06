@@ -8,6 +8,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
 
 // Nenhuma das três actions recebe chave de idempotência (server/whatsapp/operacoes-atendimento.ts):
 // abrirAtendimentoInstitucional (:103) grava um evento novo a cada chamada; classificarMensagemWhatsApp
@@ -84,7 +85,7 @@ function Item({ item, preferenciaFusoExibicao }: { item: ItemTriagem; preferenci
     if (d?.tipo === "ok") router.refresh();
   }}>
     <p className="font-medium">{item.nome} · {formatarInstanteExibicao(item.criadoEm, preferenciaFusoExibicao, "UTC").texto}</p>
-    <p className="whitespace-pre-wrap break-words text-gray-700">{item.corpo ?? `[${item.tipo.toLowerCase()}]`}</p>
+    <p className="whitespace-pre-wrap break-words text-gray-700">{item.corpo ?? `[${rotular(TIPO_MENSAGEM_LABEL, item.tipo).toLowerCase()}]`}</p>
     {item.midiaPath && <a className="text-blue-700 underline" href={item.midiaPath} target="_blank" rel="noreferrer">Abrir anexo para revisão</a>}
     <label className="grid gap-1">Atendimento do mesmo contato e canal
       <select required value={atendimentoId} onChange={(e) => setAtendimentoId(e.target.value)} className="rounded border p-1.5">

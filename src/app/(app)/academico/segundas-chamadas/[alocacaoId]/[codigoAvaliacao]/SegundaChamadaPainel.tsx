@@ -9,6 +9,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 
 type Item = {
   id: string;
@@ -147,7 +148,7 @@ export function SegundaChamadaPainel({
         {item.podeOperar && item.reserva && <div className="space-y-2">
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/cancelamento`}>Propor ou conferir cancelamento da agenda</Link>
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/remarcacao`}>Propor ou conferir remarcação da agenda</Link>
-          <p role="status">Reserva {item.reserva.status === "CONSUMIDA_FALTA" ? "consumida por falta; encontro não realizado" : item.reserva.status === "PENDENCIA_ESCOLA" ? "liberada sem consumo por impedimento da escola; revisão pendente" : item.reserva.status}. Encontro vinculado: {item.reserva.encontroId ?? "não informado"}.</p>
+          <p role="status">Reserva {item.reserva.status === "CONSUMIDA_FALTA" ? "consumida por falta; encontro não realizado" : item.reserva.status === "PENDENCIA_ESCOLA" ? "liberada sem consumo por impedimento da escola; revisão pendente" : rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.reserva.status)}. Encontro vinculado: {item.reserva.encontroId ?? "não informado"}.</p>
           {item.reserva.status === "RESERVADA" && <FormularioOcorrencia reservaId={item.reserva.id} fuso={fusoEntrada} />}
         </div>}
       </article>)}

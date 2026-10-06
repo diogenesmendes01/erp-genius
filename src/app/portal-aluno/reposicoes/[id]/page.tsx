@@ -8,6 +8,7 @@ import { consultarPreferenciaFusoPortalAluno } from "@/server/portal-aluno/prefe
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { ErroAutenticacao, ErroPermissao } from "@/server/_shared";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
   }
   return <section className="mx-auto max-w-3xl p-6 sm:p-10"><VoltarPara href="/portal-aluno" />
     <h1 className="mt-5 text-2xl font-medium">Reposição {reposicao.modalidade === "GRAVACAO" ? "por gravação" : "particular"}</h1>
-    <dl className="mt-6 grid gap-3 rounded-lg border bg-surface p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{reposicao.statusMatricula}</dd></div></dl>
+    <dl className="mt-6 grid gap-3 rounded-lg border bg-surface p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{rotular(STATUS_MATRICULA_LABEL, reposicao.statusMatricula)}</dd></div></dl>
     <p className="mt-3 text-xs text-gray-500">Instantes exibidos em {fusoExibicao}.</p>
     {detalhe?.prazoEtapaAte && <p className="mt-4 text-sm text-gray-600">Prazo vigente {etapaCorrecao ? "para responder à correção" : "da entrega"}: {data(detalhe.prazoEtapaAte)}.</p>}
     {detalhe?.entregas.map((entrega) => {

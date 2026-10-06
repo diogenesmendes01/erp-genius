@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { aplicarVinculoMigracao } from "@/server/migracao/aplicar-vinculo";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 import {
   ensaioVigenteMaisRecente,
   montarPayloadAplicarVinculo,
@@ -80,7 +81,7 @@ export function AplicarVinculoMigracao(props: Props) {
 
   return <section className="mt-3 space-y-3 rounded border border-green-200 bg-green-50 p-3 text-xs">
     <div><strong>Aplicar vínculo migrado</strong><p>Usa o ensaio vigente da fotografia conferida; não gera cobrança, pagamento ou aceite.</p></div>
-    <details><summary>Fonte e destino conferidos</summary><pre className="mt-2 overflow-auto rounded bg-surface p-2">{JSON.stringify(props.dadosOrigem, null, 2)}</pre><p>Origem: {props.origem} · Produto: {props.produtoDestino ?? "ausente"} · Turma: {props.turmaDestino ?? "ausente"} · Situação: {props.statusDestino ?? "ausente"}</p></details>
+    <details><summary>Fonte e destino conferidos</summary><pre className="mt-2 overflow-auto rounded bg-surface p-2">{JSON.stringify(props.dadosOrigem, null, 2)}</pre><p>Origem: {props.origem} · Produto: {props.produtoDestino ?? "ausente"} · Turma: {props.turmaDestino ?? "ausente"} · Situação: {props.statusDestino ? rotular(STATUS_MATRICULA_LABEL, props.statusDestino) : "ausente"}</p></details>
     <label>Ensaio vigente pronto<select className="ml-2 rounded border p-1" value={ensaioId} onChange={(event) => setEnsaioId(event.target.value)}><option value="">Selecione</option>{ensaioPermitido && exibicaoEnsaio && <option value={ensaioPermitido.id}>{exibicaoEnsaio.texto} (horário exibido em {exibicaoEnsaio.fuso}; origem UTC) · {ensaioPermitido.ensaiadoPor.nome}</option>}</select></label>
     {!ensaioPermitido && <p className="text-amber-800">Nenhum ensaio vigente pronto para esta fotografia.</p>}
     {!destinosCompletos && <p className="text-amber-800">Revise as correspondências de produto, turma e situação antes de aplicar.</p>}

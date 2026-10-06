@@ -11,6 +11,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { TIPO_SUGESTAO_IA_LABEL, rotular } from "@/lib/labels";
 
 // COMERCIAL — C1 (doc 27): auto-lead + saudação automática. Toggles INDEPENDENTES, ambos
 // nascem desligados (regra de ouro: toda automação nasce desligada). A saudação é a única
@@ -18,13 +19,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 
 const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
-
-const TIPO_SUGESTAO_LABEL: Record<string, string> = {
-  RESUMO: "Resumo executivo",
-  TEMPERATURA: "Temperatura",
-  SEGMENTO: "Segmento",
-  ETAPA: "Etapa do funil",
-};
 
 export function ComercialPainel({
   config,
@@ -272,7 +266,7 @@ export function ComercialPainel({
               <tbody>
                 {metricasCopiloto.map((m) => (
                   <tr key={m.tipo} className="border-t border-gray-100">
-                    <td className="px-3 py-2">{TIPO_SUGESTAO_LABEL[m.tipo] ?? m.tipo}</td>
+                    <td className="px-3 py-2">{rotular(TIPO_SUGESTAO_IA_LABEL, m.tipo)}</td>
                     <td className="px-3 py-2 text-right">{m.aceitas}</td>
                     <td className="px-3 py-2 text-right">{m.corrigidas}</td>
                     <td className="px-3 py-2 text-right">{m.descartadas}</td>

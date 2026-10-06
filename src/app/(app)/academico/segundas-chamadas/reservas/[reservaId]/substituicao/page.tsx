@@ -5,6 +5,7 @@ import { consultarSubstituicaoAgendaSegundaChamada } from "@/server/avaliacoes/s
 import { Formulario } from "./Formulario";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 
 function periodo(inicio: string, fim: string, fuso: string) {
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
@@ -42,7 +43,7 @@ export default async function Page({
     <VoltarPara href="/academico/segundas-chamadas/agendas" />
     <h1 className="text-2xl font-medium">Substituir professor da segunda chamada</h1>
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · avaliação {d.identificacao.codigoAvaliacao}.</p>
-    <section className="rounded border p-4"><h2 className="font-medium">Agenda preservada</h2><p>Professor atual: {d.encontro.professorNome}.</p><p>Horário: {periodo(d.encontro.inicio, d.encontro.fim, d.encontro.fusoOrigem)}.</p><p>Situação: {d.encontro.status}.</p></section>
+    <section className="rounded border p-4"><h2 className="font-medium">Agenda preservada</h2><p>Professor atual: {d.encontro.professorNome}.</p><p>Horário: {periodo(d.encontro.inicio, d.encontro.fim, d.encontro.fusoOrigem)}.</p><p>Situação: {rotular(STATUS_ENCONTRO_LABEL, d.encontro.status)}.</p></section>
     <p>A aprovação atualiza o responsável por esta avaliação, preservando turma, horário, contrato e oportunidade. Outra pessoa da gestão precisa decidir.</p>
     {(d.podePropor || d.previa) && <Formulario key={substitutoId ?? "sem-substituto"} reservaId={reservaId} base={base} professores={d.professores} selecionado={substitutoId} previa={d.previa} />}
     <h2 className="font-medium">Propostas e decisões</h2>

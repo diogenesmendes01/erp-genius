@@ -17,6 +17,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
 export type OperacaoEntrega = {
   reposicaoId: string;
@@ -79,7 +80,7 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Prorrogar prazo conferido</button>
     </form>}
     {operacao.liberacao.podeLiberar && <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); const dados = new FormData(evento.currentTarget); executar(() => liberarEntregaOperacional({ reposicaoId: operacao.reposicaoId, expiraEm: new Date(String(dados.get("expiraEm") ?? "")).toISOString(), motivo: String(dados.get("motivo") ?? "") })); }}>
-      <p className="font-medium">Liberação específica para matrícula {operacao.matriculaStatus.toLowerCase()}</p>
+      <p className="font-medium">Liberação específica para matrícula {rotular(STATUS_MATRICULA_LABEL, operacao.matriculaStatus).toLowerCase()}</p>
       {operacao.liberacao.expiraEm && <p className="text-sm">Liberação vigente até {data(operacao.liberacao.expiraEm, fusoExibicao)} (exibido em {fusoExibicao}; origem {operacao.fuso}).</p>}
       <label className="block">Expira em (horário local)<input name="expiraEm" type="datetime-local" required className="block rounded border p-2" /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>

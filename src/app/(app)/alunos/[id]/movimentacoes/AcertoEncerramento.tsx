@@ -11,7 +11,7 @@ import { CompensacoesEncerramento, CompensacoesEncerramentoSchema } from "./Comp
 import { useOperacao } from "./useOperacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
+import { TIPO_COBRANCA_LABEL, rotular, TIPO_AJUSTE_LABEL } from "@/lib/labels";
 import { consultarContextoEncerramento } from "@/server/matricula/encerramento-contexto";
 import { preverComponenteMensalEncerramento } from "@/server/matricula/encerramento-previa";
 import { consultarRascunhoAcertoEncerramento, salvarRascunhoAcertoEncerramento } from "@/server/matricula/encerramento-rascunho";
@@ -157,7 +157,7 @@ export function AcertoEncerramento({ alunoId, solicitacaoId, matriculas, prefere
             <label className="grid gap-1">Evidência contratual da cobrança<CampoTexto name={`${p.id}:contrato`} required minLength={5} maxLength={2000} className={estilo} /></label>
           </div>}
         </div>)}
-        {c.ajustes.length > 0 && <details><summary>Ajustes anteriores</summary>{c.ajustes.map((a) => <p key={a.id}>{a.tipo}: {formatarMoeda(a.valorDe, a.moeda)} para {formatarMoeda(a.valorPara, a.moeda)}. {a.motivo}</p>)}</details>}
+        {c.ajustes.length > 0 && <details><summary>Ajustes anteriores</summary>{c.ajustes.map((a) => <p key={a.id}>{rotular(TIPO_AJUSTE_LABEL, a.tipo)}: {formatarMoeda(a.valorDe, a.moeda)} para {formatarMoeda(a.valorPara, a.moeda)}. {a.motivo}</p>)}</details>}
         <CompensacoesEncerramento compensacoes={c.compensacoes} />
         {c.condicoes?.regras.multa.tipo === "SEM_PREVISAO" ? <p>Sem previsão de multa: {c.condicoes.regras.multa.motivo}</p> : c.condicoes && <div className="space-y-2">
           <p>Cláusula {c.condicoes.regras.multa.clausulaId}: {c.condicoes.regras.multa.condicoesAplicacao}. {c.condicoes.regras.multa.tipo === "VALOR_FIXO" ? `Valor fixo: ${formatarMoeda(c.condicoes.regras.multa.valor, c.moeda)}` : `${c.condicoes.regras.multa.percentual}% sobre ${c.condicoes.regras.multa.descricaoBase}`}</p>

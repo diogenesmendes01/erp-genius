@@ -5,15 +5,8 @@ import { consultarHistoricoReservasSegundaChamada } from "@/server/avaliacoes/se
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { STATUS_ENCONTRO_LABEL, STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
-
-const rotulos: Record<string, string> = {
-  RESERVADA: "Reservada", CONSUMIDA_REALIZACAO: "Realizada", CONSUMIDA_FALTA: "Falta registrada",
-  CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelamento fora do prazo", LIBERADA_CANCELAMENTO_ESCOLA: "Cancelamento pela escola",
-  LIBERADA_CANCELAMENTO_TEMPESTIVO: "Cancelamento dentro do prazo", PENDENCIA_ESCOLA: "Impedimento pela escola",
-  ...STATUS_ENCONTRO_LABEL,
-};
 
 export default async function Page({ params, searchParams }: {
   params: Promise<{ alocacaoId: string; codigoAvaliacao: string }>;
@@ -36,9 +29,9 @@ export default async function Page({ params, searchParams }: {
     <h1 className="text-2xl font-medium">Histórico de reservas · {codigoAvaliacao}</h1>
     <p>Instantes exibidos em {fusoExibicao} (referência institucional {d.fusoExibicao}).</p>
     {d.itens.map((item) => <article key={item.id} className="space-y-2 rounded border p-4">
-      <p><strong>Reserva:</strong> {rotulos[item.status] ?? item.status} · {data(item.reservadaEm)} · {item.reservadaPor}</p>
-      {item.encontro && <p>Encontro: {data(item.encontro.inicio)} a {data(item.encontro.fim)} · {rotulos[item.encontro.status] ?? item.encontro.status} · {item.encontro.professor}</p>}
-      {item.ocorrencia && <div><p>Ocorrência: {rotulos[item.ocorrencia.status] ?? item.ocorrencia.status} em {data(item.ocorrencia.ocorridaEm)} · {item.ocorrencia.registradaPor}</p><p>Registro: {data(item.ocorrencia.criadaEm)}</p><p>Motivo: {item.ocorrencia.motivo}</p><p>Evidência: {item.ocorrencia.evidencia}</p></div>}
+      <p><strong>Reserva:</strong> {rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.status)} · {data(item.reservadaEm)} · {item.reservadaPor}</p>
+      {item.encontro && <p>Encontro: {data(item.encontro.inicio)} a {data(item.encontro.fim)} · {rotular(STATUS_ENCONTRO_LABEL, item.encontro.status)} · {item.encontro.professor}</p>}
+      {item.ocorrencia && <div><p>Ocorrência: {rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.ocorrencia.status)} em {data(item.ocorrencia.ocorridaEm)} · {item.ocorrencia.registradaPor}</p><p>Registro: {data(item.ocorrencia.criadaEm)}</p><p>Motivo: {item.ocorrencia.motivo}</p><p>Evidência: {item.ocorrencia.evidencia}</p></div>}
       {item.realizacao && <div><p>Realização: {data(item.realizacao.realizadaEm)} · {item.realizacao.professor} · {item.realizacao.registradaPor}</p><p>Evidência: {item.realizacao.evidencia}</p></div>}
     </article>)}
     {!d.itens.length && <EstadoVazio bloco>Nenhuma reserva registrada.</EstadoVazio>}

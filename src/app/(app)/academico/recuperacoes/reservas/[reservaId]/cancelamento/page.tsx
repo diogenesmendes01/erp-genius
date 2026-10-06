@@ -7,14 +7,15 @@ import { Propor, Decidir } from "./Formularios";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular, STATUS_ENCONTRO_LABEL } from "@/lib/labels";
 type Item = { id: string; habilidade: string; realizacaoId: string | null; inicio: string | null; fim: string | null; status: string | null; fusoOrigem: string | null };
 function Alcance({ itens, preferencia, cancelada = false }: { itens: Item[]; preferencia: string | null; cancelada?: boolean }) {
-  return <ul className="list-disc pl-5">{itens.map(i => <li key={i.id}>{i.habilidade.replaceAll("_", " ")}: {i.realizacaoId ? "realização preservada, tentativa permanece consumida" : cancelada ? "tentativa liberada sem consumo" : "tentativa pendente nesta conferência"}.
+  return <ul className="list-disc pl-5">{itens.map(i => <li key={i.id}>{rotular(HABILIDADE_LABEL, i.habilidade)}: {i.realizacaoId ? "realização preservada, tentativa permanece consumida" : cancelada ? "tentativa liberada sem consumo" : "tentativa pendente nesta conferência"}.
     {i.inicio && i.fim && (() => {
       const referencia = i.fusoOrigem ?? "UTC";
       const fuso = resolverFusoExibicao(preferencia, referencia);
       const rotuloOrigem = i.fusoOrigem ? `origem ${i.fusoOrigem}` : "referência UTC";
-      return <> Encontro: {formatarInstanteExibicao(i.inicio, preferencia, referencia).texto} até {formatarInstanteExibicao(i.fim, preferencia, referencia).texto} ({fuso}; {rotuloOrigem}). Estado: {i.status}.</>;
+      return <> Encontro: {formatarInstanteExibicao(i.inicio, preferencia, referencia).texto} até {formatarInstanteExibicao(i.fim, preferencia, referencia).texto} ({fuso}; {rotuloOrigem}). Estado: {rotular(STATUS_ENCONTRO_LABEL, i.status)}.</>;
     })()}
   </li>)}</ul>;
 }

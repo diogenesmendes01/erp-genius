@@ -6,9 +6,9 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
-export const nomes: Record<Habilidade, string> = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 type Nota = { habilidade: Habilidade; nota: string | null; comentarioAluno: string };
 
 export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habilidades, escala, anterior, fuso, realizadores, registradorId }: {
@@ -45,8 +45,8 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
       </>}
       <p>Escala: {escala.minimo} a {escala.maximo}. Campo de nota vazio permanece pendente no rascunho.</p>
       {habilidades.map(h => { const n = anterior?.notas.find(n => n.habilidade === h); return <div key={h} className="space-y-2 rounded border p-3">
-        <label className="block">Nota de {nomes[h]}<input name={`nota-${h}`} inputMode="decimal" maxLength={100} defaultValue={n?.nota ?? ""} className="block rounded border p-2" /></label>
-        <label className="block">Comentário para o aluno — {nomes[h]}<CampoTexto name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
+        <label className="block">Nota de {HABILIDADE_LABEL[h]}<input name={`nota-${h}`} inputMode="decimal" maxLength={100} defaultValue={n?.nota ?? ""} className="block rounded border p-2" /></label>
+        <label className="block">Comentário para o aluno — {HABILIDADE_LABEL[h]}<CampoTexto name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
       <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
       <button className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar versão"}</button>

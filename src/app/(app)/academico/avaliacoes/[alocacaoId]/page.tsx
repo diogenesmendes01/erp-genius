@@ -4,6 +4,7 @@ import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { listarAvaliacoesAlocacao } from "@/server/avaliacoes/lancamentos";
 import { consultarConsolidadoAvaliacoes } from "@/server/avaliacoes/consolidado";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -11,7 +12,6 @@ function valor(f: { numerador: string; denominador: string } | null) {
   const centesimos = (absoluto * 200n + d) / (d * 2n);
   return `${n < 0n ? "−" : ""}${centesimos / 100n},${String(centesimos % 100n).padStart(2, "0")}`;
 }
-const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 const pendenciasSegunda = {
   propostasAguardandoDecisao: "Pedidos aguardando decisão",
   autorizacoesAguardandoAgenda: "Autorizações aguardando disponibilização ou agendamento",
@@ -65,9 +65,9 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
       {aproveitamento && <section className="space-y-3 rounded border p-3" aria-label="Aproveitamento de transferência anterior">
         <h3 className="font-medium">Composição com aproveitamento de transferência anterior</h3>
         {aproveitamento.fontes.length > 0 && <p>Esta composição usa fonte(s) aproveitada(s) de uma transferência anterior nas avaliações e habilidades indicadas abaixo.</p>}
-        {aproveitamento.fontes.length > 0 && <ul className="list-disc pl-5">{aproveitamento.fontes.map((fonte) => <li key={`${fonte.codigoAvaliacao}-${fonte.habilidade}`}>{tituloAvaliacao(fonte.codigoAvaliacao, consolidado.dado!.fontes)} · {nomes[fonte.habilidade]}.</li>)}</ul>}
-        {aproveitamento.conflitosLocais.length > 0 && <div role="status"><p>Há nota(s) oficializada(s) nesta turma para requisito(s) que também tinham fonte aproveitada. A nota local prevalece:</p><ul className="list-disc pl-5">{aproveitamento.conflitosLocais.map((conflito) => <li key={`${conflito.codigoAvaliacao}-${conflito.habilidade}`}>{tituloAvaliacao(conflito.codigoAvaliacao, consolidado.dado!.fontes)} · {nomes[conflito.habilidade]}.</li>)}</ul></div>}
-        {aproveitamento.pendencias.length > 0 && <div role="status"><p>Pendências do aproveitamento:</p><ul className="list-disc pl-5">{aproveitamento.pendencias.map((pendencia) => <li key={`${pendencia.codigoAvaliacao}-${pendencia.habilidade}`}>{tituloAvaliacao(pendencia.codigoAvaliacao, consolidado.dado!.fontes)} · {nomes[pendencia.habilidade]} — {pendencia.situacao === "PENDENTE_FONTE_ALTERADA" ? "a fonte aproveitada mudou e precisa de nova conferência" : "não há fonte aproveitada disponível para este requisito"}.</li>)}</ul></div>}
+        {aproveitamento.fontes.length > 0 && <ul className="list-disc pl-5">{aproveitamento.fontes.map((fonte) => <li key={`${fonte.codigoAvaliacao}-${fonte.habilidade}`}>{tituloAvaliacao(fonte.codigoAvaliacao, consolidado.dado!.fontes)} · {HABILIDADE_LABEL[fonte.habilidade]}.</li>)}</ul>}
+        {aproveitamento.conflitosLocais.length > 0 && <div role="status"><p>Há nota(s) oficializada(s) nesta turma para requisito(s) que também tinham fonte aproveitada. A nota local prevalece:</p><ul className="list-disc pl-5">{aproveitamento.conflitosLocais.map((conflito) => <li key={`${conflito.codigoAvaliacao}-${conflito.habilidade}`}>{tituloAvaliacao(conflito.codigoAvaliacao, consolidado.dado!.fontes)} · {HABILIDADE_LABEL[conflito.habilidade]}.</li>)}</ul></div>}
+        {aproveitamento.pendencias.length > 0 && <div role="status"><p>Pendências do aproveitamento:</p><ul className="list-disc pl-5">{aproveitamento.pendencias.map((pendencia) => <li key={`${pendencia.codigoAvaliacao}-${pendencia.habilidade}`}>{tituloAvaliacao(pendencia.codigoAvaliacao, consolidado.dado!.fontes)} · {HABILIDADE_LABEL[pendencia.habilidade]} — {pendencia.situacao === "PENDENTE_FONTE_ALTERADA" ? "a fonte aproveitada mudou e precisa de nova conferência" : "não há fonte aproveitada disponível para este requisito"}.</li>)}</ul></div>}
       </section>}
       <div className="space-y-2 rounded border p-3">
         <h3 className="font-medium">Frequência neste vínculo de turma</h3>
@@ -80,18 +80,18 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
         {consolidado.dado.resultado.habilidades.map(h => {
           const fonteAlterada = aproveitamento?.pendencias.some((pendencia) => pendencia.habilidade === h.habilidade && pendencia.situacao === "PENDENTE_FONTE_ALTERADA");
           const notaLocalPrevalece = aproveitamento?.conflitosLocais.some((conflito) => conflito.habilidade === h.habilidade);
-          return <tr key={h.habilidade}><th scope="row">{nomes[h.habilidade]}</th><td>{valor(h.resultado)}</td><td>{h.minimo}</td><td>{fonteAlterada ? "Fonte aproveitada em nova conferência" : notaLocalPrevalece ? "Nota local oficial prevalece" : h.atendeMinimo === null ? "Notas pendentes" : h.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>;
+          return <tr key={h.habilidade}><th scope="row">{HABILIDADE_LABEL[h.habilidade]}</th><td>{valor(h.resultado)}</td><td>{h.minimo}</td><td>{fonteAlterada ? "Fonte aproveitada em nova conferência" : notaLocalPrevalece ? "Nota local oficial prevalece" : h.atendeMinimo === null ? "Notas pendentes" : h.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>;
         })}
       </tbody></table></div>
       <p>Média geral: {valor(consolidado.dado.resultado.geral)}. Mínimo: {consolidado.dado.resultado.minimoGeral}.</p>
       <p>{consolidado.dado.resultado.atendeRequisitosNotas === null ? "Há avaliações sem notas oficiais suficientes." : consolidado.dado.resultado.atendeRequisitosNotas ? "As notas atingem os mínimos geral e por habilidade." : "As notas ainda não atingem todos os mínimos."}</p>
       {consolidado.dado.resultado.recuperacoesPendentes && <p role="status">Há notas de recuperação pendentes de lançamento completo ou conferência. Elas ainda não alteram o resultado.</p>}
       {consolidado.dado.resultado.habilidades.filter(h => h.memoriaRecuperacao.length > 0).map(h => <div className="rounded border p-3" key={h.habilidade}>
-        <h3 className="font-medium">Recuperações de {nomes[h.habilidade]}</h3>
+        <h3 className="font-medium">Recuperações de {HABILIDADE_LABEL[h.habilidade]}</h3>
         <p>Resultado regular: {valor(h.resultadoOriginal)}. Resultado vigente: {valor(h.resultado)}.</p>
         {h.memoriaRecuperacao.map(m => <p key={m.tentativaId}>Nota: {m.nota ?? "Pendente"} — {m.pendencia ? "aguardando regularização ou conferência" : m.melhorou ? "melhorou o resultado" : "preservado o melhor resultado anterior"}.</p>)}
       </div>)}
-      <details><summary>Composição dos resultados</summary>{consolidado.dado.resultado.habilidades.map(h => <div key={h.habilidade} className="my-3"><h3 className="font-medium">{nomes[h.habilidade]} — peso na média geral: {h.peso}</h3>{h.memoria.map(m => <p key={m.avaliacaoId}>{consolidado.dado!.fontes.find(f => f.codigo === m.avaliacaoId)?.titulo ?? m.avaliacaoId}: {m.nota ?? "Pendente"}; peso {m.peso}{m.pendencia === "AGUARDANDO_OFICIALIZACAO" ? " — aguardando conferência" : m.pendencia ? " — nota ausente" : ""}.</p>)}</div>)}</details>
+      <details><summary>Composição dos resultados</summary>{consolidado.dado.resultado.habilidades.map(h => <div key={h.habilidade} className="my-3"><h3 className="font-medium">{HABILIDADE_LABEL[h.habilidade]} — peso na média geral: {h.peso}</h3>{h.memoria.map(m => <p key={m.avaliacaoId}>{consolidado.dado!.fontes.find(f => f.codigo === m.avaliacaoId)?.titulo ?? m.avaliacaoId}: {m.nota ?? "Pendente"}; peso {m.peso}{m.pendencia === "AGUARDANDO_OFICIALIZACAO" ? " — aguardando conferência" : m.pendencia ? " — nota ausente" : ""}.</p>)}</div>)}</details>
     </section>}
     {!consolidado.ok && <p role="status">Consolidado indisponível: {consolidado.erro}</p>}
     <nav aria-label="Avaliações da matrícula" className="space-y-3">{r.dado.avaliacoes.map(a => <Link key={a.codigo} className="block rounded border p-3 underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(a.codigo)}`}>

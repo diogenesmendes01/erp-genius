@@ -7,6 +7,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { ResumoRegra, type ConteudoRegra } from "../../../[nivelId]/ResumoRegra";
 import { DecidirConferenciaRegraHistorica, PrepararConferenciaRegraHistorica } from "./ConferenciaRegraHistorica";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_TURMA_LABEL, rotular } from "@/lib/labels";
 
 type Fotografia = {
   turma: { nome: string | null; codigo: string | null; status: string; dataInicio: string | null; dataFim: string | null };
@@ -39,7 +40,7 @@ function Registro({ item, preferenciaFusoExibicao }: {
     <p className="whitespace-pre-wrap"><strong>Evidência:</strong> {item.evidencia}</p>
     {fotografia ? <section className="space-y-2 rounded bg-gray-50 p-3">
       <h4 className="font-medium">Fotografia conferida</h4>
-      <p>Turma {fotografia.turma.nome ?? fotografia.turma.codigo ?? "sem identificação"} · {fotografia.turma.status}; início {fotografia.turma.dataInicio ?? "não informado"}.</p>
+      <p>Turma {fotografia.turma.nome ?? fotografia.turma.codigo ?? "sem identificação"} · {rotular(STATUS_TURMA_LABEL, fotografia.turma.status)}; início {fotografia.turma.dataInicio ?? "não informado"}.</p>
       <p>Versão preservada: {fotografia.destino.versao}; {fotografia.encontros.length} encontros, {fotografia.diarios.length} diários e {fotografia.alocacoes.length} alocações no momento da proposta.</p>
       <ResumoRegra conteudo={fotografia.destino.conteudo} />
     </section> : <p role="alert">Fotografia histórica indisponível para apresentação.</p>}

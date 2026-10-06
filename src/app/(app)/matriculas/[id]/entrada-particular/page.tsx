@@ -5,7 +5,8 @@ import { consultarPagamentosEntradaParticular } from "@/server/matricula/entrada
 import { nomeCompleto } from "@/lib/nome";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
-const tipo = (s: string) => s === "MATRICULA" ? "Taxa de matrícula" : s === "MENSALIDADE" ? "Primeira mensalidade" : "Adiantamento por hora";
+import { TIPO_COBRANCA_ENTRADA_LABEL, rotular } from "@/lib/labels";
+const tipo = (s: string) => rotular(TIPO_COBRANCA_ENTRADA_LABEL, s);
 
 export default async function EntradaParticular({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);

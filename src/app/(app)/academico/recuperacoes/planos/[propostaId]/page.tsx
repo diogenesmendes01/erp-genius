@@ -10,6 +10,7 @@ import { Disponibilizar, Reservar, Realizar, CancelarPelaEscola } from "./Formul
 import { PreviaAgenda } from "./PreviaAgenda";
 import { AgendaPublicada } from "../../AgendaPublicada";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 export default async function Operacao({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
@@ -41,7 +42,7 @@ export default async function Operacao({ params, searchParams }: { params: Promi
     {d.podeDisponibilizar && d.propostaHash && <Disponibilizar key={`${d.propostaHash}:${d.autorizacaoDisponibilizacao?.id ?? "sem-autorizacao"}`} propostaId={d.propostaId} propostaHash={d.propostaHash} autorizacaoPreparacaoId={d.autorizacaoDisponibilizacao?.id} fusoInstitucional={fusoInstitucional} />}
     {d.podeGerirDesignacoes && !d.vinculoValido && !d.autorizacaoDisponibilizacao && !d.disponibilizacao && <Link className="block underline" href={`/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`}>Consultar planos para obter autorização especial de preparação</Link>}
     <h2 className="text-xl font-medium">Tentativas por habilidade neste nível da matrícula</h2>
-    <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Saldo de tentativas de recuperação</caption><thead><tr><th scope="col">Habilidade</th><th scope="col">Limite da regra</th><th scope="col">Extras aprovadas</th><th scope="col">Limite total</th><th scope="col">Consumidas</th><th scope="col">Reservadas</th><th scope="col">Disponíveis</th></tr></thead><tbody>{d.saldo.map(h => <tr key={h.habilidade}><th scope="row">{h.habilidade.replaceAll("_", " ")}</th><td>{h.limiteBase}</td><td>{h.extrasAprovadas}</td><td>{h.limite}</td><td>{h.consumidas}</td><td>{h.reservadas}</td><td>{h.disponiveis}</td></tr>)}</tbody></table></div>
+    <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Saldo de tentativas de recuperação</caption><thead><tr><th scope="col">Habilidade</th><th scope="col">Limite da regra</th><th scope="col">Extras aprovadas</th><th scope="col">Limite total</th><th scope="col">Consumidas</th><th scope="col">Reservadas</th><th scope="col">Disponíveis</th></tr></thead><tbody>{d.saldo.map(h => <tr key={h.habilidade}><th scope="row">{rotular(HABILIDADE_LABEL, h.habilidade)}</th><td>{h.limiteBase}</td><td>{h.extrasAprovadas}</td><td>{h.limite}</td><td>{h.consumidas}</td><td>{h.reservadas}</td><td>{h.disponiveis}</td></tr>)}</tbody></table></div>
     <Link className="block underline" href={`/academico/avaliacoes/${encodeURIComponent(d.alocacaoId)}/extras`}>Consultar e solicitar oportunidades extras</Link>
     {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(d.propostaId)}/autorizacao-reserva`}>Autorizar pré-reserva especial de recuperação</Link>}
     <p>A reserva separa uma oportunidade de avaliação; não confirma um horário na agenda nem consome definitivamente a tentativa.</p>
@@ -50,7 +51,7 @@ export default async function Operacao({ params, searchParams }: { params: Promi
     {d.reservas.map(reserva => <article key={reserva.id} className="space-y-3 rounded border p-4">
       <p>Reserva de {horario(reserva.criadaEm)} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{reserva.motivo}</p>
       {reserva.cancelamento && <p className="whitespace-pre-wrap">Cancelamento pela escola: {reserva.cancelamento.motivo}. Evidência: {reserva.cancelamento.evidencia}</p>}
-      {reserva.itens.map(i => <div key={i.id} className="space-y-2 rounded border p-3"><h3 className="font-medium">{i.habilidade.replaceAll("_", " ")}</h3>
+      {reserva.itens.map(i => <div key={i.id} className="space-y-2 rounded border p-3"><h3 className="font-medium">{rotular(HABILIDADE_LABEL, i.habilidade)}</h3>
         <AgendaPublicada agenda={i.agenda} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
         {!i.realizacao && !reserva.cancelamento && d.situacaoContratual !== "ATIVA" && <p role="status">{i.autorizacaoEspecialAte
           ? `Autorização específica vigente até ${horario(i.autorizacaoEspecialAte)} (${fusoExibicao}; origem UTC). Prazo do plano, atribuição docente e condições da agenda continuam obrigatórios.`

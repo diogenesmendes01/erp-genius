@@ -9,6 +9,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular, STATUS_MATRICULA_LABEL } from "@/lib/labels";
 
 export default async function AutorizacaoEspecialRecuperacao({ params, searchParams }: { params: Promise<{ itemReservaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
@@ -28,7 +29,7 @@ export default async function AutorizacaoEspecialRecuperacao({ params, searchPar
     <VoltarPara href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`} para="Tentativa" />
     <h1 className="text-2xl font-medium">Autorização especial de realização</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    <p>Habilidade: {d.habilidade.replaceAll("_", " ")} · situação da matrícula: {d.statusMatricula}.</p>
+    <p>Habilidade: {rotular(HABILIDADE_LABEL, d.habilidade)} · situação da matrícula: {rotular(STATUS_MATRICULA_LABEL, d.statusMatricula)}.</p>
     <p>Esta autorização é específica desta tentativa e não altera o saldo, a reserva ou a situação da matrícula.</p>
     {d.podeAutorizar ? <Formulario itemReservaId={d.itemReservaId} fusoInstitucional={fusoInstitucional} /> : <p role="status">Não há autorização especial disponível para esta tentativa nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações</h2>

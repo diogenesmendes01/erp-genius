@@ -1,4 +1,5 @@
 "use client";
+import { CATEGORIA_DOCUMENTO_LABEL, rotular } from "@/lib/labels";
 
 export type EvidenciaDisponivel = { id: string; nome: string; categoria: string };
 
@@ -18,7 +19,7 @@ export function EvidenciaSeletor({ nome, titulo, documentos, selecionada, onChan
       disabled={disabled} value={selecionada?.id ?? ""}
       onChange={e => onChange(opcoes.find(d => d.id === e.target.value) ?? null)}>
       <option value="">Selecione uma evidência</option>
-      {opcoes.map(d => <option key={d.id} value={d.id}>{d.nome} · {d.categoria}</option>)}
+      {opcoes.map(d => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}
     </select>
   </label>;
 }
