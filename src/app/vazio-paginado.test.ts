@@ -210,6 +210,15 @@ function avaliarTexto(e: ts.Expression, profundidade = 0): string {
   if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
   if (ts.isTemplateExpression(e)) return e.head.text + e.templateSpans.map((s) => avaliarTexto(s.expression, profundidade + 1) + s.literal.text).join("");
   if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) return avaliarTexto(e.left, profundidade + 1) + avaliarTexto(e.right, profundidade + 1);
+  // `["Nenhuma turma nesta", "página."].join(" ")` e `"a".concat(b)` (R2 da #134, B1).
+  if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression)) {
+    const alvo = e.expression.expression, metodo = e.expression.name.text;
+    if (metodo === "join" && ts.isArrayLiteralExpression(alvo)) {
+      const sep = e.arguments[0] ? avaliarTexto(e.arguments[0], profundidade + 1) : ",";
+      return alvo.elements.map((x) => avaliarTexto(x as ts.Expression, profundidade + 1)).join(sep);
+    }
+    if (metodo === "concat") return avaliarTexto(alvo, profundidade + 1) + e.arguments.map((a) => avaliarTexto(a, profundidade + 1)).join("");
+  }
   if (ts.isIdentifier(e) && profundidade < 5) {
     const inits = declaracoes.get(e.text) ?? [];
     if (inits.length === 1) return avaliarTexto(inits[0], profundidade + 1);
@@ -224,8 +233,17 @@ function textoInteiro(n: ts.Node): boolean {
   if (!p) return true;
   if (ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.PlusToken) return false;
   if (ts.isTemplateSpan(p)) return false;
+  // Pedaço de `[…].join(…)` ou de `a.concat(b)`: o texto inteiro é o da chamada.
+  if (ts.isArrayLiteralExpression(p) && ts.isPropertyAccessExpression(p.parent) && ["join", "concat"].includes(p.parent.name.text)) return false;
+  if (ts.isPropertyAccessExpression(p) && ["join", "concat"].includes(p.name.text)) return false;
+  if (ts.isCallExpression(p) && ts.isPropertyAccessExpression(p.expression) && ["join", "concat"].includes(p.expression.name.text)) return false;
   return true;
 }
+
+/** Chamada que monta texto: `[…].join(…)` de lista literal ou `x.concat(…)`. */
+const montaTexto = (n: ts.Node) =>
+  ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+  && ((n.expression.name.text === "join" && ts.isArrayLiteralExpression(n.expression.expression)) || n.expression.name.text === "concat");
 
 type Achado = { linha: number; trecho: string; guarda: string | null };
 
@@ -244,7 +262,7 @@ export function textosDePagina(fonte: string, arquivo = "x.tsx"): Achado[] {
   };
   const visita = (n: ts.Node) => {
     if (ts.isJsxText(n)) registra(n, n.text);
-    else if ((ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken))
+    else if ((ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) || montaTexto(n))
       && !ts.isImportDeclaration(n.parent) && !ts.isExportDeclaration(n.parent) && textoInteiro(n)) registra(n, avaliarTexto(n as ts.Expression));
     ts.forEachChild(n, visita);
   };
@@ -260,7 +278,9 @@ function fontes(): { arquivo: string; fonte: string }[] {
   const saida: { arquivo: string; fonte: string }[] = [];
   for (const f of readdirSync("src", { recursive: true }) as string[]) {
     const arquivo = join("src", f).split("\\").join("/");
-    if (!/\.tsx?$/.test(arquivo) || /\.test\.|\.d\.ts$|-mapa\.ts$/.test(arquivo)) continue;
+    // Manifestos das travas (dados de teste que citam os textos das telas) ficam de fora pelo caminho
+    // EXATO — um arquivo de produção *-mapa.ts continua varrido (R2 da #134, B1).
+    if (!/\.tsx?$/.test(arquivo) || /\.test\.|\.d\.ts$/.test(arquivo) || ["src/app/vazio-paginado-mapa.ts", "src/app/estados-vazios-mapa.ts", "src/app/botoes-mapa.ts"].includes(arquivo)) continue;
     saida.push({ arquivo, fonte: readFileSync(arquivo, "utf8") });
   }
   return saida;
@@ -334,6 +354,10 @@ describe("detector de vazio paginado (autoteste)", () => {
     expect(sem('return <EstadoVazio>{"Nenhuma turma nesta " + "página."}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
     expect(sem('return <EstadoVazio>{`Nenhuma turma ${"nesta"} página.`}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
     expect(sem('const pedaco = "nesta"; return <EstadoVazio>{`Nenhuma turma ${pedaco} página.`}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
+    // `.join` de lista literal e `.concat` (R2 da #134, B1).
+    expect(sem('return <p>{["Nenhuma turma nesta", "página."].join(" ")}</p>;')).toEqual(["Nenhuma turma nesta página."]);
+    expect(sem('return <p>{"Nenhuma turma nesta ".concat("página.")}</p>;')).toEqual(["Nenhuma turma nesta página."]);
+    expect(sem('return <div>{cursor ? <p>{["Nada nesta", "página."].join(" ")}</p> : null}</div>;')).toEqual([]);
     // Constante noutro arquivo (.ts): o literal já acusa onde nasce.
     expect(vaziosPaginadosSemGuarda('export const VAZIO = "Nenhuma turma nesta página.";', "textos.ts").map((x) => x.trecho)).toEqual(["Nenhuma turma nesta página."]);
   });
