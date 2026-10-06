@@ -58,7 +58,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
         void executar(() => conferirCoberturaInicial({ matriculaId: m.id, cobrancaId: m.cobertura.cobrancaId ?? "", versaoEsperada: m.cobertura.versao ?? -1, primeiroVencimento: String(f.get("vencimento")), cobertura: { referencia: String(f.get("referencia")) as "MES_CIVIL" | "CICLO_MATRICULA", inicio: String(f.get("inicio")) }, motivo: String(f.get("motivo")) }));
       }}>
         <label className="grid gap-1 text-xs">Referência contratual<select name="referencia" required defaultValue={m.cobertura.referencia ?? ""} className={estilo}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option></select></label>
-        <label className="grid gap-1 text-xs">Início do primeiro período<input name="inicio" type="date" required defaultValue={formatarDataCivil(m.cobertura.inicio, "")} className={estilo} /></label>
+        <label className="grid gap-1 text-xs">Início do primeiro período<input name="inicio" type="date" required defaultValue={m.cobertura.inicio ?? ""} className={estilo} /></label>
         <label className="grid gap-1 text-xs">Primeiro vencimento acordado<input name="vencimento" type="date" required defaultValue={m.cobertura.vencimento ?? ""} className={estilo} /></label>
         <label className="grid gap-1 text-xs">Motivo da conferência<input name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir cobertura inicial</button>
