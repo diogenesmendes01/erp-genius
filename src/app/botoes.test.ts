@@ -267,6 +267,114 @@ export function mapaDeBotoes(fonte: string): string[] {
   return itens;
 }
 
+// Hierarquia (E1): ação destrutiva ou de recusa usa a variante `perigo`. Lista FECHADA de verbos: o
+// rótulo visível (cada alternativa de um ternário conta, separadas por " · ") que começa por um deles
+// exige perigo. "Cancelar" sozinho fica de fora — é o fechar de modal/formulário (secundario ou
+// fantasma); "Cancelar <algo>" desfaz registro e entra. "Confirmar <substantivo destrutivo>" é o passo
+// de confirmação da mesma ação e também entra.
+export const VERBOS_DESTRUTIVOS = ["Rejeitar", "Recusar", "Remover", "Excluir", "Apagar", "Descartar", "Desativar", "Inativar", "Revogar", "Encerrar", "Estornar", "Anular", "Cancelar"];
+const CONFIRMACAO_DESTRUTIVA = /^Confirmar (cancelamento|rejeição|exclusão|remoção|revogação|encerramento|perda|desativação|estorno)(\s|$)/;
+
+/** O rótulo (com as alternativas separadas por " · ") nomeia uma ação destrutiva ou de recusa? */
+export function rotuloDestrutivo(rotulo: string): boolean {
+  return rotulo.split(" · ").some((parte) => {
+    const t = parte.trim();
+    if (t === "Cancelar") return false;
+    return VERBOS_DESTRUTIVOS.some((v) => t === v || t.startsWith(`${v} `)) || CONFIRMACAO_DESTRUTIVA.test(t);
+  });
+}
+
+/**
+ * Cada botão do design system no fonte — <button>/<Link>/<a> cujo className passa por botaoClasses
+ * (direto ou por constante montada com ele) e todo <Botao> — com o nome (nomeDoElemento) e as
+ * variantes possíveis: literal → ela; ternário → os dois lados; omitida → primario; outra expressão → "?".
+ * Controles fora do design system não entram: a trava de botoesForaDoDesign já os lista por nome.
+ */
+export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: string[] }[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const ehBotaoClasses = (n: ts.Node): n is ts.CallExpression => ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses";
+  const daExpressao = (e: ts.Expression): string[] => {
+    if (ts.isParenthesizedExpression(e)) return daExpressao(e.expression);
+    if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return [e.text];
+    if (ts.isConditionalExpression(e)) return [...daExpressao(e.whenTrue), ...daExpressao(e.whenFalse)];
+    return ["?"];
+  };
+  const daChamada = (c: ts.CallExpression): string[] => {
+    const arg = c.arguments[0];
+    if (!arg) return ["primario"];
+    if (!ts.isObjectLiteralExpression(arg)) return ["?"];
+    const p = arg.properties.find((x) => ts.isPropertyAssignment(x) && x.name.getText(sf) === "variante") as ts.PropertyAssignment | undefined;
+    return p ? daExpressao(p.initializer) : ["primario"];
+  };
+  /** Variantes de todas as chamadas a botaoClasses e constantes de botão dentro de um nó. */
+  const constantes = new Map<string, string[]>();
+  const naExpressao = (raiz: ts.Node): string[] => {
+    const v: string[] = [];
+    const andar = (n: ts.Node) => {
+      if (ehBotaoClasses(n)) { v.push(...daChamada(n)); return; }
+      if (ts.isIdentifier(n) && constantes.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) v.push(...constantes.get(n.text)!);
+      ts.forEachChild(n, andar);
+    };
+    andar(raiz);
+    return v;
+  };
+  const coletar = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      const v = naExpressao(n.initializer);
+      if (v.length) constantes.set(n.name.text, v);
+    }
+    ts.forEachChild(n, coletar);
+  };
+  coletar(sf);
+  const atributo = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, nome: string) =>
+    n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+  const botoes: { rotulo: string; variantes: string[] }[] = [];
+  const visitar = (n: ts.Node) => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      let variantes: string[] = [];
+      if (tag === "Botao") {
+        const ini = atributo(n, "variante")?.initializer;
+        variantes = !ini ? ["primario"] : ts.isStringLiteral(ini) ? [ini.text] : ts.isJsxExpression(ini) && ini.expression ? daExpressao(ini.expression) : ["?"];
+      } else if (["button", "Link", "a"].includes(tag)) {
+        const ini = atributo(n, "className")?.initializer;
+        if (ini) variantes = naExpressao(ini);
+      }
+      if (variantes.length) botoes.push({ rotulo: nomeDoElemento(n, sf) ?? "(sem nome)", variantes });
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return botoes;
+}
+
+/** Nomes dos botões do design system com rótulo destrutivo sem `perigo` entre as variantes possíveis. */
+export function destrutivosSemPerigo(fonte: string): string[] {
+  return variantesDosBotoes(fonte).filter((b) => rotuloDestrutivo(b.rotulo) && !b.variantes.includes("perigo")).map((b) => b.rotulo);
+}
+
+type Achado = { arquivo: string; rotulo: string };
+/**
+ * Confere exceções ancoradas (arquivo + rótulo exato): o achado sem exceção fica em `semExcecao`; a
+ * exceção que não casa com EXATAMENTE um achado (sumiu, mudou de rótulo ou ficou ambígua) fica em `soltas`.
+ */
+export function conferirExcecoes(achados: Achado[], excecoes: Achado[]): { semExcecao: string[]; soltas: string[] } {
+  const casa = (a: Achado, e: Achado) => a.arquivo === e.arquivo && a.rotulo === e.rotulo;
+  return {
+    semExcecao: achados.filter((a) => !excecoes.some((e) => casa(a, e))).map((a) => `${a.arquivo}: ${a.rotulo}`),
+    soltas: excecoes.filter((e) => achados.filter((a) => casa(a, e)).length !== 1).map((e) => `${e.arquivo}: ${e.rotulo}`),
+  };
+}
+
+/** Rótulo destrutivo que de propósito não é `perigo`: arquivo + rótulo exato + motivo. */
+const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
+  {
+    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
+    rotulo: "Remover opt-out",
+    motivo: "o efeito é registrar nova autorização de contato (opt-in com evidência): reabre o canal, não apaga nem recusa nada",
+  },
+];
+
 const arquivos = [
   ...AREAS_MIGRADAS.flatMap((raiz) =>
     (readdirSync(raiz, { recursive: true }) as string[])
@@ -394,5 +502,55 @@ describe("botões nas áreas migradas", () => {
       '<Link href="/x" className="block rounded border p-3 underline">Card da lista</Link>',
       '<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Abrir</Link>',
     ]) expect(botoesCrus(ok), ok).toEqual([]);
+  });
+});
+
+describe("hierarquia: ação destrutiva ou de recusa é perigo", () => {
+  it("todo botão do design system com rótulo destrutivo tem perigo; as exceções são ancoradas e cada uma casa com exatamente um botão", () => {
+    const achados = arquivos
+      .filter(({ arquivo }) => !/\.test\./.test(arquivo))
+      .flatMap(({ arquivo, conteudo }) => destrutivosSemPerigo(conteudo).map((rotulo) => ({ arquivo, rotulo })));
+    expect(conferirExcecoes(achados, DESTRUTIVOS_SEM_PERIGO)).toEqual({ semExcecao: [], soltas: [] });
+    for (const e of DESTRUTIVOS_SEM_PERIGO) expect(e.motivo.trim().length, `${e.arquivo}: ${e.rotulo}`).toBeGreaterThan(20);
+  });
+
+  it("rotuloDestrutivo: lista fechada de verbos; Cancelar sozinho (fechar) não conta; Cancelar <algo> e Confirmar <destruição> contam", () => {
+    for (const r of ["Rejeitar", "Rejeitar proposta", "Remover campo", "Excluir", "Revogar designação", "Encerrar", "Descartar relato sem pausar",
+      "Cancelar e liberar reserva", "Registrando… · Confirmar rejeição", "Confirmar perda", "Desativar · Ativar", "Ativar · Desativar", "Inativar empresa · Reativar empresa"])
+      expect(rotuloDestrutivo(r), r).toBe(true);
+    for (const r of ["Cancelar", "Fechar · Cancelar", "Cancelar · Editar", "Rejeitando…", "Removido", "Arquivar", "Reativar", "Ativar",
+      "Confirmar divergência material", "Registrando… · revogar", "Salvar", "Aprovar proposta"])
+      expect(rotuloDestrutivo(r), r).toBe(false);
+  });
+
+  it("destrutivosSemPerigo: lê variante direta, por constante, padrão (primario), ternário e <Botao>", () => {
+    // Acusa.
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar</button>')).toEqual(["Rejeitar"]);
+    expect(destrutivosSemPerigo("<button className={botaoClasses()}>Excluir aluno</button>")).toEqual(["Excluir aluno"]);
+    expect(destrutivosSemPerigo('const botao = botaoClasses({ variante: "secundario" }); <button className={botao}>Rejeitar proposta</button>')).toEqual(["Rejeitar proposta"]);
+    expect(destrutivosSemPerigo('<button className={`${botaoClasses({ variante: "fantasma" })} ml-2`}>{ocupado ? "Revogando…" : "Revogar"}</button>')).toEqual(["Revogando… · Revogar"]);
+    expect(destrutivosSemPerigo('<button aria-label="Remover anexo" className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}><IconTrash /></button>')).toEqual(["Remover anexo"]);
+    expect(destrutivosSemPerigo('<Botao variante="secundario">Remover</Botao>')).toEqual(["Remover"]);
+    expect(destrutivosSemPerigo("<Botao>Encerrar matrícula</Botao>")).toEqual(["Encerrar matrícula"]);
+    expect(destrutivosSemPerigo('<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Cancelar matrícula</Link>')).toEqual(["Cancelar matrícula"]);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: modo })}>Descartar</button>')).toEqual(["Descartar"]); // variante opaca ("?")
+    // Passa.
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "perigo" })}>Rejeitar</button>')).toEqual([]);
+    expect(destrutivosSemPerigo('const perigo = botaoClasses({ variante: "perigo", tamanho: "sm" }); <button className={perigo}>Remover</button>')).toEqual([]);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: ativo ? "perigo" : "fantasma", tamanho: "sm" })}>{ativo ? "Desativar" : "Ativar"}</button>')).toEqual([]);
+    expect(destrutivosSemPerigo('<Botao variante={ativo ? "perigo" : "secundario"}>Inativar</Botao>')).toEqual([]);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "secundario" })}>Cancelar</button>')).toEqual([]);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "secundario" })}>Aprovar</button>')).toEqual([]);
+    // Fora do design system não entra aqui (a trava de botoesForaDoDesign o lista por nome).
+    expect(destrutivosSemPerigo('<button className="underline">Remover</button>')).toEqual([]);
+  });
+
+  it("conferirExcecoes: achado sem exceção acusa; exceção sem alvo, com alvo trocado ou ambígua fica solta", () => {
+    const a = { arquivo: "x.tsx", rotulo: "Remover opt-out" };
+    expect(conferirExcecoes([a], [])).toEqual({ semExcecao: ["x.tsx: Remover opt-out"], soltas: [] });
+    expect(conferirExcecoes([a], [a])).toEqual({ semExcecao: [], soltas: [] });
+    expect(conferirExcecoes([], [a])).toEqual({ semExcecao: [], soltas: ["x.tsx: Remover opt-out"] }); // o botão sumiu ou virou perigo
+    expect(conferirExcecoes([{ ...a, arquivo: "y.tsx" }], [a])).toEqual({ semExcecao: ["y.tsx: Remover opt-out"], soltas: ["x.tsx: Remover opt-out"] }); // âncora é o arquivo
+    expect(conferirExcecoes([a, a], [a])).toEqual({ semExcecao: [], soltas: ["x.tsx: Remover opt-out"] }); // dois botões iguais: exceção ambígua
   });
 });

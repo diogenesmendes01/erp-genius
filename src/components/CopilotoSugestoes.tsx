@@ -166,7 +166,7 @@ export function CopilotoSugestoes({
                     </button>
                   )}
                   <button
-                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
+                    className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
                     disabled={acao.ocupado}
                     onClick={() => run(s.id, () => descartarSugestao(s.id))}
                   >

@@ -22,7 +22,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
 
 const btnPri = botaoClasses();
-const btnSec = botaoClasses({ variante: "secundario" });
 const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 interface EmpresaFicha {
@@ -213,7 +212,7 @@ export function FichaEmpresa({
           <div className="md:col-span-2"><dt className="inline text-gray-500">Observações: </dt><dd className="inline">{empresa.observacoes ?? "—"}</dd></div>
         </dl>
         <button
-          className={`${btnSec} mt-3`}
+          className={`${botaoClasses({ variante: empresa.ativo ? "perigo" : "secundario" })} mt-3`}
           disabled={ocupado}
           onClick={() =>
             run("contrato", () =>
