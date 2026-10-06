@@ -29,7 +29,9 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
           <p>Registrada em {v.criadaEm.toISOString()} (UTC). Tipo: {rotular(TIPO_PAGADOR_LABEL, v.tipo)}.</p>
           <p>Documento: {v.dados.documento || "Não informado"}</p><p>E-mail: {v.dados.email || "Não informado"}</p><p>Telefone: {v.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {v.dados.endereco || "Não informado"}</p><p>Motivo: {v.motivo}</p>
         </details>)}
-        {!h.dado.registros.length && <EstadoVazio>Nenhum registro nesta página.</EstadoVazio>}
+        {!h.dado.registros.length && (pagina > 1
+          ? <EstadoVazio acao={<Link className="underline" href="?pagina=1">Ir para a primeira página</Link>}>Nenhum registro nesta página.</EstadoVazio>
+          : <EstadoVazio>Nenhuma versão do pagador registrada para esta matrícula.</EstadoVazio>)}
         <nav aria-label="Páginas do histórico" className="flex gap-4">{pagina > 1 && <Link className="underline" href={`?pagina=${pagina - 1}`}>Anterior</Link>}<span>Página {pagina}</span>{h.dado.temProxima && <Link className="underline" href={`?pagina=${pagina + 1}`}>Próxima</Link>}</nav>
       </>}
     </section>

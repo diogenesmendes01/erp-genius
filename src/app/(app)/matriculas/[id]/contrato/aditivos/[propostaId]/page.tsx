@@ -41,8 +41,8 @@ export default async function PropostaAditivoPage({ params, searchParams }: { pa
     <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos/${encodeURIComponent(propostaId)}/alcadas`}>Consultar alçadas aplicáveis</Link>
     {d.superada && <p role="status">Existe uma proposta mais recente. Esta versão pode ser consultada ou rejeitada, mas não aprovada.</p>}{d.decisao ? <section className="rounded border p-4"><h2 className="text-xl">{d.decisao.aprovada ? "Proposta aprovada" : "Proposta rejeitada"}</h2><p>{d.decisao.decisor.nome} · {data(d.decisao.decididaEm)}</p><p className="whitespace-pre-wrap">{d.decisao.motivo}</p></section> : d.podeDecidir ? <DecidirAditivo propostaId={d.id} propostaHash={d.propostaHash} superada={d.superada} /> : <p>A decisão exige outra pessoa da Administração.</p>}
     {d.decisao?.aprovada && !d.superada && <ParticipantesFormulario matriculaId={id} propostaId={propostaId} />}
-    <ParticipantesHistorico matriculaId={id} propostaId={propostaId} pagina={pagina} preferenciaFusoExibicao={fusoExibicao} />
-    <OriginaisPainel matriculaId={id} propostaId={propostaId} pagina={paginaOriginais} podeGerar={Boolean(d.decisao?.aprovada && !d.superada)} preferenciaFusoExibicao={fusoExibicao} />
+    <ParticipantesHistorico matriculaId={id} propostaId={propostaId} pagina={pagina} paginaOriginais={paginaOriginais} preferenciaFusoExibicao={fusoExibicao} />
+    <OriginaisPainel matriculaId={id} propostaId={propostaId} pagina={paginaOriginais} paginaConferencias={pagina} podeGerar={Boolean(d.decisao?.aprovada && !d.superada)} preferenciaFusoExibicao={fusoExibicao} />
     <p role="status">A prévia em PDF não é um documento assinado. A assinatura do aditivo e a aplicação das novas condições ainda não estão disponíveis.</p>
   </div>;
 }

@@ -26,7 +26,7 @@ export function DecidirGrade({ id, podePublicar }: { id: string; podePublicar: b
     <label className="block">Motivo da decisão<CampoTexto className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" maxLength={2000} disabled={ocupado} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label>
     <div className="flex flex-wrap gap-3">
       <button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado || !podePublicar || motivo.trim().length < 5} onClick={() => decidir(true)}>Aprovar e publicar encontros</button>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
+      <button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
   </section>;

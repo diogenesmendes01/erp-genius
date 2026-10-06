@@ -1,4 +1,5 @@
 import { StatusAluno, type Prisma } from "@prisma/client";
+import { anexarOrdenacao, lerOrdenacao, orderByDe, parametrosDaQuery, type CriteriosOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 
 // Filtros da lista de alunos na URL (docs/42-auditoria-frontend-ux.md, E4): viviam em useState —
 // abrir uma ficha e voltar perdia tudo, o link não era compartilhável e a planilha exportada
@@ -7,12 +8,20 @@ import { StatusAluno, type Prisma } from "@prisma/client";
 
 export const ALUNOS_POR_PAGINA = 50;
 
+// Ordenação pelo cabeçalho (E1, §5.6 A9): lista fechada de colunas. Turma (várias por aluno) e
+// situação financeira (calculada em memória a partir das cobranças) não têm ordem no banco e ficam fora.
+export const ORDENS_ALUNOS = ["nome", "pais", "status"] as const;
+export type OrdemAlunos = (typeof ORDENS_ALUNOS)[number];
+/** A ordem de sempre da lista: nome crescente. */
+export const ORDEM_PADRAO_ALUNOS: Ordenacao<OrdemAlunos> = { campo: "nome", dir: "asc" };
+
 export type FiltrosAlunos = {
   busca: string;
   status: StatusAluno | null;
   paisId: string | null;
   turmaId: string | null;
   pagina: number;
+  ordem: Ordenacao<OrdemAlunos>;
 };
 
 type Parametros = Record<string, string | string[] | undefined> | URLSearchParams;
@@ -33,16 +42,18 @@ export function lerFiltrosAlunos(p: Parametros): FiltrosAlunos {
     paisId: id(valor(p, "pais")),
     turmaId: id(valor(p, "turma")),
     pagina: Number.isInteger(pagina) && pagina >= 1 && pagina <= 100000 ? pagina : 1,
+    ordem: lerOrdenacao(p, ORDENS_ALUNOS, ORDEM_PADRAO_ALUNOS),
   };
 }
 
-/** Query string dos filtros (sem os vazios e sem a página 1). `semPagina` para links de filtro e exportação. */
+/** Query string dos filtros (sem os vazios, sem a página 1 e sem a ordem padrão). `semPagina` para links de filtro e exportação. */
 export function filtrosParaQuery(f: FiltrosAlunos, { semPagina = false } = {}): string {
   const q = new URLSearchParams();
   if (f.busca) q.set("busca", f.busca);
   if (f.status) q.set("status", f.status);
   if (f.paisId) q.set("pais", f.paisId);
   if (f.turmaId) q.set("turma", f.turmaId);
+  anexarOrdenacao(q, f.ordem, ORDEM_PADRAO_ALUNOS);
   if (!semPagina && f.pagina > 1) q.set("pagina", String(f.pagina));
   return q.toString();
 }
@@ -50,7 +61,21 @@ export function filtrosParaQuery(f: FiltrosAlunos, { semPagina = false } = {}): 
 /** Palavras da busca (no máximo 6 — limita o tamanho da consulta). */
 export const palavrasDaBusca = (busca: string) => busca.split(/\s+/).filter(Boolean).slice(0, 6);
 
-export const temFiltroAlunos =(f: FiltrosAlunos) => !!(f.busca || f.status || f.paisId || f.turmaId);
+/** Há filtro aplicado? A ordem não é filtro: não muda quais alunos aparecem. */
+export const temFiltroAlunos = (f: FiltrosAlunos) => !!(f.busca || f.status || f.paisId || f.turmaId);
+
+// Critérios de cada coluna. Nome: primeiro nome e sobrenome na mesma direção (a decrescente é o
+// inverso exato da crescente). Nas outras colunas, empates por nome. Sempre com desempate final por id.
+const POR_NOME: Prisma.AlunoOrderByWithRelationInput[] = [{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }];
+const CRITERIOS_ALUNOS: CriteriosOrdenacao<OrdemAlunos, Prisma.AlunoOrderByWithRelationInput> = {
+  nome: (dir) => [{ primeiroNome: dir }, { sobrenome: dir }, { id: dir }],
+  pais: (dir) => [{ pais: { nome: dir } }, ...POR_NOME],
+  // Enum no banco: ordem de declaração (Ativo → Pausado → Encerrado), o ciclo de vida do aluno.
+  status: (dir) => [{ status: dir }, ...POR_NOME],
+};
+
+/** `orderBy` da lista (tela e exportação): a coluna pedida, com desempate estável por id. Sem ordem: nome crescente. */
+export const orderByAlunos = (o: Ordenacao<OrdemAlunos> = ORDEM_PADRAO_ALUNOS) => orderByDe(o, CRITERIOS_ALUNOS, POR_NOME);
 
 /**
  * Condição dos filtros — sempre combinada com o escopo do usuário por quem consulta (AND), nunca no
@@ -104,5 +129,13 @@ export const camposDosFiltros = (f: FiltrosAlunos): CamposAlunos =>
   ({ busca: f.busca, status: f.status ?? "", pais: f.paisId ?? "", turma: f.turmaId ?? "" });
 
 
-/** Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. */
-export const hrefDosCampos = (c: CamposAlunos) => hrefAlunos(lerFiltrosAlunos({ busca: c.busca, status: c.status, pais: c.pais, turma: c.turma }));
+/**
+ * Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. A ordem
+ * atual da lista (não é campo do formulário) é mantida: buscar não desfaz a ordenação escolhida.
+ */
+export const hrefDosCampos = (c: CamposAlunos, ordem: Ordenacao<OrdemAlunos> = ORDEM_PADRAO_ALUNOS) =>
+  hrefAlunos({ ...lerFiltrosAlunos({ busca: c.busca, status: c.status, pais: c.pais, turma: c.turma }), ordem });
+
+/** Busca e filtros atuais (sem página e sem ordem), para os links dos cabeçalhos ordenáveis. */
+export const parametrosFiltrosAlunos = (f: FiltrosAlunos) =>
+  parametrosDaQuery(filtrosParaQuery({ ...f, ordem: ORDEM_PADRAO_ALUNOS }, { semPagina: true }));

@@ -131,7 +131,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         <label className="block text-sm">Motivo da decisão<CampoTexto className="mt-1 block w-full rounded border p-2" rows={3} minLength={5} maxLength={2000} disabled={ocupado} value={motivoDecisao} onChange={(e) => setMotivoDecisao(e.target.value)} /></label>
         <div className="flex flex-wrap gap-3">
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !podeAprovar || motivoDecisao.trim().length < 5} onClick={() => decidir(true)}>Aprovar proposta</button>
-          <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivoDecisao.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
+          <button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || motivoDecisao.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button>
         </div>
         {!podeAprovar && <p className="text-sm text-amber-700">Resolva as pendências ou rejeite esta proposta para uma nova conferência.</p>}
       </div>}

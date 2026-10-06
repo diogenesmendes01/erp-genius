@@ -256,10 +256,11 @@ export function FilaCobranca({
       <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
       {/* Mini-dashs = filtros da régua */}
-      <div className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div role="group" aria-label="Filtrar a fila pelos indicadores" className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {DASHS.map((d) => (
           <button
             key={d.label}
+            aria-pressed={filtro === d.chave}
             onClick={() => setFiltro((f) => (f === d.chave ? null : d.chave))}
             className={
               "rounded-lg border bg-surface p-3 text-left transition " +

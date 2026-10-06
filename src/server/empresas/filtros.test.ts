@@ -5,6 +5,8 @@ import {
   filtrosEmpresasParaQuery,
   hrefDosCamposEmpresas,
   lerFiltrosEmpresas,
+  orderByEmpresas,
+  parametrosFiltrosEmpresas,
   sanearFiltrosEmpresas,
   temFiltroEmpresas,
   whereFiltrosEmpresas,
@@ -13,9 +15,9 @@ import {
 describe("filtros de empresas na URL", () => {
   it("lê e valida: situação desconhecida, id estranho e página inválida caem para vazio/1", () => {
     expect(lerFiltrosEmpresas({ busca: "  acme ", situacao: "ativas", pais: "p-1", pagina: "2" }))
-      .toEqual({ busca: "acme", situacao: "ativas", paisId: "p-1", pagina: 2 });
+      .toEqual({ busca: "acme", situacao: "ativas", paisId: "p-1", pagina: 2, ordem: null });
     expect(lerFiltrosEmpresas({ situacao: "todas", pais: "a b", pagina: "0" }))
-      .toEqual({ busca: "", situacao: null, paisId: null, pagina: 1 });
+      .toEqual({ busca: "", situacao: null, paisId: null, pagina: 1, ordem: null });
     expect(lerFiltrosEmpresas({ busca: "x".repeat(300) }).busca).toHaveLength(100);
   });
 
@@ -53,10 +55,45 @@ describe("filtros de empresas na URL", () => {
   });
 });
 
+describe("ordenação de empresas (E1 — ColunaOrdenavel)", () => {
+  it("lista fechada: código, nome, colaboradores e situação; fora dela → sem ordem (a de cadastro)", () => {
+    expect(lerFiltrosEmpresas({ ordem: "colaboradores", dir: "desc" }).ordem).toEqual({ campo: "colaboradores", dir: "desc" });
+    for (const ordem of ["pais", "faturasAReceber", "criadoEm", "documento", "id"]) {
+      expect(lerFiltrosEmpresas({ ordem, dir: "asc" }).ordem).toBeNull();
+    }
+  });
+
+  it("orderBy: sem ordem, o de sempre; cada coluna termina no desempate por id", () => {
+    expect(orderByEmpresas(null)).toEqual([{ criadoEm: "desc" }, { id: "desc" }]);
+    expect(orderByEmpresas({ campo: "nome", dir: "desc" })).toEqual([{ nome: "desc" }, { id: "desc" }]);
+    expect(orderByEmpresas({ campo: "codigo", dir: "asc" })).toEqual([{ codigo: { sort: "asc", nulls: "last" } }, { id: "asc" }]);
+    expect(orderByEmpresas({ campo: "colaboradores", dir: "desc" })).toEqual([{ matriculas: { _count: "desc" } }, { nome: "asc" }, { id: "asc" }]);
+    // Crescente pelo rótulo exibido: "Ativa" antes de "Inativa".
+    expect(orderByEmpresas({ campo: "situacao", dir: "asc" })).toEqual([{ ativo: "desc" }, { nome: "asc" }, { id: "asc" }]);
+    expect(orderByEmpresas({ campo: "situacao", dir: "desc" })).toEqual([{ ativo: "asc" }, { nome: "asc" }, { id: "asc" }]);
+  });
+
+  it("a ordem vai nos links (paginação, filtros, redirecionamento) e não conta como filtro", () => {
+    const f = lerFiltrosEmpresas({ situacao: "ativas", ordem: "nome", dir: "desc", pagina: "9" });
+    expect(filtrosEmpresasParaQuery(f)).toBe("situacao=ativas&ordem=nome&dir=desc&pagina=9");
+    expect(destinoPaginaEmpresas(f, EMPRESAS_POR_PAGINA + 1)).toBe("/empresas?situacao=ativas&ordem=nome&dir=desc&pagina=2");
+    expect(temFiltroEmpresas(lerFiltrosEmpresas({ ordem: "nome" }))).toBe(false);
+    expect(hrefDosCamposEmpresas({ busca: "acme", situacao: "", pais: "" }, f.ordem)).toBe("/empresas?busca=acme&ordem=nome&dir=desc");
+    expect(parametrosFiltrosEmpresas(f)).toEqual({ situacao: "ativas" });
+  });
+});
+
 describe("teto da busca de empresas", () => {
   it("no máximo 6 palavras: a 7ª em diante é descartada (limita o tamanho da consulta)", () => {
     const where = whereFiltrosEmpresas(lerFiltrosEmpresas({ busca: "a b c d e f g" })) as { AND: unknown[] };
     expect(where.AND).toHaveLength(6);
     expect(JSON.stringify(where)).not.toContain('"g"');
+  });
+});
+
+// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão.
+describe("ordem de /empresas: chave herdada de Object", () => {
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
+    expect(lerFiltrosEmpresas({ ordem, dir: "desc" }).ordem).toEqual(lerFiltrosEmpresas({}).ordem);
   });
 });

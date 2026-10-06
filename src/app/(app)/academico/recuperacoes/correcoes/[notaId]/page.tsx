@@ -29,7 +29,9 @@ export default async function Correcoes({ params, searchParams }: { params: Prom
       {p.decisao && <p className="whitespace-pre-wrap">Decisão de {p.decisao.decisor.nome}: {p.decisao.motivo}</p>}
       {p.podeRevisar && <Revisar propostaId={p.id} />}
     </article>)}
-    {!d.propostas.length && <EstadoVazio bloco>Sem propostas nesta página.</EstadoVazio>}
+    {!d.propostas.length && (antesVersao
+      ? <EstadoVazio bloco>Sem propostas nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma proposta de correção registrada para esta nota.</EstadoVazio>)}
     {d.proximaAntesVersao && <Link className="underline" href={`?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/correcoes/${encodeURIComponent(notaId)}`}>Versão atual</Link>}
   </section>;

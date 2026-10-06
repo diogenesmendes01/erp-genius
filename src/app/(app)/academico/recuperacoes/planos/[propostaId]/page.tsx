@@ -66,7 +66,9 @@ export default async function Operacao({ params, searchParams }: { params: Promi
       {reserva.podeCancelarPelaEscola && <CancelarPelaEscola reservaId={reserva.id} />}
       {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/reservas/${encodeURIComponent(reserva.id)}/cancelamento`}>Propor ou revisar cancelamento de recuperação agendada</Link>}
     </article>)}
-    {!d.reservas.length && <EstadoVazio bloco>Nenhuma reserva nesta página.</EstadoVazio>}
+    {!d.reservas.length && (depoisId
+      ? <EstadoVazio bloco acao={<Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Ir para a primeira página</Link>}>Nenhuma reserva nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma reserva registrada para este plano.</EstadoVazio>)}
     {d.proximoId && <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}?${new URLSearchParams({ depoisId: d.proximoId })}`}>Próximas reservas</Link>}
   </section>;
 }

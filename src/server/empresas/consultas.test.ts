@@ -26,6 +26,17 @@ describe("lista de /empresas paginada (E4)", () => {
     expect(r).toMatchObject({ total: 7, totalBase: 40, itens: [{ id: "e1", pais: "Costa Rica", colaboradores: 3 }] });
   });
 
+  it("ordem da URL (E1) vira o orderBy da consulta paginada, com desempate por id", async () => {
+    await listarEmpresasPagina(lerFiltrosEmpresas({ ordem: "colaboradores", dir: "desc", pagina: "2" }));
+    expect(db.empresa.findMany.mock.calls[0][0]).toMatchObject({
+      orderBy: [{ matriculas: { _count: "desc" } }, { nome: "asc" }, { id: "asc" }],
+      skip: EMPRESAS_POR_PAGINA,
+      take: EMPRESAS_POR_PAGINA,
+    });
+    await listarEmpresasPagina(lerFiltrosEmpresas({ ordem: "faturas", dir: "desc" }));
+    expect(db.empresa.findMany.mock.calls[1][0].orderBy).toEqual([{ criadoEm: "desc" }, { id: "desc" }]);
+  });
+
   it("nomes de país só dos países da página (não a tabela inteira)", async () => {
     await listarEmpresasPagina(lerFiltrosEmpresas({}));
     expect(db.pais.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: ["p1"] } } }));

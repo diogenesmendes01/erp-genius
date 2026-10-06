@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { StatusAluno } from "@prisma/client";
 import { STATUS_ALUNO_LABEL } from "@/lib/labels";
-import { ALUNOS_POR_PAGINA, camposDosFiltros, filtrosParaQuery, hrefDosCampos, temFiltroAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
+import { ALUNOS_POR_PAGINA, ORDEM_PADRAO_ALUNOS, camposDosFiltros, filtrosParaQuery, hrefAlunos, hrefDosCampos, lerFiltrosAlunos, parametrosFiltrosAlunos, temFiltroAlunos, type FiltrosAlunos } from "@/server/alunos/filtros";
 import { useFiltrosUrl } from "@/lib/filtros-url";
+import { mesmaOrdenacao } from "@/lib/ordenacao";
 import { Paginacao } from "@/components/Paginacao";
+import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
@@ -64,7 +66,14 @@ export function AlunosLista({
   const fim = (filtros.pagina - 1) * ALUNOS_POR_PAGINA + alunos.length;
   const temProxima = fim < total;
   // Campos controlados, transição, espera nos selects e links na transição: useFiltrosUrl (E4).
-  const { campos, buscando, aplicar, mudarTexto, mudarSelect, aoClicar } = useFiltrosUrl({ campos: camposDosFiltros(filtros), hrefDosCampos });
+  // A ordem escolhida no cabeçalho (E1) não é campo do formulário: buscar/filtrar/limpar a mantém.
+  const { campos, buscando, aplicar, mudarTexto, mudarSelect, aoClicar } = useFiltrosUrl({
+    campos: camposDosFiltros(filtros),
+    hrefDosCampos: (c) => hrefDosCampos(c, filtros.ordem),
+  });
+  const limpar = hrefAlunos({ ...lerFiltrosAlunos({}), ordem: filtros.ordem });
+  const ordemNaoPadrao = !mesmaOrdenacao(filtros.ordem, ORDEM_PADRAO_ALUNOS);
+  const coluna = { ordenacao: filtros.ordem, rota: "/alunos", parametros: parametrosFiltrosAlunos(filtros), aoClicar };
 
   return (
     <div>
@@ -117,10 +126,15 @@ export function AlunosLista({
             <option key={t.id} value={t.id}>{t.label}</option>
           ))}
         </select>
+        {/* Sem JavaScript, o formulário GET também leva a ordem atual. */}
+        {ordemNaoPadrao && <>
+          <input type="hidden" name="ordem" value={filtros.ordem.campo} />
+          <input type="hidden" name="dir" value={filtros.ordem.dir} />
+        </>}
         <button type="submit" disabled={buscando} className={botaoClasses({ variante: "secundario" })}>
           {buscando ? "Buscando…" : "Buscar"}
         </button>
-        {filtrando && <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
+        {filtrando && <Link href={limpar} onClick={aoClicar(limpar)} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
       </form>
 
       <p className="mb-2 text-xs text-gray-500" aria-live="polite">
@@ -133,10 +147,11 @@ export function AlunosLista({
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-gray-50 text-left text-xs text-gray-500">
             <tr>
-              <th className="px-4 py-2 font-medium">Aluno</th>
-              <th className="px-4 py-2 font-medium">País</th>
+              {/* Ordenação no servidor (E1); Turma e Financeiro não têm ordem no banco. */}
+              <ColunaOrdenavel campo="nome" rotulo="Aluno" {...coluna} />
+              <ColunaOrdenavel campo="pais" rotulo="País" {...coluna} />
               <th className="px-4 py-2 font-medium">Turma</th>
-              <th className="px-4 py-2 font-medium">Status</th>
+              <ColunaOrdenavel campo="status" rotulo="Status" {...coluna} />
               {exibirFinanceiro && <th className="px-4 py-2 font-medium">Financeiro</th>}
             </tr>
           </thead>
@@ -145,9 +160,9 @@ export function AlunosLista({
               <EstadoVazioLinha colSpan={exibirFinanceiro ? 5 : 4}>
                   {/* Estado vazio duplo: base vazia × filtro sem resultado (este oferece a saída). */}
                   {totalBase === 0 ? "Nenhum aluno cadastrado no seu alcance." : filtrando ? (
-                    <>Nenhum aluno com esses filtros. <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-brand-700 hover:underline">Limpar filtros</Link></>
+                    <>Nenhum aluno com esses filtros. <Link href={limpar} onClick={aoClicar(limpar)} className="text-brand-700 hover:underline">Limpar filtros</Link></>
                   ) : (
-                    <>Nenhum aluno nesta página. <Link href="/alunos" onClick={aoClicar("/alunos")} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
+                    <>Nenhum aluno nesta página. <Link href={limpar} onClick={aoClicar(limpar)} className="text-brand-700 hover:underline">Ir para a primeira página</Link></>
                   )}
                 </EstadoVazioLinha>
             ) : (

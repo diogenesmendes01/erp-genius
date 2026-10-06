@@ -9,6 +9,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ETAPA_LABEL, SEGMENTO_LABEL, TEMPERATURA_LABEL, TIPO_SUGESTAO_IA_LABEL, rotular } from "@/lib/labels";
+import { BASE_BOTAO, TAMANHOS_BOTAO, botaoClasses } from "@/components/Botao";
 
 // C3 (doc 27): sugestões do copiloto embutidas ONDE O VENDEDOR JÁ ESTÁ (ficha do lead e
 // cockpit da inbox) — sugestão sobre controles que já existem, nunca uma segunda forma de
@@ -24,7 +25,12 @@ const CAMPO_LABEL: Record<string, string> = {
   proximaAcao: "Próximo passo",
 };
 
-const btnMini = "rounded-md px-2 py-0.5 text-xs font-medium disabled:opacity-60";
+// Botões do design system (botaoClasses, tamanho sm). Exceção de paleta: "Gerar sugestões" e
+// "Aplicar corrigido" são da IA e usam --ai-* (docs/18: "--ai-solid é o botão de aceitar/aplicar
+// sugestão"; a cor da IA é o único sinal de "isto foi gerado por IA"). Nenhuma variante do Botao
+// tem essa cor — por isso só base e tamanho vêm do design system; a cor fica aqui, e os dois botões
+// estão nomeados nas exceções da trava (src/app/botoes.test.ts).
+const btnIa = `${BASE_BOTAO} ${TAMANHOS_BOTAO.sm}`;
 
 function valorDaSugestao(s: SugestaoPendente): string {
   const p = s.payload as Record<string, unknown>;
@@ -95,7 +101,7 @@ export function CopilotoSugestoes({
           Copiloto (sugestões — nada é aplicado sem você)
         </div>
         <button
-          className={btnMini + " border border-ai-300 text-ai-700 hover:bg-ai-100"}
+          className={btnIa + " border border-ai-300 text-ai-700 hover:bg-ai-100"}
           disabled={acao.ocupado || !copilotoAtivo}
           title={copilotoAtivo ? "Analisar a conversa agora" : "Copiloto desligado na configuração"}
           onClick={() => run("gerar", () => gerarSugestoesLead(leadId))}
@@ -124,7 +130,7 @@ export function CopilotoSugestoes({
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
-                    className={btnMini + " bg-success text-white hover:brightness-95"}
+                    className={btnIa + " bg-ai-solid text-white hover:brightness-95"}
                     disabled={acao.ocupado}
                     onClick={() => run(s.id, () => aceitarSugestao(s.id))}
                   >
@@ -132,7 +138,7 @@ export function CopilotoSugestoes({
                   </button>
                   {s.tipo === "RESUMO" && (
                     <button
-                      className={btnMini + " border border-gray-300 text-gray-600 hover:bg-gray-50"}
+                      className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                       disabled={acao.ocupado}
                       onClick={() => (editando === s.id ? setEditando(null) : abrirCorrecao(s))}
                     >
@@ -140,7 +146,7 @@ export function CopilotoSugestoes({
                     </button>
                   )}
                   <button
-                    className={btnMini + " border border-gray-300 text-gray-500 hover:bg-gray-50"}
+                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                     disabled={acao.ocupado}
                     onClick={() => run(s.id, () => descartarSugestao(s.id))}
                   >
@@ -180,14 +186,14 @@ export function CopilotoSugestoes({
                   <FeedbackAcao erro={alvo === s.id ? acao.erro : null} />
                   <div className="flex gap-1.5 pt-0.5">
                     <button
-                      className={btnMini + " bg-ai-solid text-white hover:brightness-95"}
+                      className={btnIa + " bg-ai-solid text-white hover:brightness-95"}
                       disabled={acao.ocupado}
                       onClick={() => salvarCorrecao(s)}
                     >
                       Aplicar corrigido
                     </button>
                     <button
-                      className={btnMini + " border border-gray-300 text-gray-500"}
+                      className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                       onClick={() => setEditando(null)}
                     >
                       Cancelar
