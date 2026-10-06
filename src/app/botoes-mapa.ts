@@ -757,6 +757,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Reabrir formulário e descartar preenchimento → secundario/lg",
     "<button> Documentos anteriores → secundario/lg",
     "<button> Próximos documentos → secundario/lg",
+    "<button> Ir para a primeira página → secundario/lg",
     "<button> Aguarde… · Registrar conferência dos signatários → secundario/lg",
   ],
   "matriculas/[id]/contrato/aditivos/ProcessoFormulario.tsx": [

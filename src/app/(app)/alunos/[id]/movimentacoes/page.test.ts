@@ -64,7 +64,17 @@ describe("MovimentacoesPage preferência de fuso", () => {
     mocks.pedidos.mockResolvedValue({ pagina: 1, temProxima: false, pedidos: [] });
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }), searchParams: Promise.resolve({ pagina: ["2", "3"] }) }));
     expect(mocks.pedidos).toHaveBeenCalledWith({ alunoId: "aluno", pagina: 1 }, expect.objectContaining({ id: "financeiro" }));
+    // Primeira página sem pedidos: não existe pedido nenhum — nada de "nesta página" (docs/42).
+    expect(html).toContain("Nenhum pedido de encerramento registrado para este aluno.");
+    expect(html).not.toContain("nesta página");
+  });
+
+  it("página seguinte vazia fala da página e oferece a volta ao início", async () => {
+    mocks.pedidos.mockResolvedValue({ pagina: 3, temProxima: false, pedidos: [] });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }), searchParams: Promise.resolve({ pagina: "3" }) }));
     expect(html).toContain("Nenhum pedido registrado nesta página.");
+    expect(html).not.toContain("para este aluno.");
+    expect(html).toMatch(/<a[^>]*href="\/alunos\/aluno\/movimentacoes"[^>]*>Ir para a primeira página<\/a>/);
   });
 
   it("não consulta aluno ou preferência se a guarda recusa", async () => {

@@ -39,7 +39,7 @@ export default async function CorrecoesReposicao({
     <VoltarPara href={professorSomente ? "/diario/reposicoes" : "/academico/reposicoes"} para="Reposições" />
     <h1 className="text-2xl font-medium">Correções da conclusão de reposição</h1>
     <p>Uma proposta não altera a conclusão vigente. A alteração só produz efeito depois de aprovação independente e nova conferência no servidor.</p>
-    <CorrecoesConclusaoReposicao key={`${dado.reposicao.id}:${dado.conclusao.id}:${dado.versaoEsperada}`} dados={dado} mostrarPreparacao={!dado.consultaHistorica && !antesVersao} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, dado.reposicao.origem.fuso)} />
+    <CorrecoesConclusaoReposicao key={`${dado.reposicao.id}:${dado.conclusao.id}:${dado.versaoEsperada}`} dados={dado} mostrarPreparacao={!dado.consultaHistorica && !antesVersao} antesVersao={antes ?? undefined} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, dado.reposicao.origem.fuso)} />
     <nav className="flex flex-wrap gap-4" aria-label="Navegação entre conclusões">
       {dado.conclusaoSeguinteVersao && <Link className="underline" href={url({ conclusaoVersao: dado.conclusaoSeguinteVersao })}>Conclusão seguinte</Link>}
       {dado.conclusaoAnteriorVersao && <Link className="underline" href={url({ conclusaoVersao: dado.conclusaoAnteriorVersao })}>Conclusão anterior</Link>}

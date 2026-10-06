@@ -15,7 +15,9 @@ export default async function DesistenciasAdministrativasPage({ searchParams }: 
     <VoltarPara href="/secretaria" />
     <h1 className="text-2xl font-medium">Desistências pendentes de decisão administrativa</h1>
     <p>Confira o pedido mais recente de cada matrícula. A Secretaria acompanha; outra pessoa da Administração decide. A decisão não substitui os tratamentos financeiros e documentais nem efetiva a desistência.</p>
-    {!d.itens.length && <EstadoVazio bloco>Nenhum pedido pendente nesta página.</EstadoVazio>}
+    {!d.itens.length && (cursor
+      ? <EstadoVazio bloco>Nenhum pedido pendente nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhum pedido aguardando decisão administrativa.</EstadoVazio>)}
     {d.itens.map(m => <article key={m.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium"><Link className="underline" href={`/matriculas/${encodeURIComponent(m.id)}/desistencia/administracao`}>{m.codigo ?? "Matrícula"} · Pedido {m.pedido.versao}</Link></h2>
       <p>Registrado por {m.pedido.registradorNome}.</p><p className="whitespace-pre-wrap">{m.pedido.motivo}</p>
