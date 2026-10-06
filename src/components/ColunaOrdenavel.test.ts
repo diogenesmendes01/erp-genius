@@ -27,13 +27,13 @@ describe("ColunaOrdenavel", () => {
     expect(html).toContain('data-direcao="desc"');
   });
 
-  it("outra coluna ordenada (ou nenhuma): aria-sort=none; o link aplica a direção inicial desta", () => {
+  it("outra coluna ordenada (ou nenhuma): sem aria-sort (só a coluna ordenada o tem); o link aplica a direção inicial desta", () => {
     const outra = render({ campo: "status", dir: "desc" });
-    expect(outra).toContain('aria-sort="none"');
+    expect(outra).not.toContain("aria-sort");
     expect(href(outra)).toBe("/alunos?busca=ana&status=ATIVO&ordem=nome&dir=asc");
     expect(outra).toContain('data-direcao="nenhuma"');
     const nenhuma = render(null, { direcaoInicial: "desc" });
-    expect(nenhuma).toContain('aria-sort="none"');
+    expect(nenhuma).not.toContain("aria-sort");
     expect(href(nenhuma)).toBe("/alunos?busca=ana&status=ATIVO&ordem=nome&dir=desc");
     expect(nenhuma).toContain(": ordenar em ordem decrescente");
   });
@@ -45,7 +45,7 @@ describe("ColunaOrdenavel", () => {
 
   it("o rótulo é um link real e a seta é só visual (aria-hidden); classe do cabeçalho substituível", () => {
     const html = render(null, { className: "p-3" });
-    expect(html).toMatch(/<th scope="col" aria-sort="none" class="p-3"><a [^>]*href="[^"]+"[^>]*>Aluno<span class="sr-only">/);
+    expect(html).toMatch(/<th scope="col" class="p-3"><a [^>]*href="[^"]+"[^>]*>Aluno<span class="sr-only">/);
     expect(html).toMatch(/<svg[^>]*aria-hidden="true"/);
   });
 });

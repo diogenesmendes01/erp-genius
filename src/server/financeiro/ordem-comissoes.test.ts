@@ -28,3 +28,10 @@ describe("ordem das comissões (E1)", () => {
     expect(parametrosOrdemComissoes({ campo: "valor", dir: "desc" })).toEqual({ ordem: "valor", dir: "desc" });
   });
 });
+
+// Revisão R1 da #136 (B4): chave herdada de Object não é coluna — cai na ordem padrão.
+describe("ordem das comissões: chave herdada de Object", () => {
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])("ordem=%s → ordem padrão", (ordem) => {
+    expect(lerOrdemComissoes({ ordem, dir: "desc" })).toEqual(ORDEM_PADRAO_COMISSOES);
+  });
+});

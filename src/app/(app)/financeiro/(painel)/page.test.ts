@@ -155,6 +155,7 @@ describe("/financeiro por rota (E8)", () => {
     expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;ordem=status&amp;dir=desc&amp;pagina=3");
     expect(pagina).toMatch(/<a[^>]*href="\/financeiro\/comissoes\?ordem=status&amp;dir=desc"[^>]*>Limpar filtro<\/a>/);
     expect(pagina).toContain('<input type="hidden" name="ordem" value="status"/>');
+    expect(pagina).toContain('<input type="hidden" name="dir" value="desc"/>'); // R1 da #136, B5: decrescente não vira crescente
     // Coluna fora da lista fechada: a ordem de sempre, sem parâmetros nos links.
     await html(Comissoes({ ordem: "percentual", dir: "desc" }));
     expect(mocks.comissoes).toHaveBeenLastCalledWith({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
@@ -177,6 +178,13 @@ describe("/financeiro por rota (E8)", () => {
     expect(comFiltro).toContain('href="/financeiro/comissoes"');
     await html(Comissoes());
     expect((mocks.componente.mock.calls.at(-1)?.[0] as { vazio?: unknown }).vazio).toBeUndefined();
+  });
+
+  it("comissões: \"Ver todas\" do vazio filtrado mantém a ordem escolhida (R1 da #136, B5)", async () => {
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 0 });
+    await html(Comissoes({ status: "PAGA", ordem: "valor", dir: "desc" }));
+    const vazio = renderToStaticMarkup(createElement("div", null, (mocks.componente.mock.calls.at(-1)?.[0] as { vazio: React.ReactNode }).vazio));
+    expect(vazio).toContain('href="/financeiro/comissoes?ordem=valor&amp;dir=desc"');
   });
 
   it("informes e retomadas vêm das filas pendentes (uma consulta), com o fuso", async () => {

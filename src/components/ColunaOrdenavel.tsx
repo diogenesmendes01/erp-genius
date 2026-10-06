@@ -44,7 +44,9 @@ export function ColunaOrdenavel({
   const href = hrefOrdenacao(rota, parametros, { campo, dir: proxima });
   const Seta = atual === "asc" ? IconArrowUp : atual === "desc" ? IconArrowDown : IconArrowsSort;
   return (
-    <th scope="col" aria-sort={atual ? ARIA_SORT[atual] : "none"} className={className}>
+    // aria-sort só na coluna ordenada (WAI-ARIA 1.2: "only one header at a time"; exemplo do APG); nas
+    // demais, o texto oculto do link já diz que a coluna ordena e em que direção.
+    <th scope="col" aria-sort={atual ? ARIA_SORT[atual] : undefined} className={className}>
       <Link href={href} onClick={aoClicar?.(href)} className="inline-flex items-center gap-1 hover:text-gray-700 hover:underline">
         {rotulo}
         <span className="sr-only">{`: ${ACAO[proxima]}`}</span>
