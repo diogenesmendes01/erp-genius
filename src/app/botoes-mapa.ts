@@ -1,7 +1,8 @@
 // Mapeamento travado da migração E1 (docs/42-auditoria-frontend-ux.md): para cada tela das áreas
-// migradas, cada chamada a botaoClasses(...) — na ordem do fonte — com o rótulo que a localiza (texto
-// visível do botão/link, ou o nome da constante) e a variante/tamanho decididos na migração. O
-// botão que usa uma constante de botão (btnPri, principal…) aparece com o nome dela.
+// migradas e cada componente de src/components, cada chamada a botaoClasses(...) — na ordem do
+// fonte — com o rótulo que a localiza (texto visível do botão/link, ou o nome da constante) e a
+// variante/tamanho decididos na migração. O botão que usa uma constante de botão (btnPri,
+// principal…) aparece com o nome dela.
 //
 // Regra aplicada na migração (preserva a intenção de cada botão):
 //   fundo da marca (ou verde de sucesso) + texto branco → primario; borda neutra → secundario;
@@ -996,5 +997,25 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "acesso-negado/page.tsx": [
     "<Link> Voltar ao início → primario/lg",
+  ],
+  // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
+  "src/components/CopilotoSugestoes.tsx": [
+    "<button> Aceitar → primario/sm",
+    "<button> Corrigir → secundario/sm",
+    "<button> Descartar → secundario/sm",
+    "<button> Cancelar → secundario/sm",
+  ],
+  "src/components/EstadoRota.tsx": [
+    "const classe → primario/lg",
+    "<Link> → classe",
+    "<button> → classe",
+  ],
+  "src/components/ExportarPlanilha.tsx": [
+    "<a> Exportar planilha (filtros aplicados) · Exportar planilha → secundario/lg",
+  ],
+  "src/components/PagamentoModal.tsx": [
+    "const btnPri → primario/md",
+    "<button> Salvando… · Enviar para conferência · Registrar recebimento → btnPri",
+    "<button> Cancelar → secundario/md",
   ],
 };
