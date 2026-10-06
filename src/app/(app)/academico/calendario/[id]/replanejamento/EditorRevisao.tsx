@@ -44,7 +44,7 @@ export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { ini
           <label>Data no fuso da turma<input required type="date" value={a.data} onChange={(e) => mudar(i, { data: e.target.value })} className={campo} /></label>
           <label>Horário no fuso da turma<input required type="time" value={a.horario} onChange={(e) => mudar(i, { horario: e.target.value })} className={campo} /></label>
           <label>Motivo do ajuste<CampoTexto required minLength={5} maxLength={2000} value={a.motivo} onChange={(e) => mudar(i, { motivo: e.target.value })} className={campo} /></label>
-          <button type="button" className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} justify-self-start`} onClick={() => { setAjustes((v) => v.filter((_, j) => i !== j)); setAlterado(true); }}>Remover ajuste {i + 1}</button>
+          <button type="button" className={`${botaoClasses({ variante: "perigo", tamanho: "lg" })} justify-self-start`} onClick={() => { setAjustes((v) => v.filter((_, j) => i !== j)); setAlterado(true); }}>Remover ajuste {i + 1}</button>
         </fieldset>)}
         <div className="flex gap-3">
           <button type="button" disabled={ajustes.length >= opcoes.length} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { setAjustes((v) => [...v, { encontroId: "", data: "", horario: "", motivo: "" }]); setAlterado(true); }}>Adicionar ajuste</button>

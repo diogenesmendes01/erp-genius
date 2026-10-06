@@ -188,7 +188,7 @@ export function ResolucaoRevisaoProgressao({
         {proposta.podeDecidir && !proposta.decisao && <form onSubmit={(evento) => decidir(evento, proposta)} className="space-y-2 border-t pt-3">
           <p className="text-sm">A rejeição registra a recusa desta proposta histórica e não atesta o estado atual.</p>
           <label className="block">Motivo da decisão<CampoTexto name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" /></label>
-          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Rejeitar proposta</button></div>
+          <div className="flex gap-2"><button name="decisao" value="APROVAR" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>Aprovar proposta</button><button name="decisao" value="REJEITAR" disabled={ocupado} className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>Rejeitar proposta</button></div>
         </form>}
       </article>)}
     </section>

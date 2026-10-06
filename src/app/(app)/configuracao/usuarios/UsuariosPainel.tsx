@@ -132,7 +132,7 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                     <button
                       onClick={() => alternar(u.id, u.ativo ? "Usuário desativado." : "Usuário ativado.")}
                       disabled={acao.ocupado}
-                      className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
+                      className={botaoClasses({ variante: u.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
                     </button>

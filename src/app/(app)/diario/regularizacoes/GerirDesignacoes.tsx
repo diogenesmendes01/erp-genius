@@ -137,7 +137,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
               <label className="block">Motivo da revogação
                 <CampoTexto className="mt-1 block w-full rounded border p-2" value={motivosRevogacao[designacao.id] ?? ""} onChange={(evento) => setMotivosRevogacao((anterior) => ({ ...anterior, [designacao.id]: evento.target.value }))} minLength={5} maxLength={2000} disabled={ocupado} />
               </label>
-              <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || (motivosRevogacao[designacao.id]?.trim().length ?? 0) < 5} onClick={() => void revogar(designacao.id)}>Revogar designação</button>
+              <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || (motivosRevogacao[designacao.id]?.trim().length ?? 0) < 5} onClick={() => void revogar(designacao.id)}>Revogar designação</button>
             </div>}
           </article>)}
         </div>
