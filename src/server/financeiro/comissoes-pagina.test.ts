@@ -21,6 +21,19 @@ describe("listarComissoesPagina (E4)", () => {
     expect(m.count).toHaveBeenCalledWith({ where: consulta.where });
   });
 
+  it("ordem (E1): sem ela, a de sempre; com ela, a coluna pedida no banco, antes da página, com desempate por id", async () => {
+    m.sessao.mockResolvedValue({ id: "f1", papeis: [Papel.FINANCEIRO] });
+    await listarComissoesPagina({ status: null, pagina: 1 });
+    expect(m.findMany.mock.calls[0][0].orderBy).toEqual([{ vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }]);
+    await listarComissoesPagina({ status: null, pagina: 2, ordem: { campo: "valor", dir: "desc" } });
+    // Valores de moedas diferentes não se comparam: agrupa por moeda e ordena dentro de cada uma.
+    expect(m.findMany.mock.calls[1][0]).toMatchObject({ orderBy: [{ moeda: "asc" }, { valor: "desc" }, { id: "desc" }], skip: COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA });
+    await listarComissoesPagina({ status: null, pagina: 1, ordem: { campo: "status", dir: "asc" } });
+    expect(m.findMany.mock.calls[2][0].orderBy).toEqual([{ status: "asc" }, { vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }]);
+    await listarComissoesPagina({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "desc" } });
+    expect(m.findMany.mock.calls[3][0].orderBy).toEqual([{ vendedor: { nome: "desc" } }, { criadoEm: "desc" }, { id: "desc" }]);
+  });
+
   it("gerente: as suas e as da equipe; financeiro: todas", async () => {
     m.sessao.mockResolvedValue({ id: "g1", papeis: [Papel.GERENTE_COMERCIAL] });
     await listarComissoesPagina({ status: null, pagina: 1 });

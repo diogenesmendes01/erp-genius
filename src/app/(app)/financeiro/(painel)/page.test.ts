@@ -134,7 +134,7 @@ describe("/financeiro por rota (E8)", () => {
     mocks.comissoes.mockResolvedValue({ itens, total: 120 });
     mocks.totais.mockResolvedValue([{ moeda: "CRC", valor: 5000 }]);
     const pagina = await html(Comissoes({ status: "APROVADA", pagina: "2" }));
-    expect(mocks.comissoes).toHaveBeenCalledWith({ status: "APROVADA", pagina: 2 });
+    expect(mocks.comissoes).toHaveBeenCalledWith({ status: "APROVADA", pagina: 2, ordem: { campo: "vendedor", dir: "asc" } });
     expect(pagina).toContain("51–100 de 120 comissões");
     expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;pagina=3");
     expect(pagina).toContain('aria-label="Filtrar por situação"');
@@ -143,6 +143,24 @@ describe("/financeiro por rota (E8)", () => {
     const props = mocks.componente.mock.calls.at(-1)?.[0] as { comissoes: unknown[]; aPagar: unknown };
     expect(props.comissoes).toHaveLength(50);
     expect(props.aPagar).toEqual([{ moeda: "CRC", valor: 5000 }]);
+  });
+
+  it("comissões (E1): a ordem da URL vai para a consulta e para os cabeçalhos; paginação, limpar e formulário a mantêm", async () => {
+    const itens = Array.from({ length: 50 }, (_, i) => ({ id: `c${i}` }));
+    mocks.comissoes.mockResolvedValue({ itens, total: 120 });
+    const pagina = await html(Comissoes({ status: "APROVADA", ordem: "status", dir: "desc", pagina: "2" }));
+    expect(mocks.comissoes).toHaveBeenCalledWith({ status: "APROVADA", pagina: 2, ordem: { campo: "status", dir: "desc" } });
+    const props = mocks.componente.mock.calls.at(-1)?.[0] as { ordenacao: unknown };
+    expect(props.ordenacao).toEqual({ atual: { campo: "status", dir: "desc" }, rota: "/financeiro/comissoes", parametros: { status: "APROVADA" } });
+    expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;ordem=status&amp;dir=desc&amp;pagina=3");
+    expect(pagina).toMatch(/<a[^>]*href="\/financeiro\/comissoes\?ordem=status&amp;dir=desc"[^>]*>Limpar filtro<\/a>/);
+    expect(pagina).toContain('<input type="hidden" name="ordem" value="status"/>');
+    // Coluna fora da lista fechada: a ordem de sempre, sem parâmetros nos links.
+    await html(Comissoes({ ordem: "percentual", dir: "desc" }));
+    expect(mocks.comissoes).toHaveBeenLastCalledWith({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+    expect((mocks.componente.mock.calls.at(-1)?.[0] as { ordenacao: unknown }).ordenacao).toEqual({ atual: { campo: "vendedor", dir: "asc" }, rota: "/financeiro/comissoes", parametros: {} });
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 60 });
+    await expect(Comissoes({ ordem: "valor", dir: "asc", pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?ordem=valor&dir=asc&pagina=2");
   });
 
   it("comissões: página além do fim volta para a última, sem perder a situação filtrada", async () => {

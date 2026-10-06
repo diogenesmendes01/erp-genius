@@ -33,6 +33,28 @@ describe("Comissoes — botão de fechamento não permite duplo clique", () => {
   });
 });
 
+describe("Comissoes — cabeçalhos ordenáveis (E1)", () => {
+  const base = { comissoes, aPagar: [], podePagar: false, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: false };
+
+  it("com a ordem da página: Vendedor, Valor e Status ordenáveis, a coluna atual marcada, filtros preservados", () => {
+    const html = renderToStaticMarkup(createElement(Comissoes, {
+      ...base, ordenacao: { atual: { campo: "valor", dir: "desc" }, rota: "/financeiro/comissoes", parametros: { status: "APROVADA" } },
+    }));
+    expect(html.match(/aria-sort="/g)).toHaveLength(3);
+    expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=valor&amp;dir=asc"[^>]*>Valor</);
+    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=vendedor&amp;dir=asc"[^>]*>Vendedor</);
+    expect(html).toMatch(/aria-sort="none"[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
+    // "%" não ordena (percentual e valor fixo misturados na mesma coluna).
+    expect(html).toContain('<th class="px-4 py-2 font-medium">%</th>');
+  });
+
+  it("sem ordem (outro uso do componente): cabeçalhos simples, sem aria-sort", () => {
+    const html = renderToStaticMarkup(createElement(Comissoes, base));
+    expect(html).not.toContain("aria-sort");
+    expect(html).toContain('<th class="px-4 py-2 font-medium">Vendedor</th>');
+  });
+});
+
 describe("Aprovacoes — botões de decisão não permitem duplo clique", () => {
   it("Aprovar e Rejeitar habilitados quando não há operação em andamento", () => {
     const html = renderToStaticMarkup(createElement(Aprovacoes, { aprovacoes, onDecidir: () => {}, isPending: false }));
