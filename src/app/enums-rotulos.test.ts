@@ -488,7 +488,9 @@ describe("(iii) mapas novos de labels.ts", () => {
 
   it("rotular devolve o rótulo e, para valor sem rótulo, o próprio valor (nunca frase inventada)", () => {
     expect(L.rotular(L.HABILIDADE_LABEL, "COMPREENSAO_ORAL")).toBe("Compreensão oral");
-    expect(L.rotular(L.STATUS_RESERVA_VAGA_LABEL, "VALOR_ANTIGO")).toBe("VALOR_ANTIGO");
+    // Valor vindo do banco fora do enum atual (registro antigo): tipado como string, não como literal.
+    const valorAntigo: string = "VALOR_ANTIGO";
+    expect(L.rotular(L.STATUS_RESERVA_VAGA_LABEL, valorAntigo)).toBe("VALOR_ANTIGO");
   });
 
   it("autoteste: o leitor de enums do schema separa nome e valores, ignorando comentários", () => {

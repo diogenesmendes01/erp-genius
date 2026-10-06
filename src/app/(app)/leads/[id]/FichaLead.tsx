@@ -725,7 +725,7 @@ function Timeline({ timeline, preferenciaFusoExibicao }: { timeline: EventoTimel
             const detalhe = detalheEvento(ev.tipo, p, preferenciaFusoExibicao);
             return (
               <li key={ev.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm text-gray-800">{EVENTO_LABEL[ev.tipo] ?? ev.tipo}</div>
+                <div className="text-sm text-gray-800">{rotular(EVENTO_LABEL, ev.tipo)}</div>
                 {detalhe && <div className="text-sm text-gray-600">{detalhe}</div>}
                 <div className="text-xs text-gray-400">
                   {ev.autor?.nome ?? "sistema"} ·{" "}
