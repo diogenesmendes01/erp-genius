@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { IconPlus } from "@tabler/icons-react";
-import { Segmento } from "@prisma/client";
 import { ModalidadeFormulario, type ModalidadeParaEditar } from "./ModalidadeFormulario";
 import { botaoClasses } from "@/components/Botao";
 import { SEGMENTO_LABEL } from "@/lib/labels";
