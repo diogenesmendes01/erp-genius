@@ -99,7 +99,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/paises/PaisesPainel.tsx": [
     "<button> Novo país → primario/lg",
     "<button> Editar → fantasma/sm",
-    "<button> key a.alvo → fantasma/sm",
+    "<button> key a.alvo → ?/sm",
     "<button> Catálogo → fantasma/sm",
   ],
   "configuracao/turmas/ImportarTurmasModal.tsx": [
@@ -559,7 +559,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar decisão → primario/lg",
   ],
   "alunos/[id]/movimentacoes/EfetivarAcerto.tsx": [
-    "<button> Efetivando… · Efetivar encerramento aprovado → primario/lg",
+    "<button> Efetivando… · Efetivar encerramento aprovado → perigo/lg",
   ],
   "alunos/[id]/movimentacoes/LiberacaoHoras.tsx": [
     "<button> Preparar proposta para conferência → secundario/lg",
@@ -660,7 +660,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar conjunto → primario/md",
     "<button> Rejeitar conjunto → perigo/md",
     "<button> Aplicar coberturas aprovadas → primario/md",
-    "<button> APROVADO · Confirmar divergência material · Descartar conjun → secundario|perigo/md",
+    "<button> APROVADO · Confirmar divergência material · Descartar conjun → perigo/md",
   ],
   "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
     "<button> Aprovar acerto → secundario/lg",
@@ -673,7 +673,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar conjunto → primario/md",
     "<button> Rejeitar conjunto → perigo/md",
     "<button> Concluir impactos aplicados → primario/md",
-    "<button> APROVADO · Confirmar fotografia divergente · Descartar conju → secundario|perigo/md",
+    "<button> APROVADO · Confirmar fotografia divergente · Descartar conju → perigo/md",
   ],
   "financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx": [
     "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
@@ -757,7 +757,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx": [
     "<button> Consultar exigências e participantes → secundario/lg",
-    "<button> Reabrir formulário e descartar preenchimento → secundario/lg",
+    "<button> Reabrir formulário e descartar preenchimento → perigo/lg",
     "<button> Documentos anteriores → secundario/lg",
     "<button> Próximos documentos → secundario/lg",
     "<button> Aguarde… · Registrar conferência dos signatários → secundario/lg",
@@ -783,7 +783,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar decisão → secundario/lg",
   ],
   "matriculas/[id]/desistencia/EfetivacaoFormulario.tsx": [
-    "<button> Efetivando… · Confirmar desistência e liberar reservas → secundario/lg",
+    "<button> Efetivando… · Confirmar desistência e liberar reservas → perigo/lg",
   ],
   "matriculas/[id]/desistencia/PedidoFormulario.tsx": [
     "<button> Registrando… · Registrar pedido → secundario/lg",
@@ -1001,9 +1001,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
   "src/components/CopilotoSugestoes.tsx": [
-    "<button> Aceitar → primario/sm",
     "<button> Corrigir → secundario/sm",
-    "<button> Descartar → perigo/sm",
+    "<button> Descartar → secundario/sm",
     "<button> Cancelar → secundario/sm",
   ],
   "src/components/EstadoRota.tsx": [

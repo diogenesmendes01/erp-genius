@@ -50,7 +50,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
       </select>
     </label>
     {!formulario ? <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => carregar()}>Consultar exigências e participantes</button>
-      : <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); setMensagem(""); }}>Reabrir formulário e descartar preenchimento</button>}
+      : <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); setMensagem(""); }}>Reabrir formulário e descartar preenchimento</button>}
     {formulario && <>
       <p>Conferência atual: versão {formulario.versaoEsperada}. Este registro produzirá uma nova versão.</p>
       {formulario.plano.pendencias.map(p => <p role="alert" key={p}>{p}</p>)}

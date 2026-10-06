@@ -150,7 +150,7 @@ export function CopilotoSugestoes({
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
-                    className={botaoClasses({ tamanho: "sm" })}
+                    className={btnIa + " bg-ai-solid text-white hover:brightness-95"}
                     disabled={acao.ocupado}
                     onClick={() => run(s.id, () => aceitarSugestao(s.id))}
                   >
@@ -166,7 +166,7 @@ export function CopilotoSugestoes({
                     </button>
                   )}
                   <button
-                    className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
+                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                     disabled={acao.ocupado}
                     onClick={() => run(s.id, () => descartarSugestao(s.id))}
                   >
