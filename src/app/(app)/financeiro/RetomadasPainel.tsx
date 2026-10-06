@@ -19,7 +19,6 @@ type Propostas = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasRe
 type Parcela = Contexto["parcelas"][number];
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
-const botao = botaoClasses({ variante: "secundario", tamanho: "lg" });
 const principal = botaoClasses({ tamanho: "lg" });
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
@@ -113,7 +112,7 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
         <label className="block text-sm">Motivo da decisão<CampoTexto className={`${campo} mt-1`} rows={2} minLength={5} maxLength={2000} disabled={ocupado} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
         <div className="flex gap-2">
           {!p.impedimentoAprovacao && <button className={principal} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar proposta e retomar</button>}
-          <button className={botao} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar proposta</button>
+          <button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar proposta</button>
         </div>
       </div>}
       <FeedbackAcao erro={alvo === p.id ? acao.erro : null} sucesso={alvo === p.id ? acao.sucesso : undefined} />

@@ -182,11 +182,12 @@ export function PoliticaPainel({
           </label>
           <div className="text-xs text-gray-600">
             Dias da semana
-            <div className="mt-1.5 flex flex-wrap gap-1">
+            <div role="group" aria-label="Dias da semana" className="mt-1.5 flex flex-wrap gap-1">
               {DIAS.map((d, i) => (
                 <button
                   key={d}
                   type="button"
+                  aria-pressed={form.diasSemana.includes(i)}
                   onClick={() =>
                     setForm((f) => ({
                       ...f,

@@ -34,7 +34,7 @@ export function DecidirResolucao({ propostaId, podeAprovar, particular = false }
     if (!r.ok) { setMensagem(r.erro); return; } router.refresh();
   } catch { setMensagem(MSG_DECISAO_INCERTA); } }); }
   return <div className="space-y-2"><label className="block">Motivo da decisão<CampoTexto className="block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} /></label>
-    <div className="flex gap-3"><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5 || !podeAprovar} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button></div>
+    <div className="flex gap-3"><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5 || !podeAprovar} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar proposta</button></div>
     {!podeAprovar && <p>A aprovação exige a proposta mais recente, estado conferido e prazo válido. Prepare uma nova proposta se necessário.</p>}{mensagem && <p role="alert">{mensagem}</p>}
   </div>;
 }
