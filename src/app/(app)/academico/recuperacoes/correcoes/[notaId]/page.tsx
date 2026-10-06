@@ -6,6 +6,7 @@ import { Propor, Revisar } from "./Formularios";
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 export default async function Correcoes({ params, searchParams }: { params: Promise<{ notaId: string }>; searchParams: Promise<{ antesVersao?: string }> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -17,7 +18,7 @@ export default async function Correcoes({ params, searchParams }: { params: Prom
     <VoltarPara href={`/academico/recuperacoes/${encodeURIComponent(d.realizacaoId)}`} para="Recuperação" />
     <h1 className="text-2xl font-medium">Correções da nota de recuperação</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    <p>Habilidade: {d.habilidade.replaceAll("_", " ")}.</p>
+    <p>Habilidade: {rotular(HABILIDADE_LABEL, d.habilidade)}.</p>
     <p>Nota original: {d.original.nota}. Nota vigente: {d.vigente.nota}. Escala: {d.escala.minimo} a {d.escala.maximo}.</p>
     <p>A nota vigente permanece até uma aprovação independente. Corrigir um erro pode reduzir o resultado; isso não representa uma nova tentativa.</p>
     {!antesVersao && <Propor key={`${d.vigente.origemId}-${d.versaoEsperada}`} notaId={notaId} {...d.vigente} versaoEsperada={d.versaoEsperada} />}

@@ -5,17 +5,11 @@ import { IconPlus } from "@tabler/icons-react";
 import { Segmento } from "@prisma/client";
 import { ModalidadeFormulario, type ModalidadeParaEditar } from "./ModalidadeFormulario";
 import { botaoClasses } from "@/components/Botao";
+import { SEGMENTO_LABEL } from "@/lib/labels";
 
 export interface ModalidadeRow extends ModalidadeParaEditar {
   _count: { produtos: number; turmas: number };
 }
-
-const SEG_LABEL: Record<Segmento, string> = {
-  ADULTO: "Adulto",
-  KIDS: "Kids",
-  TEENS: "Teens",
-  EMPRESA: "Empresa",
-};
 
 export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[] }) {
   const [form, setForm] = useState<"none" | "nova" | { editar: ModalidadeParaEditar }>("none");
@@ -63,7 +57,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
             {modalidades.map((m) => (
               <tr key={m.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{m.nome}</td>
-                <td className="px-4 py-3 text-gray-600">{SEG_LABEL[m.segmento]}</td>
+                <td className="px-4 py-3 text-gray-600">{SEGMENTO_LABEL[m.segmento]}</td>
                 <td className="px-4 py-3 text-gray-600">{m.frequencia}</td>
                 <td className="px-4 py-3 text-gray-600">{m.duracaoPorNivel}</td>
                 <td className="px-4 py-3 text-gray-600">{m.aulasPorNivel ?? "—"}</td>

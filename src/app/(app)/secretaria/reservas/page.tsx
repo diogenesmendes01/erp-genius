@@ -5,6 +5,7 @@ import { listarReservasSecretaria, listarReservasParticularesSecretaria } from "
 import { ConferirReserva } from "./ConferirReserva";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_RESERVA_VAGA_LABEL } from "@/lib/labels";
 export default async function ReservasPage({ searchParams }: { searchParams: Promise<{ pagina?: string; matriculaId?: string; historico?: string; tipo?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const filtros = await searchParams;
@@ -16,7 +17,6 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
   if (particular) params.set("tipo", "particular");
   const porTipo = (tipo: string) => { const p = new URLSearchParams(params); p.set("tipo", tipo); return `?${p}`; };
   const url = (pagina: number, todos = filtros.historico === "todos") => { const p = new URLSearchParams(params); p.set("pagina", String(pagina)); if (todos) p.set("historico", "todos"); return `?${p}`; };
-  const estados = { ATIVA: "Reserva ativa", MANTIDA_PENDENCIA: "Reserva mantida por pendência", EXPIRADA: "Expirada", UTILIZADA: "Utilizada", LIBERADA: "Liberada" };
   return <div className="space-y-4"><VoltarPara href="/secretaria" /><h1 className="text-2xl font-medium">Reservas de matrícula</h1>
     <nav className="flex gap-4" aria-label="Tipo de reserva"><Link href={porTipo("turma")} aria-current={!particular ? "page" : undefined}>Turmas</Link><Link href={porTipo("particular")} aria-current={particular ? "page" : undefined}>Particulares</Link></nav>
     <p>Reservas ativas e mantidas por pendência ocupam vagas ou horários. Nas particulares, a conferência pode expirar a reserva sem avanço formal. Pagamentos, documentos e pendências exigem o tratamento aplicável; não há devolução ou cancelamento da contratação por esta conferência.</p>
@@ -24,7 +24,7 @@ export default async function ReservasPage({ searchParams }: { searchParams: Pro
     {!r.registros.length && <EstadoVazio bloco>Nenhuma reserva nesta consulta.</EstadoVazio>}
     {r.registros.map((v) => <section key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium">{v.matricula.codigo ?? "Matrícula sem código"} · {[v.matricula.aluno.primeiroNome, v.matricula.aluno.sobrenome].filter(Boolean).join(" ")}</h2>
-      <p>{v.referencia} · {estados[v.status]}</p>
+      <p>{v.referencia} · {STATUS_RESERVA_VAGA_LABEL[v.status]}</p>
       <p>Prazo: {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: v.fuso ?? "UTC" }).format(v.expiraEm)} · {v.fuso ?? "UTC (fuso da reserva indisponível)"}{v.prazoVencido ? " · Prazo vencido" : ""}</p>
       {v.quantidadeHorarios !== null && <p>{v.quantidadeHorarios} horário(s) reservado(s). Consulte a preparação para os detalhes.</p>}
       <p className="whitespace-pre-wrap">{v.motivo}</p><Link className="underline" href={`/secretaria?matriculaId=${v.matriculaId}`}>Consultar contratação</Link>

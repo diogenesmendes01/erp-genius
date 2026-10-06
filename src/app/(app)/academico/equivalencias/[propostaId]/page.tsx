@@ -7,17 +7,11 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, type Habilidade } from "@/lib/labels";
 
-type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
-const nomesHabilidade: Record<Habilidade, string> = {
-  FALA: "Comunicação oral",
-  COMPREENSAO_ORAL: "Compreensão oral",
-  LEITURA: "Leitura",
-  ESCRITA: "Escrita",
-};
 const textoTurma = (turma: { codigo: string | null; nome: string | null }) => turma.codigo ?? turma.nome ?? "Turma sem identificação";
 const ehObjeto = (valor: unknown): valor is Record<string, unknown> => typeof valor === "object" && valor !== null && !Array.isArray(valor);
-const ehHabilidade = (valor: unknown): valor is Habilidade => typeof valor === "string" && valor in nomesHabilidade;
+const ehHabilidade = (valor: unknown): valor is Habilidade => typeof valor === "string" && valor in HABILIDADE_LABEL;
 const texto = (valor: unknown) => typeof valor === "string" ? valor : null;
 const chaveRequisito = (codigo: string, habilidade: string) => `${codigo}\u0000${habilidade}`;
 const nota = (valor: string) => valor.replace(".", ",");
@@ -42,7 +36,7 @@ function resumoPedagogico(snapshot: unknown, mapeamentos: unknown) {
     const tipo = fonte.tipoFonte === "APROVEITAMENTO" ? "APROVEITAMENTO" as const : fonte.tipoFonte === "RECUPERACAO" || codigoAvaliacao === null ? "RECUPERACAO" as const : "REGULAR" as const;
     return [{ referenciaId, ordem: indice + 1, habilidade, nota: valorNota,
       tipo,
-      avaliacao: tipo === "RECUPERACAO" ? `Recuperação de ${nomesHabilidade[habilidade]}` : `${avaliacoesOrigem.get(codigoAvaliacao ?? "") ?? "Avaliação"} (${codigoAvaliacao})`,
+      avaliacao: tipo === "RECUPERACAO" ? `Recuperação de ${HABILIDADE_LABEL[habilidade]}` : `${avaliacoesOrigem.get(codigoAvaliacao ?? "") ?? "Avaliação"} (${codigoAvaliacao})`,
     }];
   }) : [];
   const itens = ehObjeto(raiz.projecao) && Array.isArray(raiz.projecao.itens) ? raiz.projecao.itens.flatMap((item, indice) => {
@@ -95,9 +89,9 @@ export default async function PropostaEquivalenciaPage({ params }: { params: Pro
       <h2 className="text-xl font-medium">Fontes e mapeamento pedagógico</h2>
       <p>Use esta visão para conferir a avaliação, a habilidade, a nota e o peso envolvidos. Identificadores técnicos não são exibidos.</p>
       <h3 className="font-medium">Fontes oficializadas</h3>
-      {pedagogica.fontes.length ? <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Fontes oficializadas da proposta</caption><thead><tr><th>Tipo</th><th>Avaliação ou recuperação</th><th>Habilidade</th><th>Nota</th></tr></thead><tbody>{pedagogica.fontes.map((fonte) => <tr key={fonte.referenciaId}><td>{nomeTipoFonte(fonte.tipo)}</td><td>{fonte.avaliacao}</td><td>{nomesHabilidade[fonte.habilidade]}</td><td>{nota(fonte.nota)}</td></tr>)}</tbody></table></div> : <EstadoVazio>Nenhuma fonte oficial foi preservada nesta proposta.</EstadoVazio>}
+      {pedagogica.fontes.length ? <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Fontes oficializadas da proposta</caption><thead><tr><th>Tipo</th><th>Avaliação ou recuperação</th><th>Habilidade</th><th>Nota</th></tr></thead><tbody>{pedagogica.fontes.map((fonte) => <tr key={fonte.referenciaId}><td>{nomeTipoFonte(fonte.tipo)}</td><td>{fonte.avaliacao}</td><td>{HABILIDADE_LABEL[fonte.habilidade]}</td><td>{nota(fonte.nota)}</td></tr>)}</tbody></table></div> : <EstadoVazio>Nenhuma fonte oficial foi preservada nesta proposta.</EstadoVazio>}
       <h3 className="font-medium">Mapa escolhido</h3>
-      {pedagogica.mapa.length ? <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Mapa entre requisitos de destino e fontes oficializadas</caption><thead><tr><th>Avaliação de destino</th><th>Habilidade</th><th>Peso</th><th>Fonte indicada</th></tr></thead><tbody>{pedagogica.mapa.map((item, indice) => <tr key={`${item.requisito.avaliacao}-${item.fonte?.referenciaId ?? "preservada"}-${indice}`}><td>{item.requisito.avaliacao}</td><td>{nomesHabilidade[item.requisito.habilidade]}</td><td>{item.requisito.peso ? nota(item.requisito.peso) : "Conferir regra preservada"}</td><td>{item.fonte ? `${nomeTipoFonte(item.fonte.tipo)}: ${item.fonte.avaliacao} · ${nomesHabilidade[item.fonte.habilidade]} · nota ${nota(item.fonte.nota)}` : "Fonte preservada a conferir"}</td></tr>)}</tbody></table></div> : <EstadoVazio>Nenhuma fonte foi indicada; os requisitos permanecem pendentes para acompanhamento.</EstadoVazio>}
+      {pedagogica.mapa.length ? <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Mapa entre requisitos de destino e fontes oficializadas</caption><thead><tr><th>Avaliação de destino</th><th>Habilidade</th><th>Peso</th><th>Fonte indicada</th></tr></thead><tbody>{pedagogica.mapa.map((item, indice) => <tr key={`${item.requisito.avaliacao}-${item.fonte?.referenciaId ?? "preservada"}-${indice}`}><td>{item.requisito.avaliacao}</td><td>{HABILIDADE_LABEL[item.requisito.habilidade]}</td><td>{item.requisito.peso ? nota(item.requisito.peso) : "Conferir regra preservada"}</td><td>{item.fonte ? `${nomeTipoFonte(item.fonte.tipo)}: ${item.fonte.avaliacao} · ${HABILIDADE_LABEL[item.fonte.habilidade]} · nota ${nota(item.fonte.nota)}` : "Fonte preservada a conferir"}</td></tr>)}</tbody></table></div> : <EstadoVazio>Nenhuma fonte foi indicada; os requisitos permanecem pendentes para acompanhamento.</EstadoVazio>}
       {pedagogica.itens.length > pedagogica.mapa.length && <p role="status">Há requisito(s) de destino sem fonte indicada nesta proposta.</p>}
     </section>}
 

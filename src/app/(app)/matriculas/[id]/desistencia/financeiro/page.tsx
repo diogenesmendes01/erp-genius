@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL } from "@/lib/labels";
+import { STATUS_COBRANCA_LABEL, TIPO_COBRANCA_LABEL, ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {delta.podePreparar && base.podePreparar && <PrepararReconferenciaDeltaFormulario aplicacaoBaseId={base.id} />}
           {base.preparoBloqueadoPor && <p role="status">{base.preparoBloqueadoPor}</p>}
           {!base.propostas.length && <EstadoVazio bloco>Nenhuma reconferência registrada.</EstadoVazio>}
-          {base.propostas.map(proposta => <div key={proposta.id} className="space-y-3 border-t pt-3"><h4>Delta {proposta.versao} · {proposta.preparadorNome} · {proposta.estado}</h4><p>Preparada em {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>
+          {base.propostas.map(proposta => <div key={proposta.id} className="space-y-3 border-t pt-3"><h4>Delta {proposta.versao} · {proposta.preparadorNome} · {rotular(ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL, proposta.estado)}</h4><p>Preparada em {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>
             {proposta.pendencia && <p role="status">{proposta.pendencia}</p>}
             <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Ajuste devido</th><th>Ajuste saldo</th><th>Crédito novo</th><th>Redução bloqueada</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{formatarMoeda(item.ajusteDevido, item.moeda)}</td><td>{formatarMoeda(item.ajusteSaldo, item.moeda)}</td><td>{formatarMoeda(item.creditoDelta, item.moeda)}</td><td>{formatarMoeda(item.reducaoCredito, item.moeda)}</td></tr>)}</tbody></table>
             {proposta.creditosExternos.length > 0 && <table className="w-full text-left text-sm"><caption className="text-left font-medium">Créditos externos preservados nesta fotografia</caption><thead><tr><th>Crédito</th><th>Moeda</th><th>Saldo disponível</th></tr></thead><tbody>{proposta.creditosExternos.map(credito => <tr key={credito.id}><td>{credito.id}</td><td>{credito.moeda}</td><td>{formatarMoeda(credito.saldoDisponivel, credito.moeda)}</td></tr>)}</tbody></table>}

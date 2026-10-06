@@ -20,7 +20,7 @@ import {
 } from "@tabler/icons-react";
 import type { EtapaLead, Temperatura } from "@prisma/client";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
+import { ETAPA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL, STATUS_INTENCAO_LABEL, TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
 import type { ConversaResumo, LinhaDoUsuario, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
 import { LIMITE_CONVERSAS, hrefInbox, type CanalInbox } from "@/server/whatsapp/busca-inbox";
 import {
@@ -624,7 +624,7 @@ function Bolha({ m, preferenciaFusoExibicao }: { m: ThreadConversa["mensagens"][
       >
         {m.midiaPath && <Midia m={m} />}
         {m.corpo && <p className="whitespace-pre-wrap break-words">{m.corpo}</p>}
-        {!m.corpo && !m.midiaPath && <p className="italic text-gray-400">[{m.tipo.toLowerCase()}]</p>}
+        {!m.corpo && !m.midiaPath && <p className="italic text-gray-400">[{rotular(TIPO_MENSAGEM_LABEL, m.tipo).toLowerCase()}]</p>}
         <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-gray-400">
           {m.templateNome && <span>template {m.templateNome} ·</span>}
           {origem && <span>{origem} ·</span>}
@@ -695,7 +695,7 @@ function Composer({
     if (!r.ok) return onErro(r.erro ?? "Erro ao enviar.");
     const d = r.dado!;
     if (d.status === "FALHOU") onErro(`Envio falhou: ${d.motivo ?? "erro"}.`);
-    else onNota(NOTA_POR_STATUS[d.status] ?? `Estado: ${d.status}.`);
+    else onNota(NOTA_POR_STATUS[d.status] ?? `Estado: ${rotular(STATUS_INTENCAO_LABEL, d.status)}.`);
     router.refresh();
   }
 

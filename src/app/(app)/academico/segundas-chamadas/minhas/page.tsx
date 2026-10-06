@@ -5,6 +5,7 @@ import { listarSegundasChamadasDocente } from "@/server/avaliacoes/segunda-chama
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 
 
 export default async function MinhasSegundasChamadas({ searchParams }: { searchParams: Promise<{ depoisId?: string }> }) {
@@ -22,7 +23,7 @@ export default async function MinhasSegundasChamadas({ searchParams }: { searchP
       <h2 className="font-medium">{item.aluno} · {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matriculaCodigo ?? "sem código"} · {item.turma}.</p>
       {(() => { const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem); return <p>Horário: {formatarInstanteExibicao(item.inicio, fuso, item.fusoOrigem).texto} a {formatarInstanteExibicao(item.fim, fuso, item.fusoOrigem).texto} ({fuso}; origem {item.fusoOrigem}).</p>; })()}
-      <p>Situação: {item.status}.</p>
+      <p>Situação: {rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.status)}.</p>
       <p>{item.realizacao ? `Realização registrada em ${formatarInstanteExibicao(item.realizacao.realizadaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto}.` : item.podeRealizar ? "O registro será revalidado ao enviar: a data efetiva precisa pertencer ao encontro e o histórico e a autorização aplicável serão conferidos." : "A realização ainda não está disponível nas condições atuais."}</p>
       <Link className="underline" href={`/academico/segundas-chamadas/minhas/${encodeURIComponent(item.reservaId)}`}>Abrir segunda chamada designada</Link>
     </article>)}

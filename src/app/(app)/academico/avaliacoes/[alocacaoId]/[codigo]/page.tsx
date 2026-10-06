@@ -11,8 +11,8 @@ import { IdentificacaoAvaliacao } from "../../Identificacao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 
-const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 export default async function LancamentoPage({ params, searchParams }: {
   params: Promise<{ alocacaoId: string; codigo: string }>; searchParams: Promise<{ pagina?: string; fuso?: string }>;
 }) {
@@ -55,8 +55,8 @@ export default async function LancamentoPage({ params, searchParams }: {
       {v.realizadaPor && <p>Avaliação realizada por {v.realizadaPor.nome}.</p>}
       {v.motivoRegularizacao && <p className="whitespace-pre-wrap">Motivo da regularização: {v.motivoRegularizacao}</p>}
       {v.evidenciasRegularizacao && <p className="whitespace-pre-wrap">Evidências da regularização: {v.evidenciasRegularizacao}</p>}
-      {v.notas.map(n => <div key={n.habilidade}><p><strong>{nomes[n.habilidade]}:</strong> {n.nota ?? "Nota pendente"}</p>{n.comentarioAluno && <p className="whitespace-pre-wrap">Comentário para o aluno: {n.comentarioAluno}</p>}</div>)}
-      {v.vigente?.correcaoId && <section className="space-y-2 rounded border p-3"><h4 className="font-medium">Valores vigentes após correção aprovada</h4><p>Os valores acima permanecem como registro original.</p>{v.vigente.notas.map(n => <div key={n.habilidade}><p>{nomes[n.habilidade]}: {n.nota}</p>{n.comentarioAluno && <p className="whitespace-pre-wrap">{n.comentarioAluno}</p>}</div>)}</section>}
+      {v.notas.map(n => <div key={n.habilidade}><p><strong>{HABILIDADE_LABEL[n.habilidade]}:</strong> {n.nota ?? "Nota pendente"}</p>{n.comentarioAluno && <p className="whitespace-pre-wrap">Comentário para o aluno: {n.comentarioAluno}</p>}</div>)}
+      {v.vigente?.correcaoId && <section className="space-y-2 rounded border p-3"><h4 className="font-medium">Valores vigentes após correção aprovada</h4><p>Os valores acima permanecem como registro original.</p>{v.vigente.notas.map(n => <div key={n.habilidade}><p>{HABILIDADE_LABEL[n.habilidade]}: {n.nota}</p>{n.comentarioAluno && <p className="whitespace-pre-wrap">{n.comentarioAluno}</p>}</div>)}</section>}
       {v.decisao && <p className="whitespace-pre-wrap">Decisão de {v.decisao.decisor.nome} em {dataHistorico(v.decisao.criadaEm)}: {v.decisao.motivo}</p>}
       {v.vigente && <Link className="block underline" href={`/academico/correcoes/${encodeURIComponent(v.id)}`}>Propor correção ou consultar correções</Link>}
       {v.podeDecidir && <ConferirNotas lancamentoId={v.id} conteudoHash={v.conteudoHash} podeAprovar={v.podeAprovar} />}

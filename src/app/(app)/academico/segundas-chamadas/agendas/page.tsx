@@ -1,22 +1,14 @@
 import Link from "next/link";
-import { Papel, StatusReservaSegundaChamada } from "@prisma/client";
+import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { listarAgendasSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agendas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { STATUS_ENCONTRO_LABEL } from "@/lib/labels";
+import { STATUS_ENCONTRO_LABEL, STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-const rotulosReserva = {
-  RESERVADA: "Reservada",
-  CONSUMIDA_REALIZACAO: "Realizada",
-  CONSUMIDA_FALTA: "Falta",
-  LIBERADA_CANCELAMENTO_ESCOLA: "Cancelada pela escola",
-  LIBERADA_CANCELAMENTO_TEMPESTIVO: "Cancelada dentro do prazo",
-  CONSUMIDA_CANCELAMENTO_TARDIO: "Cancelada fora do prazo",
-  PENDENCIA_ESCOLA: "Pendência da escola",
-} satisfies Record<StatusReservaSegundaChamada, string>;
+const rotulosReserva = STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL;
 const rotulosEncontro = STATUS_ENCONTRO_LABEL;
 const rotulo = (rotulos: Record<string, string>, valor: string) => rotulos[valor] ?? valor;
 

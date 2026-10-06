@@ -5,6 +5,7 @@ import { consultarTelaPagador, consultarHistoricoPagador } from "@/server/secret
 import { PagadorFormulario } from "./PagadorFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { TIPO_PAGADOR_LABEL, rotular } from "@/lib/labels";
 export default async function PagadorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, busca = await searchParams;
@@ -16,7 +17,7 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
     <h1 className="text-2xl">Pagador da contratação · {d.matricula.codigo ?? "Em preparação"}</h1>
     <p>Aluno: {d.matricula.aluno.primeiroNome} {d.matricula.aluno.sobrenome}</p>
     <p>Este cadastro pertence somente a esta matrícula. Ser pagador não concede acesso acadêmico nem define quem deve assinar o contrato.</p>
-    {p ? <section className="space-y-2 rounded border p-4"><h2>Registro atual · versão {p.versao}</h2><p>{p.tipo === "ALUNO" ? "Próprio aluno" : p.tipo === "EMPRESA" ? "Empresa" : "Responsável"} · {p.dados.nome}</p>
+    {p ? <section className="space-y-2 rounded border p-4"><h2>Registro atual · versão {p.versao}</h2><p>{rotular(TIPO_PAGADOR_LABEL, p.tipo)} · {p.dados.nome}</p>
       <p>Documento: {p.dados.documento || "Pendente"}</p><p>E-mail: {p.dados.email || "Não informado"}</p><p>Telefone: {p.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {p.dados.endereco || "Pendente"}</p>
       <p>Registrado por {p.preparador.nome}. Motivo: {p.motivo}</p></section> : <p>Nenhum pagador registrado nesta preparação.</p>}
     <p>O registro não comprova conferência suficiente para emitir cobranças ou liberar assinatura.</p>
@@ -25,7 +26,7 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
     <section className="space-y-3"><h2 className="text-xl">Histórico do pagador</h2>
       {!h.ok || !h.dado ? <p role="alert">{h.ok ? "Histórico indisponível." : h.erro}</p> : <>
         {h.dado.registros.map((v) => <details key={v.id} className="rounded border p-3"><summary>Versão {v.versao} · {v.dados.nome} · {v.preparador.nome}</summary>
-          <p>Registrada em {v.criadaEm.toISOString()} (UTC). Tipo: {v.tipo}.</p>
+          <p>Registrada em {v.criadaEm.toISOString()} (UTC). Tipo: {rotular(TIPO_PAGADOR_LABEL, v.tipo)}.</p>
           <p>Documento: {v.dados.documento || "Não informado"}</p><p>E-mail: {v.dados.email || "Não informado"}</p><p>Telefone: {v.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {v.dados.endereco || "Não informado"}</p><p>Motivo: {v.motivo}</p>
         </details>)}
         {!h.dado.registros.length && <EstadoVazio>Nenhum registro nesta página.</EstadoVazio>}

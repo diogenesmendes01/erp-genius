@@ -60,8 +60,8 @@ describe("conferência financeira renderizada", () => {
       { id: "pagador-2", versao: 2, tipo: "RESPONSAVEL", dados: { nome: "João Lima" }, motivo: "conferido", criadaEm: "2026-09-16T12:00:00Z", preparador: { nome: "Secretaria" } },
     ];
     const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: { ...base, pagadores } }));
-    expect(html).toContain("Ana Lima · versão 1 · RESPONSAVEL");
-    expect(html).toContain("João Lima · versão 2 · RESPONSAVEL");
+    expect(html).toContain("Ana Lima · versão 1 · Responsável");
+    expect(html).toContain("João Lima · versão 2 · Responsável");
   });
   it("renderiza vencimento civil M01 sem reinterpretar o instante do navegador", () => {
     const html = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: {

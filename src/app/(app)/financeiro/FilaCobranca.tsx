@@ -3,7 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
+import { TIPO_COBRANCA_LABEL, STATUS_INTENCAO_LABEL, rotular } from "@/lib/labels";
 import { formatarMoeda, formatarValores } from "@/lib/dinheiro";
 import { dataCivilComDeslocamento, rotuloVencimento } from "@/lib/vencimento-civil";
 import type { FilaCobrancaItem, DashsCobranca, DegrauFila } from "@/server/cobrancas/consultas";
@@ -456,16 +456,6 @@ function AcaoRapida({
   );
 }
 
-const ROTULO_ENVIO: Record<string, string> = {
-  PENDENTE: "na fila de envio",
-  ENVIANDO: "enviando…",
-  ADIADA: "na fila (aguardando janela)",
-  DESPACHADA: "enviada via API",
-  SIMULADA: "simulada (ensaio)",
-  FALHOU: "falhou",
-  CANCELADA: "cancelada",
-};
-
 export function DetalheCobranca({
   item,
   regua,
@@ -620,7 +610,7 @@ export function DetalheCobranca({
         ) : null}
         {item.envio && (
           <div className="mx-5 mb-4 text-xs text-gray-600">
-            Braço API · {item.envio.passo ?? "—"}: {ROTULO_ENVIO[item.envio.status] ?? item.envio.status}
+            Braço API · {item.envio.passo ?? "—"}: {rotular(STATUS_INTENCAO_LABEL, item.envio.status)}
             {item.envio.motivo && <span className="text-gray-500"> ({item.envio.motivo})</span>}
             {item.envio.em && <span className="text-gray-400"> · {textoInstanteOperacional(item.envio.em, preferenciaFusoExibicao)}</span>}
           </div>

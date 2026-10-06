@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusAluno, TipoMovimentacao, Genero, Escolaridade } from "@prisma/client";
-import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
+import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL, TIPO_MOVIMENTACAO_LABEL } from "@/lib/labels";
 import { formatarValores, type ValorMoeda } from "@/lib/dinheiro";
 import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
@@ -18,14 +18,6 @@ import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
-
-const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
-  MATRICULA: "Matrícula",
-  TROCA_TURMA: "Troca de turma",
-  PAUSA: "Pausa",
-  REATIVACAO: "Reativação",
-  ENCERRAMENTO: "Encerramento",
-};
 
 const STATUS_CLS: Record<StatusAluno, string> = {
   ATIVO: "bg-green-100 text-green-700",
@@ -557,7 +549,7 @@ export function FichaAluno({
           <ul className="flex flex-col gap-3">
             {aluno.movimentacoes.map((m) => (
               <li key={m.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm font-medium text-gray-800">{TIPO_MOV_LABEL[m.tipo]}</div>
+                <div className="text-sm font-medium text-gray-800">{TIPO_MOVIMENTACAO_LABEL[m.tipo]}</div>
                 <div className="text-xs text-gray-500">{m.matriculaId ? `Matrícula: ${m.matriculaCodigo ?? "sem código"}` : "Registro global ou legado sem matrícula identificada"}</div>
                 {m.motivo && <div className="text-sm text-gray-600">{m.motivo}</div>}
                 {m.observacao && <div className="text-xs text-gray-500">{m.observacao}</div>}
