@@ -37,7 +37,7 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   return <section className="space-y-5">
     <VoltarPara href="/academico" />
     <header className="space-y-2"><h1 className="text-2xl font-medium">Propostas de aproveitamento</h1><p>{secretaria ? "Fila de autorizações da matrícula. A execução é conferida novamente ao abrir cada proposta." : "Histórico e fila de propostas de aproveitamento desta matrícula."}</p></header>
-    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : <EstadoVazio>Nenhuma proposta autorizada aguarda execução nesta página.</EstadoVazio>}</section>
+    <section className="space-y-3"><h2 className="text-xl font-medium">Autorizações aguardando execução</h2>{autorizadas.length ? lista(autorizadas) : cursor ? <EstadoVazio acao={<Link className="inline-block underline" href={`/academico/equivalencias?${new URLSearchParams({ matriculaId })}`}>Ir para a primeira página</Link>}>Nenhuma proposta autorizada aguarda execução nesta página.</EstadoVazio> : <EstadoVazio>Nenhuma proposta autorizada aguarda execução nesta matrícula.</EstadoVazio>}</section>
     {historico.length > 0 && <section className="space-y-3"><h2 className="text-xl font-medium">Outras propostas</h2>{lista(historico)}</section>}
     {!itens.length && <EstadoVazio bloco>Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.</EstadoVazio>}
     {resultado.dado.proximoCursor && <Link className="inline-block underline" href={`/academico/equivalencias?${new URLSearchParams({ matriculaId, cursor: resultado.dado.proximoCursor })}`}>Próximas propostas</Link>}

@@ -70,7 +70,9 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       </fieldset>
     </form>}
     <h2 className="text-lg">Histórico de relatos</h2>
-    {!d.relatos.length && <EstadoVazio>Nenhum relato registrado nesta página.</EstadoVazio>}
+    {!d.relatos.length && (d.pagina > 1
+      ? <EstadoVazio acao={<Link className="underline" href="?pagina=1">Ir para a primeira página</Link>}>Nenhum relato registrado nesta página.</EstadoVazio>
+      : <EstadoVazio>Nenhum relato de indisponibilidade registrado para esta matrícula.</EstadoVazio>)}
     {d.relatos.map(relato => <article key={relato.id} className="space-y-2 rounded border p-4">
       <h3>{dataCivil(relato.inicio)}{relato.fim ? ` a ${dataCivil(relato.fim)}` : relato.terminoAprovado ? ` a ${dataCivil(relato.terminoAprovado.fim)}` : " em aberto"}</h3>
       {relato.terminoAprovado && <p role="status">Último dia de indisponibilidade aprovado: {dataCivil(relato.terminoAprovado.fim)}.</p>}

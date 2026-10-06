@@ -70,7 +70,9 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
     <CadastroContratualAplicado cadastro={aplicacaoHistoricoResultado.dado?.cadastroContratual} preferenciaFusoExibicao={fusoExibicao} />
     {conclusao?.ambiente === "PRODUCAO" && conferenciaFinal?.revisao && conferenciaFinal.historico && !aplicacaoHistorica && <section className="space-y-3 rounded border p-4"><CondicoesFormalizadasFormulario matriculaId={id} propostaId={propostaId} conclusaoId={conclusao.id} revisaoHash={conferenciaFinal.revisao.hash} formalizada={Boolean(condicoesDaProposta)} /></section>}
     <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferências registradas</h2>
-      {!d.historico.length && <EstadoVazio>Nenhum registro nesta página.</EstadoVazio>}
+      {!d.historico.length && (pagina > 1
+        ? <EstadoVazio acao={<Link className="underline" href={`${atual}?pagina=1`}>Ir para a primeira página</Link>}>Nenhum registro nesta página.</EstadoVazio>
+        : <EstadoVazio>Nenhuma conferência registrada para este original.</EstadoVazio>)}
       {d.historico.map(c => <article className="rounded border p-3" key={c.id}><p>{c.autor} · {data(c.criadaEm)}</p><p className="whitespace-pre-wrap">{c.motivo}</p><p>{d.revisao?.hash === c.revisaoHash ? "Corresponde à revisão atual." : "Conferência histórica; validade atual não confirmada."}</p></article>)}
       <nav aria-label="Páginas de conferências do original" className="flex gap-3">{pagina > 1 && <Link className="underline" href={`${atual}?pagina=${pagina - 1}`}>Anteriores</Link>}<span>Página {pagina}</span>{d.temProxima && <Link className="underline" href={`${atual}?pagina=${pagina + 1}`}>Próximas</Link>}</nav>
     </section>

@@ -148,6 +148,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/admissoes/[id]/page.tsx": [
     "bloco · Nenhuma versão nesta página.",
+    "bloco · Nenhuma versão da janela de admissão registrada para esta turma.",
   ],
   "src/app/(app)/academico/admissoes/excecoes/[reservaId]/page.tsx": [
     "compacto · Nenhuma proposta registrada.",
@@ -185,6 +186,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/calendario/[id]/revisoes/page.tsx": [
     "bloco · Nenhuma revisão nesta página.",
+    "bloco · Nenhuma revisão registrada para este calendário.",
   ],
   "src/app/(app)/academico/calendario/page.tsx": [
     "bloco · Nenhuma proposta encontrada.",
@@ -207,6 +209,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/equivalencias/page.tsx": [
     "compacto · Nenhuma proposta autorizada aguarda execução nesta página.",
+    "compacto · Nenhuma proposta autorizada aguarda execução nesta matrícula.",
     "bloco · Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.",
   ],
   "src/app/(app)/academico/grades/nova/page.tsx": [
@@ -225,30 +228,37 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/recuperacoes/[realizacaoId]/page.tsx": [
     "bloco · Nenhuma versão de nota registrada nesta página.",
+    "bloco · Nenhuma versão de nota registrada para esta realização.",
   ],
   "src/app/(app)/academico/recuperacoes/correcoes/[notaId]/page.tsx": [
     "bloco · Sem propostas nesta página.",
+    "bloco · Nenhuma proposta de correção registrada para esta nota.",
   ],
   "src/app/(app)/academico/recuperacoes/designadas/page.tsx": [
     "bloco · Nenhuma tentativa disponível nesta página.",
+    "bloco · {r.dado.modo === \"historico\" ? \"Nenhuma avaliação de recuperação no seu histórico.\" : \"Nenhuma tenta",
   ],
   "src/app/(app)/academico/recuperacoes/page.tsx": [
     "bloco · Nenhuma realização disponível nesta página.",
+    "bloco · Nenhuma recuperação realizada neste vínculo.",
   ],
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/page.tsx": [
     "bloco · Nenhuma autorização especial registrada.",
   ],
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/page.tsx": [
     "bloco · Nenhuma reserva nesta página.",
+    "bloco · Nenhuma reserva registrada para este plano.",
   ],
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/prorrogacoes/page.tsx": [
     "bloco · Nenhuma proposta nesta página.",
+    "bloco · Nenhuma proposta de prorrogação registrada para esta recuperação.",
   ],
   "src/app/(app)/academico/recuperacoes/planos/autorizacoes-preparacao/page.tsx": [
     "bloco · Nenhuma autorização de preparação registrada.",
   ],
   "src/app/(app)/academico/recuperacoes/planos/page.tsx": [
     "bloco · Nenhuma proposta nesta página.",
+    "bloco · Nenhum plano de recuperação proposto para esta matrícula.",
   ],
   "src/app/(app)/academico/recuperacoes/reservas/[reservaId]/cancelamento/page.tsx": [
     "compacto · Nenhuma proposta de cancelamento registrada.",
@@ -261,6 +271,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/page.tsx": [
     "bloco · Nenhuma designação nesta página.",
+    "bloco · Nenhuma designação registrada para esta tentativa.",
   ],
   "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/propostas/page.tsx": [
     "bloco · Nenhuma proposta registrada.",
@@ -276,6 +287,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx": [
     "compacto · Não há correções nesta página.",
+    "compacto · Nenhuma correção proposta para esta conclusão.",
     "compacto · Não há encontro próprio ministrado com presença disponível para esta correção.",
     "compacto · Não há entrega completa disponível para esta correção.",
   ],
@@ -366,6 +378,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/alunos/[id]/movimentacoes/page.tsx": [
     "compacto · Nenhum pedido registrado nesta página.",
+    "compacto · Nenhum pedido de encerramento registrado para este aluno.",
   ],
   "src/app/(app)/alunos/[id]/portal/painel.tsx": [
     "compacto · Nenhuma solicitação.",
@@ -500,18 +513,22 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/financeiro/acertos-cobertura/page.tsx": [
     "compacto · Nenhum aditivo de cobertura foi encontrado nesta página.",
+    "compacto · Nenhum aditivo formaliza correção de cobertura.",
   ],
   "src/app/(app)/financeiro/acertos-taxa/page.tsx": [
     "compacto · Nenhum aditivo com condições de taxa nesta página.",
+    "compacto · Nenhum aditivo formaliza condições de taxa.",
   ],
   "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx": [
     "bloco · Nenhuma proposta de acerto registrada.",
   ],
   "src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal.tsx": [
     "bloco · Nenhuma matrícula precisa de acompanhamento nesta página.",
+    "bloco · Nenhuma matrícula precisa de acompanhamento na continuidade mensal.",
   ],
   "src/app/(app)/financeiro/desistencias/page.tsx": [
     "bloco · Nenhum pedido nesta página.",
+    "bloco · Nenhum pedido de desistência aguardando conferência financeira.",
   ],
   "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx": [
     "compacto · Nenhuma proposta registrada para esta linha.",
@@ -521,15 +538,18 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/financeiro/migracao/page.tsx": [
     "compacto · Nenhuma linha financeira nesta página.",
+    "compacto · Nenhuma linha financeira da migração para conciliar.",
   ],
   "src/app/(app)/financeiro/permuta/page.tsx": [
     "bloco · Nenhum acordo nesta página.",
+    "bloco · Nenhum acordo de permuta registrado.",
   ],
   "src/app/(app)/financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
     "bloco · Não há contratos disponíveis para recebimento.",
   ],
   "src/app/(app)/financeiro/recebimentos/page.tsx": [
     "compacto · Nenhum recebimento nesta página.",
+    "compacto · Nenhum recebimento registrado.",
   ],
   "src/app/(app)/home/HomeGerente.tsx": [
     "compacto · Sem vendedores.",
@@ -586,12 +606,15 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/OriginaisPainel.tsx": [
     "compacto · Nenhum original nesta página.",
+    "compacto · Nenhum original preservado para este aditivo.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx": [
     "compacto · Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes ",
+    "compacto · Nenhum documento disponível. Cadastre as evidências na documentação da matrícula antes de concluir.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesHistorico.tsx": [
     "compacto · Nenhuma conferência nesta página.",
+    "compacto · Nenhuma conferência de signatários registrada para este aditivo.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/alcadas/page.tsx": [
     "bloco · Não há alçadas adicionais disponíveis para esta proposta.",
@@ -599,33 +622,42 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]/page.tsx": [
     "compacto · Nenhuma tentativa de envio foi iniciada.",
     "compacto · Nenhum registro nesta página.",
+    "compacto · Nenhuma conferência registrada para este original.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx": [
     "compacto · Não há encontros particulares futuros disponíveis para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/aditivos/page.tsx": [
     "compacto · Nenhum modelo de aditivo aprovado está disponível nesta página.",
+    "compacto · Nenhum modelo de aditivo aprovado está disponível.",
     "compacto · Nenhuma proposta nesta página.",
+    "compacto · Nenhuma proposta de aditivo registrada para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/originais/[artefatoId]/page.tsx": [
     "compacto · Nenhuma conferência registrada.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/page.tsx": [
     "compacto · Nenhum modelo publicado disponível nesta página para o regime da matrícula.",
+    "compacto · Nenhum modelo publicado disponível para o regime da matrícula.",
     "compacto · Nenhuma prévia registrada nesta página.",
+    "compacto · Nenhuma prévia registrada para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/page.tsx": [
     "compacto · Ainda não há original preservado. A geração exige uma conferência atual dos participantes.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx": [
     "compacto · Nenhuma conferência registrada nesta página.",
+    "compacto · Nenhuma conferência de participantes registrada para esta prévia.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/substituicoes/Andamento.tsx": [
     "compacto · Nenhum retorno nesta página.",
+    "compacto · Nenhum retorno do cancelamento registrado.",
   ],
   "src/app/(app)/matriculas/[id]/contrato/substituicoes/page.tsx": [
     "compacto · Nenhuma conferência de outro original nesta página. Prepare e confira o documento substituto nos doc",
+    "compacto · Nenhuma conferência de outro original registrada. Prepare e confira o documento substituto nos docum",
     "compacto · Nenhuma proposta nesta página.",
+    "compacto · Nenhuma proposta de substituição registrada para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/desistencia/administracao/page.tsx": [
     "compacto · Nenhum pedido de desistência registrado.",
@@ -650,16 +682,20 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/matriculas/[id]/fechamentos-horas/page.tsx": [
     "bloco · Nenhum rascunho salvo nesta página.",
+    "bloco · Nenhum rascunho de fechamento salvo para esta matrícula.",
     "compacto · Nenhum encontro incluído para cobrança nesta versão.",
   ],
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
     "compacto · Nenhum relato registrado nesta página.",
+    "compacto · Nenhum relato de indisponibilidade registrado para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
     "compacto · Nenhuma proposta registrada nesta página.",
+    "compacto · Nenhuma proposta de término registrada para esta indisponibilidade.",
   ],
   "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/page.tsx": [
     "bloco · Nenhum encontro particular nesta página.",
+    "bloco · Nenhum encontro particular registrado para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx": [
     "compacto · Nenhuma correção de presença pendente nesta matrícula.",
@@ -667,12 +703,14 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/matriculas/[id]/pagador/page.tsx": [
     "compacto · Nenhum registro nesta página.",
+    "compacto · Nenhuma versão do pagador registrada para esta matrícula.",
   ],
   "src/app/(app)/matriculas/[id]/page.tsx": [
     "bloco · Nenhuma seção desta matrícula está disponível para a sua função.",
   ],
   "src/app/(app)/matriculas/[id]/reserva/page.tsx": [
     "compacto · Nenhuma turma nesta página.",
+    "compacto · Nenhuma turma compatível com a contratação.",
   ],
   "src/app/(app)/pipeline/KanbanBoard.tsx": [
     "compacto · Nenhum lead nesta etapa.",
@@ -683,13 +721,17 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/secretaria/avisos-agenda/page.tsx": [
     "compacto · Nenhum aviso nesta página.",
+    "compacto · Nenhum aviso de alteração na agenda.",
     "compacto · Nenhuma pendência nesta página.",
+    "compacto · Nenhuma pendência operacional registrada.",
   ],
   "src/app/(app)/secretaria/desistencias/page.tsx": [
     "bloco · Nenhum pedido pendente nesta página.",
+    "bloco · Nenhum pedido aguardando decisão administrativa.",
   ],
   "src/app/(app)/secretaria/envios-portal/page.tsx": [
     "bloco · Nenhuma solicitação nesta página.",
+    "bloco · Nenhuma solicitação de acesso ao portal na fila.",
   ],
   "src/app/(app)/secretaria/reservas/[id]/page.tsx": [
     "bloco · Nenhuma proposta registrada.",

@@ -48,7 +48,9 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     </> : <p role="status">{formulario.ok ? "Conferência indisponível." : formulario.erro}</p>}
     <section className="space-y-3"><h2 className="text-xl">Histórico das conferências</h2>
       {!historico.ok ? <p role="alert">{historico.erro}</p> : historico.dado && <>
-        {!historico.dado.registros.length && <EstadoVazio>Nenhuma conferência registrada nesta página.</EstadoVazio>}
+        {!historico.dado.registros.length && (pagina > 1
+          ? <EstadoVazio acao={<Link href={`?pagina=1&maioridade=${maioridade ?? ""}`}>Ir para a primeira página</Link>}>Nenhuma conferência registrada nesta página.</EstadoVazio>
+          : <EstadoVazio>Nenhuma conferência de participantes registrada para esta prévia.</EstadoVazio>)}
         {historico.dado.registros.map((r) => {
           const conteudo = Historico.safeParse(r.snapshot);
           return <details className="rounded border p-3" key={r.id}><summary>Versão {r.versao} · {r.autor.nome} · {textoInstanteAdministrativo(r.criadaEm, preferenciaFusoExibicao)}</summary><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>
