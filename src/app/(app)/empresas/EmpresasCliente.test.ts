@@ -108,6 +108,7 @@ describe("EmpresasCliente: a ordem escolhida sobrevive à busca, ao formulário 
 
   it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
     const html = render({ empresas: [], total: 5, totalBase: 5, filtros: lerFiltrosEmpresas({ ordem: "nome", dir: "desc", pagina: "3" }) });
-    expect(html).toMatch(new RegExp('<a[^>]*href="/empresas[?][^"]*ordem=nome&amp;dir=desc[^"]*"[^>]*>Ir para a primeira página</a>'));
+    // Exatamente a página 1 (sem `pagina`), mantendo a ordem — R2 da #136, B8.
+    expect(html).toMatch(new RegExp('<a[^>]*href="/empresas[?]ordem=nome&amp;dir=desc"[^>]*>Ir para a primeira página</a>'));
   });
 });

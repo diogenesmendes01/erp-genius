@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { StatusAluno, StatusComissao } from "@prisma/client";
@@ -29,8 +30,8 @@ import { lerOrdemComissoes } from "@/server/financeiro/ordem-comissoes";
 
 const COMPONENTE = "src/components/ColunaOrdenavel.tsx";
 
-/** Código de produção (sem testes) de src/app e src/components. */
-const fontes = ["src/app", "src/components"].flatMap((raiz) =>
+/** Código de produção (sem testes) de todo o src — inclusive src/lib e src/server, onde um helper poderia montar o atributo. */
+const fontes = ["src"].flatMap((raiz) =>
   (readdirSync(raiz, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
@@ -44,13 +45,71 @@ const TELAS = [
   "src/app/(app)/comissoes/page.tsx",
 ];
 
-/** aria-sort em qualquer grafia: literal, camelCase, montado por pedaços ("aria-" + …, `aria-${…}`, chave computada). */
-const ARIA_SORT = /aria-sort|ariaSort|["'`]aria-["'`]\s*\+|aria-\$\{|\[\s*["'`]aria-/;
+/**
+ * aria-sort escrito fora do componente, em qualquer grafia (revisão R2 da #136, B7): o texto de cada
+ * expressão é AVALIADO — literal, template, concatenação (`"aria" + "-sort"`), `.join` de lista literal,
+ * constante do arquivo — e não pode dar "aria-sort"; nem "aria" seguido de um pedaço desconhecido
+ * (`` `aria${x}` ``, `"aria-" + y`). Nome de atributo JSX e chave/propriedade `ariaSort` também contam.
+ */
+const DESCONHECIDO = "\u0000";
+export function ariaSortNoFonte(fonte: string, arquivo = "x.tsx"): string[] {
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX);
+  const consts = new Map<string, ts.Expression[]>();
+  const coletar = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) consts.set(n.name.text, [...(consts.get(n.name.text) ?? []), n.initializer]);
+    ts.forEachChild(n, coletar);
+  };
+  coletar(sf);
+  const avaliar = (e: ts.Expression, prof = 0): string => {
+    if (prof > 8) return DESCONHECIDO;
+    while (ts.isParenthesizedExpression(e) || ts.isAsExpression(e)) e = e.expression;
+    if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
+    if (ts.isTemplateExpression(e)) return e.head.text + e.templateSpans.map((s) => avaliar(s.expression, prof + 1) + s.literal.text).join("");
+    if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) return avaliar(e.left, prof + 1) + avaliar(e.right, prof + 1);
+    if (ts.isIdentifier(e)) { const i = consts.get(e.text); return i?.length === 1 ? avaliar(i[0], prof + 1) : DESCONHECIDO; }
+    if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression)) {
+      const alvo = e.expression.expression, metodo = e.expression.name.text;
+      if (metodo === "join" && ts.isArrayLiteralExpression(alvo)) {
+        const sep = e.arguments[0] ? avaliar(e.arguments[0], prof + 1) : ",";
+        return alvo.elements.map((x) => avaliar(x as ts.Expression, prof + 1)).join(sep);
+      }
+      if (metodo === "concat") return avaliar(alvo, prof + 1) + e.arguments.map((a) => avaliar(a, prof + 1)).join("");
+    }
+    return DESCONHECIDO;
+  };
+  /** Expressão de texto "inteira" (não é pedaço de concatenação/template/join maior). */
+  const inteira = (n: ts.Node) => {
+    let p = n.parent;
+    while (p && (ts.isParenthesizedExpression(p) || ts.isAsExpression(p))) p = p.parent;
+    if (!p) return true;
+    if (ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.PlusToken) return false;
+    if (ts.isTemplateSpan(p)) return false;
+    if (ts.isArrayLiteralExpression(p) && ts.isPropertyAccessExpression(p.parent) && p.parent.name.text === "join") return false;
+    if (ts.isPropertyAccessExpression(p) && ["join", "concat"].includes(p.name.text)) return false;
+    if (ts.isCallExpression(p) && ts.isPropertyAccessExpression(p.expression) && ["join", "concat"].includes(p.expression.name.text)) return false;
+    return true;
+  };
+  const achados: string[] = [];
+  const linha = (n: ts.Node) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+  const visita = (n: ts.Node) => {
+    if (ts.isJsxAttribute(n) && /^aria-?sort$/i.test(n.name.getText(sf))) achados.push(`${linha(n)}: atributo ${n.name.getText(sf)}`);
+    else if (ts.isIdentifier(n) && /^ariaSort$/i.test(n.text)) achados.push(`${linha(n)}: identificador ${n.text}`);
+    else if ((ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken)
+      || (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && ["join", "concat"].includes(n.expression.name.text))) && inteira(n) && !ts.isImportDeclaration(n.parent)) {
+      const texto = avaliar(n as ts.Expression).toLowerCase();
+      if (texto.includes("aria-sort") || /aria-?\u0000/.test(texto)) achados.push(`${linha(n)}: texto "${texto.split(DESCONHECIDO).join("…")}"`);
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return achados;
+}
+
 const colunas = (html: string) => (html.match(/data-coluna-ordenavel="[^"]+"/g) ?? []).map((m) => m.slice(23, -1));
 
 describe("colunas ordenáveis (E1)", () => {
   it("aria-sort só é escrito por <ColunaOrdenavel> — nenhum <th> do app o põe à mão", () => {
-    const ofensores = fontes.filter(({ arquivo, conteudo }) => arquivo !== COMPONENTE && ARIA_SORT.test(conteudo)).map((f) => f.arquivo);
+    const ofensores = fontes.filter(({ arquivo }) => arquivo !== COMPONENTE).flatMap(({ arquivo, conteudo }) => ariaSortNoFonte(conteudo, arquivo).map((a) => `${arquivo}:${a}`));
     expect(ofensores).toEqual([]);
     expect(fontes.find((f) => f.arquivo === COMPONENTE)?.conteudo).toMatch(/aria-sort=/);
   });
@@ -88,9 +147,14 @@ describe("colunas ordenáveis (E1)", () => {
     expect(html).not.toContain("aria-sort");
   });
 
-  it("autoteste: o padrão pega aria-sort em qualquer grafia", () => {
-    for (const fonte of ['<th aria-sort="ascending">', "<th ariaSort={x}>", '<th {...{["aria-" + "sort"]: "ascending"}}>', "<th {...{[`aria-${t}`]: v}}>", "const k = 'aria-' + 'sort';"])
-      expect(ARIA_SORT.test(fonte), fonte).toBe(true);
-    expect(ARIA_SORT.test('<th aria-label="Valor">')).toBe(false);
+  it("autoteste: aria-sort em qualquer grafia — literal, camelCase, concatenação em qualquer ponto, template, join, concat, constante, helper .ts", () => {
+    for (const fonte of [
+      '<th aria-sort="ascending">', "<th ariaSort={x}>", '<th {...{["aria-" + "sort"]: "ascending"}}>', "<th {...{[`aria-${t}`]: v}}>", "const k = 'aria-' + 'sort';",
+      '<th {...{["aria" + "-sort"]: "ascending"}}>', '<th {...{[`aria${"-sort"}`]: "ascending"}}>', '<th {...{["aria-so" + "rt"]: "x"}}>',
+      'const k = ["aria", "sort"].join("-");', 'const k = "aria".concat("-sort");', 'const A = "aria"; const k = A + "-sort";', 'const k = "aria-" + atributo;',
+    ]) expect(ariaSortNoFonte(fonte), fonte).not.toEqual([]);
+    expect(ariaSortNoFonte('export const ORDEM = "aria-sort";', "helper.ts")).not.toEqual([]);
+    for (const fonte of ['<th aria-label="Valor">', 'const t = "ordenar";', "<th className={`px-${n}`}>", 'const s = "Página " + n;'])
+      expect(ariaSortNoFonte(fonte), fonte).toEqual([]);
   });
 });

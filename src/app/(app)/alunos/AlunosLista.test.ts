@@ -129,6 +129,7 @@ describe("AlunosLista: a ordem escolhida sobrevive à busca com JavaScript e à 
 
   it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
     const html = render({ alunos: [], total: 5, totalBase: 5, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc", pagina: "3" }) });
-    expect(html).toMatch(new RegExp('<a[^>]*href="/alunos[?][^"]*ordem=pais&amp;dir=desc[^"]*"[^>]*>Ir para a primeira página</a>'));
+    // Exatamente a página 1 (sem `pagina`), mantendo a ordem — R2 da #136, B8.
+    expect(html).toMatch(new RegExp('<a[^>]*href="/alunos[?]ordem=pais&amp;dir=desc"[^>]*>Ir para a primeira página</a>'));
   });
 });
