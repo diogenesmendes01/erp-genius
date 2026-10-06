@@ -342,10 +342,11 @@ export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-medium">Pipeline</h1>
-        <div className="flex gap-1 rounded-md bg-gray-100 p-1 text-sm">
+        <div role="group" aria-label="Tipo de lead" className="flex gap-1 rounded-md bg-gray-100 p-1 text-sm">
           {(["pf", "b2b"] as const).map((t) => (
             <button
               key={t}
+              aria-pressed={tipo === t}
               onClick={() => setTipo(t)}
               className={"rounded px-3 py-1 " + (tipo === t ? "bg-surface font-medium" : "text-gray-500")}
             >

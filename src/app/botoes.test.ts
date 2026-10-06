@@ -1,8 +1,16 @@
 import { readdirSync, readFileSync, type Dirent } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MAPA_BOTOES } from "./botoes-mapa";
+
+// Só para a verificação por renderização das alternâncias (TurmaFormulario, PoliticaPainel, importados
+// dentro do teste): sem roteador do App Router e sem server actions.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
+vi.mock("@/server/turmas/acoes", () => ({ criarTurma: async () => ({ ok: true }), editarTurma: async () => ({ ok: true }) }));
+vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => ({ ok: true }), salvarPoliticaRegua: async () => ({ ok: true }) }));
 
 // E1 (docs/42-auditoria-frontend-ux.md): o botão tem uma fonte só (botaoClasses / <Botao>, em
 // src/components/Botao.tsx). A migração é por ÁREA; nas áreas desta lista (que só cresce) e em
@@ -375,6 +383,77 @@ const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
   },
 ];
 
+const OPERADORES_CONDICIONAIS: ts.SyntaxKind[] = [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken];
+
+/**
+ * Alternância sem aria-pressed (docs/42, /configuracao/turmas #6 e similares): <button>/<Botao> cuja
+ * aparência muda conforme uma condição — className (ou variante/tamanho) com ternário, `&&`, `||`,
+ * `??`, direto ou por variável/função do arquivo — mostra a seleção só por cor. Ficam de fora:
+ * - quem já declara aria-pressed;
+ * - quem abre ou navega (aria-current, aria-expanded, aria-haspopup): o estado está nesse atributo;
+ * - quem troca o nome PELA MESMA condição (texto visível ou aria-label): é uma ação que muda de rótulo
+ *   ("Desativar"/"Ativar", "Gravar"/"Parar"), não um botão de alternância — e aria-pressed com rótulo
+ *   que muda confunde o leitor de tela.
+ * Devolve o nome de cada um (nomeDoElemento).
+ */
+export function alternanciasSemAriaPressed(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const texto = (n: ts.Node) => n.getText(sf).replace(/\s+/g, " ");
+  const variaveis = new Map<string, ts.Node>();
+  const coletar = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) variaveis.set(n.name.text, n.initializer);
+    ts.forEachChild(n, coletar);
+  };
+  coletar(sf);
+  /** Condições (texto) de que uma expressão de classe depende, seguindo variáveis do arquivo. */
+  const condicoesDe = (raiz: ts.Node, vistas = new Set<string>()): string[] => {
+    const achadas: string[] = [];
+    const andar = (n: ts.Node) => {
+      if (ts.isConditionalExpression(n)) achadas.push(texto(n.condition));
+      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(texto(n.left));
+      else if (ts.isIdentifier(n) && variaveis.has(n.text) && !vistas.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
+        vistas.add(n.text);
+        achadas.push(...condicoesDe(variaveis.get(n.text)!, vistas));
+      }
+      ts.forEachChild(n, andar);
+    };
+    andar(raiz);
+    return achadas;
+  };
+  /** Condições de ternários que produzem texto no conteúdo visível (sem entrar em atributos dos filhos). */
+  const condicoesDoTexto = (el: ts.JsxElement): string[] => {
+    const achadas: string[] = [];
+    const temTexto = (n: ts.Node): boolean =>
+      ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isJsxText(n) && n.getText(sf).trim() !== "") ||
+      (!ts.isJsxAttributes(n) && (ts.forEachChild(n, temTexto) ?? false));
+    const andar = (n: ts.Node) => {
+      if (ts.isJsxAttributes(n)) return;
+      if (ts.isConditionalExpression(n) && (temTexto(n.whenTrue) || temTexto(n.whenFalse))) achadas.push(texto(n.condition));
+      ts.forEachChild(n, andar);
+    };
+    for (const c of el.children) andar(c);
+    return achadas;
+  };
+  const achados: string[] = [];
+  const visitar = (n: ts.Node) => {
+    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Botao"].includes(n.tagName.getText(sf))) {
+      const attrs = new Map(n.attributes.properties.filter(ts.isJsxAttribute).map((a) => [a.name.getText(sf), a.initializer] as const));
+      const daClasse = ["className", "variante", "tamanho"].flatMap((nome) => (attrs.get(nome) ? condicoesDe(attrs.get(nome)!) : []));
+      const isento = attrs.has("aria-pressed") || ["aria-current", "aria-expanded", "aria-haspopup"].some((a) => attrs.has(a));
+      if (daClasse.length && !isento) {
+        const doNome = [...(ts.isJsxOpeningElement(n) ? condicoesDoTexto(n.parent) : []), ...(attrs.get("aria-label") ? condicoesDe(attrs.get("aria-label")!) : [])];
+        if (!daClasse.some((c) => doNome.includes(c))) achados.push(nomeDoElemento(n, sf) ?? "(sem nome)");
+      }
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return achados;
+}
+
+/** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
+const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [];
+
 const arquivos = [
   ...AREAS_MIGRADAS.flatMap((raiz) =>
     (readdirSync(raiz, { recursive: true }) as string[])
@@ -552,5 +631,68 @@ describe("hierarquia: ação destrutiva ou de recusa é perigo", () => {
     expect(conferirExcecoes([], [a])).toEqual({ semExcecao: [], soltas: ["x.tsx: Remover opt-out"] }); // o botão sumiu ou virou perigo
     expect(conferirExcecoes([{ ...a, arquivo: "y.tsx" }], [a])).toEqual({ semExcecao: ["y.tsx: Remover opt-out"], soltas: ["x.tsx: Remover opt-out"] }); // âncora é o arquivo
     expect(conferirExcecoes([a, a], [a])).toEqual({ semExcecao: [], soltas: ["x.tsx: Remover opt-out"] }); // dois botões iguais: exceção ambígua
+  });
+});
+
+/** Rótulos dos botões com aria-pressed num HTML renderizado, separados pelo estado. */
+function pressionados(html: string): { sim: string[]; nao: string[] } {
+  const sim: string[] = [];
+  const nao: string[] = [];
+  for (const m of html.matchAll(/<button[^>]*aria-pressed="(true|false)"[^>]*>([^<]*)<\/button>/g)) (m[1] === "true" ? sim : nao).push(m[2]);
+  return { sim, nao };
+}
+
+describe("alternâncias anunciam o estado (aria-pressed)", () => {
+  it("todo botão que muda de aparência por uma condição tem aria-pressed (ou abre/navega, ou troca o nome pela mesma condição); exceções ancoradas", () => {
+    const achados = arquivos
+      .filter(({ arquivo }) => !/\.test\./.test(arquivo))
+      .flatMap(({ arquivo, conteudo }) => alternanciasSemAriaPressed(conteudo).map((rotulo) => ({ arquivo, rotulo })));
+    expect(conferirExcecoes(achados, ALTERNANCIAS_SEM_ARIA_PRESSED)).toEqual({ semExcecao: [], soltas: [] });
+    for (const e of ALTERNANCIAS_SEM_ARIA_PRESSED) expect(e.motivo.trim().length, `${e.arquivo}: ${e.rotulo}`).toBeGreaterThan(20);
+  });
+
+  it("alternanciasSemAriaPressed: acusa seleção só por cor, em qualquer forma de className", () => {
+    expect(alternanciasSemAriaPressed('<button key={d.n} className={"rounded border " + (ativo ? "bg-brand-600 text-white" : "text-gray-600")}>{d.label}</button>')).toEqual(["key d.n"]);
+    expect(alternanciasSemAriaPressed('<button className={`chip ${ativo && "bg-brand-600"}`}>Seg</button>')).toEqual(["Seg"]);
+    expect(alternanciasSemAriaPressed('const cls = (on: boolean) => (on ? "bg-brand-600" : "border"); <button className={cls(ativo)}>Ter</button>')).toEqual(["Ter"]);
+    expect(alternanciasSemAriaPressed('const chip = ativo ? "bg-brand-600" : "border"; <button className={chip}>Qua</button>')).toEqual(["Qua"]);
+    expect(alternanciasSemAriaPressed('<Botao variante={selecionado ? "primario" : "secundario"}>Mensal</Botao>')).toEqual(["Mensal"]);
+    // O nome muda, mas por OUTRA condição (o item do map, o carregamento): não comunica a seleção.
+    expect(alternanciasSemAriaPressed('<button className={botaoClasses({ variante: tipo === t ? "primario" : "secundario" })}>{t === "pf" ? "Pessoa Física" : "Empresa"}</button>')).toEqual(["pf · Pessoa Física · Empresa"]);
+    expect(alternanciasSemAriaPressed('<button className={on ? "bg-brand-600" : ""}>{ocupado ? "Salvando…" : "Salvar"}</button>')).toEqual(["Salvando… · Salvar"]);
+    // title não conta como troca de nome; ternário em atributo de um filho não é texto.
+    expect(alternanciasSemAriaPressed('<button title={on ? "Atual" : "Marcar"} className={on ? "bg-brand-600" : "text-gray-400"}>{ROTULO[t]}</button>')).toEqual(['on ? "Atual" : "Marcar"']);
+    expect(alternanciasSemAriaPressed('<button className={on ? "bg-brand-600" : ""}><span className={on ? "font-medium" : ""}>Seg</span></button>')).toEqual(["Seg"]);
+  });
+
+  it("alternanciasSemAriaPressed: isenta aria-pressed, quem abre/navega e quem troca o nome pela mesma condição", () => {
+    expect(alternanciasSemAriaPressed('<button aria-pressed={ativo} className={"chip " + (ativo ? "bg-brand-600" : "")}>Seg</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<Botao aria-pressed={on} variante={on ? "primario" : "secundario"}>Mensal</Botao>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button aria-current={atual ? "true" : undefined} className={"item " + (atual ? "bg-brand-50" : "")}>Conversa</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button aria-expanded={aberto} className={aberto ? "bg-gray-100" : ""}>Filtros</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma" })}>{i.ativo ? "Desativar" : "Ativar"}</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button aria-label={gravando ? "Parar" : "Gravar"} className={gravando ? "bg-red-100" : ""}><Icone /></button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button className={botaoClasses({ variante: "secundario" })}>Salvar</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed("const btn = botaoClasses(); <button className={`${btn} mt-2`}>Ok</button>")).toEqual([]);
+  });
+
+  it("por renderização: o dia marcado sai com aria-pressed=\"true\", o desmarcado com \"false\", e o conjunto é um grupo rotulado", async () => {
+    const { TurmaFormulario } = await import("./(app)/configuracao/turmas/TurmaFormulario");
+    const turma = {
+      id: "t1", nome: "Turma", modalidadeId: "", nivelId: "", professorId: "", diasSemana: [1, 3], horarioInicio: "08:00", horarioFim: "09:00",
+      dataInicio: "", dataFim: "", capacidade: 12, rolling: false,
+    };
+    const htmlTurma = renderToStaticMarkup(createElement(TurmaFormulario, { turma, modalidades: [], niveis: [], professores: [], onClose: () => {} }));
+    expect(pressionados(htmlTurma)).toEqual({ sim: ["Seg", "Qua"], nao: ["Ter", "Qui", "Sex", "Sáb", "Dom"] });
+    expect(htmlTurma).toContain('role="group" aria-label="Dias da semana"');
+
+    const { PoliticaPainel } = await import("./(app)/configuracao/whatsapp/PoliticaPainel");
+    const politica = {
+      id: null, nome: "Cobrança", estado: "DESLIGADA", janelaInicio: 9, janelaFim: 20, diasSemana: [1, 2, 3, 4, 5], tetoPorContatoDia: 1,
+      silencioPosInboundHoras: 0, killSwitch: false, numeroRemetenteId: null, degraus: [],
+    };
+    const htmlPolitica = renderToStaticMarkup(createElement(PoliticaPainel, { politica, numeros: [], templates: [] }));
+    expect(pressionados(htmlPolitica)).toEqual({ sim: ["seg", "ter", "qua", "qui", "sex"], nao: ["dom", "sáb"] });
+    expect(htmlPolitica).toContain('role="group" aria-label="Dias da semana"');
   });
 });
