@@ -72,7 +72,7 @@ function isoUtc(valor: FormDataEntryValue | null) {
 }
 
 /** `antesVersao`: o histórico de correções está numa página seguinte (cursor da página). Sem ele, é a primeira. */
-export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string; antesVersao?: number }) {
+export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string; /** Obrigatória: esquecer o repasse faria a página antiga afirmar que não há correção. */ antesVersao: number | undefined }) {
   return <div className="space-y-5">
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">{dados.consultaHistorica ? "Conclusão e fonte históricas" : "Conclusão e fonte vigentes"}</h2>

@@ -51,6 +51,8 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
   if (!aplicacaoHistoricoResultado.ok) return <p role="alert">{aplicacaoHistoricoResultado.erro}</p>;
   const aplicacaoHistorica = aplicacaoHistoricoResultado.dado?.aplicacao ?? null;
   const atual = `${base}/originais/${encodeURIComponent(artefatoId)}`;
+  // Paginação das conferências: preserva a página das tentativas e das observações (mesma tela).
+  const hrefConferencias = (p: number) => `${atual}?${new URLSearchParams({ pagina: String(p), paginaTentativas: String(paginaTentativas), ...(tentativaObservacoes ? { tentativaObservacoes: String(tentativaObservacoes), paginaObservacoes: String(paginaObservacoes) } : {}) })}`;
   return <div className="space-y-4"><VoltarPara href={base} para="Aditivo" />
     <h1 className="text-2xl">Conferência do original para assinatura</h1>
     <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(id)}/aditivos/${encodeURIComponent(propostaId)}/originais/${encodeURIComponent(artefatoId)}/pdf`}>Abrir PDF original preservado</a>
@@ -71,10 +73,10 @@ export default async function ConferenciaOriginalAditivoPage({ params, searchPar
     {conclusao?.ambiente === "PRODUCAO" && conferenciaFinal?.revisao && conferenciaFinal.historico && !aplicacaoHistorica && <section className="space-y-3 rounded border p-4"><CondicoesFormalizadasFormulario matriculaId={id} propostaId={propostaId} conclusaoId={conclusao.id} revisaoHash={conferenciaFinal.revisao.hash} formalizada={Boolean(condicoesDaProposta)} /></section>}
     <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferências registradas</h2>
       {!d.historico.length && (pagina > 1
-        ? <EstadoVazio acao={<Link className="underline" href={`${atual}?pagina=1`}>Ir para a primeira página</Link>}>Nenhum registro nesta página.</EstadoVazio>
+        ? <EstadoVazio acao={<Link className="underline" href={hrefConferencias(1)}>Ir para a primeira página</Link>}>Nenhum registro nesta página.</EstadoVazio>
         : <EstadoVazio>Nenhuma conferência registrada para este original.</EstadoVazio>)}
       {d.historico.map(c => <article className="rounded border p-3" key={c.id}><p>{c.autor} · {data(c.criadaEm)}</p><p className="whitespace-pre-wrap">{c.motivo}</p><p>{d.revisao?.hash === c.revisaoHash ? "Corresponde à revisão atual." : "Conferência histórica; validade atual não confirmada."}</p></article>)}
-      <nav aria-label="Páginas de conferências do original" className="flex gap-3">{pagina > 1 && <Link className="underline" href={`${atual}?pagina=${pagina - 1}`}>Anteriores</Link>}<span>Página {pagina}</span>{d.temProxima && <Link className="underline" href={`${atual}?pagina=${pagina + 1}`}>Próximas</Link>}</nav>
+      <nav aria-label="Páginas de conferências do original" className="flex gap-3">{pagina > 1 && <Link className="underline" href={hrefConferencias(pagina - 1)}>Anteriores</Link>}<span>Página {pagina}</span>{d.temProxima && <Link className="underline" href={hrefConferencias(pagina + 1)}>Próximas</Link>}</nav>
     </section>
   </div>;
 }

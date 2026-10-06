@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { MAPA_VAZIO_PAGINADO } from "./vazio-paginado-mapa";
 
 // Trava do estado vazio paginado (docs/42-auditoria-frontend-ux.md — /secretaria/desistencias #4 e
 // /secretaria/envios-portal #5): listas paginadas diziam "Nenhum X nesta página." também na
@@ -21,21 +22,23 @@ import { describe, expect, it } from "vitest";
 // - composições: `a && b` vale se um dos lados garante; `a || b`, só se os dois garantem.
 // O guarda pode estar em qualquer ancestral (ternário, &&, ||, if/else com return).
 //
-// Alcance: texto (JSX ou string, inclusive partes de template) dentro de <EstadoVazio>/
-// <EstadoVazioLinha> — atributos inclusos —, ou num valor cujo nome fala de vazio (prop
-// `mensagemVazio`, `const textoVazio = …`, `{ vazio: … }`). O ramo de lista vazia de uma tela já é
-// obrigatoriamente <EstadoVazio> (src/app/estados-vazios.test.ts), então isso cobre os vazios.
+// Apelido local vale pelo que é: `const antesPagina = true` não é guarda; `const depois = r.pagina === 1`
+// é avaliado (e aqui diz "primeira").
+//
+// Alcance: TODO texto do código de produção (src, .ts e .tsx) — JSX, string, template e
+// concatenação avaliados (`"nesta " + "página"`, `${"nesta"}`, constante local) —, não só o que está
+// em <EstadoVazio>: um <p> à mão ou uma constante noutro arquivo também contam.
 // Fora do alcance (declarado): early return sem else (`if (!cursor) return <A/>; return <B/>` — o
-// segundo return não é ramo sintático do if; escreva como ternário) e textos que não são estado
-// vazio ("Corrija e reenvie nesta página", título "Turmas compatíveis nesta página").
+// segundo return não é ramo sintático do if; escreva como ternário).
+//
+// Manifesto (src/app/vazio-paginado-mapa.ts): cada "nesta página" protegido, com a CONDIÇÃO que o
+// protege. Trocar o cursor de uma lista pelo da outra (`cursor` × `pendenciaCursor`) passa no nome,
+// mas muda o mapa e falha.
 //
 // Exceções: arquivo + trecho exato (texto normalizado do nó) + motivo; cada uma tem de casar com
 // exatamente um caso.
 
-const RAIZES = ["src/app", "src/components"];
-const COMPONENTES_DE_VAZIO = new Set(["EstadoVazio", "EstadoVazioLinha"]);
 const TEXTO_DE_PAGINA = /nesta\s+página/i;
-const NOME_DE_VAZIO = /vazi/i;
 /** Cursor de página: presente ⇒ fora da primeira página. */
 const CURSOR = /^(cursor|antes|depois|before|after)([A-Z]\w*)?$|^(?!proxim|next)\w+Cursor$/;
 /** Número de página: 1 é a primeira. */
@@ -58,6 +61,22 @@ export const EXCECOES_VAZIO_PAGINADO: readonly Excecao[] = [
     arquivo: "src/app/(app)/leads/LeadsLista.tsx",
     trecho: "Nenhum lead nesta página.",
     motivo: "o ramo só ocorre fora da primeira página: carteira não vazia (totalBase > 0), sem filtro e página sem itens; a volta ('Ir para a primeira página') está no próprio texto",
+  },
+  // Não são estado vazio: título, opção de seleção e instrução sobre a própria tela.
+  {
+    arquivo: "src/app/(app)/leads/[id]/contratacao/page.tsx",
+    trecho: "Turmas compatíveis nesta página",
+    motivo: "título da lista de turmas da página atual da consulta (paginada por 'turmas'); descreve o recorte mostrado, não afirma ausência",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/reserva/ReservarFormulario.tsx",
+    trecho: "Selecione uma turma disponível nesta página",
+    motivo: "opção vazia do select: as turmas oferecidas são as da página atual; é instrução, não estado vazio",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/minhas/[reservaId]/page.tsx",
+    trecho: ". Corrija e reenvie nesta página; não use o fluxo de correção de nota oficial.",
+    motivo: "'nesta página' é esta tela (a de lançamento da nota), não página de lista paginada",
   },
 ];
 
@@ -108,13 +127,43 @@ function comparacaoDePagina(e: ts.BinaryExpression): "fora" | "primeira" | null 
   return null;
 }
 
+/**
+ * Declarações locais do arquivo em análise (nome → inicializadores). Um apelido não vale como guarda
+ * só pelo nome: `const antesPagina = true` é constante, e `const depoisDaPrimeira = r.pagina === 1`
+ * tem de ser avaliado pelo que é (revisão R1 da #134, B3).
+ */
+let declaracoes = new Map<string, ts.Expression[]>();
+function coletarDeclaracoes(sf: ts.SourceFile): Map<string, ts.Expression[]> {
+  const mapa = new Map<string, ts.Expression[]>();
+  const visita = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) mapa.set(n.name.text, [...(mapa.get(n.name.text) ?? []), desembrulha(n.initializer)]);
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return mapa;
+}
+const ehLiteral = (e: ts.Expression) =>
+  [ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword, ts.SyntaxKind.NullKeyword].includes(e.kind) || ts.isNumericLiteral(e) || ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e);
+const OPERADORES_BOOLEANOS = new Set([ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken,
+  ts.SyntaxKind.LessThanToken, ts.SyntaxKind.LessThanEqualsToken, ts.SyntaxKind.GreaterThanToken, ts.SyntaxKind.GreaterThanEqualsToken, ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken]);
+const ehBooleano = (e: ts.Expression) =>
+  (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) || (ts.isBinaryExpression(e) && OPERADORES_BOOLEANOS.has(e.operatorToken.kind));
+
 /** A expressão avaliar como `valor` garante estar fora da primeira página? */
-export function foraDaPrimeira(e: ts.Expression, valor: boolean): boolean {
+export function foraDaPrimeira(e: ts.Expression, valor: boolean, profundidade = 0): boolean {
   e = desembrulha(e);
   const K = ts.SyntaxKind;
-  if (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken) return foraDaPrimeira(e.operand, !valor);
+  if (profundidade > 5) return false;
+  if (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken) return foraDaPrimeira(e.operand, !valor, profundidade);
   const nome = nomeDe(e);
-  if (nome !== null) return valor && CURSOR.test(nome);
+  if (nome !== null) {
+    // Apelido local: constante literal nunca é guarda; expressão booleana vale pelo que avalia.
+    const inits = ts.isIdentifier(e) ? declaracoes.get(e.text) ?? [] : [];
+    if (inits.some(ehLiteral)) return false;
+    const booleanos = inits.filter(ehBooleano);
+    if (booleanos.length) return booleanos.every((i) => foraDaPrimeira(i, valor, profundidade + 1));
+    return valor && CURSOR.test(nome);
+  }
   if (ts.isBinaryExpression(e)) {
     const op = e.operatorToken.kind;
     if (op === K.AmpersandAmpersandToken) {
@@ -130,63 +179,88 @@ export function foraDaPrimeira(e: ts.Expression, valor: boolean): boolean {
   return false;
 }
 
-/** Algum ancestral escolhe este ramo só fora da primeira página? */
-function protegidoPelaPaginacao(no: ts.Node): boolean {
+/** Condição do ancestral que escolhe este ramo só fora da primeira página (texto normalizado), ou null. */
+function guardaDaPaginacao(no: ts.Node, sf: ts.SourceFile): string | null {
   const K = ts.SyntaxKind;
+  const texto = (c: ts.Node) => normaliza(c.getText(sf));
   let filho: ts.Node = no;
   for (let p = no.parent; p; filho = p, p = p.parent) {
     if (ts.isConditionalExpression(p)) {
-      if (p.whenTrue === filho && foraDaPrimeira(p.condition, true)) return true;
-      if (p.whenFalse === filho && foraDaPrimeira(p.condition, false)) return true;
+      if (p.whenTrue === filho && foraDaPrimeira(p.condition, true)) return texto(p.condition);
+      if (p.whenFalse === filho && foraDaPrimeira(p.condition, false)) return `!(${texto(p.condition)})`;
     } else if (ts.isBinaryExpression(p) && p.right === filho) {
-      if (p.operatorToken.kind === K.AmpersandAmpersandToken && foraDaPrimeira(p.left, true)) return true;
-      if (p.operatorToken.kind === K.BarBarToken && foraDaPrimeira(p.left, false)) return true;
+      if (p.operatorToken.kind === K.AmpersandAmpersandToken && foraDaPrimeira(p.left, true)) return texto(p.left);
+      if (p.operatorToken.kind === K.BarBarToken && foraDaPrimeira(p.left, false)) return `!(${texto(p.left)})`;
     } else if (ts.isIfStatement(p)) {
-      if (p.thenStatement === filho && foraDaPrimeira(p.expression, true)) return true;
-      if (p.elseStatement === filho && foraDaPrimeira(p.expression, false)) return true;
+      if (p.thenStatement === filho && foraDaPrimeira(p.expression, true)) return texto(p.expression);
+      if (p.elseStatement === filho && foraDaPrimeira(p.expression, false)) return `!(${texto(p.expression)})`;
     }
   }
-  return false;
-}
-
-/** O nó está num estado vazio: dentro de <EstadoVazio>/<EstadoVazioLinha> ou num valor de nome "vazio". */
-function emEstadoVazio(no: ts.Node, sf: ts.SourceFile): boolean {
-  for (let p = no.parent; p; p = p.parent) {
-    if (ts.isJsxElement(p) && COMPONENTES_DE_VAZIO.has(p.openingElement.tagName.getText(sf))) return true;
-    if (ts.isJsxAttribute(p) && NOME_DE_VAZIO.test(p.name.getText(sf))) return true;
-    if ((ts.isVariableDeclaration(p) || ts.isPropertyAssignment(p)) && ts.isIdentifier(p.name) && NOME_DE_VAZIO.test(p.name.text)) return true;
-  }
-  return false;
-}
-
-function textoDoNo(n: ts.Node): string | null {
-  if (ts.isJsxText(n)) return n.text;
-  if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) return n.text;
   return null;
 }
 
-type Achado = { linha: number; trecho: string };
+const DESCONHECIDO = "\u0000";
+/**
+ * Texto que a expressão produz, juntando literal, template (`${"nesta"}`), concatenação (`"nesta " + "página"`)
+ * e constante local de um só valor. O que não dá para saber sem executar (chamada, ternário) vira
+ * DESCONHECIDO — e os ramos de um ternário são avaliados como textos próprios, com o seu guarda.
+ */
+function avaliarTexto(e: ts.Expression, profundidade = 0): string {
+  e = desembrulha(e);
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
+  if (ts.isTemplateExpression(e)) return e.head.text + e.templateSpans.map((s) => avaliarTexto(s.expression, profundidade + 1) + s.literal.text).join("");
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) return avaliarTexto(e.left, profundidade + 1) + avaliarTexto(e.right, profundidade + 1);
+  if (ts.isIdentifier(e) && profundidade < 5) {
+    const inits = declaracoes.get(e.text) ?? [];
+    if (inits.length === 1) return avaliarTexto(inits[0], profundidade + 1);
+  }
+  return DESCONHECIDO;
+}
 
-/** Textos "nesta página" de estado vazio que a página 1 pode mostrar. */
-export function vaziosPaginadosSemGuarda(fonte: string, arquivo = "x.tsx"): Achado[] {
-  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+/** Expressão de texto "inteira": não é pedaço de uma concatenação ou de um template maior. */
+function textoInteiro(n: ts.Node): boolean {
+  let p = n.parent;
+  while (p && ts.isParenthesizedExpression(p)) p = p.parent;
+  if (!p) return true;
+  if (ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.PlusToken) return false;
+  if (ts.isTemplateSpan(p)) return false;
+  return true;
+}
+
+type Achado = { linha: number; trecho: string; guarda: string | null };
+
+/**
+ * Todo texto "nesta página" do arquivo — JSX, string, template, concatenação, constante —, com a condição
+ * de paginação que o protege (null: a página 1 pode mostrá-lo). Não só o que está em <EstadoVazio>: um
+ * <p> à mão ou uma constante noutro arquivo também contam (revisão R1 da #134, B3).
+ */
+export function textosDePagina(fonte: string, arquivo = "x.tsx"): Achado[] {
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX);
+  declaracoes = coletarDeclaracoes(sf);
   const achados: Achado[] = [];
+  const registra = (n: ts.Node, texto: string) => {
+    if (!TEXTO_DE_PAGINA.test(texto)) return;
+    achados.push({ linha: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1, trecho: normaliza(texto.split(DESCONHECIDO).join("…")), guarda: guardaDaPaginacao(n, sf) });
+  };
   const visita = (n: ts.Node) => {
-    const texto = textoDoNo(n);
-    if (texto !== null && TEXTO_DE_PAGINA.test(texto) && emEstadoVazio(n, sf) && !protegidoPelaPaginacao(n)) {
-      achados.push({ linha: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1, trecho: normaliza(texto) });
-    }
+    if (ts.isJsxText(n)) registra(n, n.text);
+    else if ((ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken))
+      && !ts.isImportDeclaration(n.parent) && !ts.isExportDeclaration(n.parent) && textoInteiro(n)) registra(n, avaliarTexto(n as ts.Expression));
     ts.forEachChild(n, visita);
   };
   visita(sf);
   return achados;
 }
 
-function telas(): { arquivo: string; fonte: string }[] {
+/** Textos "nesta página" que a página 1 pode mostrar. */
+export const vaziosPaginadosSemGuarda = (fonte: string, arquivo = "x.tsx") => textosDePagina(fonte, arquivo).filter((a) => a.guarda === null);
+
+/** Fonte de produção: .ts e .tsx de src, sem testes e sem os manifestos das travas. */
+function fontes(): { arquivo: string; fonte: string }[] {
   const saida: { arquivo: string; fonte: string }[] = [];
-  for (const raiz of RAIZES) for (const f of readdirSync(raiz, { recursive: true }) as string[]) {
-    if (!f.endsWith(".tsx") || f.includes(".test.")) continue;
-    const arquivo = join(raiz, f).split("\\").join("/");
+  for (const f of readdirSync("src", { recursive: true }) as string[]) {
+    const arquivo = join("src", f).split("\\").join("/");
+    if (!/\.tsx?$/.test(arquivo) || /\.test\.|\.d\.ts$|-mapa\.ts$/.test(arquivo)) continue;
     saida.push({ arquivo, fonte: readFileSync(arquivo, "utf8") });
   }
   return saida;
@@ -202,7 +276,7 @@ describe("detector de vazio paginado (autoteste)", () => {
     expect(sem("if (!xs.length) return <EstadoVazio>Nada nesta página.</EstadoVazio>; return <ul />;")).toEqual(["Nada nesta página."]);
     // String e template dentro do EstadoVazio; prop e variável de "vazio".
     expect(sem('return <EstadoVazio>{"Nada nesta página."}</EstadoVazio>;')).toEqual(["Nada nesta página."]);
-    expect(sem("return <EstadoVazio>{`Nada de ${t} nesta página.`}</EstadoVazio>;")).toEqual(["nesta página."]);
+    expect(sem("return <EstadoVazio>{`Nada de ${t} nesta página.`}</EstadoVazio>;")).toEqual(["Nada de … nesta página."]);
     expect(sem('return <Lista itens={xs} mensagemVazio="Nada nesta página." />;')).toEqual(["Nada nesta página."]);
     expect(sem('const textoVazio = "Nada nesta página."; return <Lista vazio={textoVazio} />;')).toEqual(["Nada nesta página."]);
   });
@@ -249,29 +323,58 @@ describe("detector de vazio paginado (autoteste)", () => {
     expect(sem("return <Lista mensagemVazio={busca ? `Nada para ${busca}${antes ? \" nesta página\" : \"\"}.` : undefined} />;")).toEqual([]);
   });
 
-  it("ignora o que não é estado vazio e o texto que não fala de página", () => {
-    expect(sem("return <p>Corrija e reenvie nesta página.</p>;")).toEqual([]);
-    expect(sem("return <h3>Turmas compatíveis nesta página</h3>;")).toEqual([]);
-    expect(sem('return <select><option value="">Selecione uma turma nesta página</option></select>;')).toEqual([]);
+  it("ignora o texto que não fala de página", () => {
     expect(sem("return <EstadoVazio acao={<a href=\"?pagina=1\">Ir para a primeira página</a>}>Nenhum pedido aguardando decisão.</EstadoVazio>;")).toEqual([]);
     expect(sem("return <EstadoVazio>Nenhuma reserva nesta consulta.</EstadoVazio>;")).toEqual([]);
+  });
+
+  it("B3 (R1 da #134): todo texto conta, montado de qualquer jeito — fora do EstadoVazio, concatenado, em template ou constante", () => {
+    expect(sem("return <p>Corrija e reenvie nesta página.</p>;")).toEqual(["Corrija e reenvie nesta página."]);
+    expect(sem('return <div>{!xs.length && <p role="status">Nenhuma turma nesta página.</p>}</div>;')).toEqual(["Nenhuma turma nesta página."]);
+    expect(sem('return <EstadoVazio>{"Nenhuma turma nesta " + "página."}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
+    expect(sem('return <EstadoVazio>{`Nenhuma turma ${"nesta"} página.`}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
+    expect(sem('const pedaco = "nesta"; return <EstadoVazio>{`Nenhuma turma ${pedaco} página.`}</EstadoVazio>;')).toEqual(["Nenhuma turma nesta página."]);
+    // Constante noutro arquivo (.ts): o literal já acusa onde nasce.
+    expect(vaziosPaginadosSemGuarda('export const VAZIO = "Nenhuma turma nesta página.";', "textos.ts").map((x) => x.trecho)).toEqual(["Nenhuma turma nesta página."]);
+  });
+
+  it("B3 (R1 da #134): apelido local vale pelo que é, não pelo nome", () => {
+    expect(sem("const antesPagina = true; return <div>{antesPagina ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["Nada nesta página."]);
+    expect(sem("const cursorX = false; return <div>{cursorX ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["Nada nesta página."]);
+    expect(sem("const depoisDaPrimeira = r.pagina === 1; return <div>{depoisDaPrimeira ? <EstadoVazio>Nada nesta página.</EstadoVazio> : <EstadoVazio>Nada.</EstadoVazio>}</div>;")).toEqual(["Nada nesta página."]);
+    // Apelido de verdade passa.
+    expect(sem("const depoisDaPrimeira = r.pagina > 1; return <div>{depoisDaPrimeira ? <EstadoVazio>Nada nesta página.</EstadoVazio> : <EstadoVazio>Nada.</EstadoVazio>}</div>;")).toEqual([]);
+    expect(sem("const primeira = !cursor; return <div>{primeira ? <EstadoVazio>Nada.</EstadoVazio> : <EstadoVazio>Nada nesta página.</EstadoVazio>}</div>;")).toEqual([]);
+  });
+
+  it("o guarda registrado é a condição que protege (o manifesto compara o texto dela)", () => {
+    const guardas = (corpo: string) => textosDePagina(`export function T({ cursor, pendenciaCursor, d }: any) { ${corpo} }`).map((x) => x.guarda);
+    expect(guardas("return <div>{pendenciaCursor ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["pendenciaCursor"]);
+    expect(guardas("return <div>{cursor ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["cursor"]);
+    expect(guardas("return <div>{d.paginaHistorico > 1 && <EstadoVazio>Nada nesta página.</EstadoVazio>}</div>;")).toEqual(["d.paginaHistorico > 1"]);
+    expect(guardas("return <div>{!cursor ? null : <EstadoVazio>Nada nesta página.</EstadoVazio>}</div>;")).toEqual(["!(!cursor)"]);
   });
 });
 
 describe("estados vazios paginados nas telas", () => {
-  it("nenhuma tela mostra \"nesta página\" na primeira página (ou é exceção ancorada: arquivo + trecho)", () => {
+  const todos = fontes().flatMap(({ arquivo, fonte }) => textosDePagina(fonte, arquivo).map((a) => ({ arquivo, ...a })));
+
+  it("nenhum texto \"nesta página\" aparece na primeira página (ou é exceção ancorada: arquivo + trecho)", () => {
     const casadas = new Map<number, number>();
     const soltos: string[] = [];
-    for (const { arquivo, fonte } of telas()) {
-      for (const a of vaziosPaginadosSemGuarda(fonte, arquivo)) {
-        const i = EXCECOES_VAZIO_PAGINADO.findIndex((e) => e.arquivo === arquivo && e.trecho === a.trecho);
-        if (i >= 0) { casadas.set(i, (casadas.get(i) ?? 0) + 1); continue; }
-        soltos.push(`${arquivo}:${a.linha} ${a.trecho}`);
-      }
+    for (const a of todos.filter((x) => x.guarda === null)) {
+      const i = EXCECOES_VAZIO_PAGINADO.findIndex((e) => e.arquivo === a.arquivo && e.trecho === a.trecho);
+      if (i >= 0) { casadas.set(i, (casadas.get(i) ?? 0) + 1); continue; }
+      soltos.push(`${a.arquivo}:${a.linha} ${a.trecho}`);
     }
     expect(soltos).toEqual([]);
     // Cada exceção casa com exatamente um caso: vencida (0) ou ampla demais (2+) falha.
     const fora = EXCECOES_VAZIO_PAGINADO.map((e, i) => ({ vezes: casadas.get(i) ?? 0, e })).filter((x) => x.vezes !== 1).map((x) => `${x.vezes}× ${x.e.arquivo} | ${x.e.trecho}`);
     expect(fora).toEqual([]);
+  });
+
+  it("cada \"nesta página\" protegido tem a condição do manifesto (o cursor de outra lista muda o mapa)", () => {
+    const real = todos.filter((x) => x.guarda !== null).map((x) => `${x.arquivo} | ${x.guarda} | ${x.trecho}`).sort();
+    expect(real).toEqual([...MAPA_VAZIO_PAGINADO].sort());
   });
 });

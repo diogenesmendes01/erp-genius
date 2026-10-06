@@ -39,8 +39,8 @@ it("renderiza origem, fonte particular e decisão no fuso pessoal ao atravessar 
     }],
   };
 
-  const costaRica = renderToStaticMarkup(createElement(CorrecoesConclusaoReposicao, { dados, mostrarPreparacao: false, fusoExibicao: "America/Costa_Rica" }));
-  const utc = renderToStaticMarkup(createElement(CorrecoesConclusaoReposicao, { dados, mostrarPreparacao: false, fusoExibicao: "UTC" }));
+  const costaRica = renderToStaticMarkup(createElement(CorrecoesConclusaoReposicao, { dados, mostrarPreparacao: false, fusoExibicao: "America/Costa_Rica", antesVersao: undefined }));
+  const utc = renderToStaticMarkup(createElement(CorrecoesConclusaoReposicao, { dados, mostrarPreparacao: false, fusoExibicao: "UTC", antesVersao: undefined }));
 
   expect(costaRica).toContain("Aula de origem");
   expect(costaRica).toContain("origem UTC");
