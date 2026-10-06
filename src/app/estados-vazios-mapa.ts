@@ -377,7 +377,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma cobertura cadastrada.",
   ],
   "src/app/(app)/comissoes/page.tsx": [
-    "bloco · {status ? <>Nenhuma comissão nesta situação. <Link href=\"/comissoes\" className=\"text-brand-700 hover",
+    "bloco · {status ? <>Nenhuma comissão nesta situação. <Link href={todas} className=\"text-brand-700 hover:unde",
   ],
   "src/app/(app)/configuracao/catalogo/EntradasOfertas.tsx": [
     "compacto · Cadastre a oferta do produto no país para configurar sua entrada.",

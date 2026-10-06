@@ -27,7 +27,8 @@ export default async function ComissoesPage({ searchParams }: { searchParams: Pr
   if (ultima) redirect(hrefLista("/comissoes", { status, ...naUrl, pagina: ultima }));
   const { inicio, fim, temProxima } = faixaDaPagina(pagina, COMISSOES_POR_PAGINA, comissoes.length, total);
   const todas = hrefLista("/comissoes", naUrl);
-  const coluna = { ordenacao: ordem, rota: "/comissoes", parametros: status ? { status } : {}, className: "p-3" };
+  const filtros: Record<string, string> = status ? { status } : {};
+  const coluna = { ordenacao: ordem, rota: "/comissoes", parametros: filtros, className: "p-3" };
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Comissões</h1>
     <p className="text-sm text-gray-600">Comissões das negociações autorizadas, preservadas quando muda o responsável pelo atendimento.</p>
     <form method="get" action="/comissoes" aria-label="Filtrar comissões" className="flex flex-wrap items-center gap-2">
