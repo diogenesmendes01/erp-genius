@@ -28,12 +28,18 @@ describe("fila administrativa da desistência", () => {
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(html).toContain("Aguardando revisão por outra pessoa da Administração"); expect(html).not.toContain("<form");
   });
-  it("distingue página vazia de falha na consulta", async () => {
+  it("distingue fila zerada (primeira página), página seguinte vazia e falha na consulta", async () => {
     mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [], proximoCursor: null } });
+    // Sem cursor: a fila está zerada — "nesta página" soaria como falha de filtro (docs/42, desistências #4).
     const vazio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(vazio).toContain("Nenhum pedido pendente nesta página");
+    expect(vazio).toContain("Nenhum pedido aguardando decisão administrativa.");
+    expect(vazio).not.toContain("nesta página"); expect(vazio).not.toContain("Voltar ao início");
+    // Com cursor: o texto de paginação, ao lado do "Voltar ao início".
+    const seguinte = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ cursor: "anterior" }) }));
+    expect(seguinte).toContain("Nenhum pedido pendente nesta página.");
+    expect(seguinte).not.toContain("aguardando decisão administrativa"); expect(seguinte).toContain("Voltar ao início");
     mocks.listar.mockResolvedValue({ ok: false, erro: "Acesso negado." });
     const erro = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(erro).toContain('role="alert"'); expect(erro).not.toContain("Nenhum pedido pendente");
+    expect(erro).toContain('role="alert"'); expect(erro).not.toContain("Nenhum pedido");
   });
 });

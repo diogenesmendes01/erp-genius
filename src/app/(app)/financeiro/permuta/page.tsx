@@ -27,7 +27,9 @@ export default async function PermutaPage({ searchParams }: { searchParams: Prom
     <VoltarPara href={retorno} />
     <h1 className="text-2xl font-medium">Permutas por serviço comprovado</h1>
     <p>Página {pagina} · até 50 acordos por página</p>
-    {resultado.dado.length === 0 && <EstadoVazio bloco>Nenhum acordo nesta página.</EstadoVazio>}
+    {resultado.dado.length === 0 && (pagina > 1
+      ? <EstadoVazio bloco acao={<Link href="/financeiro/permuta" className="underline">Ir para a primeira página</Link>}>Nenhum acordo nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhum acordo de permuta registrado.</EstadoVazio>)}
     <nav aria-label="Páginas de permutas" className="flex gap-4">
       {pagina > 1 && <Link href={`/financeiro/permuta?pagina=${pagina - 1}`} className="underline">Anterior</Link>}
       {resultado.dado.length === 50 && <Link href={`/financeiro/permuta?pagina=${pagina + 1}`} className="underline">Próxima</Link>}

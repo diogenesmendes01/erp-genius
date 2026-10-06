@@ -51,4 +51,20 @@ describe("SubstituicoesPage", () => {
     expect(mocks.consulta).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
+
+  // Revisão R1 da #134 (B5): duas listas na mesma tela — a volta de uma preserva a página da outra.
+  it("vazios: página 1 afirma ausência; páginas seguintes voltam ao início sem perder a outra lista", async () => {
+    const vazio = (pagina: number, paginaConferencias: number) => ({ ok: true, dado: { ...resposta().dado, conferencias: [], propostas: [], pagina, paginaConferencias } });
+    mocks.consulta.mockResolvedValue(vazio(1, 1));
+    const primeira = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }));
+    expect(primeira).not.toContain("nesta página");
+    expect(primeira).not.toContain("Ir para a primeira página");
+
+    mocks.consulta.mockResolvedValue(vazio(3, 4));
+    const seguinte = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ pagina: "3", conferencias: "4" }) }));
+    expect(seguinte).toContain("Nenhuma proposta nesta página.");
+    expect(seguinte).toContain('href="/matriculas/matricula/contrato/substituicoes?pagina=1&amp;conferencias=4">Ir para a primeira página</a>');
+    expect(seguinte).toContain("Nenhuma conferência de outro original nesta página.");
+    expect(seguinte).toContain('href="/matriculas/matricula/contrato/substituicoes?conferencias=1&amp;pagina=3">Ir para a primeira página</a>');
+  });
 });

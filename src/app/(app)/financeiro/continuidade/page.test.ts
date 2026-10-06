@@ -44,13 +44,22 @@ describe("FilaContinuidadeMensalPage", () => {
     expect(html).not.toContain("Emitir");
   });
 
-  it("distingue página vazia da falha de consulta", async () => {
+  it("distingue fila zerada (primeira página), página seguinte vazia e falha de consulta", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.ADMINISTRADOR] });
     mocks.consultar.mockResolvedValue(resposta({ itens: [], proximoCursor: null }));
+    // Primeira página sem itens: a fila está zerada — nada de "nesta página" (docs/42, vazio paginado).
     const vazio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(mocks.consultar).toHaveBeenCalledWith({ cursor: undefined });
-    expect(vazio).toContain("Nenhuma matrícula precisa de acompanhamento nesta página.");
+    expect(vazio).toContain("Nenhuma matrícula precisa de acompanhamento na continuidade mensal.");
+    expect(vazio).not.toContain("nesta página");
     expect(vazio).not.toContain("Próxima página");
+    expect(vazio).not.toContain("Voltar ao início");
+
+    // Página seguinte vazia: o texto é de paginação e a volta ao início continua ao lado.
+    const seguinte = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ cursor: "anterior" }) }));
+    expect(seguinte).toContain("Nenhuma matrícula precisa de acompanhamento nesta página.");
+    expect(seguinte).not.toContain("na continuidade mensal.");
+    expect(seguinte).toContain("Voltar ao início");
 
     mocks.consultar.mockResolvedValue({ ok: false, erro: "Cursor de fila inválido." });
     const erro = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));

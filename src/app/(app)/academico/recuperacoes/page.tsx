@@ -22,7 +22,9 @@ export default async function Recuperacoes({ searchParams }: { searchParams: Pro
     <IdentificacaoAvaliacao dados={r.dado.identificacao} />
     <p>Recuperações realizadas neste vínculo. Lançar a nota não dispensa a conferência independente.</p>
     {r.dado.realizacoes.map(item => <Link key={item.id} className="block rounded border p-3 underline" href={`/academico/recuperacoes/${encodeURIComponent(item.id)}`}>{item.habilidade.replaceAll("_", " ")} · {formatarInstanteExibicao(item.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC) · {item.estado}</Link>)}
-    {!r.dado.realizacoes.length && <EstadoVazio bloco>Nenhuma realização disponível nesta página.</EstadoVazio>}
+    {!r.dado.realizacoes.length && (depoisId
+      ? <EstadoVazio bloco acao={<Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId })}`}>Ir para a primeira página</Link>}>Nenhuma realização disponível nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma recuperação realizada neste vínculo.</EstadoVazio>)}
     {r.dado.proximoId && <Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId, depoisId: r.dado.proximoId })}`}>Próximas realizações</Link>}
   </section>;
 }

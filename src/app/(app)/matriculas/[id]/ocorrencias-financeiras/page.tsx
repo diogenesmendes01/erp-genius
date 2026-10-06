@@ -19,7 +19,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <Link href={`/matriculas/${id}/condicoes-horas`} className="underline">Condições contratuais por hora</Link>
     <p><Link href={`/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`} className="underline">Histórico de fechamentos por hora</Link></p>
     <p><Link href={`/matriculas/${id}/ocorrencias-financeiras/revisoes-correcao-aula`} className="underline">Revisões financeiras de correções de aula</Link></p>
-    {!d.encontros.length && <EstadoVazio bloco>Nenhum encontro particular nesta página.</EstadoVazio>}
+    {!d.encontros.length && (cursor
+      ? <EstadoVazio bloco acao={<Link href={`/matriculas/${id}/ocorrencias-financeiras`} className="underline">Ir para a primeira página</Link>}>Nenhum encontro particular nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhum encontro particular registrado para esta matrícula.</EstadoVazio>)}
     {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} />)}
     {d.proximoCursor && <Link href={`/matriculas/${id}/ocorrencias-financeiras?cursor=${encodeURIComponent(d.proximoCursor)}`} className="underline">Próximos encontros</Link>}
   </div>;

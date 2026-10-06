@@ -12,9 +12,12 @@ const ESTADO_LABEL: Record<ItemFilaContinuidadeMensal["estado"], string> = {
   A_CONFERIR: "Conferência necessária",
 };
 
-export function FilaContinuidadeMensal({ itens }: { itens: ItemFilaContinuidadeMensal[] }) {
+/** `cursor`: a fila está numa página seguinte. Sem ele, é a primeira — e vazia quer dizer fila zerada. */
+export function FilaContinuidadeMensal({ itens, cursor }: { itens: ItemFilaContinuidadeMensal[]; /** Obrigatória: esquecer o repasse faria a página seguinte afirmar fila zerada. */ cursor: string | undefined }) {
   if (itens.length === 0) {
-    return <EstadoVazio bloco>Nenhuma matrícula precisa de acompanhamento nesta página.</EstadoVazio>;
+    return cursor
+      ? <EstadoVazio bloco>Nenhuma matrícula precisa de acompanhamento nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma matrícula precisa de acompanhamento na continuidade mensal.</EstadoVazio>;
   }
 
   return <div className="space-y-3">

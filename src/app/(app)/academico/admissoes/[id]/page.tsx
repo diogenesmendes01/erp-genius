@@ -20,7 +20,9 @@ export default async function JanelaPage({ params, searchParams }: { params: Pro
     </section>
     {r.turma.status !== "CONCLUIDA" && r.fusoInstitucional ? <JanelaFormulario key={`${r.ultimaVersao}:${r.fusoInstitucional}`} turmaId={id} versaoAnterior={r.ultimaVersao} fusoConferido={r.fusoInstitucional} /> : <p>Preparação indisponível: confira o fuso institucional e se a turma está concluída.</p>}
     <h2 className="text-lg font-medium">Histórico de versões</h2>
-    {!r.registros.length && <EstadoVazio bloco>Nenhuma versão nesta página.</EstadoVazio>}
+    {!r.registros.length && (r.pagina > 1
+      ? <EstadoVazio bloco acao={<Link href="?pagina=1">Ir para a primeira página</Link>}>Nenhuma versão nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma versão da janela de admissão registrada para esta turma.</EstadoVazio>)}
     {r.registros.map((v) => <section key={v.id} className="space-y-3 rounded border p-4">
       <h3 className="font-medium">Versão {v.versao} · {v.decisao ? v.decisao.aprovada ? "Aprovada" : "Rejeitada" : "Aguardando decisão"}</h3>
       <p>Limite incluído: {v.limiteEntrada} · {v.fusoAdmissao} · Preparada por {v.preparador.nome}</p><p className="whitespace-pre-wrap">{v.motivo}</p>
