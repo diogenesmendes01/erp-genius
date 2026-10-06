@@ -72,7 +72,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
   // aplicar sugestão) como o único sinal de "gerado por IA"; nenhuma variante do Botao tem essa cor.
   // Base e tamanho vêm do design system (BASE_BOTAO + TAMANHOS_BOTAO.sm); só a cor é própria.
-  "src/components/CopilotoSugestoes.tsx": ["gerar · Analisando… · Gerar sugestões", "Aplicar corrigido"],
+  "src/components/CopilotoSugestoes.tsx": ["gerar · Analisando… · Gerar sugestões", "Aceitar", "Aplicar corrigido"],
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
   "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };
@@ -265,6 +265,11 @@ export function mapaDeBotoes(fonte: string): string[] {
         }
       } else if (arg) variante = tamanho = "?";
       itens.push(`${rotuloDe(n) ?? "?"} → ${variante}/${tamanho}`);
+    } else if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "Botao") {
+      // <Botao> também entra no mapa (é o que Botao.tsx manda usar em código novo) — R1 da #135, B4.
+      const at = (nome: string) => (n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined)?.initializer;
+      const lido = (i: ts.JsxAttributeValue | undefined, padrao: string) => (!i ? padrao : ts.isStringLiteral(i) ? i.text : ts.isJsxExpression(i) && i.expression ? valor(i.expression) : "?");
+      itens.push(`<Botao> ${nomeDoElemento(n, sf) ?? ""} → ${lido(at("variante"), "primario")}/${lido(at("tamanho"), "md")}`.replace("<Botao>  →", "<Botao> →"));
     } else if (ts.isIdentifier(n) && constantesDeBotao.has(n.text) && !ts.isVariableDeclaration(n.parent) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
       const rotulo = rotuloDe(n);
       if (rotulo && !rotulo.startsWith("const ")) itens.push(`${rotulo} → ${n.text}`);
@@ -285,11 +290,7 @@ const CONFIRMACAO_DESTRUTIVA = /^Confirmar (cancelamento|rejeição|exclusão|re
 
 /** O rótulo (com as alternativas separadas por " · ") nomeia uma ação destrutiva ou de recusa? */
 export function rotuloDestrutivo(rotulo: string): boolean {
-  return rotulo.split(" · ").some((parte) => {
-    const t = parte.trim();
-    if (t === "Cancelar") return false;
-    return VERBOS_DESTRUTIVOS.some((v) => t === v || t.startsWith(`${v} `)) || CONFIRMACAO_DESTRUTIVA.test(t);
-  });
+  return rotulo.split(" · ").some((parte) => fragmentoDestrutivo(parte));
 }
 
 /**
@@ -298,7 +299,7 @@ export function rotuloDestrutivo(rotulo: string): boolean {
  * variantes possíveis: literal → ela; ternário → os dois lados; omitida → primario; outra expressão → "?".
  * Controles fora do design system não entram: a trava de botoesForaDoDesign já os lista por nome.
  */
-export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: string[] }[] {
+export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: string[]; fragmentos: string[] }[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const ehBotaoClasses = (n: ts.Node): n is ts.CallExpression => ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses";
   const daExpressao = (e: ts.Expression): string[] => {
@@ -336,7 +337,8 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
   coletar(sf);
   const atributo = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, nome: string) =>
     n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
-  const botoes: { rotulo: string; variantes: string[] }[] = [];
+  const botoes: { rotulo: string; variantes: string[]; fragmentos: string[] }[] = [];
+  const constsDoArquivo = constantesDoArquivo(sf);
   const visitar = (n: ts.Node) => {
     if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
       const tag = n.tagName.getText(sf);
@@ -348,7 +350,7 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
         const ini = atributo(n, "className")?.initializer;
         if (ini) variantes = naExpressao(ini);
       }
-      if (variantes.length) botoes.push({ rotulo: nomeDoElemento(n, sf) ?? "(sem nome)", variantes });
+      if (variantes.length) botoes.push({ rotulo: nomeDoElemento(n, sf) ?? "(sem nome)", variantes, fragmentos: rotuloResolvido(n, sf, constsDoArquivo).fragmentos });
     }
     ts.forEachChild(n, visitar);
   };
@@ -358,7 +360,8 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
 
 /** Nomes dos botões do design system com rótulo destrutivo sem `perigo` entre as variantes possíveis. */
 export function destrutivosSemPerigo(fonte: string): string[] {
-  return variantesDosBotoes(fonte).filter((b) => rotuloDestrutivo(b.rotulo) && !b.variantes.includes("perigo")).map((b) => b.rotulo);
+  // Rótulo resolvido (constante, template, caixa, símbolo inicial) — não só o texto literal do nome.
+  return variantesDosBotoes(fonte).filter((b) => (rotuloDestrutivo(b.rotulo) || b.fragmentos.some(fragmentoDestrutivo)) && !b.variantes.includes("perigo")).map((b) => b.rotulo);
 }
 
 /**
@@ -370,12 +373,8 @@ export function destrutivosSemPerigo(fonte: string): string[] {
 export function ramosDestrutivosDesalinhados(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const semParenteses = (e: ts.Expression): ts.Expression => (ts.isParenthesizedExpression(e) ? semParenteses(e.expression) : e);
-  /** Condição normalizada e se veio negada (`!x` → ["x", true]). */
-  const chave = (e: ts.Expression): [string, boolean] => {
-    e = semParenteses(e);
-    if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) { const [c, neg] = chave(e.operand); return [c, !neg]; }
-    return [e.getText(sf).replace(/\s+/g, ""), false];
-  };
+  /** Condição normalizada e se veio negada (`!x`, `x === false`, `x !== true`, `a !== b` → negada). */
+  const chave = (e: ts.Expression): [string, boolean] => condicaoNormalizada(e, sf);
   const textos = (e: ts.Expression): string[] => {
     e = semParenteses(e);
     if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return [e.text];
@@ -409,6 +408,18 @@ export function ramosDestrutivosDesalinhados(fonte: string): string[] {
         const rotulos = (m: ts.Node) => {
           if (ts.isConditionalExpression(m)) {
             const [cr, negR] = chave(m.condition);
+            // Variante com perigo e rótulo destrutivo sob OUTRA condição: não dá para provar que o
+            // destrutivo cai no ramo perigo — falha fechada (escreva as duas pela mesma condição).
+            // (Textos sob um ternário da MESMA condição da variante são conferidos ramo a ramo abaixo.)
+            const fora = (e: ts.Expression): string[] => {
+              e = semParenteses(e);
+              if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return [e.text];
+              if (ts.isConditionalExpression(e)) return chave(e.condition)[0] === cv ? [] : [...fora(e.whenTrue), ...fora(e.whenFalse)];
+              return [];
+            };
+            if (cr !== cv && [vSim, vNao].includes("perigo") && [...fora(m.whenTrue), ...fora(m.whenFalse)].some((t) => rotuloDestrutivo(t))) {
+              desalinhados.push(`condições diferentes: variante por ${cv} × rótulo por ${cr}`);
+            }
             if (cr === cv) {
               const [rSim, rNao] = negR ? [m.whenFalse, m.whenTrue] : [m.whenTrue, m.whenFalse];
               for (const [ramo, v] of [[rSim, vSim], [rNao, vNao]] as const) {
@@ -447,7 +458,190 @@ const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
     rotulo: "Remover opt-out",
     motivo: "o efeito é registrar nova autorização de contato (opt-in com evidência): reabre o canal, não apaga nem recusa nada",
   },
+  {
+    arquivo: "src/components/CopilotoSugestoes.tsx",
+    rotulo: "Descartar",
+    motivo: "descartar sugestão da IA é de baixo risco (a sugestão é regenerável); vermelho sólido em cada cartão chamaria mais atenção que aceitar",
+  },
 ];
+
+// ---------------------------------------------------------------------------------------------------
+// Revisão R1 da #135: rótulo resolvido (constante, template, caixa, símbolo), falha fechada, tabelas de
+// botão, condições normalizadas e aria-pressed ligado à condição da classe.
+// ---------------------------------------------------------------------------------------------------
+
+const VERBO_DESTRUTIVO_NO_MEIO = /\se\s(rejeitar|recusar|remover|excluir|apagar|descartar|desativar|inativar|revogar|encerrar|estornar|anular|cancelar)\b/i;
+const PREFIXOS_DESTRUTIVOS = ["efetivar encerramento", "efetivar desistência"];
+
+/**
+ * Um pedaço de rótulo nomeia ação destrutiva? Sem caixa e sem símbolo inicial ("✕ Rejeitar", "rejeitar");
+ * "Confirmar <destruição>" (inclui desistência); "Efetivar encerramento/desistência"; e "… e descartar …".
+ */
+export function fragmentoDestrutivo(fragmento: string): boolean {
+  const t = fragmento.replace(/^[^\p{L}]+/u, "").trim();
+  const baixo = t.toLowerCase();
+  if (!t || baixo === "cancelar") return false;
+  return VERBOS_DESTRUTIVOS.some((v) => baixo === v.toLowerCase() || baixo.startsWith(`${v.toLowerCase()} `))
+    || new RegExp(CONFIRMACAO_DESTRUTIVA.source, "i").test(t) || /^confirmar desistência(\s|$)/i.test(t)
+    || PREFIXOS_DESTRUTIVOS.some((p) => baixo.startsWith(p)) || VERBO_DESTRUTIVO_NO_MEIO.test(` ${t}`);
+}
+
+/** Constantes do arquivo (nome → inicializador), para resolver rótulos montados fora do JSX. */
+function constantesDoArquivo(sf: ts.SourceFile): Map<string, ts.Expression> {
+  const mapa = new Map<string, ts.Expression>();
+  const visita = (n: ts.Node) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) mapa.set(n.name.text, n.initializer);
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return mapa;
+}
+
+/** Textos que uma expressão pode mostrar (alternativas); "…" onde não dá para saber; null = nada resolvível. */
+function alternativasDeTexto(e: ts.Node, consts: Map<string, ts.Expression>, prof = 0): string[] | null {
+  if (prof > 6) return null;
+  const rec = (x: ts.Node) => alternativasDeTexto(x, consts, prof + 1);
+  const combina = (a: string[], b: string[]) => a.flatMap((x) => b.map((y) => x + y)).slice(0, 32);
+  if (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isNonNullExpression(e)) return rec(e.expression);
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) || ts.isJsxText(e)) return [e.text];
+  if ([ts.SyntaxKind.NullKeyword, ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword].includes(e.kind)) return [""];
+  if (ts.isTemplateExpression(e)) {
+    let acc = [e.head.text];
+    for (const s of e.templateSpans) acc = combina(combina(acc, rec(s.expression) ?? ["…"]), [s.literal.text]);
+    return acc;
+  }
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) return combina(rec(e.left) ?? ["…"], rec(e.right) ?? ["…"]);
+  if (ts.isConditionalExpression(e)) { const a = rec(e.whenTrue), b = rec(e.whenFalse); return a && b ? [...a, ...b] : null; }
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) return rec(e.right);
+  if (ts.isBinaryExpression(e) && [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(e.operatorToken.kind)) { const a = rec(e.left), b = rec(e.right); return a && b ? [...a, ...b] : null; }
+  if (ts.isIdentifier(e)) return e.text === "undefined" ? [""] : consts.has(e.text) ? rec(consts.get(e.text)!) : null;
+  if (ts.isJsxSelfClosingElement(e)) return [""];
+  if (ts.isJsxElement(e) || ts.isJsxFragment(e)) {
+    const r = conteudoDoRotulo(e.children, consts, prof + 1);
+    return r.completo ? r.fragmentos : null;
+  }
+  return null;
+}
+
+/**
+ * Fragmentos de texto do conteúdo e se o rótulo foi resolvido: o COMEÇO é onde fica o verbo — um
+ * pedaço dinâmico depois de texto resolvido ("Remover {data}") não esconde a ação; um começo dinâmico
+ * ("{titulo}", "{ocupado ? '…' : rotulo}") esconde, e o botão cai na falha fechada.
+ */
+function conteudoDoRotulo(filhos: ts.NodeArray<ts.JsxChild>, consts: Map<string, ts.Expression>, prof = 0): { fragmentos: string[]; completo: boolean } {
+  const fragmentos: string[] = [];
+  let completo = true;
+  for (const f of filhos) {
+    if (ts.isJsxText(f)) { const t = f.text.replace(/\s+/g, " ").trim(); if (t) fragmentos.push(t); continue; }
+    if (ts.isJsxExpression(f)) {
+      if (!f.expression) continue;
+      const alt = alternativasDeTexto(f.expression, consts, prof);
+      if (alt === null) { if (!fragmentos.some((t) => /\p{L}/u.test(t))) completo = false; } else fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
+      continue;
+    }
+    const alt = alternativasDeTexto(f as ts.Node, consts, prof);
+    if (alt === null) { if (!fragmentos.some((t) => /\p{L}/u.test(t))) completo = false; } else fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
+  }
+  return { fragmentos, completo };
+}
+
+/** Rótulo resolvido de um botão: conteúdo visível; sem texto, aria-label/title. */
+function rotuloResolvido(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile, consts: Map<string, ts.Expression>): { fragmentos: string[]; completo: boolean } {
+  const conteudo = ts.isJsxOpeningElement(n) ? conteudoDoRotulo(n.parent.children, consts) : { fragmentos: [], completo: true };
+  if (conteudo.fragmentos.some((t) => /\p{L}/u.test(t)) || !conteudo.completo) return conteudo;
+  for (const nome of ["aria-label", "title"]) {
+    const a = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+    if (!a?.initializer) continue;
+    if (ts.isStringLiteral(a.initializer)) return { fragmentos: [a.initializer.text], completo: true };
+    if (ts.isJsxExpression(a.initializer) && a.initializer.expression) {
+      const alt = alternativasDeTexto(a.initializer.expression, consts);
+      return alt === null ? { fragmentos: [], completo: false } : { fragmentos: alt, completo: true };
+    }
+  }
+  return conteudo;
+}
+
+/** O botão tira variante e rótulo da MESMA linha de uma tabela (`variante: a.variante` com `{a.label}`)? */
+function varianteDaTabela(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile): boolean {
+  let objeto: string | null = null;
+  const procura = (x: ts.Node) => {
+    if (ts.isPropertyAssignment(x) && x.name.getText(sf) === "variante" && ts.isPropertyAccessExpression(x.initializer) && x.initializer.name.text === "variante") objeto = x.initializer.expression.getText(sf);
+    ts.forEachChild(x, procura);
+  };
+  procura(n.attributes);
+  if (!objeto || !ts.isJsxOpeningElement(n)) return false;
+  return n.parent.children.some((c) => ts.isJsxExpression(c) && !!c.expression && ts.isPropertyAccessExpression(c.expression) && c.expression.expression.getText(sf) === objeto && /^(label|rotulo)$/.test(c.expression.name.text));
+}
+
+/**
+ * Botões do design system cujo rótulo não dá para resolver estaticamente (prop, chamada, linha de tabela
+ * sem a variante junto): falha fechada — cada um tem de estar em ROTULOS_DINAMICOS, com motivo.
+ */
+export function rotulosNaoResolvidos(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const consts = constantesDoArquivo(sf);
+  const achados: string[] = [];
+  const visita = (n: ts.Node) => {
+    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ehBotaoDoDesign(n, sf)) {
+      const r = rotuloResolvido(n, sf, consts);
+      if (!r.completo && !varianteDaTabela(n, sf)) achados.push(nomeDoElemento(n, sf) ?? "(sem nome)");
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return achados;
+}
+
+/** <Botao>, ou <button>/<Link>/<a> com className que passa por botaoClasses (direto ou por constante). */
+function ehBotaoDoDesign(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile): boolean {
+  const tag = n.tagName.getText(sf);
+  if (tag === "Botao") return true;
+  if (!["button", "Link", "a"].includes(tag)) return false;
+  const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
+  if (!cls?.initializer) return false;
+  const consts = constantesDoArquivo(sf);
+  const usa = (x: ts.Node, vistas = new Set<string>()): boolean => {
+    if (ts.isCallExpression(x) && ts.isIdentifier(x.expression) && x.expression.text === "botaoClasses") return true;
+    if (ts.isIdentifier(x) && consts.has(x.text) && !vistas.has(x.text)) { vistas.add(x.text); if (usa(consts.get(x.text)!, vistas)) return true; }
+    return ts.forEachChild(x, (c) => usa(c, vistas) || undefined) ?? false;
+  };
+  return usa(cls.initializer);
+}
+
+/** Linhas de tabela de botão (`{ label, variante }`): rótulo destrutivo exige variante perigo. */
+export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const achados: string[] = [];
+  const visita = (n: ts.Node) => {
+    if (ts.isObjectLiteralExpression(n)) {
+      const prop = (nomes: RegExp) => n.properties.find((p) => ts.isPropertyAssignment(p) && nomes.test(p.name.getText(sf)) && ts.isStringLiteral(p.initializer)) as ts.PropertyAssignment | undefined;
+      const rotulo = prop(/^(label|rotulo)$/), variante = prop(/^variante$/);
+      if (rotulo && variante && fragmentoDestrutivo((rotulo.initializer as ts.StringLiteral).text) && (variante.initializer as ts.StringLiteral).text !== "perigo") {
+        achados.push(`${(rotulo.initializer as ts.StringLiteral).text} → ${(variante.initializer as ts.StringLiteral).text}`);
+      }
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return achados;
+}
+
+/** Condição normalizada: `x === true` → x; `x === false`/`x !== true`/`!x` → ¬x; `a !== b` → ¬(a === b). */
+export function condicaoNormalizada(e: ts.Expression, sf: ts.SourceFile): [string, boolean] {
+  const K = ts.SyntaxKind;
+  while (ts.isParenthesizedExpression(e)) e = e.expression;
+  if (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken) { const [c, n] = condicaoNormalizada(e.operand, sf); return [c, !n]; }
+  if (ts.isBinaryExpression(e)) {
+    const op = e.operatorToken.kind, dir = e.right.kind;
+    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.TrueKeyword) return condicaoNormalizada(e.left, sf);
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.FalseKeyword) return condicaoNormalizada(e.left, sf);
+    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.FalseKeyword) { const [c, n] = condicaoNormalizada(e.left, sf); return [c, !n]; }
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.TrueKeyword) { const [c, n] = condicaoNormalizada(e.left, sf); return [c, !n]; }
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op)) return [`${e.left.getText(sf)}===${e.right.getText(sf)}`.replace(/\s+/g, ""), true];
+    if (op === K.EqualsEqualsToken) return [`${e.left.getText(sf)}===${e.right.getText(sf)}`.replace(/\s+/g, ""), false];
+  }
+  return [e.getText(sf).replace(/\s+/g, ""), false];
+}
 
 const OPERADORES_CONDICIONAIS: ts.SyntaxKind[] = [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken];
 
@@ -471,12 +665,25 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
     ts.forEachChild(n, coletar);
   };
   coletar(sf);
-  /** Condições (texto) de que uma expressão de classe depende, seguindo variáveis do arquivo. */
-  const condicoesDe = (raiz: ts.Node, vistas = new Set<string>()): string[] => {
-    const achadas: string[] = [];
+  const K = ts.SyntaxKind;
+  /** Expressão booleana (comparação, negação, lógica): o que decide uma seleção. */
+  const booleana = (e: ts.Expression): boolean => {
+    while (ts.isParenthesizedExpression(e)) e = e.expression;
+    return (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken)
+      || (ts.isBinaryExpression(e) && [K.EqualsEqualsEqualsToken, K.EqualsEqualsToken, K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken, K.LessThanToken, K.GreaterThanToken, K.LessThanEqualsToken, K.GreaterThanEqualsToken, K.AmpersandAmpersandToken, K.BarBarToken].includes(e.operatorToken.kind));
+  };
+  /**
+   * Condições de que uma expressão de classe depende, seguindo variáveis do arquivo: ternário, `&&`/`||`/`??`
+   * e também tabela indexada (`ESTILO[String(x === y)]`) ou chamada com argumento booleano
+   * (`estiloSelecao(x === y)`) — a seleção por cor escondida atrás de um índice ou de uma função (R1 da #135, B5).
+   */
+  const condicoesDe = (raiz: ts.Node, vistas = new Set<string>()): ts.Expression[] => {
+    const achadas: ts.Expression[] = [];
     const andar = (n: ts.Node) => {
-      if (ts.isConditionalExpression(n)) achadas.push(texto(n.condition));
-      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(texto(n.left));
+      if (ts.isConditionalExpression(n)) achadas.push(n.condition);
+      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(n.left);
+      else if (ts.isElementAccessExpression(n)) { const procura = (x: ts.Node) => { if (ts.isExpression(x) && booleana(x as ts.Expression)) achadas.push(x as ts.Expression); else ts.forEachChild(x, procura); }; procura(n.argumentExpression); }
+      else if (ts.isCallExpression(n) && !(ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses")) { for (const a of n.arguments) if (booleana(a)) achadas.push(a); }
       else if (ts.isIdentifier(n) && variaveis.has(n.text) && !vistas.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
         vistas.add(n.text);
         achadas.push(...condicoesDe(variaveis.get(n.text)!, vistas));
@@ -487,28 +694,59 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
     return achadas;
   };
   /** Condições de ternários que produzem texto no conteúdo visível (sem entrar em atributos dos filhos). */
-  const condicoesDoTexto = (el: ts.JsxElement): string[] => {
-    const achadas: string[] = [];
+  const condicoesDoTexto = (el: ts.JsxElement): ts.Expression[] => {
+    const achadas: ts.Expression[] = [];
     const temTexto = (n: ts.Node): boolean =>
       ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isJsxText(n) && n.getText(sf).trim() !== "") ||
       (!ts.isJsxAttributes(n) && (ts.forEachChild(n, temTexto) ?? false));
     const andar = (n: ts.Node) => {
       if (ts.isJsxAttributes(n)) return;
-      if (ts.isConditionalExpression(n) && (temTexto(n.whenTrue) || temTexto(n.whenFalse))) achadas.push(texto(n.condition));
+      if (ts.isConditionalExpression(n) && (temTexto(n.whenTrue) || temTexto(n.whenFalse))) achadas.push(n.condition);
       ts.forEachChild(n, andar);
     };
     for (const c of el.children) andar(c);
     return achadas;
   };
+  /** Está dentro de um grupo rotulado (`role="group"` com aria-label/aria-labelledby, ou <fieldset>)? */
+  const emGrupoRotulado = (n: ts.Node): boolean => {
+    for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
+      if (!ts.isJsxElement(p) || p.openingElement === n) continue;
+      const ab = p.openingElement;
+      if (ab.tagName.getText(sf) === "fieldset") return true;
+      const at = (nome: string) => ab.attributes.properties.find((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+      const role = at("role")?.initializer;
+      if (role && ts.isStringLiteral(role) && role.text === "group" && (at("aria-label") || at("aria-labelledby"))) return true;
+    }
+    return false;
+  };
+  const chaves = (es: ts.Expression[]) => es.map((e) => condicaoNormalizada(e, sf));
   const achados: string[] = [];
   const visitar = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Botao"].includes(n.tagName.getText(sf))) {
       const attrs = new Map(n.attributes.properties.filter(ts.isJsxAttribute).map((a) => [a.name.getText(sf), a.initializer] as const));
       const daClasse = ["className", "variante", "tamanho"].flatMap((nome) => (attrs.get(nome) ? condicoesDe(attrs.get(nome)!) : []));
-      const isento = attrs.has("aria-pressed") || ["aria-current", "aria-expanded", "aria-haspopup"].some((a) => attrs.has(a));
-      if (daClasse.length && !isento) {
-        const doNome = [...(ts.isJsxOpeningElement(n) ? condicoesDoTexto(n.parent) : []), ...(attrs.get("aria-label") ? condicoesDe(attrs.get("aria-label")!) : [])];
-        if (!daClasse.some((c) => doNome.includes(c))) achados.push(nomeDoElemento(n, sf) ?? "(sem nome)");
+      const doNome = [...(ts.isJsxOpeningElement(n) ? condicoesDoTexto(n.parent) : []), ...(attrs.get("aria-label") ? condicoesDe(attrs.get("aria-label")!) : [])];
+      const nome = nomeDoElemento(n, sf) ?? "(sem nome)";
+      if (attrs.has("aria-pressed")) {
+        // aria-pressed precisa dizer o estado de verdade: expressão (não constante) igual à condição da
+        // classe, com a mesma polaridade; botão de rótulo que muda não é alternância; e o conjunto é
+        // um grupo rotulado (R1 da #135, B3/B5).
+        const ini = attrs.get("aria-pressed");
+        const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
+        const constante = !expr || ts.isStringLiteral(ini!) || [K.TrueKeyword, K.FalseKeyword, K.NullKeyword].includes(expr.kind) || ts.isStringLiteral(expr)
+          || (ts.isIdentifier(expr) && expr.text === "undefined");
+        if (constante) achados.push(`${nome} — aria-pressed constante`);
+        else if (daClasse.length) {
+          const [cp, np] = condicaoNormalizada(expr!, sf);
+          if (!chaves(daClasse).some(([c, neg]) => c === cp && neg === np)) achados.push(`${nome} — aria-pressed não é a condição da classe`);
+        }
+        // Rótulo que muda PELA MESMA condição da seleção (o nome escolhido pelo item da lista não conta).
+        const chavesDaClasse = chaves(daClasse).map(([c]) => c);
+        if (chaves(doNome).some(([c]) => chavesDaClasse.includes(c))) achados.push(`${nome} — aria-pressed com rótulo que muda`);
+        if (!emGrupoRotulado(n)) achados.push(`${nome} — aria-pressed fora de grupo rotulado`);
+      } else if (daClasse.length && !["aria-current", "aria-expanded", "aria-haspopup"].some((a) => attrs.has(a))) {
+        const textosDoNome = doNome.map(texto);
+        if (!daClasse.map(texto).some((c) => textosDoNome.includes(c))) achados.push(nome);
       }
     }
     ts.forEachChild(n, visitar);
@@ -579,6 +817,9 @@ describe("botões nas áreas migradas", () => {
     // Botão que usa uma constante de botão: registrado com o nome dela (trocar btnPri por btnSec quebra).
     expect(mapaDeBotoes('const btnPri = botaoClasses(); <button className={btnPri}>Registrar pagamento</button><button className={`${btnPri} mt-3`}>Ok</button>'))
       .toEqual(["const btnPri → primario/md", "<button> Registrar pagamento → btnPri", "<button> Ok → btnPri"]);
+    // <Botao> entra no mapa (R1 da #135, B4).
+    expect(mapaDeBotoes('<Botao variante="perigo" tamanho="sm">Excluir</Botao>')).toEqual(["<Botao> Excluir → perigo/sm"]);
+    expect(mapaDeBotoes("<Botao>Salvar</Botao>")).toEqual(["<Botao> Salvar → primario/md"]);
   });
 
   it("todo <button> do painel passa por botaoClasses; os controles que não são ação são exatamente os listados, por nome", () => {
@@ -676,15 +917,26 @@ describe("hierarquia: ação destrutiva ou de recusa é perigo", () => {
     expect(ramosDestrutivosDesalinhados('<Botao variante={e.ativo ? "secundario" : "perigo"}>{e.ativo ? "Inativar empresa" : "Reativar empresa"}</Botao>')).toEqual(["Inativar empresa → secundario"]);
     expect(ramosDestrutivosDesalinhados('<button className={`${botaoClasses({ variante: x === "revogar" ? "secundario" : "perigo" })} mt-2`}>{x === "revogar" ? "Revogar designação" : "Registrar"}</button>')).toEqual(["Revogar designação → secundario"]);
     // Condições diferentes: fora do alcance desta regra (a de "perigo entre as possíveis" segue valendo).
-    expect(ramosDestrutivosDesalinhados(b('ativo ? "perigo" : "fantasma"', 'ocupado ? "Desativando…" : "Desativar"'))).toEqual([]);
+    // Condições diferentes: não dá para provar o alinhamento — falha fechada (R1 da #135, B3).
+    expect(ramosDestrutivosDesalinhados(b('ativo ? "perigo" : "fantasma"', 'ocupado ? "Desativando…" : "Desativar"'))).toEqual(["condições diferentes: variante por ativo × rótulo por ocupado"]);
+    // Normalização: `!== true`, `=== false`, `!==` valem como negação — a inversão escrita de outro jeito acusa.
+    expect(ramosDestrutivosDesalinhados(b('ativo !== true ? "perigo" : "fantasma"', 'ativo ? "Desativar" : "Ativar"'))).toEqual(["Desativar → fantasma"]);
+    expect(ramosDestrutivosDesalinhados(b('ativo === false ? "perigo" : "fantasma"', 'ativo ? "Desativar" : "Ativar"'))).toEqual(["Desativar → fantasma"]);
+    expect(ramosDestrutivosDesalinhados(b('x !== "revogar" ? "perigo" : "secundario"', 'x === "revogar" ? "Revogar" : "Registrar"'))).toEqual(["Revogar → secundario"]);
+    expect(ramosDestrutivosDesalinhados(b('ativo === true ? "perigo" : "fantasma"', 'ativo ? "Desativar" : "Ativar"'))).toEqual([]);
+    // Ternário externo de outra condição com o da mesma condição dentro: o de dentro é conferido ramo a ramo.
+    expect(ramosDestrutivosDesalinhados(b('x === "revogar" ? "perigo" : "secundario"', 'ocupado ? "Aguarde…" : x === "revogar" ? "Revogar" : "Registrar"'))).toEqual([]);
   });
 
   it("rotuloDestrutivo: lista fechada de verbos; Cancelar sozinho (fechar) não conta; Cancelar <algo> e Confirmar <destruição> contam", () => {
     for (const r of ["Rejeitar", "Rejeitar proposta", "Remover campo", "Excluir", "Revogar designação", "Encerrar", "Descartar relato sem pausar",
-      "Cancelar e liberar reserva", "Registrando… · Confirmar rejeição", "Confirmar perda", "Desativar · Ativar", "Ativar · Desativar", "Inativar empresa · Reativar empresa"])
+      "Cancelar e liberar reserva", "Registrando… · Confirmar rejeição", "Confirmar perda", "Desativar · Ativar", "Ativar · Desativar", "Inativar empresa · Reativar empresa",
+      // R1 da #135 (B2/B4): sem caixa, com símbolo inicial, desistência, efetivar encerramento/desistência e "… e descartar …".
+      "Registrando… · revogar", "rejeitar janela", "✕ Rejeitar janela", "Confirmar desistência e liberar reservas", "Efetivar encerramento aprovado",
+      "Efetivar desistência", "Reabrir formulário e descartar preenchimento"])
       expect(rotuloDestrutivo(r), r).toBe(true);
     for (const r of ["Cancelar", "Fechar · Cancelar", "Cancelar · Editar", "Rejeitando…", "Removido", "Arquivar", "Reativar", "Ativar",
-      "Confirmar divergência material", "Registrando… · revogar", "Salvar", "Aprovar proposta"])
+      "Confirmar divergência material", "Salvar", "Aprovar proposta", "Reabrir formulário", "Efetivar matrícula"])
       expect(rotuloDestrutivo(r), r).toBe(false);
   });
 
@@ -751,9 +1003,30 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
     expect(alternanciasSemAriaPressed('<button className={on ? "bg-brand-600" : ""}><span className={on ? "font-medium" : ""}>Seg</span></button>')).toEqual(["Seg"]);
   });
 
+  it("alternanciasSemAriaPressed (R1 da #135, B3/B5): aria-pressed constante, invertido, solto do grupo ou em botão de rótulo que muda acusa; classe por índice ou função também é seleção", () => {
+    const grupo = (botao: string) => `<div role="group" aria-label="Dias">${botao}</div>`;
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={true} className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed constante"]);
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed="false" className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed constante"]);
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={undefined} className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed constante"]);
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={filtro !== d.chave} className={filtro === d.chave ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed não é a condição da classe"]);
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={outra} className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed não é a condição da classe"]);
+    expect(alternanciasSemAriaPressed('<div role="group"><button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button></div>')).toEqual(["Seg — aria-pressed fora de grupo rotulado"]);
+    expect(alternanciasSemAriaPressed('<div><button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button></div>')).toEqual(["Seg — aria-pressed fora de grupo rotulado"]);
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={ativo} className={botaoClasses({ variante: ativo ? "perigo" : "fantasma" })}>{ativo ? "Desativar" : "Ativar"}</button>'))).toEqual(["Desativar · Ativar — aria-pressed com rótulo que muda"]);
+    // Seleção por tabela indexada ou função importada, sem aria-pressed.
+    expect(alternanciasSemAriaPressed('<button className={ESTILO[String(tipo === t)]}>PF</button>')).toEqual(["PF"]);
+    expect(alternanciasSemAriaPressed('<button className={estiloSelecao(filtro === d.chave)}>Todos</button>')).toEqual(["Todos"]);
+  });
+
   it("alternanciasSemAriaPressed: isenta aria-pressed, quem abre/navega e quem troca o nome pela mesma condição", () => {
-    expect(alternanciasSemAriaPressed('<button aria-pressed={ativo} className={"chip " + (ativo ? "bg-brand-600" : "")}>Seg</button>')).toEqual([]);
-    expect(alternanciasSemAriaPressed('<Botao aria-pressed={on} variante={on ? "primario" : "secundario"}>Mensal</Botao>')).toEqual([]);
+    const grupo = (botao: string) => `<div role="group" aria-label="Dias">${botao}</div>`;
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={ativo} className={"chip " + (ativo ? "bg-brand-600" : "")}>Seg</button>'))).toEqual([]);
+    expect(alternanciasSemAriaPressed(grupo('<Botao aria-pressed={on} variante={on ? "primario" : "secundario"}>Mensal</Botao>'))).toEqual([]);
+    expect(alternanciasSemAriaPressed('<fieldset><legend>Dias</legend><button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button></fieldset>')).toEqual([]);
+    // Normalização: `=== true` é a mesma condição.
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={ativo === true} className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual([]);
+    // Rótulo escolhido pelo item da lista (não pela seleção) não é "rótulo que muda".
+    expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={tipo === t} className={tipo === t ? "bg-brand-600" : ""}>{t === "pf" ? "Pessoa Física" : "Empresa"}</button>'))).toEqual([]);
     expect(alternanciasSemAriaPressed('<button aria-current={atual ? "true" : undefined} className={"item " + (atual ? "bg-brand-50" : "")}>Conversa</button>')).toEqual([]);
     expect(alternanciasSemAriaPressed('<button aria-expanded={aberto} className={aberto ? "bg-gray-100" : ""}>Filtros</button>')).toEqual([]);
     expect(alternanciasSemAriaPressed('<button className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma" })}>{i.ativo ? "Desativar" : "Ativar"}</button>')).toEqual([]);
@@ -780,5 +1053,87 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
     const htmlPolitica = renderToStaticMarkup(createElement(PoliticaPainel, { politica, numeros: [], templates: [] }));
     expect(pressionados(htmlPolitica)).toEqual({ sim: ["seg", "ter", "qua", "qui", "sex"], nao: ["dom", "sáb"] });
     expect(htmlPolitica).toContain('role="group" aria-label="Dias da semana"');
+  });
+});
+
+// Rótulo que a trava não resolve estaticamente (prop, chamada): arquivo + nome (nomeDoElemento) +
+// quantos + motivo. Falha fechada: um botão novo assim não passa sem entrar aqui (R1 da #135, B1/B4).
+const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string }[] = [
+  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "→", vezes: 1, motivo: "link para o cadastro vinculado: o rótulo é o nome do aluno/lead (navegação, não ação)" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos do arquivo, todos 'Registrar …' / 'Reservar …'" },
+  { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
+];
+
+describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", () => {
+  it("todo botão do design system tem rótulo resolvível no começo — ou está em ROTULOS_DINAMICOS, com a contagem exata", () => {
+    const contagem = new Map<string, number>();
+    for (const { arquivo, conteudo } of arquivos.filter(({ arquivo }) => !/\.test\./.test(arquivo))) {
+      for (const nome of rotulosNaoResolvidos(conteudo)) contagem.set(`${arquivo} | ${nome}`, (contagem.get(`${arquivo} | ${nome}`) ?? 0) + 1);
+    }
+    const esperado = new Map(ROTULOS_DINAMICOS.map((r) => [`${r.arquivo} | ${r.nome}`, r.vezes]));
+    expect(Object.fromEntries(contagem)).toEqual(Object.fromEntries(esperado));
+    for (const r of ROTULOS_DINAMICOS) expect(r.motivo.trim().length, r.nome).toBeGreaterThan(20);
+  });
+
+  it("rotulosNaoResolvidos (autoteste): começo dinâmico acusa; constante, template, verbo antes do dinâmico e tabela com variante passam", () => {
+    const b = (corpo: string, antes = "") => rotulosNaoResolvidos(`${antes}\nexport function T({ rotulo, t, d, a }: any) { return ${corpo}; }`);
+    expect(b('<button className={botaoClasses()}>{rotulo}</button>')).toEqual(["key rotulo".replace("key ", "")].length ? b('<button className={botaoClasses()}>{rotulo}</button>') : []);
+    expect(b('<button className={botaoClasses()}>{rotulo}</button>')).toHaveLength(1);
+    expect(b('<button className={botaoClasses()}>{t ? "Salvando…" : rotulo}</button>')).toHaveLength(1);
+    expect(b('<Botao>{rotulo}</Botao>')).toHaveLength(1);
+    expect(b('<button className={botaoClasses()}>{ROTULO}</button>', 'const ROTULO = "Excluir janela";')).toEqual([]);
+    expect(b('<button className={botaoClasses()}>{`Excluir ${t}`}</button>')).toEqual([]);
+    expect(b('<button className={botaoClasses()}>Remover {d}</button>')).toEqual([]);
+    expect(b('<button className={botaoClasses({ variante: a.variante })}>{a.label}</button>')).toEqual([]);
+    expect(b('<button className="underline">{rotulo}</button>')).toEqual([]); // fora do design system
+  });
+
+  it("destrutivosSemPerigo (R1 da #135, B4): rótulo por constante, template, minúscula e símbolo inicial também exigem perigo, no <button> e no <Botao>", () => {
+    expect(destrutivosSemPerigo('const ROTULO = "Excluir janela"; <Botao variante="secundario">{ROTULO}</Botao>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{`Excluir ${x}`}</Botao>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "secundario" })}>rejeitar janela</button>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('<button className={botaoClasses({ variante: "secundario" })}>✕ Rejeitar janela</button>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('const R = "Rejeitar janela"; <button className={botaoClasses({ variante: "secundario" })}>{R}</button>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('const R = "Rejeitar janela"; <button className={botaoClasses({ variante: "perigo" })}>{R}</button>')).toEqual([]);
+  });
+
+  it("linha de tabela de botão ({ label, variante }) com rótulo destrutivo tem variante perigo", () => {
+    const achados = arquivos.filter(({ arquivo }) => !/\.test\./.test(arquivo)).flatMap(({ arquivo, conteudo }) => tabelasDeBotaoSemPerigo(conteudo).map((r) => `${arquivo}: ${r}`));
+    expect(achados).toEqual([]);
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Excluir país", alvo: 1, variante: "fantasma" }, { label: "Pausar", variante: "fantasma" }];')).toEqual(["Excluir país → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar", variante: "perigo" }, { rotulo: "Reativar", variante: "fantasma" }];')).toEqual([]);
+  });
+});
+
+describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
+  // Os botões isentos por nome usam a paleta de IA (docs/18), mas base e tamanho vêm do design system:
+  // a constante btnIa é exatamente BASE_BOTAO + TAMANHOS_BOTAO.sm, os isentos usam btnIa, e só somam
+  // cor/borda da paleta ai-* (texto branco no sólido).
+  const fonte = readFileSync("src/components/CopilotoSugestoes.tsx", "utf8");
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const classesDosIsentos: { nome: string; expr: string }[] = [];
+  const visita = (n: ts.Node) => {
+    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
+      const nome = nomeDoElemento(n, sf) ?? "";
+      if ((CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? []).includes(nome)) {
+        const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
+        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "" });
+      }
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+
+  it("btnIa é BASE_BOTAO + TAMANHOS_BOTAO.sm, sem nada a mais", () => {
+    expect(fonte).toMatch(/const btnIa = `\$\{BASE_BOTAO\} \$\{TAMANHOS_BOTAO\.sm\}`;/);
+  });
+
+  it("cada botão isento usa btnIa e só soma classes da paleta ai-* (e texto branco)", () => {
+    expect(classesDosIsentos.map((c) => c.nome).sort()).toEqual([...(CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? [])].sort());
+    for (const { nome, expr } of classesDosIsentos) {
+      expect(expr, nome).toMatch(/^\{btnIa \+ "[^"]*"\}$/);
+      const extras = expr.match(/"([^"]*)"/)![1].trim().split(/\s+/);
+      for (const c of extras) expect(/^(hover:)?(bg|text|border)-ai-[\w-]+$|^border$|^text-white$|^hover:brightness-95$/.test(c), `${nome}: ${c}`).toBe(true);
+    }
   });
 });

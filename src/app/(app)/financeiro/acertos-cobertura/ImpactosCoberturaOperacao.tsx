@@ -33,7 +33,7 @@ export function ImpactosCoberturaOperacao({ conjunto, reprepararHref }: { conjun
     {(conjunto.podeDecidir || conjunto.podeObsoletar) && <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>}
     {conjunto.podeDecidir && <><button className={botaoClasses()} type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("aprovar")}>Aprovar conjunto</button>{" "}<button className={botaoClasses({ variante: "perigo" })} type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("rejeitar")}>Rejeitar conjunto</button></>}
     {conjunto.podeAplicar && <button className={botaoClasses()} type="button" disabled={ocupado} onClick={() => executar("aplicar")}>Aplicar coberturas aprovadas</button>}
-    {conjunto.podeObsoletar && <button className={botaoClasses({ variante: conjunto.status === "APROVADO" ? "secundario" : "perigo" })} type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("obsoletar")}>{conjunto.status === "APROVADO" ? "Confirmar divergência material" : "Descartar conjunto pendente"}</button>}
+    {conjunto.podeObsoletar && <button className={botaoClasses({ variante: "perigo" })} type="button" disabled={ocupado || motivo.trim().length < 5} onClick={() => executar("obsoletar")}>{conjunto.status === "APROVADO" ? "Confirmar divergência material" : "Descartar conjunto pendente"}</button>}
     {["REJEITADO", "OBSOLETO"].includes(conjunto.status) && <a className="underline" href={reprepararHref}>Reconferir mensalidades e preparar novo conjunto</a>}<MensagemStatus texto={mensagem} />
   </section>;
 }
