@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -857,7 +857,7 @@ function avisoCadastroDoNome(c: ThreadConversa["contato"]): { texto: string; hre
   return null;
 }
 
-function EditarNomePainel({
+export function EditarNomePainel({
   thread,
   onFechar,
   onFeito,
@@ -871,6 +871,10 @@ function EditarNomePainel({
   const [nome, setNome] = useState(thread.contato.nomeSalvo ?? "");
   const [salvando, setSalvando] = useState(false);
   const aviso = avisoCadastroDoNome(thread.contato);
+  // O campo abre com foco: sem aria-describedby, o leitor de tela pula a nota e a dica e a pessoa
+  // salva um nome que talvez não apareça nesta conversa sem saber por quê.
+  const id = useId();
+  const idNota = id + "-nota", idDica = id + "-dica";
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -893,7 +897,7 @@ function EditarNomePainel({
     <form onSubmit={salvar} className="border-b border-gray-200 bg-surface-muted px-4 py-3 text-sm">
       {/* Nota fixa sobre o cadastro (não é resultado de ação): role="note", não região viva. */}
       {aviso && (
-        <p role="note" className="mb-2 text-xs text-gray-600">
+        <p id={idNota} role="note" className="mb-2 text-xs text-gray-600">
           {aviso.texto}{" "}
           {aviso.href && <><Link href={aviso.href} className="text-brand-700 underline">Corrigir no cadastro →</Link>{" "}</>}
           O nome salvo abaixo vale para as telas que não usam esse cadastro.
@@ -906,6 +910,7 @@ function EditarNomePainel({
           onChange={(e) => setNome(e.target.value)}
           maxLength={80}
           aria-label="Nome salvo do contato"
+          aria-describedby={aviso ? idNota + " " + idDica : idDica}
           placeholder={thread.contato.nomePerfil ?? thread.contato.telefone}
           className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 outline-none focus:border-brand-500"
         />
@@ -916,7 +921,7 @@ function EditarNomePainel({
           <IconX className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1.5 text-xs text-gray-500">
+      <p id={idDica} className="mt-1.5 text-xs text-gray-500">
         {thread.contato.nomePerfil ? `Perfil no WhatsApp: ${thread.contato.nomePerfil}. ` : ""}Deixe em branco para voltar ao perfil do WhatsApp ou ao número.
       </p>
     </form>
