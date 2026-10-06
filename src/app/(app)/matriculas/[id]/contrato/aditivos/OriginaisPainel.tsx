@@ -13,7 +13,9 @@ export async function OriginaisPainel({ matriculaId, propostaId, podeGerar, pagi
     <p>O PDF preservado é o documento anterior à assinatura. Sua geração não aplica as condições do aditivo.</p>
     {podeGerar && d.conferencia && !d.preservada && <OriginalFormulario matriculaId={matriculaId} propostaId={propostaId} conferencia={d.conferencia} />}
     {podeGerar && !d.conferencia && <p>Confira os signatários antes de gerar o original.</p>}
-    {!d.registros.length && <EstadoVazio>Nenhum original nesta página.</EstadoVazio>}
+    {!d.registros.length && (pagina > 1
+      ? <EstadoVazio acao={<Link className="underline" href={`${base}?paginaOriginais=1`}>Ir para a primeira página</Link>}>Nenhum original nesta página.</EstadoVazio>
+      : <EstadoVazio>Nenhum original preservado para este aditivo.</EstadoVazio>)}
     {d.registros.map(a => <article className="space-y-1 rounded border p-3" key={a.id}><p>{a.autor.nome} · {data(a.criadoEm)} · {a.paginas} página(s)</p><p className="whitespace-pre-wrap">{a.motivo}</p>
       <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(matriculaId)}/aditivos/${encodeURIComponent(propostaId)}/originais/${encodeURIComponent(a.id)}/pdf`}>Abrir PDF original preservado</a>
       <Link className="block underline" href={`${base}/originais/${encodeURIComponent(a.id)}`}>Conferir original e consultar histórico</Link>

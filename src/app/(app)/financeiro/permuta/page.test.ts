@@ -31,6 +31,8 @@ it("inicia na primeira página sem link anterior", async () => {
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
   expect(mocks.consultar).toHaveBeenCalledWith(1);
   expect(html).not.toContain("Anterior");
+  expect(html).toContain("Nenhum acordo de permuta registrado.");
+  expect(html).not.toContain("nesta página");
 });
 
 it("lê a preferência somente depois da guarda e a encaminha à saída histórica", async () => {

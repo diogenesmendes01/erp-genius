@@ -38,7 +38,9 @@ export default async function Prorrogacoes({ params, searchParams }: { params: P
       {p.podeDecidir && !p.podeAprovar && <p>Aprovação indisponível. Confira a versão mais recente, prazo vigente, data proposta e situação da matrícula.</p>}
       {p.podeDecidir && p.propostaHash && <ConferirProrrogacao propostaId={p.id} propostaHash={p.propostaHash} podeAprovar={p.podeAprovar} />}
     </article>)}
-    {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>}
+    {!d.propostas.length && (antesVersao
+      ? <EstadoVazio bloco>Nenhuma proposta nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma proposta de prorrogação registrada para esta recuperação.</EstadoVazio>)}
     {d.proximaAntesVersao && <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}/prorrogacoes?antesVersao=${d.proximaAntesVersao}`}>Propostas anteriores</Link>}
     {antesVersao && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}/prorrogacoes`}>Propostas recentes</Link>}
   </section>;
