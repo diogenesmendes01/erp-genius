@@ -17,7 +17,8 @@ describe("docker-compose.coolify.yml: db-init", () => {
   let dbInitSection: string;
 
   beforeAll(() => {
-    composeText = fs.readFileSync(composePath, "utf8");
+    // Checkout no Windows (autocrlf) traz \r\n; o regex da seção usa `.*\n` e `.` não casa com \r.
+    composeText = fs.readFileSync(composePath, "utf8").replace(/\r\n/g, "\n");
 
     // Extrair a seção db-init (entre "db-init:" e o próximo serviço de nível raiz)
     // Procurar de "db-init:" até o próximo "^\w+:" (serviço de nível raiz)
@@ -27,7 +28,9 @@ describe("docker-compose.coolify.yml: db-init", () => {
     if (!dbInitMatch) {
       throw new Error("db-init service not found in compose file");
     }
-    dbInitSection = dbInitMatch[0];
+    // Sem as linhas de comentário do YAML: o comentário repete "\gexec" e "ON_ERROR_STOP=1", e o
+    // toContain passaria mesmo com o comando sem eles.
+    dbInitSection = dbInitMatch[0].split("\n").filter((linha) => !/^\s*#/.test(linha)).join("\n");
   });
 
   it("usa \\gexec na mesma linha do CREATE DATABASE evolution", () => {
