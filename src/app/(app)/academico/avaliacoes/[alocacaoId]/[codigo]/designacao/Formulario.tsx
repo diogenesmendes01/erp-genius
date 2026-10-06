@@ -32,7 +32,7 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
         {professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
       </select></label>
       <label className="block">Motivo<CampoTexto required minLength={5} maxLength={2000} value={motivo} className="block w-full rounded border p-2" onChange={e => { setMotivo(e.target.value); chave.current = null; }} /></label>
-      <button disabled={!professor} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{pendente ? "Registrando…" : professor === "revogar" ? "Revogar designação" : "Registrar designação"}</button>
+      <button disabled={!professor} className={botaoClasses({ variante: professor === "revogar" ? "perigo" : "secundario", tamanho: "lg" })}>{pendente ? "Registrando…" : professor === "revogar" ? "Revogar designação" : "Registrar designação"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />
   </form>;

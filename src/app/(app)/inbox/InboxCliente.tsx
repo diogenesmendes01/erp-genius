@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -857,7 +857,7 @@ function avisoCadastroDoNome(c: ThreadConversa["contato"]): { texto: string; hre
   return null;
 }
 
-function EditarNomePainel({
+export function EditarNomePainel({
   thread,
   onFechar,
   onFeito,
@@ -871,6 +871,10 @@ function EditarNomePainel({
   const [nome, setNome] = useState(thread.contato.nomeSalvo ?? "");
   const [salvando, setSalvando] = useState(false);
   const aviso = avisoCadastroDoNome(thread.contato);
+  // O campo abre com foco: sem aria-describedby, o leitor de tela pula a nota e a dica e a pessoa
+  // salva um nome que talvez não apareça nesta conversa sem saber por quê.
+  const id = useId();
+  const idNota = id + "-nota", idDica = id + "-dica";
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -881,8 +885,9 @@ function EditarNomePainel({
       if (!r.ok) return onErro(r.erro ?? "Erro ao salvar o nome.");
       onFeito(nome.trim() ? `Contato salvo como ${nome.trim()}.` : "Nome salvo removido — a conversa volta a mostrar o perfil do WhatsApp ou o número.");
     } catch {
-      // Salvar de novo é seguro: a gravação é condicional ao nome lido e não duplica nada.
-      onErro("Não foi possível confirmar se o nome foi salvo. Recarregue a conversa e confira.");
+      // A gravação é condicional ao nome lido: depois de um sucesso, reenviar não devolve o mesmo
+      // registro (o nome lido já mudou) — então a instrução é conferir antes de repetir.
+      onErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
     } finally {
       setSalvando(false);
     }
@@ -890,8 +895,9 @@ function EditarNomePainel({
 
   return (
     <form onSubmit={salvar} className="border-b border-gray-200 bg-surface-muted px-4 py-3 text-sm">
+      {/* Nota fixa sobre o cadastro (não é resultado de ação): role="note", não região viva. */}
       {aviso && (
-        <p className="mb-2 text-xs text-gray-600">
+        <p id={idNota} role="note" className="mb-2 text-xs text-gray-600">
           {aviso.texto}{" "}
           {aviso.href && <><Link href={aviso.href} className="text-brand-700 underline">Corrigir no cadastro →</Link>{" "}</>}
           O nome salvo abaixo vale para as telas que não usam esse cadastro.
@@ -904,6 +910,7 @@ function EditarNomePainel({
           onChange={(e) => setNome(e.target.value)}
           maxLength={80}
           aria-label="Nome salvo do contato"
+          aria-describedby={aviso ? idNota + " " + idDica : idDica}
           placeholder={thread.contato.nomePerfil ?? thread.contato.telefone}
           className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 outline-none focus:border-brand-500"
         />
@@ -914,7 +921,7 @@ function EditarNomePainel({
           <IconX className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1.5 text-xs text-gray-500">
+      <p id={idDica} className="mt-1.5 text-xs text-gray-500">
         {thread.contato.nomePerfil ? `Perfil no WhatsApp: ${thread.contato.nomePerfil}. ` : ""}Deixe em branco para voltar ao perfil do WhatsApp ou ao número.
       </p>
     </form>
@@ -1073,10 +1080,11 @@ function CockpitLead({
         </span>
 
         {/* Temperatura: um clique, sem sair da conversa */}
-        <span className="flex items-center gap-1">
+        <span role="group" aria-label="Temperatura do lead" className="flex items-center gap-1">
           {(Object.keys(TEMPERATURA_LABEL) as Temperatura[]).map((t) => (
             <button
               key={t}
+              aria-pressed={t === temperatura}
               disabled={ocupado || t === temperatura}
               title={t === temperatura ? "Temperatura atual" : `Marcar como ${TEMPERATURA_LABEL[t]}`}
               className={

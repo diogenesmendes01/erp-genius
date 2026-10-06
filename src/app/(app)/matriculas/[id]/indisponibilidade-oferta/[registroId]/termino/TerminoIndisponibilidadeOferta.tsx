@@ -88,7 +88,9 @@ export function TerminoIndisponibilidadeOferta({
     </form>}
 
     <h2 className="text-lg">Histórico de propostas</h2>
-    {!d.propostas.length && <EstadoVazio>Nenhuma proposta registrada nesta página.</EstadoVazio>}
+    {!d.propostas.length && (d.pagina > 1
+      ? <EstadoVazio acao={<Link className="underline" href="?pagina=1">Ir para a primeira página</Link>}>Nenhuma proposta registrada nesta página.</EstadoVazio>
+      : <EstadoVazio>Nenhuma proposta de término registrada para esta indisponibilidade.</EstadoVazio>)}
     {d.propostas.map(proposta => <article key={proposta.id} className="space-y-2 rounded border p-4">
       <h3>Último dia indisponível: {dataCivil(proposta.fim)}</h3>
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>

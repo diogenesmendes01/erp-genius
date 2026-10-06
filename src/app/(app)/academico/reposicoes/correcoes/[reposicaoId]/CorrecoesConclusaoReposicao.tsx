@@ -71,7 +71,8 @@ function isoUtc(valor: FormDataEntryValue | null) {
   return Number.isNaN(data.getTime()) ? null : data.toISOString();
 }
 
-export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string }) {
+/** `antesVersao`: o histórico de correções está numa página seguinte (cursor da página). Sem ele, é a primeira. */
+export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string; /** Obrigatória: esquecer o repasse faria a página antiga afirmar que não há correção. */ antesVersao: number | undefined }) {
   return <div className="space-y-5">
     <section className="space-y-3 rounded border p-4">
       <h2 className="text-xl font-medium">{dados.consultaHistorica ? "Conclusão e fonte históricas" : "Conclusão e fonte vigentes"}</h2>
@@ -82,7 +83,9 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExib
     {mostrarPreparacao && dados.podePropor && <ProporCorrecao dados={dados} />}
     <section className="space-y-3">
       <h2 className="text-xl font-medium">Histórico de correções</h2>
-      {!dados.correcoes.length && <EstadoVazio>Não há correções nesta página.</EstadoVazio>}
+      {!dados.correcoes.length && (antesVersao
+        ? <EstadoVazio>Não há correções nesta página.</EstadoVazio>
+        : <EstadoVazio>Nenhuma correção proposta para esta conclusão.</EstadoVazio>)}
       {dados.correcoes.map((correcao) => <article key={correcao.id} className="space-y-3 rounded border p-4">
         <h3 className="font-medium">Proposta versão {correcao.versao}</h3>
         <p>Preparada por {correcao.autor} em {dataHora(correcao.criadaEm, fusoExibicao)}.</p>

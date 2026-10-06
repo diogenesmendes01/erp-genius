@@ -25,6 +25,6 @@ export function DecisaoAusencia({ id, impactoHash }: { id: string; impactoHash: 
     <label className="block text-sm">Motivo da decisão<CampoTexto className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000} disabled={ocupado} /></label>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
     <div className="flex gap-3"><button className={botaoClasses({ tamanho: "lg" })} disabled={ocupado || !impactoHash || motivo.trim().length < 5} onClick={() => decidir(true)}>Aprovar indisponibilidade</button>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar</button></div>
+      <button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={ocupado || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar</button></div>
   </div>;
 }

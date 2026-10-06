@@ -23,7 +23,9 @@ export default async function RevisoesPage({ params, searchParams }: { params: P
     <VoltarPara href={`/academico/calendario/${id}`} para="Calendário" />
     <h1 className="text-2xl font-medium">Revisões registradas · Calendário {r.calendario.versao}</h1>
     <p>Histórico de autoria e motivos das revisões. Guardar uma revisão não publica mudanças. Instantes administrativos exibidos em {fusoExibicao}; origem {r.calendario.fusoInstitucional}.</p>
-    {!r.registros.length && <EstadoVazio bloco>Nenhuma revisão nesta página.</EstadoVazio>}
+    {!r.registros.length && (r.pagina > 1
+      ? <EstadoVazio bloco acao={<Link className="underline" href="?pagina=1">Ir para a primeira página</Link>}>Nenhuma revisão nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma revisão registrada para este calendário.</EstadoVazio>)}
     <ol className="space-y-3">{r.registros.map((v) => <li key={v.id} className="space-y-2 rounded border p-4">
       <h2 className="font-medium"><Link className="underline" href={`/academico/calendario/${id}/revisoes/${v.id}`}>Revisão {v.versao} · Consultar conteúdo</Link></h2><p>{v.preparador.nome} · {data(v.criadoEm)} ({fusoExibicao}; origem {r.calendario.fusoInstitucional})</p>
       <p className="whitespace-pre-wrap">{v.motivo}</p>

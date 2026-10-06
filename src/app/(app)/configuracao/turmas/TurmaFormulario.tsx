@@ -240,13 +240,14 @@ export function TurmaFormulario({
             <span className="ml-1 text-gray-400">— {modalidadeSel.frequencia}: marque os dias</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Dias da semana" className="flex flex-wrap gap-2">
           {DIAS.map((d) => {
             const ativo = diasSemana.includes(d.n);
             return (
               <button
                 key={d.n}
                 type="button"
+                aria-pressed={ativo}
                 onClick={() => toggleDia(d.n)}
                 className={
                   "rounded-md border px-3 py-1.5 text-sm " +

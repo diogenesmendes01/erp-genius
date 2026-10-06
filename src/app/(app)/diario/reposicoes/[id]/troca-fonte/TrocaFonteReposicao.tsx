@@ -86,7 +86,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
             : <form className="mt-3 space-y-2" onSubmit={(evento) => { evento.preventDefault(); const motivo = String(new FormData(evento.currentTarget).get("motivo") ?? ""); const aprovar = String((evento.nativeEvent as SubmitEvent).submitter?.getAttribute("value")) === "aprovar"; executar(() => decidirTrocaFonteReposicaoGravacao({ propostaId: proposta.id, aprovar, motivo }), "Decisão registrada."); }}>
               <label className="block">Motivo da decisão<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
               <button name="decisao" value="aprovar" disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aprovar adoção</button>
-              <button name="decisao" value="rejeitar" disabled={ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} ml-2`}>Rejeitar</button>
+              <button name="decisao" value="rejeitar" disabled={ocupado} className={`${botaoClasses({ variante: "perigo", tamanho: "lg" })} ml-2`}>Rejeitar</button>
             </form>}
       </article>)}
     </section>

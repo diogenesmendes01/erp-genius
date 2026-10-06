@@ -33,15 +33,16 @@ const STATUS_INFO: Record<StatusPais, { label: string; cls: string }> = {
 };
 
 // Transições oferecidas por status (ciclo de vida do mercado, doc 04).
-const ACOES_STATUS: Record<StatusPais, { label: string; alvo: StatusPais }[]> = {
-  RASCUNHO: [{ label: "Ativar", alvo: StatusPais.ATIVO }],
+// A variante vive na tabela, junto do rótulo: encerrar é terminal (ENCERRADO não tem volta) e é perigo.
+const ACOES_STATUS: Record<StatusPais, { label: string; alvo: StatusPais; variante: "perigo" | "fantasma" }[]> = {
+  RASCUNHO: [{ label: "Ativar", alvo: StatusPais.ATIVO, variante: "fantasma" }],
   ATIVO: [
-    { label: "Pausar", alvo: StatusPais.PAUSADO },
-    { label: "Encerrar", alvo: StatusPais.ENCERRADO },
+    { label: "Pausar", alvo: StatusPais.PAUSADO, variante: "fantasma" },
+    { label: "Encerrar", alvo: StatusPais.ENCERRADO, variante: "perigo" },
   ],
   PAUSADO: [
-    { label: "Reativar", alvo: StatusPais.ATIVO },
-    { label: "Encerrar", alvo: StatusPais.ENCERRADO },
+    { label: "Reativar", alvo: StatusPais.ATIVO, variante: "fantasma" },
+    { label: "Encerrar", alvo: StatusPais.ENCERRADO, variante: "perigo" },
   ],
   ENCERRADO: [],
 };
@@ -172,7 +173,7 @@ export function PaisesPainel({
                           key={a.alvo}
                           onClick={() => mudarStatus(p.id, a.alvo)}
                           disabled={acao.ocupado}
-                          className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
+                          className={botaoClasses({ variante: a.variante, tamanho: "sm" })}
                         >
                           {a.label}
                         </button>
