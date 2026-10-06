@@ -31,7 +31,7 @@ export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId
     <fieldset disabled={ocupado || concluido} className="space-y-3">
       <label className="block">Conferência final e motivo<CampoTexto name="motivo" required minLength={10} maxLength={3000} className="mt-1 block w-full rounded border p-2" placeholder="Registre como conferiu a solicitação e a ausência de pagamento ou assinatura fora do ERP." /></label>
       <label className="block"><input type="checkbox" name="conferencia" value="confirmada" required /> Confirmei que não há pagamento, comprovante ou assinatura pendente de registro para esta contratação.</label>
-      <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Efetivando…" : "Confirmar desistência e liberar reservas"}</button>
+      <button type="submit" className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>{ocupado ? "Efetivando…" : "Confirmar desistência e liberar reservas"}</button>
     </fieldset>
     <MensagemStatus texto={mensagem} />
   </form>;

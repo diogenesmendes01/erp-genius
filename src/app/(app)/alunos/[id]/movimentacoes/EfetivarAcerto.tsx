@@ -11,7 +11,7 @@ export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: str
   const router = useRouter();
   return <div className="space-y-2 rounded border p-3">
     <p>A efetivação aplica o acerto aprovado e encerra somente as matrículas deste pedido. Valores a devolver permanecem sujeitos ao fluxo de devolução.</p>
-    <button className={botaoClasses({ tamanho: "lg" })} type="button" disabled={ocupado} onClick={async () => {
+    <button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} type="button" disabled={ocupado} onClick={async () => {
       setOcupado(true); setMensagem("");
       try {
         const r = await efetivarAcertoEncerramento({ alunoId, decisaoId });

@@ -1080,10 +1080,11 @@ function CockpitLead({
         </span>
 
         {/* Temperatura: um clique, sem sair da conversa */}
-        <span className="flex items-center gap-1">
+        <span role="group" aria-label="Temperatura do lead" className="flex items-center gap-1">
           {(Object.keys(TEMPERATURA_LABEL) as Temperatura[]).map((t) => (
             <button
               key={t}
+              aria-pressed={t === temperatura}
               disabled={ocupado || t === temperatura}
               title={t === temperatura ? "Temperatura atual" : `Marcar como ${TEMPERATURA_LABEL[t]}`}
               className={

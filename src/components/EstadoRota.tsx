@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { IconProps } from "@tabler/icons-react";
+import { botaoClasses } from "./Botao";
 
 // Peça compartilhada para error.tsx / not-found.tsx (ver docs/42-auditoria-frontend-ux.md,
 // ganho rápido 1). Sem "use client": quem precisa de client boundary (error.tsx) importa
@@ -12,8 +13,7 @@ type Props = {
 };
 
 export function EstadoRota({ icone: Icone, titulo, texto, acao }: Props) {
-  const classe =
-    "mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95";
+  const classe = `${botaoClasses({ tamanho: "lg" })} mt-2`;
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
