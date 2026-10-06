@@ -9,6 +9,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
 
 export default async function AutorizacoesSegundaChamada({ params, searchParams }: { params: Promise<{ alocacaoId: string; codigoAvaliacao: string }>; searchParams: Promise<{ depoisId?: string }> }) {
@@ -26,7 +27,7 @@ export default async function AutorizacoesSegundaChamada({ params, searchParams 
     <h1 className="text-2xl font-medium">Autorizações especiais de segunda chamada</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Avaliação: {d.codigoAvaliacao}.</p>
-    <p>Situação da matrícula: {d.statusMatricula}.</p>
+    <p>Situação da matrícula: {rotular(STATUS_MATRICULA_LABEL, d.statusMatricula)}.</p>
     {d.podeAutorizar ? <Formulario alocacaoId={d.alocacaoId} codigoAvaliacao={d.codigoAvaliacao} fusoInstitucional={fusoInstitucional} /> : <p role="status">Não há pendência elegível para autorização especial nas condições atuais.</p>}
     <h2 className="text-xl font-medium">Histórico de autorizações</h2>
     {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3"><p>Autorizada por {autorizacao.autorizador.nome}, em {formatarInstanteExibicao(autorizacao.criadaEm, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p>Prazo até {formatarInstanteExibicao(autorizacao.prazoAte, fuso, "UTC").texto} ({fuso}; origem UTC).</p><p className="whitespace-pre-wrap">{autorizacao.motivo}</p></article>)}

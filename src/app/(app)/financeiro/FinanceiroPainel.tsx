@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
-import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
+import { STATUS_COMISSAO_LABEL, rotular, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
@@ -47,20 +47,6 @@ export interface AprovacaoRow {
   descontoValor: number;
   moeda: string;
 }
-
-const TIPO_APROV_LABEL: Record<TipoAprovacao, string> = {
-  DESCONTO: "Desconto",
-  BOLSA: "Bolsa",
-  ALTERACAO_VALOR: "Alteração de valor",
-  PERDAO_DIVIDA: "Perdão de dívida",
-  COMISSAO_EXCEPCIONAL: "Comissão excepcional",
-};
-// Sem emoji: labels usadas dentro de <select>, onde não cabe ícone JSX (design denso).
-const VIGENCIA_LABEL: Record<Vigencia, string> = {
-  ESTA_COBRANCA: "Esta cobrança",
-  PROXIMOS_MESES: "Próximos meses",
-  CONTRATO_INTEIRO: "Contrato inteiro",
-};
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
@@ -256,7 +242,7 @@ export function Aprovacoes({
               <div className="flex items-start justify-between gap-4">
                 <div className="text-sm">
                   <div className="font-medium text-gray-800">
-                    {a.alunoNome} — {TIPO_APROV_LABEL[a.tipo]}
+                    {a.alunoNome} — {TIPO_APROVACAO_LABEL[a.tipo]}
                   </div>
                   <div className="text-gray-600">
                     {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}

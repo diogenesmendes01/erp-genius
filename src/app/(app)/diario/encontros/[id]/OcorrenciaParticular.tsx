@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { rotular } from "@/lib/labels";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasParticular>>, { ok: true }>["dado"]>;
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
@@ -48,7 +49,7 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
     <h3 className="font-medium">Histórico de informes</h3>
     {!dados.historico.length && <EstadoVazio>Nenhum informe registrado.</EstadoVazio>}
     {dados.historico.map(o => <article key={o.id} className="rounded border p-3">
-      <p>Versão {o.versao} · {nomes[o.tipo] ?? o.tipo} · {o.autor.nome}</p>
+      <p>Versão {o.versao} · {rotular(nomes, o.tipo)} · {o.autor.nome}</p>
       <p>Registrado em {formato.format(new Date(o.criadoEm))} (exibido em {fusoExibicao}; origem {dados.fuso}).</p>
       {o.comunicadoEm && <p>Comunicação em {formato.format(new Date(o.comunicadoEm))}.</p>}
       <p className="whitespace-pre-wrap">{o.evidencia}</p>

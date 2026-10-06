@@ -4,6 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarLinhasConciliacaoFinanceira } from "@/server/migracao/consultas-financeiras";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { STATUS_PROPOSTA_CONCILIACAO_FINANCEIRA_MIGRACAO_LABEL, rotular } from "@/lib/labels";
 
 export default async function FilaConciliacaoPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.FINANCEIRO);
@@ -18,7 +19,7 @@ export default async function FilaConciliacaoPage({ searchParams }: { searchPara
       <ul className="space-y-3">{resultado.dado.itens.map(linha => <li key={linha.id} className="rounded border p-4">
         <p>{linha.lote.origem} · {linha.lote.chaveLote} · linha {linha.linhaOrigem}</p>
         <p>Contrato na fonte: {linha.matriculaOrigemId ?? "não informado"} · registro financeiro: {linha.financeiroOrigemId ?? "não informado"}</p>
-        <p>{linha.propostasConciliacaoFinanceira[0] ? "Última proposta: " + linha.propostasConciliacaoFinanceira[0].status : "Aguardando conferência"}</p>
+        <p>{linha.propostasConciliacaoFinanceira[0] ? "Última proposta: " + rotular(STATUS_PROPOSTA_CONCILIACAO_FINANCEIRA_MIGRACAO_LABEL, linha.propostasConciliacaoFinanceira[0].status) : "Aguardando conferência"}</p>
         <Link href={"/financeiro/migracao/" + encodeURIComponent(linha.id)} className="text-brand-700 underline">Conferir linha</Link>
       </li>)}</ul>
       {resultado.dado.proximoCursor && <Link href={"/financeiro/migracao?cursor=" + encodeURIComponent(resultado.dado.proximoCursor)}>Próximas linhas</Link>}

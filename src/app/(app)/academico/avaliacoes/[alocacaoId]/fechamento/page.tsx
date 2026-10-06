@@ -6,6 +6,7 @@ import { ExcecaoFrequencia } from "./ExcecaoFrequencia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
 
 const pendencias: Record<string, string> = {
   NOTAS_INCOMPLETAS: "Notas obrigatórias ainda não estão completas e oficializadas",
@@ -26,12 +27,6 @@ const insuficiencias: Record<string, string> = {
   MINIMO_POR_HABILIDADE: "Há habilidade abaixo do mínimo",
   MINIMO_GERAL: "A média geral está abaixo do mínimo",
   FREQUENCIA_MINIMA: "A frequência está abaixo do mínimo",
-};
-const nomesHabilidade: Record<string, string> = {
-  FALA: "Fala",
-  COMPREENSAO_ORAL: "Compreensão oral",
-  LEITURA: "Leitura",
-  ESCRITA: "Escrita",
 };
 function razao(valor: { numerador: string; denominador: string } | null) {
   if (!valor) return "Pendente";
@@ -75,7 +70,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
       <h2 className="text-lg font-medium">Resultado e frequência revisados</h2>
       <p className="mt-2">Resultado geral: {razao(resultado.geral)}. Mínimo geral: {resultado.minimoGeral}.</p>
       <p className="text-sm">Notas: {resultado.atendeRequisitosNotas === null ? "incompletas" : resultado.atendeRequisitosNotas ? "atingem os mínimos" : "não atingem todos os mínimos"}.</p>
-      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Mínimos e resultados por habilidade</caption><thead><tr><th>Habilidade</th><th>Resultado</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{resultado.habilidades.map((habilidade) => <tr key={habilidade.habilidade}><th scope="row">{nomesHabilidade[habilidade.habilidade] ?? habilidade.habilidade}</th><td>{razao(habilidade.resultado)}</td><td>{habilidade.minimo}</td><td>{habilidade.atendeMinimo === null ? "Pendente" : habilidade.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>)}</tbody></table></div>
+      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Mínimos e resultados por habilidade</caption><thead><tr><th>Habilidade</th><th>Resultado</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{resultado.habilidades.map((habilidade) => <tr key={habilidade.habilidade}><th scope="row">{rotular(HABILIDADE_LABEL, habilidade.habilidade)}</th><td>{razao(habilidade.resultado)}</td><td>{habilidade.minimo}</td><td>{habilidade.atendeMinimo === null ? "Pendente" : habilidade.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>)}</tbody></table></div>
       <p className="mt-3">Frequência real: {frequencia.atendeMinimo === null ? "ainda não apurada" : frequencia.atendeMinimo ? "atinge o mínimo" : "abaixo do mínimo"}.</p>
       <p className="text-sm">Percentual: {razao(frequencia.percentual)}%. Mínimo: {frequencia.minimoPercentual}%.</p>
       <p className="text-sm">Base: {frequencia.base} aulas · presenças: {frequencia.presencas} · regularizações: {frequencia.regularizadas} · faltas: {frequencia.faltas} · impedimentos: {frequencia.impedimentos}.</p>

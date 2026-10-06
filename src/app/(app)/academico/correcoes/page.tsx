@@ -7,7 +7,7 @@ import { PrepararCasosHistoricos } from "./PrepararCasosHistoricos";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
-const estados = { PENDENTE: "Pendente", APROVADA: "Aprovada", EXECUTADA: "Executada", CANCELADA: "Cancelada", REJEITADA: "Rejeitada" };
+import { STATUS_MUDANCA_ACADEMICA_LABEL } from "@/lib/labels";
 export default async function RevisoesCorrecoesPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const p = Number((await searchParams).pagina ?? 1);
@@ -25,7 +25,7 @@ export default async function RevisoesCorrecoesPage({ searchParams }: { searchPa
     {d.itens.map(i => <article key={`${i.tipo}:${i.id}:${i.matricula.id}`} className="space-y-3 rounded border p-4"><h2 className="text-lg font-medium">{nomeCompleto(i.matricula.aluno)} · {i.matricula.codigo ?? "Matrícula sem código"}</h2>
       <p>{i.tipo === "AULA" ? i.labelAula ?? `Correção de aula — versão ${i.versaoCorrecao}` : i.tipo === "REPOSICAO" ? `${i.labelReposicao ?? "Conclusão de reposição"}: correção ${i.versaoCorrecao}` : i.tipo === "RECUPERACAO" ? `Recuperação: correção ${i.versaoCorrecao} de ${i.codigoAvaliacao}` : `Avaliação regular: correção ${i.versaoCorrecao} de ${i.codigoAvaliacao}`}, aplicada por {i.decisor} em {formatarInstanteExibicao(i.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">{i.motivo}</p>
       {i.impactos.map(m => <div key={m.solicitacaoId} className="rounded border p-3"><p>Destino: {m.destino ? `${m.destino.nome ?? m.destino.codigo ?? "Turma"} · ${m.destino.nivel.idioma.nome} ${m.destino.nivel.codigo}` : "Vínculo precisa de conferência"}</p>
-        <p>Situação na correção: {estados[m.statusNaCorrecao]}. Situação atual: {m.statusAtual ? estados[m.statusAtual] : "Não localizada"}.</p>
+        <p>Situação na correção: {STATUS_MUDANCA_ACADEMICA_LABEL[m.statusNaCorrecao]}. Situação atual: {m.statusAtual ? STATUS_MUDANCA_ACADEMICA_LABEL[m.statusAtual] : "Não localizada"}.</p>
         {m.casoId && <Link className="underline" href={`/academico/correcoes/revisoes/${encodeURIComponent(m.casoId)}`}>Ver situação da revisão</Link>}
       </div>)}
       {(i.tipo === "REGULAR" || i.tipo === "RECUPERACAO") && i.impactos.some(m => !m.casoId) && <PrepararCasosHistoricos tipo={i.tipo} decisaoId={i.id} />}

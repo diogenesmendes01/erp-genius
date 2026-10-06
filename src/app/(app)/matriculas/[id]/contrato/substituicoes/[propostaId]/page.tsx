@@ -8,6 +8,8 @@ import { TextoPrevia } from "../../TextoPrevia";
 import { DecidirSubstituicao } from "../Formularios";
 import { AndamentoSubstituicao } from "../Andamento";
 import { VoltarPara } from "@/components/VoltarPara";
+import { STATUS_RESERVA_VAGA_LABEL, rotular } from "@/lib/labels";
+import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 
 export default async function PropostaPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ retornos?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
@@ -34,10 +36,10 @@ export default async function PropostaPage({ params, searchParams }: { params: P
       <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/originais/${encodeURIComponent(doc.artefatoId)}/pdf`} target="_blank" rel="noopener noreferrer">Abrir PDF preservado · {doc.titulo}</a>
       <TextoPrevia dados={doc.texto} />
       <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Pessoas identificadas para assinatura</h3>
-        <ul>{doc.assinatura.participantes.map(p => <li key={`${p.papel}:${p.etapa}`}>{p.nome} · {p.email} · {p.papel.replaceAll("_", " ")} · {p.etapa === "CLIENTE" ? "cliente" : "escola"}</li>)}</ul>
+        <ul>{doc.assinatura.participantes.map(p => <li key={`${p.papel}:${p.etapa}`}>{p.nome} · {p.email} · {rotular(PAPEIS_MODELO, p.papel)} · {p.etapa === "CLIENTE" ? "cliente" : "escola"}</li>)}</ul>
         <p>Taxa: {formatarMoeda(doc.assinatura.taxa.valor, doc.assinatura.taxa.moeda)}. {doc.assinatura.taxa.confirmada ? "Recebimento confirmado." : "Recebimento não confirmado."}</p>
         <p>{doc.assinatura.regraTaxa === "CONFIRMACAO_PREVIA_EXIGIDA" ? "Assinatura exige taxa confirmada previamente." : "Assinatura sem pagamento prévio da taxa."}</p>
-        <p>Reserva na revisão: {doc.assinatura.reserva.status.replaceAll("_", " ")} · prazo {data(doc.assinatura.reserva.expiraEm)}.</p>
+        <p>Reserva na revisão: {rotular(STATUS_RESERVA_VAGA_LABEL, doc.assinatura.reserva.status)} · prazo {data(doc.assinatura.reserva.expiraEm)}.</p>
       </section>
     </section>)}</div>
     {d.decisao ? <section className="rounded border p-4"><h2 className="text-xl">{d.decisao.aprovada ? "Proposta aprovada" : "Proposta rejeitada"}</h2><p>{d.decisao.decisor.nome} · {data(d.decisao.decididaEm)}</p><p className="whitespace-pre-wrap">{d.decisao.motivo}</p></section>

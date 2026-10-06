@@ -9,6 +9,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { PARTICIPACAO_AULA_LABEL } from "@/lib/labels";
 
 type RespostaHistorico = Awaited<ReturnType<typeof consultarHistoricoCorrecaoAula>>;
 type DadosRevisao = NonNullable<Extract<RespostaHistorico, { ok: true }> ["dado"]>;
@@ -16,11 +17,7 @@ type RespostaImpactos = Awaited<ReturnType<typeof revisarImpactosCorrecaoAula>>;
 type DadosImpactos = NonNullable<Extract<RespostaImpactos, { ok: true }> ["dado"]>;
 type Participacao = DadosRevisao["snapshot"]["registros"][number]["participacao"];
 
-const rotuloParticipacao: Record<Participacao, string> = {
-  PRESENTE: "Presente",
-  FALTA: "Falta",
-  IMPEDIDO_POR_RESTRICAO: "Impedido por restrição",
-};
+const rotuloParticipacao: Readonly<Record<Participacao, string>> = PARTICIPACAO_AULA_LABEL;
 
 const rotulosPendencia: Record<string, string> = {
   NOTAS_INCOMPLETAS: "Notas obrigatórias ainda não estão completas e oficializadas",

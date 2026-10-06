@@ -5,7 +5,7 @@ import { revisarCorrecaoNota } from "@/server/avaliacoes/correcao";
 import { DecidirCorrecao } from "../Formularios";
 import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
 import { EstadoVazio } from "@/components/EstadoVazio";
-const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
+import { HABILIDADE_LABEL } from "@/lib/labels";
 export default async function RevisaoPage({ params }: { params: Promise<{ lancamentoId: string; propostaId: string }> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { lancamentoId, propostaId } = await params, r = await revisarCorrecaoNota(propostaId);
@@ -14,7 +14,7 @@ export default async function RevisaoPage({ params }: { params: Promise<{ lancam
   return <section className="space-y-5"><Link className="underline" href={`/academico/correcoes/${encodeURIComponent(lancamentoId)}`}>Histórico de correções</Link>
     <h1 className="text-2xl font-medium">Conferir correção {d.versao}</h1><p className="whitespace-pre-wrap">{d.motivo}</p>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    {d.notasPropostas.map(n => { const antes = d.notasVigentes.find(a => a.habilidade === n.habilidade); return <div key={n.habilidade} className="rounded border p-3"><p>{nomes[n.habilidade]} — vigente: {antes?.nota}; proposta: {n.nota}</p><p className="whitespace-pre-wrap">Comentário vigente: {antes?.comentarioAluno || "Sem comentário"}</p><p className="whitespace-pre-wrap">Comentário proposto: {n.comentarioAluno || "Sem comentário"}</p></div>; })}
+    {d.notasPropostas.map(n => { const antes = d.notasVigentes.find(a => a.habilidade === n.habilidade); return <div key={n.habilidade} className="rounded border p-3"><p>{HABILIDADE_LABEL[n.habilidade]} — vigente: {antes?.nota}; proposta: {n.nota}</p><p className="whitespace-pre-wrap">Comentário vigente: {antes?.comentarioAluno || "Sem comentário"}</p><p className="whitespace-pre-wrap">Comentário proposto: {n.comentarioAluno || "Sem comentário"}</p></div>; })}
     <h2 className="text-xl font-medium">Mudanças acadêmicas que exigem revisão</h2>
     {!d.impactos.length ? <EstadoVazio bloco>Nenhuma mudança aprovada ou executada identificada para este vínculo.</EstadoVazio> : <><p>A correção não desfaz a movimentação. Os casos abaixo precisam de revisão pedagógica.</p>{d.impactos.map(i => <p key={i.id}>Solicitação {i.id} — {i.status === "EXECUTADA" ? "Executada" : "Aprovada"}</p>)}</>}
     {!d.podeAprovar && <p role="status">Esta proposta não está disponível para aprovação. Pode já ter sido decidida, ter uma versão ou origem mais recente, ou exigir outro aprovador.</p>}

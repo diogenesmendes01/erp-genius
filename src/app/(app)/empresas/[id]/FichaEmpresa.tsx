@@ -11,7 +11,7 @@ import {
 } from "@/server/empresas/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
+import { STATUS_MATRICULA_LABEL, rotular, STATUS_FATURA_B2B_LABEL } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia } from "@/lib/data-civil";
@@ -38,13 +38,6 @@ interface EmpresaFicha {
   observacoes: string | null;
   ativo: boolean;
 }
-
-const STATUS_FATURA: Record<string, string> = {
-  ABERTA: "Aberta",
-  FECHADA: "Fechada — a pagar",
-  PAGA: "Paga",
-  CANCELADA: "Cancelada",
-};
 
 export function FichaEmpresa({
   empresa,
@@ -172,7 +165,7 @@ export function FichaEmpresa({
                       {formatarMoeda(f.valorTotal, f.moeda)}
                     </td>
                     <td className="px-3 py-2 text-gray-600">{new Date(f.vencimento).toLocaleDateString("pt-BR")}</td>
-                    <td className="px-3 py-2 text-gray-600">{STATUS_FATURA[f.status] ?? f.status}</td>
+                    <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
                       {f.status === "FECHADA" && (
                         <span className="flex gap-1">

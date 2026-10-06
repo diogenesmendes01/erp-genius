@@ -23,22 +23,15 @@ const NAO_E_DINHEIRO_CRU: Record<string, number> = {
   "src/app/(app)/alunos/[id]/movimentacoes/OutrasCobrancasResumo.tsx#uso.creditoId": 1, // identificador
 };
 
-/** Enums crus em arquivos que já usam `rotular`: ainda sem mapa de rótulo (E5b) ou fora de texto. */
+/** Expressões com nome de enum em arquivos que importam os rótulos, mas fora de texto (ou já rotuladas). */
 const ENUM_SEM_MAPA: Record<string, number> = {
   "src/app/(app)/financeiro/FinanceiroPainel.tsx#c.status": 1, // key da linha, não texto
-  "src/app/(app)/financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx#conjunto.status": 1, // situação da proposta (E5b)
-  "src/app/(app)/financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx#a.status": 1, // situação do acerto (E5b)
-  "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx#p.status": 1, // situação da proposta (E5b)
-  "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx#dados.linha.mapa.status": 1, // situação da linha (E5b)
-  "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx#proposta.status": 1, // situação da proposta (E5b)
-  "src/app/(app)/financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx#p.status": 1, // situação da proposta (E5b)
-  "src/app/(app)/secretaria/SecretariaPainel.tsx#c.status": 1, // situação da correção cadastral (E5b)
-  "src/app/(app)/inbox/InboxCliente.tsx#d.status": 1, // fallback de status de envio fora de NOTA_POR_STATUS
-  "src/app/(app)/alunos/[id]/movimentacoes/AcertoEncerramento.tsx#a.tipo": 1, // tipo do ajuste anterior (E5b)
-  "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx#pagador.tipo": 1, // tipo de pagador (E5b)
-  "src/app/(app)/matriculas/[id]/nova-reserva/Formulario.tsx#revisao.pagador.tipo": 1, // tipo de pagador (E5b)
-  "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx#c.tipo": 1, // tipo de comissão (E5b)
-  "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx#d.tipo": 1, // tipo de destinação (E5b)
+  "src/app/(app)/academico/correcoes/page.tsx#i.tipo": 1, // key da linha, não texto
+  "src/app/(app)/academico/correcoes/revisoes/[casoId]/page.tsx#caso.solicitacao.status": 1, // key do formulário, não texto
+  "src/app/(app)/academico/correcoes/revisoes/[casoId]/page.tsx#caso.situacao": 1, // key do formulário, não texto
+  "src/app/(app)/matriculas/[id]/contrato/substituicoes/[propostaId]/page.tsx#p.etapa": 1, // key da linha, não texto
+  "src/app/(app)/configuracao/migracao/[loteId]/page.tsx#colisao.tipo": 1, // key da linha, não texto
+  "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx#c.tipo": 1, // tipo de comissão já rotulado no servidor ("Fixa"/"Percentual")
 };
 
 const telas = ["src/app", "src/components"].flatMap((raiz) =>

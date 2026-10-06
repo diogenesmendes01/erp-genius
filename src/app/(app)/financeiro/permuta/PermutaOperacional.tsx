@@ -14,6 +14,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { UNIDADE_PERMUTA_SERVICO_LABEL, rotular } from "@/lib/labels";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
@@ -134,7 +135,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
     </Acao>}
     {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
       <h2 className="font-medium">{acordo.matricula} · {acordo.moeda}</h2>
-      <p>{acordo.quantidadePactuada} {acordo.unidade.toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoeda(acordo.valorPorUnidade, acordo.moeda ?? "") : "—"} = {acordo.valorTotalPactuado != null ? formatarMoeda(acordo.valorTotalPactuado, acordo.moeda ?? "") : "—"}</>}. {acordo.contrapartida}</p>
+      <p>{acordo.quantidadePactuada} {rotular(UNIDADE_PERMUTA_SERVICO_LABEL, acordo.unidade).toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoeda(acordo.valorPorUnidade, acordo.moeda ?? "") : "—"} = {acordo.valorTotalPactuado != null ? formatarMoeda(acordo.valorTotalPactuado, acordo.moeda ?? "") : "—"}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>
       {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
         <CamposPeriodo nomeInicio="periodoInicio" nomeFim="periodoFim" /><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>

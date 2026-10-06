@@ -8,18 +8,12 @@ import { aceitarSugestao, corrigirSugestao, descartarSugestao, gerarSugestoesLea
 import type { Resultado } from "@/server/_shared/resultado";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { ETAPA_LABEL, SEGMENTO_LABEL, TEMPERATURA_LABEL, TIPO_SUGESTAO_IA_LABEL, rotular } from "@/lib/labels";
 
 // C3 (doc 27): sugestões do copiloto embutidas ONDE O VENDEDOR JÁ ESTÁ (ficha do lead e
 // cockpit da inbox) — sugestão sobre controles que já existem, nunca uma segunda forma de
 // editar o lead. Aceitar/corrigir/descartar em 1 clique; cada decisão alimenta a
 // métrica-gate. A IA é só-leitura: nada aqui envia mensagem ao lead.
-
-const TIPO_LABEL: Record<string, string> = {
-  RESUMO: "Resumo executivo",
-  TEMPERATURA: "Temperatura",
-  SEGMENTO: "Segmento",
-  ETAPA: "Etapa do funil",
-};
 
 const CAMPO_LABEL: Record<string, string> = {
   interesse: "Interesse",
@@ -30,27 +24,13 @@ const CAMPO_LABEL: Record<string, string> = {
   proximaAcao: "Próximo passo",
 };
 
-const VALOR_LABEL: Record<string, string> = {
-  QUENTE: "Quente",
-  MORNO: "Morno",
-  FRIO: "Frio",
-  ADULTO: "Adulto",
-  KIDS: "Kids",
-  TEENS: "Teens",
-  EMPRESA: "Empresa",
-  NOVO: "Novo",
-  EM_ATENDIMENTO: "Em atendimento",
-  QUALIFICADO: "Qualificado",
-  EXPERIMENTAL_AGENDADA: "Experimental agendada",
-};
-
 const btnMini = "rounded-md px-2 py-0.5 text-xs font-medium disabled:opacity-60";
 
 function valorDaSugestao(s: SugestaoPendente): string {
   const p = s.payload as Record<string, unknown>;
-  if (s.tipo === "TEMPERATURA") return VALOR_LABEL[String(p.temperatura)] ?? String(p.temperatura);
-  if (s.tipo === "SEGMENTO") return VALOR_LABEL[String(p.segmento)] ?? String(p.segmento);
-  if (s.tipo === "ETAPA") return VALOR_LABEL[String(p.etapa)] ?? String(p.etapa);
+  if (s.tipo === "TEMPERATURA") return rotular(TEMPERATURA_LABEL, String(p.temperatura));
+  if (s.tipo === "SEGMENTO") return rotular(SEGMENTO_LABEL, String(p.segmento));
+  if (s.tipo === "ETAPA") return rotular(ETAPA_LABEL, String(p.etapa));
   return "";
 }
 
@@ -134,7 +114,7 @@ export function CopilotoSugestoes({
             <li key={s.id} className="rounded-md border border-ai-200 bg-surface px-2.5 py-2 text-xs">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="font-medium text-gray-800">{TIPO_LABEL[s.tipo] ?? s.tipo}</span>
+                  <span className="font-medium text-gray-800">{rotular(TIPO_SUGESTAO_IA_LABEL, s.tipo)}</span>
                   {s.tipo !== "RESUMO" && (
                     <span className="ml-1.5 rounded-full bg-ai-100 px-1.5 py-0.5 text-ai-700">
                       {valorDaSugestao(s)}

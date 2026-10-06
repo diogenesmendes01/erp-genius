@@ -6,8 +6,8 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { HABILIDADE_LABEL } from "@/lib/labels";
 type Nota = { habilidade: "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA"; nota: string | null; comentarioAluno: string };
-const nomes = { FALA: "Fala", COMPREENSAO_ORAL: "Compreensão oral", LEITURA: "Leitura", ESCRITA: "Escrita" };
 
 export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas }: { lancamentoId: string; origemHash: string; versaoEsperada: number; notas: Nota[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
@@ -21,7 +21,7 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
     } catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Propor correção</legend>
-    {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{nomes[n.habilidade]} — nota vigente: {n.nota}</p>
+    {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{HABILIDADE_LABEL[n.habilidade]} — nota vigente: {n.nota}</p>
       <label className="block">Nova nota<input name={`nota-${n.habilidade}`} required maxLength={100} inputMode="decimal" defaultValue={n.nota ?? ""} className="block rounded border p-2" /></label>
       <label className="block">Comentário para o aluno<CampoTexto name={`comentario-${n.habilidade}`} maxLength={2000} defaultValue={n.comentarioAluno} className="block w-full rounded border p-2" /></label>
     </div>)}

@@ -1,13 +1,10 @@
-import { EstadoEnvioAssinatura, Papel } from "@prisma/client";
+import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDocumentosDesistenciaPreparacao } from "@/server/matricula/desistencia-documental";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { ESTADO_ENVIO_ASSINATURA_LABEL } from "@/lib/labels";
 
-const estados: Record<EstadoEnvioAssinatura, string> = {
-  PREPARADO: "Preparado para envio", ENVIANDO: "Envio em andamento", ENVIO_INCERTO: "Resultado do envio incerto",
-  ENVIADO: "Enviado", CANCELADO: "Cancelamento registrado",
-};
 const cancelamentos = {
   NAO_INICIADO: "Nenhum cancelamento para substituição registrado.",
   PENDENTE_SEM_RESULTADO: "Cancelamento para substituição iniciado, ainda sem resultado registrado.",
@@ -36,7 +33,7 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
     <section className="space-y-3"><h2 className="text-lg font-medium">Processos de assinatura</h2>
       {!d.processos.length && <EstadoVazio>Nenhum processo de assinatura registrado nesta matrícula.</EstadoVazio>}
       {d.processos.map((p, i) => <article key={p.id} className="space-y-2 rounded border p-4">
-        <h3 className="font-medium">Processo {i + 1} · {estados[p.estado]}</h3>
+        <h3 className="font-medium">Processo {i + 1} · {ESTADO_ENVIO_ASSINATURA_LABEL[p.estado]}</h3>
         <p>Serviço: {p.fornecedor} · Ambiente: {p.ambiente === "SANDBOX" ? "Teste" : p.ambiente === "PRODUCAO" ? "Produção" : p.ambiente}</p>
         <p>{p.referenciaExternaPresente ? "Referência externa registrada." : "Sem referência externa registrada; isso não comprova ausência de envio."}</p>
         <p>{p.conclusaoRegistrada ? "Conclusão das assinaturas registrada; exige tratamento contratual próprio." : "Sem conclusão de assinaturas registrada nesta consulta."}</p>

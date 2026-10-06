@@ -11,6 +11,8 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { ESTADO_ENVIO_ASSINATURA_LABEL, TIPO_COBRANCA_LABEL, rotular } from "@/lib/labels";
+import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 
 const textoInstanteAdministrativo = (valor: Date | string, preferenciaFusoExibicao: string | null) => {
   const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -41,9 +43,9 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
     {!resultadoConclusao.ok && <p role="alert">{resultadoConclusao.erro}</p>}
     {processo && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Evidências do processo de assinatura</h2>
       <p>Serviço: {processo.fornecedor}. Ambiente: {processo.ambiente === "SANDBOX" ? "Teste — não comprova assinatura em produção" : "Produção"}.</p>
-      <p>Estado do envio: {processo.estadoEnvio}. A evidência preservada não substitui a conferência final da Secretaria.</p>
+      <p>Estado do envio: {rotular(ESTADO_ENVIO_ASSINATURA_LABEL, processo.estadoEnvio)}. A evidência preservada não substitui a conferência final da Secretaria.</p>
       {processo.conclusao ? <><p>Conclusão registrada em {textoInstanteAdministrativo(processo.conclusao.concluidaEm, preferenciaFusoExibicao)}.</p>
-        <ul>{processo.conclusao.assinaturas.map(a => <li key={a.papel}>{a.nome} — {a.papel.replaceAll("_", " ")} — {textoInstanteAdministrativo(a.assinadaEm, preferenciaFusoExibicao)}</li>)}</ul>
+        <ul>{processo.conclusao.assinaturas.map(a => <li key={a.papel}>{a.nome} — {rotular(PAPEIS_MODELO, a.papel)} — {textoInstanteAdministrativo(a.assinadaEm, preferenciaFusoExibicao)}</li>)}</ul>
         <nav className="flex gap-4"><a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(processo.conclusao.id)}/pdf`}>Abrir PDF assinado</a>
           <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(processo.conclusao.id)}/auditoria`}>Baixar auditoria preservada</a></nav>
       </> : <p>Ainda não há evidência de conclusão de todas as assinaturas exigidas.</p>}
@@ -54,7 +56,7 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
       {aceite.aceite && <><p>Aceite confirmado por {aceite.aceite.autor.nome}, em {textoInstanteAdministrativo(aceite.aceite.criadaEm, preferenciaFusoExibicao)}.</p><p>{aceite.aceite.motivo}</p></>}
       {aceite.pendencia && <p role="alert">{aceite.pendencia}</p>}
       {aceite.revisao && <><p>Condições da matrícula: versão {aceite.revisao.versaoCondicoes}. Conferir o aceite não ativa a matrícula.</p>
-        <ul>{aceite.revisao.entrada.itens.map(i => <li key={i.id}>{i.tipo.replaceAll("_", " ")}: {formatarMoeda(i.valor, i.moeda)}. {i.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</li>)}</ul>
+        <ul>{aceite.revisao.entrada.itens.map(i => <li key={i.id}>{rotular(TIPO_COBRANCA_LABEL, i.tipo)}: {formatarMoeda(i.valor, i.moeda)}. {i.confirmada ? "Recebimento confirmado." : "Recebimento ainda não confirmado."}</li>)}</ul>
         {!!aceite.revisao.entrada.emitirNaAtivacao.length && <p>Existe cobrança prevista para emissão na ativação, conforme as condições do contrato.</p>}
         <ConferirAceite key={aceite.revisao.hash} matriculaId={id} conclusaoId={aceite.revisao.conclusaoId} revisaoHash={aceite.revisao.hash} />
       </>}
