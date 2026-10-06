@@ -16,7 +16,23 @@ vi.mock("react", async (original) => {
 const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
 vi.mock("@/lib/filtros-url", async (original) => {
   const real = await original<typeof import("@/lib/filtros-url")>();
-  return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => { capturado.opcoes.push(o as never); return real.useFiltrosUrl(o); } };
+  // O handler de clique sai marcado com o href que o gerou (R3 da #136, B10).
+  return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => {
+    capturado.opcoes.push(o as never);
+    const r = real.useFiltrosUrl(o);
+    return { ...r, aoClicar: (href: string) => Object.assign(r.aoClicar(href), { navegaPara: href }) };
+  } };
+});
+// Cada <Link> renderizado: o href do link e o handler do clique (com JavaScript, o clique simples segue o
+// handler, não o href) — R3 da #136, B10.
+const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string } }[] }));
+vi.mock("next/link", async () => {
+  const { createElement: h } = await import("react");
+  const texto = (c: unknown): string => typeof c === "string" ? c : Array.isArray(c) ? c.map(texto).join("") : "";
+  return { default: ({ href, onClick, children, ...resto }: { href: string; onClick?: { navegaPara?: string }; children?: unknown }) => {
+    links.lista.push({ href: String(href), texto: texto(children), onClick });
+    return h("a", { href, ...resto }, children as never);
+  } };
 });
 
 import { EmpresasCliente } from "./EmpresasCliente";
@@ -111,4 +127,27 @@ describe("EmpresasCliente: a ordem escolhida sobrevive à busca, ao formulário 
     // Exatamente a página 1 (sem `pagina`), mantendo a ordem — R2 da #136, B8.
     expect(html).toMatch(new RegExp('<a[^>]*href="/empresas[?]ordem=nome&amp;dir=desc"[^>]*>Ir para a primeira página</a>'));
   });
+});
+
+describe("EmpresasCliente: com JavaScript, o clique de cada link vai para o MESMO href do link (R3 da #136, B10)", () => {
+  const cliques = (props: Parameters<typeof render>[0]) => {
+    links.lista = [];
+    render(props);
+    return links.lista;
+  };
+  const CASOS: [nome: string, props: Parameters<typeof render>[0], esperados: string[]][] = [
+    ["página além do fim, com ordem: \"Ir para a primeira página\"", { empresas: [], total: 5, totalBase: 5, filtros: lerFiltrosEmpresas({ ordem: "nome", dir: "desc", pagina: "3" }) }, ["Ir para a primeira página"]],
+    ["filtro sem resultado: os dois \"Limpar filtros\" (barra e vazio)", { empresas: [], total: 0, totalBase: 5, filtros: lerFiltrosEmpresas({ busca: "x", ordem: "nome", dir: "desc" }) }, ["Limpar filtros"]],
+    ["lista com resultados e ordem: colunas, paginação e limpar", { empresas: [empresa(1)], total: EMPRESAS_POR_PAGINA * 3, totalBase: EMPRESAS_POR_PAGINA * 3, filtros: lerFiltrosEmpresas({ busca: "e", ordem: "colaboradores", dir: "desc", pagina: "2" }) }, ["Código", "Empresa", "Colaboradores", "Limpar filtros"]],
+  ];
+  for (const [nome, props, esperados] of CASOS) {
+    it(nome, () => {
+      const lista = cliques(props);
+      // Todo link da lista navega pelo handler da transição, e o handler vai para o href do próprio link.
+      const daLista = lista.filter((l) => l.href === "/empresas" || l.href.startsWith("/empresas?"));
+      expect(daLista.filter((l) => !l.onClick).map((l) => `${l.texto} ${l.href}`), "link da lista sem clique na transição").toEqual([]);
+      expect(daLista.filter((l) => l.onClick?.navegaPara !== l.href).map((l) => `${l.texto}: href ${l.href} · clique ${l.onClick?.navegaPara}`)).toEqual([]);
+      for (const texto of esperados) expect(daLista.some((l) => l.texto === texto), texto).toBe(true);
+    });
+  }
 });

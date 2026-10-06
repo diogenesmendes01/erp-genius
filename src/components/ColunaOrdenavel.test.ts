@@ -49,3 +49,21 @@ describe("ColunaOrdenavel", () => {
     expect(html).toMatch(/<svg[^>]*aria-hidden="true"/);
   });
 });
+
+describe("ColunaOrdenavel: com JavaScript, o clique vai para o mesmo href do link (R3 da #136, B10)", () => {
+  // aoClicar é chamado no render com o destino do clique; ele tem de ser o href do próprio link (a próxima
+  // direção, sem `pagina`), não a rota pura nem a direção atual.
+  const casos: [Ordenacao | null, string][] = [
+    [{ campo: "nome", dir: "asc" }, "/alunos?busca=ana&status=ATIVO&ordem=nome&dir=desc"],
+    [{ campo: "nome", dir: "desc" }, "/alunos?busca=ana&status=ATIVO&ordem=nome&dir=asc"],
+    [null, "/alunos?busca=ana&status=ATIVO&ordem=nome&dir=asc"],
+  ];
+  for (const [ordenacao, esperado] of casos) {
+    it(`ordem ${ordenacao ? ordenacao.dir : "nenhuma"}: clique e href → ${esperado}`, () => {
+      const destinos: string[] = [];
+      const html = render(ordenacao, { aoClicar: (h: string) => { destinos.push(h); return () => {}; } });
+      expect(href(html)).toBe(esperado);
+      expect(destinos).toEqual([esperado]);
+    });
+  }
+});
