@@ -609,16 +609,28 @@ function ehBotaoDoDesign(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf:
 }
 
 /** Linhas de tabela de botão (`{ label, variante }`): rótulo destrutivo exige variante perigo. */
+/** Literal de texto por trás da expressão (`as`/`satisfies`, parênteses, template sem substituição, constante); "?" se não for literal. */
+function literalResolvido(e: ts.Expression, consts: Map<string, ts.Expression>, prof = 0): string {
+  while (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isSatisfiesExpression(e) || ts.isTypeAssertionExpression(e)) e = e.expression;
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
+  if (ts.isIdentifier(e) && consts.has(e.text) && prof < 6) return literalResolvido(consts.get(e.text)!, consts, prof + 1);
+  return "?";
+}
+
 export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const consts = constantesDoArquivo(sf);
   const achados: string[] = [];
   const visita = (n: ts.Node) => {
     if (ts.isObjectLiteralExpression(n)) {
-      const prop = (nomes: RegExp) => n.properties.find((p) => ts.isPropertyAssignment(p) && nomes.test(p.name.getText(sf)) && ts.isStringLiteral(p.initializer)) as ts.PropertyAssignment | undefined;
+      // Valor literal resolvido: `as const`/`satisfies`, template sem substituição e constante do arquivo
+      // contam (R2 da #135, B1); o que não se resolve vira "?" — e "?" não é perigo.
+      const prop = (nomes: RegExp) => {
+        const p = n.properties.find((x) => ts.isPropertyAssignment(x) && nomes.test(x.name.getText(sf))) as ts.PropertyAssignment | undefined;
+        return p ? literalResolvido(p.initializer, consts) : null;
+      };
       const rotulo = prop(/^(label|rotulo)$/), variante = prop(/^variante$/);
-      if (rotulo && variante && fragmentoDestrutivo((rotulo.initializer as ts.StringLiteral).text) && (variante.initializer as ts.StringLiteral).text !== "perigo") {
-        achados.push(`${(rotulo.initializer as ts.StringLiteral).text} → ${(variante.initializer as ts.StringLiteral).text}`);
-      }
+      if (rotulo !== null && variante !== null && fragmentoDestrutivo(rotulo) && variante !== "perigo") achados.push(`${rotulo} → ${variante}`);
     }
     ts.forEachChild(n, visita);
   };
@@ -660,6 +672,25 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const texto = (n: ts.Node) => n.getText(sf).replace(/\s+/g, " ");
   const variaveis = new Map<string, ts.Node>();
+  /** Funções do arquivo cujo corpo decide por comparação ou ternário (seleção escondida numa função). */
+  const funcoesQueDecidem = new Set<string>();
+  const opacas = new Set<ts.Node>();
+  const decide = (corpo: ts.Node): boolean => {
+    let achou = false;
+    const andar = (x: ts.Node) => {
+      if (achou) return;
+      if (ts.isConditionalExpression(x) || (ts.isBinaryExpression(x) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(x.operatorToken.kind))) achou = true;
+      else ts.forEachChild(x, andar);
+    };
+    andar(corpo);
+    return achou;
+  };
+  const coletarFuncoes = (n: ts.Node) => {
+    if (ts.isFunctionDeclaration(n) && n.name && n.body && decide(n.body)) funcoesQueDecidem.add(n.name.text);
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) && decide(n.initializer.body)) funcoesQueDecidem.add(n.name.text);
+    ts.forEachChild(n, coletarFuncoes);
+  };
+  coletarFuncoes(sf);
   const coletar = (n: ts.Node) => {
     if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) variaveis.set(n.name.text, n.initializer);
     ts.forEachChild(n, coletar);
@@ -683,7 +714,12 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
       if (ts.isConditionalExpression(n)) achadas.push(n.condition);
       else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(n.left);
       else if (ts.isElementAccessExpression(n)) { const procura = (x: ts.Node) => { if (ts.isExpression(x) && booleana(x as ts.Expression)) achadas.push(x as ts.Expression); else ts.forEachChild(x, procura); }; procura(n.argumentExpression); }
-      else if (ts.isCallExpression(n) && !(ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses")) { for (const a of n.arguments) if (booleana(a)) achadas.push(a); }
+      else if (ts.isCallExpression(n) && !(ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses")) {
+        for (const a of n.arguments) if (booleana(a)) achadas.push(a);
+        // Função local cujo corpo decide por comparação (`estiloSelecao(tipo, t)` com `atual === opcao ? …`):
+        // a seleção foi para dentro da função — condição opaca, exige aria-pressed (R2 da #135, B4).
+        if (ts.isIdentifier(n.expression) && funcoesQueDecidem.has(n.expression.text)) { achadas.push(n); opacas.add(n); }
+      }
       else if (ts.isIdentifier(n) && variaveis.has(n.text) && !vistas.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
         vistas.add(n.text);
         achadas.push(...condicoesDe(variaveis.get(n.text)!, vistas));
@@ -715,11 +751,31 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
       if (ab.tagName.getText(sf) === "fieldset") return true;
       const at = (nome: string) => ab.attributes.properties.find((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
       const role = at("role")?.initializer;
-      if (role && ts.isStringLiteral(role) && role.text === "group" && (at("aria-label") || at("aria-labelledby"))) return true;
+      // Nome de verdade: texto não vazio (literal) ou expressão; `aria-label=""` não nomeia (R2 da #135, B3).
+      const nomeia = (a: ts.JsxAttribute | undefined) => {
+        const v = a?.initializer;
+        if (!v) return false;
+        if (ts.isStringLiteral(v)) return v.text.trim() !== "";
+        return ts.isJsxExpression(v) && !!v.expression && !(ts.isStringLiteral(v.expression) && v.expression.text.trim() === "");
+      };
+      if (role && ts.isStringLiteral(role) && role.text === "group" && (nomeia(at("aria-label")) || nomeia(at("aria-labelledby")))) return true;
     }
     return false;
   };
   const chaves = (es: ts.Expression[]) => es.map((e) => condicaoNormalizada(e, sf));
+  /** Valor de atributo ARIA que não diz nada: ausente, literal booleano/nulo/texto, `undefined`. */
+  const constante = (ini: ts.JsxAttributeValue | undefined): boolean => {
+    const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
+    return !expr || ts.isStringLiteral(ini!) || [K.TrueKeyword, K.FalseKeyword, K.NullKeyword].includes(expr.kind) || ts.isStringLiteral(expr)
+      || ts.isNoSubstitutionTemplateLiteral(expr) || (ts.isIdentifier(expr) && expr.text === "undefined");
+  };
+  /** Condição que um atributo de estado expressa: a do ternário (`atual ? "page" : undefined`) ou a própria expressão. */
+  const condicaoDoAtributo = (ini: ts.JsxAttributeValue | undefined): ts.Expression | null => {
+    const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
+    if (!expr) return null;
+    let e = expr; while (ts.isParenthesizedExpression(e)) e = e.expression;
+    return ts.isConditionalExpression(e) ? e.condition : e;
+  };
   const achados: string[] = [];
   const visitar = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Botao"].includes(n.tagName.getText(sf))) {
@@ -733,10 +789,8 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
         // um grupo rotulado (R1 da #135, B3/B5).
         const ini = attrs.get("aria-pressed");
         const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
-        const constante = !expr || ts.isStringLiteral(ini!) || [K.TrueKeyword, K.FalseKeyword, K.NullKeyword].includes(expr.kind) || ts.isStringLiteral(expr)
-          || (ts.isIdentifier(expr) && expr.text === "undefined");
-        if (constante) achados.push(`${nome} — aria-pressed constante`);
-        else if (daClasse.length) {
+        if (constante(ini)) achados.push(`${nome} — aria-pressed constante`);
+        else if (daClasse.length && !daClasse.some((c) => opacas.has(c))) {
           const [cp, np] = condicaoNormalizada(expr!, sf);
           if (!chaves(daClasse).some(([c, neg]) => c === cp && neg === np)) achados.push(`${nome} — aria-pressed não é a condição da classe`);
         }
@@ -744,9 +798,21 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
         const chavesDaClasse = chaves(daClasse).map(([c]) => c);
         if (chaves(doNome).some(([c]) => chavesDaClasse.includes(c))) achados.push(`${nome} — aria-pressed com rótulo que muda`);
         if (!emGrupoRotulado(n)) achados.push(`${nome} — aria-pressed fora de grupo rotulado`);
-      } else if (daClasse.length && !["aria-current", "aria-expanded", "aria-haspopup"].some((a) => attrs.has(a))) {
+      } else if (daClasse.length) {
+        // Quem abre ou navega anuncia o estado em aria-current/aria-expanded — mas só isenta se o valor
+        // for a MESMA condição da classe; `aria-current={undefined}` ou `aria-expanded={false}` não
+        // anunciam nada (R2 da #135, B2). aria-haspopup (botão de menu) isenta se não for "false".
+        const chavesDaClasse = chaves(daClasse).map(([c]) => c);
+        const isentoPorEstado = ["aria-current", "aria-expanded"].some((a) => {
+          if (!attrs.has(a) || constante(attrs.get(a))) return false;
+          const cond = condicaoDoAtributo(attrs.get(a));
+          return !!cond && chavesDaClasse.includes(condicaoNormalizada(cond, sf)[0]);
+        });
+        const haspopup = attrs.get("aria-haspopup");
+        const isentoPorMenu = attrs.has("aria-haspopup") && !(haspopup && ts.isStringLiteral(haspopup) && haspopup.text === "false")
+          && !(haspopup && ts.isJsxExpression(haspopup) && haspopup.expression?.kind === K.FalseKeyword);
         const textosDoNome = doNome.map(texto);
-        if (!daClasse.map(texto).some((c) => textosDoNome.includes(c))) achados.push(nome);
+        if (!isentoPorEstado && !isentoPorMenu && !daClasse.map(texto).some((c) => textosDoNome.includes(c))) achados.push(nome);
       }
     }
     ts.forEachChild(n, visitar);
@@ -1058,10 +1124,11 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
 
 // Rótulo que a trava não resolve estaticamente (prop, chamada): arquivo + nome (nomeDoElemento) +
 // quantos + motivo. Falha fechada: um botão novo assim não passa sem entrar aqui (R1 da #135, B1/B4).
-const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string }[] = [
+type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string; onde: string[] };
+const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
   { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "→", vezes: 1, motivo: "link para o cadastro vinculado: o rótulo é o nome do aluno/lead (navegação, não ação)" },
-  { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos do arquivo, todos 'Registrar …' / 'Reservar …'" },
-  { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo", onde: ["src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx"] }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos do arquivo, todos 'Registrar …' / 'Reservar …'" },
+  { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo", onde: ["src/app"] }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];
 
 describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", () => {
@@ -1073,6 +1140,38 @@ describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", 
     const esperado = new Map(ROTULOS_DINAMICOS.map((r) => [`${r.arquivo} | ${r.nome}`, r.vezes]));
     expect(Object.fromEntries(contagem)).toEqual(Object.fromEntries(esperado));
     for (const r of ROTULOS_DINAMICOS) expect(r.motivo.trim().length, r.nome).toBeGreaterThan(20);
+  });
+
+  // O rótulo dinâmico vem de uma prop: cada valor passado a ela (em todos os usos) tem de se resolver e
+  // não pode nomear ação destrutiva — senão o botão de envio, secundário, herdaria "Excluir …" (R2 da #135, B6).
+  it("rótulos dinâmicos: todos os valores que alimentam o rótulo se resolvem e nenhum é destrutivo", () => {
+    for (const r of ROTULOS_DINAMICOS.filter((x) => x.fontes)) {
+      const { componente, atributo, propriedade, onde } = r.fontes!;
+      const arquivosFonte = onde.flatMap((o) => o.endsWith(".tsx") ? [o] : (readdirSync(o, { recursive: true }) as string[]).filter((x) => x.endsWith(".tsx") && !x.includes(".test.")).map((x) => join(o, x).split("\\").join("/")));
+      const valores: string[] = [];
+      for (const arquivo of arquivosFonte) {
+        const sf = ts.createSourceFile(arquivo, readFileSync(arquivo, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        const consts = constantesDoArquivo(sf);
+        const visita = (n: ts.Node) => {
+          if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === componente) {
+            const at = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === atributo) as ts.JsxAttribute | undefined;
+            let expr: ts.Expression | undefined = at?.initializer ? (ts.isStringLiteral(at.initializer) ? at.initializer : ts.isJsxExpression(at.initializer) ? at.initializer.expression : undefined) : undefined;
+            if (expr && propriedade) {
+              const obj = ts.isObjectLiteralExpression(expr) ? expr : undefined;
+              const p = obj?.properties.find((x) => ts.isPropertyAssignment(x) && x.name.getText(sf) === propriedade) as ts.PropertyAssignment | undefined;
+              expr = p?.initializer;
+            }
+            const alt = expr ? alternativasDeTexto(expr, consts) : null;
+            if (alt === null) valores.push(`${arquivo}: <${componente}> ${atributo} não resolvível`);
+            else for (const t of alt) { valores.push(t); if (fragmentoDestrutivo(t)) valores.push(`${arquivo}: <${componente}> "${t}" é destrutivo`); }
+          }
+          ts.forEachChild(n, visita);
+        };
+        visita(sf);
+      }
+      expect(valores.filter((v) => /não resolvível|é destrutivo/.test(v)), r.arquivo).toEqual([]);
+      expect(valores.length, `${r.arquivo}: nenhum uso de <${componente}> encontrado`).toBeGreaterThan(0);
+    }
   });
 
   it("rotulosNaoResolvidos (autoteste): começo dinâmico acusa; constante, template, verbo antes do dinâmico e tabela com variante passam", () => {
@@ -1111,13 +1210,14 @@ describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
   // cor/borda da paleta ai-* (texto branco no sólido).
   const fonte = readFileSync("src/components/CopilotoSugestoes.tsx", "utf8");
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const classesDosIsentos: { nome: string; expr: string }[] = [];
+  const classesDosIsentos: { nome: string; expr: string; estilo: boolean }[] = [];
   const visita = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
       const nome = nomeDoElemento(n, sf) ?? "";
       if ((CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? []).includes(nome)) {
         const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
-        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "" });
+        const estilo = n.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "style") || n.attributes.properties.some(ts.isJsxSpreadAttribute);
+        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "", estilo });
       }
     }
     ts.forEachChild(n, visita);
@@ -1130,7 +1230,9 @@ describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
 
   it("cada botão isento usa btnIa e só soma classes da paleta ai-* (e texto branco)", () => {
     expect(classesDosIsentos.map((c) => c.nome).sort()).toEqual([...(CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? [])].sort());
-    for (const { nome, expr } of classesDosIsentos) {
+    for (const { nome, expr, estilo } of classesDosIsentos) {
+      // Sem style inline nem spread: a cor só pode vir das classes ai-* conferidas abaixo (R2 da #135, B5).
+      expect(estilo, `${nome}: style/spread`).toBe(false);
       expect(expr, nome).toMatch(/^\{btnIa \+ "[^"]*"\}$/);
       const extras = expr.match(/"([^"]*)"/)![1].trim().split(/\s+/);
       for (const c of extras) expect(/^(hover:)?(bg|text|border)-ai-[\w-]+$|^border$|^text-white$|^hover:brightness-95$/.test(c), `${nome}: ${c}`).toBe(true);
