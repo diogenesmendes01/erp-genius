@@ -7,7 +7,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreparacaoContratacao } from "@/server/matricula/preparacao-consulta";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { VoltarPara } from "@/components/VoltarPara";
-import { STATUS_RESERVA_VAGA_LABEL } from "@/lib/labels";
+import { FORMA_AGENDA_OFERTA_LABEL, STATUS_RESERVA_VAGA_LABEL, rotular } from "@/lib/labels";
 export default async function PreparacaoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
@@ -30,7 +30,7 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
       <dl className="space-y-2"><div><dt>Regime proposto</dt><dd>{tipos[p.regime]}</dd></div><div><dt>Taxa proposta</dt><dd>{formatarMoeda(Number(p.taxaProposta), p.moeda)}</dd></div><div><dt>Valor proposto por mensalidade ou hora</dt><dd>{formatarMoeda(Number(p.valorServicoProposto), p.moeda)}</dd></div></dl>
       <p className="whitespace-pre-wrap">{p.motivo}</p>
       <h2 className="text-xl">Regras de entrada registradas</h2>
-      <p>Agenda registrada na preparação: {p.politicaEntrada?.formaAgenda === "TURMA" ? "Turma" : p.politicaEntrada?.formaAgenda === "PARTICULAR_GRADE_FIXA" ? "Particular com grade fixa" : p.politicaEntrada?.formaAgenda === "PARTICULAR_FLEXIVEL" ? "Particular com agenda flexível" : "Pendente de conferência"}.</p>
+      <p>Agenda registrada na preparação: {p.politicaEntrada?.formaAgenda ? rotular(FORMA_AGENDA_OFERTA_LABEL, p.politicaEntrada.formaAgenda) : "Pendente de conferência"}.</p>
       <p>Taxa antes da assinatura: {p.politicaEntrada?.taxaPreviaAssinatura == null ? "Pendente de definição" : p.politicaEntrada.taxaPreviaAssinatura ? "Exigida" : "Não exigida antes da assinatura"}.</p>
       {p.regime === "MENSALIDADE" && <p>Primeira mensalidade paga para ativar: {p.politicaEntrada?.exigirPrimeiraMensalidade == null ? "Pendente de definição" : p.politicaEntrada.exigirPrimeiraMensalidade ? "Exigida" : "Não exigida"}.</p>}
       {p.regime === "HORA_PARTICULAR" && <p>Adiantamento inicial: {p.politicaEntrada?.adiantamentoHoraExigido == null ? "Pendente de definição" : p.politicaEntrada.adiantamentoHoraExigido ? "Exigido; valor e horas ainda devem ser conferidos" : "Dispensado"}.</p>}

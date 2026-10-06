@@ -9,6 +9,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { DESFECHO_OCORRENCIA_HORAS_LABEL, rotular } from "@/lib/labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -39,7 +40,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
         <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. Desconto original: {formatarMoeda(c.descontoOriginal, c.moeda)}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{c.minutosReservados} minutos reservados · {c.minutosConsumidos} consumidos · {c.minutosConvertidosCredito} convertidos em crédito · {c.minutosDisponiveis} ainda não reservados.</p>
-        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${r.consumo.conferenciaOcorrencia.desfecho}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
+        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, r.consumo.conferenciaOcorrencia.desfecho).toLowerCase()}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
           {!r.consumo && !r.liberada && r.statusEncontro !== "CANCELADO" && <ConsumoHoras reservaId={r.id} aoSalvar={carregar} />}
           {r.statusEncontro === "CANCELADO" && !r.consumo && <LiberacaoHoras alunoId={alunoId} reservaId={r.id} propostas={r.propostasLiberacao} aoSalvar={carregar} />}
         </div>)}

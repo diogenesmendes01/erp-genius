@@ -6,12 +6,13 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { ConfirmarEmissao } from "./ConfirmarEmissao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { TIPO_COBRANCA_ENTRADA_LABEL, rotular } from "@/lib/labels";
 export default async function EmissaoPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, r = await consultarTelaEmissao(id);
   const links = <nav className="flex gap-4"><Link className="underline" href={`/matriculas/${id}/preparacao`}>Proposta e pendências</Link><Link className="underline" href={`/matriculas/${id}/pagador`}>Pagador</Link><Link className="underline" href={`/matriculas/${id}/condicoes`}>Condições de entrada</Link></nav>;
   if (!r.ok || !r.dado) return <div className="space-y-4">{links}<p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></div>;
-  const tipo = (v: string) => v === "MATRICULA" ? "Taxa de matrícula" : v === "MENSALIDADE" ? "Primeira mensalidade" : "Adiantamento por hora";
+  const tipo = (v: string) => rotular(TIPO_COBRANCA_ENTRADA_LABEL, v);
   if (r.dado.estado === "EMITIDA") {
     const c = r.dado.registro;
     return <div className="space-y-4">{links}<h1 className="text-2xl">Emissão inicial registrada</h1><p>Conferida por {c.autor.nome} em {c.criadaEm.toISOString()} (UTC).</p><p>{c.motivo}</p><ul>{c.cobrancas.map((b) => <li key={b.id}>{tipo(b.tipo)} · {formatarMoeda(Number(b.valor), b.moeda)} · Vencimento {formatarDataCivil(b.vencimento)}</li>)}</ul><p>Estes são os valores originalmente emitidos. A confirmação do recebimento e eventuais ajustes são acompanhados no Financeiro. A emissão não ativa a matrícula.</p><Link className="underline" href="/financeiro">Abrir Financeiro</Link>{r.dado.particular && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/entrada-particular`}>Conferir pagamentos de entrada da particular</Link>}</div>;

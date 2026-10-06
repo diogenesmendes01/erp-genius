@@ -3,7 +3,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarDocumentosDesistenciaPreparacao } from "@/server/matricula/desistencia-documental";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { ESTADO_ENVIO_ASSINATURA_LABEL } from "@/lib/labels";
+import { AMBIENTE_ASSINATURA_LABEL, ESTADO_ENVIO_ASSINATURA_LABEL, rotular } from "@/lib/labels";
 
 const cancelamentos = {
   NAO_INICIADO: "Nenhum cancelamento para substituição registrado.",
@@ -34,7 +34,7 @@ export default async function DocumentosDesistenciaPage({ params }: { params: Pr
       {!d.processos.length && <EstadoVazio>Nenhum processo de assinatura registrado nesta matrícula.</EstadoVazio>}
       {d.processos.map((p, i) => <article key={p.id} className="space-y-2 rounded border p-4">
         <h3 className="font-medium">Processo {i + 1} · {ESTADO_ENVIO_ASSINATURA_LABEL[p.estado]}</h3>
-        <p>Serviço: {p.fornecedor} · Ambiente: {p.ambiente === "SANDBOX" ? "Teste" : p.ambiente === "PRODUCAO" ? "Produção" : p.ambiente}</p>
+        <p>Serviço: {p.fornecedor} · Ambiente: {rotular(AMBIENTE_ASSINATURA_LABEL, p.ambiente)}</p>
         <p>{p.referenciaExternaPresente ? "Referência externa registrada." : "Sem referência externa registrada; isso não comprova ausência de envio."}</p>
         <p>{p.conclusaoRegistrada ? "Conclusão das assinaturas registrada; exige tratamento contratual próprio." : "Sem conclusão de assinaturas registrada nesta consulta."}</p>
         <p>{cancelamentos[p.cancelamentoSubstituicao.situacao]}</p>

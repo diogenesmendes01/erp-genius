@@ -9,6 +9,7 @@ import { EmitirFechamento } from "./EmitirFechamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { DESFECHO_OCORRENCIA_HORAS_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string(), fuso: z.string(), vencimento: z.string() }),
@@ -94,7 +95,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               {anterior && <> <Link className="underline" href={`${base}&versao=${encodeURIComponent(anterior.rascunhoId)}`}>Consultar fechamento da cobrança {anterior.codigo ?? anterior.cobrancaId}</Link></>}
             </li>;
           })}</ul>
-          {m.data.apuracao.semCobranca.length > 0 && <ul>{m.data.apuracao.semCobranca.map(p => <li key={p.encontroId}>{instanteEncontro(p.origem.inicio)} · Sem cobrança: {p.desfecho === "CANCELAMENTO_ESCOLA" ? "cancelamento pela escola" : p.desfecho === "CANCELAMENTO_NO_PRAZO" ? "cancelamento do aluno dentro do prazo" : p.desfecho}.</li>)}</ul>}
+          {m.data.apuracao.semCobranca.length > 0 && <ul>{m.data.apuracao.semCobranca.map(p => <li key={p.encontroId}>{instanteEncontro(p.origem.inicio)} · Sem cobrança: {rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, p.desfecho).toLowerCase()}.</li>)}</ul>}
         </>}
         {q.versao && v.podeDecidir && <DecidirFechamento alunoId={d.matricula.alunoId} matriculaId={id} rascunhoId={v.id} />}
         {q.versao && m?.success && v.decisao?.aprovada && !v.emissao && m.data.apuracao.itens.length > 0 && ["APURACAO_COMPLETA", "PROPOSTA_PARCIAL"].includes(m.data.apuracao.estado) &&

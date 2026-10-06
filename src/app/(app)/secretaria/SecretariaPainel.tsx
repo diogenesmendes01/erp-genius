@@ -10,7 +10,7 @@ import { assumirMatricula, solicitarCorrecaoCadastro, resolverCorrecaoCadastro, 
 import { concluirMatricula } from "@/server/matricula/acoes";
 import { conferirCoberturaInicial } from "@/server/secretaria/cobertura";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { STATUS_MATRICULA_LABEL, rotular, CATEGORIA_DOCUMENTO_LABEL, STATUS_CORRECAO_CADASTRO_LABEL } from "@/lib/labels";
+import { STATUS_MATRICULA_LABEL, rotular, CATEGORIA_DOCUMENTO_LABEL, STATUS_CORRECAO_CADASTRO_LABEL, REFERENCIA_COBERTURA_MENSAL_LABEL } from "@/lib/labels";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
@@ -52,7 +52,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
         </table>
         {!m.mensalidadesExibidas.length && <EstadoVazio>Nenhuma mensalidade registrada.</EstadoVazio>}
       </div>}
-      <p className="text-sm">Cobertura: {m.cobertura.referencia === "MES_CIVIL" ? "Mês civil" : m.cobertura.referencia === "CICLO_MATRICULA" ? "Ciclo mensal da matrícula" : "Referência pendente"} · {formatarDataCivil(m.cobertura.inicio, "Início pendente")} até {formatarDataCivil(m.cobertura.fim, "Fim pendente")}. Vencimento e cobertura são independentes.</p>
+      <p className="text-sm">Cobertura: {m.cobertura.referencia ? rotular(REFERENCIA_COBERTURA_MENSAL_LABEL, m.cobertura.referencia) : "Referência pendente"} · {formatarDataCivil(m.cobertura.inicio, "Início pendente")} até {formatarDataCivil(m.cobertura.fim, "Fim pendente")}. Vencimento e cobertura são independentes.</p>
       {secretaria && m.assumida && !m.contratoConfirmado && ["RASCUNHO", "AGUARDANDO"].includes(m.status) && <form key={`${m.cobertura.cobrancaId}-${m.cobertura.versao}`} className="flex flex-wrap items-end gap-2 rounded border p-3" onSubmit={(e) => {
         e.preventDefault(); const f = new FormData(e.currentTarget);
         void executar(() => conferirCoberturaInicial({ matriculaId: m.id, cobrancaId: m.cobertura.cobrancaId ?? "", versaoEsperada: m.cobertura.versao ?? -1, primeiroVencimento: String(f.get("vencimento")), cobertura: { referencia: String(f.get("referencia")) as "MES_CIVIL" | "CICLO_MATRICULA", inicio: String(f.get("inicio")) }, motivo: String(f.get("motivo")) }));
