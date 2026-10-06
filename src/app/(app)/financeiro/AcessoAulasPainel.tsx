@@ -96,7 +96,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
         <HistoricoSolicitacaoAcessoAulas solicitacao={p} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         {p.podeDecidir && <div className="space-y-2">
           <label className="block text-xs">Motivo da decisão<CampoTexto className={campo} rows={2} maxLength={2000} value={motivosDecisao[p.id] ?? ""} onChange={(e) => setMotivosDecisao((atual) => ({ ...atual, [p.id]: e.target.value }))} /></label>
-          <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar</button><button className={botao} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar</button></div>
+          <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, true)}>Aprovar</button><button className={botaoClasses({ variante: "perigo" })} disabled={acao.ocupado || (motivosDecisao[p.id] ?? "").trim().length < 5} onClick={() => decidir(p.id, false)}>Rejeitar</button></div>
         </div>}
         <FeedbackAcao erro={alvo === `decisao:${p.id}` ? acao.erro : null} sucesso={alvo === `decisao:${p.id}` ? acao.sucesso : undefined} />
         {!p.podeDecidir && p.status === "PENDENTE" && <p className="text-xs text-gray-500">Aguardando decisão de outra pessoa da administração.</p>}

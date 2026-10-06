@@ -18,7 +18,7 @@ export default async function FilaContinuidadeMensalPage({ searchParams }: { sea
     <VoltarPara href="/financeiro" />
     <h1 className="text-2xl font-medium">Fila de continuidade mensal</h1>
     <p>Consulte as condições de cada matrícula antes de qualquer providência. Esta tela não emite cobranças nem atesta que o processamento recorrente esteja ativo.</p>
-    <FilaContinuidadeMensal itens={itens} />
+    <FilaContinuidadeMensal itens={itens} cursor={cursor} />
     {proximoCursor && <Link className="underline" href={`/financeiro/continuidade?cursor=${encodeURIComponent(proximoCursor)}`}>Próxima página</Link>}
     {cursor && <Link className="ml-4 underline" href="/financeiro/continuidade">Voltar ao início</Link>}
   </section>;

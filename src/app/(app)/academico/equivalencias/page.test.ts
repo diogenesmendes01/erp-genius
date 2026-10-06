@@ -55,4 +55,41 @@ describe("listagem de equivalências", () => {
     expect(mocks.listar).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
+
+  // Revisão R1 da #134 (B1/B5): a fila de autorizadas é recortada da página; a página 1 só afirma
+  // "nenhuma nesta matrícula" quando a lista inteira coube nela.
+  describe("autorizações aguardando execução — vazio", () => {
+    const rejeitadas = (n: number) => Array.from({ length: n }, (_, i) => ({ ...proposta, id: `p${i}`, estado: "REJEITADA" }));
+    const render = async (sp: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ matriculaId: "matricula-1", ...sp }) }));
+
+    it("página 1 com mais páginas: não afirma ausência na matrícula", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(50), proximoCursor: "p49" } });
+      const html = await render({});
+      expect(html).toContain("Nenhuma proposta autorizada entre as mais recentes. Confira as próximas propostas.");
+      expect(html).not.toContain("nesta matrícula.");
+      expect(html).not.toContain("nesta página");
+    });
+
+    it("página 1 com a lista inteira: afirma que nenhuma aguarda execução na matrícula", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), proximoCursor: null } });
+      expect(await render({})).toContain("Nenhuma proposta autorizada aguarda execução nesta matrícula.");
+    });
+
+    it("página seguinte: texto de página e volta ao início com a matrícula", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), proximoCursor: null } });
+      const html = await render({ cursor: "p49" });
+      expect(html).toContain("Nenhuma proposta autorizada aguarda execução nesta página.");
+      expect(html).toContain('<a class="inline-block underline" href="/academico/equivalencias?matriculaId=matricula-1">Ir para a primeira página</a>');
+    });
+
+    it("página vazia: só o vazio da lista, sem o da fila (e página seguinte não afirma ausência na matrícula)", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [], proximoCursor: null } });
+      const primeira = await render({});
+      expect(primeira).toContain("Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.");
+      expect(primeira).not.toContain("Nenhuma proposta autorizada");
+      const seguinte = await render({ cursor: "p49" });
+      expect(seguinte).toContain("Nenhuma proposta de aproveitamento nesta página.");
+      expect(seguinte).not.toContain("encontrada para esta matrícula");
+    });
+  });
 });

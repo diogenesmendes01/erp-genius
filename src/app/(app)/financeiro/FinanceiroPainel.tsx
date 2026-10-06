@@ -296,7 +296,7 @@ export function Aprovacoes({
                   <button
                     onClick={() => onDecidir(a.id, false)}
                     disabled={isPending}
-                    className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
+                    className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
                   >
                     Rejeitar
                   </button>

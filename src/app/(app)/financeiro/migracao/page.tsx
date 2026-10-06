@@ -14,7 +14,9 @@ export default async function FilaConciliacaoPage({ searchParams }: { searchPara
     <h1 className="text-xl font-medium">Conciliação financeira da migração</h1>
     <p>Confira as fontes históricas e proponha sua conciliação com o contrato correspondente. A proposta exige aprovação independente.</p>
     {!resultado.ok || !resultado.dado ? <p role="alert">{resultado.ok ? "Consulta sem resultado." : resultado.erro}</p> : <>
-      {resultado.dado.itens.length === 0 && <EstadoVazio>Nenhuma linha financeira nesta página.</EstadoVazio>}
+      {resultado.dado.itens.length === 0 && (cursor
+        ? <EstadoVazio>Nenhuma linha financeira nesta página.</EstadoVazio>
+        : <EstadoVazio>Nenhuma linha financeira da migração para conciliar.</EstadoVazio>)}
       <ul className="space-y-3">{resultado.dado.itens.map(linha => <li key={linha.id} className="rounded border p-4">
         <p>{linha.lote.origem} · {linha.lote.chaveLote} · linha {linha.linhaOrigem}</p>
         <p>Contrato na fonte: {linha.matriculaOrigemId ?? "não informado"} · registro financeiro: {linha.financeiroOrigemId ?? "não informado"}</p>
