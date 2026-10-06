@@ -22,9 +22,10 @@ describe("docker-compose.coolify.yml: db-init", () => {
 
     // Seção db-init: de "  db-init:" até a próxima chave de nível ≤ 2 (outro serviço ou bloco raiz).
     // Linha em branco faz parte do block scalar do YAML (o script continua depois dela): a seção
-    // não pode parar nela, senão o resto do comando fica fora de toda asserção.
+    // não pode parar nela, senão o resto do comando fica fora de toda asserção. Comentário de nível
+    // ≤ 2 também não encerra a seção: para o YAML, o que vem depois dele continua no serviço.
     const dbInitMatch = composeText.match(
-      /^  db-init:[^\n]*\n(?:(?:[ \t]+.*)?\n)*?(?=^  \S|^\S)/m
+      /^  db-init:[^\n]*\n(?:(?:[ \t]+.*)?\n)*?(?=^  [^\s#]|^[^\s#])/m
     );
     if (!dbInitMatch) {
       throw new Error("db-init service not found in compose file");
@@ -76,6 +77,21 @@ describe("docker-compose.coolify.yml: db-init", () => {
     expect(dbInitSection).toMatch(/^[ \t]+SELECT 'CREATE DATABASE evolution' WHERE NOT EXISTS \(SELECT FROM pg_database WHERE datname = 'evolution'\)\\gexec$/m);
     expect(dbInitSection.match(/ON_ERROR_STOP/g)).toHaveLength(1);
     expect(dbInitSection.match(/\\gexec/g)).toHaveLength(1);
+  });
+
+  // Linhas certas não bastam: uma linha a mais antes (`exit 0`, `: <<'X'`, `if false`) ou depois
+  // (`true`, que devolveria 0 no lugar do erro do psql) e o db-init sai com 0 sem criar o banco ou
+  // sem propagar a falha; um `entrypoint` no serviço faz o mesmo. O script é conferido INTEIRO e o
+  // serviço só pode ter as chaves conhecidas (revisão R2 da #133, B5).
+  it("script inteiro exato e só as chaves esperadas no serviço", () => {
+    const script = dbInitSection.match(/^    command:\n      - sh\n      - -c\n      - \|\n((?:(?:        .*)?\n)*?)(?=^    \S)/m)?.[1];
+    expect(script).toBe([
+      'until pg_isready -h db -U "$$PGUSER"; do sleep 1; done',
+      "psql -h db -U \"$$PGUSER\" -d postgres -v ON_ERROR_STOP=1 <<'SQL'",
+      "SELECT 'CREATE DATABASE evolution' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'evolution')\\gexec",
+      "SQL",
+    ].map((l) => "        " + l + "\n").join(""));
+    expect(dbInitSection.match(/^    [^\s#][^:]*:/gm)).toEqual(["    image:", "    restart:", "    environment:", "    command:", "    depends_on:"]);
   });
 
   it("usa heredoc <<'SQL' (sem expansão shell)", () => {
