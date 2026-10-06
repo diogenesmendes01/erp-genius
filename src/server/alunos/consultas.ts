@@ -5,7 +5,7 @@ import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, semDecimais } from "@/server/_shared/decimal";
 import type { UsuarioSessao } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
-import { ALUNOS_POR_PAGINA, whereFiltrosAlunos, type FiltrosAlunos } from "./filtros";
+import { ALUNOS_POR_PAGINA, orderByAlunos, whereFiltrosAlunos, type FiltrosAlunos } from "./filtros";
 import { rotuloTurmaAcademica } from "@/server/academico/regras";
 import { carregarOfertasAgendaDestinoTx } from "@/server/academico/destino-agenda";
 import {
@@ -211,7 +211,8 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
   const verFinanceiro = podeVerFinanceiroAluno(usuario);
   const alunos = await prisma.aluno.findMany({
     where: whereListaAlunos(usuario, filtros),
-    orderBy: [{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }],
+    // Ordem da URL (E1): no banco, antes da página — com desempate por id. Sem filtros: nome crescente.
+    orderBy: orderByAlunos(filtros?.ordem),
     ...(pagina ?? {}),
     include: {
       pais: { select: { nome: true } },
