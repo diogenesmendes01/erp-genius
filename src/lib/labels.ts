@@ -457,7 +457,7 @@ export const TIPO_MENSAGEM_LABEL: Readonly<Record<TipoMensagem, string>> = Objec
  * cobrança e o código cru ("Estado: ADIADA.") na inbox. */
 export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
   PENDENTE: "Na fila de envio",
-  ENVIANDO: "Enviando…",
+  ENVIANDO: "Enviando",
   DESPACHADA: "Enviada via API",
   CANCELADA: "Cancelada",
   FALHOU: "Falhou",
