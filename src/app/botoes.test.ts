@@ -475,21 +475,31 @@ const VERBO_DESTRUTIVO_NO_MEIO = /\se\s(rejeitar|recusar|remover|excluir|apagar|
 const PREFIXOS_DESTRUTIVOS = ["efetivar encerramento", "efetivar desistência"];
 
 /**
- * Texto como a pessoa o lê (R1 da #148, B1): forma de compatibilidade (NFKC), sem caracteres de
- * formatação invisíveis (\p{Cf}: hífen suave U+00AD, espaço de largura zero U+200B–U+200D, U+2060,
- * U+FEFF…) e com todo espaço (NBSP, espaços tipográficos) virando um espaço comum. "Encer­rar" e
- * "Encerrar​" aparecem na tela como "Encerrar" — e são comparados como "Encerrar".
+ * Texto como a pessoa o lê (R1 da #148, B1; R2, B1): forma de compatibilidade (NFKC), sem nenhum
+ * caractere que a tela não desenha — formatação (\p{Cf}: U+00AD, U+200B–U+200D, U+2060, U+FEFF…) e o
+ * resto dos ignoráveis por padrão do Unicode (\p{Default_Ignorable_Code_Point}: o combining grapheme
+ * joiner U+034F, os seletores de variação U+FE00–U+FE0F, os preenchedores Hangul U+115F/U+3164/U+1160…)
+ * — e com todo espaço (NBSP, espaços tipográficos) virando um espaço comum. "Encer\u00adrar",
+ * "Encer\u034frar" e "Encerrar\ufe0f" aparecem como "Encerrar" — e são comparados como "Encerrar".
  */
-export const textoLido = (t: string) => t.normalize("NFKC").replace(/\p{Cf}/gu, "").replace(/\s+/gu, " ");
+export const textoLido = (t: string) => t.normalize("NFKC").replace(/[\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, "").replace(/\s+/gu, " ");
+
+/**
+ * Letra fora do alfabeto latino (R2 da #148, B2): o rótulo é em português, e um homóglifo de outro
+ * alfabeto ("\u0415ncerrar", E cirílico) se lê como o verbo sem casar com ele. Sem tabela de confusáveis:
+ * falha fechada — o pedaço conta como destrutivo (exige perigo ou exceção ancorada).
+ */
+const LETRA_FORA_DO_LATIM = /(?=\p{L})\P{Script=Latin}/u;
 
 /**
  * Um pedaço de rótulo nomeia ação destrutiva? Lido como na tela (textoLido), sem caixa e sem símbolo
  * inicial ("✕ Rejeitar", "rejeitar"); "Confirmar <destruição>" (inclui desistência); "Efetivar
- * encerramento/desistência"; e "… e descartar …".
+ * encerramento/desistência"; e "… e descartar …". Letra de outro alfabeto: falha fechada (conta).
  */
 export function fragmentoDestrutivo(fragmento: string): boolean {
   const t = textoLido(fragmento).replace(/^[^\p{L}]+/u, "").trim();
   const baixo = t.toLowerCase();
+  if (LETRA_FORA_DO_LATIM.test(t)) return true;
   if (!t || baixo === "cancelar") return false;
   return VERBOS_DESTRUTIVOS.some((v) => baixo === v.toLowerCase() || baixo.startsWith(`${v.toLowerCase()} `))
     || new RegExp(CONFIRMACAO_DESTRUTIVA.source, "i").test(t) || /^confirmar desistência(\s|$)/i.test(t)
@@ -654,7 +664,7 @@ function conteudoDoRotulo(filhos: ts.NodeArray<ts.JsxChild>, prof = 0): { fragme
   };
   for (const f of filhos) {
     // Lido como na tela ANTES de juntar espaços: U+FEFF conta como espaço para `\s`, mas não aparece
-    // ("Rejei﻿tar" é "Rejeitar", não "Rejei tar") — R1 da #148, B1.
+    // ("Rejei\ufefftar" é "Rejeitar", não "Rejei tar") — R1 da #148, B1.
     if (ts.isJsxText(f)) { const t = textoLido(f.text).replace(/\s+/g, " ").trim(); if (t) fragmentos.push(t); continue; }
     if (ts.isJsxExpression(f)) { if (f.expression) somar(alternativasDeTexto(f.expression, prof)); continue; }
     somar(alternativasDeTexto(f as ts.Node, prof));
@@ -1870,13 +1880,15 @@ describe("follow-up #140: evasões restantes da trava de botões (autotestes)", 
 // cópia que se percorre — percorrer a própria lista não provaria nada.
 // ---------------------------------------------------------------------------------------------------
 describe("R1 da #148: rótulo lido como na tela, desestruturação opaca e listas fechadas", () => {
-  // Formatação invisível (\p{Cf}) e espaços que a tela mostra como espaço comum.
-  const INVISIVEIS = ["­", "​", "‌", "‍", "⁠", "﻿"];
+  // Caracteres que a tela não desenha: formatação (\p{Cf}: U+00AD, U+200B–U+200D, U+2060, U+FEFF) e, desde a
+  // R2, os ignoráveis por padrão que não são Cf: combining grapheme joiner (U+034F), seletores de variação
+  // (U+FE00, U+FE0F) e preenchedores Hangul (U+115F, U+1160, U+3164). Por código, não por literal invisível.
+  const INVISIVEIS = [0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff, 0x34f, 0xfe00, 0xfe0f, 0x115f, 0x1160, 0x3164].map((p) => String.fromCodePoint(p));
 
   it("B1 — textoLido: tira formatação invisível, normaliza espaços e compatibilidade (NFKC)", () => {
     for (const c of INVISIVEIS) expect(textoLido(`Encer${c}rar${c}`), JSON.stringify(c)).toBe("Encerrar");
-    expect(textoLido("Rejeitar proposta")).toBe("Rejeitar proposta");
-    expect(textoLido("Excluir  janela")).toBe("Excluir janela");
+    expect(textoLido("Rejeitar\u00a0proposta")).toBe("Rejeitar proposta");
+    expect(textoLido("Excluir\u2003\u2003janela")).toBe("Excluir janela");
     expect(textoLido("Ｅxcluir")).toBe("Excluir"); // letra de largura total
     expect(textoLido("Confirmar exclusão")).toBe("Confirmar exclusão"); // acento preservado
   });
@@ -1891,10 +1903,33 @@ describe("R1 da #148: rótulo lido como na tela, desestruturação opaca e lista
       expect(destrutivosSemPerigo(`<button className={botaoClasses({ variante: "secundario" })}>Rejei${c}tar proposta</button>`), `texto JSX ${nome}`).toHaveLength(1);
       expect(destrutivosSemPerigo(`<button aria-label="Remover${c}" className={botaoClasses({ variante: "fantasma" })}><Icone /></button>`), `aria-label ${nome}`).toHaveLength(1);
     }
-    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar país", variante: "fantasma" }];')).toHaveLength(1); // NBSP
-    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar matrícula"}</Botao>')).toHaveLength(1);
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar\u00a0país", variante: "fantasma" }];')).toHaveLength(1); // NBSP
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar\u00a0matrícula"}</Botao>')).toHaveLength(1);
     // "Cancelar" sozinho (fechar) continua neutro, mesmo com caractere invisível.
-    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar​"}</Botao>')).toEqual([]);
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar\u200b"}</Botao>')).toEqual([]);
+  });
+
+  it("R2 B1 — E6/E7/E8: ignoráveis que não são Cf também somem (cada um, na tabela, no meio e no fim do verbo)", () => {
+    // Os três da R2, um a um, pelo código — mesmo que a lista de cima mude, estes ficam.
+    for (const p of [0x34f, 0xfe0f, 0x3164]) {
+      const c = String.fromCodePoint(p);
+      expect(textoLido(`Encer${c}rar`), p.toString(16)).toBe("Encerrar");
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encer${c}rar", variante: "fantasma" }];`), `meio ${p.toString(16)}`).toHaveLength(1);
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encerrar${c}", variante: "fantasma" }];`), `fim ${p.toString(16)}`).toHaveLength(1);
+    }
+  });
+
+  it("R2 B2 — E9: letra de outro alfabeto (homóglifo) no rótulo falha fechado — exige perigo", () => {
+    const E_CIRILICO = String.fromCodePoint(0x415), e_CIRILICO = String.fromCodePoint(0x435), ALFA = String.fromCodePoint(0x3b1);
+    expect(fragmentoDestrutivo(`${E_CIRILICO}ncerrar`)).toBe(true);
+    expect(fragmentoDestrutivo(`R${e_CIRILICO}jeitar proposta`)).toBe(true);
+    expect(fragmentoDestrutivo(`Salv${ALFA}r`)).toBe(true); // qualquer letra fora do latim, não só a do verbo
+    expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "${E_CIRILICO}ncerrar", variante: "fantasma" }];`)).toHaveLength(1);
+    expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "${E_CIRILICO}ncerrar", variante: "perigo" }];`)).toEqual([]);
+    expect(destrutivosSemPerigo(`<Botao variante="secundario">{"R${e_CIRILICO}jeitar proposta"}</Botao>`)).toHaveLength(1);
+    expect(destrutivosSemPerigo(`<button className={botaoClasses({ variante: "secundario" })}>R${e_CIRILICO}jeitar proposta</button>`)).toHaveLength(1);
+    // Latim com acento, números e símbolos não são outro alfabeto.
+    for (const r of ["Ação concluída", "Salvar 2ª via", "✓ Salvar · →", "Exportar CSV (UTF-8)"]) expect(fragmentoDestrutivo(r), r).toBe(false);
   });
 
   it("B2 — S4: nome vindo de desestruturação é opaco (não vale o inicializador inteiro)", () => {
