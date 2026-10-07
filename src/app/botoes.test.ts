@@ -622,8 +622,10 @@ function alternativasDeTexto(e: ts.Node, prof = 0): string[] | null {
   }
   if (ts.isJsxSelfClosingElement(e)) return [""];
   if (ts.isJsxElement(e) || ts.isJsxFragment(e)) {
+    // Os fragmentos de um elemento vêm em SEQUÊNCIA ("Notas internas" + " (N)"), não são alternativas:
+    // viram um texto só, cujo começo é o do elemento.
     const r = conteudoDoRotulo(e.children, prof + 1);
-    return r.completo ? r.fragmentos : null;
+    return r.completo ? [r.fragmentos.join(" ")] : null;
   }
   return null;
 }
@@ -758,6 +760,12 @@ function valorDaChave(entradas: Entrada[], chave: string): ts.Expression | "opac
   return undefined;
 }
 
+/** Último valor CONCRETO de uma chave (ignora spread opaco): o rótulo que a linha mostra se o spread não o trocar. */
+function ultimoValorConcreto(entradas: Entrada[], chave: string): ts.Expression | undefined {
+  for (let i = entradas.length - 1; i >= 0; i--) if (entradas[i].chave === chave && entradas[i].valor) return entradas[i].valor!;
+  return undefined;
+}
+
 /**
  * Linhas de tabela de botão (`{ label | rotulo, variante }`): rótulo destrutivo exige `perigo` em TODAS as
  * variantes possíveis. Os valores se resolvem (constante pelo escopo, `as`/`satisfies`, `+`, template,
@@ -773,7 +781,9 @@ export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
       const entradas = entradasDoObjeto(n);
       const variante = valorDaChave(entradas, "variante");
       for (const chave of ["label", "rotulo"]) {
-        const rotulo = valorDaChave(entradas, chave);
+        // Rótulo possível: o último escrito na linha, mesmo com spread opaco depois (falha fechada — a
+        // variante, essa sim, vira "?" quando um spread pode trocá-la).
+        const rotulo = ultimoValorConcreto(entradas, chave) ?? valorDaChave(entradas, chave);
         if (rotulo === undefined || variante === undefined || (rotulo === "opaco" && variante === "opaco")) continue;
         const variantes = variante === "opaco" ? ["?"] : alternativasDeTexto(variante) ?? ["?"];
         const textos = rotulo === "opaco" ? null : alternativasDeTexto(rotulo);
