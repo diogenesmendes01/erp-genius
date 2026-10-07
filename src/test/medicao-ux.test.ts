@@ -130,6 +130,10 @@ describe("nucleo: herança, testes e catch central", () => {
     expect([semCatchLiteral(com), semCatchCentral(com)]).toEqual([true, false]);
     expect([semCatchLiteral(sem), semCatchCentral(sem)]).toEqual([true, true]);
     expect(semCatchLiteral(`${sem}\ntry { x() } catch { y() }`)).toBe(false);
+    // Cada forma do catch central conta (verificação de integração da #146: tirar uma delas não falhava teste).
+    for (const central of ["useAcaoCliente(", "executarAcaoCliente(() => a())", "criarExecutor("]) {
+      expect(semCatchCentral(`${sem}\n${central}`), central).toBe(false);
+    }
   });
 });
 
