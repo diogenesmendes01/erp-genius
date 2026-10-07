@@ -579,6 +579,9 @@ describe("detector do Campo (autoteste)", () => {
     expect(naArea("src/app/(app)/alunos/[id]-copia/X.tsx")).toBe(false);
     expect(naArea("src/app/(app)/matriculas/nova/MatriculaFormulario.tsx")).toBe(true);
     expect(naArea("src/app/(app)/matriculas/nova/passos/Passo3.tsx")).toBe(true);
+    // A pasta casa inteira: `nova-copia/` e `[id]-copia.tsx` não são `nova/` nem `[id]/`.
+    expect(naArea("src/app/(app)/matriculas/nova-copia/X.tsx")).toBe(false);
+    expect(naArea("src/app/(app)/alunos/[id]-copia.tsx")).toBe(false);
     expect(naArea("src/app/(app)/matriculas/[id]/page.tsx")).toBe(false);
   });
 
