@@ -39,7 +39,7 @@ import { listarFilaCobranca } from "./consultas";
 import { filtrarFila, lerFiltrosFila } from "./filtros-fila";
 
 /** Cobranças abertas e o que a régua diz de cada uma (estado, dias de atraso). */
-const CASOS: { id: string; estado: string; diasAtraso: number }[] = [
+const CASOS: { id: string; estado: string; diasAtraso: number; bloqueado?: boolean }[] = [
   { id: "vence", estado: "futuro", diasAtraso: -2 },
   { id: "vence2", estado: "futuro", diasAtraso: -9 },
   { id: "vence3", estado: "futuro", diasAtraso: -20 },
@@ -52,16 +52,22 @@ const CASOS: { id: string; estado: string; diasAtraso: number }[] = [
   // Promessas: uma que vence hoje e uma sobre cobrança atrasada — as duas só em "Promessas".
   { id: "promessa-hoje", estado: "promessa", diasAtraso: 0 },
   { id: "promessa-atrasada", estado: "promessa", diasAtraso: 4 },
+  // Entre 15 e 29 dias: Em atraso, ainda não Bloquear (o limiar é 30, não o 15 dos comentários antigos).
+  { id: "atraso-medio", estado: "acao_devida", diasAtraso: 20 },
+  // Acesso já bloqueado: Em atraso, mas fora de Bloquear (não há mais o que bloquear).
+  { id: "ja-bloqueado", estado: "acao_devida", diasAtraso: 45, bloqueado: true },
+  // Promessa com atraso ≥ 30: entra em Bloquear (precisaBloqueio não olha o estado) e fica fora de Em atraso.
+  { id: "promessa-antiga", estado: "promessa", diasAtraso: 35 },
 ];
 
 const vencimentoDe = (indice: number) => new Date(Date.UTC(2026, 0, 1 + indice));
 
-const cobranca = (id: string, indice: number) => ({
+const cobranca = (id: string, indice: number, bloqueado = false) => ({
   id, cicloRegua: 1, codigo: `COB-${id}`, tipo: "MENSALIDADE",
   valorNegociado: 100, valorRecebido: null, saldo: null, moeda: "BRL",
   vencimento: vencimentoDe(indice), competencia: "2026-01", matriculaId: `matricula-${id}`,
   matricula: {
-    acessoBloqueado: false,
+    acessoBloqueado: bloqueado,
     aluno: { id: `aluno-${id}`, primeiroNome: "Aluno", sobrenome: id, telefoneE164: null, pais: null },
     pais: { nome: "Brasil" },
     alocacoes: [],
@@ -71,7 +77,7 @@ const cobranca = (id: string, indice: number) => ({
 describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    m.cobrancas.mockResolvedValue(CASOS.map((c, i) => cobranca(c.id, i)));
+    m.cobrancas.mockResolvedValue(CASOS.map((c, i) => cobranca(c.id, i, c.bloqueado)));
     m.eventos.mockResolvedValue([]);
     m.templates.mockResolvedValue([]);
     m.intencoes.mockResolvedValue([]);
@@ -87,14 +93,14 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
   it("a fila chega com o estado e o atraso da régua (a fixture é a que os contadores veem)", async () => {
     const { itens } = await listarFilaCobranca();
     expect(itens.map((i) => [i.id, i.estado, i.diasAtraso, i.precisaBloqueio])).toEqual(
-      CASOS.map((c) => [c.id, c.estado, c.diasAtraso, c.id === "bloqueio"]),
+      CASOS.map((c) => [c.id, c.estado, c.diasAtraso, c.id === "bloqueio" || c.id === "promessa-antiga"]),
     );
   });
 
   it("cada cartão com o número esperado — quem vence hoje conta em A vencer; promessa só em Promessas", async () => {
     const { dashs } = await listarFilaCobranca();
     expect({ aVencer: dashs.aVencer, emAtraso: dashs.emAtraso, bloquear: dashs.bloquear, promessas: dashs.promessas })
-      .toEqual({ aVencer: 4, emAtraso: 3, bloquear: 1, promessas: 2 });
+      .toEqual({ aVencer: 4, emAtraso: 5, bloquear: 2, promessas: 3 });
   });
 
   it("o número de cada cartão é o tamanho da lista filtrada pelo mesmo cartão (filtros-fila)", async () => {

@@ -88,7 +88,7 @@ type ItemFiltravel = ItemIndicador & Pick<FilaCobrancaItem, "codigo" | "pais" | 
 };
 
 // Critério de cada indicador — fonte única do número do cartão (contarIndicadoresFila, usado por
-// listarFilaCobranca) e da lista filtrada (filtrarFila), para os dois não divergirem: "Bloquear" ⊂ "Em atraso";
+// listarFilaCobranca) e da lista filtrada (filtrarFila), para os dois não divergirem: "Bloquear" é `precisaBloqueio` (atraso ≥ 30, não bloqueado — inclui promessa);
 // promessa fica fora de "A vencer" e "Em atraso"; a cobrança que vence hoje (diasAtraso 0) é "A vencer".
 const DO_INDICADOR: Record<IndicadorFila, (i: ItemIndicador) => boolean> = {
   aVencer: (i) => i.estado !== "promessa" && i.diasAtraso <= 0,

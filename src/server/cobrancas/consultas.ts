@@ -44,7 +44,7 @@ export interface FilaCobrancaItem {
   // Contexto:
   matriculaId: string;
   acessoBloqueado: boolean;
-  /** Bloqueio PENDENTE de aprovação: atraso ≥ 15d e ainda não bloqueado. Desacoplado do passo
+  /** Bloqueio PENDENTE de aprovação: atraso ≥ 30d e ainda não bloqueado (vale também para promessa). Desacoplado do passo
    *  da régua — mandar a mensagem D+15 NÃO equivale a bloquear (doc 24, review §1). */
   precisaBloqueio: boolean;
   tentativas: number;
@@ -344,8 +344,8 @@ export async function listarFilaCobranca(): Promise<{
     };
   });
 
-  // Contadores dos mini-dashs (filtros). "Bloquear" ⊂ "Em atraso" — é o subconjunto urgente.
-  // "Bloquear" usa `precisaBloqueio` (atraso ≥ 15 e não bloqueado), NÃO o passo da régua: o
+  // Contadores dos mini-dashs (filtros). "Bloquear" é o subconjunto urgente de "Em atraso", mais a promessa com atraso ≥ 30.
+  // "Bloquear" usa `precisaBloqueio` (atraso ≥ 30 e não bloqueado), NÃO o passo da régua: o
   // bloqueio pendente não pode sumir só porque a mensagem D+15 foi enviada (review §1).
   // Mesmo critério do filtro da fila na URL (filtros-fila.ts): o número do cartão bate com a lista filtrada.
   const { aVencer, emAtraso, bloquear, promessas } = contarIndicadoresFila(itens);
