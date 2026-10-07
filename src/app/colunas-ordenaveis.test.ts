@@ -1122,12 +1122,24 @@ describe("colunas ordenáveis (E1)", () => {
   });
 
   it("autoteste (B3 da R1 da #149): cada item das listas fechadas tem um caso que falha sem ele", () => {
+    // As listas são conferidas contra cópias LITERAIS aqui, e os casos percorrem a cópia — percorrer a própria
+    // lista seria tautológico (tirar "globalThis" ou "srcdoc" da lista tirava também o caso; integração da #149).
+    const proibidos = ["createElement", "createElementNS", "cloneElement", "jsx", "jsxs", "jsxDEV", "setAttribute", "setAttributeNS", "toggleAttribute",
+      "setAttributeNode", "setAttributeNodeNS", "createAttribute", "createAttributeNS", "setNamedItem", "setNamedItemNS",
+      "insertAdjacentHTML", "createContextualFragment", "setHTMLUnsafe", "parseHTMLUnsafe", "innerHTML", "outerHTML", "srcdoc"];
+    const raizes = ["document", "window", "globalThis", "self", "top", "parent", "frames", "opener"];
+    const membros = ["current", "target", "currentTarget", "srcElement", "relatedTarget", "ownerDocument", "parentElement", "parentNode", "firstChild",
+      "lastChild", "firstElementChild", "lastElementChild", "previousElementSibling", "nextElementSibling", "children", "childNodes",
+      "form", "elements", "documentElement", "body", "head", "activeElement", "labels", "options", "selectedOptions"];
+    expect([...PROIBIDOS].sort()).toEqual([...proibidos].sort());
+    expect([...RAIZES_DOM].sort()).toEqual([...raizes].sort());
+    expect([...MEMBROS_DOM].sort()).toEqual([...membros].sort());
     // PROIBIDOS: o nome sozinho, num objeto qualquer (nenhuma outra regra pega).
-    for (const nome of PROIBIDOS) expect(ariaSortNoFonte(`declare const el: any; declare const k: string; el.${nome}(k);`), nome).not.toEqual([]);
+    for (const nome of proibidos) expect(ariaSortNoFonte(`declare const el: any; declare const k: string; el.${nome}(k);`), nome).not.toEqual([]);
     // RAIZES_DOM: escrita com chave calculada no global.
-    for (const raiz of RAIZES_DOM) expect(ariaSortNoFonte(`declare const k: string; ${raiz}[k] = "ascending";`), raiz).not.toEqual([]);
+    for (const raiz of raizes) expect(ariaSortNoFonte(`declare const k: string; ${raiz}[k] = "ascending";`), raiz).not.toEqual([]);
     // MEMBROS_DOM: escrita com chave calculada no membro de um objeto qualquer.
-    for (const m of MEMBROS_DOM) expect(ariaSortNoFonte(`declare const o: any; declare const k: string; o.${m}[k] = "ascending";`), m).not.toEqual([]);
+    for (const m of membros) expect(ariaSortNoFonte(`declare const o: any; declare const k: string; o.${m}[k] = "ascending";`), m).not.toEqual([]);
     // CONSULTAS_DOM: escrita com chave calculada no resultado da consulta.
     for (const c of ["querySelector", "querySelectorAll", "getElementById", "getElementsByTagName", "getElementsByClassName", "closest", "elementFromPoint", "elementsFromPoint", "item", "namedItem"]) {
       expect(ariaSortNoFonte(`declare const o: any; declare const k: string; o.${c}("x")[k] = "ascending";`), c).not.toEqual([]);
