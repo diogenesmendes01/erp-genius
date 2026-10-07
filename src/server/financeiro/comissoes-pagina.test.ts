@@ -6,7 +6,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { comissao: { findMany: m.findMany, cou
 vi.mock("@/server/_shared", async (original) => ({ ...(await original<object>()), exigirSessaoComPapel: m.sessao }));
 
 import { Prisma } from "@prisma/client";
-import { COMISSOES_POR_PAGINA, listarComissoesPagina, totaisComissoesAPagar } from "./consultas";
+import { COMISSOES_POR_PAGINA, condicoesBuscaComissoes, listarComissoesPagina, totaisComissoesAPagar } from "./consultas";
 
 describe("listarComissoesPagina (E4)", () => {
   beforeEach(() => { vi.clearAllMocks(); m.findMany.mockResolvedValue([]); m.count.mockResolvedValue(0); });
@@ -41,6 +41,38 @@ describe("listarComissoesPagina (E4)", () => {
     m.sessao.mockResolvedValue({ id: "f1", papeis: [Papel.FINANCEIRO] });
     await listarComissoesPagina({ status: null, pagina: 1 });
     expect(m.findMany.mock.calls[1][0].where).toEqual({ AND: [{}, {}] });
+  });
+});
+
+describe("listarComissoesPagina — busca (E4, §5.6 A9)", () => {
+  beforeEach(() => { vi.clearAllMocks(); m.findMany.mockResolvedValue([]); m.count.mockResolvedValue(0); });
+
+  it("palavras no nome do beneficiário, em AND com o escopo e a situação; a contagem usa o mesmo where", async () => {
+    m.sessao.mockResolvedValue({ id: "v1", papeis: [Papel.VENDEDOR] });
+    await listarComissoesPagina({ status: "PAGA", busca: "  bia   souza ", pagina: 1 });
+    const consulta = m.findMany.mock.calls[0][0];
+    expect(consulta.where).toEqual({
+      AND: [
+        { vendedorId: "v1" },
+        { status: "PAGA" },
+        { vendedor: { nome: { contains: "bia", mode: "insensitive" } } },
+        { vendedor: { nome: { contains: "souza", mode: "insensitive" } } },
+      ],
+    });
+    expect(m.count).toHaveBeenCalledWith({ where: consulta.where });
+  });
+
+  it("sem busca (vazia ou só espaços) nada muda no where", async () => {
+    m.sessao.mockResolvedValue({ id: "f1", papeis: [Papel.FINANCEIRO] });
+    await listarComissoesPagina({ status: null, busca: "   ", pagina: 1 });
+    expect(m.findMany.mock.calls[0][0].where).toEqual({ AND: [{}, {}] });
+    expect(condicoesBuscaComissoes("")).toEqual([]);
+  });
+
+  it("teto de 6 palavras: a 7ª em diante é descartada (limita o tamanho da consulta)", () => {
+    const condicoes = condicoesBuscaComissoes("a b c d e f g h");
+    expect(condicoes).toHaveLength(6);
+    expect(JSON.stringify(condicoes)).not.toContain('"g"');
   });
 });
 
