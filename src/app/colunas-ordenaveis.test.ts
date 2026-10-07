@@ -1452,7 +1452,7 @@ describe("colunas ordenáveis (E1)", () => {
       ["parâmetro mutado", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{(campo) => { (campo as Record<string, string>)[J] = "ascending"; return <input {...campo} />; }}</Campo>;`],
       ["alias do parâmetro", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{(campo) => { const o: Record<string, unknown> = campo; o[J] = "ascending"; return <input {...campo} />; }}</Campo>;`],
       ["arguments", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{function (c) { (arguments[0] as Record<string, string>)[J] = "ascending"; return <input {...c} />; }}</Campo>;`],
-      ["function nomeada (chamada de novo com outro objeto)", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{function f(c: object): unknown { return c ? <input {...c} /> : f({ [J]: "ascending" }); }}</Campo>;`],
+      ["function nomeada (chamada de novo com outro objeto)", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{function f(c: object): unknown { return <>{<input {...c} />}{J === "" ? f({ [J]: "ascending" }) : null}</>; }}</Campo>;`],
       ["dois parâmetros", `${IMPORTA}export const x = <Campo rotulo="Nome">{(campo: object, extra: object) => <input {...campo} {...extra} />}</Campo>;`],
     ];
     for (const [nome, fonte, extra] of acusados) expect(comCampo(fonte, CAMPO_TSX, extra), nome).not.toEqual([]);
