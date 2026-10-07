@@ -21,7 +21,8 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { prepararLoteMigracao } from "./acoes";
 
-let adminId = "", operadorId = "", linhaId = "", linhaCadastroId = "", entradaHash = "", entradaCadastroHash = "", origem = "MIGRACAO_TESTE";
+const origem = "MIGRACAO_TESTE";
+let adminId = "", operadorId = "", linhaId = "", linhaCadastroId = "", entradaHash = "", entradaCadastroHash = "";
 let produtoId = "", paisId = "", paisCodigo = "", turmaId = "", alunoId = "", moeda = "";
 const hash = "a".repeat(64), contexto = "b".repeat(64);
 const snapshotValido = (id: string, entrada: string, contextoHash: string) => JSON.stringify({ linhaId: id, entradaHash: entrada, contextoHash, correspondencias: { produto: null, turma: null, status: null } });
