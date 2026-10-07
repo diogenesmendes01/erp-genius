@@ -617,7 +617,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "financeiro/FilaCobranca.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
-    "<button> limpar filtro → fantasma/sm",
+    "<Link> limpar filtro → fantasma/sm",
+    "<button> Buscando… · Buscar → secundario/md",
     "<button> Enviando… · Aprovar e enviar lote → btnPri",
     "<button> Limpar → btnSec",
     "<button> Consultar acesso → perigo/sm",
