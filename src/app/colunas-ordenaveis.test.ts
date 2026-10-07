@@ -32,10 +32,13 @@ const COMPONENTE = "src/components/ColunaOrdenavel.tsx";
 
 /**
  * Código de produção do src, em toda extensão que o app carrega: .ts/.tsx e também .js/.jsx/.mjs/.cjs/.json
- * (revisão R3 da #136, B9: um helper .js ou um JSON com "aria-sort" ficavam fora da varredura). Testes ficam de fora.
+ * (revisão R3 da #136, B9: um helper .js ou um JSON com "aria-sort" ficavam fora da varredura). Testes e a
+ * infraestrutura de teste (src/test) ficam de fora — e, por isso, a produção não pode importá-los (R1 da #149, B1).
  */
 export const ehFonteDeProducao = (arquivo: string) => /\.(tsx?|jsx?|mjs|cjs|json)$/.test(arquivo)
-  && !/\.(test|spec)\.[cm]?[jt]sx?$/.test(arquivo) && !/(^|\/)__(tests|mocks)__\//.test(arquivo);
+  && !/\.(test|spec)\.[cm]?[jt]sx?$/.test(arquivo) && !/(^|\/)__(tests|mocks)__\//.test(arquivo) && !/^src\/test\//.test(arquivo);
+/** Extensões de código: um import que resolve para um destes fora da varredura é apontado (CSS, fontes e imagens não). */
+const CODIGO = /\.[cm]?[jt]sx?$|\.json$/;
 
 const fontes = (readdirSync("src", { recursive: true }) as string[])
   .map((f) => join("src", f).split("\\").join("/"))
@@ -69,7 +72,11 @@ const TELAS = [
 //         setAttribute, innerHTML…): proibidas; HTML e script embutidos precisam ser texto conhecido e
 //         passam pela mesma trava; `eval`/`new Function` proibidos;
 //       - escrita ou chamada com nome calculado em objeto do DOM (ref.current, e.target, document…) ou no
-//         módulo do React: proibida.
+//         módulo do React: proibida;
+//       - repassar props só vale para o objeto de props INTEIRO (`props`, `{ a, ...resto }`) do 1º parâmetro de
+//         um componente; prop desestruturada, `props.x`, outro parâmetro ou função comum contam como desconhecidos.
+//   (c) o GRAFO — a produção não importa o que a varredura não lê (teste, mock, src/test, arquivo fora do src),
+//       nem import que não se resolve ou de caminho calculado.
 
 const DESCONHECIDO = "\u0000";
 /** Valor de `Symbol(...)`: chave conhecida que não é texto. */
@@ -117,7 +124,9 @@ const METODOS_DE_TEXTO = new Map<string, readonly ("t" | "n" | "r")[]>([
   ["repeat", ["n"]], ["toString", []], ["valueOf", []],
 ]);
 /** Chamadas avaliadas como texto: função pelo nome (`juntar(a, b)`, `String(x)`) ou estes métodos. */
-const METODOS_RAIZ = new Set([...METODOS_DE_TEXTO.keys(), "join", "concat", "fromCharCode", "fromCodePoint", "parse", "for"]);
+const METODOS_RAIZ = new Set([...METODOS_DE_TEXTO.keys(), "join", "concat", "fromCharCode", "fromCodePoint", "parse"]);
+/** Funções do React que devolvem o próprio argumento (para seguir o componente ou o callback) — lista fechada. */
+const IDENTIDADE_REACT = new Set(["forwardRef", "memo", "useCallback"]);
 
 type Funcao = ts.FunctionDeclaration | ts.FunctionExpression | ts.ArrowFunction | ts.MethodDeclaration;
 const ehFuncao = (n: ts.Node): n is Funcao => ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isArrowFunction(n) || ts.isMethodDeclaration(n);
@@ -235,6 +244,19 @@ function ligacaoDe(nome: string, de: ts.Node): Ligacao | null {
   }
   return null;
 }
+
+/**
+ * Função de componente: nome com inicial maiúscula — o dela, ou o da constante que a recebe, direto ou por
+ * forwardRef/memo. Só o objeto de props inteiro de um componente pode ser repassado (R1 da #149, B2): um
+ * componente só é usado em JSX (ou chamado direto, o que também é conferido), onde quem chama tem as chaves travadas.
+ */
+const ehComponente = (fn: ts.SignatureDeclaration) => {
+  const proprio = ts.isFunctionDeclaration(fn) || ts.isFunctionExpression(fn) ? fn.name?.text : undefined;
+  if (proprio && /^[A-Z]/.test(proprio)) return true;
+  let p: ts.Node = fn.parent;
+  while (ts.isParenthesizedExpression(p) || (ts.isCallExpression(p) && /(^|\.)(forwardRef|memo)$/.test(p.expression.getText()))) p = p.parent;
+  return ts.isVariableDeclaration(p) && ts.isIdentifier(p.name) && /^[A-Z]/.test(p.name.text);
+};
 
 /** Retornos de uma função (sem entrar em funções internas). */
 const retornos = (fn: Funcao): ts.Expression[] => {
@@ -394,7 +416,12 @@ function analisador(virtuais = new Map<string, string>()) {
     }
     if (l.tipo === "param") {
       const arg = lig.get(l.param), cam = caminhoAte(nome, l.param.name);
-      if (!arg) return [PARAM];
+      if (!arg) {
+        // Repasse só do objeto de props inteiro (`props`, `{ a, ...resto }`) do 1º parâmetro de um componente. Prop
+        // desestruturada (`{ extra }`), outro parâmetro, função comum (`.map((x) => <div {...x} />)`): desconhecido.
+        const inteiro = l.fn.parameters[0] === l.param && ehComponente(l.fn) && !!cam && (cam.chaves.length === 0 || (cam.chaves.length === 1 && cam.chaves[0] === null));
+        return [inteiro ? PARAM : DESC_V];
+      }
       return cam ? aplicarCaminho(arg(), cam, ctx, lig, prof) : [DESC_V];
     }
     if (emCurso.has(l.decl)) return [DESC_V];
@@ -431,7 +458,8 @@ function analisador(virtuais = new Map<string, string>()) {
   const membro = (vals: Valor[], chaves: string[], prof: number): Valor[] => limitarValores(vals.flatMap((v) => chaves.flatMap((k) => membroDe(v, k, prof))));
   const membroDe = (v: Valor, k: string, prof: number): Valor[] => {
     if (prof > PROFUNDIDADE) return [DESC_V];
-    if (v.tipo === "parametro" || v.tipo === "desconhecido") return [v];
+    // `props.extra`: o valor de uma prop não é o objeto de props — as chaves dele não são travadas no chamador.
+    if (v.tipo === "parametro" || v.tipo === "desconhecido") return [DESC_V];
     if (v.tipo === "nada") return [NADA];
     // `React.forwardRef`, `ns.useForm`: o nome passa a ser o membro; `useForm().register`: segue sendo "de useForm".
     if (v.tipo === "externo") return [{ tipo: "externo", modulo: v.modulo, nome: v.nome === "default" || v.nome === "*" ? k : v.nome }];
@@ -515,9 +543,7 @@ function analisador(virtuais = new Map<string, string>()) {
     return [DESC_V];
   };
 
-  /** Funções do React que devolvem o próprio argumento (para seguir o componente ou o callback). */
-  const IDENTIDADE_REACT = new Set(["forwardRef", "memo", "useCallback"]);
-  const chamada = (e: ts.CallExpression, ctx: Ctx, lig: Ligacoes, prof: number): Valor[] => {
+  const chamada =(e: ts.CallExpression, ctx: Ctx, lig: Ligacoes, prof: number): Valor[] => {
     const callee = semEmbrulho(e.expression), [a0] = e.arguments;
     // import("x") / require("x"): o módulo.
     if (callee.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(callee) && callee.text === "require" && !ligacaoDe("require", callee))) {
@@ -746,6 +772,13 @@ function analisador(virtuais = new Map<string, string>()) {
       orcamento = ORCAMENTO;
       return valores(n, ctx, VAZIO, 0).some((v) => v.tipo === "externo" && /^react(-dom)?(\/|$)/.test(v.modulo) && (v.nome === "*" || v.nome === "default"));
     };
+    const conferirImport = (n: ts.Node, origem: string | null) => {
+      if (origem === null || origem.includes(DESCONHECIDO)) { achar(n, "import de caminho calculado"); return; }
+      if (!/^(\.|@\/|\/)/.test(origem)) return; // pacote
+      const alvo = resolverModulo(ctx.arquivo, origem);
+      if (!alvo) achar(n, `import de "${origem}", que não se resolve`);
+      else if (CODIGO.test(alvo) && !(alvo.startsWith("src/") && ehFonteDeProducao(alvo))) achar(n, `import de código fora da varredura: ${alvo}`);
+    };
     const embutido = (n: ts.Node, vals: string[] | null, script: boolean, onde: string) => {
       if (!vals || vals.some((v) => v.includes(DESCONHECIDO))) { achar(n, `${onde} com conteúdo não avaliável`); return; }
       for (const v of vals) {
@@ -768,6 +801,33 @@ function analisador(virtuais = new Map<string, string>()) {
         if (ts.isPropertyAccessExpression(c) && /^(write|writeln)$/.test(c.name.text) && domish(c.expression)) achar(n, `escrita de HTML: ${c.name.text}`);
       }
       if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier) && /^react\/jsx(-dev)?-runtime$/.test(n.moduleSpecifier.text)) achar(n, "import do runtime de JSX");
+
+      // A varredura fecha pelo grafo (R1 da #149, B1): a produção não importa código que ela não lê — teste,
+      // mock, src/test, arquivo fora do src —, nem import que não se resolve ou de caminho calculado.
+      const soTipos = (ts.isImportDeclaration(n) && !!n.importClause && (n.importClause.isTypeOnly || (!n.importClause.name && !!n.importClause.namedBindings
+          && ts.isNamedImports(n.importClause.namedBindings) && n.importClause.namedBindings.elements.length > 0 && n.importClause.namedBindings.elements.every((e) => e.isTypeOnly))))
+        || (ts.isExportDeclaration(n) && (n.isTypeOnly || (!!n.exportClause && ts.isNamedExports(n.exportClause) && n.exportClause.elements.length > 0 && n.exportClause.elements.every((e) => e.isTypeOnly))))
+        || (ts.isImportEqualsDeclaration(n) && n.isTypeOnly);
+      const especificador = (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) ? n.moduleSpecifier
+        : ts.isImportEqualsDeclaration(n) && ts.isExternalModuleReference(n.moduleReference) ? n.moduleReference.expression : undefined;
+      if (especificador && !soTipos) conferirImport(n, ts.isStringLiteral(especificador) ? especificador.text : null);
+      if (ts.isCallExpression(n) && (n.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(n.expression) && n.expression.text === "require" && !ligacaoDe("require", n.expression)))) {
+        const origem = n.arguments[0] ? avaliar(n.arguments[0]) : null;
+        conferirImport(n, origem && origem.length === 1 ? origem[0] : null);
+      }
+
+      // Componente que repassa as props ao HTML chamado como função: o argumento é o objeto de props (B2).
+      if (ts.isCallExpression(n) && n.arguments[0]) {
+        const c = semEmbrulho(n.expression);
+        const nomeC = ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : "";
+        if (/^[A-Z]/.test(nomeC)) {
+          orcamento = ORCAMENTO;
+          if (valores(c, ctx, VAZIO, 0).some((v) => v.tipo === "expr" && ehFuncao(v.expr) && funcaoRepassa(v.expr, v.ctx, 0))) {
+            const k = chavesDe(n.arguments[0], ctx, VAZIO, 0);
+            if (k.aberta || k.repasse || k.nomes.some(suspeito)) achar(n, `props com chaves desconhecidas na chamada direta de ${nomeC}`);
+          }
+        }
+      }
 
       // (a) o texto.
       if (raizDeTexto(n)) {
@@ -864,6 +924,8 @@ describe("colunas ordenáveis (E1)", () => {
     const analise = analisador();
     const ofensores = fontes.filter(({ arquivo }) => arquivo !== COMPONENTE).flatMap(({ arquivo }) => analise.achados(arquivo).map((a) => `${arquivo}:${a}`));
     expect(ofensores).toEqual([]);
+    // Com app/ ou pages/ na raiz, o Next ignora src/app — e as telas sairiam da varredura.
+    expect(["app", "pages"].filter((d) => existsSync(d))).toEqual([]);
   }, 120_000);
 
   it("o próprio componente: aria-sort só no <th>, sem spread, e só exporta ColunaOrdenavel", () => {
@@ -921,7 +983,42 @@ describe("colunas ordenáveis (E1)", () => {
 
   it("varredura: .js, .jsx, .mjs, .cjs e .json de produção entram; testes ficam de fora (B9, X20/X21)", () => {
     for (const a of ["src/lib/x.ts", "src/app/x.tsx", "src/lib/x.js", "src/lib/x.jsx", "src/lib/x.mjs", "src/lib/x.cjs", "src/lib/x.json"]) expect(ehFonteDeProducao(a), a).toBe(true);
-    for (const a of ["src/app/x.test.ts", "src/app/x.test.tsx", "src/lib/x.spec.js", "src/lib/__mocks__/x.ts", "src/app/globals.css", "src/lib/x.md"]) expect(ehFonteDeProducao(a), a).toBe(false);
+    for (const a of ["src/app/x.test.ts", "src/app/x.test.tsx", "src/lib/x.spec.js", "src/lib/__mocks__/x.ts", "src/lib/__tests__/x.ts", "src/test/integracao.ts", "src/app/globals.css", "src/lib/x.md"]) {
+      expect(ehFonteDeProducao(a), a).toBe(false);
+    }
+  });
+
+  it("autoteste (B1 da R1 da #149): a produção não importa código que a varredura não lê", () => {
+    const CABECALHO = 'export function CabecalhoPais() { return <th aria-sort="ascending">País</th>; }';
+    const casos: [string, string, Record<string, string>][] = [
+      ["E1 componente num *.test.tsx", 'import { CabecalhoPais } from "@/components/CabecalhoPais.test"; const x = <CabecalhoPais />;', { "src/components/CabecalhoPais.test.tsx": CABECALHO }],
+      ["E1 reexportação de *.test", 'export { CabecalhoPais } from "@/components/CabecalhoPais.test";', { "src/components/CabecalhoPais.test.tsx": CABECALHO }],
+      ["E1 import dinâmico de *.test", 'export const m = import("@/components/CabecalhoPais.test");', { "src/components/CabecalhoPais.test.tsx": CABECALHO }],
+      ["E1 *.spec.tsx", 'import { CabecalhoPais } from "@/components/CabecalhoPais.spec"; const x = <CabecalhoPais />;', { "src/components/CabecalhoPais.spec.tsx": CABECALHO }],
+      ["E2 componente em __mocks__", 'import { CabecalhoPais } from "@/lib/__mocks__/cabecalho"; const x = <CabecalhoPais />;', { "src/lib/__mocks__/cabecalho.tsx": CABECALHO }],
+      ["E2 componente em __tests__ por require", 'const m = require("@/lib/__tests__/cabecalho");', { "src/lib/__tests__/cabecalho.tsx": CABECALHO }],
+      ["E2 componente em src/test", 'import { CabecalhoPais } from "@/test/cabecalho"; const x = <CabecalhoPais />;', { "src/test/cabecalho.tsx": CABECALHO }],
+      ["E3 componente fora do src", 'import { CabecalhoPais } from "../../componentes-extra/CabecalhoPais"; const x = <CabecalhoPais />;', { "componentes-extra/CabecalhoPais.tsx": CABECALHO }],
+      ["E3 import de efeito fora do src", 'import "../../componentes-extra/efeito";', { "componentes-extra/efeito.js": "export {};" }],
+      ["import que não se resolve", 'import { CabecalhoPais } from "./nao-existe"; const x = <CabecalhoPais />;', {}],
+      ["import de caminho absoluto", 'import { CabecalhoPais } from "/tmp/CabecalhoPais"; const x = <CabecalhoPais />;', {}],
+      ["import dinâmico de caminho calculado", "declare const caminho: string; export const m = import(caminho);", {}],
+    ];
+    for (const [nome, fonte, modulos] of casos) expect(ariaSortNoFonte(fonte, "src/app/x.tsx", modulos), nome).not.toEqual([]);
+    // Só tipos não levam código; CSS e pacotes não são a varredura.
+    expect(ariaSortNoFonte('import type { CabecalhoPais } from "@/components/CabecalhoPais.test"; import { type X } from "@/lib/__mocks__/x"; import "./globals.css"; import { z } from "zod";',
+      "src/app/x.tsx", { "src/components/CabecalhoPais.test.tsx": CABECALHO, "src/lib/__mocks__/x.ts": "export type X = 1;" })).toEqual([]);
+  });
+
+  it("autoteste (EXTENSOES): import sem extensão de cada tipo de módulo de produção se resolve — e não é apontado", () => {
+    const modulos: Record<string, string> = {
+      "src/lib/ok-tsx.tsx": "export const OK = 1;", "src/lib/ok-ts.ts": "export const OK = 1;", "src/lib/ok-jsx.jsx": "export const OK = 1;",
+      "src/lib/ok-js.js": "export const OK = 1;", "src/lib/ok-mjs.mjs": "export const OK = 1;", "src/lib/ok-cjs.cjs": "module.exports = { OK: 1 };",
+      "src/lib/ok-json.json": '{ "OK": 1 }', "src/lib/okdir/index.ts": "export const OK = 1;",
+    };
+    for (const nome of ["ok-tsx", "ok-ts", "ok-jsx", "ok-js", "ok-mjs", "ok-cjs", "ok-json", "okdir"]) {
+      expect(ariaSortNoFonte(`import M from "@/lib/${nome}"; export const x = M;`, "src/app/x.tsx", modulos), nome).toEqual([]);
+    }
   });
 
   it("autoteste (texto): grafias antigas — literal, camelCase, concatenação, template, join, concat, constante, helper .ts", () => {
@@ -999,6 +1096,78 @@ describe("colunas ordenáveis (E1)", () => {
       ["new Function", 'declare const codigo: string; const f = new Function(codigo);'],
     ];
     for (const [nome, fonte] of casos) expect(ariaSortNoFonte(fonte), nome).not.toEqual([]);
+  });
+
+  it("autoteste (B2 da R1 da #149): só o objeto de props inteiro de um componente pode ser repassado", () => {
+    const casos: [string, string][] = [
+      ["E4 objeto por prop comum", 'function Cel({ extra }: { extra: Record<string, string> }) { return <div {...extra} />; } const x = <Cel extra={{ [String(Date.now())]: "ascending" }} />;'],
+      ["E4b aria-sort montado de forma ilegível", 'function Cel({ extra }: { extra: Record<string, string> }) { return <div {...extra} />; } const x = <Cel extra={{ [["ar", "ia-so", "rt"].reverse().reverse().join("")]: "ascending" }} />;'],
+      ["E4 por props.extra", "function Cel(props: { extra: object }) { return <div {...props.extra} />; }"],
+      ["E4 prop aninhada do resto", "function Cel({ ...resto }: { extra: object }) { return <div {...resto.extra} />; }"],
+      ["segundo parâmetro", "function Cel(a: object, b: object) { return <div {...b} />; }"],
+      ["função comum (não componente)", "const linha = (p: object) => <tr {...p} />;"],
+      ["callback de .map", "declare const itens: object[]; const x = itens.map((i) => <div {...i} />);"],
+      ["componente repassador chamado direto", 'import { f } from "pacote"; function Repassa(p: object) { return <span {...p} />; } const x = Repassa({ [f()]: "x" });'],
+    ];
+    for (const [nome, fonte] of casos) expect(ariaSortNoFonte(fonte), nome).not.toEqual([]);
+    const permitidos: [string, string][] = [
+      ["props inteiras", "function Cel(props: object) { return <div {...props} />; }"],
+      ["resto das props", "function Cel({ a, ...resto }: { a: string }) { return <div {...resto}>{a}</div>; }"],
+      ["componente em arrow", "const Cel = (p: object) => <div {...p} />;"],
+      ["componente em forwardRef", 'import { forwardRef } from "react"; const Cel = forwardRef<HTMLButtonElement, object>(function cel(p, ref) { return <button ref={ref} {...p} />; });'],
+      ["componente em memo", 'import { memo } from "react"; const Cel = memo((p: object) => <div {...p} />);'],
+      ["componente repassador chamado direto com chaves conhecidas", 'function Repassa(p: object) { return <span {...p} />; } const x = Repassa({ title: "x" });'],
+    ];
+    for (const [nome, fonte] of permitidos) expect(ariaSortNoFonte(fonte), nome).toEqual([]);
+  });
+
+  it("autoteste (B3 da R1 da #149): cada item das listas fechadas tem um caso que falha sem ele", () => {
+    // PROIBIDOS: o nome sozinho, num objeto qualquer (nenhuma outra regra pega).
+    for (const nome of PROIBIDOS) expect(ariaSortNoFonte(`declare const el: any; declare const k: string; el.${nome}(k);`), nome).not.toEqual([]);
+    // RAIZES_DOM: escrita com chave calculada no global.
+    for (const raiz of RAIZES_DOM) expect(ariaSortNoFonte(`declare const k: string; ${raiz}[k] = "ascending";`), raiz).not.toEqual([]);
+    // MEMBROS_DOM: escrita com chave calculada no membro de um objeto qualquer.
+    for (const m of MEMBROS_DOM) expect(ariaSortNoFonte(`declare const o: any; declare const k: string; o.${m}[k] = "ascending";`), m).not.toEqual([]);
+    // CONSULTAS_DOM: escrita com chave calculada no resultado da consulta.
+    for (const c of ["querySelector", "querySelectorAll", "getElementById", "getElementsByTagName", "getElementsByClassName", "closest", "elementFromPoint", "elementsFromPoint", "item", "namedItem"]) {
+      expect(ariaSortNoFonte(`declare const o: any; declare const k: string; o.${c}("x")[k] = "ascending";`), c).not.toEqual([]);
+    }
+    for (const m of ["write", "writeln"]) expect(ariaSortNoFonte(`declare const html: string; document.${m}(html);`), m).not.toEqual([]);
+    // METODOS_DE_TEXTO: sem o método, o último pedaço vira desconhecido e "aria-sor" + ? não é apontado.
+    const metodos: Record<string, string> = {
+      replace: '"x".replace("x", "t")', replaceAll: '"x".replaceAll("x", "t")', toLowerCase: '"T".toLowerCase()', toUpperCase: '"t".toUpperCase()',
+      toLocaleLowerCase: '"T".toLocaleLowerCase()', toLocaleUpperCase: '"t".toLocaleUpperCase()', trim: '" t ".trim()', trimStart: '" t".trimStart()',
+      trimEnd: '"t ".trimEnd()', normalize: '"t".normalize("NFC")', slice: '"xt".slice(1)', substring: '"xt".substring(1)', substr: '"xt".substr(1)',
+      at: '"xt".at(1)', charAt: '"xt".charAt(1)', padStart: '"".padStart(1, "t")', padEnd: '"".padEnd(1, "t")', repeat: '"t".repeat(1)',
+      toString: '"t".toString()', valueOf: '"t".valueOf()',
+    };
+    expect(Object.keys(metodos).sort()).toEqual([...METODOS_DE_TEXTO.keys()].sort());
+    for (const [m, expr] of Object.entries(metodos)) expect(ariaSortNoFonte(`const k = "aria-sor" + ${expr};`), m).not.toEqual([]);
+    expect(ariaSortNoFonte('declare const x: string; const k = "aria-sor" + x;'), "controle do método").toEqual([]);
+    // MUTADORES: objeto de chaves conhecidas, depois mutado — o spread em HTML passa a ter chaves desconhecidas.
+    for (const m of ["Object.assign(o, x)", "Object.defineProperty(o, x, {})", "Object.defineProperties(o, x)", "Object.setPrototypeOf(o, x)",
+      "Reflect.set(o, x, 1)", "Reflect.defineProperty(o, x, {})", "Reflect.deleteProperty(o, x)", "Reflect.setPrototypeOf(o, x)"]) {
+      expect(ariaSortNoFonte(`declare const x: any; const o = { a: 1 }; ${m}; const y = <div {...o} />;`), m).not.toEqual([]);
+    }
+    expect(ariaSortNoFonte("declare const x: any; const o = { a: 1 }; const y = <div {...o} />;"), "controle do mutador").toEqual([]);
+    // IDENTIDADE_REACT: o componente/callback é seguido através da função do React.
+    expect([...IDENTIDADE_REACT].sort()).toEqual(["forwardRef", "memo", "useCallback"]);
+    for (const f of ["forwardRef", "memo"]) {
+      const fonte = f === "forwardRef"
+        ? 'import { forwardRef } from "react"; import { dados } from "pacote"; const Fixo = forwardRef<HTMLParagraphElement, { x: string }>(function Fixo({ x }, ref) { return <p ref={ref}>{x}</p>; }); const y = <Fixo {...dados} />;'
+        : 'import { memo } from "react"; import { dados } from "pacote"; const Fixo = memo(function Fixo({ x }: { x: string }) { return <p>{x}</p>; }); const y = <Fixo {...dados} />;';
+      expect(ariaSortNoFonte(fonte), `${f}: componente que não repassa`).toEqual([]);
+    }
+    expect(ariaSortNoFonte('import { useCallback } from "react"; function C() { const juntar = useCallback((a: string, b: string) => a + b, []); const k = juntar("aria", "-sort"); return k; }'), "useCallback").not.toEqual([]);
+    expect(ariaSortNoFonte('import { useMemo } from "react"; function C() { const juntar = useMemo(() => (a: string, b: string) => a + b, []); const k = juntar("aria", "-sort"); return k; }'), "useMemo").not.toEqual([]);
+    // EXTERNOS_CONFIAVEIS: lista fechada exata — acrescentar uma origem afrouxa a trava.
+    expect([...EXTERNOS_CONFIAVEIS]).toEqual([
+      ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]], ["@dnd-kit/sortable", ["useSortable"]],
+    ]);
+    for (const [modulo, hooks] of EXTERNOS_CONFIAVEIS) for (const hook of hooks) {
+      expect(ariaSortNoFonte(`import { ${hook} } from "${modulo}"; function C() { const r = ${hook}(); return <div {...r} />; }`), `${modulo}#${hook}`).toEqual([]);
+      expect(ariaSortNoFonte(`import { ${hook} } from "outro-${modulo}"; function C() { const r = ${hook}(); return <div {...r} />; }`), `outro módulo: ${hook}`).not.toEqual([]);
+    }
   });
 
   it("autoteste (controle negativo): o que o app usa hoje não é apontado", () => {
