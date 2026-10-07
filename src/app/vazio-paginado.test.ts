@@ -844,10 +844,10 @@ describe("detector de vazio paginado (autoteste)", () => {
 
     it("B5 (K11): homóglifos e formas de largura total viram a letra latina", () => {
       // O trecho guarda o texto como está; comparado, é a frase.
-      expect(planos('{"Nenhuma proposta nesta p\\u0430gina."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta pagina."]);
-      expect(planos('{"Nenhuma proposta n\\u0435sta página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
-      expect(planos('{"Nenhuma proposta nest\\u03b1 página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
-      expect(planos('{"Nenhuma proposta \\uff4e\\uff45\\uff53\\uff54\\uff41 página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nesta p\\u0430gina."}').map((t) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta pagina."]);
+      expect(planos('{"Nenhuma proposta n\\u0435sta página."}').map((t) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nest\\u03b1 página."}').map((t) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta \\uff4e\\uff45\\uff53\\uff54\\uff41 página."}').map((t) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta página."]);
     });
 
     it("B6 (G20): componente no meio é fronteira — a \"página\" depois dele continua o que ele renderiza", () => {
