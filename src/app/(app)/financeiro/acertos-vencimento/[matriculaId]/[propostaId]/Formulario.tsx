@@ -12,6 +12,7 @@ export function VencimentoFormulario(props: Props) {
  const router = useRouter();
  const [ocupado,setOcupado] = useState(false), [mensagem,setMensagem] = useState("");
  const [concluido,setConcluido] = useState(false);
+ const [temTentativa,setTemTentativa] = useState(false);
  const emEnvio = useRef(false);
  const tentativa = useRef<{ entrada: Record<string,unknown>; chave: string } | null>(null);
  return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {
@@ -20,22 +21,23 @@ export function VencimentoFormulario(props: Props) {
   if (!tentativa.current) tentativa.current = { chave: crypto.randomUUID(), entrada: props.modo === "preparar"
    ? { matriculaId: props.matriculaId, versaoCondicoesId: props.versaoCondicoesId, revisaoHash: props.revisaoHash, motivo: form.get("motivo"), evidencia: form.get("evidencia") }
    : props.modo === "decidir" ? { propostaId: props.propostaId, aprovada: form.get("decisao") === "aprovar", motivo: form.get("motivo") } : { propostaId: props.propostaId } };
+  setTemTentativa(true);
   emEnvio.current = true; setOcupado(true); setMensagem("");
   try {
    const entrada = { ...tentativa.current.entrada, chaveIdempotencia: tentativa.current.chave };
    const r = await (props.modo === "preparar" ? proporVencimentoAditivo(entrada) : props.modo === "decidir" ? decidirVencimentoAditivo(entrada) : aplicarVencimentoAditivo(entrada));
    if (r.ok) { setConcluido(true); setMensagem("Operação registrada."); router.refresh(); }
-   else if (r.podeRevisar) { tentativa.current = null; setMensagem(r.erro + " Corrija os dados antes de tentar novamente."); }
+   else if (r.podeRevisar) { tentativa.current = null; setTemTentativa(false); setMensagem(r.erro + " Corrija os dados antes de tentar novamente."); }
    else setMensagem(r.erro + " A tentativa foi preservada; confira o histórico antes de iniciar outra operação.");
   } catch { setMensagem(MSG_RESULTADO_INCERTO); }
   finally { emEnvio.current = false; setOcupado(false); }
  }}>
- <fieldset disabled={ocupado || !!tentativa.current} className="space-y-2">
+ <fieldset disabled={ocupado || temTentativa} className="space-y-2">
  {props.modo !== "aplicar" && <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
  {props.modo === "preparar" && <label className="block">Evidência conferida<CampoTexto name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>}
  {props.modo === "decidir" && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
  </fieldset>
- <button disabled={ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : tentativa.current ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Preparar acerto" : props.modo === "decidir" ? "Registrar decisão" : "Aplicar vencimento aprovado"}</button>
+ <button disabled={ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{concluido ? "Registrado" : ocupado ? "Processando…" : temTentativa ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Preparar acerto" : props.modo === "decidir" ? "Registrar decisão" : "Aplicar vencimento aprovado"}</button>
  <MensagemStatus texto={mensagem} />
  </form>;
 }
