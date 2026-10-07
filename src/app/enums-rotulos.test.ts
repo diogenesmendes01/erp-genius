@@ -160,7 +160,7 @@ export function clientePrismaVirtual(schema: string): string {
     linhas.push(`type $Linha_${m.nome} = ${m.nome} & { ${m.campos.filter((c) => nomesModelos.has(c[2])).map((c) => `${c[1]}: ${tipo(c)}`).join("; ")} };`);
   }
   linhas.push(
-    "interface $Delegado<M> { findMany(a?: any): Promise<M[]>; findFirst(a?: any): Promise<M | null>; findUnique(a?: any): Promise<M | null>; findFirstOrThrow(a?: any): Promise<M>; findUniqueOrThrow(a?: any): Promise<M>; create(a?: any): Promise<M>; update(a?: any): Promise<M>; upsert(a?: any): Promise<M>; delete(a?: any): Promise<M>; createManyAndReturn(a?: any): Promise<M[]>; updateManyAndReturn(a?: any): Promise<M[]>; count(a?: any): Promise<number>; }",
+    "interface $Delegado<M> { findMany(a?: any): Promise<M[]>; findFirst(a?: any): Promise<M | null>; findUnique(a?: any): Promise<M | null>; findFirstOrThrow(a?: any): Promise<M>; findUniqueOrThrow(a?: any): Promise<M>; create(a?: any): Promise<M>; update(a?: any): Promise<M>; upsert(a?: any): Promise<M>; delete(a?: any): Promise<M>; createManyAndReturn(a?: any): Promise<M[]>; updateManyAndReturn(a?: any): Promise<M[]>; count(a?: any): Promise<number>; groupBy(a?: any): Promise<any[]>; aggregate(a?: any): Promise<any>; createMany(a?: any): Promise<{ count: number }>; updateMany(a?: any): Promise<{ count: number }>; deleteMany(a?: any): Promise<{ count: number }>; }",
     "export declare class PrismaClient {",
     "  constructor(opcoes?: any);",
     "  $transaction<T>(operacao: (tx: Prisma.TransactionClient) => Promise<T>, opcoes?: any): Promise<T>;",
@@ -1390,6 +1390,9 @@ describe("(i) enum cru na tela — AST e tipos", () => {
     expect(d).toContain("type $Linha_Turma = Turma & { itens: $Linha_Item[] };");
     expect(d).toContain("  item: $Delegado<$Linha_Item>;");
     expect(d).toContain("count(a?: any): Promise<number>;");
+    // Sem groupBy/aggregate, a função que os usa vira `any` e contamina o Promise.all inteiro da tela: o `total`
+    // de financeiro/(painel)/comissoes/page.tsx saía `any` e era acusado (integração da R2 da #150).
+    expect(d).toContain("groupBy(a?: any): Promise<any[]>; aggregate(a?: any): Promise<any>;");
   });
 });
 
