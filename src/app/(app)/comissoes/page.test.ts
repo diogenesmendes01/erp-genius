@@ -27,26 +27,26 @@ describe("/comissoes — filtro e páginas (E4)", () => {
   it("situação só do enum e página chegam à consulta; filtro no formulário GET", async () => {
     mocks.pagina.mockResolvedValue({ itens: Array.from({ length: 50 }, (_, i) => comissao(i)), total: 120 });
     const html = await render({ status: "PAGA", pagina: "2" });
-    expect(mocks.pagina).toHaveBeenCalledWith({ status: "PAGA", pagina: 2, ordem: { campo: "vendedor", dir: "asc" } });
+    expect(mocks.pagina).toHaveBeenCalledWith({ busca: "", status: "PAGA", pagina: 2, ordem: { campo: "vendedor", dir: "asc" } });
     expect(html).toMatch(/<form method="get" action="\/comissoes"/);
     expect(html).toContain('<option value="PAGA" selected="">');
     expect(html).toContain("51–100 de 120 comissões");
     expect(html).toContain('href="/comissoes?status=PAGA&amp;pagina=3"');
     await render({ status: "INVENTADA" });
-    expect(mocks.pagina).toHaveBeenLastCalledWith({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+    expect(mocks.pagina).toHaveBeenLastCalledWith({ busca: "", status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
   });
 
   it("ordem pelo cabeçalho (E1): a da URL chega à consulta e marca a coluna certa; links mantêm a ordem", async () => {
     mocks.pagina.mockResolvedValue({ itens: Array.from({ length: 50 }, (_, i) => comissao(i)), total: 120 });
     const html = await render({ status: "PAGA", ordem: "valor", dir: "desc", pagina: "2" });
-    expect(mocks.pagina).toHaveBeenCalledWith({ status: "PAGA", pagina: 2, ordem: { campo: "valor", dir: "desc" } });
+    expect(mocks.pagina).toHaveBeenCalledWith({ busca: "", status: "PAGA", pagina: 2, ordem: { campo: "valor", dir: "desc" } });
     expect(html.match(/aria-sort="/g)).toHaveLength(1);
     expect(html).toMatch(/<th scope="col" aria-sort="descending"[^>]*><a [^>]*href="\/comissoes\?status=PAGA&amp;ordem=valor&amp;dir=asc"[^>]*>Valor</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/comissoes\?status=PAGA&amp;ordem=vendedor&amp;dir=asc"[^>]*>Beneficiário</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/comissoes\?status=PAGA&amp;ordem=status&amp;dir=asc"[^>]*>Situação</);
     // Paginação, limpar filtro e o formulário GET (sem JavaScript) levam a ordem escolhida.
     expect(html).toContain('href="/comissoes?status=PAGA&amp;ordem=valor&amp;dir=desc&amp;pagina=3"');
-    expect(html).toMatch(/<a[^>]*href="\/comissoes\?ordem=valor&amp;dir=desc"[^>]*>Limpar filtro<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/comissoes\?ordem=valor&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
     expect(html).toContain('<input type="hidden" name="ordem" value="valor"/>');
     expect(html).toContain('<input type="hidden" name="dir" value="desc"/>');
   });
@@ -54,7 +54,7 @@ describe("/comissoes — filtro e páginas (E4)", () => {
   it("sem ordem na URL (ou fora da lista): beneficiário crescente marcado e URLs sem ordem", async () => {
     mocks.pagina.mockResolvedValue({ itens: Array.from({ length: 50 }, (_, i) => comissao(i)), total: 120 });
     const html = await render({ ordem: "percentual", dir: "desc" });
-    expect(mocks.pagina).toHaveBeenLastCalledWith({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+    expect(mocks.pagina).toHaveBeenLastCalledWith({ busca: "", status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
     expect(html).toMatch(/aria-sort="ascending"[^>]*><a [^>]*href="\/comissoes\?ordem=vendedor&amp;dir=desc"[^>]*>Beneficiário</);
     expect(html).toContain('href="/comissoes?pagina=2"');
     expect(html).not.toContain('type="hidden"');
@@ -74,5 +74,53 @@ describe("/comissoes — filtro e páginas (E4)", () => {
     mocks.pagina.mockResolvedValue({ itens: [], total: 0 });
     expect(await render({ status: "ESTORNADA" })).toContain("Nenhuma comissão nesta situação.");
     expect(await render({})).toContain("Nenhuma comissão no seu escopo.");
+  });
+});
+
+describe("/comissoes — busca (E4, §5.6 A9)", () => {
+  beforeEach(() => { vi.clearAllMocks(); mocks.pagina.mockResolvedValue({ itens: [], total: 0 }); });
+
+  it("busca da URL chega à consulta sem espaços nas pontas e com teto de 100 caracteres", async () => {
+    await render({ busca: "  Bia Souza  " });
+    expect(mocks.pagina).toHaveBeenLastCalledWith({ busca: "Bia Souza", status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+    await render({ busca: "x".repeat(300), status: "PAGA" });
+    expect(mocks.pagina).toHaveBeenLastCalledWith({ busca: "x".repeat(100), status: "PAGA", pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+  });
+
+  it("formulário GET de busca: campo preenchido, ordem atual nos campos ocultos e sem página (buscar volta à página 1)", async () => {
+    mocks.pagina.mockResolvedValue({ itens: Array.from({ length: 50 }, (_, i) => comissao(i)), total: 120 });
+    const html = await render({ busca: "bia", status: "PAGA", ordem: "valor", dir: "desc", pagina: "2" });
+    expect(html).toMatch(/<form method="get" action="\/comissoes" role="search"/);
+    expect(html).toMatch(/<input name="busca"[^>]*value="bia"/);
+    expect(html).toContain('aria-label="Buscar comissão por beneficiário"');
+    expect(html).toContain('<option value="PAGA" selected="">');
+    expect(html).toContain('<input type="hidden" name="ordem" value="valor"/>');
+    expect(html).toContain('<input type="hidden" name="dir" value="desc"/>');
+    expect(html).not.toContain('name="pagina"');
+  });
+
+  it("paginação, cabeçalhos ordenáveis e limpar preservam a busca (e a ordem); os cabeçalhos voltam à página 1", async () => {
+    mocks.pagina.mockResolvedValue({ itens: Array.from({ length: 50 }, (_, i) => comissao(i)), total: 120 });
+    const html = await render({ busca: "bia", status: "PAGA", ordem: "valor", dir: "desc", pagina: "2" });
+    expect(html).toContain('href="/comissoes?busca=bia&amp;status=PAGA&amp;ordem=valor&amp;dir=desc"'); // ← Anterior (página 1)
+    expect(html).toContain('href="/comissoes?busca=bia&amp;status=PAGA&amp;ordem=valor&amp;dir=desc&amp;pagina=3"');
+    expect(html).toMatch(/<a [^>]*href="\/comissoes\?busca=bia&amp;status=PAGA&amp;ordem=valor&amp;dir=asc"[^>]*>Valor</);
+    expect(html).toMatch(/<a [^>]*href="\/comissoes\?busca=bia&amp;status=PAGA&amp;ordem=vendedor&amp;dir=asc"[^>]*>Beneficiário</);
+    // Limpar tira busca e situação, mantém a ordem.
+    expect(html).toMatch(/<a[^>]*href="\/comissoes\?ordem=valor&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+  });
+
+  it("só a busca também conta como filtro: limpar aparece e o vazio diz que a busca não achou nada", async () => {
+    const html = await render({ busca: "ninguem" });
+    expect(html).toMatch(/<a[^>]*href="\/comissoes"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toContain("Nenhuma comissão com esses filtros.");
+    expect(html).toMatch(/<a[^>]*href="\/comissoes"[^>]*>Ver todas<\/a>/);
+    expect(html).not.toContain("Nenhuma comissão no seu escopo.");
+  });
+
+  it("página além do fim volta à última preservando busca, situação e ordem", async () => {
+    mocks.pagina.mockResolvedValue({ itens: [], total: 60 });
+    await expect(render({ busca: "bia", status: "PAGA", ordem: "status", dir: "desc", pagina: "5" }))
+      .rejects.toThrow("REDIRECT /comissoes?busca=bia&status=PAGA&ordem=status&dir=desc&pagina=2");
   });
 });
