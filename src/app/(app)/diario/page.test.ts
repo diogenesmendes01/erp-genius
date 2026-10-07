@@ -34,6 +34,13 @@ describe("/diario — busca no histórico (E4)", () => {
     expect(html).toContain('aria-label="Páginas do histórico do diário"');
   });
 
+  it("as sub-seções ficam nas abas do layout (E2): a página só leva às Avaliações, que são do acadêmico", async () => {
+    const html = await render({});
+    const hrefs = [...html.matchAll(/<a[^>]*\shref="([^"]+)"/g)].map((m) => m[1]);
+    expect(hrefs.filter((h) => /^\/diario\/./.test(h))).toEqual([]);
+    expect(hrefs).toContain("/academico/avaliacoes");
+  });
+
   it("busca sem resultado diz o termo; sem busca, a mensagem padrão do histórico", async () => {
     expect(await render({ busca: "zé" })).toContain('data-vazio="Nenhuma aula para “zé”."');
     expect(await render({})).toContain('data-vazio=""');
