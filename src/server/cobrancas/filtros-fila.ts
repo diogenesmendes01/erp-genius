@@ -82,18 +82,26 @@ export const hrefDosCamposFila = (c: CamposFila, indicador: IndicadorFila | null
 /** Palavras da busca (no máximo 6 — limita o trabalho por cobrança, como nas outras listas). */
 export const palavrasDaBuscaFila = (busca: string) => busca.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
 
-type ItemFiltravel = Pick<FilaCobrancaItem, "estado" | "diasAtraso" | "precisaBloqueio" | "codigo" | "pais" | "turma" | "prioridade"> & {
+type ItemIndicador = Pick<FilaCobrancaItem, "estado" | "diasAtraso" | "precisaBloqueio">;
+type ItemFiltravel = ItemIndicador & Pick<FilaCobrancaItem, "codigo" | "pais" | "turma" | "prioridade"> & {
   aluno: { nome: string };
 };
 
-// Os mesmos critérios dos contadores de listarFilaCobranca: "Bloquear" ⊂ "Em atraso"; promessa fica fora
-// de "A vencer" e "Em atraso".
-const DO_INDICADOR: Record<IndicadorFila, (i: ItemFiltravel) => boolean> = {
+// Critério de cada indicador — fonte única do número do cartão (contarIndicadoresFila, usado por
+// listarFilaCobranca) e da lista filtrada (filtrarFila), para os dois não divergirem: "Bloquear" ⊂ "Em atraso";
+// promessa fica fora de "A vencer" e "Em atraso"; a cobrança que vence hoje (diasAtraso 0) é "A vencer".
+const DO_INDICADOR: Record<IndicadorFila, (i: ItemIndicador) => boolean> = {
   aVencer: (i) => i.estado !== "promessa" && i.diasAtraso <= 0,
   emAtraso: (i) => i.estado !== "promessa" && i.diasAtraso > 0,
   bloquear: (i) => i.precisaBloqueio,
   promessas: (i) => i.estado === "promessa",
 };
+
+/** Números dos cartões-indicadores (mini-dashs) sobre a fila inteira, com o mesmo critério do filtro. */
+export function contarIndicadoresFila(itens: ItemIndicador[]): Record<IndicadorFila, number> {
+  const conta = (indicador: IndicadorFila) => itens.filter(DO_INDICADOR[indicador]).length;
+  return { aVencer: conta("aVencer"), emAtraso: conta("emAtraso"), bloquear: conta("bloquear"), promessas: conta("promessas") };
+}
 
 /**
  * A fila exibida: indicador, busca por palavras (cada uma no nome do aluno ou no código da cobrança),
