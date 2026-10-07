@@ -482,14 +482,17 @@ const PREFIXOS_DESTRUTIVOS = ["efetivar encerramento", "efetivar desistência"];
  * — e com todo espaço (NBSP, espaços tipográficos) virando um espaço comum. "Encer\u00adrar",
  * "Encer\u034frar" e "Encerrar\ufe0f" aparecem como "Encerrar" — e são comparados como "Encerrar".
  */
-export const textoLido = (t: string) => t.normalize("NFKC").replace(/[\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, "").replace(/\s+/gu, " ");
+// U+2800 (braille em branco, categoria So) não é ignorável nem `\s`, mas a tela o desenha como espaço (R3, B1).
+export const textoLido = (t: string) => t.normalize("NFKC").replace(/[\p{Cf}\p{Default_Ignorable_Code_Point}]/gu, "").replace(/[\s\u2800]+/gu, " ");
 
 /**
- * Letra fora do alfabeto latino (R2 da #148, B2): o rótulo é em português, e um homóglifo de outro
- * alfabeto ("\u0415ncerrar", E cirílico) se lê como o verbo sem casar com ele. Sem tabela de confusáveis:
- * falha fechada — o pedaço conta como destrutivo (exige perigo ou exceção ancorada).
+ * Letra fora do alfabeto do português (R2 da #148, B2; R3, B2): o rótulo é em português, e um homóglifo
+ * (E cirílico U+0415 em "Encerrar"; alfa LATINO U+0251; i sem ponto U+0131 em "Excluir") se lê como o verbo
+ * sem casar com ele. Lista de inclusão — latim básico mais as letras do Latin-1 (acentos, ç, ª, º) —, e não
+ * de exclusão por alfabeto: o próprio Script=Latin tem letras que se leem como outras. Sem tabela de
+ * confusáveis: falha fechada — o pedaço conta como destrutivo (exige perigo ou exceção ancorada).
  */
-const LETRA_FORA_DO_LATIM = /(?=\p{L})\P{Script=Latin}/u;
+const LETRA_FORA_DO_PORTUGUES = /(?=\p{L})[^A-Za-zªºÀ-ÖØ-öø-ÿ]/u;
 
 /**
  * Um pedaço de rótulo nomeia ação destrutiva? Lido como na tela (textoLido), sem caixa e sem símbolo
@@ -499,7 +502,7 @@ const LETRA_FORA_DO_LATIM = /(?=\p{L})\P{Script=Latin}/u;
 export function fragmentoDestrutivo(fragmento: string): boolean {
   const t = textoLido(fragmento).replace(/^[^\p{L}]+/u, "").trim();
   const baixo = t.toLowerCase();
-  if (LETRA_FORA_DO_LATIM.test(t)) return true;
+  if (LETRA_FORA_DO_PORTUGUES.test(t)) return true;
   if (!t || baixo === "cancelar") return false;
   return VERBOS_DESTRUTIVOS.some((v) => baixo === v.toLowerCase() || baixo.startsWith(`${v.toLowerCase()} `))
     || new RegExp(CONFIRMACAO_DESTRUTIVA.source, "i").test(t) || /^confirmar desistência(\s|$)/i.test(t)
@@ -1930,6 +1933,28 @@ describe("R1 da #148: rótulo lido como na tela, desestruturação opaca e lista
     expect(destrutivosSemPerigo(`<button className={botaoClasses({ variante: "secundario" })}>R${e_CIRILICO}jeitar proposta</button>`)).toHaveLength(1);
     // Latim com acento, números e símbolos não são outro alfabeto.
     for (const r of ["Ação concluída", "Salvar 2ª via", "✓ Salvar · →", "Exportar CSV (UTF-8)"]) expect(fragmentoDestrutivo(r), r).toBe(false);
+  });
+
+  it("R3 B1 — E10: U+2800 (braille em branco) é espaço na tela — não esconde o verbo", () => {
+    const BRAILLE = String.fromCodePoint(0x2800);
+    expect(textoLido(`Encerrar${BRAILLE}`)).toBe("Encerrar ");
+    expect(textoLido(`Encerrar${BRAILLE}${BRAILLE} país`)).toBe("Encerrar país");
+    expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encerrar${BRAILLE}", variante: "fantasma" }];`), "fim").toHaveLength(1);
+    expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encerrar${BRAILLE}país", variante: "fantasma" }];`), "entre palavras").toHaveLength(1);
+    expect(destrutivosSemPerigo(`<Botao variante="secundario">Encerrar${BRAILLE}</Botao>`), "Botao").toHaveLength(1);
+  });
+
+  it("R3 B2 — E12: homóglifo de dentro do alfabeto latino (ɑ, ı) falha fechado; letras do português não", () => {
+    const ALFA_LATINO = String.fromCodePoint(0x251), I_SEM_PONTO = String.fromCodePoint(0x131);
+    for (const r of [`Encerr${ALFA_LATINO}r`, `Exclu${I_SEM_PONTO}r`]) {
+      expect(fragmentoDestrutivo(r), r).toBe(true);
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "${r}", variante: "fantasma" }];`), `tabela ${r}`).toHaveLength(1);
+      expect(destrutivosSemPerigo(`<Botao variante="secundario">${r}</Botao>`), `Botao ${r}`).toHaveLength(1);
+    }
+    // Todo o Latin-1 que o português usa continua neutro (acentos, cedilha, ordinais).
+    for (const r of ["Nº 3", "Pré-visualização", "Ação concluída", "Salvar 2ª via", "Órgão emissor", "Índice útil", "ÂÊÔ âêô ÃÕ ãõ À à Ü ü"]) {
+      expect(fragmentoDestrutivo(r), r).toBe(false);
+    }
   });
 
   it("B2 — S4: nome vindo de desestruturação é opaco (não vale o inicializador inteiro)", () => {
