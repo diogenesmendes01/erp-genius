@@ -99,3 +99,42 @@ export function hrefAtivoMaisLongo(pathname: string, hrefs: string[]): string | 
     .filter((href) => pathname === href || pathname.startsWith(href + "/"))
     .sort((a, b) => b.length - a.length)[0];
 }
+
+/**
+ * Aba de sub-navegação (SubTabs). Por padrão acende na própria rota e em tudo abaixo dela, pelo
+ * prefixo mais longo. Duas opções para áreas de prefixos aninhados (docs/42, E2 — /academico):
+ * - `exato`: só acende na rota exata. É a aba da raiz da área (/academico, /diario): sem isso,
+ *   qualquer sub-tela sem aba própria (ex.: /academico/segundas-chamadas/[alocacaoId]/…) acenderia
+ *   a raiz e diria ao operador que ele está em "Mudanças acadêmicas".
+ * - `prefixo`: acende abaixo de um prefixo diferente do href, quando a página da aba não é a raiz
+ *   do seu ramo (a aba /academico/modalidades/quantidade cobre /academico/modalidades/[id]/…).
+ */
+export type AbaSubnav = { href: string; label: string; exato?: boolean; prefixo?: string };
+
+/** Href da aba ativa — prefixo mais longo (borda de segmento), respeitando `exato` e `prefixo`. */
+export function hrefDaAbaAtiva(pathname: string, abas: Pick<AbaSubnav, "href" | "exato" | "prefixo">[]): string | undefined {
+  const candidatas = abas.filter((a) => !a.exato || pathname === a.href);
+  const chave = (a: (typeof candidatas)[number]) => (a.exato ? a.href : a.prefixo ?? a.href);
+  const ativa = hrefAtivoMaisLongo(pathname, candidatas.map(chave));
+  return candidatas.find((a) => chave(a) === ativa)?.href;
+}
+
+/**
+ * Seção de uma área com sub-navegação (/academico, /diario): a aba e os papéis que abrem a página
+ * dela — os MESMOS do exigirSessaoPagina da página (um teste lê cada page.tsx e confere). Menu é só
+ * UX: a permissão continua no guard de cada página.
+ */
+export type SecaoArea = AbaSubnav & { papeis: Papel[] };
+
+/** Abas que o papel abre; Administrador vê todas (como no guard, onde ele sempre passa). */
+export function abasParaPapeis(secoes: SecaoArea[], papeis: readonly Papel[]): AbaSubnav[] {
+  const admin = papeis.includes(Papel.ADMINISTRADOR);
+  return secoes
+    .filter((s) => admin || s.papeis.some((p) => papeis.includes(p)))
+    .map((s) => ({
+      href: s.href,
+      label: s.label,
+      ...(s.exato ? { exato: true } : {}),
+      ...(s.prefixo ? { prefixo: s.prefixo } : {}),
+    }));
+}
