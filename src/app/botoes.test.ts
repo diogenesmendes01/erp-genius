@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, type Dirent } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync, type Dirent } from "node:fs";
+import { join, posix } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
@@ -315,30 +315,26 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
     const p = arg.properties.find((x) => ts.isPropertyAssignment(x) && x.name.getText(sf) === "variante") as ts.PropertyAssignment | undefined;
     return p ? daExpressao(p.initializer) : ["primario"];
   };
-  /** Variantes de todas as chamadas a botaoClasses e constantes de botão dentro de um nó. */
-  const constantes = new Map<string, string[]>();
-  const naExpressao = (raiz: ts.Node): string[] => {
+  /**
+   * Variantes de todas as chamadas a botaoClasses dentro de um nó, seguindo constantes PELO ESCOPO (uma
+   * sombra noutra função não troca a variante do botão; follow-up #140, B1/T7).
+   */
+  const naExpressao = (raiz: ts.Node, vistos = new Set<ts.Node>()): string[] => {
     const v: string[] = [];
     const andar = (n: ts.Node) => {
       if (ehBotaoClasses(n)) { v.push(...daChamada(n)); return; }
-      if (ts.isIdentifier(n) && constantes.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) v.push(...constantes.get(n.text)!);
+      if (ts.isIdentifier(n) && ehReferencia(n)) {
+        const valor = valorNoEscopo(n);
+        if (valor && !vistos.has(valor)) { vistos.add(valor); v.push(...naExpressao(valor, vistos)); }
+      }
       ts.forEachChild(n, andar);
     };
     andar(raiz);
     return v;
   };
-  const coletar = (n: ts.Node) => {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
-      const v = naExpressao(n.initializer);
-      if (v.length) constantes.set(n.name.text, v);
-    }
-    ts.forEachChild(n, coletar);
-  };
-  coletar(sf);
   const atributo = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, nome: string) =>
     n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
   const botoes: { rotulo: string; variantes: string[]; fragmentos: string[] }[] = [];
-  const constsDoArquivo = constantesDoArquivo(sf);
   const visitar = (n: ts.Node) => {
     if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
       const tag = n.tagName.getText(sf);
@@ -350,7 +346,7 @@ export function variantesDosBotoes(fonte: string): { rotulo: string; variantes: 
         const ini = atributo(n, "className")?.initializer;
         if (ini) variantes = naExpressao(ini);
       }
-      if (variantes.length) botoes.push({ rotulo: nomeDoElemento(n, sf) ?? "(sem nome)", variantes, fragmentos: rotuloResolvido(n, sf, constsDoArquivo).fragmentos });
+      if (variantes.length) botoes.push({ rotulo: nomeDoElemento(n, sf) ?? "(sem nome)", variantes, fragmentos: rotuloResolvido(n, sf).fragmentos });
     }
     ts.forEachChild(n, visitar);
   };
@@ -468,6 +464,11 @@ const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
 // ---------------------------------------------------------------------------------------------------
 // Revisão R1 da #135: rótulo resolvido (constante, template, caixa, símbolo), falha fechada, tabelas de
 // botão, condições normalizadas e aria-pressed ligado à condição da classe.
+// Follow-up #140 (R3 da #135): em vez de enumerar formas, a trava resolve NOMES PELO ESCOPO (uma sombra
+// noutra função não troca o valor; parâmetro não é constante), marca o trecho que não se resolve e exige
+// que o COMEÇO do rótulo seja conhecido, lê objetos com spread e chave entre aspas, confere a polaridade
+// dos atributos de estado, segue funções que decidem (locais, métodos e importadas do projeto) e varre os
+// usos do componente de rótulo dinâmico em todo o src.
 // ---------------------------------------------------------------------------------------------------
 
 const VERBO_DESTRUTIVO_NO_MEIO = /\se\s(rejeitar|recusar|remover|excluir|apagar|descartar|desativar|inativar|revogar|encerrar|estornar|anular|cancelar)\b/i;
@@ -486,38 +487,142 @@ export function fragmentoDestrutivo(fragmento: string): boolean {
     || PREFIXOS_DESTRUTIVOS.some((p) => baixo.startsWith(p)) || VERBO_DESTRUTIVO_NO_MEIO.test(` ${t}`);
 }
 
-/** Constantes do arquivo (nome → inicializador), para resolver rótulos montados fora do JSX. */
-function constantesDoArquivo(sf: ts.SourceFile): Map<string, ts.Expression> {
-  const mapa = new Map<string, ts.Expression>();
-  const visita = (n: ts.Node) => {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) mapa.set(n.name.text, n.initializer);
-    ts.forEachChild(n, visita);
-  };
-  visita(sf);
-  return mapa;
+/** Trecho de texto que não se resolve (substituição dinâmica num template, parte opaca de um "+"). */
+const DESCONHECIDO = "\u0000";
+/** Para mensagens: o trecho desconhecido aparece como "…". */
+const legivel = (t: string) => t.split(DESCONHECIDO).join("…");
+/**
+ * O COMEÇO do texto (onde fica o verbo) é conhecido? "Excluir …" sim; "…", "… itens", "Encer…" e "✕ …"
+ * não — a parte desconhecida pode completar ou ser o verbo (follow-up #140, B1: `"Encer" + x`). Texto
+ * vazio ou só de símbolos não esconde nada.
+ */
+const comecoConhecido = (t: string) => {
+  const s = t.replace(/^[^\p{L}\u0000]+/u, "");
+  return s === "" || !s.split(/\s/)[0].includes(DESCONHECIDO);
+};
+
+/** Tira embrulhos que não mudam o valor: parênteses, `as`, `satisfies`, `<T>x`, `x!`. */
+const semEmbrulho = (e: ts.Expression): ts.Expression => {
+  while (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isSatisfiesExpression(e) || ts.isTypeAssertionExpression(e) || ts.isNonNullExpression(e)) e = e.expression;
+  return e;
+};
+
+/** Nomes ligados por um padrão de declaração (`x`, `{ a, b: c }`, `[d, ...e]`). */
+function nomesLigados(b: ts.BindingName): string[] {
+  if (ts.isIdentifier(b)) return [b.text];
+  return b.elements.flatMap((el) => (ts.isOmittedExpression(el) ? [] : nomesLigados(el.name)));
 }
 
-/** Textos que uma expressão pode mostrar (alternativas); "…" onde não dá para saber; null = nada resolvível. */
-function alternativasDeTexto(e: ts.Node, consts: Map<string, ts.Expression>, prof = 0): string[] | null {
-  if (prof > 6) return null;
-  const rec = (x: ts.Node) => alternativasDeTexto(x, consts, prof + 1);
+const INCREMENTOS: ts.SyntaxKind[] = [ts.SyntaxKind.PlusPlusToken, ts.SyntaxKind.MinusMinusToken];
+/** O nome é reatribuído dentro do nó (`x = …`, `x += …`, `x++`)? */
+function reatribuido(nome: string, escopo: ts.Node): boolean {
+  let achou = false;
+  const andar = (n: ts.Node) => {
+    if (achou) return;
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
+      const alvo = semEmbrulho(n.left);
+      if (ts.isIdentifier(alvo) && alvo.text === nome) achou = true;
+    }
+    if ((ts.isPrefixUnaryExpression(n) || ts.isPostfixUnaryExpression(n)) && INCREMENTOS.includes(n.operator) && ts.isIdentifier(n.operand) && n.operand.text === nome) achou = true;
+    ts.forEachChild(n, andar);
+  };
+  andar(escopo);
+  return achou;
+}
+
+/** O identificador é uma referência a valor (não nome de propriedade, de atributo, de membro ou de tipo)? */
+const ehReferencia = (n: ts.Identifier) => {
+  const p = n.parent;
+  return !((ts.isPropertyAccessExpression(p) && p.name === n) || (ts.isPropertyAssignment(p) && p.name === n) || (ts.isMethodDeclaration(p) && p.name === n)
+    || ts.isJsxAttribute(p) || (ts.isBindingElement(p) && p.propertyName === n) || (ts.isQualifiedName(p) && p.right === n) || ts.isTypeReferenceNode(p)
+    || ts.isPropertySignature(p) || ((ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p) || ts.isJsxClosingElement(p)) && p.tagName === n));
+};
+
+type Declaracao =
+  | { tipo: "valor"; valor: ts.Expression }
+  | { tipo: "funcao"; funcao: ts.FunctionDeclaration | ts.FunctionExpression }
+  | { tipo: "importado"; origem: string; nome: string }
+  | { tipo: "opaco" };
+
+/**
+ * Declaração de um nome pelo ESCOPO (follow-up #140, B1/T7): sobe do uso até a declaração mais próxima —
+ * bloco, cláusula de switch, função (parâmetros), laço, catch, arquivo — em vez de "o último const do
+ * arquivo" (uma sombra noutra função trocava o valor). `const`, ou `let`/`var` nunca reatribuído, com
+ * inicializador → o valor; função declarada → a função; import → a origem. Parâmetro, desestruturação,
+ * reatribuição e o resto → "opaco"; nome sem declaração no arquivo → null. Quem chama trata os dois como
+ * não resolvidos (falha fechada).
+ */
+function declaracaoNoEscopo(id: ts.Identifier): Declaracao | null {
+  const nome = id.text;
+  for (let p: ts.Node | undefined = id.parent; p; p = p.parent) {
+    if (ts.isFunctionLike(p)) {
+      if (p.parameters.some((par) => nomesLigados(par.name).includes(nome))) return { tipo: "opaco" };
+      if (ts.isFunctionExpression(p) && p.name?.text === nome) return { tipo: "funcao", funcao: p };
+    }
+    if (ts.isCatchClause(p) && p.variableDeclaration && nomesLigados(p.variableDeclaration.name).includes(nome)) return { tipo: "opaco" };
+    if ((ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p)) && p.initializer && ts.isVariableDeclarationList(p.initializer)
+      && p.initializer.declarations.some((d) => nomesLigados(d.name).includes(nome))) return { tipo: "opaco" };
+    const instrucoes = ts.isSourceFile(p) || ts.isBlock(p) || ts.isModuleBlock(p) || ts.isCaseClause(p) || ts.isDefaultClause(p) ? p.statements : undefined;
+    if (!instrucoes) continue;
+    for (const s of instrucoes) {
+      if (ts.isVariableStatement(s)) {
+        for (const d of s.declarationList.declarations) {
+          if (!nomesLigados(d.name).includes(nome)) continue;
+          if (!ts.isIdentifier(d.name) || !d.initializer) return { tipo: "opaco" };
+          const constante = (s.declarationList.flags & ts.NodeFlags.Const) !== 0;
+          return constante || !reatribuido(nome, p) ? { tipo: "valor", valor: d.initializer } : { tipo: "opaco" };
+        }
+      }
+      if (ts.isFunctionDeclaration(s) && s.name?.text === nome) return s.body ? { tipo: "funcao", funcao: s } : { tipo: "opaco" };
+      if ((ts.isClassDeclaration(s) || ts.isEnumDeclaration(s)) && s.name?.text === nome) return { tipo: "opaco" };
+      if (ts.isImportDeclaration(s) && ts.isStringLiteral(s.moduleSpecifier)) {
+        const c = s.importClause, b = c?.namedBindings;
+        if (c?.name?.text === nome) return { tipo: "importado", origem: s.moduleSpecifier.text, nome: "default" };
+        if (b && ts.isNamespaceImport(b) && b.name.text === nome) return { tipo: "opaco" };
+        const e = b && ts.isNamedImports(b) ? b.elements.find((x) => x.name.text === nome) : undefined;
+        if (e) return { tipo: "importado", origem: s.moduleSpecifier.text, nome: (e.propertyName ?? e.name).text };
+      }
+    }
+  }
+  return null;
+}
+
+/** Valor de um identificador pelo escopo; null se não for um valor resolvível (parâmetro, import, reatribuído…). */
+const valorNoEscopo = (id: ts.Identifier): ts.Expression | null => {
+  const d = declaracaoNoEscopo(id);
+  return d?.tipo === "valor" ? d.valor : null;
+};
+
+/**
+ * Textos que uma expressão pode mostrar (alternativas); DESCONHECIDO onde um pedaço não se resolve;
+ * null = nada resolvível. Nomes pelo escopo; `+` e template combinam as partes (`"Encer" + "rar"` →
+ * "Encerrar"; follow-up #140, B1/T5–T6).
+ */
+function alternativasDeTexto(e: ts.Node, prof = 0): string[] | null {
+  if (prof > 8) return null;
+  const rec = (x: ts.Node) => alternativasDeTexto(x, prof + 1);
   const combina = (a: string[], b: string[]) => a.flatMap((x) => b.map((y) => x + y)).slice(0, 32);
-  if (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isNonNullExpression(e)) return rec(e.expression);
-  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) || ts.isJsxText(e)) return [e.text];
-  if ([ts.SyntaxKind.NullKeyword, ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword].includes(e.kind)) return [""];
+  const K = ts.SyntaxKind;
+  if (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isSatisfiesExpression(e) || ts.isTypeAssertionExpression(e) || ts.isNonNullExpression(e)) return rec(e.expression);
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) || ts.isJsxText(e) || ts.isNumericLiteral(e)) return [e.text];
+  if ([K.NullKeyword, K.TrueKeyword, K.FalseKeyword].includes(e.kind)) return [""];
   if (ts.isTemplateExpression(e)) {
     let acc = [e.head.text];
-    for (const s of e.templateSpans) acc = combina(combina(acc, rec(s.expression) ?? ["…"]), [s.literal.text]);
+    for (const s of e.templateSpans) acc = combina(combina(acc, rec(s.expression) ?? [DESCONHECIDO]), [s.literal.text]);
     return acc;
   }
-  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) return combina(rec(e.left) ?? ["…"], rec(e.right) ?? ["…"]);
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === K.PlusToken) return combina(rec(e.left) ?? [DESCONHECIDO], rec(e.right) ?? [DESCONHECIDO]);
   if (ts.isConditionalExpression(e)) { const a = rec(e.whenTrue), b = rec(e.whenFalse); return a && b ? [...a, ...b] : null; }
-  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) return rec(e.right);
-  if (ts.isBinaryExpression(e) && [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(e.operatorToken.kind)) { const a = rec(e.left), b = rec(e.right); return a && b ? [...a, ...b] : null; }
-  if (ts.isIdentifier(e)) return e.text === "undefined" ? [""] : consts.has(e.text) ? rec(consts.get(e.text)!) : null;
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === K.AmpersandAmpersandToken) return rec(e.right);
+  if (ts.isBinaryExpression(e) && [K.BarBarToken, K.QuestionQuestionToken].includes(e.operatorToken.kind)) { const a = rec(e.left), b = rec(e.right); return a && b ? [...a, ...b] : null; }
+  if (ts.isIdentifier(e)) {
+    if (e.text === "undefined") return [""];
+    const v = valorNoEscopo(e);
+    return v ? rec(v) : null;
+  }
   if (ts.isJsxSelfClosingElement(e)) return [""];
   if (ts.isJsxElement(e) || ts.isJsxFragment(e)) {
-    const r = conteudoDoRotulo(e.children, consts, prof + 1);
+    const r = conteudoDoRotulo(e.children, prof + 1);
     return r.completo ? r.fragmentos : null;
   }
   return null;
@@ -526,36 +631,35 @@ function alternativasDeTexto(e: ts.Node, consts: Map<string, ts.Expression>, pro
 /**
  * Fragmentos de texto do conteúdo e se o rótulo foi resolvido: o COMEÇO é onde fica o verbo — um
  * pedaço dinâmico depois de texto resolvido ("Remover {data}") não esconde a ação; um começo dinâmico
- * ("{titulo}", "{ocupado ? '…' : rotulo}") esconde, e o botão cai na falha fechada.
+ * ("{titulo}", "{ocupado ? '…' : rotulo}", "{`${n} itens`}", "{'Encer' + x}") esconde, e o botão cai
+ * na falha fechada.
  */
-function conteudoDoRotulo(filhos: ts.NodeArray<ts.JsxChild>, consts: Map<string, ts.Expression>, prof = 0): { fragmentos: string[]; completo: boolean } {
+function conteudoDoRotulo(filhos: ts.NodeArray<ts.JsxChild>, prof = 0): { fragmentos: string[]; completo: boolean } {
   const fragmentos: string[] = [];
   let completo = true;
+  const somar = (alt: string[] | null) => {
+    if ((alt === null || !alt.every(comecoConhecido)) && !fragmentos.some((t) => /\p{L}/u.test(t))) completo = false;
+    if (alt) fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
+  };
   for (const f of filhos) {
     if (ts.isJsxText(f)) { const t = f.text.replace(/\s+/g, " ").trim(); if (t) fragmentos.push(t); continue; }
-    if (ts.isJsxExpression(f)) {
-      if (!f.expression) continue;
-      const alt = alternativasDeTexto(f.expression, consts, prof);
-      if (alt === null) { if (!fragmentos.some((t) => /\p{L}/u.test(t))) completo = false; } else fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
-      continue;
-    }
-    const alt = alternativasDeTexto(f as ts.Node, consts, prof);
-    if (alt === null) { if (!fragmentos.some((t) => /\p{L}/u.test(t))) completo = false; } else fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
+    if (ts.isJsxExpression(f)) { if (f.expression) somar(alternativasDeTexto(f.expression, prof)); continue; }
+    somar(alternativasDeTexto(f as ts.Node, prof));
   }
   return { fragmentos, completo };
 }
 
 /** Rótulo resolvido de um botão: conteúdo visível; sem texto, aria-label/title. */
-function rotuloResolvido(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile, consts: Map<string, ts.Expression>): { fragmentos: string[]; completo: boolean } {
-  const conteudo = ts.isJsxOpeningElement(n) ? conteudoDoRotulo(n.parent.children, consts) : { fragmentos: [], completo: true };
+function rotuloResolvido(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile): { fragmentos: string[]; completo: boolean } {
+  const conteudo = ts.isJsxOpeningElement(n) ? conteudoDoRotulo(n.parent.children) : { fragmentos: [], completo: true };
   if (conteudo.fragmentos.some((t) => /\p{L}/u.test(t)) || !conteudo.completo) return conteudo;
   for (const nome of ["aria-label", "title"]) {
     const a = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
     if (!a?.initializer) continue;
     if (ts.isStringLiteral(a.initializer)) return { fragmentos: [a.initializer.text], completo: true };
     if (ts.isJsxExpression(a.initializer) && a.initializer.expression) {
-      const alt = alternativasDeTexto(a.initializer.expression, consts);
-      return alt === null ? { fragmentos: [], completo: false } : { fragmentos: alt, completo: true };
+      const alt = alternativasDeTexto(a.initializer.expression);
+      return alt === null || !alt.every(comecoConhecido) ? { fragmentos: alt ?? [], completo: false } : { fragmentos: alt, completo: true };
     }
   }
   return conteudo;
@@ -574,16 +678,15 @@ function varianteDaTabela(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf
 }
 
 /**
- * Botões do design system cujo rótulo não dá para resolver estaticamente (prop, chamada, linha de tabela
- * sem a variante junto): falha fechada — cada um tem de estar em ROTULOS_DINAMICOS, com motivo.
+ * Botões do design system cujo rótulo não dá para resolver estaticamente (prop, chamada, começo dinâmico,
+ * linha de tabela sem a variante junto): falha fechada — cada um tem de estar em ROTULOS_DINAMICOS, com motivo.
  */
 export function rotulosNaoResolvidos(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const consts = constantesDoArquivo(sf);
   const achados: string[] = [];
   const visita = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ehBotaoDoDesign(n, sf)) {
-      const r = rotuloResolvido(n, sf, consts);
+      const r = rotuloResolvido(n, sf);
       if (!r.completo && !varianteDaTabela(n, sf)) achados.push(nomeDoElemento(n, sf) ?? "(sem nome)");
     }
     ts.forEachChild(n, visita);
@@ -592,45 +695,92 @@ export function rotulosNaoResolvidos(fonte: string): string[] {
   return achados;
 }
 
-/** <Botao>, ou <button>/<Link>/<a> com className que passa por botaoClasses (direto ou por constante). */
+/** <Botao>, ou <button>/<Link>/<a> com className que passa por botaoClasses (direto ou por constante no escopo). */
 function ehBotaoDoDesign(n: ts.JsxOpeningElement | ts.JsxSelfClosingElement, sf: ts.SourceFile): boolean {
   const tag = n.tagName.getText(sf);
   if (tag === "Botao") return true;
   if (!["button", "Link", "a"].includes(tag)) return false;
   const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
   if (!cls?.initializer) return false;
-  const consts = constantesDoArquivo(sf);
-  const usa = (x: ts.Node, vistas = new Set<string>()): boolean => {
+  const usa = (x: ts.Node, vistos = new Set<ts.Node>()): boolean => {
     if (ts.isCallExpression(x) && ts.isIdentifier(x.expression) && x.expression.text === "botaoClasses") return true;
-    if (ts.isIdentifier(x) && consts.has(x.text) && !vistas.has(x.text)) { vistas.add(x.text); if (usa(consts.get(x.text)!, vistas)) return true; }
-    return ts.forEachChild(x, (c) => usa(c, vistas) || undefined) ?? false;
+    if (ts.isIdentifier(x) && ehReferencia(x)) {
+      const v = valorNoEscopo(x);
+      if (v && !vistos.has(v)) { vistos.add(v); if (usa(v, vistos)) return true; }
+    }
+    return ts.forEachChild(x, (c) => usa(c, vistos) || undefined) ?? false;
   };
   return usa(cls.initializer);
 }
 
-/** Linhas de tabela de botão (`{ label, variante }`): rótulo destrutivo exige variante perigo. */
-/** Literal de texto por trás da expressão (`as`/`satisfies`, parênteses, template sem substituição, constante); "?" se não for literal. */
-function literalResolvido(e: ts.Expression, consts: Map<string, ts.Expression>, prof = 0): string {
-  while (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isSatisfiesExpression(e) || ts.isTypeAssertionExpression(e)) e = e.expression;
-  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return e.text;
-  if (ts.isIdentifier(e) && consts.has(e.text) && prof < 6) return literalResolvido(consts.get(e.text)!, consts, prof + 1);
-  return "?";
+/** Nome de propriedade sem aspas (`variante`, `"variante"`, `["variante"]`); null quando a chave é computada e não literal. */
+function nomeDaPropriedade(nome: ts.PropertyName): string | null {
+  if (ts.isIdentifier(nome) || ts.isStringLiteral(nome) || ts.isNumericLiteral(nome) || ts.isPrivateIdentifier(nome)) return nome.text;
+  if (ts.isComputedPropertyName(nome)) {
+    const alt = alternativasDeTexto(nome.expression);
+    return alt?.length === 1 && !alt[0].includes(DESCONHECIDO) ? alt[0] : null;
+  }
+  return null;
 }
 
+/** Entrada de objeto literal: chave (null = pode ser qualquer chave: spread opaco, chave computada) e valor (null = opaco). */
+type Entrada = { chave: string | null; valor: ts.Expression | null };
+
+/** Objeto literal por trás da expressão (direto, embrulhado ou constante no escopo); null se não for. */
+function objetoLiteral(e: ts.Expression, prof = 0): ts.ObjectLiteralExpression | null {
+  if (prof > 6) return null;
+  const x = semEmbrulho(e);
+  if (ts.isObjectLiteralExpression(x)) return x;
+  if (ts.isIdentifier(x)) { const v = valorNoEscopo(x); return v ? objetoLiteral(v, prof + 1) : null; }
+  return null;
+}
+
+/** Entradas de um objeto literal, em ordem, abrindo o spread de objeto resolvível pelo escopo (`...NEUTRA`). */
+function entradasDoObjeto(obj: ts.ObjectLiteralExpression, prof = 0): Entrada[] {
+  return obj.properties.flatMap((p): Entrada[] => {
+    if (ts.isPropertyAssignment(p)) return [{ chave: nomeDaPropriedade(p.name), valor: p.initializer }];
+    if (ts.isShorthandPropertyAssignment(p)) return [{ chave: p.name.text, valor: p.name }];
+    if (ts.isSpreadAssignment(p)) {
+      const o = prof < 6 ? objetoLiteral(p.expression) : null;
+      return o ? entradasDoObjeto(o, prof + 1) : [{ chave: null, valor: null }];
+    }
+    return [{ chave: nomeDaPropriedade(p.name), valor: null }]; // método ou acessor
+  });
+}
+
+/** Valor de uma chave: a última entrada que a define; "opaco" se um spread/chave computada pode tê-la sobrescrito; undefined se ausente. */
+function valorDaChave(entradas: Entrada[], chave: string): ts.Expression | "opaco" | undefined {
+  for (let i = entradas.length - 1; i >= 0; i--) {
+    const e = entradas[i];
+    if (e.chave === null) return "opaco";
+    if (e.chave === chave) return e.valor ?? "opaco";
+  }
+  return undefined;
+}
+
+/**
+ * Linhas de tabela de botão (`{ label | rotulo, variante }`): rótulo destrutivo exige `perigo` em TODAS as
+ * variantes possíveis. Os valores se resolvem (constante pelo escopo, `as`/`satisfies`, `+`, template,
+ * ternário; R2 da #135, B1; follow-up #140, B1/T5–T7), a chave vale sem aspas (T9) e o spread do arquivo
+ * entra na ordem (T8). Falha fechada: variante que um spread opaco pode sobrescrever vira "?", e rótulo
+ * que não se lê numa linha com variante acusa.
+ */
 export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const consts = constantesDoArquivo(sf);
   const achados: string[] = [];
   const visita = (n: ts.Node) => {
     if (ts.isObjectLiteralExpression(n)) {
-      // Valor literal resolvido: `as const`/`satisfies`, template sem substituição e constante do arquivo
-      // contam (R2 da #135, B1); o que não se resolve vira "?" — e "?" não é perigo.
-      const prop = (nomes: RegExp) => {
-        const p = n.properties.find((x) => ts.isPropertyAssignment(x) && nomes.test(x.name.getText(sf))) as ts.PropertyAssignment | undefined;
-        return p ? literalResolvido(p.initializer, consts) : null;
-      };
-      const rotulo = prop(/^(label|rotulo)$/), variante = prop(/^variante$/);
-      if (rotulo !== null && variante !== null && fragmentoDestrutivo(rotulo) && variante !== "perigo") achados.push(`${rotulo} → ${variante}`);
+      const entradas = entradasDoObjeto(n);
+      const variante = valorDaChave(entradas, "variante");
+      for (const chave of ["label", "rotulo"]) {
+        const rotulo = valorDaChave(entradas, chave);
+        if (rotulo === undefined || variante === undefined || (rotulo === "opaco" && variante === "opaco")) continue;
+        const variantes = variante === "opaco" ? ["?"] : alternativasDeTexto(variante) ?? ["?"];
+        const textos = rotulo === "opaco" ? null : alternativasDeTexto(rotulo);
+        if (textos === null || !textos.every(comecoConhecido)) {
+          if (variante !== "opaco") achados.push(`(rótulo não resolvível) → ${variantes.join("|")}`);
+        } else if (textos.some(fragmentoDestrutivo) && !variantes.every((v) => v === "perigo")) achados.push(`${textos.map(legivel).join(" · ")} → ${variantes.join("|")}`);
+      }
     }
     ts.forEachChild(n, visita);
   };
@@ -638,65 +788,157 @@ export function tabelasDeBotaoSemPerigo(fonte: string): string[] {
   return achados;
 }
 
-/** Condição normalizada: `x === true` → x; `x === false`/`x !== true`/`!x` → ¬x; `a !== b` → ¬(a === b). */
-export function condicaoNormalizada(e: ts.Expression, sf: ts.SourceFile): [string, boolean] {
+/** Texto da expressão sem espaços, trocando parâmetros pelos argumentos da chamada (`atual` → `tipo`). */
+function textoCom(e: ts.Node, sf: ts.SourceFile, subst?: ReadonlyMap<string, string>): string {
+  const bruto = e.getText(sf);
+  if (!subst?.size) return bruto.replace(/\s+/g, "");
+  const mapa: ReadonlyMap<string, string> = subst;
+  const inicio = e.getStart(sf);
+  const trocas: [number, number, string][] = [];
+  const andar = (n: ts.Node) => {
+    if (ts.isIdentifier(n) && mapa.has(n.text) && ehReferencia(n)) trocas.push([n.getStart(sf) - inicio, n.end - inicio, mapa.get(n.text)!]);
+    ts.forEachChild(n, andar);
+  };
+  andar(e);
+  let saida = bruto;
+  for (const [de, ate, por] of trocas.sort((a, b) => b[0] - a[0])) saida = saida.slice(0, de) + por + saida.slice(ate);
+  return saida.replace(/\s+/g, "");
+}
+
+/** Igualdade sem ordem: `tipo === t` e `t === tipo` são a mesma condição. */
+const igualdade = (a: string, b: string) => [a, b].sort().join("===");
+
+/**
+ * Condição normalizada: `x === true` → x; `x === false`/`x !== true`/`!x` → ¬x; `a !== b` → ¬(a === b); a
+ * igualdade não depende da ordem dos lados. Com `subst`, os parâmetros de uma função viram os argumentos.
+ */
+export function condicaoNormalizada(e: ts.Expression, sf: ts.SourceFile, subst?: ReadonlyMap<string, string>): [string, boolean] {
   const K = ts.SyntaxKind;
   while (ts.isParenthesizedExpression(e)) e = e.expression;
-  if (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken) { const [c, n] = condicaoNormalizada(e.operand, sf); return [c, !n]; }
+  if (ts.isPrefixUnaryExpression(e) && e.operator === K.ExclamationToken) { const [c, n] = condicaoNormalizada(e.operand, sf, subst); return [c, !n]; }
   if (ts.isBinaryExpression(e)) {
     const op = e.operatorToken.kind, dir = e.right.kind;
-    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.TrueKeyword) return condicaoNormalizada(e.left, sf);
-    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.FalseKeyword) return condicaoNormalizada(e.left, sf);
-    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.FalseKeyword) { const [c, n] = condicaoNormalizada(e.left, sf); return [c, !n]; }
-    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.TrueKeyword) { const [c, n] = condicaoNormalizada(e.left, sf); return [c, !n]; }
-    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op)) return [`${e.left.getText(sf)}===${e.right.getText(sf)}`.replace(/\s+/g, ""), true];
-    if (op === K.EqualsEqualsToken) return [`${e.left.getText(sf)}===${e.right.getText(sf)}`.replace(/\s+/g, ""), false];
+    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.TrueKeyword) return condicaoNormalizada(e.left, sf, subst);
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.FalseKeyword) return condicaoNormalizada(e.left, sf, subst);
+    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op) && dir === K.FalseKeyword) { const [c, n] = condicaoNormalizada(e.left, sf, subst); return [c, !n]; }
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op) && dir === K.TrueKeyword) { const [c, n] = condicaoNormalizada(e.left, sf, subst); return [c, !n]; }
+    if ([K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken].includes(op)) return [igualdade(textoCom(e.left, sf, subst), textoCom(e.right, sf, subst)), true];
+    if ([K.EqualsEqualsEqualsToken, K.EqualsEqualsToken].includes(op)) return [igualdade(textoCom(e.left, sf, subst), textoCom(e.right, sf, subst)), false];
   }
-  return [e.getText(sf).replace(/\s+/g, ""), false];
+  return [textoCom(e, sf, subst), false];
 }
 
 const OPERADORES_CONDICIONAIS: ts.SyntaxKind[] = [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken];
+const IGUALDADES: ts.SyntaxKind[] = [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken];
+
+/** Árvore sintática; o tipo de script segue a extensão (.ts não é lido como TSX: `<T>(x)` viraria JSX). */
+const arvoreDe = (fonte: string, arquivo: string) =>
+  ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX);
+
+/** Caminho do arquivo do projeto que o import aponta ("./X", "../X", "@/X"), entre os que `existe` aceita. */
+function resolverModulo(de: string, origem: string, existe: (caminho: string) => boolean = existsSync): string | null {
+  const base = origem.startsWith("@/") ? "src/" + origem.slice(2) : origem.startsWith(".") ? posix.join(posix.dirname(de), origem) : null;
+  if (!base) return null;
+  return [".tsx", ".ts", "/index.tsx", "/index.ts"].map((ext) => base + ext).find((c) => existe(c)) ?? null;
+}
+const modulosLidos = new Map<string, ts.SourceFile>();
+
+type FuncaoAnalisavel = ts.FunctionDeclaration | ts.FunctionExpression | ts.ArrowFunction | ts.MethodDeclaration;
+/** Função de nível de arquivo com esse nome (declaração, ou const com arrow/function). */
+function funcaoDoArquivo(sf: ts.SourceFile, nome: string): FuncaoAnalisavel | null {
+  for (const s of sf.statements) {
+    if (ts.isFunctionDeclaration(s) && s.name?.text === nome && s.body) return s;
+    if (!ts.isVariableStatement(s)) continue;
+    for (const d of s.declarationList.declarations) {
+      if (!ts.isIdentifier(d.name) || d.name.text !== nome || !d.initializer) continue;
+      const f = semEmbrulho(d.initializer);
+      if (ts.isArrowFunction(f) || ts.isFunctionExpression(f)) return f;
+    }
+  }
+  return null;
+}
+
+/** Uma condição normalizada (chave + se veio negada) e o texto original, para comparar polaridades. */
+type Condicao = { chave: string; neg: boolean; texto: string };
 
 /**
  * Alternância sem aria-pressed (docs/42, /configuracao/turmas #6 e similares): <button>/<Botao> cuja
  * aparência muda conforme uma condição — className (ou variante/tamanho) com ternário, `&&`, `||`,
- * `??`, direto ou por variável/função do arquivo — mostra a seleção só por cor. Ficam de fora:
- * - quem já declara aria-pressed;
- * - quem abre ou navega (aria-current, aria-expanded, aria-haspopup): o estado está nesse atributo;
+ * `??`, direto, por variável no escopo ou por função que DECIDE (ternário, if, comparação, switch/case,
+ * consulta a objeto de chave computada), seja do arquivo, método de objeto do arquivo ou importada do
+ * projeto (analisada na origem) — mostra a seleção só por cor. Ficam de fora:
+ * - quem declara aria-pressed com a condição da classe, na mesma polaridade (dentro de função, a
+ *   comparação com os parâmetros trocados pelos argumentos: `estilo(tipo, t)` ↔ `tipo === t`);
+ * - quem anuncia o estado em aria-current/aria-expanded com a MESMA condição e a MESMA polaridade da
+ *   classe (follow-up #140, B2). aria-haspopup não isenta: diz que o botão abre algo, não o estado — um
+ *   botão de menu anuncia o estado em aria-expanded;
  * - quem troca o nome PELA MESMA condição (texto visível ou aria-label): é uma ação que muda de rótulo
  *   ("Desativar"/"Ativar", "Gravar"/"Parar"), não um botão de alternância — e aria-pressed com rótulo
  *   que muda confunde o leitor de tela.
- * Devolve o nome de cada um (nomeDoElemento).
+ * Devolve o nome de cada um (nomeDoElemento). `arquivo` resolve imports do projeto; `modulos` dá fontes
+ * virtuais por especificador de import (autoteste).
  */
-export function alternanciasSemAriaPressed(fonte: string): string[] {
-  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const texto = (n: ts.Node) => n.getText(sf).replace(/\s+/g, " ");
-  const variaveis = new Map<string, ts.Node>();
-  /** Funções do arquivo cujo corpo decide por comparação ou ternário (seleção escondida numa função). */
-  const funcoesQueDecidem = new Set<string>();
-  const opacas = new Set<ts.Node>();
-  const decide = (corpo: ts.Node): boolean => {
-    let achou = false;
-    const andar = (x: ts.Node) => {
-      if (achou) return;
-      if (ts.isConditionalExpression(x) || (ts.isBinaryExpression(x) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(x.operatorToken.kind))) achou = true;
-      else ts.forEachChild(x, andar);
-    };
-    andar(corpo);
-    return achou;
-  };
-  const coletarFuncoes = (n: ts.Node) => {
-    if (ts.isFunctionDeclaration(n) && n.name && n.body && decide(n.body)) funcoesQueDecidem.add(n.name.text);
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) && decide(n.initializer.body)) funcoesQueDecidem.add(n.name.text);
-    ts.forEachChild(n, coletarFuncoes);
-  };
-  coletarFuncoes(sf);
-  const coletar = (n: ts.Node) => {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) variaveis.set(n.name.text, n.initializer);
-    ts.forEachChild(n, coletar);
-  };
-  coletar(sf);
+export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", modulos: Record<string, string> = {}): string[] {
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const K = ts.SyntaxKind;
+  const cond = (e: ts.Expression): Condicao => {
+    const s = e.getSourceFile();
+    const [chave, neg] = condicaoNormalizada(e, s);
+    return { chave, neg, texto: textoCom(e, s) };
+  };
+  const lerModulo = (de: ts.SourceFile, origem: string): ts.SourceFile | null => {
+    if (origem in modulos) return arvoreDe(modulos[origem], `${origem}.tsx`);
+    const caminho = resolverModulo(de.fileName, origem);
+    if (!caminho) return null;
+    if (!modulosLidos.has(caminho)) modulosLidos.set(caminho, arvoreDe(readFileSync(caminho, "utf-8"), caminho));
+    return modulosLidos.get(caminho)!;
+  };
+  const funcaoDe = (d: Declaracao | null, de: ts.SourceFile): FuncaoAnalisavel | null => {
+    if (d?.tipo === "funcao") return d.funcao;
+    if (d?.tipo === "valor") { const f = semEmbrulho(d.valor); return ts.isArrowFunction(f) || ts.isFunctionExpression(f) ? f : null; }
+    if (d?.tipo === "importado") { const m = lerModulo(de, d.origem); return m ? funcaoDoArquivo(m, d.nome) : null; }
+    return null;
+  };
+  /** Função chamada: pelo escopo (local ou importada) ou método de objeto do arquivo (`E.estilo`); null se externa. */
+  const funcaoChamada = (callee: ts.Expression): FuncaoAnalisavel | null => {
+    const x = semEmbrulho(callee);
+    if (ts.isIdentifier(x)) return funcaoDe(declaracaoNoEscopo(x), x.getSourceFile());
+    if (!ts.isPropertyAccessExpression(x)) return null;
+    const o = objetoLiteral(x.expression);
+    const p = o?.properties.find((q) => !ts.isSpreadAssignment(q) && nomeDaPropriedade(q.name) === x.name.text);
+    if (p && ts.isMethodDeclaration(p)) return p;
+    if (p && ts.isPropertyAssignment(p)) { const f = semEmbrulho(p.initializer); return ts.isArrowFunction(f) || ts.isFunctionExpression(f) ? f : null; }
+    if (p && ts.isShorthandPropertyAssignment(p)) return funcaoDe(declaracaoNoEscopo(p.name), p.getSourceFile());
+    return null;
+  };
+  /**
+   * Decisões do corpo de uma função, com os parâmetros trocados pelos argumentos da chamada: ternário, if,
+   * `&&`/`||`/`??`, comparação, `switch (a) { case b: … }` (→ a === b) e consulta a objeto de chave
+   * computada (`({ [a]: … })[b]` → a === b) — follow-up #140, B4. Vazio = a função não decide.
+   */
+  const decisoesDaFuncao = (fn: FuncaoAnalisavel, args: readonly ts.Expression[]): Condicao[] => {
+    if (!fn.body) return [];
+    const fsf = fn.getSourceFile();
+    const subst = new Map<string, string>();
+    fn.parameters.forEach((p, i) => { if (ts.isIdentifier(p.name) && args[i]) subst.set(p.name.text, textoCom(args[i], args[i].getSourceFile())); });
+    const achadas: Condicao[] = [];
+    const c = (e: ts.Expression) => { const [chave, neg] = condicaoNormalizada(e, fsf, subst); achadas.push({ chave, neg, texto: textoCom(e, fsf, subst) }); };
+    const iguais = (a: ts.Expression, b: ts.Expression) => { const chave = igualdade(textoCom(a, fsf, subst), textoCom(b, fsf, subst)); achadas.push({ chave, neg: false, texto: chave }); };
+    const andar = (n: ts.Node) => {
+      if (ts.isConditionalExpression(n)) c(n.condition);
+      else if (ts.isIfStatement(n)) c(n.expression);
+      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) c(n.left);
+      else if (ts.isBinaryExpression(n) && IGUALDADES.includes(n.operatorToken.kind)) c(n);
+      else if (ts.isSwitchStatement(n)) { for (const cl of n.caseBlock.clauses) if (ts.isCaseClause(cl)) iguais(n.expression, cl.expression); }
+      else if (ts.isElementAccessExpression(n)) {
+        const o = objetoLiteral(n.expression);
+        for (const p of o?.properties ?? []) if (!ts.isSpreadAssignment(p) && p.name && ts.isComputedPropertyName(p.name)) iguais(n.argumentExpression, p.name.expression);
+      }
+      ts.forEachChild(n, andar);
+    };
+    andar(fn.body);
+    return achadas;
+  };
   /** Expressão booleana (comparação, negação, lógica): o que decide uma seleção. */
   const booleana = (e: ts.Expression): boolean => {
     while (ts.isParenthesizedExpression(e)) e = e.expression;
@@ -704,25 +946,24 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
       || (ts.isBinaryExpression(e) && [K.EqualsEqualsEqualsToken, K.EqualsEqualsToken, K.ExclamationEqualsEqualsToken, K.ExclamationEqualsToken, K.LessThanToken, K.GreaterThanToken, K.LessThanEqualsToken, K.GreaterThanEqualsToken, K.AmpersandAmpersandToken, K.BarBarToken].includes(e.operatorToken.kind));
   };
   /**
-   * Condições de que uma expressão de classe depende, seguindo variáveis do arquivo: ternário, `&&`/`||`/`??`
-   * e também tabela indexada (`ESTILO[String(x === y)]`) ou chamada com argumento booleano
-   * (`estiloSelecao(x === y)`) — a seleção por cor escondida atrás de um índice ou de uma função (R1 da #135, B5).
+   * Condições de que uma expressão de classe depende, seguindo nomes pelo escopo: ternário, `&&`/`||`/`??`,
+   * tabela indexada por booleano (`ESTILO[String(x === y)]`), chamada com argumento booleano
+   * (`estiloSelecao(x === y)`) e chamada a função que decide (`estilo(tipo, t)`).
    */
-  const condicoesDe = (raiz: ts.Node, vistas = new Set<string>()): ts.Expression[] => {
-    const achadas: ts.Expression[] = [];
+  const condicoesDe = (raiz: ts.Node, vistos = new Set<ts.Node>()): Condicao[] => {
+    const achadas: Condicao[] = [];
     const andar = (n: ts.Node) => {
-      if (ts.isConditionalExpression(n)) achadas.push(n.condition);
-      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(n.left);
-      else if (ts.isElementAccessExpression(n)) { const procura = (x: ts.Node) => { if (ts.isExpression(x) && booleana(x as ts.Expression)) achadas.push(x as ts.Expression); else ts.forEachChild(x, procura); }; procura(n.argumentExpression); }
+      if (ts.isConditionalExpression(n)) achadas.push(cond(n.condition));
+      else if (ts.isBinaryExpression(n) && OPERADORES_CONDICIONAIS.includes(n.operatorToken.kind)) achadas.push(cond(n.left));
+      else if (ts.isElementAccessExpression(n)) { const procura = (x: ts.Node) => { if (ts.isExpression(x) && booleana(x)) achadas.push(cond(x)); else ts.forEachChild(x, procura); }; procura(n.argumentExpression); }
       else if (ts.isCallExpression(n) && !(ts.isIdentifier(n.expression) && n.expression.text === "botaoClasses")) {
-        for (const a of n.arguments) if (booleana(a)) achadas.push(a);
-        // Função local cujo corpo decide por comparação (`estiloSelecao(tipo, t)` com `atual === opcao ? …`):
-        // a seleção foi para dentro da função — condição opaca, exige aria-pressed (R2 da #135, B4).
-        if (ts.isIdentifier(n.expression) && funcoesQueDecidem.has(n.expression.text)) { achadas.push(n); opacas.add(n); }
+        for (const a of n.arguments) if (booleana(a)) achadas.push(cond(a));
+        const fn = funcaoChamada(n.expression);
+        if (fn) { achadas.push(...decisoesDaFuncao(fn, n.arguments)); n.arguments.forEach(andar); return; }
       }
-      else if (ts.isIdentifier(n) && variaveis.has(n.text) && !vistas.has(n.text) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)) {
-        vistas.add(n.text);
-        achadas.push(...condicoesDe(variaveis.get(n.text)!, vistas));
+      else if (ts.isIdentifier(n) && ehReferencia(n)) {
+        const v = valorNoEscopo(n);
+        if (v && !vistos.has(v)) { vistos.add(v); achadas.push(...condicoesDe(v, vistos)); }
       }
       ts.forEachChild(n, andar);
     };
@@ -730,52 +971,99 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
     return achadas;
   };
   /** Condições de ternários que produzem texto no conteúdo visível (sem entrar em atributos dos filhos). */
-  const condicoesDoTexto = (el: ts.JsxElement): ts.Expression[] => {
-    const achadas: ts.Expression[] = [];
+  const condicoesDoTexto = (el: ts.JsxElement): Condicao[] => {
+    const achadas: Condicao[] = [];
     const temTexto = (n: ts.Node): boolean =>
       ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateExpression(n) || (ts.isJsxText(n) && n.getText(sf).trim() !== "") ||
       (!ts.isJsxAttributes(n) && (ts.forEachChild(n, temTexto) ?? false));
     const andar = (n: ts.Node) => {
       if (ts.isJsxAttributes(n)) return;
-      if (ts.isConditionalExpression(n) && (temTexto(n.whenTrue) || temTexto(n.whenFalse))) achadas.push(n.condition);
+      if (ts.isConditionalExpression(n) && (temTexto(n.whenTrue) || temTexto(n.whenFalse))) achadas.push(cond(n.condition));
       ts.forEachChild(n, andar);
     };
     for (const c of el.children) andar(c);
     return achadas;
   };
-  /** Está dentro de um grupo rotulado (`role="group"` com aria-label/aria-labelledby, ou <fieldset>)? */
+  // ids do arquivo, para conferir aria-labelledby (follow-up #140, B3/A16f): literais e expressões.
+  const idsLiterais = new Set<string>(), idsExpressoes = new Set<string>();
+  const coletarIds = (n: ts.Node) => {
+    if (ts.isJsxAttribute(n) && n.name.getText(sf) === "id" && n.initializer) {
+      if (ts.isStringLiteral(n.initializer)) idsLiterais.add(n.initializer.text);
+      else if (ts.isJsxExpression(n.initializer) && n.initializer.expression) {
+        const alt = alternativasDeTexto(n.initializer.expression);
+        if (alt && alt.every((t) => !t.includes(DESCONHECIDO))) alt.forEach((t) => idsLiterais.add(t));
+        else idsExpressoes.add(textoCom(n.initializer.expression, sf));
+      }
+    }
+    ts.forEachChild(n, coletarIds);
+  };
+  coletarIds(sf);
+  const atributoDe = (ab: ts.JsxOpeningElement | ts.JsxSelfClosingElement, nome: string) =>
+    ab.attributes.properties.find((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
+  /** aria-label que nomeia: texto com letras (literal, ou expressão resolvida); `""`, `{``}`, `{undefined}` e expressão opaca não (B3). */
+  const nomeia = (a: ts.JsxAttribute | undefined): boolean => {
+    const v = a?.initializer;
+    if (!v) return false;
+    if (ts.isStringLiteral(v)) return /\p{L}/u.test(v.text);
+    const alt = ts.isJsxExpression(v) && v.expression ? alternativasDeTexto(v.expression) : null;
+    return !!alt && alt.length > 0 && alt.every((t) => /\p{L}/u.test(t));
+  };
+  /** aria-labelledby que aponta para id existente NO ARQUIVO: cada id literal, ou a mesma expressão de um `id={…}` (B3/A16f). */
+  const apontaParaId = (a: ts.JsxAttribute | undefined): boolean => {
+    const v = a?.initializer;
+    const todosExistem = (t: string) => { const lista = t.trim().split(/\s+/).filter(Boolean); return lista.length > 0 && lista.every((id) => idsLiterais.has(id)); };
+    if (!v) return false;
+    if (ts.isStringLiteral(v)) return todosExistem(v.text);
+    if (!ts.isJsxExpression(v) || !v.expression) return false;
+    const alt = alternativasDeTexto(v.expression);
+    if (alt && alt.every((t) => !t.includes(DESCONHECIDO))) return alt.every(todosExistem);
+    return idsExpressoes.has(textoCom(v.expression, sf));
+  };
+  /** Está dentro de um grupo rotulado (`role="group"` com nome de verdade, ou <fieldset> com <legend>/nome)? */
   const emGrupoRotulado = (n: ts.Node): boolean => {
     for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
       if (!ts.isJsxElement(p) || p.openingElement === n) continue;
       const ab = p.openingElement;
-      if (ab.tagName.getText(sf) === "fieldset") return true;
-      const at = (nome: string) => ab.attributes.properties.find((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === nome) as ts.JsxAttribute | undefined;
-      const role = at("role")?.initializer;
-      // Nome de verdade: texto não vazio (literal) ou expressão; `aria-label=""` não nomeia (R2 da #135, B3).
-      const nomeia = (a: ts.JsxAttribute | undefined) => {
-        const v = a?.initializer;
-        if (!v) return false;
-        if (ts.isStringLiteral(v)) return v.text.trim() !== "";
-        return ts.isJsxExpression(v) && !!v.expression && !(ts.isStringLiteral(v.expression) && v.expression.text.trim() === "");
-      };
-      if (role && ts.isStringLiteral(role) && role.text === "group" && (nomeia(at("aria-label")) || nomeia(at("aria-labelledby")))) return true;
+      const nomeado = nomeia(atributoDe(ab, "aria-label")) || apontaParaId(atributoDe(ab, "aria-labelledby"));
+      if (ab.tagName.getText(sf) === "fieldset") {
+        const legenda = p.children.some((c) => ts.isJsxElement(c) && c.openingElement.tagName.getText(sf) === "legend" && conteudoDoRotulo(c.children).fragmentos.some((t) => /\p{L}/u.test(t)));
+        if (legenda || nomeado) return true;
+      }
+      const role = atributoDe(ab, "role")?.initializer;
+      if (role && ts.isStringLiteral(role) && role.text === "group" && nomeado) return true;
     }
     return false;
   };
-  const chaves = (es: ts.Expression[]) => es.map((e) => condicaoNormalizada(e, sf));
   /** Valor de atributo ARIA que não diz nada: ausente, literal booleano/nulo/texto, `undefined`. */
   const constante = (ini: ts.JsxAttributeValue | undefined): boolean => {
     const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
     return !expr || ts.isStringLiteral(ini!) || [K.TrueKeyword, K.FalseKeyword, K.NullKeyword].includes(expr.kind) || ts.isStringLiteral(expr)
       || ts.isNoSubstitutionTemplateLiteral(expr) || (ts.isIdentifier(expr) && expr.text === "undefined");
   };
-  /** Condição que um atributo de estado expressa: a do ternário (`atual ? "page" : undefined`) ou a própria expressão. */
-  const condicaoDoAtributo = (ini: ts.JsxAttributeValue | undefined): ts.Expression | null => {
-    const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
-    if (!expr) return null;
-    let e = expr; while (ts.isParenthesizedExpression(e)) e = e.expression;
-    return ts.isConditionalExpression(e) ? e.condition : e;
+  /**
+   * Quando aria-current/aria-expanded ANUNCIA o estado: a condição e a polaridade (follow-up #140, B2).
+   * `c ? "page" : undefined` → c; `c ? undefined : "true"` → ¬c; `c && "page"` → c; `{c}` → c. Constante,
+   * ou ternário cujos dois lados anunciam (ou nenhum), não anuncia nada → null.
+   */
+  const anuncio = (ini: ts.JsxAttributeValue | undefined): Condicao | null => {
+    const bruto = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
+    if (!bruto || constante(ini)) return null;
+    const e = semEmbrulho(bruto);
+    const anuncia = (x: ts.Expression): boolean | null => {
+      const y = semEmbrulho(x);
+      if (ts.isStringLiteral(y) || ts.isNoSubstitutionTemplateLiteral(y)) return y.text !== "" && y.text !== "false";
+      if (y.kind === K.TrueKeyword) return true;
+      if (y.kind === K.FalseKeyword || y.kind === K.NullKeyword || (ts.isIdentifier(y) && y.text === "undefined")) return false;
+      return null;
+    };
+    if (ts.isConditionalExpression(e)) {
+      const sim = anuncia(e.whenTrue), nao = anuncia(e.whenFalse), c = cond(e.condition);
+      return sim === true && nao === false ? c : sim === false && nao === true ? { ...c, neg: !c.neg } : null;
+    }
+    if (ts.isBinaryExpression(e) && e.operatorToken.kind === K.AmpersandAmpersandToken) return anuncia(e.right) === true ? cond(e.left) : null;
+    return cond(e);
   };
+  const mesma = (a: Condicao, b: Condicao) => a.chave === b.chave && a.neg === b.neg;
   const achados: string[] = [];
   const visitar = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Botao"].includes(n.tagName.getText(sf))) {
@@ -784,35 +1072,22 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
       const doNome = [...(ts.isJsxOpeningElement(n) ? condicoesDoTexto(n.parent) : []), ...(attrs.get("aria-label") ? condicoesDe(attrs.get("aria-label")!) : [])];
       const nome = nomeDoElemento(n, sf) ?? "(sem nome)";
       if (attrs.has("aria-pressed")) {
-        // aria-pressed precisa dizer o estado de verdade: expressão (não constante) igual à condição da
-        // classe, com a mesma polaridade; botão de rótulo que muda não é alternância; e o conjunto é
-        // um grupo rotulado (R1 da #135, B3/B5).
+        // aria-pressed precisa dizer o estado de verdade: expressão (não constante) igual a uma condição
+        // da classe, com a mesma polaridade — também a de dentro da função que decide; botão de rótulo
+        // que muda não é alternância; e o conjunto é um grupo rotulado (R1 da #135, B3/B5; #140, B4).
         const ini = attrs.get("aria-pressed");
-        const expr = ini && ts.isJsxExpression(ini) ? ini.expression : undefined;
         if (constante(ini)) achados.push(`${nome} — aria-pressed constante`);
-        else if (daClasse.length && !daClasse.some((c) => opacas.has(c))) {
-          const [cp, np] = condicaoNormalizada(expr!, sf);
-          if (!chaves(daClasse).some(([c, neg]) => c === cp && neg === np)) achados.push(`${nome} — aria-pressed não é a condição da classe`);
-        }
+        else if (daClasse.length && !daClasse.some((c) => mesma(c, cond((ini as ts.JsxExpression).expression!)))) achados.push(`${nome} — aria-pressed não é a condição da classe`);
         // Rótulo que muda PELA MESMA condição da seleção (o nome escolhido pelo item da lista não conta).
-        const chavesDaClasse = chaves(daClasse).map(([c]) => c);
-        if (chaves(doNome).some(([c]) => chavesDaClasse.includes(c))) achados.push(`${nome} — aria-pressed com rótulo que muda`);
+        if (doNome.some((c) => daClasse.some((d) => d.chave === c.chave))) achados.push(`${nome} — aria-pressed com rótulo que muda`);
         if (!emGrupoRotulado(n)) achados.push(`${nome} — aria-pressed fora de grupo rotulado`);
       } else if (daClasse.length) {
-        // Quem abre ou navega anuncia o estado em aria-current/aria-expanded — mas só isenta se o valor
-        // for a MESMA condição da classe; `aria-current={undefined}` ou `aria-expanded={false}` não
-        // anunciam nada (R2 da #135, B2). aria-haspopup (botão de menu) isenta se não for "false".
-        const chavesDaClasse = chaves(daClasse).map(([c]) => c);
         const isentoPorEstado = ["aria-current", "aria-expanded"].some((a) => {
-          if (!attrs.has(a) || constante(attrs.get(a))) return false;
-          const cond = condicaoDoAtributo(attrs.get(a));
-          return !!cond && chavesDaClasse.includes(condicaoNormalizada(cond, sf)[0]);
+          const c = anuncio(attrs.get(a));
+          return !!c && daClasse.some((d) => mesma(c, d));
         });
-        const haspopup = attrs.get("aria-haspopup");
-        const isentoPorMenu = attrs.has("aria-haspopup") && !(haspopup && ts.isStringLiteral(haspopup) && haspopup.text === "false")
-          && !(haspopup && ts.isJsxExpression(haspopup) && haspopup.expression?.kind === K.FalseKeyword);
-        const textosDoNome = doNome.map(texto);
-        if (!isentoPorEstado && !isentoPorMenu && !daClasse.map(texto).some((c) => textosDoNome.includes(c))) achados.push(nome);
+        const textosDoNome = doNome.map((c) => c.texto);
+        if (!isentoPorEstado && !daClasse.some((c) => textosDoNome.includes(c.texto))) achados.push(nome);
       }
     }
     ts.forEachChild(n, visitar);
@@ -820,6 +1095,7 @@ export function alternanciasSemAriaPressed(fonte: string): string[] {
   visitar(sf);
   return achados;
 }
+
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [];
@@ -1050,7 +1326,7 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
   it("todo botão que muda de aparência por uma condição tem aria-pressed (ou abre/navega, ou troca o nome pela mesma condição); exceções ancoradas", () => {
     const achados = arquivos
       .filter(({ arquivo }) => !/\.test\./.test(arquivo))
-      .flatMap(({ arquivo, conteudo }) => alternanciasSemAriaPressed(conteudo).map((rotulo) => ({ arquivo, rotulo })));
+      .flatMap(({ arquivo, conteudo }) => alternanciasSemAriaPressed(conteudo, arquivo).map((rotulo) => ({ arquivo, rotulo })));
     expect(conferirExcecoes(achados, ALTERNANCIAS_SEM_ARIA_PRESSED)).toEqual({ semExcecao: [], soltas: [] });
     for (const e of ALTERNANCIAS_SEM_ARIA_PRESSED) expect(e.motivo.trim().length, `${e.arquivo}: ${e.rotulo}`).toBeGreaterThan(20);
   });
@@ -1122,14 +1398,188 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
   });
 });
 
-// Rótulo que a trava não resolve estaticamente (prop, chamada): arquivo + nome (nomeDoElemento) +
-// quantos + motivo. Falha fechada: um botão novo assim não passa sem entrar aqui (R1 da #135, B1/B4).
-type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string; onde: string[] };
+/**
+ * Usos de um componente cujo atributo (ou propriedade dele) vira o rótulo de um botão, em TODOS os
+ * arquivos dados — não numa lista fixa (follow-up #140, B6). O componente é reconhecido pelo nome
+ * declarado no módulo, por import com qualquer nome (`import { Formulario as G }`), por namespace
+ * (`<M.Formulario>`), por alias (`const F = Formulario`) e pelos aliases que o próprio módulo exporta;
+ * num arquivo sem declaração do nome, a tag homônima também conta. Falha fechada: spread de props,
+ * valor que não se resolve, referência fora de JSX (`createElement(Formulario, …)`, passar adiante) e
+ * reexportação viram problema. Devolve os textos resolvidos e os problemas (com arquivo:linha).
+ */
+export function usosDoComponente(
+  fontes: { arquivo: string; conteudo: string }[], declaradoEm: string, componente: string, atributo: string, propriedade?: string,
+): { valores: string[]; problemas: string[] } {
+  const existentes = new Set(fontes.map((f) => f.arquivo));
+  const doModulo = (de: string, origem: string) => resolverModulo(de, origem, (c) => existentes.has(c)) === declaradoEm;
+  const valores: string[] = [], problemas: string[] = [];
+  const exportados = new Set([componente]);
+  const exportado = (n: ts.VariableStatement) => !!n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  const ordenadas = [...fontes].sort((a, b) => (a.arquivo === declaradoEm ? -1 : b.arquivo === declaradoEm ? 1 : 0));
+  for (const { arquivo, conteudo } of ordenadas) {
+    const sf = arvoreDe(conteudo, arquivo);
+    const linha = (n: ts.Node) => `${arquivo}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`;
+    const declarante = arquivo === declaradoEm;
+    const ligados = new Set<string>(declarante ? [componente] : []), espacos = new Set<string>();
+    let homonimo = false;
+    for (const s of sf.statements) {
+      if (ts.isExportDeclaration(s) && s.moduleSpecifier && ts.isStringLiteral(s.moduleSpecifier) && doModulo(arquivo, s.moduleSpecifier.text)) problemas.push(`${linha(s)}: reexporta o módulo de <${componente}>`);
+      if (!ts.isImportDeclaration(s) || !ts.isStringLiteral(s.moduleSpecifier)) continue;
+      const c = s.importClause, b = c?.namedBindings, deLa = doModulo(arquivo, s.moduleSpecifier.text);
+      if (c?.name) { if (c.name.text === componente) homonimo = true; if (deLa && exportados.has("default")) ligados.add(c.name.text); }
+      if (b && ts.isNamespaceImport(b) && deLa) espacos.add(b.name.text);
+      if (b && ts.isNamedImports(b)) for (const e of b.elements) {
+        if (e.name.text === componente) homonimo = true;
+        if (deLa && exportados.has((e.propertyName ?? e.name).text)) ligados.add(e.name.text);
+      }
+    }
+    const declaraONome = (n: ts.Node) => {
+      if (((ts.isFunctionDeclaration(n) || ts.isClassDeclaration(n)) && n.name?.text === componente) || (ts.isVariableDeclaration(n) && nomesLigados(n.name).includes(componente))) homonimo = true;
+      ts.forEachChild(n, declaraONome);
+    };
+    if (!declarante) declaraONome(sf);
+    const livre = !declarante && !homonimo && !ligados.has(componente);
+    /** A expressão é o componente: nome ligado ou `M.<exportado>` de um namespace do módulo. */
+    const ehComponente = (e: ts.Node): boolean => (ts.isIdentifier(e) && ligados.has(e.text))
+      || (ts.isPropertyAccessExpression(e) && ts.isIdentifier(e.expression) && espacos.has(e.expression.text) && exportados.has(e.name.text));
+    // Aliases (ponto fixo): `const F = Formulario`, `const F = M.Formulario`, `const { Formulario: F } = M`.
+    for (let mudou = true; mudou;) {
+      mudou = false;
+      const marcar = (nome: string) => { if (!ligados.has(nome)) { ligados.add(nome); mudou = true; } };
+      const visita = (n: ts.Node) => {
+        if (ts.isVariableDeclaration(n) && n.initializer) {
+          const v = semEmbrulho(n.initializer);
+          if (ts.isIdentifier(n.name) && ehComponente(v)) marcar(n.name.text);
+          if (ts.isObjectBindingPattern(n.name) && ts.isIdentifier(v) && espacos.has(v.text)) {
+            for (const el of n.name.elements) {
+              const chave = el.propertyName ? nomeDaPropriedade(el.propertyName) : ts.isIdentifier(el.name) ? el.name.text : null;
+              if (chave && exportados.has(chave) && ts.isIdentifier(el.name)) marcar(el.name.text);
+            }
+          }
+        }
+        ts.forEachChild(n, visita);
+      };
+      visita(sf);
+    }
+    const analisar = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => {
+      if (n.attributes.properties.some(ts.isJsxSpreadAttribute)) { problemas.push(`${linha(n)}: <${componente}> com spread de props`); return; }
+      const at = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === atributo) as ts.JsxAttribute | undefined;
+      let expr: ts.Expression | undefined = at?.initializer ? (ts.isStringLiteral(at.initializer) ? at.initializer : ts.isJsxExpression(at.initializer) ? at.initializer.expression : undefined) : undefined;
+      if (expr && propriedade) {
+        const o = objetoLiteral(expr);
+        const v = o ? valorDaChave(entradasDoObjeto(o), propriedade) : "opaco";
+        expr = v && v !== "opaco" ? v : undefined;
+      }
+      const alt = expr ? alternativasDeTexto(expr) : null;
+      if (alt === null || !alt.every(comecoConhecido)) problemas.push(`${linha(n)}: <${componente}> ${atributo}${propriedade ? `.${propriedade}` : ""} não resolvível`);
+      else for (const t of alt) { valores.push(legivel(t)); if (fragmentoDestrutivo(t)) problemas.push(`${linha(n)}: <${componente}> "${legivel(t)}" é destrutivo`); }
+    };
+    /** Referência ao componente que a trava lê: tag JSX, alias, import, a própria declaração e exportação no módulo. */
+    const permitida = (id: ts.Identifier): boolean => {
+      let p: ts.Node = id.parent;
+      if ((ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p) || ts.isJsxClosingElement(p)) && p.tagName === id) return true;
+      if (ts.isPropertyAccessExpression(p) && p.expression === id) {
+        if (!exportados.has(p.name.text)) return true; // outra exportação do módulo (M.Horario)
+        const pai = p.parent;
+        if ((ts.isJsxOpeningElement(pai) || ts.isJsxSelfClosingElement(pai) || ts.isJsxClosingElement(pai)) && pai.tagName === p) return true;
+        p = pai;
+      }
+      while (ts.isParenthesizedExpression(p) || ts.isAsExpression(p) || ts.isSatisfiesExpression(p) || ts.isNonNullExpression(p)) p = p.parent;
+      if (ts.isVariableDeclaration(p) && (p.name === id || (p.initializer && ts.isIdentifier(p.name)))) return true;
+      if (ts.isVariableDeclaration(p) && ts.isObjectBindingPattern(p.name) && p.initializer && semEmbrulho(p.initializer) === id) return true;
+      if (ts.isBindingElement(p) && (p.name === id || p.propertyName === id)) return true;
+      if ((ts.isFunctionDeclaration(p) || ts.isClassDeclaration(p)) && p.name === id) return true;
+      if (ts.isImportSpecifier(p) || ts.isImportClause(p) || ts.isNamespaceImport(p)) return true;
+      if (declarante && (ts.isExportSpecifier(p) || ts.isExportAssignment(p))) return true;
+      return false;
+    };
+    const visita = (n: ts.Node) => {
+      if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+        if (ehComponente(n.tagName) || (livre && ts.isIdentifier(n.tagName) && n.tagName.text === componente)) analisar(n);
+      }
+      if (ts.isIdentifier(n) && (ligados.has(n.text) || espacos.has(n.text)) && (ehReferencia(n) || ts.isJsxOpeningElement(n.parent) || ts.isJsxSelfClosingElement(n.parent) || ts.isJsxClosingElement(n.parent)) && !permitida(n)) problemas.push(`${linha(n)}: ${n.text} usado fora de JSX`);
+      // Exportação de um alias: no módulo, o alias passa a ser outro nome do componente; fora dele, é reexportação.
+      if (ts.isVariableStatement(n) && exportado(n)) {
+        for (const d of n.declarationList.declarations) {
+          if (!ts.isIdentifier(d.name) || !ligados.has(d.name.text) || d.name.text === componente) continue;
+          if (declarante) exportados.add(d.name.text); else problemas.push(`${linha(d)}: reexporta <${componente}> como ${d.name.text}`);
+        }
+      }
+      if (ts.isExportSpecifier(n) && !n.parent.parent.moduleSpecifier && ligados.has((n.propertyName ?? n.name).text)) {
+        if (declarante) exportados.add(n.name.text); else problemas.push(`${linha(n)}: reexporta <${componente}>`);
+      }
+      if (ts.isExportAssignment(n) && ts.isIdentifier(n.expression) && ligados.has(n.expression.text)) {
+        if (declarante) exportados.add("default"); else problemas.push(`${linha(n)}: reexporta <${componente}> como default`);
+      }
+      ts.forEachChild(n, visita);
+    };
+    visita(sf);
+  }
+  return { valores, problemas };
+}
+
+/**
+ * Classes que um DESCENDENTE de botão isento ai-* pode ter: layout, tamanho, tipografia sem cor e a
+ * própria paleta ai-*. Lista fechada: qualquer outra (bg-red-600, text-white, ring-…, opacity-…) acusa.
+ */
+const CLASSE_NEUTRA_OU_IA = /^(-?(m|p)[trblxyse]?-[\w./[\]-]+|gap(-[xy])?-\S+|(min-|max-)?(w|h|size)-\S+|flex|inline|inline-flex|inline-block|block|hidden|contents|items-\S+|justify-\S+|self-\S+|shrink(-0)?|grow(-0)?|truncate|whitespace-\S+|font-(normal|medium|semibold|bold)|leading-\S+|tracking-\S+|text-(xs|sm|base|lg|xl|[2-9]xl|left|center|right)|sr-only|not-sr-only|rounded(-\S+)?|align-\S+|underline|no-underline|italic|uppercase|lowercase|capitalize|tabular-nums|(hover:)?(bg|text|border)-ai-[\w-]+)$/;
+
+/**
+ * Problemas de cor no CONTEÚDO de um botão isento ai-* (follow-up #140, B5: `<span className="bg-red-600">`
+ * recoloria o botão). Falha fechada: só texto, <span>/<strong>/<em>/<b>/<i>/<small> e ícones Icon*; cada
+ * elemento só com className literal de classes neutras ou ai-*, aria-* e key (sem style, spread, cor por
+ * prop); conteúdo em expressão tem de se resolver em texto; constantes JSX são seguidas pelo escopo.
+ */
+export function coresNosDescendentes(botao: ts.JsxElement): string[] {
+  const problemas: string[] = [];
+  const vistos = new Set<ts.Node>();
+  const elemento = (el: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => {
+    const tag = el.tagName.getText(el.getSourceFile());
+    if (!/^(span|strong|em|b|i|small)$/.test(tag) && !/^Icon[A-Z]\w*$/.test(tag)) problemas.push(`<${tag}> não é texto nem ícone`);
+    for (const p of el.attributes.properties) {
+      if (!ts.isJsxAttribute(p)) { problemas.push(`<${tag}> com spread`); continue; }
+      const nome = p.name.getText(el.getSourceFile());
+      if (nome === "key" || /^aria-/.test(nome)) continue;
+      if (nome !== "className") { problemas.push(`<${tag}> ${nome}`); continue; }
+      const v = p.initializer;
+      const alt = v && ts.isStringLiteral(v) ? [v.text] : v && ts.isJsxExpression(v) && v.expression ? alternativasDeTexto(v.expression) : null;
+      if (alt === null || alt.some((t) => t.includes(DESCONHECIDO))) { problemas.push(`<${tag}> className não literal`); continue; }
+      for (const c of alt.join(" ").split(/\s+/).filter(Boolean)) if (!CLASSE_NEUTRA_OU_IA.test(c)) problemas.push(`<${tag}> ${c}`);
+    }
+  };
+  const andar = (n: ts.Node) => {
+    if (ts.isJsxAttributes(n)) return;
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) elemento(n);
+    if (ts.isJsxExpression(n) && n.expression && (ts.isJsxElement(n.parent) || ts.isJsxFragment(n.parent)) && alternativasDeTexto(n.expression) === null) {
+      problemas.push(`conteúdo não resolvível: ${n.expression.getText(n.getSourceFile()).replace(/\s+/g, " ")}`);
+    }
+    if (ts.isIdentifier(n) && ehReferencia(n)) {
+      const v = valorNoEscopo(n);
+      if (v && !vistos.has(v)) { vistos.add(v); andar(v); }
+    }
+    ts.forEachChild(n, andar);
+  };
+  for (const c of botao.children) andar(c);
+  return problemas;
+}
+
+// Rótulo que a trava não resolve estaticamente (prop, chamada, começo dinâmico): arquivo + nome
+// (nomeDoElemento) + quantos + motivo. Falha fechada: um botão novo assim não passa sem entrar aqui (R1
+// da #135, B1/B4). Com `fontes`, o rótulo vem de uma prop do componente declarado em `arquivo`: TODOS os
+// usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
+type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
   { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "→", vezes: 1, motivo: "link para o cadastro vinculado: o rótulo é o nome do aluno/lead (navegação, não ação)" },
-  { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo", onde: ["src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx"] }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos do arquivo, todos 'Registrar …' / 'Reservar …'" },
-  { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo", onde: ["src/app"] }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
+  { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo" }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];
+
+/** Todos os .ts/.tsx de src/app e src/components (sem testes): onde um uso do componente pode estar. */
+const FONTES_DO_SRC = ["src/app", "src/components"].flatMap((raiz) =>
+  (readdirSync(raiz, { recursive: true }) as string[])
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\./.test(f))
+    .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
+);
 
 describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", () => {
   it("todo botão do design system tem rótulo resolvível no começo — ou está em ROTULOS_DINAMICOS, com a contagem exata", () => {
@@ -1142,41 +1592,24 @@ describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", 
     for (const r of ROTULOS_DINAMICOS) expect(r.motivo.trim().length, r.nome).toBeGreaterThan(20);
   });
 
-  // O rótulo dinâmico vem de uma prop: cada valor passado a ela (em todos os usos) tem de se resolver e
-  // não pode nomear ação destrutiva — senão o botão de envio, secundário, herdaria "Excluir …" (R2 da #135, B6).
-  it("rótulos dinâmicos: todos os valores que alimentam o rótulo se resolvem e nenhum é destrutivo", () => {
+  // O rótulo dinâmico vem de uma prop: cada valor passado a ela (em TODOS os usos do componente no src) tem
+  // de se resolver e não pode nomear ação destrutiva — senão o botão de envio, secundário, herdaria
+  // "Excluir …" (R2 da #135, B6; follow-up #140, B6: alias, import com outro nome e uso fora de uma lista fixa).
+  it("rótulos dinâmicos: todos os usos do componente no src passam valores resolvidos e nenhum é destrutivo", () => {
     for (const r of ROTULOS_DINAMICOS.filter((x) => x.fontes)) {
-      const { componente, atributo, propriedade, onde } = r.fontes!;
-      const arquivosFonte = onde.flatMap((o) => o.endsWith(".tsx") ? [o] : (readdirSync(o, { recursive: true }) as string[]).filter((x) => x.endsWith(".tsx") && !x.includes(".test.")).map((x) => join(o, x).split("\\").join("/")));
-      const valores: string[] = [];
-      for (const arquivo of arquivosFonte) {
-        const sf = ts.createSourceFile(arquivo, readFileSync(arquivo, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-        const consts = constantesDoArquivo(sf);
-        const visita = (n: ts.Node) => {
-          if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === componente) {
-            const at = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === atributo) as ts.JsxAttribute | undefined;
-            let expr: ts.Expression | undefined = at?.initializer ? (ts.isStringLiteral(at.initializer) ? at.initializer : ts.isJsxExpression(at.initializer) ? at.initializer.expression : undefined) : undefined;
-            if (expr && propriedade) {
-              const obj = ts.isObjectLiteralExpression(expr) ? expr : undefined;
-              const p = obj?.properties.find((x) => ts.isPropertyAssignment(x) && x.name.getText(sf) === propriedade) as ts.PropertyAssignment | undefined;
-              expr = p?.initializer;
-            }
-            const alt = expr ? alternativasDeTexto(expr, consts) : null;
-            if (alt === null) valores.push(`${arquivo}: <${componente}> ${atributo} não resolvível`);
-            else for (const t of alt) { valores.push(t); if (fragmentoDestrutivo(t)) valores.push(`${arquivo}: <${componente}> "${t}" é destrutivo`); }
-          }
-          ts.forEachChild(n, visita);
-        };
-        visita(sf);
-      }
-      expect(valores.filter((v) => /não resolvível|é destrutivo/.test(v)), r.arquivo).toEqual([]);
+      const { componente, atributo, propriedade } = r.fontes!;
+      const modulo = posix.basename(r.arquivo).replace(/\.tsx?$/, "");
+      // Só lê a fundo quem cita o componente ou o módulo (um uso precisa de um dos dois no texto).
+      const candidatos = FONTES_DO_SRC.filter(({ conteudo }) => conteudo.includes(componente) || conteudo.includes(modulo));
+      expect(candidatos.map((c) => c.arquivo), r.arquivo).toContain(r.arquivo);
+      const { valores, problemas } = usosDoComponente(candidatos, r.arquivo, componente, atributo, propriedade);
+      expect(problemas, r.arquivo).toEqual([]);
       expect(valores.length, `${r.arquivo}: nenhum uso de <${componente}> encontrado`).toBeGreaterThan(0);
     }
   });
 
   it("rotulosNaoResolvidos (autoteste): começo dinâmico acusa; constante, template, verbo antes do dinâmico e tabela com variante passam", () => {
     const b = (corpo: string, antes = "") => rotulosNaoResolvidos(`${antes}\nexport function T({ rotulo, t, d, a }: any) { return ${corpo}; }`);
-    expect(b('<button className={botaoClasses()}>{rotulo}</button>')).toEqual(["key rotulo".replace("key ", "")].length ? b('<button className={botaoClasses()}>{rotulo}</button>') : []);
     expect(b('<button className={botaoClasses()}>{rotulo}</button>')).toHaveLength(1);
     expect(b('<button className={botaoClasses()}>{t ? "Salvando…" : rotulo}</button>')).toHaveLength(1);
     expect(b('<Botao>{rotulo}</Botao>')).toHaveLength(1);
@@ -1207,17 +1640,18 @@ describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", 
 describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
   // Os botões isentos por nome usam a paleta de IA (docs/18), mas base e tamanho vêm do design system:
   // a constante btnIa é exatamente BASE_BOTAO + TAMANHOS_BOTAO.sm, os isentos usam btnIa, e só somam
-  // cor/borda da paleta ai-* (texto branco no sólido).
+  // cor/borda da paleta ai-* (texto branco no sólido); o conteúdo não traz cor própria (follow-up #140, B5).
   const fonte = readFileSync("src/components/CopilotoSugestoes.tsx", "utf8");
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const classesDosIsentos: { nome: string; expr: string; estilo: boolean }[] = [];
+  const classesDosIsentos: { nome: string; expr: string; estilo: boolean; conteudo: string[] }[] = [];
   const visita = (n: ts.Node) => {
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
       const nome = nomeDoElemento(n, sf) ?? "";
       if ((CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? []).includes(nome)) {
         const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
         const estilo = n.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "style") || n.attributes.properties.some(ts.isJsxSpreadAttribute);
-        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "", estilo });
+        const conteudo = ts.isJsxOpeningElement(n) ? coresNosDescendentes(n.parent) : [];
+        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "", estilo, conteudo });
       }
     }
     ts.forEachChild(n, visita);
@@ -1237,5 +1671,174 @@ describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
       const extras = expr.match(/"([^"]*)"/)![1].trim().split(/\s+/);
       for (const c of extras) expect(/^(hover:)?(bg|text|border)-ai-[\w-]+$|^border$|^text-white$|^hover:brightness-95$/.test(c), `${nome}: ${c}`).toBe(true);
     }
+  });
+
+  it("o conteúdo de cada isento não recolore o botão: só texto, ícone e classes neutras ou ai-* (follow-up #140, B5)", () => {
+    expect(classesDosIsentos.flatMap(({ nome, conteudo }) => conteudo.map((p) => `${nome}: ${p}`))).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Follow-up #140 (R3 da #135): uma fonte virtual por evasão do issue — a trava acusa cada uma, e as formas
+// legítimas vizinhas continuam passando.
+// ---------------------------------------------------------------------------------------------------
+describe("follow-up #140: evasões restantes da trava de botões (autotestes)", () => {
+  it("B1 — tabela de botão: concatenação, template com expressão, constante sombreada, spread e chave entre aspas não escondem rótulo nem variante", () => {
+    // T5 / T6: o rótulo montado por "+" ou por template com expressão literal se resolve.
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encer" + "rar", variante: "fantasma" }];')).toEqual(["Encerrar → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: `Encer${"rar"}`, variante: "fantasma" }];')).toEqual(["Encerrar → fantasma"]);
+    // Começo dinâmico (parte do verbo desconhecida) numa linha com variante: falha fechada.
+    expect(tabelasDeBotaoSemPerigo('export function T({ x }: any) { return [{ label: "Encer" + x, variante: "fantasma" }]; }')).toEqual(["(rótulo não resolvível) → fantasma"]);
+    // T7: a constante vale pelo escopo — a sombra em outra função não troca o valor (nos dois sentidos).
+    expect(tabelasDeBotaoSemPerigo('const NEUTRO = "fantasma"; const A = [{ label: "Encerrar", variante: NEUTRO }]; function _sombra() { const NEUTRO = "perigo"; return NEUTRO; }')).toEqual(["Encerrar → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('const PERIGO = "perigo"; const A = [{ label: "Encerrar", variante: PERIGO }]; function _sombra() { const PERIGO = "fantasma"; return PERIGO; }')).toEqual([]);
+    // T8: variante por spread — de objeto do arquivo (resolvido) ou opaco (falha fechada); spread depois da variante pode sobrescrevê-la.
+    expect(tabelasDeBotaoSemPerigo('const NEUTRA = { variante: "fantasma" as const }; const A = [{ label: "Encerrar", ...NEUTRA }];')).toEqual(["Encerrar → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('export function T(props: any) { return [{ label: "Encerrar", ...props }]; }')).toEqual(["Encerrar → ?"]);
+    expect(tabelasDeBotaoSemPerigo('export function T(p: any) { return [{ label: "Encerrar", variante: "perigo", ...p }]; }')).toEqual(["Encerrar → ?"]);
+    expect(tabelasDeBotaoSemPerigo('const PERIGO = { variante: "perigo" as const }; const A = [{ label: "Encerrar", ...PERIGO }];')).toEqual([]);
+    // T9: chave entre aspas (ou computada literal) é a mesma chave; atalho resolve pelo escopo.
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar", "variante": "fantasma" }];')).toEqual(["Encerrar → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('const A = [{ "label": "Encerrar", ["variante"]: "fantasma" }];')).toEqual(["Encerrar → fantasma"]);
+    expect(tabelasDeBotaoSemPerigo('const label = "Encerrar"; const variante = "fantasma"; const A = [{ label, variante }];')).toEqual(["Encerrar → fantasma"]);
+    // Ternário na variante: todas as variantes possíveis têm de ser perigo.
+    expect(tabelasDeBotaoSemPerigo('export function T({ x }: any) { return [{ label: "Encerrar", variante: x ? "perigo" : "fantasma" }]; }')).toEqual(["Encerrar → perigo|fantasma"]);
+  });
+
+  it("B1 — botão: rótulo por \"+\"/template se resolve; começo dinâmico falha fechado; nome vale pelo escopo (sombra, parâmetro, let reatribuído)", () => {
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Encer" + "rar matrícula"}</Botao>')).toHaveLength(1);
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{`Encer${"rar"} matrícula`}</Botao>')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('export function T({ x }: any) { return <Botao variante="secundario">{"Encer" + x}</Botao>; }')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('export function T({ x }: any) { return <Botao>{`${x} itens`}</Botao>; }')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('export function T({ x }: any) { return <button aria-label={"Remo" + x} className={botaoClasses()}><Icone /></button>; }')).toHaveLength(1);
+    // Constante sombreada noutra função: vale a do escopo do botão (antes, "o último const do arquivo").
+    expect(destrutivosSemPerigo('function A() { const R = "Excluir janela"; return <Botao variante="secundario">{R}</Botao>; } function B() { const R = "Salvar"; return R; }')).toHaveLength(1);
+    expect(destrutivosSemPerigo('const btn = botaoClasses({ variante: "secundario" }); const r = <button className={btn}>Excluir</button>; function _s() { const btn = botaoClasses({ variante: "perigo" }); return btn; }')).toEqual(["Excluir"]);
+    // Parâmetro homônimo de uma constante do arquivo não é a constante: rótulo dinâmico.
+    expect(rotulosNaoResolvidos('const rotulo = "Salvar"; export function T({ rotulo }: { rotulo: string }) { return <Botao>{rotulo}</Botao>; }')).toHaveLength(1);
+    // let reatribuído não se resolve; let nunca reatribuído, sim.
+    expect(rotulosNaoResolvidos('export function T() { let r = "Salvar"; r = "Excluir"; return <Botao>{r}</Botao>; }')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('export function T() { let r = "Salvar"; return <Botao>{r}</Botao>; }')).toEqual([]);
+  });
+
+  it("B2 — isenção por estado: aria-current/aria-expanded só isentam com a MESMA condição e polaridade da classe; aria-haspopup não isenta seleção", () => {
+    const b = (attr: string) => alternanciasSemAriaPressed(`<button ${attr} className={tipo === t ? "bg-surface" : "text-gray-500"}>PF</button>`);
+    expect(b("aria-expanded={tipo !== t}")).toEqual(["PF"]); // A15d
+    expect(b('aria-current={tipo === t ? undefined : "true"}')).toEqual(["PF"]); // A15e
+    expect(b('aria-current={tipo !== t ? "page" : undefined}')).toEqual(["PF"]); // A18
+    expect(b('aria-current={tipo === t ? "page" : "page"}')).toEqual(["PF"]); // os dois lados anunciam
+    expect(b("aria-haspopup={undefined}")).toEqual(["PF"]); // A15f
+    expect(b('aria-haspopup="true"')).toEqual(["PF"]); // A15g
+    expect(b('aria-haspopup="menu"')).toEqual(["PF"]); // A17
+    // Legítimas (A15c): a mesma condição, a mesma polaridade (lados trocados, `&&`, dupla negação).
+    expect(b('aria-current={tipo === t ? "true" : undefined}')).toEqual([]);
+    expect(b('aria-current={t === tipo && "page"}')).toEqual([]);
+    expect(b('aria-current={tipo === t ? "page" : "false"}')).toEqual([]);
+    expect(b('aria-current={!(tipo !== t) ? "page" : undefined}')).toEqual([]);
+    expect(b("aria-expanded={tipo === t}")).toEqual([]);
+    expect(b('aria-haspopup="menu" aria-expanded={tipo === t}')).toEqual([]); // botão de menu anuncia em aria-expanded
+  });
+
+  it("B3 — grupo rotulado: aria-label vazio, undefined ou opaco não nomeia; aria-labelledby exige id existente no arquivo (A16f)", () => {
+    const btn = '<button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button>';
+    const fora = ["Seg — aria-pressed fora de grupo rotulado"];
+    const grupo = (attrs: string) => alternanciasSemAriaPressed('<div role="group" ' + attrs + ">" + btn + "</div>");
+    expect(grupo("aria-label={``}")).toEqual(fora); // A16d
+    expect(grupo("aria-label={undefined}")).toEqual(fora); // A16e
+    expect(grupo('aria-label={" "}')).toEqual(fora);
+    expect(grupo("aria-label={rotulo}")).toEqual(fora); // expressão opaca não prova nome
+    expect(grupo('aria-labelledby="id-que-nao-existe"')).toEqual(fora); // A16f
+    expect(grupo("aria-labelledby={idTitulo}")).toEqual(fora); // nenhum id={idTitulo} no arquivo
+    expect(alternanciasSemAriaPressed('const r = <><h3 id="a">Dias</h3><div role="group" aria-labelledby="a b">' + btn + "</div></>;")).toEqual(fora); // "b" não existe
+    expect(alternanciasSemAriaPressed("const r = <fieldset>" + btn + "</fieldset>;")).toEqual(fora); // fieldset sem legenda
+    // Passam: texto, template com texto, id literal existente, id pela mesma expressão.
+    expect(grupo('aria-label="Dias"')).toEqual([]);
+    expect(grupo("aria-label={`Dias de ${turma}`}")).toEqual([]);
+    expect(alternanciasSemAriaPressed('const r = <><h3 id="dias-titulo">Dias</h3><div role="group" aria-labelledby="dias-titulo">' + btn + "</div></>;")).toEqual([]);
+    expect(alternanciasSemAriaPressed('const idDias = useId(); const r = <><h3 id={idDias}>Dias</h3><div role="group" aria-labelledby={idDias}>' + btn + "</div></>;")).toEqual([]);
+  });
+
+  it("B4 — seleção em função: switch, consulta a objeto, método e função importada contam; aria-pressed tem de ser a comparação dos argumentos", () => {
+    const SWITCH = 'function estilo(atual: string, opcao: string) { switch (atual) { case opcao: return "bg-surface"; default: return "text-gray-500"; } }';
+    const LOOKUP = 'function estilo(atual: string, opcao: string) { return ({ [atual]: "bg-surface" } as Record<string, string>)[opcao] ?? "text-gray-500"; }';
+    const TERNARIO = 'function estilo(atual: string, opcao: string) { return atual === opcao ? "bg-surface" : "text-gray-500"; }';
+    const grupo = (botao: string, antes: string) => alternanciasSemAriaPressed(`${antes}\nconst r = <div role="group" aria-label="Tipo">${botao}</div>;`);
+    // A8d / A8g: sem aria-pressed, a seleção escondida em switch ou consulta a objeto acusa.
+    expect(grupo('<button className={"rounded " + estilo(tipo, t)}>PF</button>', SWITCH)).toEqual(["PF"]);
+    expect(grupo('<button className={"rounded " + estilo(tipo, t)}>PF</button>', LOOKUP)).toEqual(["PF"]);
+    // A8f: aria-pressed invertido em relação à comparação dos argumentos acusa, em qualquer das formas.
+    for (const f of [SWITCH, LOOKUP, TERNARIO]) {
+      expect(grupo("<button aria-pressed={tipo !== t} className={estilo(tipo, t)}>PF</button>", f), f).toEqual(["PF — aria-pressed não é a condição da classe"]);
+      expect(grupo("<button aria-pressed={tipo === t} className={estilo(tipo, t)}>PF</button>", f), f).toEqual([]);
+      expect(grupo("<button aria-pressed={t === tipo} className={estilo(tipo, t)}>PF</button>", f), f).toEqual([]);
+    }
+    // Método de objeto do arquivo.
+    expect(grupo("<button className={E.estilo(tipo, t)}>PF</button>", 'const E = { estilo(atual: string, opcao: string) { return atual === opcao ? "bg-surface" : ""; } };')).toEqual(["PF"]);
+    // Função importada do projeto: analisada na origem.
+    const importado = (botao: string) => alternanciasSemAriaPressed(`import { estilo } from "./estilos";\nconst r = <div role="group" aria-label="Tipo">${botao}</div>;`, "x.tsx", { "./estilos": `export ${TERNARIO}` });
+    expect(importado("<button className={estilo(tipo, t)}>PF</button>")).toEqual(["PF"]);
+    expect(importado("<button aria-pressed={tipo !== t} className={estilo(tipo, t)}>PF</button>")).toEqual(["PF — aria-pressed não é a condição da classe"]);
+    expect(importado("<button aria-pressed={tipo === t} className={estilo(tipo, t)}>PF</button>")).toEqual([]);
+    // Função que não decide (só junta classes) não é seleção.
+    expect(grupo('<button className={junta("rounded", "px-2")}>PF</button>', "function junta(...c: string[]) { return c.join(\" \"); }")).toEqual([]);
+  });
+
+  it("B5 — isentos ai-*: descendente com cor fora da paleta, elemento opaco, style ou conteúdo não resolvível recolorem o botão", () => {
+    const desc = (conteudo: string, antes = "") => {
+      const sf = ts.createSourceFile("x.tsx", `${antes}\nconst r = <button className={btnIa + " bg-ai-solid text-white"}>${conteudo}</button>;`, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      let achados: string[] = [];
+      const v = (n: ts.Node) => { if (ts.isJsxElement(n) && n.openingElement.tagName.getText(sf) === "button") achados = coresNosDescendentes(n); ts.forEachChild(n, v); };
+      v(sf);
+      return achados;
+    };
+    expect(desc('<span className="-mx-2 -my-0.5 rounded bg-red-600 px-2 py-0.5">Aplicar corrigido</span>')).toEqual(["<span> bg-red-600"]); // K4d
+    expect(desc('<span className="text-white">Aplicar</span>')).toEqual(["<span> text-white"]);
+    expect(desc('<span style={{ background: "red" }}>Aplicar</span>')).toEqual(["<span> style"]);
+    expect(desc("<span {...p}>Aplicar</span>")).toEqual(["<span> com spread"]);
+    expect(desc("<Vermelho>Aplicar</Vermelho>")).toEqual(["<Vermelho> não é texto nem ícone"]);
+    expect(desc('<IconCheck color="red" />')).toEqual(["<IconCheck> color"]);
+    expect(desc("<span className={cor}>Aplicar</span>")).toEqual(["<span> className não literal"]);
+    expect(desc("{conteudo}")).toEqual(["conteúdo não resolvível: conteudo"]);
+    expect(desc('{x ? <span className="bg-danger">A</span> : "B"}')).toEqual(["<span> bg-danger"]);
+    expect(desc("{FAIXA}", 'const FAIXA = <span className="bg-red-600">Aplicar</span>;')).toEqual(["<span> bg-red-600"]);
+    // Passam: texto, ternário de textos, ícone e classes neutras ou ai-*.
+    expect(desc('Aplicar <IconSparkles className="h-3.5 w-3.5" aria-hidden /> <span className="font-medium text-ai-700">corrigido</span>')).toEqual([]);
+    expect(desc('{ocupado ? "Analisando…" : "Gerar sugestões"}')).toEqual([]);
+  });
+
+  it("B6 — rótulo dinâmico: alias, import com outro nome, namespace e uso em qualquer arquivo entram; spread, fora de JSX e reexportação falham fechado", () => {
+    const DECL = "src/app/x/Formularios.tsx";
+    const declara = 'export function Formulario({ titulo }: { titulo: string }) { return <button className={botaoClasses()}>{titulo}</button>; }\nexport function A() { return <Formulario titulo="Registrar decisão" />; }';
+    const usos = (extras: Record<string, string>, declaracao = declara) =>
+      usosDoComponente([{ arquivo: DECL, conteudo: declaracao }, ...Object.entries(extras).map(([arquivo, conteudo]) => ({ arquivo, conteudo }))], DECL, "Formulario", "titulo");
+    expect(usos({})).toEqual({ valores: ["Registrar decisão"], problemas: [] });
+    // H16d: alias local do componente.
+    expect(usos({}, `${declara}\nconst F = Formulario;\nexport function B() { return <F titulo="Excluir tentativa reservada" />; }`).problemas)
+      .toEqual([expect.stringMatching(/Formularios\.tsx:4: <Formulario> "Excluir tentativa reservada" é destrutivo$/)]);
+    // H16g: uso em outro arquivo do src — import direto, com outro nome, por namespace e por alias exportado.
+    expect(usos({ "src/app/x/page.tsx": 'import { Formulario } from "./Formularios";\nexport default () => <Formulario titulo="Excluir tentativa" />;' }).problemas)
+      .toEqual([expect.stringMatching(/page\.tsx:2: <Formulario> "Excluir tentativa" é destrutivo$/)]);
+    expect(usos({ "src/app/y/z.tsx": 'import { Formulario as G } from "../x/Formularios";\nexport const Z = () => <G titulo="Remover tentativa" />;' }).problemas).toHaveLength(1);
+    expect(usos({ "src/app/y/z.tsx": 'import * as M from "@/app/x/Formularios";\nexport const Z = () => <M.Formulario titulo="Apagar tentativa" />;' }).problemas).toHaveLength(1);
+    expect(usos({ "src/app/y/z.tsx": 'import { Atalho } from "../x/Formularios";\nexport const Z = () => <Atalho titulo="Descartar tentativa" />;' }, `${declara}\nexport const Atalho = Formulario;`).problemas).toHaveLength(1);
+    // Usos que a trava não lê: falha fechada.
+    expect(usos({ "src/app/y/z.tsx": 'import { Formulario } from "../x/Formularios";\nexport const Z = (p: any) => <Formulario {...p} />;' }).problemas).toEqual([expect.stringMatching(/spread de props$/)]);
+    expect(usos({ "src/app/y/z.tsx": 'import { Formulario } from "../x/Formularios";\nexport const Z = ({ t }: any) => <Formulario titulo={t} />;' }).problemas).toEqual([expect.stringMatching(/titulo não resolvível$/)]);
+    expect(usos({ "src/app/y/z.tsx": 'import { createElement } from "react";\nimport { Formulario } from "../x/Formularios";\nexport const Z = () => createElement(Formulario, { titulo: "Excluir" });' }).problemas)
+      .toEqual([expect.stringMatching(/Formulario usado fora de JSX$/)]);
+    expect(usos({ "src/app/y/index.ts": 'export { Formulario } from "../x/Formularios";' }).problemas).toEqual([expect.stringMatching(/reexporta/)]);
+    expect(usos({ "src/app/y/z.tsx": 'import { Formulario } from "../x/Formularios";\nexport const G = Formulario;' }).problemas).toEqual([expect.stringMatching(/reexporta/)]);
+    // Homônimo de outro módulo não é o componente; tag sem import nenhum conta (falha fechada).
+    expect(usos({ "src/app/y/z.tsx": 'import { Formulario } from "./Formulario";\nexport const Z = () => <Formulario titulo="Excluir" />;' }).problemas).toEqual([]);
+    expect(usos({ "src/app/y/z.tsx": 'export const Z = () => <Formulario titulo="Excluir" />;' }).problemas).toHaveLength(1);
+    // Propriedade de objeto (EstadoRota acao.rotulo): spread do arquivo e chave entre aspas também se leem.
+    const rota = (uso: string) => usosDoComponente([
+      { arquivo: "src/components/EstadoRota.tsx", conteudo: "export function EstadoRota({ acao }: any) { return <button className={botaoClasses()}>{acao.rotulo}</button>; }" },
+      { arquivo: "src/app/erro.tsx", conteudo: `import { EstadoRota } from "@/components/EstadoRota";\n${uso}` },
+    ], "src/components/EstadoRota.tsx", "EstadoRota", "acao", "rotulo");
+    expect(rota('export default () => <EstadoRota acao={{ href: "/", rotulo: "Voltar ao início" }} />;')).toEqual({ valores: ["Voltar ao início"], problemas: [] });
+    expect(rota('const BASE = { rotulo: "Excluir conta" }; export default () => <EstadoRota acao={{ href: "/", ...BASE }} />;').problemas).toHaveLength(1);
+    expect(rota('export default () => <EstadoRota acao={{ href: "/", "rotulo": "Excluir conta" }} />;').problemas).toHaveLength(1);
+    expect(rota('export default (p: any) => <EstadoRota acao={{ rotulo: "Voltar", ...p }} />;').problemas).toEqual([expect.stringMatching(/acao\.rotulo não resolvível$/)]);
   });
 });
