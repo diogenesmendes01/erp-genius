@@ -80,6 +80,18 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
     expect(soDica).not.toContain("aria-invalid");
   });
 
+  it("dica vazia (\"\", false, null, undefined) não liga aria-describedby nem renderiza o elemento da dica (R1 B1)", () => {
+    for (const dica of ["", false, null, undefined] as ReactNode[]) {
+      const html = comInput({ id: "n", dica });
+      expect(html, String(dica)).not.toContain("aria-describedby");
+      expect(html, String(dica)).not.toContain('id="n-dica"');
+      // Com erro, só o erro é descrito.
+      expect(attr(tag(comInput({ id: "n", dica, erro: "Informe o nome." }), "input"), "aria-describedby"), String(dica)).toBe("n-erro");
+    }
+    // Zero é conteúdo (React o mostra): continua sendo dica.
+    expect(attr(tag(comInput({ id: "n", dica: 0 }), "input"), "aria-describedby")).toBe("n-dica");
+  });
+
   it("className é do invólucro (posição na grade); o rótulo aceita nó", () => {
     const html = renderToStaticMarkup(elCampo(
       { rotulo: createElement("span", null, "Taxa"), className: "sm:col-span-2", id: "t" },
