@@ -351,7 +351,7 @@ const METODOS_QUE_JUNTAM = new Set(["join", "concat"]);
 const METODOS_QUE_MANTEM: Readonly<Record<string, (t: string) => string>> = {
   toLowerCase: (t) => t.toLowerCase(), toLocaleLowerCase: (t) => t.toLowerCase(),
   toUpperCase: (t) => t.toUpperCase(), toLocaleUpperCase: (t) => t.toUpperCase(),
-  trim: (t) => t, trimStart: (t) => t, trimEnd: (t) => t, normalize: (t) => t, toString: (t) => t, valueOf: (t) => t,
+  trim: (t) => t, trimStart: (t) => t, trimEnd: (t) => t, normalize: (t) => t, toString: (t: string) => t, valueOf: (t: string) => t,
 };
 /** Métodos que cortam ou trocam o texto: o resultado não se sabe daqui (sinal 4). */
 const METODOS_QUE_EDITAM = new Set(["slice", "substring", "substr", "replace", "replaceAll", "split", "at", "charAt", "padStart", "padEnd", "repeat", "splice", "reduce", "reduceRight"]);
