@@ -7,6 +7,12 @@ import { Campo, type LigacaoCampo } from "@/components/Campo";
 // botões e campos e disparar onClick/onChange. Cada `renderizar` é um novo render com o estado guardado
 // por posição, como no React. Os <Campo> são expandidos: a função filha recebe a ligação e o controle
 // devolvido entra na árvore.
+//
+// LIMITE (de propósito): só useState e useCallback são simulados. Efeitos (useEffect/useLayoutEffect)
+// não rodam e useRef/useMemo/useId/useTransition/useContext não existem aqui — um componente testado
+// assim que passar a chamar um deles direto no corpo falha no teste ("Invalid hook call"), e o teste
+// precisa acompanhar (simular o gancho novo aqui, ou mockar como em DecisaoTaxa.test.ts). Componentes
+// filhos (Drawer, FeedbackAcao, Campo…) não são chamados: só as props deles são lidas.
 
 type Setter<T> = (v: T | ((anterior: T) => T)) => void;
 

@@ -108,6 +108,34 @@ describe("matrícula nova — passo 1 pela tela", () => {
     focoNoPrimeiroComErro(t);
   });
 
+  it("R2 B1 — cada obrigatório do passo 1 vazio SOZINHO (os outros preenchidos): não avança, erro só nele e foco nele", () => {
+    // Mesmo fio do passo 2: cada estado da tela tem de chegar ao seu campo em errosDoPasso1.
+    const casos: [string, string][] = [
+      ["matricula-nome", "Informe o nome do aluno."],
+      ["matricula-sobrenome", "Informe o sobrenome."],
+      ["matricula-nascimento", "Informe a data de nascimento."],
+      ["matricula-genero", "Selecione o gênero."],
+      ["matricula-pais", "Selecione o país."],
+      ["matricula-tipo-documento", "Selecione o tipo de documento."],
+      ["matricula-documento", "Informe o número do documento."],
+      ["matricula-nacionalidade", "Selecione a nacionalidade."],
+      ["matricula-email", "Informe o e-mail."],
+      ["matricula-telefone", "Informe o telefone."],
+      ["matricula-pais-residencia", "Selecione o país de residência."],
+    ];
+    for (const [id, mensagem] of casos) {
+      m.ganchos!.reiniciar();
+      preencherPasso1();
+      preencher(tela(), id, "");
+      foco.focados.length = 0;
+      clicar(tela(), PROXIMO);
+      const t = tela();
+      expect(temCampo(t, "matricula-taxa"), id).toBe(false);
+      expect(errosNaTela(t), id).toEqual({ [id]: mensagem });
+      expect(foco.focados, id).toEqual([id]);
+    }
+  });
+
   it("pagador empresa: o nome da empresa é cobrado no próprio campo (o tipo escolhido chega à validação)", () => {
     preencherPasso1();
     const pagador = elementos(tela()).find((n) => n.type === "select" && n.props["aria-labelledby"] === "matricula-pagador-titulo")!;
@@ -157,6 +185,32 @@ describe("matrícula nova — passo 2 pela tela", () => {
     expect(m.criar).not.toHaveBeenCalled();
     expect(Object.keys(errosNaTela(t))).toEqual(["primeiro-vencimento", "inicio-cobertura"]);
     expect(foco.focados).toEqual(["primeiro-vencimento"]);
+  });
+
+  it("R2 B1 — cada campo do passo 2 pendente SOZINHO (os outros preenchidos): não envia, erro só nele e foco nele", async () => {
+    // O fio da tela até errosDoPasso2: trocar um campo por outro na chamada (ex.: primeiroVencimento
+    // recebendo o início da cobertura) deixa um destes passar.
+    const casos: [string, string, string][] = [
+      ["matricula-taxa", "", "Informe a taxa de matrícula, com no máximo duas casas decimais."],
+      ["matricula-mensalidade", "", "Informe a mensalidade, com no máximo duas casas decimais."],
+      ["referencia-cobertura", "", "Selecione a cobertura prevista no contrato."],
+      ["primeiro-vencimento", "", "Informe o vencimento da primeira mensalidade."],
+      ["inicio-cobertura", "", "Informe o início do primeiro período coberto."],
+      ["matricula-certificado", "1.234", "Informe o valor do certificado, com no máximo duas casas decimais."],
+    ];
+    for (const [id, valorRuim, mensagem] of casos) {
+      vi.clearAllMocks();
+      m.ganchos!.reiniciar();
+      irAoPasso2();
+      preencherPasso2();
+      preencher(tela(), id, valorRuim);
+      foco.focados.length = 0;
+      await clicar(tela(), "Salvar matrícula");
+      const t = tela();
+      expect(m.criar, id).not.toHaveBeenCalled();
+      expect(errosNaTela(t), id).toEqual({ [id]: mensagem });
+      expect(foco.focados, id).toEqual([id]);
+    }
   });
 
   it("completo: envia os valores já convertidos; o erro do servidor fica junto do botão e some ao trocar de passo", async () => {
