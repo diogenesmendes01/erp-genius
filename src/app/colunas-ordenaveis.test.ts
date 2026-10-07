@@ -68,6 +68,7 @@ const TELAS = [
 //       - spread em elemento HTML, em componente externo ou em componente que repassa as props ao HTML:
 //         as chaves precisam ser conhecidas (objeto literal, constante, helper do projeto). Chave calculada
 //         que não se resolve, objeto mutado depois de criado, origem externa fora da lista fechada → falha;
+//         o parâmetro da função filha de um <Campo> (render-prop da #145) tem as chaves fixas de CHAVES_CAMPO;
 //       - APIs que criam elemento ou escrevem atributo pelo nome (createElement, cloneElement, jsx,
 //         setAttribute, innerHTML…): proibidas; HTML e script embutidos precisam ser texto conhecido e
 //         passam pela mesma trava; `eval`/`new Function` proibidos;
@@ -108,6 +109,15 @@ const PROIBIDOS = new Set([
 const EXTERNOS_CONFIAVEIS = new Map([
   ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]], ["@dnd-kit/sortable", ["useSortable"]],
 ]);
+/**
+ * B8 da R3 da #149 (integração com a #145): o parâmetro único da função filha de um <Campo> — o render-prop
+ * `{(campo) => <input {...campo} />}` — tem as chaves fixas pelo componente (`LigacaoCampo`), como as origens acima.
+ * Ancorado em texto exato: a tag é o `Campo` importado de "@/components/Campo" (pelo nome ou com alias), que resolve
+ * para src/components/Campo.tsx, e esse Campo só chama `children` com um objeto de chaves desta lista (contrato
+ * conferido no próprio arquivo). O parâmetro só pode aparecer espalhado; qualquer outro uso falha fechada.
+ */
+const CHAVES_CAMPO: readonly string[] = ["id", "aria-required", "aria-invalid", "aria-describedby"];
+const CAMPO = { modulo: "@/components/Campo", arquivo: "src/components/Campo.tsx", nome: "Campo" };
 /** Raízes, membros e consultas que levam a um nó do DOM. */
 const RAIZES_DOM = new Set(["document", "window", "globalThis", "self", "top", "parent", "frames", "opener"]);
 const MEMBROS_DOM = new Set([
@@ -148,6 +158,8 @@ type Valor =
   | { tipo: "externo"; modulo: string; nome: string }
   /** Parâmetro de função (props): as chaves são as do chamador. */
   | { tipo: "parametro" }
+  /** Parâmetro da função filha de um <Campo> (B8): as chaves são as de CHAVES_CAMPO. */
+  | { tipo: "campo" }
   /** Lado falso de `&&`, propriedade ausente: não espalha nada. */
   | { tipo: "nada" }
   | { tipo: "desconhecido" };
@@ -163,6 +175,7 @@ const VAZIO: Ligacoes = new Map();
 const DESC_V: Valor = { tipo: "desconhecido" };
 const NADA: Valor = { tipo: "nada" };
 const PARAM: Valor = { tipo: "parametro" };
+const CAMPO_V: Valor = { tipo: "campo" };
 
 const visitar = (no: ts.Node, f: (n: ts.Node) => void) => { f(no); ts.forEachChild(no, (filho) => visitar(filho, f)); };
 const dentro = (n: ts.Node, escopo: ts.Node) => n.pos >= escopo.pos && n.end <= escopo.end;
@@ -218,41 +231,85 @@ function caminhoAte(nome: string, alvo: ts.BindingName): Caminho | null {
 /**
  * Nomes declarados diretamente num nó de escopo (parâmetros, nome da função, catch, for, instruções do bloco,
  * imports), calculados uma vez por nó: a busca de um nome sobe os ancestrais consultando estes mapas (tempo da
- * trava, R2 da #149). O primeiro achado vale, na mesma ordem: parâmetros, nome da função, catch, for, instruções.
+ * trava, R2 da #149). Regras de escopo (R3 da #149, cada uma com autoteste de sombreamento):
+ *   - B6: o escopo das declarações de um `case` é o `switch` inteiro (o CaseBlock: todos os `case`/`default`
+ *     juntos), e é para ele que sobe a `function` declarada num `case` sem chaves;
+ *   - `var` (de bloco, de `for`, de `case`) sobe ao escopo de var — corpo da função, arquivo, namespace, bloco
+ *     estático de classe —, e a `function` de um bloco aninhado também deixa lá um nome opaco (anexo B do
+ *     ECMAScript: no modo não estrito, ela vale na função inteira);
+ *   - B7: nome com mais de uma declaração no mesmo escopo (`var`/`function` repetidos, `var`/`function` com o
+ *     nome de um parâmetro) é opaco — qual delas vale depende do fluxo, então falha fechada. Assinatura de
+ *     sobrecarga do TS (sem corpo) não é outra declaração.
  */
 const escopos = new WeakMap<ts.Node, Map<string, Ligacao>>();
 const SEM_DECLARACOES: ReadonlyMap<string, Ligacao> = new Map();
+const OPACO: Ligacao = { tipo: "opaco" };
+/** `var` (não `let`/`const`/`using`): a declaração sobe ao escopo de var. */
+const ehVar = (l: ts.VariableDeclarationList) => (l.flags & ts.NodeFlags.BlockScoped) === 0;
+/** Escopo de var: arquivo, corpo de namespace, corpo de função, bloco estático de classe. */
+const ehEscopoDeVar = (n: ts.Node) => ts.isSourceFile(n) || ts.isModuleBlock(n)
+  || (ts.isBlock(n) && (ts.isClassStaticBlockDeclaration(n.parent) || (ts.isFunctionLike(n.parent) && (n.parent as { body?: ts.Node }).body === n)));
 function declaracoesDe(n: ts.Node): ReadonlyMap<string, Ligacao> {
   const ehEscopo = ts.isFunctionLike(n) || ts.isCatchClause(n) || ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)
-    || ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n);
+    || ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseBlock(n);
   if (!ehEscopo) return SEM_DECLARACOES;
   const pronto = escopos.get(n);
   if (pronto) return pronto;
   const mapa = new Map<string, Ligacao>();
-  const por = (nome: string, l: Ligacao) => { if (!mapa.has(nome)) mapa.set(nome, l); };
+  // B7: a segunda declaração do mesmo nome no mesmo escopo torna o nome opaco (nem a primeira nem a última vale).
+  const por = (nome: string, l: Ligacao) => { mapa.set(nome, mapa.has(nome) ? OPACO : l); };
   if (ts.isFunctionLike(n)) {
     for (const p of n.parameters) for (const nome of nomesDaLigacao(p.name)) por(nome, { tipo: "param", param: p, fn: n });
     if (ts.isFunctionExpression(n) && n.name) por(n.name.text, { tipo: "funcao", fn: n });
   }
-  if (ts.isCatchClause(n) && n.variableDeclaration) for (const nome of nomesDaLigacao(n.variableDeclaration.name)) por(nome, { tipo: "opaco" });
-  if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)) && n.initializer && ts.isVariableDeclarationList(n.initializer)) {
+  if (ts.isCatchClause(n) && n.variableDeclaration) for (const nome of nomesDaLigacao(n.variableDeclaration.name)) por(nome, OPACO);
+  if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)) && n.initializer && ts.isVariableDeclarationList(n.initializer) && !ehVar(n.initializer)) {
     for (const d of n.initializer.declarations) {
-      for (const nome of nomesDaLigacao(d.name)) por(nome, ts.isForStatement(n) ? { tipo: "decl", decl: d, escopo: n } : { tipo: "opaco" });
+      for (const nome of nomesDaLigacao(d.name)) por(nome, ts.isForStatement(n) ? { tipo: "decl", decl: d, escopo: n } : OPACO);
     }
   }
-  const instrucoes = ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n) ? n.statements : [];
+  const deVar = ehEscopoDeVar(n);
+  const instrucoes: readonly ts.Statement[] = ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) ? n.statements
+    : ts.isCaseBlock(n) ? n.clauses.flatMap((c: ts.CaseOrDefaultClause) => c.statements) : [];
+  /** Assinatura de sobrecarga (sem corpo) ao lado da implementação ou de uma assinatura anterior: não é outra declaração. */
+  const sobrecarga = (s: ts.FunctionDeclaration, nome: string) => !s.body
+    && instrucoes.some((o: ts.Statement) => o !== s && ts.isFunctionDeclaration(o) && o.name?.text === nome && (!!o.body || o.pos < s.pos));
   for (const s of instrucoes) {
     if (ts.isVariableStatement(s)) {
-      for (const d of s.declarationList.declarations) for (const nome of nomesDaLigacao(d.name)) por(nome, { tipo: "decl", decl: d, escopo: n });
+      if (deVar || !ehVar(s.declarationList)) {
+        for (const d of s.declarationList.declarations) for (const nome of nomesDaLigacao(d.name)) por(nome, { tipo: "decl", decl: d, escopo: n });
+      }
     } else if (ts.isFunctionDeclaration(s)) {
-      if (s.name) por(s.name.text, { tipo: "funcao", fn: s });
+      if (s.name && !sobrecarga(s, s.name.text)) por(s.name.text, { tipo: "funcao", fn: s });
     } else if (ts.isClassDeclaration(s) || ts.isEnumDeclaration(s) || ts.isModuleDeclaration(s) || ts.isImportEqualsDeclaration(s)) {
-      if (s.name && ts.isIdentifier(s.name)) por(s.name.text, { tipo: "opaco" });
+      if (s.name && ts.isIdentifier(s.name)) por(s.name.text, OPACO);
     } else if (ts.isImportDeclaration(s) && ts.isStringLiteral(s.moduleSpecifier) && s.importClause) {
       const c = s.importClause, origem = s.moduleSpecifier.text, b = c.namedBindings;
       if (c.name) por(c.name.text, { tipo: "import", origem, nome: "default" });
       if (b && ts.isNamespaceImport(b)) por(b.name.text, { tipo: "import", origem, nome: "*" });
       if (b && ts.isNamedImports(b)) for (const el of b.elements) por(el.name.text, { tipo: "import", origem, nome: (el.propertyName ?? el.name).text });
+    }
+  }
+  if (deVar) {
+    // `var` aninhado (bloco, `for`, `case`) e `function` de bloco aninhado (anexo B), sem entrar em outra função,
+    // classe ou namespace — cada um tem o próprio escopo de var.
+    const icar = (x: ts.Node): void => {
+      if (ts.isFunctionDeclaration(x)) {
+        if (x.name && x.body) por(x.name.text, OPACO);
+        return;
+      }
+      if (ts.isFunctionLike(x) || ts.isClassLike(x) || ts.isClassStaticBlockDeclaration(x) || ts.isModuleDeclaration(x)) return;
+      if (ts.isVariableDeclarationList(x) && ehVar(x)) {
+        const iterado = ts.isForOfStatement(x.parent) || ts.isForInStatement(x.parent);
+        for (const d of x.declarations) for (const nome of nomesDaLigacao(d.name)) por(nome, iterado ? OPACO : { tipo: "decl", decl: d, escopo: n });
+      }
+      ts.forEachChild(x, icar);
+    };
+    for (const s of instrucoes) if (!ts.isVariableStatement(s) && !ts.isFunctionDeclaration(s)) icar(s);
+    // `var`/`function` com o nome de um parâmetro: a mesma variável, com valores de origens diferentes (B7).
+    const fn = n.parent;
+    if (ts.isBlock(n) && ts.isFunctionLike(fn)) {
+      for (const p of fn.parameters) for (const nome of nomesDaLigacao(p.name)) if (mapa.has(nome)) mapa.set(nome, OPACO);
     }
   }
   escopos.set(n, mapa);
@@ -298,6 +355,12 @@ const raizDeMembro = (e: ts.Node): ts.Identifier | null => {
   let x = semEmbrulho(e);
   while (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) x = semEmbrulho(x.expression);
   return ts.isIdentifier(x) ? x : null;
+};
+/** Identificador em posição de nome (`o.x`, `{ x: 1 }`, atributo JSX, `{ x: y } = o`), não de referência a uma variável. */
+const soNome = (x: ts.Identifier) => {
+  const p = x.parent;
+  return (ts.isPropertyAccessExpression(p) && p.name === x) || (ts.isPropertyAssignment(p) && p.name === x)
+    || (ts.isJsxAttribute(p) && p.name === x) || (ts.isBindingElement(p) && p.propertyName === x);
 };
 const MUTADORES = /^(Object\.(assign|defineProperty|defineProperties|setPrototypeOf)|Reflect\.(set|defineProperty|deleteProperty|setPrototypeOf))$/;
 
@@ -439,6 +502,7 @@ function analisador(virtuais = new Map<string, string>()) {
     if (l.tipo === "param") {
       const arg = lig.get(l.param), cam = caminhoAte(nome, l.param.name);
       if (!arg) {
+        if (ligacaoDoCampo(l.param, l.fn, ctx)) return [CAMPO_V];
         // Repasse só do objeto de props inteiro (`props`, `{ a, ...resto }`) do 1º parâmetro de um componente. Prop
         // desestruturada (`{ extra }`), outro parâmetro, função comum (`.map((x) => <div {...x} />)`): desconhecido.
         const inteiro = l.fn.parameters[0] === l.param && ehComponente(l.fn) && !!cam && (cam.chaves.length === 0 || (cam.chaves.length === 1 && cam.chaves[0] === null));
@@ -481,7 +545,7 @@ function analisador(virtuais = new Map<string, string>()) {
   const membroDe = (v: Valor, k: string, prof: number): Valor[] => {
     if (prof > PROFUNDIDADE) return [DESC_V];
     // `props.extra`: o valor de uma prop não é o objeto de props — as chaves dele não são travadas no chamador.
-    if (v.tipo === "parametro" || v.tipo === "desconhecido") return [DESC_V];
+    if (v.tipo === "parametro" || v.tipo === "campo" || v.tipo === "desconhecido") return [DESC_V];
     if (v.tipo === "nada") return [NADA];
     // `React.forwardRef`, `ns.useForm`: o nome passa a ser o membro; `useForm().register`: segue sendo "de useForm".
     if (v.tipo === "externo") return [{ tipo: "externo", modulo: v.modulo, nome: v.nome === "default" || v.nome === "*" ? k : v.nome }];
@@ -717,6 +781,7 @@ function analisador(virtuais = new Map<string, string>()) {
     for (const v of valores(e, ctx, lig, prof + 1)) {
       if (v.tipo === "nada") continue;
       if (v.tipo === "parametro") { r.repasse = true; continue; }
+      if (v.tipo === "campo") { r.nomes.push(...CHAVES_CAMPO); continue; }
       if (v.tipo === "externo") { if (!EXTERNOS_CONFIAVEIS.get(v.modulo)?.includes(v.nome)) r.aberta = true; continue; }
       if (v.tipo !== "expr") { r.aberta = true; continue; }
       const x = semEmbrulho(v.expr);
@@ -739,7 +804,82 @@ function analisador(virtuais = new Map<string, string>()) {
     return r;
   };
 
-  const ehIntrinseco = (tag: ts.JsxTagNameExpression) => ts.isJsxNamespacedName(tag) || (ts.isIdentifier(tag) && /^[a-z]/.test(tag.text));
+  // B8 (integração com a #145): o render-prop do <Campo>. Ver CHAVES_CAMPO.
+  let contratoCampo: boolean | null = null;
+  /** O `Campo` exportado por src/components/Campo.tsx só chama `children`, e só com um objeto de chaves de CHAVES_CAMPO? */
+  const campoCumpreContrato = (): boolean => {
+    if (contratoCampo !== null) return contratoCampo;
+    contratoCampo = false;
+    const salvo = orcamento;
+    orcamento = ORCAMENTO;
+    try {
+      const vs = exportado(CAMPO.arquivo, CAMPO.nome, 0), [v] = vs;
+      if (vs.length !== 1 || v.tipo !== "expr" || !ts.isFunctionDeclaration(v.expr)) return false;
+      const fn = v.expr, corpo = fn.body, [props] = fn.parameters, c = v.ctx;
+      if (!corpo || fn.parameters.length !== 1 || !ts.isObjectBindingPattern(props.name)) return false;
+      // Desestruturação com nomes de chave legíveis, e `children` exatamente uma vez, sem padrão.
+      const chaveDe = (el: ts.BindingElement) => { const k = el.propertyName ?? el.name; return ts.isIdentifier(k) || ts.isStringLiteral(k) ? k.text : null; };
+      const elementos = props.name.elements.filter((el: ts.BindingElement) => !el.dotDotDotToken);
+      if (elementos.some((el: ts.BindingElement) => chaveDe(el) === null)) return false;
+      const filhos = elementos.filter((el: ts.BindingElement) => chaveDe(el) === "children"), [filho] = filhos;
+      if (filhos.length !== 1 || !ts.isIdentifier(filho.name) || filho.initializer) return false;
+      const local = filho.name.text;
+      let chamadas = 0, cumpre = true;
+      visitar(corpo, (x) => {
+        if (!cumpre || !ts.isIdentifier(x)) return;
+        if (x.text === "arguments") { cumpre = false; return; }
+        if (x.text !== local || soNome(x)) return;
+        const l = ligacaoDe(local, x);
+        if (l?.tipo !== "param" || l.param !== props) return;
+        const chamada = x.parent;
+        if (!ts.isCallExpression(chamada) || chamada.expression !== x || chamada.arguments.length !== 1 || ts.isSpreadElement(chamada.arguments[0])) { cumpre = false; return; }
+        const k = chavesDe(chamada.arguments[0], c, VAZIO, 0);
+        if (k.aberta || k.repasse || !k.nomes.every((nome: string) => CHAVES_CAMPO.includes(nome))) cumpre = false;
+        chamadas++;
+      });
+      contratoCampo = cumpre && chamadas > 0;
+      return contratoCampo;
+    } finally {
+      orcamento = salvo;
+    }
+  };
+  const filhosDoCampo = new Map<ts.ParameterDeclaration, boolean>();
+  /**
+   * O parâmetro é o único de uma função anônima (arrow ou `function (c)`, sem nome: nada a chama de novo) que é o
+   * único filho de um <Campo> de "@/components/Campo", e só aparece espalhado (`{...campo}` no JSX ou num objeto) —
+   * sem alias, mutação, repasse a função nem `arguments`.
+   */
+  const ligacaoDoCampo = (param: ts.ParameterDeclaration, fn: ts.SignatureDeclaration, ctx: Ctx): boolean => {
+    const memo = filhosDoCampo.get(param);
+    if (memo !== undefined) return memo;
+    let r = false;
+    if ((ts.isArrowFunction(fn) || (ts.isFunctionExpression(fn) && !fn.name)) && fn.parameters.length === 1 && fn.parameters[0] === param
+      && ts.isIdentifier(param.name) && !param.initializer && !param.dotDotDotToken) {
+      let p: ts.Node = fn.parent;
+      while (ts.isParenthesizedExpression(p)) p = p.parent;
+      const el = ts.isJsxExpression(p) && ts.isJsxElement(p.parent) ? p.parent : null;
+      const filhos = el ? el.children.filter((x: ts.JsxChild) => !(ts.isJsxText(x) && x.containsOnlyTriviaWhiteSpaces) && !(ts.isJsxExpression(x) && !x.expression)) : [];
+      const tag = el?.openingElement.tagName;
+      const l = tag && ts.isIdentifier(tag) ? ligacaoDe(tag.text, tag) : null;
+      if (filhos.length === 1 && filhos[0] === p && l?.tipo === "import" && l.origem === CAMPO.modulo && l.nome === CAMPO.nome
+        && resolverModulo(ctx.arquivo, l.origem) === CAMPO.arquivo) {
+        const nome = param.name.text;
+        let soEspalhado = true;
+        visitar(fn.body, (x) => {
+          if (!soEspalhado || !ts.isIdentifier(x)) return;
+          if (x.text === "arguments") { soEspalhado = false; return; }
+          if (x.text !== nome || soNome(x)) return;
+          const lx = ligacaoDe(nome, x);
+          if (lx?.tipo === "param" && lx.param === param && !ts.isJsxSpreadAttribute(x.parent) && !ts.isSpreadAssignment(x.parent)) soEspalhado = false;
+        });
+        r = soEspalhado && campoCumpreContrato();
+      }
+    }
+    filhosDoCampo.set(param, r);
+    return r;
+  };
+
+  const ehIntrinseco =(tag: ts.JsxTagNameExpression) => ts.isJsxNamespacedName(tag) || (ts.isIdentifier(tag) && /^[a-z]/.test(tag.text));
   const repassa = new Map<ts.Node, boolean>();
   /** O componente repassa as próprias props (spread de parâmetro) a um elemento HTML ou a outro componente que repassa? */
   const funcaoRepassa = (fn: Funcao, ctx: Ctx, prof: number): boolean => {
@@ -1212,6 +1352,120 @@ describe("colunas ordenáveis (E1)", () => {
     for (const [modulo, hooks] of EXTERNOS_CONFIAVEIS) for (const hook of hooks) {
       expect(ariaSortNoFonte(`import { ${hook} } from "${modulo}"; function C() { const r = ${hook}(); return <div {...r} />; }`), `${modulo}#${hook}`).toEqual([]);
       expect(ariaSortNoFonte(`import { ${hook} } from "outro-${modulo}"; function C() { const r = ${hook}(); return <div {...r} />; }`), `outro módulo: ${hook}`).not.toEqual([]);
+    }
+  });
+
+  // R3 da #149: em toda evasão, J dá "aria-sort" em runtime e a trava não reconstrói o valor; a chave sombreada é uma
+  // constante externa conhecida ("data-x"). Sem a regra de escopo, a trava lê a externa e deixa passar.
+  const J = 'const J = ["ar", "ia-so", "rt"].reverse().reverse().join("");';
+  const VALOR_J = '["ar", "ia-so", "rt"].reverse().reverse().join("")';
+
+  it("autoteste (B5 da R3 da #149): sombreamento em cada tipo de escopo — a trava lê a declaração interna", () => {
+    const casos: [string, string, Record<string, string>?][] = [
+      ["Z1 case sem chaves", `${J} const K1 = "data-x"; export function c(n: number) { switch (n) { case 1: const K1 = J; return <div {...{ [K1]: "ascending" }} />; default: return null; } }`],
+      ["Z2 catch", `${J} const K2 = "data-x"; export function c() { try { throw J; } catch (K2) { return <div {...{ [K2 as string]: "ascending" }} />; } }`],
+      ["Z3 for", `${J} const K3 = "data-x"; export function c() { for (let K3 = J; ; ) return <div {...{ [K3]: "ascending" }} />; }`],
+      ["Z3 for-of", `${J} const K3 = "data-x"; export function c() { for (const K3 of [J]) return <div {...{ [K3]: "ascending" }} />; return null; }`],
+      ["Z3 for-in", `${J} const K3 = "data-x"; export function c() { for (const K3 in { [J]: 1 }) return <div {...{ [K3]: "ascending" }} />; return null; }`],
+      ["Z4 namespace (C6)", `${J} const K4 = "data-x"; namespace N { const K4 = J; export const x = <div {...{ [K4]: "ascending" }} />; }`],
+      ["Z5 nome de function expression", `${J} const K5 = () => ({ "data-x": "1" }); export const CelulaZ5 = function K5(): Record<string, string> { const g = () => <div {...K5()} />; void g; return { [J]: "ascending" }; };`],
+      ["Z7 import { a as b } liga ao nome local", 'import { PERIGO as SEGURO } from "@/lib/pedacos-z7"; export const x = <div {...{ [SEGURO]: "ascending" }} />;',
+        { "src/lib/pedacos-z7.ts": `export const SEGURO = "data-x"; export const PERIGO = ${VALOR_J};` }],
+      // `var` de bloco sobe à função (num helper .js, sem checkJs nem no-var): a trava lia a constante do arquivo.
+      ["var de bloco sobe à função (.js)", 'import { attrsVar } from "@/lib/attrs-var"; export const x = <div {...attrsVar()} />;',
+        { "src/lib/attrs-var.js": `const k = "data-x"; export function attrsVar() { if (Math.random() < 2) { var k = ${VALOR_J}; } return { [k]: "ascending" }; }` }],
+      // Anexo B: no modo não estrito (.cjs), a `function` de um bloco vale na função inteira.
+      ["function de bloco no modo não estrito (.cjs)", 'import { attrsB } from "@/lib/attrs-b"; export const x = <div {...attrsB()} />;',
+        { "src/lib/attrs-b.cjs": `function k() { return "data-x"; } function attrsB() { { function k() { return ${VALOR_J}; } } return { [k()]: "ascending" }; } module.exports = { attrsB };` }],
+    ];
+    for (const [nome, fonte, modulos] of casos) expect(ariaSortNoFonte(fonte, "src/app/x.tsx", modulos), nome).not.toEqual([]);
+    // Controles: a mesma forma com a declaração interna conhecida passa — a regra acha a declaração, não só a recusa.
+    const controles: [string, string][] = [
+      ["case", 'export function c(n: number) { switch (n) { case 1: const K1 = "data-y"; return <div {...{ [K1]: "1" }} />; default: return null; } }'],
+      ["for", 'export function c() { for (let K3 = "data-y"; ; ) return <div {...{ [K3]: "1" }} />; }'],
+      ["nome de function expression", 'export const C = function K5(): Record<string, string> { const g = () => <div {...K5()} />; void g; return { "data-y": "1" }; };'],
+      ["var de bloco", 'export function c() { if (Math.random() < 2) { var k = "data-y"; } return <div {...{ [k]: "1" }} />; }'],
+    ];
+    for (const [nome, fonte] of controles) expect(ariaSortNoFonte(fonte), `controle: ${nome}`).toEqual([]);
+  });
+
+  it("autoteste (B6 e B7 da R3 da #149): escopo do switch inteiro e declaração repetida", () => {
+    // B6: o escopo de um `case` é o CaseBlock (todos os case/default), e a `function` num `case` sobe para ele.
+    const switches: [string, string][] = [
+      ["Z8c function num case, usada no default", `function K8() { return "data-x"; } export function celulaZ8c(n: number) { switch (n) { case 1: function K8() { return ${VALOR_J}; } return null; default: return <div {...{ [K8()]: "ascending" }} />; } }`],
+      ["Z8 const num case, com fallthrough", `${J} const K8 = "data-x"; export function celulaZ8(n: number) { switch (n) { case 1: const K8 = J; default: return <div {...{ [K8]: "ascending" }} />; } }`],
+    ];
+    for (const [nome, fonte] of switches) expect(ariaSortNoFonte(fonte), nome).not.toEqual([]);
+    // B7: com duas declarações do mesmo nome no mesmo escopo, qual vale depende do fluxo — o nome é opaco.
+    const repetidos: [string, string][] = [
+      ["Z6 var redeclarado", `export function attrsDup() { var k = "data-x"; var k = ${VALOR_J}; return { [k]: "ascending" }; }`],
+      ["Z6 var redeclarado num bloco (a última não vale)", `export function attrsDup() { var k = ${VALOR_J}; if (Math.random() > 2) { var k = "data-x"; } return { [k]: "ascending" }; }`],
+      ["Z6b function duplicada", `function chave() { return "data-x"; } function chave() { return ${VALOR_J}; } export function attrsDup() { return { [chave()]: "ascending" }; }`],
+    ];
+    for (const [nome, helper] of repetidos) {
+      expect(ariaSortNoFonte('import { attrsDup } from "@/lib/attrs-dup"; export const x = <div {...attrsDup()} />;', "src/app/x.tsx", { "src/lib/attrs-dup.js": helper }), `${nome} (.js)`).not.toEqual([]);
+      expect(ariaSortNoFonte(`${helper} export const x = <div {...attrsDup()} />;`), `${nome} (.tsx)`).not.toEqual([]);
+    }
+    // `var` com o nome de um parâmetro: o componente parecia não repassar as props, e as chaves do chamador escapavam.
+    expect(ariaSortNoFonte(`${J} function Cel(props: object) { if (Math.random() > 2) { var props = { title: "x" }; } return <div {...props} />; } export const x = <Cel {...{ [J]: "ascending" }} />;`),
+      "var com o nome do parâmetro").not.toEqual([]);
+    // Controle: sobrecarga do TS não é declaração repetida.
+    expect(ariaSortNoFonte('function f(a: string): string; function f(a: number): string; function f(a: unknown) { void a; return "data-y"; } export const x = <div {...{ [f(1)]: "1" }} />;'),
+      "controle: sobrecarga").toEqual([]);
+  });
+
+  it("autoteste (B8 da R3 da #149): o render-prop do <Campo> (#145) tem as chaves fixas de CHAVES_CAMPO", () => {
+    // Lista fechada e âncoras: conferidas contra cópias literais; os casos percorrem a cópia.
+    const chavesCampo = ["id", "aria-required", "aria-invalid", "aria-describedby"];
+    expect([...CHAVES_CAMPO]).toEqual(chavesCampo);
+    expect(CAMPO).toEqual({ modulo: "@/components/Campo", arquivo: "src/components/Campo.tsx", nome: "Campo" });
+    // O contrato do Campo da #145 (src/components/Campo.tsx), reduzido ao que a trava confere.
+    const CAMPO_TSX = 'import { useId, type ReactNode } from "react"; export type LigacaoCampo = { id: string; "aria-required"?: true; "aria-invalid"?: true; "aria-describedby"?: string }; '
+      + "export function Campo({ rotulo, obrigatorio = false, erro, id: idFixo, children }: { rotulo: ReactNode; obrigatorio?: boolean; erro?: string | null; id?: string; children: (campo: LigacaoCampo) => ReactNode }) { "
+      + "const gerado = useId(); const id = idFixo ?? `campo-${gerado}`; const descritoPor = erro ? `${id}-erro` : undefined; "
+      + 'return <div><label htmlFor={id}>{rotulo}</label>{children({ id, "aria-required": obrigatorio || undefined, "aria-invalid": !!erro || undefined, "aria-describedby": descritoPor })}</div>; }';
+    const comCampo = (fonte: string, campo = CAMPO_TSX, extra: Record<string, string> = {}) => ariaSortNoFonte(fonte, "src/app/x.tsx", { "src/components/Campo.tsx": campo, ...extra });
+    const IMPORTA = 'import { Campo } from "@/components/Campo"; ';
+    const permitidos: [string, string][] = [
+      ["spread do parâmetro dentro do <Campo>", `${IMPORTA}export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} />}</Campo>;`],
+      ["Campo com alias", 'import { Campo as C } from "@/components/Campo"; export const x = <C rotulo="Nome">{(campo) => <input {...campo} />}</C>;'],
+      ["outro nome de parâmetro (c =>)", `${IMPORTA}export const x = <Campo rotulo="Nome">{c => <select {...c} />}</Campo>;`],
+      ["function (c)", `${IMPORTA}export const x = <Campo rotulo="Nome">{function (c) { return <input {...c} />; }}</Campo>;`],
+      ["parênteses, espaços e comentário em volta", `${IMPORTA}export const x = <Campo rotulo="Nome">\n  {/* nome */}\n  {(campo) => (\n    <input {...campo} className="c" />\n  )}\n</Campo>;`],
+      ["componente que repassa (SelectISO)", `${IMPORTA}function SelectISO({ value, ...aria }: { value: string }) { return <select {...aria} value={value} />; } export const x = <Campo rotulo="País">{(campo) => <SelectISO {...campo} value="CR" />}</Campo>;`],
+    ];
+    for (const [nome, fonte] of permitidos) expect(comCampo(fonte), nome).toEqual([]);
+    // Cada chave da cópia: um Campo que entrega só ela continua aceito (tirar a chave da lista quebra o contrato).
+    for (const k of chavesCampo) {
+      const so = `export function Campo({ children }: { children: (c: object) => unknown }) { return <div>{children({ "${k}": "1" })}</div>; }`;
+      expect(comCampo(`${IMPORTA}export const x = <Campo>{(campo) => <input {...campo} />}</Campo>;`, so), `chave ${k}`).toEqual([]);
+    }
+    const USO = `${IMPORTA}export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} />}</Campo>;`;
+    const acusados: [string, string, Record<string, string>?][] = [
+      ["fora do Campo (função solta)", 'import type { LigacaoCampo } from "@/components/Campo"; export const f = (campo: LigacaoCampo) => <input {...campo} />;'],
+      ["fora do Campo (filho de outro elemento)", `${IMPORTA}export const x = <div>{(campo: object) => <input {...campo} />}</div>;`],
+      ["Campo importado de outro módulo", 'import { Campo } from "@/components/OutroCampo"; export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} />}</Campo>;', { "src/components/OutroCampo.tsx": CAMPO_TSX }],
+      ["Campo local", `${CAMPO_TSX} export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} />}</Campo>;`],
+      ["Campo padrão (default) do módulo", 'import Campo from "@/components/Campo"; export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} />}</Campo>;'],
+      ["aria-sort à mão junto do spread", `${IMPORTA}export const x = <Campo rotulo="Nome">{(campo) => <input {...campo} aria-sort="ascending" />}</Campo>;`],
+      ["chave ilegível num objeto com o spread", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{(campo) => <input {...{ ...campo, [J]: "ascending" }} />}</Campo>;`],
+      ["parâmetro mutado", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{(campo) => { (campo as Record<string, string>)[J] = "ascending"; return <input {...campo} />; }}</Campo>;`],
+      ["alias do parâmetro", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{(campo) => { const o: Record<string, unknown> = campo; o[J] = "ascending"; return <input {...campo} />; }}</Campo>;`],
+      ["arguments", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{function (c) { (arguments[0] as Record<string, string>)[J] = "ascending"; return <input {...c} />; }}</Campo>;`],
+      ["function nomeada (chamada de novo com outro objeto)", `${IMPORTA}${J} export const x = <Campo rotulo="Nome">{function f(c: object): unknown { return c ? <input {...c} /> : f({ [J]: "ascending" }); }}</Campo>;`],
+      ["dois parâmetros", `${IMPORTA}export const x = <Campo rotulo="Nome">{(campo: object, extra: object) => <input {...campo} {...extra} />}</Campo>;`],
+    ];
+    for (const [nome, fonte, extra] of acusados) expect(comCampo(fonte, CAMPO_TSX, extra), nome).not.toEqual([]);
+    // O contrato: o Campo só chama `children`, e só com as chaves da lista — senão, o mesmo uso passa a ser acusado.
+    const contratos: [string, string][] = [
+      ["Campo que entrega outra chave", CAMPO_TSX.replace('"aria-describedby": descritoPor })', '"aria-describedby": descritoPor, "data-x": "1" })')],
+      ["Campo que entrega chave ilegível", CAMPO_TSX.replace('"aria-describedby": descritoPor })', `"aria-describedby": descritoPor, [${VALOR_J}]: "ascending" })`)],
+      ["Campo que entrega um objeto de fora", `import { extra } from "pacote"; ${CAMPO_TSX.replace("{children({ id,", "{children({ ...extra, id,")}`],
+      ["Campo que usa children sem chamar", CAMPO_TSX.replace("{children({ id,", "{[children][0]({ id,")],
+    ];
+    for (const [nome, campo] of contratos) {
+      expect(campo.length, `${nome}: a variação mexeu no Campo`).toBeGreaterThan(CAMPO_TSX.length);
+      expect(comCampo(USO, campo), nome).not.toEqual([]);
     }
   });
 
