@@ -475,11 +475,20 @@ const VERBO_DESTRUTIVO_NO_MEIO = /\se\s(rejeitar|recusar|remover|excluir|apagar|
 const PREFIXOS_DESTRUTIVOS = ["efetivar encerramento", "efetivar desistência"];
 
 /**
- * Um pedaço de rótulo nomeia ação destrutiva? Sem caixa e sem símbolo inicial ("✕ Rejeitar", "rejeitar");
- * "Confirmar <destruição>" (inclui desistência); "Efetivar encerramento/desistência"; e "… e descartar …".
+ * Texto como a pessoa o lê (R1 da #148, B1): forma de compatibilidade (NFKC), sem caracteres de
+ * formatação invisíveis (\p{Cf}: hífen suave U+00AD, espaço de largura zero U+200B–U+200D, U+2060,
+ * U+FEFF…) e com todo espaço (NBSP, espaços tipográficos) virando um espaço comum. "Encer­rar" e
+ * "Encerrar​" aparecem na tela como "Encerrar" — e são comparados como "Encerrar".
+ */
+export const textoLido = (t: string) => t.normalize("NFKC").replace(/\p{Cf}/gu, "").replace(/\s+/gu, " ");
+
+/**
+ * Um pedaço de rótulo nomeia ação destrutiva? Lido como na tela (textoLido), sem caixa e sem símbolo
+ * inicial ("✕ Rejeitar", "rejeitar"); "Confirmar <destruição>" (inclui desistência); "Efetivar
+ * encerramento/desistência"; e "… e descartar …".
  */
 export function fragmentoDestrutivo(fragmento: string): boolean {
-  const t = fragmento.replace(/^[^\p{L}]+/u, "").trim();
+  const t = textoLido(fragmento).replace(/^[^\p{L}]+/u, "").trim();
   const baixo = t.toLowerCase();
   if (!t || baixo === "cancelar") return false;
   return VERBOS_DESTRUTIVOS.some((v) => baixo === v.toLowerCase() || baixo.startsWith(`${v.toLowerCase()} `))
@@ -644,7 +653,9 @@ function conteudoDoRotulo(filhos: ts.NodeArray<ts.JsxChild>, prof = 0): { fragme
     if (alt) fragmentos.push(...alt.map((t) => t.trim()).filter(Boolean));
   };
   for (const f of filhos) {
-    if (ts.isJsxText(f)) { const t = f.text.replace(/\s+/g, " ").trim(); if (t) fragmentos.push(t); continue; }
+    // Lido como na tela ANTES de juntar espaços: U+FEFF conta como espaço para `\s`, mas não aparece
+    // ("Rejei﻿tar" é "Rejeitar", não "Rejei tar") — R1 da #148, B1.
+    if (ts.isJsxText(f)) { const t = textoLido(f.text).replace(/\s+/g, " ").trim(); if (t) fragmentos.push(t); continue; }
     if (ts.isJsxExpression(f)) { if (f.expression) somar(alternativasDeTexto(f.expression, prof)); continue; }
     somar(alternativasDeTexto(f as ts.Node, prof));
   }
@@ -1850,5 +1861,80 @@ describe("follow-up #140: evasões restantes da trava de botões (autotestes)", 
     expect(rota('const BASE = { rotulo: "Excluir conta" }; export default () => <EstadoRota acao={{ href: "/", ...BASE }} />;').problemas).toHaveLength(1);
     expect(rota('export default () => <EstadoRota acao={{ href: "/", "rotulo": "Excluir conta" }} />;').problemas).toHaveLength(1);
     expect(rota('export default (p: any) => <EstadoRota acao={{ rotulo: "Voltar", ...p }} />;').problemas).toEqual([expect.stringMatching(/acao\.rotulo não resolvível$/)]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Revisão R1 da #148: caractere invisível no verbo (B1), desestruturação opaca (B2) e um caso por item
+// das listas fechadas de verbos e substantivos (C1). As listas são comparadas com CÓPIAS LITERAIS, e é a
+// cópia que se percorre — percorrer a própria lista não provaria nada.
+// ---------------------------------------------------------------------------------------------------
+describe("R1 da #148: rótulo lido como na tela, desestruturação opaca e listas fechadas", () => {
+  // Formatação invisível (\p{Cf}) e espaços que a tela mostra como espaço comum.
+  const INVISIVEIS = ["­", "​", "‌", "‍", "⁠", "﻿"];
+
+  it("B1 — textoLido: tira formatação invisível, normaliza espaços e compatibilidade (NFKC)", () => {
+    for (const c of INVISIVEIS) expect(textoLido(`Encer${c}rar${c}`), JSON.stringify(c)).toBe("Encerrar");
+    expect(textoLido("Rejeitar proposta")).toBe("Rejeitar proposta");
+    expect(textoLido("Excluir  janela")).toBe("Excluir janela");
+    expect(textoLido("Ｅxcluir")).toBe("Excluir"); // letra de largura total
+    expect(textoLido("Confirmar exclusão")).toBe("Confirmar exclusão"); // acento preservado
+  });
+
+  it("B1 — E4/E5: caractere invisível no meio ou no fim do verbo não esconde o destrutivo (tabela, <Botao>, <button> e texto JSX)", () => {
+    for (const c of INVISIVEIS) {
+      const nome = JSON.stringify(c);
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encer${c}rar", variante: "fantasma" }];`), `E4 ${nome}`).toHaveLength(1);
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encerrar${c}", variante: "fantasma" }];`), `E5 ${nome}`).toHaveLength(1);
+      expect(tabelasDeBotaoSemPerigo(`const A = [{ label: "Encer${c}rar", variante: "perigo" }];`), `perigo ${nome}`).toEqual([]);
+      expect(destrutivosSemPerigo(`<Botao variante="secundario">{"Rejei${c}tar proposta"}</Botao>`), `<Botao> ${nome}`).toHaveLength(1);
+      expect(destrutivosSemPerigo(`<button className={botaoClasses({ variante: "secundario" })}>Rejei${c}tar proposta</button>`), `texto JSX ${nome}`).toHaveLength(1);
+      expect(destrutivosSemPerigo(`<button aria-label="Remover${c}" className={botaoClasses({ variante: "fantasma" })}><Icone /></button>`), `aria-label ${nome}`).toHaveLength(1);
+    }
+    expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar país", variante: "fantasma" }];')).toHaveLength(1); // NBSP
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar matrícula"}</Botao>')).toHaveLength(1);
+    // "Cancelar" sozinho (fechar) continua neutro, mesmo com caractere invisível.
+    expect(destrutivosSemPerigo('<Botao variante="secundario">{"Cancelar​"}</Botao>')).toEqual([]);
+  });
+
+  it("B2 — S4: nome vindo de desestruturação é opaco (não vale o inicializador inteiro)", () => {
+    // Com a desestruturação lida como o inicializador, `r` viraria "Salvar" (resolvido) e `NEUTRA` o objeto
+    // de fora (sem `variante`, a linha sumiria): hoje os dois caem na falha fechada.
+    expect(rotulosNaoResolvidos('const [r] = "Salvar"; const x = <Botao>{r}</Botao>;')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('const { length: r } = "Salvar"; const x = <Botao>{r}</Botao>;')).toHaveLength(1);
+    expect(tabelasDeBotaoSemPerigo('const { NEUTRA } = { NEUTRA: { variante: "perigo" as const } }; const A = [{ label: "Encerrar", ...NEUTRA }];')).toEqual(["Encerrar → ?"]);
+    // O caso da revisão: rótulo por desestruturação no botão e na linha de tabela.
+    expect(rotulosNaoResolvidos('const { rotulo } = { rotulo: "Excluir" }; const x = <Botao variante="fantasma">{rotulo}</Botao>;')).toHaveLength(1);
+    expect(tabelasDeBotaoSemPerigo('const { rotulo } = { rotulo: "Excluir" }; const A = [{ rotulo, variante: "fantasma" }];')).toEqual(["(rótulo não resolvível) → fantasma"]);
+    // Também em parâmetro desestruturado, em laço e em catch.
+    expect(rotulosNaoResolvidos('const r = "Salvar"; export function T({ a: { r } }: any) { return <Botao>{r}</Botao>; }')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('const r = "Salvar"; for (const r of lista) { const x = <Botao>{r}</Botao>; }')).toHaveLength(1);
+    expect(rotulosNaoResolvidos('const r = "Salvar"; try { f(); } catch (r) { const x = <Botao>{r}</Botao>; }')).toHaveLength(1);
+  });
+
+  it("C1 — lista fechada de verbos: cada verbo acusa sozinho, com complemento e depois de \" e \"", () => {
+    const VERBOS = ["Rejeitar", "Recusar", "Remover", "Excluir", "Apagar", "Descartar", "Desativar", "Inativar", "Revogar", "Encerrar", "Estornar", "Anular", "Cancelar"];
+    expect(VERBOS_DESTRUTIVOS).toEqual(VERBOS);
+    expect(VERBO_DESTRUTIVO_NO_MEIO.source.match(/\(([^)]*)\)/)![1].split("|")).toEqual(VERBOS.map((v) => v.toLowerCase()));
+    for (const v of VERBOS) {
+      expect(fragmentoDestrutivo(`${v} registro`), `${v} registro`).toBe(true);
+      expect(fragmentoDestrutivo(`${v.toLowerCase()} registro`), `${v} minúsculo`).toBe(true);
+      expect(fragmentoDestrutivo(`Salvar e ${v.toLowerCase()} registro`), `… e ${v}`).toBe(true);
+      expect(fragmentoDestrutivo(v), v).toBe(v !== "Cancelar"); // "Cancelar" sozinho é fechar
+    }
+  });
+
+  it("C1 — lista fechada de confirmações e prefixos: cada substantivo acusa como \"Confirmar <substantivo>\"", () => {
+    const SUBSTANTIVOS = ["cancelamento", "rejeição", "exclusão", "remoção", "revogação", "encerramento", "perda", "desativação", "estorno"];
+    expect(CONFIRMACAO_DESTRUTIVA.source.match(/\(([^)]*)\)/)![1].split("|")).toEqual(SUBSTANTIVOS);
+    for (const s of [...SUBSTANTIVOS, "desistência"]) {
+      expect(fragmentoDestrutivo(`Confirmar ${s}`), s).toBe(true);
+      expect(fragmentoDestrutivo(`Confirmar ${s} da matrícula`), `${s} com complemento`).toBe(true);
+    }
+    const PREFIXOS = ["efetivar encerramento", "efetivar desistência"];
+    expect(PREFIXOS_DESTRUTIVOS).toEqual(PREFIXOS);
+    for (const p of PREFIXOS) expect(fragmentoDestrutivo(`${p[0].toUpperCase()}${p.slice(1)} aprovado`), p).toBe(true);
+    // Vizinhos que não destroem.
+    for (const r of ["Confirmar divergência material", "Confirmar", "Efetivar matrícula"]) expect(fragmentoDestrutivo(r), r).toBe(false);
   });
 });
