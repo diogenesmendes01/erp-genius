@@ -2,13 +2,17 @@
 // aqui aparece no diff da revisão.
 //
 // EXCECOES_CAMPO: casos que a trava acusaria e que ficam como estão, ancorados em arquivo + trecho
-// (a tag de abertura exata, espaços normalizados) + motivo. Cada um tem de casar com exatamente um caso.
-// Nas áreas migradas até aqui (/matriculas/nova e /alunos/[id]) nenhum controle precisou de exceção:
-// a lista começa vazia e só recebe o que uma migração justificar.
+// (a tag de abertura exata, espaços normalizados) + motivo não vazio. Cada um tem de casar com
+// exatamente um caso. Nas áreas migradas até aqui (/matriculas/nova e /alunos/[id]) nenhum controle
+// precisou de exceção: a lista começa vazia e só recebe o que uma migração justificar.
 //
 // MAPA_CAMPOS: cada <Campo> de cada tela, na ordem do fonte — rótulo · obrigatoriedade · controle
-// ligado, mais "dica" e "erro" quando o Campo os recebe. Trocar um Campo por um controle solto,
-// apagá-lo, tirar o `obrigatorio` ou deixar de ligar o `erro` da validação muda o mapa e falha a trava.
+// ligado, mais "dica" quando há dica e "erro: <expressão>" com a expressão que alimenta o erro. Trocar
+// um Campo por um controle solto, apagá-lo, tirar o `obrigatorio` ou religar o `erro` a outra expressão
+// muda o mapa e falha a trava. Erro constante (`erro={undefined}`, `erro="…"`) e dica/rótulo vazios
+// a própria trava recusa, com ou sem mudança aqui. Que a expressão do erro vem da validação certa, os
+// testes de interação das telas conferem (FichaAluno.interacao.test.ts e
+// MatriculaFormulario.interacao.test.ts).
 
 export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 
@@ -16,12 +20,12 @@ export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
   "src/app/(app)/alunos/[id]/FichaAluno.tsx": [
-    "Nome · obrigatório · input · erro",
-    "Sobrenome(s) · obrigatório · input · erro",
+    "Nome · obrigatório · input · erro: errosEdicao.primeiroNome",
+    "Sobrenome(s) · obrigatório · input · erro: errosEdicao.sobrenome",
     "Nome preferido · opcional · input",
     "Nascimento · opcional · input",
     "Gênero · opcional · select",
-    "País · obrigatório · select · erro",
+    "País · obrigatório · select · erro: errosEdicao.paisId",
     "Tipo de documento · opcional · select",
     "Número do documento · opcional · input · dica",
     "País emissor · opcional · SelectISO",
@@ -41,27 +45,27 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Idioma nativo · opcional · input",
     "Fuso horário · opcional · input",
     "Observações · opcional · CampoTexto",
-    "Motivo da edição · obrigatório · CampoTexto · dica · erro",
-    "Motivo da pausa · obrigatório · input · erro",
+    "Motivo da edição · obrigatório · CampoTexto · dica · erro: errosEdicao.motivo",
+    'Motivo da pausa · obrigatório · input · erro: tentou && !motivoPausa.trim() ? "Informe o motivo da pausa." : null',
     "Retorno previsto (opcional) · opcional · input",
     "Motivo do encerramento · obrigatório · select",
-    'Observação · obrigatório se motivoEnc === "Outro" · input · dica · erro',
+    'Observação · obrigatório se motivoEnc === "Outro" · input · dica · erro: erroObsEnc',
   ],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": [
-    "Nome · obrigatório · input · erro",
-    "Sobrenome(s) · obrigatório · input · erro",
+    "Nome · obrigatório · input · erro: errosPasso1.primeiroNome",
+    "Sobrenome(s) · obrigatório · input · erro: errosPasso1.sobrenome",
     "Nome preferido · opcional · input",
-    "Data de nascimento · obrigatório · input · erro",
-    "Gênero · obrigatório · select · erro",
-    "País · obrigatório · select · erro",
-    "Tipo de documento · obrigatório · select · erro",
-    "Número do documento · obrigatório · input · erro",
+    "Data de nascimento · obrigatório · input · erro: errosPasso1.nascimento",
+    "Gênero · obrigatório · select · erro: errosPasso1.genero",
+    "País · obrigatório · select · erro: errosPasso1.alunoPaisId",
+    "Tipo de documento · obrigatório · select · erro: errosPasso1.tipoDocumentoId",
+    "Número do documento · obrigatório · input · erro: errosPasso1.documento",
     "País emissor · opcional · SelectISO",
-    "Nacionalidade · obrigatório · SelectISO · erro",
+    "Nacionalidade · obrigatório · SelectISO · erro: errosPasso1.nacionalidade",
     "Segunda nacionalidade · opcional · SelectISO",
-    "E-mail · obrigatório · input · erro",
-    "Telefone principal · obrigatório · input · erro",
-    "País de residência · obrigatório · SelectISO · erro",
+    "E-mail · obrigatório · input · erro: errosPasso1.email",
+    "Telefone principal · obrigatório · input · erro: errosPasso1.telefone",
+    "País de residência · obrigatório · SelectISO · erro: errosPasso1.paisResidencia",
     "CEP / Código postal · opcional · input",
     "Região / Estado / Província · opcional · input",
     "Cidade · opcional · input",
@@ -76,7 +80,7 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Parentesco · opcional · input",
     "Telefone · opcional · input",
     "Observações · opcional · CampoTexto",
-    '{pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} · obrigatório · input · erro',
+    '{pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} · obrigatório · input · erro: errosPasso1.respNome',
     "Parentesco · opcional · input",
     "Telefone · opcional · input",
     "E-mail · opcional · input",
@@ -85,14 +89,14 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Nível inicial · opcional · select",
     "Origem do nível · opcional · select",
     "Data da avaliação · opcional · input",
-    "Taxa de matrícula · obrigatório · CampoMoeda · dica · erro",
-    "Mensalidade · obrigatório · CampoMoeda · dica · erro",
+    "Taxa de matrícula · obrigatório · CampoMoeda · dica · erro: errosPasso2.taxa",
+    "Mensalidade · obrigatório · CampoMoeda · dica · erro: errosPasso2.mensalidade",
     "Dia de vencimento · opcional · select",
     "Meses do plano · opcional · input",
-    "Cobertura prevista no contrato · obrigatório · select · dica · erro",
-    "Vencimento da primeira mensalidade · obrigatório · input · dica · erro",
-    "Início do primeiro período coberto · obrigatório · input · dica · erro",
-    "Certificado (só Costa Rica) · opcional · CampoMoeda · erro",
+    "Cobertura prevista no contrato · obrigatório · select · dica · erro: errosPasso2.referenciaCobertura",
+    "Vencimento da primeira mensalidade · obrigatório · input · dica · erro: errosPasso2.primeiroVencimento",
+    "Início do primeiro período coberto · obrigatório · input · dica · erro: errosPasso2.inicioCobertura",
+    "Certificado (só Costa Rica) · opcional · CampoMoeda · erro: errosPasso2.certificado",
     "Justificativa da exceção (sem tabela de preço) · obrigatório · CampoTexto",
   ],
 };

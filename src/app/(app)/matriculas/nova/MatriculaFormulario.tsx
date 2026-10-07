@@ -21,7 +21,7 @@ const inputCls =
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-/** Números já parseados dos três campos de dinheiro do passo 2 — validarPasso2 devolve
+/** Números já parseados dos três campos de dinheiro do passo 2 — errosDoPasso2 devolve
  *  isto (ou os erros), montarInput só aceita isto, nunca o texto cru de novo. */
 interface ValoresMonetariosPasso2 {
   taxa: number;
@@ -92,6 +92,38 @@ const IDS_PASSO2 = {
   certificado: "matricula-certificado",
 } as const;
 type CampoPasso2 = keyof typeof IDS_PASSO2;
+
+/** Valores do passo 2 que a validação confere (o texto cru dos campos de dinheiro e as datas). */
+export type DadosPasso2 = {
+  taxaValor: string;
+  mensalidadeValor: string;
+  certificadoValor: string;
+  referenciaCobertura: "" | "MES_CIVIL" | "CICLO_MATRICULA";
+  primeiroVencimento: string;
+  inicioCobertura: string;
+};
+
+/**
+ * Validação do passo 2, por campo e na ordem da tela (taxa, mensalidade, cobertura, primeiro
+ * vencimento, início, certificado). Nunca ?? 0 nos três valores monetários: texto inválido viraria
+ * taxa/mensalidade/certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
+ * devolve os números prontos só quando os três são válidos — montarInput não reparseia (e não tem
+ * fallback ?? 0 interno pra ninguém reusar por engano sem validar antes). Função pura, testada à parte.
+ */
+export function errosDoPasso2(d: DadosPasso2): { erros: ErrosDeCampos<CampoPasso2>; valores: ValoresMonetariosPasso2 | null } {
+  const erros: ErrosDeCampos<CampoPasso2> = {};
+  const taxa = parseMoeda(d.taxaValor);
+  if (taxa === null) erros.taxa = "Informe a taxa de matrícula, com no máximo duas casas decimais.";
+  const mensalidade = parseMoeda(d.mensalidadeValor);
+  if (mensalidade === null) erros.mensalidade = "Informe a mensalidade, com no máximo duas casas decimais.";
+  if (!d.referenciaCobertura) erros.referenciaCobertura = "Selecione a cobertura prevista no contrato.";
+  if (!d.primeiroVencimento) erros.primeiroVencimento = "Informe o vencimento da primeira mensalidade.";
+  if (!d.inicioCobertura) erros.inicioCobertura = "Informe o início do primeiro período coberto.";
+  const certificado = d.certificadoValor === "" ? 0 : parseMoeda(d.certificadoValor);
+  if (certificado === null) erros.certificado = "Informe o valor do certificado, com no máximo duas casas decimais.";
+  const valores = taxa !== null && mensalidade !== null && certificado !== null ? { taxa, mensalidade, certificado } : null;
+  return { erros, valores };
+}
 
 interface PaisOpt {
   id: string;
@@ -314,24 +346,7 @@ export function MatriculaFormulario({
     email, telefone, paisResidencia, respNome, pagador,
   });
 
-  // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
-  // certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
-  // devolve os números prontos (só quando os três são válidos) — montarInput não reparseia
-  // (e não tem fallback ?? 0 interno pra ninguém reusar por engano sem validar antes).
-  function validarPasso2(): { erros: ErrosDeCampos<CampoPasso2>; valores: ValoresMonetariosPasso2 | null } {
-    const erros: ErrosDeCampos<CampoPasso2> = {};
-    const taxa = parseMoeda(taxaValor);
-    if (taxa === null) erros.taxa = "Informe a taxa de matrícula, com no máximo duas casas decimais.";
-    const mensalidade = parseMoeda(mensalidadeValor);
-    if (mensalidade === null) erros.mensalidade = "Informe a mensalidade, com no máximo duas casas decimais.";
-    if (!referenciaCobertura) erros.referenciaCobertura = "Selecione a cobertura prevista no contrato.";
-    if (!primeiroVencimento) erros.primeiroVencimento = "Informe o vencimento da primeira mensalidade.";
-    if (!inicioCobertura) erros.inicioCobertura = "Informe o início do primeiro período coberto.";
-    const certificado = certificadoValor === "" ? 0 : parseMoeda(certificadoValor);
-    if (certificado === null) erros.certificado = "Informe o valor do certificado, com no máximo duas casas decimais.";
-    const valores = taxa !== null && mensalidade !== null && certificado !== null ? { taxa, mensalidade, certificado } : null;
-    return { erros, valores };
-  }
+  const validarPasso2 = () => errosDoPasso2({ taxaValor, mensalidadeValor, certificadoValor, referenciaCobertura, primeiroVencimento, inicioCobertura });
 
   const errosPasso1: ErrosDeCampos<CampoPasso1> = tentouPasso1 ? validarPasso1() : {};
   const errosPasso2: ErrosDeCampos<CampoPasso2> = tentouPasso2 ? validarPasso2().erros : {};
