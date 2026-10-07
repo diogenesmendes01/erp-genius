@@ -89,3 +89,50 @@ it("mostra liberação, relato e pausa no fuso pessoal, sem esconder a origem", 
   expect(exibicao).not.toContain("01/09/2026, 03:30");
 });
 
+
+// Integração da #151 (B3): a trava do retry vem do estado `temTentativa` (antes, de ref.current no render).
+// Com a tentativa pendente, professor e motivo ficam travados e o botão vira "Repetir substituição" — senão a
+// pessoa editaria os campos e o retry reenviaria a entrada congelada sem avisar.
+/** Elemento com a prop `name` dada, de qualquer tipo (o CampoTexto vem embrulhado e não é expandido por `todos`). */
+function comNome(no: unknown, nome: string): No | undefined {
+  if (Array.isArray(no)) { for (const n of no) { const r = comNome(n, nome); if (r) return r; } return undefined; }
+  if (!no || typeof no !== "object") return undefined;
+  const n = no as No;
+  if (n.props?.name === nome) return n;
+  if (typeof n.type === "function") return comNome((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), nome);
+  return comNome(n.props?.children, nome);
+}
+function renderComTentativa(temTentativa: boolean) {
+  mocks.useState.mockReset().mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce([temTentativa, vi.fn()]).mockReturnValue(["", vi.fn()]);
+  mocks.useTransition.mockReturnValue([false, (callback: () => void) => callback()]);
+  mocks.useRef.mockReturnValueOnce({ current: "q40-chave-estável" }).mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
+  const formulario = todos(OperacaoEntregaReposicao({ operacao, fusoExibicao: "America/Costa_Rica" }), "form")[0];
+  return {
+    professor: comNome(formulario, "professorId")!,
+    motivo: comNome(formulario, "motivo")!,
+    botao: texto(todos(formulario, "button")[0]),
+  };
+}
+
+it("tentativa pendente: professor e motivo travados e o botão diz \"Repetir substituição\"; sem tentativa, editáveis", () => {
+  const pendente = renderComTentativa(true);
+  expect([pendente.professor.props?.disabled, pendente.motivo.props?.disabled, pendente.botao]).toEqual([true, true, "Repetir substituição"]);
+  const livre = renderComTentativa(false);
+  expect([livre.professor.props?.disabled, livre.motivo.props?.disabled, livre.botao]).toEqual([false, false, "Confirmar substituição"]);
+});
+
+it("envio liga a tentativa pendente; só o sucesso a desliga", async () => {
+  const setTemTentativa = vi.fn();
+  mocks.useState.mockReset().mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce([false, setTemTentativa]).mockReturnValue(["", vi.fn()]);
+  mocks.useTransition.mockReturnValue([false, (callback: () => void) => callback()]);
+  mocks.useRef.mockReturnValueOnce({ current: "q40-chave-estável" }).mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
+  vi.stubGlobal("crypto", { randomUUID: () => "q40-chave-nova" });
+  vi.stubGlobal("FormData", class { get(nome: string) { return ({ professorId: "prof-b", motivo: "Substituição necessária para concluir a avaliação" } as Record<string, string>)[nome] ?? null; } });
+  mocks.substituir.mockResolvedValueOnce({ ok: false, erro: "Resultado incerto; repita a mesma operação." }).mockResolvedValueOnce({ ok: true });
+  const formulario = todos(OperacaoEntregaReposicao({ operacao, fusoExibicao: "America/Costa_Rica" }), "form")[0].props!;
+  const enviar = formulario.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => Promise<void>;
+  await enviar({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
+  expect(setTemTentativa.mock.calls).toEqual([[true]]);
+  await enviar({ preventDefault: vi.fn(), currentTarget: {} }); await Promise.resolve();
+  expect(setTemTentativa.mock.calls).toEqual([[true], [true], [false]]);
+});

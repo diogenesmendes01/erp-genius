@@ -27,6 +27,14 @@ const config = [
       "react-hooks/set-state-in-effect": "warn",
     },
   },
+  {
+    // Testes: `any` em mocks (evento sintético de formulário, transação do Prisma, fotografia JSON
+    // adulterada) é o padrão destes arquivos. No código de produção a regra continua como erro.
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 ];
 
 export default config;

@@ -26,7 +26,8 @@ import { decidirUtilizacaoCredito } from "./uso-credito-decisao";
 import { proporDevolucaoCredito, decidirDevolucaoCredito } from "./devolucao-credito";
 import { instanteDaGrade } from "@/server/agenda/grade";
 
-let financeiroId = "", matriculaId = "", moeda = "CRC", c1 = "", c2 = "";
+const moeda = "CRC";
+let financeiroId = "", matriculaId = "", c1 = "", c2 = "";
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 
 beforeEach(async () => {
