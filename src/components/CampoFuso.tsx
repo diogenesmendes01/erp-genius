@@ -26,6 +26,9 @@ export function CampoFuso({
   name = "fuso",
   required = true,
   className,
+  "aria-required": ariaRequired,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
 }: {
   /** Fuso institucional (ou o fuso do registro sendo editado) — nunca "UTC" fixo. Use "" se
    *  ainda não houver um fuso conhecido pra sugerir; o campo fica vazio e obrigatório. */
@@ -34,6 +37,10 @@ export function CampoFuso({
   name?: string;
   required?: boolean;
   className: string;
+  /** Ligações do <Campo> (src/components/Campo.tsx): obrigatoriedade, erro e dica/mensagem. */
+  "aria-required"?: boolean;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 }) {
   const listaId = `fusos-${useId()}`;
   return (
@@ -44,6 +51,9 @@ export function CampoFuso({
         list={listaId}
         defaultValue={padrao}
         required={required}
+        aria-required={ariaRequired}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedby}
         maxLength={100}
         className={className}
       />
