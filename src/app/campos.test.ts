@@ -135,21 +135,69 @@ function valor(n: Elemento, nome: string, sf: ts.SourceFile): Valor {
 
 /** `required`/`aria-required` presente e não desligado (`={false}`, `"false"`, `{undefined}`, `{null}`). */
 const ligado = (v: Valor) => v !== undefined && !DESLIGADOS.has(v as string);
-/** Texto vazio ou desligado (rótulo, dica, aria-label). */
-const vazio = (v: Valor) => v === undefined || v === true || DESLIGADOS.has(v) || (!v.startsWith("{") && !v.trim());
 
-/** O valor depende de algo da tela (tem um identificador que não é undefined/NaN/Infinity) — não é constante. */
-function dinamico(n: Elemento, nome: string): boolean {
-  const a = atributo(n, nome);
-  if (!a || a.valor === true) return false;
+/**
+ * A expressão lê algo da tela: tem um identificador que não é global (`Boolean`, `Math`, `undefined`,
+ * `NaN`… são globais) nem nome de propriedade (`.random`, `{ chave: … }`). `Boolean(0)` e `1 < 0` não
+ * leem nada; `Boolean(erros.nome)` lê `erros`.
+ */
+function leDaTela(e: ts.Node): boolean {
   let tem = false;
   const procura = (m: ts.Node) => {
     if (tem) return;
-    if (ts.isIdentifier(m) && !["undefined", "NaN", "Infinity"].includes(m.text)) { tem = true; return; }
+    if (ts.isIdentifier(m)) {
+      const p = m.parent;
+      const nomeDePropriedade = (ts.isPropertyAccessExpression(p) && p.name === m) || (ts.isPropertyAssignment(p) && p.name === m) || ts.isJsxAttribute(p);
+      // Tag nativa (`<span>`) não lê nada; componente (`<PrecoTag />`) pode ler.
+      const tagNativa = (ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p) || ts.isJsxClosingElement(p)) && /^[a-z]/.test(m.text);
+      if (!nomeDePropriedade && !tagNativa && !(m.text in globalThis)) { tem = true; return; }
+    }
     ts.forEachChild(m, procura);
   };
-  procura(a.valor);
+  procura(e);
   return tem;
+}
+
+/**
+ * Texto de uma expressão que não lê nada da tela: literal de texto ou número, template e `+` entre eles.
+ * Qualquer outra constante (`1 < 0`, `Boolean(0)`, `{false}`, `{null}`) não mostra texto: null.
+ */
+function textoConstante(e: ts.Expression): string | null {
+  e = desembrulha(e);
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e) || ts.isNumericLiteral(e)) return e.text;
+  if (ts.isTemplateExpression(e)) {
+    const partes = [e.head.text];
+    for (const s of e.templateSpans) {
+      const t = textoConstante(s.expression);
+      if (t === null) return null;
+      partes.push(t, s.literal.text);
+    }
+    return partes.join("");
+  }
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    const a = textoConstante(e.left), b = textoConstante(e.right);
+    return a === null || b === null ? null : a + b;
+  }
+  if (ts.isJsxElement(e) || ts.isJsxFragment(e)) {
+    // Elemento nativo constante (`<span>Texto</span>`): o texto dos filhos.
+    return e.children.map((c) => ts.isJsxText(c) ? c.text : ts.isJsxExpression(c) && c.expression ? textoConstante(c.expression) ?? "" : ts.isJsxElement(c) ? textoConstante(c) ?? "" : "").join("");
+  }
+  return null;
+}
+
+/** A expressão não mostra texto nenhum: não lê a tela e o texto constante dela não tem letra nem número. */
+const semTexto = (e: ts.Expression) => !leDaTela(e) && !/[\p{L}\p{N}]/u.test(textoConstante(e) ?? "");
+
+/** Atributo de texto ausente, só o nome, ou sem texto (rótulo, dica, aria-label): `""`, `" "`, `{" " + ""}`, `{undefined}`. */
+function vazio(n: Elemento, nome: string): boolean {
+  const a = atributo(n, nome);
+  return !a || a.valor === true || semTexto(a.valor);
+}
+
+/** O valor depende de algo da tela — não é constante (`{1 < 0}`, `{Boolean(0)}`, `"true"`). */
+function dinamico(n: Elemento, nome: string): boolean {
+  const a = atributo(n, nome);
+  return !!a && a.valor !== true && leDaTela(a.valor);
 }
 
 /** O controle que o Campo liga: está na função filha do Campo e espalha o parâmetro dela. */
@@ -210,8 +258,8 @@ export function camposMalLigados(fonte: string, arquivo = "x.tsx"): Achado[] {
       const { lista, opacos } = atributos(n);
       if (opacos.length) acusa(tag, "spread no Campo (rótulo e obrigatoriedade não verificáveis)");
       if (!lista.some((a) => a.nome === "rotulo")) acusa(tag, "Campo sem rótulo");
-      else if (vazio(valor(n, "rotulo", sf))) acusa(tag, "Campo com rótulo vazio");
-      if (atributo(n, "dica") && vazio(valor(n, "dica", sf))) acusa(tag, "Campo com dica vazia ou desligada");
+      else if (vazio(n, "rotulo")) acusa(tag, "Campo com rótulo vazio");
+      if (atributo(n, "dica") && vazio(n, "dica")) acusa(tag, "Campo com dica vazia ou desligada");
       if (atributo(n, "erro") && !dinamico(n, "erro")) acusa(tag, "Campo com erro constante (não vem da validação)");
       const { controle, parametro, problema } = ligacaoDoCampo(n, sf);
       if (problema) acusa(tag, problema);
@@ -235,7 +283,8 @@ function rotuloComTexto(label: ts.JsxElement, ctx: Contexto, excluir: ts.Node | 
   const visita = (c: ts.JsxChild): boolean => {
     if (c === excluir) return false;
     if (ts.isJsxText(c)) return /[\p{L}\p{N}]/u.test(c.text);
-    if (ts.isJsxExpression(c)) return !!c.expression && !contemJsx(c.expression);
+    // Expressão: só a que lê a tela ou tem texto constante (`{" "}` e `{""}` não nomeiam nada).
+    if (ts.isJsxExpression(c)) return !!c.expression && !contemJsx(c.expression) && !semTexto(c.expression);
     if (ts.isJsxElement(c)) return !NATIVOS.has(tagDe(c, ctx)) && c.children.some(visita);
     if (ts.isJsxFragment(c)) return c.children.some(visita);
     return false;
@@ -256,7 +305,7 @@ export function controlesForaDoCampo(fonte: string, arquivo = "x.tsx"): Achado[]
   // Controles ligados a um Campo → o Campo; rótulos por htmlFor; ids do arquivo.
   const ligadoA = new Map<ts.Node, Elemento>();
   const rotulosPorAlvo = new Map<string, ts.JsxElement[]>();
-  const ids = new Set<string>();
+  const porId = new Map<string, Elemento[]>();
   const coleta = (n: ts.Node) => {
     if (ehCampo(n, ctx) && ts.isJsxElement(n)) {
       const { controle } = ligacaoDoCampo(n, sf);
@@ -264,7 +313,7 @@ export function controlesForaDoCampo(fonte: string, arquivo = "x.tsx"): Achado[]
     }
     if (ehElemento(n)) {
       const id = valor(n, "id", sf);
-      if (typeof id === "string") ids.add(id);
+      if (typeof id === "string") porId.set(id, [...(porId.get(id) ?? []), n]);
       const alvo = valor(n, "htmlFor", sf);
       if (typeof alvo === "string" && ts.isJsxElement(n)) rotulosPorAlvo.set(alvo, [...(rotulosPorAlvo.get(alvo) ?? []), n]);
     }
@@ -277,11 +326,19 @@ export function controlesForaDoCampo(fonte: string, arquivo = "x.tsx"): Achado[]
     for (let p = n.parent; p; p = p.parent) if (ts.isJsxElement(p) && tagDe(p, ctx) === "label") return p;
     return null;
   };
+  const ehTagDeControle = (el: Elemento) => {
+    const t = tagDe(el, ctx);
+    return NATIVOS.has(t) || DO_DESIGN_SYSTEM.has(t) || locais.has(t) || ligadoA.has(el);
+  };
   const temRotulo = (n: Elemento) => {
-    for (const nome of ["aria-label", "ariaLabel"]) if (atributo(n, nome) && !vazio(valor(n, nome, sf))) return true;
+    for (const nome of ["aria-label", "ariaLabel"]) if (!vazio(n, nome)) return true;
+    // aria-labelledby: cada id citado tem de ser de outro elemento, que não seja controle e que tenha texto
+    // (o próprio controle ou um campo vizinho não dão nome).
     const rotuladoPor = valor(n, "aria-labelledby", sf);
-    if (typeof rotuladoPor === "string" && !vazio(rotuladoPor)) {
-      if (rotuladoPor.startsWith("{") ? ids.has(rotuladoPor) : rotuladoPor.split(/\s+/).filter(Boolean).every((t) => ids.has(t))) return true;
+    if (typeof rotuladoPor === "string" && !vazio(n, "aria-labelledby")) {
+      const alvos = rotuladoPor.startsWith("{") ? [rotuladoPor] : rotuladoPor.split(/\s+/).filter(Boolean);
+      const nomeia = (el: Elemento) => el !== n && !ehTagDeControle(el) && ts.isJsxElement(el) && rotuloComTexto(el, ctx, null);
+      if (alvos.length && alvos.every((alvo) => (porId.get(alvo) ?? []).some(nomeia))) return true;
     }
     const id = valor(n, "id", sf);
     if (typeof id === "string" && (rotulosPorAlvo.get(id) ?? []).some((l) => rotuloComTexto(l, ctx, null))) return true;
@@ -474,6 +531,47 @@ describe("detector do Campo (autoteste)", () => {
     expect(fora('<label htmlFor="a"><span /></label><input id="a" />')).toEqual(["sem nome acessível"]);
     expect(fora('<label htmlFor="a"><span>A</span></label><input id="a" />')).toEqual([]);
     expect(fora("<label>{rotulo} <input /></label>")).toEqual([]);
+  });
+
+  it("R2 B2 — EV6: aria-invalid com função ou objeto global e nada da tela não liga (Boolean(0), Math…)", () => {
+    for (const constante of ["{Boolean(0)}", "{Number(1) > 2}", "{Math.random() > 2}", '{String(1) === "x"}', "{isNaN(1)}", "{Boolean(undefined)}"]) {
+      expect(fora(`<input aria-label="Q" required aria-invalid=${constante} />`), constante).toEqual([OBRIG_FORA]);
+      expect(mal(`<Campo rotulo="A" erro=${constante}>{(campo) => <input {...campo} />}</Campo>`), constante).toEqual(["Campo com erro constante (não vem da validação)"]);
+    }
+    for (const daTela of ["{Boolean(erros.nome)}", "{Math.max(0, falhas) > 0}", "{String(estado) === \"erro\"}"]) {
+      expect(fora(`<input aria-label="Q" required aria-invalid=${daTela} />`), daTela).toEqual([]);
+    }
+    // Nome de propriedade não é o que se lê: `{ chave: 1 }.chave` não lê nada da tela.
+    expect(fora('<input aria-label="Q" required aria-invalid={({ erro: 1 }).erro > 2} />')).toEqual([OBRIG_FORA]);
+  });
+
+  it("R2 B2 — EV7: <label> com expressão sem texto em volta não nomeia ({\" \"}, {\"\"}, template vazio, concatenação vazia)", () => {
+    for (const semTexto of ['{" "}', '{""}', "{`  `}", '{" " + ""}', "{false}", "{null}", "{1 < 0}", "{Boolean(0)}"]) {
+      expect(fora(`<label>${semTexto}<input /></label>`), semTexto).toEqual(["sem nome acessível"]);
+      expect(fora(`<label htmlFor="a">${semTexto}</label><input id="a" />`), semTexto).toEqual(["sem nome acessível"]);
+    }
+    for (const comTexto of ['{"Nome"}', "{`Nome ${sufixo}`}", "{rotulo}", '{"Nome " + sufixo}', "{2}"]) {
+      expect(fora(`<label>${comTexto}<input /></label>`), comTexto).toEqual([]);
+    }
+    // aria-label e rótulo do Campo: a mesma regra.
+    expect(fora('<input aria-label={" " + ""} />')).toEqual(["sem nome acessível"]);
+    expect(mal('<Campo rotulo={" " + ""}>{(campo) => <input {...campo} />}</Campo>')).toEqual(["Campo com rótulo vazio"]);
+    expect(mal('<Campo rotulo="A" dica={<span className="x" />}>{(campo) => <input {...campo} />}</Campo>')).toEqual(["Campo com dica vazia ou desligada"]);
+    expect(mal('<Campo rotulo="A" dica={<span className="x">Formato</span>}>{(campo) => <input {...campo} />}</Campo>')).toEqual([]);
+  });
+
+  it("R2 B2 — EV12: aria-labelledby que aponta para o próprio controle, outro controle ou elemento sem texto não nomeia", () => {
+    expect(fora('<input id="ev12" aria-labelledby="ev12" />')).toEqual(["sem nome acessível"]);
+    expect(fora("<input id={ids.a} aria-labelledby={ids.a} />")).toEqual(["sem nome acessível"]);
+    // Outro controle (mesmo com nome próprio) não é rótulo.
+    expect(fora('<label htmlFor="a">A</label><input id="a" /><select aria-labelledby="a" />')).toEqual(["sem nome acessível"]);
+    expect(fora('<CampoTexto id="a" aria-label="A" /><select aria-labelledby="a" />')).toEqual(["sem nome acessível"]);
+    // Alvo sem texto.
+    expect(fora('<span id="t" /><select aria-labelledby="t" />')).toEqual(["sem nome acessível"]);
+    expect(fora('<h2 id="t">{" "}</h2><select aria-labelledby="t" />')).toEqual(["sem nome acessível"]);
+    // Um alvo bom e um ruim: todos têm de nomear.
+    expect(fora('<h2 id="t">T</h2><select id="s" aria-labelledby="t s" />')).toEqual(["sem nome acessível"]);
+    expect(fora('<h2 id="t"><span>Título</span></h2><select aria-labelledby="t" />')).toEqual([]);
   });
 
   it("dentro do Campo: passa; obrigatório pede `obrigatorio` no Campo", () => {
