@@ -62,19 +62,34 @@ function componenteQueRepassaId(conteudo: string, i: number) {
  * Componentes de campo que recebem o id por prop e o repassam (CampoMoeda, CampoFuso, SelectISO…).
  * Dentro deles `id={id}` é aceito; em troca, cada uso `<Componente …>` é conferido como um campo.
  */
-const repassadores = new Set(
-  telas.flatMap(({ conteudo }) =>
+type Fonte = { arquivo: string; conteudo: string };
+
+const repassadoresDe = (fontes: Fonte[]) => new Set(
+  fontes.flatMap(({ conteudo }) =>
     [...conteudo.matchAll(/<(?:select|input|textarea)\b/g)]
       .filter((m) => expressao(tagEm(conteudo, m.index!), "id") === "{id}")
       .map((m) => componenteQueRepassaId(conteudo, m.index!))
       .filter((nome): nome is string => Boolean(nome)),
   ),
 );
+const repassadores = repassadoresDe(telas);
 
-function camposSemRotulo() {
+/**
+ * Parâmetro da função de ligação do <Campo …> ainda aberto na posição (não confundir com
+ * <CampoTexto>/<CampoMoeda>), ou null fora de Campo.
+ */
+function parametroDoCampoAberto(antes: string): string | null {
+  const ultima = [...antes.matchAll(/<Campo(?=[\s>])/g)].at(-1)?.index ?? -1;
+  if (ultima < 0 || ultima < antes.lastIndexOf("</Campo>")) return null;
+  const m = /\{\s*\(\s*(\w+)\s*\)\s*=>|\{\s*(\w+)\s*=>|\{\s*function\s*\(\s*(\w+)\s*\)/.exec(antes.slice(ultima));
+  return m ? m[1] ?? m[2] ?? m[3] ?? null : null;
+}
+
+function camposSemRotulo(fontes: Fonte[] = telas, repass: Set<string> = repassadores) {
   // CampoTexto é um <textarea> (com o mínimo visível): cada uso é conferido como campo.
-  const campo = new RegExp(String.raw`<(select|input|textarea|CampoTexto|${[...repassadores].join("|")})\b`, "g");
-  return telas.flatMap(({ arquivo, conteudo }) => {
+  // Sem repassadores, `|${""}` viraria uma alternativa vazia e casaria qualquer `<` (até `<Campo`).
+  const campo = new RegExp(String.raw`<(${["select", "input", "textarea", "CampoTexto", ...repass].join("|")})\b`, "g");
+  return fontes.flatMap(({ arquivo, conteudo }) => {
     // CampoTexto repassa todos os atributos ao seu <textarea>: o rótulo vem de cada uso, conferido acima.
     if (arquivo.split("\\").join("/") === "src/components/CampoTexto.tsx") return [];
     const alvos = valores(conteudo, "htmlFor");
@@ -86,6 +101,11 @@ function camposSemRotulo() {
         if (id && alvos.has(id)) return false;
         if (id === "{id}" && componenteQueRepassaId(conteudo, m.index!)) return false;
         const antes = conteudo.slice(0, m.index);
+        // Controle de um <Campo> (src/components/Campo.tsx): recebe id + aria-* espalhando a ligação
+        // (`{(campo) => <input {...campo} />}`) e o rótulo do Campo aponta para esse id. Só vale o spread do
+        // parâmetro da função do Campo aberto; o resto a trava por AST confere (src/app/campos.test.ts).
+        const parametro = parametroDoCampoAberto(antes);
+        if (parametro && new RegExp(String.raw`\{\s*\.\.\.\s*${parametro}\s*\}`).test(tag)) return false;
         return antes.lastIndexOf("<label") <= antes.lastIndexOf("</label>"); // fora de <label> aberto
       })
       .map((m) => `${arquivo}:${linha(conteudo, m.index!)} <${m[1]}>`);
@@ -106,6 +126,24 @@ function rotulosSoltos() {
   );
 }
 
+describe("rótulos de formulário — controle de um Campo (autoteste; R1 da #145, B6)", () => {
+  const sem = (conteudo: string) => camposSemRotulo([{ arquivo: "x.tsx", conteudo }], new Set()).map((s) => s.split(" ").at(-1));
+
+  it("spread fora de Campo não isenta o controle de rótulo", () => {
+    expect(sem("<input {...x} />")).toEqual(["<input>"]);
+    expect(sem('<Campo rotulo="A">{(campo) => <input {...campo} />}</Campo><input {...campo} />')).toEqual(["<input>"]);
+    // <CampoTexto> não é um Campo.
+    expect(sem("<CampoTexto {...x} />")).toEqual(["<CampoTexto>"]);
+  });
+
+  it("dentro do Campo, só o spread do parâmetro da função de ligação conta", () => {
+    expect(sem('<Campo rotulo="A">{(campo) => <input {...campo} />}</Campo>')).toEqual([]);
+    expect(sem('<Campo rotulo="A">{c => <select {...c} />}</Campo>')).toEqual([]);
+    expect(sem('<Campo rotulo="A">{function (c) { return <input {...c} />; }}</Campo>')).toEqual([]);
+    expect(sem('<Campo rotulo="A">{(campo) => <input {...outro} />}</Campo>')).toEqual(["<input>"]);
+  });
+});
+
 describe("rótulos de formulário", () => {
   it("todo <input>/<select>/<textarea> tem rótulo ligado (htmlFor↔id, <label> em volta ou aria-label)", () => {
     expect(camposSemRotulo()).toEqual([]);
@@ -117,6 +155,8 @@ describe("rótulos de formulário", () => {
 
   it("htmlFor aponta para um id que existe no mesmo arquivo — literal, template ou variável, comparados por inteiro", () => {
     const quebrados = telas.flatMap(({ arquivo, conteudo }) => {
+      // O rótulo do Campo aponta para o id que ele mesmo entrega ao controle (que mora em cada tela).
+      if (arquivo.split("\\").join("/") === "src/components/Campo.tsx") return [];
       const ids = valores(conteudo, "id");
       return [...conteudo.matchAll(/<label\b/g)]
         .map((m) => ({ alvo: expressao(tagEm(conteudo, m.index!), "htmlFor"), i: m.index! }))
