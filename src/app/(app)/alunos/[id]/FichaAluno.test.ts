@@ -6,7 +6,7 @@ import { expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/alunos/acoes", () => ({ pausarAluno: vi.fn(), encerrarAluno: vi.fn(), editarAluno: vi.fn() }));
 
-import { FichaAluno, type AlunoFicha } from "./FichaAluno";
+import { FichaAluno, errosDaEdicaoAluno, type AlunoFicha } from "./FichaAluno";
 
 function aluno(proximoVencimento: AlunoFicha["financeiro"] extends infer Financeiro
   ? Financeiro extends { proximoVencimento: infer Vencimento } ? Vencimento : never
@@ -57,10 +57,37 @@ it("cada rótulo do painel de edição aponta para um campo existente e as ajuda
   for (const id of alvos) {
     expect([...html.matchAll(new RegExp(`\\sid="${id}"`, "g"))], id).toHaveLength(1);
   }
-  for (const [campo, ajuda] of [["ficha-documento", "ficha-documento-ajuda"], ["ficha-motivo", "ficha-motivo-ajuda"]]) {
+  // As ajudas são a `dica` do <Campo> (src/components/Campo.tsx): id = `${id do campo}-dica`.
+  for (const [campo, ajuda] of [["ficha-documento", "ficha-documento-dica"], ["ficha-motivo", "ficha-motivo-dica"]]) {
     expect(html).toMatch(new RegExp(`id="${campo}"[^>]*aria-describedby="${ajuda}"|aria-describedby="${ajuda}"[^>]*id="${campo}"`));
     expect(html).toContain(`id="${ajuda}"`);
   }
-  // O motivo é obrigatório (Salvar só habilita com ele) — o leitor de tela precisa saber disso.
+  // O motivo é obrigatório (o servidor recusa sem ele) — o leitor de tela precisa saber disso.
   expect(html).toMatch(/<textarea(?=[^>]*\sid="ficha-motivo")(?=[^>]*\saria-required="true")[^>]*>/);
+});
+
+it("os obrigatórios da edição (EditarAlunoSchema) são aria-required, e nenhum campo nasce inválido", () => {
+  const html = renderToStaticMarkup(createElement(FichaAluno, {
+    aluno: aluno(null), paises: [], podeEditarCadastro: true, preferenciaFusoExibicao: null,
+  }));
+  const obrigatorios = [...html.matchAll(/<(?:input|select|textarea)\b[^>]*\sid="(ficha-[^"]+)"[^>]*>/g)]
+    .filter((m) => /\saria-required="true"/.test(m[0]))
+    .map((m) => m[1]);
+  expect(obrigatorios).toEqual(["ficha-primeiroNome", "ficha-sobrenome", "ficha-paisId", "ficha-motivo"]);
+  // Antes de tentar salvar: sem aria-invalid e sem mensagem de erro de campo.
+  expect(html).not.toContain("aria-invalid");
+  expect(html).not.toMatch(/id="ficha-[^"]+-erro"/);
+  // "Salvar alterações" não fica desabilitado sem explicação: o que falta aparece no campo ao clicar.
+  expect(html).toMatch(/<button[^>]*>Salvar alterações<\/button>/);
+  expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Salvar alterações<\/button>/);
+});
+
+it("edição: cada obrigatório vazio (ou só espaços) vira o erro do próprio campo; completo não tem erro (revisão de integração da #145)", () => {
+  const completo = { primeiroNome: "Ana", sobrenome: "Souza", paisId: "p1", motivo: "Correção do documento" };
+  expect(errosDaEdicaoAluno(completo)).toEqual({});
+  expect(errosDaEdicaoAluno({ ...completo, primeiroNome: "  " })).toEqual({ primeiroNome: "Informe o nome." });
+  expect(errosDaEdicaoAluno({ ...completo, sobrenome: "" })).toEqual({ sobrenome: "Informe o sobrenome." });
+  expect(errosDaEdicaoAluno({ ...completo, paisId: "" })).toEqual({ paisId: "Selecione o país." });
+  expect(errosDaEdicaoAluno({ ...completo, motivo: " " })).toEqual({ motivo: "Informe o motivo da edição." });
+  expect(Object.keys(errosDaEdicaoAluno({ primeiroNome: "", sobrenome: "", paisId: "", motivo: "" })).sort()).toEqual(["motivo", "paisId", "primeiroNome", "sobrenome"]);
 });
