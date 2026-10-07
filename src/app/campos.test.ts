@@ -332,12 +332,12 @@ export function controlesForaDoCampo(fonte: string, arquivo = "x.tsx"): Achado[]
   };
   const temRotulo = (n: Elemento) => {
     for (const nome of ["aria-label", "ariaLabel"]) if (!vazio(n, nome)) return true;
-    // aria-labelledby: cada id citado tem de ser de outro elemento, que não seja controle e que tenha texto
-    // (o próprio controle ou um campo vizinho não dão nome).
+    // aria-labelledby: cada id citado tem de ser de um elemento que não seja controle e que tenha texto.
+    // O próprio controle também é controle: apontar para si mesmo ou para um campo vizinho não dá nome.
     const rotuladoPor = valor(n, "aria-labelledby", sf);
     if (typeof rotuladoPor === "string" && !vazio(n, "aria-labelledby")) {
       const alvos = rotuladoPor.startsWith("{") ? [rotuladoPor] : rotuladoPor.split(/\s+/).filter(Boolean);
-      const nomeia = (el: Elemento) => el !== n && !ehTagDeControle(el) && ts.isJsxElement(el) && rotuloComTexto(el, ctx, null);
+      const nomeia = (el: Elemento) => !ehTagDeControle(el) && ts.isJsxElement(el) && rotuloComTexto(el, ctx, null);
       if (alvos.length && alvos.every((alvo) => (porId.get(alvo) ?? []).some(nomeia))) return true;
     }
     const id = valor(n, "id", sf);
@@ -566,6 +566,9 @@ describe("detector do Campo (autoteste)", () => {
     // Outro controle (mesmo com nome próprio) não é rótulo.
     expect(fora('<label htmlFor="a">A</label><input id="a" /><select aria-labelledby="a" />')).toEqual(["sem nome acessível"]);
     expect(fora('<CampoTexto id="a" aria-label="A" /><select aria-labelledby="a" />')).toEqual(["sem nome acessível"]);
+    // Controle com texto dentro (as <option>) também não: nem ele mesmo, nem outro.
+    expect(fora('<select id="s" aria-labelledby="s"><option>Opção</option></select>')).toEqual(["sem nome acessível"]);
+    expect(fora('<select id="a" aria-label="A"><option>Um</option></select><select aria-labelledby="a" />')).toEqual(["sem nome acessível"]);
     // Alvo sem texto.
     expect(fora('<span id="t" /><select aria-labelledby="t" />')).toEqual(["sem nome acessível"]);
     expect(fora('<h2 id="t">{" "}</h2><select aria-labelledby="t" />')).toEqual(["sem nome acessível"]);
