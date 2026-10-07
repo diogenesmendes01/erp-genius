@@ -95,16 +95,16 @@ export const ETAPA_LABEL: Record<EtapaLead, string> = {
 };
 
 // Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3). Vieram de lib/roles.ts, que os reexporta.
-export const PAPEL_LABEL: Record<Papel, string> = {
+export const PAPEL_LABEL: Readonly<Record<Papel, string>> = Object.freeze({
   ADMINISTRADOR: "Administrador",
-  GERENTE_COMERCIAL: "Gerente Comercial",
+  GERENTE_COMERCIAL: "Gerente comercial",
   VENDEDOR: "Vendedor",
-  GERENTE_PEDAGOGICO: "Gerente Pedagógico",
+  GERENTE_PEDAGOGICO: "Gerente pedagógico",
   PROFESSOR: "Professor",
   FINANCEIRO: "Financeiro",
-  SECRETARIA_ACADEMICA: "Secretaria Acadêmica",
+  SECRETARIA_ACADEMICA: "Secretaria acadêmica",
   ALUNO: "Aluno (portal)",
-};
+});
 
 /** Etapa do lead por extenso, para mensagens (a gestão recebe no WhatsApp); o kanban usa a forma curta de ETAPA_LABEL. */
 export const ETAPA_EXTENSO_LABEL: Readonly<Record<EtapaLead, string>> = Object.freeze({

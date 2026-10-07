@@ -23,6 +23,22 @@ const ETAPAS_FUNIL_ATIVO: EtapaLead[] = [
   EtapaLead.NO_SHOW,
 ];
 
+/** Linhas do funil no relatório da gestão: etapa por extenso (ETAPA_EXTENSO_LABEL), nunca o código; maior primeiro. */
+export function linhasDoFunil(funil: readonly { etapa: string; _count: { _all: number } }[]): string {
+  return [...funil]
+    .sort((a, b) => b._count._all - a._count._all)
+    .map((f) => `• ${rotular(ETAPA_EXTENSO_LABEL, f.etapa)}: ${f._count._all}`)
+    .join("\n");
+}
+
+/** Linhas dos gargalos (etapa, leads parados), na ordem recebida; sem gargalo, a frase de tudo em dia. */
+export function linhasDosGargalos(gargalos: readonly (readonly [string, number])[]): string {
+  if (gargalos.length === 0) return "Nenhum gargalo relevante (nada parado há 3+ dias). ✅";
+  return gargalos
+    .map(([etapa, n], i) => `${i + 1}º ${rotular(ETAPA_EXTENSO_LABEL, etapa)} — ${n} lead(s) parados há 3+ dias`)
+    .join("\n");
+}
+
 export interface ResultadoCronGestao {
   executou: boolean;
   motivoParada: string | null;
@@ -216,16 +232,8 @@ async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<s
   }
   const gargalos = [...paradosPorEtapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  const funilLinhas = funil
-    .sort((a, b) => b._count._all - a._count._all)
-    .map((f) => `• ${rotular(ETAPA_EXTENSO_LABEL, f.etapa)}: ${f._count._all}`)
-    .join("\n");
-  const gargaloLinhas =
-    gargalos.length === 0
-      ? "Nenhum gargalo relevante (nada parado há 3+ dias). ✅"
-      : gargalos
-          .map(([etapa, n], i) => `${i + 1}º ${rotular(ETAPA_EXTENSO_LABEL, etapa)} — ${n} lead(s) parados há 3+ dias`)
-          .join("\n");
+  const funilLinhas = linhasDoFunil(funil);
+  const gargaloLinhas = linhasDosGargalos(gargalos);
 
   return (
     `📊 Relatório diário — ${agora.toLocaleDateString("pt-BR")}\n\n` +

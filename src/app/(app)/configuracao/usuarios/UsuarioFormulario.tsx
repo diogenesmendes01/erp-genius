@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
-import { PAPEL_LABEL } from "@/lib/roles";
+import { PAPEL_LABEL } from "@/lib/labels";
 import { CAPACIDADES_LISTA, CAPACIDADES_LABEL } from "@/lib/capacidades";
 import {
   CriarUsuarioSchema,
