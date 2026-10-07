@@ -215,32 +215,54 @@ function caminhoAte(nome: string, alvo: ts.BindingName): Caminho | null {
   return null;
 }
 
+/**
+ * Nomes declarados diretamente num nó de escopo (parâmetros, nome da função, catch, for, instruções do bloco,
+ * imports), calculados uma vez por nó: a busca de um nome sobe os ancestrais consultando estes mapas (tempo da
+ * trava, R2 da #149). O primeiro achado vale, na mesma ordem: parâmetros, nome da função, catch, for, instruções.
+ */
+const escopos = new WeakMap<ts.Node, Map<string, Ligacao>>();
+const SEM_DECLARACOES: ReadonlyMap<string, Ligacao> = new Map();
+function declaracoesDe(n: ts.Node): ReadonlyMap<string, Ligacao> {
+  const ehEscopo = ts.isFunctionLike(n) || ts.isCatchClause(n) || ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)
+    || ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n);
+  if (!ehEscopo) return SEM_DECLARACOES;
+  const pronto = escopos.get(n);
+  if (pronto) return pronto;
+  const mapa = new Map<string, Ligacao>();
+  const por = (nome: string, l: Ligacao) => { if (!mapa.has(nome)) mapa.set(nome, l); };
+  if (ts.isFunctionLike(n)) {
+    for (const p of n.parameters) for (const nome of nomesDaLigacao(p.name)) por(nome, { tipo: "param", param: p, fn: n });
+    if (ts.isFunctionExpression(n) && n.name) por(n.name.text, { tipo: "funcao", fn: n });
+  }
+  if (ts.isCatchClause(n) && n.variableDeclaration) for (const nome of nomesDaLigacao(n.variableDeclaration.name)) por(nome, { tipo: "opaco" });
+  if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)) && n.initializer && ts.isVariableDeclarationList(n.initializer)) {
+    for (const d of n.initializer.declarations) {
+      for (const nome of nomesDaLigacao(d.name)) por(nome, ts.isForStatement(n) ? { tipo: "decl", decl: d, escopo: n } : { tipo: "opaco" });
+    }
+  }
+  const instrucoes = ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n) ? n.statements : [];
+  for (const s of instrucoes) {
+    if (ts.isVariableStatement(s)) {
+      for (const d of s.declarationList.declarations) for (const nome of nomesDaLigacao(d.name)) por(nome, { tipo: "decl", decl: d, escopo: n });
+    } else if (ts.isFunctionDeclaration(s)) {
+      if (s.name) por(s.name.text, { tipo: "funcao", fn: s });
+    } else if (ts.isClassDeclaration(s) || ts.isEnumDeclaration(s) || ts.isModuleDeclaration(s) || ts.isImportEqualsDeclaration(s)) {
+      if (s.name && ts.isIdentifier(s.name)) por(s.name.text, { tipo: "opaco" });
+    } else if (ts.isImportDeclaration(s) && ts.isStringLiteral(s.moduleSpecifier) && s.importClause) {
+      const c = s.importClause, origem = s.moduleSpecifier.text, b = c.namedBindings;
+      if (c.name) por(c.name.text, { tipo: "import", origem, nome: "default" });
+      if (b && ts.isNamespaceImport(b)) por(b.name.text, { tipo: "import", origem, nome: "*" });
+      if (b && ts.isNamedImports(b)) for (const el of b.elements) por(el.name.text, { tipo: "import", origem, nome: (el.propertyName ?? el.name).text });
+    }
+  }
+  escopos.set(n, mapa);
+  return mapa;
+}
 /** A declaração visível de um nome a partir de um ponto do código (escopo léxico: parâmetros, blocos, arquivo, imports). */
 function ligacaoDe(nome: string, de: ts.Node): Ligacao | null {
   for (let n: ts.Node | undefined = de; n; n = n.parent) {
-    if (ts.isFunctionLike(n)) {
-      for (const p of n.parameters) if (nomesDaLigacao(p.name).includes(nome)) return { tipo: "param", param: p, fn: n };
-      if (ts.isFunctionExpression(n) && n.name?.text === nome) return { tipo: "funcao", fn: n };
-    }
-    if (ts.isCatchClause(n) && n.variableDeclaration && nomesDaLigacao(n.variableDeclaration.name).includes(nome)) return { tipo: "opaco" };
-    if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n)) && n.initializer && ts.isVariableDeclarationList(n.initializer)) {
-      for (const d of n.initializer.declarations) if (nomesDaLigacao(d.name).includes(nome)) return ts.isForStatement(n) ? { tipo: "decl", decl: d, escopo: n } : { tipo: "opaco" };
-    }
-    const instrucoes = ts.isSourceFile(n) || ts.isBlock(n) || ts.isModuleBlock(n) || ts.isCaseClause(n) || ts.isDefaultClause(n) ? n.statements : [];
-    for (const s of instrucoes) {
-      if (ts.isVariableStatement(s)) {
-        for (const d of s.declarationList.declarations) if (nomesDaLigacao(d.name).includes(nome)) return { tipo: "decl", decl: d, escopo: n };
-      } else if (ts.isFunctionDeclaration(s)) {
-        if (s.name?.text === nome) return { tipo: "funcao", fn: s };
-      } else if (ts.isClassDeclaration(s) || ts.isEnumDeclaration(s) || ts.isModuleDeclaration(s) || ts.isImportEqualsDeclaration(s)) {
-        if (s.name && ts.isIdentifier(s.name) && s.name.text === nome) return { tipo: "opaco" };
-      } else if (ts.isImportDeclaration(s) && ts.isStringLiteral(s.moduleSpecifier) && s.importClause) {
-        const c = s.importClause, origem = s.moduleSpecifier.text, b = c.namedBindings;
-        if (c.name?.text === nome) return { tipo: "import", origem, nome: "default" };
-        if (b && ts.isNamespaceImport(b) && b.name.text === nome) return { tipo: "import", origem, nome: "*" };
-        if (b && ts.isNamedImports(b)) for (const el of b.elements) if (el.name.text === nome) return { tipo: "import", origem, nome: (el.propertyName ?? el.name).text };
-      }
-    }
+    const l = declaracoesDe(n).get(nome);
+    if (l) return l;
   }
   return null;
 }
@@ -1003,11 +1025,22 @@ describe("colunas ordenáveis (E1)", () => {
       ["import que não se resolve", 'import { CabecalhoPais } from "./nao-existe"; const x = <CabecalhoPais />;', {}],
       ["import de caminho absoluto", 'import { CabecalhoPais } from "/tmp/CabecalhoPais"; const x = <CabecalhoPais />;', {}],
       ["import dinâmico de caminho calculado", "declare const caminho: string; export const m = import(caminho);", {}],
+      // B4 da R2: import/reexportação mistos (`{ type X, Valor }`) levam código — não são "só tipos".
+      ["B4 import misto de __mocks__", 'import { type X, CabecalhoPais } from "@/lib/__mocks__/cabecalho"; const x: X = <CabecalhoPais />;', { "src/lib/__mocks__/cabecalho.tsx": `export type X = unknown; ${CABECALHO}` }],
+      ["B4 import misto, valor antes do tipo", 'import { CabecalhoPais, type X } from "@/lib/__mocks__/cabecalho"; const x: X = <CabecalhoPais />;', { "src/lib/__mocks__/cabecalho.tsx": `export type X = unknown; ${CABECALHO}` }],
+      ["B4 padrão + tipo nomeado", 'import CabecalhoPais, { type X } from "@/lib/__mocks__/cabecalho"; const x: X = <CabecalhoPais />;', { "src/lib/__mocks__/cabecalho.tsx": `export type X = unknown; export default ${CABECALHO.replace("export ", "")}` }],
+      ["B4 reexportação mista", 'export { type X, CabecalhoPais } from "@/lib/__mocks__/cabecalho";', { "src/lib/__mocks__/cabecalho.tsx": `export type X = unknown; ${CABECALHO}` }],
+      ["B4 reexportação de tudo", 'export * from "@/lib/__mocks__/cabecalho";', { "src/lib/__mocks__/cabecalho.tsx": CABECALHO }],
+      // C3 da R2: `import x = require()` (o tsc barra com module esnext, mas a trava não depende disso).
+      ["C3 import = require", 'import m = require("@/lib/__mocks__/cabecalho"); export const x = m;', { "src/lib/__mocks__/cabecalho.tsx": CABECALHO }],
     ];
     for (const [nome, fonte, modulos] of casos) expect(ariaSortNoFonte(fonte, "src/app/x.tsx", modulos), nome).not.toEqual([]);
     // Só tipos não levam código; CSS e pacotes não são a varredura.
     expect(ariaSortNoFonte('import type { CabecalhoPais } from "@/components/CabecalhoPais.test"; import { type X } from "@/lib/__mocks__/x"; import "./globals.css"; import { z } from "zod";',
       "src/app/x.tsx", { "src/components/CabecalhoPais.test.tsx": CABECALHO, "src/lib/__mocks__/x.ts": "export type X = 1;" })).toEqual([]);
+    // Também só tipos: vários especificadores todos `type`, reexportação de tipos e `import type x = require()`.
+    expect(ariaSortNoFonte('import { type X, type Y } from "@/lib/__mocks__/x"; export type { X } from "@/lib/__mocks__/x"; export { type Y as Z } from "@/lib/__mocks__/x"; import type m = require("@/lib/__mocks__/x");',
+      "src/app/x.tsx", { "src/lib/__mocks__/x.ts": "export type X = 1; export type Y = 2;" })).toEqual([]);
   });
 
   it("autoteste (EXTENSOES): import sem extensão de cada tipo de módulo de produção se resolve — e não é apontado", () => {
