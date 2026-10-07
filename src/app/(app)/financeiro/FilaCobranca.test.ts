@@ -22,15 +22,17 @@ vi.mock("@/lib/filtros-url", async (original) => {
   } };
 });
 // Cada <Link> renderizado: o href, o texto visível (descendo nos elementos filhos — o cartão tem número e
-// rótulo em <div>s) e o handler do clique (com JavaScript, o clique simples segue o handler, não o href).
-const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string } }[] }));
+// rótulo em <div>s), o handler do clique (com JavaScript, o clique simples segue o handler, não o href) e
+// o de teclado (o cartão com role="button" aciona com Espaço).
+type TeclaFalsa = { key: string; preventDefault: () => void; currentTarget: { click: () => void } };
+const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string }; onKeyDown?: (e: TeclaFalsa) => void }[] }));
 vi.mock("next/link", async () => {
   const { createElement: h, isValidElement } = await import("react");
   const texto = (c: unknown): string => typeof c === "string" || typeof c === "number" ? String(c)
     : Array.isArray(c) ? c.map(texto).join(" ")
     : isValidElement(c) ? texto((c.props as { children?: unknown }).children) : "";
-  return { default: ({ href, onClick, children, ...resto }: { href: string; onClick?: { navegaPara?: string }; children?: unknown }) => {
-    links.lista.push({ href: String(href), texto: texto(children).replace(/\s+/g, " ").trim(), onClick });
+  return { default: ({ href, onClick, onKeyDown, children, ...resto }: { href: string; onClick?: { navegaPara?: string }; onKeyDown?: (e: TeclaFalsa) => void; children?: unknown }) => {
+    links.lista.push({ href: String(href), texto: texto(children).replace(/\s+/g, " ").trim(), onClick, onKeyDown });
     return h("a", { href, ...resto }, children as never);
   } };
 });
@@ -215,6 +217,33 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
       expect(daFila.length).toBeGreaterThanOrEqual(4);
       expect(daFila.filter((l) => !l.onClick).map((l) => `${l.texto} ${l.href}`), "link da fila sem clique na transição").toEqual([]);
       expect(daFila.filter((l) => l.onClick?.navegaPara !== l.href).map((l) => `${l.texto}: href ${l.href} · clique ${l.onClick?.navegaPara}`)).toEqual([]);
+    }
+  });
+
+  it("cartão com role=\"button\" aciona com Espaço (como um <button>): impede a rolagem e clica no próprio link", () => {
+    fila({ indicador: "emAtraso", busca: "ana" });
+    const CARTOES = ["2 A vencer", "1 Em atraso", "0 Bloquear", "0 Promessas"];
+    for (const texto of CARTOES) {
+      const cartao = link(texto);
+      expect(cartao.onKeyDown, `${texto}: sem onKeyDown`).toBeTypeOf("function");
+      // O clique() do elemento dispara o onClick do próprio link — que navega para o href do cartão.
+      const destinos: (string | undefined)[] = [];
+      const preventDefault = vi.fn();
+      cartao.onKeyDown!({ key: " ", preventDefault, currentTarget: { click: () => destinos.push(cartao.onClick?.navegaPara) } });
+      expect(preventDefault, texto).toHaveBeenCalledTimes(1);
+      expect(destinos, texto).toEqual([cartao.href]);
+    }
+  });
+
+  it("outras teclas no cartão seguem o comportamento do link: nada de preventDefault nem clique extra (Enter já aciona o link)", () => {
+    fila({});
+    const cartao = link("2 A vencer");
+    for (const key of ["Enter", "a", "Tab", "ArrowDown", "  "]) {
+      const preventDefault = vi.fn();
+      const click = vi.fn();
+      cartao.onKeyDown!({ key, preventDefault, currentTarget: { click } });
+      expect(preventDefault, key).not.toHaveBeenCalled();
+      expect(click, key).not.toHaveBeenCalled();
     }
   });
 

@@ -11,6 +11,7 @@ import { renderizarTemplate } from "@/server/whatsapp/render";
 import { resolverDestinoCobranca, INCLUDE_MATRICULA_DESTINO } from "@/server/whatsapp/identidade";
 import { contatoCorrespondeDestinoFinanceiro } from "@/server/whatsapp/destinatario-atual";
 import { suspensoesPorConferencia } from "./conferencia";
+import { contarIndicadoresFila } from "./filtros-fila";
 import { cicloDoEventoCobranca } from "./eventos";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
@@ -346,10 +347,8 @@ export async function listarFilaCobranca(): Promise<{
   // Contadores dos mini-dashs (filtros). "Bloquear" ⊂ "Em atraso" — é o subconjunto urgente.
   // "Bloquear" usa `precisaBloqueio` (atraso ≥ 15 e não bloqueado), NÃO o passo da régua: o
   // bloqueio pendente não pode sumir só porque a mensagem D+15 foi enviada (review §1).
-  const aVencer = itens.filter((i) => i.estado !== "promessa" && i.diasAtraso <= 0).length;
-  const emAtraso = itens.filter((i) => i.estado !== "promessa" && i.diasAtraso > 0).length;
-  const bloquear = itens.filter((i) => i.precisaBloqueio).length;
-  const promessas = itens.filter((i) => i.estado === "promessa").length;
+  // Mesmo critério do filtro da fila na URL (filtros-fila.ts): o número do cartão bate com a lista filtrada.
+  const { aVencer, emAtraso, bloquear, promessas } = contarIndicadoresFila(itens);
 
   // Recebido hoje = soma das BAIXAS de hoje (eventos PagamentoRegistrado), não o status PAGO:
   // captura parciais (que ficam PENDENTE) e usa o valor DESTA baixa, não o acumulado (review §2).

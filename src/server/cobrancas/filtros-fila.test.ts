@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  INDICADORES_FILA,
   ROTA_FILA,
+  contarIndicadoresFila,
   filtrarFila,
   filtrosFilaParaQuery,
   hrefDosCamposFila,
@@ -59,18 +61,43 @@ describe("filtros da fila de cobrança na URL (E4)", () => {
 describe("filtrarFila", () => {
   const fila = [
     item("vence", { diasAtraso: -2 }),
+    // Fronteira: vence hoje (diasAtraso 0, fora de promessa) — o contador o põe em "A vencer".
+    item("hoje", { diasAtraso: 0 }),
     item("atraso", { diasAtraso: 5 }),
     item("bloqueio", { diasAtraso: 20, precisaBloqueio: true }),
     item("promessa", { estado: "promessa", diasAtraso: 4 }),
   ];
+  const por = (indicador: string) => ids(filtrarFila(fila, lerFiltrosFila({ indicador }))).sort();
 
   it("cada indicador com o mesmo critério dos contadores (Bloquear ⊂ Em atraso; promessa fora de A vencer/Em atraso)", () => {
-    const por = (indicador: string) => ids(filtrarFila(fila, lerFiltrosFila({ indicador })));
-    expect(por("aVencer")).toEqual(["vence"]);
-    expect(por("emAtraso").sort()).toEqual(["atraso", "bloqueio"]);
+    expect(por("aVencer")).toEqual(["hoje", "vence"]);
+    expect(por("emAtraso")).toEqual(["atraso", "bloqueio"]);
     expect(por("bloquear")).toEqual(["bloqueio"]);
     expect(por("promessas")).toEqual(["promessa"]);
-    expect(filtrarFila(fila, lerFiltrosFila({}))).toHaveLength(4);
+    expect(filtrarFila(fila, lerFiltrosFila({}))).toHaveLength(5);
+  });
+
+  it("vence hoje (diasAtraso 0) entra em A vencer e fica fora de Em atraso; um dia depois, o contrário", () => {
+    const hoje = [item("hoje", { diasAtraso: 0 })];
+    expect(ids(filtrarFila(hoje, lerFiltrosFila({ indicador: "aVencer" })))).toEqual(["hoje"]);
+    expect(filtrarFila(hoje, lerFiltrosFila({ indicador: "emAtraso" }))).toEqual([]);
+    expect(contarIndicadoresFila(hoje)).toEqual({ aVencer: 1, emAtraso: 0, bloquear: 0, promessas: 0 });
+    const ontem = [item("ontem", { diasAtraso: 1 })];
+    expect(filtrarFila(ontem, lerFiltrosFila({ indicador: "aVencer" }))).toEqual([]);
+    expect(ids(filtrarFila(ontem, lerFiltrosFila({ indicador: "emAtraso" })))).toEqual(["ontem"]);
+    expect(contarIndicadoresFila(ontem)).toEqual({ aVencer: 0, emAtraso: 1, bloquear: 0, promessas: 0 });
+    // Promessa que vence hoje não é "A vencer": está em "Promessas".
+    expect(contarIndicadoresFila([item("p", { estado: "promessa", diasAtraso: 0 })])).toEqual({ aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 1 });
+  });
+
+  it("o número de cada cartão (contador de listarFilaCobranca) é o tamanho da lista filtrada por ele", () => {
+    const contador = contarIndicadoresFila(fila);
+    expect(contador).toEqual({ aVencer: 2, emAtraso: 2, bloquear: 1, promessas: 1 });
+    // Cópia literal das chaves (não itera INDICADORES_FILA): um indicador novo exige rever este teste.
+    expect([...INDICADORES_FILA]).toEqual(["aVencer", "emAtraso", "bloquear", "promessas"]);
+    for (const indicador of ["aVencer", "emAtraso", "bloquear", "promessas"] as const) {
+      expect(filtrarFila(fila, lerFiltrosFila({ indicador })), indicador).toHaveLength(contador[indicador]);
+    }
   });
 
   it("busca por palavras: cada uma no nome do aluno ou no código, sem diferenciar maiúsculas", () => {
