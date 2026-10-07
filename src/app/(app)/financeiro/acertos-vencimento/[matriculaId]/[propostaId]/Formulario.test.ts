@@ -5,8 +5,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.atualizar }) 
 vi.mock("@/server/contratos/vencimento-aditivo", () => ({ proporVencimentoAditivo: m.preparar, decidirVencimentoAditivo: m.decidir, aplicarVencimentoAditivo: m.aplicar }));
 import { VencimentoFormulario } from "./Formulario";
 function montar() {
- const setters = [vi.fn(), vi.fn(), vi.fn()];
- m.estado.mockReturnValueOnce([false,setters[0]]).mockReturnValueOnce(["",setters[1]]).mockReturnValueOnce([false,setters[2]]);
+ const setters = [vi.fn(), vi.fn(), vi.fn(), vi.fn()];
+ m.estado.mockReturnValueOnce([false,setters[0]]).mockReturnValueOnce(["",setters[1]]).mockReturnValueOnce([false,setters[2]]).mockReturnValueOnce([false,setters[3]]);
  const envio = { current: false }, tentativa = { current: null as any };
  m.ref.mockReturnValueOnce(envio).mockReturnValueOnce(tentativa);
  let motivo = "Conferência financeira", evidencia = "Contrato assinado";
@@ -21,11 +21,13 @@ it("preserva chave e entrada após resultado incerto, mesmo com campos alterados
  const c = montar(); await c.enviar(); c.alterar(); await c.enviar();
  expect(m.preparar.mock.calls[0][0]).toEqual(m.preparar.mock.calls[1][0]);
  expect(c.setters[2]).toHaveBeenCalledWith(true); expect(c.tentativa.current).not.toBeNull();
+ // A tela mostra "Repetir mesma tentativa" e trava os campos pelo estado, não pelo ref (react-hooks/refs).
+ expect(c.setters[3]).toHaveBeenCalledWith(true); expect(c.setters[3]).not.toHaveBeenCalledWith(false);
  expect(m.atualizar).toHaveBeenCalledTimes(1);
 });
 it("rejeição conhecida permite corrigir a entrada com nova chave", async () => {
  m.preparar.mockResolvedValueOnce({ ok: false, erro: "Corrigir", podeRevisar: true }).mockResolvedValueOnce({ ok: true });
- const c = montar(); await c.enviar(); expect(c.tentativa.current).toBeNull(); c.alterar(); await c.enviar();
+ const c = montar(); await c.enviar(); expect(c.tentativa.current).toBeNull(); expect(c.setters[3]).toHaveBeenLastCalledWith(false); c.alterar(); await c.enviar();
  expect(m.preparar.mock.calls[1][0].motivo).toBe("Dados corrigidos");
  expect(m.preparar.mock.calls[1][0].chaveIdempotencia).not.toBe(m.preparar.mock.calls[0][0].chaveIdempotencia);
 });

@@ -12,7 +12,7 @@ function valido(valor: string) { if (!valor.trim()) return true; try { new Intl.
 
 export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | null }) {
   const [ocupado, iniciar] = useTransition(), [erro, setErro] = useState(""), [feito, setFeito] = useState(""), [fuso, setFuso] = useState(atual ?? ""); const router = useRouter();
-  const fusos = useMemo(todosOsFusos, []);
+  const fusos = useMemo(() => todosOsFusos(), []);
   function enviar() {
     const fusoExibicao = fuso.trim(); setErro(""); setFeito("");
     if (!valido(fusoExibicao)) { setErro("Escolha um fuso IANA válido, como America/Costa_Rica."); return; }
