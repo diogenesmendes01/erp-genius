@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL, STATUS_INTENCAO_LABEL, rotular } from "@/lib/labels";
@@ -22,6 +22,18 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { useFiltrosUrl } from "@/lib/filtros-url";
+import {
+  ROTA_FILA,
+  camposDosFiltrosFila,
+  hrefDosCamposFila,
+  hrefIndicador,
+  hrefSemBusca,
+  hrefSemIndicador,
+  temBuscaFila,
+  type FiltrosFila,
+  type IndicadorFila,
+} from "@/server/cobrancas/filtros-fila";
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
@@ -31,7 +43,12 @@ function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string |
   return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
 }
 
-type Filtro = "aVencer" | "emAtraso" | "bloquear" | "promessas" | null;
+/** Cartão-indicador com papel de botão (alternância com aria-pressed): Espaço também aciona, como num <button>. */
+function espacoAciona(e: KeyboardEvent<HTMLAnchorElement>) {
+  if (e.key !== " ") return;
+  e.preventDefault();
+  e.currentTarget.click();
+}
 
 // Cor do chip do degrau por tipo de ação (lembrar=preventivo, cobrar=atraso, bloquear=crítico).
 function chipCls(item: FilaCobrancaItem): string {
@@ -70,14 +87,27 @@ function valorDevido(item: FilaCobrancaItem): number {
   return item.saldo > 0 ? item.saldo : item.valorNegociado;
 }
 
+// Filtros na URL (E4): o servidor lê e valida (filtros-fila.ts) e entrega `itens` já filtrados e
+// ordenados. Trocar de filtro navega para a mesma página — o componente não é recriado, então a seleção
+// do lote e os avisos sobrevivem à troca, como quando o filtro era estado local (item selecionado que sai
+// da visão continua no lote).
 export function FilaCobranca({
   itens,
+  totalFila,
+  filtros,
+  opcoes,
   dashs,
   regua,
   podeOperar,
   preferenciaFusoExibicao = null,
 }: {
+  /** Cobranças da visão atual (filtradas e ordenadas no servidor). */
   itens: FilaCobrancaItem[];
+  /** Cobranças da fila inteira, sem filtro. */
+  totalFila: number;
+  filtros: FiltrosFila;
+  /** Opções dos selects, da fila inteira. */
+  opcoes: { paises: string[]; turmas: string[] };
   dashs: DashsCobranca;
   regua: DegrauFila[];
   podeOperar: boolean;
@@ -85,10 +115,6 @@ export function FilaCobranca({
   preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
-  const [filtro, setFiltro] = useState<Filtro>(null);
-  const [busca, setBusca] = useState("");
-  const [fPais, setFPais] = useState("");
-  const [fTurma, setFTurma] = useState("");
   const [aberta, setAberta] = useState<FilaCobrancaItem | null>(null);
   const [pagar, setPagar] = useState<FilaCobrancaItem | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -96,24 +122,10 @@ export function FilaCobranca({
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
   const [enviandoLote, setEnviandoLote] = useState(false);
 
-  const paisesOpts = useMemo(() => [...new Set(itens.map((i) => i.pais))].sort(), [itens]);
-  const turmasOpts = useMemo(
-    () => [...new Set(itens.map((i) => i.turma).filter((t): t is string => !!t))].sort(),
-    [itens],
-  );
-
-  const filtrados = useMemo(() => {
-    let arr = itens;
-    if (filtro === "aVencer") arr = arr.filter((i) => i.estado !== "promessa" && i.diasAtraso <= 0);
-    else if (filtro === "emAtraso") arr = arr.filter((i) => i.estado !== "promessa" && i.diasAtraso > 0);
-    else if (filtro === "bloquear") arr = arr.filter((i) => i.precisaBloqueio);
-    else if (filtro === "promessas") arr = arr.filter((i) => i.estado === "promessa");
-    const q = busca.trim().toLowerCase();
-    if (q) arr = arr.filter((i) => i.aluno.nome.toLowerCase().includes(q) || (i.codigo ?? "").toLowerCase().includes(q));
-    if (fPais) arr = arr.filter((i) => i.pais === fPais);
-    if (fTurma) arr = arr.filter((i) => i.turma === fTurma);
-    return [...arr].sort((a, b) => a.prioridade - b.prioridade || b.diasAtraso - a.diasAtraso);
-  }, [itens, filtro, busca, fPais, fTurma]);
+  // O indicador escolhido não é campo do formulário: buscar/filtrar/limpar a busca o mantém.
+  const lista = useFiltrosUrl({ campos: camposDosFiltrosFila(filtros), hrefDosCampos: (c) => hrefDosCamposFila(c, filtros.indicador) });
+  const semIndicador = hrefSemIndicador(filtros);
+  const semBusca = hrefSemBusca(filtros);
 
   async function run(p: Promise<{ ok: boolean; erro?: string }>, msg?: string) {
     setErro(null);
@@ -243,7 +255,7 @@ export function FilaCobranca({
 
   const elegivelLote = (i: FilaCobrancaItem) => i.estado === "acao_devida" && !!i.passo && !!i.destino;
 
-  const DASHS: { chave: Filtro; label: string; valor: string; cls: string }[] = [
+  const DASHS: { chave: IndicadorFila; label: string; valor: string; cls: string }[] = [
     { chave: "aVencer", label: "A vencer", valor: String(dashs.aVencer), cls: "text-green-700" },
     { chave: "emAtraso", label: "Em atraso", valor: String(dashs.emAtraso), cls: "text-amber-700" },
     { chave: "bloquear", label: "Bloquear", valor: String(dashs.bloquear), cls: "text-red-700" },
@@ -255,21 +267,25 @@ export function FilaCobranca({
       {erro && <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
       <MensagemStatus texto={nota} className="mb-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700" />
 
-      {/* Mini-dashs = filtros da régua */}
+      {/* Mini-dashs = filtros da régua. Cada cartão é um link real (F5, voltar, nova aba e link
+          compartilhado mantêm o recorte) com papel de botão de alternância: aria-pressed diz qual está ativo. */}
       <div role="group" aria-label="Filtrar a fila pelos indicadores" className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {DASHS.map((d) => (
-          <button
+          <Link
             key={d.label}
-            aria-pressed={filtro === d.chave}
-            onClick={() => setFiltro((f) => (f === d.chave ? null : d.chave))}
+            href={hrefIndicador(filtros, d.chave)}
+            onClick={lista.aoClicar(hrefIndicador(filtros, d.chave))}
+            onKeyDown={espacoAciona}
+            role="button"
+            aria-pressed={filtros.indicador === d.chave}
             className={
-              "rounded-lg border bg-surface p-3 text-left transition " +
-              (filtro === d.chave ? "border-brand-500 ring-1 ring-brand-500" : "border-gray-200 hover:border-gray-300")
+              "block rounded-lg border bg-surface p-3 text-left transition " +
+              (filtros.indicador === d.chave ? "border-brand-500 ring-1 ring-brand-500" : "border-gray-200 hover:border-gray-300")
             }
           >
             <div className={"text-2xl font-medium " + d.cls}>{d.valor}</div>
             <div className="text-xs text-gray-500">{d.label}</div>
-          </button>
+          </Link>
         ))}
         <div className="rounded-lg border border-gray-200 bg-surface p-3">
           <div className="text-lg font-medium text-gray-800">{formatarValores(dashs.recebidoHoje)}</div>
@@ -278,44 +294,60 @@ export function FilaCobranca({
       </div>
       <p className="mb-3 text-xs text-gray-400">
         Cartões filtram a fila ·{" "}
-        {filtro ? (
-          <button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={() => setFiltro(null)}>
+        {filtros.indicador ? (
+          <Link href={semIndicador} onClick={lista.aoClicar(semIndicador)} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>
             limpar filtro
-          </button>
+          </Link>
         ) : (
           <>ordenada por prioridade</>
         )}
       </p>
 
-      {/* Busca + filtros de navegação (volume) */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Busca + filtros de navegação (volume), na URL. Sem JavaScript, o formulário GET também leva o
+          indicador escolhido. */}
+      <form
+        action={ROTA_FILA}
+        onSubmit={(e) => { e.preventDefault(); lista.aplicar(lista.campos); }}
+        className="mb-3 flex flex-wrap items-center gap-2"
+        role="search"
+        aria-label="Buscar na fila de cobrança"
+      >
         <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          name="busca"
+          value={lista.campos.busca}
+          onChange={lista.mudarTexto("busca")}
+          maxLength={100}
           aria-label="Buscar cobrança por aluno ou código"
           placeholder="Buscar aluno ou código…"
           className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
         <select
-          value={fPais}
-          onChange={(e) => setFPais(e.target.value)}
+          name="pais"
+          value={lista.campos.pais}
+          onChange={lista.mudarSelect("pais")}
           aria-label="Filtrar por país"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todos os países</option>
-          {paisesOpts.map((p) => <option key={p} value={p}>{p}</option>)}
+          {opcoes.paises.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
         <select
-          value={fTurma}
-          onChange={(e) => setFTurma(e.target.value)}
+          name="turma"
+          value={lista.campos.turma}
+          onChange={lista.mudarSelect("turma")}
           aria-label="Filtrar por turma"
           className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">Todas as turmas</option>
-          {turmasOpts.map((t) => <option key={t} value={t}>{t}</option>)}
+          {opcoes.turmas.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <span className="text-xs text-gray-400">{filtrados.length} de {itens.length}</span>
-      </div>
+        {filtros.indicador && <input type="hidden" name="indicador" value={filtros.indicador} />}
+        <button type="submit" disabled={lista.buscando} className={botaoClasses({ variante: "secundario" })}>
+          {lista.buscando ? "Buscando…" : "Buscar"}
+        </button>
+        {temBuscaFila(filtros) && <Link href={semBusca} onClick={lista.aoClicar(semBusca)} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
+        <span className="text-xs text-gray-400" aria-live="polite">{lista.buscando ? "Buscando…" : `${itens.length} de ${totalFila}`}</span>
+      </form>
 
       {/* Barra de lote-com-aprovação (doc 26 §Camada 1): humano seleciona → aprova → a fila dispara */}
       {podeOperar && selecao.size > 0 && (
@@ -329,11 +361,11 @@ export function FilaCobranca({
       )}
 
       {/* Lista magra */}
-      {filtrados.length === 0 ? (
-        <EstadoVazio bloco>Nada nesta visão.</EstadoVazio>
+      {itens.length === 0 ? (
+        <EstadoVazio bloco aria-busy={lista.buscando}>Nada nesta visão.</EstadoVazio>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200">
-          {filtrados.map((item) => (
+        <div aria-busy={lista.buscando} className={"overflow-hidden rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
+          {itens.map((item) => (
             // Linha acessível por teclado (docs/42 E7): a ação principal é um <button> de verdade, com o
             // `::after` esticado sobre a linha inteira — clicar em qualquer ponto continua abrindo o
             // detalhe. Checkbox do lote e ações rápidas ficam FORA do botão (controle dentro de botão é

@@ -47,7 +47,7 @@ vi.mock("../BarraAbasFinanceiro", () => ({
 
 import Indice from "./page";
 import Layout from "./layout";
-import Cobrancas from "./cobrancas/page";
+import CobrancasPagina from "./cobrancas/page";
 import Informes from "./informes/page";
 import Retomadas from "./retomadas/page";
 import ComissoesPagina from "./comissoes/page";
@@ -58,6 +58,8 @@ import Aprovacoes from "./aprovacoes/page";
 import Cambio from "./cambio/page";
 
 const html = async (el: Promise<React.ReactElement | null>) => renderToStaticMarkup((await el) ?? createElement("span"));
+/** A aba de cobranças lê os filtros da fila da URL (E4); sem parâmetros, a fila inteira. */
+const Cobrancas = (parametros: Record<string, string> = {}) => CobrancasPagina({ searchParams: Promise.resolve(parametros) });
 /** A aba de comissões lê situação e página da URL (E4); sem parâmetros, a primeira página. */
 const Comissoes = (parametros: Record<string, string> = {}) => ComissoesPagina({ searchParams: Promise.resolve(parametros) });
 /** Consultas pesadas, cada uma só da sua aba. */
