@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TipoCobranca, OrigemNivel, Genero, Escolaridade } from "@prisma/client";
 import { GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
@@ -13,14 +13,16 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 " +
+  CONTROLE_INVALIDO;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-/** Números já parseados dos três campos de dinheiro do passo 2 — validarPasso2 devolve
- *  isto (ou um erro), montarInput só aceita isto, nunca o texto cru de novo. */
+/** Números já parseados dos três campos de dinheiro do passo 2 — errosDoPasso2 devolve
+ *  isto (ou os erros), montarInput só aceita isto, nunca o texto cru de novo. */
 interface ValoresMonetariosPasso2 {
   taxa: number;
   mensalidade: number;
@@ -32,6 +34,95 @@ export interface PrecoRef {
   produtoId: string;
   tipoCobranca: TipoCobranca;
   valor: number;
+}
+
+/** Campos validados no cliente, na ordem da tela (o foco vai para o primeiro com erro). Os ids são os
+ *  do <Campo> de cada um. */
+const IDS_PASSO1 = {
+  primeiroNome: "matricula-nome",
+  sobrenome: "matricula-sobrenome",
+  nascimento: "matricula-nascimento",
+  genero: "matricula-genero",
+  alunoPaisId: "matricula-pais",
+  tipoDocumentoId: "matricula-tipo-documento",
+  documento: "matricula-documento",
+  nacionalidade: "matricula-nacionalidade",
+  email: "matricula-email",
+  telefone: "matricula-telefone",
+  paisResidencia: "matricula-pais-residencia",
+  respNome: "matricula-responsavel-nome",
+} as const;
+type CampoPasso1 = keyof typeof IDS_PASSO1;
+
+/** Valores do passo 1 que a validação confere (os mesmos estados do formulário). */
+export type DadosPasso1 = Record<Exclude<CampoPasso1, "respNome">, string> & { respNome: string; pagador: "ALUNO" | "RESPONSAVEL" | "EMPRESA" };
+
+/**
+ * Validação "inteligente" do passo 1 (essenciais obrigatórios) — espelha o MatriculaSchema
+ * (servidor é a fonte da verdade). País dirige o resto. Todos os erros de uma vez, por campo, na
+ * ordem da tela: o operador vê cada campo marcado em vez de descobrir um por clique. Função pura
+ * (fora do componente) para o teste conferir cada regra sem simular o clique.
+ */
+export function errosDoPasso1(d: DadosPasso1): ErrosDeCampos<CampoPasso1> {
+  const erros: ErrosDeCampos<CampoPasso1> = {};
+  if (!d.primeiroNome.trim()) erros.primeiroNome = "Informe o nome do aluno.";
+  if (!d.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
+  if (!d.nascimento) erros.nascimento = "Informe a data de nascimento.";
+  if (!d.genero) erros.genero = "Selecione o gênero.";
+  if (!d.alunoPaisId) erros.alunoPaisId = "Selecione o país.";
+  if (!d.tipoDocumentoId) erros.tipoDocumentoId = "Selecione o tipo de documento.";
+  if (!d.documento.trim()) erros.documento = "Informe o número do documento.";
+  if (!d.nacionalidade) erros.nacionalidade = "Selecione a nacionalidade.";
+  if (!d.email.trim()) erros.email = "Informe o e-mail.";
+  else if (!EMAIL_RE.test(d.email.trim())) erros.email = "E-mail inválido.";
+  if (!d.telefone.trim()) erros.telefone = "Informe o telefone.";
+  if (!d.paisResidencia) erros.paisResidencia = "Selecione o país de residência.";
+  if (d.pagador !== "ALUNO" && !d.respNome.trim()) {
+    erros.respNome = d.pagador === "EMPRESA" ? "Informe o nome da empresa pagadora." : "Informe o nome do responsável financeiro.";
+  }
+  return erros;
+}
+
+const IDS_PASSO2 = {
+  taxa: "matricula-taxa",
+  mensalidade: "matricula-mensalidade",
+  referenciaCobertura: "referencia-cobertura",
+  primeiroVencimento: "primeiro-vencimento",
+  inicioCobertura: "inicio-cobertura",
+  certificado: "matricula-certificado",
+} as const;
+type CampoPasso2 = keyof typeof IDS_PASSO2;
+
+/** Valores do passo 2 que a validação confere (o texto cru dos campos de dinheiro e as datas). */
+export type DadosPasso2 = {
+  taxaValor: string;
+  mensalidadeValor: string;
+  certificadoValor: string;
+  referenciaCobertura: "" | "MES_CIVIL" | "CICLO_MATRICULA";
+  primeiroVencimento: string;
+  inicioCobertura: string;
+};
+
+/**
+ * Validação do passo 2, por campo e na ordem da tela (taxa, mensalidade, cobertura, primeiro
+ * vencimento, início, certificado). Nunca ?? 0 nos três valores monetários: texto inválido viraria
+ * taxa/mensalidade/certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
+ * devolve os números prontos só quando os três são válidos — montarInput não reparseia (e não tem
+ * fallback ?? 0 interno pra ninguém reusar por engano sem validar antes). Função pura, testada à parte.
+ */
+export function errosDoPasso2(d: DadosPasso2): { erros: ErrosDeCampos<CampoPasso2>; valores: ValoresMonetariosPasso2 | null } {
+  const erros: ErrosDeCampos<CampoPasso2> = {};
+  const taxa = parseMoeda(d.taxaValor);
+  if (taxa === null) erros.taxa = "Informe a taxa de matrícula, com no máximo duas casas decimais.";
+  const mensalidade = parseMoeda(d.mensalidadeValor);
+  if (mensalidade === null) erros.mensalidade = "Informe a mensalidade, com no máximo duas casas decimais.";
+  if (!d.referenciaCobertura) erros.referenciaCobertura = "Selecione a cobertura prevista no contrato.";
+  if (!d.primeiroVencimento) erros.primeiroVencimento = "Informe o vencimento da primeira mensalidade.";
+  if (!d.inicioCobertura) erros.inicioCobertura = "Informe o início do primeiro período coberto.";
+  const certificado = d.certificadoValor === "" ? 0 : parseMoeda(d.certificadoValor);
+  if (certificado === null) erros.certificado = "Informe o valor do certificado, com no máximo duas casas decimais.";
+  const valores = taxa !== null && mensalidade !== null && certificado !== null ? { taxa, mensalidade, certificado } : null;
+  return { erros, valores };
 }
 
 interface PaisOpt {
@@ -80,6 +171,10 @@ export function MatriculaFormulario({
   const salvando = acao.ocupado || navegando;
   // Wizard: passo 1 = informações do aluno · passo 2 = curso, alocação e contrato.
   const [passo, setPasso] = useState<1 | 2>(1);
+  // Depois da primeira tentativa de avançar/salvar, os erros de cada campo acompanham a digitação
+  // (somem quando o campo é corrigido); antes dela nenhum campo é marcado.
+  const [tentouPasso1, setTentouPasso1] = useState(false);
+  const [tentouPasso2, setTentouPasso2] = useState(false);
 
   async function pedirAbertura() {
     await abertura.executar(() => solicitarAberturaTurma({ produtoId, nivelId: nivelInicialId || undefined }), "Solicitação enviada ao Gerente Pedagógico.");
@@ -246,63 +341,32 @@ export function MatriculaFormulario({
     };
   }
 
-  // Validação "inteligente" do passo 1 (essenciais obrigatórios) — espelha o MatriculaSchema
-  // (servidor é a fonte da verdade). País dirige o resto.
-  function validarPasso1(): string | null {
-    if (!primeiroNome.trim()) return "Informe o nome do aluno.";
-    if (!sobrenome.trim()) return "Informe o sobrenome.";
-    if (!nascimento) return "Informe a data de nascimento.";
-    if (!genero) return "Selecione o gênero.";
-    if (!alunoPaisId) return "Selecione o país.";
-    if (!tipoDocumentoId) return "Selecione o tipo de documento.";
-    if (!documento.trim()) return "Informe o número do documento.";
-    if (!nacionalidade) return "Selecione a nacionalidade.";
-    if (!email.trim()) return "Informe o e-mail.";
-    if (!EMAIL_RE.test(email.trim())) return "E-mail inválido.";
-    if (!telefone.trim()) return "Informe o telefone.";
-    if (!paisResidencia) return "Selecione o país de residência.";
-    if (pagador !== "ALUNO" && !respNome.trim()) return "Informe o nome do responsável financeiro.";
-    return null;
-  }
+  const validarPasso1 = () => errosDoPasso1({
+    primeiroNome, sobrenome, nascimento, genero, alunoPaisId, tipoDocumentoId, documento, nacionalidade,
+    email, telefone, paisResidencia, respNome, pagador,
+  });
 
-  // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
-  // certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e
-  // devolve os números prontos — montarInput não reparseia (e não tem fallback ?? 0
-  // interno pra ninguém reusar por engano sem validar antes).
-  function validarPasso2(): { erro: string } | ValoresMonetariosPasso2 {
-    const taxa = parseMoeda(taxaValor);
-    if (taxa === null) return { erro: "Informe a taxa de matrícula, com no máximo duas casas decimais." };
-    const mensalidade = parseMoeda(mensalidadeValor);
-    if (mensalidade === null) return { erro: "Informe a mensalidade, com no máximo duas casas decimais." };
-    const certificado = certificadoValor === "" ? 0 : parseMoeda(certificadoValor);
-    if (certificado === null) return { erro: "Informe o valor do certificado, com no máximo duas casas decimais." };
-    return { taxa, mensalidade, certificado };
-  }
+  const validarPasso2 = () => errosDoPasso2({ taxaValor, mensalidadeValor, certificadoValor, referenciaCobertura, primeiroVencimento, inicioCobertura });
+
+  const errosPasso1: ErrosDeCampos<CampoPasso1> = tentouPasso1 ? validarPasso1() : {};
+  const errosPasso2: ErrosDeCampos<CampoPasso2> = tentouPasso2 ? validarPasso2().erros : {};
 
   function irParaPasso(p: 1 | 2) {
-    if (p === 2) {
-      const e = validarPasso1();
-      if (e) {
-        acao.setErro(e);
-        return;
-      }
-    }
     acao.limpar();
+    if (p === 2) {
+      // O erro aparece em cada campo (aria-invalid + mensagem) e o foco vai ao primeiro deles.
+      setTentouPasso1(true);
+      if (focarPrimeiroComErro(validarPasso1(), IDS_PASSO1)) return;
+    }
     setPasso(p);
   }
 
   async function salvar() {
     acao.limpar();
-    if (!referenciaCobertura || !inicioCobertura || !primeiroVencimento) {
-      acao.setErro("Informe a referência contratual, o início da cobertura e o primeiro vencimento.");
-      return;
-    }
-    const passo2 = validarPasso2();
-    if ("erro" in passo2) {
-      acao.setErro(passo2.erro);
-      return;
-    }
-    const res = await acao.executar(() => criarMatricula(montarInput(referenciaCobertura, passo2)));
+    setTentouPasso2(true);
+    const { erros, valores } = validarPasso2();
+    if (focarPrimeiroComErro(erros, IDS_PASSO2) || !valores || !referenciaCobertura) return;
+    const res = await acao.executar(() => criarMatricula(montarInput(referenciaCobertura, valores)));
     if (res?.tipo !== "ok") return;
     setNavegando(true);
     if (res.dado?.aguardaPreco) {
@@ -333,21 +397,21 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Identificação</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-nome" label="Nome" obrig>
-                {(id) => <input id={id} aria-required="true" className={inputCls} value={primeiroNome} onChange={(e) => setPrimeiroNome(e.target.value)} />}
+              <Campo id={IDS_PASSO1.primeiroNome} rotulo="Nome" obrigatorio erro={errosPasso1.primeiroNome}>
+                {(campo) => <input {...campo} className={inputCls} value={primeiroNome} onChange={(e) => setPrimeiroNome(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-sobrenome" label="Sobrenome(s)" obrig>
-                {(id) => <input id={id} aria-required="true" className={inputCls} value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} />}
+              <Campo id={IDS_PASSO1.sobrenome} rotulo="Sobrenome(s)" obrigatorio erro={errosPasso1.sobrenome}>
+                {(campo) => <input {...campo} className={inputCls} value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-nome-preferido" label="Nome preferido">
-                {(id) => <input id={id} className={inputCls} value={nomePreferido} onChange={(e) => setNomePreferido(e.target.value)} />}
+              <Campo id="matricula-nome-preferido" rotulo="Nome preferido">
+                {(campo) => <input {...campo} className={inputCls} value={nomePreferido} onChange={(e) => setNomePreferido(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-nascimento" label="Data de nascimento" obrig>
-                {(id) => <input id={id} aria-required="true" type="date" className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />}
+              <Campo id={IDS_PASSO1.nascimento} rotulo="Data de nascimento" obrigatorio erro={errosPasso1.nascimento}>
+                {(campo) => <input {...campo} type="date" className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-genero" label="Gênero" obrig>
-                {(id) => (
-                  <select id={id} aria-required="true" className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
+              <Campo id={IDS_PASSO1.genero} rotulo="Gênero" obrigatorio erro={errosPasso1.genero}>
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
                     <option value="">—</option>
                     {Object.values(Genero).map((g) => (
                       <option key={g} value={g}>{GENERO_LABEL[g]}</option>
@@ -363,18 +427,18 @@ export function MatriculaFormulario({
             <h2 className="mb-1 text-sm font-medium">Documentação</h2>
             <p className="mb-4 text-xs text-gray-400">O país dirige os tipos de documento e a validação. Documento inválido avisa, mas não bloqueia (doc 04).</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-pais" label="País" obrig>
-                {(id) => (
-                  <select id={id} aria-required="true" className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
+              <Campo id={IDS_PASSO1.alunoPaisId} rotulo="País" obrigatorio erro={errosPasso1.alunoPaisId}>
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
                     {paises.map((p) => (
                       <option key={p.id} value={p.id}>{p.nome}</option>
                     ))}
                   </select>
                 )}
               </Campo>
-              <Campo id="matricula-tipo-documento" label="Tipo de documento" obrig>
-                {(id) => (
-                  <select id={id} aria-required="true" className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)}>
+              <Campo id={IDS_PASSO1.tipoDocumentoId} rotulo="Tipo de documento" obrigatorio erro={errosPasso1.tipoDocumentoId}>
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)}>
                     <option value="">—</option>
                     {tiposDocDoPais.map((t) => (
                       <option key={t.id} value={t.id}>{t.nome}</option>
@@ -382,17 +446,17 @@ export function MatriculaFormulario({
                   </select>
                 )}
               </Campo>
-              <Campo id="matricula-documento" label="Número do documento" obrig>
-                {(id) => <input id={id} aria-required="true" className={inputCls} value={documento} onChange={(e) => setDoc(e.target.value)} />}
+              <Campo id={IDS_PASSO1.documento} rotulo="Número do documento" obrigatorio erro={errosPasso1.documento}>
+                {(campo) => <input {...campo} className={inputCls} value={documento} onChange={(e) => setDoc(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-pais-emissor" label="País emissor">
-                {(id) => <SelectISO id={id} value={documentoPaisEmissor} onChange={setDocEmissor} comVazio />}
+              <Campo id="matricula-pais-emissor" rotulo="País emissor">
+                {(campo) => <SelectISO {...campo} value={documentoPaisEmissor} onChange={setDocEmissor} comVazio />}
               </Campo>
-              <Campo id="matricula-nacionalidade" label="Nacionalidade" obrig>
-                {(id) => <SelectISO id={id} obrig value={nacionalidade} onChange={setNacionalidade} comVazio />}
+              <Campo id={IDS_PASSO1.nacionalidade} rotulo="Nacionalidade" obrigatorio erro={errosPasso1.nacionalidade}>
+                {(campo) => <SelectISO {...campo} value={nacionalidade} onChange={setNacionalidade} comVazio />}
               </Campo>
-              <Campo id="matricula-segunda-nacionalidade" label="Segunda nacionalidade">
-                {(id) => <SelectISO id={id} value={segundaNacionalidade} onChange={setSegNacionalidade} comVazio />}
+              <Campo id="matricula-segunda-nacionalidade" rotulo="Segunda nacionalidade">
+                {(campo) => <SelectISO {...campo} value={segundaNacionalidade} onChange={setSegNacionalidade} comVazio />}
               </Campo>
             </div>
           </section>
@@ -401,11 +465,11 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Contato</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-email" label="E-mail" obrig>
-                {(id) => <input id={id} aria-required="true" type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />}
+              <Campo id={IDS_PASSO1.email} rotulo="E-mail" obrigatorio erro={errosPasso1.email}>
+                {(campo) => <input {...campo} type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-telefone" label="Telefone principal" obrig>
-                {(id) => <input id={id} aria-required="true" className={inputCls} value={telefone} onChange={(e) => setTel(e.target.value)} placeholder="+506..." />}
+              <Campo id={IDS_PASSO1.telefone} rotulo="Telefone principal" obrigatorio erro={errosPasso1.telefone}>
+                {(campo) => <input {...campo} className={inputCls} value={telefone} onChange={(e) => setTel(e.target.value)} placeholder="+506..." />}
               </Campo>
               <div className="flex items-end gap-4 pb-2">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -424,29 +488,29 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Residência</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-pais-residencia" label="País de residência" obrig>
-                {(id) => <SelectISO id={id} obrig value={paisResidencia} onChange={setPaisResidencia} comVazio />}
+              <Campo id={IDS_PASSO1.paisResidencia} rotulo="País de residência" obrigatorio erro={errosPasso1.paisResidencia}>
+                {(campo) => <SelectISO {...campo} value={paisResidencia} onChange={setPaisResidencia} comVazio />}
               </Campo>
-              <Campo id="matricula-cep" label="CEP / Código postal">
-                {(id) => <input id={id} className={inputCls} value={cep} onChange={(e) => setCep(e.target.value)} />}
+              <Campo id="matricula-cep" rotulo="CEP / Código postal">
+                {(campo) => <input {...campo} className={inputCls} value={cep} onChange={(e) => setCep(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-regiao" label="Região / Estado / Província">
-                {(id) => <input id={id} className={inputCls} value={regiao} onChange={(e) => setRegiao(e.target.value)} />}
+              <Campo id="matricula-regiao" rotulo="Região / Estado / Província">
+                {(campo) => <input {...campo} className={inputCls} value={regiao} onChange={(e) => setRegiao(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-cidade" label="Cidade">
-                {(id) => <input id={id} className={inputCls} value={cidade} onChange={(e) => setCidade(e.target.value)} />}
+              <Campo id="matricula-cidade" rotulo="Cidade">
+                {(campo) => <input {...campo} className={inputCls} value={cidade} onChange={(e) => setCidade(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-bairro" label="Bairro / Distrito">
-                {(id) => <input id={id} className={inputCls} value={bairro} onChange={(e) => setBairro(e.target.value)} />}
+              <Campo id="matricula-bairro" rotulo="Bairro / Distrito">
+                {(campo) => <input {...campo} className={inputCls} value={bairro} onChange={(e) => setBairro(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-rua" label="Rua">
-                {(id) => <input id={id} className={inputCls} value={rua} onChange={(e) => setRua(e.target.value)} />}
+              <Campo id="matricula-rua" rotulo="Rua">
+                {(campo) => <input {...campo} className={inputCls} value={rua} onChange={(e) => setRua(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-numero" label="Número">
-                {(id) => <input id={id} className={inputCls} value={numero} onChange={(e) => setNumero(e.target.value)} />}
+              <Campo id="matricula-numero" rotulo="Número">
+                {(campo) => <input {...campo} className={inputCls} value={numero} onChange={(e) => setNumero(e.target.value)} />}
               </Campo>
-              <Campo id="matricula-complemento" label="Complemento">
-                {(id) => <input id={id} className={inputCls} value={complemento} onChange={(e) => setComplemento(e.target.value)} />}
+              <Campo id="matricula-complemento" rotulo="Complemento">
+                {(campo) => <input {...campo} className={inputCls} value={complemento} onChange={(e) => setComplemento(e.target.value)} />}
               </Campo>
             </div>
           </section>
@@ -455,9 +519,9 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Acadêmico</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-escolaridade" label="Escolaridade">
-                {(id) => (
-                  <select id={id} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
+              <Campo id="matricula-escolaridade" rotulo="Escolaridade">
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
                     <option value="">—</option>
                     {Object.values(Escolaridade).map((e) => (
                       <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
@@ -465,8 +529,8 @@ export function MatriculaFormulario({
                   </select>
                 )}
               </Campo>
-              <Campo id="matricula-idioma-nativo" label="Idioma nativo">
-                {(id) => <input id={id} className={inputCls} value={idiomaNativo} onChange={(e) => setIdiomaNativo(e.target.value)} placeholder="Ex.: Espanhol" />}
+              <Campo id="matricula-idioma-nativo" rotulo="Idioma nativo">
+                {(campo) => <input {...campo} className={inputCls} value={idiomaNativo} onChange={(e) => setIdiomaNativo(e.target.value)} placeholder="Ex.: Espanhol" />}
               </Campo>
             </div>
           </section>
@@ -475,22 +539,28 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Operacional</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-              <Campo id="matricula-fuso" label="Fuso horário">
-                {(id) => <input id={id} className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />}
+              <Campo id="matricula-fuso" rotulo="Fuso horário">
+                {(campo) => <input {...campo} className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />}
               </Campo>
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">
-              <p className="mb-2 text-xs font-medium text-gray-600">Contato de emergência</p>
+              <h3 className="mb-2 text-xs font-medium text-gray-600">Contato de emergência</h3>
+              {/* Rótulo visível em cada campo: o placeholder era o único nome e sumia ao digitar. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
-                <input aria-label="Nome do contato de emergência" className={inputCls} placeholder="Nome" value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />
-                <input aria-label="Parentesco do contato de emergência" className={inputCls} placeholder="Parentesco" value={emergenciaParentesco} onChange={(e) => setEmergParentesco(e.target.value)} />
-                <input aria-label="Telefone do contato de emergência" className={inputCls} placeholder="Telefone" value={emergenciaTelefone} onChange={(e) => setEmergTel(e.target.value)} />
+                <Campo id="matricula-emergencia-nome" rotulo="Nome do contato">
+                  {(campo) => <input {...campo} className={inputCls} value={emergenciaNome} onChange={(e) => setEmergNome(e.target.value)} />}
+                </Campo>
+                <Campo id="matricula-emergencia-parentesco" rotulo="Parentesco">
+                  {(campo) => <input {...campo} className={inputCls} value={emergenciaParentesco} onChange={(e) => setEmergParentesco(e.target.value)} />}
+                </Campo>
+                <Campo id="matricula-emergencia-telefone" rotulo="Telefone">
+                  {(campo) => <input {...campo} className={inputCls} value={emergenciaTelefone} onChange={(e) => setEmergTel(e.target.value)} placeholder="+506..." />}
+                </Campo>
               </div>
             </div>
-            <div className="mt-4 border-t border-gray-100 pt-4">
-              <label htmlFor="matricula-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
-              <CampoTexto id="matricula-observacoes" className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
-            </div>
+            <Campo id="matricula-observacoes" rotulo="Observações" className="mt-4 border-t border-gray-100 pt-4">
+              {(campo) => <CampoTexto {...campo} className={inputCls} rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />}
+            </Campo>
           </section>
 
           {/* Responsável financeiro (pagador) */}
@@ -503,17 +573,25 @@ export function MatriculaFormulario({
             </select>
             {pagador !== "ALUNO" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
-                <input aria-label={pagador === "EMPRESA" ? "Nome da empresa pagadora" : "Nome do responsável financeiro"} className={inputCls} placeholder={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} value={respNome} onChange={(e) => setRespNome(e.target.value)} />
+                <Campo id={IDS_PASSO1.respNome} rotulo={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} obrigatorio erro={errosPasso1.respNome}>
+                  {(campo) => <input {...campo} className={inputCls} value={respNome} onChange={(e) => setRespNome(e.target.value)} />}
+                </Campo>
                 {pagador === "RESPONSAVEL" && (
-                  <input aria-label="Parentesco do responsável financeiro" className={inputCls} placeholder="Parentesco" value={respParentesco} onChange={(e) => setRespParentesco(e.target.value)} />
+                  <Campo id="matricula-responsavel-parentesco" rotulo="Parentesco">
+                    {(campo) => <input {...campo} className={inputCls} value={respParentesco} onChange={(e) => setRespParentesco(e.target.value)} />}
+                  </Campo>
                 )}
-                <input aria-label="Telefone do responsável financeiro" className={inputCls} placeholder="Telefone" value={respTelefone} onChange={(e) => setRespTelefone(e.target.value)} />
-                <input aria-label="E-mail do responsável financeiro" className={inputCls} placeholder="E-mail" value={respEmail} onChange={(e) => setRespEmail(e.target.value)} />
+                <Campo id="matricula-responsavel-telefone" rotulo="Telefone">
+                  {(campo) => <input {...campo} className={inputCls} value={respTelefone} onChange={(e) => setRespTelefone(e.target.value)} placeholder="+506..." />}
+                </Campo>
+                <Campo id="matricula-responsavel-email" rotulo="E-mail">
+                  {(campo) => <input {...campo} type="email" className={inputCls} value={respEmail} onChange={(e) => setRespEmail(e.target.value)} />}
+                </Campo>
               </div>
             )}
           </section>
 
-          {/* Validação do passo 1 (também pelo Stepper): junto do botão que avança. */}
+          {/* Erro do servidor junto do botão que avança; os de validação ficam em cada campo (foco no primeiro). */}
           <FeedbackAcao erro={acao.erro} />
           <div className="flex justify-end">
             <button
@@ -545,30 +623,34 @@ export function MatriculaFormulario({
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 className="mb-4 text-sm font-medium">Curso & alocação</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
+              <Campo id="matricula-produto" rotulo="Produto">
+                {(campo) => (
+                  <select
+                    {...campo}
+                    className={inputCls}
+                    value={produtoId}
+                    onChange={(e) => {
+                      setProduto(e.target.value);
+                      prefillPrecos(alunoPaisId, e.target.value);
+                    }}
+                  >
+                    {produtos.map((p) => (
+                      <option key={p.id} value={p.id}>{p.label}</option>
+                    ))}
+                  </select>
+                )}
+              </Campo>
               <div>
-                <label htmlFor="matricula-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
-                <select
-                  id="matricula-produto"
-                  className={inputCls}
-                  value={produtoId}
-                  onChange={(e) => {
-                    setProduto(e.target.value);
-                    prefillPrecos(alunoPaisId, e.target.value);
-                  }}
-                >
-                  {produtos.map((p) => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="matricula-turma" className="mb-1 block text-xs text-gray-600">Turma (Aberta com vaga)</label>
-                <select id="matricula-turma" className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)}>
-                  <option value="">Sem alocação / lista de espera</option>
-                  {turmas.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
-                  ))}
-                </select>
+                <Campo id="matricula-turma" rotulo="Turma (aberta com vaga)">
+                  {(campo) => (
+                    <select {...campo} className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)}>
+                      <option value="">Sem alocação / lista de espera</option>
+                      {turmas.map((t) => (
+                        <option key={t.id} value={t.id}>{t.label}</option>
+                      ))}
+                    </select>
+                  )}
+                </Campo>
                 {!turmaId && (
                   <button type="button" onClick={pedirAbertura} disabled={abertura.ocupado} className={`${botaoClasses({ variante: "fantasma", tamanho: "sm" })} mt-1`}>
                     Sem turma compatível? Solicitar abertura ao Gerente Pedagógico
@@ -576,27 +658,28 @@ export function MatriculaFormulario({
                 )}
                 <FeedbackAcao erro={abertura.erro} sucesso={abertura.sucesso} className="mt-1" />
               </div>
-              <div>
-                <label htmlFor="matricula-nivel-inicial" className="mb-1 block text-xs text-gray-600">Nível inicial</label>
-                <select id="matricula-nivel-inicial" className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
-                  <option value="">—</option>
-                  {niveis.map((n) => (
-                    <option key={n.id} value={n.id}>{n.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="matricula-origem-nivel" className="mb-1 block text-xs text-gray-600">Origem do nível</label>
-                <select id="matricula-origem-nivel" className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
-                  <option value={OrigemNivel.MANUAL}>Manual</option>
-                  <option value={OrigemNivel.AVALIACAO}>Avaliação</option>
-                </select>
-              </div>
+              <Campo id="matricula-nivel-inicial" rotulo="Nível inicial">
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
+                    <option value="">—</option>
+                    {niveis.map((n) => (
+                      <option key={n.id} value={n.id}>{n.label}</option>
+                    ))}
+                  </select>
+                )}
+              </Campo>
+              <Campo id="matricula-origem-nivel" rotulo="Origem do nível">
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
+                    <option value={OrigemNivel.MANUAL}>Manual</option>
+                    <option value={OrigemNivel.AVALIACAO}>Avaliação</option>
+                  </select>
+                )}
+              </Campo>
               {origemNivel === OrigemNivel.AVALIACAO && (
-                <div>
-                  <label htmlFor="matricula-data-avaliacao" className="mb-1 block text-xs text-gray-600">Data da avaliação</label>
-                  <input id="matricula-data-avaliacao" type="date" className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />
-                </div>
+                <Campo id="matricula-data-avaliacao" rotulo="Data da avaliação">
+                  {(campo) => <input {...campo} type="date" className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />}
+                </Campo>
               )}
             </div>
           </section>
@@ -613,71 +696,78 @@ export function MatriculaFormulario({
               </p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
-              <div>
-                <label htmlFor="matricula-taxa" className="mb-1 block text-xs text-gray-600">Taxa de matrícula</label>
-                <CampoMoeda id="matricula-taxa" value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />
-                <PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />
-              </div>
-              <div>
-                <label htmlFor="matricula-mensalidade" className="mb-1 block text-xs text-gray-600">Mensalidade</label>
-                <CampoMoeda id="matricula-mensalidade" value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />
-                <PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />
-              </div>
-              <div>
-                <label htmlFor="matricula-dia-vencimento" className="mb-1 block text-xs text-gray-600">Dia de vencimento</label>
-                <select id="matricula-dia-vencimento" className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>Dia {d}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="matricula-meses-plano" className="mb-1 block text-xs text-gray-600">Meses do plano</label>
-                <input id="matricula-meses-plano" type="number" className={inputCls} value={mesesPlano} onChange={(e) => setMeses(Number(e.target.value))} />
-              </div>
-              <div>
-                <label htmlFor="referencia-cobertura" className="mb-1 block text-xs text-gray-600">Cobertura prevista no contrato</label>
-                <select id="referencia-cobertura" className={inputCls} value={referenciaCobertura} onChange={(e) => setReferenciaCobertura(e.target.value as typeof referenciaCobertura)}>
-                  <option value="">Selecione a regra contratada</option>
-                  <option value="MES_CIVIL">Mês civil</option>
-                  <option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option>
-                </select>
-                <p className="text-xs text-gray-600">Se o mês não tiver esse dia, vence no último dia do mês. A referência é mantida nos meses seguintes.</p>
-              </div>
-              <div>
-                <label htmlFor="primeiro-vencimento" className="mb-1 block text-xs text-gray-600">Vencimento da primeira mensalidade</label>
-                <input id="primeiro-vencimento" type="date" className={inputCls} value={primeiroVencimento} onChange={(e) => setPrimeiroVencimento(e.target.value)} />
-                <p className="text-xs text-gray-600">Informe a data acordada. As seguintes usam o dia de referência nos próximos meses; a cobertura permanece independente.</p>
-              </div>
-              <div>
-                <label htmlFor="inicio-cobertura" className="mb-1 block text-xs text-gray-600">Início do primeiro período coberto</label>
-                <input id="inicio-cobertura" type="date" className={inputCls} value={inicioCobertura} onChange={(e) => setInicioCobertura(e.target.value)} />
-                <p className="text-xs text-gray-600">{referenciaCobertura === "MES_CIVIL" ? "Informe o primeiro dia do mês contratado." : "Esta data define a referência dos ciclos mensais."} A cobertura é independente do vencimento; a mensalidade permanece integral.</p>
-              </div>
+              <Campo id={IDS_PASSO2.taxa} rotulo="Taxa de matrícula" obrigatorio dica={<PrecoTag refValor={refTaxa?.valor} moeda={moeda} manual={taxaManual} />} erro={errosPasso2.taxa}>
+                {(campo) => <CampoMoeda {...campo} value={taxaValor} onChange={setTaxa} moeda={moeda} className={inputCls} />}
+              </Campo>
+              <Campo id={IDS_PASSO2.mensalidade} rotulo="Mensalidade" obrigatorio dica={<PrecoTag refValor={refMens?.valor} moeda={moeda} manual={mensManual} />} erro={errosPasso2.mensalidade}>
+                {(campo) => <CampoMoeda {...campo} value={mensalidadeValor} onChange={setMens} moeda={moeda} className={inputCls} />}
+              </Campo>
+              <Campo id="matricula-dia-vencimento" rotulo="Dia de vencimento">
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>Dia {d}</option>
+                    ))}
+                  </select>
+                )}
+              </Campo>
+              <Campo id="matricula-meses-plano" rotulo="Meses do plano">
+                {(campo) => <input {...campo} type="number" className={inputCls} value={mesesPlano} onChange={(e) => setMeses(Number(e.target.value))} />}
+              </Campo>
+              <Campo
+                id={IDS_PASSO2.referenciaCobertura}
+                rotulo="Cobertura prevista no contrato"
+                obrigatorio
+                dica="Se o mês não tiver esse dia, vence no último dia do mês. A referência é mantida nos meses seguintes."
+                erro={errosPasso2.referenciaCobertura}
+              >
+                {(campo) => (
+                  <select {...campo} className={inputCls} value={referenciaCobertura} onChange={(e) => setReferenciaCobertura(e.target.value as typeof referenciaCobertura)}>
+                    <option value="">Selecione a regra contratada</option>
+                    <option value="MES_CIVIL">Mês civil</option>
+                    <option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option>
+                  </select>
+                )}
+              </Campo>
+              <Campo
+                id={IDS_PASSO2.primeiroVencimento}
+                rotulo="Vencimento da primeira mensalidade"
+                obrigatorio
+                dica="Informe a data acordada. As seguintes usam o dia de referência nos próximos meses; a cobertura permanece independente."
+                erro={errosPasso2.primeiroVencimento}
+              >
+                {(campo) => <input {...campo} type="date" className={inputCls} value={primeiroVencimento} onChange={(e) => setPrimeiroVencimento(e.target.value)} />}
+              </Campo>
+              <Campo
+                id={IDS_PASSO2.inicioCobertura}
+                rotulo="Início do primeiro período coberto"
+                obrigatorio
+                dica={`${referenciaCobertura === "MES_CIVIL" ? "Informe o primeiro dia do mês contratado." : "Esta data define a referência dos ciclos mensais."} A cobertura é independente do vencimento; a mensalidade permanece integral.`}
+                erro={errosPasso2.inicioCobertura}
+              >
+                {(campo) => <input {...campo} type="date" className={inputCls} value={inicioCobertura} onChange={(e) => setInicioCobertura(e.target.value)} />}
+              </Campo>
               <div>
                 <p className="mb-1 block text-xs text-gray-600">Comissão da matrícula</p>
                 <p className="text-sm text-gray-600">Calculada pela política vigente da oferta: percentual da taxa ou valor fixo. A administração configura as versões no Financeiro.</p>
               </div>
-              <div>
-                <label htmlFor="matricula-certificado" className="mb-1 block text-xs text-gray-600">Certificado (só Costa Rica)</label>
-                <CampoMoeda id="matricula-certificado" value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />
-              </div>
+              <Campo id={IDS_PASSO2.certificado} rotulo="Certificado (só Costa Rica)" erro={errosPasso2.certificado}>
+                {(campo) => <CampoMoeda {...campo} value={certificadoValor} onChange={setCert} moeda={moeda} className={inputCls} placeholder="0" />}
+              </Campo>
             </div>
             {semTabela && (
-              <div className="mt-4 border-t border-gray-100 pt-4">
-                <label htmlFor="matricula-justificativa-sem-preco" className="mb-1 block text-xs text-gray-600">
-                  Justificativa da exceção (sem tabela de preço) <span className="text-red-500">*</span>
-                </label>
-                <CampoTexto
-                  id="matricula-justificativa-sem-preco"
-                  aria-required="true"
-                  className={inputCls}
-                  rows={2}
-                  value={justificativaSemPreco}
-                  onChange={(e) => setJustSemPreco(e.target.value)}
-                  placeholder="Ex.: país/produto ainda sem matriz de preços; valor aprovado pelo gerente."
-                />
-              </div>
+              <Campo id="matricula-justificativa-sem-preco" rotulo="Justificativa da exceção (sem tabela de preço)" obrigatorio className="mt-4 border-t border-gray-100 pt-4">
+                {(campo) => (
+                  <CampoTexto
+                    {...campo}
+                    className={inputCls}
+                    rows={2}
+                    value={justificativaSemPreco}
+                    onChange={(e) => setJustSemPreco(e.target.value)}
+                    placeholder="Ex.: país/produto ainda sem matriz de preços; valor aprovado pelo gerente."
+                  />
+                )}
+              </Campo>
             )}
             <p className="mt-3 text-sm text-gray-600">
               Taxa de matrícula: <strong>{formatarMoeda(parseMoeda(taxaValor) ?? 0, moeda)}</strong>. Mensalidade: {formatarMoeda(parseMoeda(mensalidadeValor) ?? 0, moeda)}.
@@ -718,36 +808,21 @@ export function MatriculaFormulario({
   );
 }
 
-/** Campo com label e marcador de obrigatório. */
-function Campo({ id, label, obrig, children }: { id: string; label: string; obrig?: boolean; children: (id: string) => ReactNode }) {
-  // O mesmo id vai para o htmlFor do rótulo e é repassado ao campo filho (render prop).
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs text-gray-600">
-        {label}
-        {obrig && <span className="text-red-500"> *</span>}
-      </label>
-      {children(id)}
-    </div>
-  );
-}
-
-/** Select de país ISO 3166 (nacionalidade, residência, país emissor). */
+/** Select de país ISO 3166 (nacionalidade, residência, país emissor). Recebe as ligações do <Campo>. */
 function SelectISO({
   id,
-  obrig,
   value,
   onChange,
   comVazio,
-}: {
+  ...ligacao
+}: Omit<LigacaoCampo, "id"> & {
   id: string;
-  obrig?: boolean;
   value: string;
   onChange: (v: string) => void;
   comVazio?: boolean;
 }) {
   return (
-    <select id={id} aria-required={obrig ? true : undefined} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>
@@ -756,23 +831,16 @@ function SelectISO({
   );
 }
 
-/** Etiqueta da linha de cobrança: diferencia preço sugerido × manual × sem tabela (issue #22). */
+/** Etiqueta da linha de cobrança: diferencia preço sugerido × manual × sem tabela (issue #22). Vai como
+ *  dica do <Campo> (texto em linha, ligado ao campo por aria-describedby). */
 function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: string; manual: boolean }) {
   if (refValor === undefined) {
-    return <p className="mt-1 text-xs text-amber-700">Sem tabela — valor manual</p>;
+    return <span className="text-amber-700">Sem tabela — valor manual</span>;
   }
   if (manual) {
-    return (
-      <p className="mt-1 text-xs text-amber-700">
-        Manual (sugerido: {formatarMoeda(refValor, moeda)})
-      </p>
-    );
+    return <span className="text-amber-700">Manual (sugerido: {formatarMoeda(refValor, moeda)})</span>;
   }
-  return (
-    <p className="mt-1 text-xs text-gray-400">
-      Sugerido: {formatarMoeda(refValor, moeda)}
-    </p>
-  );
+  return <>Sugerido: {formatarMoeda(refValor, moeda)}</>;
 }
 
 /** Stepper do wizard (2 passos). O passo concluído/clicável volta livremente; avançar valida o passo 1. */

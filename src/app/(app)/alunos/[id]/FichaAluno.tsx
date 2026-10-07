@@ -18,6 +18,7 @@ import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
 const STATUS_CLS: Record<StatusAluno, string> = {
   ATIVO: "bg-green-100 text-green-700",
@@ -81,7 +82,30 @@ interface PaisOpt {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 " +
+  CONTROLE_INVALIDO;
+
+/** Obrigatórios da edição (EditarAlunoSchema), na ordem do painel: o foco vai ao primeiro pendente. */
+const IDS_EDICAO = {
+  primeiroNome: "ficha-primeiroNome",
+  sobrenome: "ficha-sobrenome",
+  paisId: "ficha-paisId",
+  motivo: "ficha-motivo",
+} as const;
+
+/**
+ * Mesmas exigências do EditarAlunoSchema (o servidor revalida). Aluno importado por lote costuma chegar
+ * sem sobrenome: a edição mostra isso no campo em vez de deixar "Salvar" desabilitado sem motivo.
+ * Função pura (fora do componente) para o teste conferir cada regra sem simular o clique.
+ */
+export function errosDaEdicaoAluno(ed: { primeiroNome: string; sobrenome: string; paisId: string; motivo: string }): ErrosDeCampos<keyof typeof IDS_EDICAO> {
+  const erros: ErrosDeCampos<keyof typeof IDS_EDICAO> = {};
+  if (!ed.primeiroNome.trim()) erros.primeiroNome = "Informe o nome.";
+  if (!ed.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
+  if (!ed.paisId) erros.paisId = "Selecione o país.";
+  if (!ed.motivo.trim()) erros.motivo = "Informe o motivo da edição.";
+  return erros;
+}
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario" });
 
@@ -117,6 +141,9 @@ export function FichaAluno({
   const [retorno, setRetorno] = useState("");
   const [motivoEnc, setMotivoEnc] = useState<(typeof MOTIVOS_ENCERRAMENTO)[number]>("Concluiu");
   const [obsEnc, setObsEnc] = useState("");
+  // O painel aberto já tentou confirmar? Só então os campos pendentes aparecem marcados (e acompanham
+  // a digitação). Volta a false a cada painel aberto.
+  const [tentou, setTentou] = useState(false);
   const instanteAdministrativo = (valor: string) => {
     const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
     return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
@@ -157,6 +184,9 @@ export function FichaAluno({
   const set = <K extends keyof ReturnType<typeof valoresEd>>(k: K, v: ReturnType<typeof valoresEd>[K]) =>
     setEd((e) => ({ ...e, [k]: v }));
 
+  const errosEdicao: ErrosDeCampos<keyof typeof IDS_EDICAO> = tentou && modal === "editar" ? errosDaEdicaoAluno(ed) : {};
+  const erroObsEnc = tentou && motivoEnc === "Outro" && !obsEnc.trim() ? "Informe a observação quando o motivo é “Outro”." : null;
+
   const tiposDocEd = paises.find((p) => p.id === ed.paisId)?.tiposDocumento ?? [];
   const tipoDocNome =
     paises.find((p) => p.id === aluno.paisId)?.tiposDocumento.find((t) => t.id === aluno.tipoDocumentoId)?.nome ?? null;
@@ -172,6 +202,7 @@ export function FichaAluno({
   // O erro é exibido dentro do painel aberto; trocar de painel não pode herdar o erro do anterior.
   function abrir(m: typeof modal) {
     acao.limpar();
+    setTentou(false);
     setModal(m);
   }
 
@@ -233,18 +264,22 @@ export function FichaAluno({
             <FeedbackAcao erro={modal === "editar" ? acao.erro : null} className="mb-3" />
             <div className="flex justify-end gap-2">
               <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
+              {/* Habilitado mesmo com obrigatório vazio: ao clicar, cada campo pendente é marcado e o foco
+                  vai ao primeiro (antes, o botão ficava desabilitado sem dizer o que faltava). */}
               <button
                 className={btnPri}
-                disabled={acao.ocupado || !ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
-                onClick={() =>
+                disabled={acao.ocupado}
+                onClick={() => {
+                  setTentou(true);
+                  if (focarPrimeiroComErro(errosDaEdicaoAluno(ed), IDS_EDICAO)) return;
                   run(() =>
                     editarAluno(aluno.id, {
                       ...ed,
                       genero: ed.genero || undefined,
                       escolaridade: ed.escolaridade || undefined,
                     }),
-                  )
-                }
+                  );
+                }}
               >
                 {acao.ocupado ? "Salvando…" : "Salvar alterações"}
               </button>
@@ -254,88 +289,81 @@ export function FichaAluno({
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Identificação */}
-          <div>
-            <label htmlFor="ficha-primeiroNome" className="mb-1 block text-xs text-gray-600">Nome</label>
-            <input id="ficha-primeiroNome" className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-sobrenome" className="mb-1 block text-xs text-gray-600">Sobrenome(s)</label>
-            <input id="ficha-sobrenome" className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-nomePreferido" className="mb-1 block text-xs text-gray-600">Nome preferido</label>
-            <input id="ficha-nomePreferido" className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-nascimento" className="mb-1 block text-xs text-gray-600">Nascimento</label>
-            <input id="ficha-nascimento" type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-genero" className="mb-1 block text-xs text-gray-600">Gênero</label>
-            <select id="ficha-genero" className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
-              <option value="">—</option>
-              {Object.values(Genero).map((g) => (
-                <option key={g} value={g}>{GENERO_LABEL[g]}</option>
-              ))}
-            </select>
-          </div>
+          <Campo id={IDS_EDICAO.primeiroNome} rotulo="Nome" obrigatorio erro={errosEdicao.primeiroNome}>
+            {(campo) => <input {...campo} className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />}
+          </Campo>
+          <Campo id={IDS_EDICAO.sobrenome} rotulo="Sobrenome(s)" obrigatorio erro={errosEdicao.sobrenome}>
+            {(campo) => <input {...campo} className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-nomePreferido" rotulo="Nome preferido">
+            {(campo) => <input {...campo} className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-nascimento" rotulo="Nascimento">
+            {(campo) => <input {...campo} type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-genero" rotulo="Gênero">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
+                <option value="">—</option>
+                {Object.values(Genero).map((g) => (
+                  <option key={g} value={g}>{GENERO_LABEL[g]}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
 
           {/* Documentação */}
-          <div>
-            <label htmlFor="ficha-paisId" className="mb-1 block text-xs text-gray-600">País</label>
-            <select id="ficha-paisId"
-              className={inputCls}
-              value={ed.paisId}
-              onChange={(e) => {
-                const np = paises.find((p) => p.id === e.target.value);
-                setEd((s) => ({
-                  ...s,
-                  paisId: e.target.value,
-                  tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
-                }));
-              }}
-            >
-              {paises.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="ficha-tipoDocumentoId" className="mb-1 block text-xs text-gray-600">Tipo de documento</label>
-            <select id="ficha-tipoDocumentoId" className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
-              <option value="">—</option>
-              {tiposDocEd.map((t) => (
-                <option key={t.id} value={t.id}>{t.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="ficha-documento" className="mb-1 block text-xs text-gray-600">Número do documento</label>
-            <input id="ficha-documento" aria-describedby="ficha-documento-ajuda" className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />
-            <p id="ficha-documento-ajuda" className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
-          </div>
-          <div>
-            <label htmlFor="ficha-documentoPaisEmissor" className="mb-1 block text-xs text-gray-600">País emissor</label>
-            <SelectISO id="ficha-documentoPaisEmissor" value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />
-          </div>
-          <div>
-            <label htmlFor="ficha-nacionalidade" className="mb-1 block text-xs text-gray-600">Nacionalidade</label>
-            <SelectISO id="ficha-nacionalidade" value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />
-          </div>
-          <div>
-            <label htmlFor="ficha-segundaNacionalidade" className="mb-1 block text-xs text-gray-600">Segunda nacionalidade</label>
-            <SelectISO id="ficha-segundaNacionalidade" value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />
-          </div>
+          <Campo id={IDS_EDICAO.paisId} rotulo="País" obrigatorio erro={errosEdicao.paisId}>
+            {(campo) => (
+              <select
+                {...campo}
+                className={inputCls}
+                value={ed.paisId}
+                onChange={(e) => {
+                  const np = paises.find((p) => p.id === e.target.value);
+                  setEd((s) => ({
+                    ...s,
+                    paisId: e.target.value,
+                    tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
+                  }));
+                }}
+              >
+                {paises.map((p) => (
+                  <option key={p.id} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-tipoDocumentoId" rotulo="Tipo de documento">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
+                <option value="">—</option>
+                {tiposDocEd.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nome}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-documento" rotulo="Número do documento" dica="Documento inválido não impede salvar — fica marcado como “não validado”.">
+            {(campo) => <input {...campo} className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-documentoPaisEmissor" rotulo="País emissor">
+            {(campo) => <SelectISO {...campo} value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-nacionalidade" rotulo="Nacionalidade">
+            {(campo) => <SelectISO {...campo} value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-segundaNacionalidade" rotulo="Segunda nacionalidade">
+            {(campo) => <SelectISO {...campo} value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />}
+          </Campo>
 
           {/* Contato */}
-          <div>
-            <label htmlFor="ficha-email" className="mb-1 block text-xs text-gray-600">E-mail</label>
-            <input id="ficha-email" type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-telefone" className="mb-1 block text-xs text-gray-600">Telefone</label>
-            <input id="ficha-telefone" className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />
-          </div>
+          <Campo id="ficha-email" rotulo="E-mail">
+            {(campo) => <input {...campo} type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-telefone" rotulo="Telefone">
+            {(campo) => <input {...campo} className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />}
+          </Campo>
           <div className="flex items-center gap-4 pt-5 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" checked={ed.whatsapp} onChange={(e) => set("whatsapp", e.target.checked)} />
@@ -348,86 +376,97 @@ export function FichaAluno({
           </div>
 
           {/* Residência */}
-          <div>
-            <label htmlFor="ficha-paisResidencia" className="mb-1 block text-xs text-gray-600">País de residência</label>
-            <SelectISO id="ficha-paisResidencia" value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />
-          </div>
-          <div>
-            <label htmlFor="ficha-cep" className="mb-1 block text-xs text-gray-600">CEP / Código postal</label>
-            <input id="ficha-cep" className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-regiao" className="mb-1 block text-xs text-gray-600">Região / Estado / Província</label>
-            <input id="ficha-regiao" className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-cidade" className="mb-1 block text-xs text-gray-600">Cidade</label>
-            <input id="ficha-cidade" className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-bairro" className="mb-1 block text-xs text-gray-600">Bairro / Distrito</label>
-            <input id="ficha-bairro" className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-rua" className="mb-1 block text-xs text-gray-600">Rua</label>
-            <input id="ficha-rua" className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-numero" className="mb-1 block text-xs text-gray-600">Número</label>
-            <input id="ficha-numero" className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-complemento" className="mb-1 block text-xs text-gray-600">Complemento</label>
-            <input id="ficha-complemento" className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />
-          </div>
+          <Campo id="ficha-paisResidencia" rotulo="País de residência">
+            {(campo) => <SelectISO {...campo} value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-cep" rotulo="CEP / Código postal">
+            {(campo) => <input {...campo} className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-regiao" rotulo="Região / Estado / Província">
+            {(campo) => <input {...campo} className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-cidade" rotulo="Cidade">
+            {(campo) => <input {...campo} className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-bairro" rotulo="Bairro / Distrito">
+            {(campo) => <input {...campo} className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-rua" rotulo="Rua">
+            {(campo) => <input {...campo} className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-numero" rotulo="Número">
+            {(campo) => <input {...campo} className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-complemento" rotulo="Complemento">
+            {(campo) => <input {...campo} className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />}
+          </Campo>
 
           {/* Acadêmico / operacional */}
-          <div>
-            <label htmlFor="ficha-escolaridade" className="mb-1 block text-xs text-gray-600">Escolaridade</label>
-            <select id="ficha-escolaridade" className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
-              <option value="">—</option>
-              {Object.values(Escolaridade).map((e) => (
-                <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="ficha-idiomaNativo" className="mb-1 block text-xs text-gray-600">Idioma nativo</label>
-            <input id="ficha-idiomaNativo" className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />
-          </div>
-          <div>
-            <label htmlFor="ficha-fuso" className="mb-1 block text-xs text-gray-600">Fuso horário</label>
-            <input id="ficha-fuso" className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="ficha-observacoes" className="mb-1 block text-xs text-gray-600">Observações</label>
-            <CampoTexto id="ficha-observacoes" className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
-          </div>
+          <Campo id="ficha-escolaridade" rotulo="Escolaridade">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
+                <option value="">—</option>
+                {Object.values(Escolaridade).map((e) => (
+                  <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-idiomaNativo" rotulo="Idioma nativo">
+            {(campo) => <input {...campo} className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-fuso" rotulo="Fuso horário">
+            {(campo) => <input {...campo} className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-observacoes" rotulo="Observações" className="sm:col-span-2">
+            {(campo) => <CampoTexto {...campo} className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />}
+          </Campo>
 
           {/* Auditoria */}
-          <div className="sm:col-span-2">
-            <label htmlFor="ficha-motivo" className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
-            <CampoTexto id="ficha-motivo" aria-describedby="ficha-motivo-ajuda" aria-required="true"
-              className={inputCls}
-              rows={2}
-              placeholder="Ex.: correção de documento informado pelo aluno"
-              value={ed.motivo}
-              onChange={(e) => set("motivo", e.target.value)}
-            />
-            <p id="ficha-motivo-ajuda" className="mt-1 text-xs text-gray-500">Fica registrado na auditoria, junto com quem editou.</p>
-          </div>
+          <Campo
+            id={IDS_EDICAO.motivo}
+            rotulo="Motivo da edição"
+            obrigatorio
+            dica="Fica registrado na auditoria, junto com quem editou."
+            erro={errosEdicao.motivo}
+            className="sm:col-span-2"
+          >
+            {(campo) => (
+              <CampoTexto
+                {...campo}
+                className={inputCls}
+                rows={2}
+                placeholder="Ex.: correção de documento informado pelo aluno"
+                value={ed.motivo}
+                onChange={(e) => set("motivo", e.target.value)}
+              />
+            )}
+          </Campo>
         </div>
       </Drawer>
 
       {modal === "pausar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Pausar aluno</h3>
-          <input className={inputCls + " mb-2"} aria-label="Motivo da pausa" placeholder="Motivo" value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />
-          <label htmlFor="pausa-retorno" className="mb-1 block text-xs text-gray-600">Retorno previsto (opcional)</label>
-          <input id="pausa-retorno" type="date" className={inputCls + " mb-3"} value={retorno} onChange={(e) => setRetorno(e.target.value)} />
+          <Campo id="pausa-motivo" rotulo="Motivo da pausa" obrigatorio erro={tentou && !motivoPausa.trim() ? "Informe o motivo da pausa." : null} className="mb-2">
+            {(campo) => <input {...campo} className={inputCls} value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />}
+          </Campo>
+          <Campo id="pausa-retorno" rotulo="Retorno previsto (opcional)" className="mb-3">
+            {(campo) => <input {...campo} type="date" className={inputCls} value={retorno} onChange={(e) => setRetorno(e.target.value)} />}
+          </Campo>
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri} disabled={acao.ocupado} onClick={() => run(() => pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>{acao.ocupado ? "Confirmando…" : "Confirmar pausa"}</button>
+            <button
+              className={btnPri}
+              disabled={acao.ocupado}
+              onClick={() => {
+                setTentou(true);
+                if (!motivoPausa.trim()) { document.getElementById("pausa-motivo")?.focus(); return; }
+                run(() => pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }));
+              }}
+            >
+              {acao.ocupado ? "Confirmando…" : "Confirmar pausa"}
+            </button>
             <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
@@ -436,15 +475,38 @@ export function FichaAluno({
       {modal === "encerrar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Encerrar aluno</h3>
-          <select className={inputCls + " mb-2"} aria-label="Motivo do encerramento" value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
-            {MOTIVOS_ENCERRAMENTO.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-          <input className={inputCls + " mb-3"} aria-label="Observação do encerramento" placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
+          <Campo id="encerramento-motivo" rotulo="Motivo do encerramento" obrigatorio className="mb-2">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
+                {MOTIVOS_ENCERRAMENTO.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo
+            id="encerramento-observacao"
+            rotulo="Observação"
+            obrigatorio={motivoEnc === "Outro"}
+            dica="Obrigatória quando o motivo é “Outro”."
+            erro={erroObsEnc}
+            className="mb-3"
+          >
+            {(campo) => <input {...campo} className={inputCls} value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />}
+          </Campo>
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={botaoClasses({ variante: "perigo" })} disabled={acao.ocupado} onClick={() => run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>{acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}</button>
+            <button
+              className={botaoClasses({ variante: "perigo" })}
+              disabled={acao.ocupado}
+              onClick={() => {
+                setTentou(true);
+                if (motivoEnc === "Outro" && !obsEnc.trim()) { document.getElementById("encerramento-observacao")?.focus(); return; }
+                run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }));
+              }}
+            >
+              {acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}
+            </button>
             <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
@@ -575,10 +637,16 @@ function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-/** Select de país ISO 3166. */
-function SelectISO({ id, value, onChange, comVazio }: { id?: string; value: string; onChange: (v: string) => void; comVazio?: boolean }) {
+/** Select de país ISO 3166. Recebe as ligações do <Campo>. */
+function SelectISO({
+  id,
+  value,
+  onChange,
+  comVazio,
+  ...ligacao
+}: Omit<LigacaoCampo, "id"> & { id: string; value: string; onChange: (v: string) => void; comVazio?: boolean }) {
   return (
-    <select id={id} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>
