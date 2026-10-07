@@ -1,0 +1,24 @@
+export type ItemMetrica = { nome: string; valor: string | number; nota: string };
+export type NumerosMetricas = {
+  paginas: number;
+  loading: number;
+  loadingCobertas: number;
+  error: number;
+  errorCobertas: number;
+  notFound: number;
+  globalError: number;
+  chamadasNotFound: number;
+  suspense: number;
+  coresFora: number;
+  coresMapeadas: number;
+  bgBrand700: number;
+  bgWhite: number;
+  controles: number;
+  controlesSemNome: number;
+  familiasReprovadas: number;
+  soParaFrente: number;
+  chamaAcao: number;
+  semCatchLiteral: number;
+  semCatchCentral: number;
+};
+export function medir(raiz: string): { secoes: Record<string, ItemMetrica[]>; n: NumerosMetricas };
