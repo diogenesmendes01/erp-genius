@@ -57,6 +57,12 @@ export const INVISIVEIS = /[\p{Cf}\u034f\u17b4\u17b5\u180b-\u180f\ufe00-\ufe0f\u
  */
 export const BRANCOS_VISIVEIS = ["\u2800", "\u115f", "\u1160", "\u3164", "\uffa0"] as const;
 const RE_BRANCOS = new RegExp(`[${BRANCOS_VISIVEIS.join("")}]`, "gu");
+/**
+ * Na leitura "como espaço", todo caractere que não é letra, marca, número, pontuação nem espaço (símbolo,
+ * desenho, nota nula musical U+1D159…) vira espaço: um vão na tela que a lista acima não conhece (R3 da #147,
+ * B3). Os marcadores de uso privado (U+E000–U+F8FF), que as travas usam, ficam.
+ */
+const SIMBOLOS = /[^\p{L}\p{M}\p{N}\p{P}\s\ue000-\uf8ff]/gu;
 /** Como ler um branco visível: como espaço (a tela mostra um vão) ou como nada (a fonte não dá largura). */
 export type LeituraDoBranco = "espaco" | "nada";
 
@@ -70,6 +76,15 @@ export const HOMOGLIFOS: Readonly<Record<string, string>> = {
   "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0396": "Z", "\u0397": "H", "\u0399": "I", "\u039a": "K", "\u039c": "M",
   "\u039d": "N", "\u039f": "O", "\u03a1": "P", "\u03a4": "T", "\u03a5": "Y", "\u03a7": "X",
   "\u0261": "g", "\u0131": "i", "\u0251": "a",
+  // Versaletes e letras do IPA que parecem minúsculas latinas (R3 da #147, B2).
+  "\u1d00": "a", "\u1d01": "ae", "\u1d02": "ae", "\u1d03": "b", "\u1d04": "c", "\u1d05": "d", "\u1d06": "d", "\u1d07": "e",
+  "\u1d08": "e", "\u1d09": "i", "\u1d0a": "j", "\u1d0b": "k", "\u1d0c": "l", "\u1d0d": "m", "\u1d0e": "n", "\u1d0f": "o",
+  "\u1d10": "o", "\u1d11": "o", "\u1d12": "o", "\u1d13": "o", "\u1d14": "oe", "\u1d15": "ou", "\u1d16": "o", "\u1d17": "o",
+  "\u1d18": "p", "\u1d19": "r", "\u1d1a": "r", "\u1d1b": "t", "\u1d1c": "u", "\u1d1d": "u", "\u1d1e": "u", "\u1d1f": "m",
+  "\u1d20": "v", "\u1d21": "w", "\u1d22": "z", "\ua730": "f", "\ua731": "s", "\u0274": "n", "\u0280": "r", "\u028f": "y",
+  "\u0262": "g", "\u029f": "l", "\u026a": "i", "\u029c": "h", "\u0299": "b",
+  // O sinal de micro vira "\u03bc" grego no NFKC: lido como "u", para "\u00b5s" não misturar alfabetos.
+  "\u03bc": "u",
 };
 const RE_HOMOGLIFOS = new RegExp(`[${Object.keys(HOMOGLIFOS).join("")}]`, "gu");
 
@@ -83,12 +98,14 @@ export function textoLido(t: string): string {
 
 /**
  * Texto lido, para comparar: além do `textoLido`, as formas de compatibilidade (NFKC: largura total,
- * ligaduras) e os homóglifos viram a letra latina; o branco visível vira espaço ou nada, conforme `branco`.
+ * ligaduras) e os homóglifos viram a letra latina; o branco visível vira espaço ou nada, conforme `branco`, e na
+ * leitura "como espaço" o símbolo também vira espaço.
  * Não junta espaços (as posições dos pedaços se mantêm).
  */
 export function textoComparavel(t: string, branco: LeituraDoBranco = "espaco"): string {
-  return decodificarEntidades(t).replace(INVISIVEIS, "").replace(RE_BRANCOS, branco === "espaco" ? " " : "").normalize("NFKC")
-    .replace(RE_HOMOGLIFOS, (c: string) => HOMOGLIFOS[c]).normalize("NFC").replace(/\s/g, " ");
+  const r = decodificarEntidades(t).replace(INVISIVEIS, "").replace(RE_BRANCOS, branco === "espaco" ? " " : "").normalize("NFKC")
+    .replace(RE_HOMOGLIFOS, (c: string) => HOMOGLIFOS[c]).normalize("NFC");
+  return (branco === "espaco" ? r.replace(SIMBOLOS, " ") : r).replace(/\s/g, " ");
 }
 
 /** Letra que não é latina nem comum (de outro alfabeto: cirílico, grego, armênio…). */

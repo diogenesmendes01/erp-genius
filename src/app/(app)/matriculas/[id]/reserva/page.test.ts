@@ -26,7 +26,9 @@ const leituras = (html: string) => [html.replace(TAG, ""), html.replace(TAG, " "
 const NESTA_PAGINA = /(?<!\p{L})nesta\s+p[aá]gina(?!\p{L})/iu;
 /** Mostra (ou pode mostrar) "nesta página": em alguma leitura, ou com palavra de alfabetos misturados (R2 da #147, B1). */
 const mostraNestaPagina = (html: string) =>
-  leituras(html).some((t: string) => NESTA_PAGINA.test(t)) || misturaDeAlfabetos(textoLido(html.replace(TAG, ""))).length > 0;
+  leituras(html).some((t: string) => NESTA_PAGINA.test(t) || misturaDeAlfabetos(t).length > 0)
+  // A mistura no texto lido (antes dos homóglifos) e no comparável (depois: "\u0578\u0435\u0455\u03c4\u0430" vira "\u0578es\u03c4a"; R3 da #147, B2).
+  || misturaDeAlfabetos(textoLido(html.replace(TAG, ""))).length > 0;
 
 // Revisão R2 da #134 (B3): página 1 sem turma diz que não há turma compatível; página seguinte diz
 // "nesta página" e oferece a volta ao início (a ação faz parte do vazio). Revisão R3 (B2): a comparação
@@ -85,6 +87,10 @@ describe("reserva da contratação — vazio paginado", () => {
       "<p>Nenhuma turma nesta\uffa0página.</p>",
       "<p>Nenhuma turma \u0578esta página.</p>",
       "<p>Nenhuma turma nes\u03c4a página.</p>",
+      // R3 da #147: versalete, palavra sem letra latina, símbolo como vão.
+      "<p>Nenhuma turma ne\ua731ta página.</p>",
+      "<p>Nenhuma turma \u0578\u0435\u0455\u03c4\u0430 página.</p>",
+      "<p>Nenhuma turma nesta\u{1d159}página.</p>",
     ];
     for (const html of formas) expect(mostraNestaPagina(html), html).toBe(true);
     // Não confunde: outra palavra depois de "nesta", plural, "primeira página", blocos separados.

@@ -48,8 +48,9 @@ import { MAPA_VAZIO_PAGINADO } from "./vazio-paginado-mapa";
 //      formato da paginação ("Página {n}", "Página 2") ou como texto próprio que segue ("Página não
 //      encontrada"); o fim de "nesta" ("sta página", "ta página") colado a algo desconhecido ou abrindo
 //      texto avulso;
-//   4. texto editado: literal com "nesta" que passa por `.slice`, `.replace`, `.split`, `.substring`… (o
-//      corte ou a troca podem montar a frase). `.toLowerCase()`/`.toUpperCase()`/`.trim()` não editam: o
+//   4. texto editado: literal com "nesta" que passa por qualquer acesso que não mantenha nem junte o texto
+//      (`.slice`, `.split`, `.match`, `["split"]`, `.length`…), pelo espalhamento (`[...s]`) ou por
+//      `Array.from` — o corte, a troca ou a desmontagem podem montar a frase. `.toLowerCase()`/`.toUpperCase()`/`.trim()` não editam: o
 //      texto segue avaliado, na caixa nova (`"Página".toLowerCase()` é "página").
 //   5. alfabetos misturados: letra latina e letra de outro alfabeto na mesma palavra ("nes" + tau grego
 //      + "a", o "n" armênio) — a tabela de homóglifos sempre deixa alguma de fora (R2 da #147, B1).
@@ -275,15 +276,16 @@ const NESTA_PARTIDA = /(?<!\p{L})[Nn](?:e|es|est) *$/gu;
 /** Sinal 2: o pedaço termina em "nesta" + começo de "página" ("nesta p", "nesta pág"…). */
 const PAGINA_PARTIDA = /(?<!\p{L})nesta +p(?:[aá](?:g(?:i(?:n)?)?)?)? *$/giu;
 /** Sinal 3: "página" minúscula logo depois de um desconhecido ou de um elemento ("pagina" sem acento só
- * seguida de espaço ou pontuação — a chave `pagina` da URL não é texto). */
-const PAGINA_APOS_DESCONHECIDO = /[\ue000\ue001][ \ue001]*(página|pagina(?=[ .,;:!?)]))(?!\p{L})/gu;
+ * seguida de espaço ou pontuação, e o ponto só se não vier letra depois — a chave `pagina` da URL e o nome
+ * de arquivo `pagina.tsx` não são texto; R3 da #147, B1). */
+const PAGINA_APOS_DESCONHECIDO = /[\ue000\ue001][ \ue001]*(página|pagina(?=[ ,;:!?)]|\.(?!\p{L})))(?!\p{L})/gu;
 /** Sinal 3: "Página" maiúscula logo depois de um desconhecido ou de um elemento, fora do formato da
  * paginação ("Página {n}", "Página 2"). */
 const PAGINA_MAIUSCULA_APOS_DESCONHECIDO = /[\ue000\ue001][ \ue001]*(P[áa]gina|PÁGINA|PAGINA)(?!\p{L})(?![ \ue001]*[\d\ue000])/gu;
 /** Sinal 3: o fim de "nesta" ("esta", "sta", "ta") + "página", colado a um desconhecido ou elemento. */
 const FIM_DE_NESTA_APOS_DESCONHECIDO = /[\ue000\ue001]((?:esta|sta|ta) +p[aá]gina)(?!\p{L})/gu;
 /** Sinal 3: "página" minúscula abrindo um texto avulso (argumento, constante, item de lista). */
-const PAGINA_NO_INICIO = /^ *(página|pagina(?=[ .,;:!?)]))(?!\p{L})/gu;
+const PAGINA_NO_INICIO = /^ *(página|pagina(?=[ ,;:!?)]|\.(?!\p{L})))(?!\p{L})/gu;
 /** Sinal 3: "Página" sozinha como texto avulso (só a palavra: `.replace("X", "Página")`). */
 const PAGINA_SOZINHA = /^ *(P[áa]gina|PÁGINA|PAGINA)[ .,;:!?)]*$/gu;
 /** Sinal 3: o fim de "nesta" + "página" abrindo um texto avulso (`junta("Nenhuma proposta n", "esta página.")`). */
@@ -342,7 +344,7 @@ function pedacoEm(lista: Pedaco[], inicios: number[], i: number): ts.Node | null
 /**
  * Aplica as regras ao texto comparável dos pedaços — em cada leitura do branco visível — e devolve os
  * literais acusados (onde a palavra está). Também acusa a palavra que mistura alfabetos (R2 da #147, B1),
- * no texto lido (antes de os homóglifos virarem latinos).
+ * no texto lido (antes de os homóglifos virarem latinos) e no comparável (depois; R3 da #147, B2).
  */
 function acusados(lista: Pedaco[], regras: Regra[]): ts.Node[] {
   const nos: ts.Node[] = [];
@@ -352,6 +354,8 @@ function acusados(lista: Pedaco[], regras: Regra[]): ts.Node[] {
     const inicios: number[] = [];
     for (const p of lista) { inicios.push(texto.length); texto += comparavel(p.texto, branco); }
     for (const r of regras) for (const m of texto.matchAll(r.re)) marca(pedacoEm(lista, inicios, r.palavra(m)));
+    // A mistura também depois da tabela de homóglifos: "\u0578\u0435\u0455\u03c4\u0430" (sem letra latina) vira "\u0578es\u03c4a" (R3 da #147, B2).
+    for (const i of misturaDeAlfabetos(texto)) marca(pedacoEm(lista, inicios, i));
   }
   let lido = "";
   const inicios: number[] = [];
@@ -371,15 +375,17 @@ const ehFilhoJsx = (n: ts.Node) => ts.isJsxExpression(n.parent) && (ts.isJsxElem
 
 const ehArrayOf = (c: ts.CallExpression) =>
   ts.isPropertyAccessExpression(c.expression) && c.expression.name.text === "of" && ts.isIdentifier(c.expression.expression) && c.expression.expression.text === "Array";
-const METODOS_QUE_JUNTAM = new Set(["join", "concat"]);
+export const METODOS_QUE_JUNTAM: ReadonlySet<string> = new Set(["join", "concat"]);
 /** Métodos que mantêm o texto (só mudam a caixa ou as pontas): o texto segue avaliado. */
-const METODOS_QUE_MANTEM: Readonly<Record<string, (t: string) => string>> = {
+export const METODOS_QUE_MANTEM: Readonly<Record<string, (t: string) => string>> = {
   toLowerCase: (t) => t.toLowerCase(), toLocaleLowerCase: (t) => t.toLowerCase(),
   toUpperCase: (t) => t.toUpperCase(), toLocaleUpperCase: (t) => t.toUpperCase(),
   trim: (t) => t, trimStart: (t) => t, trimEnd: (t) => t, normalize: (t) => t, toString: (t: string) => t, valueOf: (t: string) => t,
 };
-/** Métodos que cortam ou trocam o texto: o resultado não se sabe daqui (sinal 4). */
-export const METODOS_QUE_EDITAM: ReadonlySet<string> = new Set(["slice", "substring", "substr", "replace", "replaceAll", "split", "at", "charAt", "padStart", "padEnd", "repeat", "splice", "reduce", "reduceRight"]);
+/** O método só mantém ou junta o texto (o resultado segue avaliado): fora disso, o sinal 4 vale. */
+const mantemOuJunta = (nome: string) => METODOS_QUE_JUNTAM.has(nome) || Object.hasOwn(METODOS_QUE_MANTEM, nome);
+/** Chamadas que desmontam o texto recebido em argumento (letra por letra, ou em partes). */
+const DESMONTAM = new Set(["Array.from", "Object.values", "Object.entries"]);
 /** `Array.of(…)`, `x.join(…)` ou `x.concat(…)`: os argumentos entram no texto. */
 const juntaArgumentos = (c: ts.CallExpression) =>
   ehArrayOf(c) || (ts.isPropertyAccessExpression(c.expression) && METODOS_QUE_JUNTAM.has(c.expression.name.text));
@@ -420,11 +426,19 @@ function raiz(n: ts.Node): ts.Node {
   return n;
 }
 
-/** O texto inteiro (tirados parênteses e `as`) passa por um método que corta ou troca (sinal 4)? */
+/**
+ * O texto inteiro sai daqui por um caminho que corta, troca ou desmonta (sinal 4)? Falha fechado (R3 da #147,
+ * B4): conta QUALQUER acesso sobre ele (`.x`, `?.x`, `.x(…)`) que não mantenha nem junte o texto, o acesso por
+ * colchete (`["split"]`), o espalhamento (`[...s]`) e `Array.from(s)`/`Object.values(s)`. `r` já é a raiz
+ * (`raiz` sobe por parênteses, `as` e pelos métodos que mantêm ou juntam).
+ */
 function editado(r: ts.Node): boolean {
-  // `r` já é a raiz (`raiz` sobe por parênteses e `as`): o método, se houver, é o que recebe ela.
-  const metodo = metodoSobre(r);
-  return !!metodo && METODOS_QUE_EDITAM.has(metodo.nome);
+  const p = r.parent;
+  if (!p) return false;
+  if (ts.isPropertyAccessExpression(p) && p.expression === r) return !mantemOuJunta(p.name.text);
+  if (ts.isElementAccessExpression(p) && p.expression === r) return true;
+  if (ts.isSpreadElement(p)) return true;
+  return ts.isCallExpression(p) && p.arguments.some((a: ts.Expression) => a === r) && DESMONTAM.has(p.expression.getText());
 }
 
 /** Itens de `[…]`, `Array.of(…)` ou de constante local com uma delas (null: não é lista conhecida). */
@@ -592,7 +606,9 @@ const MANIFESTOS = ["src/app/vazio-paginado-mapa.ts", "src/app/estados-vazios-ma
  * sem declarações de tipo e sem os manifestos. Um .json ou .js importado por uma tela também é texto dela
  * (R3 da #134, B1). */
 export const ehFonteDeProducao = (arquivo: string) =>
-  /\.([mc]?[jt]sx?|json)$/.test(arquivo) && !/\.test\.|\.d\.[mc]?ts$/.test(arquivo) && !MANIFESTOS.includes(arquivo);
+  /\.([mc]?[jt]sx?|json)$/.test(arquivo) && !/\.test\.|\.d\.[mc]?ts$/.test(arquivo) && !MANIFESTOS.includes(arquivo)
+  // Apoio de teste (src/test: banco isolado, leitura de texto, guarda de página) não é tela (R3 da #147, B1).
+  && !arquivo.startsWith("src/test/");
 function fontes(): { arquivo: string; fonte: string }[] {
   const saida: { arquivo: string; fonte: string }[] = [];
   for (const f of readdirSync("src", { recursive: true }) as string[]) {
@@ -866,6 +882,7 @@ describe("detector de vazio paginado (autoteste)", () => {
         "src/app/a.test.ts": false, "src/app/a.test.tsx": false, "src/app/a.int.test.ts": false, "src/app/a.d.ts": false, "src/app/a.d.mts": false,
         "src/app/a.css": false, "src/app/a.md": false, "src/app/a.svg": false, "src/app/a.ts.bak": false,
         "src/app/vazio-paginado-mapa.ts": false, "src/app/estados-vazios-mapa.ts": false, "src/app/botoes-mapa.ts": false,
+        "src/test/guard-pagina.ts": false, "src/test/texto-lido.ts": false, "src/test/x.json": false, "src/testes/a.ts": true,
       };
       expect(Object.fromEntries(Object.keys(esperado).map((n) => [n, ehFonteDeProducao(n)]))).toEqual(esperado);
     });
@@ -910,11 +927,10 @@ describe("detector de vazio paginado (autoteste)", () => {
       expect(planos('{"Nenhuma proposta nes\\u2800ta página."}')).toEqual(["Nenhuma proposta nes ta página."]);
     });
 
-    it("B3 (ED2, X1): cada método do sinal 4 acusa sozinho o literal com \"nesta\" que ele edita", () => {
-      const COPIA_METODOS_QUE_EDITAM = ["slice", "substring", "substr", "replace", "replaceAll", "split", "at", "charAt", "padStart", "padEnd", "repeat", "splice", "reduce", "reduceRight"];
-      expect([...METODOS_QUE_EDITAM]).toEqual(COPIA_METODOS_QUE_EDITAM);
+    it("B3 (ED2, X1): cada método que corta ou troca acusa sozinho o literal com \"nesta\" que ele edita", () => {
       // Montagem que nenhum outro sinal pega: "nesta" seguida de outra palavra, editada por um método.
-      for (const metodo of COPIA_METODOS_QUE_EDITAM) {
+      const EDITAM = ["slice", "substring", "substr", "replace", "replaceAll", "split", "at", "charAt", "padStart", "padEnd", "repeat", "splice", "reduce", "reduceRight", "match", "matchAll", "search", "codePointAt", "localeCompare"];
+      for (const metodo of EDITAM) {
         expect(planos(`{"Nenhuma proposta nesta X".${metodo}(0)}`), metodo).toEqual(["Nenhuma proposta nesta X"]);
       }
       // K14 e K17: a montagem real com `.split` (também entre parênteses).
@@ -922,6 +938,57 @@ describe("detector de vazio paginado (autoteste)", () => {
       expect(planos('{("Nenhuma proposta nesta|página.").split("|").join(" ")}')).toEqual(["Nenhuma proposta nesta|página."]);
       // Método que não edita (só mantém) não acusa o literal sem a frase.
       expect(planos('{"Nenhuma proposta nesta matrícula.".trim()}')).toEqual([]);
+    });
+  });
+
+  // Revisão R3 da #147: nome de arquivo "pagina.tsx" (B1), palavra sem letra latina e versalete (B2), símbolo
+  // como vão (B3) e montagens equivalentes ao `.split` (B4: E4, E5, E6).
+  describe("R3 da #147: nome de arquivo, homóglifos, símbolo como vão e sinal 4 pela regra contrária", () => {
+    const planos = (texto: string, antes = "") => sem(`${antes} return <div>{!d.planos[0] && <p role="status">${texto}</p>}</div>;`);
+
+    it("B1: \"pagina.tsx\" (nome de arquivo) não acusa; \"nesta pagina.\" continua acusando", () => {
+      expect(vaziosPaginadosSemGuarda('const sf = ts.createSourceFile("pagina.tsx", fonte, alvo);', "src/app/x.ts")).toEqual([]);
+      expect(vaziosPaginadosSemGuarda('const a = ["pagina.ts", "pagina.json", "pagina"];', "src/app/x.ts")).toEqual([]);
+      expect(planos("Nenhuma proposta nesta pagina.")).toEqual(["Nenhuma proposta nesta pagina."]);
+      // "pagina." avulso (ponto sem letra depois) ainda é continuação de frase.
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "pagina.")}')).toEqual(["Nenhuma proposta nesta X.", "pagina."]);
+    });
+
+    it("B2 (E1, E2): versalete latino e palavra feita só de letras de fora", () => {
+      expect(planos('{"Nenhuma proposta ne\\ua731ta página."}').map((t: string) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta \\u0274\\u1d07sta página."}').map((t: string) => textoComparavel(t))).toEqual(["Nenhuma proposta nesta página."]);
+      // "\u0578\u0435\u0455\u03c4\u0430": sem letra latina no texto lido; depois da tabela, "\u0578es\u03c4a" mistura alfabetos.
+      expect(planos('{"Nenhuma proposta \\u0578\\u0435\\u0455\\u03c4\\u0430 página."}')).toHaveLength(1);
+      expect(planos('{"Nenhuma proposta \\u0578\\u0435\\u0455\\u03c4\\u0430 página."}')[0].startsWith("Nenhuma proposta ")).toBe(true);
+    });
+
+    it("B3 (E3): símbolo que aparece como vão (nota nula musical) entre \"nesta\" e \"página\"", () => {
+      expect(planos('{"Nenhuma proposta nesta\\u{1d159}página."}')).toEqual(["Nenhuma proposta nesta\u{1d159}página."]);
+      expect(planos('{"Nenhuma proposta nesta\\u2192página."}')).toEqual(["Nenhuma proposta nesta\u2192página."]);
+    });
+
+    it("B4 (E4, E5, E6): colchete, `match` e espalhamento contam como edição", () => {
+      expect(planos('{"Nenhuma proposta nesta X"["split"]("X").join(" ")}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos('{"Nenhuma proposta nesta X".match(/[^X]+/g)!.join(" ")}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos('{[..."Nenhuma proposta nesta X"].map((c: string) => (c === "X" ? " " : c)).join("")}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos('{Array.from("Nenhuma proposta nesta X").join("")}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos('{"Nenhuma proposta nesta X".length}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos('{"Nenhuma proposta nesta X"?.split("X")}')).toEqual(["Nenhuma proposta nesta X"]);
+      // As montagens da revisão, com "|" (o "|" já é vão na leitura "como espaço": acusa de todo jeito).
+      expect(planos('{"Nenhuma proposta nesta|página."["split"]("|").join(" ")}')).toEqual(["Nenhuma proposta nesta|página."]);
+      expect(planos('{"Nenhuma proposta nesta|página.".match(/[^|]+/g)!.join(" ")}')).toEqual(["Nenhuma proposta nesta|página."]);
+      expect(planos('{[..."Nenhuma proposta nesta|página."].map((c: string) => (c === "|" ? " " : c)).join("")}')).toEqual(["Nenhuma proposta nesta|página."]);
+    });
+
+    it("B4: só os métodos que mantêm ou juntam deixam o texto seguir avaliado (listas comparadas com a cópia)", () => {
+      const COPIA_MANTEM = ["toLowerCase", "toLocaleLowerCase", "toUpperCase", "toLocaleUpperCase", "trim", "trimStart", "trimEnd", "normalize", "toString", "valueOf"];
+      const COPIA_JUNTAM = ["join", "concat"];
+      expect(Object.keys(METODOS_QUE_MANTEM)).toEqual(COPIA_MANTEM);
+      expect([...METODOS_QUE_JUNTAM]).toEqual(COPIA_JUNTAM);
+      for (const metodo of COPIA_MANTEM) expect(planos(`{"Nenhuma proposta nesta matrícula.".${metodo}()}`), metodo).toEqual([]);
+      expect(planos('{"Nenhuma proposta nesta matrícula.".concat("")}')).toEqual([]);
+      // Fora dos dois: acusa.
+      expect(planos('{"Nenhuma proposta nesta matrícula.".toLocaleString()}')).toEqual(["Nenhuma proposta nesta matrícula."]);
     });
   });
 

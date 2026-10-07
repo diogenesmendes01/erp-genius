@@ -16,6 +16,15 @@ const COPIA_HOMOGLIFOS: Record<string, string> = {
   "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0396": "Z", "\u0397": "H", "\u0399": "I", "\u039a": "K", "\u039c": "M",
   "\u039d": "N", "\u039f": "O", "\u03a1": "P", "\u03a4": "T", "\u03a5": "Y", "\u03a7": "X",
   "\u0261": "g", "\u0131": "i", "\u0251": "a",
+  // Versaletes e letras do IPA que parecem minúsculas latinas (R3 da #147, B2).
+  "\u1d00": "a", "\u1d01": "ae", "\u1d02": "ae", "\u1d03": "b", "\u1d04": "c", "\u1d05": "d", "\u1d06": "d", "\u1d07": "e",
+  "\u1d08": "e", "\u1d09": "i", "\u1d0a": "j", "\u1d0b": "k", "\u1d0c": "l", "\u1d0d": "m", "\u1d0e": "n", "\u1d0f": "o",
+  "\u1d10": "o", "\u1d11": "o", "\u1d12": "o", "\u1d13": "o", "\u1d14": "oe", "\u1d15": "ou", "\u1d16": "o", "\u1d17": "o",
+  "\u1d18": "p", "\u1d19": "r", "\u1d1a": "r", "\u1d1b": "t", "\u1d1c": "u", "\u1d1d": "u", "\u1d1e": "u", "\u1d1f": "m",
+  "\u1d20": "v", "\u1d21": "w", "\u1d22": "z", "\ua730": "f", "\ua731": "s", "\u0274": "n", "\u0280": "r", "\u028f": "y",
+  "\u0262": "g", "\u029f": "l", "\u026a": "i", "\u029c": "h", "\u0299": "b",
+  // O sinal de micro vira "\u03bc" grego no NFKC: lido como "u", para "\u00b5s" não misturar alfabetos.
+  "\u03bc": "u",
 };
 
 const COPIA_OUTRAS: Record<string, number> = {
@@ -94,5 +103,23 @@ describe("texto lido (autoteste)", () => {
     expect(misturaDeAlfabetos("p\u0430gina n\u0435sta")).toEqual([1, 8]);
     // Não acusa: palavra só latina (com acento combinado), só grega, sinal de micro, número.
     expect(misturaDeAlfabetos("Página x\u0301 \u03b1\u03b2\u03b3 \u00b5s 2º 3ª")).toEqual([]);
+  });
+
+  it("R3 da #147 (B2, B3): versalete, palavra sem letra latina, símbolo como vão", () => {
+    // Versalete "s" (U+A731) e "n" (U+0274): da tabela.
+    expect(textoComparavel("ne\ua731ta \u0274esta")).toBe("nesta nesta");
+    // Palavra sem letra latina ("\u0578\u0435\u0455\u03c4\u0430"): depois da tabela vira "\u0578es\u03c4a", que mistura alfabetos.
+    const palavra = "\u0578\u0435\u0455\u03c4\u0430";
+    expect(misturaDeAlfabetos(textoLido(palavra))).toEqual([]);
+    expect(misturaDeAlfabetos(textoComparavel(palavra))).toEqual([0]);
+    // Sinal de micro: NFKC o faz grego, a tabela o faz "u".
+    expect(textoComparavel("5 \u00b5s")).toBe("5 us");
+    expect(misturaDeAlfabetos(textoComparavel("5 \u00b5s"))).toEqual([]);
+    // Nota nula musical (U+1D159) e outros símbolos: vão na leitura "como espaço"; ficam na leitura "nada".
+    expect(textoComparavel("nesta\u{1d159}página")).toBe("nesta página");
+    expect(textoComparavel("nesta\u{1d159}página", "nada")).toBe("nesta\u{1d159}página");
+    expect(textoComparavel("nesta|página nesta\u2192página")).toBe("nesta página nesta página");
+    // Os marcadores de uso privado das travas não viram espaço.
+    expect(textoComparavel("a\ue000b\ue001c")).toBe("a\ue000b\ue001c");
   });
 });
