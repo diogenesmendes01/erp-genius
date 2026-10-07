@@ -10,14 +10,23 @@ export default async function AutorizacoesComunicacaoPage({ params, searchParams
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
   const { id } = await params;
   const { cursor } = await searchParams;
+  // A consulta e a preparação dos dados ficam no try (falha → o mesmo alerta de antes); o JSX é montado
+  // fora dele (react-hooks/error-boundaries: try/catch não pega erro de renderização).
+  let dados;
   try {
     const [tela, preferencia] = await Promise.all([
       consultarTelaAutorizacoesComunicacaoAcademica({ matriculaId: id, cursor }),
       consultarPreferenciaFusoEquipe(),
     ]);
-    return <section className="space-y-5"><VoltarPara href="/secretaria" />
-      <header><h1 className="text-2xl font-medium">Destinatários acadêmicos · {tela.matricula.codigo ?? "Matrícula em preparação"}</h1><p>{tela.matricula.alunoNome}</p><p className="text-sm text-gray-600">Ser responsável ou pagador não autoriza avisos. Registre evidência explícita para cada matrícula.</p></header>
-      <AutorizacoesFormulario matriculaId={id} responsaveis={tela.responsaveis} historico={tela.historico.itens.map((item) => ({ ...item, vigenteEm: item.vigenteEm.toISOString(), revogadaEm: item.revogadaEm?.toISOString() ?? null }))} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />{(cursor || tela.historico.proximoCursor) && <nav aria-label="Páginas do histórico" className="flex gap-4">{cursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao`}>Início</Link>}{tela.historico.proximoCursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao?cursor=${encodeURIComponent(tela.historico.proximoCursor)}`}>Próxima página</Link>}</nav>}
-    </section>;
+    dados = {
+      tela,
+      historico: tela.historico.itens.map((item) => ({ ...item, vigenteEm: item.vigenteEm.toISOString(), revogadaEm: item.revogadaEm?.toISOString() ?? null })),
+      fusoExibicao: (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null,
+    };
   } catch { return <p role="alert">Não foi possível consultar as autorizações desta matrícula.</p>; }
+  const { tela, historico, fusoExibicao } = dados;
+  return <section className="space-y-5"><VoltarPara href="/secretaria" />
+      <header><h1 className="text-2xl font-medium">Destinatários acadêmicos · {tela.matricula.codigo ?? "Matrícula em preparação"}</h1><p>{tela.matricula.alunoNome}</p><p className="text-sm text-gray-600">Ser responsável ou pagador não autoriza avisos. Registre evidência explícita para cada matrícula.</p></header>
+      <AutorizacoesFormulario matriculaId={id} responsaveis={tela.responsaveis} historico={historico} preferenciaFusoExibicao={fusoExibicao} />{(cursor || tela.historico.proximoCursor) && <nav aria-label="Páginas do histórico" className="flex gap-4">{cursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao`}>Início</Link>}{tela.historico.proximoCursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao?cursor=${encodeURIComponent(tela.historico.proximoCursor)}`}>Próxima página</Link>}</nav>}
+    </section>;
 }

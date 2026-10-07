@@ -1,0 +1,88 @@
+# CI: typecheck, lint e testes unitários em cada PR para a main e em cada push na main.
+# Só CI — deploy (CD) fica fora deste workflow.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Em PR: um run por branch de origem, e push novo cancela o anterior (só o último commit importa).
+# Em push na main: cada commit é o próprio grupo e nada é cancelado — merges seguidos não derrubam o CI do
+# commit anterior (num grupo compartilhado, o GitHub também descartaria o run pendente da fila).
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.head_ref) || format('main-{0}', github.sha) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Valores de TESTE, nunca segredos reais. Nenhum job conecta em banco: os testes de integração
+  # (*.int.test.ts) ficam fora do `npm test` (vitest.config.ts) e rodam à parte com `npm run test:int`.
+  # O Prisma só gera o client; a URL existe porque o schema a declara.
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: TypeScript (tsc --noEmit)
+        run: npx tsc --noEmit
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: ESLint (eslint .)
+        run: npx eslint .
+
+  test:
+    # Dois fusos: UTC (o do runner) e o da operação. A produção não fixa TZ, e há teste sensível a fuso
+    # (ex.: #137) — a matriz pega o que só quebra num deles.
+    name: test (${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Sao_Paulo]
+    env:
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: Testes unitários (npm test — vitest, config padrão, sem *.int.test.ts)
+        run: npm test
