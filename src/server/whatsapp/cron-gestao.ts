@@ -1,4 +1,5 @@
 import { EtapaLead } from "@prisma/client";
+import { ETAPA_EXTENSO_LABEL, rotular } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_MUDAM_ETAPA } from "@/server/comercial/schema";
 import { garantirContato } from "./identidade";
@@ -21,17 +22,6 @@ const ETAPAS_FUNIL_ATIVO: EtapaLead[] = [
   EtapaLead.AGUARDANDO_MATRICULA,
   EtapaLead.NO_SHOW,
 ];
-
-const ETAPA_ROTULO: Record<string, string> = {
-  NOVO: "Novo",
-  EM_ATENDIMENTO: "Em atendimento",
-  QUALIFICADO: "Qualificado",
-  EXPERIMENTAL_AGENDADA: "Experimental agendada",
-  EXPERIMENTAL_REALIZADA: "Experimental realizada",
-  PROPOSTA: "Proposta",
-  AGUARDANDO_MATRICULA: "Aguardando matrícula",
-  NO_SHOW: "No-show",
-};
 
 export interface ResultadoCronGestao {
   executou: boolean;
@@ -228,13 +218,13 @@ async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<s
 
   const funilLinhas = funil
     .sort((a, b) => b._count._all - a._count._all)
-    .map((f) => `• ${ETAPA_ROTULO[f.etapa] ?? f.etapa}: ${f._count._all}`)
+    .map((f) => `• ${rotular(ETAPA_EXTENSO_LABEL, f.etapa)}: ${f._count._all}`)
     .join("\n");
   const gargaloLinhas =
     gargalos.length === 0
       ? "Nenhum gargalo relevante (nada parado há 3+ dias). ✅"
       : gargalos
-          .map(([etapa, n], i) => `${i + 1}º ${ETAPA_ROTULO[etapa] ?? etapa} — ${n} lead(s) parados há 3+ dias`)
+          .map(([etapa, n], i) => `${i + 1}º ${rotular(ETAPA_EXTENSO_LABEL, etapa)} — ${n} lead(s) parados há 3+ dias`)
           .join("\n");
 
   return (

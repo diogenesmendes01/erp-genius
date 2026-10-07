@@ -1,16 +1,7 @@
 import { Papel } from "@prisma/client";
 
-// Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3).
-export const PAPEL_LABEL: Record<Papel, string> = {
-  ADMINISTRADOR: "Administrador",
-  GERENTE_COMERCIAL: "Gerente Comercial",
-  VENDEDOR: "Vendedor",
-  GERENTE_PEDAGOGICO: "Gerente Pedagógico",
-  PROFESSOR: "Professor",
-  FINANCEIRO: "Financeiro",
-  SECRETARIA_ACADEMICA: "Secretaria Acadêmica",
-  ALUNO: "Aluno (portal)",
-};
+// Rótulos dos papéis: em labels.ts (mapa de rótulo só lá — E5, R3 da #138); reexportados aqui para os imports antigos.
+export { PAPEL_LABEL } from "./labels";
 
 export function temPapel(papeis: string[] = [], ...alvo: Papel[]): boolean {
   return papeis.some((p) => alvo.includes(p as Papel));
