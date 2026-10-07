@@ -14,13 +14,8 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
   const busca = lerBuscaDiario(parametros);
   const [historico, turmas] = await Promise.all([listarAulasDiario(usuario, antes, busca), listarTurmasParaDiario(usuario)]);
   return <div className="space-y-6">
-    <Link className="text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
-    <Link className="text-sm text-brand-700 underline" href="/diario/encontros">Encontros atribuídos</Link>
-    <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/regularizacoes">Regularizações de aula</Link>
-    <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/pendencias">Pendências do diário</Link>
-    {usuario.papeis.includes(Papel.PROFESSOR) && <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/reposicoes">Fila de reposições individuais</Link>}
-    <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/excecoes-gravacao">Exceções de gravação</Link>
-    {usuario.papeis.some((papel) => papel === Papel.GERENTE_PEDAGOGICO || papel === Papel.ADMINISTRADOR) && <Link className="ml-4 text-sm text-brand-700 underline" href="/diario/regularizacoes-gravacao">Regularizações de gravação</Link>}
+    {/* As sub-seções do diário estão nas abas do layout (E2); Avaliações é do acadêmico. */}
+    <Link className="inline-block text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
     <form method="get" action="/diario" role="search" aria-label="Buscar no histórico do diário" className="flex flex-wrap items-center gap-2">
       <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
       <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>

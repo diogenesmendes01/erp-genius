@@ -28,6 +28,25 @@ describe("SubTabs", () => {
     expect([...html.matchAll(/aria-current="page"/g)]).toHaveLength(1);
   });
 
+  it("prefixos aninhados (E2, /academico): aba exata não acende por prefixo; `prefixo` cobre o ramo", () => {
+    const aninhadas = [
+      { href: "/academico", label: "Mudanças acadêmicas", exato: true },
+      { href: "/academico/recuperacoes", label: "Recuperações" },
+      { href: "/academico/recuperacoes/designadas", label: "Minhas recuperações" },
+      { href: "/academico/modalidades/quantidade", label: "Quantidade de aulas", prefixo: "/academico/modalidades" },
+    ];
+    const marcadas = (caminho: string) => {
+      mocks.pathname.mockReturnValue(caminho);
+      const html = renderToStaticMarkup(createElement(SubTabs, { tabs: aninhadas }));
+      return [...html.matchAll(/<a[^>]*aria-current="page"[^>]*>/g)].map((m) => m[0].match(/\shref="([^"]+)"/)?.[1]);
+    };
+    expect(marcadas("/academico")).toEqual(["/academico"]);
+    expect(marcadas("/academico/recuperacoes/designadas")).toEqual(["/academico/recuperacoes/designadas"]);
+    expect(marcadas("/academico/recuperacoes/planos/p1")).toEqual(["/academico/recuperacoes"]);
+    expect(marcadas("/academico/modalidades/m1/quantidade")).toEqual(["/academico/modalidades/quantidade"]);
+    expect(marcadas("/academico/segundas-chamadas/a1/P1")).toEqual([]);
+  });
+
   it("aceita um aria-label próprio para distinguir mais de um SubTabs na mesma página", () => {
     mocks.pathname.mockReturnValue("/configuracao");
     const semLabel = renderToStaticMarkup(createElement(SubTabs, { tabs }));
