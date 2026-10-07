@@ -53,6 +53,12 @@ describe("grades responsivas", () => {
     expect(ocorrencias('className="grid grid-cols-2 gap-4"', BASE_MULTICOLUNA)).toHaveLength(1);
     expect(ocorrencias('className="grid grid-cols-1 sm:grid-cols-2 gap-4"', BASE_MULTICOLUNA)).toHaveLength(0);
     expect(ocorrencias('className="grid gap-2 md:grid-cols-3"', BASE_MULTICOLUNA)).toHaveLength(0);
+    // Base de uma coluna que só abre em telas largas — as 3 grades que um `grep '\bgrid-cols-2\b'`
+    // ainda acusa (o `:` do prefixo é borda de palavra): regras/turmas/[turmaId], CorrecoesConclusaoReposicao
+    // e contrato/substituicoes/[propostaId]. Não são ofensoras.
+    expect(ocorrencias('className="grid gap-4 xl:grid-cols-2"', BASE_MULTICOLUNA)).toHaveLength(0);
+    expect(ocorrencias('className="grid gap-3 lg:grid-cols-2"', BASE_MULTICOLUNA)).toHaveLength(0);
+    expect(ocorrencias("className={`grid ${denso ? \"grid-cols-2\" : \"grid-cols-1\"}`}", BASE_MULTICOLUNA)).toHaveLength(1);
     expect(ocorrencias('className="col-span-2 md:col-span-1"', COL_SPAN_BASE)).toHaveLength(1);
     expect(ocorrencias('className="sm:col-span-2 md:col-span-1"', COL_SPAN_BASE)).toHaveLength(0);
   });

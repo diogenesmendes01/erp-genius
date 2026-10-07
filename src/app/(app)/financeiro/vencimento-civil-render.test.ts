@@ -19,6 +19,7 @@ import { FichaFinanceira, type FichaFinanceiraDados } from "../alunos/[id]/finan
 import { FilaCobranca } from "./FilaCobranca";
 import { ConferenciaFinanceiraMigracao, type DadosConciliacaoFinanceira } from "./migracao/[linhaId]/ConferenciaFinanceiraMigracao";
 import type { DashsCobranca, DegrauFila, FilaCobrancaItem } from "@/server/cobrancas/consultas";
+import { lerFiltrosFila, opcoesDaFila } from "@/server/cobrancas/filtros-fila";
 import type { VencimentoVisivel } from "@/lib/vencimento-civil";
 
 const confirmado: VencimentoVisivel = {
@@ -63,9 +64,10 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
     let chamadasUseState = 0;
     mocks.useState.mockImplementation((inicial: unknown) => {
       chamadasUseState += 1;
-      return [chamadasUseState === 5 ? item : resolverEstadoInicial(inicial), vi.fn()];
+      // O 1º useState da fila é o detalhe aberto (`aberta`): os filtros saíram do estado local para a URL (E4).
+      return [chamadasUseState === 1 ? item : resolverEstadoInicial(inicial), vi.fn()];
     });
-    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], dashs, regua, podeOperar: false, podeBloquear: false }));
+    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false }));
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
     const fichaRenderizada = renderToStaticMarkup(createElement(FichaFinanceira, { dados: ficha }));
     const migracaoRenderizada = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: migracao }));
