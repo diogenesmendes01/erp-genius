@@ -10,5 +10,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts"],
     exclude: ["**/node_modules/**", "src/**/*.int.test.ts"],
+    // As travas que varrem o src inteiro pela AST (colunas-ordenaveis, enums-rotulos, botoes…) levam alguns
+    // segundos; no runner do CI uma delas passou dos 5 s padrão (5262 ms) e falhou por tempo, não por regra.
+    testTimeout: 30_000,
   },
 });
