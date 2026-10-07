@@ -8,10 +8,12 @@ on:
   push:
     branches: [main]
 
-# Um run por branch: push novo cancela o anterior da mesma branch (em PR, a branch de origem).
+# Em PR: um run por branch de origem, e push novo cancela o anterior (só o último commit importa).
+# Em push na main: cada commit é o próprio grupo e nada é cancelado — merges seguidos não derrubam o CI do
+# commit anterior (num grupo compartilhado, o GitHub também descartaria o run pendente da fila).
 concurrency:
-  group: ci-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.head_ref) || format('main-{0}', github.sha) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
