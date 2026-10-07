@@ -24,6 +24,9 @@ export function CampoMoeda({
   placeholder,
   className,
   disabled,
+  "aria-required": ariaRequired,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
 }: {
   value: string;
   onChange: (valor: string) => void;
@@ -39,6 +42,10 @@ export function CampoMoeda({
    *  espaço à esquerda para o símbolo, sem impor um visual próprio. */
   className: string;
   disabled?: boolean;
+  /** Ligações do <Campo> (src/components/Campo.tsx): obrigatoriedade, erro e dica/mensagem. */
+  "aria-required"?: boolean;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 }) {
   function normalizarAoSair() {
     const numero = parseMoeda(value);
@@ -63,6 +70,9 @@ export function CampoMoeda({
         id={id}
         name={name}
         aria-label={ariaLabel}
+        aria-required={ariaRequired}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedby}
         required={required}
         placeholder={placeholder}
         disabled={disabled}

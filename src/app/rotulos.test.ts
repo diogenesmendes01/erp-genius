@@ -71,6 +71,13 @@ const repassadores = new Set(
   ),
 );
 
+/** A posição está dentro de um <Campo …> ainda aberto (não confundir com <CampoTexto>/<CampoMoeda>). */
+function dentroDeCampo(antes: string) {
+  const aberturas = [...antes.matchAll(/<Campo(?=[\s>])/g)];
+  const ultima = aberturas.at(-1)?.index ?? -1;
+  return ultima > antes.lastIndexOf("</Campo>");
+}
+
 function camposSemRotulo() {
   // CampoTexto é um <textarea> (com o mínimo visível): cada uso é conferido como campo.
   const campo = new RegExp(String.raw`<(select|input|textarea|CampoTexto|${[...repassadores].join("|")})\b`, "g");
@@ -86,6 +93,10 @@ function camposSemRotulo() {
         if (id && alvos.has(id)) return false;
         if (id === "{id}" && componenteQueRepassaId(conteudo, m.index!)) return false;
         const antes = conteudo.slice(0, m.index);
+        // Controle de um <Campo> (src/components/Campo.tsx): recebe id + aria-* espalhando a ligação
+        // (`{(campo) => <input {...campo} />}`) e o rótulo do Campo aponta para esse id. Que o espalhado é
+        // mesmo o parâmetro do Campo, a trava por AST confere (src/app/campos.test.ts).
+        if (/\{\s*\.\.\.\s*\w+\s*\}/.test(tag) && dentroDeCampo(antes)) return false;
         return antes.lastIndexOf("<label") <= antes.lastIndexOf("</label>"); // fora de <label> aberto
       })
       .map((m) => `${arquivo}:${linha(conteudo, m.index!)} <${m[1]}>`);
@@ -117,6 +128,8 @@ describe("rótulos de formulário", () => {
 
   it("htmlFor aponta para um id que existe no mesmo arquivo — literal, template ou variável, comparados por inteiro", () => {
     const quebrados = telas.flatMap(({ arquivo, conteudo }) => {
+      // O rótulo do Campo aponta para o id que ele mesmo entrega ao controle (que mora em cada tela).
+      if (arquivo.split("\\").join("/") === "src/components/Campo.tsx") return [];
       const ids = valores(conteudo, "id");
       return [...conteudo.matchAll(/<label\b/g)]
         .map((m) => ({ alvo: expressao(tagEm(conteudo, m.index!), "htmlFor"), i: m.index! }))
