@@ -418,6 +418,8 @@ export type Rastreador = {
   consts: Map<string, string[]>;
   funcoes: Map<string, Funcao>;
   atravessa: (nome: string) => boolean;
+  /** Índices dos parâmetros do helper que chegam ao retorno dele. */
+  fluem: (nome: string) => ReadonlySet<number>;
   /** As expressões em posição de texto que nascem neste nó: filho de JSX, atributo/prop de texto, `__html`. */
   textosDoNo: (n: ts.Node) => ts.Expression[];
   atributoDeTexto: (a: ts.JsxAttribute) => boolean;
@@ -506,11 +508,11 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     || (ts.isPropertyAccessExpression(alvo) && ROTULADORES.has(alvo.name.text) && ts.isIdentifier(alvo.expression) && deLabels.has(alvo.expression.text));
   const rotularSeguro = (x: ts.CallExpression) => ehRotular(semEmbrulho(x.expression)) ? mapaSeguro(x.arguments[0]) : null;
 
-  type Tem = (chave: string) => boolean;
+  type Tem = (chave: string, no?: ts.Expression) => boolean;
   const cru = (e: ts.Expression, tem: Tem, direto: boolean): ts.Expression[] => {
     const x = semEmbrulho(e);
     const chave = chaveDe(x);
-    if ((chave !== null && tem(chave)) || (direto && campoDireto(x))) return [x];
+    if ((chave !== null && tem(chave, x)) || (direto && campoDireto(x))) return [x];
     const achados = descer(x, tem, direto);
     // Pelo tipo (C13): o que a descida não achou pelo nome, o checker acha pela união de literais de enum.
     return achados.length || !direto || !porTipo(x) ? achados : [x];
@@ -560,40 +562,98 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     }
     // Função local que rotula não deixa passar; a que devolve o parâmetro deixa. Importada do projeto: analisada na
     // origem (R3 da #138, B15/G5); de fora do projeto: falha fechada, o código atravessa pelos argumentos.
-    if (ts.isIdentifier(alvo) && funcoes.has(alvo.text) && !atravessa(alvo.text)) return [];
+    const soOsQueFluem = (passam: ReadonlySet<number>) => argumentosQueFluem(x, passam).flatMap((a) => {
+      const f = semEmbrulho(a as ts.Expression);
+      return ts.isArrowFunction(f) || ts.isFunctionExpression(f) ? retornos(f).flatMap(c) : c(a as ts.Expression);
+    });
+    if (ts.isIdentifier(alvo) && funcoes.has(alvo.text)) return soOsQueFluem(fluem(alvo.text));
     if (ts.isIdentifier(alvo) && importados.has(alvo.text)) {
       const imp = importados.get(alvo.text)!, i = imp.lastIndexOf("#");
       const outro = projeto.rastreador(imp.slice(0, i)), nome = imp.slice(i + 1);
-      if (outro && outro.funcoes.has(nome) && !outro.atravessa(nome)) return [];
+      if (outro && outro.funcoes.has(nome)) return soOsQueFluem(outro.fluem(nome));
     }
     return argumentos();
   };
-  const deixaPassar = new Map<string, boolean>();
-  const atravessa = (nome: string): boolean => {
-    if (deixaPassar.has(nome)) return deixaPassar.get(nome)!;
-    deixaPassar.set(nome, true); // recursão: falha fechada
+  // Por PARÂMETRO (integração da #150): só o argumento cujo parâmetro chega ao retorno atravessa o helper —
+  // `detalheEvento(ev.tipo, p)` devolve texto de `p`; `ev.tipo` só é comparado e não chega ao texto. Parâmetro
+  // desestruturado (sem nome único) conta como passando (falha fechada).
+  const fluemCache = new Map<string, ReadonlySet<number>>();
+  const fluem = (nome: string): ReadonlySet<number> => {
+    if (fluemCache.has(nome)) return fluemCache.get(nome)!;
     const fn = funcoes.get(nome)!;
-    const params = new Set(fn.parameters.flatMap((p) => ts.isIdentifier(p.name) ? [p.name.text] : []));
-    const r = retornos(fn).some((e) => crus(e, params).length > 0);
-    deixaPassar.set(nome, r);
+    const todos = new Set(fn.parameters.map((_, i) => i));
+    fluemCache.set(nome, todos); // recursão: falha fechada
+    // O parâmetro flui se algum achado no retorno é ELE (pela raiz: `p`, `p.x`, `p.trim()`) — não basta o retorno ter
+    // outro código (um parâmetro irmão tipado como enum não faz este fluir).
+    const raiz = (x: ts.Expression): string | null => {
+      const y = semEmbrulho(x);
+      if (ts.isIdentifier(y)) return y.text;
+      if (ts.isPropertyAccessExpression(y) || ts.isElementAccessExpression(y)) return raiz(y.expression);
+      if (ts.isCallExpression(y) && ts.isPropertyAccessExpression(y.expression)) return raiz(y.expression.expression);
+      return null;
+    };
+    const r = new Set(fn.parameters.flatMap((p, i) => {
+      if (!ts.isIdentifier(p.name)) return [i];
+      const nomeP = p.name.text;
+      return retornos(fn).some((e) => crus(e, new Set([nomeP])).some((a) => raiz(a) === nomeP)) ? [i] : [];
+    }));
+    fluemCache.set(nome, r);
     return r;
   };
+  const atravessa = (nome: string): boolean => fluem(nome).size > 0;
+  /** Argumentos da chamada a um helper que chegam ao retorno dele (o resto só decide, não vira texto). */
+  const argumentosQueFluem = (x: ts.CallExpression, passam: ReadonlySet<number>) => x.arguments.filter((a, i) => passam.has(i) || ts.isSpreadElement(a));
   /** Ponto fixo dos nomes que guardam o código sob `raiz`, a partir de `iniciais`. */
+  /** Declarações de cada nome marcado por fecharAliases (por conjunto devolvido) — com checker, um identificador
+   * só é alias se o símbolo dele vem de uma delas (integração da #150: o `motivo` de texto livre não herda a marca
+   * do estado `[motivo] = useState<MotivoPerda>` do mesmo arquivo). Nome marcado sem declaração vale pelo nome. */
+  const declaracoesDe = new WeakMap<ReadonlySet<string>, { porDecl: Map<string, Set<ts.Node>>; soPorNome: Set<string> }>();
+  /** O tipo é união só de literais de texto, nenhum código de enum? (posição de tupla que guarda rótulo, não código) */
+  const tipoSemCodigo = (no: ts.Node) => {
+    if (!checker) return false;
+    const tp = checker.getTypeAtLocation(no);
+    const partes = tp.isUnion() ? tp.types : [tp];
+    return partes.length > 0 && partes.every((p) => p.isStringLiteral() && !projeto.codigos.has(p.value));
+  };
+  const declsDoSimbolo = (no: ts.Node): readonly ts.Node[] => (checker && checker.getSymbolAtLocation(no)?.declarations) || [];
+  const confere = (conjunto: ReadonlySet<string>, k: string, no?: ts.Expression) => {
+    if (!checker || !no || !ts.isIdentifier(no)) return true;
+    const info = declaracoesDe.get(conjunto);
+    if (!info || info.soPorNome.has(k)) return true;
+    const decls = info.porDecl.get(k);
+    if (!decls) return true;
+    const doNo = declsDoSimbolo(no);
+    return !doNo.length || doNo.some((d) => decls.has(d));
+  };
   const fecharAliases = (raiz: ts.Node, iniciais: ReadonlySet<string>, direto: boolean): Set<string> => {
     const nomes = new Set(iniciais);
-    const tem = (k: string) => nomes.has(k);
+    const porDecl = new Map<string, Set<ts.Node>>(), soPorNome = new Set<string>(iniciais);
+    declaracoesDe.set(nomes, { porDecl, soPorNome });
+    const tem = (k: string, no?: ts.Expression) => nomes.has(k) && confere(nomes, k, no);
     const guarda = (e: ts.Expression) => cru(e, tem, direto).length > 0;
     for (let mudou = true; mudou;) {
       mudou = false;
-      const marcar = (nome: string | null) => { if (nome && !nomes.has(nome)) { nomes.add(nome); mudou = true; } };
-      const marcarPadrao = (p: ts.BindingName) => {
-        if (ts.isIdentifier(p)) marcar(p.text);
-        else for (const el of p.elements) if (!ts.isOmittedExpression(el)) marcarPadrao(el.name);
+      const marcar = (nome: string | null, decl?: ts.Node | readonly ts.Node[]) => {
+        if (!nome) return;
+        const ds = decl === undefined ? [] : Array.isArray(decl) ? decl : [decl as ts.Node];
+        if (!ds.length || !checker) { if (!soPorNome.has(nome)) { soPorNome.add(nome); mudou = true; } }
+        else for (const d of ds) { const conj = porDecl.get(nome) ?? new Set<ts.Node>(); if (!conj.has(d)) { conj.add(d); porDecl.set(nome, conj); mudou = true; } }
+        if (!nomes.has(nome)) { nomes.add(nome); mudou = true; }
+      };
+      /** Marca os nomes do padrão; `decl` é a declaração do nome simples. Em lista/tupla, a posição cujo tipo é só
+       * rótulo (literais sem código) não guarda o código: `[valor, rotulo]` de `[["FALTA", "Falta"]]` marca só `valor`. */
+      const marcarPadrao = (p: ts.BindingName, decl?: ts.Node) => {
+        if (ts.isIdentifier(p)) marcar(p.text, decl ?? p.parent);
+        else for (const el of p.elements) {
+          if (ts.isOmittedExpression(el)) continue;
+          if (ts.isArrayBindingPattern(p) && ts.isIdentifier(el.name) && tipoSemCodigo(el.name)) continue;
+          marcarPadrao(el.name, el);
+        }
       };
       visitar(raiz, (n) => {
         if (ts.isVariableDeclaration(n) && n.initializer) {
           const init = semEmbrulho(n.initializer);
-          if (ts.isIdentifier(n.name) && guarda(n.initializer)) marcar(n.name.text);
+          if (ts.isIdentifier(n.name) && guarda(n.initializer)) marcar(n.name.text, n);
           // const [s] = [d.status] (R3 da #138, B12).
           if (ts.isArrayBindingPattern(n.name) && guarda(n.initializer)) marcarPadrao(n.name);
           // const v = { rot: d.status }: a propriedade do objeto local guarda o código (B12).
@@ -610,12 +670,13 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
         }
         if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken && guarda(n.right)) {
           const alvo = semEmbrulho(n.left);
-          marcar(ts.isElementAccessExpression(alvo) ? chaveDe(semEmbrulho(alvo.expression)) : chaveDe(alvo)); // partes[i] = …; s = …; v.rot = …
+          const destino = ts.isElementAccessExpression(alvo) ? semEmbrulho(alvo.expression) : alvo;
+          marcar(chaveDe(destino), ts.isIdentifier(destino) ? declsDoSimbolo(destino) : undefined); // partes[i] = …; s = …; v.rot = …
         }
         if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)) {
           const metodo = n.expression.name.text, receptor = semEmbrulho(n.expression.expression);
           // partes.push(d.status): a lista passa a guardar o código (B12).
-          if (Object.prototype.hasOwnProperty.call(METODOS_QUE_GUARDAM, metodo) && METODOS_QUE_GUARDAM[metodo](n.arguments).some(guarda)) marcar(chaveDe(receptor));
+          if (Object.prototype.hasOwnProperty.call(METODOS_QUE_GUARDAM, metodo) && METODOS_QUE_GUARDAM[metodo](n.arguments).some(guarda)) marcar(chaveDe(receptor), ts.isIdentifier(receptor) ? declsDoSimbolo(receptor) : undefined);
           // xs.map((s) => …) sobre lista que guarda o código; Object.values(StatusTurma).map((v) => <option>{v}</option>).
           if (Object.prototype.hasOwnProperty.call(METODOS_COM_ITEM, metodo)) {
             const [fn] = n.arguments, indice = METODOS_COM_ITEM[metodo];
@@ -629,7 +690,7 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
         // const { situacao } = d / function B({ estado }): desestruturação de campo com nome de enum.
         if (direto && ts.isBindingElement(n) && ts.isIdentifier(n.name) && !n.dotDotDotToken && ts.isObjectBindingPattern(n.parent)) {
           const chave = chaveDoElemento(n);
-          if (chave && nomeDeEnum(chave)) marcar(n.name.text);
+          if (chave && nomeDeEnum(chave)) marcar(n.name.text, n);
         }
       });
     }
@@ -643,7 +704,7 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
   const crus = (e: ts.Expression, extra: ReadonlySet<string> = VAZIO, direto = true) => {
     if (!direto) return cru(e, (k) => extra.has(k), false);
     const a = aliases();
-    return cru(e, (k) => a.has(k) || extra.has(k), true);
+    return cru(e, (k, no) => (a.has(k) && confere(a, k, no)) || extra.has(k), true);
   };
 
   /** O componente da tag: função deste arquivo ou importada do projeto. Sem declaração (pacote, `X.Y`): null. */
@@ -712,7 +773,7 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     });
     return sim;
   };
-  const eu: Rastreador = { sf, crus, campoDireto, consts, funcoes, atravessa, textosDoNo, atributoDeTexto, imprimeProp, rotularSeguro };
+  const eu: Rastreador = { sf, crus, campoDireto, consts, funcoes, atravessa, fluem, textosDoNo, atributoDeTexto, imprimeProp, rotularSeguro };
   return eu;
 }
 
@@ -1008,6 +1069,31 @@ describe("(i) enum cru na tela — AST e tipos", () => {
     expect(enumsCrusDoProjeto(projeto, "src/app/t/page.tsx").map((a) => a.trecho)).toEqual(["i.motivo", "i.turma?.fase", "d.motivos", "filtro", "d.motivo"]);
     // Sem checker, os mesmos nomes passam: o que acusa acima é o tipo, não o nome.
     expect(enumsCrusDoProjeto(projetoVirtual({ "src/app/t/page.tsx": "const r = <p>{i.motivo} {i.turma?.fase}</p>;" }), "src/app/t/page.tsx")).toEqual([]);
+  });
+
+  it("autoteste (integração da #150): com o checker, alias pela declaração, posição de tupla pelo tipo e fluxo por parâmetro", () => {
+    const projeto = projetoVirtual({
+      "src/app/t/page.tsx": [
+        'import { useState } from "react";',
+        'import type { MotivoY } from "@prisma/client";',
+        // Dois `motivo` no mesmo arquivo: o estado guarda o código; o local de outra função é texto livre.
+        "export function Estado() { const [motivo] = useState<MotivoY>(\"RECUSA\"); return <p>{motivo}</p>; }",
+        "export function Livre({ p }: { p: Record<string, unknown> }) { const motivo = typeof p.motivo === \"string\" ? p.motivo : null; return <p>{motivo}</p>; }",
+        // Tupla [código, rótulo]: só a posição do código guarda o código.
+        'const tipos = [["SEM_CONTATO", "Sem contato"], ["RECUSA", "Recusa"]] as const;',
+        "export function Opcoes() { return <select>{tipos.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}</select>; }",
+        "export function Cru() { return <p>{tipos.map(([valor]) => valor).join(\", \")}</p>; }",
+        // Helper: só o argumento cujo parâmetro chega ao retorno atravessa; `tipo` só decide.
+        'function detalhe(tipo: MotivoY, nota: string, eco: MotivoY) { return tipo === "RECUSA" ? nota : `${nota} ${eco}`; }',
+        "export function Detalhe({ m }: { m: MotivoY }) { return <p>{detalhe(m, \"ok\", \"RECUSA\")} {detalhe(\"RECUSA\", \"ok\", m)}</p>; }",
+      ].join("\n"),
+    }, true);
+    const trechos = enumsCrusDoProjeto(projeto, "src/app/t/page.tsx").map((a) => `${a.linha}:${a.trecho}`);
+    // Linha 3: o `motivo` do estado; linha 4 (texto livre) não. Linha 6: `rotulo` não; linha 7: `valor` sim.
+    // Linha 9: no 1º `detalhe`, `m` vai no parâmetro que só decide; no 2º, no que chega ao texto.
+    expect(trechos).toEqual(["3:motivo", "7:valor", "9:m"]);
+    expect(trechos.filter((x) => x.startsWith("4:") || x.startsWith("6:"))).toEqual([]);
+    expect(trechos.filter((x) => x.startsWith("9:"))).toEqual(["9:m"]);
   });
 
   it("autoteste: o client virtual do Prisma traz enums, modelos, relações e delegados", () => {
