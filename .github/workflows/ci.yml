@@ -31,8 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -50,8 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -61,12 +61,20 @@ jobs:
         run: npx eslint .
 
   test:
-    name: test
+    # Dois fusos: UTC (o do runner) e o da operação. A produção não fixa TZ, e há teste sensível a fuso
+    # (ex.: #137) — a matriz pega o que só quebra num deles.
+    name: test (${{ matrix.tz }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Sao_Paulo]
+    env:
+      TZ: ${{ matrix.tz }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -74,5 +82,7 @@ jobs:
         run: npm ci
       - name: Gerar o client do Prisma
         run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
       - name: Testes unitários (npm test — vitest, config padrão, sem *.int.test.ts)
         run: npm test
