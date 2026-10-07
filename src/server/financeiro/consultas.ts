@@ -22,13 +22,23 @@ function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.Comis
 export const COMISSOES_POR_PAGINA = 50;
 
 /**
+ * Busca de /comissoes (E4, §5.6 A9): por palavras no nome do beneficiário — a coluna que a tabela
+ * mostra —, cada uma precisa aparecer ("ana silva" acha "Ana Maria Silva"). No máximo 6 palavras
+ * (limita o tamanho da consulta, como nas outras listas). Sem busca, nenhuma condição.
+ */
+export function condicoesBuscaComissoes(busca: string): Prisma.ComissaoWhereInput[] {
+  return busca.trim().split(/\s+/).filter(Boolean).slice(0, 6)
+    .map((palavra) => ({ vendedor: { nome: { contains: palavra, mode: "insensitive" as const } } }));
+}
+
+/**
  * Lista de /comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
- * página. Filtro por situação (em AND com o escopo), 50 por página, total filtrado. Ordem pelo
+ * página. Filtro por situação e busca (em AND com o escopo), 50 por página, total filtrado. Ordem pelo
  * cabeçalho (E1) feita no banco, antes da página, com desempate por id; sem ordem, beneficiário crescente.
  */
-export async function listarComissoesPagina({ status, pagina, ordem }: { status: StatusComissao | null; pagina: number; ordem?: Ordenacao<OrdemComissoes> }) {
+export async function listarComissoesPagina({ status, busca = "", pagina, ordem }: { status: StatusComissao | null; busca?: string; pagina: number; ordem?: Ordenacao<OrdemComissoes> }) {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
-  const where: Prisma.ComissaoWhereInput = { AND: [escopoComissoes(usuario), status ? { status } : {}] };
+  const where: Prisma.ComissaoWhereInput = { AND: [escopoComissoes(usuario), status ? { status } : {}, ...condicoesBuscaComissoes(busca)] };
   const [comissoes, total] = await Promise.all([
     prisma.comissao.findMany({
       where, orderBy: orderByComissoes(ordem), skip: (pagina - 1) * COMISSOES_POR_PAGINA, take: COMISSOES_POR_PAGINA,
