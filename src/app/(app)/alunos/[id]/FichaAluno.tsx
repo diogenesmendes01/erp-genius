@@ -92,6 +92,20 @@ const IDS_EDICAO = {
   paisId: "ficha-paisId",
   motivo: "ficha-motivo",
 } as const;
+
+/**
+ * Mesmas exigências do EditarAlunoSchema (o servidor revalida). Aluno importado por lote costuma chegar
+ * sem sobrenome: a edição mostra isso no campo em vez de deixar "Salvar" desabilitado sem motivo.
+ * Função pura (fora do componente) para o teste conferir cada regra sem simular o clique.
+ */
+export function errosDaEdicaoAluno(ed: { primeiroNome: string; sobrenome: string; paisId: string; motivo: string }): ErrosDeCampos<keyof typeof IDS_EDICAO> {
+  const erros: ErrosDeCampos<keyof typeof IDS_EDICAO> = {};
+  if (!ed.primeiroNome.trim()) erros.primeiroNome = "Informe o nome.";
+  if (!ed.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
+  if (!ed.paisId) erros.paisId = "Selecione o país.";
+  if (!ed.motivo.trim()) erros.motivo = "Informe o motivo da edição.";
+  return erros;
+}
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario" });
 
@@ -170,17 +184,7 @@ export function FichaAluno({
   const set = <K extends keyof ReturnType<typeof valoresEd>>(k: K, v: ReturnType<typeof valoresEd>[K]) =>
     setEd((e) => ({ ...e, [k]: v }));
 
-  // Mesmas exigências do EditarAlunoSchema (o servidor revalida). Aluno importado por lote costuma chegar
-  // sem sobrenome: a edição mostra isso no campo em vez de deixar "Salvar" desabilitado sem motivo.
-  function validarEdicao(): ErrosDeCampos<keyof typeof IDS_EDICAO> {
-    const erros: ErrosDeCampos<keyof typeof IDS_EDICAO> = {};
-    if (!ed.primeiroNome.trim()) erros.primeiroNome = "Informe o nome.";
-    if (!ed.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
-    if (!ed.paisId) erros.paisId = "Selecione o país.";
-    if (!ed.motivo.trim()) erros.motivo = "Informe o motivo da edição.";
-    return erros;
-  }
-  const errosEdicao: ErrosDeCampos<keyof typeof IDS_EDICAO> = tentou && modal === "editar" ? validarEdicao() : {};
+  const errosEdicao: ErrosDeCampos<keyof typeof IDS_EDICAO> = tentou && modal === "editar" ? errosDaEdicaoAluno(ed) : {};
   const erroObsEnc = tentou && motivoEnc === "Outro" && !obsEnc.trim() ? "Informe a observação quando o motivo é “Outro”." : null;
 
   const tiposDocEd = paises.find((p) => p.id === ed.paisId)?.tiposDocumento ?? [];
@@ -267,7 +271,7 @@ export function FichaAluno({
                 disabled={acao.ocupado}
                 onClick={() => {
                   setTentou(true);
-                  if (focarPrimeiroComErro(validarEdicao(), IDS_EDICAO)) return;
+                  if (focarPrimeiroComErro(errosDaEdicaoAluno(ed), IDS_EDICAO)) return;
                   run(() =>
                     editarAluno(aluno.id, {
                       ...ed,

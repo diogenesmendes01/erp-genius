@@ -54,6 +54,35 @@ const IDS_PASSO1 = {
 } as const;
 type CampoPasso1 = keyof typeof IDS_PASSO1;
 
+/** Valores do passo 1 que a validação confere (os mesmos estados do formulário). */
+export type DadosPasso1 = Record<Exclude<CampoPasso1, "respNome">, string> & { respNome: string; pagador: "ALUNO" | "RESPONSAVEL" | "EMPRESA" };
+
+/**
+ * Validação "inteligente" do passo 1 (essenciais obrigatórios) — espelha o MatriculaSchema
+ * (servidor é a fonte da verdade). País dirige o resto. Todos os erros de uma vez, por campo, na
+ * ordem da tela: o operador vê cada campo marcado em vez de descobrir um por clique. Função pura
+ * (fora do componente) para o teste conferir cada regra sem simular o clique.
+ */
+export function errosDoPasso1(d: DadosPasso1): ErrosDeCampos<CampoPasso1> {
+  const erros: ErrosDeCampos<CampoPasso1> = {};
+  if (!d.primeiroNome.trim()) erros.primeiroNome = "Informe o nome do aluno.";
+  if (!d.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
+  if (!d.nascimento) erros.nascimento = "Informe a data de nascimento.";
+  if (!d.genero) erros.genero = "Selecione o gênero.";
+  if (!d.alunoPaisId) erros.alunoPaisId = "Selecione o país.";
+  if (!d.tipoDocumentoId) erros.tipoDocumentoId = "Selecione o tipo de documento.";
+  if (!d.documento.trim()) erros.documento = "Informe o número do documento.";
+  if (!d.nacionalidade) erros.nacionalidade = "Selecione a nacionalidade.";
+  if (!d.email.trim()) erros.email = "Informe o e-mail.";
+  else if (!EMAIL_RE.test(d.email.trim())) erros.email = "E-mail inválido.";
+  if (!d.telefone.trim()) erros.telefone = "Informe o telefone.";
+  if (!d.paisResidencia) erros.paisResidencia = "Selecione o país de residência.";
+  if (d.pagador !== "ALUNO" && !d.respNome.trim()) {
+    erros.respNome = d.pagador === "EMPRESA" ? "Informe o nome da empresa pagadora." : "Informe o nome do responsável financeiro.";
+  }
+  return erros;
+}
+
 const IDS_PASSO2 = {
   taxa: "matricula-taxa",
   mensalidade: "matricula-mensalidade",
@@ -280,28 +309,10 @@ export function MatriculaFormulario({
     };
   }
 
-  // Validação "inteligente" do passo 1 (essenciais obrigatórios) — espelha o MatriculaSchema
-  // (servidor é a fonte da verdade). País dirige o resto. Todos os erros de uma vez, por campo, na
-  // ordem da tela: o operador vê cada campo marcado em vez de descobrir um por clique.
-  function validarPasso1(): ErrosDeCampos<CampoPasso1> {
-    const erros: ErrosDeCampos<CampoPasso1> = {};
-    if (!primeiroNome.trim()) erros.primeiroNome = "Informe o nome do aluno.";
-    if (!sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
-    if (!nascimento) erros.nascimento = "Informe a data de nascimento.";
-    if (!genero) erros.genero = "Selecione o gênero.";
-    if (!alunoPaisId) erros.alunoPaisId = "Selecione o país.";
-    if (!tipoDocumentoId) erros.tipoDocumentoId = "Selecione o tipo de documento.";
-    if (!documento.trim()) erros.documento = "Informe o número do documento.";
-    if (!nacionalidade) erros.nacionalidade = "Selecione a nacionalidade.";
-    if (!email.trim()) erros.email = "Informe o e-mail.";
-    else if (!EMAIL_RE.test(email.trim())) erros.email = "E-mail inválido.";
-    if (!telefone.trim()) erros.telefone = "Informe o telefone.";
-    if (!paisResidencia) erros.paisResidencia = "Selecione o país de residência.";
-    if (pagador !== "ALUNO" && !respNome.trim()) {
-      erros.respNome = pagador === "EMPRESA" ? "Informe o nome da empresa pagadora." : "Informe o nome do responsável financeiro.";
-    }
-    return erros;
-  }
+  const validarPasso1 = () => errosDoPasso1({
+    primeiroNome, sobrenome, nascimento, genero, alunoPaisId, tipoDocumentoId, documento, nacionalidade,
+    email, telefone, paisResidencia, respNome, pagador,
+  });
 
   // Nunca ?? 0 nos três valores monetários: texto inválido viraria taxa/mensalidade/
   // certificado GRATUITOS registrados na matrícula, silencioso. Parseia UMA VEZ aqui e

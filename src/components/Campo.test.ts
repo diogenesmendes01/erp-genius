@@ -7,10 +7,15 @@ import { CampoMoeda } from "./CampoMoeda";
 import { CampoFuso } from "./CampoFuso";
 
 type Props = { rotulo?: ReactNode; obrigatorio?: boolean; dica?: ReactNode; erro?: string | null; id?: string; className?: string };
+type PropsCampo = Parameters<typeof Campo>[0];
+
+/** <Campo> com o controle como filho: a função vai no 3º argumento do createElement (o React a entrega em `children`). */
+const elCampo = (props: Omit<PropsCampo, "children">, filho: PropsCampo["children"]) =>
+  createElement(Campo, props as PropsCampo, filho as unknown as ReactNode);
 
 /** Campo com um <input> espalhando a ligação — o uso padrão nas telas. */
 const comInput = (props: Props) =>
-  renderToStaticMarkup(createElement(Campo, { rotulo: "Nome", ...props, children: (campo: LigacaoCampo) => createElement("input", { ...campo, className: "c" }) }));
+  renderToStaticMarkup(elCampo({ rotulo: "Nome", ...props }, (campo: LigacaoCampo) => createElement("input", { ...campo, className: "c" })));
 
 const tag = (html: string, nome: string) => new RegExp(`<${nome}\\b[^>]*>`).exec(html)?.[0] ?? "";
 const attr = (trecho: string, nome: string) => new RegExp(`\\s${nome}="([^"]*)"`).exec(trecho)?.[1];
@@ -28,8 +33,8 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
 
   it("sem id fixo, useId: rótulo e controle combinam e dois Campos na mesma tela não colidem", () => {
     const html = renderToStaticMarkup(createElement("div", null,
-      createElement(Campo, { rotulo: "A", children: (c: LigacaoCampo) => createElement("input", c) }),
-      createElement(Campo, { rotulo: "B", children: (c: LigacaoCampo) => createElement("input", c) }),
+      elCampo({ rotulo: "A" }, (c: LigacaoCampo) => createElement("input", c)),
+      elCampo({ rotulo: "B" }, (c: LigacaoCampo) => createElement("input", c)),
     ));
     const fors = [...html.matchAll(/<label for="([^"]+)"/g)].map((m) => m[1]);
     const ids = [...html.matchAll(/<input id="([^"]+)"/g)].map((m) => m[1]);
@@ -76,10 +81,10 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
   });
 
   it("className é do invólucro (posição na grade); o rótulo aceita nó", () => {
-    const html = renderToStaticMarkup(createElement(Campo, {
-      rotulo: createElement("span", null, "Taxa"), className: "sm:col-span-2", id: "t",
-      children: (c: LigacaoCampo) => createElement("input", c),
-    }));
+    const html = renderToStaticMarkup(elCampo(
+      { rotulo: createElement("span", null, "Taxa"), className: "sm:col-span-2", id: "t" },
+      (c: LigacaoCampo) => createElement("input", c),
+    ));
     expect(html.startsWith('<div class="sm:col-span-2"><label for="t"')).toBe(true);
     expect(html).toContain("<span>Taxa</span>");
   });
@@ -87,10 +92,10 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
 
 describe("Campo compõe com os campos do design system (sem duplicá-los)", () => {
   it("CampoTexto: recebe id, aria-required e aria-invalid; o describedby do Campo se junta à dica de mínimo", () => {
-    const html = renderToStaticMarkup(createElement(Campo, {
-      rotulo: "Motivo", id: "motivo", obrigatorio: true, dica: "Fica na auditoria.", erro: "Informe o motivo.",
-      children: (c: LigacaoCampo) => createElement(CampoTexto, { ...c, minLength: 5, value: "", onChange: () => {} }),
-    }));
+    const html = renderToStaticMarkup(elCampo(
+      { rotulo: "Motivo", id: "motivo", obrigatorio: true, dica: "Fica na auditoria.", erro: "Informe o motivo." },
+      (c: LigacaoCampo) => createElement(CampoTexto, { ...c, minLength: 5, value: "", onChange: () => {} }),
+    ));
     const campo = /<textarea\b[^>]*>/.exec(html)?.[0] ?? "";
     expect(attr(campo, "id")).toBe("motivo");
     expect(attr(campo, "aria-required")).toBe("true");
@@ -100,18 +105,18 @@ describe("Campo compõe com os campos do design system (sem duplicá-los)", () =
   });
 
   it("CampoTexto sem erro do Campo: continua marcando inválido só abaixo do mínimo (regra dele)", () => {
-    const render = (value: string) => renderToStaticMarkup(createElement(Campo, {
-      rotulo: "Motivo", id: "motivo", children: (c: LigacaoCampo) => createElement(CampoTexto, { ...c, minLength: 5, value, onChange: () => {} }),
-    }));
+    const render = (value: string) => renderToStaticMarkup(elCampo(
+      { rotulo: "Motivo", id: "motivo" }, (c: LigacaoCampo) => createElement(CampoTexto, { ...c, minLength: 5, value, onChange: () => {} }),
+    ));
     expect(render("ok")).toMatch(/<textarea[^>]*aria-invalid="true"/);
     expect(render("motivo longo")).not.toContain("aria-invalid");
   });
 
   it("CampoMoeda: o <input> recebe a ligação inteira", () => {
-    const html = renderToStaticMarkup(createElement(Campo, {
-      rotulo: "Taxa de matrícula", id: "taxa", obrigatorio: true, dica: "Sugerido: R$ 100,00", erro: "Informe a taxa.",
-      children: (c: LigacaoCampo) => createElement(CampoMoeda, { ...c, value: "", onChange: () => {}, moeda: "BRL", className: "c" }),
-    }));
+    const html = renderToStaticMarkup(elCampo(
+      { rotulo: "Taxa de matrícula", id: "taxa", obrigatorio: true, dica: "Sugerido: R$ 100,00", erro: "Informe a taxa." },
+      (c: LigacaoCampo) => createElement(CampoMoeda, { ...c, value: "", onChange: () => {}, moeda: "BRL", className: "c" }),
+    ));
     const input = tag(html, "input");
     expect(attr(input, "id")).toBe("taxa");
     expect(attr(input, "aria-required")).toBe("true");
@@ -121,10 +126,10 @@ describe("Campo compõe com os campos do design system (sem duplicá-los)", () =
   });
 
   it("CampoFuso: o <input> recebe a ligação; o datalist continua com id próprio", () => {
-    const html = renderToStaticMarkup(createElement(Campo, {
-      rotulo: "Fuso horário", id: "fuso", obrigatorio: true, erro: "Informe o fuso.",
-      children: (c: LigacaoCampo) => createElement(CampoFuso, { ...c, padrao: "", className: "c" }),
-    }));
+    const html = renderToStaticMarkup(elCampo(
+      { rotulo: "Fuso horário", id: "fuso", obrigatorio: true, erro: "Informe o fuso." },
+      (c: LigacaoCampo) => createElement(CampoFuso, { ...c, padrao: "", className: "c" }),
+    ));
     const input = tag(html, "input");
     expect(attr(input, "id")).toBe("fuso");
     expect(attr(input, "aria-required")).toBe("true");
