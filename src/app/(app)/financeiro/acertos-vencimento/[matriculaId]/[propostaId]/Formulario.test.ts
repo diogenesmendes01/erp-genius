@@ -38,3 +38,23 @@ it("não dispara submissão concorrente antes da próxima renderização", async
  expect(m.preparar).toHaveBeenCalledTimes(1); concluir({ ok: true }); await primeira;
  expect(c.envio.current).toBe(false);
 });
+
+// Integração da #151 (B3): o que a tela mostra com a tentativa pendente vem do estado `temTentativa` — campos
+// travados (fieldset) e "Repetir mesma tentativa" —, para a pessoa não editar e achar que reenviou outra coisa.
+type No = { type?: unknown; props?: Record<string, unknown> };
+function achar(no: unknown, tipo: string): No | undefined {
+ if (Array.isArray(no)) { for (const n of no) { const r = achar(n, tipo); if (r) return r; } return undefined; }
+ if (!no || typeof no !== "object") return undefined;
+ const n = no as No; if (n.type === tipo) return n; return achar(n.props?.children, tipo);
+}
+const texto = (no: unknown): string => typeof no === "string" ? no : Array.isArray(no) ? no.map(texto).join("") : no && typeof no === "object" ? texto((no as No).props?.children) : "";
+function renderComTentativa(temTentativa: boolean) {
+ m.estado.mockReturnValueOnce([false, vi.fn()]).mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce([false, vi.fn()]).mockReturnValueOnce([temTentativa, vi.fn()]);
+ m.ref.mockReturnValueOnce({ current: false }).mockReturnValueOnce({ current: null });
+ const arvore = VencimentoFormulario({ modo: "preparar", matriculaId: "m", versaoCondicoesId: "v", revisaoHash: "hash" });
+ return { travado: achar(arvore, "fieldset")?.props?.disabled, botao: texto(achar(arvore, "button")) };
+}
+it("tentativa pendente: campos travados e \"Repetir mesma tentativa\"; sem tentativa, editáveis e \"Preparar acerto\"", () => {
+ expect(renderComTentativa(true)).toEqual({ travado: true, botao: "Repetir mesma tentativa" });
+ expect(renderComTentativa(false)).toEqual({ travado: false, botao: "Preparar acerto" });
+});
