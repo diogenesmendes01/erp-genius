@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  ENTIDADES_GREGO, ENTIDADES_HTML, ENTIDADES_LATIN1, ENTIDADES_OUTRAS, HOMOGLIFOS, decodificarEntidades, textoComparavel, textoLido,
+  BRANCOS_VISIVEIS, ENTIDADES_GREGO, ENTIDADES_HTML, ENTIDADES_LATIN1, ENTIDADES_OUTRAS, HOMOGLIFOS, decodificarEntidades, misturaDeAlfabetos,
+  textoComparavel, textoLido,
 } from "./texto-lido";
 
 // Autoteste da leitura de texto das travas (revisão R1 da #147, B1/B3/B5). As listas fechadas são
@@ -26,10 +27,13 @@ const COPIA_OUTRAS: Record<string, number> = {
   lsaquo: 0x2039, rsaquo: 0x203a, oline: 0x203e, frasl: 0x2044, euro: 0x20ac, trade: 0x2122,
 };
 
+/** Brancos visíveis (cópia literal): braille vazio e preenchimentos hangul (R2 da #147, B2). */
+const COPIA_BRANCOS = ["\u2800", "\u115f", "\u1160", "\u3164", "\uffa0"];
+
 /** Invisíveis que não podem separar "nes" de "ta" (cópia literal, um de cada família). */
 const COPIA_INVISIVEIS = [
-  "\u00ad", "\u034f", "\u061c", "\u115f", "\u1160", "\u17b4", "\u180b", "\u180e", "\u200b", "\u200c", "\u200d", "\u200e", "\u200f",
-  "\u202a", "\u202e", "\u2060", "\u2064", "\u2066", "\u3164", "\ufe00", "\ufe0f", "\ufeff", "\uffa0", "\u{e0001}", "\u{e0100}", "\u{e01ef}",
+  "\u00ad", "\u034f", "\u061c", "\u17b4", "\u180b", "\u180e", "\u200b", "\u200c", "\u200d", "\u200e", "\u200f",
+  "\u202a", "\u202e", "\u2060", "\u2064", "\u2066", "\ufe00", "\ufe0f", "\ufeff", "\u{e0001}", "\u{e0100}", "\u{e01ef}",
 ];
 
 describe("texto lido (autoteste)", () => {
@@ -69,5 +73,26 @@ describe("texto lido (autoteste)", () => {
     expect(textoComparavel("pa\u0301gina")).toBe("página");
     expect(textoComparavel("nesta\u00a0página\u2003x")).toBe("nesta página x");
     expect(textoLido("pa\u0301gina")).toBe("página");
+  });
+
+  it("brancos visíveis (R2 da #147, B2): a tabela é a da cópia; lidos como espaço e, na outra leitura, como nada", () => {
+    expect(BRANCOS_VISIVEIS).toEqual(COPIA_BRANCOS);
+    for (const c of COPIA_BRANCOS) {
+      const cod = c.codePointAt(0)!.toString(16);
+      expect(textoLido(`nesta${c}página`), cod).toBe("nesta página");
+      expect(textoComparavel(`nesta${c}página`), cod).toBe("nesta página");
+      expect(textoComparavel(`nesta${c}página`, "espaco"), cod).toBe("nesta página");
+      expect(textoComparavel(`nes${c}ta`, "nada"), cod).toBe("nesta");
+    }
+    // Os que `\s` já pega: separador de linha e de parágrafo, espaço matemático.
+    expect(textoComparavel("nesta\u2028p\u00e1gina nesta\u2029p\u00e1gina nesta\u205fp\u00e1gina")).toBe("nesta página nesta página nesta página");
+  });
+
+  it("alfabetos misturados (R2 da #147, B1): letra de outro alfabeto numa palavra latina, dentro ou fora da tabela", () => {
+    expect(misturaDeAlfabetos("\u0578esta")).toEqual([0]);
+    expect(misturaDeAlfabetos("Nenhuma proposta nes\u03c4a página.")).toEqual([20]);
+    expect(misturaDeAlfabetos("p\u0430gina n\u0435sta")).toEqual([1, 8]);
+    // Não acusa: palavra só latina (com acento combinado), só grega, sinal de micro, número.
+    expect(misturaDeAlfabetos("Página x\u0301 \u03b1\u03b2\u03b3 \u00b5s 2º 3ª")).toEqual([]);
   });
 });

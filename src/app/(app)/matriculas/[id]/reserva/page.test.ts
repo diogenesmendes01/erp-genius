@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { textoComparavel, textoLido } from "@/test/texto-lido";
+import { type LeituraDoBranco, misturaDeAlfabetos, textoComparavel, textoLido } from "@/test/texto-lido";
 
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
@@ -15,13 +15,18 @@ const textoDoHtml = (html: string) => textoLido(html.replace(TAG, " ")).replace(
 /**
  * As leituras do HTML para conferir o que NÃO pode aparecer (revisão R3 da #134, B2; R1 da #147, B1/B2): a
  * tag pode separar palavras (bloco, `<br>`) ou não (inline: `nes<span>ta</span>`, `nes<wbr>ta`) — vale
- * cada uma. Entidades decodificadas, invisíveis (classe Cf, seletores de variação) tirados, NFKC e
+ * cada uma; o branco visível (braille vazio, preenchimento hangul) também, como espaço e como nada (R2 da
+ * #147, B2). Entidades decodificadas, invisíveis (classe Cf, seletores de variação) tirados, NFKC e
  * homóglifos como a letra latina (src/test/texto-lido.ts).
  */
-const leituras = (html: string) => [html.replace(TAG, ""), html.replace(TAG, " ")].map((t) => textoComparavel(t).replace(/\s+/g, " ").trim());
+const LEITURAS_DO_BRANCO: readonly LeituraDoBranco[] = ["espaco", "nada"];
+const leituras = (html: string) => [html.replace(TAG, ""), html.replace(TAG, " ")]
+  .flatMap((t: string) => LEITURAS_DO_BRANCO.map((b: LeituraDoBranco) => textoComparavel(t, b).replace(/\s+/g, " ").trim()));
 /** "nesta página" em qualquer caixa, com ou sem acento. */
 const NESTA_PAGINA = /(?<!\p{L})nesta\s+p[aá]gina(?!\p{L})/iu;
-const mostraNestaPagina = (html: string) => leituras(html).some((t) => NESTA_PAGINA.test(t));
+/** Mostra (ou pode mostrar) "nesta página": em alguma leitura, ou com palavra de alfabetos misturados (R2 da #147, B1). */
+const mostraNestaPagina = (html: string) =>
+  leituras(html).some((t: string) => NESTA_PAGINA.test(t)) || misturaDeAlfabetos(textoLido(html.replace(TAG, ""))).length > 0;
 
 // Revisão R2 da #134 (B3): página 1 sem turma diz que não há turma compatível; página seguinte diz
 // "nesta página" e oferece a volta ao início (a ação faz parte do vazio). Revisão R3 (B2): a comparação
@@ -72,6 +77,14 @@ describe("reserva da contratação — vazio paginado", () => {
       "<p>Nenhuma turma \uff4e\uff45\uff53\uff54\uff41 página.</p>",
       "<p>NENHUMA TURMA NESTA PÁGINA.</p>",
       "<p>Nenhuma turma nesta pagina.</p>",
+      // R2 da #147: <br> (só a leitura com tag como espaço acha), brancos visíveis e letra de outro alfabeto.
+      "<p>Nenhuma turma nesta<br>página.</p>",
+      "<p>Nenhuma turma nesta\u2800página.</p>",
+      "<p>Nenhuma turma nesta\u3164página.</p>",
+      "<p>Nenhuma turma nes\u3164ta página.</p>",
+      "<p>Nenhuma turma nesta\uffa0página.</p>",
+      "<p>Nenhuma turma \u0578esta página.</p>",
+      "<p>Nenhuma turma nes\u03c4a página.</p>",
     ];
     for (const html of formas) expect(mostraNestaPagina(html), html).toBe(true);
     // Não confunde: outra palavra depois de "nesta", plural, "primeira página", blocos separados.

@@ -44,11 +44,21 @@ export function decodificarEntidades(t: string): string {
 }
 
 /**
- * O que não aparece na tela: toda a classe de formatação (Cf: hífen suave, espaço de largura zero, junções,
- * marcas de direção, BOM…), o "combining grapheme joiner", os seletores de variação (U+FE00–U+FE0F e
- * U+E0100–U+E01EF), os seletores mongóis e os preenchimentos hangul.
+ * O que não aparece na tela (largura zero): toda a classe de formatação (Cf: hífen suave, espaço de largura
+ * zero, junções, marcas de direção, BOM…), o "combining grapheme joiner", os seletores de variação
+ * (U+FE00–U+FE0F e U+E0100–U+E01EF) e os seletores mongóis.
  */
-export const INVISIVEIS = /[\p{Cf}\u034f\u115f\u1160\u17b4\u17b5\u180b-\u180f\u3164\ufe00-\ufe0f\uffa0\u{e0100}-\u{e01ef}]/gu;
+export const INVISIVEIS = /[\p{Cf}\u034f\u17b4\u17b5\u180b-\u180f\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/gu;
+
+/**
+ * Brancos visíveis que `\s` não pega (revisão R2 da #147, B2): aparecem na tela como um espaço em branco,
+ * mas a fonte pode não dar largura a eles — o texto é lido dos dois jeitos (branco como espaço e sem ele).
+ * Padrão braille vazio e os preenchimentos hangul.
+ */
+export const BRANCOS_VISIVEIS = ["\u2800", "\u115f", "\u1160", "\u3164", "\uffa0"] as const;
+const RE_BRANCOS = new RegExp(`[${BRANCOS_VISIVEIS.join("")}]`, "gu");
+/** Como ler um branco visível: como espaço (a tela mostra um vão) ou como nada (a fonte não dá largura). */
+export type LeituraDoBranco = "espaco" | "nada";
 
 /** Letras de outros alfabetos com a mesma cara de uma latina (cirílico, grego e variantes latinas). */
 export const HOMOGLIFOS: Readonly<Record<string, string>> = {
@@ -65,17 +75,37 @@ const RE_HOMOGLIFOS = new RegExp(`[${Object.keys(HOMOGLIFOS).join("")}]`, "gu");
 
 /**
  * Texto lido, para mostrar (trecho de exceção e de manifesto): entidades decodificadas, acento composto (NFC),
- * sem invisíveis, todo espaço — inclusive o não separável — como " ". Não junta espaços.
+ * sem invisíveis, todo espaço — inclusive o não separável e os brancos visíveis — como " ". Não junta espaços.
  */
 export function textoLido(t: string): string {
-  return decodificarEntidades(t).normalize("NFC").replace(INVISIVEIS, "").replace(/\s/g, " ");
+  return decodificarEntidades(t).normalize("NFC").replace(INVISIVEIS, "").replace(RE_BRANCOS, " ").replace(/\s/g, " ");
 }
 
 /**
  * Texto lido, para comparar: além do `textoLido`, as formas de compatibilidade (NFKC: largura total,
- * ligaduras) e os homóglifos viram a letra latina. Não junta espaços (as posições dos pedaços se mantêm).
+ * ligaduras) e os homóglifos viram a letra latina; o branco visível vira espaço ou nada, conforme `branco`.
+ * Não junta espaços (as posições dos pedaços se mantêm).
  */
-export function textoComparavel(t: string): string {
-  return decodificarEntidades(t).replace(INVISIVEIS, "").normalize("NFKC")
-    .replace(RE_HOMOGLIFOS, (c) => HOMOGLIFOS[c]).normalize("NFC").replace(/\s/g, " ");
+export function textoComparavel(t: string, branco: LeituraDoBranco = "espaco"): string {
+  return decodificarEntidades(t).replace(INVISIVEIS, "").replace(RE_BRANCOS, branco === "espaco" ? " " : "").normalize("NFKC")
+    .replace(RE_HOMOGLIFOS, (c: string) => HOMOGLIFOS[c]).normalize("NFC").replace(/\s/g, " ");
+}
+
+/** Letra que não é latina nem comum (de outro alfabeto: cirílico, grego, armênio…). */
+const LETRA_NAO_LATINA = /[^\P{L}\p{Script=Latin}\p{Script=Common}]/u;
+/**
+ * Palavra que mistura alfabetos (revisão R2 da #147, B1): letra latina e letra de outro alfabeto na mesma
+ * palavra ("\u0578esta", com o "\u0578" armênio). Uma tabela de homóglifos sempre deixa alguma letra de fora; a
+ * mistura não tem motivo num texto de tela em português. `t` já lido (NFC); devolve, por palavra misturada, a
+ * posição da primeira letra de fora.
+ */
+export function misturaDeAlfabetos(t: string): number[] {
+  const posicoes: number[] = [];
+  for (const m of t.matchAll(/[\p{L}\p{M}]+/gu)) {
+    const palavra = m[0];
+    if (!/\p{Script=Latin}/u.test(palavra)) continue;
+    const i = palavra.search(LETRA_NAO_LATINA);
+    if (i >= 0) posicoes.push(m.index! + i);
+  }
+  return posicoes;
 }
