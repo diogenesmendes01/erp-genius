@@ -185,8 +185,9 @@ export async function rodarGestao(agora: Date = new Date()): Promise<ResultadoCr
   return r;
 }
 
-/** KPIs do dia + funil + ranking de GARGALOS (etapas com mais leads parados há 3+ dias). */
-async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<string> {
+/** KPIs do dia + funil + ranking de GARGALOS (etapas com mais leads parados há 3+ dias). Exportada para o teste
+ * unitário conferir que o texto enviado usa linhasDoFunil/linhasDosGargalos (R2 da #150, B4). */
+export async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<string> {
   const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
   const fimDia = new Date(inicioDia.getTime() + 24 * 3600_000);
 

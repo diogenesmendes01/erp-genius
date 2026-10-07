@@ -134,7 +134,8 @@ function resolverModulo(de: string, origem: string, ler: (caminho: string) => st
 
 /**
  * `@prisma/client` em miniatura, gerado do schema: enums como no client real (`$Enums.X` + const + tipo), modelos com
- * escalares e relações, e delegados `prisma.modelo.findMany/findFirst/…` que devolvem o modelo. O client gerado tem
+ * escalares e relações, e delegados `prisma.modelo.findMany/findFirst/…` que devolvem o modelo e `count` que devolve
+ * número (o total da página não é texto; R2 da #150, B1). O client gerado tem
  * megabytes de tipos condicionais; para saber que `item.status` é `StatusTurma` basta isto. O que não está aqui
  * (`Prisma.TurmaWhereInput`, `groupBy`…) vira erro de tipo = `any`, que a trava não acusa.
  */
@@ -159,7 +160,7 @@ export function clientePrismaVirtual(schema: string): string {
     linhas.push(`type $Linha_${m.nome} = ${m.nome} & { ${m.campos.filter((c) => nomesModelos.has(c[2])).map((c) => `${c[1]}: ${tipo(c)}`).join("; ")} };`);
   }
   linhas.push(
-    "interface $Delegado<M> { findMany(a?: any): Promise<M[]>; findFirst(a?: any): Promise<M | null>; findUnique(a?: any): Promise<M | null>; findFirstOrThrow(a?: any): Promise<M>; findUniqueOrThrow(a?: any): Promise<M>; create(a?: any): Promise<M>; update(a?: any): Promise<M>; upsert(a?: any): Promise<M>; delete(a?: any): Promise<M>; createManyAndReturn(a?: any): Promise<M[]>; updateManyAndReturn(a?: any): Promise<M[]>; }",
+    "interface $Delegado<M> { findMany(a?: any): Promise<M[]>; findFirst(a?: any): Promise<M | null>; findUnique(a?: any): Promise<M | null>; findFirstOrThrow(a?: any): Promise<M>; findUniqueOrThrow(a?: any): Promise<M>; create(a?: any): Promise<M>; update(a?: any): Promise<M>; upsert(a?: any): Promise<M>; delete(a?: any): Promise<M>; createManyAndReturn(a?: any): Promise<M[]>; updateManyAndReturn(a?: any): Promise<M[]>; count(a?: any): Promise<number>; }",
     "export declare class PrismaClient {",
     "  constructor(opcoes?: any);",
     "  $transaction<T>(operacao: (tx: Prisma.TransactionClient) => Promise<T>, opcoes?: any): Promise<T>;",
@@ -370,15 +371,26 @@ const METODOS_COM_ITEM: Record<string, number> = { map: 0, flatMap: 0, forEach: 
 const METODOS_QUE_GUARDAM: Record<string, (args: readonly ts.Expression[]) => readonly ts.Expression[]> = {
   push: (a) => a, unshift: (a) => a, splice: (a) => a.slice(2), fill: (a) => a.slice(0, 1), set: (a) => a.slice(1, 2), add: (a) => a.slice(0, 1),
 };
+/** Objetos globais cujas funções recebem o dado pelos ARGUMENTOS (R2 da #150, B2): `Object.values(o)`, `Reflect.get(o, k)`,
+ * `JSON.parse(s)`, `Array.from(xs)`… — `get`/`values` aqui não devolvem elemento do receptor, e o resultado (e a
+ * propriedade dele) carrega o que entrou. Também por colchete (`Object["values"]`), por `globalThis.X`, por alias do
+ * objeto (`const O = Object`) ou do membro (`const ov = Object.values`, `const { fromEntries } = Object`). */
+const NAMESPACES_GLOBAIS = new Set(["Object", "Reflect", "JSON", "Array", "Promise", "Map", "Set"]);
+/** Raízes pelas quais um objeto global também é alcançado (`globalThis.Reflect.get`). */
+const RAIZES_GLOBAIS = new Set(["globalThis", "window", "self"]);
 /** Campos de objeto que viram texto lido (`{ value, label }` de opção, `{ titulo, descricao }` de item). */
 const CAMPOS_DE_TEXTO = new Set(["label", "rotulo", "texto", "titulo", "descricao", "legenda", "mensagem"]);
 /** Teto de argumentos ligados a um parâmetro rest. */
 const MAX_ARGUMENTOS_REST = 64;
 const OPS_QUE_CARREGAM_TEXTO = new Set([ts.SyntaxKind.PlusToken, ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.BarBarToken]);
+/** Tipos que não podem ser o código (texto): número, booleano, bigint, null/undefined/void (R2 da #150, B1). */
+const TIPOS_SEM_TEXTO = ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral | ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral
+  | ts.TypeFlags.BigInt | ts.TypeFlags.BigIntLiteral | ts.TypeFlags.Null | ts.TypeFlags.Undefined | ts.TypeFlags.Void;
 
 type Funcao = ts.ArrowFunction | ts.FunctionExpression | ts.FunctionDeclaration;
-/** As expressões que uma função devolve (corpo de expressão ou cada `return` do bloco, sem entrar em função aninhada). */
-function retornos(fn: Funcao): ts.Expression[] {
+/** As expressões que uma função devolve (corpo de expressão ou cada `return` do bloco, sem entrar em função aninhada).
+ * Vale também para método e `get` de objeto literal (`{ get a() { return d.status; } }`). */
+function retornos(fn: ts.FunctionLikeDeclaration): ts.Expression[] {
   if (!fn.body) return [];
   if (!ts.isBlock(fn.body)) return [fn.body];
   const r: ts.Expression[] = [];
@@ -433,6 +445,9 @@ export type Rastreador = {
   rotularSeguro: (x: ts.CallExpression) => boolean | null;
   /** Constantes do arquivo que são objeto com chaves (mapa local). */
   mapasLocais: ReadonlySet<string>;
+  /** O nome, neste arquivo, é mapa de rótulo? Do labels (import ou alias), mapa local com chaves, alias local de um
+   * deles, ou importado de outro módulo do projeto onde é um deles (R2 da #150, B1: `export const M = MAPA_DO_LABELS`). */
+  mapaPorNome: (nome: string) => boolean;
 };
 
 /**
@@ -442,7 +457,10 @@ export type Rastreador = {
  * `find`/`filter`, `[x][0]`, `await`, helper de identidade (do arquivo ou importado), `.map`/`reduce` — tudo carrega o
  * código adiante. A fonte do código é o campo com nome de enum e, com checker, QUALQUER expressão cujo tipo é união
  * de literais de enum (C13). Aliases: `const`/`let`, atribuição, desestruturação de objeto e de lista, `push` numa
- * lista, propriedade de objeto local, `for…of` e parâmetro de callback sobre lista que guarda o código.
+ * lista, propriedade de objeto local, `for…of` e parâmetro de callback sobre lista que guarda o código. Objeto literal
+ * guarda os valores dele; `new X(…)` e função de objeto global (`Object.*`, `Reflect.*`, `JSON.*`…, também por alias ou
+ * colchete) devolvem o que entrou, e a propriedade do resultado também (R2 da #150, B2). Com checker, número/booleano
+ * não é o código (B1).
  */
 function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto): Rastreador {
   const consts = constantesDeTexto(sf);
@@ -459,6 +477,50 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     if (c?.name) importados.set(c.name.text, `${caminho}#default`);
   }
   const deLabels = nomesDeLabels(sf);
+  // Objetos globais (R2 da #150, B2): `Object`, `globalThis.Reflect`, alias do objeto (`const O = Object`) e alias de
+  // membro (`const ov = Object.values`, `const { fromEntries } = Object`), em ponto fixo.
+  const namespacesLocais = new Set<string>(), membrosGlobais = new Set<string>();
+  const ehNamespaceGlobal = (e: ts.Expression | undefined): boolean => {
+    const x = e && semEmbrulho(e);
+    if (!x) return false;
+    if (ts.isIdentifier(x)) return NAMESPACES_GLOBAIS.has(x.text) || namespacesLocais.has(x.text);
+    return ts.isPropertyAccessExpression(x) && NAMESPACES_GLOBAIS.has(x.name.text) && ts.isIdentifier(x.expression) && RAIZES_GLOBAIS.has(x.expression.text);
+  };
+  for (let mudou = true; mudou;) {
+    mudou = false;
+    const novo = (conjunto: Set<string>, nome: string) => { if (!conjunto.has(nome)) { conjunto.add(nome); mudou = true; } };
+    visitar(sf, (n) => {
+      if (!ts.isVariableDeclaration(n) || !n.initializer) return;
+      const i = semEmbrulho(n.initializer);
+      if (ts.isIdentifier(n.name)) {
+        if (ehNamespaceGlobal(i)) novo(namespacesLocais, n.name.text);
+        else if ((ts.isPropertyAccessExpression(i) || ts.isElementAccessExpression(i)) && ehNamespaceGlobal(i.expression)) novo(membrosGlobais, n.name.text);
+      } else if (ts.isObjectBindingPattern(n.name) && ehNamespaceGlobal(i)) {
+        for (const el of n.name.elements) if (ts.isIdentifier(el.name)) novo(membrosGlobais, el.name.text);
+      }
+    });
+  }
+  /** O receptor de uma chamada `R.m(…)`/`R["m"](…)` é objeto global? */
+  const receptorGlobal = (alvo: ts.Expression) => (ts.isPropertyAccessExpression(alvo) || ts.isElementAccessExpression(alvo)) && ehNamespaceGlobal(alvo.expression);
+  /**
+   * Chamada OPACA: o resultado é feito dos argumentos e a trava não tem a declaração para saber quais campos saem —
+   * `new X(…)`, função de objeto global (direta, por colchete ou por alias), callee que não é nome nem método
+   * (`obj["m"](…)`, `(0, f)(…)`, `f()(…)`). A propriedade do resultado (`Object.fromEntries(…).a`) carrega o que entrou
+   * (falha fechada; R2 da #150, B2). Método de receptor do projeto (`lista.find(…)?.nome`) não é opaco.
+   */
+  const chamadaOpaca = (e: ts.Expression): boolean => {
+    let y = semEmbrulho(e);
+    if (ts.isAwaitExpression(y)) y = semEmbrulho(y.expression);
+    if (ts.isNewExpression(y)) return true;
+    if (!ts.isCallExpression(y)) return false;
+    const alvo = semEmbrulho(y.expression);
+    if (ts.isIdentifier(alvo)) return membrosGlobais.has(alvo.text);
+    if (ts.isPropertyAccessExpression(alvo)) return receptorGlobal(alvo);
+    return true;
+  };
+  /** Nomes cujo valor saiu de chamada opaca que recebeu o código (`const o = Object.fromEntries([["a", d.status]])`):
+   * a propriedade deles (`o.a`) também é o código. */
+  const opacos = new Set<string>();
   /** Mapas locais com chaves (`const M = { … }`, `Object.freeze({ … })`): `rotular(M, x)` com eles devolve rótulo. */
   const mapasLocais = new Set<string>();
   const comoFuncao = (e: ts.Expression | undefined): Funcao | undefined => {
@@ -510,14 +572,32 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     const x = e && semEmbrulho(e);
     if (!x) return false;
     if (ts.isObjectLiteralExpression(x)) return x.properties.length > 0;
-    if (ts.isIdentifier(x)) {
-      if (deLabels.has(x.text) || mapasLocais.has(x.text)) return true;
-      const imp = importados.get(x.text);
+    if (ts.isIdentifier(x)) return mapaPorNome(x.text);
+    return ts.isPropertyAccessExpression(x) && ts.isIdentifier(x.expression) && deLabels.has(x.expression.text);
+  };
+  /** Alias local de mapa (`const N = M`): N → M. */
+  const aliasDeMapa = new Map<string, string>();
+  visitar(sf, (n) => {
+    if (!ts.isVariableDeclaration(n) || !ts.isIdentifier(n.name) || !n.initializer) return;
+    const origem = semEmbrulho(n.initializer);
+    if (ts.isIdentifier(origem)) aliasDeMapa.set(n.name.text, origem.text);
+  });
+  // Nomes em análise: import circular (`a` importa M de `b`, que o importa de `a`) não é mapa — falha fechada.
+  const emAnalise = new Set<string>();
+  const mapaPorNome = (nome: string): boolean => {
+    if (deLabels.has(nome) || mapasLocais.has(nome)) return true;
+    if (emAnalise.has(nome)) return false;
+    emAnalise.add(nome);
+    try {
+      const alias = aliasDeMapa.get(nome);
+      if (alias !== undefined) return mapaPorNome(alias);
+      const imp = importados.get(nome);
       if (!imp) return false;
       const i = imp.lastIndexOf("#"), outro = projeto.rastreador(imp.slice(0, i));
-      return !!outro && outro.mapasLocais.has(imp.slice(i + 1));
+      return !!outro && outro.mapaPorNome(imp.slice(i + 1));
+    } finally {
+      emAnalise.delete(nome);
     }
-    return ts.isPropertyAccessExpression(x) && ts.isIdentifier(x.expression) && deLabels.has(x.expression.text);
   };
   const ehRotular = (alvo: ts.Expression) => (ts.isIdentifier(alvo) && ROTULADORES.has(alvo.text))
     || (ts.isPropertyAccessExpression(alvo) && ROTULADORES.has(alvo.name.text) && ts.isIdentifier(alvo.expression) && deLabels.has(alvo.expression.text));
@@ -527,7 +607,9 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
   const cru = (e: ts.Expression, tem: Tem, direto: boolean): ts.Expression[] => {
     const x = semEmbrulho(e);
     const chave = chaveDe(x);
-    if ((chave !== null && tem(chave, x)) || (direto && campoDireto(x))) return [x];
+    // Nome que guarda o código, ou campo de enum — salvo se o checker diz que o valor é número/booleano: o `total`
+    // desestruturado junto com a lista da página não é o código (R2 da #150, B1).
+    if ((chave !== null && tem(chave, x)) || (direto && campoDireto(x))) return semTexto(x) ? [] : [x];
     const achados = descer(x, tem, direto);
     // Pelo tipo (C13): o que a descida não achou pelo nome, o checker acha pela união de literais de enum.
     return achados.length || !direto || !porTipo(x) ? achados : [x];
@@ -551,20 +633,34 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     // unknown as Record<…>` — pode devolver o próprio código (R1 da #150, B1). A chave só conta se o resultado pode ser texto.
     if (ts.isElementAccessExpression(x)) return mapaSeguro(x.expression) ? [] : [...c(x.expression), ...(podeSerTexto(x) ? c(x.argumentExpression) : [])];
     if (ts.isCallExpression(x)) return chamada(x, tem, direto);
+    // Objeto literal guarda os valores dele (método e `get` pelo que devolvem): `Reflect.get({ a: d.status }, "a")`,
+    // `const o = { a: d.status }; Object.values(o)` (R2 da #150, B2).
+    if (ts.isObjectLiteralExpression(x)) return valoresDoObjeto(x, c);
+    // new X(…): falha fechada, os argumentos chegam ao objeto criado (`new Map([["a", d.status]]).get("a")`).
+    if (ts.isNewExpression(x)) return argumentosDe(x.arguments ?? [], c);
+    // Propriedade do resultado de chamada opaca (`Object.fromEntries([["a", d.status]]).a`) ou de nome que guarda esse
+    // resultado (`const o = Object.assign({}, { a: d.status }); o.a`) — R2 da #150, B2.
+    if (ts.isPropertyAccessExpression(x)) {
+      const base = semEmbrulho(x.expression);
+      return (chamadaOpaca(base) || (ts.isIdentifier(base) && opacos.has(base.text))) && podeSerTexto(x) ? c(base) : [];
+    }
     return [];
   };
+  /** Argumentos que chegam ao resultado; o que é função (callback de reduce, useMemo…) entra pelo que ela devolve (B12). */
+  const argumentosDe = (args: readonly ts.Expression[], c: (y: ts.Expression) => ts.Expression[]): ts.Expression[] => args.flatMap((a) => {
+    const f = semEmbrulho(ts.isSpreadElement(a) ? a.expression : a);
+    return ts.isArrowFunction(f) || ts.isFunctionExpression(f) ? retornos(f).flatMap(c) : c(f);
+  });
   const chamada = (x: ts.CallExpression, tem: Tem, direto: boolean): ts.Expression[] => {
     const c = (y: ts.Expression) => cru(y, tem, direto);
-    // Argumento que é função (callback de reduce, useMemo…): o que ela devolve segue adiante (B12).
-    const argumentos = () => x.arguments.flatMap((a) => {
-      const f = semEmbrulho(ts.isSpreadElement(a) ? a.expression : a);
-      return ts.isArrowFunction(f) || ts.isFunctionExpression(f) ? retornos(f).flatMap(c) : c(f);
-    });
+    const argumentos = () => argumentosDe(x.arguments, c);
     const alvo = semEmbrulho(x.expression);
     // (() => d.status)(): a função chamada na hora devolve o que o corpo devolve (R1 da #150, B1).
     if (ts.isArrowFunction(alvo) || ts.isFunctionExpression(alvo)) return [...retornos(alvo).flatMap(c), ...argumentos()];
-    // Object.values/entries({ a: d.status }): os valores do objeto saem no resultado (R1 da #150, B1).
-    if (/^Object\.(values|entries)$/.test(alvo.getText(sf))) return x.arguments.flatMap((a) => valoresDoObjeto(a, c));
+    // Função de objeto global — Object.values/entries/fromEntries, Reflect.get, JSON.parse…, também por colchete ou
+    // `globalThis.X` — devolve o que entrou pelos argumentos; `get`/`values` aqui não são do receptor (R1 da #150, B1;
+    // R2, B2). Alias do membro (`const ov = Object.values`) cai na falha fechada do fim (função sem declaração).
+    if (receptorGlobal(alvo)) return argumentos();
     // rotular(M, x) só rotula com mapa do labels (ou local com chaves); com `{}` devolve o próprio código (B12).
     const seguro = rotularSeguro(x);
     if (seguro !== null) return seguro ? [] : x.arguments.slice(1).flatMap(c);
@@ -633,7 +729,13 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     const o = semEmbrulho(ts.isSpreadElement(a) ? a.expression : a);
     if (!ts.isObjectLiteralExpression(o)) return c(o);
     return o.properties.flatMap((p) => ts.isPropertyAssignment(p) ? c(p.initializer) : ts.isShorthandPropertyAssignment(p) ? c(p.name)
-      : ts.isSpreadAssignment(p) ? c(p.expression) : []);
+      : ts.isSpreadAssignment(p) ? c(p.expression) : ts.isMethodDeclaration(p) || ts.isGetAccessorDeclaration(p) ? retornos(p).flatMap(c) : []);
+  };
+  /** Com checker, o valor é só número/booleano/bigint/null/undefined? Então não é o código (R2 da #150, B1). */
+  const semTexto = (x: ts.Expression) => {
+    if (!checker) return false;
+    const t = checker.getTypeAtLocation(x);
+    return (t.isUnion() ? t.types : [t]).every((p) => !!(p.flags & TIPOS_SEM_TEXTO));
   };
   /** O resultado pode ser texto? Com checker, número/booleano/objeto não carregam a chave (`contagem[status]`). */
   const podeSerTexto = (x: ts.Expression) => {
@@ -693,7 +795,11 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
       visitar(raiz, (n) => {
         if (ts.isVariableDeclaration(n) && n.initializer) {
           const init = semEmbrulho(n.initializer);
-          if (ts.isIdentifier(n.name) && guarda(n.initializer)) marcar(n.name.text, n);
+          if (ts.isIdentifier(n.name) && guarda(n.initializer)) {
+            marcar(n.name.text, n);
+            // Resultado de chamada opaca: a propriedade dele também é o código (R2 da #150, B2).
+            if (chamadaOpaca(n.initializer) && !opacos.has(n.name.text)) { opacos.add(n.name.text); mudou = true; }
+          }
           // const [s] = [d.status] (R3 da #138, B12).
           if (ts.isArrayBindingPattern(n.name) && guarda(n.initializer)) marcarPadrao(n.name);
           // const v = { rot: d.status }: a propriedade do objeto local guarda o código (B12).
@@ -712,6 +818,7 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
           const alvo = semEmbrulho(n.left);
           const destino = ts.isElementAccessExpression(alvo) ? semEmbrulho(alvo.expression) : alvo;
           marcar(chaveDe(destino), ts.isIdentifier(destino) ? declsDoSimbolo(destino) : undefined); // partes[i] = …; s = …; v.rot = …
+          if (alvo === destino && ts.isIdentifier(destino) && chamadaOpaca(n.right) && !opacos.has(destino.text)) { opacos.add(destino.text); mudou = true; }
         }
         if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)) {
           const metodo = n.expression.name.text, receptor = semEmbrulho(n.expression.expression);
@@ -817,7 +924,7 @@ function rastreadorDeEnum(sf: ts.SourceFile, arquivo: string, projeto: Projeto):
     });
     return sim;
   };
-  const eu: Rastreador = { sf, crus, campoDireto, consts, funcoes, atravessa, fluem, textosDoNo, atributoDeTexto, imprimeProp, rotularSeguro, mapasLocais };
+  const eu: Rastreador = { sf, crus, campoDireto, consts, funcoes, atravessa, fluem, textosDoNo, atributoDeTexto, imprimeProp, rotularSeguro, mapasLocais, mapaPorNome };
   return eu;
 }
 
@@ -1097,6 +1204,97 @@ describe("(i) enum cru na tela — AST e tipos", () => {
     expect(textos("const v = useMemo(() => d.status, [d.tipo]);\nconst r = <p>{v} {useMemo(() => d.estado, [d.situacao])}</p>;")).toEqual(["v", "d.estado"]);
   });
 
+  it("autoteste (R2 da #150, B2): fromEntries, Reflect.get, Object[\"values\"], alias de Object.values, objeto em constante, new e propriedade de resultado opaco", () => {
+    const textos = (fonte: string) => enumsCrus(fonte).filter((a) => a.tipo === "texto").map((a) => a.trecho);
+    // V1–V4 e V8 da R2, cada um sozinho.
+    expect(textos('const r = <p>{Object.fromEntries([["a", d.status]]).a}</p>;')).toEqual(["d.status"]);
+    expect(textos('const r = <p>{Reflect.get({ a: d.status }, "a")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const r = <p>{Object["values"]({ a: d.status }).join("")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const ov = Object.values;\nconst r = <p>{ov({ a: d.status }).join("")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const r = <p>{(() => { const o = { a: d.status }; return Object.values(o).join(""); })()}</p>;')).toEqual(["o"]);
+    // A mesma família: globalThis, alias do objeto e do membro, propriedade de resultado guardado, new, get de objeto.
+    expect(textos('const r = <p>{globalThis.Reflect.get({ a: d.status }, "a")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const O = Object;\nconst r = <p>{O.values({ a: d.status }).join("")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const { fromEntries } = Object;\nconst r = <p>{fromEntries([["a", d.status]]).a}</p>;')).toEqual(["d.status"]);
+    expect(textos("const o = Object.assign({}, { a: d.status });\nconst r = <p>{o.a}</p>;")).toEqual(["o"]);
+    expect(textos('let o2 = {}; o2 = JSON.parse(JSON.stringify({ a: d.status }));\nconst r = <p>{o2.a}</p>;')).toEqual(["o2"]);
+    expect(textos('const r = <p>{new Map([["a", d.status]]).get("a")}</p>;')).toEqual(["d.status"]);
+    expect(textos('const r = <p>{Object["fromEntries"]([["a", d.status]]).a} {(0, Object.fromEntries)([["b", d.tipo]]).b}</p>;')).toEqual(["d.status", "d.tipo"]);
+    expect(textos("const r = <p>{Object.values({ get a() { return d.status; } }).join(\"\")}</p>;")).toEqual(["d.status"]);
+    // Falha fechada: função de fora do projeto que recebe objeto com o código devolve o código.
+    expect(textos("const r = <p>{formatar({ valor: d.status })}</p>;")).toEqual(["d.status"]);
+    // Não acusa: propriedade de resultado de método de receptor do projeto, resultado opaco sem código, propriedade de
+    // objeto que guarda o código em OUTRO campo.
+    expect(textos([
+      "const lista = [{ status: d.status, nome: d.nome }];",
+      "const o3 = { a: d.status, b: d.nome };",
+      'const r = <p>{lista.find((i) => i.nome === "x")?.nome} {Object.fromEntries([["a", d.nome]]).a} {o3.b}</p>;',
+    ].join("\n"))).toEqual([]);
+  });
+
+  it("autoteste (R2 da #150, B2): cada objeto global devolve o que entra pelos argumentos (lista fechada, conferida por cópia)", () => {
+    const copia = ["Object", "Reflect", "JSON", "Array", "Promise", "Map", "Set"];
+    expect([...NAMESPACES_GLOBAIS]).toEqual(copia);
+    expect([...RAIZES_GLOBAIS]).toEqual(["globalThis", "window", "self"]);
+    const textos = (fonte: string) => enumsCrus(fonte).filter((a) => a.tipo === "texto").map((a) => a.trecho);
+    // `get`/`values` são "do receptor" em lista/Map; no objeto global, o argumento chega ao resultado.
+    for (const g of copia) {
+      expect(textos(`const r = <p>{${g}.get({ a: d.status }, "a")} {${g}.values({ b: d.tipo }).c}</p>;`), g).toEqual(["d.status", "d.tipo"]);
+    }
+    for (const raiz of ["globalThis", "window", "self"]) {
+      expect(textos(`const r = <p>{${raiz}.Reflect.get({ a: d.status }, "a")}</p>;`), raiz).toEqual(["d.status"]);
+    }
+  });
+
+  it("autoteste (R2 da #150, B1/B3): mapa importado de outro módulo do projeto — objeto literal, alias do labels ou alias local — rotula", () => {
+    const projeto = projetoVirtual({
+      "src/app/t/mapas.ts": [
+        'import { STATUS_X_LABEL } from "@/lib/labels";',
+        'export const LOCAL = { A: "a" };',
+        // O caso real do B1: `export const nomesHabilidades = HABILIDADE_LABEL` (regras/[nivelId]/ResumoRegra.tsx).
+        "export const DO_LABELS = STATUS_X_LABEL;",
+        'import { LOCAL as BASE } from "./base";',
+        "export const DE_OUTRO = BASE;",
+        "export const FALSO = ((s: string) => s) as unknown as Record<string, string>;",
+      ].join("\n"),
+      "src/app/t/base.ts": 'export const LOCAL = { B: "b" };',
+      // Import circular: nenhum dos dois é mapa — falha fechada.
+      "src/app/t/ciclo-a.ts": 'import { B } from "./ciclo-b";\nexport const A = B;',
+      "src/app/t/ciclo-b.ts": 'import { A } from "./ciclo-a";\nexport const B = A;',
+      "src/app/t/page.tsx": [
+        'import { LOCAL, DO_LABELS, DE_OUTRO, FALSO } from "./mapas";',
+        'import { A } from "./ciclo-a";',
+        "const r = <p>{LOCAL[d.status]} {DO_LABELS[d.tipo]} {DE_OUTRO[d.estado]} {FALSO[d.situacao]} {A[d.etapa]}</p>;",
+      ].join("\n"),
+    });
+    expect(enumsCrusDoProjeto(projeto, "src/app/t/page.tsx").map((a) => a.trecho)).toEqual(["d.situacao", "d.etapa"]);
+  });
+
+  it("autoteste (R2 da #150, B1/B3): com o checker, número não é o código — total da página e contagem por código", () => {
+    const projeto = projetoVirtual({
+      "src/server/consulta.ts": [
+        'import { PrismaClient, type MotivoY } from "@prisma/client";',
+        "const prisma = new PrismaClient();",
+        "export async function pagina({ motivo }: { motivo: MotivoY | null }) {",
+        "  const where = motivo ? { motivo } : {};",
+        "  const [itens, total] = await Promise.all([prisma.item.findMany({ where }), prisma.item.count({ where })]);",
+        "  return { itens, total };",
+        "}",
+      ].join("\n"),
+      "src/app/t/page.tsx": [
+        'import type { MotivoY } from "@prisma/client";',
+        'import { pagina } from "@/server/consulta";',
+        "export default async function P({ m, contagem, rotulos }: { m: MotivoY; contagem: Record<MotivoY, number>; rotulos: Record<string, string> }) {",
+        "  const [{ itens, total }, outro] = await Promise.all([pagina({ motivo: m }), Promise.resolve(m)]);",
+        "  return <p>{total} {contagem[m]} {itens.length} {rotulos[m]} {outro}</p>;",
+        "}",
+      ].join("\n"),
+    }, true);
+    // `total` (number, do count) e `contagem[m]` (number) não acusam; `rotulos[m]` (Record de texto que não é mapa) e
+    // `outro` (o próprio código, desestruturado do mesmo Promise.all) acusam.
+    expect(enumsCrusDoProjeto(projeto, "src/app/t/page.tsx").map((a) => a.trecho)).toEqual(["m", "outro"]);
+  });
+
   it("a varredura real usa o checker: Program nas telas, códigos do schema e o tipo de um campo real (R1 da #150, B3)", () => {
     const ficha = "src/app/(app)/alunos/[id]/FichaAluno.tsx";
     const r = projeto.rastreador(ficha)!;
@@ -1191,6 +1389,7 @@ describe("(i) enum cru na tela — AST e tipos", () => {
     expect(d).toContain("type $Linha_Item = Item & { turma: $Linha_Turma | null };");
     expect(d).toContain("type $Linha_Turma = Turma & { itens: $Linha_Item[] };");
     expect(d).toContain("  item: $Delegado<$Linha_Item>;");
+    expect(d).toContain("count(a?: any): Promise<number>;");
   });
 });
 
