@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { textoComparavel, textoLido } from "@/test/texto-lido";
 import { MAPA_VAZIO_PAGINADO } from "./vazio-paginado-mapa";
 
 // Trava do estado vazio paginado (docs/42-auditoria-frontend-ux.md — /secretaria/desistencias #4 e
@@ -29,33 +30,39 @@ import { MAPA_VAZIO_PAGINADO } from "./vazio-paginado-mapa";
 // que está em <EstadoVazio>: um <p> à mão, uma constante noutro arquivo ou um .json importado também
 // contam.
 //
-// Detecção que falha fechado (revisão R3 da #134, B1). Listar montagens ("a" + "b", `.join`, `.concat`…)
-// sempre deixa uma de fora (lista em variável, `Array.of`, JSX partido, `<strong>`/`&nbsp;` no meio,
-// `.replace`, helper, `.json`). Em vez disso, como na trava de enum (enums-rotulos.test.ts), a trava olha
-// as PALAVRAS em cada pedaço de texto literal — string, template, texto e atributo de JSX — e no texto
-// da posição onde ele aparece. O texto é o que a pessoa lê: entidades decodificadas (`&nbsp;`, `&#160;`),
-// acento composto (NFC), sem caractere invisível, qualquer espaço como espaço, qualquer caixa e
-// "pagina" sem acento também. Três sinais acusam o pedaço onde a palavra está:
-//   1. "nesta página" no pedaço ou na posição;
-//   2. "nesta" aberto: o pedaço termina em "nesta", ou na posição o que vem depois dele não se sabe
-//      daqui (expressão não avaliável, componente) — a continuação vem de outro lugar;
-//   3. "página" (minúscula) abrindo um texto avulso (argumento, constante, item de lista) ou logo depois
-//      de algo que não se sabe — é continuação de frase (`"nesta X".replace("X", "página")`).
-// A posição de um elemento JSX junta os filhos e tira as tags (`nesta <strong>página</strong>`); a de
-// uma expressão junta literal, template, `+`, lista (`[…]`, `Array.of`), `.join`, `.concat` e constante
-// local; o resto é "desconhecido" (…). O guarda é procurado a partir do pedaço acusado: o literal acusa
-// onde nasce (uma constante fora do ramo protegido acusa mesmo que o uso esteja dentro dele).
+// Detecção que falha fechado (revisão R3 da #134, B1; R1 da #147). Listar montagens ("a" + "b", `.join`,
+// `.concat`…) sempre deixa uma de fora (lista em variável, `Array.of`, JSX partido, `<strong>`/`&nbsp;` no
+// meio, `.replace`, helper, `.json`). Em vez disso, como na trava de enum (enums-rotulos.test.ts), a trava
+// olha as PALAVRAS em cada pedaço de texto literal — string, template, texto e atributo de JSX — e no texto
+// da posição onde ele aparece. O texto é o que a pessoa lê (src/test/texto-lido.ts): entidades HTML
+// decodificadas (tabela do HTML 4, a que o JSX decodifica: `&nbsp;`, `&aacute;`, `&shy;`, `&#160;`), sem
+// caractere invisível (classe Cf inteira — `&lrm;`, `\u200e` —, seletores de variação), formas de
+// compatibilidade (NFKC) e homóglifos (o `\u0430` cirílico) como a letra latina, qualquer caixa e "pagina" sem
+// acento também. Sinais que acusam o pedaço onde a palavra está:
+//   1. "nesta página" no pedaço ou na posição — a posição de JSX é lida de dois jeitos: com as tags
+//      separando (`nesta <strong>página</strong>`) e juntando (`nes<span>ta</span>`, `nes<wbr />ta`);
+//   2. "nesta" aberto: o pedaço termina em "nesta" (ou num começo dela: "ne", "nes", "nest"; ou em
+//      "nesta pág…"), ou na posição o que vem depois não se sabe daqui (expressão, componente);
+//   3. continuação de frase: "página" minúscula abrindo um texto avulso (argumento, constante, item de
+//      lista) ou logo depois de algo que não se sabe (expressão, componente); "Página" maiúscula aí só no
+//      formato da paginação ("Página {n}", "Página 2") ou como texto próprio que segue ("Página não
+//      encontrada"); o fim de "nesta" ("sta página", "ta página") colado a algo desconhecido ou abrindo
+//      texto avulso;
+//   4. texto editado: literal com "nesta" que passa por `.slice`, `.replace`, `.split`, `.substring`… (o
+//      corte ou a troca podem montar a frase). `.toLowerCase()`/`.toUpperCase()`/`.trim()` não editam: o
+//      texto segue avaliado, na caixa nova (`"Página".toLowerCase()` é "página").
+// A posição de um elemento JSX junta os filhos e tira as tags; a de uma expressão junta literal, template,
+// `+`, lista (`[…]`, `Array.of`), `.join`, `.concat`, troca de caixa e constante local; o resto é
+// "desconhecido" (…). O guarda é procurado a partir do pedaço acusado: o literal acusa onde nasce (uma
+// constante fora do ramo protegido acusa mesmo que o uso esteja dentro dele).
 //
 // Por que rastrear até a posição e não um `EstadoVazioPaginado` único: a proibição de "nesta página"
 // fora do componente precisaria do mesmo reconhecimento de texto partido (é isso que escapava), e
 // trocaria ~45 telas já aprovadas. Aqui a mudança fica só na trava; o guarda continua conferido.
 //
-// Fora do alcance (declarado):
-// - early return sem else (`if (!cursor) return <A/>; return <B/>` — o segundo return não é ramo
-//   sintático do if; escreva como ternário);
-// - palavra partida no meio (`"nes" + "ta"`) ou texto que não nasce de literal (String.fromCharCode,
-//   dado vindo do servidor);
-// - "Página" com maiúscula depois de algo desconhecido: abre texto próprio ("Página 2"), não continua frase.
+// Fora do alcance (declarado): early return sem else (`if (!cursor) return <A/>; return <B/>` — o segundo
+// return não é ramo sintático do if; escreva como ternário) e texto que não nasce de literal
+// (String.fromCharCode, dado vindo do servidor).
 //
 // Manifesto (src/app/vazio-paginado-mapa.ts): cada "nesta página" protegido, com a CONDIÇÃO que o
 // protege. Trocar o cursor de uma lista pelo da outra (`cursor` × `pendenciaCursor`) passa no nome,
@@ -241,13 +248,13 @@ function guardaDaPaginacao(no: ts.Node, sf: ts.SourceFile): string | null {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Texto: pedaços literais, posições e os três sinais (revisão R3 da #134, B1)
+// Texto: pedaços literais, posições e os sinais (revisão R3 da #134, B1; R1 da #147)
 // ---------------------------------------------------------------------------------------------------
 
 /** O que não dá para saber sem executar (chamada, ternário, campo). Marcadores na área de uso privado do Unicode: não são letra nem espaço. */
-const DESCONHECIDO = "\uE000";
+const DESCONHECIDO = "\ue000";
 /** Filho JSX que é elemento ou componente: o texto dele é visto na própria posição, não daqui. */
-const FRONTEIRA = "\uE001";
+const FRONTEIRA = "\ue001";
 
 /** Pedaço do texto de uma posição; `no` é o literal de onde ele vem (null: espaço, desconhecido, fronteira). */
 type Pedaco = { texto: string; no: ts.Node | null };
@@ -255,53 +262,66 @@ const desconhecido: Pedaco = { texto: DESCONHECIDO, no: null };
 const fronteira: Pedaco = { texto: FRONTEIRA, no: null };
 const espaco: Pedaco = { texto: " ", no: null };
 
-const ENTIDADES: Record<string, string> = {
-  nbsp: "\u00a0", ensp: "\u2002", emsp: "\u2003", thinsp: "\u2009", shy: "\u00ad", zwj: "\u200d", zwnj: "\u200c",
-  amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'",
-};
-/**
- * Texto como a pessoa lê (R3 da #134, B1/B2): entidade HTML decodificada (`&nbsp;`, `&#160;`, `&#xA0;`),
- * acento composto (NFC: "pa\u0301gina" é "página"), sem caractere invisível (`\u200b`, `&shy;`) e todo
- * espaço — inclusive o não separável — como " ". Não junta espaços (as posições dos pedaços se mantêm).
- */
-export function textoLido(t: string): string {
-  return t
-    .replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (m, c: string) => {
-      if (c[0] !== "#") return ENTIDADES[c.toLowerCase()] ?? m;
-      const n = c[1] === "x" || c[1] === "X" ? parseInt(c.slice(2), 16) : Number(c.slice(1));
-      return n > 1 && n <= 0x10ffff ? String.fromCodePoint(n) : m;
-    })
-    .normalize("NFC")
-    .replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g, "")
-    .replace(/\s/g, " ");
-}
-
 /** Sinal 1: "nesta página" (qualquer caixa, com ou sem acento), com espaço ou elemento JSX no meio. */
-const FRASE = /(?<!\p{L})nesta[ \uE001]+p[aá]gina(?!\p{L})/giu;
+const FRASE = /(?<!\p{L})nesta[ \ue001]+p[aá]gina(?!\p{L})/giu;
 /** Sinal 2: "nesta" aberto — o que vem depois é o fim do pedaço, um desconhecido ou um elemento. */
-const NESTA_ABERTO = /(?<!\p{L})nesta[ \uE001]*(?=[\uE000\uE001]|$)/giu;
-/** Sinal 3: "página" minúscula logo depois de um desconhecido ("pagina" sem acento só seguida de espaço ou
- * pontuação — a chave `pagina` da URL não é texto). */
-const PAGINA_APOS_DESCONHECIDO = /\uE000[ \uE001]*(página|pagina(?=[ .,;:!?)]))(?!\p{L})/gu;
+const NESTA_ABERTO = /(?<!\p{L})nesta[ \ue001]*(?=[\ue000\ue001]|$)/giu;
+/** Sinal 2: o pedaço termina num começo de "nesta" ("ne", "nes", "nest"; a sigla toda em maiúscula — "NE" — não). */
+const NESTA_PARTIDA = /(?<!\p{L})[Nn](?:e|es|est) *$/gu;
+/** Sinal 2: o pedaço termina em "nesta" + começo de "página" ("nesta p", "nesta pág"…). */
+const PAGINA_PARTIDA = /(?<!\p{L})nesta +p(?:[aá](?:g(?:i(?:n)?)?)?)? *$/giu;
+/** Sinal 3: "página" minúscula logo depois de um desconhecido ou de um elemento ("pagina" sem acento só
+ * seguida de espaço ou pontuação — a chave `pagina` da URL não é texto). */
+const PAGINA_APOS_DESCONHECIDO = /[\ue000\ue001][ \ue001]*(página|pagina(?=[ .,;:!?)]))(?!\p{L})/gu;
+/** Sinal 3: "Página" maiúscula logo depois de um desconhecido ou de um elemento, fora do formato da
+ * paginação ("Página {n}", "Página 2"). */
+const PAGINA_MAIUSCULA_APOS_DESCONHECIDO = /[\ue000\ue001][ \ue001]*(P[áa]gina|PÁGINA|PAGINA)(?!\p{L})(?![ \ue001]*[\d\ue000])/gu;
+/** Sinal 3: o fim de "nesta" ("esta", "sta", "ta") + "página", colado a um desconhecido ou elemento. */
+const FIM_DE_NESTA_APOS_DESCONHECIDO = /[\ue000\ue001]((?:esta|sta|ta) +p[aá]gina)(?!\p{L})/gu;
 /** Sinal 3: "página" minúscula abrindo um texto avulso (argumento, constante, item de lista). */
 const PAGINA_NO_INICIO = /^ *(página|pagina(?=[ .,;:!?)]))(?!\p{L})/gu;
+/** Sinal 3: "Página" sozinha como texto avulso (só a palavra: `.replace("X", "Página")`). */
+const PAGINA_SOZINHA = /^ *(P[áa]gina|PÁGINA|PAGINA)[ .,;:!?)]*$/gu;
+/** Sinal 3: o fim de "nesta" + "página" abrindo um texto avulso (`junta("Nenhuma proposta n", "esta página.")`). */
+const FIM_DE_NESTA_NO_INICIO = /^ *((?:esta|sta|ta) +p[aá]gina)(?!\p{L})/gu;
 
 type Regra = { re: RegExp; palavra: (m: RegExpMatchArray) => number };
 /** Onde começa a palavra acusada: no início do casamento ("nesta") ou no grupo ("página"). */
 const noInicio = (m: RegExpMatchArray) => m.index!;
 const noGrupo = (m: RegExpMatchArray) => m.index! + m[0].length - m[1].length;
-/** Pedaço sozinho: frase inteira ou "nesta" no fim. */
-const REGRAS_PEDACO: Regra[] = [{ re: FRASE, palavra: noInicio }, { re: NESTA_ABERTO, palavra: noInicio }];
+const naPalavraGrupo = (m: RegExpMatchArray) => m.index! + m[0].indexOf(m[1]);
+/** Pedaço sozinho: frase inteira, "nesta" no fim ou partido no fim. */
+const REGRAS_PEDACO: Regra[] = [
+  { re: FRASE, palavra: noInicio }, { re: NESTA_ABERTO, palavra: noInicio },
+  { re: NESTA_PARTIDA, palavra: noInicio }, { re: PAGINA_PARTIDA, palavra: noInicio },
+];
 /** Posição de JSX: o início é o da posição de fora (o "nesta" de lá é visto lá). */
-const REGRAS_JSX: Regra[] = [...REGRAS_PEDACO, { re: PAGINA_APOS_DESCONHECIDO, palavra: noGrupo }];
-/** Texto avulso (expressão fora do filho de JSX): também não pode abrir com "página". */
-const REGRAS_AVULSO: Regra[] = [...REGRAS_JSX, { re: PAGINA_NO_INICIO, palavra: noGrupo }];
+const REGRAS_JSX: Regra[] = [
+  ...REGRAS_PEDACO,
+  { re: PAGINA_APOS_DESCONHECIDO, palavra: noGrupo }, { re: PAGINA_MAIUSCULA_APOS_DESCONHECIDO, palavra: naPalavraGrupo },
+  { re: FIM_DE_NESTA_APOS_DESCONHECIDO, palavra: naPalavraGrupo },
+];
+/** Texto avulso (expressão fora do filho de JSX): também não pode abrir como continuação de frase. */
+const REGRAS_AVULSO: Regra[] = [
+  ...REGRAS_JSX,
+  { re: PAGINA_NO_INICIO, palavra: noGrupo }, { re: PAGINA_SOZINHA, palavra: naPalavraGrupo }, { re: FIM_DE_NESTA_NO_INICIO, palavra: naPalavraGrupo },
+];
+/** Sinal 4: "nesta" em qualquer lugar do texto (para o literal que passa por edição). */
+const NESTA = /(?<!\p{L})nesta(?!\p{L})/iu;
 
-/** Aplica as regras ao texto lido dos pedaços e devolve os literais acusados (onde a palavra está). */
+/** `textoComparavel` com memória: a varredura de src repete muito os mesmos pedaços (o tempo da trava conta no CI). */
+const comparaveis = new Map<string, string>();
+function comparavel(t: string): string {
+  let r = comparaveis.get(t);
+  if (r === undefined) { r = textoComparavel(t); comparaveis.set(t, r); }
+  return r;
+}
+
+/** Aplica as regras ao texto comparável dos pedaços e devolve os literais acusados (onde a palavra está). */
 function acusados(lista: Pedaco[], regras: Regra[]): ts.Node[] {
   let texto = "";
   const inicios: number[] = [];
-  for (const p of lista) { inicios.push(texto.length); texto += textoLido(p.texto); }
+  for (const p of lista) { inicios.push(texto.length); texto += comparavel(p.texto); }
   const nos: ts.Node[] = [];
   for (const r of regras) {
     for (const m of texto.matchAll(r.re)) {
@@ -327,9 +347,23 @@ const ehFilhoJsx = (n: ts.Node) => ts.isJsxExpression(n.parent) && (ts.isJsxElem
 const ehArrayOf = (c: ts.CallExpression) =>
   ts.isPropertyAccessExpression(c.expression) && c.expression.name.text === "of" && ts.isIdentifier(c.expression.expression) && c.expression.expression.text === "Array";
 const METODOS_QUE_JUNTAM = new Set(["join", "concat"]);
+/** Métodos que mantêm o texto (só mudam a caixa ou as pontas): o texto segue avaliado. */
+const METODOS_QUE_MANTEM: Readonly<Record<string, (t: string) => string>> = {
+  toLowerCase: (t) => t.toLowerCase(), toLocaleLowerCase: (t) => t.toLowerCase(),
+  toUpperCase: (t) => t.toUpperCase(), toLocaleUpperCase: (t) => t.toUpperCase(),
+  trim: (t) => t, trimStart: (t) => t, trimEnd: (t) => t, normalize: (t) => t, toString: (t) => t, valueOf: (t) => t,
+};
+/** Métodos que cortam ou trocam o texto: o resultado não se sabe daqui (sinal 4). */
+const METODOS_QUE_EDITAM = new Set(["slice", "substring", "substr", "replace", "replaceAll", "split", "at", "charAt", "padStart", "padEnd", "repeat", "splice", "reduce", "reduceRight"]);
 /** `Array.of(…)`, `x.join(…)` ou `x.concat(…)`: os argumentos entram no texto. */
 const juntaArgumentos = (c: ts.CallExpression) =>
   ehArrayOf(c) || (ts.isPropertyAccessExpression(c.expression) && METODOS_QUE_JUNTAM.has(c.expression.name.text));
+/** Método chamado com `n` de receptor (`n.metodo(…)`), ou null. */
+function metodoSobre(n: ts.Node): { nome: string; chamada: ts.CallExpression } | null {
+  const p = n.parent;
+  if (p && ts.isPropertyAccessExpression(p) && p.expression === n && ts.isCallExpression(p.parent) && p.parent.expression === p) return { nome: p.name.text, chamada: p.parent };
+  return null;
+}
 
 /** O pai de `n` compõe o texto dele? Devolve o nó que junta (para continuar subindo) ou null. */
 function compoe(n: ts.Node): ts.Node | null {
@@ -340,7 +374,8 @@ function compoe(n: ts.Node): ts.Node | null {
   if (ts.isTemplateSpan(p)) return p.parent;
   // Item de lista só compõe quando a lista vira um texto (juntada, ou filha de JSX — o React junta os itens).
   if (ts.isArrayLiteralExpression(p)) return listaViraTexto(p) ? p : null;
-  if (ts.isPropertyAccessExpression(p) && p.expression === n && METODOS_QUE_JUNTAM.has(p.name.text) && ts.isCallExpression(p.parent) && p.parent.expression === p) return p.parent;
+  const metodo = metodoSobre(n);
+  if (metodo && (METODOS_QUE_JUNTAM.has(metodo.nome) || Object.hasOwn(METODOS_QUE_MANTEM, metodo.nome))) return metodo.chamada;
   if (ts.isCallExpression(p) && p.arguments.some((a) => a === n) && juntaArgumentos(p)) return p;
   return null;
 }
@@ -360,6 +395,14 @@ function raiz(n: ts.Node): ts.Node {
   return n;
 }
 
+/** O texto inteiro (tirados parênteses e `as`) passa por um método que corta ou troca (sinal 4)? */
+function editado(r: ts.Node): boolean {
+  let n = r;
+  while (n.parent && (ts.isParenthesizedExpression(n.parent) || ts.isAsExpression(n.parent) || ts.isNonNullExpression(n.parent) || ts.isSatisfiesExpression(n.parent))) n = n.parent;
+  const metodo = metodoSobre(n);
+  return !!metodo && METODOS_QUE_EDITAM.has(metodo.nome);
+}
+
 /** Itens de `[…]`, `Array.of(…)` ou de constante local com uma delas (null: não é lista conhecida). */
 function itensDaLista(e: ts.Expression, profundidade: number): ts.Expression[] | null {
   e = desembrulha(e);
@@ -374,8 +417,9 @@ function itensDaLista(e: ts.Expression, profundidade: number): ts.Expression[] |
 
 /**
  * Pedaços do texto que a expressão produz: literal, template, `+`, lista (o React junta os itens), `.join`
- * (de `[…]`, `Array.of` ou constante), `.concat` e constante local de um só valor. O resto (chamada,
- * ternário, campo, espalhamento) é desconhecido — os ramos de um ternário são textos próprios, com o seu guarda.
+ * (de `[…]`, `Array.of` ou constante), `.concat`, troca de caixa/`.trim` e constante local de um só valor.
+ * O resto (chamada, ternário, campo, espalhamento) é desconhecido — os ramos de um ternário são textos
+ * próprios, com o seu guarda.
  */
 function pedacos(e: ts.Expression, profundidade = 0): Pedaco[] {
   e = desembrulha(e);
@@ -396,6 +440,8 @@ function pedacos(e: ts.Expression, profundidade = 0): Pedaco[] {
       return lista.flatMap((x, i) => [...(i ? sep : []), ...pedacos(x, profundidade + 1)]);
     }
     if (metodo === "concat") return [...pedacos(alvo, profundidade + 1), ...e.arguments.flatMap((a) => pedacos(a, profundidade + 1))];
+    const mantem = METODOS_QUE_MANTEM[metodo];
+    if (Object.hasOwn(METODOS_QUE_MANTEM, metodo)) return pedacos(alvo, profundidade + 1).map((p) => (p.no ? { texto: mantem(p.texto), no: p.no } : p));
   }
   if (ts.isIdentifier(e)) {
     const inits = declaracoes.get(e.text) ?? [];
@@ -439,17 +485,20 @@ function devolveJsx(e: ts.Expression): boolean {
 }
 
 /**
- * Pedaços do texto de um elemento JSX, como a pessoa lê: os filhos juntos, com as tags tiradas
- * (`nesta <strong>página</strong>` é "nesta página"). Expressão de texto entra avaliada; a que só rende
- * elementos e o componente sem filhos (`<Rotulo />`) são fronteira — o texto deles não se vê daqui.
+ * Pedaços do texto de um elemento JSX, como a pessoa lê: os filhos juntos, com as tags tiradas. A tag pode
+ * separar palavras (`nesta <strong>página</strong>`, bloco) ou não (`nes<span>ta</span>`, `nes<wbr />ta`,
+ * inline): `juntando` lê do segundo jeito, e a posição é lida dos dois. Expressão de texto entra avaliada;
+ * a que só rende elementos e o componente sem filhos (`<Rotulo />`) são fronteira — o texto deles não se
+ * vê daqui.
  */
-function pedacosJsx(el: ts.JsxElement | ts.JsxFragment): Pedaco[] {
+function pedacosJsx(el: ts.JsxElement | ts.JsxFragment, juntando: boolean): Pedaco[] {
+  const borda: Pedaco[] = juntando ? [] : [espaco];
   return el.children.flatMap((c): Pedaco[] => {
     if (ts.isJsxText(c)) return [{ texto: c.text, no: c }];
     if (ts.isJsxExpression(c)) return !c.expression ? [] : devolveJsx(c.expression) ? [fronteira] : pedacos(c.expression);
-    if (ts.isJsxElement(c) || ts.isJsxFragment(c)) return [espaco, ...pedacosJsx(c), espaco];
-    // <br />, <img />: espaço; <Componente />: rende texto que não se vê daqui.
-    return [/^[a-z]/.test(c.tagName.getText()) ? espaco : fronteira];
+    if (ts.isJsxElement(c) || ts.isJsxFragment(c)) return [...borda, ...pedacosJsx(c, juntando), ...borda];
+    // <br />, <wbr />, <img />: borda; <Componente />: rende texto que não se vê daqui.
+    return /^[a-z]/.test(c.tagName.getText()) ? borda : [fronteira];
   });
 }
 
@@ -469,10 +518,10 @@ function arvore(fonte: string, arquivo: string): ts.SourceFile {
 }
 
 /**
- * Todo texto "nesta página" do arquivo — inteiro, partido ou aberto (os três sinais) —, com a condição de
- * paginação que protege o pedaço acusado (null: a página 1 pode mostrá-lo). Não só o que está em
+ * Todo texto "nesta página" do arquivo — inteiro, partido, aberto ou editado (os sinais) —, com a condição
+ * de paginação que protege o pedaço acusado (null: a página 1 pode mostrá-lo). Não só o que está em
  * <EstadoVazio>: um <p> à mão, uma constante noutro arquivo ou um .json também contam (R1 da #134, B3;
- * R3 da #134, B1). Cada literal é acusado no máximo uma vez.
+ * R3 da #134, B1; R1 da #147). Cada literal é acusado no máximo uma vez.
  */
 export function textosDePagina(fonte: string, arquivo = "x.tsx"): Achado[] {
   const sf = arvore(fonte, arquivo);
@@ -486,11 +535,21 @@ export function textosDePagina(fonte: string, arquivo = "x.tsx"): Achado[] {
       // A expressão de texto inteira de que ele faz parte (a de filho de JSX é vista na posição do elemento).
       if (!ts.isJsxText(n)) {
         const r = raiz(n);
-        if (!vistas.has(r) && !ehFilhoJsx(r)) { vistas.add(r); marca(acusados(pedacos(r as ts.Expression), REGRAS_AVULSO)); }
+        if (!vistas.has(r)) {
+          vistas.add(r);
+          const lista = pedacos(r as ts.Expression);
+          if (!ehFilhoJsx(r)) marca(acusados(lista, REGRAS_AVULSO));
+          // Sinal 4: o texto com "nesta" passa por corte ou troca — o resultado pode ser a frase.
+          if (editado(r)) marca(lista.filter((p) => p.no && NESTA.test(comparavel(p.texto))).map((p) => p.no!));
+        }
       }
     }
-    // A posição de um elemento JSX que não está dentro de outro (o de dentro entra no texto do de fora).
-    if ((ts.isJsxElement(n) || ts.isJsxFragment(n)) && !ts.isJsxElement(n.parent) && !ts.isJsxFragment(n.parent)) marca(acusados(pedacosJsx(n), REGRAS_JSX));
+    // A posição de um elemento JSX que não está dentro de outro (o de dentro entra no texto do de fora),
+    // lida com as tags separando e juntando.
+    if ((ts.isJsxElement(n) || ts.isJsxFragment(n)) && !ts.isJsxElement(n.parent) && !ts.isJsxFragment(n.parent)) {
+      marca(acusados(pedacosJsx(n, false), REGRAS_JSX));
+      marca(acusados(pedacosJsx(n, true), REGRAS_JSX));
+    }
     ts.forEachChild(n, visita);
   };
   visita(sf);
@@ -502,19 +561,25 @@ export function textosDePagina(fonte: string, arquivo = "x.tsx"): Achado[] {
 /** Textos "nesta página" que a página 1 pode mostrar. */
 export const vaziosPaginadosSemGuarda = (fonte: string, arquivo = "x.tsx") => textosDePagina(fonte, arquivo).filter((a) => a.guarda === null);
 
-/** Fonte de produção: código e dados de src (.ts, .tsx, .js, .jsx, .mjs, .cjs, .json), sem testes e sem os
- * manifestos das travas. Um .json ou .js importado por uma tela também é texto dela (R3 da #134, B1). */
+/** Manifestos das travas (dados de teste que citam os textos das telas): fora pelo caminho EXATO — um
+ * arquivo de produção *-mapa.ts continua varrido (R2 da #134, B1). */
+const MANIFESTOS = ["src/app/vazio-paginado-mapa.ts", "src/app/estados-vazios-mapa.ts", "src/app/botoes-mapa.ts"];
+/** Fonte de produção: código e dados de src (.ts, .tsx, .mts, .cts, .js, .jsx, .mjs, .cjs, .json), sem testes,
+ * sem declarações de tipo e sem os manifestos. Um .json ou .js importado por uma tela também é texto dela
+ * (R3 da #134, B1). */
+export const ehFonteDeProducao = (arquivo: string) =>
+  /\.([mc]?[jt]sx?|json)$/.test(arquivo) && !/\.test\.|\.d\.[mc]?ts$/.test(arquivo) && !MANIFESTOS.includes(arquivo);
 function fontes(): { arquivo: string; fonte: string }[] {
   const saida: { arquivo: string; fonte: string }[] = [];
   for (const f of readdirSync("src", { recursive: true }) as string[]) {
     const arquivo = join("src", f).split("\\").join("/");
-    // Manifestos das travas (dados de teste que citam os textos das telas) ficam de fora pelo caminho
-    // EXATO — um arquivo de produção *-mapa.ts continua varrido (R2 da #134, B1).
-    if (!/\.([mc]?[jt]sx?|json)$/.test(arquivo) || /\.test\.|\.d\.[mc]?ts$/.test(arquivo) || ["src/app/vazio-paginado-mapa.ts", "src/app/estados-vazios-mapa.ts", "src/app/botoes-mapa.ts"].includes(arquivo)) continue;
-    saida.push({ arquivo, fonte: readFileSync(arquivo, "utf8") });
+    if (ehFonteDeProducao(arquivo)) saida.push({ arquivo, fonte: readFileSync(arquivo, "utf8") });
   }
   return saida;
 }
+
+/** A exceção vale para o achado: mesmo caminho e mesmo trecho, exatos (nem prefixo, nem o nome do arquivo sozinho). */
+export const casaExcecao = (e: Pick<Excecao, "arquivo" | "trecho">, a: { arquivo: string; trecho: string }) => e.arquivo === a.arquivo && e.trecho === a.trecho;
 
 describe("detector de vazio paginado (autoteste)", () => {
   const sem = (corpo: string) => vaziosPaginadosSemGuarda(`export function T({ xs, t, cursor, pagina, r, d, q, filtrando, antesVersao, depoisId, pendenciaCursor, proximoCursor, antes, busca, a }: any) { ${corpo} }`).map((x) => x.trecho);
@@ -625,11 +690,11 @@ describe("detector de vazio paginado (autoteste)", () => {
       expect(planos('{"Nenhuma proposta nesta\\u00a0página."}')).toEqual(["Nenhuma proposta nesta página."]);
     });
 
-    it("XV5: `.replace` / `.replaceAll` — \"página\" minúscula abrindo texto avulso ou depois de desconhecido", () => {
-      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "página")}')).toEqual(["página"]);
-      expect(planos('{"Nenhuma proposta nesta consulta.".replaceAll("consulta", "página")}')).toEqual(["página"]);
-      expect(planos('{"Nenhuma proposta nesta X.".replace("X", PAG)}', 'const PAG = "página";')).toEqual(["página"]);
-      expect(planos('{"Nenhuma proposta nesta X".replace(" X", "")} página.')).toEqual(["página."]);
+    it("XV5: `.replace` / `.replaceAll` — o texto editado (sinal 4) e a \"página\" que continua a frase (sinal 3)", () => {
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "página")}')).toEqual(["Nenhuma proposta nesta X.", "página"]);
+      expect(planos('{"Nenhuma proposta nesta consulta.".replaceAll("consulta", "página")}')).toEqual(["Nenhuma proposta nesta consulta.", "página"]);
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", PAG)}', 'const PAG = "página";')).toEqual(["página", "Nenhuma proposta nesta X."]);
+      expect(planos('{"Nenhuma proposta nesta X".replace(" X", "")} página.')).toEqual(["Nenhuma proposta nesta X", "página."]);
     });
 
     it("XV6: `Array.of(…).join`", () => {
@@ -693,6 +758,105 @@ describe("detector de vazio paginado (autoteste)", () => {
     });
   });
 
+  // Revisão R1 da #147: evasões que ainda passavam (K1–K11) e mutações da própria trava (G5, G13–G16, G20).
+  describe("R1 da #147: evasões e mutações da trava", () => {
+    const planos = (texto: string, antes = "") => sem(`${antes} return <div>{!d.planos[0] && <p role="status">${texto}</p>}</div>;`);
+
+    it("B1 (K4, K5, K10): invisíveis fora do conjunto antigo — marcas de direção e seletor de variação", () => {
+      expect(planos("Nenhuma proposta nes&lrm;ta página.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos("Nenhuma proposta nes&rlm;ta página.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nesta \\u200epágina."}')).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nesta \\u200fpágina."}')).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nes\\ufe0fta página."}')).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nes\\u{e0100}ta página."}')).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nes\\u202eta página."}')).toEqual(["Nenhuma proposta nesta página."]);
+    });
+
+    it("B2 (K1, K2): palavra partida por elemento — a posição também é lida com as tags juntando", () => {
+      expect(planos("Nenhuma proposta nes<wbr />ta página.")).toEqual(["Nenhuma proposta nes"]);
+      expect(planos("Nenhuma proposta <span>nes</span>ta página.")).toEqual(["nes"]);
+      // Sem começo de "nesta" no fim do pedaço: só a leitura juntando acha a frase.
+      expect(planos("Nenhuma proposta n<b>esta</b> página.")).toEqual(["Nenhuma proposta n"]);
+      expect(planos("Nenhuma proposta nesta p<i>ágina</i>.")).toEqual(["Nenhuma proposta nesta p"]);
+    });
+
+    it("B3 (K3, G5): entidades nomeadas do HTML — letra acentuada e invisíveis", () => {
+      expect(planos("Nenhuma proposta nesta p&aacute;gina.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos("Nenhuma proposta nesta P&Aacute;GINA.")).toEqual(["Nenhuma proposta nesta PÁGINA."]);
+      expect(planos("Nenhuma proposta nes&shy;ta página.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos("Nenhuma proposta nes&zwj;ta página.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos("Nenhuma proposta nes&zwnj;ta página.")).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos("Nenhuma proposta nesta&ensp;página.")).toEqual(["Nenhuma proposta nesta página."]);
+    });
+
+    it("B4 (K6): troca de caixa não esconde a continuação — o texto segue avaliado na caixa nova", () => {
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "Página".toLowerCase())}')).toEqual(["Nenhuma proposta nesta X.", "página"]);
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "PÁGINA".toLocaleLowerCase().trim())}')).toEqual(["Nenhuma proposta nesta X.", "página"]);
+      // "Página" sozinha como texto avulso também é continuação.
+      expect(planos('{"Nenhuma proposta nesta X.".replace("X", "Página")}')).toEqual(["Nenhuma proposta nesta X.", "Página"]);
+    });
+
+    it("B4 (K7): corte (`.slice`) e \"Página\" maiúscula depois de desconhecido fora do formato da paginação", () => {
+      expect(planos('{"Nenhuma proposta nesta X".slice(0, -2)} Página.')).toEqual(["Nenhuma proposta nesta X", "Página."]);
+      expect(planos('{"Nenhuma proposta nesta X".substring(0, 23)}{"!"}')).toEqual(["Nenhuma proposta nesta X"]);
+      expect(planos("{rotulo} Página.")).toEqual(["Página."]);
+      // O formato da paginação passa: "Página {n}", "Página 2".
+      expect(planos("{anterior} Página {pagina}")).toEqual([]);
+      expect(planos("{anterior} Página 2 de 5")).toEqual([]);
+    });
+
+    it("B4 (K8, K9): \"nesta\" partida entre literais (helper, `.reduce`)", () => {
+      const junta = "const junta = (a: string, b: string) => a + b;";
+      expect(planos('{junta("Nenhuma proposta nes", "ta página.")}', junta)).toEqual(["Nenhuma proposta nes", "ta página."]);
+      expect(planos('{["Nenhuma proposta nes", "ta página."].reduce((x, y) => x + y)}')).toEqual(["Nenhuma proposta nes", "ta página."]);
+      expect(planos('{junta("Nenhuma proposta ne", "sta página.")}', junta)).toEqual(["Nenhuma proposta ne", "sta página."]);
+      expect(planos('{junta("Nenhuma proposta nest", "a página.")}', junta)).toEqual(["Nenhuma proposta nest"]);
+      expect(planos('{junta("Nenhuma proposta n", "esta página.")}', junta)).toEqual(["esta página."]);
+      expect(planos('{junta("Nenhuma proposta nesta pá", "gina.")}', junta)).toEqual(["Nenhuma proposta nesta pá"]);
+      expect(planos('{x}esta página.')).toEqual(["esta página."]);
+      // Não acusa: sigla em maiúsculas ("NE"), "Esta página" abrindo frase própria.
+      expect(sem('const UF = ["NE", "SE"]; return <p>Esta página mostra o resumo.</p>;')).toEqual([]);
+    });
+
+    it("B5 (K11): homóglifos e formas de largura total viram a letra latina", () => {
+      // O trecho guarda o texto como está; comparado, é a frase.
+      expect(planos('{"Nenhuma proposta nesta p\\u0430gina."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta pagina."]);
+      expect(planos('{"Nenhuma proposta n\\u0435sta página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta nest\\u03b1 página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
+      expect(planos('{"Nenhuma proposta \\uff4e\\uff45\\uff53\\uff54\\uff41 página."}').map(textoComparavel)).toEqual(["Nenhuma proposta nesta página."]);
+    });
+
+    it("B6 (G20): componente no meio é fronteira — a \"página\" depois dele continua o que ele renderiza", () => {
+      expect(planos("Nenhuma proposta <Rotulo /> página.")).toEqual(["página."]);
+      expect(planos("Nenhuma proposta {t && <b>nesta</b>} página.")).toEqual(["nesta", "página."]);
+      expect(planos("Nenhuma proposta nesta <Rotulo />.")).toEqual(["Nenhuma proposta nesta"]);
+      // Elemento de HTML sem texto (<br />) não é fronteira.
+      expect(planos("Nenhuma proposta.<br /> página seguinte")).toEqual([]);
+    });
+
+    it("B6 (G13, G14): o filtro de arquivos varre .json/.js/.mjs/.cjs/.jsx e deixa de fora testes, tipos e manifestos", () => {
+      const esperado: Record<string, boolean> = {
+        "src/app/a.ts": true, "src/app/a.tsx": true, "src/app/a.mts": true, "src/app/a.cts": true,
+        "src/app/a.js": true, "src/app/a.jsx": true, "src/app/a.mjs": true, "src/app/a.cjs": true, "src/app/a.json": true,
+        "src/app/textos-mapa.ts": true, "src/outro/vazio-paginado-mapa.ts": true,
+        "src/app/a.test.ts": false, "src/app/a.test.tsx": false, "src/app/a.int.test.ts": false, "src/app/a.d.ts": false, "src/app/a.d.mts": false,
+        "src/app/a.css": false, "src/app/a.md": false, "src/app/a.svg": false, "src/app/a.ts.bak": false,
+        "src/app/vazio-paginado-mapa.ts": false, "src/app/estados-vazios-mapa.ts": false, "src/app/botoes-mapa.ts": false,
+      };
+      expect(Object.fromEntries(Object.keys(esperado).map((n) => [n, ehFonteDeProducao(n)]))).toEqual(esperado);
+    });
+
+    it("B6 (G15, G16): exceção casa por caminho e trecho exatos", () => {
+      const e = { arquivo: "src/components/VoltarPara.tsx", trecho: "página anterior" };
+      expect(casaExcecao(e, { arquivo: "src/components/VoltarPara.tsx", trecho: "página anterior" })).toBe(true);
+      // Trecho que estende o registrado, trecho que é só o começo dele, arquivo homônimo noutra pasta.
+      expect(casaExcecao(e, { arquivo: "src/components/VoltarPara.tsx", trecho: "página anterior nesta página" })).toBe(false);
+      expect(casaExcecao(e, { arquivo: "src/components/VoltarPara.tsx", trecho: "página" })).toBe(false);
+      expect(casaExcecao(e, { arquivo: "src/app/(app)/outra/VoltarPara.tsx", trecho: "página anterior" })).toBe(false);
+      expect(casaExcecao(e, { arquivo: "VoltarPara.tsx", trecho: "página anterior" })).toBe(false);
+    });
+  });
+
   it("B3 (R1 da #134): apelido local vale pelo que é, não pelo nome", () => {
     expect(sem("const antesPagina = true; return <div>{antesPagina ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["Nada nesta página."]);
     expect(sem("const cursorX = false; return <div>{cursorX ? <EstadoVazio>Nada nesta página.</EstadoVazio> : null}</div>;")).toEqual(["Nada nesta página."]);
@@ -718,7 +882,7 @@ describe("estados vazios paginados nas telas", () => {
     const casadas = new Map<number, number>();
     const soltos: string[] = [];
     for (const a of todos.filter((x) => x.guarda === null)) {
-      const i = EXCECOES_VAZIO_PAGINADO.findIndex((e) => e.arquivo === a.arquivo && e.trecho === a.trecho);
+      const i = EXCECOES_VAZIO_PAGINADO.findIndex((e) => casaExcecao(e, a));
       if (i >= 0) { casadas.set(i, (casadas.get(i) ?? 0) + 1); continue; }
       soltos.push(`${a.arquivo}:${a.linha} ${a.trecho}`);
     }
