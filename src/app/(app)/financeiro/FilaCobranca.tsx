@@ -11,8 +11,9 @@ import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { registrarCobrancaWhatsApp } from "@/server/financeiro/acoes";
 import { prepararCobrancaManual } from "@/server/financeiro/cobranca-manual";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
-import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "@/server/whatsapp/acoes";
+import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca, type EnvioApiResultado } from "@/server/whatsapp/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
@@ -121,6 +122,8 @@ export function FilaCobranca({
   const [nota, setNota] = useState<string | null>(null);
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
   const [enviandoLote, setEnviandoLote] = useState(false);
+  // Cobrança cujo envio via API espera confirmação (linha da fila ou gaveta do detalhe).
+  const [confirmarEnvio, setConfirmarEnvio] = useState<FilaCobrancaItem | null>(null);
 
   // O indicador escolhido não é campo do formulário: buscar/filtrar/limpar a busca o mantém.
   const lista = useFiltrosUrl({ campos: camposDosFiltrosFila(filtros), hrefDosCampos: (c) => hrefDosCamposFila(c, filtros.indicador) });
@@ -143,27 +146,27 @@ export function FilaCobranca({
   }
 
   // BRAÇO API (doc 30 E2): enfileira e despacha na hora — passa pelos mesmos guard-rails
-  // do cron. O resultado diz o que aconteceu (enviada, simulada em ensaio, adiada, falhou).
-  async function enviarViaApi(item: FilaCobrancaItem) {
+  // do cron. Mensagem REAL ao cliente, sem desfazer: o "Cobrar"/"Lembrar" da linha e o "Enviar via
+  // WhatsApp (API)" do detalhe só abrem a confirmação (docs/42 L2014; docs/43 §6 item 1), que mostra
+  // para quem vai, por qual número e com qual degrau. A action roda no ConfirmarAcao, que mostra a
+  // falha dentro dele; aqui chega só o resultado do despacho, que diz o que aconteceu (enviada,
+  // simulada em ensaio, adiada, falhou).
+  function pedirEnvioViaApi(item: FilaCobrancaItem) {
     setErro(null);
     setNota(null);
-    try {
-      const r = await enfileirarCobrancaWhatsApp(item.id);
-      if (!r.ok) {
-        setErro(r.erro ?? "Erro ao enfileirar.");
-        return;
-      }
-      const d = r.dado!;
-      if (d.status === "DESPACHADA") setNota(`Enviado via WhatsApp (${d.passo}).`);
-      else if (d.status === "SIMULADA") setNota(`Ensaio (shadow): ${d.passo} simulado — nada foi enviado de verdade.`);
-      else if (d.status === "ADIADA") setNota(`Na fila (${d.motivo === "fora_da_janela" ? "fora da janela de horário" : d.motivo}) — envia sozinho na próxima janela.`);
-      else if (d.status === "FALHOU") setErro(`Envio falhou: ${d.motivo ?? "erro"} — o item continua na fila manual.`);
-      else if (d.status === "CANCELADA") setNota(`Não enviado: ${d.motivo === "conversa_viva" ? "o contato respondeu — trate a conversa antes" : d.motivo}.`);
-      router.refresh();
-      setAberta(null);
-    } catch {
-      setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE);
-    }
+    setConfirmarEnvio(item);
+  }
+
+  function envioConcluido(d: EnvioApiResultado | undefined) {
+    setConfirmarEnvio(null);
+    setAberta(null);
+    if (!d) setNota("Envio registrado.");
+    else if (d.status === "DESPACHADA") setNota(`Enviado via WhatsApp (${d.passo}).`);
+    else if (d.status === "SIMULADA") setNota(`Ensaio (shadow): ${d.passo} simulado — nada foi enviado de verdade.`);
+    else if (d.status === "ADIADA") setNota(`Na fila (${d.motivo === "fora_da_janela" ? "fora da janela de horário" : d.motivo}) — envia sozinho na próxima janela.`);
+    else if (d.status === "FALHOU") setErro(`Envio falhou: ${d.motivo ?? "erro"} — o item continua na fila manual.`);
+    else if (d.status === "CANCELADA") setNota(`Não enviado: ${d.motivo === "conversa_viva" ? "o contato respondeu — trate a conversa antes" : d.motivo}.`);
+    router.refresh();
   }
 
   /** Preparar o link não é prova de envio: a action só devolve a URL após revalidar a cobrança. */
@@ -413,7 +416,7 @@ export function FilaCobranca({
                   <AcaoRapida
                     item={item}
                     podeOperar={podeOperar}
-                    onEnviar={() => enviarViaApi(item)}
+                    onEnviar={() => pedirEnvioViaApi(item)}
                     onAcesso={() => setAberta(item)}
                   />
                   <span className="text-gray-300">›</span>
@@ -434,12 +437,26 @@ export function FilaCobranca({
           podeOperar={podeOperar}
           preferenciaFusoExibicao={preferenciaFusoExibicao}
           onClose={() => setAberta(null)}
-          onEnviarApi={() => enviarViaApi(aberta)}
+          onEnviarApi={() => pedirEnvioViaApi(aberta)}
           onPrepararManual={(texto) => prepararEnvioManual(aberta, texto)}
           onConfirmarManual={() => confirmarEnvioManual(aberta)}
           onPagar={() => { setPagar(aberta); setAberta(null); }}
           onPromessa={(ate) => run(registrarPromessaPagamento(aberta.id, ate), "Promessa registrada.").then(() => setAberta(null))}
         />
+      )}
+
+      {/* Depois do detalhe no DOM: abre por cima da gaveta, que não responde ao teclado enquanto isso. */}
+      {confirmarEnvio && (
+        <ConfirmarAcao
+          titulo={`Enviar ${confirmarEnvio.tipoAcao === "lembrar" ? "o lembrete" : "a cobrança"} ${confirmarEnvio.passo ?? ""} para ${confirmarEnvio.aluno.nome} pelo WhatsApp?`}
+          confirmacao={`envio para ${primeiroNome(confirmarEnvio.destino?.nome ?? confirmarEnvio.aluno.nome)}`}
+          idempotente={false}
+          acao={() => enfileirarCobrancaWhatsApp(confirmarEnvio.id)}
+          aoConcluir={envioConcluido}
+          aoCancelar={() => setConfirmarEnvio(null)}
+        >
+          <ResumoEnvioApi item={confirmarEnvio} />
+        </ConfirmarAcao>
       )}
 
       {pagar && (
@@ -458,7 +475,33 @@ export function FilaCobranca({
   );
 }
 
-function AcaoRapida({
+function primeiroNome(nome: string): string {
+  return nome.trim().split(/\s+/)[0] || nome;
+}
+
+/** O que a confirmação do envio via API diz: destino, valor, degrau e que a mensagem não volta atrás. */
+function ResumoEnvioApi({ item }: { item: FilaCobrancaItem }) {
+  return (
+    <>
+      <p>
+        {item.destino
+          ? <>Mensagem real para <strong>{item.destino.nome}</strong>{item.destino.viaResponsavel ? " (responsável financeiro)" : ""}, no número {item.destino.telefone}.</>
+          : <>Esta cobrança não tem destinatário financeiro válido para o envio.</>}
+      </p>
+      <p>
+        {formatarMoeda(valorDevido(item), item.moeda)} · {rotular(TIPO_COBRANCA_LABEL, item.tipo)}
+        {item.competencia ? ` ${formatarCompetencia(item.competencia)}` : ""} · {rotuloVencimento(item.vencimento)}
+      </p>
+      <p>
+        O envio usa o template do degrau {item.passo ?? "devido"}{item.rotuloAcao ? ` (${item.rotuloAcao})` : ""}, não o texto editado no detalhe, e passa pelas travas da régua (janela de horário, teto por contato, conversa em aberto).
+        {item.respondeuEm ? " O contato respondeu depois da última cobrança." : ""}
+      </p>
+      <p>Uma mensagem enviada não pode ser desfeita.</p>
+    </>
+  );
+}
+
+export function AcaoRapida({
   item,
   podeOperar,
   onEnviar,

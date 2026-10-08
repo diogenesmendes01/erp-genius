@@ -10,6 +10,7 @@ import {
   submeterTemplateMeta,
 } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
@@ -69,8 +70,20 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
       `Sincronizado com a WABA: ${d!.total} template(s) lá, ${d!.atualizados} atualizado(s), ${d!.importados} importado(s).`);
   }
 
+  // Editar um template APROVADO o devolve a rascunho e tira do ar o degrau que dependia dele (docs/42
+  // L2518): o aviso sobe para o topo do formulário e o Salvar, nesse caso, só abre a confirmação.
+  const original = form?.id ? templates.find((t) => t.id === form.id) : undefined;
+  const editandoAprovado = original?.statusMeta === "APROVADO";
+  const [confirmando, setConfirmando] = useState(false);
+
   async function salvar() {
     if (!form) return;
+    if (editandoAprovado) {
+      setOrigem("form");
+      acao.limpar();
+      setConfirmando(true);
+      return;
+    }
     const dados = form;
     const d = await run("form", () => salvarTemplateWhatsApp(dados), "Template salvo.");
     if (d?.tipo === "ok") setForm(null);
@@ -169,6 +182,12 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               <IconX className="h-4 w-4" />
             </button>
           </div>
+          {editandoAprovado && (
+            <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Este template está aprovado pela Meta. Salvar uma alteração o devolve a rascunho: os degraus que o usam
+              ficam sem template aprovado até ele ser submetido e aprovado de novo.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-xs text-gray-600">
               Nome (padrão Meta)
@@ -221,6 +240,25 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
             </button>
           </div>
         </div>
+      )}
+      {form && confirmando && (
+        <ConfirmarAcao
+          titulo={`Salvar o template aprovado "${original?.nome ?? form.nome}" e devolvê-lo a rascunho?`}
+          confirmacao="alteração do template"
+          idempotente={false}
+          acao={() => salvarTemplateWhatsApp(form)}
+          aoConcluir={() => {
+            setConfirmando(false);
+            setForm(null);
+            setOrigem("form");
+            acao.setSucesso("Template salvo — voltou a rascunho; submeta à Meta de novo.");
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmando(false)}
+        >
+          <p>Este template está aprovado e será revertido para rascunho. Os degraus que o usam ficam sem template aprovado.</p>
+          <p>Em número oficial, a automação desses degraus deixa de enviar até o template ser submetido e aprovado de novo pela Meta.</p>
+        </ConfirmarAcao>
       )}
       {/* O card fecha no sucesso; "Template salvo." é anunciado aqui, numa região sempre montada. */}
       <FeedbackAcao erro={null} sucesso={!form && origem === "form" ? acao.sucesso : null} className="mt-3" />

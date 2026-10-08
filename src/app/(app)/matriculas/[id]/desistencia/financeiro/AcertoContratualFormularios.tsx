@@ -8,6 +8,8 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { formatarValores, somarPorMoeda } from "@/lib/dinheiro";
 
 function useOperacao() {
   const router = useRouter(), chave = useRef(crypto.randomUUID());
@@ -17,7 +19,21 @@ function useOperacao() {
     try { const r = await acao(); if (!r.ok) setMensagem(r.erro ?? "Não foi possível concluir a operação."); else { setMensagem(sucesso); chave.current = crypto.randomUUID(); router.refresh(); } }
     catch { setMensagem(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
-  }, chave };
+  },
+  /** Sucesso de uma ação executada fora daqui (ConfirmarAcao): mesma saída do `executar`. */
+  concluir(sucesso: string) { setMensagem(sucesso); chave.current = crypto.randomUUID(); router.refresh(); },
+  /** Resultado incerto vindo do ConfirmarAcao: a chave fica (o reenvio confere a mesma tentativa). */
+  informar(texto: string) { setMensagem(texto); },
+  chave };
+}
+
+/** Item da memória contratual, como a página o recebe (valores em texto decimal). */
+export type ItemMemoriaAcerto = { cobrancaId: string; moeda: string; devido: string; saldoDevido: string; creditoApurado: string };
+
+/** O que a aplicação do acerto faz, em números: cobranças ajustadas e crédito criado, por moeda. */
+export function resumoAplicacaoAcerto(itens: ItemMemoriaAcerto[]) {
+  const credito = somarPorMoeda(itens.map((i) => ({ moeda: i.moeda, valor: Number(i.creditoApurado) }))).filter((v) => v.valor > 0);
+  return { cobrancas: itens.length, credito };
 }
 
 export function PrepararAcertoContratualFormulario({ pedidoId, condicoesId, reapresentacao }: { pedidoId: string; condicoesId: string; reapresentacao?: { id: string; versao: number; aprovada: boolean } | null }) {
@@ -36,7 +52,26 @@ export function DecidirAcertoContratualFormulario({ propostaId, fotografiaHash }
   </form>;
 }
 
-export function AplicarAcertoContratualFormulario({ decisaoId }: { decisaoId: string }) {
+export function AplicarAcertoContratualFormulario({ decisaoId, itens }: { decisaoId: string; itens: ItemMemoriaAcerto[] }) {
   const op = useOperacao();
-  return <div className="space-y-2"><p>A aplicação ajusta os valores aprovados e cria crédito somente para excedente comprovado. A Secretaria ainda efetiva a desistência.</p><button disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => void op.executar(() => aplicarAcertoDesistenciaContratual({ decisaoId, chaveIdempotencia: op.chave.current }), "Acerto aplicado. A Secretaria pode efetivar a desistência.")}>{op.ocupado ? "Aplicando…" : "Aplicar acerto aprovado"}</button><MensagemStatus texto={op.mensagem} /></div>;
+  // Ajusta valores de cobrança e cria crédito — a ação mais irreversível da área (docs/42 L799). O botão
+  // só revela o resumo; a aplicação exige marcar "Confirmo os valores acima" no diálogo.
+  const [confirmando, setConfirmando] = useState(false);
+  const resumo = resumoAplicacaoAcerto(itens);
+  return <div className="space-y-2"><p>A aplicação ajusta os valores aprovados e cria crédito somente para excedente comprovado. A Secretaria ainda efetiva a desistência.</p><button disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => setConfirmando(true)}>Aplicar acerto aprovado</button><MensagemStatus texto={op.mensagem} />
+    {confirmando && <ConfirmarAcao
+      titulo="Aplicar o acerto contratual aprovado?"
+      confirmacao="aplicação do acerto"
+      conferencia="Confirmo os valores acima."
+      idempotente
+      acao={() => aplicarAcertoDesistenciaContratual({ decisaoId, chaveIdempotencia: op.chave.current })}
+      aoConcluir={() => { setConfirmando(false); op.concluir("Acerto aplicado. A Secretaria pode efetivar a desistência."); }}
+      aoFalhar={(falha) => { if (falha.tipo === "incerto") op.informar(falha.mensagem); }}
+      aoCancelar={() => setConfirmando(false)}
+    >
+      <p>{resumo.cobrancas === 1 ? "Será ajustada 1 cobrança" : `Serão ajustadas ${resumo.cobrancas} cobranças`} desta matrícula pelos valores da memória aprovada.</p>
+      <p>{resumo.credito.length ? `Será criado crédito de ${formatarValores(resumo.credito)} (excedente comprovado).` : "Nenhum crédito será criado."}</p>
+      <p>Os valores aplicados não são desfeitos por esta tela; uma mudança posterior exige reconferência.</p>
+    </ConfirmarAcao>}
+  </div>;
 }

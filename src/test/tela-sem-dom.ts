@@ -8,11 +8,13 @@ import { Campo, type LigacaoCampo } from "@/components/Campo";
 // por posição, como no React. Os <Campo> são expandidos: a função filha recebe a ligação e o controle
 // devolvido entra na árvore.
 //
-// LIMITE (de propósito): só useState e useCallback são simulados. Efeitos (useEffect/useLayoutEffect)
-// não rodam e useRef/useMemo/useId/useTransition/useContext não existem aqui — um componente testado
-// assim que passar a chamar um deles direto no corpo falha no teste ("Invalid hook call"), e o teste
-// precisa acompanhar (simular o gancho novo aqui, ou mockar como em DecisaoTaxa.test.ts). Componentes
-// filhos (Drawer, FeedbackAcao, Campo…) não são chamados: só as props deles são lidas.
+// LIMITE (de propósito): useState e useCallback são simulados; useRef e useId também, guardados por
+// posição como o estado (o ref e o id ficam os mesmos entre renders — uma chave de idempotência num
+// useRef não muda a cada render), para o teste que os ligar no `vi.mock("react", …)`. Efeitos
+// (useEffect/useLayoutEffect) não rodam — o teste que precisar os troca por função vazia — e
+// useMemo/useTransition/useContext não existem aqui: um componente testado assim que passar a chamar um
+// deles direto no corpo falha no teste ("Invalid hook call"), e o teste precisa acompanhar. Componentes
+// filhos (Drawer, FeedbackAcao, Campo, ConfirmarAcao…) não são chamados: só as props deles são lidas.
 
 type Setter<T> = (v: T | ((anterior: T) => T)) => void;
 
@@ -30,6 +32,16 @@ export function criarGanchos() {
     },
     useCallback<F>(f: F): F {
       return f;
+    },
+    useRef<T>(inicial: T): { current: T } {
+      const k = posicao++;
+      if (k >= estados.length) estados.push({ current: inicial });
+      return estados[k] as { current: T };
+    },
+    useId(): string {
+      const k = posicao++;
+      if (k >= estados.length) estados.push(`id-${k}`);
+      return estados[k] as string;
     },
     renderizar<P>(componente: (props: P) => ReactNode, props: P): ReactNode {
       posicao = 0;

@@ -10,6 +10,7 @@ import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualiza
 import { decidirAprovacao } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
@@ -78,8 +79,15 @@ function useExecutorFinanceiro() {
   return { acao, run, router };
 }
 
-export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio, ordenacao }: { comissoes: ComissaoRow[]; aPagar: ValorMoeda[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode; ordenacao?: OrdenacaoComissoes }) {
-  const { acao, run } = useExecutorFinanceiro();
+/** Total a pagar de uma moeda, com quantas comissões aprovadas o compõem (servidor, todo o escopo). */
+export type TotalAPagar = ValorMoeda & { quantidade: number };
+
+export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatico, vazio, ordenacao }: { comissoes: ComissaoRow[]; aPagar: (ValorMoeda | TotalAPagar)[]; podePagar: boolean; fechamentoAutomatico: boolean; vazio?: ReactNode; ordenacao?: OrdenacaoComissoes }) {
+  const { acao, run, router } = useExecutorFinanceiro();
+  // "Fechar mês e marcar pagas" paga TODAS as aprovadas e não tem desfazer (docs/42 L2016): o botão só
+  // abre a confirmação, que repete quantas comissões e quanto, por moeda.
+  const [confirmarFechamento, setConfirmarFechamento] = useState(false);
+  const quantidade = aPagar.reduce((n, v) => n + ("quantidade" in v ? v.quantidade : 0), 0);
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
@@ -89,11 +97,33 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
         vazio={vazio}
         ordenacao={ordenacao}
         podePagar={podePagar}
-        onFechar={() => run(() => fecharMesComissoes())}
+        onFechar={() => { acao.limpar(); setConfirmarFechamento(true); }}
         fechamentoAutomatico={fechamentoAutomatico}
         onToggleAutomatico={(ligado) => run(() => salvarConfigFinanceiro({ fechamentoComissaoAutomatico: ligado }))}
         isPending={acao.ocupado}
       />
+      {confirmarFechamento && (
+        <ConfirmarAcao
+          titulo="Fechar o mês e marcar as comissões aprovadas como pagas?"
+          confirmacao="fechamento do mês"
+          idempotente={false}
+          acao={() => fecharMesComissoes()}
+          aoConcluir={(d) => {
+            const pagas = d?.pagas ?? 0;
+            setConfirmarFechamento(false);
+            acao.setSucesso(pagas === 1 ? "Mês fechado: 1 comissão marcada como paga." : `Mês fechado: ${pagas} comissões marcadas como pagas.`);
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmarFechamento(false)}
+        >
+          <p>
+            {quantidade > 0
+              ? <><strong>{quantidade} {quantidade === 1 ? "comissão aprovada" : "comissões aprovadas"}</strong> {quantidade === 1 ? "passa a paga" : "passam a pagas"}, total <strong>{formatarValores(aPagar)}</strong>.</>
+              : <>Todas as comissões aprovadas passam a pagas, total <strong>{formatarValores(aPagar)}</strong>.</>}
+          </p>
+          <p>Entram todas as aprovadas até agora, inclusive as que não aparecem nesta página da lista. Não há desfazer pela tela.</p>
+        </ConfirmarAcao>
+      )}
     </>
   );
 }
