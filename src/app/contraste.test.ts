@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 import { BASE_BOTAO, TAMANHOS_BOTAO, VARIANTES_BOTAO, type TamanhoBotao, type VarianteBotao } from "@/components/Botao";
 import { contraste, corSobre, hexParaRgb } from "../../scripts/medicao-ux/nucleo.mjs";
-import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_FUNDO_DA_MARCA, SUPERFICIES } from "./contraste-mapa";
+import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_FUNDO_DA_MARCA, SUPERFICIES, SUPERFICIES_DA_SELECAO } from "./contraste-mapa";
 
 // Trava de contraste (docs/43-medicao-auditoria-ux.md §6 item 5; docs/42 §7.4 "pares de token reprovando AA").
 //
@@ -13,7 +13,11 @@ import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_F
 //    do globals.css entram na razão WCAG 2.x (a mesma função do scripts/medicao-ux/nucleo.mjs) e:
 //    - texto branco (o `white` do tailwind.config.ts) sobre cada fundo sólido — inclusive --brand-solid —
 //      tem ≥ 4,5:1 (1.4.3);
-//    - --border-control (gray-300) sobre cada superfície (página, cartão, sutil, neutro) tem ≥ 3:1 (1.4.11).
+//    - --border-control (gray-300) sobre cada superfície (página, cartão, sutil, neutro) tem ≥ 3:1 (1.4.11);
+//    - --brand-solid (o fundo da aba/passo/chip selecionado) sobre cada superfície que fica sob a seleção
+//      (página, cartão, sutil) tem ≥ 3:1 (1.4.11) — no escuro, #4338ca dava 1,97:1 sobre --surface (C1 da
+//      revisão da #156). O neutro fica de fora porque é vizinho da seleção, não o fundo dela, e porque no
+//      escuro nenhuma cor passa ali junto com os 4,5:1 do branco; a trava confere essa impossibilidade.
 //    A cor com alfa é composta sobre o fundo; vale o menor valor entre a composição exata e a de 8 bits
 //    (o que o navegador pinta). Falha fechada: token declarado fora dos blocos `:root`/`.dark` de topo (num
 //    @media, num `:root, .dark`, num `html.dark`), valor que a conta não lê (hsl, nome, var(), color-mix,
@@ -49,6 +53,7 @@ import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_F
 /** Cópias literais das listas fechadas de src/app/contraste-mapa.ts. */
 const COPIA_SHADES = ["500", "600"];
 const COPIA_SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
+const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"];
 const COPIA_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"];
 const COPIA_FUNDOS_SEM_TEXTO = [{ arquivo: "src/app/(app)/home/HomeVendedor.tsx", trecho: "h-full bg-brand-600" }];
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
@@ -120,16 +125,40 @@ const token = (T: Record<string, string>, nome: string): string => {
 
 type Par = { tema: Tema; par: string; valor: number; minimo: number };
 
-/** Texto branco sobre cada fundo sólido (≥ 4,5) e --border-control sobre cada superfície (≥ 3), nos dois temas. */
-export function paresDeContraste(css: string, superficies: readonly string[], solidos: readonly string[], branco: string): Par[] {
+/**
+ * Texto branco sobre cada fundo sólido (≥ 4,5), --border-control sobre cada superfície (≥ 3) e --brand-solid
+ * sobre cada superfície que fica sob a seleção (≥ 3), nos dois temas.
+ */
+export function paresDeContraste(
+  css: string,
+  superficies: readonly string[],
+  solidos: readonly string[],
+  branco: string,
+  superficiesDaSelecao: readonly string[] = [],
+): Par[] {
   const temas = temasDoCss(css);
   const pares: Par[] = [];
   for (const tema of ["claro", "escuro"] as const) {
     const T = temas[tema];
     for (const s of solidos) pares.push({ tema, par: `${branco}/${s}`, valor: razao(branco, token(T, s)), minimo: 4.5 });
     for (const s of superficies) pares.push({ tema, par: `--border-control/${s}`, valor: razao(token(T, "--border-control"), token(T, s)), minimo: 3 });
+    for (const s of superficiesDaSelecao) pares.push({ tema, par: `--brand-solid/${s}`, valor: razao(token(T, "--brand-solid"), token(T, s)), minimo: 3 });
   }
   return pares;
+}
+
+/**
+ * Verdadeiro quando nenhuma cor opaca tem, ao mesmo tempo, ≥ 4,5:1 com o branco (luminância ≤ 1,05/4,5 − 0,05)
+ * e ≥ 3:1 sobre o fundo de luminância L — mais clara (≥ 3(L + 0,05) − 0,05) ou mais escura ((L + 0,05)/3 − 0,05).
+ */
+export function selecaoImpossivelSobre(superficie: string): boolean {
+  if (!HEX.test(superficie)) throw new Error(`fundo não é cor opaca em hex: ${superficie}`);
+  // Luminância pela própria razão: contra o branco (luminância 1), razão = 1,05 / (L + 0,05).
+  const L = 1.05 / contraste([255, 255, 255], hexParaRgb(superficie)) - 0.05;
+  const maximoComBranco = 1.05 / 4.5 - 0.05;
+  const cabeMaisClara = 3 * (L + 0.05) - 0.05 <= maximoComBranco;
+  const cabeMaisEscura = (L + 0.05) / 3 - 0.05 >= 0;
+  return !cabeMaisClara && !cabeMaisEscura;
 }
 const reprovados = (pares: Par[]) =>
   pares.filter((p) => !(p.valor >= p.minimo)).map((p) => `${p.tema} ${p.par} ${p.valor.toFixed(3)}:1 < ${p.minimo}:1`);
@@ -152,6 +181,7 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
   it("listas fechadas: mapa = cópia literal = o que o tailwind.config.ts e o globals.css dizem", () => {
     expect([...SHADES_FUNDO_DA_MARCA]).toEqual(COPIA_SHADES);
     expect([...SUPERFICIES]).toEqual(COPIA_SUPERFICIES);
+    expect([...SUPERFICIES_DA_SELECAO]).toEqual(COPIA_SUPERFICIES_DA_SELECAO);
     expect([...FUNDOS_SOLIDOS]).toEqual(COPIA_SOLIDOS);
     expect(FUNDOS_DA_MARCA_SEM_TEXTO.map(({ arquivo, trecho }) => ({ arquivo, trecho }))).toEqual(COPIA_FUNDOS_SEM_TEXTO);
     expect(EXCECOES_CONTRASTE.map(({ arquivo, trecho }) => ({ arquivo, trecho }))).toEqual(COPIA_EXCECOES);
@@ -165,6 +195,12 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     const cinzas = CORES.gray as Record<string, string>;
     const body = semComentarios(CSS).match(/\bbody\s*\{[^}]*background-color:\s*var\((--[\w-]+)\)/)?.[1];
     expect([...new Set([varDe(CORES.surface), varDe(CORES["surface-muted"]), varDe(cinzas["50"]), varDe(cinzas["100"]), body])].sort()).toEqual(COPIA_SUPERFICIES);
+    // Superfícies sob a seleção: as superfícies menos o neutro (gray-100), e só ele, porque no escuro nenhuma
+    // cor passa nele junto com o branco. Se o neutro mudar e a conta ficar possível, ele volta para a lista.
+    const foraDaSelecao = COPIA_SUPERFICIES.filter((s) => !COPIA_SUPERFICIES_DA_SELECAO.includes(s));
+    expect(COPIA_SUPERFICIES_DA_SELECAO.every((s) => COPIA_SUPERFICIES.includes(s))).toBe(true);
+    expect(foraDaSelecao).toEqual([varDe(cinzas["100"])]);
+    for (const s of foraDaSelecao) expect(selecaoImpossivelSobre(token(temasDoCss(CSS).escuro, s)), s).toBe(true);
     // Fundos sólidos: todo token *-solid do globals.css, cada um com uma cor no config.
     const solidos = Object.keys(temasDoCss(CSS).claro).filter((t) => t.endsWith("-solid")).sort();
     expect(solidos).toEqual(COPIA_SOLIDOS);
@@ -174,10 +210,52 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(CORES.white).toBe("#ffffff");
   });
 
-  it("texto branco ≥ 4,5:1 sobre cada fundo sólido e --border-control ≥ 3:1 sobre cada superfície, nos dois temas", () => {
-    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, COPIA_SOLIDOS, CORES.white as string);
-    expect(pares).toHaveLength(2 * (COPIA_SOLIDOS.length + COPIA_SUPERFICIES.length));
+  it("texto branco ≥ 4,5:1 sobre cada fundo sólido; --border-control e --brand-solid ≥ 3:1 sobre as superfícies, nos dois temas", () => {
+    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, COPIA_SOLIDOS, CORES.white as string, COPIA_SUPERFICIES_DA_SELECAO);
+    expect(pares).toHaveLength(2 * (COPIA_SOLIDOS.length + COPIA_SUPERFICIES.length + COPIA_SUPERFICIES_DA_SELECAO.length));
+    expect(pares.filter((p) => p.par.startsWith("--brand-solid/")).map((p) => `${p.tema} ${p.par}`)).toEqual(
+      (["claro", "escuro"] as const).flatMap((tema) => COPIA_SUPERFICIES_DA_SELECAO.map((s) => `${tema} --brand-solid/${s}`)),
+    );
     expect(reprovados(pares)).toEqual([]);
+  });
+
+  it("autoteste da seleção (1.4.11): --brand-solid que passa no branco e some na superfície reprova; a faixa do escuro é estreita", () => {
+    const virtual = (escuro: string) => `:root {
+  --bg-page: #fafaf7;
+  --surface: #ffffff;
+  --surface-muted: #f4f4f0;
+  --brand-solid: #4338ca;
+}
+.dark {
+  --bg-page: #1b1b1a;
+  --surface: #242422;
+  --surface-muted: #2b2b29;
+  --brand-solid: ${escuro};
+}`;
+    const conta = (escuro: string) => reprovados(paresDeContraste(virtual(escuro), [], ["--brand-solid"], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO));
+    // O escuro de antes (o hex do claro): 7,90:1 com branco passa, mas o fundo some nas três superfícies.
+    expect(conta("#4338ca")).toEqual([
+      "escuro --brand-solid/--bg-page 2.181:1 < 3:1",
+      "escuro --brand-solid/--surface 1.968:1 < 3:1",
+      "escuro --brand-solid/--surface-muted 1.795:1 < 3:1",
+    ]);
+    // O contrário: o --brand do escuro aparece nas superfícies, mas reprova com o branco.
+    expect(conta("#6b6ef5")).toEqual(["escuro #ffffff/--brand-solid 4.059:1 < 4.5:1"]);
+    // As bordas da faixa (luminância 0,1720–0,1833): um passo mais escuro reprova na superfície sutil, um
+    // passo mais claro reprova com o branco; o valor escolhido passa em tudo.
+    expect(conta("#6161ea")).toEqual(["escuro --brand-solid/--surface-muted 2.977:1 < 3:1"]);
+    expect(conta("#6566ef")).toEqual(["escuro #ffffff/--brand-solid 4.468:1 < 4.5:1"]);
+    expect(conta("#6264ec")).toEqual([]);
+    // O claro passa com folga: 7,56 / 7,90 / 7,17:1.
+    const claro = paresDeContraste(virtual("#6264ec"), [], [], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO).filter((p) => p.tema === "claro");
+    expect(claro.map((p) => p.valor.toFixed(2))).toEqual(["7.56", "7.90", "7.17"]);
+    // Sem --brand-solid no tema, erro (não aprovação).
+    expect(() => paresDeContraste(":root {\n  --surface: #ffffff;\n}", [], [], "#ffffff", ["--surface"])).toThrow(/token ausente: --brand-solid/);
+    // A impossibilidade no neutro do escuro: 3:1 pede luminância ≥ 0,1846 e o branco, ≤ 0,1833.
+    expect(selecaoImpossivelSobre("#2f2f2c")).toBe(true);
+    expect(selecaoImpossivelSobre("#2b2b29")).toBe(false);
+    expect(selecaoImpossivelSobre("#efeee9")).toBe(false);
+    expect(() => selecaoImpossivelSobre("var(--x)")).toThrow(/fundo não é cor opaca/);
   });
 
   it("autoteste da conta: os valores antigos reprovam com os números do docs/43; formas que a conta não lê são erro", () => {
