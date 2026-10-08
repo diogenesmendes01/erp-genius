@@ -101,9 +101,13 @@ describe("nucleo: contraste e famílias", () => {
     // #767676 sobre branco = 4,54 → passa
     expect(paresReprovados(css.replace("#777777", "#767676")).familias).toEqual(["#fff/--brand", "--border"]);
   });
-  it("globals.css atual: 4 famílias, com --border-control e sem --text-terciary", () => {
+  it("globals.css atual: 3 famílias, sem --text-terciary e sem --border-control (docs/43 §6 item 5)", () => {
     const r = paresReprovados(readFileSync("src/app/globals.css", "utf-8"));
-    expect(r.familias).toEqual(["#fff/--brand", "--border", "--border-control", "--brand-border"]);
+    // O docs/43 mediu 4 famílias em 6b105093; o item 5 da §6 tirou --border-control (.42/.34 → .44/.36).
+    // #fff/--brand segue reprovando no token, mas nenhum elemento usa mais o par: o texto branco da
+    // seleção foi para bg-brand-solid, e src/app/contraste.test.ts proíbe bg-brand-500|600 com text-white.
+    expect(r.familias).toEqual(["#fff/--brand", "--border", "--brand-border"]);
+    expect(r.reprovados.filter((p) => p.familia === "#fff/--brand-solid")).toEqual([]);
     const brand = r.reprovados.find((p) => p.familia === "#fff/--brand");
     expect(brand?.tema).toBe("escuro");
     expect(brand?.valor).toBeCloseTo(4.06, 2);

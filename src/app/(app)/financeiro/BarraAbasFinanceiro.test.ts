@@ -35,6 +35,16 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/permuta")).not.toContain('aria-current="page"');
   });
 
+  it("aba ativa: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+    const html = render(["comissoes", "descontos"]);
+    const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
+    expect(classeDe("/financeiro/comissoes")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-white"]));
+    expect(classeDe("/financeiro/descontos")).toEqual(expect.arrayContaining(["text-gray-600"]));
+    expect(classeDe("/financeiro/descontos")).not.toContain("bg-brand-solid");
+    expect(classeDe("/financeiro/descontos")).not.toContain("text-white");
+    expect(html).not.toMatch(/bg-brand-(?:500|600)/);
+  });
+
   it("as contagens das filas pendentes aparecem no rótulo", () => {
     const html = render(["cobrancas", "informes", "retomadas", "aprovacoes"], { informes: 2, retomadas: 0, aprovacoes: 1 }, "/financeiro/cobrancas");
     expect(html).toContain(">A conferir (2)<");

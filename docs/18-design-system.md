@@ -47,7 +47,11 @@
 | Texto secundário | `--text-secondary` | `#5F5E5A` | `#A7A6A1` |
 | Texto terciário | `--text-terciary` | `#6D6C64` | `#979692` |
 | Borda (card) | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
-| Borda (controle — input/select, `gray-300`) | `--border-control` | `rgba(0,0,0,.42)` | `rgba(255,255,255,.34)` |
+| Borda (controle — input/select, `gray-300`) | `--border-control` | `rgba(0,0,0,.44)` | `rgba(255,255,255,.36)` |
+
+> `--border-control` passa dos 3:1 da WCAG 1.4.11 sobre página, superfície, superfície sutil e
+> neutro nos dois temas (3,17–3,24:1 no claro; 3,12–3,33:1 no escuro). Os valores antigos
+> (`.42`/`.34`) davam 2,996 e 2,991 sobre `--surface-muted` (docs/43 §6 item 5).
 
 ## Tokens — Semânticos (fundo / texto — repare a inversão)
 | Cor | Token bg / text | Claro (bg / text) | Escuro (bg / text) |
@@ -64,12 +68,33 @@
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
 > (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão
-> primário, **não inverte** no dark), `--brand` (accent de checkbox/radio **e** fundo de
-> indicador de estado ativo — aba selecionada, passo concluído do wizard, chip de dia da
-> semana marcado; nesses casos o fundo é `bg-brand-600`, nunca `bg-brand-solid`, porque não é
-> uma ação — é feedback de seleção, e clarear no dark é aceitável ali), `--brand-text` /
+> primário **e** de todo indicador de estado ativo com texto — aba selecionada, passo do
+> wizard, chip de dia da semana marcado, etapa atual do funil; sempre com texto branco),
+> `--brand` (accent de checkbox/radio, contorno de foco e barra de progresso sem texto; **nunca**
+> fundo de texto branco: `#fff` sobre `--brand` dá 4,06:1 no escuro e reprova AA — docs/43 §6
+> item 5), `--brand-text` /
 > `text-brand-700` (links, só texto — nunca fundo), `--brand-bg` (fundo claro de hover/estado
 > ativo em itens de menu).
+
+> **`--brand-solid` tem um valor por tema.** Ele cumpre duas contas nos dois temas: o texto branco
+> sobre ele dá ≥ 4,5:1 (WCAG 1.4.3), e ele sobre a página, o cartão e a superfície sutil dá ≥ 3:1
+> (WCAG 1.4.11; é o fundo que mostra qual aba ou chip está selecionado).
+>
+> | Tema | `--brand-solid` | `#fff` sobre ele | sobre `--bg-page` / `--surface` / `--surface-muted` |
+> |---|---|---|---|
+> | Claro | `#4338CA` | 7,90:1 | 7,56 / 7,90 / 7,17:1 |
+> | Escuro | `#6264EC` (era `#4338CA`) | 4,61:1 | 3,74 / 3,37 / 3,08:1 |
+>
+> **Por que o escuro mudou** (C1 da revisão da #156): com o hex do claro, o índigo sumia no fundo
+> escuro, com 2,18 / 1,97 / 1,80:1 sobre as três superfícies. No escuro, a faixa que cumpre as
+> duas contas é estreita: luminância relativa de 0,1720 (3:1 sobre `--surface-muted`, a mais clara
+> das três) a 0,1833 (4,5:1 com branco). `#6264EC` fica no meio (0,1777) e é da família do
+> `--brand` escuro (`#6B6EF5`) e do indigo-500 (`#6366F1`). Um passo mais escuro (`#6161EA`) já
+> reprova sobre `--surface-muted` (2,98:1); um mais claro (`#6566EF`) reprova com o branco (4,47:1).
+> O neutro `--neutral-muted` (gray-100) fica fora da conta: ele é o vizinho da seleção (passo
+> seguinte, chip desmarcado, hover da aba inativa), não o fundo sob ela. Além disso, no escuro
+> nenhuma cor cumpre as duas contas sobre ele (3:1 pede luminância ≥ 0,1846). A trava é
+> `src/app/contraste.test.ts` e lê os tokens reais do `globals.css`.
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
@@ -77,7 +102,13 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
 - **Botão primário:** `bg-brand-solid text-white hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
-- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-600 text-white` — é seleção, não ação; não promova para `bg-brand-solid`.
+- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-white`.
+  `bg-brand-500`/`bg-brand-600` (que clareiam no escuro) **nunca** levam `text-white`, em nenhuma
+  forma de `className`; ficam para fundo sem texto (barra de progresso). A trava é
+  `src/app/contraste.test.ts`, que também recalcula pelos tokens do `globals.css` o contraste do
+  texto branco sobre cada fundo sólido (≥ 4,5:1), da borda de controle sobre cada superfície
+  (≥ 3:1) e do `--brand-solid` sobre a página, o cartão e a superfície sutil (≥ 3:1), nos dois
+  temas.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.
 - **Só use as shades mapeadas no `tailwind.config.ts`** (`gray`, `brand`/`brand-solid`, `green`,
