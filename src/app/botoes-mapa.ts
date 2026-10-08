@@ -796,7 +796,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
     "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",
     "<button> Registrando… · Registrar decisão independente → secundario/lg",
-    "<button> Aplicando… · Aplicar acerto aprovado → secundario/lg",
+    "<button> Aplicar acerto aprovado → secundario/lg",
   ],
   "matriculas/[id]/desistencia/financeiro/Formularios.tsx": [
     "<button> Registrando… · Submeter proposta financeira → secundario/lg",
@@ -806,7 +806,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Reconciliando… · Reconciliar mesma tentativa → secundario/lg",
     "<button> Preparando… · Preparar reconferência → secundario/lg",
     "<button> Registrando… · Registrar decisão administrativa · Registrar → secundario/lg",
-    "<button> Aplicando… · Aplicar reconferência → secundario/lg",
+    "<button> Aplicar reconferência → secundario/lg",
   ],
   "matriculas/[id]/disponibilidade-oferta/DisponibilidadeOferta.tsx": [
     "<button> Enviar para conferência → secundario/lg",
@@ -821,7 +821,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar decisão → secundario/lg",
   ],
   "matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx": [
-    "<button> Emitindo… · Emitir cobrança aprovada → secundario/lg",
+    "<button> Emitir cobrança aprovada → secundario/lg",
   ],
   "matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx": [
     "<button> Conferindo… · Salvar rascunho do período conferido · Conferi → secundario/lg",
@@ -950,7 +950,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "const btnPri → primario/md",
     "<Link> Preparar matrícula individual → btnPri",
     "<button> Registrar pagamento → btnPri",
-    "<button> Cancelar → perigo/md",
+    "<button> Cancelar fatura → perigo/md",
     "<button> Inativar empresa · Reativar empresa → perigo|secundario/md",
   ],
   "inbox/AtendimentosPainel.tsx": [
@@ -1002,6 +1002,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Voltar ao início → primario/lg",
   ],
   // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
+  "src/components/ConfirmarAcao.tsx": [
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Confirmando… · Confirmar → perigo/md",
+  ],
   "src/components/CopilotoSugestoes.tsx": [
     "<button> Corrigir → secundario/sm",
     "<button> Descartar → secundario/sm",
