@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 
 // docs/43-medicao-auditoria-ux.md §6 item 2 (docs/42 E3): erro e sucesso separados na designação do
 // avaliador — erro em role="alert", sucesso em role="status", falha de rede como resultado incerto e o
@@ -86,7 +87,7 @@ describe("FormularioDesignacao — buscar não apaga o motivo", () => {
   const comBusca = { ...props, professores: [{ id: "prof-1", nome: "Ana" }, { id: "prof-2", nome: "Bia" }, { id: "prof-3", nome: "Bruno" }], busca: "", refinarBusca: false };
   const telaBusca = (p = comBusca) => m.ganchos!.renderizar(FormularioDesignacao, p);
   const busca = (t = telaBusca()) => elementos(t).find((n) => n.type === "input" && n.props.type === "search")!;
-  const opcoes = (t = telaBusca()) => elementos(elementos(t).find((n) => n.type === "select")).filter((n) => n.type === "option").map((n) => texto(n.props.children));
+  const opcoes = (t = telaBusca()) => elementos(elementos(t).find((n) => n.type === "select") as unknown as ReactNode).filter((n) => n.type === "option").map((n) => texto(n.props.children));
   const digitarBusca = (v: string) => (busca().props.onChange as AoMudar)({ target: { value: v } });
 
   it("com a lista completa, filtra em memória enquanto digita — sem ir ao servidor", () => {

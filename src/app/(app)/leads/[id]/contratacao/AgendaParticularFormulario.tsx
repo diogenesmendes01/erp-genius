@@ -9,11 +9,11 @@ export function AgendaParticularFormulario({ leadId, ofertaId, versaoOferta, fix
   const [busca, setBusca] = useState(""), [pagina, setPagina] = useState(1), [mais, setMais] = useState(false);
   const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]), [professorId, setProfessor] = useState("");
   const [fuso, setFuso] = useState(""), [horarios, setHorarios] = useState([{ data: "", horario: "", minutos: "" }]);
-  const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [revisao, setRevisao] = useState<Revisao | null>(null), [confirmado, setConfirmado] = useState(false);
+  const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [revisaoConferida, setRevisao] = useState<Revisao | null>(null), [confirmado, setConfirmado] = useState(false);
   // O formulário não remonta quando a oferta muda de versão (docs/43 §6 item 3): a conferência feita para a
   // versão anterior deixa de valer e é preciso conferir de novo — os horários digitados ficam.
   const [versaoConferida, setVersaoConferida] = useState<number | null>(null);
-  const revisaoAtual = revisao && versaoConferida === versaoOferta ? revisao : null;
+  const revisao = revisaoConferida && versaoConferida === versaoOferta ? revisaoConferida : null;
   function limpar() { setRevisao(null); setConfirmado(false); onChange(null); }
   const agenda = () => ({ ofertaId, versaoOferta, professorId, fusoOrigem: fuso, encontros: horarios.map((h) => ({ data: h.data, horario: h.horario, duracaoMinutos: Number(h.minutos) })) });
   async function buscar(p: number) {
@@ -38,9 +38,9 @@ export function AgendaParticularFormulario({ leadId, ofertaId, versaoOferta, fix
     <button type="button" disabled={horarios.length >= 1000} onClick={() => { setHorarios([...horarios, { data: "", horario: "", minutos: "" }]); limpar(); }} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar encontro</button>
     <button type="button" onClick={conferir} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir disponibilidade</button>
     {erro && <p role="alert">{erro}</p>}
-    <MensagemStatus texto={revisao && !revisaoAtual ? "A oferta foi atualizada depois da conferência. Confira a disponibilidade novamente." : null} />
-    {revisaoAtual && <div aria-live="polite"><p>Conferência de horários — ainda sem reserva.</p><ul>{revisaoAtual.encontros.map((e) => <li key={e.indice}>{new Intl.DateTimeFormat("pt-BR", { timeZone: fuso.trim(), dateStyle: "short", timeStyle: "short" }).format(new Date(e.inicio))} — {new Intl.DateTimeFormat("pt-BR", { timeZone: fuso.trim(), dateStyle: "short", timeStyle: "short" }).format(new Date(e.fim))}{e.conflito ? " · Horário ocupado" : ""}{e.docenteIndisponivel ? " · Professor indisponível" : ""}{e.naoLetivo ? " · Período não letivo" : ""}</li>)}</ul>
-      {revisaoAtual.impedimentos.length ? <ul role="alert">{revisaoAtual.impedimentos.map((i) => <li key={i}>{mensagens[i] ?? "Confira a pendência com a gestão."}</li>)}</ul> : <label className="block"><input type="checkbox" checked={confirmado} onChange={(e) => { setConfirmado(e.target.checked); onChange(e.target.checked ? { ...agenda(), estadoHash: revisaoAtual.estadoHash, horariosAcordadosConferidos: true } : null); }} /> Conferi os horários acordados e apresentados acima.</label>}
+    <MensagemStatus texto={revisaoConferida && !revisao ? "A oferta foi atualizada depois da conferência. Confira a disponibilidade novamente." : null} />
+    {revisao && <div aria-live="polite"><p>Conferência de horários — ainda sem reserva.</p><ul>{revisao.encontros.map((e) => <li key={e.indice}>{new Intl.DateTimeFormat("pt-BR", { timeZone: fuso.trim(), dateStyle: "short", timeStyle: "short" }).format(new Date(e.inicio))} — {new Intl.DateTimeFormat("pt-BR", { timeZone: fuso.trim(), dateStyle: "short", timeStyle: "short" }).format(new Date(e.fim))}{e.conflito ? " · Horário ocupado" : ""}{e.docenteIndisponivel ? " · Professor indisponível" : ""}{e.naoLetivo ? " · Período não letivo" : ""}</li>)}</ul>
+      {revisao.impedimentos.length ? <ul role="alert">{revisao.impedimentos.map((i) => <li key={i}>{mensagens[i] ?? "Confira a pendência com a gestão."}</li>)}</ul> : <label className="block"><input type="checkbox" checked={confirmado} onChange={(e) => { setConfirmado(e.target.checked); onChange(e.target.checked ? { ...agenda(), estadoHash: revisao.estadoHash, horariosAcordadosConferidos: true } : null); }} /> Conferi os horários acordados e apresentados acima.</label>}
     </div>}
   </fieldset>;
 }
