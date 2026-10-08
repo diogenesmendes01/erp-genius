@@ -11,25 +11,51 @@ import { PAPEIS_MODELO, CONDICOES_MODELO } from "./labels";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 const campo = "block w-full rounded border p-2";
 const vazio: Conteudo = { titulo: "", finalidade: "CONTRATO", regimes: [], aplicacao: "", campos: [], secoes: [{ titulo: "", texto: "" }], assinaturas: [] };
+type Proposta = { codigo: string; versaoEsperada: number; conteudo: Conteudo; motivo: string };
+
 export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?: string; versaoEsperada: number; inicial?: Conteudo }) {
   const router = useRouter(), [valor, setValor] = useState<Conteudo>(inicial ?? vazio), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
-  return <form className="space-y-5" onSubmit={async (e) => {
+  // Tentativa anterior não confirmada e a proposta mudou desde então (docs/42 L2368): a tela mostra qual era e
+  // oferece reenviá-la ou descartá-la, em vez de só bloquear (recarregar, a única saída, apagava tudo).
+  const [pendente, setPendente] = useState<{ titulo: string; secoes: number } | null>(null);
+  // Aviso ao sair (docs/43 §6 item 3; docs/42 L2367): horas de redação jurídica viviam só no estado. Sujo = o
+  // conteúdo mudou ou algum campo foi tocado (código e motivo); depois de salvar, o aviso sai antes de navegar.
+  const [tocado, setTocado] = useState(false), [salvo, setSalvo] = useState(false);
+  useAvisoAoSair(!salvo && (tocado || JSON.stringify(valor) !== JSON.stringify(inicial ?? vazio)));
+  async function enviar(d: Proposta, chave: string) {
+    setOcupado(true); setErro("");
+    try {
+      const r = await prepararModeloContratual({ ...d, chaveIdempotencia: chave });
+      if (!r.ok) { setErro(r.erro); if (r.erro !== "Erro inesperado. Tente novamente.") { tentativa.current = null; setPendente(null); } }
+      else { tentativa.current = null; setPendente(null); setSalvo(true); router.push(`/configuracao/contratos/${d.codigo}`); router.refresh(); }
+    } catch { setErro(MSG_RESULTADO_INCERTO); }
+    finally { setOcupado(false); }
+  }
+  async function reenviarAnterior() {
+    if (!tentativa.current) return;
+    await enviar(JSON.parse(tentativa.current.entrada) as Proposta, tentativa.current.chave);
+  }
+  function descartarAnterior() {
+    tentativa.current = null; setPendente(null); setErro("");
+  }
+  return <form className="space-y-5" onChange={() => setTocado(true)} onSubmit={async (e) => {
     e.preventDefault(); const f = new FormData(e.currentTarget);
     const conteudo = ConteudoModeloSchema.safeParse(valor);
     if (!conteudo.success) { setErro(conteudo.error.issues[0]?.message ?? "Confira o conteúdo."); return; }
-    const d = { codigo: codigo ?? String(f.get("codigo") ?? "").trim().toUpperCase(), versaoEsperada, conteudo: conteudo.data, motivo: String(f.get("motivo") ?? "") };
+    const d: Proposta = { codigo: codigo ?? String(f.get("codigo") ?? "").trim().toUpperCase(), versaoEsperada, conteudo: conteudo.data, motivo: String(f.get("motivo") ?? "") };
     const entrada = JSON.stringify(d);
-    if (tentativa.current && tentativa.current.entrada !== entrada) { setErro("A tentativa anterior ainda não foi confirmada. Consulte o histórico ou reenvie os mesmos dados antes de alterar a proposta."); return; }
-    tentativa.current ??= { entrada, chave: crypto.randomUUID() }; setOcupado(true); setErro("");
-    try {
-      const r = await prepararModeloContratual({ ...d, chaveIdempotencia: tentativa.current.chave });
-      if (!r.ok) { setErro(r.erro); if (r.erro !== "Erro inesperado. Tente novamente.") tentativa.current = null; }
-      else { router.push(`/configuracao/contratos/${d.codigo}`); router.refresh(); }
-    } catch { setErro(MSG_RESULTADO_INCERTO); }
-    finally { setOcupado(false); }
+    if (tentativa.current && tentativa.current.entrada !== entrada) {
+      const anterior = JSON.parse(tentativa.current.entrada) as Proposta;
+      setPendente({ titulo: anterior.conteudo.titulo, secoes: anterior.conteudo.secoes.length });
+      setErro("A tentativa anterior ainda não foi confirmada. Reenvie a proposta anterior ou descarte-a para enviar a atual.");
+      return;
+    }
+    tentativa.current ??= { entrada, chave: crypto.randomUUID() };
+    await enviar(d, tentativa.current.chave);
   }}>
     <p>O conteúdo será enviado para aprovação de outra pessoa da Administração. Use as cláusulas e condições definidas pela escola.</p>
     <fieldset disabled={ocupado} className="space-y-5">
@@ -69,5 +95,12 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       <button type="submit" className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Salvando proposta…" : "Salvar proposta para aprovação"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
+    {pendente && <div className="space-y-2 rounded border p-3">
+      <p>Tentativa anterior não confirmada (título: {pendente.titulo}; {pendente.secoes} {pendente.secoes === 1 ? "seção" : "seções"}). Consulte o histórico do modelo antes de decidir.</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={ocupado} onClick={reenviarAnterior} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reenviar a proposta anterior</button>
+        <button type="button" disabled={ocupado} onClick={descartarAnterior} className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>Descartar a tentativa anterior</button>
+      </div>
+    </div>}
   </form>;
 }

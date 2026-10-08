@@ -87,6 +87,7 @@ export function TurmaFormulario({
   professores,
   onClose,
   aoMudarOcupado,
+  aoMudarAlterado,
 }: {
   turma?: TurmaParaEditar;
   modalidades: ModalidadeOpcao[];
@@ -95,6 +96,8 @@ export function TurmaFormulario({
   onClose: () => void;
   /** Avisa quem envolve o formulário (o diálogo) que há um salvamento em curso — para não fechar no meio. */
   aoMudarOcupado?: (ocupado: boolean) => void;
+  /** Avisa o diálogo se há algo preenchido e não salvo — para o fundo/Escape pedirem confirmação antes de descartar. */
+  aoMudarAlterado?: (alterado: boolean) => void;
 }) {
   const router = useRouter();
   // Sem chave de idempotência: repetir a criação geraria outra turma (novo código); a falha de rede
@@ -113,6 +116,10 @@ export function TurmaFormulario({
   const [dataFim] = useState(turma?.dataFim ?? "");
   const [capacidade, setCapacidade] = useState(turma?.capacidade ?? 12);
   const [rolling, setRolling] = useState(turma?.rolling ?? false);
+  // Algo diferente do que o formulário abriu (docs/43 §6 item 3; docs/42 L2395): o diálogo não descarta sem confirmar.
+  const alterado = JSON.stringify([nome, modalidadeId, nivelId, professorId, diasSemana, horarioInicio, horarioFim, dataInicio, capacidade, rolling])
+    !== JSON.stringify([turma?.nome ?? "", turma?.modalidadeId ?? "", turma?.nivelId ?? "", turma?.professorId ?? "", turma?.diasSemana ?? [], turma?.horarioInicio ?? "", turma?.horarioFim ?? "", turma?.dataInicio ?? "", turma?.capacidade ?? 12, turma?.rolling ?? false]);
+  useEffect(() => { aoMudarAlterado?.(alterado); }, [alterado, aoMudarAlterado]);
 
   const modalidadeSel = modalidades.find((m) => m.id === modalidadeId);
   const diasRequeridos = modalidadeSel ? diasPorSemanaDaFrequencia(modalidadeSel.frequencia) : null;

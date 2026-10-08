@@ -9,7 +9,6 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { IdentificacaoAvaliacao } from "../../Identificacao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
-import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL } from "@/lib/labels";
 
@@ -27,7 +26,7 @@ export default async function LancamentoPage({ params, searchParams }: {
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
-  const d = r.dado, c = d.contexto, anterior = d.versoes[0];
+  const d = r.dado, c = d.contexto, anterior = d.anterior;
   const fusoExibicaoHistorico = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEntrada);
   const dataHistorico = (valor: Date | string) => formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEntrada).texto;
   return <section className="space-y-5">
@@ -35,17 +34,14 @@ export default async function LancamentoPage({ params, searchParams }: {
     <h1 className="text-2xl font-medium">{c.avaliacao?.titulo ?? codigo} — {c.turma}</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     {d.podeGerirDesignacao && <Link className="block underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(codigo)}/designacao`}>Gerenciar avaliador designado</Link>}
-    <form method="get" className="space-y-2 rounded border p-3"><label className="block">Fuso para informar horários<input name="fuso" list="fusos-avaliacao" required maxLength={100} defaultValue={fusoEntrada} className="block rounded border p-2" /></label>
-      <datalist id="fusos-avaliacao"><option value="America/Sao_Paulo" /><option value="America/Costa_Rica" /><option value="UTC" /></datalist>
-      <p>Use uma referência de região, como America/Sao_Paulo. Esse fuso define a entrada de data e horário. Salve o rascunho antes de trocar o fuso.</p>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Aplicar fuso</button>
-    </form>
     <p>Regra {c.regraVersao ?? "não vinculada"}. Oficializar uma avaliação não fecha o nível nem autoriza a progressão.</p>
     {!c.avaliacao && <p role="alert">Avaliação não encontrada na regra vinculada. Confira a configuração antes de lançar.</p>}
     {d.oficial && <p role="status">Esta avaliação possui notas oficiais. Alterações exigem o fluxo de correção com aprovação independente.</p>}
-    {d.podeLancar && d.pagina === 1 && c.avaliacao && c.escala && <LancarNotas key={`${d.versaoEsperada}:${fusoEntrada}`} fuso={fusoEntrada} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} habilidades={c.avaliacao.habilidades} escala={c.escala}
+    {/* Sem key de versão, fuso ou página (docs/43 §6 item 3): o fuso é escolhido dentro do formulário, e trocar a
+        página do histórico ou receber a versão nova depois de salvar não remonta o que foi digitado. */}
+    {d.podeLancar && c.avaliacao && c.escala && <LancarNotas fuso={fusoEntrada} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} habilidades={c.avaliacao.habilidades} escala={c.escala}
       realizadores={d.realizadores} registradorId={d.registradorId}
-      anterior={anterior ? { realizadaEm: dataHoraAvaliacaoLocal(anterior.realizadaEm, fusoEntrada), notas: anterior.notas } : null} />}
+      anterior={anterior ? { realizadaEm: dataHoraAvaliacaoLocal(anterior.realizadaEm, fusoEntrada), instante: new Date(anterior.realizadaEm).toISOString(), notas: anterior.notas } : null} />}
     <h2 className="text-xl font-medium">Histórico de lançamentos</h2>
     <p className="text-sm">Fuso de exibição do histórico: {fusoExibicaoHistorico} (origem UTC).</p>
     {!d.versoes.length && <EstadoVazio bloco>Nenhuma nota registrada.</EstadoVazio>}

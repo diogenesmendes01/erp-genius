@@ -16,6 +16,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { templateAlterado } from "./template-alterado";
 
 // TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
 // - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
@@ -54,6 +56,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
   // (submeter, pelo id) ou formulário (salvar).
   const [origem, setOrigem] = useState<string | null>(null);
   const ocupado = acao.ocupado;
+  useAvisoAoSair(templateAlterado(form, templates)); // docs/43 §6 item 3: editor aberto com alteração não salva
 
   async function run<T>(secao: string, disparar: () => Promise<Resultado<T>>, sucesso: MensagemSucesso<T>) {
     setOrigem(secao);

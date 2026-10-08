@@ -55,7 +55,7 @@ export async function consultarLancamentosAvaliacao(input: { alocacaoId: string;
       if (!gestao && !professorAtual && !historicoProprio && !designado) throw new ErroPermissao();
       const regra = t.regraAvaliacao ? ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo) : null;
       const avaliacao = regra?.avaliacoes.find(av => av.codigo === d.codigoAvaliacao) ?? null;
-      const ultima = registro ? await tx.versaoLancamentoAvaliacao.findFirst({ where: { registroId: registro.id }, orderBy: { versao: "desc" }, select: { id: true, versao: true } }) : null;
+      const ultima = registro ? await tx.versaoLancamentoAvaliacao.findFirst({ where: { registroId: registro.id }, orderBy: { versao: "desc" }, select: { id: true, versao: true, realizadaEm: true, notas: true } }) : null;
       const oficial = registro ? await tx.versaoLancamentoAvaliacao.count({ where: { registroId: registro.id, decisao: { aprovada: true } } }) > 0 : false;
       const filtroAutor = gestao || professorAtual || designado ? {} : autoriaPropria;
       const versoes = registro ? await tx.versaoLancamentoAvaliacao.findMany({ where: { registroId: registro.id, ...filtroAutor }, orderBy: { versao: "desc" }, skip: (d.pagina - 1) * 20, take: 21,
@@ -69,6 +69,9 @@ export async function consultarLancamentosAvaliacao(input: { alocacaoId: string;
         contexto: { turma: t.nome ?? t.codigo ?? "Turma", regraVersao: t.regraAvaliacao?.versao ?? null, escala: regra?.escala ?? null, avaliacao },
         versaoEsperada: ultima?.versao ?? 0, oficial, podeGerirDesignacao: gestao,
         podeLancar: (professorAtual || designado) && !!avaliacao && !oficial, realizadores, registradorId: u.id,
+        // A última versão, independente da página do histórico: base do formulário de lançamento, que fica
+        // montado em qualquer página (docs/43 §6 item 3). Só para quem lança, que já vê o histórico inteiro.
+        anterior: (professorAtual || designado) && !!avaliacao && !oficial && ultima ? { realizadaEm: ultima.realizadaEm, notas: NotasLancamentoSchema.parse(ultima.notas) } : null,
         versoes: await Promise.all(versoes.slice(0, 20).map(async v => ({ ...v, notas: NotasLancamentoSchema.parse(v.notas),
           vigente: (gestao || professorAtual) && v.decisao?.aprovada ? await notaVigente(tx, v) : null,
           podeDecidir: gestao && v.autor.id !== u.id && v.realizadaPor?.id !== u.id && v.submetida && !v.decisao,

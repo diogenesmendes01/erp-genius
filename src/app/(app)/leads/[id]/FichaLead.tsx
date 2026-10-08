@@ -509,23 +509,40 @@ function BarraAcoes({
   );
 }
 
-function Resumo({
-  lead,
-}: {
-  lead: LeadFicha;
-}) {
-  const [editar, setEditar] = useState(false);
-  const { acao, run } = useAcaoSecao();
-  const [f, setF] = useState({
+type CamposResumo = { interesse: string; objetivo: string; urgencia: string; orcamento: string; objecao: string; proximaAcao: string };
+
+/** O resumo como o servidor o tem (refeito a cada router.refresh()). */
+function resumoPersistido(lead: LeadFicha): CamposResumo {
+  return {
     interesse: lead.interesse ?? "",
     objetivo: lead.objetivo ?? "",
     urgencia: lead.urgencia ?? "",
     orcamento: lead.orcamento ?? "",
     objecao: lead.objecao ?? "",
     proximaAcao: lead.proximaAcao ?? "",
-  });
+  };
+}
 
-  const campos: [keyof typeof f, string][] = [
+/** Assinatura dos valores do servidor: muda quando o router.refresh() traz outro valor. */
+const assinaturaDe = (valores: Record<string, string>) => JSON.stringify(valores);
+
+// docs/42 L2202 (docs/43 §6 item 3): a leitura mostra o valor PERSISTIDO, não o rascunho `f` — um save recusado
+// (ou um Cancelar) não aparece mais como se tivesse sido salvo. Editar começa do persistido; sair da edição só
+// com sucesso. Depois do sucesso, até o refresh chegar, a leitura mostra o que o servidor confirmou.
+export function Resumo({
+  lead,
+}: {
+  lead: LeadFicha;
+}) {
+  const [editar, setEditar] = useState(false);
+  const { acao, run } = useAcaoSecao();
+  const persistido = resumoPersistido(lead);
+  const assinatura = assinaturaDe(persistido);
+  const [f, setF] = useState(persistido);
+  const [confirmado, setConfirmado] = useState<{ assinatura: string; valores: CamposResumo } | null>(null);
+  const leitura = confirmado && confirmado.assinatura === assinatura ? confirmado.valores : persistido;
+
+  const campos: [keyof CamposResumo, string][] = [
     ["interesse", "Interesse"],
     ["objetivo", "Objetivo"],
     ["urgencia", "Urgência"],
@@ -538,7 +555,7 @@ function Resumo({
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-medium">Resumo executivo</h2>
-        <button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={() => { acao.limpar(); setEditar(!editar); }}>
+        <button className={botaoClasses({ variante: "fantasma", tamanho: "sm" })} onClick={() => { acao.limpar(); if (!editar) setF(leitura); setEditar(!editar); }}>
           {editar ? "Cancelar" : "Editar"}
         </button>
       </div>
@@ -556,7 +573,8 @@ function Resumo({
               className={btnPri}
               disabled={acao.ocupado}
               onClick={async () => {
-                if (await run(() => atualizarResumo(lead.id, f))) setEditar(false);
+                const enviado = f;
+                if (await run(() => atualizarResumo(lead.id, enviado))) { setConfirmado({ assinatura, valores: enviado }); setEditar(false); }
               }}
             >
               Salvar resumo
@@ -568,7 +586,7 @@ function Resumo({
           {campos.map(([k, label]) => (
             <div key={k} className="flex gap-2">
               <dt className="w-28 shrink-0 text-gray-500">{label}</dt>
-              <dd className="text-gray-800">{f[k] || "—"}</dd>
+              <dd className="text-gray-800">{leitura[k] || "—"}</dd>
             </div>
           ))}
         </dl>
@@ -577,16 +595,26 @@ function Resumo({
   );
 }
 
-function ProximosPassos({
+type DatasLead = { followUp: string; exp: string; prop: string };
+
+// docs/42 L2203 (docs/43 §6 item 3): os campos acompanham o servidor depois de cada router.refresh(). Antes, o
+// useState era inicializado uma vez e a seção sobrevivia ao refresh: quem agendava a experimental pela barra de
+// ações e depois clicava "Salvar datas" sobrescrevia a data nova com a antiga. Agora o valor mostrado é o do
+// servidor, menos os campos que a pessoa editou (a edição, essa, não se perde num refresh).
+export function ProximosPassos({
   lead,
 }: {
   lead: LeadFicha;
 }) {
   const { acao, run } = useAcaoSecao();
-  const [followUp, setFollow] = useState(soData(lead.proximoFollowUp));
   // datetime-local p/ preservar o horário da experimental já agendada (issue #16).
-  const [exp, setExp] = useState(soDataHora(lead.dataExperimental));
-  const [prop, setProp] = useState(soData(lead.dataProposta));
+  const servidor: DatasLead = { followUp: soData(lead.proximoFollowUp), exp: soDataHora(lead.dataExperimental), prop: soData(lead.dataProposta) };
+  const assinatura = assinaturaDe(servidor);
+  const [edicao, setEdicao] = useState<Partial<DatasLead>>({});
+  const [confirmado, setConfirmado] = useState<{ assinatura: string; valores: DatasLead } | null>(null);
+  const base = confirmado && confirmado.assinatura === assinatura ? confirmado.valores : servidor;
+  const valores: DatasLead = { ...base, ...edicao };
+  const editar = (campo: keyof DatasLead, valor: string) => setEdicao((e) => ({ ...e, [campo]: valor }));
 
   return (
     <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -595,31 +623,30 @@ function ProximosPassos({
       <div className="flex flex-col gap-2">
         <div>
           <label htmlFor="ficha-lead-follow-up" className="mb-1 block text-xs text-gray-600">Próximo follow-up</label>
-          <input id="ficha-lead-follow-up" type="date" className={inputCls} value={followUp} onChange={(e) => setFollow(e.target.value)} />
+          <input id="ficha-lead-follow-up" type="date" className={inputCls} value={valores.followUp} onChange={(e) => editar("followUp", e.target.value)} />
         </div>
         <div>
           <label htmlFor="ficha-lead-data-experimental" className="mb-1 block text-xs text-gray-600">Data/hora da experimental</label>
-          <input id="ficha-lead-data-experimental" type="datetime-local" className={inputCls} value={exp} onChange={(e) => setExp(e.target.value)} />
+          <input id="ficha-lead-data-experimental" type="datetime-local" className={inputCls} value={valores.exp} onChange={(e) => editar("exp", e.target.value)} />
           <p className="mt-1 text-xs text-gray-400">Mantém o horário já agendado; ajuste a data sem perder a hora.</p>
         </div>
         <div>
           <label htmlFor="ficha-lead-data-proposta" className="mb-1 block text-xs text-gray-600">Data da proposta</label>
-          <input id="ficha-lead-data-proposta" type="date" className={inputCls} value={prop} onChange={(e) => setProp(e.target.value)} />
+          <input id="ficha-lead-data-proposta" type="date" className={inputCls} value={valores.prop} onChange={(e) => editar("prop", e.target.value)} />
         </div>
         <FeedbackAcao erro={acao.erro} />
         <div>
           <button
             className={btnPri}
             disabled={acao.ocupado}
-            onClick={() =>
-              run(() =>
-                atualizarDatas(lead.id, {
-                  proximoFollowUp: followUp,
-                  dataExperimental: exp,
-                  dataProposta: prop,
-                }),
-              )
-            }
+            onClick={async () => {
+              const enviados = valores;
+              if (await run(() => atualizarDatas(lead.id, { proximoFollowUp: enviados.followUp, dataExperimental: enviados.exp, dataProposta: enviados.prop }))) {
+                // Salvo: a edição vira o valor confirmado até o refresh trazer o do servidor.
+                setConfirmado({ assinatura, valores: enviados });
+                setEdicao({});
+              }
+            }}
           >
             Salvar datas
           </button>

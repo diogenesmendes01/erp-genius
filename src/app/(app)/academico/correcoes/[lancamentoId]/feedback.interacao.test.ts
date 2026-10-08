@@ -23,7 +23,7 @@ import type { ReactNode } from "react";
 import { ProporCorrecao, DecidirCorrecao } from "./Formularios";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
-import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto } from "@/test/tela-sem-dom";
+import { FormDataFalso, criarGanchos, elementos, formularioFalso, formularios, submeter, texto } from "@/test/tela-sem-dom";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -62,6 +62,33 @@ describe("ProporCorrecao", () => {
     await enviar();
     expect(chaves()[2]).not.toBe(chaves()[0]);
     expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  // docs/43 §6 item 3: sem a versão na key, o formulário não remonta depois de registrar — a chave de
+  // idempotência é trocada à mão no sucesso (a próxima proposta é outra tentativa) e a versão nova vem por prop.
+  it("depois de registrar, a próxima proposta usa chave nova e a versão nova, sem remontar", async () => {
+    m.propor.mockResolvedValue({ ok: true });
+    await enviar();
+    await submeter(m.ganchos!.renderizar(ProporCorrecao, { ...props, versaoEsperada: 3 }), { "nota-FALA": "8,5", "comentario-FALA": "Melhoria", motivo: "Outra correção." });
+    const [a, b] = m.propor.mock.calls.map((c) => c[0] as { chaveIdempotencia: string; versaoEsperada: number });
+    expect(b.chaveIdempotencia).not.toBe(a.chaveIdempotencia);
+    expect([a.versaoEsperada, b.versaoEsperada]).toEqual([2, 3]);
+  });
+
+  // R1 da #155, C1: sem remontar, o formulário ficaria com as notas e o motivo digitados — um segundo clique criaria
+  // outra proposta pendente idêntica. No sucesso ele volta às notas vigentes e ao motivo vazio (reset); na falha, não.
+  it("registrada a proposta, o formulário volta ao vigente (reset); recusada, o digitado fica", async () => {
+    const enviarCom = (form: ReturnType<typeof formularioFalso>) =>
+      (formularios(tela())[0].props.onSubmit as (e: { preventDefault(): void; currentTarget: unknown }) => Promise<void>)({ preventDefault() {}, currentTarget: form });
+    const recusado = Object.assign(formularioFalso({ "nota-FALA": "8,0", "comentario-FALA": "", motivo: "Nota corrigida." }), { reset: vi.fn() });
+    m.propor.mockResolvedValueOnce({ ok: false, erro: "Recusada." });
+    await enviarCom(recusado);
+    expect(recusado.reset).not.toHaveBeenCalled();
+    const aceito = Object.assign(formularioFalso({ "nota-FALA": "8,0", "comentario-FALA": "", motivo: "Nota corrigida." }), { reset: vi.fn() });
+    m.propor.mockResolvedValueOnce({ ok: true });
+    await enviarCom(aceito);
+    expect(aceito.reset).toHaveBeenCalledTimes(1);
+    expect(anuncios(tela()).status).toEqual(["Proposta registrada. As notas permanecem vigentes até aprovação independente."]);
   });
 });
 

@@ -11,13 +11,17 @@ type Turma = { id: string; codigo: string; versao: number; dataInicio: string | 
 export function PrepararGrade({ turmas, turmaInicialId }: { turmas: Turma[]; turmaInicialId?: string | null }) {
   const router = useRouter();
   const inicialValida = turmas.some((t) => t.id === turmaInicialId) ? turmaInicialId ?? "" : "";
-  const [turmaId, selecionar] = useState(inicialValida);
+  const [turmaId, setTurmaId] = useState(inicialValida);
+  // Sem key de busca ou de cursor (docs/43 §6 item 3): "Próximas turmas" não remonta o formulário; a turma
+  // escolhida continua selecionada mesmo quando sai da lista desta consulta.
+  const [escolhida, setEscolhida] = useState<Turma | null>(turmas.find((t) => t.id === inicialValida) ?? null);
+  const selecionar = (id: string) => { setTurmaId(id); setEscolhida(turmas.find((t) => t.id === id) ?? (escolhida?.id === id ? escolhida : null)); };
   const [fuso, setFuso] = useState("");
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useTransition();
   const tentativa = useRef<{ assinatura: string; chave: string } | null>(null);
-  const turma = turmas.find((t) => t.id === turmaId);
+  const turma = turmas.find((t) => t.id === turmaId) ?? (escolhida && escolhida.id === turmaId ? escolhida : undefined);
   function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!turma) return;
@@ -38,7 +42,7 @@ export function PrepararGrade({ turmas, turmaInicialId }: { turmas: Turma[]; tur
   return <form onSubmit={enviar} className="space-y-4">
     <fieldset disabled={ocupado} className="space-y-4">
       <legend className="font-medium">Nova proposta de grade</legend>
-      <label className="block">Turma<select required className={campo} value={turmaId} onChange={(e) => selecionar(e.target.value)}><option value="">Selecione uma turma</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.codigo}</option>)}</select></label>
+      <label className="block">Turma<select required className={campo} value={turmaId} onChange={(e) => selecionar(e.target.value)}><option value="">Selecione uma turma</option>{turma && !turmas.some((t) => t.id === turma.id) && <option value={turma.id}>{turma.codigo}</option>}{turmas.map((t) => <option key={t.id} value={t.id}>{t.codigo}</option>)}</select></label>
       {turma && <div className="space-y-1 rounded border p-3">
         <p>Data inicial: {turma.dataInicio ?? "Não informada"} · Horário: {turma.horario ?? "Não informado"}</p>
         <p>Dias: {turma.dias.map((d) => ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][d]).join(", ") || "Não informados"}</p>
