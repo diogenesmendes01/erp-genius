@@ -706,7 +706,7 @@ function detalheEvento(tipo: string, p: Record<string, unknown>, preferenciaFuso
   if (tipo === "EtapaAlterada") {
     const de = p.de as EtapaLead | null;
     const para = p.para as EtapaLead | null;
-    const rotulo = (e: EtapaLead | null) => (e ? (ETAPA_LABEL[e] ?? e) : "—");
+    const rotulo = (e: EtapaLead | null) => (e ? rotular(ETAPA_LABEL, e) : "—");
     return para ? `${rotulo(de)} → ${rotulo(para)}` : null;
   }
   return txt(p.nota);

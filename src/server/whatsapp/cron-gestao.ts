@@ -1,4 +1,5 @@
 import { EtapaLead } from "@prisma/client";
+import { ETAPA_EXTENSO_LABEL, rotular } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_MUDAM_ETAPA } from "@/server/comercial/schema";
 import { garantirContato } from "./identidade";
@@ -22,16 +23,21 @@ const ETAPAS_FUNIL_ATIVO: EtapaLead[] = [
   EtapaLead.NO_SHOW,
 ];
 
-const ETAPA_ROTULO: Record<string, string> = {
-  NOVO: "Novo",
-  EM_ATENDIMENTO: "Em atendimento",
-  QUALIFICADO: "Qualificado",
-  EXPERIMENTAL_AGENDADA: "Experimental agendada",
-  EXPERIMENTAL_REALIZADA: "Experimental realizada",
-  PROPOSTA: "Proposta",
-  AGUARDANDO_MATRICULA: "Aguardando matrícula",
-  NO_SHOW: "No-show",
-};
+/** Linhas do funil no relatório da gestão: etapa por extenso (ETAPA_EXTENSO_LABEL), nunca o código; maior primeiro. */
+export function linhasDoFunil(funil: readonly { etapa: string; _count: { _all: number } }[]): string {
+  return [...funil]
+    .sort((a, b) => b._count._all - a._count._all)
+    .map((f) => `• ${rotular(ETAPA_EXTENSO_LABEL, f.etapa)}: ${f._count._all}`)
+    .join("\n");
+}
+
+/** Linhas dos gargalos (etapa, leads parados), na ordem recebida; sem gargalo, a frase de tudo em dia. */
+export function linhasDosGargalos(gargalos: readonly (readonly [string, number])[]): string {
+  if (gargalos.length === 0) return "Nenhum gargalo relevante (nada parado há 3+ dias). ✅";
+  return gargalos
+    .map(([etapa, n], i) => `${i + 1}º ${rotular(ETAPA_EXTENSO_LABEL, etapa)} — ${n} lead(s) parados há 3+ dias`)
+    .join("\n");
+}
 
 export interface ResultadoCronGestao {
   executou: boolean;
@@ -179,8 +185,9 @@ export async function rodarGestao(agora: Date = new Date()): Promise<ResultadoCr
   return r;
 }
 
-/** KPIs do dia + funil + ranking de GARGALOS (etapas com mais leads parados há 3+ dias). */
-async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<string> {
+/** KPIs do dia + funil + ranking de GARGALOS (etapas com mais leads parados há 3+ dias). Exportada para o teste
+ * unitário conferir que o texto enviado usa linhasDoFunil/linhasDosGargalos (R2 da #150, B4). */
+export async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<string> {
   const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
   const fimDia = new Date(inicioDia.getTime() + 24 * 3600_000);
 
@@ -226,16 +233,8 @@ async function montarRelatorioDiario(agora: Date, slaMinutos: number): Promise<s
   }
   const gargalos = [...paradosPorEtapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  const funilLinhas = funil
-    .sort((a, b) => b._count._all - a._count._all)
-    .map((f) => `• ${ETAPA_ROTULO[f.etapa] ?? f.etapa}: ${f._count._all}`)
-    .join("\n");
-  const gargaloLinhas =
-    gargalos.length === 0
-      ? "Nenhum gargalo relevante (nada parado há 3+ dias). ✅"
-      : gargalos
-          .map(([etapa, n], i) => `${i + 1}º ${ETAPA_ROTULO[etapa] ?? etapa} — ${n} lead(s) parados há 3+ dias`)
-          .join("\n");
+  const funilLinhas = linhasDoFunil(funil);
+  const gargaloLinhas = linhasDosGargalos(gargalos);
 
   return (
     `📊 Relatório diário — ${agora.toLocaleDateString("pt-BR")}\n\n` +

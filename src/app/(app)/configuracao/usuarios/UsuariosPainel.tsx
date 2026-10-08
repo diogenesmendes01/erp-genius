@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
-import { PAPEL_LABEL } from "@/lib/roles";
+import { PAPEL_LABEL } from "@/lib/labels";
 import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
