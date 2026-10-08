@@ -94,11 +94,11 @@ export function SegundaChamadaPainel({
         {item.decisao
           ? <p role="status">Decisão: {item.decisao.aprovada ? "autorizada" : "rejeitada"}. {item.decisao.motivo}</p>
           : <p role="status">Aguardando decisão independente.</p>}
-        {item.podeDecidir && item.propostaHash && <form className="space-y-2" onSubmit={evento => {
+        {item.podeDecidir && item.propostaHash && <form className="space-y-2" onSubmit={async evento => {
           evento.preventDefault();
           const formulario = new FormData(evento.currentTarget);
           const aprovada = formulario.get("aprovada") === "sim";
-          void executar(`item:${item.id}`, () => decidirSegundaChamada({
+          await executar(`item:${item.id}`, () => decidirSegundaChamada({
             propostaId: item.id,
             propostaHash: item.propostaHash!,
             aprovada,
@@ -115,7 +115,7 @@ export function SegundaChamadaPainel({
           <label className="block">Motivo da decisão<CampoTexto name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
           <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
         </form>}
-        {item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao && <form className="space-y-2" onSubmit={evento => {
+        {item.podeOperar && item.decisao?.aprovada && !item.disponibilizacao && <form className="space-y-2" onSubmit={async evento => {
           evento.preventDefault();
           const formulario = new FormData(evento.currentTarget);
           const entrada = JSON.stringify({
@@ -127,7 +127,7 @@ export function SegundaChamadaPainel({
           const anterior = disponibilizacoes.current.get(item.id);
           const instante = anterior?.entrada === entrada ? anterior.instante : new Date().toISOString();
           disponibilizacoes.current.set(item.id, { entrada, instante });
-          void executar(`item:${item.id}`, () => disponibilizarSegundaChamada({
+          await executar(`item:${item.id}`, () => disponibilizarSegundaChamada({
             propostaId: item.id,
             propostaHash: item.propostaHash ?? "",
             disponibilizadaEm: instante,
