@@ -25,28 +25,56 @@ export function proximoFocoPreso<T>(focaveis: T[], atual: T | null, shift: boole
 }
 
 /**
- * Liga o comportamento de diálogo a `ref` enquanto `aberto`. `aoFechar` é chamado no Escape — a menos
- * que `bloquearFechamento` (ex.: ação em andamento) esteja ligado.
+ * Pilha dos diálogos abertos, na ordem em que abriram: só o de cima responde ao teclado. Um
+ * ConfirmarAcao aberto sobre outro diálogo (o detalhe da cobrança, por exemplo) não pode deixar o Escape
+ * fechar também o de trás, nem o Tab de trás puxar o foco para fora da confirmação — os dois ouvintes
+ * estão no mesmo `document`, e `stopPropagation` não impede o outro de rodar.
  */
-export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFechar, bloquearFechamento = false }: {
+export function criarPilhaDialogos() {
+  const abertos: object[] = [];
+  return {
+    abrir(marca: object) { abertos.push(marca); },
+    fechar(marca: object) {
+      const i = abertos.lastIndexOf(marca);
+      if (i >= 0) abertos.splice(i, 1);
+    },
+    noTopo(marca: object) { return abertos.length > 0 && abertos[abertos.length - 1] === marca; },
+  };
+}
+
+const PILHA_DIALOGOS = criarPilhaDialogos();
+
+/**
+ * Liga o comportamento de diálogo a `ref` enquanto `aberto`. `aoFechar` é chamado no Escape — a menos
+ * que `bloquearFechamento` (ex.: ação em andamento) esteja ligado. `focoInicial` escolhe quem recebe o
+ * foco ao abrir (a confirmação de ação irreversível abre no botão seguro); sem ele, o primeiro focável.
+ */
+export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFechar, bloquearFechamento = false, focoInicial }: {
   aberto: boolean;
   aoFechar: () => void;
   bloquearFechamento?: boolean;
+  focoInicial?: RefObject<HTMLElement | null>;
 }) {
   // O callback mais recente, sem reinstalar os ouvintes a cada render do chamador.
   const fechar = useRef(aoFechar);
   const bloqueado = useRef(bloquearFechamento);
-  useEffect(() => { fechar.current = aoFechar; bloqueado.current = bloquearFechamento; });
+  const inicial = useRef(focoInicial);
+  useEffect(() => { fechar.current = aoFechar; bloqueado.current = bloquearFechamento; inicial.current = focoInicial; });
 
   useEffect(() => {
     if (!aberto) return;
+    const marca = {};
+    PILHA_DIALOGOS.abrir(marca);
     const anterior = document.activeElement as HTMLElement | null;
     const caixa = ref.current;
     const focaveis = () => (caixa ? [...caixa.querySelectorAll<HTMLElement>(SELETOR_FOCAVEL)].filter((el) => !el.closest("[inert]")) : []);
-    // Foco inicial: o primeiro campo/botão; sem nenhum, a própria caixa (tabIndex -1 no componente).
-    (focaveis()[0] ?? caixa)?.focus();
+    // Foco inicial: o escolhido pelo diálogo; senão o primeiro campo/botão; sem nenhum, a própria caixa
+    // (tabIndex -1 no componente).
+    (inicial.current?.current ?? focaveis()[0] ?? caixa)?.focus();
 
     function onKey(e: KeyboardEvent) {
+      // Diálogo por baixo de outro: quem responde é o de cima.
+      if (!PILHA_DIALOGOS.noTopo(marca)) return;
       if (e.key === "Escape") {
         if (!bloqueado.current) { e.stopPropagation(); fechar.current(); }
         return;
@@ -57,6 +85,7 @@ export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFecha
     }
     document.addEventListener("keydown", onKey);
     return () => {
+      PILHA_DIALOGOS.fechar(marca);
       document.removeEventListener("keydown", onKey);
       // Devolve o foco a quem abriu, se ele ainda está na página.
       if (anterior && document.contains(anterior)) anterior.focus();

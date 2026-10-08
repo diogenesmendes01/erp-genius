@@ -51,7 +51,8 @@ export async function listarComissoesPagina({ status, busca = "", pagina, ordem 
 
 /**
  * "A pagar (aprovadas)" da aba de comissões do /financeiro, agregado no banco por moeda sobre TODO o
- * escopo — com a lista paginada, somar só a página exibida daria um total errado.
+ * escopo — com a lista paginada, somar só a página exibida daria um total errado. A quantidade por moeda
+ * vai para a confirmação do "Fechar mês e marcar pagas" ("N comissões, total X"; docs/42 L2016).
  */
 export async function totaisComissoesAPagar() {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
@@ -59,9 +60,10 @@ export async function totaisComissoesAPagar() {
     by: ["moeda"],
     where: { AND: [escopoComissoes(usuario), { status: StatusComissao.APROVADA }] },
     _sum: { valor: true },
+    _count: { _all: true },
     orderBy: { moeda: "asc" },
   });
-  return grupos.map((g) => ({ moeda: g.moeda, valor: numero(g._sum.valor ?? 0) }));
+  return grupos.map((g) => ({ moeda: g.moeda, valor: numero(g._sum.valor ?? 0), quantidade: g._count._all }));
 }
 
 function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { select: { nome: true } } } }>) {
