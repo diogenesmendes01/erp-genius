@@ -20,6 +20,6 @@ export default async function ReplanejamentoPage({ params }: { params: Promise<{
     <h1 className="text-2xl font-medium">Prévia de replanejamento</h1>
     <Link className="underline" href={`/academico/calendario/${id}/revisoes`}>Consultar registros anteriores</Link>
     <p>Estas datas são sugestões. Nenhuma alteração foi aplicada à agenda. Cada turma preserva seu fuso de origem; a apresentação usa sua preferência válida quando disponível.</p>
-    <EditorRevisao key={`${r.estadoHash}:${r.versaoRascunho}`} inicial={r} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
+    <EditorRevisao inicial={r} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
   </div>;
 }

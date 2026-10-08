@@ -6,6 +6,8 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-substituicao", () => ({ consultarSubstituicaoAgendaSegundaChamada: mocks.consultar }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }) }));
 import Page from "./page";
+import { Formulario } from "./Formulario";
+import { identidadeNoReact } from "@/test/tela-sem-dom";
 
 describe("SubstituicaoAgendaSegundaChamadaPage", () => {
   it("mostra prévia, pendências, decisão independente e paginação sem expor IDs", async () => {
@@ -52,5 +54,26 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(html).toContain("Professor indisponível no horário.");
     expect(html).toContain("Professor alternativo");
     expect(html).toContain("Enviar proposta");
+  });
+
+  // docs/43 §6 item 3 (docs/42 L1814): a key do formulário era o substitutoId da URL — trocar o professor fazia
+  // router.replace, remontava o formulário e apagava motivo e evidência já digitados.
+  it("o formulário de proposta tem a mesma identidade no React ao trocar o professor (URL) e a página das propostas", async () => {
+    const dado = (substituto: { id: string; nome: string } | null) => ({
+      identificacao: { aluno: "Ana", matriculaCodigo: null, turma: "T-1", codigoAvaliacao: "FALA" },
+      encontro: { id: "e", professorId: "p", professorNome: "Professor atual", inicio: "2026-09-17T10:00:00.000Z", fim: "2026-09-17T11:00:00.000Z", fusoOrigem: "UTC", status: "PREVISTO" },
+      professores: [{ id: "p2", nome: "Professor alternativo" }, { id: "p3", nome: "Professora três" }],
+      previa: substituto ? { estadoConferido: "estado", pendencias: [], substituto } : null,
+      podePropor: true, podeDecidir: false, itens: [], proximaVersao: null,
+    });
+    const renderizar = (busca: { substitutoId?: string; antesVersao?: string }) => Page({ params: Promise.resolve({ reservaId: "r" }), searchParams: Promise.resolve(busca) });
+    mocks.consultar.mockResolvedValue({ ok: true, dado: dado(null) });
+    const base = identidadeNoReact(await renderizar({}), Formulario);
+    expect(base).not.toBeNull();
+    expect(base!.key).toBeNull();
+    mocks.consultar.mockResolvedValue({ ok: true, dado: dado({ id: "p2", nome: "Professor alternativo" }) });
+    expect(identidadeNoReact(await renderizar({ substitutoId: "p2" }), Formulario)).toEqual(base);
+    mocks.consultar.mockResolvedValue({ ok: true, dado: dado({ id: "p3", nome: "Professora três" }) });
+    expect(identidadeNoReact(await renderizar({ substitutoId: "p3", antesVersao: "4" }), Formulario)).toEqual(base);
   });
 });

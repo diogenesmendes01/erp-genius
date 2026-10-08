@@ -7,7 +7,6 @@ import { FormularioDesignacao } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 export default async function DesignacaoPage({ params, searchParams }: {
@@ -29,9 +28,9 @@ export default async function DesignacaoPage({ params, searchParams }: {
     <p>{d.atual?.professor ? `Último professor designado: ${d.atual.professor.nome}${d.atual.professor.ativo ? "" : " (usuário inativo)"}.` : "Sem designação vigente."}</p>
     <p>A designação se limita a esta avaliação e mantém o professor titular da turma e a autoria dos registros anteriores.</p>
     {d.podeAlterar ? <>
-      <form method="get" className="space-y-2"><label className="block">Buscar professor por nome<input name="busca" maxLength={100} defaultValue={d.busca} className="block rounded border p-2" /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Buscar</button><p>A busca atualiza a página. Registre a alteração antes de fazer outra busca.</p></form>
-      {d.refinarBusca && <p role="status">Exibindo os primeiros 50 professores. Refine a busca para localizar o nome desejado.</p>}
-      <FormularioDesignacao key={`${d.versaoEsperada}:${d.busca}`} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} atualId={d.atual?.professor?.id ?? null} professores={d.professores} />
+      {/* A busca de professor mora no formulário (docs/43 §6 item 3, docs/42 L1327): sem <form method="get"> e sem
+          key de versão ou busca, buscar ou receber a versão nova não remonta o formulário nem apaga o motivo. */}
+      <FormularioDesignacao alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} atualId={d.atual?.professor?.id ?? null} professores={d.professores} busca={d.busca} refinarBusca={d.refinarBusca} />
     </> : <p role="status">Avaliação oficializada: a designação da pendência foi encerrada. O histórico permanece disponível.</p>}
     <h2 className="text-xl font-medium">Histórico de designações</h2>
     {!d.historico.length && <EstadoVazio bloco>Nenhuma designação registrada.</EstadoVazio>}

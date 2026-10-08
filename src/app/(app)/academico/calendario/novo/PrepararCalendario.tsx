@@ -5,6 +5,7 @@ import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 
 type Periodo = { id: string; nome: string; tipo: "FERIADO" | "RECESSO" | "FERIAS"; inicio: string; fim: string };
 export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConferido }: { periodosIniciais: Periodo[]; versaoAnterior: number; fusoConferido: string }) {
@@ -14,6 +15,10 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
   const [erro, setErro] = useState("");
   const [ocupado, iniciar] = useTransition();
   const tentativa = useRef<{ assinatura: string; chave: string } | null>(null);
+  // Aviso ao sair (docs/43 §6 item 3; docs/42 L1059): preencher 20 períodos e sair perdia tudo em silêncio.
+  // Sujo = os períodos diferem dos iniciais (por conteúdo: o refresh traz outro array igual) ou há motivo.
+  const [salvo, setSalvo] = useState(false);
+  useAvisoAoSair(!salvo && (motivo.trim() !== "" || JSON.stringify(periodos) !== JSON.stringify(periodosIniciais)));
   function alterar(id: string, valores: Partial<Periodo>) { setPeriodos((anteriores) => anteriores.map((p) => p.id === id ? { ...p, ...valores } : p)); }
   function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,6 +30,7 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
       try {
         const r = await prepararCalendarioEscolar({ ...dados, chaveIdempotencia });
         if (!r.ok || !r.dado) { setErro(r.ok ? "Proposta não confirmada." : r.erro); return; }
+        setSalvo(true);
         router.push(`/academico/calendario/${r.dado.id}`);
       } catch { setErro(MSG_RESULTADO_INCERTO); }
     });

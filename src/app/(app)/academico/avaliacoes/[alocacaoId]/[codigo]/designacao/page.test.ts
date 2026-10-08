@@ -8,6 +8,8 @@ vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFuso
 vi.mock("./Formulario", () => ({ FormularioDesignacao: () => null }));
 
 import Page from "./page";
+import { FormularioDesignacao } from "./Formulario";
+import { identidadeNoReact } from "@/test/tela-sem-dom";
 
 const dado = {
   titulo: "Avaliação final", identificacao: { aluno: "Ana", matriculaId: "matricula", matriculaCodigo: "M-1", oferta: "Inglês", turma: "Turma 1", nivel: "A1" },
@@ -16,7 +18,7 @@ const dado = {
   pagina: 1, temProxima: false, professores: [], refinarBusca: false, busca: "",
 };
 
-const renderizar = () => Page({ params: Promise.resolve({ alocacaoId: "alocacao", codigo: "final" }), searchParams: Promise.resolve({}) });
+const renderizar = (busca: { busca?: string; pagina?: string } = {}) => Page({ params: Promise.resolve({ alocacaoId: "alocacao", codigo: "final" }), searchParams: Promise.resolve(busca) });
 
 describe("designação de avaliador", () => {
   beforeEach(() => {
@@ -26,11 +28,11 @@ describe("designação de avaliador", () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   });
 
-  it("mostra o histórico administrativo na preferência pessoal sem remover a busca", async () => {
+  it("mostra o histórico administrativo na preferência pessoal; a busca mora no formulário (sem <form method=get>)", async () => {
     const html = renderToStaticMarkup(await renderizar());
     expect(html).toMatch(/30\/09\/2026.*20:30/);
     expect(html).toContain("America/Costa_Rica; origem UTC");
-    expect(html).toContain('name="busca"');
+    expect(html).not.toContain('method="get"');
     expect(html).toContain('href="/academico/avaliacoes/alocacao/final"');
   });
 
@@ -46,5 +48,17 @@ describe("designação de avaliador", () => {
     await expect(renderizar()).rejects.toThrow("Sem sessão");
     expect(mocks.consultar).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
+  });
+
+  // docs/43 §6 item 3 (docs/42 L1327): a key do formulário tinha a versão e a busca — buscar outro professor ou
+  // receber a versão nova remontava o formulário e apagava o motivo digitado.
+  it("o formulário tem a mesma identidade no React com outra busca, outra página do histórico e outra versão", async () => {
+    const base = identidadeNoReact(await renderizar(), FormularioDesignacao);
+    expect(base).not.toBeNull();
+    expect(base!.key).toBeNull();
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, busca: "Car", professores: [{ id: "p4", nome: "Carla" }], refinarBusca: true } });
+    expect(identidadeNoReact(await renderizar({ busca: "Car" }), FormularioDesignacao)).toEqual(base);
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 2, versaoEsperada: 2 } });
+    expect(identidadeNoReact(await renderizar({ pagina: "2" }), FormularioDesignacao)).toEqual(base);
   });
 });

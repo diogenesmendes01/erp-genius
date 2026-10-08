@@ -23,7 +23,7 @@ import type { ReactNode } from "react";
 import { LancarNotas, ConferirNotas } from "./Formularios";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
-import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto } from "@/test/tela-sem-dom";
+import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto, type No } from "@/test/tela-sem-dom";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -93,5 +93,57 @@ describe("ConferirNotas", () => {
     await submeter(tela(), { decisao: "devolver", motivo: "Revisar notas." });
     expect(m.oficializar).toHaveBeenLastCalledWith({ lancamentoId: "lancamento", conteudoHash: "a".repeat(64), aprovada: false, motivo: "Revisar notas." });
     expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+});
+
+// docs/43 §6 item 3 (docs/42 L1314): o fuso de entrada é estado do formulário. Antes, "Aplicar fuso" era um
+// <form method="get"> que recarregava a página e remontava o LancarNotas (key com o fuso): as notas sumiam.
+describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
+  const props = {
+    alocacaoId: "alocacao", codigoAvaliacao: "final", versaoEsperada: 1, habilidades: ["FALA" as const],
+    escala: { minimo: "0", maximo: "10" }, fuso: "UTC", realizadores: [], registradorId: "professor",
+    anterior: { realizadaEm: "2026-10-01T02:30:00.000", instante: "2026-10-01T02:30:00.000Z", notas: [] },
+  };
+  const tela = () => m.ganchos!.renderizar(LancarNotas, props);
+  const campo = (nome: string): No => elementos(tela()).find((n) => n.type === "input" && n.props.name === nome)!;
+  const digitar = (nome: string, valor: string) => (campo(nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+
+  it("trocar o fuso não navega nem remonta: a data da última versão acompanha o fuso e o resto do estado fica", () => {
+    expect(campo("fuso").props.value).toBe("UTC");
+    expect(campo("realizadaEm").props.value).toBe("2026-10-01T02:30:00.000");
+    digitar("fuso", "America/Sao_Paulo");
+    expect(campo("fuso").props.value).toBe("America/Sao_Paulo");
+    expect(campo("realizadaEm").props.value).toBe("2026-09-30T23:30:00.000");
+    expect(texto(elementos(tela()).find((n) => n.type === "label" && texto(n.props.children).startsWith("Data e horário"))?.props.children)).toContain("(America/Sao_Paulo)");
+    expect(m.refresh).not.toHaveBeenCalled();
+  });
+
+  it("a data digitada sobrevive à troca de fuso (não é sobrescrita pela conversão)", () => {
+    digitar("realizadaEm", "2026-10-02T10:00");
+    digitar("fuso", "America/Costa_Rica");
+    expect(campo("realizadaEm").props.value).toBe("2026-10-02T10:00");
+    expect(campo("fuso").props.value).toBe("America/Costa_Rica");
+  });
+
+  it("envia no fuso escolhido no formulário; fuso inválido não chama a action e diz por quê", async () => {
+    digitar("fuso", "America/Costa_Rica");
+    m.salvar.mockResolvedValueOnce({ ok: true });
+    await submeter(tela(), { realizadaEm: "2026-10-02T10:00", modo: "rascunho", "nota-FALA": "9", "comentario-FALA": "" });
+    expect(m.salvar.mock.calls[0][0]).toMatchObject({ fuso: "America/Costa_Rica", realizadaLocal: "2026-10-02T10:00" });
+    digitar("fuso", "Lugar/Nenhum");
+    await submeter(tela(), { realizadaEm: "2026-10-02T10:00", modo: "rascunho", "nota-FALA": "9", "comentario-FALA": "" });
+    expect(m.salvar).toHaveBeenCalledTimes(1);
+    expect(campo("fuso").props["aria-invalid"]).toBe(true);
+    expect(anuncios(tela()).alerta).toEqual(["Informe um fuso válido, como America/Sao_Paulo ou America/Costa_Rica."]);
+  });
+
+  it("depois de salvar, a próxima versão é outra tentativa (chave nova), sem remontar", async () => {
+    const valores = { realizadaEm: "2026-10-02T10:00", modo: "rascunho", "nota-FALA": "9", "comentario-FALA": "" };
+    m.salvar.mockResolvedValue({ ok: true });
+    await submeter(tela(), valores);
+    await submeter(tela(), valores);
+    const [a, b] = m.salvar.mock.calls.map((c) => (c[0] as { chaveIdempotencia: string }).chaveIdempotencia);
+    expect(b).not.toBe(a);
+    expect(m.refresh).toHaveBeenCalledTimes(2);
   });
 });
