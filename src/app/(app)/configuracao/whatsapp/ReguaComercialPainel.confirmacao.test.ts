@@ -68,7 +68,9 @@ describe("ReguaComercialPainel \u2014 ativar e go-live passam pela confirmação
     expect(consequencia).toContain("Remetente: Vendas SP");
     expect(consequencia).toContain("1º follow-up (após 60 min, followup_1)");
     expect(consequencia).not.toContain("2º follow-up");
+    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.salvar).toHaveBeenCalledTimes(1);
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ chave: "lead-novo", estado: "ATIVA", modoPiloto: true, pilotoLeadIds: ["l1", "l2"] });
     (c.props.aoConcluir as () => void)();
@@ -86,7 +88,9 @@ describe("ReguaComercialPainel \u2014 ativar e go-live passam pela confirmação
     expect(c.props.titulo).toBe(`Levar a régua "Lead novo sem resposta" a todos os leads (go-live geral)?`);
     expect(c.props.confirmacao).toBe("go-live geral");
     expect(texto(c.props.children).replace(/\s+/g, " ")).toContain("GO-LIVE GERAL \u2014 todos os leads elegíveis do número");
+    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ modoPiloto: false });
   });
 

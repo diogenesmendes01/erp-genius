@@ -142,3 +142,17 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
     motivo: "template novo, em rascunho, em revisão ou rejeitado não derruba degrau nenhum ao salvar; o aprovado abre o ConfirmarAcao",
   },
 ];
+
+/**
+ * Import que sai do `src` (relativo, ou `@/` com `..`): a trava não lê o que ele carrega, então só passa o que
+ * está aqui, ancorado no arquivo e no especificador EXATO (R2 da #154, C6). Cópia literal no teste.
+ */
+export type ImportForaDoSrc = { arquivo: string; especificador: string; motivo: string };
+
+export const IMPORTS_FORA_DO_SRC: ImportForaDoSrc[] = [
+  {
+    arquivo: "src/test/setup-integracao.ts",
+    especificador: "../../vitest.integration.config",
+    motivo: "o setup das integrações lê a URL do banco descartável da configuração do vitest; não chama action nem tela",
+  },
+];

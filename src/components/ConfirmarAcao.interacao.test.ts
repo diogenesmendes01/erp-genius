@@ -193,4 +193,21 @@ describe("ConfirmarAcao \u2014 interação", () => {
     expect(acao).toHaveBeenCalledTimes(1);
     expect(props.aoConcluir).toHaveBeenCalledTimes(1);
   });
+
+  it("conferência desmarcada depois de marcada (R2 da #154, B9): a confirmação volta a desabilitar e o clique não executa", async () => {
+    props = { ...props, conferencia: "Confirmo os valores acima." };
+    const caixaDe = (t: ReactNode): No => elementos(t).find((n: No) => n.type === "input")!;
+    const marcar = (valor: boolean) => (caixaDe(tela()).props.onChange as (e: { target: { checked: boolean } }) => void)({ target: { checked: valor } });
+    marcar(true);
+    expect(caixaDe(tela()).props.checked).toBe(true);
+    expect(botaoPorTexto(tela(), CONFIRMAR).props.disabled).toBe(false);
+    marcar(false);
+    const t = tela();
+    expect(caixaDe(t).props.checked).toBe(false);
+    expect(botaoPorTexto(t, CONFIRMAR).props.disabled).toBe(true);
+    await clicar(t, CONFIRMAR);
+    await esvaziar();
+    expect(acao).not.toHaveBeenCalled();
+    expect(props.aoConcluir).not.toHaveBeenCalled();
+  });
 });

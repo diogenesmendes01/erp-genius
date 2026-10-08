@@ -53,7 +53,9 @@ describe("ComercialPainel \u2014 ativar automações passa pela confirmação", 
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("enviada de verdade");
     expect(consequencia).toContain("Olá! Já retornamos.");
+    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.salvar).toHaveBeenCalledTimes(1);
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ saudacaoEstado: "ATIVA" });
     (c.props.aoConcluir as () => void)();

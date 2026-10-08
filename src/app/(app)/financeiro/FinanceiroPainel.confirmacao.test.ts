@@ -58,7 +58,9 @@ describe("ComissoesAba \u2014 fechar o mês passa pela confirmação", () => {
     expect(consequencia).toContain("4 comissões aprovadas passam a pagas, total R$");
     expect(consequencia).toContain("US$");
     expect(consequencia).toContain("Não há desfazer pela tela.");
+    expect(m.fechar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.fechar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.fechar).toHaveBeenCalledTimes(1);
   });
 

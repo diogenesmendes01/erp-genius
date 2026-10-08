@@ -51,7 +51,9 @@ describe("TemplatesPainel \u2014 editar template aprovado passa pela confirmaç�
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe(`Salvar o template aprovado "cobranca_vencida" e devolvê-lo a rascunho?`);
     expect(texto(c.props.children)).toContain("Este template está aprovado e será revertido para rascunho. Os degraus que o usam ficam sem template aprovado.");
+    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.salvar).toHaveBeenCalledWith({ id: "t1", nome: "cobranca_vencida", corpo: aprovado.corpo, idioma: "es", categoria: "utility" });
     (c.props.aoConcluir as () => void)();
     const t = tela();

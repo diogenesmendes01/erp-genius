@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Aplicar acerto e reconferência delta (docs/42 L799): "as duas ações mais irreversíveis da área" agora
 // revelam o resumo (cobranças ajustadas, crédito criado) num ConfirmarAcao que exige "Confirmo os valores
 // acima"; só a confirmação chama a action, com a chave de idempotência estável do formulário.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
-  aplicarAcerto: vi.fn(), aplicarDelta: vi.fn(), refresh: vi.fn(),
+  aplicarAcerto: vi.fn(), aplicarDelta: vi.fn(), prepararDelta: vi.fn(), decidirDelta: vi.fn(), refresh: vi.fn(),
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -22,12 +22,12 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/matricula/desistencia-acerto-contratual", () => ({ prepararAcertoDesistenciaContratual: vi.fn(), decidirAcertoDesistenciaContratual: vi.fn() }));
 vi.mock("@/server/matricula/desistencia-acerto-aplicacao", () => ({ aplicarAcertoDesistenciaContratual: m.aplicarAcerto }));
 vi.mock("@/server/matricula/desistencia-reconferencia-delta", () => ({
-  prepararReconferenciaDeltaDesistencia: vi.fn(), decidirReconferenciaDeltaDesistencia: vi.fn(),
+  prepararReconferenciaDeltaDesistencia: m.prepararDelta, decidirReconferenciaDeltaDesistencia: m.decidirDelta,
   decidirAdministrativamenteReconferenciaDeltaDesistencia: vi.fn(), aplicarReconferenciaDeltaDesistencia: m.aplicarDelta,
 }));
 
 import { AplicarAcertoContratualFormulario, resumoAplicacaoAcerto } from "./AcertoContratualFormularios";
-import { AplicarReconferenciaDeltaFormulario, resumoAplicacaoDelta } from "./ReconferenciaDeltaFormularios";
+import { AplicarReconferenciaDeltaFormulario, DecidirReconferenciaDeltaFormulario, PrepararReconferenciaDeltaFormulario, resumoAplicacaoDelta } from "./ReconferenciaDeltaFormularios";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
@@ -41,6 +41,8 @@ const itensAcerto = [
   { cobrancaId: "c1", moeda: "CRC", devido: "50000", saldoDevido: "0", creditoApurado: "12500" },
   { cobrancaId: "c2", moeda: "CRC", devido: "50000", saldoDevido: "50000", creditoApurado: "0" },
 ];
+/** Ajuste só no saldo (o devido não muda): ainda é uma cobrança ajustada. */
+const soSaldo = { cobrancaId: "c4", moeda: "CRC", ajusteDevido: "0", ajusteSaldo: "-500", creditoDelta: "0", reducaoCredito: "0" };
 const itensDelta = [
   { cobrancaId: "c1", moeda: "CRC", ajusteDevido: "-5000", ajusteSaldo: "0", creditoDelta: "5000", reducaoCredito: "0" },
   { cobrancaId: "c2", moeda: "CRC", ajusteDevido: "0", ajusteSaldo: "0", creditoDelta: "0", reducaoCredito: "0" },
@@ -62,6 +64,9 @@ describe("resumos da aplicação", () => {
     expect(resumoAplicacaoDelta(itensDelta)).toEqual({ comAjuste: 1, credito: [{ moeda: "CRC", valor: 5000 }], reducao: [], semDiferenca: false });
     expect(resumoAplicacaoDelta([itensDelta[1]]).semDiferenca).toBe(true);
   });
+  it("delta: ajuste só de saldo também conta como cobrança ajustada (R2 da #154, B10)", () => {
+    expect(resumoAplicacaoDelta([soSaldo])).toEqual({ comAjuste: 1, credito: [], reducao: [], semDiferenca: false });
+  });
 });
 
 describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", () => {
@@ -77,7 +82,9 @@ describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", ()
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Serão ajustadas 2 cobranças desta matrícula");
     expect(consequencia).toContain("Será criado crédito de \u20a1");
+    expect(m.aplicarAcerto).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.aplicarAcerto).toHaveBeenCalledTimes(1);
     expect(m.aplicarAcerto.mock.calls[0][0]).toMatchObject({ decisaoId: "decisao-1" });
   });
@@ -85,7 +92,9 @@ describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", ()
   it("a chave é a mesma entre tentativas (incerto) e só troca depois do sucesso", async () => {
     clicar(tela(), "Aplicar acerto aprovado");
     let c = doTipo(tela(), ConfirmarAcao)[0];
+    expect(m.aplicarAcerto).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.aplicarAcerto).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "incerto", mensagem: MSG_RESULTADO_INCERTO });
     c = doTipo(tela(), ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
@@ -122,7 +131,9 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Será ajustada 1 cobrança desta matrícula");
     expect(consequencia).toContain("Será criado crédito novo de \u20a1");
+    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     expect(m.aplicarDelta.mock.calls[0][0]).toMatchObject({ decisaoFinanceiraId: "df-1" });
   });
@@ -130,7 +141,9 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
   it("resultado incerto: fecha a confirmação, trava o botão e a reconciliação REABRE a confirmação com a mesma chave", async () => {
     clicar(tela(), "Aplicar reconferência");
     let c = doTipo(tela(), ConfirmarAcao)[0];
+    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "incerto", mensagem: MSG_RESULTADO_INCERTO });
     (c.props.aoCancelar as () => void)();
     let t = tela();
@@ -148,7 +161,9 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
   it("erro de negócio troca a chave (outra tentativa); sucesso troca e anuncia", async () => {
     clicar(tela(), "Aplicar reconferência");
     let c = doTipo(tela(), ConfirmarAcao)[0];
+    expect(m.aplicarDelta).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "erro", mensagem: "Decisão revogada." });
     c = doTipo(tela(), ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
@@ -185,5 +200,55 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     const consequencia = texto(doTipo(t(), ConfirmarAcao)[0].props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Sem diferença a aplicar");
     expect(consequencia).not.toContain("Será ajustada");
+  });
+
+  it("ajuste só de saldo: a consequência diz que a cobrança é ajustada, não \"sem diferença\" (R2 da #154, B10)", () => {
+    m.ganchos!.reiniciar();
+    const t = (): ReactNode => m.ganchos!.renderizar(AplicarReconferenciaDeltaFormulario, { decisaoFinanceiraId: "df-4", itens: [soSaldo] });
+    clicar(t(), "Aplicar reconferência");
+    const consequencia = texto(doTipo(t(), ConfirmarAcao)[0].props.children).replace(/\s+/g, " ");
+    expect(consequencia).toContain("Será ajustada 1 cobrança desta matrícula");
+    expect(consequencia).not.toContain("Sem diferença a aplicar");
+  });
+});
+
+describe("Reconciliar mesma tentativa no preparo e na decisão (R2 da #154, B11)", () => {
+  // Campos do formulário enviado (FormData simulado: o teste roda sem DOM).
+  const CAMPOS = new Map<string, string>([["motivo", "Fato posterior conferido."], ["decisao", "aprovar"]]);
+  class DadosFormulario {
+    get(nome: string): string | null { return CAMPOS.get(nome) ?? null; }
+  }
+  const esvaziar = () => new Promise((r: (v: unknown) => void) => setTimeout(r, 0));
+  const enviar = async (t: ReactNode) => {
+    const formulario = elementos(t).find((n: No) => n.type === "form")!;
+    (formulario.props.onSubmit as (e: { preventDefault: () => void; currentTarget: object }) => void)({ preventDefault: () => {}, currentTarget: {} });
+    await esvaziar();
+  };
+  /** O botão "Reconciliar mesma tentativa" (filho ReconciliarTentativaDelta, chamado como função). */
+  const reconciliar = (t: ReactNode): ReactNode => expandir(elementos(t).find((n: No) => typeof n.type === "function" && "op" in n.props && !("aoReconciliar" in n.props))!);
+
+  beforeEach(() => { vi.stubGlobal("FormData", DadosFormulario); });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("preparo incerto: reconciliar reenvia a MESMA tentativa (mesmos dados e mesma chave)", async () => {
+    m.prepararDelta.mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce({ ok: true });
+    const tela = (): ReactNode => m.ganchos!.renderizar(PrepararReconferenciaDeltaFormulario, { aplicacaoBaseId: "base-1" });
+    await enviar(tela());
+    expect(m.prepararDelta).toHaveBeenCalledTimes(1);
+    await clicar(reconciliar(tela()), "Reconciliar mesma tentativa");
+    expect(m.prepararDelta).toHaveBeenCalledTimes(2);
+    expect(m.prepararDelta.mock.calls[1][0]).toEqual(m.prepararDelta.mock.calls[0][0]);
+    expect(m.prepararDelta.mock.calls[0][0]).toMatchObject({ aplicacaoBaseId: "base-1", motivo: "Fato posterior conferido." });
+  });
+
+  it("decisão incerta: reconciliar reenvia a MESMA decisão (mesma chave)", async () => {
+    m.decidirDelta.mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce({ ok: true });
+    const tela = (): ReactNode => m.ganchos!.renderizar(DecidirReconferenciaDeltaFormulario, { propostaId: "p-1", fotografiaHash: "h-1", administrativo: false });
+    await enviar(tela());
+    expect(m.decidirDelta).toHaveBeenCalledTimes(1);
+    await clicar(reconciliar(tela()), "Reconciliar mesma tentativa");
+    expect(m.decidirDelta).toHaveBeenCalledTimes(2);
+    expect(m.decidirDelta.mock.calls[1][0]).toEqual(m.decidirDelta.mock.calls[0][0]);
+    expect(m.decidirDelta.mock.calls[0][0]).toMatchObject({ propostaId: "p-1", aprovada: true });
   });
 });
