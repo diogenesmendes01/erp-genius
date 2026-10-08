@@ -43,7 +43,7 @@ const props = (pagina: number, o = oferta()): Props => ({
 });
 const tela = (p: Props) => m.ganchos!.renderizar(PreparacaoFormulario, p);
 const select = (t: ReactNode, nome: string) => elementos(t).find((n) => n.type === "select" && n.props.name === nome)!;
-const opcoes = (t: ReactNode, nome: string) => elementos(select(t, nome)).filter((n) => n.type === "option").map((n) => texto(n.props.children));
+const opcoes = (t: ReactNode, nome: string) => elementos(select(t, nome) as unknown as ReactNode).filter((n) => n.type === "option").map((n) => texto(n.props.children));
 const escolher = (t: ReactNode, nome: string, valor: string) => (select(t, nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 const preencherValores = (p: Props) => {
   const [taxa] = elementos(tela(p)).filter((n) => n.type === CampoMoeda);

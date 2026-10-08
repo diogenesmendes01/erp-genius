@@ -101,6 +101,8 @@ describe("SeletorMaioridade — troca client-side, sem <form method=get>", () =>
 
   it("atualiza a URL pelo roteador, sem rolar a tela, e só quando a escolha mudou", () => {
     expect(elementos(seletor("MENOR")).some((n) => n.type === "form")).toBe(false);
+    // O campo continua sendo "maioridade" (o mesmo nome do parâmetro da URL; historicos-fuso.test.ts confere no HTML).
+    expect(elementos(seletor("MENOR")).find((n) => n.type === "select")!.props.name).toBe("maioridade");
     expect(botao(seletor("MENOR")).props.disabled).toBe(true);
     escolher("MAIOR");
     expect(botao(seletor("MENOR")).props.disabled).toBe(false);

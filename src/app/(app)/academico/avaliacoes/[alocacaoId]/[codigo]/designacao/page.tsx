@@ -28,7 +28,7 @@ export default async function DesignacaoPage({ params, searchParams }: {
     <p>{d.atual?.professor ? `Último professor designado: ${d.atual.professor.nome}${d.atual.professor.ativo ? "" : " (usuário inativo)"}.` : "Sem designação vigente."}</p>
     <p>A designação se limita a esta avaliação e mantém o professor titular da turma e a autoria dos registros anteriores.</p>
     {d.podeAlterar ? <>
-      {/* A busca de professor mora no formulário (docs/43 §6 item 3, docs/42 L1327): sem <form method="get"> e sem
+      {/* A busca de professor mora no formulário (docs/43 §6 item 3, docs/42 L1327): sem formulário GET de página e sem
           key de versão ou busca, buscar ou receber a versão nova não remonta o formulário nem apaga o motivo. */}
       <FormularioDesignacao alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} atualId={d.atual?.professor?.id ?? null} professores={d.professores} busca={d.busca} refinarBusca={d.refinarBusca} />
     </> : <p role="status">Avaliação oficializada: a designação da pendência foi encerrada. O histórico permanece disponível.</p>}
