@@ -1,16 +1,17 @@
 "use client";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { RegrasHorasSchema } from "@/server/matricula/condicoes-horas-schema";
 import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-financeira-consulta";
 import { preverConferenciaOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-previa";
 import { conferirOcorrenciaHoras } from "@/server/matricula/ocorrencia-financeira-conferir";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { DESFECHO_OCORRENCIA_HORAS_LABEL, TIPO_OCORRENCIA_HORAS_LABEL, rotular } from "@/lib/labels";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => string }) {
@@ -22,11 +23,29 @@ function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => s
     <p>Cláusula de preço: {r.data.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {r.data.regras.clausulaCancelamento}</p></div>;
 }
 export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"] }) {
-  const router = useRouter(), [ocupado, iniciar] = useTransition(), [previa, setPrevia] = useState<Previa | null>(null), [mensagem, setMensagem] = useState("");
+  // Prévia é leitura sem chave; a conferência leva chave de idempotência estável. Cada uma preserva a orientação
+  // própria para falha de transporte; um estado por grupo de ação, e o ocupado trava os dois.
+  const router = useRouter(), carregamento = useAcaoCliente({ idempotente: false }), registro = useAcaoCliente({ idempotente: true }), [previa, setPrevia] = useState<Previa | null>(null);
+  const ocupado = carregamento.ocupado || registro.ocupado;
   const [condicoesId, setCondicoesId] = useState("");
   const chave = useRef({ entrada: "", valor: "" });
   const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(v));
   const origem = { alunoId: matricula.alunoId, matriculaId: matricula.id, ocorrenciaId: e.ocorrencia?.id ?? "", condicoesId };
+  async function carregarPrevia() {
+    registro.limpar(); setPrevia(null);
+    const d = await carregamento.executar(() => preverConferenciaOcorrenciaHoras(origem));
+    if (d?.tipo === "incerto") carregamento.setErro("Não foi possível carregar a prévia.");
+    if (d?.tipo === "ok") setPrevia(d.dado ?? null);
+  }
+  async function registrarConferencia(event: FormEvent<HTMLFormElement>, estadoPrevia: Previa["estadoPrevia"]) {
+    event.preventDefault(); const f = new FormData(event.currentTarget);
+    const entrada = { ...origem, estadoPrevia, motivo: String(f.get("motivo")) }, serial = JSON.stringify(entrada);
+    if (chave.current.entrada !== serial) chave.current = { entrada: serial, valor: crypto.randomUUID() };
+    const valor = chave.current.valor;
+    const d = await registro.executar(() => conferirOcorrenciaHoras({ ...entrada, chaveIdempotencia: valor }), "Conferência registrada.");
+    if (d?.tipo === "incerto") registro.setErro("Atualize o histórico para conferir o resultado antes de repetir.");
+    if (d?.tipo === "ok") { setPrevia(null); router.refresh(); }
+  }
   return <article className="space-y-3 rounded border p-4">
     <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {e.fusoOrigem}</h2>
     {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotular(TIPO_OCORRENCIA_HORAS_LABEL, e.ocorrencia.tipo)} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {data(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
@@ -37,15 +56,12 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
       <details><summary>Memória preservada da conferência</summary><Memoria snapshot={e.conferencia.snapshot} data={data} /></details>
       <p>A emissão da cobrança é uma etapa separada.</p>
     </section> : e.ocorrencia && <>
-      <label className="block">Condições aprovadas<select className="ml-2 rounded border p-2" value={condicoesId} disabled={ocupado} onChange={event => { setCondicoesId(event.target.value); setPrevia(null); setMensagem(""); }}>
+      <label className="block">Condições aprovadas<select className="ml-2 rounded border p-2" value={condicoesId} disabled={ocupado} onChange={event => { setCondicoesId(event.target.value); setPrevia(null); carregamento.limpar(); registro.limpar(); }}>
         <option value="">Selecione a versão aplicável</option>
         {condicoes.filter(c => !!c.regras).map(c => <option key={c.id} value={c.id}>Versão {c.versao} · desde {data(c.regras!.vigenteDesde)} · {formatarMoeda(c.regras!.valorHora, c.regras!.moeda)}/hora</option>)}
       </select></label>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !condicoesId} onClick={() => iniciar(async () => {
-        setMensagem(""); setPrevia(null);
-        try { const r = await preverConferenciaOcorrenciaHoras(origem); if (!r.ok) setMensagem(r.erro); else setPrevia(r.dado ?? null); }
-        catch { setMensagem("Não foi possível carregar a prévia."); }
-      })}>Conferir prévia</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !condicoesId} onClick={carregarPrevia}>Conferir prévia</button>
+      <FeedbackAcao erro={carregamento.erro} />
       {previa && <section className="space-y-2 rounded border p-3"><h3>Prévia — ainda não registrada</h3>
         <p>{rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, previa.classificacao.desfecho)} · {previa.minutos} minutos ÷ 60 · {formatarMoeda(previa.regras.valorHora, previa.moeda)}/hora</p>
         {previa.reservaAntecipada ? <p>Valor preservado da compra: {formatarMoeda(previa.valorApurado, previa.moeda)}. O valor contratual atual de {formatarMoeda(previa.valorContratualInformativo, previa.moeda)} é apenas informativo e não reprecifica as horas já quitadas.</p> : <p>Valor apurado: {formatarMoeda(previa.valorApurado, previa.moeda)}</p>}
@@ -54,18 +70,11 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
         <p>Cláusula de preço: {previa.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {previa.regras.clausulaCancelamento}</p>
         {previa.classificacao.limiteCancelamento && <p>Limite de cancelamento: {data(previa.classificacao.limiteCancelamento)} ({e.fusoOrigem})</p>}
         {previa.pendencias.map(p => <p key={p} role="status">{p}</p>)}
-        {!previa.pendencias.length && <form onSubmit={event => {
-          event.preventDefault(); const f = new FormData(event.currentTarget);
-          iniciar(async () => {
-            const entrada = { ...origem, estadoPrevia: previa.estadoPrevia, motivo: String(f.get("motivo")) }, serial = JSON.stringify(entrada);
-            if (chave.current.entrada !== serial) chave.current = { entrada: serial, valor: crypto.randomUUID() };
-            try { const r = await conferirOcorrenciaHoras({ ...entrada, chaveIdempotencia: chave.current.valor }); setMensagem(r.ok ? "Conferência registrada." : r.erro); if (r.ok) { setPrevia(null); router.refresh(); } }
-            catch { setMensagem("Atualize o histórico para conferir o resultado antes de repetir."); }
-          });
-        }}><label className="block">Justificativa da conferência<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} disabled={ocupado} /></label>
+        {!previa.pendencias.length && <form onSubmit={event => registrarConferencia(event, previa.estadoPrevia)}><label className="block">Justificativa da conferência<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} disabled={ocupado} /></label>
           <button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-2`} disabled={ocupado}>Registrar conferência</button></form>}
       </section>}
     </>}
-    <MensagemStatus texto={mensagem} />
+    {/* Fora da prévia: depois do registro a prévia some (e, com o refresh, o formulário), e o resultado continua visível. */}
+    <FeedbackAcao erro={registro.erro} sucesso={registro.sucesso} />
   </article>;
 }
