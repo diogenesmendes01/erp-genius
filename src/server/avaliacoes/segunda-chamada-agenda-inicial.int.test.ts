@@ -249,7 +249,7 @@ it("proposta aguardando decisão fica na fila; agenda aplicada sai dela sem apag
   expect(depois.dado.itens).toHaveLength(0);
   expect(await prisma.propostaSegundaChamada.count()).toBe(1);
   expect(await prisma.reservaSegundaChamada.count()).toBe(1);
-  expect(await listarSegundasChamadasSemAgenda({ cursor: { id: "fonte-inexistente", criadaEm: new Date().toISOString() } })).toMatchObject({ ok: false });
+  expect(await listarSegundasChamadasSemAgenda({ pagina: 0 })).toMatchObject({ ok: false });
 });
 
 it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", async () => {
