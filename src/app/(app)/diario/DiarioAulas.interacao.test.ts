@@ -78,6 +78,22 @@ describe("DiarioAulas — trocar a data não apaga a chamada", () => {
     expect(data(tela()).props.value).toBe("2026-10-01T10:00");
   });
 
+  // R1 da #155, C2: se a chamada da nova data não carrega, a lista na tela é a da data anterior — a tela volta à
+  // data anterior (lista e data coerentes ao salvar) e mantém o que foi digitado.
+  it("falha ao carregar a chamada da nova data: volta à data anterior e mantém a chamada", async () => {
+    for (const falha of [() => m.listar.mockResolvedValueOnce({ ok: false, erro: "Turma sem agenda na data." }), () => m.listar.mockRejectedValueOnce(new TypeError("Failed to fetch"))]) {
+      m.ganchos = criarGanchos();
+      await prepararChamada();
+      const anterior = data(tela()).props.value;
+      falha();
+      (data(tela()).props.onChange as Mudanca)({ target: { value: "2026-10-01T10:00" } });
+      await tick();
+      expect(data(tela()).props.value).toBe(anterior);
+      expect(chamada(tela())).toEqual(["sim|", "|Participou bem."]);
+      expect(elementos(tela()).some((n) => n.props.role === "alert")).toBe(true);
+    }
+  });
+
   it("mesclarChamada: mantém por aluno, lista descartados só com algo preenchido", () => {
     const r = (alunoId: string, nomeAluno: string, presente: boolean | null, observacao: string) => ({ alunoId, nomeAluno, presente, observacao, podeEditar: true });
     const m2 = mesclarChamada([r("a", "Ana", true, ""), r("b", "Bia", null, " "), r("c", "Cid", false, "")], [{ alunoId: "a", nomeAluno: "Ana" }, { alunoId: "d", nomeAluno: "Davi" }]);

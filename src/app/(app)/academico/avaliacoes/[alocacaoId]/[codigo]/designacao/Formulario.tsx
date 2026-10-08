@@ -46,8 +46,9 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
     e.preventDefault(); if (!professor) return;
     const chaveIdempotencia = (chave.current ??= crypto.randomUUID());
     const d = await acao.executar(() => designarAvaliador({ alocacaoId, codigoAvaliacao, versaoEsperada, professorId: professor === "revogar" ? null : professor, motivo, chaveIdempotencia }), "Designação registrada.");
-    // Registrada: a próxima designação é outra tentativa (chave nova); a tela recebe a versão nova sem remontar.
-    if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
+    // Registrada: a próxima designação é outra tentativa (chave nova) e começa limpa (R1 da #155, C1); a tela
+    // recebe a versão nova sem remontar — a busca digitada fica.
+    if (d?.tipo === "ok") { chave.current = null; setProfessor(""); setMotivo(""); setEscolhido(null); router.refresh(); }
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3">
       <legend className="font-medium">Alterar responsável pela avaliação</legend>
