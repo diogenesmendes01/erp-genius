@@ -82,6 +82,26 @@ export function elementos(raiz: ReactNode): No[] {
   return saida;
 }
 
+/**
+ * Como o React reconhece o elemento entre dois renders (docs/43 §6 item 3): o caminho de posições até o
+ * primeiro elemento do `tipo` (pelos `children`, como o React reconcilia) e o `key` dele. Dois renders com a
+ * mesma identidade — mesmo tipo, mesmo caminho, mesmo key — preservam o estado do componente; mudar o key ou
+ * a posição remonta e apaga o que foi digitado. null quando o elemento não está na árvore.
+ */
+export function identidadeNoReact(raiz: ReactNode, tipo: unknown): { caminho: number[]; key: string | null } | null {
+  const busca = (v: unknown, caminho: number[]): { caminho: number[]; key: string | null } | null => {
+    if (Array.isArray(v)) {
+      for (let i = 0; i < v.length; i++) { const r = busca(v[i], [...caminho, i]); if (r) return r; }
+      return null;
+    }
+    if (!ehNo(v)) return null;
+    if (v.type === tipo) return { caminho, key: (v as { key?: string | null }).key ?? null };
+    const filhos = v.props.children;
+    return Array.isArray(filhos) ? busca(filhos, caminho) : busca(filhos, [...caminho, 0]);
+  };
+  return busca(raiz, []);
+}
+
 /** Texto visível de um nó (strings e números dos filhos). */
 export function texto(v: unknown): string {
   if (typeof v === "string" || typeof v === "number") return String(v);

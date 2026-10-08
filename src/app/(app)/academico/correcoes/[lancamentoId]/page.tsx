@@ -22,7 +22,9 @@ export default async function CorrecoesPage({ params, searchParams }: { params: 
   return <section className="space-y-5"><VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(d.alocacaoId)}/${encodeURIComponent(d.codigoAvaliacao)}`} para="Avaliação" />
     <h1 className="text-2xl font-medium">Correções — {d.titulo}</h1><p>Escala: {d.escala.minimo} a {d.escala.maximo}. A correção pode reduzir uma nota registrada incorretamente; o histórico permanece preservado.</p>
     <IdentificacaoAvaliacao dados={d.identificacao} />
-    {d.pagina === 1 && <ProporCorrecao key={`${d.versaoEsperada}:${d.vigente.origemHash}`} lancamentoId={lancamentoId} origemHash={d.vigente.origemHash} versaoEsperada={d.versaoEsperada} notas={d.vigente.notas} />}
+    {/* Em qualquer página e sem key de versão (docs/43 §6 item 3): a proposta é sobre a nota vigente, que não muda
+        com a página do histórico; navegar ou receber a versão nova depois de registrar não apaga o que foi digitado. */}
+    <ProporCorrecao lancamentoId={lancamentoId} origemHash={d.vigente.origemHash} versaoEsperada={d.versaoEsperada} notas={d.vigente.notas} />
     <h2 className="text-xl font-medium">Histórico de propostas</h2>{!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4"><h3 className="font-medium">Proposta {p.versao} — {p.decisao ? p.decisao.aprovada ? "Aplicada" : "Rejeitada" : "Aguardando decisão"}</h3>
       <p>{p.autor.nome} · {formatarInstanteExibicao(p.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC)</p><p className="whitespace-pre-wrap">{p.motivo}</p>

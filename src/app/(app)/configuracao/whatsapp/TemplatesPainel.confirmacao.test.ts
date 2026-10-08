@@ -19,6 +19,9 @@ vi.mock("react", async (original) => {
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ salvarTemplateWhatsApp: m.salvar, sincronizarTemplatesMeta: vi.fn(), submeterTemplateMeta: vi.fn() }));
+// O aviso de saída (#155) é um efeito; sem DOM os efeitos não rodam. Ele tem teste próprio em
+// TemplatesPainel.aviso.test.ts e src/lib/aviso-ao-sair.test.ts.
+vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: (): void => {} }));
 
 import { TemplatesPainel } from "./TemplatesPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";

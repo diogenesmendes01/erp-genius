@@ -14,6 +14,8 @@ vi.mock("./Formularios", () => ({
 vi.mock("../../Identificacao", () => ({ IdentificacaoAvaliacao: () => null }));
 
 import Page from "./page";
+import { LancarNotas } from "./Formularios";
+import { identidadeNoReact } from "@/test/tela-sem-dom";
 
 const dado = {
   contexto: {
@@ -23,6 +25,7 @@ const dado = {
   },
   identificacao: {}, versaoEsperada: 1, oficial: false, podeGerirDesignacao: true, podeLancar: true,
   realizadores: [], registradorId: "professor", pagina: 1, temProxima: true,
+  anterior: { realizadaEm: new Date("2026-10-01T02:30:00.000Z"), notas: [{ habilidade: "FALA", nota: "8", comentarioAluno: "Bom" }] },
   versoes: [{
     id: "versao", versao: 1, realizadaEm: new Date("2026-10-01T02:30:00.000Z"), criadaEm: new Date("2026-10-01T03:30:00.000Z"),
     notas: [{ habilidade: "FALA", nota: "8", comentarioAluno: "Bom" }], submetida: true, conteudoHash: "a".repeat(64),
@@ -50,9 +53,8 @@ describe("lançamentos de avaliação", () => {
     const html = renderToStaticMarkup(await renderizar({ fuso: "UTC" }));
     expect(html).toMatch(/30\/09\/2026.*20:30/);
     expect(html).toContain("Fuso de exibição do histórico: America/Costa_Rica (origem UTC).");
-    expect(html).toContain("Fuso para informar horários");
-    expect(html).toContain('name="fuso"');
-    expect(html).toContain('value="UTC"');
+    // O fuso de entrada mora no formulário (docs/43 §6 item 3): a página só passa o inicial, sem <form method="get">.
+    expect(html).not.toContain('method="get"');
     expect(html).toContain("entrada=UTC");
     expect(html).toContain("anterior=2026-10-01T02:30");
     expect(html).toContain('href="?fuso=UTC&amp;pagina=2"');
@@ -65,7 +67,6 @@ describe("lançamentos de avaliação", () => {
     const html = renderToStaticMarkup(await renderizar({ fuso: "America/Sao_Paulo" }));
     expect(html).toMatch(/30\/09\/2026.*23:30/);
     expect(html).toContain("Fuso de exibição do histórico: America/Sao_Paulo (origem UTC).");
-    expect(html).toContain('value="America/Sao_Paulo"');
     expect(html).toContain("entrada=America/Sao_Paulo");
     expect(html).toContain("anterior=2026-09-30T23:30");
     expect(mocks.fuso).not.toHaveBeenCalled();
@@ -90,14 +91,30 @@ describe("lançamentos de avaliação", () => {
   it("sem fuso na URL, usa o fuso institucional configurado como entrada padrão", async () => {
     mocks.fuso.mockResolvedValue("America/Sao_Paulo");
     const html = renderToStaticMarkup(await renderizar({}));
-    expect(html).toContain('value="America/Sao_Paulo"');
     expect(html).toContain("entrada=America/Sao_Paulo");
   });
 
   it("sem fuso na URL e sem fuso institucional configurado, recorre a UTC", async () => {
     mocks.fuso.mockResolvedValue(null);
     const html = renderToStaticMarkup(await renderizar({}));
-    expect(html).toContain('value="UTC"');
     expect(html).toContain("entrada=UTC");
+  });
+
+  // docs/43 §6 item 3 (docs/42 L1314): antes, a key do LancarNotas tinha a versão e o fuso, e o formulário só
+  // existia na página 1 do histórico — aplicar o fuso, mudar de página ou receber a versão nova apagava as notas.
+  it("o formulário tem a mesma identidade no React ao mudar a página do histórico, o fuso da URL e a versão: nada remonta", async () => {
+    const base = identidadeNoReact(await renderizar({ fuso: "UTC" }), LancarNotas);
+    expect(base).not.toBeNull();
+    expect(base!.key).toBeNull();
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 2, versoes: [] } });
+    expect(identidadeNoReact(await renderizar({ fuso: "UTC", pagina: "2" }), LancarNotas)).toEqual(base);
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, versaoEsperada: 2 } });
+    expect(identidadeNoReact(await renderizar({ fuso: "America/Sao_Paulo" }), LancarNotas)).toEqual(base);
+  });
+
+  it("na página 2 do histórico o formulário continua e parte da última versão (não da primeira da página)", async () => {
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 2, versoes: [] } });
+    const html = renderToStaticMarkup(await renderizar({ fuso: "UTC", pagina: "2" }));
+    expect(html).toContain("entrada=UTC; anterior=2026-10-01T02:30");
   });
 });

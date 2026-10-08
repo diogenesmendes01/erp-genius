@@ -45,7 +45,9 @@ export default async function Page({
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · avaliação {d.identificacao.codigoAvaliacao}.</p>
     <section className="rounded border p-4"><h2 className="font-medium">Agenda preservada</h2><p>Professor atual: {d.encontro.professorNome}.</p><p>Horário: {periodo(d.encontro.inicio, d.encontro.fim, d.encontro.fusoOrigem)}.</p><p>Situação: {rotular(STATUS_ENCONTRO_LABEL, d.encontro.status)}.</p></section>
     <p>A aprovação atualiza o responsável por esta avaliação, preservando turma, horário, contrato e oportunidade. Outra pessoa da gestão precisa decidir.</p>
-    {(d.podePropor || d.previa) && <Formulario key={substitutoId ?? "sem-substituto"} reservaId={reservaId} base={base} professores={d.professores} selecionado={substitutoId} previa={d.previa} />}
+    {/* Sem key do substituto (docs/43 §6 item 3; docs/42 L1814): trocar o professor faz router.replace com o novo
+        substitutoId, e o formulário continua montado — motivo e evidência digitados não se perdem. */}
+    {(d.podePropor || d.previa) && <Formulario reservaId={reservaId} base={base} professores={d.professores} selecionado={substitutoId} previa={d.previa} />}
     <h2 className="font-medium">Propostas e decisões</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta de substituição foi registrada.</EstadoVazio>}
     {d.itens.map((item) => <article key={item.id} className="space-y-2 rounded border p-4">

@@ -8,6 +8,8 @@ vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFuso
 vi.mock("./Formularios", () => ({ ProporCorrecao: () => null }));
 
 import Page from "./page";
+import { ProporCorrecao } from "./Formularios";
+import { identidadeNoReact } from "@/test/tela-sem-dom";
 
 const dado = {
   alocacaoId: "alocacao", codigoAvaliacao: "final", titulo: "Avaliação final", escala: { minimo: 0, maximo: 10 },
@@ -37,6 +39,19 @@ describe("correções de nota", () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ lancamentoId: "lancamento" }), searchParams: Promise.resolve({}) }));
     expect(html).toMatch(/01\/10\/2026.*02:30/);
     expect(html).toContain("UTC; origem UTC");
+  });
+
+  // docs/43 §6 item 3: a proposta de correção só existia na página 1 do histórico e tinha a versão na key —
+  // mudar de página ou receber a versão nova depois de registrar apagava notas, comentários e motivo.
+  it("o formulário de proposta tem a mesma identidade no React em qualquer página do histórico e depois de uma versão nova", async () => {
+    const renderizar = (pagina?: string) => Page({ params: Promise.resolve({ lancamentoId: "lancamento" }), searchParams: Promise.resolve(pagina ? { pagina } : {}) });
+    const base = identidadeNoReact(await renderizar(), ProporCorrecao);
+    expect(base).not.toBeNull();
+    expect(base!.key).toBeNull();
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 2, propostas: [] } });
+    expect(identidadeNoReact(await renderizar("2"), ProporCorrecao)).toEqual(base);
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, versaoEsperada: 3 } });
+    expect(identidadeNoReact(await renderizar(), ProporCorrecao)).toEqual(base);
   });
 
   it("não consulta correções ou preferência antes da guarda", async () => {

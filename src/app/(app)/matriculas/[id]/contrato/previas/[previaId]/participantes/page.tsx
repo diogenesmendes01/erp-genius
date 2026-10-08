@@ -13,7 +13,7 @@ import { EvidenciaParticipantes } from "./Evidencia";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
-import { botaoClasses } from "@/components/Botao";
+import { SeletorMaioridade } from "./SeletorMaioridade";
 import { EstadoVazio } from "@/components/EstadoVazio";
 const Historico = z.object({ maioridade: ConferirParticipantesSchema.innerType().shape.maioridade,
   participantes: z.array(z.object({ papel: RegraAssinaturaSchema.shape.papel, identidade: IdentidadeSignatarioSchema,
@@ -41,10 +41,12 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     <VoltarPara href={base} para="Conteúdo da prévia" /><h1 className="text-2xl">Conferir participantes do contrato</h1>
     <p>Identifique as pessoas exigidas pelo modelo e registre a representação aplicável. Esta conferência não envia convites nem comprova assinatura.</p>
     <nav className="flex gap-4"><Link className="underline" href={`/matriculas/${id}/pagador`}>Conferir cadastro do pagador</Link><Link className="underline" href="/secretaria">Cadastro e documentos na Secretaria</Link></nav>
-    <form className="flex flex-wrap items-end gap-3" method="get"><label>Classificação de maioridade conferida<select name="maioridade" defaultValue={maioridade ?? ""} className="block rounded border p-2"><option value="">Ainda não conferida / não exigida pelas regras</option><option value="MAIOR">Maior de idade</option><option value="MENOR">Menor de idade</option></select></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Atualizar papéis exigidos</button></form>
+    <SeletorMaioridade maioridade={maioridade} />
     {formulario.ok && formulario.dado ? <>
       <EvidenciaParticipantes matriculaId={id} />
-      <FormularioParticipantes key={`${formulario.dado.versaoEsperada}:${maioridade ?? "pendente"}`} dados={formulario.dado} />
+      {/* Sem key de versão ou de maioridade (docs/43 §6 item 3): trocar a classificação, mudar a página do
+          histórico ou registrar uma versão não remonta o formulário nem apaga o que foi digitado. */}
+      <FormularioParticipantes dados={formulario.dado} />
     </> : formulario.ok ? <p role="status">Conferência indisponível.</p> : <p role="alert">{formulario.erro}</p>}
     <section className="space-y-3"><h2 className="text-xl">Histórico das conferências</h2>
       {!historico.ok ? <p role="alert">{historico.erro}</p> : historico.dado && <>
