@@ -1,13 +1,13 @@
 "use client";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { conferirParticipantesAditivo, consultarFormularioParticipantesAditivo } from "@/server/contratos/aditivo-participantes";
 import { EvidenciaSeletor, type EvidenciaDisponivel } from "./EvidenciaSeletor";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -17,24 +17,25 @@ const campo = "mt-1 block w-full rounded border p-2";
 
 export function ParticipantesFormulario({ matriculaId, propostaId }: { matriculaId: string; propostaId: string }) {
   const router = useRouter();
-  const [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
+  // Dois grupos de ação: a consulta (só leitura; sem chave) e o registro (chave estável por conteúdo).
+  const consulta = useAcaoCliente({ idempotente: false }), registro = useAcaoCliente({ idempotente: true });
+  const pendente = consulta.ocupado || registro.ocupado;
   const [maioridade, setMaioridade] = useState<"MAIOR" | "MENOR" | null>(null);
   const [formulario, setFormulario] = useState<Formulario | null>(null);
   const [evidencias, setEvidencias] = useState<Record<string, EvidenciaDisponivel | null>>({});
   const tentativa = useRef<{ conteudo: string; chave: string } | null>(null);
 
-  function carregar(paginaDocumentos = 1) {
-    setMensagem(""); iniciar(async () => {
-      try {
-        const r = await consultarFormularioParticipantesAditivo({ matriculaId, propostaId, maioridade, paginaDocumentos });
-        if (!r.ok) { setMensagem(r.erro); return; }
-        if (!r.dado) { setMensagem("Não foi possível carregar a conferência."); return; }
-        if (formulario && (r.dado.propostaHash !== formulario.propostaHash || r.dado.versaoEsperada !== formulario.versaoEsperada)) {
-          setMensagem("A conferência mudou durante a consulta. Reabra o formulário para revisar a versão atual."); return;
-        }
-        setFormulario(r.dado);
-      } catch { setMensagem("Não foi possível consultar os signatários. Tente novamente."); }
-    });
+  async function carregar(paginaDocumentos = 1) {
+    registro.limpar();
+    const d = await consulta.executar(() => consultarFormularioParticipantesAditivo({ matriculaId, propostaId, maioridade, paginaDocumentos }));
+    // Falha de transporte numa consulta: nada foi gravado, basta repetir (mensagem própria, preservada).
+    if (d?.tipo === "incerto") { consulta.setErro("Não foi possível consultar os signatários. Tente novamente."); return; }
+    if (d?.tipo !== "ok") return;
+    if (!d.dado) { consulta.setErro("Não foi possível carregar a conferência."); return; }
+    if (formulario && (d.dado.propostaHash !== formulario.propostaHash || d.dado.versaoEsperada !== formulario.versaoEsperada)) {
+      consulta.setErro("A conferência mudou durante a consulta. Reabra o formulário para revisar a versão atual."); return;
+    }
+    setFormulario(d.dado);
   }
   const evidencia = (chave: string, titulo: string) => <EvidenciaSeletor nome={chave} titulo={titulo}
     documentos={formulario?.documentos ?? []} selecionada={evidencias[chave] ?? null}
@@ -50,7 +51,8 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
       </select>
     </label>
     {!formulario ? <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => carregar()}>Consultar exigências e participantes</button>
-      : <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); setMensagem(""); }}>Reabrir formulário e descartar preenchimento</button>}
+      : <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); consulta.limpar(); registro.limpar(); }}>Reabrir formulário e descartar preenchimento</button>}
+    <FeedbackAcao erro={consulta.erro} />
     {formulario && <>
       <p>Conferência atual: versão {formulario.versaoEsperada}. Este registro produzirá uma nova versão.</p>
       {formulario.plano.pendencias.map(p => <p role="alert" key={p}>{p}</p>)}
@@ -59,7 +61,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
       {!formulario.documentos.length && (formulario.paginaDocumentos > 1
         ? <EstadoVazio acao={<button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => carregar(1)}>Ir para a primeira página</button>}>Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes de concluir.</EstadoVazio>
         : <EstadoVazio>Nenhum documento disponível. Cadastre as evidências na documentação da matrícula antes de concluir.</EstadoVazio>)}
-      <form className="space-y-4" onSubmit={e => {
+      <form className="space-y-4" onSubmit={async e => {
         e.preventDefault(); const fd = new FormData(e.currentTarget), texto = (chave: string) => String(fd.get(chave) ?? "").trim();
         const participantes = formulario.participantesSugeridos.map(p => ({ papel: p.papel,
           identidade: p.automatico ? p.identidade! : { nome: texto(`${p.papel}:nome`), email: texto(`${p.papel}:email`), documento: texto(`${p.papel}:documento`) },
@@ -71,13 +73,11 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         const conteudo = JSON.stringify(dados);
         if (!tentativa.current || tentativa.current.conteudo !== conteudo) tentativa.current = { conteudo, chave: crypto.randomUUID() };
         const chaveIdempotencia = tentativa.current.chave;
-        setMensagem(""); iniciar(async () => {
-          try {
-            const r = await conferirParticipantesAditivo({ ...dados, chaveIdempotencia });
-            if (!r.ok) { setMensagem(r.erro); return; }
-            setMensagem(`Conferência registrada · versão ${r.dado?.versao}.`); setFormulario(null); setEvidencias({}); tentativa.current = null; router.refresh();
-          } catch { setMensagem(MSG_RESULTADO_INCERTO); }
-        });
+        consulta.limpar();
+        const d = await registro.executar(() => conferirParticipantesAditivo({ ...dados, chaveIdempotencia }),
+          (dado) => `Conferência registrada · versão ${dado?.versao}.`);
+        if (d?.tipo !== "ok") return;
+        setFormulario(null); setEvidencias({}); tentativa.current = null; router.refresh();
       }}>
         {maioridade && <fieldset className="space-y-3 rounded border p-3" disabled={pendente}><legend>Critério de maioridade</legend>
           <label className="block">Regra e conferência realizadas<CampoTexto className={campo} name="criterio" required minLength={5} maxLength={2000} /></label>
@@ -98,6 +98,8 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>
     </>}
-    <MensagemStatus texto={mensagem} />
+    {/* Logo abaixo do botão de registro (último item do formulário); fora do bloco condicional porque o
+        sucesso fecha o formulário e a confirmação precisa continuar visível. */}
+    <FeedbackAcao erro={registro.erro} sucesso={registro.sucesso} />
   </section>;
 }
