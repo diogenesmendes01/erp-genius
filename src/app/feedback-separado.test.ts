@@ -3,6 +3,7 @@ import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import * as MENSAGENS from "@/lib/mensagens";
+import * as ACAO_CLIENTE from "@/lib/acao-cliente";
 
 // Trava do feedback separado (docs/43-medicao-auditoria-ux.md §6 item 2; docs/42-auditoria-frontend-ux.md E3).
 // Havia ~50 formulários com UMA mensagem para sucesso e erro — `setMensagem(r.ok ? "Salvo." : r.erro)`
@@ -23,20 +24,28 @@ import * as MENSAGENS from "@/lib/mensagens";
 //    constante MSG_*INCERT*, variável de catch e parâmetro de `.catch`, nome de erro, texto que começa
 //    como erro) e o que não dá para seguir (prop do componente, parâmetro de função anônima, função
 //    passada adiante, setter/callback de mensagem passado como valor a algo que não é `on<Palavra>`).
+//    O desfecho do executor (`.mensagem`) é reconhecido pelo import do módulo (com qualquer nome local), por
+//    `.executar`, pelas atribuições do `let` e pelo que uma função local devolve; componente embrulhado em
+//    memo/forwardRef continua componente, e `on<Palavra>` desestruturado de qualquer parâmetro é conferido.
 // B. REGIÃO DE STATUS não recebe erro: <MensagemStatus texto/progresso>, <FeedbackAcao sucesso/progresso>
 //    (também renomeados no import, por namespace, por constante, por createElement e por cloneElement),
-//    e tudo o que está dentro de elemento com role="status"/aria-live="polite" — expressões e texto fixo,
-//    em qualquer profundidade, menos dentro de um role="alert". Spread de props e uso do componente como
-//    valor falham fechado.
+//    e tudo o que está dentro de região nativa — role status/log (literal, constante ou ternário),
+//    aria-live polite, <output> — em qualquer profundidade (inclusive JSX dentro de uma expressão e
+//    dangerouslySetInnerHTML), menos dentro de um role="alert". Papel não literal ou spread opaco num
+//    elemento nativo: tratado como região (falha fechada). Spread de props e uso do componente como valor
+//    falham fechado.
 // C. O sucesso passado a `.executar(acao, sucesso)` (useAcaoCliente) não é erro.
 // D. Nada recarrega a página: `.reload`, `{ reload }`, `history.go` (também por alias e `{ go }`),
 //    qualquer atribuição (inclusive composta) a `location` ou a um campo dela — salvo destino literal que
-//    não lê a própria página —, `location.assign/replace` com a própria página (`location…`, `document.URL`).
+//    não lê a própria página —, `location.assign/replace` com a própria página (`location…`, `document.URL`),
+//    `window.open` da própria página na mesma janela. Campo computado de location/history/window e
+//    location passada como valor (argumento, spread, objeto) falham fechado.
 // E. Arquivo que não analisa (erro de sintaxe) e `useState` sem desestruturar falham fechado.
 //
-// Exceções: arquivo + TIPO do achado (erro × opaco) + trecho exato (espaços normalizados) + motivo; cada
-// uma casa com exatamente um achado — exceção dada a um valor "opaco" não isenta um erro novo no mesmo
-// trecho —, e a lista é comparada com uma cópia literal (acrescentar exceção exige mexer nos dois lugares).
+// Exceções: arquivo + TIPO do achado (erro × opaco) + trecho exato (espaços normalizados) + motivo; a do
+// tipo erro lista também as FONTES de erro que aceita (o achado leva todas as do fluxo): uma fonte nova no
+// mesmo trecho não casa. Cada uma casa com exatamente um achado, e a lista é comparada com uma cópia
+// literal (acrescentar exceção exige mexer nos dois lugares).
 
 const RAIZES = ["src/app", "src/components"];
 
@@ -58,6 +67,20 @@ export const FABRICAS_DE_ELEMENTO = ["createElement", "jsx", "jsxs", "jsxDEV"];
 export const FUNCOES_DO_EXECUTOR = ["executar", "executarAcaoCliente"];
 /** Campos lidos de `document` que são a própria página. */
 export const CAMPOS_DA_PROPRIA_PAGINA = ["URL", "documentURI", "baseURI", "location"];
+/** Módulo do executor: o import dele (com qualquer nome local) é reconhecido pelo nome original. */
+export const MODULO_DO_EXECUTOR = "@/lib/acao-cliente";
+/** Papéis ARIA de região polite (role="status" e role="log" têm aria-live="polite" implícito). */
+export const PAPEIS_POLITE = ["status", "log"];
+/** Elementos nativos que já são região polite sem atributo (`<output>` tem role="status" implícito). */
+export const ELEMENTOS_POLITE = ["output"];
+/** Alvos do window.open que trocam a própria página (os outros abrem outra janela). */
+export const ALVOS_DA_PROPRIA_JANELA = ["_self", "_top", "_parent"];
+/** Objetos globais donde sai o window.open (`open(…)` solto também conta). */
+export const OBJETOS_DA_JANELA = ["window", "globalThis", "self"];
+/** Objetos globais cujo campo computado pode ser a recarga (`location[x]()`), e por isso falham fechado. */
+export const OBJETOS_DE_NAVEGACAO = ["location", "history", "window", "globalThis", "document"];
+/** Embrulhos de componente: a função passada a eles continua sendo o componente (props no 1º parâmetro). */
+export const EMBRULHOS_DE_COMPONENTE = ["memo", "forwardRef"];
 /** Passos de valor seguidos antes de desistir (falha fechada). */
 const PROFUNDIDADE_MAXIMA = 12;
 
@@ -75,7 +98,11 @@ const normaliza = (t: string) => t.replace(/\s+/g, " ").trim();
 
 /** `erro`: o valor pode ser erro (ou recarrega a página); `opaco`: não dá para provar que não é (falha fechada). */
 export type TipoAchado = "erro" | "opaco";
-export type Achado = { arquivo: string; trecho: string; tipo: TipoAchado; problema: string };
+/**
+ * `fontes`: num achado `erro`, TODAS as fontes de erro achadas no fluxo do valor (o texto de cada nó), em
+ * ordem; a exceção do tipo `erro` lista as fontes que aceita, e uma fonte nova no mesmo trecho não casa.
+ */
+export type Achado = { arquivo: string; trecho: string; tipo: TipoAchado; problema: string; fontes: string[] };
 type Veredito = { tipo: "erro" | "opaco"; motivo: string } | null;
 
 function desembrulha(e: ts.Expression): ts.Expression {
@@ -173,8 +200,13 @@ function ehNome(n: ts.Identifier): boolean {
  */
 function nomeDaFuncao(f: ts.Node): ts.Identifier | null {
   if (ts.isFunctionDeclaration(f)) return f.name ?? null;
-  const p = f.parent;
-  if (p && ts.isVariableDeclaration(p) && p.initializer === f && ts.isIdentifier(p.name)) return p.name;
+  // `const Thread = memo(function Thread(…) {…})`, `forwardRef((…) => …)`, `React.memo(forwardRef(…))`:
+  // o embrulho não tira o nome — é o da constante que recebe a chamada (ou o da própria expressão).
+  let alvo: ts.Node = f;
+  let p = f.parent;
+  while (p && ts.isCallExpression(p) && p.arguments[0] === alvo && EMBRULHOS_DE_COMPONENTE.includes(nomeDoCallee(p.expression))) { alvo = p; p = p.parent; }
+  if (p && ts.isVariableDeclaration(p) && p.initializer === alvo && ts.isIdentifier(p.name)) return p.name;
+  if (alvo !== f && ts.isFunctionExpression(f) && f.name) return f.name;
   return null;
 }
 
@@ -242,27 +274,31 @@ function ehDasProps(id: ts.Identifier, profundidade = 0): boolean {
 // ---------------------------------------------------------------------------------------------------
 // O valor pode ser erro? Leitura sintática (qualquer ponto da expressão) + fluxo do valor.
 // ---------------------------------------------------------------------------------------------------
-function erroSintatico(raiz: ts.Node): string | null {
-  let achado: string | null = null;
+type FonteDeErro = { no: ts.Node; motivo: string };
+/**
+ * Todas as fontes de erro que aparecem na expressão, em pré-ordem (a primeira é a de sempre; as outras
+ * servem para a exceção do tipo `erro` saber exatamente o que aceita).
+ */
+function errosSintaticos(raiz: ts.Node): FonteDeErro[] {
+  const achados: FonteDeErro[] = [];
   const visita = (n: ts.Node): void => {
-    if (achado) return;
-    if (ts.isPropertyAccessExpression(n) && PROPRIEDADE_DE_ERRO.test(n.name.text)) { achado = `lê .${n.name.text}`; return; }
+    if (ts.isPropertyAccessExpression(n) && PROPRIEDADE_DE_ERRO.test(n.name.text)) achados.push({ no: n, motivo: `lê .${n.name.text}` });
     if (ts.isElementAccessExpression(n)) {
       const a = desembrulha(n.argumentExpression);
-      if (ts.isStringLiteralLike(a) && PROPRIEDADE_DE_ERRO.test(a.text)) { achado = `lê ["${a.text}"]`; return; }
+      if (ts.isStringLiteralLike(a) && PROPRIEDADE_DE_ERRO.test(a.text)) achados.push({ no: n, motivo: `lê ["${a.text}"]` });
     }
     if ((ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isJsxText(n)) && textoDeErro(n.text)) {
-      achado = `texto de erro "${normaliza(n.text).slice(0, 40)}"`; return;
+      achados.push({ no: n, motivo: `texto de erro "${normaliza(n.text).slice(0, 40)}"` });
     }
     if (ts.isIdentifier(n) && !ehNome(n)) {
-      if (CONSTANTE_DE_INCERTEZA.test(n.text)) { achado = `usa ${n.text}`; return; }
-      if (NOME_DE_ERRO.test(n.text)) { achado = `usa ${n.text}`; return; }
-      if (resolver(n)?.tipo === "catch") { achado = `usa a variável do catch (${n.text})`; return; }
+      if (CONSTANTE_DE_INCERTEZA.test(n.text)) achados.push({ no: n, motivo: `usa ${n.text}` });
+      else if (NOME_DE_ERRO.test(n.text)) achados.push({ no: n, motivo: `usa ${n.text}` });
+      else if (resolver(n)?.tipo === "catch") achados.push({ no: n, motivo: `usa a variável do catch (${n.text})` });
     }
     ts.forEachChild(n, visita);
   };
   visita(raiz);
-  return achado;
+  return achados;
 }
 
 /** Campo lido em `a.b` / `a["b"]` (null quando o índice é computado). */
@@ -283,11 +319,26 @@ function vemDoExecutor(e: ts.Expression, prof = 0): boolean {
   const x = desembrulha(e);
   if (ts.isCallExpression(x)) {
     const c = desembrulha(x.expression);
-    return FUNCOES_DO_EXECUTOR.includes(ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : "");
+    if (ts.isPropertyAccessExpression(c)) return FUNCOES_DO_EXECUTOR.includes(c.name.text); // acao.executar(…), AC.executarAcaoCliente(…)
+    if (!ts.isIdentifier(c)) return false;
+    const d = resolver(c);
+    // Import do módulo do executor, com qualquer nome local: vale o nome original (`executarAcaoCliente as rodar`).
+    if (d?.tipo === "import") {
+      const esp = d.nome.parent;
+      const decl = esp && ts.isImportSpecifier(esp) ? esp.parent.parent.parent : null;
+      const modulo = decl && ts.isImportDeclaration(decl) && ts.isStringLiteral(decl.moduleSpecifier) ? decl.moduleSpecifier.text : null;
+      return modulo === MODULO_DO_EXECUTOR && FUNCOES_DO_EXECUTOR.includes((esp as ts.ImportSpecifier).propertyName?.text ?? c.text);
+    }
+    // Função local que devolve o desfecho (`const rodar = () => executarAcaoCliente(…)`).
+    const f = funcaoLocal(c);
+    if (f) return retornos(f).some((r: ts.Expression) => vemDoExecutor(r, prof + 1));
+    return !d && FUNCOES_DO_EXECUTOR.includes(c.text); // nome livre (fonte virtual sem import)
   }
   if (ts.isIdentifier(x)) {
     const d = resolver(x);
-    return d?.tipo === "variavel" && !d.elemento && !!d.no.initializer && vemDoExecutor(d.no.initializer, prof + 1);
+    if (d?.tipo !== "variavel" || d.elemento) return false;
+    const { fontes } = origensDe(d, x.text); // inicializador e atribuições do `let`
+    return fontes.some((f: ts.Expression) => vemDoExecutor(f, prof + 1));
   }
   return false;
 }
@@ -359,6 +410,39 @@ function ehTratadorDeFalha(f: ts.Node): boolean {
   return (c.name.text === "catch" && p.arguments[0] === f) || (c.name.text === "then" && p.arguments[1] === f);
 }
 
+/**
+ * Estado de uma verificação: os nós já vistos (contra ciclo) e, no modo coleta, a lista onde entram TODAS as
+ * fontes de erro do fluxo (o texto de cada nó). No modo coleta nenhum veredito interrompe a busca.
+ */
+type Ctx = { vistos: Set<ts.Node>; fontes: string[] | null };
+const novoCtx = (coleta = false): Ctx => ({ vistos: new Set<ts.Node>(), fontes: coleta ? [] : null });
+
+/** As fontes de erro do valor, todas (para ancorar a exceção do tipo `erro`). */
+export function fontesDeErro(e: ts.Expression): string[] {
+  const ctx = novoCtx(true);
+  verificar(e, 0, ctx);
+  return ctx.fontes ?? [];
+}
+
+/** Expressões de dentro de um JSX (atributos e filhos, em qualquer profundidade), menos o que está num role="alert". */
+function expressoesDoJsx(x: ts.JsxElement | ts.JsxSelfClosingElement | ts.JsxFragment): { expr: ts.Expression; pedaco: boolean }[] {
+  const saida: { expr: ts.Expression; pedaco: boolean }[] = [];
+  const abertura = ts.isJsxElement(x) ? x.openingElement : ts.isJsxSelfClosingElement(x) ? x : null;
+  if (abertura) {
+    for (const a of abertura.attributes.properties) {
+      if (ts.isJsxAttribute(a) && a.name.getText() === "role" && a.initializer && ts.isStringLiteral(a.initializer) && a.initializer.text === "alert") return [];
+    }
+    for (const a of abertura.attributes.properties) {
+      if (ts.isJsxSpreadAttribute(a)) saida.push({ expr: a.expression, pedaco: true });
+      else if (a.initializer && ts.isJsxExpression(a.initializer) && a.initializer.expression) saida.push({ expr: a.initializer.expression, pedaco: true });
+    }
+  }
+  if (!ts.isJsxSelfClosingElement(x)) for (const f of x.children) {
+    if (ts.isJsxExpression(f) && f.expression) saida.push({ expr: f.expression, pedaco: false });
+    else if (ts.isJsxElement(f) || ts.isJsxSelfClosingElement(f) || ts.isJsxFragment(f)) saida.push({ expr: f, pedaco: false });
+  }
+  return saida;
+}
 
 /**
  * O valor pode ser erro (veredito "erro") ou não dá para seguir de onde ele vem ("opaco")? `soErro`: o
@@ -366,14 +450,20 @@ function ehTratadorDeFalha(f: ts.Node): boolean {
  * objeto de onde se lê um campo) — aí dado de origem desconhecida (número, nome, data) é normal e só o
  * erro acusa.
  */
-export function verificar(e: ts.Expression, prof = 0, vistos = new Set<ts.Node>(), soErro = false): Veredito {
-  const opaco = (motivo: string): Veredito => (soErro ? null : { tipo: "opaco", motivo });
+export function verificar(e: ts.Expression, prof = 0, ctx: Ctx = novoCtx(), soErro = false): Veredito {
+  const opaco = (motivo: string): Veredito => (soErro || ctx.fontes ? null : { tipo: "opaco", motivo });
+  /** Erro achado no nó `no`: no modo coleta, anota e segue procurando; senão, é o veredito. */
+  const erro = (no: ts.Node, motivo: string): Veredito => {
+    if (!ctx.fontes) return { tipo: "erro", motivo };
+    const t = normaliza(no.getText());
+    if (!ctx.fontes.includes(t)) ctx.fontes.push(t);
+    return null;
+  };
   if (prof > PROFUNDIDADE_MAXIMA) return opaco("cadeia de valores longa demais");
-  if (vistos.has(e)) return null;
-  vistos.add(e);
-  const sint = erroSintatico(e);
-  if (sint) return { tipo: "erro", motivo: sint };
-  const seguir = (x: ts.Expression, pedaco = soErro) => verificar(x, prof + 1, vistos, pedaco);
+  if (ctx.vistos.has(e)) return null;
+  ctx.vistos.add(e);
+  for (const s of errosSintaticos(e)) { const v = erro(s.no, s.motivo); if (v) return v; }
+  const seguir = (x: ts.Expression, pedaco = soErro) => verificar(x, prof + 1, ctx, pedaco);
   const x = desembrulha(e);
   if (ts.isConditionalExpression(x)) return seguir(x.whenTrue) ?? seguir(x.whenFalse);
   if (ts.isBinaryExpression(x)) {
@@ -387,12 +477,17 @@ export function verificar(e: ts.Expression, prof = 0, vistos = new Set<ts.Node>(
     for (const s of x.templateSpans) { const v = seguir(s.expression, true); if (v) return v; }
     return null;
   }
-  if (ts.isIdentifier(x)) return identificador(x, seguir, opaco);
+  // JSX dentro do valor (`{x && <span>{x}</span>}`): cada expressão de dentro é seguida, como na região.
+  if (ts.isJsxElement(x) || ts.isJsxSelfClosingElement(x) || ts.isJsxFragment(x)) {
+    for (const s of expressoesDoJsx(x)) { const v = seguir(s.expr, s.pedaco || soErro); if (v) return v; }
+    return null;
+  }
+  if (ts.isIdentifier(x)) return identificador(x, seguir, opaco, erro);
   if (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) {
     const r = raizDe(x);
     if (r && ehDasProps(r)) return opaco(`${r.text} vem das props do componente`);
     const campo = campoLido(x);
-    if (campo === "mensagem" && vemDoExecutor(x.expression)) return { tipo: "erro", motivo: "lê .mensagem de um desfecho do executor (erro ou incerto)" };
+    if (campo === "mensagem" && vemDoExecutor(x.expression)) { const v = erro(x, "lê .mensagem de um desfecho do executor (erro ou incerto)"); if (v) return v; }
     // Campo de objeto local: segue de onde a raiz vem (o objeto literal, o que a função local devolve).
     const alvo = desembrulha(x.expression);
     if (ts.isIdentifier(alvo)) {
@@ -429,18 +524,23 @@ export function verificar(e: ts.Expression, prof = 0, vistos = new Set<ts.Node>(
   return null;
 }
 
-function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: boolean) => Veredito, opaco: (motivo: string) => Veredito): Veredito {
+function identificador(
+  id: ts.Identifier,
+  seguir: (x: ts.Expression, pedaco?: boolean) => Veredito,
+  opaco: (motivo: string) => Veredito,
+  erro: (no: ts.Node, motivo: string) => Veredito,
+): Veredito {
   if (id.text === "undefined") return null;
   const d = resolver(id);
   if (!d || d.tipo === "funcao" || d.tipo === "import") return null;
-  if (d.tipo === "catch") return { tipo: "erro", motivo: `usa a variável do catch (${id.text})` };
+  if (d.tipo === "catch") return erro(id, `usa a variável do catch (${id.text})`);
   if (d.elemento) {
     // Desestruturado: a chave diz o que é (`{ erro: t }`); chave computada não é verificável; valor padrão também conta.
     const chave = d.elemento.propertyName ?? d.elemento.name;
     if (ts.isComputedPropertyName(chave)) return opaco(`${id.text} vem de chave computada`);
-    if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && PROPRIEDADE_DE_ERRO.test(chave.text)) return { tipo: "erro", motivo: `${id.text} é o campo "${chave.text}"` };
+    if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && PROPRIEDADE_DE_ERRO.test(chave.text)) return erro(id, `${id.text} é o campo "${chave.text}"`);
     if (ts.isIdentifier(chave) && chave.text === "mensagem" && d.tipo === "variavel" && d.no.initializer && vemDoExecutor(d.no.initializer)) {
-      return { tipo: "erro", motivo: `${id.text} é o .mensagem de um desfecho do executor` };
+      return erro(id, `${id.text} é o .mensagem de um desfecho do executor`);
     }
     if (d.elemento.initializer) { const v = seguir(d.elemento.initializer); if (v) return v; }
   }
@@ -455,7 +555,7 @@ function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: bo
     const { fontes, pedacos, chaves } = origensDe(d, id.text);
     if (chaves.includes(CHAVE_COMPUTADA)) return opaco(`${id.text} recebe valor por chave computada`);
     const chaveDeErro = chaves.find((c: string | typeof CHAVE_COMPUTADA): c is string => typeof c === "string" && PROPRIEDADE_DE_ERRO.test(c));
-    if (chaveDeErro) return { tipo: "erro", motivo: `${id.text} recebe o campo "${chaveDeErro}" por desestruturação` };
+    if (chaveDeErro) { const v = erro(id, `${id.text} recebe o campo "${chaveDeErro}" por desestruturação`); if (v) return v; }
     if (fontes.length === 0 && pedacos.length === 0) return opaco(`${id.text} sem valor verificável`);
     for (const f of fontes) { const v = seguir(f); if (v) return v; }
     for (const f of pedacos) { const v = seguir(f, true); if (v) return v; }
@@ -464,7 +564,7 @@ function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: bo
   // Parâmetro: o valor padrão conta sempre (a chamada sem o argumento usa ele).
   const parametro = d.funcao.parameters[d.indice];
   if (parametro?.initializer) { const v = seguir(parametro.initializer); if (v) return v; }
-  if (ehTratadorDeFalha(d.funcao)) return { tipo: "erro", motivo: `${id.text} é o erro recebido por .catch/.then` };
+  if (ehTratadorDeFalha(d.funcao)) return erro(id, `${id.text} é o erro recebido por .catch/.then`);
   // Função que é o valor de um atributo on<Palavra> (`onFeito={(msg) => …}`): quem a chama é o filho, e lá a chamada é conferida.
   if (vaiParaCallbackDeMensagem(d.funcao)) return null;
   if (ehComponente(d.funcao)) return opaco(`${id.text} é prop do componente`);
@@ -522,19 +622,19 @@ function vaiParaCallbackDeMensagem(n: ts.Node): boolean {
 export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX);
   const diagnosticos = (sf as unknown as { parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics ?? [];
-  if (diagnosticos.length) return [{ arquivo, trecho: "(arquivo)", tipo: "opaco", problema: "não foi possível analisar o arquivo (erro de sintaxe): falha fechada" }];
+  if (diagnosticos.length) return [{ arquivo, trecho: "(arquivo)", tipo: "opaco", problema: "não foi possível analisar o arquivo (erro de sintaxe): falha fechada", fontes: [] }];
   const achados: Achado[] = [];
   const vistosTrecho = new Set<string>();
-  const acusa = (no: ts.Node, tipo: TipoAchado, problema: string) => {
+  const acusa = (no: ts.Node, tipo: TipoAchado, problema: string, fontes: string[] = []) => {
     const trecho = normaliza(no.getText(sf));
     const chave = `${no.pos}:${tipo}:${trecho}`;
     if (vistosTrecho.has(chave)) return;
     vistosTrecho.add(chave);
-    achados.push({ arquivo, trecho, tipo, problema });
+    achados.push({ arquivo, trecho, tipo, problema, fontes });
   };
-  /** Acusa um veredito (erro ou opaco) com o texto do problema de cada tipo. */
-  const acusaVeredito = (no: ts.Node, v: Veredito, seErro: (motivo: string) => string, seOpaco: (motivo: string) => string) => {
-    if (v?.tipo === "erro") acusa(no, "erro", seErro(v.motivo));
+  /** Acusa um veredito (erro ou opaco) do valor `expr`; no erro, com TODAS as fontes dele (para a exceção casar exatamente). */
+  const acusaVeredito = (no: ts.Node, v: Veredito, expr: ts.Expression, seErro: (motivo: string) => string, seOpaco: (motivo: string) => string) => {
+    if (v?.tipo === "erro") acusa(no, "erro", seErro(v.motivo), fontesDeErro(expr));
     else if (v?.tipo === "opaco") acusa(no, "opaco", seOpaco(v.motivo));
   };
 
@@ -572,7 +672,9 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   coletaAliases(sf); // segunda passada: constante de constante
 
   // Expressões que vão para uma região de status (para B e para marcar estados de mensagem).
-  const regioes: { no: ts.Node; expr: ts.Expression | null; soErro: boolean }[] = [];
+  // `presumida`: região nativa por papel não literal (spread/expressão opaca) — confere o erro, mas não faz de um
+  // estado "estado de mensagem" (o elemento pode nem ser região).
+  const regioes: { no: ts.Node; expr: ts.Expression | null; soErro: boolean; presumida?: boolean }[] = [];
   const atributoDe = (props: readonly string[], a: ts.JsxAttributeLike) => {
     if (ts.isJsxSpreadAttribute(a)) { regioes.push({ no: a, expr: null, soErro: false }); return; }
     const nome = a.name.getText(sf);
@@ -589,13 +691,73 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     }
     return null;
   };
+  /**
+   * Valores possíveis de um atributo: literal, ternário/`&&`/`||`/`??` de literais, constante, spread de objeto
+   * literal. null quando não dá para saber (expressão opaca, spread opaco): aí o elemento é tratado como região.
+   */
+  const valoresDe = (e: ts.Expression, prof = 0): string[] | null => {
+    if (prof > PROFUNDIDADE_MAXIMA) return null;
+    const x = desembrulha(e);
+    if (ts.isStringLiteralLike(x)) return [x.text];
+    if (x.kind === ts.SyntaxKind.NullKeyword || x.kind === ts.SyntaxKind.FalseKeyword || (ts.isIdentifier(x) && x.text === "undefined")) return [];
+    if (ts.isConditionalExpression(x)) { const a = valoresDe(x.whenTrue, prof + 1), b = valoresDe(x.whenFalse, prof + 1); return a && b ? [...a, ...b] : null; }
+    if (ts.isBinaryExpression(x) && x.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) return valoresDe(x.right, prof + 1);
+    if (ts.isBinaryExpression(x) && (x.operatorToken.kind === ts.SyntaxKind.BarBarToken || x.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) {
+      const a = valoresDe(x.left, prof + 1), b = valoresDe(x.right, prof + 1);
+      return a && b ? [...a, ...b] : null;
+    }
+    if (ts.isIdentifier(x)) {
+      const d = resolver(x);
+      return d?.tipo === "variavel" && !d.elemento && d.no.initializer ? valoresDe(d.no.initializer, prof + 1) : null;
+    }
+    return null;
+  };
+  const valoresDoAtributo = (attrs: ts.JsxAttributes, nome: string): string[] | null => {
+    const saida: string[] = [];
+    for (const a of attrs.properties) {
+      if (ts.isJsxSpreadAttribute(a)) {
+        const o = desembrulha(a.expression);
+        if (!ts.isObjectLiteralExpression(o)) return null; // spread opaco: pode trazer o atributo
+        for (const q of o.properties) {
+          if (ts.isSpreadAssignment(q) || (ts.isPropertyAssignment(q) && nomeDaChave(q.name) === null)) return null;
+          if (ts.isPropertyAssignment(q) && nomeDaChave(q.name) === nome) { const v = valoresDe(q.initializer); if (!v) return null; saida.push(...v); }
+          if (ts.isShorthandPropertyAssignment(q) && q.name.text === nome) { const v = valoresDe(q.name); if (!v) return null; saida.push(...v); }
+        }
+        continue;
+      }
+      if (a.name.getText(sf) !== nome || !a.initializer) continue;
+      if (ts.isStringLiteral(a.initializer)) saida.push(a.initializer.text);
+      else if (ts.isJsxExpression(a.initializer) && a.initializer.expression) { const v = valoresDe(a.initializer.expression); if (!v) return null; saida.push(...v); }
+    }
+    return saida;
+  };
+  /**
+   * Elemento nativo que é região polite ("certa": <output>, role status/log, aria-live polite) ou pode ser
+   * ("presumida": role/aria-live não literal ou spread opaco — falha fechada: o conteúdo é conferido).
+   */
+  const regiaoNativa = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement): "certa" | "presumida" | null => {
+    if (!ts.isIdentifier(n.tagName) || !/^[a-z]/.test(n.tagName.text)) return null;
+    const papeis = valoresDoAtributo(n.attributes, "role"), vivo = valoresDoAtributo(n.attributes, "aria-live");
+    if (ELEMENTOS_POLITE.includes(n.tagName.text) || papeis?.some((v: string) => PAPEIS_POLITE.includes(v)) || vivo?.includes("polite")) return "certa";
+    if (papeis?.includes("alert")) return null;
+    return papeis === null || vivo === null ? "presumida" : null;
+  };
+  /** HTML injetado (dangerouslySetInnerHTML) também é conteúdo da região. */
+  const htmlDaRegiao = (attrs: ts.JsxAttributes, presumida: boolean) => {
+    for (const a of attrs.properties) {
+      if (ts.isJsxAttribute(a) && a.name.getText(sf) === "dangerouslySetInnerHTML" && a.initializer && ts.isJsxExpression(a.initializer) && a.initializer.expression) {
+        regioes.push({ no: a, expr: a.initializer.expression, soErro: true, presumida });
+      }
+    }
+  };
   /** Tudo o que está dentro da região nativa, em qualquer profundidade — menos dentro de um role="alert". */
-  const conteudoDaRegiao = (filhos: readonly ts.JsxChild[]) => {
+  const conteudoDaRegiao = (filhos: readonly ts.JsxChild[], presumida: boolean) => {
     for (const f of filhos) {
-      if (ts.isJsxExpression(f) && f.expression) regioes.push({ no: f, expr: f.expression, soErro: true });
-      else if (ts.isJsxText(f) && textoDeErro(f.text)) acusa(f, "erro", `texto de erro "${normaliza(f.text).slice(0, 40)}" dentro de região de status — erro vai para role="alert"`);
-      else if (ts.isJsxElement(f) && literalDoAtributo(f.openingElement.attributes, "role") !== "alert") conteudoDaRegiao(f.children);
-      else if (ts.isJsxFragment(f)) conteudoDaRegiao(f.children);
+      if (ts.isJsxExpression(f) && f.expression) regioes.push({ no: f, expr: f.expression, soErro: true, presumida });
+      else if (ts.isJsxText(f) && textoDeErro(f.text)) acusa(f, "erro", `texto de erro "${normaliza(f.text).slice(0, 40)}" dentro de região de status — erro vai para role="alert"`, [normaliza(f.text)]);
+      else if (ts.isJsxElement(f) && literalDoAtributo(f.openingElement.attributes, "role") !== "alert") { htmlDaRegiao(f.openingElement.attributes, presumida); conteudoDaRegiao(f.children, presumida); }
+      else if (ts.isJsxSelfClosingElement(f) && literalDoAtributo(f.attributes, "role") !== "alert") htmlDaRegiao(f.attributes, presumida);
+      else if (ts.isJsxFragment(f)) conteudoDaRegiao(f.children, presumida);
     }
   };
   /** Props passadas por fábrica (createElement/jsx) ou por cloneElement a um componente de região. */
@@ -614,9 +776,10 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
       const c = canonico(n.tagName);
       if (c) for (const a of n.attributes.properties) atributoDe(REGIOES_DE_STATUS[c], a);
-      const nativo = ts.isIdentifier(n.tagName) && /^[a-z]/.test(n.tagName.text);
-      if (nativo && ts.isJsxOpeningElement(n) && (literalDoAtributo(n.attributes, "role") === "status" || literalDoAtributo(n.attributes, "aria-live") === "polite")) {
-        conteudoDaRegiao((n.parent as ts.JsxElement).children);
+      const regiao = regiaoNativa(n);
+      if (regiao) {
+        if (ts.isJsxOpeningElement(n)) conteudoDaRegiao((n.parent as ts.JsxElement).children, regiao === "presumida");
+        htmlDaRegiao(n.attributes, regiao === "presumida");
       }
     }
     if (ts.isCallExpression(n) && n.arguments.length > 0) {
@@ -636,7 +799,7 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   for (const r of regioes) {
     if (!r.expr) { acusa(r.no, "opaco", "props da região de status não verificáveis (spread ou objeto opaco): falha fechada"); continue; }
     const v = verificar(r.expr);
-    if (v?.tipo === "erro") acusa(r.no, "erro", `região de status (role="status") recebe erro (${v.motivo}) — erro vai para role="alert" (FeedbackAcao erro)`);
+    if (v?.tipo === "erro") acusa(r.no, "erro", `região de status (role="status") recebe erro (${v.motivo}) — erro vai para role="alert" (FeedbackAcao erro)`, fontesDeErro(r.expr));
     else if (v?.tipo === "opaco" && !r.soErro) acusa(r.no, "opaco", `região de status recebe valor não verificável (${v.motivo})`);
   }
 
@@ -674,7 +837,7 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
 
   // Estado cujo VALOR vai para a região (não a condição: `{salvo ? "Salvo." : null}` não faz de `salvo` mensagem).
   const naRegiao = new Set<ts.Node>();
-  for (const r of regioes) if (r.expr) for (const id of identificadoresDeValor(r.expr)) {
+  for (const r of regioes) if (r.expr && !r.presumida) for (const id of identificadoresDeValor(r.expr)) {
     const a = alvoDe(resolver(id));
     if (a) naRegiao.add(a);
   }
@@ -686,7 +849,7 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
       if (ts.isCallExpression(p) && p.expression === u) {
         for (const arg of p.arguments) {
           const v = verificar(arg);
-          if (v) { acusaVeredito(p, v, (m: string) => `${rotulo} recebe erro (${m}) — use useAcaoCliente + FeedbackAcao (erro em role="alert")`, (m: string) => `${rotulo} recebe valor não verificável (${m})`); break; }
+          if (v) { acusaVeredito(p, v, arg, (m: string) => `${rotulo} recebe erro (${m}) — use useAcaoCliente + FeedbackAcao (erro em role="alert")`, (m: string) => `${rotulo} recebe valor não verificável (${m})`); break; }
         }
       } else if (!vaiParaCallbackDeMensagem(u)) {
         acusa(ts.isJsxExpression(p) ? p.parent : p, "opaco", `${rotulo} usado como valor: o que ele recebe não é verificável (falha fechada; só pode ir para um atributo on<Palavra>, conferido no filho)`);
@@ -707,7 +870,9 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   const coletaCallbacks = (n: ts.Node) => {
     if (ts.isBindingElement(n) && ts.isIdentifier(n.name)) {
       const chave = n.propertyName ?? n.name;
-      if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && CALLBACK_DE_MENSAGEM.test(chave.text) && ehDasProps(n.name)) {
+      // Das props do componente — ou de QUALQUER parâmetro desestruturado (função em memo/forwardRef, helper):
+      // um `on<Palavra>` recebido de fora é o setter de outro componente.
+      if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && CALLBACK_DE_MENSAGEM.test(chave.text) && (ehDasProps(n.name) || resolver(n.name)?.tipo === "parametro")) {
         confereChamadas(referencias(sf, n.name, n.name.text), `callback de mensagem "${chave.text}"`);
       }
     }
@@ -724,7 +889,7 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     if (ts.isCallExpression(n) && n.arguments.length >= 2) {
       const c = desembrulha(n.expression);
       if (ts.isPropertyAccessExpression(c) && c.name.text === "executar") {
-        acusaVeredito(n, verificar(n.arguments[1]), (m: string) => `sucesso do executar recebe erro (${m})`, (m: string) => `sucesso do executar não verificável (${m})`);
+        acusaVeredito(n, verificar(n.arguments[1]), n.arguments[1], (m: string) => `sucesso do executar recebe erro (${m})`, (m: string) => `sucesso do executar não verificável (${m})`);
       }
     }
     ts.forEachChild(n, coletaExecutar);
@@ -771,7 +936,43 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     const x = desembrulha(e);
     return (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateExpression(x)) && !leAPropriaPagina(x);
   };
+  /** Pai efetivo (sobe por parênteses, `as`, `!`). */
+  const paiEfetivo = (m: ts.Node): { pai: ts.Node; filho: ts.Node } => {
+    let filho = m, pai = m.parent;
+    while (pai && (ts.isParenthesizedExpression(pai) || ts.isAsExpression(pai) || ts.isNonNullExpression(pai) || ts.isSatisfiesExpression(pai))) { filho = pai; pai = pai.parent; }
+    return { pai, filho };
+  };
+  /** location (ou alias) usada como VALOR — passada a função, espalhada, guardada em objeto: o que se faz com ela não é verificável. */
+  const locationComoValor = (m: ts.Node): boolean => {
+    const ehLocation = (ts.isIdentifier(m) && !ehNome(m)) || ts.isPropertyAccessExpression(m);
+    if (!ehLocation || !apontaPara(m as ts.Expression, "location")) return false;
+    const { pai, filho } = paiEfetivo(m);
+    if ((ts.isPropertyAccessExpression(pai) || ts.isElementAccessExpression(pai)) && pai.expression === filho) return false; // leitura de campo
+    if (ts.isVariableDeclaration(pai) && pai.initializer === filho) return false; // alias (seguido por apontaPara)
+    if (ts.isTypeOfExpression(pai)) return false;
+    if (ts.isBinaryExpression(pai)) {
+      const op = pai.operatorToken.kind;
+      if (op >= ts.SyntaxKind.FirstAssignment && op <= ts.SyntaxKind.LastAssignment && pai.left === filho) return false; // alvo: regra da atribuição
+      if ([ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(op)) return false;
+    }
+    return true;
+  };
   const coletaRecarga = (n: ts.Node) => {
+    if (locationComoValor(n)) acusa(n, "opaco", "location usada como valor (argumento, spread, objeto…): o que se faz com ela não é verificável — falha fechada");
+    if (ts.isElementAccessExpression(n)) {
+      const a = desembrulha(n.argumentExpression);
+      if (!ts.isStringLiteralLike(a) && !ts.isNumericLiteral(a) && OBJETOS_DE_NAVEGACAO.some((o: string) => apontaPara(n.expression, o))) {
+        acusa(n, "opaco", "campo computado de objeto de navegação (location/history/window…): pode ser a recarga — falha fechada");
+      }
+    }
+    if (ts.isCallExpression(n) && nomeDoCallee(n.expression) === "open") {
+      const c = desembrulha(n.expression);
+      const daJanela = ts.isIdentifier(c) ? !resolver(c) : ts.isPropertyAccessExpression(c) && OBJETOS_DA_JANELA.some((o: string) => apontaPara(c.expression, o));
+      const [destino, alvoJanela] = n.arguments;
+      const alvo = alvoJanela ? desembrulha(alvoJanela) : null;
+      const propriaJanela = !!alvo && (!ts.isStringLiteralLike(alvo) || ALVOS_DA_PROPRIA_JANELA.includes(alvo.text));
+      if (daJanela && destino && propriaJanela && leAPropriaPagina(destino)) acusa(n, "erro", "recarrega a página (window.open da própria página na mesma janela): use mensagem + router.refresh()");
+    }
     if (ts.isPropertyAccessExpression(n) && n.name.text === "reload") acusa(n, "erro", "recarrega a página (.reload): use mensagem + router.refresh()");
     if (ts.isElementAccessExpression(n)) { const a = desembrulha(n.argumentExpression); if (ts.isStringLiteralLike(a) && a.text === "reload") acusa(n, "erro", "recarrega a página ([\"reload\"]): use mensagem + router.refresh()"); }
     if (ts.isBindingElement(n)) {
@@ -805,7 +1006,8 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
 // ---------------------------------------------------------------------------------------------------
 // Exceções (arquivo + tipo + trecho exato + motivo) e a varredura.
 // ---------------------------------------------------------------------------------------------------
-export type Excecao = { arquivo: string; tipo: TipoAchado; trecho: string; motivo: string };
+/** `fontes` (obrigatório no tipo `erro`): as fontes de erro que a exceção aceita; uma fonte nova no trecho não casa. */
+export type Excecao = { arquivo: string; tipo: TipoAchado; trecho: string; motivo: string; fontes?: string[] };
 
 const PR_PARALELA = "pendência: a PR paralela do ConfirmarAcao (docs/43 §6 item 1) mexe neste arquivo; migrar para useAcaoCliente + FeedbackAcao depois do merge dela";
 
@@ -844,38 +1046,46 @@ export const EXCECOES: Excecao[] = [
     arquivo: "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx",
     tipo: "erro",
     trecho: "{p.reconciliacaoAcesso.erro}",
+    fontes: ["p.reconciliacaoAcesso.erro"],
     motivo: "estado persistido do job de reconciliação de acesso (tentativas e último erro gravados no servidor), lido na carga da página junto do andamento; não é resultado de ação do operador",
   },
   {
     arquivo: "src/app/login/page.tsx",
     tipo: "erro",
     trecho: "{errors.email?.message}",
+    fontes: ["errors.email?.message", "errors"],
     motivo: "erro de validação do campo (react-hook-form) ligado ao input por aria-describedby; região polite sempre montada para não interromper a digitação a cada tecla",
   },
   {
     arquivo: "src/app/login/page.tsx",
     tipo: "erro",
     trecho: "{errors.senha?.message}",
+    fontes: ["errors.senha?.message", "errors"],
     motivo: "erro de validação do campo (react-hook-form) ligado ao input por aria-describedby; região polite sempre montada para não interromper a digitação a cada tecla",
   },
   {
     arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx",
     tipo: "erro",
     trecho: "setNota(`Lote: ${partes.join(\" \u00b7 \")}.`)",
-    motivo: `o resumo do lote soma a contagem de falhas (d.falhas) à nota de sucesso: a falha parcial deveria sair também em role="alert"; ${PR_PARALELA}`,
+    fontes: ["d.falhas"],
+    motivo: "pendência explícita (não solta sozinha depois da #154, que não mexe neste trecho): o resumo do lote soma a contagem de falhas (d.falhas) à nota de sucesso, e a falha parcial deveria sair também em role=\"alert\" — migrar junto com os 3 arquivos da PR paralela do ConfirmarAcao",
   },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")", fontes: ["r.erro", "\"Não foi possível concluir a operação.\""], motivo: PR_PARALELA },
   { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "opaco", trecho: "setMensagem(sucesso)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", fontes: ["MSG_RESULTADO_INCERTO"], motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")", fontes: ["resultado.erro", "\"Não foi possível concluir a operação.\""], motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", fontes: ["MSG_RESULTADO_INCERTO"], motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)", fontes: ["r.erro"], motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)", fontes: ["MSG_RESULTADO_INCERTO_SEM_CHAVE"], motivo: PR_PARALELA },
 ];
 
-/** Casa por arquivo + tipo + trecho: a exceção de um valor "opaco" não isenta um erro que apareça no mesmo trecho. */
+/**
+ * Casa por arquivo + tipo + trecho — e, no tipo `erro`, cada fonte de erro achada tem de estar entre as que a
+ * exceção aceita: a exceção de um valor "opaco" não isenta um erro, e a de um erro não isenta um erro NOVO.
+ */
 export function conferirExcecoes(achados: Achado[], excecoes: Excecao[]): { semExcecao: string[]; soltas: string[] } {
-  const casa = (a: Achado, e: Excecao) => a.arquivo === e.arquivo && a.tipo === e.tipo && a.trecho === normaliza(e.trecho);
+  const casa = (a: Achado, e: Excecao) => a.arquivo === e.arquivo && a.tipo === e.tipo && a.trecho === normaliza(e.trecho)
+    && (e.tipo !== "erro" || a.fontes.every((f: string) => (e.fontes ?? []).includes(f)));
   return {
     semExcecao: achados.filter((a: Achado) => !excecoes.some((e: Excecao) => casa(a, e))).map((a: Achado) => `${a.arquivo}: [${a.tipo}] ${a.trecho} — ${a.problema}`),
     soltas: excecoes.filter((e: Excecao) => achados.filter((a: Achado) => casa(a, e)).length !== 1).map((e: Excecao) => `${e.arquivo}: [${e.tipo}] ${e.trecho}`),
@@ -980,8 +1190,24 @@ describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" 
     expect(conferirExcecoes(achados, EXCECOES)).toEqual({ semExcecao: [], soltas: [] });
   });
 
-  it("cada exceção tem motivo de verdade", () => {
+  it("cada exceção tem motivo de verdade; a do tipo erro lista as fontes que aceita (e só ela)", () => {
     for (const e of EXCECOES) expect(e.motivo.trim().length, `${e.arquivo}: ${e.trecho}`).toBeGreaterThan(30);
+    for (const e of EXCECOES) expect(e.tipo === "erro" ? (e.fontes ?? []).length > 0 : e.fontes === undefined, `${e.arquivo}: ${e.trecho}`).toBe(true);
+  });
+
+  it("as fontes aceitas por exceção do tipo erro são as combinadas (cópia literal)", () => {
+    expect(EXCECOES.filter((e: Excecao) => e.tipo === "erro").map((e: Excecao) => `${e.trecho} :: ${(e.fontes ?? []).join(" | ")}`)).toEqual([
+      "{p.reconciliacaoAcesso.erro} :: p.reconciliacaoAcesso.erro",
+      "{errors.email?.message} :: errors.email?.message | errors",
+      "{errors.senha?.message} :: errors.senha?.message | errors",
+      "setNota(`Lote: ${partes.join(\" · \")}.`) :: d.falhas",
+      "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\") :: r.erro | \"Não foi possível concluir a operação.\"",
+      "setMensagem(MSG_RESULTADO_INCERTO) :: MSG_RESULTADO_INCERTO",
+      "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\") :: resultado.erro | \"Não foi possível concluir a operação.\"",
+      "setMensagem(MSG_RESULTADO_INCERTO) :: MSG_RESULTADO_INCERTO",
+      "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro) :: r.erro",
+      "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE) :: MSG_RESULTADO_INCERTO_SEM_CHAVE",
+    ]);
   });
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
@@ -1215,10 +1441,10 @@ describe("autoteste: recarga da página (D) e falha fechada (E)", () => {
     expect(analisar('export function T({ id }: { id: string }) { const s = () => { location.assign(`/academico/${id}`); window.location.href = "/login"; }; return <button onClick={s}>Ok</button>; }\n')).toEqual([]);
   });
   it("E20 — arquivo que não analisa falha fechado", () => {
-    expect(analisar("export function T( { return <div>; }")).toEqual([{ arquivo: "virtual.tsx", trecho: "(arquivo)", tipo: "opaco", problema: expect.stringMatching(/falha fechada/) }]);
+    expect(analisar("export function T( { return <div>; }")).toEqual([{ arquivo: "virtual.tsx", trecho: "(arquivo)", tipo: "opaco", problema: expect.stringMatching(/falha fechada/), fontes: [] }]);
   });
   it("conferirExcecoes: achado sem exceção acusa; exceção sem alvo, com alvo trocado, de outro tipo ou ambígua fica solta", () => {
-    const a: Achado = { arquivo: "x.tsx", trecho: "texto={erro}", tipo: "opaco", problema: "p" };
+    const a: Achado = { arquivo: "x.tsx", trecho: "texto={erro}", tipo: "opaco", problema: "p", fontes: [] };
     const e: Excecao = { arquivo: "x.tsx", trecho: "texto={erro}", tipo: "opaco", motivo: "m" };
     expect(conferirExcecoes([a], [])).toEqual({ semExcecao: ["x.tsx: [opaco] texto={erro} — p"], soltas: [] });
     expect(conferirExcecoes([a], [e])).toEqual({ semExcecao: [], soltas: [] });
@@ -1227,6 +1453,11 @@ describe("autoteste: recarga da página (D) e falha fechada (E)", () => {
     expect(conferirExcecoes([a, { ...a, problema: "q" }], [e]).soltas).toEqual(["x.tsx: [opaco] texto={erro}"]); // ambígua
     // R1 da #153 (B4b): a exceção de um valor opaco não isenta um ERRO que passe a sair no mesmo trecho.
     expect(conferirExcecoes([{ ...a, tipo: "erro" }], [e])).toEqual({ semExcecao: ["x.tsx: [erro] texto={erro} — p"], soltas: ["x.tsx: [opaco] texto={erro}"] });
+    // R2 da #153 (B6): a exceção do tipo erro aceita só as fontes listadas; uma fonte nova no trecho não casa.
+    const comFonte: Excecao = { ...e, tipo: "erro", fontes: ["d.falhas"] };
+    expect(conferirExcecoes([{ ...a, tipo: "erro", fontes: ["d.falhas"] }], [comFonte])).toEqual({ semExcecao: [], soltas: [] });
+    expect(conferirExcecoes([{ ...a, tipo: "erro", fontes: ["d.falhas", "MSG_RESULTADO_INCERTO_SEM_CHAVE"] }], [comFonte]))
+      .toEqual({ semExcecao: ["x.tsx: [erro] texto={erro} — p"], soltas: ["x.tsx: [erro] texto={erro}"] });
   });
 });
 
@@ -1355,5 +1586,149 @@ describe("R1 da #153 — C2: cloneElement de um componente de região", () => {
     expect(trechos(`${IMPORTS}${imp}export function T({ r }: { r: { erro?: string } }) { return <div>{cloneElement(<MensagemStatus texto={null} />, { texto: r.erro })}</div>; }\n`)).toEqual(["texto: r.erro"]);
     expect(trechos(`${IMPORTS}${imp}export function T({ r }: { r: { erro?: string } }) { const base = <MensagemStatus texto={null} />; return <div>{cloneElement(base, { texto: r.erro })}</div>; }\n`)).toEqual(["texto: r.erro"]);
     expect(analisar(`${IMPORTS}${imp}export function T() { return <div>{cloneElement(<MensagemStatus texto={null} />, { texto: "Salvo." })}</div>; }\n`)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// R2 da #153: evasões que sobreviviam (L14–L16, L19–L25, L26/L28/L33, X8, EX1). Uma fonte virtual por
+// forma; as listas novas são comparadas com cópias literais, com um caso por item.
+// ---------------------------------------------------------------------------------------------------
+describe("R2 da #153 — B1: desfecho do executor reconhecido pelo import, pelo let e pela função local", () => {
+  it("E31 (L14) — `let d; d = await executarAcaoCliente(…)`: as atribuições do let contam", () => {
+    expect(trechos(tela('async function s() { let d; d = await executarAcaoCliente(() => f(), { idempotente: true }); if (d.tipo !== "ok") { setMensagem(d.mensagem); return; } }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E32 (L15) — função local que devolve o desfecho: `const rodar = () => executarAcaoCliente(…)`", () => {
+    expect(trechos(tela('async function s() { const rodar = () => executarAcaoCliente(() => f(), { idempotente: true }); const d = await rodar(); if (d.tipo !== "ok") setMensagem(d.mensagem); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(tela('async function rodar() { return await executarAcaoCliente(() => f(), { idempotente: false }); } async function s() { const d = await rodar(); if (d.tipo !== "ok") setMensagem(d.mensagem); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E33 (L16) — import renomeado e por namespace do módulo do executor; o mesmo nome vindo de outro módulo é dado", () => {
+    const renomeado = 'import { executarAcaoCliente as rodarAcao } from "@/lib/acao-cliente";\n';
+    expect(trechos(renomeado + tela('async function s() { const d = await rodarAcao(() => f(), { idempotente: true }); if (d.tipo !== "ok") setMensagem(d.mensagem); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    const namespace = 'import * as AC from "@/lib/acao-cliente";\n';
+    expect(trechos(namespace + tela('async function s() { const d = await AC.executarAcaoCliente(() => f(), { idempotente: true }); if (d.tipo !== "ok") setMensagem(d.mensagem); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    const outro = 'import { executarAcaoCliente } from "@/lib/outra-coisa";\n';
+    expect(analisar(outro + tela('async function s() { const d = await executarAcaoCliente(); setMensagem(d.mensagem ?? ""); }'))).toEqual([]);
+  });
+  it("módulo do executor (cópia literal) e funções da lista exportadas por ele de verdade", () => {
+    expect(MODULO_DO_EXECUTOR).toBe("@/lib/acao-cliente");
+    // `executar` é o método do useAcaoCliente; as demais são exportações do módulo.
+    for (const f of FUNCOES_DO_EXECUTOR.filter((n: string) => n !== "executar")) expect(Object.keys(ACAO_CLIENTE), f).toContain(f);
+  });
+});
+
+describe("R2 da #153 — B2: região polite por constante, implícita, não literal e JSX dentro da expressão", () => {
+  const reg = (jsx: string, corpo = "", antes = "") => `${antes}${IMPORTS}export function T({ r, papel }: { r: { ok: boolean; erro?: string }; papel: () => string }) { const erro = r.erro; ${corpo} return <div>${jsx}</div>; }\n`;
+  it("E34 (L19) — role por constante e por ternário de literais", () => {
+    expect(trechos(reg("<p role={PAPEL}>{erro}</p>", "", 'const PAPEL = "status";\n'))).toEqual(["{erro}"]);
+    expect(trechos(reg('<p role={r.ok ? "status" : "alert"}>{erro}</p>'))).toEqual(["{erro}"]);
+  });
+  it("E35 — role/aria-live não literal e spread opaco: o elemento é tratado como região (falha fechada)", () => {
+    expect(trechos(reg("<p role={papel()}>{erro}</p>"))).toEqual(["{erro}"]);
+    expect(trechos(reg("<p aria-live={papel()}>{erro}</p>"))).toEqual(["{erro}"]);
+    expect(trechos(reg("<p {...(r as object)}>{erro}</p>"))).toEqual(["{erro}"]);
+    expect(trechos(reg('<p {...{ role: "status" }}>{erro}</p>'))).toEqual(["{erro}"]); // L20: spread de objeto literal
+    // Controles: papel que só pode ser alerta/diálogo, e campo sem conteúdo, não são região.
+    expect(analisar(reg('<p role={r.ok ? undefined : "alert"}>{erro}</p>'))).toEqual([]);
+    expect(analisar(reg('<p role={r.ok ? "dialog" : undefined}>{erro}</p>'))).toEqual([]);
+    expect(analisar(reg("<input {...(r as object)} />"))).toEqual([]);
+  });
+  it("E36 (L21, L23) — região implícita: <output> e role=\"log\"", () => {
+    expect(trechos(reg('<output className="block text-red-700">{erro}</output>'))).toEqual(["{erro}"]);
+    expect(trechos(reg('<p role="log">{erro}</p>'))).toEqual(["{erro}"]);
+  });
+  it("lista fechada de papéis e elementos polite: cada item vira região", () => {
+    const PAPEIS = ["status", "log"];
+    const ELEMENTOS = ["output"];
+    expect(PAPEIS_POLITE).toEqual(PAPEIS);
+    expect(ELEMENTOS_POLITE).toEqual(ELEMENTOS);
+    for (const p of PAPEIS) expect(trechos(reg(`<div role="${p}">{erro}</div>`)), p).toEqual(["{erro}"]);
+    for (const el of ELEMENTOS) expect(trechos(reg(`<${el}>{erro}</${el}>`)), el).toEqual(["{erro}"]);
+  });
+  it("E37 (L25) — JSX dentro da expressão da região: `{x ? <span>{x}</span> : null}` e `{x && <b>{x}</b>}`", () => {
+    expect(trechos(reg('<p role="status">{detalhe ? <span>{detalhe}</span> : null}</p>', "const detalhe = erro;"))).toEqual(["{detalhe ? <span>{detalhe}</span> : null}"]);
+    expect(trechos(reg('<p role="status">{r.ok && <b className="x">{detalhe}</b>}</p>', "const detalhe = erro;"))).toEqual(['{r.ok && <b className="x">{detalhe}</b>}']);
+    expect(analisar(reg('<p role="status">{r.ok ? <span>Salvo.</span> : null}</p>'))).toEqual([]);
+  });
+  it("E38 (L24) — dangerouslySetInnerHTML na região (no elemento e aninhado)", () => {
+    expect(trechos(reg('<p role="status" dangerouslySetInnerHTML={{ __html: erro ?? "" }} />'))).toEqual(['dangerouslySetInnerHTML={{ __html: erro ?? "" }}']);
+    expect(trechos(reg('<div role="status"><span dangerouslySetInnerHTML={{ __html: erro ?? "" }} /></div>'))).toEqual(['dangerouslySetInnerHTML={{ __html: erro ?? "" }}']);
+  });
+});
+
+describe("R2 da #153 — B3: recarga por campo computado, window.open e location como valor", () => {
+  const tiposDe = (f: string) => analisar(`export function T({ k }: { k: string }) { const s = () => { ${f} }; return <button onClick={s}>Ok</button>; }\n`).map((a: Achado) => a.tipo);
+  it("E39 (L26) — campo computado em objeto de navegação falha fechado", () => {
+    expect(tiposDe('window.location[("re" + "load") as "reload"]();')).toContain("opaco");
+    expect(tiposDe("history[k](0);")).toContain("opaco");
+  });
+  it("lista fechada de objetos de navegação: campo computado em cada um falha fechado", () => {
+    const OBJETOS = ["location", "history", "window", "globalThis", "document"];
+    expect(OBJETOS_DE_NAVEGACAO).toEqual(OBJETOS);
+    for (const o of OBJETOS) expect(tiposDe(`${o}[k];`), o).toEqual(["opaco"]);
+    expect(tiposDe('window["location"].hash;')).toEqual([]); // chave literal: é o campo nomeado, conferido pelas outras regras
+  });
+  it("E40 (L28) — window.open da própria página na mesma janela recarrega", () => {
+    expect(tiposDe('window.open(window.location.href, "_self");')).toContain("erro");
+    expect(tiposDe('open(document.URL, "_top");')).toContain("erro");
+    expect(tiposDe("window.open(location.href, k);")).toContain("erro"); // alvo não literal
+    expect(tiposDe("window.open(location.href);")).toEqual([]); // nova janela
+    expect(tiposDe('window.open("/relatorio", "_self");')).toEqual([]); // outra página
+  });
+  it("listas fechadas de alvos da própria janela e de objetos da janela: cada item acusa", () => {
+    const ALVOS = ["_self", "_top", "_parent"];
+    const JANELAS = ["window", "globalThis", "self"];
+    expect(ALVOS_DA_PROPRIA_JANELA).toEqual(ALVOS);
+    expect(OBJETOS_DA_JANELA).toEqual(JANELAS);
+    for (const a of ALVOS) expect(tiposDe(`window.open(location.href, "${a}");`), a).toContain("erro");
+    for (const j of JANELAS) expect(tiposDe(`${j}.open(location.href, "_self");`), j).toContain("erro");
+    expect(tiposDe('window.open(location.href, "_blank");')).toEqual([]);
+  });
+  it("E41 (L33) — location (ou alias) passada como valor falha fechado", () => {
+    expect(tiposDe("Object.assign(window.location, { href: window.location.href });")).toContain("opaco");
+    expect(tiposDe('Reflect.set(location, "href", location.href);')).toContain("opaco");
+    expect(tiposDe('const l = window.location; Object.defineProperty(l, "href", { value: l.href });')).toContain("opaco");
+    expect(tiposDe("const lugares = [window.location];")).toContain("opaco");
+    // Controles: leitura de campo, alias, typeof e comparação passam.
+    expect(tiposDe('const p = new URLSearchParams(window.location.search); const l = window.location; const t = typeof location; const igual = l === window.location; void [p, t, igual, l.hash];')).toEqual([]);
+  });
+});
+
+describe("R2 da #153 — B4: componente em memo/forwardRef e on<Palavra> de qualquer parâmetro", () => {
+  const fonte = (definicao: string) => `${IMPORTS}import { memo, forwardRef } from "react";\n${definicao}\n`;
+  const corpo = 'const s = async () => { const r = await f(); if (!r.ok) return onNota(r.erro ?? ""); onNota("Salvo."); }; return <button onClick={s}>Ok</button>;';
+  it("E42 (X8) — filho em memo (função nomeada e arrow), em forwardRef e em React.memo: o onNota é conferido", () => {
+    expect(trechos(fonte(`export const Filho = memo(function Filho({ onNota }: { onNota: (m: string) => void }) { ${corpo} });`))).toEqual(['onNota(r.erro ?? "")']);
+    expect(trechos(fonte(`export const Filho = memo(({ onNota }: { onNota: (m: string) => void }) => { ${corpo} });`))).toEqual(['onNota(r.erro ?? "")']);
+    expect(trechos(fonte(`export const Filho = forwardRef(function Filho({ onNota }: { onNota: (m: string) => void }, ref) { void ref; ${corpo} });`))).toEqual(['onNota(r.erro ?? "")']);
+    expect(trechos(fonte(`export const Filho = React.memo(forwardRef(({ onNota }: { onNota: (m: string) => void }) => { ${corpo} }));`))).toEqual(['onNota(r.erro ?? "")']);
+  });
+  it("E43 — on<Palavra> desestruturado de qualquer parâmetro (helper, função passada adiante) é conferido", () => {
+    expect(trechos(fonte('function avisar({ onAviso }: { onAviso: (m: string) => void }, r: { erro?: string }) { onAviso(r.erro ?? ""); }'))).toEqual(['onAviso(r.erro ?? "")']);
+    expect(trechos(fonte('export const lista = [1].map(({ onAviso }: { onAviso: (m: string) => void }) => onAviso(MSG_RESULTADO_INCERTO));'))).toEqual(["onAviso(MSG_RESULTADO_INCERTO)"]);
+  });
+  it("lista fechada de embrulhos: a função dentro de cada um continua componente (prop é prop)", () => {
+    const EMBRULHOS = ["memo", "forwardRef"];
+    expect(EMBRULHOS_DE_COMPONENTE).toEqual(EMBRULHOS);
+    for (const w of EMBRULHOS) {
+      expect(problemas(fonte(`export const C = ${w}(function C({ t }: { t: string }) { return <MensagemStatus texto={t} />; });`)), w).toEqual([expect.stringMatching(/prop do componente/)]);
+    }
+  });
+});
+
+describe("R2 da #153 — B6: o achado do tipo erro leva todas as fontes; a exceção aceita só as listadas", () => {
+  it("E44 (EX1) — uma segunda fonte de erro no mesmo trecho aparece nas fontes do achado", () => {
+    const lote = (extra: string) => tela(`function s(d: { falhas: number }) { const partes = [d.falhas ? \`\${d.falhas} falhou\` : null${extra}].filter(Boolean); setMensagem(\`Lote: \${partes.join(" ")}.\`); }`);
+    expect(analisar(lote("")).map((a: Achado) => a.fontes)).toEqual([["d.falhas"]]);
+    expect(analisar(lote(", d.falhas ? MSG_RESULTADO_INCERTO_SEM_CHAVE : null")).map((a: Achado) => a.fontes)).toEqual([["d.falhas", "MSG_RESULTADO_INCERTO_SEM_CHAVE"]]);
+  });
+  it("fontesDeErro segue o fluxo inteiro (não para na primeira): const, ternário e campo de objeto", () => {
+    const sf = ts.createSourceFile("v.tsx", 'const r = { erro: "x" }; const t = r.erro; const v = cond ? t : MSG_DECISAO_INCERTA;', ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const ultima = sf.statements[2] as ts.VariableStatement;
+    expect(fontesDeErro(ultima.declarationList.declarations[0].initializer!)).toEqual(["MSG_DECISAO_INCERTA", "r.erro"]);
   });
 });
