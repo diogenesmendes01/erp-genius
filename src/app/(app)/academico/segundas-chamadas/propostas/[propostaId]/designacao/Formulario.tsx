@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { designarProfessorSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-designacao-local";
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 export function Formulario({ propostaId, professores, fusoInstitucional }: {
@@ -15,14 +16,14 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
   fusoInstitucional: string | null;
 }) {
   const router = useRouter();
-  const [ocupado, setOcupado] = useState(false);
-  const [mensagem, setMensagem] = useState("");
+  // Chave de idempotência estável entre tentativas com a mesma entrada: na falha de transporte, reenviar é seguro.
+  const acao = useAcaoCliente({ idempotente: true });
   const periodo = useInicioDoPeriodo();
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
 
   return <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
     evento.preventDefault();
-    if (ocupado) return;
+    if (acao.ocupado) return;
     const valores = new FormData(evento.currentTarget);
     const dados = {
       propostaId,
@@ -35,21 +36,12 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
     const entrada = JSON.stringify(dados);
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
     const chaveIdempotencia = tentativa.current.chave;
-    setOcupado(true);
-    setMensagem("");
-    try {
-      const r = await designarProfessorSegundaChamadaLocal({ ...dados, chaveIdempotencia });
-      if (r.ok) router.refresh();
-      else setMensagem(r.erro);
-    } catch {
-      setMensagem(MSG_RESULTADO_INCERTO);
-    } finally {
-      setOcupado(false);
-    }
+    const d = await acao.executar(() => designarProfessorSegundaChamadaLocal({ ...dados, chaveIdempotencia }), "Professor designado.");
+    if (d?.tipo === "ok") router.refresh();
   }}>
     <h2 className="text-xl font-medium">Designar professor</h2>
     <p className="text-sm">O início deve estar no passado ou presente e o fim, se informado, deve ser posterior ao início. A designação não concede autorização retroativa: o acesso depende do registro e de sua vigência.</p>
-    <fieldset disabled={ocupado} className="space-y-3">
+    <fieldset disabled={acao.ocupado} className="space-y-3">
       <label className="block">Professor
         <select name="professorId" required defaultValue="" className="block rounded border p-2">
           <option value="" disabled>Selecione</option>
@@ -68,8 +60,8 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
       <label className="block">Motivo
         <CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Designando…" : "Designar professor"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Designando…" : "Designar professor"}</button>
     </fieldset>
-    {mensagem && <p role="alert">{mensagem}</p>}
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
 }

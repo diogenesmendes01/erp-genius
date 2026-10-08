@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { proporAcertoTaxaAditivo } from "@/server/contratos/aditivo-acerto-taxa-acoes";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -27,41 +27,32 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
   const [cobrancaId, setCobrancaId] = useState("");
   const [motivo, setMotivo] = useState("");
   const [evidencia, setEvidencia] = useState("");
-  const [mensagem, setMensagem] = useState("");
-  const [ocupado, setOcupado] = useState(false);
-  const emEnvio = useRef(false);
+  // Chave estável entre tentativas da mesma entrada: na falha de transporte, reenviar confere a mesma proposta.
+  const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const atual = cobrancas.find(c => c.id === cobrancaId);
   const podeEnviar = Boolean(atual && !atual.pendencia && motivo.trim().length >= 5 && evidencia.trim().length >= 5);
 
   async function propor() {
-    if (emEnvio.current || !podeEnviar) return;
+    if (!podeEnviar) return;
     const dados = { matriculaId, propostaAditivoId, conclusaoId, revisaoHash, cobrancaId,
       motivo: motivo.trim(), evidencia: { texto: evidencia.trim() } };
     const entrada = JSON.stringify(dados);
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
-    emEnvio.current = true;
-    setOcupado(true);
-    setMensagem("");
-    try {
-      const resultado = await proporAcertoTaxaAditivo({ ...dados, chaveIdempotencia: tentativa.current.chave });
-      if (!resultado.ok) { setMensagem(resultado.erro); return; }
-      setMensagem("Proposta registrada. Aguarda conferência de outra pessoa autorizada.");
-      setCobrancaId(""); setMotivo(""); setEvidencia(""); tentativa.current = null;
-      router.refresh();
-    } catch {
-      setMensagem(MSG_RESULTADO_INCERTO);
-    } finally {
-      emEnvio.current = false;
-      setOcupado(false);
-    }
+    const chaveIdempotencia = tentativa.current.chave;
+    // O executor ignora o clique enquanto há envio em curso (devolve null).
+    const d = await acao.executar(() => proporAcertoTaxaAditivo({ ...dados, chaveIdempotencia }),
+      "Proposta registrada. Aguarda conferência de outra pessoa autorizada.");
+    if (d?.tipo !== "ok") return;
+    setCobrancaId(""); setMotivo(""); setEvidencia(""); tentativa.current = null;
+    router.refresh();
   }
 
   return <section className="space-y-3 rounded border p-4">
     <h2 className="text-xl">Acerto da taxa emitida</h2>
     <p>Selecione a cobrança e confira os efeitos do aditivo. A proposta não confirma pagamentos nem devolve dinheiro.</p>
     {!cobrancas.length && <EstadoVazio role="status">Nenhuma cobrança de taxa disponível para conferência.</EstadoVazio>}
-    <fieldset disabled={ocupado} className="space-y-3">
+    <fieldset disabled={acao.ocupado} className="space-y-3">
       <label className="block">Cobrança de taxa
         <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
           <option value="">Selecione a cobrança</option>
@@ -79,8 +70,8 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
       {atual?.pendencia && <p role="alert">{atual.pendencia.tratamento} Valor: {formatarMoeda(atual.pendencia.valor, atual.moeda)}.</p>}
       <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" maxLength={2000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
       <label className="block">Evidência conferida<CampoTexto className="mt-1 block w-full rounded border p-2" maxLength={2000} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label>
-      <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={!podeEnviar || ocupado} onClick={propor}>{ocupado ? "Registrando proposta…" : "Propor acerto"}</button>
+      <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={!podeEnviar || acao.ocupado} onClick={propor}>{acao.ocupado ? "Registrando proposta…" : "Propor acerto"}</button>
     </fieldset>
-    <MensagemStatus texto={mensagem} />
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </section>;
 }

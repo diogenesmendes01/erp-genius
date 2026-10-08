@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { consultarCondicoesContinuidadeMensal, decidirCondicoesContinuidadeMensal, prepararCondicoesContinuidadeMensal } from "@/server/matricula/condicoes-continuidade-mensal";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -29,8 +31,12 @@ const data = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "s
 
 export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
   const router = useRouter();
-  const [ocupado, iniciar] = useTransition();
-  const [mensagem, setMensagem] = useState("");
+  // Preparar e decidir não levam chave de idempotência: na falha de transporte, conferir antes de repetir.
+  // A decisão preserva a orientação própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
+  const preparo = useAcaoCliente({ idempotente: false });
+  const decisao = useAcaoCliente({ idempotente: false });
+  const [versaoDecidida, setVersaoDecidida] = useState<string | null>(null);
+  const ocupado = preparo.ocupado || decisao.ocupado;
   const periodo = useInicioDoPeriodo();
   const [referencia, setReferencia] = useState<Referencia>("");
   const [referenciaVencimento, setReferenciaVencimento] = useState<ReferenciaVencimento>("");
@@ -42,62 +48,54 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
   return <div className="space-y-4">
     <p>Matrícula {d.codigo ?? d.matriculaId} · moeda contratual {d.moeda}</p>
     <MensagemStatus texto={d.impedimento} />
-    <MensagemStatus texto={mensagem} />
-    {d.podePreparar && d.documentoId && <form className="space-y-3 rounded border p-4" onSubmit={evento => {
+    {d.podePreparar && d.documentoId && <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
       evento.preventDefault();
       const formulario = new FormData(evento.currentTarget);
       const documentoId = d.documentoId;
-      if (!documentoId) return;
-      iniciar(async () => {
-        setMensagem("");
-        try {
-          if (!referencia || !referenciaVencimento || !ajusteVencimento) {
-            setMensagem("Selecione as referências de cobertura, vencimento e o ajuste de vencimento previstos no contrato.");
-            return;
-          }
-          if (ajusteVencimento === "PROXIMO_DIA_UTIL" && (!diasSemanaUteis.length || feriados.some(feriado => !feriado))) {
-            setMensagem("Informe os dias úteis e todos os feriados do calendário financeiro.");
-            return;
-          }
-          const regraCobertura = referencia === "MES_CIVIL"
-            ? { referencia: "MES_CIVIL" as const }
-            : { referencia: "CICLO_MATRICULA" as const, dataReferencia: String(formulario.get("ancora")) };
-          const resultado = await prepararCondicoesContinuidadeMensal({
-            matriculaId: d.matriculaId,
-            documentoId,
-            motivo: String(formulario.get("motivo")),
-            regras: {
-              continuidadeContratada: { contratada: true, clausula: String(formulario.get("clausula")), evidenciaId: documentoId },
-              regraCobertura,
-              diaVencimento: Number(formulario.get("diaVencimento")),
-              antecedenciaDias: Number(formulario.get("antecedenciaDias")),
-              referenciaVencimento,
-              valorOriginal: String(formulario.get("valorOriginal")),
-              valorNegociado: String(formulario.get("valorNegociado")),
-              moeda: d.moeda,
-              vigenteDesde: String(formulario.get("vigenteDesde")),
-              ajusteVencimento: ajusteVencimento === "MANTER_DATA"
-                ? { regra: "MANTER_DATA" as const }
-                : {
-                    regra: "PROXIMO_DIA_UTIL" as const,
-                    calendario: {
-                      id: String(formulario.get("calendarioId")),
-                      versao: Number(formulario.get("calendarioVersao")),
-                      referencia: String(formulario.get("calendarioReferencia")),
-                      inicioVigencia: String(formulario.get("calendarioInicioVigencia")),
-                      fimVigencia: String(formulario.get("calendarioFimVigencia")),
-                      diasSemanaUteis,
-                      feriados,
-                    },
-                  },
-            },
-          });
-          setMensagem(resultado.ok ? "Versão preparada para revisão independente." : resultado.erro);
-          if (resultado.ok) router.refresh();
-        } catch (erro) {
-          setMensagem(erro instanceof Error ? erro.message : MSG_RESULTADO_INCERTO_SEM_CHAVE);
-        }
-      });
+      if (!documentoId || ocupado) return;
+      decisao.limpar();
+      if (!referencia || !referenciaVencimento || !ajusteVencimento) {
+        preparo.limpar(); preparo.setErro("Selecione as referências de cobertura, vencimento e o ajuste de vencimento previstos no contrato.");
+        return;
+      }
+      if (ajusteVencimento === "PROXIMO_DIA_UTIL" && (!diasSemanaUteis.length || feriados.some(feriado => !feriado))) {
+        preparo.limpar(); preparo.setErro("Informe os dias úteis e todos os feriados do calendário financeiro.");
+        return;
+      }
+      const regraCobertura = referencia === "MES_CIVIL"
+        ? { referencia: "MES_CIVIL" as const }
+        : { referencia: "CICLO_MATRICULA" as const, dataReferencia: String(formulario.get("ancora")) };
+      const resultado = await preparo.executar(() => prepararCondicoesContinuidadeMensal({
+        matriculaId: d.matriculaId,
+        documentoId,
+        motivo: String(formulario.get("motivo")),
+        regras: {
+          continuidadeContratada: { contratada: true, clausula: String(formulario.get("clausula")), evidenciaId: documentoId },
+          regraCobertura,
+          diaVencimento: Number(formulario.get("diaVencimento")),
+          antecedenciaDias: Number(formulario.get("antecedenciaDias")),
+          referenciaVencimento,
+          valorOriginal: String(formulario.get("valorOriginal")),
+          valorNegociado: String(formulario.get("valorNegociado")),
+          moeda: d.moeda,
+          vigenteDesde: String(formulario.get("vigenteDesde")),
+          ajusteVencimento: ajusteVencimento === "MANTER_DATA"
+            ? { regra: "MANTER_DATA" as const }
+            : {
+                regra: "PROXIMO_DIA_UTIL" as const,
+                calendario: {
+                  id: String(formulario.get("calendarioId")),
+                  versao: Number(formulario.get("calendarioVersao")),
+                  referencia: String(formulario.get("calendarioReferencia")),
+                  inicioVigencia: String(formulario.get("calendarioInicioVigencia")),
+                  fimVigencia: String(formulario.get("calendarioFimVigencia")),
+                  diasSemanaUteis,
+                  feriados,
+                },
+              },
+        },
+      }), "Versão preparada para revisão independente.");
+      if (resultado?.tipo === "ok") router.refresh();
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Nova transcrição do contrato confirmado</legend>
@@ -145,6 +143,8 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Preparar para revisão"}</button>
       </fieldset>
     </form>}
+    {/* Fora do form: depois do refresh a preparação pode deixar de ser oferecida, e o resultado continua visível. */}
+    <FeedbackAcao erro={preparo.erro} sucesso={preparo.sucesso} />
     <h2 className="text-lg">Histórico das condições</h2>
     {!d.versoes.length && <EstadoVazio>Nenhuma versão registrada.</EstadoVazio>}
     {d.versoes.map(versao => <article key={versao.id} className="space-y-2 rounded border p-4">
@@ -161,18 +161,14 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
       </> : <p role="alert">{versao.naoConferida ? "Esta versão não informa a referência do vencimento. Ela precisa de conferência; prepare uma nova versão completa para substituí-la, sem alterar este histórico." : "As regras desta versão precisam de conferência."}</p>}
       <p>{versao.motivo}</p>
       {versao.decisor && <p>Decisão de {versao.decisor.nome}: {versao.motivoDecisao}{versao.decididaEm && ` · ${data(versao.decididaEm)}`}</p>}
-      {versao.podeDecidir && <form className="space-y-2" onSubmit={evento => {
+      {versao.podeDecidir && <form className="space-y-2" onSubmit={async evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);
-        iniciar(async () => {
-          try {
-            const resultado = await decidirCondicoesContinuidadeMensal({ id: versao.id, aprovar: formulario.get("decisao") === "aprovar", motivo: String(formulario.get("motivo")) });
-            setMensagem(resultado.ok ? "Decisão registrada." : resultado.erro);
-            if (resultado.ok) router.refresh();
-          } catch {
-            setMensagem(MSG_DECISAO_INCERTA);
-          }
-        });
+        if (ocupado) return;
+        preparo.limpar(); setVersaoDecidida(versao.id);
+        const resultado = await decisao.executar(() => decidirCondicoesContinuidadeMensal({ id: versao.id, aprovar: formulario.get("decisao") === "aprovar", motivo: String(formulario.get("motivo")) }), "Decisão registrada.");
+        if (resultado?.tipo === "incerto") decisao.setErro(MSG_DECISAO_INCERTA);
+        if (resultado?.tipo === "ok") router.refresh();
       }}>
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Revisão administrativa independente</legend>
@@ -181,6 +177,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
       </form>}
+      {versaoDecidida === versao.id && <FeedbackAcao erro={decisao.erro} sucesso={decisao.sucesso} />}
     </article>)}
   </div>;
 }
