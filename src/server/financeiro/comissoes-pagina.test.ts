@@ -81,10 +81,14 @@ describe("totaisComissoesAPagar (aba de comissões do /financeiro)", () => {
 
   it("agrega no banco as APROVADAS de todo o escopo, por moeda — não a página exibida", async () => {
     m.sessao.mockResolvedValue({ id: "g1", papeis: [Papel.GERENTE_COMERCIAL] });
-    m.groupBy.mockResolvedValue([{ moeda: "CRC", _sum: { valor: new Prisma.Decimal("5000.50") } }, { moeda: "USD", _sum: { valor: null } }]);
-    expect(await totaisComissoesAPagar()).toEqual([{ moeda: "CRC", valor: 5000.5 }, { moeda: "USD", valor: 0 }]);
+    m.groupBy.mockResolvedValue([
+      { moeda: "CRC", _sum: { valor: new Prisma.Decimal("5000.50") }, _count: { _all: 3 } },
+      { moeda: "USD", _sum: { valor: null }, _count: { _all: 0 } },
+    ]);
+    // A quantidade por moeda alimenta a confirmação do fechamento do mês ("N comissões, total X").
+    expect(await totaisComissoesAPagar()).toEqual([{ moeda: "CRC", valor: 5000.5, quantidade: 3 }, { moeda: "USD", valor: 0, quantidade: 0 }]);
     const consulta = m.groupBy.mock.calls[0][0];
-    expect(consulta).toMatchObject({ by: ["moeda"], _sum: { valor: true } });
+    expect(consulta).toMatchObject({ by: ["moeda"], _sum: { valor: true }, _count: { _all: true } });
     expect(consulta.where).toEqual({ AND: [{ OR: [{ vendedorId: "g1" }, { vendedor: { gerenteComercialId: "g1" } }] }, { status: "APROVADA" }] });
     expect(consulta).not.toHaveProperty("take");
   });

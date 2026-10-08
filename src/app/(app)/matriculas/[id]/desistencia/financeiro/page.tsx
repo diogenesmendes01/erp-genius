@@ -64,7 +64,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {!proposta.decisao && proposta.podeDecidir && <DecidirAcertoContratualFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} />}
             {proposta.decisao && <p>{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisorNome}: {proposta.decisao.motivo}</p>}
             {proposta.decisao?.aprovada && !proposta.decisao.aplicacao && !proposta.podeAplicar && <p role="status">A aplicação aguarda decisão administrativa aprovada para este pedido e a alçada da pessoa que aprovou a memória.</p>}
-            {proposta.podeAplicar && proposta.decisao && <AplicarAcertoContratualFormulario decisaoId={proposta.decisao.id} />}
+            {proposta.podeAplicar && proposta.decisao && <AplicarAcertoContratualFormulario decisaoId={proposta.decisao.id} itens={proposta.itens} />}
             {proposta.decisao?.aplicacao && <div><p>Acerto aplicado em {instanteAdministrativo(proposta.decisao.aplicacao.criadaEmISO)} ({fusoExibicao}; origem UTC). A Secretaria pode efetivar a desistência.</p>{proposta.decisao.aplicacao.creditos.length > 0 && <p>Créditos gerados: {proposta.decisao.aplicacao.creditos.map((creditoId, indice) => <span key={creditoId}>{indice > 0 && ", "}<Link className="underline" href={`/alunos/${acerto.matricula.alunoId}/creditos/${creditoId}`}>consultar crédito</Link></span>)}</p>}</div>}
           </article>)}
           {acerto.temMaisPropostas && <p>São exibidas as vinte memórias contratuais mais recentes. Existem propostas anteriores preservadas no histórico.</p>}
@@ -90,7 +90,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {proposta.podeDecidirAdministrativo && <DecidirReconferenciaDeltaFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} administrativo />}
             {proposta.decisaoFinanceira && <p>Decisão financeira: {proposta.decisaoFinanceira.aprovada ? "aprovada" : "rejeitada"} por {proposta.decisaoFinanceira.decisorNome}: {proposta.decisaoFinanceira.motivo}</p>}
             {proposta.decisaoAdministrativa && <p>Decisão administrativa: {proposta.decisaoAdministrativa.aprovada ? "aprovada" : "rejeitada"} por {proposta.decisaoAdministrativa.decisorNome}: {proposta.decisaoAdministrativa.motivo}</p>}
-            {proposta.podeAplicar && proposta.decisaoFinanceira && <AplicarReconferenciaDeltaFormulario decisaoFinanceiraId={proposta.decisaoFinanceira.id} />}
+            {proposta.podeAplicar && proposta.decisaoFinanceira && <AplicarReconferenciaDeltaFormulario decisaoFinanceiraId={proposta.decisaoFinanceira.id} itens={proposta.itens} />}
             {proposta.aplicacao && <p>Reconferência aplicada em {instanteAdministrativo(proposta.aplicacao.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>}
           </div>)}</article>)}</>;
       })()}

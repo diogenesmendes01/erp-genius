@@ -12,6 +12,7 @@ import { salvarReguaComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { criarBuscaMaisRecente } from "@/lib/busca-recente";
 import { botaoClasses } from "@/components/Botao";
@@ -62,7 +63,8 @@ export function ReguasComerciaisPainel({
   );
 }
 
-function ReguaComercialPainel({
+/** Uma régua comercial (exportada para o teste de interação da confirmação). */
+export function ReguaComercialPainel({
   regua,
   numeros,
   templates,
@@ -121,17 +123,17 @@ function ReguaComercialPainel({
     setOpcoesPiloto([]);
   }
 
-  function alternarModoPiloto(ligado: boolean) {
-    // Desligar o piloto = GO-LIVE GERAL (todos os leads elegíveis do número) — nunca por
-    // clique distraído (B1).
-    if (!ligado && !window.confirm(
-      "Desligar o modo piloto faz esta cadência alcançar TODOS os leads elegíveis do número (go-live geral). Confirmar?",
-    )) return;
-    setModoPiloto(ligado);
-  }
+  // Desligar o piloto = GO-LIVE GERAL (todos os leads elegíveis do número) e passar a régua para ATIVA =
+  // mensagens reais (B1; docs/42 L2517). Antes o go-live pedia um window.confirm no clique da caixa, e a
+  // ativação não pedia nada. Agora as duas passam pela mesma confirmação, no Salvar — o momento em que o
+  // efeito acontece —, com remetente, janela, teto, degraus ativos e o alcance (o piloto ou todos).
+  const ativando = regua.estado !== "ATIVA" && estado === "ATIVA";
+  const desligandoPiloto = regua.modoPiloto && !modoPiloto;
+  const [confirmando, setConfirmando] = useState(false);
+  const SUCESSO = `Régua "${regua.nome}" salva.`;
 
-  async function salvar() {
-    const desfecho = await acao.executar(() => salvarReguaComercial({
+  function dadosRegua() {
+    return {
       chave: regua.chave,
       estado,
       numeroRemetenteId,
@@ -139,16 +141,32 @@ function ReguaComercialPainel({
       janelaFim,
       tetoPorContatoDia,
       modoPiloto,
-      pilotoLeadIds: pilotoLeads.map((l) => l.id),
-      degraus: degraus.map((d) => ({
+      pilotoLeadIds: pilotoLeads.map((l: { id: string }) => l.id),
+      degraus: degraus.map((d: DegrauForm) => ({
         passo: d.passo,
         offsetMinutos: d.offsetMinutos,
         ativo: d.ativo,
         templateId: d.templateId,
       })),
-    }), `Régua "${regua.nome}" salva.`);
+    };
+  }
+
+  async function salvar() {
+    if (ativando || desligandoPiloto) {
+      acao.limpar();
+      setConfirmando(true);
+      return;
+    }
+    const desfecho = await acao.executar(() => salvarReguaComercial(dadosRegua()), SUCESSO);
     if (desfecho?.tipo === "ok") router.refresh();
   }
+
+  const remetente = numerosVendas.find((n: NumeroResumo) => n.id === numeroRemetenteId)?.rotulo ?? null;
+  const nomeTemplate = new Map(templates.map((t: TemplateResumo): [string, string] => [t.id, t.nome]));
+  const degrausAtivos = degraus
+    .filter((d: DegrauForm) => d.ativo)
+    .map((d: DegrauForm) => `${d.rotulo} (após ${d.offsetMinutos} min, ${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
+    .join("; ");
 
   return (
     <div>
@@ -232,7 +250,7 @@ function ReguaComercialPainel({
                 type="checkbox"
                 className="h-4 w-4 accent-brand-600"
                 checked={modoPiloto}
-                onChange={(e) => alternarModoPiloto(e.target.checked)}
+                onChange={(e) => setModoPiloto(e.target.checked)}
               />
               Modo piloto (cohort restrito)
             </label>
@@ -296,6 +314,36 @@ function ReguaComercialPainel({
         </button>
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       </div>
+
+      {confirmando && (
+        <ConfirmarAcao
+          titulo={ativando ? `Ativar a régua "${regua.nome}" e enviar mensagens reais?` : `Levar a régua "${regua.nome}" a todos os leads (go-live geral)?`}
+          confirmacao={ativando ? "ativação da régua" : "go-live geral"}
+          idempotente={false}
+          acao={() => salvarReguaComercial(dadosRegua())}
+          aoConcluir={() => {
+            setConfirmando(false);
+            acao.setSucesso(SUCESSO);
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmando(false)}
+        >
+          <p>
+            {ativando
+              ? <>A régua passa de {regua.estado === "SHADOW" ? "ensaio" : "desligada"} para <strong>ativa</strong>: os degraus abaixo enviam mensagens reais aos leads.</>
+              : estado === "ATIVA"
+                ? "A régua está ativa: depois de salvar, as mensagens reais deixam de ficar restritas ao piloto."
+                : "A régua ainda não envia (desligada ou em ensaio), mas, quando for ativada, alcança todos os leads."}
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            <li>Alcance: {modoPiloto ? `só os ${pilotoLeads.length} lead(s) do piloto${pilotoLeads.length === 0 ? " — lista vazia, ninguém recebe" : ""}` : "GO-LIVE GERAL — todos os leads elegíveis do número"}</li>
+            <li>Remetente: {remetente ?? "nenhum escolhido"}</li>
+            <li>Janela: {janelaInicio}h às {janelaFim}h · teto de {tetoPorContatoDia} por contato/dia</li>
+            <li>Degraus ativos: {degrausAtivos || "nenhum"}</li>
+          </ul>
+          <p>Mensagem enviada não volta atrás. Para parar depois, volte a régua para desligada ou ensaio, ou religue o modo piloto, e salve.</p>
+        </ConfirmarAcao>
+      )}
     </div>
   );
 }
