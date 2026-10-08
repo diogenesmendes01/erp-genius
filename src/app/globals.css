@@ -16,8 +16,10 @@
   --neutral-muted: #efeee9;
   --border: rgba(0, 0, 0, 0.1);
   /* Borda de controle (input/select — border-gray-300): mais escura que --border de card,
-     para o contorno do campo ficar perceptível (ver docs/42-auditoria-frontend-ux.md, 7.2). */
-  --border-control: rgba(0, 0, 0, 0.42);
+     para o contorno do campo ficar perceptível (ver docs/42-auditoria-frontend-ux.md, 7.2).
+     0.44 (era 0.42): o valor antigo dava 2,996:1 sobre --surface-muted, abaixo dos 3:1 da WCAG
+     1.4.11 (docs/43 §6 item 5). Agora 3,17–3,24:1 sobre página, superfícies e neutro. */
+  --border-control: rgba(0, 0, 0, 0.44);
   --text-primary: #1a1a19;
   --text-secondary: #5f5e5a;
   /* #6d6c64 (era #88877f): o valor antigo reprovava contraste AA — é a cor de todo
@@ -29,9 +31,14 @@
   --brand-text: #3730a3;
   --brand-bg: #eef2ff;
   --brand-border: #c7d2fe;
-  /* Fundo de botão primário — NÃO inverte no dark (mesma tinta nos dois temas, sempre com
-     text-white). Distinto de --brand-text (link) e --brand (accent de checkbox/radio).
-     Ver docs/18-design-system.md. */
+  /* Fundo de botão primário e de todo indicador de seleção com texto (aba ativa, passo do
+     assistente, chip marcado), sempre com text-white. Duas exigências nos dois temas (trava em
+     src/app/contraste.test.ts): #fff sobre ele ≥ 4,5:1 (1.4.3) e ele sobre página, cartão e
+     superfície sutil ≥ 3:1 (1.4.11 — o fundo é o que mostra o estado selecionado). No claro:
+     7,90:1 com branco e 7,17–7,90:1 sobre as superfícies. O escuro tem tom próprio (ver .dark).
+     Distinto de --brand-text (link) e --brand (accent de checkbox/radio, contorno de foco, barra
+     sem texto): #fff sobre --brand dá 4,06:1 no dark e reprova AA, por isso bg-brand-500/600
+     nunca leva text-white. Ver docs/18-design-system.md. */
   --brand-solid: #4338ca;
 
   /* Semânticas (fundo / texto) */
@@ -51,7 +58,8 @@
   /* IA (sugestões do copiloto — doc 27 C3): identidade visual própria, deliberadamente
      distinta do resto da UI, para o operador reconhecer "isto foi gerado por IA" de
      relance. Mesmo padrão bg/text que os outros semânticos (inverte no dark);
-     --ai-solid é o botão primário de aceitar sugestão, não inverte (como --brand-solid). */
+     --ai-solid é o botão primário de aceitar sugestão, não inverte (texto branco nos dois temas,
+     como --brand-solid). */
   --ai-bg: #f3eefc;
   --ai-text: #5b21b6;
   --ai-border: #ddd0f8;
@@ -65,7 +73,8 @@
   --surface-muted: #2b2b29;
   --neutral-muted: #2f2f2c;
   --border: rgba(255, 255, 255, 0.12);
-  --border-control: rgba(255, 255, 255, 0.34);
+  /* 0.36 (era 0.34): 2,991:1 sobre --surface-muted reprovava; agora 3,12–3,33:1. */
+  --border-control: rgba(255, 255, 255, 0.36);
   --text-primary: #ececea;
   --text-secondary: #a7a6a1;
   /* #979692 (era #6e6d68): mesma correção de contraste do claro. */
@@ -76,8 +85,13 @@
   --brand-text: #a5b4fc;
   --brand-bg: #1f1d33;
   --brand-border: rgba(255, 255, 255, 0.14);
-  /* Mesmo hex do claro — ver comentário em :root. */
-  --brand-solid: #4338ca;
+  /* #6264ec (era #4338ca, o do claro): o índigo do claro sumia no fundo escuro — 1,97:1 sobre
+     --surface e 2,18:1 sobre --bg-page, abaixo dos 3:1 da 1.4.11 (C1 da revisão da #156).
+     A faixa que cumpre as duas exigências é estreita: luminância ≥ 0,1720 (3:1 sobre
+     --surface-muted, a mais clara das três) e ≤ 0,1833 (4,5:1 com branco). #6264ec fica no meio
+     (0,1777), na família do --brand do escuro (#6b6ef5) e do indigo-500 (#6366f1): 4,61:1 com
+     branco; 3,74 / 3,37 / 3,08:1 sobre --bg-page / --surface / --surface-muted. */
+  --brand-solid: #6264ec;
 
   --info-bg: #0c447c;
   --info-text: #b5d4f4;
