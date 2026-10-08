@@ -45,7 +45,7 @@ export default async function ParticipantesPage({ params, searchParams }: { para
     {formulario.ok && formulario.dado ? <>
       <EvidenciaParticipantes matriculaId={id} />
       <FormularioParticipantes key={`${formulario.dado.versaoEsperada}:${maioridade ?? "pendente"}`} dados={formulario.dado} />
-    </> : <p role="status">{formulario.ok ? "Conferência indisponível." : formulario.erro}</p>}
+    </> : formulario.ok ? <p role="status">Conferência indisponível.</p> : <p role="alert">{formulario.erro}</p>}
     <section className="space-y-3"><h2 className="text-xl">Histórico das conferências</h2>
       {!historico.ok ? <p role="alert">{historico.erro}</p> : historico.dado && <>
         {!historico.dado.registros.length && (pagina > 1
