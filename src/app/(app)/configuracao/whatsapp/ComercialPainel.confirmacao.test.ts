@@ -43,7 +43,7 @@ beforeEach(() => {
   m.salvar.mockResolvedValue({ ok: true });
 });
 
-describe("ComercialPainel — ativar automações passa pela confirmação", () => {
+describe("ComercialPainel \u2014 ativar automações passa pela confirmação", () => {
   it("saudação de ensaio para ativa: Salvar não salva; a confirmação mostra o texto que passa a sair", async () => {
     escolher(0, "ATIVA");
     await clicar(tela(), SALVAR);

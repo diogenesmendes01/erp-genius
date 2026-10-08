@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Modal } from "@/components/Modal";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -73,7 +73,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, a
             className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
             checked={conferido}
             disabled={ocupado}
-            onChange={(e) => setConferido(e.target.checked)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setConferido(e.target.checked)}
           />
           <span>{conferencia}</span>
         </label>
@@ -84,7 +84,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, a
           Voltar
         </Botao>
         <Botao variante="perigo" disabled={ocupado || aguardaConferencia} aria-busy={ocupado || undefined} onClick={confirmar}>
-          {ocupado ? "Confirmando…" : <>Confirmar {confirmacao}</>}
+          {ocupado ? "Confirmando\u2026" : <>Confirmar {confirmacao}</>}
         </Botao>
       </div>
     </Modal>

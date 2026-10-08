@@ -55,7 +55,7 @@ beforeEach(() => {
   m.salvar.mockResolvedValue({ ok: true });
 });
 
-describe("ReguaComercialPainel — ativar e go-live passam pela confirmação", () => {
+describe("ReguaComercialPainel \u2014 ativar e go-live passam pela confirmação", () => {
   it("de ensaio para ativa (com piloto): Salvar não salva; a confirmação diz o alcance do piloto e os degraus ativos", async () => {
     escolherEstado("ATIVA");
     await clicar(tela(), SALVAR);
@@ -85,7 +85,7 @@ describe("ReguaComercialPainel — ativar e go-live passam pela confirmação", 
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe(`Levar a régua "Lead novo sem resposta" a todos os leads (go-live geral)?`);
     expect(c.props.confirmacao).toBe("go-live geral");
-    expect(texto(c.props.children).replace(/\s+/g, " ")).toContain("GO-LIVE GERAL — todos os leads elegíveis do número");
+    expect(texto(c.props.children).replace(/\s+/g, " ")).toContain("GO-LIVE GERAL \u2014 todos os leads elegíveis do número");
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ modoPiloto: false });
   });

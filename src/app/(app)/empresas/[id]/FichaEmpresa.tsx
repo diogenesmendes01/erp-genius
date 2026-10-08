@@ -23,7 +23,6 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
 
 const btnPri = botaoClasses();
-const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 interface EmpresaFicha {
   id: string;
@@ -227,7 +226,7 @@ export function FichaEmpresa({
             confirmacao="pagamento da fatura"
             idempotente={false}
             acao={() => pagarFaturaB2B(confirmarFatura.fatura.id)}
-            aoConcluir={(d) => {
+            aoConcluir={(d: { baixadas: number } | undefined) => {
               const baixadas = d?.baixadas ?? confirmarFatura.fatura.cobrancas;
               faturaConcluida(baixadas === 1 ? "Fatura paga — 1 cobrança baixada." : `Fatura paga — ${baixadas} cobranças baixadas em lote.`);
             }}

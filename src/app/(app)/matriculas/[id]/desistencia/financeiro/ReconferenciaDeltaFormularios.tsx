@@ -8,7 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao, type FalhaConfirmacao } from "@/components/ConfirmarAcao";
-import { formatarValores, somarPorMoeda } from "@/lib/dinheiro";
+import { formatarValores, somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
 
 type ResultadoAcao = { ok: boolean; erro?: string };
 type Tentativa = { acao: () => Promise<ResultadoAcao>; sucesso: string };
@@ -74,7 +74,7 @@ function useOperacaoDelta() {
 
 /** Reconcilia a tentativa incerta: reenvia a mesma (mesma chave) — ou, na aplicação, reabre a confirmação. */
 function ReconciliarTentativaDelta({ op, aoReconciliar }: { op: ReturnType<typeof useOperacaoDelta>; aoReconciliar?: () => void }) {
-  return op.incerta && <button type="button" disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => (aoReconciliar ? aoReconciliar() : void op.reconciliar())}>
+  return op.incerta && <button type="button" disabled={op.ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={async () => { if (aoReconciliar) aoReconciliar(); else await op.reconciliar(); }}>
     {op.ocupado ? "Reconciliando…" : "Reconciliar mesma tentativa"}
   </button>;
 }
@@ -110,9 +110,9 @@ export type ItemMemoriaDelta = { cobrancaId: string; moeda: string; ajusteDevido
 
 /** O que a aplicação da reconferência faz, em números: cobranças com ajuste, crédito novo e redução bloqueada. */
 export function resumoAplicacaoDelta(itens: ItemMemoriaDelta[]) {
-  const comAjuste = itens.filter((i) => Number(i.ajusteDevido) !== 0 || Number(i.ajusteSaldo) !== 0).length;
-  const credito = somarPorMoeda(itens.map((i) => ({ moeda: i.moeda, valor: Number(i.creditoDelta) }))).filter((v) => v.valor > 0);
-  const reducao = somarPorMoeda(itens.map((i) => ({ moeda: i.moeda, valor: Number(i.reducaoCredito) }))).filter((v) => v.valor > 0);
+  const comAjuste = itens.filter((i: ItemMemoriaDelta) => Number(i.ajusteDevido) !== 0 || Number(i.ajusteSaldo) !== 0).length;
+  const credito = somarPorMoeda(itens.map((i: ItemMemoriaDelta): ValorMoeda => ({ moeda: i.moeda, valor: Number(i.creditoDelta) }))).filter((v: ValorMoeda) => v.valor > 0);
+  const reducao = somarPorMoeda(itens.map((i: ItemMemoriaDelta): ValorMoeda => ({ moeda: i.moeda, valor: Number(i.reducaoCredito) }))).filter((v: ValorMoeda) => v.valor > 0);
   return { comAjuste, credito, reducao, semDiferenca: comAjuste === 0 && credito.length === 0 && reducao.length === 0 };
 }
 
@@ -131,7 +131,7 @@ export function AplicarReconferenciaDeltaFormulario({ decisaoFinanceiraId, itens
       idempotente
       acao={() => aplicarReconferenciaDeltaDesistencia({ decisaoFinanceiraId, chaveIdempotencia: op.chave.current })}
       aoConcluir={() => { setConfirmando(false); op.concluir("Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência."); }}
-      aoFalhar={(falha) => op.registrarFalha(falha)}
+      aoFalhar={(falha: FalhaConfirmacao) => op.registrarFalha(falha)}
       aoCancelar={() => setConfirmando(false)}
     >
       {resumo.semDiferenca

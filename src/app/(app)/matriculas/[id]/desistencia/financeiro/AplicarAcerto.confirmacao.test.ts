@@ -64,7 +64,7 @@ describe("resumos da aplicação", () => {
   });
 });
 
-describe("AplicarAcertoContratualFormulario — passa pela confirmação", () => {
+describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", () => {
   const tela = (): ReactNode => m.ganchos!.renderizar(AplicarAcertoContratualFormulario, { decisaoId: "decisao-1", itens: itensAcerto });
 
   it("clicar não aplica; a confirmação exige conferência e repete cobranças e crédito", async () => {
@@ -76,7 +76,7 @@ describe("AplicarAcertoContratualFormulario — passa pela confirmação", () =>
     expect(c.props.idempotente).toBe(true);
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Serão ajustadas 2 cobranças desta matrícula");
-    expect(consequencia).toContain("Será criado crédito de ₡");
+    expect(consequencia).toContain("Será criado crédito de \u20a1");
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.aplicarAcerto).toHaveBeenCalledTimes(1);
     expect(m.aplicarAcerto.mock.calls[0][0]).toMatchObject({ decisaoId: "decisao-1" });
@@ -110,7 +110,7 @@ describe("AplicarAcertoContratualFormulario — passa pela confirmação", () =>
   });
 });
 
-describe("AplicarReconferenciaDeltaFormulario — passa pela confirmação", () => {
+describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", () => {
   const tela = (): ReactNode => m.ganchos!.renderizar(AplicarReconferenciaDeltaFormulario, { decisaoFinanceiraId: "df-1", itens: itensDelta });
 
   it("clicar não aplica; a confirmação exige conferência e repete ajuste e crédito novo", async () => {
@@ -121,7 +121,7 @@ describe("AplicarReconferenciaDeltaFormulario — passa pela confirmação", () 
     expect(c.props.idempotente).toBe(true);
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Será ajustada 1 cobrança desta matrícula");
-    expect(consequencia).toContain("Será criado crédito novo de ₡");
+    expect(consequencia).toContain("Será criado crédito novo de \u20a1");
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.aplicarDelta).toHaveBeenCalledTimes(1);
     expect(m.aplicarDelta.mock.calls[0][0]).toMatchObject({ decisaoFinanceiraId: "df-1" });
@@ -159,5 +159,31 @@ describe("AplicarReconferenciaDeltaFormulario — passa pela confirmação", () 
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
     expect(doTipo(t, MensagemStatus)[0].props.texto).toBe("Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência.");
     expect(m.refresh).toHaveBeenCalledTimes(1);
+    // R1 da #154, B6: depois do sucesso, a próxima aplicação é OUTRA tentativa (chave nova).
+    clicar(t, "Aplicar reconferência");
+    await (doTipo(tela(), ConfirmarAcao)[0].props.acao as () => Promise<unknown>)();
+    const terceira = m.aplicarDelta.mock.calls[2][0].chaveIdempotencia;
+    expect(terceira).not.toBe(segunda);
+    expect(terceira).not.toBe(primeira);
+  });
+
+  it("a consequência repete a redução de crédito bloqueada quando há (R1 da #154, B7)", () => {
+    m.ganchos!.reiniciar();
+    const comReducao = [{ cobrancaId: "c3", moeda: "CRC", ajusteDevido: "-2000", ajusteSaldo: "0", creditoDelta: "0", reducaoCredito: "3000" }];
+    const t = (): ReactNode => m.ganchos!.renderizar(AplicarReconferenciaDeltaFormulario, { decisaoFinanceiraId: "df-2", itens: comReducao });
+    clicar(t(), "Aplicar reconferência");
+    const consequencia = texto(doTipo(t(), ConfirmarAcao)[0].props.children).replace(/\s+/g, " ");
+    expect(consequencia).toContain("Será ajustada 1 cobrança desta matrícula");
+    expect(consequencia).toContain("Nenhum crédito novo será criado.");
+    expect(consequencia).toContain("Redução de crédito bloqueada: \u20a1");
+  });
+
+  it("sem diferença: a consequência diz que nada é ajustado nem creditado", () => {
+    m.ganchos!.reiniciar();
+    const t = (): ReactNode => m.ganchos!.renderizar(AplicarReconferenciaDeltaFormulario, { decisaoFinanceiraId: "df-3", itens: [itensDelta[1]] });
+    clicar(t(), "Aplicar reconferência");
+    const consequencia = texto(doTipo(t(), ConfirmarAcao)[0].props.children).replace(/\s+/g, " ");
+    expect(consequencia).toContain("Sem diferença a aplicar");
+    expect(consequencia).not.toContain("Será ajustada");
   });
 });

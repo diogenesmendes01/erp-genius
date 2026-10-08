@@ -37,6 +37,8 @@ const politicaBase: PoliticaConfig = {
   tetoPorContatoDia: 2, silencioPosInboundHoras: 72, killSwitch: false, numeroRemetenteId: "n1",
   degraus: [
     { passo: "D-3", offsetDias: -3, tipo: "lembrar", rotulo: "Lembrete", modo: "AUTOMATICO", ativo: true, templateId: "t1" },
+    { passo: "D+3", offsetDias: 3, tipo: "cobrar", rotulo: "Cobrança", modo: "LOTE", ativo: true, templateId: null },
+    { passo: "D0", offsetDias: 0, tipo: "cobrar", rotulo: "Vencimento", modo: "LOTE", ativo: false, templateId: "t1" },
     { passo: "D+7", offsetDias: 7, tipo: "cobrar", rotulo: "Cobrança", modo: "MANUAL", ativo: true, templateId: null },
     { passo: "D+15", offsetDias: 15, tipo: "bloquear", rotulo: "Bloqueio", modo: "MANUAL", ativo: true, templateId: null },
   ],
@@ -55,7 +57,7 @@ beforeEach(() => {
   m.salvar.mockResolvedValue({ ok: true });
 });
 
-describe("PoliticaPainel — kill switch", () => {
+describe("PoliticaPainel \u2014 kill switch", () => {
   it("ligar: o botão não congela; a confirmação diz o que para; só confirmar chama a action", async () => {
     clicar(tela(), "Kill switch");
     expect(m.kill).not.toHaveBeenCalled();
@@ -67,12 +69,12 @@ describe("PoliticaPainel — kill switch", () => {
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
-    expect(doTipo(t, FeedbackAcao)[0].props.sucesso).toBe("Kill switch LIGADO — automação congelada (nada se perde).");
+    expect(doTipo(t, FeedbackAcao)[0].props.sucesso).toBe("Kill switch LIGADO \u2014 automação congelada (nada se perde).");
   });
 
   it("destravar também confirma, dizendo que mensagens reais voltam a sair quando a régua está ativa", async () => {
     politica = { ...politicaBase, killSwitch: true, estado: "ATIVA" };
-    clicar(tela(), "Kill switch LIGADO — destravar");
+    clicar(tela(), "Kill switch LIGADO \u2014 destravar");
     expect(m.kill).not.toHaveBeenCalled();
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe("Destravar a automação de cobrança?");
@@ -91,7 +93,7 @@ describe("PoliticaPainel — kill switch", () => {
   });
 });
 
-describe("PoliticaPainel — ativar a régua", () => {
+describe("PoliticaPainel \u2014 ativar a régua", () => {
   it("de ensaio para ATIVA: Salvar não salva; a confirmação mostra remetente, janela, teto e degraus armados", async () => {
     escolherEstado("ATIVA");
     await clicar(tela(), "Salvar política");
@@ -103,7 +105,9 @@ describe("PoliticaPainel — ativar a régua", () => {
     expect(consequencia).toContain("Janela: 9h às 20h, seg, ter, qua, qui, sex");
     expect(consequencia).toContain("Teto: 2 mensagens automáticas por contato/dia");
     expect(consequencia).toContain("Automáticos (saem sozinhos): D-3 (cobranca_vencida)");
-    expect(consequencia).toContain("Em lote (saem quando alguém aprova o lote): nenhum");
+    // Lote armado entra com o nome (R1 da #154, B7); o inativo (D0) e o manual (D+7) não.
+    expect(consequencia).toContain("Em lote (saem quando alguém aprova o lote): D+3 (texto de fábrica)");
+    expect(consequencia).not.toContain("D0");
     expect(consequencia).not.toContain("D+7"); // manual não dispara sozinho
     expect(consequencia).not.toContain("D+15");
     await (c.props.acao as () => Promise<unknown>)();

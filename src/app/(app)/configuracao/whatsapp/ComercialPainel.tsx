@@ -84,7 +84,7 @@ export function ComercialPainel({
     if (d?.tipo === "ok") router.refresh();
   }
 
-  const remetenteGestao = numerosVendas.find((n) => n.id === gestaoNumeroId)?.rotulo ?? null;
+  const remetenteGestao = numerosVendas.find((n: { id: string; rotulo: string }) => n.id === gestaoNumeroId)?.rotulo ?? null;
 
   return (
     <section>

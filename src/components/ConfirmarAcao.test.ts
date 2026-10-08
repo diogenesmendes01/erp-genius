@@ -24,7 +24,7 @@ function html(extra: Partial<PropsConfirmarAcao<unknown>> = {}) {
 
 const botoes = (h: string) => [...h.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)].map((m) => ({ atributos: m[1], texto: m[2] }));
 
-describe("ConfirmarAcao — marcação", () => {
+describe("ConfirmarAcao \u2014 marcação", () => {
   it("é um alertdialog modal, nomeado pelo título e descrito pela consequência", () => {
     const h = html();
     const caixa = h.match(/<div[^>]*role="alertdialog"[^>]*>/)?.[0];

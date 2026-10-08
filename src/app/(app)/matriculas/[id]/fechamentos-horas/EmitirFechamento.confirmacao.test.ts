@@ -35,7 +35,7 @@ beforeEach(() => {
   m.emitir.mockResolvedValue({ ok: true, dado: { id: "cob-1" } });
 });
 
-describe("EmitirFechamento — passa pela confirmação", () => {
+describe("EmitirFechamento \u2014 passa pela confirmação", () => {
   it("clicar não emite; a confirmação pede a conferência do valor; só confirmar emite", async () => {
     expect(doTipo(tela(), ConfirmarAcao)).toHaveLength(0);
     clicar(tela(), "Emitir cobrança aprovada");
