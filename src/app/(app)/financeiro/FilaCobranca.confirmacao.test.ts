@@ -8,7 +8,7 @@ import type { FilaCobrancaItem } from "@/server/cobrancas/consultas";
 // ConfirmarAcao) não rodam — as props deles são acionadas.
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
-  enfileirar: vi.fn(), refresh: vi.fn(),
+  enfileirar: vi.fn(), lote: vi.fn(), refresh: vi.fn(),
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -32,14 +32,15 @@ vi.mock("@/lib/filtros-url", () => ({
 vi.mock("@/server/financeiro/acoes", () => ({ registrarCobrancaWhatsApp: vi.fn() }));
 vi.mock("@/server/financeiro/cobranca-manual", () => ({ prepararCobrancaManual: vi.fn() }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
-vi.mock("@/server/whatsapp/acoes", () => ({ aprovarLoteCobranca: vi.fn(), enfileirarCobrancaWhatsApp: m.enfileirar }));
+vi.mock("@/server/whatsapp/acoes", () => ({ aprovarLoteCobranca: m.lote, enfileirarCobrancaWhatsApp: m.enfileirar }));
 vi.mock("@/components/PagamentoModal", () => ({ PagamentoModal: () => null }));
 vi.mock("./AcessoAulasPainel", () => ({ AcessoAulasPainel: () => null }));
 
 import { AcaoRapida, DetalheCobranca, FilaCobranca } from "./FilaCobranca";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
-import { criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
+import { botao, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
+import { anuncios } from "@/test/feedback-acao";
 import { lerFiltrosFila } from "@/server/cobrancas/filtros-fila";
 
 const item: FilaCobrancaItem = {
@@ -190,3 +191,36 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
     expect(nota(t)).toBe("Ensaio (shadow): D+3 simulado \u2014 nada foi enviado de verdade.");
   });
 });
+
+describe("FilaCobranca \u2014 lote: falha parcial em role=\"alert\", resumo em role=\"status\" (#153)", () => {
+  /** Seleciona a cobrança para o lote e aprova; devolve o que a tela anuncia depois. */
+  async function aprovarLote(dado: { enfileiradas: number; despachadas: number; simuladas: number; falhas: number; puladas: { motivo: string }[] }) {
+    m.lote.mockResolvedValueOnce({ ok: true, dado });
+    const caixa = elementos(tela()).find((n: No) => n.type === "input" && n.props.type === "checkbox")!;
+    (caixa.props.onChange as () => void)();
+    await (botao(tela(), "Aprovar e enviar lote").props.onClick as () => Promise<void>)();
+    expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-1"] });
+    return anuncios(tela());
+  }
+
+  it("com falha: a contagem de falhas sai como erro; o resumo do que saiu, como status", async () => {
+    expect(await aprovarLote({ enfileiradas: 2, despachadas: 1, simuladas: 0, falhas: 1, puladas: [] })).toEqual({
+      alerta: ["1 envio do lote falhou; o item continua na fila manual."],
+      status: ["Lote: 2 aprovada(s) \u00b7 1 enviada(s)."],
+    });
+  });
+
+  it("várias falhas: plural no erro, e o resumo não fala de falha", async () => {
+    const r = await aprovarLote({ enfileiradas: 3, despachadas: 0, simuladas: 1, falhas: 2, puladas: [] });
+    expect(r.alerta).toEqual(["2 envios do lote falharam; os itens continuam na fila manual."]);
+    expect(r.status).toEqual(["Lote: 3 aprovada(s) \u00b7 1 simulada(s) (ensaio)."]);
+  });
+
+  it("sem falha: só o status", async () => {
+    expect(await aprovarLote({ enfileiradas: 1, despachadas: 1, simuladas: 0, falhas: 0, puladas: [] })).toEqual({
+      alerta: [],
+      status: ["Lote: 1 aprovada(s) \u00b7 1 enviada(s)."],
+    });
+  });
+});
+

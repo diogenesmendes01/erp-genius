@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("react", async importOriginal => ({ ...(await importOriginal<typeof import("react")>()), useState: mocks.useState, useRef: mocks.useRef }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
+// O <FeedbackAcao> (erro/sucesso separados) usa useRef/useEffect próprios; aqui os ganchos do React são
+// mocks em ordem, então ele vira um nó vazio — o que este teste confere é o formulário e a reconciliação.
+vi.mock("@/components/FeedbackAcao", () => ({ FeedbackAcao: () => null }));
 vi.mock("@/server/matricula/desistencia-reconferencia-delta", () => ({
   prepararReconferenciaDeltaDesistencia: mocks.preparar,
   decidirReconferenciaDeltaDesistencia: mocks.decidirFinanceiro,
@@ -23,11 +26,13 @@ class DadosFormulario {
   get(nome: string) { return nome === "motivo" ? motivo : null; }
 }
 function montar(incerta = false) {
-  const setters = [vi.fn(), vi.fn(), vi.fn()];
+  // Estados do useOperacaoDelta, na ordem: ocupado, incerta, erro, sucesso (erro e sucesso separados, #153).
+  const setters = [vi.fn(), vi.fn(), vi.fn(), vi.fn()];
   mocks.useState.mockReset()
     .mockReturnValueOnce([false, setters[0]])
     .mockReturnValueOnce([incerta, setters[1]])
-    .mockReturnValueOnce(["", setters[2]]);
+    .mockReturnValueOnce([null, setters[2]])
+    .mockReturnValueOnce([null, setters[3]]);
   const chave = { current: "chave-delta-estavel" };
   const tentativa = { current: null as unknown };
   mocks.useRef.mockReset().mockReturnValueOnce(chave).mockReturnValueOnce(tentativa);

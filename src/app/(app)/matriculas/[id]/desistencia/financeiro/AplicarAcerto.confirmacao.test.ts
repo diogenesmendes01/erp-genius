@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   aplicarAcerto: vi.fn(), aplicarDelta: vi.fn(), prepararDelta: vi.fn(), decidirDelta: vi.fn(), refresh: vi.fn(),
+  prepararAcerto: vi.fn(), decidirAcerto: vi.fn(),
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -19,17 +20,17 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
-vi.mock("@/server/matricula/desistencia-acerto-contratual", () => ({ prepararAcertoDesistenciaContratual: vi.fn(), decidirAcertoDesistenciaContratual: vi.fn() }));
+vi.mock("@/server/matricula/desistencia-acerto-contratual", () => ({ prepararAcertoDesistenciaContratual: m.prepararAcerto, decidirAcertoDesistenciaContratual: m.decidirAcerto }));
 vi.mock("@/server/matricula/desistencia-acerto-aplicacao", () => ({ aplicarAcertoDesistenciaContratual: m.aplicarAcerto }));
 vi.mock("@/server/matricula/desistencia-reconferencia-delta", () => ({
   prepararReconferenciaDeltaDesistencia: m.prepararDelta, decidirReconferenciaDeltaDesistencia: m.decidirDelta,
   decidirAdministrativamenteReconferenciaDeltaDesistencia: vi.fn(), aplicarReconferenciaDeltaDesistencia: m.aplicarDelta,
 }));
 
-import { AplicarAcertoContratualFormulario, resumoAplicacaoAcerto } from "./AcertoContratualFormularios";
+import { AplicarAcertoContratualFormulario, DecidirAcertoContratualFormulario, PrepararAcertoContratualFormulario, resumoAplicacaoAcerto } from "./AcertoContratualFormularios";
 import { AplicarReconferenciaDeltaFormulario, DecidirReconferenciaDeltaFormulario, PrepararReconferenciaDeltaFormulario, resumoAplicacaoDelta } from "./ReconferenciaDeltaFormularios";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botao, clicar, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
 
@@ -100,11 +101,12 @@ describe("AplicarAcertoContratualFormulario \u2014 passa pela confirmação", ()
     await (c.props.acao as () => Promise<unknown>)();
     const [primeira, segunda] = m.aplicarAcerto.mock.calls.map((x) => x[0].chaveIdempotencia);
     expect(segunda).toBe(primeira);
-    expect(doTipo(tela(), MensagemStatus)[0].props.texto).toBe(MSG_RESULTADO_INCERTO);
+    // O incerto também fica fora do diálogo, como ERRO (role="alert"), não como status (#153).
+    expect(anuncios(tela())).toEqual({ alerta: [MSG_RESULTADO_INCERTO], status: [] });
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
-    expect(doTipo(t, MensagemStatus)[0].props.texto).toBe("Acerto aplicado. A Secretaria pode efetivar a desistência.");
+    expect(anuncios(t)).toEqual({ alerta: [], status: ["Acerto aplicado. A Secretaria pode efetivar a desistência."] });
     expect(m.refresh).toHaveBeenCalledTimes(1);
     clicar(t, "Aplicar acerto aprovado");
     await (doTipo(tela(), ConfirmarAcao)[0].props.acao as () => Promise<unknown>)();
@@ -147,6 +149,8 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "incerto", mensagem: MSG_RESULTADO_INCERTO });
     (c.props.aoCancelar as () => void)();
     let t = tela();
+    // Fechada a confirmação, o incerto continua anunciado como ERRO (role="alert"), nunca como status (#153).
+    expect(anuncios(t)).toEqual({ alerta: [MSG_RESULTADO_INCERTO], status: [] });
     expect(botao(t, "Aplicar reconferência").props.disabled).toBe(true);
     const [reconciliar] = elementos(t).filter((n) => typeof n.type === "function" && "aoReconciliar" in n.props);
     clicar(expandir(reconciliar), "Reconciliar mesma tentativa");
@@ -165,6 +169,8 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.aplicarDelta).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     (c.props.aoFalhar as (f: unknown) => void)({ tipo: "erro", mensagem: "Decisão revogada." });
+    // O erro de negócio fica DENTRO do diálogo (que continua aberto); fora dele, nada é anunciado.
+    expect(anuncios(tela())).toEqual({ alerta: [], status: [] });
     c = doTipo(tela(), ConfirmarAcao)[0];
     await (c.props.acao as () => Promise<unknown>)();
     const [primeira, segunda] = m.aplicarDelta.mock.calls.map((x) => x[0].chaveIdempotencia);
@@ -172,7 +178,7 @@ describe("AplicarReconferenciaDeltaFormulario \u2014 passa pela confirmação", 
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
-    expect(doTipo(t, MensagemStatus)[0].props.texto).toBe("Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência.");
+    expect(anuncios(t)).toEqual({ alerta: [], status: ["Reconferência aplicada. A Secretaria ainda precisa efetivar a desistência."] });
     expect(m.refresh).toHaveBeenCalledTimes(1);
     // R1 da #154, B6: depois do sucesso, a próxima aplicação é OUTRA tentativa (chave nova).
     clicar(t, "Aplicar reconferência");
@@ -252,3 +258,82 @@ describe("Reconciliar mesma tentativa no preparo e na decisão (R2 da #154, B11)
     expect(m.decidirDelta.mock.calls[0][0]).toMatchObject({ propostaId: "p-1", aprovada: true });
   });
 });
+
+describe("feedback separado nos formulários do acerto e da reconferência (#153: erro em role=\"alert\", sucesso em role=\"status\")", () => {
+  const CAMPOS = new Map<string, string>([["motivo", "Fato posterior conferido."], ["decisao", "aprovar"]]);
+  class DadosFormulario {
+    get(nome: string): string | null { return CAMPOS.get(nome) ?? null; }
+  }
+  beforeEach(() => { vi.stubGlobal("FormData", DadosFormulario); });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  /** Envia o formulário da tela atual e devolve a promessa do handler. */
+  const enviarDe = (tela: () => ReactNode) => () => {
+    const formulario = elementos(tela()).find((n: No) => n.type === "form")!;
+    return (formulario.props.onSubmit as (e: { preventDefault: () => void; currentTarget: object }) => Promise<void>)({ preventDefault: () => {}, currentTarget: {} });
+  };
+  /** O botão de envio mostra o rótulo de ocupado? */
+  const rotuloOcupado = (tela: () => ReactNode, rotulo: string) => () =>
+    elementos(tela()).some((n: No) => n.type === "button" && texto(n.props.children).trim() === rotulo);
+
+  const acertoPreparar = (): ReactNode => m.ganchos!.renderizar(PrepararAcertoContratualFormulario, { pedidoId: "ped-1", condicoesId: "cond-1", reapresentacao: null });
+  contratoFeedbackSeparado({
+    nome: "acerto \u00b7 preparar memória",
+    preparar: () => { m.ganchos = criarGanchos(); },
+    tela: acertoPreparar,
+    acionar: enviarDe(acertoPreparar),
+    action: m.prepararAcerto,
+    sucesso: "Memória contratual preparada. Outra pessoa autorizada deve decidir.",
+    incerto: MSG_RESULTADO_INCERTO,
+    ocupado: rotuloOcupado(acertoPreparar, "Preparando\u2026"),
+  });
+
+  const acertoDecidir = (): ReactNode => m.ganchos!.renderizar(DecidirAcertoContratualFormulario, { propostaId: "prop-1", fotografiaHash: "h-1" });
+  contratoFeedbackSeparado({
+    nome: "acerto \u00b7 decisão independente",
+    preparar: () => { m.ganchos = criarGanchos(); },
+    tela: acertoDecidir,
+    acionar: enviarDe(acertoDecidir),
+    action: m.decidirAcerto,
+    sucesso: "Decisão independente registrada.",
+    incerto: MSG_RESULTADO_INCERTO,
+    ocupado: rotuloOcupado(acertoDecidir, "Registrando\u2026"),
+  });
+
+  const deltaPreparar = (): ReactNode => m.ganchos!.renderizar(PrepararReconferenciaDeltaFormulario, { aplicacaoBaseId: "base-1" });
+  contratoFeedbackSeparado({
+    nome: "reconferência \u00b7 preparar",
+    preparar: () => { m.ganchos = criarGanchos(); },
+    tela: deltaPreparar,
+    acionar: enviarDe(deltaPreparar),
+    action: m.prepararDelta,
+    sucesso: "Reconferência preparada. As decisões financeira e administrativa são independentes.",
+    incerto: MSG_RESULTADO_INCERTO,
+    ocupado: rotuloOcupado(deltaPreparar, "Preparando\u2026"),
+  });
+
+  const deltaDecidir = (): ReactNode => m.ganchos!.renderizar(DecidirReconferenciaDeltaFormulario, { propostaId: "p-1", fotografiaHash: "h-1", administrativo: false });
+  contratoFeedbackSeparado({
+    nome: "reconferência \u00b7 decisão financeira",
+    preparar: () => { m.ganchos = criarGanchos(); },
+    tela: deltaDecidir,
+    acionar: enviarDe(deltaDecidir),
+    action: m.decidirDelta,
+    sucesso: "Decisão independente registrada.",
+    incerto: MSG_RESULTADO_INCERTO,
+    ocupado: rotuloOcupado(deltaDecidir, "Registrando\u2026"),
+  });
+
+  it("acerto: a chave não troca depois de erro nem de incerto; troca depois do sucesso", async () => {
+    m.ganchos = criarGanchos();
+    m.prepararAcerto.mockResolvedValueOnce({ ok: false, erro: "Recusado." }).mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: true });
+    const enviar = enviarDe(acertoPreparar);
+    for (let i = 0; i < 4; i++) await enviar();
+    const chaves = m.prepararAcerto.mock.calls.map((x: unknown[]) => (x[0] as { chaveIdempotencia: string }).chaveIdempotencia);
+    expect(chaves[1]).toBe(chaves[0]);
+    expect(chaves[2]).toBe(chaves[0]);
+    expect(chaves[3]).not.toBe(chaves[2]);
+    expect(m.refresh).toHaveBeenCalledTimes(2); // só os dois sucessos releem a página
+  });
+});
+
