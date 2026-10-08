@@ -61,7 +61,7 @@ beforeEach(() => {
   };
 });
 
-describe("ConfirmarAcao — interação", () => {
+describe("ConfirmarAcao \u2014 interação", () => {
   it("abrir não executa nada; Voltar cancela sem executar", () => {
     const t = tela();
     expect(acao).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe("ConfirmarAcao — interação", () => {
     const [voltar, confirmar] = botoes(t);
     expect(voltar.props.disabled).toBe(true);
     expect(confirmar.props.disabled).toBe(true);
-    expect(texto(confirmar.props.children).trim()).toBe("Confirmando…");
+    expect(texto(confirmar.props.children).trim()).toBe("Confirmando\u2026");
     (modal.props.aoFechar as () => void)();
     (voltar.props.onClick as () => void)();
     expect(props.aoCancelar).not.toHaveBeenCalled();
@@ -126,6 +126,29 @@ describe("ConfirmarAcao — interação", () => {
     liberar({ ok: true, dado: { baixadas: 14 } });
     await promessa;
     expect(props.aoConcluir).toHaveBeenCalledTimes(1);
+  });
+
+  it("ocupado com conferência (R1 da #154, B4): a caixa trava e a confirmação anuncia aria-busy; fora do ocupado, não", async () => {
+    props = { ...props, conferencia: "Confirmo os valores acima." };
+    const caixaDe = (t: ReactNode): No => elementos(t).find((n: No) => n.type === "input")!;
+    (caixaDe(tela()).props.onChange as (e: { target: { checked: boolean } }) => void)({ target: { checked: true } });
+    let t = tela();
+    expect(caixaDe(t).props.disabled).toBe(false);
+    expect(botaoPorTexto(t, CONFIRMAR).props["aria-busy"]).toBeUndefined();
+
+    let liberar: (r: Resultado<Dado>) => void = () => {};
+    acao.mockImplementationOnce(() => new Promise((r: (v: Resultado<Dado>) => void) => { liberar = r; }));
+    const promessa = clicar(t, CONFIRMAR);
+    t = tela();
+    expect(caixaDe(t).props.disabled).toBe(true);
+    expect(caixaDe(t).props.checked).toBe(true);
+    const [, confirmar] = botoes(t);
+    expect(confirmar.props["aria-busy"]).toBe(true);
+    liberar({ ok: false, erro: "Fatura já paga." });
+    await promessa;
+    t = tela();
+    expect(caixaDe(t).props.disabled).toBe(false);
+    expect(botaoPorTexto(t, CONFIRMAR).props["aria-busy"]).toBeUndefined();
   });
 
   it("erro de negócio: a mensagem fica DENTRO do diálogo, que continua aberto; nada é concluído", async () => {

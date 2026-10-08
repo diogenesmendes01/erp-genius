@@ -30,7 +30,7 @@ const ESTADO_HINT: Record<string, string> = {
 
 /** Janela e dias em texto: "9h às 20h, seg, ter, qua, qui, sex". */
 function textoJanela(inicio: number, fim: number, dias: number[]): string {
-  const nomes = [...dias].sort((a, b) => a - b).map((d) => DIAS[d]).filter(Boolean);
+  const nomes = [...dias].sort((a: number, b: number) => a - b).map((d: number) => DIAS[d]).filter((nome: string | undefined): nome is string => !!nome);
   return `${inicio}h às ${fim}h, ${nomes.length ? nomes.join(", ") : "nenhum dia marcado"}`;
 }
 
@@ -89,7 +89,7 @@ export function PoliticaPainel({
     return {
       ...form,
       numeroRemetenteId: form.numeroRemetenteId || undefined,
-      degraus: form.degraus.map((d) => ({
+      degraus: form.degraus.map((d: DegrauConfig) => ({
         passo: d.passo as "D-7" | "D-3" | "D0" | "D+3" | "D+7" | "D+15",
         offsetDias: d.offsetDias,
         modo: d.modo as "AUTOMATICO" | "MANUAL" | "LOTE",
@@ -127,11 +127,11 @@ export function PoliticaPainel({
     router.refresh();
   }
 
-  const nomeTemplate = new Map(templates.map((t) => [t.id, t.nome]));
+  const nomeTemplate = new Map(templates.map((t: TemplateConfig): [string, string] => [t.id, t.nome]));
   // Degraus que disparam depois de ativar (ativos, fora do D+15, que é sempre aprovação humana), por modo.
   const armados = (modo: string) => form.degraus
-    .filter((d) => d.ativo && d.tipo !== "bloquear" && d.modo === modo)
-    .map((d) => `${d.passo} (${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
+    .filter((d: DegrauConfig) => d.ativo && d.tipo !== "bloquear" && d.modo === modo)
+    .map((d: DegrauConfig) => `${d.passo} (${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
     .join("; ");
   const armadosAutomaticos = armados("AUTOMATICO");
   const armadosEmLote = armados("LOTE");

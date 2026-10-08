@@ -72,7 +72,7 @@ beforeEach(() => {
   m.enfileirar.mockResolvedValue({ ok: true, dado: { passo: "D+3", status: "DESPACHADA", motivo: null } });
 });
 
-describe("FilaCobranca — cobrar pela linha passa pela confirmação", () => {
+describe("FilaCobranca \u2014 cobrar pela linha passa pela confirmação", () => {
   it("o \"Cobrar\" da linha é um botão que só chama onEnviar (AcaoRapida)", () => {
     const onEnviar = vi.fn();
     const botao = AcaoRapida({ item, podeOperar: true, onEnviar, onAcesso: vi.fn() }) as unknown as No;
@@ -117,6 +117,29 @@ describe("FilaCobranca — cobrar pela linha passa pela confirmação", () => {
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 
+  // R1 da #154, B5: cada desfecho do despacho sai no lugar certo — falha como erro (role="alert"), o resto
+  // como nota (região polite). FALHOU numa nota verde esconderia a mensagem que não saiu.
+  const desfechos: { status: string; motivo: string | null; nota: string | null; erro: string | null }[] = [
+    { status: "DESPACHADA", motivo: null, nota: "Enviado via WhatsApp (D+3).", erro: null },
+    { status: "SIMULADA", motivo: null, nota: "Ensaio (shadow): D+3 simulado \u2014 nada foi enviado de verdade.", erro: null },
+    { status: "ADIADA", motivo: "fora_da_janela", nota: "Na fila (fora da janela de horário) \u2014 envia sozinho na próxima janela.", erro: null },
+    { status: "FALHOU", motivo: "numero_invalido", nota: null, erro: "Envio falhou: numero_invalido \u2014 o item continua na fila manual." },
+    { status: "CANCELADA", motivo: "conversa_viva", nota: "Não enviado: o contato respondeu \u2014 trate a conversa antes.", erro: null },
+  ];
+  for (const d of desfechos) {
+    it(`desfecho ${d.status}: ${d.erro ? "erro (role=alert), sem nota" : "nota, sem erro"}`, () => {
+      const [rapida] = doTipo(tela(), AcaoRapida);
+      (rapida.props.onEnviar as () => void)();
+      const [c] = confirmacoes(tela());
+      (c.props.aoConcluir as (dado: { passo: string; status: string; motivo: string | null }) => void)({ passo: "D+3", status: d.status, motivo: d.motivo });
+      const t = tela();
+      const alerta = elementos(t).find((n: No) => n.type === "p" && n.props.role === "alert");
+      expect(alerta ? texto(alerta.props.children) : null).toBe(d.erro);
+      expect(nota(t) ?? null).toBe(d.nota);
+      expect(confirmacoes(t)).toHaveLength(0);
+    });
+  }
+
   it("voltar fecha a confirmação sem enviar", () => {
     const [rapida] = doTipo(tela(), AcaoRapida);
     (rapida.props.onEnviar as () => void)();
@@ -126,7 +149,7 @@ describe("FilaCobranca — cobrar pela linha passa pela confirmação", () => {
   });
 });
 
-describe("FilaCobranca — enviar pela gaveta do detalhe passa pela confirmação", () => {
+describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirmação", () => {
   const abrirDetalhe = () => {
     const linha = elementos(tela()).find((n) => n.type === "button" && texto(n.props.children).includes("Ana Silva"));
     (linha!.props.onClick as () => void)();
@@ -160,6 +183,6 @@ describe("FilaCobranca — enviar pela gaveta do detalhe passa pela confirmaçã
     t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
     expect(doTipo(t, DetalheCobranca)).toHaveLength(0);
-    expect(nota(t)).toBe("Ensaio (shadow): D+3 simulado — nada foi enviado de verdade.");
+    expect(nota(t)).toBe("Ensaio (shadow): D+3 simulado \u2014 nada foi enviado de verdade.");
   });
 });

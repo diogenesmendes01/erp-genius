@@ -141,8 +141,8 @@ export function ReguaComercialPainel({
       janelaFim,
       tetoPorContatoDia,
       modoPiloto,
-      pilotoLeadIds: pilotoLeads.map((l) => l.id),
-      degraus: degraus.map((d) => ({
+      pilotoLeadIds: pilotoLeads.map((l: { id: string }) => l.id),
+      degraus: degraus.map((d: DegrauForm) => ({
         passo: d.passo,
         offsetMinutos: d.offsetMinutos,
         ativo: d.ativo,
@@ -161,11 +161,11 @@ export function ReguaComercialPainel({
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
-  const remetente = numerosVendas.find((n) => n.id === numeroRemetenteId)?.rotulo ?? null;
-  const nomeTemplate = new Map(templates.map((t) => [t.id, t.nome]));
+  const remetente = numerosVendas.find((n: NumeroResumo) => n.id === numeroRemetenteId)?.rotulo ?? null;
+  const nomeTemplate = new Map(templates.map((t: TemplateResumo): [string, string] => [t.id, t.nome]));
   const degrausAtivos = degraus
-    .filter((d) => d.ativo)
-    .map((d) => `${d.rotulo} (após ${d.offsetMinutos} min, ${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
+    .filter((d: DegrauForm) => d.ativo)
+    .map((d: DegrauForm) => `${d.rotulo} (após ${d.offsetMinutos} min, ${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
     .join("; ");
 
   return (

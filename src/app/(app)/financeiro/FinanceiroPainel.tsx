@@ -87,7 +87,7 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
   // "Fechar mês e marcar pagas" paga TODAS as aprovadas e não tem desfazer (docs/42 L2016): o botão só
   // abre a confirmação, que repete quantas comissões e quanto, por moeda.
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
-  const quantidade = aPagar.reduce((n, v) => n + ("quantidade" in v ? v.quantidade : 0), 0);
+  const quantidade = aPagar.reduce((n: number, v: ValorMoeda | TotalAPagar) => n + ("quantidade" in v ? v.quantidade : 0), 0);
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
@@ -108,7 +108,7 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
           confirmacao="fechamento do mês"
           idempotente={false}
           acao={() => fecharMesComissoes()}
-          aoConcluir={(d) => {
+          aoConcluir={(d: { pagas: number } | undefined) => {
             const pagas = d?.pagas ?? 0;
             setConfirmarFechamento(false);
             acao.setSucesso(pagas === 1 ? "Mês fechado: 1 comissão marcada como paga." : `Mês fechado: ${pagas} comissões marcadas como pagas.`);

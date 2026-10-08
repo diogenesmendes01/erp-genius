@@ -72,7 +72,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
 
   // Editar um template APROVADO o devolve a rascunho e tira do ar o degrau que dependia dele (docs/42
   // L2518): o aviso sobe para o topo do formulário e o Salvar, nesse caso, só abre a confirmação.
-  const original = form?.id ? templates.find((t) => t.id === form.id) : undefined;
+  const original = form?.id ? templates.find((t: TemplateConfig) => t.id === form.id) : undefined;
   const editandoAprovado = original?.statusMeta === "APROVADO";
   const [confirmando, setConfirmando] = useState(false);
 

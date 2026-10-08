@@ -8,8 +8,8 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
-import { ConfirmarAcao } from "@/components/ConfirmarAcao";
-import { formatarValores, somarPorMoeda } from "@/lib/dinheiro";
+import { ConfirmarAcao, type FalhaConfirmacao } from "@/components/ConfirmarAcao";
+import { formatarValores, somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
 
 function useOperacao() {
   const router = useRouter(), chave = useRef(crypto.randomUUID());
@@ -32,7 +32,7 @@ export type ItemMemoriaAcerto = { cobrancaId: string; moeda: string; devido: str
 
 /** O que a aplicação do acerto faz, em números: cobranças ajustadas e crédito criado, por moeda. */
 export function resumoAplicacaoAcerto(itens: ItemMemoriaAcerto[]) {
-  const credito = somarPorMoeda(itens.map((i) => ({ moeda: i.moeda, valor: Number(i.creditoApurado) }))).filter((v) => v.valor > 0);
+  const credito = somarPorMoeda(itens.map((i: ItemMemoriaAcerto): ValorMoeda => ({ moeda: i.moeda, valor: Number(i.creditoApurado) }))).filter((v: ValorMoeda) => v.valor > 0);
   return { cobrancas: itens.length, credito };
 }
 
@@ -66,7 +66,7 @@ export function AplicarAcertoContratualFormulario({ decisaoId, itens }: { decisa
       idempotente
       acao={() => aplicarAcertoDesistenciaContratual({ decisaoId, chaveIdempotencia: op.chave.current })}
       aoConcluir={() => { setConfirmando(false); op.concluir("Acerto aplicado. A Secretaria pode efetivar a desistência."); }}
-      aoFalhar={(falha) => { if (falha.tipo === "incerto") op.informar(falha.mensagem); }}
+      aoFalhar={(falha: FalhaConfirmacao) => { if (falha.tipo === "incerto") op.informar(falha.mensagem); }}
       aoCancelar={() => setConfirmando(false)}
     >
       <p>{resumo.cobrancas === 1 ? "Será ajustada 1 cobrança" : `Serão ajustadas ${resumo.cobrancas} cobranças`} desta matrícula pelos valores da memória aprovada.</p>

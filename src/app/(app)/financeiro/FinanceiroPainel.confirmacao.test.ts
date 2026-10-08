@@ -40,7 +40,7 @@ beforeEach(() => {
   m.salvarConfig.mockResolvedValue({ ok: true });
 });
 
-describe("ComissoesAba — fechar o mês passa pela confirmação", () => {
+describe("ComissoesAba \u2014 fechar o mês passa pela confirmação", () => {
   it("o botão da lista chama onFechar", () => {
     const [lista] = doTipo(tela(), Comissoes);
     expect(lista.props.podePagar).toBe(true);

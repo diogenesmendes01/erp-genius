@@ -42,7 +42,7 @@ beforeEach(() => {
   m.salvar.mockResolvedValue({ ok: true, dado: { id: "t1" } });
 });
 
-describe("TemplatesPainel — editar template aprovado passa pela confirmação", () => {
+describe("TemplatesPainel \u2014 editar template aprovado passa pela confirmação", () => {
   it("o aviso aparece no topo do formulário do aprovado; Salvar não salva; a confirmação diz o efeito", async () => {
     editar(0);
     expect(texto(tela())).toContain(AVISO);
@@ -57,7 +57,7 @@ describe("TemplatesPainel — editar template aprovado passa pela confirmação"
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
     expect(texto(t)).not.toContain(AVISO); // o formulário fechou
-    expect(doTipo(t, FeedbackAcao).at(-1)!.props.sucesso).toBe("Template salvo — voltou a rascunho; submeta à Meta de novo.");
+    expect(doTipo(t, FeedbackAcao).at(-1)!.props.sucesso).toBe("Template salvo \u2014 voltou a rascunho; submeta à Meta de novo.");
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 

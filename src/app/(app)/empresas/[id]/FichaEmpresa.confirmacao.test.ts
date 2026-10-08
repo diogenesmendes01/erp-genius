@@ -43,7 +43,7 @@ beforeEach(() => {
   m.cancelar.mockResolvedValue({ ok: true });
 });
 
-describe("FichaEmpresa — pagar fatura passa pela confirmação", () => {
+describe("FichaEmpresa \u2014 pagar fatura passa pela confirmação", () => {
   it("clicar não paga; a confirmação diz quantas cobranças e quanto; só confirmar paga", async () => {
     clicar(tela(), "Registrar pagamento");
     expect(m.pagar).not.toHaveBeenCalled();
@@ -62,15 +62,16 @@ describe("FichaEmpresa — pagar fatura passa pela confirmação", () => {
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.pagar).toHaveBeenCalledWith("fat-1");
     expect(m.cancelar).not.toHaveBeenCalled();
-    (c.props.aoConcluir as (d: unknown) => void)({ baixadas: 14 });
+    // O anúncio usa o que o SERVIDOR baixou (R1 da #154, B7), não a contagem da linha (14).
+    (c.props.aoConcluir as (d: { baixadas: number } | undefined) => void)({ baixadas: 13 });
     const t = tela();
     expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
-    expect(sucessoDasFaturas(t)).toBe("Fatura paga — 14 cobranças baixadas em lote.");
+    expect(sucessoDasFaturas(t)).toBe("Fatura paga \u2014 13 cobranças baixadas em lote.");
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 });
 
-describe("FichaEmpresa — cancelar fatura passa pela confirmação", () => {
+describe("FichaEmpresa \u2014 cancelar fatura passa pela confirmação", () => {
   it("o botão diz o que cancela; clicar não cancela; só confirmar cancela", async () => {
     clicar(tela(), "Cancelar fatura");
     expect(m.cancelar).not.toHaveBeenCalled();
