@@ -15,6 +15,16 @@ export const SHADES_FUNDO_DA_MARCA = ["500", "600"] as const;
  */
 export const SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"] as const;
 
+/**
+ * Superfícies sobre as quais fica um indicador de seleção em bg-brand-solid (aba, passo, chip, botão
+ * primário): o fundo da seleção tem de se destacar delas com ≥ 3:1 (WCAG 1.4.11), nos dois temas.
+ * Fica de fora --neutral-muted (gray-100): ele é o vizinho da seleção (passo seguinte, chip
+ * desmarcado, hover da aba inativa), não o fundo sob ela — e no escuro nenhuma cor cumpre as duas
+ * contas sobre ele (3:1 exige luminância ≥ 0,1846; 4,5:1 com branco, ≤ 0,1833). A trava confere essa
+ * impossibilidade pelos tokens: se --neutral-muted mudar e ela sumir, ele volta para a lista.
+ */
+export const SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"] as const;
+
 /** Fundos sólidos (não invertem no escuro) que levam texto branco: ≥ 4,5:1 nos dois temas. */
 export const FUNDOS_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"] as const;
 
