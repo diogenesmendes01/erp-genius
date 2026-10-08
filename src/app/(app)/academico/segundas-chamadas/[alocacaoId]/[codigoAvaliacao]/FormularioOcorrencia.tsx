@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useRouter } from "next/navigation";
 import { registrarOcorrenciaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-ocorrencia-local";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 const tipos = [
@@ -15,35 +16,25 @@ const tipos = [
 export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; fuso: string }) {
   const router = useRouter();
   const listaFusosId = useId();
-  const [ocupado, setOcupado] = useState(false);
-  const [mensagem, setMensagem] = useState("");
+  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
+  const acao = useAcaoCliente({ idempotente: false });
 
   return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {
     evento.preventDefault();
-    if (ocupado) return;
     const valores = new FormData(evento.currentTarget);
-    setOcupado(true);
-    setMensagem("");
-    try {
-      const r = await registrarOcorrenciaSegundaChamadaLocal({
-        reservaId,
-        tipo: String(valores.get("tipo")) as (typeof tipos)[number][0],
-        dataHoraLocal: String(valores.get("dataHoraLocal")),
-        fuso: String(valores.get("fuso")),
-        motivo: String(valores.get("motivo")),
-        evidencia: String(valores.get("evidencia")),
-      });
-      if (r.ok) router.refresh();
-      else setMensagem(r.erro);
-    } catch {
-      setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE);
-    } finally {
-      setOcupado(false);
-    }
+    const d = await acao.executar(() => registrarOcorrenciaSegundaChamadaLocal({
+      reservaId,
+      tipo: String(valores.get("tipo")) as (typeof tipos)[number][0],
+      dataHoraLocal: String(valores.get("dataHoraLocal")),
+      fuso: String(valores.get("fuso")),
+      motivo: String(valores.get("motivo")),
+      evidencia: String(valores.get("evidencia")),
+    }), "Ocorrência registrada.");
+    if (d?.tipo === "ok") router.refresh();
   }}>
     <h3 className="font-medium">Registrar ocorrência</h3>
     <p className="text-sm">O sistema calcula cancelamento dentro ou fora do prazo. Falta não lança nota zero; impedimento pela escola não consome a oportunidade.</p>
-    <fieldset disabled={ocupado} className="space-y-2">
+    <fieldset disabled={acao.ocupado} className="space-y-2">
       <label className="block">Tipo
         <select name="tipo" required defaultValue="" className="block rounded border p-2">
           <option value="" disabled>Selecione</option>
@@ -68,8 +59,8 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
       <label className="block">Evidência
         <CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" />
       </label>
-      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar ocorrência"}</button>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Registrar ocorrência"}</button>
     </fieldset>
-    {mensagem && <p role="alert">{mensagem}</p>}
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
 }

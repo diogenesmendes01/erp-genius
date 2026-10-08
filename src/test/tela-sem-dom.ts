@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Campo, type LigacaoCampo } from "@/components/Campo";
+import { Botao } from "@/components/Botao";
 
 // Teste de interação de componente cliente sem DOM (sem jsdom, como o resto da suíte): o componente é
 // chamado como função, com `useState`/`useCallback` do React trocados pelos ganchos daqui (o teste faz
@@ -8,11 +9,13 @@ import { Campo, type LigacaoCampo } from "@/components/Campo";
 // por posição, como no React. Os <Campo> são expandidos: a função filha recebe a ligação e o controle
 // devolvido entra na árvore.
 //
-// LIMITE (de propósito): só useState e useCallback são simulados. Efeitos (useEffect/useLayoutEffect)
-// não rodam e useRef/useMemo/useId/useTransition/useContext não existem aqui — um componente testado
-// assim que passar a chamar um deles direto no corpo falha no teste ("Invalid hook call"), e o teste
-// precisa acompanhar (simular o gancho novo aqui, ou mockar como em DecisaoTaxa.test.ts). Componentes
-// filhos (Drawer, FeedbackAcao, Campo…) não são chamados: só as props deles são lidas.
+// LIMITE (de propósito): useState e useCallback são simulados; useRef e useId também, guardados por
+// posição como o estado (o ref e o id ficam os mesmos entre renders — uma chave de idempotência num
+// useRef não muda a cada render), para o teste que os ligar no `vi.mock("react", …)`. Efeitos
+// (useEffect/useLayoutEffect) não rodam — o teste que precisar os troca por função vazia — e
+// useMemo/useTransition/useContext não existem aqui: um componente testado assim que passar a chamar um
+// deles direto no corpo falha no teste ("Invalid hook call"), e o teste precisa acompanhar. Componentes
+// filhos (Drawer, FeedbackAcao, Campo, ConfirmarAcao…) não são chamados: só as props deles são lidas.
 
 type Setter<T> = (v: T | ((anterior: T) => T)) => void;
 
@@ -30,6 +33,16 @@ export function criarGanchos() {
     },
     useCallback<F>(f: F): F {
       return f;
+    },
+    useRef<T>(inicial: T): { current: T } {
+      const k = posicao++;
+      if (k >= estados.length) estados.push({ current: inicial });
+      return estados[k] as { current: T };
+    },
+    useId(): string {
+      const k = posicao++;
+      if (k >= estados.length) estados.push(`id-${k}`);
+      return estados[k] as string;
     },
     renderizar<P>(componente: (props: P) => ReactNode, props: P): ReactNode {
       posicao = 0;
@@ -104,6 +117,67 @@ export function botao(raiz: ReactNode, rotulo: string): No {
 /** Clica no botão (pelo texto exato); devolve o que o onClick devolver (a promessa, quando assíncrono). */
 export function clicar(raiz: ReactNode, rotulo: string): unknown {
   return (botao(raiz, rotulo).props.onClick as () => unknown)();
+}
+
+/** Botão nativo ou <Botao> do design system pelo texto exato (o <Botao> não é chamado: lê-se a prop). */
+export function botaoOuBotao(raiz: ReactNode, rotulo: string): No {
+  const achados = elementos(raiz).filter((n) => (n.type === "button" || n.type === Botao) && texto(n.props.children).trim() === rotulo);
+  if (achados.length !== 1) throw new Error(`esperava 1 botão "${rotulo}", achei ${achados.length}`);
+  return achados[0];
+}
+
+/** Clica no botão nativo ou <Botao> (pelo texto exato) com um evento mínimo; devolve o que o onClick devolver. */
+export function clicarBotao(raiz: ReactNode, rotulo: string): unknown {
+  return (botaoOuBotao(raiz, rotulo).props.onClick as (e: unknown) => unknown)({ preventDefault() {}, stopPropagation() {} });
+}
+
+// Formulário sem DOM: o evento de submit leva um "formulário" falso com os valores por nome, e o
+// FormData global (trocado no teste por FormDataFalso, via vi.stubGlobal) lê esses valores.
+const VALORES = Symbol("valores do formulário falso");
+type ValoresFormulario = Record<string, string | string[]>;
+
+/** Formulário falso: os valores por `name`; `reset()` não faz nada. */
+export function formularioFalso(valores: ValoresFormulario = {}) {
+  return { [VALORES]: valores, reset() {}, elements: {} };
+}
+
+/** FormData que lê o formulário falso (`new FormData(evento.currentTarget)`). */
+export class FormDataFalso {
+  private readonly valores: ValoresFormulario;
+  constructor(form?: unknown) {
+    this.valores = (form && typeof form === "object" && VALORES in form ? (form as { [VALORES]: ValoresFormulario })[VALORES] : {});
+  }
+  get(nome: string): string | null {
+    const v = this.valores[nome];
+    return v === undefined ? null : Array.isArray(v) ? v[0] ?? null : v;
+  }
+  getAll(nome: string): string[] {
+    const v = this.valores[nome];
+    return v === undefined ? [] : Array.isArray(v) ? v : [v];
+  }
+  has(nome: string): boolean {
+    return nome in this.valores;
+  }
+  *entries(): IterableIterator<[string, string]> {
+    for (const [nome, v] of Object.entries(this.valores)) for (const x of Array.isArray(v) ? v : [v]) yield [nome, x];
+  }
+  [Symbol.iterator]() {
+    return this.entries();
+  }
+}
+
+/** Os <form> com onSubmit, na ordem da tela. */
+export const formularios = (raiz: ReactNode) => elementos(raiz).filter((n) => n.type === "form" && typeof n.props.onSubmit === "function");
+
+/**
+ * Submete o formulário `indice` (na ordem da tela) com os valores por nome; devolve o que o onSubmit
+ * devolver (a promessa, quando assíncrono). Exige FormDataFalso no global (vi.stubGlobal("FormData", FormDataFalso)).
+ */
+export function submeter(raiz: ReactNode, valores: ValoresFormulario = {}, indice = 0): unknown {
+  const lista = formularios(raiz);
+  if (!lista[indice]) throw new Error(`esperava um <form> com onSubmit na posição ${indice}, achei ${lista.length}`);
+  const form = formularioFalso(valores);
+  return (lista[indice].props.onSubmit as (e: unknown) => unknown)({ preventDefault() {}, currentTarget: form, target: form });
 }
 
 /** Erro de cada <Campo> que tem erro, por id, na ordem da tela. */

@@ -1,14 +1,15 @@
 "use client";
-import { useId, useState, useSyncExternalStore, useTransition } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAditivoContratual, prepararAditivoContratual } from "@/server/contratos/aditivos";
 import type { OrigemCampo } from "@/server/contratos/campos";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "@/server/contratos/aditivo-valores";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { CicloCoberturaFuturoAditivoSchema } from "@/server/contratos/aditivo-schema";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
@@ -18,12 +19,14 @@ const fusoNavegador = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 
 const fusoServidor = () => null;
 
 export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null }) {
-  const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState(""), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
+  // Chave estável enquanto o conteúdo não muda: na falha de transporte, reenviar confere a mesma proposta.
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
+  const pendente = acao.ocupado;
   const id = useId();
   const [escolhaCiclo, setEscolhaCiclo] = useState("");
   const [modeloId, setModeloId] = useState(""), [valoresEstruturados, setValoresEstruturados] = useState<Partial<Record<OrigemCampo, unknown>>>({}); const modelo = modelos.find(m => m.id === modeloId);
   const fuso = useSyncExternalStore<string | null>(acompanharFuso, fusoNavegador, fusoServidor);
-  return <form className="space-y-4 rounded border p-4" onSubmit={e => {
+  return <form className="space-y-4 rounded border p-4" onSubmit={async e => {
     e.preventDefault(); const dados = new FormData(e.currentTarget), vigenciaLocal = String(dados.get("vigencia") ?? ""), instante = new Date(vigenciaLocal);
     const alteracoes: { origem: OrigemCampo; novo: string; valorEstruturado?: ReturnType<typeof validarValorAlteracaoAditivo> }[] = [];
     for (const c of fonte.campos) {
@@ -35,26 +38,23 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
         try {
           const validado = validarValorAlteracaoAditivo(c.origem, valorEstruturado);
           alteracoes.push({ origem: c.origem, novo: representarValorAlteracaoAditivo(validado), valorEstruturado: validado });
-        } catch { setMensagem(`Preencha o novo valor de ${c.rotulo} conforme indicado.`); return; }
+        } catch { acao.limpar(); acao.setErro(`Preencha o novo valor de ${c.rotulo} conforme indicado.`); return; }
       } else alteracoes.push({ origem: c.origem, novo: String(dados.get(`novo:${c.origem}`) ?? "").trim() });
     }
-    if (!modelo || !vigenciaLocal || Number.isNaN(instante.getTime()) || !alteracoes.length || alteracoes.some(a => !a.novo)) { setMensagem("Selecione o modelo, a vigência e ao menos uma condição com novo valor."); return; }
+    if (!modelo || !vigenciaLocal || Number.isNaN(instante.getTime()) || !alteracoes.length || alteracoes.some(a => !a.novo)) { acao.limpar(); acao.setErro("Selecione o modelo, a vigência e ao menos uma condição com novo valor."); return; }
     const alteraCobertura = alteracoes.some(a => a.origem === "COBERTURA_INICIO" || a.origem === "COBERTURA_FIM");
     const ciclo = alteraCobertura ? CicloCoberturaFuturoAditivoSchema.safeParse(escolhaCiclo === "MUDAR_REFERENCIA"
       ? { escolha: escolhaCiclo, referencia: dados.get("referenciaCiclo"), dataReferencia: dados.get("dataReferenciaCiclo") }
       : { escolha: escolhaCiclo }) : null;
-    if (ciclo && !ciclo.success) { setMensagem("Escolha como ficam os períodos seguintes e informe uma referência válida quando houver mudança."); return; }
+    if (ciclo && !ciclo.success) { acao.limpar(); acao.setErro("Escolha como ficam os períodos seguintes e informe uma referência válida quando houver mudança."); return; }
     const politica = ciclo?.success ? { cicloCoberturaFutura: ciclo.data } : {};
     const vigenciaInicio = instante.toISOString(), conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? "") });
     const chaveAtual = tentativa && tentativa !== conteudo ? crypto.randomUUID() : chave;
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
-    setMensagem(""); iniciar(async () => {
-      try {
-      const r = await prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
-        modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual });
-      if (!r.ok) setMensagem(r.erro); else if (r.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(r.dado.id)}`);
-      } catch { setMensagem(MSG_RESULTADO_INCERTO); }
-    });
+    // Sem mensagem de sucesso: o sucesso navega para a proposta registrada.
+    const d = await acao.executar(() => prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
+      modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual }));
+    if (d?.tipo === "ok" && d.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(d.dado.id)}`);
   }}>
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
     <div className="block"><label htmlFor={`${id}-modelo`}>Modelo institucional aprovado</label><select id={`${id}-modelo`} className="mt-1 block w-full rounded border p-2" value={modeloId} onChange={e => setModeloId(e.target.value)} required disabled={pendente}><option value="">Selecione um modelo</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.codigo} · versão {m.versao} · {m.titulo}</option>)}</select></div>
@@ -72,21 +72,22 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
     <p role="status">{fuso ? `Informe a vigência no fuso ${fuso}. O instante correspondente será preservado no registro.` : "Identificando o fuso do navegador…"}</p>
     <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <p>Esta proposta não altera condições, não emite taxa e não cria matrícula. Outra pessoa da Administração ainda precisa decidir.</p>
-    {mensagem && <p role="alert">{mensagem}</p>}<button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !modelo}>{pendente ? "Registrando…" : "Registrar proposta de aditivo"}</button>
+    <FeedbackAcao erro={acao.erro} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !modelo}>{pendente ? "Registrando…" : "Registrar proposta de aditivo"}</button>
   </form>;
 }
 
 export function DecidirAditivo({ propostaId, propostaHash, superada }: { propostaId: string; propostaHash: string; superada: boolean }) {
-  const router = useRouter(), [pendente, iniciar] = useTransition(), [mensagem, setMensagem] = useState("");
-  return <form className="space-y-3 rounded border p-4" onSubmit={e => { e.preventDefault(); const dados = new FormData(e.currentTarget), decisao = dados.get("decisao"); if (decisao !== "aprovar" && decisao !== "rejeitar") { setMensagem("Escolha uma decisão."); return; } setMensagem(""); iniciar(async () => {
-    try {
-    const r = await decidirAditivoContratual({ propostaId, propostaHashEsperado: propostaHash, aprovada: decisao === "aprovar", motivo: String(dados.get("motivo") ?? "") });
-    if (!r.ok) setMensagem(r.erro); else { setMensagem("Decisão registrada."); router.refresh(); }
-    } catch { setMensagem(MSG_DECISAO_INCERTA); }
-  }); }}>
+  // A decisão não leva chave; na falha de transporte vale a mensagem própria de decisão (MSG_DECISAO_INCERTA).
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
+  const pendente = acao.ocupado;
+  return <form className="space-y-3 rounded border p-4" onSubmit={async e => { e.preventDefault(); const dados = new FormData(e.currentTarget), decisao = dados.get("decisao"); if (decisao !== "aprovar" && decisao !== "rejeitar") { acao.limpar(); acao.setErro("Escolha uma decisão."); return; }
+    const d = await acao.executar(() => decidirAditivoContratual({ propostaId, propostaHashEsperado: propostaHash, aprovada: decisao === "aprovar", motivo: String(dados.get("motivo") ?? "") }), "Decisão registrada.");
+    if (d?.tipo === "incerto") acao.setErro(MSG_DECISAO_INCERTA);
+    if (d?.tipo === "ok") router.refresh();
+  }}>
     <h2 className="text-xl">Decisão administrativa</h2><label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o original, as alterações e a vigência desta proposta.</label>
     <label className="block">Decisão<select className="mt-1 block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}><option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
     <label className="block">Justificativa<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
-    <MensagemStatus texto={mensagem} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;
 }

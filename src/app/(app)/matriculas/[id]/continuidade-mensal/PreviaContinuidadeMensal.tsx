@@ -33,7 +33,7 @@ function situacaoOferta(estado: "INDISPONIVEL" | "PENDENTE_CONFERENCIA" | "SEM_R
 export function PreviaContinuidadeMensal({ resultado }: { resultado: Resultado }) {
   return <section className="space-y-3 rounded border p-4">
     <h2 className="text-lg">Prévia da próxima continuidade</h2>
-    {!resultado.ok || !resultado.dado ? <p role="status">{resultado.ok ? "A prévia ainda não está disponível." : resultado.erro}</p> : <>
+    {!resultado.ok ? <p role="alert">{resultado.erro}</p> : !resultado.dado ? <p role="status">A prévia ainda não está disponível.</p> : <>
       <p>{resultado.dado.motivo}</p>
       <dl className="grid gap-2 sm:grid-cols-2">
         <div><dt className="font-medium">Próxima cobertura</dt><dd>{data(resultado.dado.plano.cobertura.inicio)} a {data(resultado.dado.plano.cobertura.fim)}</dd></div>

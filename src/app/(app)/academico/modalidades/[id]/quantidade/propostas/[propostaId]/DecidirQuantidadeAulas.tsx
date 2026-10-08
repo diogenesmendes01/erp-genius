@@ -1,12 +1,15 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { decidirAlteracaoQuantidadeAulasModalidade } from "@/server/agenda/modalidade-quantidade";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 export function DecidirQuantidadeAulas({ propostaId }: { propostaId: string }) {
  // Decisão sem chave de idempotência no contrato (server/agenda/modalidade-quantidade.ts:60): a falha não manda reenviar.
+ const router = useRouter();
  const [motivo, setMotivo] = useState(""), acao = useAcaoCliente({ idempotente: false }), pendente = acao.ocupado;
- const decidir = async (aprovar: boolean) => { const d = await acao.executar(() => decidirAlteracaoQuantidadeAulasModalidade({ propostaId, aprovar, motivo })); if (d?.tipo === "ok") window.location.reload(); };
- return <section className="space-y-3 rounded border p-4"><h2 className="font-medium">Decisão independente</h2><p className="text-sm text-gray-600">A aprovação aplica o conjunto completo nesta mesma operação.</p><label className="block">Motivo<input className="ml-2 w-96 rounded border px-2 py-1" value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label><FeedbackAcao erro={acao.erro} /><button className={`${botaoClasses({ tamanho: "lg" })} mr-2`} disabled={pendente || motivo.trim().length < 5} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar</button></section>;
+ // Aprovar aplica o conjunto completo na mesma transação (situação APLICADA); rejeitar só encerra a proposta (REJEITADA).
+ const decidir = async (aprovar: boolean) => { const d = await acao.executar(() => decidirAlteracaoQuantidadeAulasModalidade({ propostaId, aprovar, motivo }), aprovar ? "Alteração aprovada e aplicada." : "Proposta rejeitada."); if (d?.tipo === "ok") router.refresh(); };
+ return <section className="space-y-3 rounded border p-4"><h2 className="font-medium">Decisão independente</h2><p className="text-sm text-gray-600">A aprovação aplica o conjunto completo nesta mesma operação.</p><label className="block">Motivo<input className="ml-2 w-96 rounded border px-2 py-1" value={motivo} onChange={(e) => setMotivo(e.target.value)} /></label><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button className={`${botaoClasses({ tamanho: "lg" })} mr-2`} disabled={pendente || motivo.trim().length < 5} onClick={() => decidir(true)}>Aprovar e aplicar</button><button className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente || motivo.trim().length < 5} onClick={() => decidir(false)}>Rejeitar</button></section>;
 }
