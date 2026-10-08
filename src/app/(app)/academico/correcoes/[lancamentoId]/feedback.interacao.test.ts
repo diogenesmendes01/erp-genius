@@ -63,6 +63,17 @@ describe("ProporCorrecao", () => {
     expect(chaves()[2]).not.toBe(chaves()[0]);
     expect(m.refresh).toHaveBeenCalledTimes(1);
   });
+
+  // docs/43 §6 item 3: sem a versão na key, o formulário não remonta depois de registrar — a chave de
+  // idempotência é trocada à mão no sucesso (a próxima proposta é outra tentativa) e a versão nova vem por prop.
+  it("depois de registrar, a próxima proposta usa chave nova e a versão nova, sem remontar", async () => {
+    m.propor.mockResolvedValue({ ok: true });
+    await enviar();
+    await submeter(m.ganchos!.renderizar(ProporCorrecao, { ...props, versaoEsperada: 3 }), { "nota-FALA": "8,5", "comentario-FALA": "Melhoria", motivo: "Outra correção." });
+    const [a, b] = m.propor.mock.calls.map((c) => c[0] as { chaveIdempotencia: string; versaoEsperada: number });
+    expect(b.chaveIdempotencia).not.toBe(a.chaveIdempotencia);
+    expect([a.versaoEsperada, b.versaoEsperada]).toEqual([2, 3]);
+  });
 });
 
 describe("DecidirCorrecao", () => {

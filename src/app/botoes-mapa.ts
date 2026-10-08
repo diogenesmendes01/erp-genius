@@ -52,6 +52,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Remover regra → perigo/sm",
     "<button> Adicionar regra de assinatura → secundario/sm",
     "<button> Salvando proposta… · Salvar proposta para aprovação → primario/lg",
+    "<button> Reenviar a proposta anterior → secundario/lg",
+    "<button> Descartar a tentativa anterior → perigo/lg",
   ],
   "configuracao/contratos/page.tsx": [
     "<Link> Preparar novo modelo → secundario/md",
@@ -115,6 +117,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/turmas/TurmasPainel.tsx": [
     "<button> Nova turma → primario/lg",
+    "<button> Descartar alterações → perigo/lg",
+    "<button> Continuar editando → secundario/lg",
     "<button> Editar → fantasma/sm",
   ],
   "configuracao/usuarios/UsuarioFormulario.tsx": [
@@ -164,6 +168,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "diario/DiarioAulas.tsx": [
     "const botao → primario/lg",
     "<button> Registrar aula → botao",
+    "<button> Descartar e usar a nova data → perigo/lg",
+    "<button> Manter a data anterior → secundario/lg",
     "<button> Salvando… · Salvar aula → botao",
     "<button> Cancelar → secundario/lg",
     "<Link> Completar diário do encontro → secundario/lg",
@@ -289,13 +295,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar decisão → secundario/lg",
   ],
   "academico/avaliacoes/[alocacaoId]/[codigo]/designacao/Formulario.tsx": [
-    "<button> Registrando… · revogar · Revogar designação · Registrar desi → perigo|secundario/lg",
-  ],
-  "academico/avaliacoes/[alocacaoId]/[codigo]/designacao/page.tsx": [
     "<button> Buscar → secundario/lg",
-  ],
-  "academico/avaliacoes/[alocacaoId]/[codigo]/page.tsx": [
-    "<button> Aplicar fuso → secundario/lg",
+    "<button> Registrando… · revogar · Revogar designação · Registrar desi → perigo|secundario/lg",
   ],
   "academico/avaliacoes/[alocacaoId]/equivalencia/PrepararEquivalenciaTransferencia.tsx": [
     "<button> Conferindo… · Atualizar requisitos · Carregar requisitos e f → secundario/lg",
@@ -777,7 +778,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/previas/[previaId]/participantes/Formulario.tsx": [
     "<button> Registrando… · Registrar conferência dos participantes → secundario/lg",
   ],
-  "matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx": [
+  "matriculas/[id]/contrato/previas/[previaId]/participantes/SeletorMaioridade.tsx": [
     "<button> Atualizar papéis exigidos → secundario/lg",
   ],
   "matriculas/[id]/contrato/substituicoes/Formularios.tsx": [

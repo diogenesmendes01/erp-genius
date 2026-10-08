@@ -18,6 +18,26 @@ function dataLocal(iso = new Date().toISOString()) {
   return local.toISOString().slice(0, 16);
 }
 type RegistroForm = { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string; podeEditar: boolean };
+type AlunoChamada = { alunoId: string; nomeAluno: string };
+/** Troca de data que tiraria da chamada alunos com presença ou observação preenchida: espera a decisão. */
+type TrocaPendente = { registros: RegistroForm[]; descartados: string[]; exigeConferencia: boolean; dataAnterior: string; conferenciaAnterior: boolean };
+
+/**
+ * Chamada da nova data mesclada com a já preenchida (docs/43 §6 item 3; docs/42 L1835): quem continua na lista
+ * mantém presença e observação; quem entra começa vazio. `descartados` são os nomes de quem sai da lista com
+ * algo preenchido — esses só saem depois que a pessoa confirma.
+ */
+export function mesclarChamada(atuais: RegistroForm[], alunos: AlunoChamada[]): { registros: RegistroForm[]; descartados: string[] } {
+  const porAluno = new Map(atuais.map((r) => [r.alunoId, r] as const));
+  const ficam = new Set(alunos.map((a) => a.alunoId));
+  return {
+    registros: alunos.map((a) => {
+      const anterior = porAluno.get(a.alunoId);
+      return { ...a, presente: anterior ? anterior.presente : null, observacao: anterior ? anterior.observacao : "", podeEditar: true };
+    }),
+    descartados: atuais.filter((r) => !ficam.has(r.alunoId) && (r.presente !== null || r.observacao.trim() !== "")).map((r) => r.nomeAluno),
+  };
+}
 
 export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiarioView[]; turmas: TurmaDiario[]; /** Estado vazio de uma busca (a página diz o termo). */ mensagemVazio?: string }) {
   const router = useRouter();
@@ -32,25 +52,48 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
   const consulta = useRef(0);
   const [carregando, setCarregando] = useState(false);
   const [conferencia, setConferencia] = useState(false);
+  const [troca, setTroca] = useState<TrocaPendente | null>(null);
 
-  function escolherTurma(id: string, instante = data) {
+  /**
+   * Carrega a chamada da turma na data. Trocar de turma começa do zero; trocar a DATA (`preenchidos`) não apaga
+   * o que foi digitado: a lista nova é mesclada com a atual e, se alguém com dados preenchidos sair, a troca
+   * espera a confirmação (aplicarTroca/manterData).
+   */
+  async function escolherTurma(id: string, instante = data, preenchidos?: { registros: RegistroForm[]; dataAnterior: string; conferenciaAnterior: boolean }) {
     setTurmaId(id);
     const versao = ++consulta.current;
-    setRegistros([]); setErro(null); setConferencia(false); setCarregando(false);
+    if (!preenchidos) setRegistros([]);
+    setErro(null); setConferencia(false); setCarregando(false); setTroca(null);
     const ocorrida = new Date(instante);
     if (!id || !Number.isFinite(ocorrida.getTime())) return;
     setCarregando(true);
-    void listarAlunosParaChamada({ turmaId: id, ocorridaEm: ocorrida.toISOString() }).then((r) => {
+    try {
+      const r = await listarAlunosParaChamada({ turmaId: id, ocorridaEm: ocorrida.toISOString() });
       if (versao !== consulta.current) return;
       if (!r.ok) { setErro(r.erro); return; }
+      const mescla = mesclarChamada(preenchidos?.registros ?? [], r.dado!.alunos);
+      if (preenchidos && mescla.descartados.length) {
+        setTroca({ registros: mescla.registros, descartados: mescla.descartados, exigeConferencia: r.dado!.exigeConferencia, dataAnterior: preenchidos.dataAnterior, conferenciaAnterior: preenchidos.conferenciaAnterior });
+        return;
+      }
       setConferencia(r.dado!.exigeConferencia);
-      setRegistros(r.dado!.alunos.map((a) => ({ ...a, presente: null, observacao: "", podeEditar: true })));
-    }).catch(() => {
+      setRegistros(mescla.registros);
+    } catch {
       if (versao === consulta.current) setErro("Não foi possível carregar a chamada. Selecione a turma novamente.");
-    }).finally(() => { if (versao === consulta.current) setCarregando(false); });
+    } finally {
+      if (versao === consulta.current) setCarregando(false);
+    }
+  }
+  function aplicarTroca() {
+    if (!troca) return;
+    setRegistros(troca.registros); setConferencia(troca.exigeConferencia); setTroca(null);
+  }
+  function manterData() {
+    if (!troca) return;
+    consulta.current++; setData(troca.dataAnterior); setConferencia(troca.conferenciaAnterior); setTroca(null);
   }
   function abrir(aula: AulaDiarioView | null) {
-    consulta.current++; setCarregando(false); setConferencia(false);
+    consulta.current++; setCarregando(false); setConferencia(false); setTroca(null);
     setErro(null); setEdicao(aula); setAberto(true);
     setConteudo(aula?.conteudo ?? ""); setData(dataLocal(aula?.ocorridaEm));
     if (aula) {
@@ -78,24 +121,28 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
       {erro && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">Turma
-          {edicao ? <span className={campo}>{edicao.turma}</span> : <select className={campo} value={turmaId} onChange={(e) => escolherTurma(e.target.value)}><option value="">Selecione</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>}
+          {edicao ? <span className={campo}>{edicao.turma}</span> : <select className={campo} value={turmaId} onChange={async (e) => { await escolherTurma(e.target.value); }}><option value="">Selecione</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>}
         </label>
         <label className="flex flex-col gap-1 text-sm">Data e hora da aula (seu fuso local)
-          <input className={campo} type="datetime-local" value={data} disabled={!!edicao} max={dataLocal()} onChange={(e) => { setData(e.target.value); escolherTurma(turmaId, e.target.value); }} />
+          <input className={campo} type="datetime-local" value={data} disabled={!!edicao} max={dataLocal()} onChange={async (e) => { const dataAnterior = data; setData(e.target.value); await escolherTurma(turmaId, e.target.value, { registros, dataAnterior, conferenciaAnterior: conferencia }); }} />
         </label>
       </div>
       <label className="flex flex-col gap-1 text-sm">Conteúdo ministrado<CampoTexto className={campo} rows={3} value={conteudo} maxLength={10000} onChange={(e) => setConteudo(e.target.value)} /></label>
       <div className="space-y-3">
         <MensagemStatus texto={carregando ? "Carregando a chamada da data selecionada…" : null} />
+        {troca && <div role="alert" className="space-y-2 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+          <p>Na nova data, {troca.descartados.join(", ")} {troca.descartados.length === 1 ? "não está" : "não estão"} na chamada. A presença e a observação já preenchidas para {troca.descartados.length === 1 ? "essa pessoa" : "essas pessoas"} serão descartadas; as dos demais alunos continuam.</p>
+          <div className="flex flex-wrap gap-2"><button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} onClick={aplicarTroca}>Descartar e usar a nova data</button><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={manterData}>Manter a data anterior</button></div>
+        </div>}
         {conferencia && <p role="alert" className="text-amber-700">Há vínculos com histórico incompleto. Solicite conferência à gestão antes de registrar esta chamada.</p>}
         {registros.map((r, i) => <div key={r.alunoId} className="grid gap-2 rounded-md border border-gray-100 p-3 sm:grid-cols-[1fr_160px_2fr]">
           <div className="text-sm font-medium">{r.nomeAluno}{!r.podeEditar && <p className="mt-1 text-xs font-normal text-gray-500">Histórico em leitura após saída da turma.</p>}</div>
-          <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<select className={campo} disabled={!r.podeEditar} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))}><option value="">Não informada</option><option value="sim">Presente</option><option value="nao">Ausente</option></select></label>
-          <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<CampoTexto className={campo} disabled={!r.podeEditar} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
+          <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<select className={campo} disabled={!r.podeEditar || carregando || !!troca} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))}><option value="">Não informada</option><option value="sim">Presente</option><option value="nao">Ausente</option></select></label>
+          <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<CampoTexto className={campo} disabled={!r.podeEditar || carregando || !!troca} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
         </div>)}
-        {turmaId && !carregando && !erro && registros.length === 0 && <EstadoVazio>Nenhum aluno elegível na data selecionada.</EstadoVazio>}
+        {turmaId && !carregando && !erro && !troca && registros.length === 0 && <EstadoVazio>Nenhum aluno elegível na data selecionada.</EstadoVazio>}
       </div>
-      <div className="flex gap-3"><button className={botao} disabled={pendente || carregando || conferencia || !turmaId || !data || !conteudo.trim() || registros.length === 0} onClick={salvar}>{pendente ? "Salvando…" : "Salvar aula"}</button><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => { consulta.current++; setAberto(false); }}>Cancelar</button></div>
+      <div className="flex gap-3"><button className={botao} disabled={pendente || carregando || conferencia || !!troca || !turmaId || !data || !conteudo.trim() || registros.length === 0} onClick={salvar}>{pendente ? "Salvando…" : "Salvar aula"}</button><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => { consulta.current++; setAberto(false); }}>Cancelar</button></div>
     </section>}
     {aulas.length === 0 && <EstadoVazio bloco>{mensagemVazio ?? "Nenhuma aula registrada neste histórico."}</EstadoVazio>}
     {aulas.map((a) => <article key={a.id} className="rounded-lg border border-gray-200 bg-surface p-5">

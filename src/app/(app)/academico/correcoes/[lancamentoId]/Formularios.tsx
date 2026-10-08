@@ -19,7 +19,8 @@ export function ProporCorrecao({ lancamentoId, origemHash, versaoEsperada, notas
     const d = await acao.executar(() => proporCorrecaoNota({ lancamentoId, origemHash, versaoEsperada, chaveIdempotencia, motivo: String(f.get("motivo") ?? ""),
       notas: notas.map(n => ({ habilidade: n.habilidade, nota: String(f.get(`nota-${n.habilidade}`) ?? "").trim().replace(",", ".") || null, comentarioAluno: String(f.get(`comentario-${n.habilidade}`) ?? "") })) }),
     "Proposta registrada. As notas permanecem vigentes até aprovação independente.");
-    if (d?.tipo === "ok") router.refresh();
+    // Registrada: outra proposta é outra tentativa (chave nova); o formulário fica montado (sem key de versão).
+    if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
   }}><fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Propor correção</legend>
     {notas.map(n => <div key={n.habilidade} className="space-y-2 rounded border p-3"><p>{HABILIDADE_LABEL[n.habilidade]} — nota vigente: {n.nota}</p>
       <label className="block">Nova nota<input name={`nota-${n.habilidade}`} required maxLength={100} inputMode="decimal" defaultValue={n.nota ?? ""} className="block rounded border p-2" /></label>

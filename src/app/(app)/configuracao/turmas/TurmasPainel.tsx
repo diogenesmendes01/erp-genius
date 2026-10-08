@@ -97,6 +97,11 @@ export function TurmasPainel({
 }) {
   const [form, setForm] = useState<"none" | "nova" | { editar: TurmaParaEditar }>("none");
   const [salvandoTurma, setSalvandoTurma] = useState(false);
+  // Fundo e Escape não descartam uma turma preenchida sem confirmar (docs/43 §6 item 3; docs/42 L2395): o
+  // formulário tem 12 campos e o clique fora fechava tudo em silêncio.
+  const [turmaAlterada, setTurmaAlterada] = useState(false);
+  const [confirmandoDescarte, setConfirmandoDescarte] = useState(false);
+  const fecharFormulario = () => { setForm("none"); setTurmaAlterada(false); setConfirmandoDescarte(false); };
 
   return (
     <div>
@@ -119,14 +124,25 @@ export function TurmasPainel({
       </div>
 
       {form !== "none" && (
-        <DialogoFormularioTurma titulo={typeof form === "object" ? "Editar turma" : "Nova turma"} aoFechar={() => setForm("none")} bloquearFechamento={salvandoTurma}>
+        <DialogoFormularioTurma titulo={typeof form === "object" ? "Editar turma" : "Nova turma"} aoFechar={() => { if (turmaAlterada) setConfirmandoDescarte(true); else fecharFormulario(); }} bloquearFechamento={salvandoTurma}>
+          {confirmandoDescarte && (
+            <div role="alert" className="mb-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-medium">Descartar a turma não salva?</p>
+              <p>O que foi preenchido no formulário será perdido.</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={fecharFormulario} className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>Descartar alterações</button>
+                <button type="button" onClick={() => setConfirmandoDescarte(false)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Continuar editando</button>
+              </div>
+            </div>
+          )}
           <TurmaFormulario
             turma={typeof form === "object" ? form.editar : undefined}
             modalidades={modalidades}
             niveis={niveis}
             professores={professores}
-            onClose={() => setForm("none")}
+            onClose={fecharFormulario}
             aoMudarOcupado={setSalvandoTurma}
+            aoMudarAlterado={setTurmaAlterada}
           />
         </DialogoFormularioTurma>
       )}
