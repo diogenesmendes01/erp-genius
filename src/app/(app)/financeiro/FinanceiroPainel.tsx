@@ -121,7 +121,7 @@ export function ComissoesAba({ comissoes, aPagar, podePagar, fechamentoAutomatic
               ? <><strong>{quantidade} {quantidade === 1 ? "comissão aprovada" : "comissões aprovadas"}</strong> {quantidade === 1 ? "passa a paga" : "passam a pagas"}, total <strong>{formatarValores(aPagar)}</strong>.</>
               : <>Todas as comissões aprovadas passam a pagas, total <strong>{formatarValores(aPagar)}</strong>.</>}
           </p>
-          <p>Entram todas as aprovadas até agora, inclusive as que não aparecem nesta página da lista. Não há desfazer pela tela.</p>
+          <p>Entram todas as aprovadas até agora, inclusive as que não aparecem na página atual da lista. Não há desfazer pela tela.</p>
         </ConfirmarAcao>
       )}
     </>

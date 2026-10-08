@@ -46,7 +46,8 @@ describe("ConfirmarAcao — marcação", () => {
     expect(confirmar.texto.replace(/<!-- -->/g, "")).toBe("Confirmar cancelamento da fatura");
     expect(confirmar.atributos).toContain('type="button"');
     expect(confirmar.atributos).toContain(VARIANTES_BOTAO.perigo);
-    expect(confirmar.atributos).not.toContain("disabled");
+    // `disabled:` das classes do Tailwind não conta: só o atributo.
+    expect(confirmar.atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
   });
 
   it("sem conferência não há caixa de marcar; com ela, a caixa vem desmarcada e a confirmação desabilitada", () => {
@@ -55,7 +56,7 @@ describe("ConfirmarAcao — marcação", () => {
     expect(h).toMatch(/<label[^>]*><input type="checkbox"[^>]*\/><span>Confirmo os valores acima\.<\/span><\/label>/);
     expect(h).not.toMatch(/type="checkbox"[^>]*checked/);
     const [voltar, confirmar] = botoes(h);
-    expect(voltar.atributos).not.toContain("disabled");
+    expect(voltar.atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
     expect(confirmar.atributos).toContain('disabled=""');
   });
 
