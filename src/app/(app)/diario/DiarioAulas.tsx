@@ -70,7 +70,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
     try {
       const r = await listarAlunosParaChamada({ turmaId: id, ocorridaEm: ocorrida.toISOString() });
       if (versao !== consulta.current) return;
-      if (!r.ok) { setErro(r.erro); return; }
+      if (!r.ok) { setErro(r.erro); voltarDataSeFalhou(preenchidos); return; }
       const mescla = mesclarChamada(preenchidos?.registros ?? [], r.dado!.alunos);
       if (preenchidos && mescla.descartados.length) {
         setTroca({ registros: mescla.registros, descartados: mescla.descartados, exigeConferencia: r.dado!.exigeConferencia, dataAnterior: preenchidos.dataAnterior, conferenciaAnterior: preenchidos.conferenciaAnterior });
@@ -79,10 +79,18 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio }: { aulas: AulaDiari
       setConferencia(r.dado!.exigeConferencia);
       setRegistros(mescla.registros);
     } catch {
-      if (versao === consulta.current) setErro("Não foi possível carregar a chamada. Selecione a turma novamente.");
+      if (versao === consulta.current) { setErro("Não foi possível carregar a chamada. Selecione a turma novamente."); voltarDataSeFalhou(preenchidos); }
     } finally {
       if (versao === consulta.current) setCarregando(false);
     }
+  }
+  /**
+   * A chamada da nova data não carregou (R1 da #155, C2): a tela volta à data anterior, para a lista mostrada e a
+   * data do registro continuarem coerentes — salvar não pode juntar a lista antiga com a data nova.
+   */
+  function voltarDataSeFalhou(preenchidos?: { dataAnterior: string; conferenciaAnterior: boolean }) {
+    if (!preenchidos) return;
+    setData(preenchidos.dataAnterior); setConferencia(preenchidos.conferenciaAnterior);
   }
   function aplicarTroca() {
     if (!troca) return;

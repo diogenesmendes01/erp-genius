@@ -110,6 +110,21 @@ describe("FormularioDesignacao — buscar não apaga o motivo", () => {
     expect(busca(depois).props.value).toBe("Car");
   });
 
+  // R1 da #155, C1: sem remontar, professor e motivo ficariam preenchidos depois de registrar.
+  it("registrada a designação, professor e motivo voltam ao vazio (a busca digitada fica)", async () => {
+    digitarBusca("Bi");
+    (elementos(telaBusca()).find((n) => n.type === "select")!.props.onChange as AoMudar)({ target: { value: "prof-2" } });
+    (elementos(telaBusca()).find((n) => n.type === CampoTexto)!.props.onChange as AoMudar)({ target: { value: "Designação conferida." } });
+    m.designar.mockResolvedValueOnce({ ok: true });
+    await submeter(telaBusca());
+    expect(m.designar).toHaveBeenCalledWith(expect.objectContaining({ professorId: "prof-2", motivo: "Designação conferida." }));
+    const depois = telaBusca();
+    expect(elementos(depois).find((n) => n.type === "select")!.props.value).toBe("");
+    expect(elementos(depois).find((n) => n.type === CampoTexto)!.props.value).toBe("");
+    expect(busca(depois).props.value).toBe("Bi");
+    expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+
   it("Enter na busca busca no servidor e não envia a designação", () => {
     digitarBusca("Bi");
     const evento = { key: "Enter", preventDefault: vi.fn() };

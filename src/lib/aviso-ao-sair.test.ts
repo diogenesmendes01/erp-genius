@@ -26,7 +26,13 @@ vi.mock("react", async (original) => {
   return { ...real, useEffect: ((f: () => (() => void) | void, deps?: unknown[]) => m.useEffect(f, deps)) as unknown as typeof real.useEffect };
 });
 
-import { ligarAvisoAoSair, pedirConfirmacaoDeSaida, useAvisoAoSair, type AlvoDoAviso } from "./aviso-ao-sair";
+import { pedirConfirmacaoDeSaida, useAvisoAoSair } from "./aviso-ao-sair";
+
+/** O mínimo de `window` que o aviso usa. */
+type AlvoDoAviso = {
+  addEventListener(tipo: "beforeunload", ouvinte: (evento: BeforeUnloadEvent) => void): void;
+  removeEventListener(tipo: "beforeunload", ouvinte: (evento: BeforeUnloadEvent) => void): void;
+};
 
 /** `window` falso: guarda os ouvintes de beforeunload registrados agora. */
 function janelaFalsa() {
@@ -81,19 +87,19 @@ describe("useAvisoAoSair", () => {
   });
 });
 
-describe("ligarAvisoAoSair e pedirConfirmacaoDeSaida", () => {
-  it("sujo=false não registra nada e devolve um desligamento inofensivo", () => {
-    const desligar = ligarAvisoAoSair(janela, false);
-    expect(janela.adicoes).toBe(0);
-    desligar();
+describe("pedirConfirmacaoDeSaida", () => {
+  it("o ouvinte registrado no window é o pedido de confirmação, e o mesmo sai ao desligar", () => {
+    m.render(() => useAvisoAoSair(true));
+    expect([...janela.ouvintes]).toEqual([pedirConfirmacaoDeSaida]);
+    m.render(() => useAvisoAoSair(false));
     expect(janela.ouvintes.size).toBe(0);
   });
 
-  it("sujo=true registra o pedido de confirmação e o desligamento remove o MESMO ouvinte", () => {
-    const desligar = ligarAvisoAoSair(janela, true);
-    expect([...janela.ouvintes]).toEqual([pedirConfirmacaoDeSaida]);
-    desligar();
-    expect(janela.ouvintes.size).toBe(0);
+  it("sem window (render no servidor), o gancho não falha nem registra nada", () => {
+    vi.unstubAllGlobals();
+    expect(typeof window).toBe("undefined");
+    expect(() => m.render(() => useAvisoAoSair(true))).not.toThrow();
+    expect(janela.adicoes).toBe(0);
   });
 
   it("o pedido usa preventDefault e returnValue (navegadores antigos)", () => {
