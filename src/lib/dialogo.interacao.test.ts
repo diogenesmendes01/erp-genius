@@ -39,6 +39,8 @@ function teclar(key: string, shiftKey = false): Evento {
 /** Abre um diálogo (chama o gancho como um componente montado) e devolve a limpeza do efeito principal. */
 function abrir(ref: { current: unknown }, opcoes: Parameters<typeof useDialogo>[1]): () => void {
   const antes = m.limpezas.length;
+  // O gancho roda fora de componente de propósito: useEffect está mockado e o teste dispara o efeito à mão.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useDialogo(ref as Parameters<typeof useDialogo>[0], opcoes);
   const limpeza = m.limpezas[m.limpezas.length - 1];
   expect(m.limpezas.length, "o efeito do diálogo aberto devolve uma limpeza").toBe(antes + 1);
