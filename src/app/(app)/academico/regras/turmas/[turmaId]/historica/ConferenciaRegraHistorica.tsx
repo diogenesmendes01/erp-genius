@@ -1,14 +1,115 @@
 "use client";
-import { useRef,useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ResumoRegra,type ConteudoRegra } from "../../../[nivelId]/ResumoRegra";
-import { decidirConferenciaRegraHistorica,proporConferenciaRegraHistorica,revisarConferenciaRegraHistorica } from "@/server/avaliacoes/conferencia-regra-historica";
+import { ResumoRegra, type ConteudoRegra } from "../../../[nivelId]/ResumoRegra";
+import { decidirConferenciaRegraHistorica, proporConferenciaRegraHistorica, revisarConferenciaRegraHistorica } from "@/server/avaliacoes/conferencia-regra-historica";
 import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import type { Resultado } from "@/server/_shared/resultado";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
-type Destino={id:string;versao:number}; type Revisao={destinoId:string;estadoHash:string;versaoEsperada:number;destino:{versao:number;conteudo:ConteudoRegra};encontros:number;diarios:number;alocacoes:number};
-export function ProporConferenciaRegraHistorica({turmaId,revisao}:{turmaId:string;revisao:Revisao}){const r=useRouter(),chave=useRef<string|null>(null),enviando=useRef(false),[ocupado,setOcupado]=useState(false),[mensagem,setMensagem]=useState("");return <form className="space-y-3" onChange={()=>{chave.current=null;setMensagem("")}} onSubmit={async e=>{e.preventDefault();if(enviando.current)return;const f=new FormData(e.currentTarget);enviando.current=true;chave.current??=crypto.randomUUID();setOcupado(true);try{const x=await proporConferenciaRegraHistorica({turmaId,destinoId:revisao.destinoId,estadoHash:revisao.estadoHash,versaoEsperada:revisao.versaoEsperada,motivo:String(f.get("motivo")??""),evidencia:String(f.get("evidencia")??""),chaveIdempotencia:chave.current});setMensagem(x.ok?"Conferência registrada para decisão independente.":x.erro);if(x.ok)r.refresh()}catch{setMensagem(MSG_RESULTADO_INCERTO)}finally{enviando.current=false;setOcupado(false)}}}><fieldset disabled={ocupado} className="space-y-3"><label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2"/></label><label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2"/></label><label><input type="checkbox" required/> Conferi o conteúdo e as contagens exibidos.</label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado?"Registrando…":"Propor conferência"}</button></fieldset>{mensagem&&<p role={mensagem.includes("registrada")?"status":"alert"}>{mensagem}</p>}</form>}
-export function PrepararConferenciaRegraHistorica({turmaId,destinos}:{turmaId:string;destinos:Destino[]}){const[destinoId,setDestinoId]=useState(""),[revisao,setRevisao]=useState<Revisao|null>(null),[mensagem,setMensagem]=useState(""),[ocupado,setOcupado]=useState(false);const enviando=useRef(false);return <section className="space-y-3"><h2 className="text-xl font-medium">Conferência inicial da regra histórica</h2><p>Escolha explicitamente a versão publicada demonstrada pela evidência.</p><form onSubmit={async e=>{e.preventDefault();if(enviando.current||!destinoId){setMensagem("Selecione uma versão publicada.");return}enviando.current=true;setOcupado(true);setMensagem("");try{const x=await revisarConferenciaRegraHistorica({turmaId,destinoId}),conteudo=x.ok&&x.dado?ConteudoRegraAvaliacaoSchema.safeParse(x.dado.destino.conteudo):null;if(!x.ok||!x.dado||!conteudo?.success){setRevisao(null);setMensagem(x.ok?"A revisão retornou conteúdo inválido.":x.erro)}else setRevisao({destinoId,estadoHash:x.dado.estadoHash,versaoEsperada:x.dado.versaoEsperada,destino:{...x.dado.destino,conteudo:conteudo.data},encontros:x.dado.encontros,diarios:x.dado.diarios,alocacoes:x.dado.alocacoes})}catch{setRevisao(null);setMensagem("A revisão não foi confirmada.")}finally{enviando.current=false;setOcupado(false)}}}><fieldset disabled={ocupado} className="flex gap-3"><label>Versão publicada<select value={destinoId} onChange={e=>{setDestinoId(e.target.value);setRevisao(null);setMensagem("")}} className="ml-2 rounded border p-2"><option value="">Selecione</option>{destinos.map(d=><option key={d.id} value={d.id}>Versão {d.versao}</option>)}</select></label><button className={botaoClasses({ variante: "secundario" })}>{ocupado?"Revisando…":"Revisar"}</button></fieldset></form>{mensagem&&<p role="alert">{mensagem}</p>}{revisao&&<section className="space-y-3 rounded border p-3"><h3 className="font-medium">Versão {revisao.destino.versao} conferida</h3><p>{revisao.encontros} encontros, {revisao.diarios} diários e {revisao.alocacoes} alocações na fotografia.</p><ResumoRegra conteudo={revisao.destino.conteudo}/><ProporConferenciaRegraHistorica key={`${revisao.destinoId}:${revisao.estadoHash}:${revisao.versaoEsperada}`} turmaId={turmaId} revisao={revisao}/></section>}</section>}
-export function DecidirConferenciaRegraHistorica({propostaId,estadoHash,podeAprovar}:{propostaId:string;estadoHash:string;podeAprovar:boolean}){const r=useRouter(),enviando=useRef(false),[ocupado,setOcupado]=useState(false),[mensagem,setMensagem]=useState("");return <form onSubmit={async e=>{e.preventDefault();if(enviando.current)return;enviando.current=true;setOcupado(true);try{const f=new FormData(e.currentTarget),x=await decidirConferenciaRegraHistorica({propostaId,estadoHash,aprovada:f.get("decisao")==="aprovar",motivo:String(f.get("motivo")??"")});setMensagem(x.ok?"Decisão registrada.":x.erro);if(x.ok)r.refresh()}finally{enviando.current=false;setOcupado(false)}}}><fieldset disabled={ocupado}><select name="decisao" aria-label="Decisão da conferência" required defaultValue=""><option value="">Selecione</option>{podeAprovar&&<option value="aprovar">Aprovar</option>}<option value="rejeitar">Rejeitar</option></select><CampoTexto name="motivo" aria-label="Motivo da decisão" required minLength={5}/><button className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button></fieldset><MensagemStatus texto={mensagem} /></form>}
+
+type Destino = { id: string; versao: number };
+type Revisao = {
+  destinoId: string; estadoHash: string; versaoEsperada: number;
+  destino: { versao: number; conteudo: ConteudoRegra };
+  encontros: number; diarios: number; alocacoes: number;
+};
+
+// Erro e sucesso separados (docs/42 E3; docs/43 §6 item 2): cada fluxo (Propor, Revisar, Decidir) tem o
+// próprio useAcaoCliente — falha de transporte vira resultado incerto em role="alert" e o ocupado é
+// liberado em qualquer desfecho. A trava de duplo envio é a do executor (executar devolve null).
+
+export function ProporConferenciaRegraHistorica({ turmaId, revisao }: { turmaId: string; revisao: Revisao }) {
+  const r = useRouter(), chave = useRef<string | null>(null);
+  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar sem alterar (MSG_RESULTADO_INCERTO).
+  const acao = useAcaoCliente({ idempotente: true });
+  return <form className="space-y-3" onChange={() => { chave.current = null; acao.limpar(); }} onSubmit={async e => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const chaveIdempotencia = (chave.current ??= crypto.randomUUID());
+    const d = await acao.executar(() => proporConferenciaRegraHistorica({
+      turmaId, destinoId: revisao.destinoId, estadoHash: revisao.estadoHash, versaoEsperada: revisao.versaoEsperada,
+      motivo: String(f.get("motivo") ?? ""), evidencia: String(f.get("evidencia") ?? ""), chaveIdempotencia,
+    }), "Conferência registrada para decisão independente.");
+    if (d?.tipo === "ok") r.refresh();
+  }}>
+    <fieldset disabled={acao.ocupado} className="space-y-3">
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
+      <label><input type="checkbox" required /> Conferi o conteúdo e as contagens exibidos.</label>
+      <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Propor conferência"}</button>
+    </fieldset>
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
+  </form>;
+}
+
+export function PrepararConferenciaRegraHistorica({ turmaId, destinos }: { turmaId: string; destinos: Destino[] }) {
+  const [destinoId, setDestinoId] = useState(""), [revisao, setRevisao] = useState<Revisao | null>(null);
+  // Só leitura (revisão da fotografia): repetir é seguro; a falha mantém o texto próprio desta tela.
+  const acao = useAcaoCliente({ idempotente: true });
+  return <section className="space-y-3">
+    <h2 className="text-xl font-medium">Conferência inicial da regra histórica</h2>
+    <p>Escolha explicitamente a versão publicada demonstrada pela evidência.</p>
+    <form onSubmit={async e => {
+      e.preventDefault();
+      if (!destinoId) { acao.setErro("Selecione uma versão publicada."); return; }
+      const d = await acao.executar(async (): Promise<Resultado<Revisao>> => {
+        const x = await revisarConferenciaRegraHistorica({ turmaId, destinoId });
+        if (!x.ok) return x;
+        const conteudo = x.dado ? ConteudoRegraAvaliacaoSchema.safeParse(x.dado.destino.conteudo) : null;
+        if (!x.dado || !conteudo?.success) return { ok: false, erro: "A revisão retornou conteúdo inválido." };
+        return { ok: true, dado: {
+          destinoId, estadoHash: x.dado.estadoHash, versaoEsperada: x.dado.versaoEsperada,
+          destino: { ...x.dado.destino, conteudo: conteudo.data },
+          encontros: x.dado.encontros, diarios: x.dado.diarios, alocacoes: x.dado.alocacoes,
+        } };
+      });
+      if (d === null) return;
+      if (d.tipo === "ok" && d.dado) { setRevisao(d.dado); return; }
+      setRevisao(null);
+      if (d.tipo === "incerto") acao.setErro("A revisão não foi confirmada.");
+    }}>
+      <fieldset disabled={acao.ocupado} className="flex gap-3">
+        <label>Versão publicada<select value={destinoId} onChange={e => { setDestinoId(e.target.value); setRevisao(null); acao.limpar(); }} className="ml-2 rounded border p-2">
+          <option value="">Selecione</option>
+          {destinos.map(d => <option key={d.id} value={d.id}>Versão {d.versao}</option>)}
+        </select></label>
+        <button className={botaoClasses({ variante: "secundario" })}>{acao.ocupado ? "Revisando…" : "Revisar"}</button>
+      </fieldset>
+    </form>
+    <FeedbackAcao erro={acao.erro} />
+    {revisao && <section className="space-y-3 rounded border p-3">
+      <h3 className="font-medium">Versão {revisao.destino.versao} conferida</h3>
+      <p>{revisao.encontros} encontros, {revisao.diarios} diários e {revisao.alocacoes} alocações na fotografia.</p>
+      <ResumoRegra conteudo={revisao.destino.conteudo} />
+      <ProporConferenciaRegraHistorica key={`${revisao.destinoId}:${revisao.estadoHash}:${revisao.versaoEsperada}`} turmaId={turmaId} revisao={revisao} />
+    </section>}
+  </section>;
+}
+
+export function DecidirConferenciaRegraHistorica({ propostaId, estadoHash, podeAprovar }: { propostaId: string; estadoHash: string; podeAprovar: boolean }) {
+  // Antes não havia catch (docs/43): a falha de transporte deixava a tela sem resposta. Sem chave de
+  // idempotência; a decisão incerta usa o texto das demais decisões (reenviar a mesma decisão).
+  const r = useRouter(), acao = useAcaoCliente({ idempotente: false });
+  return <form onSubmit={async e => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const d = await acao.executar(() => decidirConferenciaRegraHistorica({ propostaId, estadoHash, aprovada: f.get("decisao") === "aprovar", motivo: String(f.get("motivo") ?? "") }), "Decisão registrada.");
+    if (d?.tipo === "incerto") acao.setErro(MSG_DECISAO_INCERTA);
+    else if (d?.tipo === "ok") r.refresh();
+  }}>
+    <fieldset disabled={acao.ocupado}>
+      <select name="decisao" aria-label="Decisão da conferência" required defaultValue="">
+        <option value="">Selecione</option>
+        {podeAprovar && <option value="aprovar">Aprovar</option>}
+        <option value="rejeitar">Rejeitar</option>
+      </select>
+      <CampoTexto name="motivo" aria-label="Motivo da decisão" required minLength={5} />
+      <button className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
+    </fieldset>
+    <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
+  </form>;
+}

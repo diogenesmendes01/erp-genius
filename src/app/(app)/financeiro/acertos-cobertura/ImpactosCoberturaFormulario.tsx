@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { prepararImpactosCoberturaAditivo } from "@/server/contratos/aditivo-cobertura";
-import { MensagemStatus } from "@/components/MensagemStatus";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -24,21 +24,22 @@ export function ImpactosCoberturaFormulario({ matriculaId, propostaId, conclusao
   const [classificacoes, setClassificacoes] = useState<Record<string, "AFETADA" | "PRESERVADA">>(() => Object.fromEntries(cobrancas.map(c => [c.id, "AFETADA"])));
   const [limites, setLimites] = useState<Record<string, { inicio: string; fim: string }>>({});
   const [justificativas, setJustificativas] = useState<Record<string, string>>({});
-  const [motivo, setMotivo] = useState(""), [evidencia, setEvidencia] = useState(""), [mensagem, setMensagem] = useState(""), [ocupado, setOcupado] = useState(false);
+  const [motivo, setMotivo] = useState(""), [evidencia, setEvidencia] = useState("");
+  // Chave de idempotência estável entre tentativas: na falha de transporte, reenviar a mesma entrada confere a mesma operação.
+  const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   const linhas = cobrancas.map(c => ({ cobrancaId: c.id, classificacao: classificacoes[c.id] ?? "AFETADA", coberturaInicioNova: limites[c.id]?.inicio || undefined, coberturaFimNova: limites[c.id]?.fim || undefined, justificativa: (justificativas[c.id] ?? "").trim() }));
   const podePreparar = linhas.length > 0 && motivo.trim().length >= 5 && evidencia.trim().length >= 5 && linhas.every(l => l.justificativa.length >= 5 && (l.classificacao === "PRESERVADA" || (!!l.coberturaInicioNova && !!l.coberturaFimNova && l.coberturaInicioNova <= l.coberturaFimNova)));
   async function preparar() {
-    if (!podePreparar || ocupado) return;
+    if (!podePreparar || acao.ocupado) return;
     const dados = { matriculaId, propostaId, conclusaoId, revisaoHash, linhas, motivo: motivo.trim(), evidencia: evidencia.trim() }, entrada = JSON.stringify(dados);
     if (tentativa.current?.entrada !== entrada) tentativa.current = { entrada, chave: crypto.randomUUID() };
-    setOcupado(true); setMensagem("");
-    try { const r = await prepararImpactosCoberturaAditivo({ ...dados, chaveIdempotencia: tentativa.current.chave }); if (!r.ok) { setMensagem(r.erro); return; } tentativa.current = null; setMensagem("Conjunto de cobertura preparado para aprovação independente."); router.refresh(); }
-    catch { setMensagem(MSG_RESULTADO_INCERTO); }
-    finally { setOcupado(false); }
+    const chave = tentativa.current.chave;
+    const d = await acao.executar(() => prepararImpactosCoberturaAditivo({ ...dados, chaveIdempotencia: chave }), "Conjunto de cobertura preparado para aprovação independente.");
+    if (d?.tipo === "ok") { tentativa.current = null; router.refresh(); }
   }
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Impactos de cobertura das mensalidades</h2><p>Política formalizada no aditivo assinado: {descreverPolitica(politica)}</p><p>Classifique todas as mensalidades. Para cada afetada, informe os limites corrigidos; uma preservada não recebe novos limites.</p>
     {!cobrancas.length ? <EstadoVazio role="status">Nenhuma mensalidade existe nesta matrícula.</EstadoVazio> : cobrancas.map(c => { const afetada = (classificacoes[c.id] ?? "AFETADA") === "AFETADA"; return <article className="space-y-2 rounded border p-3" key={c.id}><p className="font-medium">{c.codigo ?? "Mensalidade sem código"} · {c.moeda} · vencimento {formatarDataCivil(c.vencimento)}</p><p>Cobertura atual: {formatarDataCivil(c.coberturaInicio, "não informada")} até {formatarDataCivil(c.coberturaFim, "não informada")}.</p><label>Tratamento <select className="ml-2 rounded border p-1" value={classificacoes[c.id] ?? "AFETADA"} onChange={e => setClassificacoes(a => ({ ...a, [c.id]: e.target.value as "AFETADA" | "PRESERVADA" }))}><option value="AFETADA">Afetada pelo aditivo</option><option value="PRESERVADA">Preservada</option></select></label>{afetada && <div className="flex gap-2"><label>Início novo<input className="ml-2 rounded border p-1" type="date" value={limites[c.id]?.inicio ?? ""} onChange={e => setLimites(a => ({ ...a, [c.id]: { ...a[c.id], inicio: e.target.value } }))} /></label><label>Fim novo<input className="ml-2 rounded border p-1" type="date" value={limites[c.id]?.fim ?? ""} onChange={e => setLimites(a => ({ ...a, [c.id]: { ...a[c.id], fim: e.target.value } }))} /></label></div>}<label className="block">Justificativa<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={justificativas[c.id] ?? ""} onChange={e => setJustificativas(a => ({ ...a, [c.id]: e.target.value }))} /></label></article>; })}
-    <label className="block">Motivo do conjunto<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={motivo} onChange={e => setMotivo(e.target.value)} /></label><label className="block">Evidência da conferência<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label><button className={botaoClasses({ tamanho: "lg" })} type="button" disabled={ocupado || !podePreparar} onClick={preparar}>{ocupado ? "Preparando…" : "Preparar impactos de cobertura"}</button><MensagemStatus texto={mensagem} />
+    <label className="block">Motivo do conjunto<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={motivo} onChange={e => setMotivo(e.target.value)} /></label><label className="block">Evidência da conferência<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} value={evidencia} onChange={e => setEvidencia(e.target.value)} /></label><button className={botaoClasses({ tamanho: "lg" })} type="button" disabled={acao.ocupado || !podePreparar} onClick={preparar}>{acao.ocupado ? "Preparando…" : "Preparar impactos de cobertura"}</button><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </section>;
 }

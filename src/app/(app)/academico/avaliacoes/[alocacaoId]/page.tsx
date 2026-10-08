@@ -93,7 +93,7 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
       </div>)}
       <details><summary>Composição dos resultados</summary>{consolidado.dado.resultado.habilidades.map(h => <div key={h.habilidade} className="my-3"><h3 className="font-medium">{HABILIDADE_LABEL[h.habilidade]} — peso na média geral: {h.peso}</h3>{h.memoria.map(m => <p key={m.avaliacaoId}>{consolidado.dado!.fontes.find(f => f.codigo === m.avaliacaoId)?.titulo ?? m.avaliacaoId}: {m.nota ?? "Pendente"}; peso {m.peso}{m.pendencia === "AGUARDANDO_OFICIALIZACAO" ? " — aguardando conferência" : m.pendencia ? " — nota ausente" : ""}.</p>)}</div>)}</details>
     </section>}
-    {!consolidado.ok && <p role="status">Consolidado indisponível: {consolidado.erro}</p>}
+    {!consolidado.ok && <p role="alert">Consolidado indisponível: {consolidado.erro}</p>}
     <nav aria-label="Avaliações da matrícula" className="space-y-3">{r.dado.avaliacoes.map(a => <Link key={a.codigo} className="block rounded border p-3 underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(a.codigo)}`}>
       {a.titulo} — {a.etapa === "FINAL" ? "Final" : "Intermediária"}
     </Link>)}</nav>
