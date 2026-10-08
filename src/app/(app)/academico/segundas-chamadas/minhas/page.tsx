@@ -5,13 +5,15 @@ import { listarSegundasChamadasDocente } from "@/server/avaliacoes/segunda-chama
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
 import { STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
 
-export default async function MinhasSegundasChamadas({ searchParams }: { searchParams: Promise<{ depoisId?: string }> }) {
+export default async function MinhasSegundasChamadas({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
-  const { depoisId } = await searchParams;
-  const [resultado, preferencia] = await Promise.all([listarSegundasChamadasDocente({ ...(depoisId ? { depoisId } : {}) }), consultarPreferenciaFusoEquipe()]);
+  const pagina = lerPagina(await searchParams);
+  const [resultado, preferencia] = await Promise.all([listarSegundasChamadasDocente({ pagina }), consultarPreferenciaFusoEquipe()]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const d = resultado.dado;
 
@@ -28,6 +30,6 @@ export default async function MinhasSegundasChamadas({ searchParams }: { searchP
       <Link className="underline" href={`/academico/segundas-chamadas/minhas/${encodeURIComponent(item.reservaId)}`}>Abrir segunda chamada designada</Link>
     </article>)}
     {!d.itens.length && <EstadoVazio bloco>Nenhuma segunda chamada designada está disponível.</EstadoVazio>}
-    {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ depoisId: d.proximoId })}`}>Próximas segundas chamadas</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista("/academico/segundas-chamadas/minhas", { pagina: p })} rotulo="Páginas de segundas chamadas designadas" />
   </section>;
 }

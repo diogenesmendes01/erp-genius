@@ -3,11 +3,12 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, type Resultado } from "@/server/_shared";
 import { consultarDecisaoAdministrativaDesistencia } from "./desistencia-administrativa";
 
 const entradaSchema = z.object({
-  cursor: z.string().trim().min(1).max(100).optional(),
+  pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional(),
 }).strict();
 
 export type ItemFilaAdministrativaDesistencia = {
@@ -25,7 +26,8 @@ export type ItemFilaAdministrativaDesistencia = {
 
 export type FilaAdministrativaDesistencia = {
   itens: ItemFilaAdministrativaDesistencia[];
-  proximoCursor: string | null;
+  pagina: number;
+  temProxima: boolean;
 };
 
 type Candidato = { matriculaId: string; pedidoId: string };
@@ -50,13 +52,17 @@ async function exigirLeitorAtual(usuarioId: string) {
  * atuais; no máximo vinte consultas são feitas e nenhuma fotografia/URL/valor é
  * devolvido. Uma alteração concorrente pode, portanto, reduzir uma página, mas
  * nunca transforma esta lista em autorização para decidir.
+ *
+ * Paginação numerada (E4): a ordem por `m.id` é estável, então a mesma página lida
+ * na ida e na volta traz os mesmos candidatos.
  */
 export async function listarPendenciasAdministrativasDesistencia(
-  input: { cursor?: string } = {},
+  input: { pagina?: number } = {},
 ): Promise<Resultado<FilaAdministrativaDesistencia>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const dados = entradaSchema.parse(input);
+    const { pagina = 1 } = entradaSchema.parse(input);
+    const janela = janelaDaPagina(pagina, 20);
     await exigirLeitorAtual(sessao.id);
 
     // O LATERAL fixa somente o pedido mais recente da matrícula. Assim, uma
@@ -80,7 +86,6 @@ export async function listarPendenciasAdministrativasDesistencia(
         AND m."ativadaEm" IS NULL
         AND efetivacao.id IS NULL
         AND decisao.id IS NULL
-        AND (${dados.cursor ?? null}::text IS NULL OR m.id > ${dados.cursor ?? null})
         AND (
           m."contratoOk" = TRUE OR m."confirmacaoContratoEm" IS NOT NULL
           OR EXISTS (
@@ -102,12 +107,12 @@ export async function listarPendenciasAdministrativasDesistencia(
           OR jsonb_path_exists(ultimo."snapshotJson", '$.financeiro.cobrancas[*] ? (@.status == "PAGO" || @.pagoEm != null || (@.valorRecebido != null && @.valorRecebido != "0.00") || @.valorLiquidadoCredito != "0.00" || (@.valorCompensadoPermuta != null && @.valorCompensadoPermuta != "0.00") || @.informes[*].status == "A_CONFERIR" || @.informes[*].status == "CONFIRMADO" || @.recebimentos[*].id != null)')
         )
       ORDER BY m.id ASC
-      LIMIT 21
+      LIMIT ${janela.take} OFFSET ${janela.skip}
     `);
 
-    const pagina = candidatos.slice(0, 20);
+    const { registros: daPagina, temProxima } = recorteDaPagina(candidatos, 20);
     const itens: ItemFilaAdministrativaDesistencia[] = [];
-    for (const candidato of pagina) {
+    for (const candidato of daPagina) {
       // Esta consulta repete a autorização fresca e a revalidação da fotografia
       // por matrícula. A página já foi limitada acima, evitando uma varredura
       // que adquira locks de todas as pendências.
@@ -133,9 +138,6 @@ export async function listarPendenciasAdministrativasDesistencia(
       });
     }
     await exigirLeitorAtual(sessao.id);
-    return {
-      itens,
-      proximoCursor: candidatos.length > 20 ? candidatos[19].matriculaId : null,
-    };
+    return { itens, pagina, temProxima };
   });
 }

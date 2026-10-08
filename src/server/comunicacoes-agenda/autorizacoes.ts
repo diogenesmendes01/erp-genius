@@ -4,6 +4,7 @@ import { Papel, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroRegra, exigirSessaoComPapel, executarAcao, type Resultado } from "@/server/_shared";
 
 const papeisPermitidos = [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] as const;
@@ -11,7 +12,7 @@ const id = z.string().trim().min(1).max(100);
 const texto = z.string().trim().min(5).max(2_000);
 const RegistrarSchema = z.object({ matriculaId: id, responsavelId: id, evidencia: texto }).strict();
 const RevogarSchema = z.object({ id, motivoRevogacao: texto }).strict();
-const ListarSchema = z.object({ matriculaId: id, cursor: id.optional() }).strict();
+const ListarSchema = z.object({ matriculaId: id, pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict();
 
 async function bloquearAutorAtual(tx: Prisma.TransactionClient, autorId: string) {
   const autores = await tx.$queryRaw<{ id: string }[]>`
@@ -92,12 +93,12 @@ export async function listarAutorizacoesComunicacaoAcademica(input: unknown) {
     where: { id: sessao.id, ativo: true, papeis: { hasSome: [...papeisPermitidos] } },
     select: { id: true },
   });
-  const registros = await prisma.autorizacaoComunicacaoAcademica.findMany({
+  // Histórico numerado (E4): vigência desc com desempate pelo id — a volta à página traz os mesmos registros.
+  const pagina = dados.pagina ?? 1;
+  const lidos = await prisma.autorizacaoComunicacaoAcademica.findMany({
     where: { matriculaId: dados.matriculaId },
     orderBy: [{ vigenteEm: "desc" }, { id: "desc" }],
-    cursor: dados.cursor ? { id: dados.cursor } : undefined,
-    skip: dados.cursor ? 1 : undefined,
-    take: 26,
+    ...janelaDaPagina(pagina, 25),
     select: {
       id: true,
       responsavelId: true,
@@ -110,8 +111,8 @@ export async function listarAutorizacoesComunicacaoAcademica(input: unknown) {
       revogadaPor: { select: { nome: true } },
     },
   });
-  const itens = registros.slice(0, 25);
-  return { itens, proximoCursor: registros.length > itens.length ? itens.at(-1)?.id ?? null : null };
+  const { registros: itens, temProxima } = recorteDaPagina(lidos, 25);
+  return { itens, pagina, temProxima };
 }
 export async function consultarTelaAutorizacoesComunicacaoAcademica(input: unknown) {
   const sessao = await exigirSessaoComPapel(...papeisPermitidos);

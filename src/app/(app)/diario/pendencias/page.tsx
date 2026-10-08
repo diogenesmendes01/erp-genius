@@ -6,15 +6,17 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
 function dataNoFuso(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
 }
 
-export default async function PendenciasDiarioPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
+export default async function PendenciasDiarioPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
-  const { cursor } = await searchParams;
-  const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ cursor }), consultarPreferenciaFusoEquipe()]);
+  const pagina = lerPagina(await searchParams);
+  const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ pagina }), consultarPreferenciaFusoEquipe()]);
 
   return <section className="space-y-5">
     <VoltarPara href="/diario" />
@@ -40,10 +42,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
         <p className="text-sm text-gray-600">{item.quantidadeLembretes > 0 ? `${item.quantidadeLembretes} lembrete(s) registrado(s).` : "Nenhum lembrete registrado."}{item.ultimoLembreteEm && <> Último: {dataNoFuso(item.ultimoLembreteEm, fuso)}.</>}{item.proximoLembreteEm && <> Próximo: {dataNoFuso(item.proximoLembreteEm, fuso)}.</>}</p>
         {item.podeRegularizar && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${encodeURIComponent(item.encontroId)}`}>Abrir diário para regularizar</Link>}
       </article>})}
-      <nav className="flex gap-4 text-sm text-brand-700" aria-label="Paginação de pendências">
-        {cursor && <Link className="underline" href="/diario/pendencias">Primeira página</Link>}
-        {resultado.dado.proximoCursor && <Link className="underline" href={`/diario/pendencias?cursor=${encodeURIComponent(resultado.dado.proximoCursor)}`}>Próximas pendências</Link>}
-      </nav>
+      <Paginacao pagina={pagina} temProxima={resultado.dado.temProxima} href={(p) => hrefLista("/diario/pendencias", { pagina: p })} rotulo="Páginas de pendências" />
     </>}
   </section>;
 }

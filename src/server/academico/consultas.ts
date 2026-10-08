@@ -3,6 +3,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
+import { janelaDaPagina, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, type Resultado } from "@/server/_shared";
 import { docenteAtual, escopoTurmasDocente } from "@/server/diario/permissoes";
 import { APROVADORES_ACADEMICOS, EXECUTORES_ACADEMICOS, SOLICITANTES_ACADEMICOS, carregarEstadoAcademico, turmaAcademicaSelect } from "./estado";
@@ -45,7 +46,7 @@ export async function listarContextoMudancaAcademica(alunoId: string, matriculaI
   });
 }
 
-export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string; matriculaId?: string; apenasAbertas?: boolean; antesDe?: string }): Promise<Resultado<{ solicitacoes: SolicitacaoAcademicaView[]; proximo: string | null }>> {
+export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string; matriculaId?: string; apenasAbertas?: boolean; pagina?: number }): Promise<Resultado<{ solicitacoes: SolicitacaoAcademicaView[]; pagina: number; temProxima: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES_ACADEMICOS, Papel.PROFESSOR);
     const agora = new Date();
@@ -59,14 +60,10 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
         ...(dados.matriculaId ? [{ matriculaId: dados.matriculaId }] : []),
         ...(dados.apenasAbertas ? [{ status: { in: ["PENDENTE", "APROVADA"] } } as Prisma.SolicitacaoMudancaAcademicaWhereInput] : [])],
     };
-    let cursor: { id: string } | undefined;
-    if (dados.antesDe) {
-      const permitido = await prisma.solicitacaoMudancaAcademica.findFirst({ where: { AND: [where, { id: dados.antesDe }] }, select: { id: true } });
-      if (!permitido) throw new ErroPermissao("Página indisponível para o seu escopo atual.");
-      cursor = permitido;
-    }
-    const registros = await prisma.solicitacaoMudancaAcademica.findMany({
-      where, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], take: 51, ...(cursor ? { cursor, skip: 1 } : {}),
+    // Página numerada (E4), contada dentro do escopo de quem consulta: não carrega id de registro na URL.
+    const pagina = dados.pagina ?? 1;
+    const lidos = await prisma.solicitacaoMudancaAcademica.findMany({
+      where, orderBy: [{ criadoEm: "desc" }, { id: "desc" }], ...janelaDaPagina(pagina, 50),
       select: {
         id: true, alunoId: true, status: true, motivo: true, criadoEm: true, snapshot: true, alocacaoOrigemId: true, turmaOrigemId: true, turmaDestinoId: true,
         solicitanteId: true, aprovadorId: true, motivoDecisao: true, justificativaDispensaParecer: true, motivoExecucao: true, motivoCancelamento: true,
@@ -79,8 +76,9 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
         pareceres: { orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { id: true, autorId: true, conteudo: true, criadoEm: true, autor: { select: { nome: true, ativo: true, papeis: true } } } },
       },
     });
+    const { registros, temProxima } = recorteDaPagina(lidos, 50);
     const solicitacoes: SolicitacaoAcademicaView[] = [];
-    for (const registro of registros.slice(0, 50)) {
+    for (const registro of registros) {
       const aberto = registro.status === "PENDENTE" || registro.status === "APROVADA";
       const parsed = SnapshotMudancaAcademicaSchema.safeParse(registro.snapshot);
       const temParecer = registro.pareceres.some((p) => p.autor.ativo && p.autor.papeis.includes(Papel.PROFESSOR) && docenteAtual(p.autorId, registro.turmaOrigem));
@@ -122,7 +120,7 @@ export async function listarSolicitacoesAcademicas(filtros?: { alunoId?: string;
         podeCancelar: aberto && amplo, impedimento,
       });
     }
-    return { solicitacoes, proximo: registros.length > 50 ? solicitacoes.at(-1)?.id ?? null : null };
+    return { solicitacoes, pagina, temProxima };
   });
 }
 
