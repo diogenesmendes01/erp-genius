@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import * as MENSAGENS from "@/lib/mensagens";
@@ -24,22 +24,28 @@ import * as ACAO_CLIENTE from "@/lib/acao-cliente";
 //    constante MSG_*INCERT*, variável de catch e parâmetro de `.catch`, nome de erro, texto que começa
 //    como erro) e o que não dá para seguir (prop do componente, parâmetro de função anônima, função
 //    passada adiante, setter/callback de mensagem passado como valor a algo que não é `on<Palavra>`).
-//    O desfecho do executor (`.mensagem`) é reconhecido pelo import do módulo (com qualquer nome local), por
-//    `.executar`, pelas atribuições do `let` e pelo que uma função local devolve; componente embrulhado em
-//    memo/forwardRef continua componente, e `on<Palavra>` desestruturado de qualquer parâmetro é conferido.
+//    O desfecho do executor (`.mensagem`) é reconhecido pela ORIGEM da ligação: import do módulo pelo caminho
+//    resolvido (alias ou relativo, qualquer nome local), namespace (`AC.x`/`AC["x"]`), `.executar`, `{ executar }`
+//    de `useAcaoCliente(…)`, `criarExecutor(…)`, alias, `.call`/`.apply`/`.bind`, atribuições do `let`, o que
+//    uma função local devolve e o `.then` do executor; `.mensagem` de parâmetro de callback anônimo de origem
+//    desconhecida falha fechado. Mutação por método (`push`, `set`…) é fonte do valor; arrays são seguidos e o
+//    parâmetro de iterador (`map`…) fica ligado ao receptor. Componente embrulhado em memo/forwardRef continua
+//    componente, e `on<Palavra>` desestruturado de qualquer parâmetro é conferido.
 // B. REGIÃO DE STATUS não recebe erro: <MensagemStatus texto/progresso>, <FeedbackAcao sucesso/progresso>
 //    (também renomeados no import, por namespace, por constante, por createElement e por cloneElement),
-//    e tudo o que está dentro de região nativa — role status/log (literal, constante ou ternário),
+//    e tudo o que está dentro de região nativa — role com algum token status/log (literal, constante ou ternário),
 //    aria-live polite, <output> — em qualquer profundidade (inclusive JSX dentro de uma expressão e
-//    dangerouslySetInnerHTML), menos dentro de um role="alert". Papel não literal ou spread opaco num
+//    children={…} e dangerouslySetInnerHTML), menos dentro de um role="alert". Papel não literal ou spread opaco num
 //    elemento nativo: tratado como região (falha fechada). Spread de props e uso do componente como valor
 //    falham fechado.
 // C. O sucesso passado a `.executar(acao, sucesso)` (useAcaoCliente) não é erro.
 // D. Nada recarrega a página: `.reload`, `{ reload }`, `history.go` (também por alias e `{ go }`),
 //    qualquer atribuição (inclusive composta) a `location` ou a um campo dela — salvo destino literal que
 //    não lê a própria página —, `location.assign/replace` com a própria página (`location…`, `document.URL`),
-//    `window.open` da própria página na mesma janela. Campo computado de location/history/window e
-//    location passada como valor (argumento, spread, objeto) falham fechado.
+//    `window.open` da própria página na mesma janela. Destino literal só é navegação se for absoluto (`/…` ou
+//    URL). Campo computado de location/history/window/self/top/parent/frames, location passada como valor,
+//    window.open por `.call`/`.apply`/`.bind` ou como valor e objeto de janela passado a mutador de objeto ou
+//    espalhado falham fechado.
 // E. Arquivo que não analisa (erro de sintaxe) e `useState` sem desestruturar falham fechado.
 //
 // Exceções: arquivo + TIPO do achado (erro × opaco) + trecho exato (espaços normalizados) + motivo; a do
@@ -67,18 +73,31 @@ export const FABRICAS_DE_ELEMENTO = ["createElement", "jsx", "jsxs", "jsxDEV"];
 export const FUNCOES_DO_EXECUTOR = ["executar", "executarAcaoCliente"];
 /** Campos lidos de `document` que são a própria página. */
 export const CAMPOS_DA_PROPRIA_PAGINA = ["URL", "documentURI", "baseURI", "location"];
-/** Módulo do executor: o import dele (com qualquer nome local) é reconhecido pelo nome original. */
-export const MODULO_DO_EXECUTOR = "@/lib/acao-cliente";
+/** Módulo do executor, pelo caminho RESOLVIDO (`@/lib/acao-cliente` ou relativo que chegue a ele): vale o nome original do import. */
+export const MODULO_DO_EXECUTOR = "src/lib/acao-cliente";
+/** Fábricas do módulo do executor: `criarExecutor(…)` devolve o executor; `useAcaoCliente(…)` devolve `{ executar }`. */
+export const FABRICAS_DO_EXECUTOR = ["criarExecutor"];
+export const GANCHOS_DO_EXECUTOR = ["useAcaoCliente"];
+/** Invocação indireta de função: `f.call(…)`/`f.apply(…)` chamam f; `f.bind(…)` devolve f. */
+export const METODOS_DE_INVOCACAO = ["call", "apply", "bind"];
+/** Métodos que põem valor dentro da variável (a fonte do valor é o argumento). */
+export const MUTADORES = ["push", "unshift", "splice", "fill", "set", "add"];
+/** Iteradores cujo callback recebe os elementos do receptor (o parâmetro fica ligado a ele). */
+export const ITERADORES = ["map", "flatMap", "filter", "reduce"];
+/** Atributos de elemento nativo que são conteúdo dele. */
+export const ATRIBUTOS_DE_CONTEUDO = ["children", "dangerouslySetInnerHTML"];
+/** Funções que mexem num objeto passado como primeiro argumento (`Object.assign(window, …)`). */
+export const MUTADORES_DE_OBJETO = ["assign", "set", "defineProperty", "defineProperties"];
 /** Papéis ARIA de região polite (role="status" e role="log" têm aria-live="polite" implícito). */
 export const PAPEIS_POLITE = ["status", "log"];
 /** Elementos nativos que já são região polite sem atributo (`<output>` tem role="status" implícito). */
 export const ELEMENTOS_POLITE = ["output"];
 /** Alvos do window.open que trocam a própria página (os outros abrem outra janela). */
 export const ALVOS_DA_PROPRIA_JANELA = ["_self", "_top", "_parent"];
-/** Objetos globais donde sai o window.open (`open(…)` solto também conta). */
-export const OBJETOS_DA_JANELA = ["window", "globalThis", "self"];
+/** Objetos de janela: donde sai o window.open (`open(…)` solto também conta) e que não podem ir como valor a um mutador. */
+export const OBJETOS_DA_JANELA = ["window", "globalThis", "self", "top", "parent", "frames"];
 /** Objetos globais cujo campo computado pode ser a recarga (`location[x]()`), e por isso falham fechado. */
-export const OBJETOS_DE_NAVEGACAO = ["location", "history", "window", "globalThis", "document"];
+export const OBJETOS_DE_NAVEGACAO = ["location", "history", "window", "globalThis", "document", "self", "top", "parent", "frames"];
 /** Embrulhos de componente: a função passada a eles continua sendo o componente (props no 1º parâmetro). */
 export const EMBRULHOS_DE_COMPONENTE = ["memo", "forwardRef"];
 /** Passos de valor seguidos antes de desistir (falha fechada). */
@@ -313,32 +332,97 @@ function nomeDaChave(p: ts.PropertyName): string | null {
   return ts.isIdentifier(p) || ts.isStringLiteral(p) || ts.isNumericLiteral(p) ? p.text : null;
 }
 
-/** O valor vem de `executar(…)`/`executarAcaoCliente(…)` — um DesfechoAcao, cujo `.mensagem` é erro ou incerto? */
+/** Caminho resolvido de um import: `@/x` → `src/x`; relativo → a partir do arquivo; sem extensão nem `/index`. */
+export function caminhoDoModulo(especificador: string, arquivo: string): string {
+  const base = arquivo.split("\\").join("/");
+  const r = especificador.startsWith("@/") ? `src/${especificador.slice(2)}`
+    : especificador.startsWith(".") ? posix.normalize(posix.join(posix.dirname(base), especificador)) : especificador;
+  return r.replace(/\.(tsx?|jsx?)$/, "").replace(/\/index$/, "");
+}
+
+/** O identificador é um import do módulo do executor com um destes nomes ORIGINAIS ("*" para namespace)? */
+function importDoExecutor(id: ts.Identifier, nomes: readonly string[]): boolean {
+  const d = resolver(id);
+  if (d?.tipo !== "import") return false;
+  const esp = d.nome.parent;
+  let decl: ts.Node | undefined, original: string;
+  if (ts.isImportSpecifier(esp)) { decl = esp.parent.parent.parent; original = (esp.propertyName ?? esp.name).text; }
+  else if (ts.isNamespaceImport(esp)) { decl = esp.parent.parent; original = "*"; }
+  else return false;
+  return !!decl && ts.isImportDeclaration(decl) && ts.isStringLiteral(decl.moduleSpecifier)
+    && caminhoDoModulo(decl.moduleSpecifier.text, id.getSourceFile().fileName) === MODULO_DO_EXECUTOR && nomes.includes(original);
+}
+
+/** A expressão nomeia uma função do módulo do executor (import, namespace `AC.x`/`AC["x"]`, ou nome livre em fonte virtual)? */
+function funcaoDoModulo(e: ts.Expression, nomes: readonly string[]): boolean {
+  const x = desembrulha(e);
+  if (ts.isIdentifier(x)) return resolver(x) ? importDoExecutor(x, nomes) : nomes.includes(x.text);
+  if (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) {
+    const campo = campoLido(x), obj = desembrulha(x.expression);
+    return !!campo && nomes.includes(campo) && ts.isIdentifier(obj) && (resolver(obj) ? importDoExecutor(obj, ["*"]) : true);
+  }
+  return false;
+}
+
+/** A expressão é o resultado de `useAcaoCliente(…)` (direto ou numa constante)? */
+function resultadoDoGancho(e: ts.Expression, prof = 0): boolean {
+  if (prof > PROFUNDIDADE_MAXIMA) return false;
+  const x = desembrulha(e);
+  if (ts.isCallExpression(x)) return funcaoDoModulo(x.expression, GANCHOS_DO_EXECUTOR);
+  if (ts.isIdentifier(x)) {
+    const d = resolver(x);
+    return d?.tipo === "variavel" && !d.elemento && !!d.no.initializer && resultadoDoGancho(d.no.initializer, prof + 1);
+  }
+  return false;
+}
+
+/**
+ * A expressão É uma função executora (devolve DesfechoAcao)? Pela ORIGEM da ligação, não pelo nome:
+ * import do módulo (qualquer nome local, caminho resolvido), namespace, `.executar` de qualquer objeto,
+ * `{ executar }` (renomeado ou não) desestruturado de `useAcaoCliente(…)`, `criarExecutor(…)`, alias `const`/`let`
+ * e `f.bind(…)`.
+ */
+function ehExecutor(e: ts.Expression, prof = 0): boolean {
+  if (prof > PROFUNDIDADE_MAXIMA) return false;
+  const x = desembrulha(e);
+  if (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) {
+    return campoLido(x) === "executar" || funcaoDoModulo(x, FUNCOES_DO_EXECUTOR);
+  }
+  if (ts.isCallExpression(x)) {
+    const c = desembrulha(x.expression);
+    if ((ts.isPropertyAccessExpression(c) || ts.isElementAccessExpression(c)) && campoLido(c) === "bind") return ehExecutor(c.expression, prof + 1);
+    return funcaoDoModulo(c, FABRICAS_DO_EXECUTOR);
+  }
+  if (!ts.isIdentifier(x)) return false;
+  const d = resolver(x);
+  if (!d || d.tipo === "import") return funcaoDoModulo(x, FUNCOES_DO_EXECUTOR);
+  if (d.tipo !== "variavel") return false;
+  if (d.elemento) {
+    const chave = d.elemento.propertyName ?? d.elemento.name;
+    return ts.isIdentifier(chave) && chave.text === "executar" && !!d.no.initializer && resultadoDoGancho(d.no.initializer, prof + 1);
+  }
+  return origensDe(d, x.text).fontes.some((f: ts.Expression) => ehExecutor(f, prof + 1));
+}
+
+/**
+ * O valor vem de uma chamada a um executor — um DesfechoAcao, cujo `.mensagem` é erro ou incerto? Segue a
+ * chamada (direta, `f.call`/`f.apply`, função local que devolve o desfecho) e as origens da variável (`let`).
+ */
 function vemDoExecutor(e: ts.Expression, prof = 0): boolean {
   if (prof > PROFUNDIDADE_MAXIMA) return false;
   const x = desembrulha(e);
   if (ts.isCallExpression(x)) {
     const c = desembrulha(x.expression);
-    if (ts.isPropertyAccessExpression(c)) return FUNCOES_DO_EXECUTOR.includes(c.name.text); // acao.executar(…), AC.executarAcaoCliente(…)
-    if (!ts.isIdentifier(c)) return false;
-    const d = resolver(c);
-    // Import do módulo do executor, com qualquer nome local: vale o nome original (`executarAcaoCliente as rodar`).
-    if (d?.tipo === "import") {
-      const esp = d.nome.parent;
-      const decl = esp && ts.isImportSpecifier(esp) ? esp.parent.parent.parent : null;
-      const modulo = decl && ts.isImportDeclaration(decl) && ts.isStringLiteral(decl.moduleSpecifier) ? decl.moduleSpecifier.text : null;
-      return modulo === MODULO_DO_EXECUTOR && FUNCOES_DO_EXECUTOR.includes((esp as ts.ImportSpecifier).propertyName?.text ?? c.text);
-    }
-    // Função local que devolve o desfecho (`const rodar = () => executarAcaoCliente(…)`).
-    const f = funcaoLocal(c);
-    if (f) return retornos(f).some((r: ts.Expression) => vemDoExecutor(r, prof + 1));
-    return !d && FUNCOES_DO_EXECUTOR.includes(c.text); // nome livre (fonte virtual sem import)
+    const indireta = (ts.isPropertyAccessExpression(c) || ts.isElementAccessExpression(c)) && ["call", "apply"].includes(campoLido(c) ?? "");
+    const alvo = indireta ? (c as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression : c;
+    if (ehExecutor(alvo, prof + 1)) return true;
+    const f = funcaoLocal(alvo);
+    return !!f && retornos(f).some((r: ts.Expression) => vemDoExecutor(r, prof + 1));
   }
   if (ts.isIdentifier(x)) {
     const d = resolver(x);
     if (d?.tipo !== "variavel" || d.elemento) return false;
-    const { fontes } = origensDe(d, x.text); // inicializador e atribuições do `let`
-    return fontes.some((f: ts.Expression) => vemDoExecutor(f, prof + 1));
+    return origensDe(d, x.text).fontes.some((f: ts.Expression) => vemDoExecutor(f, prof + 1)); // inicializador e atribuições do `let`
   }
   return false;
 }
@@ -374,6 +458,16 @@ function origensDe(d: Variavel, nome: string) {
       const esq = desembrulha(n.left);
       if (ts.isIdentifier(esq)) { if (esq.text === nome && alvoDe(resolver(esq)) === d.nome) fontes.push(n.right); }
       else for (const chave of alvosNoPadrao(esq, null)) { pedacos.push(n.right); if (chave !== null) chaves.push(chave); }
+    }
+    // Mutação por método (`avisos.push(r.erro)`, `mapa.set(k, v)`…): o argumento também é pedaço do valor.
+    if (ts.isCallExpression(n)) {
+      const c = desembrulha(n.expression);
+      if ((ts.isPropertyAccessExpression(c) || ts.isElementAccessExpression(c)) && MUTADORES.includes(campoLido(c) ?? "")) {
+        const obj = desembrulha(c.expression);
+        if (ts.isIdentifier(obj) && obj.text === nome && alvoDe(resolver(obj)) === d.nome) {
+          for (const a of n.arguments) pedacos.push(ts.isSpreadElement(a) ? a.expression : a);
+        }
+      }
     }
     ts.forEachChild(n, visita);
   };
@@ -482,12 +576,36 @@ export function verificar(e: ts.Expression, prof = 0, ctx: Ctx = novoCtx(), soEr
     for (const s of expressoesDoJsx(x)) { const v = seguir(s.expr, s.pedaco || soErro); if (v) return v; }
     return null;
   }
+  // Array (`[detalhe]`, `[...lista]`): cada elemento é seguido.
+  if (ts.isArrayLiteralExpression(x)) {
+    for (const el of x.elements) { const v = seguir(ts.isSpreadElement(el) ? el.expression : el); if (v) return v; }
+    return null;
+  }
   if (ts.isIdentifier(x)) return identificador(x, seguir, opaco, erro);
   if (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) {
     const r = raizDe(x);
     if (r && ehDasProps(r)) return opaco(`${r.text} vem das props do componente`);
     const campo = campoLido(x);
     if (campo === "mensagem" && vemDoExecutor(x.expression)) { const v = erro(x, "lê .mensagem de um desfecho do executor (erro ou incerto)"); if (v) return v; }
+    // `.mensagem` de parâmetro de callback anônimo (`.then((d) => d.mensagem)`): o desfecho chega por parâmetro.
+    // Recebido de um executor, é erro; de onde não dá para saber, falha fechado — mesmo como pedaço. O dado de
+    // sucesso do `.executar(acao, (dado) => …)` é exceção: é o dado da action, não o desfecho.
+    if (campo === "mensagem") {
+      const raizDoCampo = desembrulha(x.expression);
+      const d = ts.isIdentifier(raizDoCampo) ? resolver(raizDoCampo) : null;
+      if (d?.tipo === "parametro" && !nomeDaFuncao(d.funcao)) {
+        const chamada = d.funcao.parent;
+        const callee = chamada && ts.isCallExpression(chamada) ? desembrulha(chamada.expression) : null;
+        const nomeCallee = callee && (ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee)) ? campoLido(callee) : null;
+        const dadoDoSucesso = nomeCallee === "executar" && (chamada as ts.CallExpression).arguments[1] === d.funcao;
+        // Callback de iterador (`lista.map((m) => m.mensagem)`): o parâmetro é elemento do receptor, seguido abaixo.
+        if (!dadoDoSucesso && !ITERADORES.includes(nomeCallee ?? "")) {
+          const receptor = callee && (ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee)) ? callee.expression : null;
+          if (nomeCallee === "then" && receptor && vemDoExecutor(receptor)) { const v = erro(x, "lê .mensagem do desfecho recebido no .then do executor"); if (v) return v; }
+          else if (!ctx.fontes) return { tipo: "opaco", motivo: `.mensagem de parâmetro de callback anônimo (${raizDoCampo.getText()}): falha fechada` };
+        }
+      }
+    }
     // Campo de objeto local: segue de onde a raiz vem (o objeto literal, o que a função local devolve).
     const alvo = desembrulha(x.expression);
     if (ts.isIdentifier(alvo)) {
@@ -567,6 +685,12 @@ function identificador(
   if (ehTratadorDeFalha(d.funcao)) return erro(id, `${id.text} é o erro recebido por .catch/.then`);
   // Função que é o valor de um atributo on<Palavra> (`onFeito={(msg) => …}`): quem a chama é o filho, e lá a chamada é conferida.
   if (vaiParaCallbackDeMensagem(d.funcao)) return null;
+  // Callback de iterador (`lista.map((t) => …)`): o parâmetro é um elemento do receptor.
+  const chamadaDoIterador = d.funcao.parent;
+  if (chamadaDoIterador && ts.isCallExpression(chamadaDoIterador) && chamadaDoIterador.arguments[0] === d.funcao) {
+    const c = desembrulha(chamadaDoIterador.expression);
+    if ((ts.isPropertyAccessExpression(c) || ts.isElementAccessExpression(c)) && ITERADORES.includes(campoLido(c) ?? "")) return seguir(c.expression);
+  }
   if (ehComponente(d.funcao)) return opaco(`${id.text} é prop do componente`);
   if (d.elemento) return opaco(`${id.text} vem de parâmetro desestruturado`);
   const nome = nomeDaFuncao(d.funcao);
@@ -606,6 +730,18 @@ const ehUseState = (n: ts.Node): n is ts.CallExpression => ts.isCallExpression(n
   const c = desembrulha(n.expression);
   return (ts.isIdentifier(c) && c.text === "useState") || (ts.isPropertyAccessExpression(c) && c.name.text === "useState");
 })();
+
+/** Texto literal (string ou template). */
+const ehTextoLiteral = (e: ts.Expression): boolean => { const x = desembrulha(e); return ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateExpression(x); };
+/**
+ * Destino que é NAVEGAÇÃO para outro lugar: caminho absoluto (`/…`) ou URL com esquema. Vazio, `?…`, `#…`, `.`,
+ * `./` e relativos podem ser a própria página — falham fechado.
+ */
+export function destinoAbsoluto(e: ts.Expression): boolean {
+  const x = desembrulha(e);
+  const inicio = ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) ? x.text : ts.isTemplateExpression(x) ? x.head.text : null;
+  return inicio !== null && /^(\/|[a-z][a-z0-9+.-]*:)/i.test(inicio);
+}
 
 /** Nome de um callee (`f(…)` → "f", `a.f(…)` → "f"). */
 function nomeDoCallee(e: ts.Expression): string {
@@ -737,15 +873,18 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
    */
   const regiaoNativa = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement): "certa" | "presumida" | null => {
     if (!ts.isIdentifier(n.tagName) || !/^[a-z]/.test(n.tagName.text)) return null;
-    const papeis = valoresDoAtributo(n.attributes, "role"), vivo = valoresDoAtributo(n.attributes, "aria-live");
+    // `role` é lista de tokens separados por espaço (o navegador usa o primeiro papel que conhece): fechado — basta
+    // um token polite para ser região.
+    const papeis = valoresDoAtributo(n.attributes, "role")?.flatMap((v: string) => v.split(/\s+/).filter(Boolean)) ?? null;
+    const vivo = valoresDoAtributo(n.attributes, "aria-live")?.flatMap((v: string) => v.split(/\s+/).filter(Boolean)) ?? null;
     if (ELEMENTOS_POLITE.includes(n.tagName.text) || papeis?.some((v: string) => PAPEIS_POLITE.includes(v)) || vivo?.includes("polite")) return "certa";
     if (papeis?.includes("alert")) return null;
     return papeis === null || vivo === null ? "presumida" : null;
   };
-  /** HTML injetado (dangerouslySetInnerHTML) também é conteúdo da região. */
+  /** Atributos que são conteúdo (`children={…}`, `dangerouslySetInnerHTML`) também vão para a região. */
   const htmlDaRegiao = (attrs: ts.JsxAttributes, presumida: boolean) => {
     for (const a of attrs.properties) {
-      if (ts.isJsxAttribute(a) && a.name.getText(sf) === "dangerouslySetInnerHTML" && a.initializer && ts.isJsxExpression(a.initializer) && a.initializer.expression) {
+      if (ts.isJsxAttribute(a) && ATRIBUTOS_DE_CONTEUDO.includes(a.name.getText(sf)) && a.initializer && ts.isJsxExpression(a.initializer) && a.initializer.expression) {
         regioes.push({ no: a, expr: a.initializer.expression, soErro: true, presumida });
       }
     }
@@ -934,7 +1073,7 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   /** Destino literal (texto ou template) que não lê a própria página: é navegação, não recarga. */
   const destinoLiteral = (e: ts.Expression) => {
     const x = desembrulha(e);
-    return (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateExpression(x)) && !leAPropriaPagina(x);
+    return (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateExpression(x)) && !leAPropriaPagina(x) && destinoAbsoluto(x);
   };
   /** Pai efetivo (sobe por parênteses, `as`, `!`). */
   const paiEfetivo = (m: ts.Node): { pai: ts.Node; filho: ts.Node } => {
@@ -957,7 +1096,23 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     }
     return true;
   };
+  /** window.open (do objeto de janela ou `open` global) — para o pegar também por `.call`/`.apply`/`.bind` ou como valor. */
+  const ehOpenDaJanela = (m: ts.Node): boolean =>
+    (ts.isIdentifier(m) && m.text === "open" && !ehNome(m) && !resolver(m))
+    || ((ts.isPropertyAccessExpression(m) || ts.isElementAccessExpression(m)) && campoLido(m) === "open" && OBJETOS_DA_JANELA.some((o: string) => apontaPara(m.expression, o)));
+  /** Objeto de janela (window, self…) — passado a um mutador de objeto ou espalhado, falha fechado. */
+  const ehObjetoDeJanela = (m: ts.Node): boolean =>
+    ((ts.isIdentifier(m) && !ehNome(m)) || ts.isPropertyAccessExpression(m)) && OBJETOS_DA_JANELA.some((o: string) => apontaPara(m as ts.Expression, o));
   const coletaRecarga = (n: ts.Node) => {
+    if (ehOpenDaJanela(n)) {
+      const { pai, filho } = paiEfetivo(n);
+      if (!(ts.isCallExpression(pai) && pai.expression === filho)) acusa(n, "opaco", "window.open por .call/.apply/.bind ou como valor: o destino não é verificável — falha fechada");
+    }
+    if (ehObjetoDeJanela(n)) {
+      const { pai, filho } = paiEfetivo(n);
+      const mutado = ts.isCallExpression(pai) && pai.arguments[0] === filho && MUTADORES_DE_OBJETO.includes(nomeDoCallee(pai.expression));
+      if (mutado || ts.isSpreadElement(pai) || ts.isSpreadAssignment(pai)) acusa(n, "opaco", "objeto de janela passado a um mutador de objeto (Object.assign, Reflect.set, defineProperty) ou espalhado: falha fechada");
+    }
     if (locationComoValor(n)) acusa(n, "opaco", "location usada como valor (argumento, spread, objeto…): o que se faz com ela não é verificável — falha fechada");
     if (ts.isElementAccessExpression(n)) {
       const a = desembrulha(n.argumentExpression);
@@ -971,7 +1126,10 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
       const [destino, alvoJanela] = n.arguments;
       const alvo = alvoJanela ? desembrulha(alvoJanela) : null;
       const propriaJanela = !!alvo && (!ts.isStringLiteralLike(alvo) || ALVOS_DA_PROPRIA_JANELA.includes(alvo.text));
-      if (daJanela && destino && propriaJanela && leAPropriaPagina(destino)) acusa(n, "erro", "recarrega a página (window.open da própria página na mesma janela): use mensagem + router.refresh()");
+      if (daJanela && destino && propriaJanela) {
+        if (leAPropriaPagina(destino) || (ehTextoLiteral(destino) && !destinoAbsoluto(destino))) acusa(n, "erro", "recarrega a página (window.open da própria página, ou de destino não absoluto, na mesma janela): use mensagem + router.refresh()");
+        else if (!ehTextoLiteral(destino)) acusa(n, "opaco", "window.open na mesma janela com destino não literal: falha fechada");
+      }
     }
     if (ts.isPropertyAccessExpression(n) && n.name.text === "reload") acusa(n, "erro", "recarrega a página (.reload): use mensagem + router.refresh()");
     if (ts.isElementAccessExpression(n)) { const a = desembrulha(n.argumentExpression); if (ts.isStringLiteralLike(a) && a.text === "reload") acusa(n, "erro", "recarrega a página ([\"reload\"]): use mensagem + router.refresh()"); }
@@ -986,8 +1144,10 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
       const c = desembrulha(n.expression);
       if (ts.isPropertyAccessExpression(c) && c.name.text === "go" && apontaPara(c.expression, "history")) acusa(n, "erro", "recarrega a página (history.go): use mensagem + router.refresh()");
       // `location.assign("/outra")` navega; `location.assign(location.href)`/`(document.URL)` recarrega a mesma página.
-      if (ts.isPropertyAccessExpression(c) && ["assign", "replace"].includes(c.name.text) && apontaPara(c.expression, "location") && n.arguments.some((a: ts.Expression) => leAPropriaPagina(a))) {
-        acusa(n, "erro", `recarrega a página (location.${c.name.text} para a própria página): use mensagem + router.refresh()`);
+      if (ts.isPropertyAccessExpression(c) && ["assign", "replace"].includes(c.name.text) && apontaPara(c.expression, "location")) {
+        const [destino] = n.arguments;
+        if (!destino || leAPropriaPagina(destino) || (ehTextoLiteral(destino) && !destinoAbsoluto(destino))) acusa(n, "erro", `recarrega a página (location.${c.name.text} para a própria página ou destino não absoluto): use mensagem + router.refresh()`);
+        else if (!ehTextoLiteral(destino)) acusa(n, "opaco", `location.${c.name.text} com destino não literal: falha fechada`);
       }
     }
     if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
@@ -1548,11 +1708,12 @@ describe("R1 da #153 — B3: variantes de recarga", () => {
     // Por location.assign (que só acusa quando o destino lê a própria página), não por atribuição — esta
     // acusa qualquer destino não literal e não provaria o item da lista.
     for (const c of CAMPOS) expect(acusa(`location.assign(document.${c});`), c).toContain("erro");
-    expect(acusa("location.assign(document.title);")).toEqual([]);
+    // R3: destino não literal no location.assign falha fechado (opaco) — não é a própria página, mas não dá para saber.
+    expect(acusa("location.assign(document.title);")).toEqual(["opaco"]);
   });
   it("controle: destino literal (texto ou template) para outra página continua permitido", () => {
     expect(acusa('window.location.href = "/login";')).toEqual([]);
-    expect(acusa("location.hash = \"#topo\";")).toEqual([]);
+    expect(acusa("window.location.href = \"https://exemplo.com/sair\";")).toEqual([]); // R3: só destino absoluto é navegação
     expect(acusa("const id = \"1\"; location.assign(`/alunos/${id}`);")).toEqual([]);
   });
 });
@@ -1615,7 +1776,7 @@ describe("R2 da #153 — B1: desfecho do executor reconhecido pelo import, pelo 
     expect(analisar(outro + tela('async function s() { const d = await executarAcaoCliente(); setMensagem(d.mensagem ?? ""); }'))).toEqual([]);
   });
   it("módulo do executor (cópia literal) e funções da lista exportadas por ele de verdade", () => {
-    expect(MODULO_DO_EXECUTOR).toBe("@/lib/acao-cliente");
+    expect(MODULO_DO_EXECUTOR).toBe("src/lib/acao-cliente"); // R3: caminho resolvido (alias ou relativo)
     // `executar` é o método do useAcaoCliente; as demais são exportações do módulo.
     for (const f of FUNCOES_DO_EXECUTOR.filter((n: string) => n !== "executar")) expect(Object.keys(ACAO_CLIENTE), f).toContain(f);
   });
@@ -1667,7 +1828,7 @@ describe("R2 da #153 — B3: recarga por campo computado, window.open e location
     expect(tiposDe("history[k](0);")).toContain("opaco");
   });
   it("lista fechada de objetos de navegação: campo computado em cada um falha fechado", () => {
-    const OBJETOS = ["location", "history", "window", "globalThis", "document"];
+    const OBJETOS = ["location", "history", "window", "globalThis", "document", "self", "top", "parent", "frames"];
     expect(OBJETOS_DE_NAVEGACAO).toEqual(OBJETOS);
     for (const o of OBJETOS) expect(tiposDe(`${o}[k];`), o).toEqual(["opaco"]);
     expect(tiposDe('window["location"].hash;')).toEqual([]); // chave literal: é o campo nomeado, conferido pelas outras regras
@@ -1681,7 +1842,7 @@ describe("R2 da #153 — B3: recarga por campo computado, window.open e location
   });
   it("listas fechadas de alvos da própria janela e de objetos da janela: cada item acusa", () => {
     const ALVOS = ["_self", "_top", "_parent"];
-    const JANELAS = ["window", "globalThis", "self"];
+    const JANELAS = ["window", "globalThis", "self", "top", "parent", "frames"];
     expect(ALVOS_DA_PROPRIA_JANELA).toEqual(ALVOS);
     expect(OBJETOS_DA_JANELA).toEqual(JANELAS);
     for (const a of ALVOS) expect(tiposDe(`window.open(location.href, "${a}");`), a).toContain("erro");
@@ -1730,5 +1891,138 @@ describe("R2 da #153 — B6: o achado do tipo erro leva todas as fontes; a exce�
     const sf = ts.createSourceFile("v.tsx", 'const r = { erro: "x" }; const t = r.erro; const v = cond ? t : MSG_DECISAO_INCERTA;', ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     const ultima = sf.statements[2] as ts.VariableStatement;
     expect(fontesDeErro(ultima.declarationList.declarations[0].initializer!)).toEqual(["MSG_DECISAO_INCERTA", "r.erro"]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// R3 da #153: evasões que sobreviviam (N1–N14, NA1, EX3). Uma fonte virtual por forma, com a forma da
+// revisão; as listas novas são comparadas com cópias literais, com um caso por item.
+// ---------------------------------------------------------------------------------------------------
+describe("R3 da #153 — B1: executor reconhecido pela origem da ligação", () => {
+  const doModulo = (nomes: string) => `import { ${nomes} } from "@/lib/acao-cliente";\n`;
+  const desfecho = 'if (d && d.tipo !== "ok") { setMensagem(d.mensagem); return; }';
+  it("E45 (N1) — `const { executar } = useAcaoCliente(…)`, renomeado e por constante intermediária", () => {
+    expect(trechos(doModulo("useAcaoCliente") + tela(`async function s() { const { executar } = useAcaoCliente({ idempotente: true }); const d = await executar(() => f()); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(doModulo("useAcaoCliente") + tela(`async function s() { const { executar: rodar } = useAcaoCliente({ idempotente: true }); const d = await rodar(() => f()); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(doModulo("useAcaoCliente") + tela(`async function s() { const acao = useAcaoCliente({ idempotente: true }); const { executar } = acao; const d = await executar(() => f()); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+    // Controle: `{ executar }` de outra coisa (não do gancho do módulo) é dado.
+    expect(analisar('import { useOutraCoisa } from "@/lib/outra";\n' + tela(`async function s() { const { executar } = useOutraCoisa(); const d = await executar(); setMensagem(d.mensagem ?? ""); }`))).toEqual([]);
+  });
+  it("E46 (N2) — `criarExecutor(…)` devolve o executor", () => {
+    expect(trechos(doModulo("criarExecutor") + tela(`async function s() { const rodar = criarExecutor({ setOcupado: () => {}, setErro: () => {}, setSucesso: () => {} }, { idempotente: true }); const d = await rodar(() => f()); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E47 (N3) — colchete literal sobre o namespace", () => {
+    expect(trechos('import * as AC from "@/lib/acao-cliente";\n' + tela(`async function s() { const d = await AC["executarAcaoCliente"](() => f(), { idempotente: true }); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E48 (N4) — alias `const` de um executor", () => {
+    expect(trechos(doModulo("executarAcaoCliente") + tela(`async function s() { const rodar = executarAcaoCliente; const d = await rodar(() => f(), { idempotente: true }); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E49 (N5) — `.call`, `.apply` e `.bind` (lista fechada de invocação indireta)", () => {
+    const METODOS = ["call", "apply", "bind"];
+    expect(METODOS_DE_INVOCACAO).toEqual(METODOS);
+    expect(trechos(doModulo("executarAcaoCliente") + tela(`async function s() { const d = await executarAcaoCliente.call(null, () => f(), { idempotente: true }); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(doModulo("executarAcaoCliente") + tela(`async function s() { const d = await executarAcaoCliente.apply(null, [() => f(), { idempotente: true }]); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(doModulo("executarAcaoCliente") + tela(`async function s() { const rodar = executarAcaoCliente.bind(null); const d = await rodar(() => f(), { idempotente: true }); ${desfecho} }`))).toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E50 (N6) — o import vale pelo caminho resolvido: relativo que chega a src/lib/acao-cliente", () => {
+    const arquivo = "src/app/(app)/academico/indisponibilidades/SolicitarAusencia.tsx";
+    const relativo = (caminho: string) => `import { executarAcaoCliente } from "${caminho}";\n` + tela(`async function s() { const d = await executarAcaoCliente(() => f(), { idempotente: true }); ${desfecho} }`);
+    expect(analisar(relativo("../../../../lib/acao-cliente"), arquivo).map((a: Achado) => a.trecho)).toEqual(["setMensagem(d.mensagem)"]);
+    expect(analisar(relativo("../../../../lib/acao-cliente.ts"), arquivo).map((a: Achado) => a.trecho)).toEqual(["setMensagem(d.mensagem)"]);
+    expect(analisar(relativo("../../../../lib/outra-coisa"), arquivo)).toEqual([]);
+    expect(caminhoDoModulo("../../../../lib/acao-cliente", arquivo)).toBe("src/lib/acao-cliente");
+    expect(caminhoDoModulo("@/lib/acao-cliente", arquivo)).toBe("src/lib/acao-cliente");
+  });
+  it("lista fechada de fábricas e ganchos do executor: exportados de verdade pelo módulo", () => {
+    expect(FABRICAS_DO_EXECUTOR).toEqual(["criarExecutor"]);
+    expect(GANCHOS_DO_EXECUTOR).toEqual(["useAcaoCliente"]);
+    for (const f of [...FABRICAS_DO_EXECUTOR, ...GANCHOS_DO_EXECUTOR]) expect(Object.keys(ACAO_CLIENTE), f).toContain(f);
+  });
+  it("E51 (N7) — `.mensagem` de parâmetro de callback anônimo: do `.then` do executor é erro; de origem desconhecida falha fechado, mesmo como pedaço", () => {
+    expect(trechos(doModulo("executarAcaoCliente") + tela('function s() { void executarAcaoCliente(() => f(), { idempotente: true }).then((d) => { if (d.tipo !== "ok") { setMensagem(d.mensagem); } }); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    expect(problemas(tela("function s(p: Promise<{ mensagem: string }>) { void p.then((d) => setMensagem(d.mensagem)); }"))).toEqual([expect.stringMatching(/callback anônimo/)]);
+    expect(problemas(tela("function s(p: Promise<{ mensagem: string }>) { void p.then((d) => setMensagem(`Aviso: ${d.mensagem}`)); }"))).toEqual([expect.stringMatching(/callback anônimo/)]);
+    // Controles: o dado de sucesso do `.executar(acao, (dado) => …)` e o elemento de um iterador são dado.
+    expect(analisar(tela('function s(acao: { executar: (a: unknown, b: unknown) => void }) { acao.executar(() => f(), (dado: { mensagem?: string }) => dado?.mensagem ?? "Salvo."); }'))).toEqual([]);
+    expect(analisar(tela('function s(lista: { mensagem: string }[]) { setMensagem(lista.map((m) => m.mensagem).join(" ")); }'))).toEqual([]);
+  });
+  it("E52 (NA1) — mutação por método conta como fonte: cada mutador da lista fechada", () => {
+    expect(trechos(tela('function s() { if (!r.ok) { const avisos: string[] = []; avisos.push(r.erro ?? ""); setMensagem(avisos.join(" ")); return; } }'))).toEqual(['setMensagem(avisos.join(" "))']);
+    const MUTA = ["push", "unshift", "splice", "fill", "set", "add"];
+    expect(MUTADORES).toEqual(MUTA);
+    for (const m of MUTA) expect(trechos(tela(`function s(caixa: { ${m}: (...a: unknown[]) => void }) { const lista = caixa; lista.${m}(r.erro ?? ""); setMensagem(String(lista)); }`)), m).toEqual(["setMensagem(String(lista))"]);
+  });
+});
+
+describe("R3 da #153 — B2: tokens de role, children e iteradores", () => {
+  const reg = (jsx: string, corpo = "") => `${IMPORTS}export function T({ r }: { r: { ok: boolean; erro?: string } }) { const erro = r.erro; ${corpo} return <div>${jsx}</div>; }\n`;
+  it("E53 (N8) — role é lista de tokens: basta um token polite", () => {
+    expect(trechos(reg('<p role="aviso status">{erro}</p>'))).toEqual(["{erro}"]);
+    expect(trechos(reg('<p role={"note log"}>{erro}</p>'))).toEqual(["{erro}"]);
+    expect(analisar(reg('<p role="note alert">{erro}</p>'))).toEqual([]);
+  });
+  it("E54 (N9b) — `children={…}` em elemento nativo é conteúdo da região (lista fechada de atributos de conteúdo)", () => {
+    expect(trechos(reg('<p role="status" className="text-red-700" children={erro} />'))).toEqual(["children={erro}"]);
+    const ATRIBUTOS = ["children", "dangerouslySetInnerHTML"];
+    expect(ATRIBUTOS_DE_CONTEUDO).toEqual(ATRIBUTOS);
+    for (const a of ATRIBUTOS) expect(trechos(reg(`<div role="status"><span ${a}={erro} /></div>`)), a).toEqual([`${a}={erro}`]);
+  });
+  it("E55 (N10) — array e spread são seguidos; o parâmetro do iterador fica ligado ao receptor", () => {
+    expect(trechos(reg('<p role="status">{avisos.map((t) => <span key={t}>{t}</span>)}</p>', "const detalhe = erro; const avisos = detalhe ? [detalhe] : [];")))
+      .toEqual(["{avisos.map((t) => <span key={t}>{t}</span>)}"]);
+    expect(trechos(reg('<p role="status">{[...avisos]}</p>', "const avisos = [erro];"))).toEqual(["{[...avisos]}"]);
+    const ITER = ["map", "flatMap", "filter", "reduce"];
+    expect(ITERADORES).toEqual(ITER);
+    for (const it2 of ITER) {
+      expect(trechos(tela(`function s() { const lista = [r.erro ?? ""]; lista.${it2}((t: string) => { setMensagem(t); return t; }); }`)), it2).toEqual(["setMensagem(t)"]);
+    }
+    expect(analisar(reg('<p role="status">{itens.map((t) => <span key={t}>{t}</span>)}</p>', 'const itens = ["Salvo."];'))).toEqual([]);
+  });
+});
+
+describe("R3 da #153 — B3: open indireto, destino não absoluto, janela como valor", () => {
+  const tiposDe = (f: string) => analisar(`export function T({ k }: { k: string }) { const s = () => { ${f} }; return <button onClick={s}>Ok</button>; }\n`).map((a: Achado) => a.tipo);
+  it("E56 (N11) — window.open por .call/.apply/.bind ou como valor falha fechado", () => {
+    expect(tiposDe('window.open.call(window, window.location.href, "_self");')).toContain("opaco");
+    expect(tiposDe('window.open.apply(window, [location.href, "_self"]);')).toContain("opaco");
+    expect(tiposDe('const abrir = window.open.bind(window); abrir(location.href, "_self");')).toContain("opaco");
+    expect(tiposDe("const abrir = window.open;")).toEqual(["opaco"]);
+    expect(tiposDe('window.open("/relatorio", "_blank");')).toEqual([]);
+  });
+  it("E57 (N12) — destino literal só é navegação se for absoluto: vazio, ?, #, ., ./ e relativo falham", () => {
+    for (const t of ["", "?", "?x=1", "#topo", ".", "./", "pagina"]) {
+      expect(tiposDe(`window.open("${t}", "_self");`), `open ${t}`).toContain("erro");
+      expect(tiposDe(`location.href = "${t}";`), `href ${t}`).toContain("erro");
+      expect(tiposDe(`location.assign("${t}");`), `assign ${t}`).toContain("erro");
+    }
+    for (const t of ["/inicio", "https://exemplo.com/x", "mailto:a@b.c"]) expect(tiposDe(`location.assign("${t}");`), t).toEqual([]);
+    expect(destinoAbsoluto(ts.factory.createStringLiteral("/x"))).toBe(true);
+    expect(destinoAbsoluto(ts.factory.createStringLiteral("?"))).toBe(false);
+  });
+  it("E58 (N13) — campo computado em self/top/parent/frames falha fechado", () => {
+    expect(tiposDe('self[("loca" + "tion") as "location"][("re" + "load") as "reload"]();')).toContain("opaco");
+    for (const o of ["self", "top", "parent", "frames"]) expect(tiposDe(`${o}[k];`), o).toEqual(["opaco"]);
+  });
+  it("E59 (N14) — objeto de janela passado a mutador de objeto ou espalhado falha fechado (lista fechada de mutadores)", () => {
+    expect(tiposDe("Object.assign(window, { location: window.location.href });")).toContain("opaco");
+    expect(tiposDe('Reflect.set(globalThis, "location", "/x");')).toContain("opaco");
+    expect(tiposDe('Object.defineProperty(self, "location", { value: "?" });')).toContain("opaco");
+    expect(tiposDe("const copia = { ...window };")).toContain("opaco");
+    const MUT = ["assign", "set", "defineProperty", "defineProperties"];
+    expect(MUTADORES_DE_OBJETO).toEqual(MUT);
+    for (const m of MUT) expect(tiposDe(`Reflect.${m}(window, {});`), m).toEqual(["opaco"]);
+    expect(tiposDe('window.addEventListener("x", () => undefined); const t = typeof window;')).toEqual([]);
+  });
+});
+
+describe("R3 da #153 — B6: fonte por push no trecho isento", () => {
+  it("E44b (EX3) — `partes.push(MSG_…)` entra nas fontes do achado, e a exceção que aceitava só d.falhas não casa", () => {
+    const lote = (push: string) => tela(`function s(d: { falhas: number }) { const partes = [d.falhas ? \`\${d.falhas} falhou\` : null].filter(Boolean); ${push} setMensagem(\`Lote: \${partes.join(" ")}.\`); }`);
+    const achados = analisar(lote("if (d.falhas) partes.push(MSG_RESULTADO_INCERTO_SEM_CHAVE);"));
+    expect(achados.map((a: Achado) => a.fontes)).toEqual([["d.falhas", "MSG_RESULTADO_INCERTO_SEM_CHAVE"]]);
+    const excecao: Excecao = { arquivo: "virtual.tsx", tipo: "erro", trecho: achados[0].trecho, fontes: ["d.falhas"], motivo: "resumo do lote com contagem de falhas" };
+    expect(conferirExcecoes(achados, [excecao]).semExcecao).toHaveLength(1);
+    expect(conferirExcecoes(analisar(lote("")), [excecao])).toEqual({ semExcecao: [], soltas: [] });
   });
 });
