@@ -10,6 +10,7 @@ import {
   salvarEmpresa,
 } from "@/server/empresas/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular, STATUS_FATURA_B2B_LABEL } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -38,6 +39,15 @@ interface EmpresaFicha {
   ativo: boolean;
 }
 
+/** Identificação da fatura na confirmação: código, competência, cobranças e total. */
+function ResumoFatura({ fatura }: { fatura: FaturaResumo }) {
+  return (
+    <p>
+      <strong>{fatura.codigo ?? "Fatura sem código"}</strong> · {formatarCompetencia(fatura.competencia)} · {fatura.cobrancas} {fatura.cobrancas === 1 ? "cobrança" : "cobranças"} · total <strong>{formatarMoeda(fatura.valorTotal, fatura.moeda)}</strong>
+    </p>
+  );
+}
+
 export function FichaEmpresa({
   empresa,
   colaboradores,
@@ -62,6 +72,21 @@ export function FichaEmpresa({
   async function run<T>(secao: "faturas" | "contrato", disparar: () => Promise<Resultado<T>>, sucesso: string) {
     setOrigem(secao);
     if ((await acao.executar(disparar, sucesso))?.tipo === "ok") router.refresh();
+  }
+  // Pagar baixa EM LOTE todas as cobranças da fatura; cancelar desfaz o agrupamento. Nenhum dos dois tem
+  // desfazer pela tela (docs/42 L2281): o botão da linha só abre a confirmação, que repete fatura,
+  // competência, quantidade de cobranças e total. A action roda no ConfirmarAcao.
+  const [confirmarFatura, setConfirmarFatura] = useState<{ fatura: FaturaResumo; operacao: "pagar" | "cancelar" } | null>(null);
+  function pedirConfirmacao(fatura: FaturaResumo, operacao: "pagar" | "cancelar") {
+    setOrigem("faturas");
+    acao.limpar();
+    setConfirmarFatura({ fatura, operacao });
+  }
+  function faturaConcluida(mensagem: string) {
+    setConfirmarFatura(null);
+    setOrigem("faturas");
+    acao.setSucesso(mensagem);
+    router.refresh();
   }
   const feedback = (secao: "faturas" | "contrato") => (
     <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
@@ -167,12 +192,14 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
                       {f.status === "FECHADA" && (
-                        <span className="flex gap-1">
+                        // "Cancelar" sozinho, ao lado da ação primária, lia-se como "desistir da operação":
+                        // o botão diz o que cancela e fica afastado do pagamento.
+                        <span className="flex flex-wrap gap-3">
                           {podePagar && (
                             <button
                               className={btnPri}
                               disabled={ocupado}
-                              onClick={() => run("faturas", () => pagarFaturaB2B(f.id), "Fatura paga — cobranças baixadas em lote.")}
+                              onClick={() => pedirConfirmacao(f, "pagar")}
                             >
                               Registrar pagamento
                             </button>
@@ -180,9 +207,9 @@ export function FichaEmpresa({
                           <button
                             className={botaoClasses({ variante: "perigo" })}
                             disabled={ocupado}
-                            onClick={() => run("faturas", () => cancelarFaturaB2B(f.id), "Fatura cancelada.")}
+                            onClick={() => pedirConfirmacao(f, "cancelar")}
                           >
-                            Cancelar
+                            Cancelar fatura
                           </button>
                         </span>
                       )}
@@ -194,6 +221,39 @@ export function FichaEmpresa({
           </div>
         )}
         {feedback("faturas")}
+        {confirmarFatura?.operacao === "pagar" && (
+          <ConfirmarAcao
+            titulo={`Registrar o pagamento da fatura ${confirmarFatura.fatura.codigo ?? "sem código"}?`}
+            confirmacao="pagamento da fatura"
+            idempotente={false}
+            acao={() => pagarFaturaB2B(confirmarFatura.fatura.id)}
+            aoConcluir={(d) => {
+              const baixadas = d?.baixadas ?? confirmarFatura.fatura.cobrancas;
+              faturaConcluida(baixadas === 1 ? "Fatura paga — 1 cobrança baixada." : `Fatura paga — ${baixadas} cobranças baixadas em lote.`);
+            }}
+            aoCancelar={() => setConfirmarFatura(null)}
+          >
+            <ResumoFatura fatura={confirmarFatura.fatura} />
+            <p>
+              {confirmarFatura.fatura.cobrancas === 1 ? "A cobrança da fatura é baixada" : `As ${confirmarFatura.fatura.cobrancas} cobranças da fatura são baixadas em lote`}, cada uma pelo valor faturado, e a fatura passa a paga. Não há desfazer pela tela.
+            </p>
+          </ConfirmarAcao>
+        )}
+        {confirmarFatura?.operacao === "cancelar" && (
+          <ConfirmarAcao
+            titulo={`Cancelar a fatura ${confirmarFatura.fatura.codigo ?? "sem código"}?`}
+            confirmacao="cancelamento da fatura"
+            idempotente={false}
+            acao={() => cancelarFaturaB2B(confirmarFatura.fatura.id)}
+            aoConcluir={() => faturaConcluida("Fatura cancelada — as cobranças voltaram a ficar soltas.")}
+            aoCancelar={() => setConfirmarFatura(null)}
+          >
+            <ResumoFatura fatura={confirmarFatura.fatura} />
+            <p>
+              A fatura passa a cancelada e {confirmarFatura.fatura.cobrancas === 1 ? "a cobrança volta a ficar solta" : `as ${confirmarFatura.fatura.cobrancas} cobranças voltam a ficar soltas`}, sem valor faturado. Nada é baixado. Para cobrar a empresa de novo, é preciso fechar outra fatura. O cancelamento não é desfeito pela tela.
+            </p>
+          </ConfirmarAcao>
+        )}
       </section>
 
       {/* Dados do contrato */}

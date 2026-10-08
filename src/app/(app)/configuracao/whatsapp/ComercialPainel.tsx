@@ -7,6 +7,7 @@ import type { MetricaCopilotoTipo } from "@/server/ia/consultas";
 import { salvarConfigComercial } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -49,8 +50,16 @@ export function ComercialPainel({
   // salvarConfigComercial não recebe chave de idempotência: resultado incerto manda conferir.
   const acao = useAcaoCliente({ idempotente: false });
 
-  async function salvar() {
-    const d = await acao.executar(() => salvarConfigComercial({
+  // Passar a saudação ou os alertas do gestor para "Ativa — envia" é ligar uma automação que manda
+  // mensagens reais (docs/42 L2517; regra de ouro: toda automação nasce desligada). Nesse caso o Salvar só
+  // abre a confirmação, com o que passa a sair, de qual número e para quem. Sem ativar, salva direto.
+  const ativandoSaudacao = config.saudacaoEstado !== "ATIVA" && saudacaoEstado === "ATIVA";
+  const ativandoGestao = config.gestaoEstado !== "ATIVA" && gestaoEstado === "ATIVA";
+  const [confirmando, setConfirmando] = useState(false);
+  const SUCESSO = "Configuração comercial salva.";
+
+  function dadosComerciais() {
+    return {
       autoLeadAtivo,
       saudacaoEstado,
       saudacaoTexto,
@@ -62,9 +71,20 @@ export function ComercialPainel({
       gestaoNumeroId,
       gestaoSlaMinutos,
       gestaoRelatorioHora,
-    }), "Configuração comercial salva.");
+    };
+  }
+
+  async function salvar() {
+    if (ativandoSaudacao || ativandoGestao) {
+      acao.limpar();
+      setConfirmando(true);
+      return;
+    }
+    const d = await acao.executar(() => salvarConfigComercial(dadosComerciais()), SUCESSO);
     if (d?.tipo === "ok") router.refresh();
   }
+
+  const remetenteGestao = numerosVendas.find((n) => n.id === gestaoNumeroId)?.rotulo ?? null;
 
   return (
     <section>
@@ -246,6 +266,38 @@ export function ComercialPainel({
         </button>
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       </div>
+
+      {confirmando && (
+        <ConfirmarAcao
+          titulo={ativandoSaudacao && ativandoGestao ? "Ativar a saudação automática e os alertas do gestor?" : ativandoSaudacao ? "Ativar a saudação automática?" : "Ativar os alertas e o relatório do gestor?"}
+          confirmacao="ativação"
+          idempotente={false}
+          acao={() => salvarConfigComercial(dadosComerciais())}
+          aoConcluir={() => {
+            setConfirmando(false);
+            acao.setSucesso(SUCESSO);
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmando(false)}
+        >
+          {ativandoSaudacao && (
+            <>
+              <p>
+                A saudação deixa de ser {config.saudacaoEstado === "SHADOW" ? "só registrada (ensaio)" : "desligada"} e passa a ser <strong>enviada de verdade</strong>:
+                todo contato que mandar a 1ª mensagem a um número de vendas recebe, em segundos e fora da janela de horário, o texto:
+              </p>
+              <p className="whitespace-pre-wrap rounded-md bg-gray-100 px-3 py-2">{saudacaoTexto.trim() || "(texto vazio)"}</p>
+            </>
+          )}
+          {ativandoGestao && (
+            <p>
+              Os alertas de SLA (lead novo parado há {gestaoSlaMinutos} min) e o relatório diário das {gestaoRelatorioHora}h passam a ser <strong>enviados de verdade</strong> ao
+              WhatsApp do gestor {gestaoTelefoneE164.trim() || "(sem número)"}, pelo número {remetenteGestao ?? "(sem remetente)"}.
+            </p>
+          )}
+          <p>Mensagem enviada não volta atrás. Para parar depois, volte o estado para desligada ou ensaio e salve.</p>
+        </ConfirmarAcao>
+      )}
 
       {/* Métrica-gate (doc 27): taxa de aceitação por tipo — autoriza (ou não) auto-aplicação futura. */}
       {metricasCopiloto.length > 0 && (

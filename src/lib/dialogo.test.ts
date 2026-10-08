@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { proximoFocoPreso } from "./dialogo";
+import { criarPilhaDialogos, proximoFocoPreso } from "./dialogo";
 import { Modal } from "@/components/Modal";
 
 describe("proximoFocoPreso (Tab preso no diálogo)", () => {
@@ -33,5 +33,45 @@ describe("Modal", () => {
     expect(dialogo).toContain("overflow-y-auto");
     const id = dialogo.match(/aria-labelledby="([^"]+)"/)![1];
     expect(html).toContain(`<h3 id="${id}" class="mb-3 text-sm font-medium">Registrar recebimento</h3>`);
+  });
+});
+
+describe("pilha de diálogos (confirmação aberta sobre outro diálogo)", () => {
+  it("só o diálogo de cima responde ao teclado; ao fechar, o de baixo volta a responder", () => {
+    const pilha = criarPilhaDialogos();
+    const gaveta = {}, confirmacao = {};
+    pilha.abrir(gaveta);
+    expect(pilha.noTopo(gaveta)).toBe(true);
+    pilha.abrir(confirmacao);
+    expect(pilha.noTopo(confirmacao)).toBe(true);
+    expect(pilha.noTopo(gaveta)).toBe(false); // Escape não fecha a gaveta de trás
+    pilha.fechar(confirmacao);
+    expect(pilha.noTopo(gaveta)).toBe(true);
+    pilha.fechar(gaveta);
+    expect(pilha.noTopo(gaveta)).toBe(false);
+  });
+
+  it("fechar fora de ordem tira só aquele diálogo", () => {
+    const pilha = criarPilhaDialogos();
+    const a = {}, b = {}, c = {};
+    pilha.abrir(a); pilha.abrir(b); pilha.abrir(c);
+    pilha.fechar(b);
+    expect(pilha.noTopo(c)).toBe(true);
+    pilha.fechar(c);
+    expect(pilha.noTopo(a)).toBe(true);
+    pilha.fechar({}); // desconhecido: nada muda
+    expect(pilha.noTopo(a)).toBe(true);
+  });
+});
+
+describe("Modal como alertdialog (ConfirmarAcao)", () => {
+  it("papel alertdialog, descrito pelo id dado; o padrão continua dialog sem descrição", () => {
+    const html = renderToStaticMarkup(createElement(Modal, { titulo: "Cancelar a fatura?", aoFechar: () => {}, papel: "alertdialog", descricaoId: "consequencia" }, createElement("p", { id: "consequencia" }, "Sem desfazer.")));
+    const caixa = html.match(/<div[^>]*role="alertdialog"[^>]*>/)![0];
+    expect(caixa).toContain('aria-modal="true"');
+    expect(caixa).toContain('aria-describedby="consequencia"');
+    const padrao = renderToStaticMarkup(createElement(Modal, { titulo: "Registrar recebimento", aoFechar: () => {} }));
+    expect(padrao).toMatch(/role="dialog"/);
+    expect(padrao).not.toContain("aria-describedby");
   });
 });

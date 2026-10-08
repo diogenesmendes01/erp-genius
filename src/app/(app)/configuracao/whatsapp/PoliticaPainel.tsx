@@ -6,6 +6,7 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import type { DegrauConfig, NumeroConfig, PoliticaConfig, TemplateConfig } from "@/server/whatsapp/consultas";
 import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
@@ -26,6 +27,12 @@ const ESTADO_HINT: Record<string, string> = {
   SHADOW: "Ensaio: o cron gera intenções SIMULADAS — nada é enviado de verdade.",
   ATIVA: "Valendo: degraus automáticos disparam sozinhos dentro da janela.",
 };
+
+/** Janela e dias em texto: "9h às 20h, seg, ter, qua, qui, sex". */
+function textoJanela(inicio: number, fim: number, dias: number[]): string {
+  const nomes = [...dias].sort((a, b) => a - b).map((d) => DIAS[d]).filter(Boolean);
+  return `${inicio}h às ${fim}h, ${nomes.length ? nomes.join(", ") : "nenhum dia marcado"}`;
+}
 
 export function PoliticaPainel({
   politica,
@@ -72,8 +79,14 @@ export function PoliticaPainel({
     }));
   }
 
-  async function salvar() {
-    const desfecho = await run("salvar", () => salvarPoliticaRegua({
+  // Sair de desligada/ensaio para ATIVA põe a régua a mandar mensagens reais a clientes (docs/42 L2517):
+  // o Salvar, nesse caso, só abre a confirmação com remetente, janela, teto e degraus armados — o mesmo
+  // rigor do go-live do piloto. Salvar sem ativar continua direto.
+  const ativando = politica.estado !== "ATIVA" && form.estado === "ATIVA";
+  const [confirmar, setConfirmar] = useState<"salvar" | "kill" | null>(null);
+
+  function dadosPolitica() {
+    return {
       ...form,
       numeroRemetenteId: form.numeroRemetenteId || undefined,
       degraus: form.degraus.map((d) => ({
@@ -83,21 +96,45 @@ export function PoliticaPainel({
         ativo: d.ativo,
         templateId: d.templateId ?? undefined,
       })),
-    }), "Política salva — cron, fila e timeline passam a ler esta configuração.");
+    };
+  }
+  const SUCESSO_SALVAR = "Política salva — cron, fila e timeline passam a ler esta configuração.";
+
+  async function salvar() {
+    if (ativando) {
+      setOrigem("salvar");
+      acao.limpar();
+      setConfirmar("salvar");
+      return;
+    }
+    const desfecho = await run("salvar", () => salvarPoliticaRegua(dadosPolitica()), SUCESSO_SALVAR);
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
-  async function alternarKill() {
-    const ligar = !form.killSwitch;
-    const d = await run(
-      "kill",
-      () => acionarKillSwitchRegua(ligar),
-      ligar ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.",
-    );
-    if (d?.tipo !== "ok") return;
-    setForm((f) => ({ ...f, killSwitch: ligar }));
+  // O kill switch congela (ou destrava) TODA a automação de cobrança (docs/42 L2516): confirmação nos
+  // dois sentidos, dizendo o que para ou o que volta a sair.
+  function pedirKill() {
+    setOrigem("kill");
+    acao.limpar();
+    setConfirmar("kill");
+  }
+
+  function killConcluido(ligado: boolean) {
+    setConfirmar(null);
+    setOrigem("kill");
+    acao.setSucesso(ligado ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.");
+    setForm((f) => ({ ...f, killSwitch: ligado }));
     router.refresh();
   }
+
+  const nomeTemplate = new Map(templates.map((t) => [t.id, t.nome]));
+  // Degraus que disparam depois de ativar (ativos, fora do D+15, que é sempre aprovação humana), por modo.
+  const armados = (modo: string) => form.degraus
+    .filter((d) => d.ativo && d.tipo !== "bloquear" && d.modo === modo)
+    .map((d) => `${d.passo} (${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
+    .join("; ");
+  const armadosAutomaticos = armados("AUTOMATICO");
+  const armadosEmLote = armados("LOTE");
 
   return (
     <section>
@@ -110,7 +147,7 @@ export function PoliticaPainel({
           </p>
         </div>
         <button
-          onClick={alternarKill}
+          onClick={pedirKill}
           disabled={acao.ocupado}
           className={botaoClasses({ variante: form.killSwitch ? "perigo" : "secundario" })}
         >
@@ -339,6 +376,58 @@ export function PoliticaPainel({
         </div>
         {feedback("salvar")}
       </div>
+
+      {confirmar === "kill" && (
+        <ConfirmarAcao
+          titulo={form.killSwitch ? "Destravar a automação de cobrança?" : "Congelar toda a automação de cobrança?"}
+          confirmacao={form.killSwitch ? "destravamento" : "congelamento"}
+          idempotente={false}
+          acao={() => acionarKillSwitchRegua(!form.killSwitch)}
+          aoConcluir={() => killConcluido(!form.killSwitch)}
+          aoCancelar={() => setConfirmar(null)}
+        >
+          {form.killSwitch ? (
+            <>
+              <p>A automação volta a seguir o estado salvo da régua. {ESTADO_HINT[politica.estado]}</p>
+              {politica.estado === "ATIVA" && (
+                <p>
+                  Mensagens reais voltam a sair para os clientes: cobranças com degrau devido são enviadas dentro da janela
+                  ({textoJanela(politica.janelaInicio, politica.janelaFim, politica.diasSemana)}), e o que ficou parado na fila
+                  enquanto a automação estava congelada volta a andar.
+                </p>
+              )}
+            </>
+          ) : (
+            <p>Nenhuma mensagem automática de cobrança sai enquanto o kill switch estiver ligado. O que estava na fila fica parado, sem se perder, até alguém destravar.</p>
+          )}
+        </ConfirmarAcao>
+      )}
+
+      {confirmar === "salvar" && (
+        <ConfirmarAcao
+          titulo="Ativar a régua de cobrança e enviar mensagens reais?"
+          confirmacao="ativação da régua"
+          idempotente={false}
+          acao={() => salvarPoliticaRegua(dadosPolitica())}
+          aoConcluir={() => {
+            setConfirmar(null);
+            setOrigem("salvar");
+            acao.setSucesso(SUCESSO_SALVAR);
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmar(null)}
+        >
+          <p>A régua sai {politica.estado === "SHADOW" ? "do ensaio" : "de desligada"} e passa a <strong>ativa</strong>: os degraus abaixo disparam com mensagens reais aos clientes.</p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            <li>Remetente: {remetente ? `${remetente.rotulo} (${remetente.driver === "META_CLOUD" ? "oficial" : "baileys"})` : "nenhum escolhido"}</li>
+            <li>Janela: {textoJanela(form.janelaInicio, form.janelaFim, form.diasSemana)} (hora local do contato)</li>
+            <li>Teto: {form.tetoPorContatoDia} {form.tetoPorContatoDia === 1 ? "mensagem automática" : "mensagens automáticas"} por contato/dia</li>
+            <li>Automáticos (saem sozinhos): {armadosAutomaticos || "nenhum"}</li>
+            <li>Em lote (saem quando alguém aprova o lote): {armadosEmLote || "nenhum"}</li>
+          </ul>
+          <p>Alcance: toda cobrança com degrau automático ou de lote devido entra na fila e é enviada dentro da janela. Mensagem enviada não volta atrás; para parar depois, use o kill switch.</p>
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }
