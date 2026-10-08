@@ -101,7 +101,9 @@ describe("FilaCobranca \u2014 cobrar pela linha passa pela confirmação", () =>
     expect(consequencia).toContain("Uma mensagem enviada não pode ser desfeita.");
     expect(m.enfileirar).not.toHaveBeenCalled();
 
+    expect(m.enfileirar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.enfileirar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.enfileirar).toHaveBeenCalledTimes(1);
     expect(m.enfileirar).toHaveBeenCalledWith("cobranca-1");
   });
@@ -177,7 +179,9 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
     let t = tela();
     expect(doTipo(t, DetalheCobranca)).toHaveLength(1); // o detalhe continua aberto por baixo
     const [c] = confirmacoes(t);
+    expect(m.enfileirar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.enfileirar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.enfileirar).toHaveBeenCalledWith("cobranca-1");
     (c.props.aoConcluir as (d: unknown) => void)({ passo: "D+3", status: "SIMULADA", motivo: null });
     t = tela();

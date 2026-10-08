@@ -64,7 +64,9 @@ describe("PoliticaPainel \u2014 kill switch", () => {
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe("Congelar toda a automação de cobrança?");
     expect(texto(c.props.children)).toContain("Nenhuma mensagem automática de cobrança sai");
+    expect(m.kill).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.kill).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.kill).toHaveBeenCalledWith(true);
     (c.props.aoConcluir as () => void)();
     const t = tela();
@@ -81,7 +83,9 @@ describe("PoliticaPainel \u2014 kill switch", () => {
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("Mensagens reais voltam a sair para os clientes");
     expect(consequencia).toContain("9h às 20h, seg, ter, qua, qui, sex");
+    expect(m.kill).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.kill).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.kill).toHaveBeenCalledWith(false);
   });
 
@@ -110,7 +114,9 @@ describe("PoliticaPainel \u2014 ativar a régua", () => {
     expect(consequencia).not.toContain("D0");
     expect(consequencia).not.toContain("D+7"); // manual não dispara sozinho
     expect(consequencia).not.toContain("D+15");
+    expect(m.salvar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.salvar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.salvar).toHaveBeenCalledTimes(1);
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ estado: "ATIVA", numeroRemetenteId: "n1" });
   });

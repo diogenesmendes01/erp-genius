@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { ACOES_CONFIRMADAS, EXCECOES_CONFIRMACAO } from "./confirmacoes-mapa";
+import { ACOES_CONFIRMADAS, EXCECOES_CONFIRMACAO, IMPORTS_FORA_DO_SRC } from "./confirmacoes-mapa";
 
 // Trava do ConfirmarAcao (docs/42-auditoria-frontend-ux.md, E1 e padrão 8; docs/43 §6 item 1). As ações
 // irreversíveis ou de efeito externo da lista fechada (src/app/confirmacoes-mapa.ts) só disparam dentro da
@@ -20,7 +20,11 @@ import { ACOES_CONFIRMADAS, EXCECOES_CONFIRMACAO } from "./confirmacoes-mapa";
 // - nenhum outro arquivo do src (telas, src/lib, src/test, src/server) importa ou reexporta a action — caminho
 //   relativo e `@/` resolvidos para o mesmo módulo —, e no módulo da action ela só aparece na própria declaração
 //   (sem wrapper nem alias); nenhum window.confirm no src, também por alias, cadeia do global ou reflexão
-//   (R1 da #154, B1/B2).
+//   (R1 da #154, B1/B2);
+// - a referência tem de estar no CORPO da função que é o valor da prop `acao` (nada roda no render; R2, B8);
+// - a varredura lê todo código do src (.ts/.tsx/.js/…; só os `*.test.ts` ficam de fora), com o escopo léxico
+//   para os nomes do global, e acusa o que ela não consegue ler: import que sai do src (fora da lista
+//   fechada), eval/Function/constructor e timer com código em texto (R2, B1/B2/C6).
 // As listas do mapa são comparadas a uma cópia literal aqui, e a verificação percorre a CÓPIA.
 
 /** Cópia literal da lista fechada (arquivo, módulo, ação, achado). */
@@ -45,6 +49,11 @@ const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [
   { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", trecho: "salvarConfigComercial(dadosComerciais())" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", trecho: "salvarReguaComercial(dadosRegua())" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", trecho: "salvarTemplateWhatsApp(dados)" },
+];
+
+/** Cópia literal dos imports que saem do src (arquivo, especificador exato). */
+const COPIA_IMPORTS_FORA_DO_SRC: { arquivo: string; especificador: string }[] = [
+  { arquivo: "src/test/setup-integracao.ts", especificador: "../../vitest.integration.config" },
 ];
 
 const MODULO_DO_COMPONENTE = "@/components/ConfirmarAcao";
@@ -82,7 +91,7 @@ function trechoDaReferencia(id: ts.Identifier, sf: ts.SourceFile): string {
  */
 export function resolverModulo(arquivo: string, especificador: string): string {
   let caminho: string;
-  if (especificador.startsWith("@/")) caminho = `src/${especificador.slice(2)}`;
+  if (especificador.startsWith("@/")) caminho = posix.normalize(`src/${especificador.slice(2)}`);
   else if (especificador.startsWith(".")) caminho = posix.normalize(posix.join(posix.dirname(arquivo), especificador));
   else return especificador;
   return caminho.replace(/\.(tsx?|jsx?|mjs|cjs)$/, "").replace(/\/index$/, "");
@@ -170,7 +179,14 @@ export function verificarConfirmacoes(fonte: string, acoes: Record<string, strin
       let atributo: ts.JsxAttribute | undefined;
       for (let p: ts.Node | undefined = n.parent; p && !atributo; p = p.parent) if (ts.isJsxAttribute(p)) atributo = p;
       const elemento = atributo?.parent.parent;
-      const dentro = !!atributo && atributo.name.getText(sf) === "acao" && !!elemento && ehConfirmar(elemento.tagName);
+      // A ação só pode rodar quando a confirmação chama `acao` (R2 da #154, B8): a referência tem de estar no
+      // CORPO da função que é o próprio valor da prop. `acao={((p) => () => p)(acao(id))}`, um parâmetro com
+      // valor padrão ou `acao={acao}` executariam (ou entregariam) a action no render, antes de confirmar.
+      const valor = atributo?.initializer && ts.isJsxExpression(atributo.initializer) && atributo.initializer.expression
+        ? semEmbrulho(atributo.initializer.expression) : undefined;
+      const funcao = valor && (ts.isArrowFunction(valor) || ts.isFunctionExpression(valor)) ? valor : undefined;
+      const dentro = !!atributo && atributo.name.getText(sf) === "acao" && !!elemento && ehConfirmar(elemento.tagName)
+        && !!funcao && descendeDe(n, funcao.body);
       if (dentro) naConfirmacao[acao]++;
       else fora.push(trechoDaReferencia(n, sf));
     }
@@ -178,6 +194,12 @@ export function verificarConfirmacoes(fonte: string, acoes: Record<string, strin
   };
   visitar(sf);
   return { fora, naConfirmacao, problemas };
+}
+
+/** `n` está dentro de `raiz` (ou é ela)? */
+function descendeDe(n: ts.Node, raiz: ts.Node): boolean {
+  for (let p: ts.Node | undefined = n; p; p = p.parent) if (p === raiz) return true;
+  return false;
 }
 
 /** Confere as referências fora da confirmação contra as exceções: cada exceção casa com exatamente uma. */
@@ -199,62 +221,104 @@ function nomesDoPadrao(nome: ts.BindingName): string[] {
 }
 
 const GLOBAIS = new Set(["window", "globalThis", "self", "top", "parent", "frames"]);
+/** Propriedades que devolvem uma janela a partir de QUALQUER objeto (`document.defaultView`, `iframe.contentWindow`). */
+const JANELA_DE_QUALQUER = new Set(["defaultView", "opener", "contentWindow"]);
 const COMPARACOES = new Set([ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken, ts.SyntaxKind.InKeyword]);
 const ehEmbrulho = (n: ts.Node): n is ts.ParenthesizedExpression | ts.AsExpression | ts.NonNullExpression | ts.SatisfiesExpression | ts.TypeAssertion =>
   ts.isParenthesizedExpression(n) || ts.isAsExpression(n) || ts.isNonNullExpression(n) || ts.isSatisfiesExpression(n) || ts.isTypeAssertionExpression(n);
+const semEmbrulho = (e: ts.Expression): ts.Expression => (ehEmbrulho(e) ? semEmbrulho(e.expression) : e);
+
+/**
+ * A declaração de um nome pelo ESCOPO léxico (R2 da #154, B2/G3): sobe do uso até o bloco, a função
+ * (parâmetros), o `catch`, o laço ou o arquivo que o declaram. Devolve a `VariableDeclaration` de um nome
+ * simples (`const w = …`), "outra" para parâmetro, desestruturação, função, classe, enum ou import, e null
+ * quando nada no arquivo declara o nome (aí ele é o global). Um parâmetro `window` numa função não muda o
+ * `window` das outras.
+ */
+function declaracaoNoEscopo(id: ts.Identifier): ts.VariableDeclaration | "outra" | null {
+  const nome = id.text;
+  const daLista = (d: ts.VariableDeclaration): ts.VariableDeclaration | "outra" | null =>
+    (nomesDoPadrao(d.name).includes(nome) ? (ts.isIdentifier(d.name) ? d : "outra") : null);
+  for (let p: ts.Node | undefined = id.parent; p; p = p.parent) {
+    if (ts.isFunctionLike(p)) {
+      if (p.parameters.some((par: ts.ParameterDeclaration) => nomesDoPadrao(par.name).includes(nome))) return "outra";
+      if ((ts.isFunctionExpression(p) || ts.isFunctionDeclaration(p)) && p.name?.text === nome) return "outra";
+    }
+    if (ts.isCatchClause(p) && p.variableDeclaration && nomesDoPadrao(p.variableDeclaration.name).includes(nome)) return "outra";
+    if ((ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p)) && p.initializer && ts.isVariableDeclarationList(p.initializer)) {
+      for (const d of p.initializer.declarations) { const r = daLista(d); if (r) return r; }
+    }
+    const instrucoes = ts.isSourceFile(p) || ts.isBlock(p) || ts.isModuleBlock(p) || ts.isCaseClause(p) || ts.isDefaultClause(p) ? p.statements : undefined;
+    if (!instrucoes) continue;
+    for (const s of instrucoes) {
+      if (ts.isVariableStatement(s)) for (const d of s.declarationList.declarations) { const r = daLista(d); if (r) return r; }
+      if ((ts.isFunctionDeclaration(s) || ts.isClassDeclaration(s) || ts.isEnumDeclaration(s)) && s.name?.text === nome) return "outra";
+      if (ts.isImportDeclaration(s) && s.importClause) {
+        const c = s.importClause, b = c.namedBindings;
+        if (c.name?.text === nome) return "outra";
+        if (b && ts.isNamespaceImport(b) && b.name.text === nome) return "outra";
+        if (b && ts.isNamedImports(b) && b.elements.some((e: ts.ImportSpecifier) => e.name.text === nome)) return "outra";
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * window.confirm (e as formas que escondem o nome) num fonte: a confirmação do app é o <ConfirmarAcao>.
- * Falha fechada (R1 da #154, B2):
- * - todo identificador `confirm` acusa — chamada solta, `qualquer.confirm` (de QUALQUER objeto: `w.confirm` com
- *   `const w = window` é o mesmo), referência guardada, desestruturação —, menos o nome de uma chave declarada
- *   (`{ confirm: true }`, membro de tipo ou de classe, atributo JSX);
- * - todo texto literal "confirm" acusa (`window["confirm"]`, `Reflect.get(window, "confirm")`,
- *   `Object.getOwnPropertyDescriptor(window, "confirm")`);
- * - o objeto global (`window`, `globalThis`, `self`, `top`, `parent`, `frames` — quando não são nomes declarados
- *   no arquivo —, as cadeias `window.window`/`globalThis.self` e os aliases `const w = window`) só aparece como
- *   dono de propriedade nomeada (`window.location`), com chave literal, em `typeof`, comparação e `in`, ou como
- *   valor de um alias; qualquer outro uso (argumento, chave calculada, espalhamento, desestruturação) acusa.
+ * Falha fechada (R1/R2 da #154, B2):
+ * - todo identificador `confirm` acusa — chamada solta, `qualquer.confirm` (de QUALQUER objeto), referência
+ *   guardada, desestruturação —, menos o nome de uma chave declarada (`{ confirm: true }`, membro de tipo ou de
+ *   classe, atributo JSX);
+ * - todo texto literal "confirm" acusa (`window["confirm"]`, `Reflect.get(window, "confirm")`);
+ * - a janela — o global (`window`, `globalThis`, `self`, `top`, `parent`, `frames`, quando o ESCOPO não os declara),
+ *   as cadeias (`window.window`), `x.defaultView`/`x.opener`/`x.contentWindow` de qualquer objeto, o resultado de
+ *   `window.open(…)` e os aliases de qualquer um deles (pelo escopo) — só aparece como dono de propriedade nomeada
+ *   ou de chave literal, em `typeof`, comparação, `in`, condição (`if`, ternário, `!`), instrução solta, `void`, ou
+ *   como valor de um alias; qualquer outro uso (argumento, chave calculada, espalhamento, desestruturação) acusa.
  */
 export function confirmacoesNativas(fonte: string): string[] {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const semEmbrulho = (e: ts.Expression): ts.Expression => (ehEmbrulho(e) ? semEmbrulho(e.expression) : e);
-  // Nomes declarados no arquivo: um `parent` local (parâmetro, variável, import) não é o global.
-  const declarados = new Set<string>();
-  const coletar = (n: ts.Node) => {
-    if (ts.isVariableDeclaration(n) || ts.isParameter(n) || ts.isBindingElement(n)) for (const x of nomesDoPadrao(n.name)) declarados.add(x);
-    if ((ts.isFunctionDeclaration(n) || ts.isClassDeclaration(n) || ts.isFunctionExpression(n)) && n.name) declarados.add(n.name.text);
-    if (ts.isImportClause(n) && n.name) declarados.add(n.name.text);
-    if (ts.isImportSpecifier(n) || ts.isNamespaceImport(n)) declarados.add(n.name.text);
-    ts.forEachChild(n, coletar);
-  };
-  coletar(sf);
-  const aliases = new Set<string>();
-  const ehGlobal = (e: ts.Expression): boolean => {
+  const aliases = new Set<ts.VariableDeclaration>();
+  const ehJanela = (e: ts.Expression): boolean => {
     const x = semEmbrulho(e);
-    if (ts.isIdentifier(x)) return aliases.has(x.text) || (GLOBAIS.has(x.text) && !declarados.has(x.text));
-    return ts.isPropertyAccessExpression(x) && GLOBAIS.has(x.name.text) && ehGlobal(x.expression);
+    if (ts.isIdentifier(x)) {
+      const d = declaracaoNoEscopo(x);
+      return d === null ? GLOBAIS.has(x.text) : d !== "outra" && aliases.has(d);
+    }
+    if (ts.isPropertyAccessExpression(x)) return JANELA_DE_QUALQUER.has(x.name.text) || (GLOBAIS.has(x.name.text) && ehJanela(x.expression));
+    if (ts.isCallExpression(x)) {
+      const f = semEmbrulho(x.expression);
+      return ts.isPropertyAccessExpression(f) && f.name.text === "open" && ehJanela(f.expression);
+    }
+    return false;
   };
-  // Aliases em ponto fixo: `const w = window`, `const v = w.self`, `const g = globalThis as unknown as X`.
+  // Aliases em ponto fixo: `const w = window`, `const v = w.self`, `const p = window.open(…)`.
   for (let mudou = true; mudou;) {
     mudou = false;
     const procurar = (n: ts.Node) => {
-      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && !aliases.has(n.name.text) && ehGlobal(n.initializer)) { aliases.add(n.name.text); mudou = true; }
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && !aliases.has(n) && ehJanela(n.initializer)) { aliases.add(n); mudou = true; }
       ts.forEachChild(n, procurar);
     };
     procurar(sf);
   }
-  /** Uso permitido de uma expressão que É o objeto global (ou um alias dele). */
+  /** Uso permitido de uma expressão que É a janela. */
   const usoPermitido = (e: ts.Expression): boolean => {
     let filho: ts.Node = e;
     let p: ts.Node = e.parent;
     while (ehEmbrulho(p)) { filho = p; p = p.parent; }
     if (ts.isPropertyAccessExpression(p) && p.expression === filho) return true; // `.nome`: o `.confirm` acusa pelo nome
     if (ts.isElementAccessExpression(p) && p.expression === filho) return ts.isStringLiteralLike(p.argumentExpression); // "confirm" acusa pelo texto
-    if (ts.isTypeOfExpression(p)) return true;
+    if (ts.isTypeOfExpression(p) || ts.isVoidExpression(p) || ts.isExpressionStatement(p)) return true;
+    if (ts.isPrefixUnaryExpression(p) && p.operator === ts.SyntaxKind.ExclamationToken) return true;
+    if ((ts.isConditionalExpression(p) || ts.isIfStatement(p)) && (ts.isIfStatement(p) ? p.expression : p.condition) === filho) return true;
     if (ts.isBinaryExpression(p) && COMPARACOES.has(p.operatorToken.kind)) return true;
     return ts.isVariableDeclaration(p) && p.initializer === filho && ts.isIdentifier(p.name); // alias, seguido acima
   };
+  const candidato = (n: ts.Node): n is ts.Expression =>
+    (ts.isIdentifier(n) && ehReferencia(n))
+    || (ts.isPropertyAccessExpression(n) && (GLOBAIS.has(n.name.text) || JANELA_DE_QUALQUER.has(n.name.text)))
+    || ts.isCallExpression(n);
   const achados: string[] = [];
   const registrar = (n: ts.Node) => achados.push(normaliza(n.getText(sf)).slice(0, 80));
   const visitar = (n: ts.Node) => {
@@ -266,9 +330,8 @@ export function confirmacoesNativas(fonte: string): string[] {
       if (!nomeDeChave) registrar(p);
     }
     if (ts.isStringLiteralLike(n) && n.text === "confirm") registrar(n.parent);
-    // O global como valor: só a expressão inteira conta (o `window` de `window.window` é dono de propriedade).
-    if (!emPosicaoDeTipo(n) && ((ts.isIdentifier(n) && ehReferencia(n)) || (ts.isPropertyAccessExpression(n) && GLOBAIS.has(n.name.text)))
-      && ehGlobal(n as ts.Expression) && !usoPermitido(n as ts.Expression)) registrar(n.parent);
+    // A janela como valor: só a expressão inteira conta (o `window` de `window.window` é dono de propriedade).
+    if (!emPosicaoDeTipo(n) && candidato(n) && ehJanela(n) && !usoPermitido(n)) registrar(n.parent);
     ts.forEachChild(n, visitar);
   };
   visitar(sf);
@@ -354,9 +417,58 @@ export function referenciasNoModulo(fonte: string, acao: string): string[] {
   return achados;
 }
 
+/**
+ * Arquivo que a varredura lê: todo código do src (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.mts`, `.cts` —
+ * o tsconfig tem `allowJs`), menos os testes que o vitest roda (os `*.test.ts` do src, vitest.config). Um
+ * `cobranca.test.apoio.ts` ou um `.js` não é teste e entra (R2 da #154, B1/F3–F4, B2/G4–G5).
+ */
+export function ehFonteVarrida(caminho: string): boolean {
+  return /\.(m|c)?[jt]sx?$/.test(caminho) && !/\.test\.ts$/.test(caminho);
+}
+
+/**
+ * Código que a trava não consegue ler (R2 da #154, C6), para não depender de outra trava:
+ * - import, reexportação ou carga dinâmica de um caminho que sai do src (relativo, ou `@/` com `..`);
+ * - `eval`/`Function` (como valor, chamada ou `new`, quando o escopo não os declara), qualquer `.eval`,
+ *   `.Function` ou `.constructor` (`(() => {}).constructor("…")`) e as mesmas chaves em texto;
+ * - `setTimeout`/`setInterval` com código em texto.
+ */
+export function codigoOpaco(fonte: string, arquivo = "src/app/(app)/x/T.tsx"): string[] {
+  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const OPACOS = new Set(["eval", "Function"]);
+  const achados: string[] = [];
+  const foraDoSrc = (especificador: string) =>
+    (especificador.startsWith(".") || especificador.startsWith("@/")) && !resolverModulo(arquivo, especificador).startsWith("src/");
+  const visitar = (n: ts.Node) => {
+    const especificador = (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) && n.moduleSpecifier && ts.isStringLiteral(n.moduleSpecifier)
+      ? n.moduleSpecifier.text : cargaDinamica(n)?.especificador ?? null;
+    if (especificador !== null && foraDoSrc(especificador)) achados.push(`import de fora do src: ${especificador}`);
+    if (ts.isIdentifier(n) && OPACOS.has(n.text) && ehReferencia(n) && !emPosicaoDeTipo(n) && declaracaoNoEscopo(n) === null) {
+      achados.push(`${n.text} (código montado em texto): ${normaliza(n.parent.getText(sf)).slice(0, 60)}`);
+    }
+    if (ts.isPropertyAccessExpression(n) && (OPACOS.has(n.name.text) || n.name.text === "constructor")) {
+      achados.push(`.${n.name.text} (código montado em texto): ${normaliza(n.getText(sf)).slice(0, 60)}`);
+    }
+    if (ts.isStringLiteralLike(n) && (OPACOS.has(n.text) || n.text === "constructor") && ts.isElementAccessExpression(n.parent)) {
+      achados.push(`["${n.text}"] (código montado em texto): ${normaliza(n.parent.getText(sf)).slice(0, 60)}`);
+    }
+    if (ts.isCallExpression(n)) {
+      const f = semEmbrulho(n.expression);
+      const nome = ts.isIdentifier(f) ? f.text : ts.isPropertyAccessExpression(f) ? f.name.text : null;
+      const primeiro = n.arguments[0];
+      if ((nome === "setTimeout" || nome === "setInterval") && primeiro && (ts.isStringLiteralLike(primeiro) || ts.isTemplateExpression(primeiro))) {
+        achados.push(`${nome} com código em texto: ${normaliza(n.getText(sf)).slice(0, 60)}`);
+      }
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return achados;
+}
+
 /** Todo o src (telas, src/components, src/lib, src/test e src/server), sem os testes. */
 const FONTES = (readdirSync("src", { recursive: true }) as string[])
-  .filter((f: string) => /\.tsx?$/.test(f) && !/\.test\./.test(f))
+  .filter((f: string) => ehFonteVarrida(f.split("\\").join("/")))
   .map((f: string) => ({ arquivo: join("src", f).split("\\").join("/"), conteudo: readFileSync(join("src", f), "utf-8") }));
 
 /** As ações da cópia, agrupadas por arquivo (nome → módulo). */
@@ -407,6 +519,18 @@ describe("ações irreversíveis passam pelo ConfirmarAcao", () => {
       return referenciasNoModulo(readFileSync(caminho, "utf-8"), acao).map((r) => `${caminho}: ${r}`);
     });
     expect(ofensas).toEqual([]);
+  });
+
+  it("a lista de imports que saem do src é exatamente a cópia literal", () => {
+    expect(IMPORTS_FORA_DO_SRC.map(({ arquivo, especificador }) => ({ arquivo, especificador }))).toEqual(COPIA_IMPORTS_FORA_DO_SRC);
+    for (const i of IMPORTS_FORA_DO_SRC) expect(i.motivo.trim().length, i.especificador).toBeGreaterThan(20);
+  });
+
+  it("nenhum código que a trava não lê: import de fora do src (só os da lista), eval/Function/constructor, timer com texto", () => {
+    const achados = FONTES.flatMap(({ arquivo, conteudo }) => codigoOpaco(conteudo, arquivo).map((a: string) => `${arquivo}: ${a}`));
+    const permitidos = COPIA_IMPORTS_FORA_DO_SRC.map((i: { arquivo: string; especificador: string }) => `${i.arquivo}: import de fora do src: ${i.especificador}`);
+    const { semExcecao, soltas } = conferirExcecoesConfirmacao(achados, permitidos);
+    expect({ semExcecao, soltas }).toEqual({ semExcecao: [], soltas: [] });
   });
 
   it("nenhum window.confirm no src: a confirmação é o <ConfirmarAcao>", () => {
@@ -666,5 +790,90 @@ describe("referenciasNoModulo (autoteste)", () => {
 
   it("ação que não é declarada como função no módulo (renomeada, virou const) acusa", () => {
     expect(referenciasNoModulo(`export const enviar = async (id: string) => id;`, "enviar")).toEqual(['"enviar" declarada 0 vez(es) como função no módulo']);
+  });
+});
+
+describe("R2 da #154, B8 \u2014 a ação só pode rodar quando a confirmação chama `acao`", () => {
+  it("F7: executar no render (IIFE no valor da prop) acusa", () => {
+    expect(v(`return <ConfirmarAcao acao={((p: unknown) => () => p)(enviar(id))} />;`).fora).toEqual(["enviar(id)"]);
+  });
+  it("valor padrão de parâmetro roda ao chamar? não: roda antes do corpo \u2014 e fica fora do corpo: acusa", () => {
+    expect(v(`return <ConfirmarAcao acao={(r = enviar(id)) => r} />;`).fora).toEqual(["enviar(id)"]);
+  });
+  it("a própria action como valor (sem função em volta) acusa: o corpo dela não é o da confirmação", () => {
+    expect(v(`return <ConfirmarAcao acao={enviar} />;`).fora).toHaveLength(1);
+  });
+  it("arrow com corpo em bloco, `async` e `function` passam", () => {
+    expect(v(`return <ConfirmarAcao acao={async () => { const r = await enviar(id); return r; }} />;`).naConfirmacao).toEqual({ enviar: 1 });
+    expect(v(`return <ConfirmarAcao acao={function () { return enviar(id); }} />;`).naConfirmacao).toEqual({ enviar: 1 });
+    expect(v(`return <ConfirmarAcao acao={(() => enviar(id))} />;`).naConfirmacao).toEqual({ enviar: 1 });
+  });
+});
+
+describe("R2 da #154, B1 \u2014 caminhos `@/` com `..`/`.` e varredura de .js e de nomes com `.test.`", () => {
+  const lista = [{ modulo: "@/server/empresas/acoes", acao: "cancelarFaturaB2B" }];
+  it("F1/F2: `@/` com `..` ou `.` é o mesmo módulo", () => {
+    expect(resolverModulo("src/lib/x.ts", "@/server/empresas/../empresas/acoes")).toBe("src/server/empresas/acoes");
+    expect(resolverModulo("src/lib/x.ts", "@/server/./empresas/acoes")).toBe("src/server/empresas/acoes");
+    expect(importacoesForaDaLista(`import { cancelarFaturaB2B } from "@/server/empresas/../empresas/acoes"; export const cancelarJa = (id: string) => cancelarFaturaB2B(id);`, lista, "src/lib/cobranca-direta.ts"))
+      .toEqual(["cancelarFaturaB2B from @/server/empresas/../empresas/acoes"]);
+    expect(importacoesForaDaLista(`import { cancelarFaturaB2B } from "@/server/./empresas/acoes";`, lista, "src/lib/cobranca-direta.ts"))
+      .toEqual(["cancelarFaturaB2B from @/server/./empresas/acoes"]);
+  });
+  it("F3/F4 (e G4/G5): .js, .jsx, .mjs, .cjs e nome com `.test.` que não é teste entram; só os `.test.ts` ficam de fora", () => {
+    for (const f of ["lib/cobranca-direta.js", "components/perguntar.jsx", "lib/a.mjs", "lib/a.cjs", "lib/a.mts", "lib/cobranca.test.apoio.ts", "components/perguntar.test.apoio.ts", "components/A.test.tsx", "types/x.d.ts"]) {
+      expect(ehFonteVarrida(f), f).toBe(true);
+    }
+    for (const f of ["app/confirmacoes.test.ts", "server/x.int.test.ts"]) expect(ehFonteVarrida(f), f).toBe(false);
+    expect(ehFonteVarrida("lib/leiame.md")).toBe(false);
+  });
+  it("um .js é lido: o import do wrapper acusa mesmo sem tipos", () => {
+    expect(importacoesForaDaLista(`import { cancelarFaturaB2B } from "@/server/empresas/acoes";\nexport const cancelarJa = (id) => cancelarFaturaB2B(id);`, lista, "src/lib/cobranca-direta.js"))
+      .toEqual(["cancelarFaturaB2B from @/server/empresas/acoes"]);
+  });
+});
+
+describe("R2 da #154, B2 \u2014 window.confirm por defaultView, parâmetro homônimo noutra função e window.open", () => {
+  it("G1: `document.defaultView` (e opener, contentWindow) é a janela", () => {
+    expect(confirmacoesNativas(`const v = document.defaultView as unknown as Record<string, (m: string) => boolean>; v["con" + "firm"]("Go-live?");`)).toEqual(['v["con" + "firm"]']);
+    expect(confirmacoesNativas(`window.opener["con" + "firm"]("x");`)).toEqual(['window.opener["con" + "firm"]']);
+    expect(confirmacoesNativas(`usar(iframe.contentWindow);`)).toEqual(["usar(iframe.contentWindow)"]);
+  });
+  it("G3: um parâmetro `window` numa função não desliga o global nas outras (escopo, não o arquivo)", () => {
+    const fonte = [
+      `export function largura(window: { innerWidth: number }) { return window.innerWidth; }`,
+      `export function perguntar() { const w = window as unknown as Record<string, (m: string) => boolean>; return w["con" + "firm"]("Go-live?"); }`,
+    ].join("\n");
+    expect(confirmacoesNativas(fonte)).toEqual(['w["con" + "firm"]']);
+    // O parâmetro em si, dentro da função dele, não é o global.
+    expect(confirmacoesNativas(`export function f(window: Record<string, number>, k: string) { return window[k]; }`)).toEqual([]);
+  });
+  it("o resultado de window.open é uma janela: chave calculada e passagem adiante acusam; condição e alias passam", () => {
+    expect(confirmacoesNativas(`const p = window.open("x"); p["con" + "firm"]("y");`)).toEqual(['p["con" + "firm"]']);
+    expect(confirmacoesNativas(`usar(window.open("x"));`)).toEqual(['usar(window.open("x"))']);
+    expect(confirmacoesNativas(`const popup = window.open(u, "_blank"); setNota(popup ? "a" : "b"); if (!popup) parar(); window.open(u);`)).toEqual([]);
+  });
+});
+
+describe("R2 da #154, C6 \u2014 codigoOpaco (autoteste)", () => {
+  it("import, reexportação e carga dinâmica que saem do src acusam; dentro do src e pacote não", () => {
+    expect(codigoOpaco(`import { x } from "../../../../scripts/atalho";`, "src/app/(app)/x/T.tsx")).toEqual(["import de fora do src: ../../../../scripts/atalho"]);
+    expect(codigoOpaco(`import { x } from "@/../scripts/atalho";`)).toEqual(["import de fora do src: @/../scripts/atalho"]);
+    expect(codigoOpaco(`export * from "../../scripts/atalho";`, "src/lib/x.ts")).toEqual(["import de fora do src: ../../scripts/atalho"]);
+    expect(codigoOpaco(`const m = await import("../../scripts/atalho");`, "src/lib/x.ts")).toEqual(["import de fora do src: ../../scripts/atalho"]);
+    expect(codigoOpaco(`import { x } from "../y"; import { z } from "@/lib/z"; import { useRouter } from "next/navigation";`, "src/lib/a/b.ts")).toEqual([]);
+  });
+  it("G2 e afins: eval, Function (chamada, new, alias, propriedade de outro objeto), .constructor e timer com texto acusam", () => {
+    expect(codigoOpaco(`eval("1");`)).toHaveLength(1);
+    expect(codigoOpaco(`Function("return this")();`)).toHaveLength(1);
+    expect(codigoOpaco(`new Function("return this");`)).toHaveLength(1);
+    expect(codigoOpaco(`const F = Function; F("x");`)).toHaveLength(1);
+    expect(codigoOpaco(`globalThis.Function("x");`)).toHaveLength(1);
+    expect(codigoOpaco(`(() => 1).constructor("return this")();`)).toHaveLength(1);
+    expect(codigoOpaco(`(() => 1)["constructor"]("return this")();`)).toHaveLength(1);
+    expect(codigoOpaco(`setTimeout("perguntar()", 0); window.setInterval(\`x\`, 1);`)).toHaveLength(2);
+  });
+  it("o que não é código opaco passa: tipo Function, função local chamada eval, timer com função", () => {
+    expect(codigoOpaco(`type F = Function; function eval2() {} const t = setTimeout(() => 1, 0); function g(eval: number) { return eval; }`)).toEqual([]);
   });
 });

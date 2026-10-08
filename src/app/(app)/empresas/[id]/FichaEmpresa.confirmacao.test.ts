@@ -59,7 +59,9 @@ describe("FichaEmpresa \u2014 pagar fatura passa pela confirmação", () => {
     expect(consequencia).toContain("R$");
     expect(consequencia).toContain("As 14 cobranças da fatura são baixadas em lote");
     expect(consequencia).toContain("Não há desfazer pela tela.");
+    expect(m.pagar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.pagar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.pagar).toHaveBeenCalledWith("fat-1");
     expect(m.cancelar).not.toHaveBeenCalled();
     // O anúncio usa o que o SERVIDOR baixou (R1 da #154, B7), não a contagem da linha (14).
@@ -79,7 +81,9 @@ describe("FichaEmpresa \u2014 cancelar fatura passa pela confirmação", () => {
     expect(c.props.titulo).toBe("Cancelar a fatura FAT-0031?");
     expect(c.props.confirmacao).toBe("cancelamento da fatura");
     expect(texto((c.props.children as No[])[1]).replace(/\s+/g, " ")).toContain("as 14 cobranças voltam a ficar soltas");
+    expect(m.cancelar).not.toHaveBeenCalled(); // renderizar a confirmação não executa a ação (R2 da #154, B8)
     await (c.props.acao as () => Promise<unknown>)();
+    expect(m.cancelar).toHaveBeenCalledTimes(1); // só o confirmar executa, uma vez
     expect(m.cancelar).toHaveBeenCalledWith("fat-1");
     expect(m.pagar).not.toHaveBeenCalled();
   });
