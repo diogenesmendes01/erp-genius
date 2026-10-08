@@ -80,5 +80,7 @@ export function useAcaoCliente(opcoes: OpcoesAcao) {
   // um memo e, com ele, a trava). `idempotente` é lido na montagem — é uma propriedade da action.
   const [executar] = useState(() => criarExecutor({ setOcupado, setErro, setSucesso }, opcoes));
   const limpar = useCallback(() => { setErro(null); setSucesso(null); }, []);
-  return { ocupado, erro, sucesso, executar, setErro, limpar };
+  // setSucesso: a ação que rodou noutro executor (a confirmação do ConfirmarAcao, que fecha no sucesso)
+  // anuncia o resultado aqui, junto dos botões da tela.
+  return { ocupado, erro, sucesso, executar, setErro, setSucesso, limpar };
 }

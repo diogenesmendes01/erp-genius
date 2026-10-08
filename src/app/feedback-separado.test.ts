@@ -1169,8 +1169,6 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
 /** `fontes` (obrigatório no tipo `erro`): as fontes de erro que a exceção aceita; uma fonte nova no trecho não casa. */
 export type Excecao = { arquivo: string; tipo: TipoAchado; trecho: string; motivo: string; fontes?: string[] };
 
-const PR_PARALELA = "pendência: a PR paralela do ConfirmarAcao (docs/43 §6 item 1) mexe neste arquivo; migrar para useAcaoCliente + FeedbackAcao depois do merge dela";
-
 export const EXCECOES: Excecao[] = [
   {
     arquivo: "src/components/FeedbackAcao.tsx",
@@ -1223,20 +1221,6 @@ export const EXCECOES: Excecao[] = [
     fontes: ["errors.senha?.message", "errors"],
     motivo: "erro de validação do campo (react-hook-form) ligado ao input por aria-describedby; região polite sempre montada para não interromper a digitação a cada tecla",
   },
-  {
-    arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx",
-    tipo: "erro",
-    trecho: "setNota(`Lote: ${partes.join(\" \u00b7 \")}.`)",
-    fontes: ["d.falhas"],
-    motivo: "pendência explícita (não solta sozinha depois da #154, que não mexe neste trecho): o resumo do lote soma a contagem de falhas (d.falhas) à nota de sucesso, e a falha parcial deveria sair também em role=\"alert\" — migrar junto com os 3 arquivos da PR paralela do ConfirmarAcao",
-  },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")", fontes: ["r.erro", "\"Não foi possível concluir a operação.\""], motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "opaco", trecho: "setMensagem(sucesso)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", fontes: ["MSG_RESULTADO_INCERTO"], motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")", fontes: ["resultado.erro", "\"Não foi possível concluir a operação.\""], motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", fontes: ["MSG_RESULTADO_INCERTO"], motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)", fontes: ["r.erro"], motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)", fontes: ["MSG_RESULTADO_INCERTO_SEM_CHAVE"], motivo: PR_PARALELA },
 ];
 
 /**
@@ -1326,8 +1310,10 @@ export const MIGRADOS = [
   "src/app/(app)/matriculas/[id]/desistencia/EfetivacaoFormulario.tsx",
   "src/app/(app)/matriculas/[id]/desistencia/PedidoFormulario.tsx",
   "src/app/(app)/matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx",
+  "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx",
   "src/app/(app)/matriculas/[id]/desistencia/financeiro/Formularios.tsx",
   "src/app/(app)/matriculas/[id]/fechamentos-horas/DecidirFechamento.tsx",
+  "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx",
   "src/app/(app)/matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx",
   "src/app/(app)/matriculas/[id]/nova-reserva/Formulario.tsx",
   "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/ConferenciaHoras.tsx",
@@ -1360,13 +1346,6 @@ describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" 
       "{p.reconciliacaoAcesso.erro} :: p.reconciliacaoAcesso.erro",
       "{errors.email?.message} :: errors.email?.message | errors",
       "{errors.senha?.message} :: errors.senha?.message | errors",
-      "setNota(`Lote: ${partes.join(\" · \")}.`) :: d.falhas",
-      "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\") :: r.erro | \"Não foi possível concluir a operação.\"",
-      "setMensagem(MSG_RESULTADO_INCERTO) :: MSG_RESULTADO_INCERTO",
-      "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\") :: resultado.erro | \"Não foi possível concluir a operação.\"",
-      "setMensagem(MSG_RESULTADO_INCERTO) :: MSG_RESULTADO_INCERTO",
-      "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro) :: r.erro",
-      "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE) :: MSG_RESULTADO_INCERTO_SEM_CHAVE",
     ]);
   });
 
@@ -1380,14 +1359,6 @@ describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" 
       "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx :: erro :: {p.reconciliacaoAcesso.erro}",
       "src/app/login/page.tsx :: erro :: {errors.email?.message}",
       "src/app/login/page.tsx :: erro :: {errors.senha?.message}",
-      "src/app/(app)/financeiro/FilaCobranca.tsx :: erro :: setNota(`Lote: ${partes.join(\" \u00b7 \")}.`)",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: erro :: setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: opaco :: setMensagem(sucesso)",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO)",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: erro :: setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO)",
-      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: erro :: setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)",
-      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)",
     ]);
   });
 
