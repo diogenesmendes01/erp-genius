@@ -86,7 +86,7 @@ export function AplicarAcertoContratualFormulario({ decisaoId, itens }: { decisa
       conferencia="Confirmo os valores acima."
       idempotente
       acao={() => aplicarAcertoDesistenciaContratual({ decisaoId, chaveIdempotencia: tentativa.chave.current })}
-      aoConcluir={() => { setConfirmando(false); acao.setSucesso("Acerto aplicado. A Secretaria pode efetivar a desistência."); tentativa.depoisDoSucesso(); }}
+      aoConcluir={() => { setConfirmando(false); acao.setErro(null); acao.setSucesso("Acerto aplicado. A Secretaria pode efetivar a desistência."); tentativa.depoisDoSucesso(); }}
       aoFalhar={avisarIncerto}
       aoCancelar={() => setConfirmando(false)}
     >
