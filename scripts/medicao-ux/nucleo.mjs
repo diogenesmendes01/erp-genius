@@ -210,6 +210,12 @@ export function paginasCobertas(paginas, diretoriosCom) {
 /** Arquivo de teste fica fora da medição (código de produção nos dois lados da comparação). */
 export const ehTeste = (caminhoPosix) => /\.test\.tsx?$/.test(caminhoPosix) || caminhoPosix.startsWith("src/test/");
 
+/** Arquivo com paginação para frente (critério literal da métrica 7.5): tem "Próxima". */
+export const temProxima = (texto) => /Próxima/.test(texto);
+/** Paginação só para frente (métrica 7.5): "Próxima" sem "Anterior" no mesmo arquivo. A trava
+ * src/app/paginacao-dois-sentidos.test.ts usa este mesmo critério para conferir o conjunto medido. */
+export const soParaFrente = (texto) => temProxima(texto) && !/Anterior/.test(texto);
+
 /** Client component que chama server action. */
 export const chamaServerAction = (texto) => /^["']use client["']/m.test(texto) && /from "@\/server\//.test(texto);
 /** Sem nenhum `catch` no arquivo (critério literal da auditoria). */

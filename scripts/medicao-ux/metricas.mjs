@@ -16,7 +16,7 @@ import { join, dirname, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   chamaServerAction, contarCores, ehTeste, exigirNode, mapaDeCores, nomesDeControles, paginasCobertas,
-  paresReprovados, semCatchCentral, semCatchLiteral, tags,
+  paresReprovados, semCatchCentral, semCatchLiteral, soParaFrente, tags, temProxima,
 } from "./nucleo.mjs";
 
 function listar(raiz, dir = "src") {
@@ -182,8 +182,8 @@ export function medir(raiz) {
     }
   }
   put("7.5", "tabelas 7+ colunas sem overflow-x", `${largasSemScroll} de ${largas} tabelas largas (${tabelas} tabelas em ${comTabela.length} arquivos)`, `por arquivo (≥7 <th> no arquivo e nenhum overflow-x): ${largasPorArquivo.length}; wrappers overflow-hidden sem overflow-x: ${cortadas}`);
-  const comProxima = arquivosCom(TSX, /Próxima/);
-  n.soParaFrente = comProxima.filter((f) => !/Anterior/.test(ler(f))).length;
+  const comProxima = TSX.filter((f) => temProxima(ler(f)));
+  n.soParaFrente = comProxima.filter((f) => soParaFrente(ler(f))).length;
   put("7.5", "paginações só para frente (\"Próxima\" sem \"Anterior\")", `${n.soParaFrente} de ${comProxima.length}`, `arquivos que usam <Paginacao: ${arquivosCom(TSX, /<Paginacao\b/).length}`);
   put("7.5", "aria-sort (linhas)", linhas(TSX, /aria-sort/), `usos de <ColunaOrdenavel: ${ocorr(TSX, /<ColunaOrdenavel\b/)}`);
 

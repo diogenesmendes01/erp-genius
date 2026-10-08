@@ -3,34 +3,36 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
-const Entrada = z.object({ cursor: z.string().min(1).max(100).optional() }).strict();
+const Entrada = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict();
 const textoDaFotografia = (dados: unknown, caminho: string[]) => {
   const valor = caminho.reduce<unknown>((atual, chave) => atual && typeof atual === "object" ? (atual as Record<string, unknown>)[chave] : null, dados);
   if (typeof valor === "string" && valor.trim()) return valor.trim();
   return typeof valor === "number" && Number.isFinite(valor) ? String(valor) : null;
 };
 export type ItemLotePreparacaoMigracao = { id: string; origem: string; chaveLote: string; estado: "PREPARADO" | "COM_PENDENCIAS"; criadoEm: Date; preparadoPorNome: string; linhas: number; pendencias: number; colisoes: number; conflitosEntrada: number };
-export type ConsultaLotesPreparacaoMigracao = { itens: ItemLotePreparacaoMigracao[]; proximoCursor: string | null };
+export type ConsultaLotesPreparacaoMigracao = { itens: ItemLotePreparacaoMigracao[]; pagina: number; temProxima: boolean };
 
 async function adminFrescoTx(tx: Prisma.TransactionClient, usuarioId: string) {
   const [usuario] = await tx.$queryRaw<{ ativo: boolean; papeis: Papel[] }[]>(Prisma.sql`SELECT ativo, papeis FROM "Usuario" WHERE id = ${usuarioId} FOR SHARE`);
   if (!usuario?.ativo || !usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao("Sua permissão mudou; inicie a consulta novamente.");
 }
-/** Consulta administrativa sem aplicar nem supor dados a partir da preparação. */
-export async function consultarLotesPreparacaoMigracao(input: { cursor?: string } = {}) {
+/** Consulta administrativa sem aplicar nem supor dados a partir da preparação. Paginada por número (E4), em ordem de id. */
+export async function consultarLotesPreparacaoMigracao(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const dados = Entrada.parse(input);
+    const { pagina = 1 } = Entrada.parse(input);
     return prisma.$transaction(async (tx) => {
       await adminFrescoTx(tx, sessao.id);
-      const lotes = await tx.lotePreparacaoMigracao.findMany({
-        ...(dados.cursor ? { where: { id: { gt: dados.cursor } } } : {}), orderBy: { id: "asc" }, take: 21,
+      const lidos = await tx.lotePreparacaoMigracao.findMany({
+        orderBy: { id: "asc" }, ...janelaDaPagina(pagina, 20),
         select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, _count: { select: { linhas: true, conflitosEntrada: true } }, linhas: { select: { _count: { select: { pendencias: true } }, colisoesComoConflitante: { select: { id: true } }, colisoesComoExistente: { select: { id: true } } } } },
       });
-      const pagina = lotes.slice(0, 20).map((lote) => ({ id: lote.id, origem: lote.origem, chaveLote: lote.chaveLote, estado: lote.estado, criadoEm: lote.criadoEm, preparadoPorNome: lote.preparadoPor.nome, linhas: lote._count.linhas, pendencias: lote.linhas.reduce((total, linha) => total + linha._count.pendencias, 0), colisoes: new Set(lote.linhas.flatMap((linha) => [...linha.colisoesComoConflitante, ...linha.colisoesComoExistente].map((colisao) => colisao.id))).size, conflitosEntrada: lote._count.conflitosEntrada }));
-      return { itens: pagina, proximoCursor: lotes.length > 20 ? pagina.at(-1)!.id : null } satisfies ConsultaLotesPreparacaoMigracao;
+      const { registros: lotes, temProxima } = recorteDaPagina(lidos, 20);
+      const itens = lotes.map((lote) => ({ id: lote.id, origem: lote.origem, chaveLote: lote.chaveLote, estado: lote.estado, criadoEm: lote.criadoEm, preparadoPorNome: lote.preparadoPor.nome, linhas: lote._count.linhas, pendencias: lote.linhas.reduce((total, linha) => total + linha._count.pendencias, 0), colisoes: new Set(lote.linhas.flatMap((linha) => [...linha.colisoesComoConflitante, ...linha.colisoesComoExistente].map((colisao) => colisao.id))).size, conflitosEntrada: lote._count.conflitosEntrada }));
+      return { itens, pagina, temProxima } satisfies ConsultaLotesPreparacaoMigracao;
     });
   });
 }

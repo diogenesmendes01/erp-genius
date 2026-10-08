@@ -141,10 +141,14 @@ it("lista ausências com escopo docente, paginação e pendências atuais sem ap
   const encontro = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: p1.id, preparadorId: autorId, inicio: new Date("2099-10-01T10:00:00Z"), fim: new Date("2099-10-01T11:00:00Z"), status: "PREVISTO", fusoOrigem: "UTC", motivo: "Aula que exige solução", chaveIdempotencia: "encontro-ausencia-lista", entradaHash: "fixture" } });
   authMock.mockResolvedValue({ user: { id: gestor.id } });
   const primeira = await consultarIndisponibilidadesDocentes({ limite: 1 });
-  if (!primeira.ok || !primeira.dado?.proximoCursor) throw new Error("Cursor ausente");
-  const segunda = await consultarIndisponibilidadesDocentes({ limite: 1, cursor: primeira.dado.proximoCursor });
+  if (!primeira.ok || !primeira.dado?.temProxima) throw new Error("Página seguinte ausente");
+  const segunda = await consultarIndisponibilidadesDocentes({ limite: 1, pagina: 2 });
   if (!segunda.ok || !segunda.dado) throw new Error("Página ausente");
+  expect(segunda.dado.temProxima).toBe(false);
   expect(new Set([...primeira.dado.itens, ...segunda.dado.itens].map((a) => a.id))).toEqual(new Set([a1, a2]));
+  const volta = await consultarIndisponibilidadesDocentes({ limite: 1, pagina: 1 });
+  if (!volta.ok || !volta.dado) throw new Error("Volta ausente");
+  expect(volta.dado.itens.map((a) => a.id)).toEqual(primeira.dado.itens.map((a) => a.id));
   expect(await consultarIndisponibilidadesDocentes({ professorId: p1.id, situacao: "PENDENTE" })).toMatchObject({ ok: true, dado: { itens: [{ id: a1, encontrosParaConferencia: [{ id: encontro.id }], encontrosPendentes: [] }] } });
   expect((await decidirIndisponibilidadeDocente({ indisponibilidadeId: a1, impactoHash: await impactoAusenciaTeste(a1), aprovar: true, motivo: "Conferido pela gestão" })).ok).toBe(true);
   expect(await consultarIndisponibilidadesDocentes({ situacao: "APROVADA" })).toMatchObject({ ok: true, dado: { itens: [{ id: a1, encontrosPendentes: [{ id: encontro.id }] }] } });

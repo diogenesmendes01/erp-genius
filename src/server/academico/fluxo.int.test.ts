@@ -402,12 +402,13 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { matriculaId } });
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId })).solicitacoes.map(s => s.id)).toEqual([id]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId })).solicitacoes).toEqual([]);
-    expect((await listarSolicitacoesAcademicas({ alunoId, matriculaId, antesDe: id })).ok).toBe(false);
+    // A página é contada no escopo do contrato: nenhuma página dele traz o pedido legado.
+    expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId, pagina: 2 })).solicitacoes).toEqual([]);
     expect(sucesso(await listarContextoMudancaAcademica(alunoId, matriculaId)).pedidoAbertoId).toBeNull();
     expect((await pedido(id)).matriculaId).toBeNull();
   });
 
-  it("filtra histórico e cursor pelo contrato sem ampliar o acesso docente", async () => {
+  it("filtra histórico e páginas pelo contrato sem ampliar o acesso docente", async () => {
     const primeira = sucesso(await solicitarMudancaAcademica(alunoId, { matriculaId, alocacaoOrigemId: alocacaoId, turmaDestinoId: destino.id, motivo, horarioCompativel: true })).solicitacaoId;
     sucesso(await cancelarMudancaAcademica(primeira, { motivo: "Aluno desistiu desta mudança" }));
     await prisma.alocacaoTurma.update({ where: { id: alocacaoId }, data: { ativa: false, encerradaEm: new Date() } });
@@ -420,8 +421,8 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId })).solicitacoes.map(s => s.id)).toEqual([primeira]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId, apenasAbertas: true })).solicitacoes).toEqual([]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId: outra.id })).solicitacoes.map(s => s.id)).toEqual([segunda]);
-    expect((await listarSolicitacoesAcademicas({ alunoId, matriculaId, antesDe: segunda })).ok).toBe(false);
-    expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId, antesDe: primeira })).solicitacoes).toEqual([]);
+    expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId })).temProxima).toBe(false);
+    expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId, pagina: 2 })).solicitacoes).toEqual([]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId: "outro-aluno", matriculaId })).solicitacoes).toEqual([]);
     expect((await listarSolicitacoesAcademicas({ matriculaId: " " })).ok).toBe(false);
     entrar(pro.id);
@@ -429,7 +430,7 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId: outra.id })).solicitacoes.map(s => s.id)).toEqual([segunda]);
     entrar(proAlheio.id);
     expect(sucesso(await listarSolicitacoesAcademicas({ matriculaId: outra.id })).solicitacoes).toEqual([]);
-    expect((await listarSolicitacoesAcademicas({ matriculaId: outra.id, antesDe: segunda })).ok).toBe(false);
+    expect(sucesso(await listarSolicitacoesAcademicas({ matriculaId: outra.id, pagina: 2 })).solicitacoes).toEqual([]);
   });
 
   it.each([true, false])("mantém o contrato durante parecer, aprovação e execução; seleção explícita=%s", async (explicita) => {
@@ -445,7 +446,7 @@ describe("solicitação, parecer, decisão e execução separados", () => {
     expect(contextoSemVinculo.destinos).toEqual([]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId })).solicitacoes.map(s => s.id)).toEqual([id]);
     expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId: outra.id })).solicitacoes).toEqual([]);
-    expect((await listarSolicitacoesAcademicas({ alunoId, matriculaId: outra.id, antesDe: id })).ok).toBe(false);
+    expect(sucesso(await listarSolicitacoesAcademicas({ alunoId, matriculaId: outra.id, pagina: 2 })).solicitacoes).toEqual([]);
     const vinculoOutroContrato = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId: outra.id, turmaId: equivalente.id } });
     const semSelecao = sucesso(await listarContextoMudancaAcademica(alunoId));
     expect(semSelecao).toMatchObject({ origem: null, podeSolicitar: false, podeTransferirEquivalente: false });

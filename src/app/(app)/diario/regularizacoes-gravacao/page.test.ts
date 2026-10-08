@@ -49,6 +49,26 @@ describe("RegularizacoesGravacaoPage", () => {
     expect(html).not.toContain("proposta-interna");
   });
 
+  it("pagina nos dois sentidos mantendo a busca, sem link para a página 1", async () => {
+    mocks.sessao.mockResolvedValue({ id: "gestao" });
+    mocks.consultar.mockResolvedValue({ publicacoes: [], materiais: [], propostas: [], pagina: 1, temProxima: true });
+    const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "M-1" }) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ pagina: 1, busca: "M-1" });
+    expect(primeira).not.toContain("Anterior");
+    expect(primeira).not.toContain("pagina=1");
+    expect(primeira).toContain('href="/diario/regularizacoes-gravacao?busca=M-1&amp;pagina=2">Próxima');
+
+    const meio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "M-1", pagina: "3" }) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ pagina: 3, busca: "M-1" });
+    expect(meio).toContain('href="/diario/regularizacoes-gravacao?busca=M-1&amp;pagina=2">← Anterior');
+    expect(meio).toContain('href="/diario/regularizacoes-gravacao?busca=M-1&amp;pagina=4">Próxima');
+
+    mocks.consultar.mockResolvedValue({ publicacoes: [], materiais: [], propostas: [], pagina: 2, temProxima: false });
+    const ultima = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "M-1", pagina: "2" }) }));
+    expect(ultima).toContain('href="/diario/regularizacoes-gravacao?busca=M-1">← Anterior');
+    expect(ultima).not.toContain("Próxima");
+  });
+
   it("renderiza o mesmo instante no fuso pessoal e atravessa o dia sem alterar a origem UTC", async () => {
     mocks.sessao.mockResolvedValue({ id: "gestao" });
     const instante = new Date("2026-01-01T02:30:00.000Z");

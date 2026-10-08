@@ -209,7 +209,7 @@ it("conferência da transferência liga fontes oficiais e requisitos da regra de
   expect(operacional.dado).not.toHaveProperty("mapeamentos");
   expect(JSON.stringify(operacional.dado)).not.toContain(lancamento.id);
   expect(await listarPropostasEquivalencia({ matriculaId })).toMatchObject({ ok: true,
-    dado: { itens: [{ id: proposta.dado.id, estado: "APROVADA" }], proximoCursor: null } });
+    dado: { itens: [{ id: proposta.dado.id, estado: "APROVADA" }], pagina: 1, temProxima: false } });
   const outroContrato = await prisma.matricula.findFirstOrThrow({ where: { alunoId: outroAlunoId }, select: { id: true } });
   expect(await listarPropostasEquivalencia({ matriculaId: outroContrato.id })).toMatchObject({ ok: true, dado: { itens: [] } });
   expect(await prisma.alocacaoTurma.count({ where: { matriculaId, turmaId: destino.id } })).toBe(0);

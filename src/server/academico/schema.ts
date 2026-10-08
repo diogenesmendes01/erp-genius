@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { StatusMudancaAcademica } from "@prisma/client";
+import { PAGINA_MAXIMA } from "@/lib/pagina-url";
 
 const motivo = z.string().trim().min(5, "Informe uma justificativa com pelo menos 5 caracteres.").max(2000);
 export const HorarioCompativelSchema = z.literal(true, {
@@ -41,7 +42,8 @@ export const FiltrosSolicitacoesAcademicasSchema = z.object({
   alunoId: z.string().trim().min(1).optional(),
   matriculaId: z.string().trim().min(1).optional(),
   apenasAbertas: z.boolean().optional(),
-  antesDe: z.string().trim().min(1).optional(),
+  /** Página numerada (E4), 50 por página; a ordem (criadoEm, id) é estável na ida e na volta. */
+  pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional(),
 });
 
 export interface ContextoMudancaAcademica {

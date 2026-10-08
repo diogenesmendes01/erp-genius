@@ -7,11 +7,13 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { DecidirExcecao } from "./DecidirExcecao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function ExcecoesPage({ searchParams }: { searchParams: Promise<{ historico?: string; cursor?: string }> }) {
+export default async function ExcecoesPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const q = await searchParams, historico = q.historico === "todos";
-  const [r, preferencia] = await Promise.all([listarExcecoesGravacao({ apenasPendentes: !historico, cursor: q.cursor }), consultarPreferenciaFusoEquipe()]);
+  const q = await searchParams, historico = q.historico === "todos", pagina = lerPagina(q);
+  const [r, preferencia] = await Promise.all([listarExcecoesGravacao({ apenasPendentes: !historico, pagina }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-4">
     <VoltarPara href="/diario" />
     <h1 className="text-2xl font-medium">Exceções de gravação</h1>
@@ -26,6 +28,6 @@ export default async function ExcecoesPage({ searchParams }: { searchParams: Pro
       </details>}
       {p.podeDecidir && <DecidirExcecao id={p.id} diarioCorresponde={p.diarioCorresponde} />}
     </article>)}
-    {r.ok && r.dado?.proximoCursor && <Link href={`/diario/excecoes-gravacao?${historico ? "historico=todos&" : ""}cursor=${encodeURIComponent(r.dado.proximoCursor)}`}>Próximas solicitações</Link>}
+    <Paginacao pagina={pagina} temProxima={r.ok && !!r.dado?.temProxima} href={(p) => hrefLista("/diario/excecoes-gravacao", { historico: historico ? "todos" : null, pagina: p })} rotulo="Páginas de exceções de gravação" />
   </div>;
 }

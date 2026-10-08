@@ -20,6 +20,8 @@ export function paresReprovados(css: string): {
 };
 export function paginasCobertas(paginas: string[], diretoriosCom: Set<string>): number;
 export function ehTeste(caminhoPosix: string): boolean;
+export function temProxima(texto: string): boolean;
+export function soParaFrente(texto: string): boolean;
 export function chamaServerAction(texto: string): boolean;
 export function semCatchLiteral(texto: string): boolean;
 export function semCatchCentral(texto: string): boolean;

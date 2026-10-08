@@ -43,11 +43,11 @@ const TELAS: Record<string, (status: string) => Promise<string>> = {
     return renderToStaticMarkup(await EncontrosPage({ searchParams: Promise.resolve({}) }));
   },
   "/diario/regularizacoes": async (status) => {
-    mocks.regularizacoes.mockResolvedValue({ ok: true, dado: { gestao: false, proximoCursor: null, itens: [{ id: "e", turma: "T-1", inicio, fim, fusoOrigem: "UTC", status, professor: "Ana", designacao: null, podeRegularizar: false, podeGerir: false }] } });
+    mocks.regularizacoes.mockResolvedValue({ ok: true, dado: { gestao: false, pagina: 1, temProxima: false, itens: [{ id: "e", turma: "T-1", inicio, fim, fusoOrigem: "UTC", status, professor: "Ana", designacao: null, podeRegularizar: false, podeGerir: false }] } });
     return renderToStaticMarkup(await RegularizacoesPage({ searchParams: Promise.resolve({}) }));
   },
   "/academico/segundas-chamadas/agendas": async (status) => {
-    mocks.agendas.mockResolvedValue({ ok: true, dado: { proximoCursor: null, itens: [{
+    mocks.agendas.mockResolvedValue({ ok: true, dado: { pagina: 1, temProxima: false, itens: [{
       reservaId: "r", statusReserva: "RESERVADA", codigoAvaliacao: "FALA", reservadaEm: inicio,
       matricula: { codigo: "M-1" }, aluno: "Ana", turma: { codigo: "T-1", nome: "Turma" },
       agenda: { inicio, fim, fusoOrigem: "UTC", status },

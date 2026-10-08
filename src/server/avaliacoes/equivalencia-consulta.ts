@@ -3,26 +3,28 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 
+/** Paginada por número (E4), 50 por página, em ordem estável (criadaEm, id). */
 export async function listarPropostasEquivalencia(input: unknown) {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
     const entrada = z.object({ matriculaId: z.string().trim().min(1).max(100),
-      cursor: z.string().min(1).max(100).optional() }).strict().parse(input);
-    const propostas = await prisma.propostaEquivalenciaAvaliacao.findMany({
-      where: { matriculaId: entrada.matriculaId }, take: 51,
-      ...(entrada.cursor ? { cursor: { id: entrada.cursor }, skip: 1 } : {}),
+      pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict().parse(input);
+    const lidas = await prisma.propostaEquivalenciaAvaliacao.findMany({
+      where: { matriculaId: entrada.matriculaId }, ...janelaDaPagina(entrada.pagina, 50),
       orderBy: [{ criadaEm: "desc" }, { id: "desc" }],
       select: { id: true, versao: true, criadaEm: true, motivo: true,
         turmaOrigem: { select: { nome: true, codigo: true } }, turmaDestino: { select: { nome: true, codigo: true } },
         decisao: { select: { aprovada: true, aplicacao: { select: { id: true } } } },
       },
     });
-    const itens = propostas.slice(0, 50).map(({ decisao, ...item }) => ({ ...item,
+    const { registros: propostas, temProxima } = recorteDaPagina(lidas, 50);
+    const itens = propostas.map(({ decisao, ...item }) => ({ ...item,
       estado: decisao?.aplicacao ? "APLICADA" : decisao ? (decisao.aprovada ? "APROVADA" : "REJEITADA") : "PENDENTE",
     }));
-    return { itens, proximoCursor: propostas.length > 50 ? itens[itens.length - 1]!.id : null };
+    return { itens, pagina: entrada.pagina, temProxima };
   });
 }
 
