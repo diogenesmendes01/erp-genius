@@ -216,6 +216,39 @@ describe("ImpactosTaxaFormulario", () => {
     sucesso: "Conjunto preparado. O Financeiro deve vincular os acertos das taxas afetadas antes da aprovação independente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => botaoOcupado(tela(), "Preparando…"),
   });
+
+  // R1 da #153 (B5): na falha de transporte o resultado é incerto — a tentativa (e a chave) fica, e a tela
+  // não atualiza; o reenvio sem alterar confere o mesmo conjunto. Só o sucesso descarta a chave e atualiza.
+  const justificar = (motivo: string) => mudar(elementos(tela()).find((n) => n.type === CampoTexto)!, motivo);
+  const chaves = () => m.impactos.mock.calls.map((chamada: unknown[]) => (chamada[0] as { chaveIdempotencia: string }).chaveIdempotencia);
+
+  it("falha de rede: o reenvio sem alterar usa a mesma chave e só o sucesso atualiza a tela", async () => {
+    justificar("Taxa afetada pelo aditivo");
+    m.impactos.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await clicar(tela(), "Preparar conjunto de impactos");
+    expect(anuncios(tela()).alerta).toEqual([MSG_RESULTADO_INCERTO]);
+    expect(m.refresh).not.toHaveBeenCalled();
+    m.impactos.mockResolvedValueOnce({ ok: true });
+    await clicar(tela(), "Preparar conjunto de impactos");
+    expect(chaves()).toHaveLength(2);
+    expect(chaves()[1]).toBe(chaves()[0]);
+    expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("erro do servidor mantém a chave (sem refresh); depois do sucesso, a próxima tentativa ganha chave nova", async () => {
+    justificar("Taxa afetada pelo aditivo");
+    m.impactos.mockResolvedValueOnce({ ok: false, erro: "Revisão mudou." });
+    await clicar(tela(), "Preparar conjunto de impactos");
+    expect(m.refresh).not.toHaveBeenCalled();
+    m.impactos.mockResolvedValueOnce({ ok: true });
+    await clicar(tela(), "Preparar conjunto de impactos");
+    m.impactos.mockResolvedValueOnce({ ok: true });
+    await clicar(tela(), "Preparar conjunto de impactos");
+    const [primeira, segunda, terceira] = chaves();
+    expect(segunda).toBe(primeira);
+    expect(terceira).not.toBe(segunda);
+    expect(m.refresh).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("OriginalFormulario", () => {

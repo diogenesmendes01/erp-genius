@@ -13,22 +13,30 @@ import * as MENSAGENS from "@/lib/mensagens";
 //
 // Pelo AST do TypeScript, em todo arquivo de produção de src/app e src/components:
 // A. ESTADO DE MENSAGEM não recebe erro. É estado de mensagem o `useState` cujo nome está na lista
-//    PALAVRAS_DE_MENSAGEM ou cujo valor aparece numa região de status (B). Cada chamada do setter é
-//    seguida pelo fluxo do valor — ternário, `&&`/`||`/`??`/`+`, template, constante e `let` (com as
-//    atribuições), desestruturação, função local (o que ela devolve), parâmetro de função local (cada
-//    chamada dela no arquivo) — e acusa erro (`.erro`/`.message`/`.falha`, constante MSG_*INCERT*,
-//    variável de catch, nome de erro, texto que começa como erro) e o que não dá para seguir (prop do
-//    componente, parâmetro de função anônima, função passada adiante, setter passado como valor).
+//    PALAVRAS_DE_MENSAGEM ou cujo valor aparece numa região de status (B); e também o callback recebido
+//    por prop com nome `on<Palavra>` (onNota, onFeito…), que é o setter visto do lado do filho. Cada
+//    chamada é seguida pelo fluxo do valor — ternário, `&&`/`||`/`??`/`+`, template, constante e `let`
+//    (com as atribuições, inclusive por desestruturação), desestruturação, campo de objeto local (o objeto
+//    literal de onde ele vem), função local (o que ela devolve), função de fora (os argumentos e o objeto
+//    do método: `String(e)` não lava nada), parâmetro de função local (o valor padrão e cada chamada dela
+//    no arquivo) — e acusa erro (`.erro`/`.message`/`.falha`, `.mensagem` de um desfecho do executor,
+//    constante MSG_*INCERT*, variável de catch e parâmetro de `.catch`, nome de erro, texto que começa
+//    como erro) e o que não dá para seguir (prop do componente, parâmetro de função anônima, função
+//    passada adiante, setter/callback de mensagem passado como valor a algo que não é `on<Palavra>`).
 // B. REGIÃO DE STATUS não recebe erro: <MensagemStatus texto/progresso>, <FeedbackAcao sucesso/progresso>
-//    (também renomeados no import, por namespace, por constante ou por createElement), filhos de elemento
-//    com role="status"/aria-live="polite". Spread de props e uso do componente como valor falham fechado.
+//    (também renomeados no import, por namespace, por constante, por createElement e por cloneElement),
+//    e tudo o que está dentro de elemento com role="status"/aria-live="polite" — expressões e texto fixo,
+//    em qualquer profundidade, menos dentro de um role="alert". Spread de props e uso do componente como
+//    valor falham fechado.
 // C. O sucesso passado a `.executar(acao, sucesso)` (useAcaoCliente) não é erro.
-// D. Nada recarrega a página: `.reload`, `{ reload }`, `history.go`, atribuição a `location`/`location.href`,
-//    `location.assign`/`location.replace`.
+// D. Nada recarrega a página: `.reload`, `{ reload }`, `history.go` (também por alias e `{ go }`),
+//    qualquer atribuição (inclusive composta) a `location` ou a um campo dela — salvo destino literal que
+//    não lê a própria página —, `location.assign/replace` com a própria página (`location…`, `document.URL`).
 // E. Arquivo que não analisa (erro de sintaxe) e `useState` sem desestruturar falham fechado.
 //
-// Exceções: arquivo + trecho exato (espaços normalizados) + motivo; cada uma casa com exatamente um achado,
-// e a lista é comparada com uma cópia literal (acrescentar exceção exige mexer nos dois lugares).
+// Exceções: arquivo + TIPO do achado (erro × opaco) + trecho exato (espaços normalizados) + motivo; cada
+// uma casa com exatamente um achado — exceção dada a um valor "opaco" não isenta um erro novo no mesmo
+// trecho —, e a lista é comparada com uma cópia literal (acrescentar exceção exige mexer nos dois lugares).
 
 const RAIZES = ["src/app", "src/components"];
 
@@ -46,6 +54,10 @@ export const CONSTANTE_DE_INCERTEZA = /^MSG_\w*INCERT/;
 export const REGIOES_DE_STATUS: Record<string, readonly string[]> = { MensagemStatus: ["texto", "progresso"], FeedbackAcao: ["sucesso", "progresso"] };
 /** Fábricas de elemento que recebem o componente como primeiro argumento. */
 export const FABRICAS_DE_ELEMENTO = ["createElement", "jsx", "jsxs", "jsxDEV"];
+/** Funções que devolvem um DesfechoAcao (src/lib/acao-cliente.ts): o `.mensagem` dele é erro ou incerto. */
+export const FUNCOES_DO_EXECUTOR = ["executar", "executarAcaoCliente"];
+/** Campos lidos de `document` que são a própria página. */
+export const CAMPOS_DA_PROPRIA_PAGINA = ["URL", "documentURI", "baseURI", "location"];
 /** Passos de valor seguidos antes de desistir (falha fechada). */
 const PROFUNDIDADE_MAXIMA = 12;
 
@@ -53,13 +65,17 @@ const capital = (p: string) => p[0].toUpperCase() + p.slice(1);
 /** Chave própria do mapa de regiões (`"toString" in {}` é true; aqui não). */
 const ehRegiao = (nome: string) => Object.prototype.hasOwnProperty.call(REGIOES_DE_STATUS, nome);
 const ESTADO_DE_MENSAGEM = new RegExp(`^(?:${PALAVRAS_DE_MENSAGEM.join("|")})(?:[A-Z]\\w*)?$|(?:${PALAVRAS_DE_MENSAGEM.map(capital).join("|")})$`);
+/** Callback de mensagem recebido por prop: `on` + palavra de mensagem (onNota, onFeito, onMensagemLote…). */
+const CALLBACK_DE_MENSAGEM = new RegExp(`^on(?:${PALAVRAS_DE_MENSAGEM.map(capital).join("|")})(?:[A-Z]\\w*)?$`);
 const NOME_DE_ERRO = new RegExp(PALAVRAS_DE_ERRO.join("|"), "i");
 const PROPRIEDADE_DE_ERRO = new RegExp(PROPRIEDADES_DE_ERRO.join("|"), "i");
 const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-const textoDeErro = (t: string) => { const s = semAcento(t).trim(); return PREFIXOS_DE_ERRO.some((p) => s.startsWith(p)); };
+const textoDeErro = (t: string) => { const s = semAcento(t).trim(); return PREFIXOS_DE_ERRO.some((p: string) => s.startsWith(p)); };
 const normaliza = (t: string) => t.replace(/\s+/g, " ").trim();
 
-export type Achado = { arquivo: string; trecho: string; problema: string };
+/** `erro`: o valor pode ser erro (ou recarrega a página); `opaco`: não dá para provar que não é (falha fechada). */
+export type TipoAchado = "erro" | "opaco";
+export type Achado = { arquivo: string; trecho: string; tipo: TipoAchado; problema: string };
 type Veredito = { tipo: "erro" | "opaco"; motivo: string } | null;
 
 function desembrulha(e: ts.Expression): ts.Expression {
@@ -249,10 +265,106 @@ function erroSintatico(raiz: ts.Node): string | null {
   return achado;
 }
 
+/** Campo lido em `a.b` / `a["b"]` (null quando o índice é computado). */
+function campoLido(x: ts.PropertyAccessExpression | ts.ElementAccessExpression): string | null {
+  if (ts.isPropertyAccessExpression(x)) return x.name.text;
+  const a = desembrulha(x.argumentExpression);
+  return ts.isStringLiteralLike(a) ? a.text : null;
+}
+
+/** Nome de uma chave de objeto (`a`, `"a"`); null quando computada. */
+function nomeDaChave(p: ts.PropertyName): string | null {
+  return ts.isIdentifier(p) || ts.isStringLiteral(p) || ts.isNumericLiteral(p) ? p.text : null;
+}
+
+/** O valor vem de `executar(…)`/`executarAcaoCliente(…)` — um DesfechoAcao, cujo `.mensagem` é erro ou incerto? */
+function vemDoExecutor(e: ts.Expression, prof = 0): boolean {
+  if (prof > PROFUNDIDADE_MAXIMA) return false;
+  const x = desembrulha(e);
+  if (ts.isCallExpression(x)) {
+    const c = desembrulha(x.expression);
+    return FUNCOES_DO_EXECUTOR.includes(ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : "");
+  }
+  if (ts.isIdentifier(x)) {
+    const d = resolver(x);
+    return d?.tipo === "variavel" && !d.elemento && !!d.no.initializer && vemDoExecutor(d.no.initializer, prof + 1);
+  }
+  return false;
+}
+
+type Variavel = Extract<Declaracao, { tipo: "variavel" }>;
+/** Marca de alvo com chave computada numa atribuição por desestruturação (`({ [k]: t } = r)`). */
+const CHAVE_COMPUTADA = Symbol("chave computada");
+
+/**
+ * De onde vem o valor de uma variável local: o inicializador e cada atribuição (`t = …`, `t += …`) são
+ * `fontes`; numa atribuição por desestruturação (`({ erro: t } = r)`, `[t] = lista`) a fonte é só um pedaço
+ * do lado direito e a chave diz o que é.
+ */
+function origensDe(d: Variavel, nome: string) {
+  const fontes: ts.Expression[] = d.no.initializer ? [d.no.initializer] : [];
+  const pedacos: ts.Expression[] = [];
+  const chaves: (string | typeof CHAVE_COMPUTADA)[] = [];
+  const alvosNoPadrao = (padrao: ts.Expression, chave: string | null | typeof CHAVE_COMPUTADA): (string | null | typeof CHAVE_COMPUTADA)[] => {
+    const p = desembrulha(padrao);
+    if (ts.isIdentifier(p)) return p.text === nome && alvoDe(resolver(p)) === d.nome ? [chave] : [];
+    if (ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.EqualsToken) return alvosNoPadrao(p.left, chave); // `{ a: t = padrão }`
+    if (ts.isObjectLiteralExpression(p)) return p.properties.flatMap((q: ts.ObjectLiteralElementLike): (string | null | typeof CHAVE_COMPUTADA)[] => {
+      if (ts.isPropertyAssignment(q)) return alvosNoPadrao(q.initializer, nomeDaChave(q.name) ?? CHAVE_COMPUTADA);
+      if (ts.isShorthandPropertyAssignment(q)) return q.name.text === nome && alvoDe(resolver(q.name)) === d.nome ? [q.name.text] : [];
+      if (ts.isSpreadAssignment(q)) return alvosNoPadrao(q.expression, null);
+      return [];
+    });
+    if (ts.isArrayLiteralExpression(p)) return p.elements.flatMap((el: ts.Expression) => alvosNoPadrao(ts.isSpreadElement(el) ? el.expression : el, null));
+    return [];
+  };
+  const visita = (n: ts.Node) => {
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
+      const esq = desembrulha(n.left);
+      if (ts.isIdentifier(esq)) { if (esq.text === nome && alvoDe(resolver(esq)) === d.nome) fontes.push(n.right); }
+      else for (const chave of alvosNoPadrao(esq, null)) { pedacos.push(n.right); if (chave !== null) chaves.push(chave); }
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(d.escopo);
+  return { fontes, pedacos, chaves };
+}
+
+/** O campo `campo` do valor `fonte`: no objeto literal, ou no que uma função local devolve (null: não achou). */
+function campoDe(fonte: ts.Expression, campo: string, prof = 0): ts.Expression | null | undefined {
+  if (prof > PROFUNDIDADE_MAXIMA) return undefined;
+  const o = desembrulha(fonte);
+  if (ts.isObjectLiteralExpression(o)) {
+    for (const q of o.properties) {
+      if (ts.isPropertyAssignment(q) && nomeDaChave(q.name) === campo) return q.initializer;
+      if (ts.isShorthandPropertyAssignment(q) && q.name.text === campo) return q.name;
+    }
+    return null;
+  }
+  if (ts.isCallExpression(o)) {
+    const f = funcaoLocal(o.expression);
+    if (!f) return undefined;
+    const achados = retornos(f).map((r: ts.Expression) => campoDe(r, campo, prof + 1));
+    return achados.find((a: ts.Expression | null | undefined) => !!a) ?? (achados.some((a: ts.Expression | null | undefined) => a === undefined) ? undefined : null);
+  }
+  return undefined;
+}
+
+/** Função passada como argumento de `.catch(f)` ou como segundo de `.then(ok, f)`: o parâmetro é o erro. */
+function ehTratadorDeFalha(f: ts.Node): boolean {
+  const p = f.parent;
+  if (!p || !ts.isCallExpression(p)) return false;
+  const c = desembrulha(p.expression);
+  if (!ts.isPropertyAccessExpression(c)) return false;
+  return (c.name.text === "catch" && p.arguments[0] === f) || (c.name.text === "then" && p.arguments[1] === f);
+}
+
+
 /**
  * O valor pode ser erro (veredito "erro") ou não dá para seguir de onde ele vem ("opaco")? `soErro`: o
- * valor é só um PEDAÇO do texto (interpolação, concatenação, retorno de função local que monta o texto) —
- * aí dado de origem desconhecida (número, nome, data) é normal e só o erro acusa.
+ * valor é só um PEDAÇO do texto (interpolação, concatenação, retorno de função local que monta o texto,
+ * objeto de onde se lê um campo) — aí dado de origem desconhecida (número, nome, data) é normal e só o
+ * erro acusa.
  */
 export function verificar(e: ts.Expression, prof = 0, vistos = new Set<ts.Node>(), soErro = false): Veredito {
   const opaco = (motivo: string): Veredito => (soErro ? null : { tipo: "opaco", motivo });
@@ -278,12 +390,36 @@ export function verificar(e: ts.Expression, prof = 0, vistos = new Set<ts.Node>(
   if (ts.isIdentifier(x)) return identificador(x, seguir, opaco);
   if (ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x)) {
     const r = raizDe(x);
-    return r && ehDasProps(r) ? opaco(`${r.text} vem das props do componente`) : null;
+    if (r && ehDasProps(r)) return opaco(`${r.text} vem das props do componente`);
+    const campo = campoLido(x);
+    if (campo === "mensagem" && vemDoExecutor(x.expression)) return { tipo: "erro", motivo: "lê .mensagem de um desfecho do executor (erro ou incerto)" };
+    // Campo de objeto local: segue de onde a raiz vem (o objeto literal, o que a função local devolve).
+    const alvo = desembrulha(x.expression);
+    if (ts.isIdentifier(alvo)) {
+      const d = resolver(alvo);
+      if (d?.tipo === "variavel" && !d.elemento) {
+        const { fontes, pedacos } = origensDe(d, alvo.text);
+        for (const f of fontes) {
+          const valor = campo === null ? undefined : campoDe(f, campo);
+          const v = valor ? seguir(valor) : seguir(f, true);
+          if (v) return v;
+        }
+        for (const f of pedacos) { const v = seguir(f, true); if (v) return v; }
+        return null;
+      }
+    }
+    return r ? seguir(r, true) : null;
   }
   if (ts.isCallExpression(x)) {
     const f = funcaoLocal(x.expression);
-    if (!f) return null;
-    for (const r of retornos(f)) { const v = seguir(r, true); if (v) return v; }
+    if (f) {
+      for (const r of retornos(f)) { const v = seguir(r, true); if (v) return v; }
+      return null;
+    }
+    // Função de fora (`String(e)`, `partes.join(" ")`): o valor sai dos argumentos e do objeto do método.
+    const c = desembrulha(x.expression);
+    if (ts.isPropertyAccessExpression(c) || ts.isElementAccessExpression(c)) { const v = seguir(c.expression, true); if (v) return v; }
+    for (const a of x.arguments) { const v = seguir(ts.isSpreadElement(a) ? a.expression : a); if (v) return v; }
     return null;
   }
   if (ts.isArrowFunction(x) || ts.isFunctionExpression(x)) {
@@ -299,10 +435,14 @@ function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: bo
   if (!d || d.tipo === "funcao" || d.tipo === "import") return null;
   if (d.tipo === "catch") return { tipo: "erro", motivo: `usa a variável do catch (${id.text})` };
   if (d.elemento) {
-    // Desestruturado: a chave diz o que é (`{ erro: t }`); chave computada não é verificável.
+    // Desestruturado: a chave diz o que é (`{ erro: t }`); chave computada não é verificável; valor padrão também conta.
     const chave = d.elemento.propertyName ?? d.elemento.name;
     if (ts.isComputedPropertyName(chave)) return opaco(`${id.text} vem de chave computada`);
     if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && PROPRIEDADE_DE_ERRO.test(chave.text)) return { tipo: "erro", motivo: `${id.text} é o campo "${chave.text}"` };
+    if (ts.isIdentifier(chave) && chave.text === "mensagem" && d.tipo === "variavel" && d.no.initializer && vemDoExecutor(d.no.initializer)) {
+      return { tipo: "erro", motivo: `${id.text} é o .mensagem de um desfecho do executor` };
+    }
+    if (d.elemento.initializer) { const v = seguir(d.elemento.initializer); if (v) return v; }
   }
   if (d.tipo === "variavel") {
     if (d.elemento) {
@@ -312,18 +452,21 @@ function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: bo
       const r = d.no.initializer ? raizDe(d.no.initializer) : null;
       return r && ehDasProps(r) ? opaco(`${id.text} vem das props do componente`) : null;
     }
-    const fontes: ts.Expression[] = d.no.initializer ? [d.no.initializer] : [];
-    const visita = (n: ts.Node) => {
-      if (ts.isBinaryExpression(n) && ts.isIdentifier(n.left) && n.left.text === id.text && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
-        && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment && alvoDe(resolver(n.left)) === d.nome) fontes.push(n.right);
-      ts.forEachChild(n, visita);
-    };
-    visita(d.escopo);
-    if (fontes.length === 0) return opaco(`${id.text} sem valor verificável`);
+    const { fontes, pedacos, chaves } = origensDe(d, id.text);
+    if (chaves.includes(CHAVE_COMPUTADA)) return opaco(`${id.text} recebe valor por chave computada`);
+    const chaveDeErro = chaves.find((c: string | typeof CHAVE_COMPUTADA): c is string => typeof c === "string" && PROPRIEDADE_DE_ERRO.test(c));
+    if (chaveDeErro) return { tipo: "erro", motivo: `${id.text} recebe o campo "${chaveDeErro}" por desestruturação` };
+    if (fontes.length === 0 && pedacos.length === 0) return opaco(`${id.text} sem valor verificável`);
     for (const f of fontes) { const v = seguir(f); if (v) return v; }
+    for (const f of pedacos) { const v = seguir(f, true); if (v) return v; }
     return null;
   }
-  // Parâmetro.
+  // Parâmetro: o valor padrão conta sempre (a chamada sem o argumento usa ele).
+  const parametro = d.funcao.parameters[d.indice];
+  if (parametro?.initializer) { const v = seguir(parametro.initializer); if (v) return v; }
+  if (ehTratadorDeFalha(d.funcao)) return { tipo: "erro", motivo: `${id.text} é o erro recebido por .catch/.then` };
+  // Função que é o valor de um atributo on<Palavra> (`onFeito={(msg) => …}`): quem a chama é o filho, e lá a chamada é conferida.
+  if (vaiParaCallbackDeMensagem(d.funcao)) return null;
   if (ehComponente(d.funcao)) return opaco(`${id.text} é prop do componente`);
   if (d.elemento) return opaco(`${id.text} vem de parâmetro desestruturado`);
   const nome = nomeDaFuncao(d.funcao);
@@ -332,8 +475,9 @@ function identificador(id: ts.Identifier, seguir: (x: ts.Expression, pedaco?: bo
   const alvo: ts.Node = ts.isFunctionDeclaration(d.funcao) ? d.funcao : nome;
   for (const u of referencias(id.getSourceFile(), alvo, nome.text)) {
     const p = u.parent;
+    if (vaiParaCallbackDeMensagem(u)) continue; // `onNota={avisar}`: quem chama é o filho, conferido lá
     if (!(ts.isCallExpression(p) && p.expression === u)) return opaco(`${nome.text} é passada adiante; o parâmetro ${id.text} não é verificável`);
-    if (p.arguments.slice(0, d.indice + 1).some((a) => ts.isSpreadElement(a))) return opaco(`${nome.text} é chamada com spread`);
+    if (p.arguments.slice(0, d.indice + 1).some((a: ts.Expression) => ts.isSpreadElement(a))) return opaco(`${nome.text} é chamada com spread`);
     const arg = p.arguments[d.indice];
     if (arg) { const v = seguir(arg); if (v) return v; }
   }
@@ -363,18 +507,35 @@ const ehUseState = (n: ts.Node): n is ts.CallExpression => ts.isCallExpression(n
   return (ts.isIdentifier(c) && c.text === "useState") || (ts.isPropertyAccessExpression(c) && c.name.text === "useState");
 })();
 
+/** Nome de um callee (`f(…)` → "f", `a.f(…)` → "f"). */
+function nomeDoCallee(e: ts.Expression): string {
+  const c = desembrulha(e);
+  return ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : "";
+}
+
+/** O nó é o valor de um atributo JSX `on<Palavra>` (`onNota={…}`)? Então quem o chama é o filho, conferido lá. */
+function vaiParaCallbackDeMensagem(n: ts.Node): boolean {
+  const p = n.parent;
+  return !!p && ts.isJsxExpression(p) && !!p.parent && ts.isJsxAttribute(p.parent) && CALLBACK_DE_MENSAGEM.test(p.parent.name.getText());
+}
+
 export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
   const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX);
   const diagnosticos = (sf as unknown as { parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics ?? [];
-  if (diagnosticos.length) return [{ arquivo, trecho: "(arquivo)", problema: "não foi possível analisar o arquivo (erro de sintaxe): falha fechada" }];
+  if (diagnosticos.length) return [{ arquivo, trecho: "(arquivo)", tipo: "opaco", problema: "não foi possível analisar o arquivo (erro de sintaxe): falha fechada" }];
   const achados: Achado[] = [];
   const vistosTrecho = new Set<string>();
-  const acusa = (no: ts.Node, problema: string) => {
+  const acusa = (no: ts.Node, tipo: TipoAchado, problema: string) => {
     const trecho = normaliza(no.getText(sf));
-    const chave = `${no.pos}:${trecho}`;
+    const chave = `${no.pos}:${tipo}:${trecho}`;
     if (vistosTrecho.has(chave)) return;
     vistosTrecho.add(chave);
-    achados.push({ arquivo, trecho, problema });
+    achados.push({ arquivo, trecho, tipo, problema });
+  };
+  /** Acusa um veredito (erro ou opaco) com o texto do problema de cada tipo. */
+  const acusaVeredito = (no: ts.Node, v: Veredito, seErro: (motivo: string) => string, seOpaco: (motivo: string) => string) => {
+    if (v?.tipo === "erro") acusa(no, "erro", seErro(v.motivo));
+    else if (v?.tipo === "opaco") acusa(no, "opaco", seOpaco(v.motivo));
   };
 
   // Nomes locais dos componentes de região de status (import renomeado, namespace, constante).
@@ -383,6 +544,20 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     if (ts.isIdentifier(e)) return aliases.get(e.text) ?? null;
     if (ts.isPropertyAccessExpression(e)) return ehRegiao(e.name.text) ? e.name.text : null;
     if (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isNonNullExpression(e)) return canonico(e.expression);
+    return null;
+  };
+  /** Componente de região de um ELEMENTO (`<MensagemStatus …/>`, direto ou numa constante): para cloneElement. */
+  const canonicoDoElemento = (e: ts.Expression, prof = 0): { tag: string; atributos: ts.JsxAttributes } | null => {
+    const x = desembrulha(e);
+    if (ts.isJsxSelfClosingElement(x) || ts.isJsxElement(x)) {
+      const abertura = ts.isJsxElement(x) ? x.openingElement : x;
+      const tag = canonico(abertura.tagName);
+      return tag ? { tag, atributos: abertura.attributes } : null;
+    }
+    if (ts.isIdentifier(x) && prof < PROFUNDIDADE_MAXIMA) {
+      const d = resolver(x);
+      if (d?.tipo === "variavel" && !d.elemento && d.no.initializer) return canonicoDoElemento(d.no.initializer, prof + 1);
+    }
     return null;
   };
   const coletaAliases = (n: ts.Node) => {
@@ -414,29 +589,43 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     }
     return null;
   };
+  /** Tudo o que está dentro da região nativa, em qualquer profundidade — menos dentro de um role="alert". */
+  const conteudoDaRegiao = (filhos: readonly ts.JsxChild[]) => {
+    for (const f of filhos) {
+      if (ts.isJsxExpression(f) && f.expression) regioes.push({ no: f, expr: f.expression, soErro: true });
+      else if (ts.isJsxText(f) && textoDeErro(f.text)) acusa(f, "erro", `texto de erro "${normaliza(f.text).slice(0, 40)}" dentro de região de status — erro vai para role="alert"`);
+      else if (ts.isJsxElement(f) && literalDoAtributo(f.openingElement.attributes, "role") !== "alert") conteudoDaRegiao(f.children);
+      else if (ts.isJsxFragment(f)) conteudoDaRegiao(f.children);
+    }
+  };
+  /** Props passadas por fábrica (createElement/jsx) ou por cloneElement a um componente de região. */
+  const propsDaFabrica = (no: ts.Node, tag: string, propsArg: ts.Expression | undefined) => {
+    const props = propsArg ? desembrulha(propsArg) : null;
+    if (!props) return;
+    if (!ts.isObjectLiteralExpression(props)) { regioes.push({ no, expr: null, soErro: false }); return; }
+    for (const p of props.properties) {
+      if (ts.isSpreadAssignment(p)) regioes.push({ no: p, expr: null, soErro: false });
+      else if (ts.isPropertyAssignment(p)) { if (REGIOES_DE_STATUS[tag].includes(nomeDaChave(p.name) ?? "")) regioes.push({ no: p, expr: p.initializer, soErro: false }); else if (!nomeDaChave(p.name)) regioes.push({ no: p, expr: null, soErro: false }); }
+      else if (ts.isShorthandPropertyAssignment(p)) { if (REGIOES_DE_STATUS[tag].includes(p.name.text)) regioes.push({ no: p, expr: p.name, soErro: false }); }
+      else regioes.push({ no: p, expr: null, soErro: false });
+    }
+  };
   const coletaRegioes = (n: ts.Node) => {
     if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
       const c = canonico(n.tagName);
       if (c) for (const a of n.attributes.properties) atributoDe(REGIOES_DE_STATUS[c], a);
       const nativo = ts.isIdentifier(n.tagName) && /^[a-z]/.test(n.tagName.text);
       if (nativo && ts.isJsxOpeningElement(n) && (literalDoAtributo(n.attributes, "role") === "status" || literalDoAtributo(n.attributes, "aria-live") === "polite")) {
-        for (const filho of (n.parent as ts.JsxElement).children) if (ts.isJsxExpression(filho) && filho.expression) regioes.push({ no: filho, expr: filho.expression, soErro: true });
+        conteudoDaRegiao((n.parent as ts.JsxElement).children);
       }
     }
     if (ts.isCallExpression(n) && n.arguments.length > 0) {
-      const callee = desembrulha(n.expression);
-      const nomeCallee = ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : "";
+      const nomeCallee = nomeDoCallee(n.expression);
       const c = FABRICAS_DE_ELEMENTO.includes(nomeCallee) ? canonico(n.arguments[0]) : null;
-      if (c) {
-        const props = n.arguments[1] ? desembrulha(n.arguments[1]) : null;
-        if (!props) { /* sem props: nada vai para a região */ }
-        else if (!ts.isObjectLiteralExpression(props)) regioes.push({ no: n, expr: null, soErro: false });
-        else for (const p of props.properties) {
-          if (ts.isSpreadAssignment(p)) regioes.push({ no: p, expr: null, soErro: false });
-          else if (ts.isPropertyAssignment(p) && REGIOES_DE_STATUS[c].includes(p.name.getText(sf).replace(/^["']|["']$/g, ""))) regioes.push({ no: p, expr: p.initializer, soErro: false });
-          else if (ts.isShorthandPropertyAssignment(p) && REGIOES_DE_STATUS[c].includes(p.name.text)) regioes.push({ no: p, expr: p.name, soErro: false });
-          else if (!ts.isPropertyAssignment(p) && !ts.isShorthandPropertyAssignment(p)) regioes.push({ no: p, expr: null, soErro: false });
-        }
+      if (c) propsDaFabrica(n, c, n.arguments[1]);
+      if (nomeCallee === "cloneElement") {
+        const el = canonicoDoElemento(n.arguments[0]);
+        if (el) propsDaFabrica(n, el.tag, n.arguments[1]);
       }
     }
     ts.forEachChild(n, coletaRegioes);
@@ -445,10 +634,10 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
 
   // B — região de status.
   for (const r of regioes) {
-    if (!r.expr) { acusa(r.no, "props da região de status não verificáveis (spread ou objeto opaco): falha fechada"); continue; }
+    if (!r.expr) { acusa(r.no, "opaco", "props da região de status não verificáveis (spread ou objeto opaco): falha fechada"); continue; }
     const v = verificar(r.expr);
-    if (v?.tipo === "erro") acusa(r.no, `região de status (role="status") recebe erro (${v.motivo}) — erro vai para role="alert" (FeedbackAcao erro)`);
-    else if (v?.tipo === "opaco" && !r.soErro) acusa(r.no, `região de status recebe valor não verificável (${v.motivo})`);
+    if (v?.tipo === "erro") acusa(r.no, "erro", `região de status (role="status") recebe erro (${v.motivo}) — erro vai para role="alert" (FeedbackAcao erro)`);
+    else if (v?.tipo === "opaco" && !r.soErro) acusa(r.no, "opaco", `região de status recebe valor não verificável (${v.motivo})`);
   }
 
   // Componente de região usado como valor (fora de tag JSX, import, alias e fábrica de elemento).
@@ -457,9 +646,9 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
       const p = n.parent;
       const ok = (ts.isIdentifier(n) && ehNome(n)) || ((ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p) || ts.isJsxClosingElement(p)) && p.tagName === n)
         || (ts.isVariableDeclaration(p) && p.initializer === n && ts.isIdentifier(p.name) && aliases.has(p.name.text))
-        || (ts.isCallExpression(p) && p.arguments[0] === n && FABRICAS_DE_ELEMENTO.includes((() => { const c = desembrulha(p.expression); return ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : ""; })()))
+        || (ts.isCallExpression(p) && p.arguments[0] === n && FABRICAS_DE_ELEMENTO.includes(nomeDoCallee(p.expression)))
         || ts.isExportSpecifier(p) || (ts.isPropertyAccessExpression(n) && ts.isPropertyAccessExpression(p) && p.expression === n);
-      if (!ok) acusa(p, `${canonico(n)} usado como valor: o que ele recebe não é verificável (falha fechada)`);
+      if (!ok) acusa(p, "opaco", `${canonico(n)} usado como valor: o que ele recebe não é verificável (falha fechada)`);
       if (ts.isPropertyAccessExpression(n)) return;
     }
     ts.forEachChild(n, usoComoValor);
@@ -475,9 +664,9 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
       if (ts.isVariableDeclaration(p) && ts.isArrayBindingPattern(p.name)) {
         const [v, s] = p.name.elements;
         const setter = s && !ts.isOmittedExpression(s) ? s : null;
-        if (setter && !ts.isIdentifier(setter.name)) acusa(p, "setter do useState desestruturado de forma não verificável: falha fechada");
+        if (setter && !ts.isIdentifier(setter.name)) acusa(p, "opaco", "setter do useState desestruturado de forma não verificável: falha fechada");
         else estados.push({ valor: v && !ts.isOmittedExpression(v) && ts.isIdentifier(v.name) ? v.name : null, setter: setter ? setter.name as ts.Identifier : null, no: n });
-      } else acusa(n, "useState sem desestruturar [valor, setter]: o setter não é verificável (falha fechada)");
+      } else acusa(n, "opaco", "useState sem desestruturar [valor, setter]: o setter não é verificável (falha fechada)");
     }
     ts.forEachChild(n, coletaEstados);
   };
@@ -490,31 +679,52 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     if (a) naRegiao.add(a);
   }
 
-  for (const e of estados) {
-    if (!e.setter) continue;
-    const nomeDoValor = e.valor?.text ?? e.setter.text.replace(/^set/, "").replace(/^./, (c) => c.toLowerCase());
-    if (NOME_DE_ERRO.test(nomeDoValor)) continue; // estado de erro: vai para role="alert"
-    const deMensagem = ESTADO_DE_MENSAGEM.test(nomeDoValor) || (!!e.valor && naRegiao.has(e.valor));
-    if (!deMensagem) continue;
-    for (const u of referencias(sf, e.setter, e.setter.text)) {
+  /** Cada chamada do setter/callback tem os argumentos conferidos; outro uso como valor falha fechado. */
+  const confereChamadas = (usos: ts.Node[], rotulo: string) => {
+    for (const u of usos) {
       const p = u.parent;
       if (ts.isCallExpression(p) && p.expression === u) {
         for (const arg of p.arguments) {
           const v = verificar(arg);
-          if (v?.tipo === "erro") { acusa(p, `estado de mensagem "${nomeDoValor}" recebe erro (${v.motivo}) — use useAcaoCliente + FeedbackAcao (erro em role="alert")`); break; }
-          if (v?.tipo === "opaco") { acusa(p, `estado de mensagem "${nomeDoValor}" recebe valor não verificável (${v.motivo})`); break; }
+          if (v) { acusaVeredito(p, v, (m: string) => `${rotulo} recebe erro (${m}) — use useAcaoCliente + FeedbackAcao (erro em role="alert")`, (m: string) => `${rotulo} recebe valor não verificável (${m})`); break; }
         }
-      } else acusa(ts.isJsxExpression(p) ? p.parent : p, `setter do estado de mensagem "${nomeDoValor}" usado como valor: o que ele recebe não é verificável (falha fechada)`);
+      } else if (!vaiParaCallbackDeMensagem(u)) {
+        acusa(ts.isJsxExpression(p) ? p.parent : p, "opaco", `${rotulo} usado como valor: o que ele recebe não é verificável (falha fechada; só pode ir para um atributo on<Palavra>, conferido no filho)`);
+      }
     }
+  };
+
+  for (const e of estados) {
+    if (!e.setter) continue;
+    const nomeDoValor = e.valor?.text ?? e.setter.text.replace(/^set/, "").replace(/^./, (c: string) => c.toLowerCase());
+    if (NOME_DE_ERRO.test(nomeDoValor)) continue; // estado de erro: vai para role="alert"
+    const deMensagem = ESTADO_DE_MENSAGEM.test(nomeDoValor) || (!!e.valor && naRegiao.has(e.valor));
+    if (!deMensagem) continue;
+    confereChamadas(referencias(sf, e.setter, e.setter.text), `estado de mensagem "${nomeDoValor}"`);
   }
+
+  // A — callback de mensagem recebido por prop (onNota, onFeito…): o setter visto do lado do filho.
+  const coletaCallbacks = (n: ts.Node) => {
+    if (ts.isBindingElement(n) && ts.isIdentifier(n.name)) {
+      const chave = n.propertyName ?? n.name;
+      if ((ts.isIdentifier(chave) || ts.isStringLiteral(chave)) && CALLBACK_DE_MENSAGEM.test(chave.text) && ehDasProps(n.name)) {
+        confereChamadas(referencias(sf, n.name, n.name.text), `callback de mensagem "${chave.text}"`);
+      }
+    }
+    if (ts.isPropertyAccessExpression(n) && CALLBACK_DE_MENSAGEM.test(n.name.text)) {
+      const r = raizDe(n.expression);
+      if (r && ehDasProps(r)) confereChamadas([n], `callback de mensagem "${n.name.text}"`);
+    }
+    ts.forEachChild(n, coletaCallbacks);
+  };
+  coletaCallbacks(sf);
 
   // C — sucesso do executar (useAcaoCliente).
   const coletaExecutar = (n: ts.Node) => {
     if (ts.isCallExpression(n) && n.arguments.length >= 2) {
       const c = desembrulha(n.expression);
       if (ts.isPropertyAccessExpression(c) && c.name.text === "executar") {
-        const v = verificar(n.arguments[1]);
-        if (v) acusa(n, v.tipo === "erro" ? `sucesso do executar recebe erro (${v.motivo})` : `sucesso do executar não verificável (${v.motivo})`);
+        acusaVeredito(n, verificar(n.arguments[1]), (m: string) => `sucesso do executar recebe erro (${m})`, (m: string) => `sucesso do executar não verificável (${m})`);
       }
     }
     ts.forEachChild(n, coletaExecutar);
@@ -529,35 +739,61 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
     if (ts.isElementAccessExpression(x)) { const a = desembrulha(x.argumentExpression); return ts.isStringLiteralLike(a) ? a.text : null; }
     return null;
   };
-  /** A expressão lê `location` (o destino é a própria página: recarga disfarçada de navegação). */
-  const leLocation = (e: ts.Node): boolean => {
+  /** A expressão é `nome` (window.location, location, `const l = window.location`, `const { location: l } = window`)? */
+  const apontaPara = (e: ts.Expression, nome: string, prof = 0): boolean => {
+    if (prof > PROFUNDIDADE_MAXIMA) return false;
+    const x = desembrulha(e);
+    if (ultimoNome(x) === nome) return true;
+    if (ts.isIdentifier(x)) {
+      const d = resolver(x);
+      if (d?.tipo === "variavel" && d.no.initializer) {
+        if (!d.elemento) return apontaPara(d.no.initializer, nome, prof + 1);
+        const chave = d.elemento.propertyName ?? d.elemento.name;
+        return ts.isIdentifier(chave) && chave.text === nome;
+      }
+    }
+    return false;
+  };
+  /** A expressão lê a própria página: `location` (ou alias), `document.URL`/`documentURI`/`baseURI`/`document.location`. */
+  const leAPropriaPagina = (e: ts.Node): boolean => {
     let tem = false;
     const visita = (m: ts.Node) => {
       if (tem) return;
-      if ((ts.isIdentifier(m) && m.text === "location") || (ts.isPropertyAccessExpression(m) && m.name.text === "location")) { tem = true; return; }
-      if (ts.isElementAccessExpression(m)) { const a = desembrulha(m.argumentExpression); if (ts.isStringLiteralLike(a) && a.text === "location") { tem = true; return; } }
+      if ((ts.isIdentifier(m) || ts.isPropertyAccessExpression(m) || ts.isElementAccessExpression(m)) && apontaPara(m, "location")) { tem = true; return; }
+      if ((ts.isPropertyAccessExpression(m) || ts.isElementAccessExpression(m)) && CAMPOS_DA_PROPRIA_PAGINA.includes(ultimoNome(m) ?? "") && apontaPara(m.expression, "document")) { tem = true; return; }
       ts.forEachChild(m, visita);
     };
     visita(e);
     return tem;
   };
+  /** Destino literal (texto ou template) que não lê a própria página: é navegação, não recarga. */
+  const destinoLiteral = (e: ts.Expression) => {
+    const x = desembrulha(e);
+    return (ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateExpression(x)) && !leAPropriaPagina(x);
+  };
   const coletaRecarga = (n: ts.Node) => {
-    if (ts.isPropertyAccessExpression(n) && n.name.text === "reload") acusa(n, "recarrega a página (.reload): use mensagem + router.refresh()");
-    if (ts.isElementAccessExpression(n)) { const a = desembrulha(n.argumentExpression); if (ts.isStringLiteralLike(a) && a.text === "reload") acusa(n, "recarrega a página ([\"reload\"]): use mensagem + router.refresh()"); }
-    if (ts.isBindingElement(n) && ((n.propertyName && ts.isIdentifier(n.propertyName) && n.propertyName.text === "reload") || (!n.propertyName && ts.isIdentifier(n.name) && n.name.text === "reload"))) acusa(n, "recarrega a página ({ reload }): use mensagem + router.refresh()");
+    if (ts.isPropertyAccessExpression(n) && n.name.text === "reload") acusa(n, "erro", "recarrega a página (.reload): use mensagem + router.refresh()");
+    if (ts.isElementAccessExpression(n)) { const a = desembrulha(n.argumentExpression); if (ts.isStringLiteralLike(a) && a.text === "reload") acusa(n, "erro", "recarrega a página ([\"reload\"]): use mensagem + router.refresh()"); }
+    if (ts.isBindingElement(n)) {
+      const chave = n.propertyName ?? n.name;
+      const nomeChave = ts.isIdentifier(chave) || ts.isStringLiteral(chave) ? chave.text : null;
+      if (nomeChave === "reload") acusa(n, "erro", "recarrega a página ({ reload }): use mensagem + router.refresh()");
+      const decl = n.parent?.parent;
+      if (nomeChave === "go" && decl && ts.isVariableDeclaration(decl) && decl.initializer && apontaPara(decl.initializer, "history")) acusa(n, "erro", "recarrega a página ({ go } de history): use mensagem + router.refresh()");
+    }
     if (ts.isCallExpression(n)) {
       const c = desembrulha(n.expression);
-      if (ts.isPropertyAccessExpression(c) && c.name.text === "go" && ultimoNome(c.expression) === "history") acusa(n, "recarrega a página (history.go): use mensagem + router.refresh()");
-      // `location.assign("/outra")` navega; `location.assign(location.href)` recarrega a mesma página.
-      if (ts.isPropertyAccessExpression(c) && ["assign", "replace"].includes(c.name.text) && ultimoNome(c.expression) === "location" && n.arguments.some(leLocation)) {
-        acusa(n, `recarrega a página (location.${c.name.text} para a própria página): use mensagem + router.refresh()`);
+      if (ts.isPropertyAccessExpression(c) && c.name.text === "go" && apontaPara(c.expression, "history")) acusa(n, "erro", "recarrega a página (history.go): use mensagem + router.refresh()");
+      // `location.assign("/outra")` navega; `location.assign(location.href)`/`(document.URL)` recarrega a mesma página.
+      if (ts.isPropertyAccessExpression(c) && ["assign", "replace"].includes(c.name.text) && apontaPara(c.expression, "location") && n.arguments.some((a: ts.Expression) => leAPropriaPagina(a))) {
+        acusa(n, "erro", `recarrega a página (location.${c.name.text} para a própria página): use mensagem + router.refresh()`);
       }
     }
-    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
       const alvo = desembrulha(n.left);
-      const nome = ultimoNome(alvo);
-      const doLocation = nome === "location" || (nome === "href" && (ts.isPropertyAccessExpression(alvo) || ts.isElementAccessExpression(alvo)) && ultimoNome(alvo.expression) === "location");
-      if (doLocation && leLocation(n.right)) acusa(n, "atribuir a própria location recarrega a página: use mensagem + router.refresh()");
+      const naLocation = apontaPara(alvo, "location") || ((ts.isPropertyAccessExpression(alvo) || ts.isElementAccessExpression(alvo)) && apontaPara(alvo.expression, "location"));
+      const navegacao = n.operatorToken.kind === ts.SyntaxKind.EqualsToken && destinoLiteral(n.right);
+      if (naLocation && !navegacao) acusa(n, "erro", "atribuição a location (ou a um campo dela) que não é destino literal recarrega a página: use mensagem + router.refresh()");
     }
     ts.forEachChild(n, coletaRecarga);
   };
@@ -567,73 +803,98 @@ export function analisar(fonte: string, arquivo = "virtual.tsx"): Achado[] {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Exceções (arquivo + trecho exato + motivo) e a varredura.
+// Exceções (arquivo + tipo + trecho exato + motivo) e a varredura.
 // ---------------------------------------------------------------------------------------------------
-export type Excecao = { arquivo: string; trecho: string; motivo: string };
+export type Excecao = { arquivo: string; tipo: TipoAchado; trecho: string; motivo: string };
 
 const PR_PARALELA = "pendência: a PR paralela do ConfirmarAcao (docs/43 §6 item 1) mexe neste arquivo; migrar para useAcaoCliente + FeedbackAcao depois do merge dela";
 
 export const EXCECOES: Excecao[] = [
   {
     arquivo: "src/components/FeedbackAcao.tsx",
+    tipo: "opaco",
     trecho: "texto={sucesso}",
     motivo: "é o par erro/sucesso: o erro sai no <p role=\"alert\"> logo acima; a região polite recebe só a prop `sucesso`, cujo conteúdo esta trava confere em cada tela que usa o FeedbackAcao",
   },
   {
     arquivo: "src/components/FeedbackAcao.tsx",
+    tipo: "opaco",
     trecho: "progresso={progresso}",
     motivo: "texto de progresso (\"Processando…\") repassado à mesma região polite; cada tela que passa `progresso` é conferida por esta trava",
   },
   {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
-    trecho: "onNota={setNota}",
-    motivo: "o painel da conversa recebe onErro e onNota separados: onNota só recebe textos de sucesso (run(…, msg), NOTA_POR_STATUS) e o erro vai por onErro para role=\"alert\"",
-  },
-  {
     arquivo: "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx",
+    tipo: "opaco",
     trecho: "texto={correcao.impedimentoAprovacao}",
     motivo: "impedimento calculado no servidor (regra de negócio) mostrado como aviso antes da decisão; não é resultado de ação nem erro de transporte",
   },
   {
     arquivo: "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx",
+    tipo: "opaco",
     trecho: "texto={d.impedimento}",
     motivo: "impedimento calculado no servidor (regra de negócio) mostrado como aviso antes da preparação; não é resultado de ação nem erro de transporte",
   },
   {
     arquivo: "src/app/(app)/matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx",
+    tipo: "opaco",
     trecho: "texto={d.impedimento}",
     motivo: "impedimento calculado no servidor (regra de negócio) mostrado como aviso antes da preparação; não é resultado de ação nem erro de transporte",
   },
   {
     arquivo: "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx",
+    tipo: "erro",
     trecho: "{p.reconciliacaoAcesso.erro}",
     motivo: "estado persistido do job de reconciliação de acesso (tentativas e último erro gravados no servidor), lido na carga da página junto do andamento; não é resultado de ação do operador",
   },
   {
     arquivo: "src/app/login/page.tsx",
+    tipo: "erro",
     trecho: "{errors.email?.message}",
     motivo: "erro de validação do campo (react-hook-form) ligado ao input por aria-describedby; região polite sempre montada para não interromper a digitação a cada tecla",
   },
   {
     arquivo: "src/app/login/page.tsx",
+    tipo: "erro",
     trecho: "{errors.senha?.message}",
     motivo: "erro de validação do campo (react-hook-form) ligado ao input por aria-describedby; região polite sempre montada para não interromper a digitação a cada tecla",
   },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", trecho: "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", trecho: "setMensagem(sucesso)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", trecho: "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", trecho: "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)", motivo: PR_PARALELA },
-  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", trecho: "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)", motivo: PR_PARALELA },
+  {
+    arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx",
+    tipo: "erro",
+    trecho: "setNota(`Lote: ${partes.join(\" \u00b7 \")}.`)",
+    motivo: `o resumo do lote soma a contagem de falhas (d.falhas) à nota de sucesso: a falha parcial deveria sair também em role="alert"; ${PR_PARALELA}`,
+  },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "opaco", trecho: "setMensagem(sucesso)", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO)", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)", motivo: PR_PARALELA },
+  { arquivo: "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx", tipo: "erro", trecho: "setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)", motivo: PR_PARALELA },
 ];
 
+/** Casa por arquivo + tipo + trecho: a exceção de um valor "opaco" não isenta um erro que apareça no mesmo trecho. */
 export function conferirExcecoes(achados: Achado[], excecoes: Excecao[]): { semExcecao: string[]; soltas: string[] } {
-  const casa = (a: Achado, e: Excecao) => a.arquivo === e.arquivo && a.trecho === normaliza(e.trecho);
+  const casa = (a: Achado, e: Excecao) => a.arquivo === e.arquivo && a.tipo === e.tipo && a.trecho === normaliza(e.trecho);
   return {
-    semExcecao: achados.filter((a) => !excecoes.some((e) => casa(a, e))).map((a) => `${a.arquivo}: ${a.trecho} — ${a.problema}`),
-    soltas: excecoes.filter((e) => achados.filter((a) => casa(a, e)).length !== 1).map((e) => `${e.arquivo}: ${e.trecho}`),
+    semExcecao: achados.filter((a: Achado) => !excecoes.some((e: Excecao) => casa(a, e))).map((a: Achado) => `${a.arquivo}: [${a.tipo}] ${a.trecho} — ${a.problema}`),
+    soltas: excecoes.filter((e: Excecao) => achados.filter((a: Achado) => casa(a, e)).length !== 1).map((e: Excecao) => `${e.arquivo}: [${e.tipo}] ${e.trecho}`),
   };
+}
+
+/** Os <FeedbackAcao> do arquivo que recebem `erro` E `sucesso` (pelo AST: a ordem dos atributos não importa). */
+export function feedbacksCompletos(fonte: string, arquivo = "virtual.tsx"): number {
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let total = 0;
+  const visita = (n: ts.Node) => {
+    if ((ts.isJsxSelfClosingElement(n) || ts.isJsxOpeningElement(n)) && n.tagName.getText(sf) === "FeedbackAcao") {
+      const nomes = n.attributes.properties.filter(ts.isJsxAttribute).map((a: ts.JsxAttribute) => a.name.getText(sf));
+      if (nomes.includes("erro") && nomes.includes("sucesso")) total++;
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return total;
 }
 
 function arquivosDeProducao() {
@@ -708,11 +969,11 @@ export const MIGRADOS = [
 
 describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" (docs/43 §6 item 2)", () => {
   const arquivos = arquivosDeProducao();
-  const achados = arquivos.flatMap(({ arquivo, fonte }) => analisar(fonte, arquivo));
+  const achados = arquivos.flatMap(({ arquivo, fonte }: { arquivo: string; fonte: string }) => analisar(fonte, arquivo));
 
   it("a varredura acha os arquivos (não passa vazia por erro de caminho) e inclui src/components", () => {
     expect(arquivos.length).toBeGreaterThan(300);
-    expect(arquivos.map((a) => a.arquivo)).toEqual(expect.arrayContaining(["src/components/FeedbackAcao.tsx", "src/components/MensagemStatus.tsx", ...MIGRADOS]));
+    expect(arquivos.map((a: { arquivo: string }) => a.arquivo)).toEqual(expect.arrayContaining(["src/components/FeedbackAcao.tsx", "src/components/MensagemStatus.tsx", ...MIGRADOS]));
   });
 
   it("nenhum estado de mensagem recebe erro, nenhuma região de status mostra erro, nada recarrega a página — exceções ancoradas", () => {
@@ -724,32 +985,39 @@ describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" 
   });
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
-    expect(EXCECOES.map((e) => `${e.arquivo} :: ${e.trecho}`)).toEqual([
-      "src/components/FeedbackAcao.tsx :: texto={sucesso}",
-      "src/components/FeedbackAcao.tsx :: progresso={progresso}",
-      "src/app/(app)/inbox/InboxCliente.tsx :: onNota={setNota}",
-      "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx :: texto={correcao.impedimentoAprovacao}",
-      "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx :: texto={d.impedimento}",
-      "src/app/(app)/matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx :: texto={d.impedimento}",
-      "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx :: {p.reconciliacaoAcesso.erro}",
-      "src/app/login/page.tsx :: {errors.email?.message}",
-      "src/app/login/page.tsx :: {errors.senha?.message}",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: setMensagem(sucesso)",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: setMensagem(MSG_RESULTADO_INCERTO)",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")",
-      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: setMensagem(MSG_RESULTADO_INCERTO)",
-      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)",
-      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)",
+    expect(EXCECOES.map((e: Excecao) => `${e.arquivo} :: ${e.tipo} :: ${e.trecho}`)).toEqual([
+      "src/components/FeedbackAcao.tsx :: opaco :: texto={sucesso}",
+      "src/components/FeedbackAcao.tsx :: opaco :: progresso={progresso}",
+      "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx :: opaco :: texto={correcao.impedimentoAprovacao}",
+      "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx :: opaco :: texto={d.impedimento}",
+      "src/app/(app)/matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx :: opaco :: texto={d.impedimento}",
+      "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx :: erro :: {p.reconciliacaoAcesso.erro}",
+      "src/app/login/page.tsx :: erro :: {errors.email?.message}",
+      "src/app/login/page.tsx :: erro :: {errors.senha?.message}",
+      "src/app/(app)/financeiro/FilaCobranca.tsx :: erro :: setNota(`Lote: ${partes.join(\" \u00b7 \")}.`)",
+      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: erro :: setMensagem(r.erro ?? \"Não foi possível concluir a operação.\")",
+      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: opaco :: setMensagem(sucesso)",
+      "src/app/(app)/matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO)",
+      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: erro :: setMensagem(resultado.erro ?? \"Não foi possível concluir a operação.\")",
+      "src/app/(app)/matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO)",
+      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: erro :: setMensagem(r.ok ? \"Cobrança emitida. Consulte o registro abaixo; isso não confirma pagamento.\" : r.erro)",
+      "src/app/(app)/matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx :: erro :: setMensagem(MSG_RESULTADO_INCERTO_SEM_CHAVE)",
     ]);
   });
 
-  it("os componentes migrados seguem no padrão: useAcaoCliente + <FeedbackAcao erro={…} sucesso={…}>", () => {
+  it("os componentes migrados seguem no padrão: useAcaoCliente + <FeedbackAcao> com erro E sucesso (qualquer ordem)", () => {
     for (const arquivo of MIGRADOS) {
       const fonte = readFileSync(arquivo, "utf8");
       expect(fonte, arquivo).toMatch(/\buseAcaoCliente\(/);
-      expect(fonte, arquivo).toMatch(/<FeedbackAcao\b[^>]*\berro=\{[^}]+\}[^>]*\bsucesso=\{[^}]+\}/);
+      expect(feedbacksCompletos(fonte, arquivo), arquivo).toBeGreaterThan(0);
     }
+  });
+
+  it("feedbacksCompletos (autoteste): a ordem dos atributos não importa; sem `sucesso` (ou sem `erro`) não conta", () => {
+    expect(feedbacksCompletos("const a = <FeedbackAcao erro={x.erro} sucesso={x.sucesso} />;")).toBe(1);
+    expect(feedbacksCompletos("const a = <FeedbackAcao sucesso={x.sucesso} className=\"mt-2\" erro={x.erro} />;")).toBe(1);
+    expect(feedbacksCompletos("const a = <FeedbackAcao erro={x.erro} />;")).toBe(0);
+    expect(feedbacksCompletos("const a = <FeedbackAcao sucesso={x.sucesso} />;")).toBe(0);
   });
 });
 
@@ -760,8 +1028,8 @@ const IMPORTS = 'import { MensagemStatus } from "@/components/MensagemStatus";\n
 /** Um componente com um estado `mensagem` e o corpo/JSX dados. */
 const tela = (corpo: string, jsx = "<MensagemStatus texto={mensagem} />", estado = "mensagem") =>
   `${IMPORTS}export function Tela({ r }: { r: { ok: boolean; erro?: string } }) {\n  const [${estado}, set${capital(estado)}] = useState("");\n  const [erro, setErro] = useState<string | null>(null);\n  ${corpo}\n  return <div>${jsx}</div>;\n}\n`;
-const problemas = (fonte: string) => analisar(fonte).map((a) => a.problema);
-const trechos = (fonte: string) => analisar(fonte).map((a) => a.trecho);
+const problemas = (fonte: string) => analisar(fonte).map((a: Achado) => a.problema);
+const trechos = (fonte: string) => analisar(fonte).map((a: Achado) => a.trecho);
 
 describe("autoteste: estado de mensagem (A)", () => {
   it("E1 — ternário no setter (sucesso : erro) acusa", () => {
@@ -776,7 +1044,7 @@ describe("autoteste: estado de mensagem (A)", () => {
     }
   });
   it("E3b — toda constante de incerteza exportada por src/lib/mensagens casa com o padrão", () => {
-    const incertas = Object.keys(MENSAGENS).filter((k) => /INCERT/.test(k));
+    const incertas = Object.keys(MENSAGENS).filter((k: string) => /INCERT/.test(k));
     expect(incertas.length).toBeGreaterThanOrEqual(3);
     for (const k of incertas) expect(CONSTANTE_DE_INCERTEZA.test(k), k).toBe(true);
   });
@@ -802,12 +1070,15 @@ describe("autoteste: estado de mensagem (A)", () => {
     expect(trechos(tela('const avisar = async (t: string) => { setMensagem(t); }; function s() { void avisar("Salvo."); }'))).toEqual([]);
   });
   it("E8 — helper passado adiante, callback anônimo e parâmetro desestruturado falham fechado", () => {
-    expect(problemas(tela('function avisar(t: string) { setMensagem(t); }', "<Filho onAviso={avisar} />"))).toEqual([expect.stringMatching(/passada adiante/)]);
+    expect(problemas(tela('function avisar(t: string) { setMensagem(t); }', "<Filho onClick={avisar} />"))).toEqual([expect.stringMatching(/passada adiante/)]);
+    // Para um atributo on<Palavra> pode: quem chama é o filho, e a chamada lá é conferida (E29).
+    expect(analisar(tela('function avisar(t: string) { setMensagem(t); }', "<Filho onAviso={avisar} />"))).toEqual([]);
     expect(problemas(tela("function s(p: Promise<string>) { void p.then((t) => setMensagem(t)); }"))).toEqual([expect.stringMatching(/função anônima/)]);
     expect(problemas(tela("function avisar({ t }: { t: string }) { setMensagem(t); } avisar({ t: \"x\" });"))).toEqual([expect.stringMatching(/desestruturado/)]);
   });
-  it("E9 — setter de mensagem passado como valor ou com outro nome falha fechado", () => {
-    expect(trechos(tela("", "<Filho onMensagem={setMensagem} />"))).toEqual(["onMensagem={setMensagem}"]);
+  it("E9 — setter de mensagem passado como valor ou com outro nome falha fechado (só um atributo on<Palavra> pode recebê-lo)", () => {
+    expect(trechos(tela("", "<Filho onTexto={setMensagem} />"))).toEqual(["onTexto={setMensagem}"]);
+    expect(analisar(tela("", "<Filho onMensagem={setMensagem} />"))).toEqual([]);
     expect(trechos(tela("function s(p: Promise<string>) { void p.then(setMensagem); }"))).toEqual(["p.then(setMensagem)"]);
     expect(trechos(tela("const s = setMensagem; function t() { s(r.erro ?? \"\"); }"))).toEqual(["s = setMensagem"]);
   });
@@ -944,15 +1215,145 @@ describe("autoteste: recarga da página (D) e falha fechada (E)", () => {
     expect(analisar('export function T({ id }: { id: string }) { const s = () => { location.assign(`/academico/${id}`); window.location.href = "/login"; }; return <button onClick={s}>Ok</button>; }\n')).toEqual([]);
   });
   it("E20 — arquivo que não analisa falha fechado", () => {
-    expect(analisar("export function T( { return <div>; }")).toEqual([{ arquivo: "virtual.tsx", trecho: "(arquivo)", problema: expect.stringMatching(/falha fechada/) }]);
+    expect(analisar("export function T( { return <div>; }")).toEqual([{ arquivo: "virtual.tsx", trecho: "(arquivo)", tipo: "opaco", problema: expect.stringMatching(/falha fechada/) }]);
   });
-  it("conferirExcecoes: achado sem exceção acusa; exceção sem alvo, com alvo trocado ou ambígua fica solta", () => {
-    const a = { arquivo: "x.tsx", trecho: "texto={erro}", problema: "p" };
-    const e = { arquivo: "x.tsx", trecho: "texto={erro}", motivo: "m" };
-    expect(conferirExcecoes([a], [])).toEqual({ semExcecao: ["x.tsx: texto={erro} — p"], soltas: [] });
+  it("conferirExcecoes: achado sem exceção acusa; exceção sem alvo, com alvo trocado, de outro tipo ou ambígua fica solta", () => {
+    const a: Achado = { arquivo: "x.tsx", trecho: "texto={erro}", tipo: "opaco", problema: "p" };
+    const e: Excecao = { arquivo: "x.tsx", trecho: "texto={erro}", tipo: "opaco", motivo: "m" };
+    expect(conferirExcecoes([a], [])).toEqual({ semExcecao: ["x.tsx: [opaco] texto={erro} — p"], soltas: [] });
     expect(conferirExcecoes([a], [e])).toEqual({ semExcecao: [], soltas: [] });
-    expect(conferirExcecoes([], [e])).toEqual({ semExcecao: [], soltas: ["x.tsx: texto={erro}"] });
-    expect(conferirExcecoes([{ ...a, arquivo: "y.tsx" }], [e])).toEqual({ semExcecao: ["y.tsx: texto={erro} — p"], soltas: ["x.tsx: texto={erro}"] });
-    expect(conferirExcecoes([a, { ...a, problema: "q" }], [e]).soltas).toEqual(["x.tsx: texto={erro}"]); // ambígua
+    expect(conferirExcecoes([], [e])).toEqual({ semExcecao: [], soltas: ["x.tsx: [opaco] texto={erro}"] });
+    expect(conferirExcecoes([{ ...a, arquivo: "y.tsx" }], [e])).toEqual({ semExcecao: ["y.tsx: [opaco] texto={erro} — p"], soltas: ["x.tsx: [opaco] texto={erro}"] });
+    expect(conferirExcecoes([a, { ...a, problema: "q" }], [e]).soltas).toEqual(["x.tsx: [opaco] texto={erro}"]); // ambígua
+    // R1 da #153 (B4b): a exceção de um valor opaco não isenta um ERRO que passe a sair no mesmo trecho.
+    expect(conferirExcecoes([{ ...a, tipo: "erro" }], [e])).toEqual({ semExcecao: ["x.tsx: [erro] texto={erro} — p"], soltas: ["x.tsx: [opaco] texto={erro}"] });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// R1 da #153: evasões que sobreviviam (L1–L12, X1, C2 da revisão). Uma fonte virtual por forma; as
+// listas novas (funções do executor, campos da própria página) são comparadas com cópias literais.
+// ---------------------------------------------------------------------------------------------------
+describe("R1 da #153 — B1: o fluxo do valor é seguido de verdade", () => {
+  it("E21 (L1) — .mensagem de um desfecho do executor é erro ou incerto: direto, por acao.executar e desestruturado", () => {
+    expect(trechos(tela('async function s() { const d = await executarAcaoCliente(() => f(), { idempotente: true }); if (d.tipo !== "ok") { setMensagem(d.mensagem); return; } setMensagem("Salvo."); }')))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(tela("async function s(acao: Acao) { const d = await acao.executar(() => f()); if (d && d.tipo !== \"ok\") setMensagem(d.mensagem); }")))
+      .toEqual(["setMensagem(d.mensagem)"]);
+    expect(trechos(tela("async function s() { const d = await executarAcaoCliente(() => f(), { idempotente: false }); const { mensagem: m } = d as { mensagem: string }; setMensagem(m); }")))
+      .toEqual(["setMensagem(m)"]);
+    // Controle: `.mensagem` de outro objeto (não é desfecho do executor) é dado.
+    expect(analisar(tela('async function s() { const d = await consultar(); setMensagem(d.mensagem ?? ""); }'))).toEqual([]);
+  });
+  it("lista fechada de funções do executor: o .mensagem do que cada uma devolve acusa", () => {
+    const FUNCOES = ["executar", "executarAcaoCliente"];
+    expect(FUNCOES_DO_EXECUTOR).toEqual(FUNCOES);
+    for (const f of FUNCOES) expect(trechos(tela(`async function s() { const d = await ${f}(() => g()); setMensagem(d.mensagem); }`)), f).toEqual(["setMensagem(d.mensagem)"]);
+  });
+  it("E22 (L2) — função de fora não lava a variável do catch: String(alias), String(e), JSON.stringify(e)", () => {
+    expect(trechos(tela("async function s() { try { await f(); } catch (e) { const causa = e; setMensagem(String(causa)); } }"))).toEqual(["setMensagem(String(causa))"]);
+    expect(trechos(tela("async function s() { try { await f(); } catch (e) { setMensagem(JSON.stringify(e)); } }"))).toEqual(["setMensagem(JSON.stringify(e))"]);
+    expect(trechos(tela("async function s() { try { await f(); } catch (e) { const partes = [e]; setMensagem(partes.join(\" \")); } }"))).toEqual(['setMensagem(partes.join(" "))']);
+  });
+  it("E23 (L3) — parâmetro de .catch(f) e de .then(ok, f) é o erro; parâmetro de callback anônimo falha fechado mesmo dentro de String()", () => {
+    expect(trechos(tela("async function s() { await f().catch((e) => { setMensagem(String(e)); throw e; }); }"))).toEqual(["setMensagem(String(e))"]);
+    expect(problemas(tela("async function s() { await f().catch((e) => { setMensagem(String(e)); throw e; }); }"))).toEqual([expect.stringMatching(/\.catch\/\.then/)]);
+    expect(trechos(tela("function s() { void f().then(() => undefined, (motivo) => setMensagem(String(motivo))); }"))).toEqual(["setMensagem(String(motivo))"]);
+    expect(problemas(tela("function s(p: Promise<string>) { void p.then((t) => setMensagem(String(t))); }"))).toEqual([expect.stringMatching(/função anônima/)]);
+  });
+  it("E24 (L4) — campo de objeto local: o objeto literal (ou o que a função local devolve) é seguido", () => {
+    expect(trechos(tela("function s() { if (!r.ok) { const saida = { texto: r.erro ?? \"\" }; setMensagem(saida.texto); return; } }"))).toEqual(["setMensagem(saida.texto)"]);
+    expect(trechos(tela("function s() { const montar = () => ({ texto: r.erro ?? \"\" }); setMensagem(montar().texto); }"))).toEqual(["setMensagem(montar().texto)"]);
+    expect(trechos(tela("function s() { let saida = { texto: \"Salvo.\" }; saida = { texto: r.erro ?? \"\" }; setMensagem(saida.texto); }"))).toEqual(["setMensagem(saida.texto)"]);
+    // Controle: o campo certo do objeto é sucesso, mesmo que outro campo seja erro.
+    expect(analisar(tela("function s() { const saida = { texto: \"Salvo.\", detalhe: r.erro }; setMensagem(saida.texto); }"))).toEqual([]);
+  });
+  it("E25 (L5) — atribuição por desestruturação ao let: a chave diz o que é; array e chave computada também", () => {
+    expect(trechos(tela("function s() { let t = \"\"; ({ erro: t } = r as { erro: string }); setMensagem(t); }"))).toEqual(["setMensagem(t)"]);
+    expect(trechos(tela("function s() { let u = \"\"; [u] = [r.erro ?? \"\"]; setMensagem(u); }"))).toEqual(["setMensagem(u)"]);
+    expect(problemas(tela("function s(k: string) { let t = \"\"; ({ [k]: t } = r as Record<string, string>); setMensagem(t); }"))).toEqual([expect.stringMatching(/chave computada/)]);
+  });
+  it("E26 (L6) — valor padrão do parâmetro conta (a chamada sem o argumento usa ele)", () => {
+    expect(trechos(tela("function avisar(t: string = MSG_RESULTADO_INCERTO) { setMensagem(t); } function s() { avisar(); }"))).toEqual(["setMensagem(t)"]);
+    expect(trechos(tela("const avisar = (t = \"Falha ao salvar.\") => setMensagem(t); function s() { avisar(); }"))).toEqual(["setMensagem(t)"]);
+    expect(trechos(tela("function avisar({ t = r.erro ?? \"\" }: { t?: string }) { setMensagem(t); } avisar({});"))).toEqual(["setMensagem(t)"]);
+  });
+});
+
+describe("R1 da #153 — B2: tudo dentro de role=\"status\"/aria-live=\"polite\" é região", () => {
+  const reg = (jsx: string) => `${IMPORTS}export function T({ r }: { r: { ok: boolean; erro?: string } }) { const erro = r.erro; return <div>${jsx}</div>; }\n`;
+  it("E27 (L7) — expressão em elemento aninhado e texto fixo de erro acusam; dentro de role=\"alert\" não", () => {
+    expect(trechos(reg('<p role="status" className="text-red-700"><span>{erro}</span></p>'))).toEqual(["{erro}"]);
+    expect(trechos(reg('<div aria-live="polite"><p><strong>{r.erro}</strong></p></div>'))).toEqual(["{r.erro}"]);
+    expect(trechos(reg('<p role="status"><strong>Falha ao salvar.</strong></p>'))).toEqual(["Falha ao salvar."]);
+    expect(trechos(reg('<p role="status">Não foi possível registrar.</p>'))).toEqual(["Não foi possível registrar."]);
+    expect(trechos(reg('<p role="status"><>{erro}</></p>'))).toEqual(["{erro}"]);
+    expect(analisar(reg('<div role="status"><p role="alert">{erro}</p></div>'))).toEqual([]);
+    expect(analisar(reg('<p role="status"><span>Salvo.</span></p>'))).toEqual([]);
+  });
+});
+
+describe("R1 da #153 — B3: variantes de recarga", () => {
+  const acusa = (f: string) => analisar(`export function T() { const s = () => { ${f} }; return <button onClick={s}>Ok</button>; }\n`).map((a: Achado) => a.tipo);
+  it("E28 (L9–L12) — campo qualquer da location, document.URL, atribuição composta, alias de history e de location", () => {
+    const FORMAS = [
+      "window.location.search = window.location.search;", // L9
+      "window.location.href = document.URL;", // L10
+      "const h = window.history; h.go(0);", // L11
+      'window.location.href += "";', // L12
+      "const { go } = window.history; go(0);",
+      "const { go: ir } = history; ir(0);",
+      "const l = window.location; l.href = l.href;",
+      "const { location: l } = window; l.hash = l.hash;",
+      "location.assign(document.URL);",
+      "window.location.replace(document.documentURI);",
+      "location.href = String(location);",
+    ];
+    for (const f of FORMAS) expect(acusa(f), f).toContain("erro");
+  });
+  it("lista fechada de campos da própria página em document: cada um acusa", () => {
+    const CAMPOS = ["URL", "documentURI", "baseURI", "location"];
+    expect(CAMPOS_DA_PROPRIA_PAGINA).toEqual(CAMPOS);
+    // Por location.assign (que só acusa quando o destino lê a própria página), não por atribuição — esta
+    // acusa qualquer destino não literal e não provaria o item da lista.
+    for (const c of CAMPOS) expect(acusa(`location.assign(document.${c});`), c).toContain("erro");
+    expect(acusa("location.assign(document.title);")).toEqual([]);
+  });
+  it("controle: destino literal (texto ou template) para outra página continua permitido", () => {
+    expect(acusa('window.location.href = "/login";')).toEqual([]);
+    expect(acusa("location.hash = \"#topo\";")).toEqual([]);
+    expect(acusa("const id = \"1\"; location.assign(`/alunos/${id}`);")).toEqual([]);
+  });
+});
+
+describe("R1 da #153 — B4: callback de mensagem recebido por prop (on<Palavra>) é conferido no filho", () => {
+  const filho = (corpo: string, assinatura = "{ onNota }: { onNota: (m: string | null) => void }") =>
+    `${IMPORTS}export function Filho(${assinatura}) { const s = async () => { const r = await f(); ${corpo} }; return <button onClick={s}>Ok</button>; }\n`;
+  it("E29 (X1) — erro por onNota acusa: direto, renomeado, por props.onNota e por helper", () => {
+    expect(trechos(filho('if (!r.ok) return onNota(r.erro ?? ""); onNota("Salvo.");'))).toEqual(['onNota(r.erro ?? "")']);
+    expect(trechos(filho('if (!r.ok) return avisar(r.erro ?? "");', "{ onNota: avisar }: { onNota: (m: string) => void }"))).toEqual(['avisar(r.erro ?? "")']);
+    expect(trechos(filho('if (!r.ok) props.onNota(r.erro ?? "");', "props: { onNota: (m: string) => void }"))).toEqual(['props.onNota(r.erro ?? "")']);
+    expect(trechos(filho('const run = (msg: string) => onNota(msg); if (!r.ok) run(r.erro ?? "");'))).toEqual(["onNota(msg)"]);
+  });
+  it("E29 — o callback passado a algo que não é on<Palavra> falha fechado; repassado a on<Palavra>, não", () => {
+    expect(problemas(`${IMPORTS}export function Filho({ onNota }: { onNota: (m: string) => void }) { return <Neto onClick={onNota} />; }\n`)).toEqual([expect.stringMatching(/usado como valor/)]);
+    expect(analisar(`${IMPORTS}export function Filho({ onNota }: { onNota: (m: string) => void }) { return <Neto onNota={onNota} />; }\n`)).toEqual([]);
+    // No pai: o setter vai para on<Palavra>, direto ou por função; o argumento é conferido no filho.
+    expect(analisar(`${IMPORTS}export function Pai() { const [nota, setNota] = useState<string | null>(null); return <><MensagemStatus texto={nota} /><Filho onNota={setNota} /><Filho onNota={(m) => setNota(m)} /></>; }\n`)).toEqual([]);
+  });
+  it("lista fechada: cada palavra de mensagem vira callback on<Palavra> conferido", () => {
+    for (const p of ["mensagem", "msg", "aviso", "nota", "sucesso", "feito", "retorno", "feedback", "resultado", "ok"]) {
+      const nome = `on${capital(p)}`;
+      expect(trechos(filho(`if (!r.ok) ${nome}(r.erro ?? "");`, `{ ${nome} }: { ${nome}: (m: string) => void }`)), nome).toEqual([`${nome}(r.erro ?? "")`]);
+    }
+  });
+});
+
+describe("R1 da #153 — C2: cloneElement de um componente de região", () => {
+  const imp = 'import { cloneElement } from "react";\n';
+  it("E30 — cloneElement(<MensagemStatus/>, { texto: erro }) acusa, direto ou por constante", () => {
+    expect(trechos(`${IMPORTS}${imp}export function T({ r }: { r: { erro?: string } }) { return <div>{cloneElement(<MensagemStatus texto={null} />, { texto: r.erro })}</div>; }\n`)).toEqual(["texto: r.erro"]);
+    expect(trechos(`${IMPORTS}${imp}export function T({ r }: { r: { erro?: string } }) { const base = <MensagemStatus texto={null} />; return <div>{cloneElement(base, { texto: r.erro })}</div>; }\n`)).toEqual(["texto: r.erro"]);
+    expect(analisar(`${IMPORTS}${imp}export function T() { return <div>{cloneElement(<MensagemStatus texto={null} />, { texto: "Salvo." })}</div>; }\n`)).toEqual([]);
   });
 });
