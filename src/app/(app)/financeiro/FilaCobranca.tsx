@@ -248,10 +248,11 @@ export function FilaCobranca({
       `${d.enfileiradas} aprovada(s)`,
       d.despachadas ? `${d.despachadas} enviada(s)` : null,
       d.simuladas ? `${d.simuladas} simulada(s) (ensaio)` : null,
-      d.falhas ? `${d.falhas} falhou(aram)` : null,
       d.puladas.length ? `${d.puladas.length} pulada(s): ${d.puladas[0].motivo}` : null,
     ].filter(Boolean);
     setNota(`Lote: ${partes.join(" · ")}.`);
+    // Falha parcial é erro (docs/43 §6 item 2): sai em role="alert", não somada à nota de sucesso.
+    if (d.falhas) setErro(d.falhas === 1 ? "1 envio do lote falhou; o item continua na fila manual." : `${d.falhas} envios do lote falharam; os itens continuam na fila manual.`);
     setSelecao(new Set());
     router.refresh();
   }
