@@ -47,7 +47,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
   "src/components/BarraMobile.tsx": 2, // botões só de ícone da barra do celular (menu, sair)
   "src/components/Sidebar.tsx": 2, // item da navegação principal (ativo = fundo da marca) e contador de não lidas
-  "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: bg-brand-600 é seleção, não ação): o literal e o <Link>
+  "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: seleção, não ação; fundo bg-brand-solid): o literal e o <Link>
 };
 
 /**

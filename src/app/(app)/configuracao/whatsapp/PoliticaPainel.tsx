@@ -237,7 +237,7 @@ export function PoliticaPainel({
                   className={
                     "rounded-full px-2 py-0.5 text-[11px] " +
                     (form.diasSemana.includes(i)
-                      ? "bg-brand-600 text-white"
+                      ? "bg-brand-solid text-white"
                       : "border border-gray-300 text-gray-500 hover:bg-gray-50")
                   }
                 >

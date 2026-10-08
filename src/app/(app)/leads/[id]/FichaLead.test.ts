@@ -47,3 +47,13 @@ it("preserva literais e eventos antigos sem converter nem fabricar referência c
   expect(html).toContain("Proposta: legado-inválido (registro histórico sem referência civil)");
   expect(html).not.toContain("Invalid Date");
 });
+
+it("etapa atual da trilha: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+  const lead = { id: "lead", codigo: "L-1", nome: "Ana", telefoneE164: null, etapa: EtapaLead.QUALIFICADO, segmento: Segmento.ADULTO, temperatura: Temperatura.MORNO, b2b: false, criadoEm: "2026-01-01T02:30:00.000Z", pais: null, vendedor: null, origemCampanha: null, origemAnuncio: null, interesse: null, objetivo: null, urgencia: null, orcamento: null, objecao: null, proximaAcao: null, proximoFollowUp: null, dataExperimental: null, dataProposta: null, motivoPerda: null, matricula: null, valorPrevisto: null, planoPrevisto: null, comissaoPrevista: null, documentos: [], professorExperimentalId: null };
+  const html = renderToStaticMarkup(createElement(FichaLead, { lead, timeline: [], professores: [], preferenciaFusoExibicao: null }));
+  const etapas = [...html.matchAll(/<span class="rounded px-2 py-0\.5 text-xs ([^"]*)">([^<]*)<\/span>/g)].map((m) => [m[2], m[1]]);
+  expect(etapas.find(([rotulo]) => rotulo === "Qualificado")).toEqual(["Qualificado", "bg-brand-solid font-medium text-white"]);
+  expect(etapas.find(([rotulo]) => rotulo === "Novo")).toEqual(["Novo", "bg-gray-100 text-gray-500"]);
+  expect(etapas.filter(([, classe]) => classe.includes("bg-brand-solid"))).toHaveLength(1);
+  expect(html).not.toMatch(/bg-brand-(?:500|600)/);
+});

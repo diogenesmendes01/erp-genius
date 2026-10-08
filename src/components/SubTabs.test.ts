@@ -16,15 +16,25 @@ describe("SubTabs", () => {
   it("destaca só a sub-aba de prefixo mais longo em /configuracao/whatsapp", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
-    expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao\/whatsapp")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-600[^"]*")[^>]*>/);
+    expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao\/whatsapp")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-solid[^"]*")[^>]*>/);
     expect([...html.matchAll(/aria-current="page"/g)]).toHaveLength(1);
-    expect([...html.matchAll(/class="[^"]*bg-brand-600[^"]*"/g)]).toHaveLength(1);
+    expect([...html.matchAll(/class="[^"]*bg-brand-solid[^"]*"/g)]).toHaveLength(1);
+  });
+
+  it("aba ativa: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+    mocks.pathname.mockReturnValue("/configuracao/whatsapp");
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
+    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-white"]));
+    expect(classeDe("/configuracao")).not.toContain("bg-brand-solid");
+    expect(classeDe("/configuracao")).not.toContain("text-white");
+    expect(html).not.toMatch(/bg-brand-(?:500|600)/);
   });
 
   it("destaca a aba geral quando a rota é exatamente /configuracao", () => {
     mocks.pathname.mockReturnValue("/configuracao");
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
-    expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-600[^"]*")[^>]*>/);
+    expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-solid[^"]*")[^>]*>/);
     expect([...html.matchAll(/aria-current="page"/g)]).toHaveLength(1);
   });
 
