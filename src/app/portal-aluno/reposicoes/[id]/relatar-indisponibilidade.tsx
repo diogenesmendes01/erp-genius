@@ -15,8 +15,13 @@ const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
 /** Q57/Q58: o aluno vê só seus relatos e as interrupções do material da sua
  * própria reposição; a ação de escrita volta a confirmar o mesmo vínculo. */
 export function RelatarIndisponibilidadePortalAluno({
-  reposicaoId, podeRelatar, relatos, pausas, fusoExibicao,
-}: { reposicaoId: string; podeRelatar: boolean; relatos: Relato[]; pausas: Pausa[]; fusoExibicao: string }) {
+  reposicaoId, podeRelatar, motivoSemRelato = null, relatos, pausas, fusoExibicao,
+}: {
+  reposicaoId: string; podeRelatar: boolean;
+  /** No lugar do formulário quando não dá para relatar: por quê e o que fazer (docs/42 L2676). */
+  motivoSemRelato?: string | null;
+  relatos: Relato[]; pausas: Pausa[]; fusoExibicao: string;
+}) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false), [erro, setErro] = useState<string | null>(null), [sucesso, setSucesso] = useState<string | null>(null);
 
@@ -48,6 +53,7 @@ export function RelatarIndisponibilidadePortalAluno({
       {relatos.map((relato) => <article key={relato.id} className="rounded border p-2"><p className="whitespace-pre-wrap">{relato.descricao}</p><p className="mt-1 text-gray-600">{rotular(SITUACAO_RELATO_MATERIAL_REPOSICAO_LABEL, relato.situacao)} · relatado em {data(relato.criadoEm, fusoExibicao)}{relato.confirmadoEm ? ` · confirmado em ${data(relato.confirmadoEm, fusoExibicao)}` : ""}</p></article>)}
     </div></details>}
     {podeRelatar && <form onSubmit={relatar} className="space-y-2 border-t pt-3"><label className="block text-sm">Descreva o problema<CampoTexto required minLength={5} maxLength={4000} name="descricao" className="mt-1 min-h-20 w-full rounded border p-2" /></label><button disabled={enviando} className="rounded border px-3 py-2 text-sm disabled:opacity-60">{enviando ? "Enviando…" : "Relatar indisponibilidade"}</button></form>}
+    {!podeRelatar && <p className="border-t pt-3 text-sm text-gray-700">{motivoSemRelato ?? "O relato não está disponível para esta reposição no momento. Procure a secretaria da escola."}</p>}
     <MensagemStatus texto={sucesso} className="text-sm text-green-700" />
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
   </section>;

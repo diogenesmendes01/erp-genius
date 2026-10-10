@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), cabecalho: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
+vi.mock("@/server/matricula/cabecalho", () => ({ consultarCabecalhoMatricula: mocks.cabecalho }));
 vi.mock("@/server/matricula/fechamento-horas-consulta", () => ({ consultarFechamentosHoras: mocks.consulta }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./PrepararFechamento", () => ({ PrepararFechamento: () => null }));
@@ -30,6 +31,35 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     expect(html.match(/31\/12\/2025, 20:30/g)).toHaveLength(2);
     expect(html.match(/horário exibido em America\/Costa_Rica; origem UTC/g)).toHaveLength(2);
     expect(html).toContain("Intervalo: 2099-10-01 até 2099-11-01");
+  });
+
+  it("sem ?aluno= na URL, o aluno sai da matrícula — não é mais beco (docs/42 L905)", async () => {
+    mocks.cabecalho.mockResolvedValue({ id: "matricula", codigo: "M-1", status: "ATIVA", alunoId: "aluno-da-matricula", aluno: "Ana", produto: "Inglês" });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }));
+    expect(mocks.cabecalho).toHaveBeenCalledWith({ id: "financeiro" }, "matricula");
+    expect(mocks.consulta).toHaveBeenCalledWith({ alunoId: "aluno-da-matricula", matriculaId: "matricula", cursor: undefined, rascunhoId: undefined });
+    expect(html).toContain("Fechamentos por hora · M-1");
+    expect(html).not.toContain("Abra os fechamentos pela ficha financeira");
+  });
+
+  it("com ?aluno= não consulta o cabeçalho; fora do alcance, diz por quê e dá saída", async () => {
+    await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno" }) });
+    expect(mocks.cabecalho).not.toHaveBeenCalled();
+    mocks.cabecalho.mockResolvedValue(null);
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain('role="alert">Matrícula não encontrada no seu alcance');
+    expect(html).toContain('href="/financeiro"');
+    expect(mocks.consulta).toHaveBeenCalledTimes(1);
+  });
+
+  it("sem código, a matrícula e a cobrança não viram o id interno", async () => {
+    const semCodigo = { ...(dado as unknown as Record<string, unknown>), matricula: { alunoId: "aluno", codigo: null },
+      versoes: [{ ...(dado as { versoes: Record<string, unknown>[] }).versoes[0]!, emissao: { executor: { nome: "Financeiro" }, criadaEm: new Date("2026-01-01T02:30:00.000Z"), cobranca: { id: "cobranca-interna", codigo: null, moeda: "USD", valorOriginal: "100", valorNegociado: "100", saldo: "100" } } }] };
+    mocks.consulta.mockResolvedValue({ ok: true, dado: semCodigo });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula-interna" }), searchParams: Promise.resolve({ aluno: "aluno" }) }));
+    expect(html).toContain("Fechamentos por hora · matrícula sem código");
+    expect(html).toContain("Cobrança emitida · sem código");
+    expect(html.replace(/href="[^"]*"/g, "")).not.toMatch(/matricula-interna|cobranca-interna/);
   });
 
   it("não consulta preferência se a guarda recusa", async () => {

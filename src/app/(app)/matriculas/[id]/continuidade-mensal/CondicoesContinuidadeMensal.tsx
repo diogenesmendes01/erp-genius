@@ -46,7 +46,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
   const classe = "block w-full rounded border p-2";
 
   return <div className="space-y-4">
-    <p>Matrícula {d.codigo ?? d.matriculaId} · moeda contratual {d.moeda}</p>
+    <p>Matrícula {d.codigo ?? "sem código"} · moeda contratual {d.moeda}</p>
     <MensagemStatus texto={d.impedimento} />
     {d.podePreparar && d.documentoId && <form className="space-y-3 rounded border p-4" onSubmit={async evento => {
       evento.preventDefault();

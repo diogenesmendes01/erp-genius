@@ -55,6 +55,7 @@ export async function consultarPropostasUsoCredito(input: { alunoId: string; cre
         ? await tx.origemCreditoAcertoDesistenciaContratual.findUniqueOrThrow({
           where: { id: credito.origemAcertoDesistenciaContratualId },
           select: { id: true, matriculaId: true, cobrancaId: true, valor: true, moeda: true, criadaEm: true,
+            cobranca: { select: { codigo: true, tipo: true, vencimento: true } },
             aplicacao: { select: { id: true, decisao: { select: { id: true, proposta: { select: { id: true, pedidoId: true } } } } } },
           },
         }) : null;
@@ -80,6 +81,8 @@ export async function consultarPropostasUsoCredito(input: { alunoId: string; cre
       return { creditoId: credito.id, matriculaId: credito.matriculaId, moeda: credito.moeda, valorCredito: (await saldoCreditoTx(tx, credito.id)).toFixed(2), reservaDevolucao: reservasDevolucao.toFixed(2), devolvido: devolvido.toFixed(2),
         origemDesistencia: origemDesistencia ? {
           id: origemDesistencia.id, cobrancaId: origemDesistencia.cobrancaId,
+          // Rótulo da cobrança de origem para a tela (código · tipo · vencimento), no lugar do id interno.
+          cobranca: origemDesistencia.cobranca ? { codigo: origemDesistencia.cobranca.codigo, tipo: origemDesistencia.cobranca.tipo, vencimento: origemDesistencia.cobranca.vencimento.toISOString() } : null,
           valorOriginal: origemDesistencia.valor.toFixed(2), criadaEm: origemDesistencia.criadaEm.toISOString(),
           aplicacaoId: origemDesistencia.aplicacao.id, decisaoId: origemDesistencia.aplicacao.decisao.id,
           propostaId: origemDesistencia.aplicacao.decisao.proposta.id, pedidoId: origemDesistencia.aplicacao.decisao.proposta.pedidoId,

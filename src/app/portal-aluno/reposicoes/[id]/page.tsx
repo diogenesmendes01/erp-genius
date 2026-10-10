@@ -53,6 +53,13 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
       // Histórico permanece visível; fonte e controles exigem autorização atual.
     }
   }
+  // O relato exige a mesma autorização da reprodução (o servidor a confere de novo). Sem ela, o formulário
+  // não aparece — e o aluno lê por quê e o que fazer, em vez de um bloco sem campo (docs/42 L2676).
+  const motivoSemRelato = podeReproduzir ? null
+    : detalhe?.pausadaDesde ? "A escola já confirmou a indisponibilidade do material e está regularizando; não é preciso enviar outro relato."
+    : !detalhe?.disponivel ? "O material ainda não foi liberado pela escola. Se o prazo já estiver correndo, procure a secretaria."
+    : reposicao.statusMatricula !== "ATIVA" ? `A matrícula está ${rotular(STATUS_MATRICULA_LABEL, reposicao.statusMatricula).toLowerCase()}; o relato só pode ser enviado com a matrícula ativa. Procure a secretaria da escola.`
+    : "A gravação não está liberada para você neste momento (por exemplo, por bloqueio de acesso da matrícula). Procure a secretaria da escola para regularizar.";
   return <section className="mx-auto max-w-3xl p-6 sm:p-10"><VoltarPara href="/portal-aluno" />
     <h1 className="mt-5 text-2xl font-medium">Reposição {reposicao.modalidade === "GRAVACAO" ? "por gravação" : "particular"}</h1>
     <dl className="mt-6 grid gap-3 rounded-lg border bg-surface p-5 text-sm"><div><dt className="text-gray-500">Situação</dt><dd>{reposicao.concluida ? (reposicao.dataResultado ? "Reposta em " + data(reposicao.dataResultado) : "Reposição concluída; data em conferência") : reposicao.autorizada ? "Autorizada" : "Aguardando autorização"}</dd></div><div><dt className="text-gray-500">Matrícula</dt><dd>{rotular(STATUS_MATRICULA_LABEL, reposicao.statusMatricula)}</dd></div></dl>
@@ -71,7 +78,7 @@ export default async function ReposicaoPortalAlunoPage({ params }: { params: Pro
       return <article key={correcao.id} className="mt-4 rounded border border-amber-200 bg-amber-50 p-4 text-sm"><p className="font-medium">{correcao.situacao === "PENDENTE" ? "Correção solicitada" : "Correção respondida"}{entrega ? ` para a versão ${entrega.versao}` : ""}</p><p className="mt-2 whitespace-pre-wrap">{correcao.comentario}</p><p className="mt-2">Prazo: {data(correcao.prazoAte)}</p></article>;
     })}
     {podeReproduzir && <VideoGravacaoPortalAluno reposicaoId={reposicao.id} />}
-    {detalhe && reposicao.modalidade === "GRAVACAO" && <RelatarIndisponibilidadePortalAluno reposicaoId={reposicao.id} podeRelatar={podeReproduzir} relatos={detalhe.relatosIndisponibilidade} pausas={detalhe.pausasMaterial} fusoExibicao={fusoExibicao} />}
+    {detalhe && reposicao.modalidade === "GRAVACAO" && <RelatarIndisponibilidadePortalAluno reposicaoId={reposicao.id} podeRelatar={podeReproduzir} motivoSemRelato={motivoSemRelato} relatos={detalhe.relatosIndisponibilidade} pausas={detalhe.pausasMaterial} fusoExibicao={fusoExibicao} />}
     {reposicao.modalidade === "GRAVACAO" && <EntregaGravacaoPortalAluno reposicaoId={reposicao.id} podeEntregar={podeEntregar} motivoBloqueio={motivoBloqueio} />}
   </section>;
 }

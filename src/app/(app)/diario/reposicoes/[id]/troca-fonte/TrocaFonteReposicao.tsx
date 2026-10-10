@@ -65,8 +65,9 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
   return <section className="space-y-5">
     <section className="rounded border bg-surface p-4 text-sm" aria-label="Fontes atuais da reposição">
       <h2 className="font-medium">Fonte da reposição</h2>
-      <p className="mt-1">Material: versão {contexto.fonteMaterialAtual.versao}, revisão fixa {contexto.fonteMaterialAtual.revisao}.</p>
-      <p>Publicação corrigida da aula original: versão {contexto.fontePublicacaoAtual.versao}, revisão fixa {contexto.fontePublicacaoAtual.revisao}.</p>
+      {/* A revisão do Drive é identificador técnico: fica como texto secundário (title), não como o nome da fonte. */}
+      <p className="mt-1" title={`Revisão fixa no Drive: ${contexto.fonteMaterialAtual.revisao}`}>Material: versão {contexto.fonteMaterialAtual.versao}, com revisão fixada.</p>
+      <p title={`Revisão fixa no Drive: ${contexto.fontePublicacaoAtual.revisao}`}>Publicação corrigida da aula original: versão {contexto.fontePublicacaoAtual.versao}, com revisão fixada.</p>
       <p className="mt-1 text-gray-700">O material está {contexto.materialDisponivel ? "disponível" : "indisponível"}. A troca só cria outra versão da fonte; não altera disponibilização, entregas, avaliações ou prazos.</p>
     </section>
     <form className="space-y-3 rounded border bg-surface p-4" onSubmit={propor}>
@@ -78,7 +79,7 @@ export function TrocaFonteReposicao({ contexto, propostas, fusoExibicao }: { con
     <section className="space-y-3" aria-label="Histórico de trocas de fonte">
       <h2 className="font-medium">Histórico antes e depois</h2>
       {propostas.length === 0 ? <EstadoVazio>Nenhuma troca de fonte foi proposta para esta reposição.</EstadoVazio> : propostas.map((proposta) => <article key={proposta.id} className="rounded border bg-surface p-4 text-sm">
-        <p className="font-medium">Material v{proposta.fonteMaterialAnterior.versao} ({proposta.fonteMaterialAnterior.driveRevisionId}) → publicação v{proposta.fontePublicacao.versao} ({proposta.fontePublicacao.driveRevisionId})</p>
+        <p className="font-medium" title={`Revisões no Drive: ${proposta.fonteMaterialAnterior.driveRevisionId} → ${proposta.fontePublicacao.driveRevisionId}`}>Material v{proposta.fonteMaterialAnterior.versao} → publicação v{proposta.fontePublicacao.versao}</p>
         <p className="mt-1 whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         <p className="mt-1 text-gray-600">Preparada por {proposta.preparador.nome ?? "Usuário"} em {formatarInstanteExibicao(proposta.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}).</p>
         {proposta.decisao ? <p role="status" className="mt-2">{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisor.nome ?? "Usuário"}: {proposta.decisao.motivo}{proposta.fonteMaterial ? ` Fonte MATERIAL v${proposta.fonteMaterial.versao} fixada.` : ""}</p>
