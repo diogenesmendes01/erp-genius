@@ -1,0 +1,16 @@
+export const ARQUIVO_DO_CAMPO_FUSO: string;
+export const PALAVRA_DE_FUSO: RegExp;
+export const IDENTIFICADOR_IANA: RegExp;
+export const EXEMPLO_DE_FUSO: RegExp;
+export const ROTULO_DE_FUSO: RegExp;
+export const ATRIBUTOS_DE_NOME: string[];
+export const ATRIBUTOS_DE_VALOR: string[];
+export const NOME_DE_FUSO: RegExp;
+export function semComentarios(texto: string): string;
+export function rotuloEmVolta(texto: string, pos: number): string | null;
+export function tagDeFuso(tag: string): boolean;
+export function camposDeFuso(fonte: string): { tipo: "campo" | "lista"; pos: number; trecho: string }[];
+export const METODOS_CRUS: string[];
+export const CORTES: string[];
+export const ATRIBUTOS_SEM_TEXTO: string[];
+export function instantesCrus(fonte: string): { pos: number; trecho: string }[];

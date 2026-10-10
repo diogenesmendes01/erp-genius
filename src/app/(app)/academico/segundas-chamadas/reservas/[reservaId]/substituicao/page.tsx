@@ -6,6 +6,8 @@ import { Formulario } from "./Formulario";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 function periodo(inicio: string, fim: string, fuso: string) {
   const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", {
@@ -29,11 +31,14 @@ export default async function Page({
   const { reservaId } = await params;
   const { substitutoId, antesVersao } = await searchParams;
   const versao = antesVersao && /^\d+$/.test(antesVersao) ? Number(antesVersao) : undefined;
-  const resultado = await consultarSubstituicaoAgendaSegundaChamada({
+  const [resultado, preferencia] = await Promise.all([consultarSubstituicaoAgendaSegundaChamada({
     reservaId,
     ...(substitutoId ? { substitutoId } : {}),
     ...(versao ? { antesVersao: versao } : {}),
-  });
+  }), consultarPreferenciaFusoEquipe()]);
+  // Registro e decisão no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes, ISO cru.
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const instante = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   if (!resultado.ok || !resultado.dado) {
     return <section className="space-y-3"><VoltarPara href="/academico/segundas-chamadas/agendas" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
@@ -53,9 +58,9 @@ export default async function Page({
     {d.itens.map((item) => <article key={item.id} className="space-y-2 rounded border p-4">
       <p>Versão {item.versao} · proposta de {item.autorNome}.</p>
       <p>{resumoConferido(item.snapshot)}</p><p>Substituto proposto: {item.substitutoNome}.</p><p>Motivo: {item.motivo}</p><p>Evidência: {item.evidencia}</p>
-      <p>Registrada em {new Date(item.criadaEm).toISOString()} (UTC).</p>
+      <p>Registrada em {instante(item.criadaEm)}.</p>
       {item.decisao
-        ? <p role="status">{item.decisao.aprovada ? (item.decisao.aplicada ? "Aprovada e aplicada" : "Aprovada") : "Rejeitada"} por {item.decisao.decisorNome}: {item.decisao.motivo}. Decisão em {new Date(item.decisao.decididaEm).toISOString()} (UTC).</p>
+        ? <p role="status">{item.decisao.aprovada ? (item.decisao.aplicada ? "Aprovada e aplicada" : "Aprovada") : "Rejeitada"} por {item.decisao.decisorNome}: {item.decisao.motivo}. Decisão em {instante(item.decisao.decididaEm)}.</p>
         : <><p>Aguardando decisão independente.</p>{item.podeDecidir && item.entradaHash && <Formulario reservaId={reservaId} base={base} proposta={{ id: item.id, hash: item.entradaHash, podeAprovar: item.podeAprovar ?? true, impedimentoAprovacao: item.impedimentoAprovacao ?? null }} />}</>}
     </article>)}
     {(versao || d.proximaVersao) && <nav className="flex gap-4" aria-label="Paginação das substituições">

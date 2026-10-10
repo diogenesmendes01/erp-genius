@@ -27,7 +27,7 @@ export default async function Prorrogacoes({ params, searchParams }: { params: P
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Prazo original: {horario(d.prazoOriginal)}. Prazo vigente: {horario(d.prazoVigente)} ({fuso}; origem UTC).</p>
     {!d.podePropor && <p role="status">A matrícula não está ativa. Prorrogação não substitui a autorização específica após pausa ou encerramento.</p>}
-    {d.podePropor && !antesVersao && <ProporProrrogacao key={`${d.versaoEsperada}:${d.prazoVigente}`} disponibilizacaoId={d.disponibilizacaoId} prazoAnterior={d.prazoVigente} versaoEsperada={d.versaoEsperada} fusoInstitucional={fusoInstitucional} />}
+    {d.podePropor && !antesVersao && <ProporProrrogacao key={`${d.versaoEsperada}:${d.prazoVigente}`} disponibilizacaoId={d.disponibilizacaoId} prazoAnterior={d.prazoVigente} versaoEsperada={d.versaoEsperada} fusoInstitucional={fusoInstitucional} fusoExibicao={fuso} />}
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
     {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
       <h3 className="font-medium">Proposta {p.versao} — {p.preparador}</h3>

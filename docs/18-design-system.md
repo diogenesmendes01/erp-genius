@@ -95,6 +95,11 @@
 > seguinte, chip desmarcado, hover da aba inativa), não o fundo sob ela. Além disso, no escuro
 > nenhuma cor cumpre as duas contas sobre ele (3:1 pede luminância ≥ 0,1846). A trava é
 > `src/app/contraste.test.ts` e lê os tokens reais do `globals.css`.
+>
+> **Hover do primário no escuro** (C1 da revisão da #157): `hover:brightness-95` (`src/components/Botao.tsx`)
+> escurece o `#6264EC` e, só enquanto o ponteiro está em cima, ele fica com 2,83:1 sobre `--surface-muted`. É
+> transitório, e o texto branco fica ainda mais legível (escurecer só sobe o contraste com o branco). A conta de
+> 3:1 vale para o estado em repouso, que é o que mostra a seleção. Não "corrija" o token olhando só o hover.
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,

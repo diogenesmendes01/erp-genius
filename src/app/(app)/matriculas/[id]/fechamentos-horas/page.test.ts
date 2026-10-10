@@ -3,11 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), fuso: vi.fn(), preparar: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/fechamento-horas-consulta", () => ({ consultarFechamentosHoras: mocks.consulta }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./PrepararFechamento", () => ({ PrepararFechamento: () => null }));
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
+vi.mock("./PrepararFechamento", () => ({ PrepararFechamento: (props: unknown) => { mocks.preparar(props); return null; } }));
 vi.mock("./DecidirFechamento", () => ({ DecidirFechamento: () => null }));
 vi.mock("./EmitirFechamento", () => ({ EmitirFechamento: () => null }));
 
@@ -21,6 +22,18 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     mocks.sessao.mockResolvedValue({ id: "financeiro" });
     mocks.consulta.mockResolvedValue({ ok: true, dado });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.fuso.mockResolvedValue(null);
+  });
+
+  // docs/43 §6 item 6: "Fuso do período" começava vazio, só com placeholder.
+  it("o fuso do período começa no fuso da escola; sem ele, na preferência da equipe", async () => {
+    const abrir = async () => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno" }) }));
+    mocks.fuso.mockResolvedValue("America/Sao_Paulo");
+    await abrir();
+    expect(mocks.preparar).toHaveBeenLastCalledWith(expect.objectContaining({ fusoInicial: "America/Sao_Paulo" }));
+    mocks.fuso.mockResolvedValue(null);
+    await abrir();
+    expect(mocks.preparar).toHaveBeenLastCalledWith(expect.objectContaining({ fusoInicial: "America/Costa_Rica" }));
   });
 
   it("formata preparação e emissão administrativas na preferência após a guarda", async () => {

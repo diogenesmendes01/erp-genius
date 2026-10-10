@@ -14,6 +14,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, dirname, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { ARQUIVO_DO_CAMPO_FUSO, camposDeFuso, instantesCrus } from "./fuso.mjs";
 import {
   chamaServerAction, contarCores, ehTeste, exigirNode, mapaDeCores, nomesDeControles, paginasCobertas,
   paresReprovados, semCatchCentral, semCatchLiteral, soParaFrente, tags, temProxima,
@@ -203,12 +204,19 @@ export function medir(raiz) {
   for (const f of TSX) for (const c of tags(ler(f), "input")) if (/type="number"/.test(c.texto) && /step="0\.01"/.test(c.texto)) dinheiroNumber++;
   put("7.6", "dinheiro em type=number step=0.01", linhas(TSX, /<input[^>]*type="number"[^>]*step="0\.01"/), `varredura de tag multilinha: ${dinheiroNumber}; usos de <CampoMoeda: ${ocorr(TSX, /<CampoMoeda\b/)}`);
   put("7.6", "campos de fuso em texto (name=\"fuso)", linhas(TSX, /name="fuso/), `defaultValue="UTC" (linhas, inclui comentários): ${linhas(TSX, /defaultValue="UTC"/)}; usos de <CampoFuso: ${ocorr(TSX, /<CampoFuso\b/)}`);
+  // Critério da trava src/app/fuso-instante.test.ts (docs/43 §6 item 6): por atributo, spread, placeholder ou rótulo.
+  const fusos = TSX.flatMap((f) => camposDeFuso(ler(f)).map((c) => ({ ...c, arquivo: f })));
+  n.camposFusoFora = fusos.filter((c) => c.tipo === "campo" && c.arquivo !== ARQUIVO_DO_CAMPO_FUSO).length;
+  n.listasFusoFora = fusos.filter((c) => c.tipo === "lista" && c.arquivo !== ARQUIVO_DO_CAMPO_FUSO).length;
+  put("7.6", "campos de fuso fora do CampoFuso (critério da trava fuso-instante)", n.camposFusoFora, `listas de fusos (datalist/select) fora do CampoFuso: ${n.listasFusoFora}; arquivos: ${new Set(fusos.filter((c) => c.arquivo !== ARQUIVO_DO_CAMPO_FUSO).map((c) => c.arquivo)).size}`);
 
   // ---------- extras (citados nas seções 4 e 5, sem tabela própria na 7) ----------
   put("extras", "grid-cols-2 sem prefixo de breakpoint (ocorrências)", ocorr(TSX, /(?<![\w:-])grid-cols-2(?![\w-])/));
   put("extras", "page/layout com metadata ou generateMetadata", APP.filter((f) => /^(page|layout)\.tsx$/.test(base(f)) && /export (const metadata|async function generateMetadata|function generateMetadata)/.test(ler(f))).length);
   put("extras", "classes de mostrar/esconder por breakpoint (md:hidden | hidden md:)", ocorr(TSX, /\b(md:hidden|sm:hidden|hidden (sm|md|lg):)/));
   put("extras", "toISOString() impresso como texto (seguido de texto, ponto ou tag)", ocorr(TSX, /\{[^{}]*toISOString\(\)[^{}]*\}\s*(\(UTC\)|\.|<\/)/), `toISOString() em qualquer {…} (inclui valor de campo e payload): ${linhas(TSX, /\{[^{}]*toISOString\(\)[^{}]*\}/)}`);
+  n.instantesCrus = TSX.reduce((t, f) => t + instantesCrus(ler(f)).length, 0);
+  put("extras", "instantes crus na tela (critério da trava fuso-instante)", n.instantesCrus, "toISOString/toJSON/toUTCString, com cortes, como filho de JSX ou em ${…} de template que não é key/href/…; formatar(x.toISOString()) não conta");
   put("extras", "beforeunload", ocorr(TS_TSX, /beforeunload/));
   put("extras", "window.confirm / confirm(", ocorr(TSX, /\bconfirm\(/));
   put("extras", "<textarea com minLength (textarea crus)", ocorr(TSX, /<textarea\b[^>]*minLength/), `usos de <CampoTexto: ${ocorr(TSX, /<CampoTexto\b/)}`);
