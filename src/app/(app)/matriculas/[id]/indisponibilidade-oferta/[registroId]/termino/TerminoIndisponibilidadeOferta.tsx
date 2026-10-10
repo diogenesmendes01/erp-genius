@@ -13,6 +13,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -20,9 +21,10 @@ function dataCivil(valor: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 }
 
+/** Sem fuso da escola, o instante sai em UTC formatado e rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939). */
 function instanteDoEvento(valor: string, fusoInstitucional: string | null) {
   const instante = new Date(valor);
-  if (!fusoInstitucional) return `${instante.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC")} (fuso institucional não configurado)`;
+  if (!fusoInstitucional) return `${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(instante)} UTC`;
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoInstitucional }).format(instante);
 }
 
@@ -46,6 +48,7 @@ export function TerminoIndisponibilidadeOferta({
   const paginaAnterior = d.pagina > 1 ? d.pagina - 1 : null;
 
   return <div className="space-y-4">
+    {!fusoInstitucional && <AvisoFusoNaoConfigurado />}
     <p>Indisponibilidade relatada desde {dataCivil(inicio)}.</p>
     <MensagemStatus texto={mensagem} />
     {erro && <p role="alert">{erro}</p>}

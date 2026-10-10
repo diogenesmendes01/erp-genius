@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
@@ -10,6 +10,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoFuso } from "@/components/CampoFuso";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -102,11 +103,16 @@ export function PaisFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-fuso">Fuso horário</label>
-          <input id="pais-fuso" {...register("fuso")} className={inputCls} />
+          {/* CampoFuso (docs/43 §6 item 6; docs/42 L2429): sugestões + validação IANA no campo; o PaisSchema valida de novo no servidor. */}
+          <Controller control={control} name="fuso" render={({ field }) => (
+            <CampoFuso id="pais-fuso" name={field.name} valor={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} className={inputCls} aria-invalid={errors.fuso ? true : undefined} aria-describedby={errors.fuso ? "pais-fuso-erro" : undefined} />
+          )} />
+          {errors.fuso && <p id="pais-fuso-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.fuso.message}</p>}
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="pais-idioma">Idioma</label>
-          <input id="pais-idioma" {...register("idioma")} placeholder="es" className={inputCls} />
+          <input id="pais-idioma" {...register("idioma")} placeholder="es" className={inputCls} aria-invalid={errors.idioma ? true : undefined} aria-describedby={errors.idioma ? "pais-idioma-erro" : undefined} />
+          {errors.idioma && <p id="pais-idioma-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.idioma.message}</p>}
         </div>
       </div>
 

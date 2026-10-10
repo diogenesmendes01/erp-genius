@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { formatarInstanteExibicao, resolverFusoExibicao } from "./fuso-exibicao";
+import { formatarInstanteExibicao, fusoInicialDeEntrada, resolverFusoExibicao } from "./fuso-exibicao";
+
+// docs/43 §6 item 6: o valor inicial de um campo de fuso de entrada.
+describe("fusoInicialDeEntrada", () => {
+  it("fuso da escola; sem ele, a preferência; sem nenhum válido, vazio — nunca UTC presumido", () => {
+    expect(fusoInicialDeEntrada("America/Sao_Paulo", "America/Costa_Rica")).toBe("America/Sao_Paulo");
+    expect(fusoInicialDeEntrada(null, "America/Costa_Rica")).toBe("America/Costa_Rica");
+    expect(fusoInicialDeEntrada("fuso-invalido", " America/Manaus ")).toBe("America/Manaus");
+    expect(fusoInicialDeEntrada(null, null)).toBe("");
+    expect(fusoInicialDeEntrada(undefined, "Factory")).toBe("");
+  });
+});
 
 describe("fuso pessoal de exibição", () => {
   it("prefere IANA pessoal e preserva origem para preferência ausente ou inválida", () => {

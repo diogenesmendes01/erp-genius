@@ -5,17 +5,22 @@ import { consultarTelaEmissao } from "@/server/secretaria/conferencia-emissao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ConfirmarEmissao } from "./ConfirmarEmissao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { TIPO_COBRANCA_ENTRADA_LABEL, TIPO_PAGADOR_LABEL, rotular } from "@/lib/labels";
 export default async function EmissaoPage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
-  const { id } = await params, r = await consultarTelaEmissao(id);
+  const { id } = await params;
+  const [r, preferencia] = await Promise.all([consultarTelaEmissao(id), consultarPreferenciaFusoEquipe()]);
+  // Instante da conferência no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes era o ISO cru.
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const links = <nav className="flex gap-4"><Link className="underline" href={`/matriculas/${id}/preparacao`}>Proposta e pendências</Link><Link className="underline" href={`/matriculas/${id}/pagador`}>Pagador</Link><Link className="underline" href={`/matriculas/${id}/condicoes`}>Condições de entrada</Link></nav>;
   if (!r.ok || !r.dado) return <div className="space-y-4">{links}<p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></div>;
   const tipo = (v: string) => rotular(TIPO_COBRANCA_ENTRADA_LABEL, v);
   if (r.dado.estado === "EMITIDA") {
     const c = r.dado.registro;
-    return <div className="space-y-4">{links}<h1 className="text-2xl">Emissão inicial registrada</h1><p>Conferida por {c.autor.nome} em {c.criadaEm.toISOString()} (UTC).</p><p>{c.motivo}</p><ul>{c.cobrancas.map((b) => <li key={b.id}>{tipo(b.tipo)} · {formatarMoeda(Number(b.valor), b.moeda)} · Vencimento {formatarDataCivil(b.vencimento)}</li>)}</ul><p>Estes são os valores originalmente emitidos. A confirmação do recebimento e eventuais ajustes são acompanhados no Financeiro. A emissão não ativa a matrícula.</p><Link className="underline" href="/financeiro">Abrir Financeiro</Link>{r.dado.particular && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/entrada-particular`}>Conferir pagamentos de entrada da particular</Link>}</div>;
+    return <div className="space-y-4">{links}<h1 className="text-2xl">Emissão inicial registrada</h1><p>Conferida por {c.autor.nome} em {formatarInstanteExibicao(c.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p>{c.motivo}</p><ul>{c.cobrancas.map((b) => <li key={b.id}>{tipo(b.tipo)} · {formatarMoeda(Number(b.valor), b.moeda)} · Vencimento {formatarDataCivil(b.vencimento)}</li>)}</ul><p>Estes são os valores originalmente emitidos. A confirmação do recebimento e eventuais ajustes são acompanhados no Financeiro. A emissão não ativa a matrícula.</p><Link className="underline" href="/financeiro">Abrir Financeiro</Link>{r.dado.particular && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/entrada-particular`}>Conferir pagamentos de entrada da particular</Link>}</div>;
   }
   const v = r.dado.revisao, a = v.dados.aluno, p = v.dados.pagador;
   return <div className="space-y-5">{links}<h1 className="text-2xl">Conferência para emissão inicial</h1>

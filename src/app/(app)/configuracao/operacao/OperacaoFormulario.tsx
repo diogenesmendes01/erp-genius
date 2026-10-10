@@ -5,6 +5,7 @@ import { salvarConfiguracaoOperacional } from "@/server/operacao/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoFuso } from "@/components/CampoFuso";
 
 export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferenciaHoras, fusoInstitucional, prazoReservaMinutos }: { exigirPrimeiraMensalidade: boolean; prazoConferenciaHoras: number | null; fusoInstitucional: string | null; prazoReservaMinutos: number | null }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferencia
     if (desfecho?.tipo === "ok") router.refresh();
   }
   return <form action={salvar} className="space-y-5 rounded border p-5 text-sm">
-    <label className="block">Fuso oficial da escola<input name="fuso" defaultValue={fusoInstitucional ?? ""} placeholder="America/Sao_Paulo" maxLength={100} className="mt-1 block w-full rounded border p-2" /></label>
+    <label className="block">Fuso oficial da escola<CampoFuso padrao={fusoInstitucional ?? ""} required={false} className="mt-1 block w-full rounded border p-2" /></label>
     <p className="text-gray-500">Define as datas institucionais. A preferência de exibição de cada pessoa é independente. Deixar em branco mantém a configuração atual; não escolhe um fuso automaticamente.</p>
     <p>Contrato aceito e taxa de matrícula confirmada são obrigatórios para ativar a matrícula.</p>
     <label className="flex items-center gap-2"><input type="checkbox" name="primeira" defaultChecked={exigirPrimeiraMensalidade} />Exigir também a primeira mensalidade confirmada</label>

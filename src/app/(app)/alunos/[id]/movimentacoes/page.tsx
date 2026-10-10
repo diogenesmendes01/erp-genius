@@ -19,6 +19,10 @@ import { listarPedidosEncerramentoParaUsuario, paginaPedidosEncerramento } from 
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_SOLICITACAO_ENCERRAMENTO_LABEL } from "@/lib/labels";
+import { formatarDataCivil } from "@/lib/data-civil";
+
+/** Data civil (@db.Date, gravada à meia-noite UTC) em dd/mm/aaaa, sem converter de fuso (docs/43 §6 item 6). */
+const dataCivil = (data: Date) => formatarDataCivil(data.toISOString().slice(0, 10));
 
 export default async function MovimentacoesPage({
   params,
@@ -59,7 +63,7 @@ export default async function MovimentacoesPage({
         : <EstadoVazio>Nenhum pedido de encerramento registrado para este aluno.</EstadoVazio>)}
       {pedidos.pedidos.map((p) => <article key={p.id} className="space-y-1 rounded border p-3 text-sm">
         <p>{p.itens.map((i) => identificacaoContrato(i.matricula.codigo, i.matricula.id)).join(", ")} · {STATUS_SOLICITACAO_ENCERRAMENTO_LABEL[p.status]}</p>
-        <p>Registrado por {p.registrador.nome} em {p.dataPedido.toISOString().slice(0, 10)}. Encerramento solicitado para {p.dataSolicitada.toISOString().slice(0, 10)}.</p>
+        <p>Registrado por {p.registrador.nome} em {dataCivil(p.dataPedido)}. Encerramento solicitado para {dataCivil(p.dataSolicitada)}.</p>
         <p>{p.motivo}</p><p>Evidência do pedido: {p.evidenciaPedido}</p>
         {p.motivoRetroatividade && <p>Retroatividade solicitada: {p.motivoRetroatividade}. Evidência: {p.evidenciaRetroatividade}</p>}
         {["ABERTA", "EM_ACERTO", "CONCLUIDA"].includes(p.status) && usuario.papeis.some((papel) => papel === "FINANCEIRO" || papel === "ADMINISTRADOR") && <AcertoEncerramento alunoId={id} solicitacaoId={p.id} matriculas={p.itens.map((i) => i.matricula)} preferenciaFusoExibicao={preferenciaFusoExibicao} />}

@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
@@ -23,7 +24,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       <label className="block">Professor<select required name="professor" className={estilo} defaultValue=""><option value="" disabled>Selecione</option>{dados.professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <label className="block">Data no fuso informado<input type="date" name="data" required className={estilo} /></label>
       <label className="block">Horário<input type="time" name="horario" required className={estilo} /></label>
-      <label className="block">Fuso do encontro<input name="fuso" required defaultValue={dados.fuso} className={estilo} /></label>
+      <label className="block">Fuso do encontro<CampoFuso padrao={dados.fuso} className={estilo} /></label>
       <label className="block">Evidência da escolha do aluno<CampoTexto name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Justificativa de exceção em dia não letivo, se necessária<CampoTexto name="excecao" minLength={5} maxLength={2000} className={estilo} /></label>
