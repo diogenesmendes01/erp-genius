@@ -9,12 +9,13 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL } from "@/lib/labels";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
+import { CampoFuso, type SugestaoFuso } from "@/components/CampoFuso";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 type Nota = { habilidade: Habilidade; nota: string | null; comentarioAluno: string };
 
-/** Fusos sugeridos para a entrada (o campo aceita qualquer fuso IANA válido, como o CampoFuso). */
-export const FUSOS_SUGERIDOS_AVALIACAO = ["America/Sao_Paulo", "America/Costa_Rica", "UTC"];
+/** Fusos sugeridos para a entrada (o CampoFuso aceita qualquer fuso IANA válido). */
+export const FUSOS_SUGERIDOS_AVALIACAO: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"]];
 
 /** Data e hora locais (`datetime-local` com milissegundos) de um instante no fuso; null se o fuso não vale. */
 export function dataHoraLocalNoFuso(instante: string, fuso: string): string | null {
@@ -67,8 +68,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
     if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-4"><legend className="font-medium">Registrar avaliação realizada</legend>
-      <label className="block">Fuso para informar horários<input name="fuso" list="fusos-avaliacao" required maxLength={100} value={fuso} onChange={e => trocarFuso(e.target.value)} aria-invalid={!fusoValido} className="block rounded border p-2" /></label>
-      <datalist id="fusos-avaliacao">{FUSOS_SUGERIDOS_AVALIACAO.map(f => <option key={f} value={f} />)}</datalist>
+      <label className="block">Fuso para informar horários<CampoFuso valor={fuso} onChange={trocarFuso} sugestoes={FUSOS_SUGERIDOS_AVALIACAO} aria-invalid={!fusoValido} className="block rounded border p-2" /></label>
       <p>Use uma referência de região, como America/Sao_Paulo. Esse fuso define a entrada de data e horário; trocá-lo não apaga as notas digitadas.</p>
       <label className="block">Data e horário da realização ({fuso})<input type="datetime-local" name="realizadaEm" step="0.001" required value={realizadaEm} onChange={e => { setRealizadaEm(e.target.value); setDataTocada(true); }} className="block rounded border p-2" /></label>
       {!!realizadores.length && <label className="block">Quem realizou a avaliação?<select required value={realizador} onChange={e => setRealizador(e.target.value)} className="block rounded border p-2"><option value="">Selecione o professor</option>{realizadores.map(p => <option key={p.id} value={p.id}>{p.nome}{p.id === registradorId ? " (eu)" : ""}</option>)}</select></label>}

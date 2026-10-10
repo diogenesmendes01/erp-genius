@@ -5,7 +5,8 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRemarcacoesAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
 import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoInicialDeEntrada, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const agendaSchema = z.object({ encontro: z.object({ inicio: z.string(), fim: z.string(), fusoOrigem: z.string() }).nullable() });
@@ -36,10 +37,10 @@ export default async function Page({
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { reservaId } = await params;
   const { antesId } = await searchParams;
-  const [r, preferencia] = await Promise.all([consultarRemarcacoesAgendaSegundaChamada({
+  const [r, preferencia, fusoInstitucional] = await Promise.all([consultarRemarcacoesAgendaSegundaChamada({
     reservaId,
     ...(antesId ? { antesId } : {}),
-  }), consultarPreferenciaFusoEquipe()]);
+  }), consultarPreferenciaFusoEquipe(), consultarFusoInstitucional()]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <section className="space-y-4">
@@ -57,7 +58,7 @@ export default async function Page({
     </dl>
     <h2 className="font-medium">{d.conferencia.contextoVigente ? "Agenda atual" : "Agenda registrada"}</h2>
     <Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
-    {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoHash} />}
+    {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoHash} fusoInicial={fusoInicialDeEntrada(fusoInstitucional, preferencia.ok ? preferencia.dado?.fusoExibicao : null)} />}
     <h2 className="font-medium">Propostas e decisões</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma proposta registrada.</EstadoVazio>}
     {d.itens.map(p => <article key={p.id} className="space-y-3 rounded border p-4">

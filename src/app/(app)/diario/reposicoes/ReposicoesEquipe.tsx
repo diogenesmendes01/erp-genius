@@ -15,6 +15,7 @@ import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 
@@ -150,7 +151,7 @@ function AgendarParticular({ reposicaoId, opcoes, excecoes, preferenciaFusoExibi
     <p className="text-sm">Confira cota, período e conflitos antes de confirmar. O servidor confere tudo novamente no envio; uma data não letiva exige a aprovação específica daquele horário.</p>
     <label className="block">Docente<select name="professorId" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione o docente</option>{opcoes.professores.map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
     <div className="grid gap-3 md:grid-cols-2"><label className="block">Início local<input name="inicioLocal" type="datetime-local" required {...periodo.propsInicio} className="block w-full rounded border p-2" /></label><label className="block">Fim local<input name="fimLocal" type="datetime-local" required min={periodo.min} className="block w-full rounded border p-2" /></label></div>
-    <label className="block">Fuso horário<input name="fuso" required defaultValue={opcoes.fuso} className="block w-full rounded border p-2" /></label><p className="text-sm">Use o identificador do local, por exemplo, America/Sao_Paulo.</p>
+    <label className="block">Fuso horário<CampoFuso padrao={opcoes.fuso} className="block w-full rounded border p-2" /></label><p className="text-sm">Use o identificador do local, por exemplo, America/Sao_Paulo.</p>
     {opcoes.autorizacoesExcepcionais.length > 0 && <label className="block">Autorização excepcional aprovada (somente se não houver benefício)<select name="autorizacaoExcecaoId" defaultValue="" className="block rounded border p-2"><option value="">Usar benefício normal</option>{opcoes.autorizacoesExcepcionais.map((autorizacao) => <option key={autorizacao.id} value={autorizacao.id}>Autorização aprovada: {autorizacao.motivo}</option>)}</select></label>}
     <label className="block">Motivo do agendamento<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <button type="button" onClick={e => conferir(e.currentTarget.form!)} disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Conferindo…" : "Conferir agenda"}</button>

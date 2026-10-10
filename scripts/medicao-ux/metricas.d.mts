@@ -20,5 +20,8 @@ export type NumerosMetricas = {
   chamaAcao: number;
   semCatchLiteral: number;
   semCatchCentral: number;
+  camposFusoFora: number;
+  listasFusoFora: number;
+  instantesCrus: number;
 };
 export function medir(raiz: string): { secoes: Record<string, ItemMetrica[]>; n: NumerosMetricas };

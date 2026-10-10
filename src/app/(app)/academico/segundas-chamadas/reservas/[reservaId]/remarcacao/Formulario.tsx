@@ -7,12 +7,15 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 type Props = {
  reservaId: string;
  estadoConferido: string;
  proposta?: { id: string; hash: string; podeAprovar: boolean; impedimentoAprovacao: string | null; periodosNaoLetivos: string[] };
+ /** Fuso da escola ou da preferência (fusoInicialDeEntrada); "" deixa o campo vazio e obrigatório. */
+ fusoInicial?: string;
 };
-export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
+export function Formulario({ reservaId, estadoConferido, proposta, fusoInicial = "" }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
  const [ocupado, setOcupado] = useState(false), [erro, setErro] = useState(""), [decisao, setDecisao] = useState("");
  const periodo = useInicioDoPeriodo();
@@ -48,7 +51,7 @@ export function Formulario({ reservaId, estadoConferido, proposta }: Props) {
  <p>A proposta mantém o horário atual até outra pessoa autorizada aprovar. O prazo da avaliação e a oportunidade reservada permanecem os mesmos.</p>
  <label className="block">Novo início<input name="inicioLocal" type="datetime-local" required {...periodo.propsInicio} className="block border p-2" /></label>
  <label className="block">Novo término<input name="fimLocal" type="datetime-local" required min={periodo.min} className="block border p-2" /></label>
- <label className="block">Fuso dos horários<input name="fusoOrigem" required maxLength={100} placeholder="America/Sao_Paulo" className="block border p-2" /><span className="text-sm">Informe o fuso em que preencheu início e término.</span></label>
+ <label className="block">Fuso dos horários<CampoFuso name="fusoOrigem" padrao={fusoInicial} className="block border p-2" /><span className="text-sm">Informe o fuso em que preencheu início e término.</span></label>
  <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
  <label className="block">Justificativa de exceção não letiva, se o horário a atingir<CampoTexto name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>
  </>}

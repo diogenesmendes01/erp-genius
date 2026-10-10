@@ -47,7 +47,9 @@ describe("MovimentacoesPage preferência de fuso", () => {
     expect(html).toContain('data-compras="America/Costa_Rica"');
     expect(html).toContain('data-cumprimento="America/Costa_Rica"');
     expect(html).toContain('data-acerto="America/Costa_Rica"');
-    expect(html).toContain("Registrado por Secretaria em 2099-01-01");
+    // Datas civis (@db.Date) em dd/mm/aaaa, sem o ISO cru (docs/43 §6 item 6).
+    expect(html).toContain("Registrado por Secretaria em 01/01/2099. Encerramento solicitado para 02/01/2099.");
+    expect(html).not.toContain("2099-01-01");
     expect(html).toContain('href="/alunos/aluno/movimentacoes?pagina=2"');
   });
 

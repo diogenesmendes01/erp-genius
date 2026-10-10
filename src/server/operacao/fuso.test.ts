@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { dataCivilInstitucional, FusoInstitucionalSchema } from "./fuso";
+import { dataCivilInstitucional, fusoIanaValido, FusoInstitucionalSchema } from "./fuso";
+// Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
+describe("fusoIanaValido", () => {
+  it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
+  it.each(["", "America/Sao Paulo", "America/SaoPaulo", "GMT-3", "+03:00", "-03:00", "Brasil", "America/Inexistente"])("recusa %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(false));
+});
 describe("data civil institucional", () => {
   it("mesmo instante pode ser datas diferentes no Brasil e Costa Rica", () => {
     const instante = new Date("2026-09-12T04:00:00Z");
