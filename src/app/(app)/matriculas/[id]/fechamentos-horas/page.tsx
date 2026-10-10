@@ -7,7 +7,8 @@ import { PrepararFechamento } from "./PrepararFechamento";
 import { DecidirFechamento } from "./DecidirFechamento";
 import { EmitirFechamento } from "./EmitirFechamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao, fusoInicialDeEntrada } from "@/server/operacao/fuso-exibicao";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { DESFECHO_OCORRENCIA_HORAS_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -30,9 +31,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   await exigirSessaoPagina(Papel.FINANCEIRO);
   const { id } = await params, q = await searchParams;
   if (!q.aluno) return <p role="alert">Abra os fechamentos pela ficha financeira da matrícula.</p>;
-  const [r, preferencia] = await Promise.all([
+  const [r, preferencia, fusoInstitucional] = await Promise.all([
     consultarFechamentosHoras({ alunoId: q.aluno, matriculaId: id, cursor: q.cursor, rascunhoId: q.versao }),
     consultarPreferenciaFusoEquipe(),
+    consultarFusoInstitucional(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, base = `/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`;
@@ -45,7 +47,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <Link href={`/matriculas/${id}/ocorrencias-financeiras`} className="underline">Conferência das particulares</Link>
     <h1 className="text-2xl">Fechamentos por hora · {d.matricula.codigo ?? id}</h1>
     <p>Histórico dos rascunhos de apuração. Salvar uma versão não aprova condições, emite cobrança ou confirma pagamento.</p>
-    {!q.versao && <PrepararFechamento alunoId={d.matricula.alunoId} matriculaId={id} />}
+    {!q.versao && <PrepararFechamento alunoId={d.matricula.alunoId} matriculaId={id} fusoInicial={fusoInicialDeEntrada(fusoInstitucional, preferenciaFusoExibicao)} />}
     {q.versao && <Link href={base} className="underline">Todas as versões</Link>}
     {!d.versoes.length && (q.cursor
       ? <EstadoVazio bloco acao={<Link href={base} className="underline">Ir para a primeira página</Link>}>Nenhum rascunho salvo nesta página.</EstadoVazio>

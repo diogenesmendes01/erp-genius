@@ -94,10 +94,18 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("entrada=America/Sao_Paulo");
   });
 
-  it("sem fuso na URL e sem fuso institucional configurado, recorre a UTC", async () => {
+  it("sem fuso na URL e sem fuso institucional configurado, recorre a UTC — e avisa na tela, com o caminho para configurar", async () => {
     mocks.fuso.mockResolvedValue(null);
     const html = renderToStaticMarkup(await renderizar({}));
     expect(html).toContain("entrada=UTC");
+    expect(html).toContain("Fuso da escola não configurado; horários exibidos em UTC.");
+    expect(html).toContain('href="/configuracao/operacao"');
+  });
+
+  it("com fuso da escola (ou fuso escolhido na URL), não há aviso de UTC", async () => {
+    mocks.fuso.mockResolvedValue("America/Sao_Paulo");
+    expect(renderToStaticMarkup(await renderizar({}))).not.toContain("Fuso da escola não configurado");
+    expect(renderToStaticMarkup(await renderizar({ fuso: "UTC" }))).not.toContain("Fuso da escola não configurado");
   });
 
   // docs/43 §6 item 3 (docs/42 L1314): antes, a key do LancarNotas tinha a versão e o fuso, e o formulário só

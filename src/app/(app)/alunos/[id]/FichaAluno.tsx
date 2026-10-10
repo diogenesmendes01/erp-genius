@@ -17,6 +17,7 @@ import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-c
 import { botaoClasses } from "@/components/Botao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
@@ -416,7 +417,7 @@ export function FichaAluno({
             {(campo) => <input {...campo} className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />}
           </Campo>
           <Campo id="ficha-fuso" rotulo="Fuso horário">
-            {(campo) => <input {...campo} className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />}
+            {(campo) => <CampoFuso {...campo} name="fuso" required={false} className={inputCls} valor={ed.fuso} onChange={(valor) => set("fuso", valor)} />}
           </Campo>
           <Campo id="ficha-observacoes" rotulo="Observações" className="sm:col-span-2">
             {(campo) => <CampoTexto {...campo} className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />}
